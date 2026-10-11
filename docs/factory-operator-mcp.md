@@ -7,7 +7,7 @@ stdio client connects to that worker and never starts another instance.
 
 Operator grants are separate from dashboard passkeys. They cannot approve reviews,
 merge deliveries, reset passkeys, modify arbitrary run state, or directly mark a
-coding ticket Done. Dashboard APIs continue to require a passkey session.
+coding ticket Done. Remote dashboard APIs require a passkey session; direct HTTP loopback dashboard access uses validated local operator authority.
 
 ## Local owner setup
 

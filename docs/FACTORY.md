@@ -4,14 +4,14 @@
 [Homepage](https://jappyjan.github.io/bobs-factory/)
 
 The factory builds on Cyrus’s runners, Git worktrees and ticket integrations. Its
-dashboard and JSON workflow graph are deliberately small: passkeys and a private
-local authentication file, without accounts, a database or a hosted identity service.
+dashboard and JSON workflow graph are deliberately small: automatic direct local
+access and per-origin remote passkeys, without accounts, a database or a hosted identity service.
 
 ## Start locally
 
 Follow the two-command [installation](../README.md#install-and-start), then run
-`bobs-factory`. Your browser opens at http://localhost:3457. First launch prints
-the passkey setup code in the same terminal and guides you through selecting a
+`bobs-factory`. Your browser opens at http://localhost:3457. First launch opens
+onboarding directly and guides you through selecting a
 Git project, coding agent and optional GitHub connection. No separate terminal,
 GitHub CLI, Node, npm or Bun is needed to install the factory.
 
@@ -42,15 +42,16 @@ use `pnpm factory` with the same onboarding.
 `bobs-factory start` uses configured repositories/integrations and starts the
 dashboard on port 3457. Set `BOBS_FACTORY_FACTORY_PORT` to choose another port,
 or `0` to disable it. The dashboard binds to loopback separately from the
-webhook listener and is intended for one operator. Every browser dashboard address
-requires a passkey session, including localhost. Provider webhooks and OAuth
+webhook listener and is intended for one operator. Direct HTTP loopback dashboard access requires no enrollment or login. Public HTTPS
+origins require a passkey session. Provider webhooks and OAuth
 callbacks stay independent of dashboard authentication.
 
 ## Protected remote access design
 
 Factory uses application passkeys for one operator and retains separate dashboard
 and provider listeners. Network reachability and browser identity are separate
-checks: a permitted network connection still needs a verified Factory session.
+checks: remote connections need a verified Factory session; direct local connections use
+the machine operator’s authority.
 
 | Design | Practical consequence |
 | --- | --- |
@@ -59,12 +60,23 @@ checks: a permitted network connection still needs a verified Factory session.
 | Shared listener with public routes | Possible with strict public-route isolation, but adds routing risk. Existing separate listeners avoid that restructuring. |
 
 Local desktop browsers use `http://localhost:3457`; the IP entrypoint redirects
-there for WebAuthn. Remote desktop and mobile browsers use the exact configured
-HTTPS origin and enroll a key at that address. Neither path bypasses login.
+there for a consistent dashboard address. Remote desktop and mobile browsers use the exact configured
+HTTPS origin and enroll a key at that address. Local access opens directly; remote access requires login.
 The HTTPS proxy terminates TLS and forwards to the loopback dashboard while
 preserving the external **Host** authority and browser **Origin** header.
-Its loopback TCP connection and `X-Forwarded-*` headers never establish identity.
-Direct requests to the dashboard port also require a session.
+Its loopback TCP connection alone and `X-Forwarded-*` headers never establish
+local authority for a public Host. Forwarded localhost authorities are rejected.
+Direct loopback HTTP requests with an exact `localhost`, `127.0.0.1` or `[::1]`
+authority at the configured port need no passkey. The worker listens on IPv4 and
+IPv6 loopback at the same port (IPv4 remains available on hosts with IPv6 disabled).
+The socket peer must also be loopback; forwarded IP/Host cannot replace it.
+Cross-origin Origin, Referer, navigation and Fetch Metadata requests are rejected,
+and mutations still require exact Origin and `X-Factory-Request: 1`.
+
+A raw TCP port-forward, or a proxy that strips every forwarding signal and
+rewrites Host to localhost, is indistinguishable from a local client and exposes
+local operator authority. Use the configured public HTTPS Host/Origin through
+proxies and tunnels. Do not publish localhost through a rewriting proxy.
 
 The hostname in the example below is deployment context from Taskbot #40, not a
 request to change tunnels. Keep the operator's currently configured webhook/OAuth
@@ -75,10 +87,14 @@ legacy Tailscale proxy belong to the separate host setup work.
 
 ## Passkey access and first setup
 
-Factory requires a server-verified passkey session for browser dashboard data and
-controls. The terminal dashboard uses a separate authenticated local-operator session
-as described below. Localhost has no unauthenticated bypass. An empty store displays the
-first-passkey setup screen; it does not give a remote visitor permission to enroll.
+Direct HTTP localhost browser/desktop access opens data, controls and onboarding
+without enrollment, login, a reusable cookie or an expiry deadline. Access settings
+explain remote passkeys without prompting for a local key. Local actions are audited
+as `local-operator`. Connection loss still clears private views; reconnect rechecks
+the local request boundary. Remote HTTPS requires a server-verified passkey session.
+An empty remote store displays first-passkey setup; it does not give a visitor
+permission to enroll. The terminal dashboard retains its compatible local-operator
+request mechanism as described below.
 Development checkouts use Node 22 or newer (SimpleWebAuthn 14). The binary includes its runtime.
 
 For an HTTPS tunnel, configure the exact browser origin before starting Factory:
@@ -93,14 +109,13 @@ Configured services use `BOBS_FACTORY_FACTORY_ORIGIN` for the same setting.
 `BOBS_FACTORY_FACTORY_ORIGIN` setting takes precedence when both are supplied.
 `BOBS_FACTORY_FACTORY_PORT` remains 3457 by default. The server binds only to loopback,
 accepts only explicitly configured authorities and checks exact browser Origin
-on writes. Request headers and loopback proxy peers never waive authentication.
+on writes. Public Host requests retain authentication even when their socket peer is a loopback proxy.
 The tunnel must preserve the public authority and origin. No forwarded header
 is used as an authentication or identity claim. There is no extra UI listener.
 Remote access is denied when its origin has not been configured.
 
-At first foreground startup, Bob prints a ten-minute, single-use setup code in
-the same terminal and opens the browser. Enter it in the first-passkey screen.
-The private grant is also written to `<home>/factory/auth/enroll.json`, readable
+Local foreground startup opens onboarding without a setup code. For remote
+passkey enrollment, a ten-minute single-use grant is written to `<home>/factory/auth/enroll.json`, readable
 only by the operator. Existing passkeys are never automatically reset. For a
 service or an expired/cancelled enrollment, generate another code on the machine:
 
@@ -108,8 +123,8 @@ service or an expired/cancelled enrollment, generate another code on the machine
 bobs-factory --home /absolute/path/to/the/effective/factory-home factory-auth
 ```
 
-Checkout users also get the code from `pnpm factory` on first launch. The
-manual recovery helper is `bun run scripts/factory.ts factory-auth`; add
+Checkout users also open local onboarding directly with `pnpm factory`. The
+remote enrollment/recovery helper is `bun run scripts/factory.ts factory-auth`; add
 `--home /absolute/path/to/the/effective/factory-home` when selecting another
 state directory.
 
@@ -120,17 +135,15 @@ and `bobs-factory --home /absolute/home factory-auth --recover --confirm
 Start the server before generating a code: pending grants/challenges are
 invalidated on restart. Both launch modes default to `~/.bobs-factory`; `--home` selects another
 state directory. Always choose the home used by the running service. Setup codes
-authorize one enrollment and expire in ten minutes. Automatic local first launch
-passes the grant in a localhost URL fragment that is consumed and removed before
-normal app navigation; it is not sent in HTTP requests. Keep codes out of shared
+authorize one enrollment and expire in ten minutes. Local launch does not read or pass this grant. Keep codes out of shared
 URLs, screenshots, run prompts and ticket comments. Transfer the
 code privately to the phone, then open the exact configured HTTPS origin there.
 
-Each passkey belongs to the address where it was created. Localhost and the
-public hostname need separate keys. The `http://127.0.0.1:3457` entrypoint redirects
-to `http://localhost:3457` because WebAuthn rejects IP addresses as RP IDs.
-Both addresses protect data; the redirect provides a usable local login.
-`Settings` in the main navigation contains passkey management and sign-out.
+Each passkey belongs to the address where it was created. Each public hostname
+needs a separate key. Localhost needs no key. The `http://127.0.0.1:3457`
+entrypoint redirects to `http://localhost:3457` for a consistent dashboard address.
+All three loopback authorities open after local request validation.
+At a remote address, `Settings` contains passkey management and sign-out.
 The sign-in screen folds new-key setup under `Set up a new passkey` once the
 first key exists. First-time setup opens automatically. A new key can be enrolled
 from that screen with a fresh machine-authorized code while signed out, or from
@@ -149,11 +162,12 @@ precedence over the environment, and twelve hours applies only when neither is
 set. Invalid values fail startup. Sessions survive a restart;
 credentials, counters and token hashes live in private atomic files. HTTPS uses
 host-only `__Host-` cookies with Secure, HttpOnly, SameSite=Strict and Path=/.
-Loopback HTTP uses a host-only HttpOnly/SameSite=Strict cookie. Both paths require
+Existing local passkey cookies remain readable for credential compatibility;
+direct local access does not create or require them. Remote access requires
 a verified, unexpired server record. Ceremonies require user verification, exact
 origin/RP binding and a single-use browser-bound challenge valid for five minutes.
 
-Sign out warns that unsent edits and review comments will be discarded across
+Remote sign out warns that unsent edits and review comments will be discarded across
 tabs. Expiry/revocation also clears sensitive views and
 stops retries, streams and late responses. Reopening, restored navigation and
 reconnection recheck the session. Connection loss clears private views and unsent
@@ -174,7 +188,7 @@ bobs-factory --home /absolute/path/to/the/effective/factory-home factory-auth \
 ```
 
 A running server consumes the private recovery request and revokes every key,
-session, stream and pending ceremony. No service restart is required. If corrupt
+remote session/stream and pending ceremony. Direct local streams remain local authority. No service restart is required. If corrupt
 state prevented startup, rerun the server after recovery. Run history, workflows,
 integrations, credentials for provider services and worktrees are preserved.
 The old auth file is retained privately as a recovery backup and is never read
@@ -184,8 +198,9 @@ or deliberately recover rather than silently rebinding existing keys.
 
 | Surface | Access |
 | --- | --- |
-| Local and public browser dashboard data/actions/media/SSE | Passkey session required |
-| Terminal dashboard on localhost | Private local-operator request; expiring Bearer session, bound to localhost |
+| Direct HTTP loopback dashboard data/actions/media/SSE | Validated socket peer, loopback Host and same-origin context; no login |
+| Public/TLS browser dashboard data/actions/media/SSE | Per-origin passkey session required |
+| Terminal dashboard on localhost | Same validated direct loopback authority; no login |
 | Static app shell, version, access status and ceremonies | Public; no run or configuration data |
 | First or recovery enrollment | Operator setup code; one key only |
 | Additional enrollment | Recently verified session, or operator code from an unauthenticated setup screen |
@@ -197,9 +212,9 @@ or deliberately recover rather than silently rebinding existing keys.
 Production deployment is separate from this implementation. Before rollout,
 configure the exact HTTPS origin, confirm that zrok2 preserves Host/Origin and
 retire the legacy localhost-rewriting proxy in the host setup thread. The UI
-tunnel can keep target `127.0.0.1:3457`; authentication still applies to direct
-or rewritten localhost requests, but rewriting Host prevents correct remote
-origin checks. Verify signed Linear deliveries, rejection of unsigned deliveries
+tunnel can keep target `127.0.0.1:3457`; the public Host retains authentication. Rewriting to localhost is rejected when
+forwarding headers are present; stripping those headers as well exposes local
+authority and is unsupported. Verify signed Linear deliveries, rejection of unsigned deliveries
 and OAuth callback routing on the independent provider listener. Do not perform
 live provider authorization merely to check dashboard access.
 
@@ -219,10 +234,12 @@ QR behavior. A local HTTPS proxy test does not establish production zrok2 routin
 
 ### Access and validation map
 
-The dashboard rejects private requests before their handlers run. Its public
+The dashboard rejects unauthorized private requests before their handlers run.
+The following session checks apply to remote access; every listed data/action
+surface also accepts validated direct HTTP loopback authority. Its public
 allowlist serves only static assets, version and authentication bootstrap or
 ceremonies; it does not expose runs, settings or credentials. Unknown routes also
-require authentication. Private responses use `Cache-Control: no-store`.
+require validated local authority or a remote session. Private responses use `Cache-Control: no-store`.
 
 | Surface and representative routes | Boundary and existing verification |
 | --- | --- |
@@ -292,19 +309,20 @@ when truecolor is unavailable. Auto detection queries the terminal background,
 then uses `COLORFGBG`, then dark. `--theme light|dark` overrides detection.
 Use a terminal at least 60 columns by 16 rows; larger sizes show more context.
 
-Local login writes a one-minute request containing only a token hash under the
+The terminal client's legacy local-login exchange writes a one-minute request containing only a token hash under the
 operator-owned `<home>/factory/auth` directory. The server consumes that request
 and grants an expiring memory-only session for its localhost origin. The raw
 token stays in terminal process memory. The private directory is the authority;
-HTTP headers or a loopback connection alone never grant access. Remote origins
-cannot use this terminal session. It cannot manage passkeys, and browser links
-still require browser passkey login. Sessions follow the configured 1–24 hour
+HTTP headers alone never grant access. Direct local HTTP requests now open without this session, using the same
+validated socket/Host/origin boundary as the browser. Remote origins
+cannot use this terminal session. It cannot manage passkeys, and local browser links
+open without passkey login. Sessions follow the configured 1–24 hour
 lifetime; expiry/restart causes a fresh local request. Deliberate auth recovery
 revokes them along with browser sessions. No native credential store is changed.
 
 ## Execution identities and tools
 
-**Settings** has separate pages for **Access** (passkeys and sign-out), **Execution defaults**, **Identity profiles**, **Tool profiles**, **Instance capacity** and **Run titles**. Recipes manages bundled execution preferences, private editable forks, launch permissions and enable state. In Identity profiles, create an identity with separate Git author/committer, repository account, signing policy and per-runner API references. Create a tool profile with declared MCP sources/definitions, per-server credential references, removals, denials and supported ordinary settings. Enter credential names or protected-file paths, never token values.
+**Settings** has separate pages for **Access** (local access or remote passkeys/sign-out), **Execution defaults**, **Identity profiles**, **Tool profiles**, **Instance capacity** and **Run titles**. Recipes manages bundled execution preferences, private editable forks, launch permissions and enable state. In Identity profiles, create an identity with separate Git author/committer, repository account, signing policy and per-runner API references. Create a tool profile with declared MCP sources/definitions, per-server credential references, removals, denials and supported ordinary settings. Enter credential names or protected-file paths, never token values.
 
 The composer selects identity and tools independently and offers an effective preview. Manual choices override repository defaults, which override factory defaults. No selection/default keeps Legacy behavior. Explicit profiles require both concerns and an authentication binding for every workflow provider and the title agent. Unsupported native sources fail before worktree setup. Saved runs keep their accepted definitions even when defaults change or profiles are deleted.
 
@@ -413,7 +431,7 @@ Keep the existing stable HTTPS address and tailnet-only Tailscale Serve deployme
 Set `BOBS_FACTORY_FACTORY_ORIGIN` to that exact HTTPS origin (no path or trailing slash)
 when the proxy forwards its public Host or Origin. The listener remains loopback-only;
 only configured origins pass the request guards. Push status and device management
-require the same passkey session as the dashboard, including on localhost. A
+use the same validated local authority or remote passkey session as the dashboard. A
 notification opened while signed out keeps its destination and requires sign-in
 before refreshing current run or review state. Non-sensitive device consent and
 deferred subscription cleanup survive sign-out; private drafts and run caches

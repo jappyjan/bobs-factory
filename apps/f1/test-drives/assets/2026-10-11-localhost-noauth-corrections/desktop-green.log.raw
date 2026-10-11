@@ -1,0 +1,55 @@
+
+> bobs-factory-desktop@1.0.0-beta test:run /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/apps/desktop
+> bun build src/update-services.ts --target node --format esm --outfile src/update-services.mjs && node --test test/*.test.mjs
+
+Bundled 148 modules in 77ms
+
+  update-services.mjs  3.28 MB  (entry point)
+
+✔ TERM-ignoring child escalates; PASS appears only after all child close events (788.708292ms)
+✔ existing PASS and FAIL receipts are rejected before work and preserved byte-for-byte (17.025125ms)
+✔ partial final receipt write keeps the reserved pending FAIL and removes temp file (748.729833ms)
+✔ cleanup failure plus final rename failure leaves only the current pending receipt (26.333041ms)
+✔ leader exits first; its TERM-ignoring descendant is still drained (1171.444917ms)
+✔ failed owned lock removal fails receipt while unrelated foreground process survives (1041.0285ms)
+✔ overwritten lock cannot authorize signaling or removal of unrelated PID (1217.856709ms)
+✔ actual controller SIGTERM creates FAIL after cleanup, receipt outside fixture HOME (1085.840667ms)
+✔ stale PID stamp never signals a reused unrelated process (583.440083ms)
+✔ cleanup exception produces a failed receipt and nonzero controller exit (82.204125ms)
+✔ replacement fixture home cannot authorize removing a copied lock (890.86675ms)
+﹣ pinned Electron Node helper inventories and archives the physical ASAR bytes, mode and symlinks (0.312667ms) # Electron binary is not materialized
+✔ retained standalone helper resolves its full module closure and runs recovery without repository modules (1279.23575ms)
+✔ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (2991.112958ms)
+✔ packaging requires exact pinned vendor notices; recovery retains bytes and missing/tampered notices fail closed (5.916333ms)
+(node:71232) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ macOS complete-app staging preserves actual quarantine without changing byte identity (364.490084ms)
+✔ macOS complete-app replacement and rollback preserves actual quarantine without changing byte identity (699.461125ms)
+✔ macOS complete-app interrupted recovery preserves actual quarantine without changing byte identity (597.83525ms)
+(node:71233) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ first nightly shell subscribes to nightly idle-auto; saved stable/manual choices survive reopening a nightly app (89.715166ms)
+✔ complete app archive preserves framework symlinks and modes; traversal/special ancestry fails before extraction (6.053875ms)
+✔ intermediate directory symlinks resolve before ..; actual outside sentinel cannot be packed or extracted (1.863042ms)
+✔ unsigned app source binds exact payload, channel, target and full inventory; publisher tamper never stages (266.205083ms)
+✔ user-owned DMG app accepts candidate-bound unsigned integrity receipts; external symlink handoff remains (251.092416ms)
+✔ nightly app replacement keeps runtime state, old app and policy; failed health rolls back and suppresses candidate (2110.613125ms)
+✔ app final authorization rejects raced policy {"paused":true} (1233.326334ms)
+✔ app final authorization rejects raced policy {"pin":"2.0.0"} (1180.893917ms)
+✔ app final authorization rejects raced policy {"channel":"stable"} (1651.786958ms)
+✔ app final authorization rejects raced policy {"policy":"manual"} (1389.952ms)
+✔ stable requires exact candidate Install; Quit is never consent, stale receipt rejects (1540.281708ms)
+✔ forged staged fingerprint/receipt never executes, including self-consistent local tampering (1460.454667ms)
+✔ interrupted recovery preserves foreign-bytes on repeated attempts; authenticated missing/restored installs still recover (2270.413291ms)
+✔ interrupted recovery preserves foreign-symlink on repeated attempts; authenticated missing/restored installs still recover (2088.099792ms)
+✔ interrupted recovery preserves foreign-dangling-symlink on repeated attempts; authenticated missing/restored installs still recover (1459.293375ms)
+✔ remote origins cannot become local filesystem or insecure bridge targets (0.728042ms)
+✔ open launcher refreshes automatic candidates/results without discarding edits or changing captured consent (6.198084ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 17191.65875

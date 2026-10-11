@@ -1,0 +1,43 @@
+
+> bobs-factory-edge-worker@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker
+> vitest run prompt-assembly test/FactoryOnboarding.test.ts test/Video.test.ts test/FactoryAccess.test.ts test/FactoryAuth.test.ts test/FactoryWebClient.test.ts test/FactoryServer.test.ts test/FactoryServer.update-startup.test.ts
+
+
+ RUN  v4.1.11 /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker
+
+(node:62673) ExperimentalWarning: The supports Web Crypto API method is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:62673) ExperimentalWarning: The ML-DSA-44 Web Crypto API algorithm is an experimental feature and might change at any time
+(node:62671) ExperimentalWarning: The supports Web Crypto API method is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:62671) ExperimentalWarning: The ML-DSA-44 Web Crypto API algorithm is an experimental feature and might change at any time
+(node:62674) ExperimentalWarning: The supports Web Crypto API method is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:62674) ExperimentalWarning: The ML-DSA-44 Web Crypto API algorithm is an experimental feature and might change at any time
+(node:62672) ExperimentalWarning: The supports Web Crypto API method is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:62672) ExperimentalWarning: The ML-DSA-44 Web Crypto API algorithm is an experimental feature and might change at any time
+Note: switching to 'HEAD~1'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at ef70b92 fixture
+
+ Test Files  16 passed (16)
+      Tests  116 passed (116)
+   Start at  23:07:20
+   Duration  8.62s (transform 10.10s, setup 349ms, import 25.38s, tests 14.35s, environment 1ms)
+

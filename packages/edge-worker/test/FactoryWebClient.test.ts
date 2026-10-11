@@ -553,6 +553,29 @@ it("ignores old-cookie denials after passkey verification while retaining privat
 	expect(client.getQueryData(["run", "private"])).toBeUndefined();
 });
 
+it("accepts server-validated local access without a passkey deadline and still clears private state on connection loss", async () => {
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async () =>
+			factoryResponse({
+				authenticated: true,
+				access: "local",
+				setupRequired: false,
+			}),
+		),
+	);
+	await checkAccess();
+	expect(accessState()).toEqual({ status: "authenticated", access: "local" });
+	client.setQueryData(["run", "private"], { transcript: "local content" });
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async () => factoryResponse({}, { status: 403 })),
+	);
+	await checkAccess();
+	expect(accessState().status).toBe("required");
+	expect(client.getQueryData(["run", "private"])).toBeUndefined();
+});
+
 it("keeps credential management mounted during verified-session refresh, but clears private state on denial", async () => {
 	client.setQueryData(["run", "private"], { transcript: "private content" });
 	let respond!: (response: Response) => void;

@@ -15,6 +15,7 @@ import { afterEach, expect, it } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { qaDigest } from "../src/factory/EvidenceDigest.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
+import { FactoryServer as ProtectedFactoryServer } from "../src/factory/FactoryServer.js";
 import { CaptureSchema } from "../src/factory/FactoryTools.js";
 import { scopeRevision } from "../src/factory/RepositoryScope.js";
 import {
@@ -453,15 +454,19 @@ it("streams full/HEAD/open/suffix ranges and rejects stale, malformed, replaced 
 	const f = setup();
 	f.run.outputs.capture = await finalizeVideoEvidence(f.ctx, f.output);
 	const video = (f.run.outputs.capture as VideoCapture).videos![0];
-	const server = new FactoryServer(f.runtime, {
-		repositories: () => [],
-		sessions: () => [],
-		entries: () => [],
-		start: async () => {
-			throw Error("unused");
+	const server = new ProtectedFactoryServer(
+		f.runtime,
+		{
+			repositories: () => [],
+			sessions: () => [],
+			entries: () => [],
+			start: async () => {
+				throw Error("unused");
+			},
+			stop: () => {},
 		},
-		stop: () => {},
-	});
+		{ origins: ["http://localhost", "https://remote.example.test"] },
+	);
 	const url = `/api/runs/${f.run.id}/videos/${video.taskId}/media?v=${video.validation!.sha256}`;
 	const get = (range?: string, method: "GET" | "HEAD" = "GET") =>
 		server.app.inject({
@@ -476,7 +481,12 @@ it("streams full/HEAD/open/suffix ranges and rejects stale, malformed, replaced 
 				const denied = await server.app.inject({
 					url: url.replace("/media?", `/${asset}?`),
 					method,
-					headers: { cookie: "", range: "bytes=0-9" },
+					headers: {
+						host: "remote.example.test",
+						origin: "https://remote.example.test",
+						cookie: "",
+						range: "bytes=0-9",
+					},
 				});
 				expect(denied.statusCode).toBe(401);
 				expect(denied.headers["cache-control"]).toBe("no-store");
@@ -522,8 +532,6 @@ it("streams full/HEAD/open/suffix ranges and rejects stale, malformed, replaced 
 		expect((await get("bytes=0-9")).statusCode).toBe(409);
 		rmSync(f.path);
 		expect((await get()).statusCode).toBe(410);
-		server.auth.logout("route-fixture-session", "http://localhost");
-		expect((await get("bytes=0-9")).statusCode).toBe(401);
 	} finally {
 		await server.stop();
 		await f.runtime.shutdown();

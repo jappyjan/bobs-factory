@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "commit": "6f40898469c9083dda4d74f37dc1c408718eaa67",
+  "sourceSha256": {
+    "packages/edge-worker/src/factory/FactoryServer.ts": "9cb44a64b91528613cd37fe20c0121766572d83056038bbbbfb38d4e826d7aff",
+    "packages/edge-worker/src/factory/LocalFactoryAccess.ts": "99af07ef5039844d486a9749422a5442a7ded1fdc8c49c1b7c65b6dc58634c2a",
+    "packages/edge-worker/src/factory/web/auth-state.ts": "556b997cb1c8d5013129e553d5742d02c895c3e4621d152950fdd90791ad8325",
+    "packages/edge-worker/src/factory/web/auth.tsx": "0ce1fd2c9b9eb9cb94607b9ecc14adf9f92383cbf56b9f7cad5378e6a79ba041",
+    "apps/desktop/src/main.mjs": "5e7f1933e0cd768878ca25cb5787cb254a731ef2b2640caa7a6d0b4c70679a74",
+    "apps/cli/src/local.ts": "15b72fc7d5c6f07b679a7c707313bb0c3d7b5d2625e976d498b6382de8230be2"
+  },
+  "checks": [
+    "actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment",
+    "fresh first-launch project/provider onboarding accessible before passkey setup",
+    "project onboarding mutation completes without authentication (prepared-tool stubs only)",
+    "noauth dashboard recipe save/start creates actual EdgeWorker worktree, executes script and returns completed run",
+    "actual socket external Origin/Fetch Metadata and forwarded localhost reads/mutations rejected",
+    "actual TLS Host-preserving forwarded proxy retains remote passkey enrollment/login/logout, opaque cookie and no local transplant",
+    "local SSE opens without a session and remote enrollment does not revoke local authority",
+    "actual external-origin browser navigation/read/POST all denied with no run mutation"
+  ],
+  "externalRequests": [
+    {
+      "method": "GET",
+      "path": "/api/config",
+      "status": 403,
+      "origin": "http://localhost:3634"
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/manual-b566d3ee-772d-4eac-9f0f-dcbae0b4824e/stop",
+      "status": 403,
+      "origin": "http://localhost:3634"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 403
+    }
+  ],
+  "directory": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-mFXXoF",
+  "limitations": "Mock agents, disposable prepared-tool stubs, scripted workflow, software WebAuthn authenticator and self-signed local TLS proxy. No provider calls, OS desktop packaging or physical authenticator proof. Fixture retained; listeners and worker stopped."
+}

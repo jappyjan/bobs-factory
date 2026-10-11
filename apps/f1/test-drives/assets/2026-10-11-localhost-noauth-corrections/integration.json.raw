@@ -1,0 +1,164 @@
+{
+  "base": "c7caa8ecbd0a235f33eb163d48348b21c489c54d",
+  "testedImplementation": "f713ee75f80bae096227cf4f7caa6abb6ab6e3e8",
+  "originalReviewHead": "05a2c7d314c6b1afa62905e6e8026d331f2d82e5",
+  "asarPayloadUnchanged": [
+    {
+      "path": "apps/desktop/src/app-archive.mjs",
+      "sha256": "3916f821aabc7ef186894188b75406116889caaf1e14d882f0194bb83f5bcd57"
+    },
+    {
+      "path": "apps/desktop/src/app-filesystem.mjs",
+      "sha256": "eb4755942be215468d0d1bf2cb2d274f7f5b0478f9053b908419a40a8996d452"
+    },
+    {
+      "path": "apps/desktop/src/app-helper-files.mjs",
+      "sha256": "bcdbc5de711102c9a839f69a71e7b37a13d9a2a1cee90ce19c72412612ea8dde"
+    },
+    {
+      "path": "apps/desktop/src/app-licenses.mjs",
+      "sha256": "89cc61d76bc003df77cbd995ac16efe1087fc5f646c1e425ef02aeef8f8e3b06"
+    },
+    {
+      "path": "apps/desktop/src/app-lifecycle.mjs",
+      "sha256": "43b7bc3f49727171612c27850652b4c4af7d186c11a28cbc44c69288a39f1281"
+    },
+    {
+      "path": "apps/desktop/src/app-quarantine.mjs",
+      "sha256": "c8af4ef973084693496446fb14b77737905ee4d34bd2f21a7ba75314de051725"
+    },
+    {
+      "path": "apps/desktop/src/app-source.mjs",
+      "sha256": "be61c02c0f083401696e8b5d0421a90c36b974ebd20217478617c24fa993a3e2"
+    },
+    {
+      "path": "apps/desktop/test/app-asar-fixture.mjs",
+      "sha256": "ec3e3919d01362b19bf3993460041ab8e79acf34a731f83bf39c9c7721fbc786"
+    },
+    {
+      "path": "apps/desktop/test/app-asar.test.mjs",
+      "sha256": "87884ff108d6bb70a109e8d3a4d0e731442e9f97f905f2846d0c1150074a295a"
+    },
+    {
+      "path": "apps/f1/test-drives/2026-10-11-desktop-asar.md",
+      "sha256": "12a94266c250d6cc46173cc511e43525dde9749374f4684ccaa05be91b491095"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/approved-native-fixture.mjs.raw",
+      "sha256": "5de109fd3ac89e7289de0bf9c1b8c73b9eb08aa06ab6b2a47a7a28bf49d17ecb"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/approved-quarantine-input.json.raw",
+      "sha256": "2ebb5324c84b06e0136bb03316b42e815cad68d11151b6a87c72e2f59204a0dc"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/baseline-readonly.json.raw",
+      "sha256": "c6c364fbc0d802aae248fbb6c0ec3a4278dd0edd0c4ac65c58f51157689b39a9"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/complete-fingerprints.json.raw",
+      "sha256": "1296ae69b9f9d9b8ae8eb2b9a2e7b04ba53f2c1ef029c468cb5847afca1ed0e4"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/desktop-suite.log.raw",
+      "sha256": "05a7cb49c98360c1ce6e5ba2e050d0d0aee7610ad2ac36beb740e05467682b3a"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/electron-regression-green.log.raw",
+      "sha256": "3ad6cee0ebd736896133ba7928e47fead5285b0998a826292c9052a1f69fefe3"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/electron-regression-red.log.raw",
+      "sha256": "69899f7af893a320f69fdbb92f2c35edd03c32bb5031ff8bc990418df5d95ff2"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/f1-fixture-atomic.log.raw",
+      "sha256": "2a36c21ac3cd71f96e7a6b62c382e18d80a03acb07c589e08f05ef80073f1b35"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/f1-fixture-write-race.log.raw",
+      "sha256": "71480e134d9d8bc5bb01485f0a52f7aae94522d5191ad15750c9bcefcc780a49"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/f1-shell-atomic.json.raw",
+      "sha256": "5515b55943bd99cac72c153ea1c60aae1a4f9d36561628aa68af09e2922c95db"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/f1-shell.json.raw",
+      "sha256": "586636ae416d26c7676dd6dc4b7440799a6bbdf45f9e092789de7de4fc5b7cc3"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/final-evidence.json.raw",
+      "sha256": "feb031f45b6152c39e177917c79630fda61b26070c81d25974983cf1e6b3f178"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/fixture-ditto-metadata-failure.json.raw",
+      "sha256": "f8ad187cf3015ad460692cfba82b75bebc41d01e3f8efe93ec079e1eded52be7"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/fixture-hex-display-failure.json.raw",
+      "sha256": "dd040d404b8464a3d5942a54ca58639c02995e28011fa6cc87533a96d31a156f"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/native-approved-helper-outcome.json.raw",
+      "sha256": "29a18a7de24abfe68af38964a1270031a8e49cf02b9240bf2bea0cb57f48ad90"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/native-approved-quarantine-result.json.raw",
+      "sha256": "82dd418eba39916b8b0615248b2bf4bd9e26effcba2e9f4b43a3a20b77c49fb2"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/native-first-fixed-failure.json.raw",
+      "sha256": "597023c2bd304c3c599df9e905376ab6985dc17ab4a9a94271b5556c02c2c612"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/native-pre-entry-failure.json.raw",
+      "sha256": "4aa28bbdff2da503908152b5a68b571a8cce2b56c5cf6ade09ae6492277ef6d5"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/native-stdio-observer.mjs.raw",
+      "sha256": "c77da852decdc05a75753b7acc006b9b72253df8902ffa4521c9bd0d01f42cc4"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/native-unquarantined-result.json.raw",
+      "sha256": "7c126ec21352dc350b4428b8288d78d65ebd7f085afbb8dddb20fdd10b4693c8"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/2026-10-11-desktop-asar/user-allow-observation.json.raw",
+      "sha256": "40e4ae3a7efa18d167bb82e3371864c6e84551af4a172b5097a9af72be1af5a4"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/desktop-shell-update.mjs",
+      "sha256": "224650e34c33aa2320d8c521ffed6d4607051d9206bff3ad7a6a5eb71387208c"
+    }
+  ],
+  "originalLocalhostEvidencePathsPreserved": [
+    "apps/f1/test-drives/2026-10-11-localhost-noauth.md",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/access-settings-committed.png",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/access-settings.png",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/browser-committed.json.raw",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/committed-drive.log.raw",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/committed-result.json.raw",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/dashboard-committed.png",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/dashboard.png",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/drive.log.raw",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/external-page-committed.png",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/external-page.png",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/failed-fixture-default.log.raw",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/onboarding-committed.png",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/onboarding.png",
+    "apps/f1/test-drives/assets/2026-10-11-localhost-noauth/result.json.raw"
+  ],
+  "f1FingerprintsMatched": 12,
+  "f1Checks": 7,
+  "reviewReports": [
+    {
+      "path": "standards-review-05a2.md.raw",
+      "sha256": "00d848083da60e3de433626ff2a338030ebd70e7e7393a43544da833fc800c3d"
+    },
+    {
+      "path": "spec-review-05a2.md.raw",
+      "sha256": "833be6d4d97558f34a32c19e2bfdf3f6e4abc13dd7abfa8fef615c07b1fd15b0"
+    }
+  ]
+}

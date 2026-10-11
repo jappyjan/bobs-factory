@@ -1,0 +1,13 @@
+
+> bobs-factory@1.0.0-beta test:run /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/apps/cli
+> vitest run --passWithNoTests src/local.test.ts
+
+
+ RUN  v4.1.11 /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/apps/cli
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  23:08:21
+   Duration  3.54s (transform 795ms, setup 0ms, import 1.15s, tests 2.23s, environment 0ms)
+

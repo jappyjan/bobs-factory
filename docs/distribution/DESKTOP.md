@@ -1,9 +1,10 @@
 # Desktop candidate preparation
 
-The native shell reuses the Factory web UI and authenticated APIs. Its launcher
-opens the local Factory or an explicit remote HTTPS origin. Local launch offers
-the existing protected passkey/repository/provider onboarding, without installing
-agents or moving their native credentials. Each dashboard origin has a separate
+The native shell reuses the Factory web UI and APIs. Its launcher opens the local
+Factory without enrollment or login, or connects to an explicit remote HTTPS origin
+with that host’s passkey session. Local launch goes directly to repository/provider
+onboarding without installing agents or moving their native credentials. The launcher
+never reads or injects a local passkey setup grant. Each dashboard origin has a separate
 persistent Electron session. Factory web contents have sandboxing, context isolation,
 no Node integration. Its minimal preload can only open the local app settings
 window. The packaged launcher owns connection and shell-update actions;
@@ -150,7 +151,7 @@ manager, rather than Squirrel.Mac or `setLoginItemSettings`. Validate those path
 functionally; these upstream limitations are not paid-account prerequisites.
 
 Before release, retain actual isolated native receipts for DMG drag/open, Linux
-packages, local/remote authentication enrollment/login/logout, secure-origin/session
+packages, automatic direct localhost access and remote authentication enrollment/login/logout, secure-origin/session
 isolation, window close/reopen while jobs run, explicit Stop, crash restart, workflow
 and native-session continuation, client-version mismatch, and successful/failed
 updates. Publication remains a separately authorized #117 stage;
