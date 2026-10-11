@@ -1,0 +1,82 @@
+{
+  "failedCI": {
+    "head": "88a9b1f61e0c8082a242c2e32c669583c869e363",
+    "runId": 38168182020,
+    "passed": 140,
+    "failed": 1,
+    "skipped": 1,
+    "node24": "cancelled"
+  },
+  "testedImplementation": "3ae15485963261f10d110b121a216cbb3fe806b0",
+  "host": "macOS; Node22 v22.21.1; shared temporary directory and subprocess concurrency model",
+  "node22All": {
+    "concurrency": 4,
+    "passed": 143,
+    "failed": 0,
+    "skipped": 0
+  },
+  "node24PublisherFlow": {
+    "concurrency": 2,
+    "passed": 32,
+    "failed": 0
+  },
+  "exactFocused": {
+    "passed": 4,
+    "failed": 0
+  },
+  "isolationRed": {
+    "failed": 1,
+    "passed": 0
+  },
+  "isolatedRecoveryAndLockGreen": {
+    "passed": 3,
+    "failed": 0
+  },
+  "productionCodeChanged": false,
+  "files": {
+    "ci-original.log.raw": {
+      "sha256": "b214c8a2a3c000cb300a481178b3e5c59c199e0b9d0bd62cba4f3b8e3540a4fc",
+      "size": 121994
+    },
+    "concurrent-diagnostic.log.raw": {
+      "sha256": "d0ed4cfa63425125e595a5d2508ceff369ae9719c0d25b418abc050844d37add",
+      "size": 7073
+    },
+    "diagnostic-held-lock.log.raw": {
+      "sha256": "5c6d18f616d07469b7f41f2f5ef169fd00eae8f73569ca28d947e422ddf4d43f",
+      "size": 2980
+    },
+    "exact-green.log.raw": {
+      "sha256": "c23c031cdcec10d66b9a65cc38d2b4a68f4f75073bd743b4e2ed0043aeadfb40",
+      "size": 1118
+    },
+    "held-lock-repro.mjs.raw": {
+      "sha256": "5febdd06ed84cdefb8502c3128d783eec5868fcbe158cef565521896f6ad7f70",
+      "size": 745
+    },
+    "isolation-green.log.raw": {
+      "sha256": "c9f41094496525f03a654bbf7af40b25224087aa1f4b25cf6e6a313893d80d78",
+      "size": 831
+    },
+    "isolation-red.log.raw": {
+      "sha256": "c70815400082fb154b8ab54d0c292964401319d3944f6fc348040cf0419bf9bf",
+      "size": 2347
+    },
+    "node22-concurrent-all.log.raw": {
+      "sha256": "cc81a2f1f0e09df201596ac13a08bd2611f9664f83666caf03a9577124df9675",
+      "size": 31777
+    },
+    "node24-concurrent-publication.log.raw": {
+      "sha256": "fb264987a4702de2b10f6e956c0374685182ed198f23d76acf14fca3a498820a",
+      "size": 3179
+    },
+    "old-held-lock.log.raw": {
+      "sha256": "a0663deb345b2bb1fb071101cad04ae3798cebf89e3ec29c4d8d80ae460a6ad0",
+      "size": 1188
+    },
+    "source-hooks.log.raw": {
+      "sha256": "3a95596a4e0c608efa8a940f7e22ec0376959aef8f187014ac556eff58ae5179",
+      "size": 5978
+    }
+  }
+}

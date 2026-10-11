@@ -4,24 +4,29 @@ import {
 	copyFileSync,
 	existsSync,
 	mkdirSync,
+	readdirSync,
 	readFileSync,
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { sha256, sha256File } from "../lib/binary-release.mjs";
+import {
+	fileRecord,
+	jsonBytes,
+	sha256,
+	sha256File,
+} from "../lib/binary-release.mjs";
+import { verifyPublishedRelease } from "../lib/github-release.mjs";
 import { validatePreparedRelease } from "../lib/prepared-release.mjs";
 import { withPublicationLock } from "../lib/publication-lock.mjs";
-import { verifyManifestSignature } from "../lib/release-signature.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
-import { keys } from "./release-fixtures.mjs";
 
 const transport = fileURLToPath(
 	new URL("./publication-transport.mjs", import.meta.url),
 );
-function setup(channel = "nightly", state = {}) {
-	const f = preparedFixture(channel),
+function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
+	const f = preparedFixture(channel, fixtureOptions),
 		provider = join(f.work, "provider.json"),
 		approval = join(f.work, "approval.json");
 	writeFileSync(
@@ -41,12 +46,17 @@ function setup(channel = "nightly", state = {}) {
 			approvedBy: "fixture-maintainer",
 		}),
 	);
-	const run = (publish = true, extra = []) =>
+	const run = (
+		publish = true,
+		extra = [],
+		{ preload, env = {}, timeout } = {},
+	) =>
 		spawnSync(
 			process.execPath,
 			[
 				"--import",
 				transport,
+				...(preload ? ["--import", preload] : []),
 				join(f.work, "scripts/publish-binary-release.mjs"),
 				"--candidate",
 				join(f.assets, "candidate.json"),
@@ -62,13 +72,18 @@ function setup(channel = "nightly", state = {}) {
 			],
 			{
 				encoding: "utf8",
+				timeout,
 				env: {
 					...process.env,
+					// Each fixture has its own simulated repository/provider. Share its
+					// lock across retries without contending with unrelated test files.
+					TMPDIR: f.work,
 					GH_TOKEN: "synthetic-test-token",
 					BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE: "",
 					BOBS_FACTORY_AUTOMATIC_NIGHTLIES: "enabled",
 					BOBS_FACTORY_RELEASE_PUBLICATION_LOCK: "repository",
 					BOBS_FACTORY_TEST_PROVIDER: provider,
+					...env,
 				},
 			},
 		);
@@ -119,6 +134,194 @@ test("publisher dry run makes no remote calls and produces candidate-bound asset
 		f.cleanup();
 	}
 });
+
+test("publisher cancels an unread rejected upload and cleans snapshot while retaining draft", () => {
+	const f = setup("nightly", {}, { sourceChunks: true });
+	try {
+		// A genuinely inventoried supplemental fixture asset exceeds stream buffering;
+		// the provider returns HTTP 413 without reading any body bytes.
+		const file = "extra-data.bin";
+		writeFileSync(join(f.assets, file), Buffer.alloc(2 * 1024 ** 2, 0x61));
+		const bytes = jsonBytes({
+			...f.manifest,
+			assets: [...f.manifest.assets, fileRecord(join(f.assets, file), file)],
+		});
+		writeFileSync(join(f.assets, "release.json"), bytes);
+		const preload = join(f.work, "reject-unread-upload.mjs");
+		writeFileSync(
+			preload,
+			`const original = globalThis.fetch;
+globalThis.fetch = async (url, options) => {
+ if (new URL(url).hostname === "uploads.github.com" && new URL(url).searchParams.get("name") === ${JSON.stringify(file)})
+  return new Response("rejected fixture upload", {status: 413});
+ return original(url, options);
+};
+`,
+		);
+		const temporary = join(f.work, "rejected-upload-temporary");
+		mkdirSync(temporary);
+		const result = f.run(true, [], {
+			preload,
+			env: { TMPDIR: temporary },
+			timeout: 5000,
+		});
+		assert.equal(result.status, 1, result.stderr);
+		assert.match(result.stderr, /Upload failed: extra-data.bin \(413\)/);
+		assert.equal(f.state().release.draft, true);
+		assert.equal(
+			f.state().operations.some((o) => o.method === "PATCH"),
+			false,
+		);
+		assert.deepEqual(readdirSync(temporary), []);
+	} finally {
+		f.cleanup();
+	}
+});
+
+for (const fault of [
+	"corrupt-chunk",
+	"unexpected-asset",
+	"manifest",
+	"symlink",
+	"mode",
+]) {
+	for (const publish of fault === "corrupt-chunk" ||
+	fault === "unexpected-asset"
+		? [false, true]
+		: [true]) {
+		test(`publisher refuses post-validation ${fault} before ${publish ? "publication" : "verified plan"}`, () => {
+			const f = setup("nightly", {}, { sourceChunks: true });
+			try {
+				const chunk = join(f.assets, f.manifest.sourceTransport.chunks[0].file);
+				const preload = join(f.work, "post-validation-mutation.mjs");
+				const mutations = {
+					"corrupt-chunk": `const bytes = original(${JSON.stringify(chunk)}); bytes[0] ^= 255; fs.writeFileSync(${JSON.stringify(chunk)}, bytes);`,
+					"unexpected-asset": `fs.writeFileSync(${JSON.stringify(join(f.assets, "unsigned-extra.txt"))}, "unsigned extra");`,
+					manifest: `fs.appendFileSync(${JSON.stringify(join(f.assets, "release.json"))}, "\\n");`,
+					symlink: `fs.renameSync(${JSON.stringify(chunk)}, ${JSON.stringify(join(f.work, "linked-chunk"))}); fs.symlinkSync(${JSON.stringify(join(f.work, "linked-chunk"))}, ${JSON.stringify(chunk)});`,
+					mode: `fs.chmodSync(${JSON.stringify(chunk)}, 0o666);`,
+				};
+				writeFileSync(
+					preload,
+					`import fs from "node:fs";
+import {syncBuiltinESMExports} from "node:module";
+const originalRead = fs.readFileSync; const original = fs.rmSync; let done = false;
+fs.rmSync = function(path, ...args) {
+ const result = original.call(this, path, ...args);
+ if (!done && String(path).includes("factory-prepared-evidence-")) {
+  done = true; ${mutations[fault].replace("original(", "originalRead(")}
+ }
+ return result;
+}; syncBuiltinESMExports();
+`,
+				);
+				const temporary = join(f.work, "publication-temporary");
+				mkdirSync(temporary);
+				const result = f.run(publish, [], {
+					preload,
+					env: { TMPDIR: temporary },
+				});
+				assert.notEqual(result.status, 0, result.stdout);
+				assert.match(
+					result.stderr,
+					/Publication asset|publication asset|ELOOP/,
+				);
+				assert.equal(
+					existsSync(join(f.output, "publication-plan.json")),
+					false,
+				);
+				assert.deepEqual(f.state().operations, []);
+				assert.deepEqual(readdirSync(temporary), []);
+			} finally {
+				f.cleanup();
+			}
+		});
+	}
+}
+
+for (const target of [
+	"original",
+	"staging",
+	"staging-mode",
+	"staging-midstream",
+]) {
+	test(`publisher ${target !== "original" ? `refuses ${target} corruption` : "uses pinned snapshot despite original corruption"} during upload`, async () => {
+		const f = setup("nightly", {}, { sourceChunks: true });
+		try {
+			const file = f.manifest.sourceTransport.chunks[0].file;
+			const preload = join(f.work, "upload-mutation.mjs");
+			writeFileSync(
+				preload,
+				`import fs from "node:fs";
+import {syncBuiltinESMExports} from "node:module";
+const original = fs.createReadStream; let done = false;
+function mutate(path) {
+ const changed = ${target !== "original" ? "path" : JSON.stringify(join(f.assets, file))};
+ fs.chmodSync(changed, 0o600);
+ const bytes = fs.readFileSync(changed); bytes[${target === "staging-midstream" ? 100 : 0}] ^= 255;
+ fs.writeFileSync(changed, bytes);
+ ${target === "staging" || target === "staging-midstream" ? "fs.chmodSync(changed, 0o400);" : ""}
+}
+fs.createReadStream = function(path, ...args) {
+ const stream = original.call(this, path, ${target === "staging-midstream" ? "{...args[0], highWaterMark: 64}" : "...args"});
+ if (!done && path.endsWith(${JSON.stringify(file)})) {
+  done = true;
+  ${target === "staging-midstream" ? 'stream.once("data", () => mutate(path));' : "mutate(path);"}
+ }
+ return stream;
+}; syncBuiltinESMExports();
+`,
+			);
+			const temporary = join(f.work, "upload-temporary");
+			mkdirSync(temporary);
+			const result = f.run(true, [], { preload, env: { TMPDIR: temporary } });
+			assert.deepEqual(readdirSync(temporary), []);
+			if (target !== "original") {
+				assert.notEqual(result.status, 0, result.stdout);
+				assert.match(
+					result.stderr,
+					/Publication upload mode changed|Publication upload bytes differ/,
+				);
+				assert.equal(f.state().release.draft, true);
+				assert.equal(
+					f
+						.state()
+						.operations.some(
+							(o) =>
+								o.method === "PATCH" ||
+								o.path.endsWith("website.yml/dispatches"),
+						),
+					false,
+				);
+				const receipt = JSON.parse(
+					readFileSync(join(f.output, "publication-receipt.json")),
+				);
+				assert.deepEqual(receipt.assets, f.records);
+				assert.equal(receipt.stages.includes("published"), false);
+			} else {
+				assert.equal(result.status, 0, result.stderr);
+				assert.equal(f.state().release.draft, false);
+				const uploaded = f.state().assets.find((a) => a.name === file);
+				assert.equal(
+					uploaded.digest,
+					`sha256:${f.manifest.sourceTransport.chunks[0].sha256}`,
+				);
+				const state = f.state();
+				await verifyPublishedRelease(
+					{
+						pages: async () => state.assets,
+						bytes: async (asset) => Buffer.from(asset.bytes, "base64"),
+						api: async (path) =>
+							path.startsWith("git/ref/") ? state.tag : state.annotation,
+					},
+					state.release,
+				);
+			}
+		} finally {
+			f.cleanup();
+		}
+	});
+}
 for (const fault of [
 	"tag-after",
 	"draft-after",
@@ -151,7 +354,11 @@ test("partial upload resumes only missing assets and Pages recovery only dispatc
 	const f = setup("nightly", { fault: "upload-before:candidate.json" });
 	try {
 		const first = f.run();
-		assert.notEqual(first.status, 0);
+		assert.equal(first.status, 1, first.stderr || first.error?.message);
+		assert.match(
+			first.stderr,
+			/Simulated timeout: upload-before:candidate.json/,
+		);
 		const partial = f.state();
 		assert.equal(partial.release.draft, true);
 		assert.ok(partial.assets.length > 0);
@@ -214,7 +421,7 @@ test("conflicting tag, candidate and immutable assets are never replaced", () =>
 		}
 	}
 });
-test("stable approval binds exact signed asset bytes and stable publication sets latest", () => {
+test("stable approval binds exact unsigned asset bytes and stable publication sets latest", () => {
 	const f = setup("stable");
 	try {
 		writeFileSync(
@@ -243,22 +450,12 @@ test("stable approval binds exact signed asset bytes and stable publication sets
 		f.cleanup();
 	}
 });
-test("a newer stable signed by an unknown key blocks older tooling before any publication mutation", () => {
+test("a newer unsigned stable blocks older tooling before any publication mutation", () => {
 	const f = setup("stable"),
 		newer = preparedFixture("stable", { stableVersion: "2.0.0" });
 	try {
-		const bytes = readFileSync(join(newer.assets, "release.json")),
-			signature = readFileSync(join(newer.assets, "release.json.sig"));
-		// The published signature is valid, but its newly named key is absent
-		// from the older candidate's frozen trust store.
-		verifyManifestSignature(bytes, signature, "rotated", {
-			rotated: keys.fixture,
-		});
 		const assets = newer.records.map((record) => {
-			const content =
-				record.file === "release.json.key-id"
-					? Buffer.from("rotated\n")
-					: readFileSync(join(newer.assets, record.file));
+			const content = readFileSync(join(newer.assets, record.file));
 			return {
 				name: record.file,
 				state: "uploaded",
@@ -275,6 +472,7 @@ test("a newer stable signed by an unknown key blocks older tooling before any pu
 				history: [
 					{
 						id: 100,
+						commit: newer.manifest.commit,
 						tag_name: newer.manifest.tag,
 						draft: false,
 						prerelease: false,
@@ -303,40 +501,33 @@ for (const fallback of [false, true])
 			latest = preparedFixture("nightly", { sequence: 9 }),
 			older = preparedFixture("nightly", { sequence: 8 });
 		try {
-			verifyManifestSignature(
-				readFileSync(join(latest.assets, "release.json")),
-				readFileSync(join(latest.assets, "release.json.sig")),
-				"rotated",
-				{ rotated: keys.fixture },
-			);
-			const historical = (fixture, id, keyId = "fixture") => ({
+			const historical = (fixture, id, incomplete = false) => ({
 				id,
 				tag_name: fixture.manifest.tag,
 				commit: fixture.manifest.commit,
 				draft: false,
 				prerelease: true,
 				published_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-				assets: fixture.records.map((record) => {
-					const bytes =
-						record.file === "release.json.key-id"
-							? Buffer.from(`${keyId}\n`)
-							: readFileSync(join(fixture.assets, record.file));
-					return {
-						name: record.file,
-						state: "uploaded",
-						size: bytes.length,
-						digest: `sha256:${sha256(bytes)}`,
-						bytes: bytes.toString("base64"),
-						browser_download_url: `https://github.com/jappyjan/bobs-factory/releases/download/${fixture.manifest.tag}/${record.file}`,
-					};
-				}),
+				assets: fixture.records
+					.filter((record) => !incomplete || record.file !== "candidate.json")
+					.map((record) => {
+						const bytes = readFileSync(join(fixture.assets, record.file));
+						return {
+							name: record.file,
+							state: "uploaded",
+							size: bytes.length,
+							digest: `sha256:${sha256(bytes)}`,
+							bytes: bytes.toString("base64"),
+							browser_download_url: `https://github.com/jappyjan/bobs-factory/releases/download/${fixture.manifest.tag}/${record.file}`,
+						};
+					}),
 			});
 			writeFileSync(
 				f.provider,
 				JSON.stringify({
 					...f.state(),
 					history: [
-						historical(latest, 100, "rotated"),
+						historical(latest, 100, true),
 						...(fallback ? [historical(older, 101)] : []),
 					],
 				}),
@@ -406,6 +597,20 @@ test("stale nightly candidate does not create a tag or draft", () => {
 	}
 });
 
+test("independent simulated publisher is isolated from another fixture's publication lock", async () => {
+	const f = setup();
+	try {
+		await withPublicationLock(async () => {
+			const result = f.run();
+			assert.equal(result.status, 0, result.stderr || result.error?.message);
+			assert.equal(f.state().release.draft, false);
+			assert.equal(f.state().assets.length, f.records.length);
+		});
+	} finally {
+		f.cleanup();
+	}
+});
+
 test("publication lock rejects overlapping versions and releases after failure", async () => {
 	let entered = false;
 	await assert.rejects(
@@ -426,7 +631,7 @@ test("publication lock rejects overlapping versions and releases after failure",
 });
 
 test("fresh preparation consumes exact artifact ZIPs and produces unsigned inspectable assets without mutations", () => {
-	const f = preparedFixture("nightly", { gitTooling: true });
+	const f = preparedFixture("nightly", { gitTooling: true, desktop: true });
 	try {
 		const zips = join(f.work, "zips");
 		mkdirSync(zips);
@@ -443,6 +648,7 @@ test("fresh preparation consumes exact artifact ZIPs and produces unsigned inspe
 				"runtime-smoke",
 				"native-helpers",
 				"prepared-agent-boundaries",
+				"public-installer",
 			])
 				copyFileSync(
 					join(
@@ -464,6 +670,7 @@ test("fresh preparation consumes exact artifact ZIPs and produces unsigned inspe
 					"runtime-smoke.txt",
 					"native-helpers.json",
 					"prepared-agent-boundaries.json",
+					"public-installer.json",
 				],
 				{ cwd: stage },
 			);
@@ -530,8 +737,92 @@ test("fresh preparation consumes exact artifact ZIPs and produces unsigned inspe
 			readFileSync(join(output, "publication-plan.json")),
 		);
 		assert.equal(plan.candidateDigest, f.candidate.digest);
-		assert.match(plan.signature, /blocked/);
-		validatePreparedRelease(join(output, "assets"), f.candidate);
+		assert.equal(plan.publisherSignature, "none");
+		assert.equal(plan.integrity, "github-https-sha256");
+		const prepared = validatePreparedRelease(
+			join(output, "assets"),
+			f.candidate,
+		);
+		assert.equal(
+			prepared.manifest.desktop.artifacts[0].validation.file,
+			"desktop-validation.json",
+		);
+	} finally {
+		f.cleanup();
+	}
+});
+
+for (const fault of [
+	"upload-before:source-rebuild.tar.gz.part0002",
+	"upload-after:source-rebuild.tar.gz.part0002",
+]) {
+	test(`chunk publication resumes exact unsigned inventory after ${fault}`, () => {
+		const f = setup("nightly", { fault }, { sourceChunks: true });
+		try {
+			const dry = f.run(false);
+			assert.equal(dry.status, 0, dry.stderr);
+			assert.equal(f.state().operations.length, 0);
+			const plan = JSON.parse(
+				readFileSync(join(f.output, "publication-plan.json")),
+			);
+			assert.equal(plan.assetsDigest, f.assetsDigest);
+			assert.ok(!plan.assets.some((r) => r.file === "source-rebuild.tar.gz"));
+			assert.ok(f.manifest.sourceTransport.chunks.length > 1);
+			const first = f.run();
+			if (fault.includes("before")) assert.notEqual(first.status, 0);
+			else assert.equal(first.status, 0, first.stderr);
+			const partial = f.state();
+			const retry = f.run();
+			assert.equal(retry.status, 0, retry.stderr);
+			const after = f.state();
+			assert.equal(after.assets.length, f.records.length);
+			for (const asset of partial.assets)
+				assert.equal(
+					after.assets.filter((a) => a.name === asset.name).length,
+					1,
+				);
+			assert.ok(!after.assets.some((a) => a.name === "source-rebuild.tar.gz"));
+			const verified = JSON.parse(
+				readFileSync(join(f.output, "publication-receipt.json")),
+			);
+			assert.deepEqual(verified.assets, f.records);
+		} finally {
+			f.cleanup();
+		}
+	});
+}
+test("chunk publication refuses unexpected remote monolith or missing public chunk", () => {
+	const f = setup("nightly", {}, { sourceChunks: true });
+	try {
+		const first = f.run();
+		assert.equal(first.status, 0, first.stderr);
+		const good = f.state();
+		const unexpected = structuredClone(good);
+		unexpected.assets.push({
+			name: "source-rebuild.tar.gz",
+			state: "uploaded",
+			size: f.manifest.source.size,
+			digest: `sha256:${f.manifest.source.sha256}`,
+		});
+		writeFileSync(f.provider, JSON.stringify(unexpected));
+		const rejected = f.run();
+		assert.notEqual(rejected.status, 0);
+		assert.match(rejected.stderr, /Unexpected immutable release asset/);
+		const missing = structuredClone(good);
+		missing.assets = missing.assets.filter(
+			(a) => a.name !== f.manifest.sourceTransport.chunks[0].file,
+		);
+		writeFileSync(f.provider, JSON.stringify(missing));
+		const incomplete = f.run();
+		assert.notEqual(incomplete.status, 0);
+		assert.match(incomplete.stderr, /Public release is incomplete/);
+		assert.deepEqual(
+			f
+				.state()
+				.operations.slice(missing.operations.length)
+				.filter((o) => o.method !== "GET"),
+			[],
+		);
 	} finally {
 		f.cleanup();
 	}

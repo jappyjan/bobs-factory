@@ -1,0 +1,11 @@
+(node:15277) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+{
+  "status": "reproduced",
+  "invoked": "actual appUpdates.action verify-installation/configure/check/install",
+  "exitCode": 1,
+  "phase": "no activation transaction",
+  "staged": true,
+  "missingModule": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-Q1IOnX/home/desktop/updates/helper/app-quarantine.mjs",
+  "stderr": "node:internal/modules/esm/resolve:272\n    throw new ERR_MODULE_NOT_FOUND(\n          ^\n\nError [ERR_MODULE_NOT_FOUND]: Cannot find module '/private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-Q1IOnX/home/desktop/updates/helper/app-quarantine.mjs' imported from /private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-Q1IOnX/home/desktop/updates/helper/app-lifecycle.mjs\n    at finalizeResolution (node:internal/modules/esm/resolve:272:11)\n    at moduleResolve (node:internal/modules/esm/resolve:879:10)\n    at defaultResolve (node:internal/modules/esm/resolve:1006:11)\n    at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)\n    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)\n    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)\n    at #resolve (node:internal/modules/esm/loader:687:17)\n    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)\n    at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33)\n    at ModuleJob.link (node:internal/modules/esm/module_job:381:17) {\n  code: 'ERR_MODULE_NOT_FOUND',\n  url: 'file:///private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-Q1IOnX/home/desktop/updates/helper/app-quarantine.mjs'\n}\n\nNode.js v24.20.0\n"
+}

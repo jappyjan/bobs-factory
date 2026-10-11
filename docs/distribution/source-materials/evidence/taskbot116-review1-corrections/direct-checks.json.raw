@@ -1,0 +1,44 @@
+[
+  {
+    "check": "ICU exact commit LICENSE equals exact pinned source archive and release tag LICENSE",
+    "status": "PASS",
+    "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
+    "size": 27718,
+    "source": "https://raw.githubusercontent.com/unicode-org/icu/21d1eb0f306e1141c10931e914dfc038c06121da/LICENSE"
+  },
+  {
+    "check": "Python syntax linux-x64.py",
+    "status": "PASS"
+  },
+  {
+    "check": "Python syntax webkit_trial.py",
+    "status": "PASS"
+  },
+  {
+    "check": "Python syntax stage-relink.py",
+    "status": "PASS"
+  },
+  {
+    "check": "Bundled linux-x64 helper local import and --help",
+    "status": "PASS",
+    "scope": "does not execute provisioning/relink/native tools"
+  },
+  {
+    "target": "linux-x64",
+    "check": "All kit member hashes unchanged except explicit objcopy graph correction",
+    "status": "PASS",
+    "members": 158,
+    "changes": [
+      "objects/build/relink-recipe.ninja"
+    ]
+  },
+  {
+    "target": "linux-arm64",
+    "check": "All kit member hashes unchanged except explicit objcopy graph correction",
+    "status": "PASS",
+    "members": 20,
+    "changes": [
+      "objects/build/relink-recipe.ninja"
+    ]
+  }
+]

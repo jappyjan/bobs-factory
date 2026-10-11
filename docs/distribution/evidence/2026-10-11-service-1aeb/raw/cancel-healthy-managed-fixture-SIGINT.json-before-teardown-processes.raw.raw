@@ -1,0 +1,2 @@
+  16362    1248 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-m3GYeN/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-m3GYeN/state --port 37915 --no-open service run
+  16364    1248 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-m3GYeN/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-m3GYeN/state --port 37915 --no-open service updates-run

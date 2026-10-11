@@ -1,0 +1,76 @@
+[
+  {
+    "target": "darwin-arm64",
+    "result": "PASS",
+    "baseSha256": "35d20dd0263e5c950194434b925454fdfa9ba6e4467da960410fa05b08a7a5b5",
+    "factorySha256": "1a66bd81f84f7a382ded69db2b588f3ff0a69b08228695124ef834bc35cb9d10",
+    "wholeReconstructedSha256": "1a66bd81f84f7a382ded69db2b588f3ff0a69b08228695124ef834bc35cb9d10",
+    "entireExecutableMatchesIncludingSignature": true,
+    "factoryBytes": 101641074,
+    "payloadOffset": 61554688,
+    "graph": {
+      "length": 39121189,
+      "sha256": "d1aafe7225ee666701ed8978a9ce77c8f8a67d38942b1d3e131bebf20b37a3a2",
+      "modules": 1,
+      "byteCount": 39121141,
+      "flags": "0x17c"
+    },
+    "signatureOffset": 100853024,
+    "signatureSize": 788050,
+    "signaturePageHashes": 24623,
+    "signatureReconstructedWithoutCandidateMetadata": true
+  },
+  {
+    "target": "darwin-x64",
+    "result": "PASS",
+    "baseSha256": "2fa513af22ac59e03aae640cad302e73cb1ddb0f6398501e2ddccf7dcd613596",
+    "factorySha256": "087ee6c64f3c53a499d0ad88b102a8cae97e2f2a0bea2f10a8ddf29f644d4843",
+    "wholeReconstructedSha256": "087ee6c64f3c53a499d0ad88b102a8cae97e2f2a0bea2f10a8ddf29f644d4843",
+    "entireExecutableMatchesIncludingSignature": true,
+    "factoryBytes": 108441872,
+    "payloadOffset": 68546560,
+    "graph": {
+      "length": 39121137,
+      "sha256": "d43b228c8904e4e2452292a10f2eb5be529a85871f03a446aaff315cccf475e1",
+      "modules": 1,
+      "byteCount": 39121089,
+      "flags": "0x17c"
+    },
+    "originalSignaturePreserved": true,
+    "signatureValidityNotEstablished": true
+  },
+  {
+    "target": "linux-x64",
+    "result": "PASS",
+    "baseSha256": "a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c",
+    "factorySha256": "144e32d1894e912072948379210eb1f6e30c688be8aeeee7f8b2d21e27b50caa",
+    "wholeReconstructedSha256": "144e32d1894e912072948379210eb1f6e30c688be8aeeee7f8b2d21e27b50caa",
+    "entireExecutableMatchesIncludingSignature": true,
+    "factoryBytes": 120428000,
+    "payloadOffset": 81260544,
+    "graph": {
+      "length": 39115809,
+      "sha256": "0b271fd865a52ddc38051f96100d31858306b138a3286b8505d3eb861f71e92e",
+      "modules": 1,
+      "byteCount": 39115761,
+      "flags": "0x17c"
+    }
+  },
+  {
+    "target": "linux-arm64",
+    "result": "PASS",
+    "baseSha256": "616f267a34278ff5ac282df37ffdfba1d7141f4f6926bca99af2cd6ef3ad32b1",
+    "factorySha256": "f211479c82733e2c466e5f80ef7f8ffef77b305aafb069e4907c85a2d935a6f8",
+    "wholeReconstructedSha256": "f211479c82733e2c466e5f80ef7f8ffef77b305aafb069e4907c85a2d935a6f8",
+    "entireExecutableMatchesIncludingSignature": true,
+    "factoryBytes": 120375592,
+    "payloadOffset": 81199104,
+    "graph": {
+      "length": 39115861,
+      "sha256": "8f338ad8413c215c26aaf820073dc9c781d7be46ffbe9465596aa1cd443e5a81",
+      "modules": 1,
+      "byteCount": 39115813,
+      "flags": "0x17c"
+    }
+  }
+]

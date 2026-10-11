@@ -1,0 +1,31 @@
+{
+  "history1058": "unchanged",
+  "archives": [
+    {
+      "folder": "2026-10-11-service-f6",
+      "archiveSha256": "c8c23aad06a62248cbd24b977d10971e10054b3e375a1229e6b6dab5214ddd89",
+      "members": 94,
+      "receipts": 8,
+      "source": "f6f41bc6446ba1d84c7b661ca585920892ccda21"
+    },
+    {
+      "folder": "2026-10-11-service-834",
+      "archiveSha256": "1a93e40dc9e915311133650bf33a3ceb9d7585ca1bc02aad904e23931c6938f8",
+      "members": 94,
+      "receipts": 8,
+      "source": "834088bcd4406dc2b0b5950d022a5a8b72134d57"
+    },
+    {
+      "folder": "2026-10-11-service-round4",
+      "archiveSha256": "ffc8269fc388f416e4e9e957a61c0a011ed8f53bef9d3b224b0f36bc3ea80e2c",
+      "members": 94,
+      "receipts": 8,
+      "source": "482e95cbaed55be6e4f01916b0095c77979d2fdc"
+    },
+    {
+      "folder": "2026-10-11-service-round3-failure",
+      "members": 85,
+      "archiveSha256": "eef72aa87802ffac3ad5ec1fe8197638dd73c0a4bbd7b0a92f4a57f879e7b75e"
+    }
+  ]
+}

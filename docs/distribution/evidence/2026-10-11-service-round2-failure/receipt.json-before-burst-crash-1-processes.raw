@@ -1,0 +1,2 @@
+   2884    1338 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-oOkcL7/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-oOkcL7/state --port 44399 --no-open service updates-run
+   3420    1338 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-oOkcL7/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-oOkcL7/state --port 44399 --no-open service run

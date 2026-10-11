@@ -1,0 +1,196 @@
+TAP version 13
+# Subtest: prepared validation rejects modified binary bytes, missing gates and different recipes
+ok 1 - prepared validation rejects modified binary bytes, missing gates and different recipes
+  ---
+  duration_ms: 442.679667
+  type: 'test'
+  ...
+# Subtest: publisher dry run makes no remote calls and produces candidate-bound assets digest
+ok 2 - publisher dry run makes no remote calls and produces candidate-bound assets digest
+  ---
+  duration_ms: 475.92675
+  type: 'test'
+  ...
+# Subtest: publisher cancels an unread rejected upload and cleans snapshot while retaining draft
+ok 3 - publisher cancels an unread rejected upload and cleans snapshot while retaining draft
+  ---
+  duration_ms: 516.609667
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation corrupt-chunk before verified plan
+ok 4 - publisher refuses post-validation corrupt-chunk before verified plan
+  ---
+  duration_ms: 500.925083
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation corrupt-chunk before publication
+ok 5 - publisher refuses post-validation corrupt-chunk before publication
+  ---
+  duration_ms: 568.091708
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation unexpected-asset before verified plan
+ok 6 - publisher refuses post-validation unexpected-asset before verified plan
+  ---
+  duration_ms: 456.701292
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation unexpected-asset before publication
+ok 7 - publisher refuses post-validation unexpected-asset before publication
+  ---
+  duration_ms: 474.085667
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation manifest before publication
+ok 8 - publisher refuses post-validation manifest before publication
+  ---
+  duration_ms: 433.253166
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation symlink before publication
+ok 9 - publisher refuses post-validation symlink before publication
+  ---
+  duration_ms: 458.189708
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation mode before publication
+ok 10 - publisher refuses post-validation mode before publication
+  ---
+  duration_ms: 463.684
+  type: 'test'
+  ...
+# Subtest: publisher uses pinned snapshot despite original corruption during upload
+ok 11 - publisher uses pinned snapshot despite original corruption during upload
+  ---
+  duration_ms: 473.002916
+  type: 'test'
+  ...
+# Subtest: publisher refuses staging corruption during upload
+ok 12 - publisher refuses staging corruption during upload
+  ---
+  duration_ms: 461.048583
+  type: 'test'
+  ...
+# Subtest: publisher refuses staging-mode corruption during upload
+ok 13 - publisher refuses staging-mode corruption during upload
+  ---
+  duration_ms: 480.61125
+  type: 'test'
+  ...
+# Subtest: publisher refuses staging-midstream corruption during upload
+ok 14 - publisher refuses staging-midstream corruption during upload
+  ---
+  duration_ms: 536.467084
+  type: 'test'
+  ...
+# Subtest: publisher reconciles tag-after without duplicate immutable mutations
+ok 15 - publisher reconciles tag-after without duplicate immutable mutations
+  ---
+  duration_ms: 856.026375
+  type: 'test'
+  ...
+# Subtest: publisher reconciles draft-after without duplicate immutable mutations
+ok 16 - publisher reconciles draft-after without duplicate immutable mutations
+  ---
+  duration_ms: 853.800125
+  type: 'test'
+  ...
+# Subtest: publisher reconciles upload-after:build-provenance.json without duplicate immutable mutations
+ok 17 - publisher reconciles upload-after:build-provenance.json without duplicate immutable mutations
+  ---
+  duration_ms: 851.350166
+  type: 'test'
+  ...
+# Subtest: publisher reconciles publish-after without duplicate immutable mutations
+ok 18 - publisher reconciles publish-after without duplicate immutable mutations
+  ---
+  duration_ms: 834.023666
+  type: 'test'
+  ...
+# Subtest: partial upload resumes only missing assets and Pages recovery only dispatches synchronization
+ok 19 - partial upload resumes only missing assets and Pages recovery only dispatches synchronization
+  ---
+  duration_ms: 1597.9405
+  type: 'test'
+  ...
+# Subtest: conflicting tag, candidate and immutable assets are never replaced
+ok 20 - conflicting tag, candidate and immutable assets are never replaced
+  ---
+  duration_ms: 3317.897708
+  type: 'test'
+  ...
+# Subtest: stable approval binds exact unsigned asset bytes and stable publication sets latest
+ok 21 - stable approval binds exact unsigned asset bytes and stable publication sets latest
+  ---
+  duration_ms: 843.751125
+  type: 'test'
+  ...
+# Subtest: a newer unsigned stable blocks older tooling before any publication mutation
+ok 22 - a newer unsigned stable blocks older tooling before any publication mutation
+  ---
+  duration_ms: 527.1785
+  type: 'test'
+  ...
+# Subtest: unverifiable latest nightly blocks preparation and publication
+ok 23 - unverifiable latest nightly blocks preparation and publication
+  ---
+  duration_ms: 691.946542
+  type: 'test'
+  ...
+# Subtest: unverifiable latest nightly blocks preparation and publication despite an older verified nightly
+ok 24 - unverifiable latest nightly blocks preparation and publication despite an older verified nightly
+  ---
+  duration_ms: 676.504666
+  type: 'test'
+  ...
+# Subtest: stale nightly candidate does not create a tag or draft
+ok 25 - stale nightly candidate does not create a tag or draft
+  ---
+  duration_ms: 471.321292
+  type: 'test'
+  ...
+# Subtest: publication lock rejects overlapping versions and releases after failure
+ok 26 - publication lock rejects overlapping versions and releases after failure
+  ---
+  duration_ms: 0.636667
+  type: 'test'
+  ...
+# Subtest: fresh preparation consumes exact artifact ZIPs and produces unsigned inspectable assets without mutations
+ok 27 - fresh preparation consumes exact artifact ZIPs and produces unsigned inspectable assets without mutations
+  ---
+  duration_ms: 1382.708291
+  type: 'test'
+  ...
+# Subtest: chunk publication resumes exact unsigned inventory after upload-before:source-rebuild.tar.gz.part0002
+ok 28 - chunk publication resumes exact unsigned inventory after upload-before:source-rebuild.tar.gz.part0002
+  ---
+  duration_ms: 1194.363375
+  type: 'test'
+  ...
+# Subtest: chunk publication resumes exact unsigned inventory after upload-after:source-rebuild.tar.gz.part0002
+ok 29 - chunk publication resumes exact unsigned inventory after upload-after:source-rebuild.tar.gz.part0002
+  ---
+  duration_ms: 1210.016542
+  type: 'test'
+  ...
+# Subtest: chunk publication refuses unexpected remote monolith or missing public chunk
+ok 30 - chunk publication refuses unexpected remote monolith or missing public chunk
+  ---
+  duration_ms: 1213.834375
+  type: 'test'
+  ...
+# Subtest: unsigned publisher → discovery → prepared/offline chunks → updater preserves integrity and rollback
+ok 31 - unsigned publisher → discovery → prepared/offline chunks → updater preserves integrity and rollback
+  ---
+  duration_ms: 1993.582041
+  type: 'test'
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23312.864542

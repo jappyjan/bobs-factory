@@ -7,12 +7,14 @@ import {
 	readFileSync,
 	readlinkSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { generateRecipes } from "../generate-package-recipes.mjs";
 import {
 	compareReleaseVersions,
 	fileRecord,
@@ -31,7 +33,6 @@ import {
 	validateReleaseManifest,
 } from "../lib/binary-release.mjs";
 import { freezeCandidate } from "../lib/release-candidate.mjs";
-import { keys, signBytes, testInstaller } from "./release-fixtures.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const native = `${process.platform}-${process.arch}`;
@@ -61,7 +62,7 @@ function fixture(version = "0.2.74") {
 	const bootstrap = join(work, "install.sh");
 	writeFileSync(
 		bootstrap,
-		testInstaller(readFileSync(join(root, "scripts/install.sh"), "utf8")),
+		readFileSync(join(root, "scripts/install.sh"), "utf8"),
 	);
 	const install = (...args) =>
 		spawnSync("sh", [bootstrap, ...args], {
@@ -70,10 +71,42 @@ function fixture(version = "0.2.74") {
 		});
 	const cleanup = () => rmSync(work, { recursive: true, force: true });
 	function release(nextVersion = version) {
+		const channel = nextVersion.includes("nightly")
+			? "nightly"
+			: nextVersion.includes("beta")
+				? "beta"
+				: "stable";
+		const promotion =
+			channel === "stable"
+				? {
+						channel: "nightly",
+						version: "1.0.0-nightly.20261009.1",
+						tag: "v1.0.0-nightly.20261009.1",
+						commit,
+						manifestSha256: "a".repeat(64),
+						releaseId: 1,
+					}
+				: undefined;
+		const candidate = freezeCandidate({
+			channel,
+			version: nextVersion,
+			commit,
+			committedVersion: nextVersion.split("-")[0],
+			workflowSha: commit,
+			promotion,
+			sequence:
+				channel === "nightly"
+					? Number(nextVersion.split(".").at(-1))
+					: undefined,
+			date: channel === "nightly" ? "2026-10-09T00:00:00Z" : undefined,
+		});
+
 		const name = `bobs-factory-${nextVersion}-${native}`;
 		const stage = join(work, name);
 		mkdirSync(stage);
-		const executable = Buffer.from(`#!/bin/sh\necho ${nextVersion}\n`);
+		const executable = Buffer.from(
+			`#!/bin/sh\necho ${nextVersion}\nif [ -n "$BOBS_FACTORY_TEST_DOWNLOADS" ]; then printf '%s\\n' "$@" > "$BOBS_FACTORY_TEST_DOWNLOADS/executed-args"; fi\n`,
+		);
 		writeFileSync(join(stage, "bobs-factory"), executable, { mode: 0o755 });
 		writeFileSync(join(stage, "LICENSE"), "Apache License 2.0");
 		writeFileSync(join(stage, "NOTICE"), "Bob's Factory derived from Cyrus");
@@ -87,6 +120,8 @@ function fixture(version = "0.2.74") {
 				schemaVersion: 1,
 				product: "bobs-factory",
 				version: nextVersion,
+				candidateDigest: candidate.digest,
+				workflowSha: commit,
 				commit,
 				dirty: false,
 				target: native,
@@ -116,6 +151,8 @@ function fixture(version = "0.2.74") {
 				schemaVersion: 1,
 				product: "bobs-factory",
 				version: nextVersion,
+				candidateDigest: candidate.digest,
+				workflowSha: commit,
 				commit,
 				dirty: false,
 				target: native,
@@ -187,31 +224,6 @@ function fixture(version = "0.2.74") {
 				]),
 			].map((file) => ({ file, sha256: "e".repeat(64), size: 12 })),
 		];
-		const channel = metadata.channel;
-		const promotion =
-			channel === "stable"
-				? {
-						channel: "nightly",
-						version: "1.0.0-nightly.20261009.1",
-						tag: "v1.0.0-nightly.20261009.1",
-						commit,
-						manifestSha256: "a".repeat(64),
-						releaseId: 1,
-					}
-				: undefined;
-		const candidate = freezeCandidate({
-			channel,
-			version: nextVersion,
-			commit,
-			committedVersion: nextVersion.split("-")[0],
-			workflowSha: commit,
-			promotion,
-			sequence:
-				channel === "nightly"
-					? Number(nextVersion.split(".").at(-1))
-					: undefined,
-			date: channel === "nightly" ? "2026-10-09T00:00:00Z" : undefined,
-		});
 		metadata.candidateDigest = candidate.digest;
 		writeFileSync(join(downloads, "candidate.json"), jsonBytes(candidate));
 		metadata.assets.find((a) => a.file === "candidate.json").sha256 = sha256(
@@ -221,11 +233,6 @@ function fixture(version = "0.2.74") {
 			jsonBytes(candidate).length;
 		for (const file of ["latest.json", "release.json", "nightly.json"]) {
 			writeFileSync(join(downloads, file), jsonBytes(metadata));
-			writeFileSync(
-				join(downloads, `${file}.sig`),
-				signBytes(jsonBytes(metadata)),
-			);
-			writeFileSync(join(downloads, `${file}.key-id`), "fixture\n");
 		}
 		return {
 			metadata,
@@ -253,6 +260,21 @@ test("anonymous install configures PATH once, retains old version, and safely re
 	try {
 		let result = f.install();
 		assert.equal(result.status, 0, result.stderr);
+		const ownershipRecord = join(
+			f.prefix,
+			`lib/bobs-factory/records/bobs-factory-0.2.73-${native}.json`,
+		);
+		assert.deepEqual(JSON.parse(readFileSync(ownershipRecord, "utf8")), {
+			schemaVersion: 1,
+			product: "bobs-factory",
+			owner: "bobs-factory-installer",
+			source: "bootstrap",
+			channel: "stable",
+			version: "0.2.73",
+			target: native,
+			commit,
+			publisherKeyId: "",
+		});
 		const before = readFileSync(f.profile, "utf8");
 		execFileSync("sh", ["-n", f.profile]);
 		const path = execFileSync(
@@ -291,6 +313,10 @@ test("anonymous install configures PATH once, retains old version, and safely re
 			"repeat must not append PATH repeatedly",
 		);
 		assert.match(readlinkSync(join(f.prefix, "bin/bobs-factory")), /0\.2\.74/);
+		assert.ok(
+			readFileSync(ownershipRecord, "utf8").includes('"version": "0.2.73"'),
+			"upgrading retains the prior version's ownership record",
+		);
 	} finally {
 		f.cleanup();
 	}
@@ -309,6 +335,18 @@ test("first public beta installs anonymously by default or exact version", () =>
 				}).trim(),
 				"1.0.0-beta",
 			);
+		}
+		const link = readlinkSync(join(f.prefix, "bin/bobs-factory"));
+		const profile = readFileSync(f.profile, "utf8");
+		for (const args of [
+			["--channel", "stable"],
+			["--channel", "stable", "--version", "1.0.0-beta"],
+		]) {
+			const rejected = f.install(...args);
+			assert.notEqual(rejected.status, 0);
+			assert.match(rejected.stderr, /Requested channel/);
+			assert.equal(readlinkSync(join(f.prefix, "bin/bobs-factory")), link);
+			assert.equal(readFileSync(f.profile, "utf8"), profile);
 		}
 		const result = f.install("--version", "1.0.0-beta.01");
 		assert.notEqual(result.status, 0);
@@ -377,8 +415,10 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
 			"sync-release-metadata.mjs",
 			"install.sh",
 			"lib/binary-release.mjs",
+			"lib/source-transport.mjs",
+			"lib/release-material.mjs",
+			"lib/bounded-archive.mjs",
 			"lib/release-candidate.mjs",
-			"lib/release-signature.mjs",
 			"lib/github-release.mjs",
 		])
 			copyFileSync(
@@ -386,10 +426,6 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
 				join(workspace, "scripts", file),
 			);
 		mkdirSync(join(workspace, "docs/distribution"), { recursive: true });
-		writeFileSync(
-			join(workspace, "docs/distribution/release-keys.json"),
-			JSON.stringify({ schemaVersion: 1, keys }),
-		);
 		const metadata = f.current.metadata;
 		const bytes = jsonBytes(metadata);
 		const assetURL = `https://github.com/${REPOSITORY}/releases/download/${metadata.tag}/release.json`;
@@ -421,21 +457,11 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
 			JSON.stringify({
 				release,
 				content: bytes.toString("utf8"),
-				signature: signBytes(bytes).toString("base64"),
 				candidate: readFileSync(join(f.downloads, "candidate.json"), "utf8"),
 			}),
 		);
 		const preload = join(workspace, "transport.mjs");
 
-		release.assets.push(
-			...["release.json.sig", "release.json.key-id"].map((file) => ({
-				name: file,
-				state: "uploaded",
-				size: readFileSync(join(f.downloads, file)).length,
-				digest: `sha256:${sha256(readFileSync(join(f.downloads, file)))}`,
-				browser_download_url: assetURL.replace(/release.json$/, file),
-			})),
-		);
 		release.assets[0].state = "uploaded";
 		release.assets.find(
 			(a) => a.name === "candidate.json",
@@ -448,7 +474,6 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
 			JSON.stringify({
 				release,
 				content: bytes.toString("utf8"),
-				signature: signBytes(bytes).toString("base64"),
 				candidate: readFileSync(join(f.downloads, "candidate.json"), "utf8"),
 			}),
 		);
@@ -463,8 +488,6 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
         if(path.includes('/releases/123/assets?')) return new Response(JSON.stringify(f.release.assets));
         if(path.includes('/releases?')) return new Response(JSON.stringify([f.release]));
         if(path.endsWith('/release.json')) return new Response(f.content);
-        if(path.endsWith('/release.json.sig')) return new Response(Buffer.from(f.signature,"base64"));
-        if(path.endsWith('/release.json.key-id')) return new Response("fixture\\n");
         if(path.endsWith('/candidate.json')) return new Response(f.candidate);
         throw Error("Unexpected network request: "+url);
       };`,
@@ -485,7 +508,6 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
 			JSON.stringify({
 				release,
 				content: `${bytes.toString("utf8")} `,
-				signature: signBytes(bytes).toString("base64"),
 				candidate: readFileSync(join(f.downloads, "candidate.json"), "utf8"),
 			}),
 		);
@@ -565,8 +587,6 @@ test("pending public release gives clear availability guidance", () => {
 				status: "pending",
 			}),
 		);
-		rmSync(join(f.downloads, "latest.json.sig"));
-		rmSync(join(f.downloads, "latest.json.key-id"));
 		const result = f.install();
 		assert.notEqual(result.status, 0);
 		assert.match(result.stderr, /No verified stable release is available/);
@@ -710,7 +730,17 @@ test("release/archive validation rejects target omissions, source mismatch and u
 	try {
 		const { metadata, archive, sidecar } = f.current;
 		validateReleaseManifest(metadata);
-		validateArchive(archive, sidecar, { version: "0.2.74", commit }, native);
+		validateArchive(
+			archive,
+			sidecar,
+			{
+				version: "0.2.74",
+				commit,
+				candidateDigest: metadata.candidateDigest,
+				workflowSha: metadata.workflowSha,
+			},
+			native,
+		);
 		const missing = structuredClone(metadata);
 		delete missing.targets["linux-arm64"];
 		assert.throws(
@@ -722,7 +752,12 @@ test("release/archive validation rejects target omissions, source mismatch and u
 				validateArchive(
 					archive,
 					sidecar,
-					{ version: "0.2.74", commit: "f".repeat(40) },
+					{
+						version: "0.2.74",
+						commit: "f".repeat(40),
+						candidateDigest: metadata.candidateDigest,
+						workflowSha: metadata.workflowSha,
+					},
 					native,
 				),
 			/reviewed source/,
@@ -747,30 +782,28 @@ test("release/archive validation rejects target omissions, source mismatch and u
 	}
 });
 
-test("signed manifests reject tampering, unknown keys and unsigned payloads before installation", () => {
+test("unsigned install rejects wrong manifest identity before changing the installation", () => {
 	const f = fixture();
 	try {
 		assert.equal(f.install("--no-modify-path").status, 0);
 		const link = readlinkSync(join(f.prefix, "bin/bobs-factory"));
 		const profile = readFileSync(f.profile, "utf8");
-		const original = readFileSync(join(f.downloads, "latest.json"));
-		for (const [file, bytes] of [
-			["latest.json", Buffer.concat([original, Buffer.from(" ")])],
-			["latest.json.sig", Buffer.from("wrong")],
-			["latest.json.key-id", Buffer.from("unknown\n")],
+		for (const patch of [
+			{ product: "other" },
+			{ repository: "other/repo" },
+			{ tag: "v2.0.0" },
+			{ commit: "bad" },
+			{ candidateDigest: "f".repeat(64) },
+			{ workflowSha: "f".repeat(40) },
 		]) {
-			const before = readFileSync(join(f.downloads, file));
-			writeFileSync(join(f.downloads, file), bytes);
-			const result = f.install();
-			assert.notEqual(result.status, 0);
-			assert.match(result.stderr, /signature|publisher/);
+			writeFileSync(
+				join(f.downloads, "latest.json"),
+				jsonBytes({ ...f.current.metadata, ...patch }),
+			);
+			assert.notEqual(f.install().status, 0);
 			assert.equal(readlinkSync(join(f.prefix, "bin/bobs-factory")), link);
 			assert.equal(readFileSync(f.profile, "utf8"), profile);
-			writeFileSync(join(f.downloads, file), before);
 		}
-		rmSync(join(f.downloads, "latest.json.sig"));
-		assert.notEqual(f.install().status, 0);
-		assert.equal(readlinkSync(join(f.prefix, "bin/bobs-factory")), link);
 	} finally {
 		f.cleanup();
 	}
@@ -794,8 +827,6 @@ test("unsigned pending channels stop with availability guidance and preserve an 
 					status: "pending",
 				}),
 			);
-			rmSync(join(f.downloads, `${file}.sig`));
-			rmSync(join(f.downloads, `${file}.key-id`));
 			const result = f.install("--channel", channel);
 			assert.notEqual(result.status, 0);
 			assert.match(
@@ -831,7 +862,7 @@ test("nightly installation is opt-in and exact versions must match the selected 
 		f.cleanup();
 	}
 });
-test("legacy beta requires signed inventory attestation without rewriting its manifest", () => {
+test("legacy beta requires inventory attestation without rewriting its manifest", () => {
 	const f = fixture("1.0.0-beta");
 	try {
 		const legacy = {
@@ -845,12 +876,11 @@ test("legacy beta requires signed inventory attestation without rewriting its ma
 		const bytes = jsonBytes(legacy);
 		for (const file of ["latest.json", "release.json"]) {
 			writeFileSync(join(f.downloads, file), bytes);
-			writeFileSync(join(f.downloads, `${file}.sig`), signBytes(bytes));
 		}
 		assert.notEqual(
 			f.install().status,
 			0,
-			"No attestation must block signed legacy beta",
+			"No attestation must block legacy beta",
 		);
 		const attestation = jsonBytes({
 			schemaVersion: 1,
@@ -868,10 +898,6 @@ test("legacy beta requires signed inventory attestation without rewriting its ma
 		});
 		writeFileSync(join(f.downloads, "release-attestation.json"), attestation);
 		writeFileSync(
-			join(f.downloads, "release-attestation.json.sig"),
-			signBytes(attestation),
-		);
-		writeFileSync(
 			join(f.downloads, "release-attestation.json.key-id"),
 			"fixture\n",
 		);
@@ -880,9 +906,268 @@ test("legacy beta requires signed inventory attestation without rewriting its ma
 		assert.deepEqual(readFileSync(join(f.downloads, "release.json")), bytes);
 		writeFileSync(
 			join(f.downloads, "release-attestation.json"),
-			Buffer.concat([attestation, Buffer.from(" ")]),
+			jsonBytes({
+				...JSON.parse(attestation),
+				manifest: {
+					...JSON.parse(attestation).manifest,
+					sha256: "f".repeat(64),
+				},
+			}),
 		);
 		assert.notEqual(f.install().status, 0);
+	} finally {
+		f.cleanup();
+	}
+});
+
+test("removal validates all ownership before deleting and preserves state and unknown files", () => {
+	const f = fixture();
+	try {
+		assert.equal(f.install().status, 0);
+		const remove = () =>
+			spawnSync(
+				"sh",
+				[join(root, "scripts/uninstall-binary.sh"), f.prefix, "--stopped"],
+				{ encoding: "utf8" },
+			);
+		const executable = join(f.prefix, "bin/bobs-factory");
+		const link = readlinkSync(executable);
+		const foreign = join(f.prefix, "lib/bobs-factory/operator-file");
+		writeFileSync(foreign, "keep");
+		const receipt = join(
+			f.prefix,
+			`lib/bobs-factory/records/${f.current.name}.json`,
+		);
+		const bytes = readFileSync(receipt);
+		writeFileSync(
+			receipt,
+			bytes.toString().replace("bobs-factory-installer", "foreign"),
+		);
+		assert.notEqual(remove().status, 0);
+		assert.equal(readlinkSync(executable), link);
+		writeFileSync(receipt, bytes);
+		const result = remove();
+		assert.equal(result.status, 0, result.stderr);
+		assert.throws(() => readlinkSync(executable));
+		assert.equal(readFileSync(foreign, "utf8"), "keep");
+		assert.equal(
+			readFileSync(f.profile, "utf8").includes("Existing user settings"),
+			true,
+		);
+	} finally {
+		f.cleanup();
+	}
+});
+
+test("installer refuses redirected stores and removal refuses foreign links", () => {
+	const f = fixture();
+	try {
+		const external = join(f.work, "external");
+		mkdirSync(external);
+		mkdirSync(join(f.prefix, "lib"), { recursive: true });
+		symlinkSync(external, join(f.prefix, "lib/bobs-factory"));
+		assert.notEqual(f.install().status, 0);
+		assert.equal(readFileSync(f.profile, "utf8"), "# Existing user settings\n");
+		rmSync(join(f.prefix, "lib/bobs-factory"));
+		assert.equal(f.install().status, 0);
+		rmSync(join(f.prefix, "bin/bobs-factory"));
+		symlinkSync("/unrelated/bobs-factory", join(f.prefix, "bin/bobs-factory"));
+		const result = spawnSync(
+			"sh",
+			[join(root, "scripts/uninstall-binary.sh"), f.prefix, "--stopped"],
+			{ encoding: "utf8" },
+		);
+		assert.notEqual(result.status, 0);
+		assert.equal(
+			readlinkSync(join(f.prefix, "bin/bobs-factory")),
+			"/unrelated/bobs-factory",
+		);
+	} finally {
+		f.cleanup();
+	}
+});
+
+test("settings handoff names the chosen instance without supplying an implicit policy reset", () => {
+	const f = fixture("1.0.0-nightly.20261009.10");
+	try {
+		const home = join(f.work, "state");
+		const result = f.install("--channel", "nightly", "--home", home);
+		assert.equal(result.status, 0, result.stderr);
+		assert.deepEqual(
+			readFileSync(join(f.downloads, "executed-args"), "utf8")
+				.trim()
+				.split("\n"),
+			["--home", home, "update", "settings", "--channel", "nightly"],
+		);
+		assert.equal(
+			f.install(
+				"--channel",
+				"nightly",
+				"--home",
+				home,
+				"--update-policy",
+				"manual",
+			).status,
+			0,
+		);
+		assert.deepEqual(
+			readFileSync(join(f.downloads, "executed-args"), "utf8")
+				.trim()
+				.split("\n"),
+			[
+				"--home",
+				home,
+				"update",
+				"settings",
+				"--channel",
+				"nightly",
+				"--policy",
+				"manual",
+			],
+		);
+		assert.equal(f.install("--update-policy", "idle-auto").status, 1);
+		assert.match(result.stdout, /nightly/);
+	} finally {
+		f.cleanup();
+	}
+});
+
+test("recipes require unsigned complete published desktop packages and immutable URLs", async () => {
+	const f = fixture();
+	try {
+		const manifest = structuredClone(f.current.metadata);
+		manifest.desktop = { schemaVersion: 1, artifacts: [] };
+		const contents = new Map();
+		for (const target of TARGETS) {
+			const [os, arch] = target.split("-");
+			const stem = `bobs-factory-desktop-${manifest.version}-${os === "darwin" ? "mac" : "linux"}-${arch}`;
+			const record = (ext) => {
+				const file = `${stem}.${ext}`;
+				const bytes = Buffer.from(file);
+				contents.set(file, bytes);
+				return { file, size: bytes.length, sha256: sha256(bytes) };
+			};
+			const archive = record(os === "darwin" ? "dmg" : "AppImage");
+			const updateMetadata = record("update.json");
+			const validation = record("validation.json");
+			manifest.desktop.artifacts.push({
+				version: manifest.version,
+				commit,
+				channel: "stable",
+				target,
+				platformRequirements: "native validation pending publication",
+				archive,
+				updateMetadata,
+				validation,
+			});
+			manifest.assets.push(archive, updateMetadata, validation);
+			if (os === "linux") manifest.assets.push(record("deb"));
+		}
+		const base = `https://github.com/${REPOSITORY}/releases/download/${manifest.tag}`;
+		const refresh = () => {
+			const bytes = jsonBytes(manifest);
+			contents.set("release.json", bytes);
+		};
+		refresh();
+		contents.set(
+			"candidate.json",
+			readFileSync(join(f.downloads, "candidate.json")),
+		);
+		const assets = () =>
+			[
+				...manifest.assets,
+				...["release.json"].map((file) => ({
+					file,
+					size: contents.get(file).length,
+					sha256: sha256(contents.get(file)),
+				})),
+			].map((r) => ({
+				name: r.file,
+				size: r.size,
+				digest: `sha256:${r.sha256}`,
+				state: "uploaded",
+				browser_download_url: `${base}/${r.file}`,
+			}));
+		const client = {
+			api: async (path) =>
+				path.startsWith("releases/tags/")
+					? {
+							id: 1,
+							tag_name: manifest.tag,
+							prerelease: false,
+							published_at: "2026-10-10",
+						}
+					: { object: { type: "commit", sha: commit } },
+			pages: async () => assets(),
+			bytes: async (asset) => contents.get(asset.name),
+		};
+		const recipes = await generateRecipes(client, manifest.version);
+		const prepared = JSON.parse(recipes["npm/package.json"]);
+		assert.equal(prepared.private, true);
+		assert.deepEqual(prepared.factoryRelease, {
+			version: manifest.version,
+			channel: "stable",
+		});
+		const recipeFile = join(f.work, "PKGBUILD");
+		writeFileSync(recipeFile, recipes["aur/bobs-factory-desktop-bin/PKGBUILD"]);
+		execFileSync("bash", ["-n", recipeFile]);
+
+		assert.match(recipes["Casks/bobs-factory.rb"], /mac-#\{arch\}.dmg/);
+		assert.match(
+			recipes["Casks/bobs-factory.rb"],
+			/depends_on macos: ">= :sequoia"/,
+		);
+		assert.match(
+			recipes["aur/bobs-factory-desktop-bin/PKGBUILD"],
+			/sha256sums_aarch64/,
+		);
+		assert.match(
+			recipes["aur/bobs-factory-desktop-bin/PKGBUILD"],
+			/depends=\('glibc>=2\.39'/,
+		);
+		assert.match(
+			recipes["aur/bobs-factory-desktop-bin/.SRCINFO"],
+			/depends = glibc>=2\.39/,
+		);
+		const desktop = manifest.desktop;
+		delete manifest.desktop;
+		manifest.assets = manifest.assets.filter(
+			(a) => !a.file.startsWith("bobs-factory-desktop-"),
+		);
+		refresh();
+		const nativeOnly = await generateRecipes(client, manifest.version, "npm");
+		assert.equal(JSON.parse(nativeOnly["npm/package.json"]).private, true);
+		await assert.rejects(
+			generateRecipes(client, manifest.version),
+			/desktop targets/,
+		);
+		manifest.desktop = desktop;
+		manifest.assets.push(
+			...desktop.artifacts.flatMap((item) => [
+				item.archive,
+				item.updateMetadata,
+				item.validation,
+			]),
+		);
+		for (const arch of ["arm64", "x64"]) {
+			const file = `bobs-factory-desktop-${manifest.version}-linux-${arch}.deb`;
+			const bytes = contents.get(file);
+			manifest.assets.push({ file, size: bytes.length, sha256: sha256(bytes) });
+		}
+		refresh();
+		contents.set("release.json", Buffer.from("invalid"));
+		await assert.rejects(
+			generateRecipes(client, manifest.version),
+			/not valid JSON/,
+		);
+		manifest.assets = manifest.assets.filter(
+			(a) => !a.file.endsWith("x64.deb"),
+		);
+		refresh();
+		await assert.rejects(
+			generateRecipes(client, manifest.version),
+			/Missing validated desktop package/,
+		);
 	} finally {
 		f.cleanup();
 	}

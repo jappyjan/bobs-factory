@@ -2,14 +2,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
-import { sha256 } from "../lib/binary-release.mjs";
+import {
+	jsonBytes,
+	sha256,
+	validateReleaseManifest,
+} from "../lib/binary-release.mjs";
 import {
 	discoverReleases,
 	githubClient,
 	requireVerifiedNightlyHistory,
+	selectVerifiedPromotionNightly,
 } from "../lib/github-release.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
-import { keys } from "./release-fixtures.mjs";
 
 function provider(fixtures) {
 	const releaseList = fixtures.map((f, i) => ({
@@ -80,50 +84,95 @@ function provider(fixtures) {
 		},
 	};
 }
-test("discovery separates signed stable/nightly, excludes incomplete candidates and aborts network failures", async () => {
+test("unsigned desktop discovery requires intact archive, update metadata and validation inventory", async () => {
+	const f = preparedFixture("nightly", { desktop: true });
+	try {
+		const p = provider([f]);
+		assert.equal(
+			(await discoverReleases(p.client)).nightly.manifest.desktop.artifacts
+				.length,
+			1,
+		);
+		const assets = structuredClone(p.releaseList[0].assets);
+		for (const file of [
+			"desktop.tar.gz",
+			"desktop-update.json",
+			"desktop-validation.json",
+		]) {
+			for (const fault of ["missing", "size", "digest", "duplicate"]) {
+				p.releaseList[0].assets = structuredClone(assets);
+				const asset = p.releaseList[0].assets.find((a) => a.name === file);
+				if (fault === "missing")
+					p.releaseList[0].assets = p.releaseList[0].assets.filter(
+						(a) => a.name !== file,
+					);
+				if (fault === "size") asset.size++;
+				if (fault === "digest") asset.digest = `sha256:${"f".repeat(64)}`;
+				if (fault === "duplicate") p.releaseList[0].assets.push({ ...asset });
+				const state = await discoverReleases(p.client);
+				assert.equal(state.nightly, null, `${file}: ${fault}`);
+				assert.equal(state.rejected.length, 1);
+			}
+		}
+		const incomplete = structuredClone(f.manifest);
+		incomplete.assets = incomplete.assets.filter(
+			(a) => a.file !== "desktop-validation.json",
+		);
+		assert.throws(
+			() => validateReleaseManifest(incomplete),
+			/Release inventory mismatch/,
+		);
+		const wrongSource = structuredClone(f.manifest);
+		wrongSource.desktop.artifacts[0].commit = "f".repeat(40);
+		assert.throws(
+			() => validateReleaseManifest(wrongSource),
+			/Desktop identity/,
+		);
+	} finally {
+		f.cleanup();
+	}
+});
+test("discovery separates unsigned stable/nightly, excludes incomplete candidates and aborts network failures", async () => {
 	const stable = preparedFixture("stable"),
 		nightly = preparedFixture(),
 		beta = preparedFixture("beta");
 	try {
 		const p = provider([stable, nightly, beta]);
-		let state = await discoverReleases(p.client, keys);
+		let state = await discoverReleases(p.client);
 		assert.equal(state.stable.manifest.channel, "stable");
 		assert.equal(state.nightly.manifest.channel, "nightly");
 		assert.equal(requireVerifiedNightlyHistory(state), state.nightly);
 		p.releaseList[0].draft = true;
-		state = await discoverReleases(p.client, keys);
+		state = await discoverReleases(p.client);
 		assert.equal(state.stable.manifest.channel, "beta");
 		p.releaseList[2].draft = true;
-		state = await discoverReleases(p.client, keys);
+		state = await discoverReleases(p.client);
 		assert.equal(state.stable, null);
 		assert.equal(state.nightly.manifest.channel, "nightly");
 		p.releaseList[2].draft = false;
 		p.corrupt(
 			nightly.manifest.tag,
 			"release.json",
-			Buffer.concat([
-				readFileSync(join(nightly.assets, "release.json")),
-				Buffer.from(" "),
-			]),
+			Buffer.from(JSON.stringify({ ...nightly.manifest, tag: "v2.0.0" })),
 		);
-		state = await discoverReleases(p.client, keys);
+		state = await discoverReleases(p.client);
 		assert.equal(state.nightly, null);
 		assert.throws(
 			() => requireVerifiedNightlyHistory(state),
 			/latest published nightly cannot be verified/,
 		);
 		assert.equal(state.stable.manifest.channel, "beta");
-		assert.match(state.rejected[0].reason, /signature/);
+		assert.match(state.rejected[0].reason, /tag/);
 		p.releaseList[2].assets = p.releaseList[2].assets.filter(
 			(a) => a.name !== "native-helpers-linux-arm64.json",
 		);
-		state = await discoverReleases(p.client, keys);
+		state = await discoverReleases(p.client);
 		assert.equal(state.stable, null);
 		assert.ok(
 			state.rejected.some((r) => /missing or conflicting/.test(r.reason)),
 		);
 		p.fail();
-		await assert.rejects(discoverReleases(p.client, keys), /download failed/);
+		await assert.rejects(discoverReleases(p.client), /download failed/);
 	} finally {
 		for (const f of [stable, nightly, beta]) f.cleanup();
 	}
@@ -166,7 +215,7 @@ test("channel-only discovery authenticates API calls and skips older verified hi
 					i % 2 ? `v1.0.0-nightly.20261008.${Math.floor(i / 2)}` : `v0.9.${i}`,
 			});
 		}
-		const state = await discoverReleases(p.client, keys, {
+		const state = await discoverReleases(p.client, {
 			selectedOnly: true,
 		});
 		assert.equal(state.stable.manifest.version, stable.manifest.version);
@@ -185,26 +234,33 @@ test("channel-only discovery authenticates API calls and skips older verified hi
 				request.options.headers.Authorization,
 				"Bearer synthetic-test-token",
 			);
-		// Rejection of the newest stable still tries a prior signed candidate.
+		// Rejection of the newest stable still tries a prior validated candidate.
 		const beta = preparedFixture("beta");
 		try {
 			const fallback = provider([stable, beta, nightly]);
 			fallback.corrupt(
 				stable.manifest.tag,
-				"release.json.key-id",
-				Buffer.from("unknown\n"),
+				"release.json",
+				jsonBytes({ ...stable.manifest, tag: "v9.0.0" }),
 			);
-			const result = await discoverReleases(fallback.client, keys, {
+			const result = await discoverReleases(fallback.client, {
 				selectedOnly: true,
 			});
 			assert.equal(result.stable.manifest.channel, "beta");
-			assert.match(
-				result.rejected[0].reason,
-				/Unknown or retired publisher key/,
+			const explicit = await discoverReleases(fallback.client, {
+				selectedOnly: true,
+				allowBetaFallback: false,
+			});
+			assert.equal(explicit.stable, null);
+			assert.equal(explicit.nightly.manifest.channel, "nightly");
+			assert.equal(
+				explicit.verified.some((value) => value.manifest.channel === "beta"),
+				false,
 			);
+			assert.match(result.rejected[0].reason, /tag must match/);
 			fallback.fail();
 			await assert.rejects(
-				discoverReleases(fallback.client, keys, { selectedOnly: true }),
+				discoverReleases(fallback.client, { selectedOnly: true }),
 				/download failed/,
 			);
 		} finally {
@@ -213,5 +269,92 @@ test("channel-only discovery authenticates API calls and skips older verified hi
 	} finally {
 		stable.cleanup();
 		nightly.cleanup();
+	}
+});
+
+test("stable promotion selects an older unsigned nightly and refuses unavailable or invalid selections", async () => {
+	const older = preparedFixture("nightly", { sequence: 9 });
+	const latest = preparedFixture("nightly", { sequence: 10 });
+	const stable = preparedFixture("stable");
+	try {
+		const p = provider([latest, older, stable]);
+		let state = await discoverReleases(p.client);
+		assert.equal(state.nightly.manifest.tag, latest.manifest.tag);
+		const selected = selectVerifiedPromotionNightly(state, older.manifest.tag);
+		assert.equal(selected.manifest.tag, older.manifest.tag);
+		assert.equal(
+			selected.manifestSha256,
+			sha256(readFileSync(join(older.assets, "release.json"))),
+		);
+		for (const tag of [
+			undefined,
+			"",
+			stable.manifest.tag,
+			"v1.0.0-beta",
+			"v1.0.0-nightly.20261009.8",
+		])
+			assert.throws(
+				() => selectVerifiedPromotionNightly(state, tag),
+				/Stable promotion/,
+			);
+		p.releaseList[1].draft = true;
+		state = await discoverReleases(p.client);
+		assert.throws(
+			() => selectVerifiedPromotionNightly(state, older.manifest.tag),
+			/not a complete validated published/,
+		);
+		p.releaseList[1].draft = false;
+		p.releaseList[1].assets = p.releaseList[1].assets.filter(
+			(a) => a.name !== "runtime-smoke-linux-arm64.txt",
+		);
+		state = await discoverReleases(p.client);
+		assert.throws(
+			() => selectVerifiedPromotionNightly(state, older.manifest.tag),
+			/not a complete validated published/,
+		);
+		assert.equal(state.nightly.manifest.tag, latest.manifest.tag);
+	} finally {
+		for (const f of [older, latest, stable]) f.cleanup();
+	}
+});
+
+test("unsigned chunk discovery requires exact complete remote inventory", async () => {
+	const f = preparedFixture("nightly", { sourceChunks: true });
+	try {
+		const p = provider([f]);
+		const assets = structuredClone(p.releaseList[0].assets);
+		assert.equal(
+			(await discoverReleases(p.client)).nightly.manifest.source.sha256,
+			f.manifest.source.sha256,
+		);
+		for (const fault of [
+			"missing",
+			"duplicate",
+			"size",
+			"digest",
+			"unexpected",
+		]) {
+			p.releaseList[0].assets = structuredClone(assets);
+			const chunk = p.releaseList[0].assets.find(
+				(a) => a.name === f.manifest.sourceTransport.chunks[0].file,
+			);
+			if (fault === "missing")
+				p.releaseList[0].assets = p.releaseList[0].assets.filter(
+					(a) => a !== chunk,
+				);
+			if (fault === "duplicate") p.releaseList[0].assets.push({ ...chunk });
+			if (fault === "size") chunk.size++;
+			if (fault === "digest") chunk.digest = `sha256:${"f".repeat(64)}`;
+			if (fault === "unexpected")
+				p.releaseList[0].assets.push({
+					...chunk,
+					name: "source-rebuild.tar.gz",
+				});
+			const result = await discoverReleases(p.client);
+			assert.equal(result.nightly, null, fault);
+			assert.equal(result.rejected.length, 1);
+		}
+	} finally {
+		f.cleanup();
 	}
 });

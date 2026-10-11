@@ -1,0 +1,2 @@
+   7583    1248 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-on8fRb/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-on8fRb/state --port 43189 --no-open service updates-run
+   8044    1248 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-on8fRb/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-on8fRb/state --port 43189 --no-open service run

@@ -1,0 +1,88 @@
+[
+  {
+    "target": "darwin-arm64",
+    "status": "PASS",
+    "scope": "actual source/objects/cache staging and Ninja dry run; no native execution",
+    "inputClosure": {
+      "target": "darwin-arm64",
+      "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+      "verifiedApplicationArchives": 2,
+      "verifiedLinkedLibraries": 3,
+      "stagedOnly": true,
+      "executed": false
+    },
+    "elapsedSeconds": 7.564
+  },
+  {
+    "target": "darwin-x64",
+    "status": "PASS",
+    "scope": "actual source/objects/cache staging and Ninja dry run; no native execution",
+    "inputClosure": {
+      "target": "darwin-x64",
+      "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+      "verifiedApplicationArchives": 2,
+      "verifiedLinkedLibraries": 3,
+      "stagedOnly": true,
+      "executed": false
+    },
+    "elapsedSeconds": 7.297
+  },
+  {
+    "target": "linux-x64",
+    "status": "PASS",
+    "scope": "actual source/objects/cache staging and Ninja dry run; no native execution",
+    "inputClosure": {
+      "target": "linux-x64",
+      "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+      "verifiedApplicationArchives": 2,
+      "verifiedLinkedLibraries": 6,
+      "stagedOnly": true,
+      "executed": false
+    },
+    "isolatedPATH": {
+      "PATH": "/usr/bin:/bin",
+      "returncode": 0,
+      "providedTool": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/fixture-tools/llvm/bin/llvm-objcopy",
+      "command": [
+        "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/tools-env/bin/ninja",
+        "-C",
+        "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/staging-checks/linux-x64/build",
+        "-f",
+        "relink-recipe.ninja",
+        "-v",
+        "bun-profile"
+      ],
+      "scope": "real staged recipe/Ninja/Node process, mocked clang++/objcopy; no compiler/linker/native runtime execution"
+    },
+    "elapsedSeconds": 9.382
+  },
+  {
+    "target": "linux-arm64",
+    "status": "PASS",
+    "scope": "actual source/objects/cache staging and Ninja dry run; no native execution",
+    "inputClosure": {
+      "target": "linux-arm64",
+      "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+      "verifiedApplicationArchives": 2,
+      "verifiedLinkedLibraries": 6,
+      "stagedOnly": true,
+      "executed": false
+    },
+    "isolatedPATH": {
+      "PATH": "/usr/bin:/bin",
+      "returncode": 0,
+      "providedTool": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/fixture-tools/llvm/bin/llvm-objcopy",
+      "command": [
+        "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/tools-env/bin/ninja",
+        "-C",
+        "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/staging-checks/linux-arm64/build",
+        "-f",
+        "relink-recipe.ninja",
+        "-v",
+        "bun-profile"
+      ],
+      "scope": "real staged recipe/Ninja/Node process, mocked clang++/objcopy; no compiler/linker/native runtime execution"
+    },
+    "elapsedSeconds": 8.46
+  }
+]

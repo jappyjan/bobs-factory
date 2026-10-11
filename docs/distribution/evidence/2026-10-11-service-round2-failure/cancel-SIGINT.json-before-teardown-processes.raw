@@ -1,0 +1,2 @@
+   5178    1338 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-X8m17w/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-X8m17w/state --port 41441 --no-open service run
+   5181    1338 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-X8m17w/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-X8m17w/state --port 41441 --no-open service updates-run

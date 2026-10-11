@@ -5,11 +5,11 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { MockAgentRunner } from "../../../../../apps/f1/src/MockAgentRunner.ts";
 import { EdgeWorker } from "../../../../../packages/edge-worker/src/EdgeWorker.ts";
 import { defaultWorkflows } from "../../../../../packages/edge-worker/src/factory/defaultWorkflows.ts";
 import { WorkflowRuntime } from "../../../../../packages/edge-worker/src/factory/WorkflowRuntime.ts";
 import { proposal } from "../../../../../packages/edge-worker/test/fixtures/architecture.ts";
+import { MockAgentRunner } from "../../../src/MockAgentRunner.ts";
 
 const evidence = mkdtempSync(join(tmpdir(), "arch-f1-evidence-"));
 const home = mkdtempSync(join(tmpdir(), "bf90-f1-"));
@@ -81,7 +81,12 @@ const worker: any = new EdgeWorker({
 			else if (role === "Write implementation plan")
 				reply = proposal(classification).candidate;
 			else if (role === "Discuss architecture") reply = versioned();
-			else if (role === "Review implementation plan")
+			else if (
+				[
+					"Review implementation plan",
+					"Review architecture candidate",
+				].includes(role)
+			)
 				reply = { approved: true, feedback: [] };
 			else if (role === "Implement accepted plan")
 				reply = {
@@ -113,17 +118,36 @@ await worker.start();
 let runtime: any = worker.getFactoryRuntime();
 const defs = structuredClone(defaultWorkflows);
 const pipe = defs.find((w) => w.id === "factory-pipeline")!;
-pipe.steps = pipe.steps.slice(
-	0,
-	pipe.steps.findIndex((s) => s.id === "implement") + 1,
-);
+pipe.steps.find((s) => s.id === "implement")!.next = "end";
 runtime.updateWorkflows(defs);
 const originalAgent = runtime.hooks.agent;
 const implementations: any[] = [];
 runtime.hooks.agent = async (c: any) => {
 	if (c.step.id === "implement")
 		implementations.push({ id: c.run.id, input: c.input });
-	return originalAgent(c);
+	const result = await originalAgent(c);
+	if (c.step.id === "clarify") return { ...result, deliveryMode: "repository" };
+	if (c.step.id === "plan")
+		return {
+			...result,
+			deliveryContract: {
+				format: "delivery-v1",
+				version: 1,
+				mode: "repository",
+				authorization: {
+					status: "authorized",
+					reference: "F1 requested implementation",
+				},
+				executionReference: c.input.deliveryExecutionReference,
+				targets: [],
+			},
+		};
+	if (c.step.id === "plan-review")
+		return {
+			...result,
+			deliveryContractDigest: c.input.deliveryCandidateDigest,
+		};
+	return result;
 };
 const tracker = worker.issueTrackers.get("cli-workspace");
 const existingIssue = await tracker.createIssue({
@@ -243,8 +267,15 @@ try {
 			Object.keys(calls[0].input)
 				.filter((k) => !["ticketReference", "ticketSync"].includes(k))
 				.sort(),
-			["answers", "plan"],
+			[
+				"answers",
+				"delivery",
+				"deliveryCandidateDigest",
+				"deliveryExecutionReference",
+				"plan",
+			],
 		);
+		assert.equal(calls[0].input.delivery.contract.mode, "repository");
 		assert.match(calls[0].input.plan.plan, /branch existing/);
 		assert.deepEqual(
 			current.architectureProposals

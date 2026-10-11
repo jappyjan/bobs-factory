@@ -1,0 +1,24 @@
+[
+  {
+    "target": "linux-aarch64-build-bun",
+    "profileOrderSha256": "41ca700c51b22234de2dacba20bdb97c893e23c4c46dfff9fd18995ab390a544",
+    "matchesInheritedOrder": [],
+    "bytes": 1163683
+  },
+  {
+    "target": "linux-x64-build-bun",
+    "profileOrderSha256": "32c24058f67945853c9e97c35a8dd6ece17b7c493249dab1a442a20250c20dd3",
+    "matchesInheritedOrder": [
+      "bun-linux-x64.order"
+    ],
+    "bytes": 1156033
+  },
+  {
+    "target": "darwin-aarch64-build-bun",
+    "profileOrderSha256": "edfd0474affcc9dee361452be47cf4394f0f6a4c2ee2d21e4cadbd87db15b6c2",
+    "matchesInheritedOrder": [
+      "bun-darwin-aarch64.order"
+    ],
+    "bytes": 1089931
+  }
+]

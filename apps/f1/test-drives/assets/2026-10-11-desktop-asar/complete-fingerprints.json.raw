@@ -1,0 +1,82 @@
+[
+  {
+    "app": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/Bob's Factory.app",
+    "executable": "/Users/jappy/.nvm/versions/node/v24.20.0/bin/node",
+    "status": 0,
+    "observed": {
+      "electron": null,
+      "node": "24.20.0",
+      "noAsar": null,
+      "virtualDirectory": false,
+      "kind": "bob-owned",
+      "fingerprint": "c5d07506f7beebe69490b71fad770527ca8ee219259e87beb65e9b32991d4d26",
+      "asar": {
+        "path": "Contents/Resources/app.asar",
+        "kind": "file",
+        "mode": 420,
+        "size": 41739706,
+        "sha256": "e90ee5abfdd969ba6d6486a034e0497bf0c1869efcd390b359227d522143997d"
+      }
+    }
+  },
+  {
+    "app": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/Bob's Factory.app",
+    "executable": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/Bob's Factory.app/Contents/MacOS/Bob's Factory",
+    "status": 0,
+    "observed": {
+      "electron": "44.7.0",
+      "node": "24.21.0",
+      "noAsar": null,
+      "virtualDirectory": true,
+      "kind": "bob-owned",
+      "fingerprint": "c5d07506f7beebe69490b71fad770527ca8ee219259e87beb65e9b32991d4d26",
+      "asar": {
+        "path": "Contents/Resources/app.asar",
+        "kind": "file",
+        "mode": 420,
+        "size": 41739706,
+        "sha256": "e90ee5abfdd969ba6d6486a034e0497bf0c1869efcd390b359227d522143997d"
+      }
+    }
+  },
+  {
+    "app": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/fresh-pr96-unsigned-20261011/recovery-apps/darwin-arm64/Bob's Factory.app",
+    "executable": "/Users/jappy/.nvm/versions/node/v24.20.0/bin/node",
+    "status": 0,
+    "observed": {
+      "electron": null,
+      "node": "24.20.0",
+      "noAsar": null,
+      "virtualDirectory": false,
+      "kind": "bob-owned",
+      "fingerprint": "2dd4bb16cbe80e35a02e179b8e173fe2383466653d10be39286aaea5c622f25d",
+      "asar": {
+        "path": "Contents/Resources/app.asar",
+        "kind": "file",
+        "mode": 420,
+        "size": 41741728,
+        "sha256": "bc66de6bb46f5d6fd123b7d383745b97de3a942ac9b6a65af4df33603d590099"
+      }
+    }
+  },
+  {
+    "app": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/fresh-pr96-unsigned-20261011/recovery-apps/darwin-arm64/Bob's Factory.app",
+    "executable": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/fresh-pr96-unsigned-20261011/recovery-apps/darwin-arm64/Bob's Factory.app/Contents/MacOS/Bob's Factory",
+    "status": 0,
+    "observed": {
+      "electron": "44.7.0",
+      "node": "24.21.0",
+      "noAsar": null,
+      "virtualDirectory": true,
+      "kind": "bob-owned",
+      "fingerprint": "2dd4bb16cbe80e35a02e179b8e173fe2383466653d10be39286aaea5c622f25d",
+      "asar": {
+        "path": "Contents/Resources/app.asar",
+        "kind": "file",
+        "mode": 420,
+        "size": 41741728,
+        "sha256": "bc66de6bb46f5d6fd123b7d383745b97de3a942ac9b6a65af4df33603d590099"
+      }
+    }
+  }
+]

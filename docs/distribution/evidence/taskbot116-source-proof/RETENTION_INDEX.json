@@ -1,0 +1,360 @@
+{
+	"schemaVersion": 1,
+	"reviewedRetentionCommit": "d5cde18eab21c01c23b90c4e118d6922094c720d",
+	"originalFileCount": 50,
+	"originalBytes": 2159210,
+	"originalResearchRoot": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/source-inputs",
+	"policy": "Original research JSON and module copies use .raw extensions; their bytes, source-side names and hashes are unchanged. Maintained README, checksum inventory and this index may be updated.",
+	"files": [
+		{
+			"originalFile": "ACTUAL_PAYLOAD_VERIFICATION.json",
+			"retainedFile": "ACTUAL_PAYLOAD_VERIFICATION.json.raw",
+			"size": 2013,
+			"sha256": "b26497bf065842b8e9d98aeb8957bc6775f8f2ba7b680c539a06fed81f222402",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "BASE_RUNTIME_BYTE_BINDING.json",
+			"retainedFile": "BASE_RUNTIME_BYTE_BINDING.json.raw",
+			"size": 4539,
+			"sha256": "7b80048b687c447cb4bc28d6648a3d889d99afc431d3708224055f1a9c362281",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "COORDINATOR_REPORT_CONTINUATION.md",
+			"retainedFile": "COORDINATOR_REPORT_CONTINUATION.md",
+			"size": 17110,
+			"sha256": "e4d89774f889ad9eff03a2a52e09163a359f56c18cda1e1ff06c4345e2c31b06",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "COPIED_EVIDENCE_SHA256SUMS.txt",
+			"retainedFile": "COPIED_EVIDENCE_SHA256SUMS.txt",
+			"size": 4804,
+			"sha256": "ccab5c46b5252bf2ea278216440153566e0be29216c59ee28c796272849ce583",
+			"immutableResearchCopy": false
+		},
+		{
+			"originalFile": "DOWNLOAD_PROVENANCE.json",
+			"retainedFile": "DOWNLOAD_PROVENANCE.json.raw",
+			"size": 1425,
+			"sha256": "5392602408b841d4744a2ec069a029a4454bfcf286db013911f2ea9b631e57ae",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "FORMAT_INSPECTION.json",
+			"retainedFile": "FORMAT_INSPECTION.json.raw",
+			"size": 117965,
+			"sha256": "969d08f210d61748df2ee750cdf348891e39bd0b5d9c6a9c0986f8b6e59f2a1c",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "GENUINE_AR_MEMBER_INVENTORIES.json",
+			"retainedFile": "GENUINE_AR_MEMBER_INVENTORIES.json.raw",
+			"size": 1099986,
+			"sha256": "f0c2256f8fcc37966fa1578257d5cec485253a88c332d332ee3cb0e789466b30",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "LINK_INPUT_DOWNLOAD_MANIFEST.json",
+			"retainedFile": "LINK_INPUT_DOWNLOAD_MANIFEST.json.raw",
+			"size": 15656,
+			"sha256": "0dce7237a74fae49aec1297a8c7a9a96ea0a6a3fe882cad3dbf1726b56a44b08",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "LINK_MAP_INPUT_CLOSURE.json",
+			"retainedFile": "LINK_MAP_INPUT_CLOSURE.json.raw",
+			"size": 4945,
+			"sha256": "fc80421c1ef57ec617629ac57a963c8b84680c27650ae2da40faf2d7f7952443",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "PRESERVATION_MANIFEST.json",
+			"retainedFile": "PRESERVATION_MANIFEST.json.raw",
+			"size": 16157,
+			"sha256": "05a62009a278f431c5b6d1a15764a0ca8ac3af4725b5eca4b7f87c5f438e02cd",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "PROFILE_CONFIG_DOWNLOAD_MANIFEST.json",
+			"retainedFile": "PROFILE_CONFIG_DOWNLOAD_MANIFEST.json.raw",
+			"size": 7764,
+			"sha256": "ddb37543af9c5f9fdfe018b13223d63afc56fd933171ac530e529ec8453e5f74",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "PROFILE_ORDER_CORRESPONDENCE.json",
+			"retainedFile": "PROFILE_ORDER_CORRESPONDENCE.json.raw",
+			"size": 665,
+			"sha256": "9c460c0b8d74fbd3b698f2b026654f82118ec4de539232e6d6eb1a307cc45201",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "README.md",
+			"retainedFile": "README.md",
+			"size": 5675,
+			"sha256": "aadf7c7cbffe489d7b7df52aa82f26ac270772d279e48b293b362222219a1597",
+			"immutableResearchCopy": false
+		},
+		{
+			"originalFile": "RESEARCH_EVIDENCE_INDEX.json",
+			"retainedFile": "RESEARCH_EVIDENCE_INDEX.json.raw",
+			"size": 28435,
+			"sha256": "674f13dac1e686c1524a9541d032acd5c8db78d3d4245cd0e05d8d220153f9cc",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "RUNTIME_CACHE_DOWNLOAD_MANIFEST.json",
+			"retainedFile": "RUNTIME_CACHE_DOWNLOAD_MANIFEST.json.raw",
+			"size": 4982,
+			"sha256": "0f9f8984c548d9d508e9f9b4a0de6706549dc20163cde865eb44fc0a4fa17fec",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "STANDALONE_GRAPH_FOOTERS.json",
+			"retainedFile": "STANDALONE_GRAPH_FOOTERS.json.raw",
+			"size": 1657,
+			"sha256": "1683b1b0209d8abf21c8f1eac06bc8e42eecac62700deb1e6ed6763742e16f5b",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "WEBKIT_ARCHIVE_INDEPENDENT_VERIFICATION.json",
+			"retainedFile": "WEBKIT_ARCHIVE_INDEPENDENT_VERIFICATION.json.raw",
+			"size": 400,
+			"sha256": "d54f7356b3328bcfc83e83e7d2e4b838aaef57cb713f76a08810447dab66513a",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "WEBKIT_ARCHIVE_RESULT.json",
+			"retainedFile": "WEBKIT_ARCHIVE_RESULT.json.raw",
+			"size": 708,
+			"sha256": "090b309a870691ba4240c7931d7da28a71b1e1376c0b5e9049c43dd349fbddd7",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "WEBKIT_CURRENT_INTAKE_RESULT.json",
+			"retainedFile": "WEBKIT_CURRENT_INTAKE_RESULT.json.raw",
+			"size": 201,
+			"sha256": "3360fc21406cf9a0e3afa4869c1e168303436f5c0c72972c5af27140fcd17c3e",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "WEBKIT_SOURCE_VERIFICATION.json",
+			"retainedFile": "WEBKIT_SOURCE_VERIFICATION.json.raw",
+			"size": 805,
+			"sha256": "e0869d651b9bc96f2795611401b13ea7f0f4c3856df1e5ece66d29106a84c80e",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "acquire_candidate21.py",
+			"retainedFile": "acquire_candidate21.py",
+			"size": 1523,
+			"sha256": "8d2372eb8ea52897d8941812ed5feda3493843f8ba5ff49e2699f2949ac6b913",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "acquire_link_inputs.py",
+			"retainedFile": "acquire_link_inputs.py",
+			"size": 1350,
+			"sha256": "49f56cb1796b2b53aca35b366459e2f26208193fe4607e42d79c8b59ded49824",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "acquire_profile_configs.py",
+			"retainedFile": "acquire_profile_configs.py",
+			"size": 1560,
+			"sha256": "69ba2af4e341378a205e3eae9877add6acde3b920ea42ff650000916b850382e",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "acquire_runtime_and_caches.py",
+			"retainedFile": "acquire_runtime_and_caches.py",
+			"size": 1777,
+			"sha256": "35f3a6914c3572476d7300c9bbbbe99cc684557b99d272c85303246a318da3e0",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "archive_webkit.py",
+			"retainedFile": "archive_webkit.py",
+			"size": 3241,
+			"sha256": "d9252331bd6fc23eaf0348e67c9e0fae7144b5f46d3124f01870f98df0c7e6a8",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "compare_all_runtimes.py",
+			"retainedFile": "compare_all_runtimes.py",
+			"size": 3760,
+			"sha256": "c2e601dfeb98053a303d13c975386066609c7654b92568f4deca0b2b1733123f",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "fetch_exact_webkit.py",
+			"retainedFile": "fetch_exact_webkit.py",
+			"size": 2035,
+			"sha256": "bb37ef14b9890e243f75b2432547a3ce713b6690e424cf80917f3a478d05bd60",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/REVIEW_RECORD.json",
+			"retainedFile": "independent-review/REVIEW_RECORD.json.raw",
+			"size": 71478,
+			"sha256": "ab81758098d84347ec0897c0c5a3abd7a3151d27d79df3afc9ace1a22ef834d4",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/archive_audit.py",
+			"retainedFile": "independent-review/archive_audit.py",
+			"size": 3627,
+			"sha256": "5f55c5bfaa86dedb1afd86deb6cf32bcb328fb4cc630efde31f5e6a11ec0b960",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/archive_audit.result.json",
+			"retainedFile": "independent-review/archive_audit.result.json.raw",
+			"size": 599,
+			"sha256": "45a582409f4a19aef830ca7884259ba124bf5557600239e4338283faa6315c9e",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/binding.result.json",
+			"retainedFile": "independent-review/binding.result.json.raw",
+			"size": 2863,
+			"sha256": "3308bf7a306501d7673bff29b61f8a8b8c402956fbf5ecc070c1fcf1c065054d",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/binding_audit.py",
+			"retainedFile": "independent-review/binding_audit.py",
+			"size": 9796,
+			"sha256": "45d0adfc58f35b4b7ca4001f217a01d6c5759097a6c33fbf67f70e4cdf39b5da",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/headers.result.json",
+			"retainedFile": "independent-review/headers.result.json.raw",
+			"size": 161,
+			"sha256": "5be71943b448c907ec406ff342acecf85de0e195f04d2072cdc7876183b111d6",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/intake.result.json",
+			"retainedFile": "independent-review/intake.result.json.raw",
+			"size": 370,
+			"sha256": "26531249aac2dc557b796bb284584d7470e8185dfba9e96d0d6e3c22e80151fc",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/intake_audit.mjs",
+			"retainedFile": "independent-review/intake_audit.mjs.raw",
+			"size": 1174,
+			"sha256": "41680c63ce741384a653fcf6473dad542bf270bb7952f9ec34440c5ea6173464",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/link.result.json",
+			"retainedFile": "independent-review/link.result.json.raw",
+			"size": 671974,
+			"sha256": "ea9927faa582ddeb5f4700578933c8c5fed914a2af1da4ac8f04cc5e14674be6",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/link_audit.py",
+			"retainedFile": "independent-review/link_audit.py",
+			"size": 4236,
+			"sha256": "8f5436000f6a13cf85c643ca6db270d3b81aa7064e21e445a4d6b4633f382291",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/materials.result.json",
+			"retainedFile": "independent-review/materials.result.json.raw",
+			"size": 2576,
+			"sha256": "2be5b77b2bda11c39bb6f28351d211bd0ecc49055eaad43659004e3ffbf8752d",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/materials_audit.py",
+			"retainedFile": "independent-review/materials_audit.py",
+			"size": 7239,
+			"sha256": "eeb52e8127f0edc5339f7b31ece7d36bed3fc0a0127123769e1fdfe93b790d4e",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/provider.result.json",
+			"retainedFile": "independent-review/provider.result.json.raw",
+			"size": 4158,
+			"sha256": "05fa750215918c08e386d75f4bf22de78e7e011283b9f08545fba3ea3b416f8c",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/provider_audit.py",
+			"retainedFile": "independent-review/provider_audit.py",
+			"size": 3043,
+			"sha256": "6e3cc90c337d5a6210076d05a9e8fcfa043f22996959688e20c203ab94d14a6e",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/signature.result.json",
+			"retainedFile": "independent-review/signature.result.json.raw",
+			"size": 1164,
+			"sha256": "c41348c477e1cdf7633863a9a889b631ee3adaa22fd11cb2b6d93f051fee149d",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/signature_audit.py",
+			"retainedFile": "independent-review/signature_audit.py",
+			"size": 1785,
+			"sha256": "7aed606e189357831dd0a81512b212c4a5cbadb93bb1ee00612fb18fedc2ad43",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/upstream.result.json",
+			"retainedFile": "independent-review/upstream.result.json.raw",
+			"size": 1719,
+			"sha256": "881fe5288ec56b29a1169fdadda72bcf93866f6bf206712d2a5aa7c1d2ac0b5b",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "independent-review/upstream_audit.py",
+			"retainedFile": "independent-review/upstream_audit.py",
+			"size": 4859,
+			"sha256": "7d04bd99c2d0d58570d6ee11ecb45d55d28609ffb66b9ad24f0b3c55255d3431",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "inspect_candidate_formats.py",
+			"retainedFile": "inspect_candidate_formats.py",
+			"size": 3230,
+			"sha256": "2f66e73b888601520e91b0a32d03b4d24e49135cd7adce86b5fc3acdb9904569",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "inventory_ar_objects.py",
+			"retainedFile": "inventory_ar_objects.py",
+			"size": 1266,
+			"sha256": "ed8e4f0d824d215908a8c0bd4ef9ed9508429a762e75dd406ef0da013d70578a",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "verify_candidate_base_binding.py",
+			"retainedFile": "verify_candidate_base_binding.py",
+			"size": 6935,
+			"sha256": "9d703b40f5ebd405ef9840655df9a5874cb6b942ce7f0b37c791fb132ed54dda",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "verify_source_archive.py",
+			"retainedFile": "verify_source_archive.py",
+			"size": 1640,
+			"sha256": "ecf26d5d86ecc5ab4cc4e0edb1ffa7838206a7b0ad32d9057efaf2db3ed80bc7",
+			"immutableResearchCopy": true
+		},
+		{
+			"originalFile": "verify_webkit.py",
+			"retainedFile": "verify_webkit.py",
+			"size": 2180,
+			"sha256": "7023eeb00f6977f18714f2e30bdc078963056873314a164852a1e8850ffce529",
+			"immutableResearchCopy": true
+		}
+	]
+}

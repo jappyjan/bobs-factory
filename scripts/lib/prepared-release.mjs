@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import {
 	closeSync,
+	constants,
 	copyFileSync,
 	lstatSync,
 	mkdirSync,
@@ -19,19 +20,30 @@ import {
 	TARGETS,
 	validateArchive,
 	validateBuildProvenance,
+	validateDesktopReceipt,
 	validateEvidence,
 	validateNativeHelpers,
 	validatePreparedAgentBoundaries,
+	validatePublicInstaller,
 	validateReleaseManifest,
 } from "./binary-release.mjs";
 import { candidateIdentity, validateCandidate } from "./release-candidate.mjs";
+import { reconstructSourceArchive } from "./source-transport.mjs";
 
 export function validatePreparedRelease(
 	directory,
 	expectedCandidate,
-	{ legacyBeta = false } = {},
+	{ legacyBeta = false, recoveredSourceDirectory, expectedManifestBytes } = {},
 ) {
 	const manifestBytes = readFileSync(join(directory, "release.json"));
+	// Callers that check integrity outside this validator must bind that exact read.
+	// All reconstruction records below come from this checked byte snapshot.
+	if (expectedManifestBytes !== undefined)
+		requireValue(
+			Buffer.isBuffer(expectedManifestBytes) &&
+				manifestBytes.equals(expectedManifestBytes),
+			"Prepared manifest differs from checked bytes",
+		);
 	const manifest = validateReleaseManifest(JSON.parse(manifestBytes));
 	requireValue(
 		manifest.status === "available" &&
@@ -39,7 +51,7 @@ export function validatePreparedRelease(
 				(legacyBeta &&
 					manifest.schemaVersion === 1 &&
 					/-beta(?:\.\d+)?$/.test(manifest.version))),
-		"Prepared publication requires schema 2 or explicitly authenticated historical beta",
+		"Prepared publication requires schema 2 or explicitly inventoried historical beta",
 	);
 	const inventory =
 		manifest.schemaVersion === 2
@@ -67,11 +79,27 @@ export function validatePreparedRelease(
 			),
 			`Asset differs from immutable release manifest: ${record.file}`,
 		);
+	if (manifest.sourceTransport)
+		requireValue(
+			readdirSync(directory).every((file) =>
+				[
+					...inventory.map((a) => a.file),
+					"release.json",
+					"release.json.sig",
+					"release.json.key-id",
+				].includes(file),
+			),
+			"Unexpected prepared asset",
+		);
 	for (const r of inventory) {
 		const path = join(directory, r.file);
 		requireValue(
 			lstatSync(path).isFile(),
 			"Prepared assets must be regular files",
+		);
+		requireValue(
+			lstatSync(path).size === r.size,
+			`Prepared asset changed: ${r.file}`,
 		);
 		const actual = fileRecord(path, r.file);
 		requireValue(
@@ -151,6 +179,14 @@ export function validatePreparedRelease(
 			target,
 			build,
 		);
+		if (manifest.publicInstallerValidation === 1)
+			validatePublicInstaller(
+				JSON.parse(
+					readFileSync(join(directory, `public-installer-${target}.json`)),
+				),
+				identity,
+				target,
+			);
 		const smoke = readFileSync(
 			join(directory, `runtime-smoke-${target}.txt`),
 			"utf8",
@@ -164,6 +200,12 @@ export function validatePreparedRelease(
 			`Missing native runtime smoke: ${target}`,
 		);
 	}
+	for (const item of manifest.desktop?.artifacts ?? [])
+		validateDesktopReceipt(
+			JSON.parse(readFileSync(join(directory, item.validation.file))),
+			identity,
+			item.target,
+		);
 	const temporary = mkdtempSync(join(tmpdir(), "factory-prepared-evidence-"));
 	try {
 		const archive = join(directory, "validation-receipts.tar.gz");
@@ -204,15 +246,44 @@ export function validatePreparedRelease(
 				closeSync(fd);
 			}
 		}
-		copyFileSync(
-			join(directory, "source-rebuild.tar.gz"),
-			join(temporary, "source-rebuild.tar.gz"),
+		if (manifest.sourceTransport)
+			reconstructSourceArchive(
+				directory,
+				manifest.source,
+				manifest.sourceTransport,
+				temporary,
+			);
+		else
+			copyFileSync(
+				join(directory, manifest.source.file),
+				join(temporary, manifest.source.file),
+			);
+		const evidence = JSON.parse(
+			readFileSync(join(directory, "release-evidence.json")),
 		);
-		validateEvidence(
-			JSON.parse(readFileSync(join(directory, "release-evidence.json"))),
-			temporary,
-			identity,
+		requireValue(
+			evidence.source?.file === manifest.source.file &&
+				evidence.source.sha256 === manifest.source.sha256 &&
+				evidence.source.size === manifest.source.size,
+			"Evidence source differs from inventory reconstruction",
 		);
+		validateEvidence(evidence, temporary, identity);
+		if (expectedManifestBytes !== undefined)
+			requireValue(
+				readFileSync(join(directory, "release.json")).equals(manifestBytes),
+				"Prepared manifest changed during inventory validation",
+			);
+		if (recoveredSourceDirectory) {
+			requireValue(
+				lstatSync(recoveredSourceDirectory).isDirectory(),
+				"Recovered source directory must not be a link",
+			);
+			copyFileSync(
+				join(temporary, manifest.source.file),
+				join(recoveredSourceDirectory, manifest.source.file),
+				constants.COPYFILE_EXCL,
+			);
+		}
 	} finally {
 		rmSync(temporary, { recursive: true, force: true });
 	}

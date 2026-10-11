@@ -1,0 +1,81 @@
+xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-rm2OVd/home/desktop/updates/stage-8zTs6F/contents/Bob's Factory.app: No such xattr: com.apple.quarantine
+xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-pIEdPw/Installed.app: No such xattr: com.apple.quarantine
+xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-hIUcet/Installed.app: No such xattr: com.apple.quarantine
+(node:720) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✖ macOS complete-app staging preserves actual quarantine without changing byte identity (116.775ms)
+✖ macOS complete-app replacement and rollback preserves actual quarantine without changing byte identity (146.321167ms)
+✖ macOS complete-app interrupted recovery preserves actual quarantine without changing byte identity (152.160792ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 539.03475
+
+✖ failing tests:
+
+test at apps/desktop/test/app-quarantine.test.mjs:54:2
+✖ macOS complete-app staging preserves actual quarantine without changing byte identity (116.775ms)
+  Error: Command failed: /usr/bin/xattr -p com.apple.quarantine /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-rm2OVd/home/desktop/updates/stage-8zTs6F/contents/Bob's Factory.app
+  xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-rm2OVd/home/desktop/updates/stage-8zTs6F/contents/Bob's Factory.app: No such xattr: com.apple.quarantine
+  
+      at genericNodeError (node:internal/errors:986:15)
+      at wrappedFn (node:internal/errors:540:14)
+      at checkExecSyncError (node:child_process:942:11)
+      at execFileSync (node:child_process:978:15)
+      at attribute (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop/test/app-quarantine.test.mjs:17:29)
+      at TestContext.<anonymous> (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop/test/app-quarantine.test.mjs:61:18)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    status: 1,
+    signal: null,
+    output: [ null, '', "xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-rm2OVd/home/desktop/updates/stage-8zTs6F/contents/Bob's Factory.app: No such xattr: com.apple.quarantine\n" ],
+    pid: 968,
+    stdout: '',
+    stderr: "xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-rm2OVd/home/desktop/updates/stage-8zTs6F/contents/Bob's Factory.app: No such xattr: com.apple.quarantine\n"
+  }
+
+test at apps/desktop/test/app-quarantine.test.mjs:54:2
+✖ macOS complete-app replacement and rollback preserves actual quarantine without changing byte identity (146.321167ms)
+  Error: Command failed: /usr/bin/xattr -p com.apple.quarantine /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-pIEdPw/Installed.app
+  xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-pIEdPw/Installed.app: No such xattr: com.apple.quarantine
+  
+      at genericNodeError (node:internal/errors:986:15)
+      at wrappedFn (node:internal/errors:540:14)
+      at checkExecSyncError (node:child_process:942:11)
+      at execFileSync (node:child_process:978:15)
+      at attribute (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop/test/app-quarantine.test.mjs:17:29)
+      at TestContext.<anonymous> (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop/test/app-quarantine.test.mjs:72:17)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    status: 1,
+    signal: null,
+    output: [ null, '', 'xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-pIEdPw/Installed.app: No such xattr: com.apple.quarantine\n' ],
+    pid: 1166,
+    stdout: '',
+    stderr: 'xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-pIEdPw/Installed.app: No such xattr: com.apple.quarantine\n'
+  }
+
+test at apps/desktop/test/app-quarantine.test.mjs:54:2
+✖ macOS complete-app interrupted recovery preserves actual quarantine without changing byte identity (152.160792ms)
+  Error: Command failed: /usr/bin/xattr -p com.apple.quarantine /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-hIUcet/Installed.app
+  xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-hIUcet/Installed.app: No such xattr: com.apple.quarantine
+  
+      at genericNodeError (node:internal/errors:986:15)
+      at wrappedFn (node:internal/errors:540:14)
+      at checkExecSyncError (node:child_process:942:11)
+      at execFileSync (node:child_process:978:15)
+      at attribute (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop/test/app-quarantine.test.mjs:17:29)
+      at TestContext.<anonymous> (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop/test/app-quarantine.test.mjs:72:17)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    status: 1,
+    signal: null,
+    output: [ null, '', 'xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-hIUcet/Installed.app: No such xattr: com.apple.quarantine\n' ],
+    pid: 1311,
+    stdout: '',
+    stderr: 'xattr: /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/factory-publication-fixture-hIUcet/Installed.app: No such xattr: com.apple.quarantine\n'
+  }

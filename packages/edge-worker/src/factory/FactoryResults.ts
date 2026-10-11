@@ -3,6 +3,8 @@ import {
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
 } from "./Architecture.js";
+import { DeliveryContractSchema } from "./Delivery.js";
+import { ExternalGuideFields } from "./ExternalGuide.js";
 import {
 	CaptureSchema,
 	filterReview,
@@ -14,6 +16,7 @@ import {
 	normalizeQuestionResult,
 	QuestionRecommendationSchema,
 } from "./Questions.js";
+import { isReviewBrief, ReviewBriefSchema } from "./ReviewBrief.js";
 import { FlowSchema, SystemSchema } from "./VisualContracts.js";
 
 const text = z.string().min(1);
@@ -145,6 +148,11 @@ export const GuideScopeSchema = z.object({
 	files: z.array(text),
 });
 export const GuideSchema = z.object({
+	deliveryMode: z.enum(["repository", "external", "mixed"]).optional(),
+	externalDigest: text.optional(),
+	externalResources: ExternalGuideFields.externalResources.optional(),
+	externalChanges: ExternalGuideFields.externalChanges.optional(),
+	externalCriteria: ExternalGuideFields.externalCriteria.optional(),
 	// Optional only when reading historical artifacts.
 	scope: GuideScopeSchema.optional(),
 	requirementCoverage: RequirementCoverageSchema.optional(),
@@ -339,6 +347,7 @@ function parseFactoryResult(
 					decisions: z.array(
 						z.object({ question: text, answer: text, reason: text }),
 					),
+					deliveryMode: z.enum(["repository", "external", "mixed"]).optional(),
 					requirements: z.array(text).min(1),
 				})
 				.parse(output);
@@ -346,12 +355,17 @@ function parseFactoryResult(
 			return z
 				.object({
 					plan: text,
+					deliveryContract: DeliveryContractSchema.optional(),
 					assets: z.array(z.object({ path: text, purpose: text })),
 				})
 				.parse(output);
 		case "plan-review":
 			return z
-				.object({ approved: z.boolean(), feedback: z.array(text) })
+				.object({
+					approved: z.boolean(),
+					feedback: z.array(text),
+					deliveryContractDigest: text.optional(),
+				})
 				.parse(output);
 		case "implement":
 			return z
@@ -411,7 +425,9 @@ function parseFactoryResult(
 				? QaCaptureSchema.parse(output)
 				: CaptureSchema.parse(output);
 		case "guide":
-			return GuideSchema.parse(output);
+			return isReviewBrief(output)
+				? ReviewBriefSchema.parse(output)
+				: GuideSchema.parse(output);
 		case "ci-fix":
 			return z
 				.object({

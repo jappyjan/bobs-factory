@@ -2,16 +2,25 @@
 
 Install with the [two-command quick start](../../README.md#install-and-start).
 The public installer detects your OS/CPU and downloads a verified version without
-GitHub login, GitHub CLI, Node or Bun. System OpenSSL verifies publisher signatures. First launch opens protected browser setup
+GitHub login, GitHub CLI, Node or Bun. GitHub HTTPS and SHA-256/size inventories check release integrity. First launch opens protected browser setup
 for a project, prepared agent and GitHub connection. Agents may have their own
 runtime and login requirements.
 
 The shared [`release.json` contract](PUBLIC_RELEASES.md) drives the installer,
 homepage and Nix package. The installer selects verified stable releases, or the
-latest authenticated beta before the first stable release. Nightly is explicit
+latest validated beta before the first stable release. Nightly is explicit
 (`--channel nightly`) and never becomes the default. When no reviewed release is
 available, the homepage and installer report unavailable downloads. CI artifacts
 remain maintainer validation material.
+
+The maintained [downloads page](https://jappyjan.github.io/bobs-factory/downloads/)
+is the index for all supported entry points. It lists the verified CLI bootstrap
+and marks desktop, package-manager and npm paths unavailable until their actual
+assets and package identities exist. No Homebrew cask, Linux desktop package or
+public npm launcher is currently published. A public npm launcher is a separate,
+minimal product from private workspace packages and must execute the same unsigned
+release contract; npm/Node is a launcher prerequisite only, not a Factory runtime
+prerequisite.
 
 The artifact contract is `bobs-factory-VERSION-TARGET.tar.gz` with a matching
 `.manifest.json`: schema version, product, exact version, commit, target, byte size
@@ -74,8 +83,13 @@ Checkout development continues to use its own installed SDK. This change does
 not relocate or convert native conversations. Authenticated Cursor validation was
 waived by the human for this implementation; it is not claimed as passing evidence.
 
-Linux builds target glibc. macOS minimum version, minimum glibc and native/CPU
-constraints need native-runner evidence; musl and Windows are not claimed.
+First-release minimums are macOS 15 and Ubuntu 24.04 / glibc 2.39, for ARM64
+and x64 (user decision, October 11). Observed CI is macOS 15.7.9 and Ubuntu
+24.04.5 / glibc 2.39 on both architectures; it does not prove macOS 15.0, all
+Ubuntu kernel/image variants or other Linux distributions. Historical native
+acceptance is documented in [the final report](FINAL_NATIVE_116.md). Its prior paid-signing
+gates are superseded by the current [unsigned release contract](PUBLIC_RELEASES.md); musl and
+Windows are not claimed.
 Official packaging references: [Bun executables](https://bun.sh/docs/bundler/executables)
 and [Node SEA fallback](https://nodejs.org/api/single-executable-applications.html).
 Bun reached actual worker startup; resources/helpers require the explicit boundary
@@ -101,6 +115,11 @@ Cursor's proprietary SDK and native sidecars remain in the operator's separately
 prepared installation. Bob’s Factory does not redistribute or modify those files.
 The archive's runtime dependency inventory excludes them.
 
+Complete source archives that exceed GitHub's individual asset limit use hash-bound
+ordered chunks. They reconstruct the exact full archive before unchanged source
+intake; local source evidence and historical single-file releases remain intact.
+See [source transport and offline recovery](PUBLIC_RELEASES.md#complete-source-transport).
+
 ## Installation and manual replacement
 
 The public installer is the primary installation path. For maintainer validation
@@ -122,7 +141,21 @@ and stop workers/descendants before replacing the active executable. Verify one
 worker, preserved home/config and continuation after restart. To roll back, stop
 replacement consumers, point the executable link to the retained previous version
 and restore separately backed-up mutable state only if needed. Do not run old and
-new workers together. Automatic polling/updating is deferred.
+new workers together. The [per-instance updater](UPDATES.md) implements hash-bound
+discovery, remembered stable/nightly policy and owned staged replacement with
+recovery. [User services](SERVICES.md) and [desktop app updates](DESKTOP.md)
+have separate lifecycle owners; rollout still requires genuine release evidence
+and actual functional validation.
+
+Bootstrap installs also keep an ownership record under
+`PREFIX/lib/bobs-factory/records/`. It records the exact release channel, version,
+target, source commit and hash-bound release identity, separately from
+`~/.bobs-factory`. Reinstalling does not reset per-instance settings. Package
+managers and Nix retain ownership of their own paths; do not replace those
+executables with the bootstrap installer. See
+[package entry points and safe removal](PACKAGE_ENTRY_POINTS.md) for updater handoff,
+receipt-checked uninstall, generated Homebrew/AUR recipes and npm operator gates.
+The trial retains separate state in `~/.bobs-factory-trial`.
 
 The binary CI workflow remains build/verification only, with immutable candidate
 input. The separate [public release workflow](PUBLIC_RELEASES.md) defaults to a
@@ -131,6 +164,14 @@ npm publishing scripts/workflow are retained as historical files in `scripts/arc
 they are not supported fork commands. Future publishing must retain the exact
 reviewed candidate, all-target evidence and manifest checks.
 
+## Operator MCP smoke
+
+The installed executable supports `operator grant|list|revoke` and the protocol-only
+`operator-mcp --home PATH --credential-file PATH` bridge. Follow
+[operator setup](../factory-operator-mcp.md) using a fresh private home. Verify scoped
+MCP discovery and an inspection against the running isolated worker; revoke the
+grant and verify the same client can no longer discover/call tools. The bridge
+must not start another worker or bypass dashboard passkeys.
 ## Nix from the same release manifest
 
 Pin a reviewed release's `release.json` as a file in your Nix configuration.
@@ -141,18 +182,15 @@ checksum from that manifest:
 bobs-factory = import /path/to/bobs-factory/nix/package.nix {
   inherit pkgs;
   releaseManifest = ./bobs-factory-release.json;
-  releaseSignature = ./bobs-factory-release.json.sig;
-  releaseKeyId = "reviewed-active-publisher-key-id";
 };
 ```
 
-Keep the exact manifest bytes and detached signature together. The key ID must
-match an active public key in the reviewed release tooling. Historical beta
-manifests also require the signed inventory attestation described in
-[the public release contract](PUBLIC_RELEASES.md). Before unpacking, Nix verifies
-both signatures, the attestation's exact manifest identity and bytes, every
-manifest-bound inventory record, and the required validation receipts for all
-four targets. Missing, duplicate, malformed or mismatched records fail the build.
+Keep the exact reviewed manifest bytes. Historical beta manifests additionally
+require the reviewed complete inventory attestation described in the
+[public release contract](PUBLIC_RELEASES.md). Nix checks the attestation's exact
+manifest identity/hash/size and required four-target evidence before unpacking;
+archive downloads are fixed by SHA-256. These are integrity checks over HTTPS,
+without an independent publisher signature claim.
 Keep `nix/validate-beta-attestation.jq` with `nix/package.nix` in reviewed tooling.
 The package fetches public versioned assets without GitHub credentials. An
 unavailable manifest fails evaluation clearly. Update the pinned manifest when

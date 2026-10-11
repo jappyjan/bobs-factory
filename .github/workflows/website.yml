@@ -10,8 +10,6 @@ on:
       - 'scripts/install.sh'
       - 'scripts/sync-release-metadata.mjs'
       - 'scripts/lib/*.mjs'
-      - 'docs/distribution/release-keys.json'
-      - 'scripts/sync-release-keys.mjs'
       - '.github/workflows/website.yml'
   pull_request:
     branches:
@@ -21,8 +19,6 @@ on:
       - 'scripts/install.sh'
       - 'scripts/sync-release-metadata.mjs'
       - 'scripts/lib/*.mjs'
-      - 'docs/distribution/release-keys.json'
-      - 'scripts/sync-release-keys.mjs'
       - '.github/workflows/website.yml'
   release:
     types: [published]
@@ -65,7 +61,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          node scripts/sync-release-keys.mjs --check
           node scripts/sync-release-metadata.mjs
 
       - name: Build website

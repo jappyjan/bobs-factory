@@ -1,0 +1,9 @@
+{
+  "state": "acquired; independent full streamed archive verification passed",
+  "archive": "WebKit-2e2aa2290fac856d6f451ceacb58f7f5b44dd057.tar.gz",
+  "archiveSha256": "108dd98cc15bf43debc753cfb597b5635bd936855da2bb48bf0bcacc46881f7d",
+  "entriesVerified": 466297,
+  "largestBlobBytes": 86731388,
+  "allPathsModesSymlinkTargetsAndGitBlobHashesMatch": true,
+  "elapsedSeconds": 16.536690416000056
+}

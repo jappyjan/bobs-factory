@@ -713,6 +713,29 @@ it("upgrades untouched stock planning, preserving customized model settings and 
 			.find((w) => w.id === "factory-pipeline")!
 			.steps.some((s) => s.architectureContract === "architecture-v1"),
 	).toBe(true);
+	const deliveryStock = structuredClone(defaultWorkflows);
+	const savedPipeline = deliveryStock.find((w) => w.id === "factory-pipeline")!;
+	savedPipeline.steps = savedPipeline.steps.filter(
+		(s) => !s.architectureContract && s.tool !== "architecture-decision",
+	);
+	for (const step of savedPipeline.steps) {
+		if (step.next === "architecture") step.next = "implement";
+		for (const branch of step.branches)
+			if (branch.next === "architecture") branch.next = "implement";
+	}
+	const integrated = validateWorkflows(upgradeWorkflows(deliveryStock)).find(
+		(w) => w.id === "factory-pipeline",
+	)!;
+	expect(integrated.steps.find((s) => s.id === "delivery-route")?.next).toBe(
+		"architecture",
+	);
+	expect(integrated.steps.find((s) => s.id === "plan-review")?.next).toBe(
+		"delivery-route",
+	);
+	expect(
+		integrated.steps.find((s) => s.id === "architecture-review")
+			?.architectureContract,
+	).toBe("architecture-review-v1");
 	const customized = structuredClone(defaultWorkflows);
 	customized.find((w) => w.id === "factory-pipeline")!.steps =
 		legacyReviewSteps.map((s) => StepSchema.parse(s));

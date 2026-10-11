@@ -1,0 +1,127 @@
+✖ child cleanup claim verified-pass requires independent native proof (146.322166ms)
+✖ child cleanup claim false-pass-active requires independent native proof (139.077917ms)
+✖ child cleanup claim false-pass-job requires independent native proof (134.070459ms)
+✖ child cleanup claim false-pass-manager-error requires independent native proof (136.028042ms)
+✖ child cleanup claim false-pass-query-error requires independent native proof (136.979875ms)
+✔ child cleanup claim failed-exit requires independent native proof (984.901292ms)
+✔ child cleanup claim SIGINT requires independent native proof (981.789167ms)
+✔ child cleanup claim SIGTERM requires independent native proof (989.821708ms)
+✔ child cleanup claim forced-deadline requires independent native proof (1530.127042ms)
+✖ child cleanup claim missing-receipt requires independent native proof (990.542542ms)
+✖ child cleanup claim malformed-receipt requires independent native proof (138.263292ms)
+✔ child cleanup claim malformed-manifest requires independent native proof (138.743708ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 5
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6497.789792
+
+✖ failing tests:
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:126:2
+✖ child cleanup claim verified-pass requires independent native proof (146.322166ms)
+  AssertionError [ERR_ASSERTION]: A cleanup:true receipt skipped native verification
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review6-proof/docs/distribution/acceptance/owned-fixture.test.mjs:176:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:126:2
+✖ child cleanup claim false-pass-active requires independent native proof (139.077917ms)
+  AssertionError [ERR_ASSERTION]: A cleanup:true receipt skipped native verification
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review6-proof/docs/distribution/acceptance/owned-fixture.test.mjs:176:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:126:2
+✖ child cleanup claim false-pass-job requires independent native proof (134.070459ms)
+  AssertionError [ERR_ASSERTION]: A cleanup:true receipt skipped native verification
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review6-proof/docs/distribution/acceptance/owned-fixture.test.mjs:176:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:126:2
+✖ child cleanup claim false-pass-manager-error requires independent native proof (136.028042ms)
+  AssertionError [ERR_ASSERTION]: A cleanup:true receipt skipped native verification
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review6-proof/docs/distribution/acceptance/owned-fixture.test.mjs:176:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:126:2
+✖ child cleanup claim false-pass-query-error requires independent native proof (136.979875ms)
+  AssertionError [ERR_ASSERTION]: A cleanup:true receipt skipped native verification
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review6-proof/docs/distribution/acceptance/owned-fixture.test.mjs:176:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:126:2
+✖ child cleanup claim missing-receipt requires independent native proof (990.542542ms)
+  AssertionError [ERR_ASSERTION]: Unproven native cleanup must reject a claimed PASS
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review6-proof/docs/distribution/acceptance/owned-fixture.test.mjs:181:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:126:2
+✖ child cleanup claim malformed-receipt requires independent native proof (138.263292ms)
+  AssertionError [ERR_ASSERTION]: A cleanup:true receipt skipped native verification
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review6-proof/docs/distribution/acceptance/owned-fixture.test.mjs:176:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

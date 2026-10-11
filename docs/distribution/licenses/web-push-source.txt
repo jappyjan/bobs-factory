@@ -1,0 +1,5 @@
+web-push@3.6.7 Source Code Form (MPL-2.0)
+The installed package source is bundled without upstream source patches. Obtain the exact unmodified Source Code Form at https://registry.npmjs.org/web-push/-/web-push-3.6.7.tgz . Extract with tar -xzf web-push-3.6.7.tgz in a new directory; source files are package/src and the full license is package/LICENSE.
+SHA256 85774fffee09f70bde084cebcebae20b3cf6f48239f61659e45aed9fd513463e
+Frozen npm integrity sha512-OpiIUe8cuGjrj3mMBFWY+e4MMIkW3SVT+7vEIjvD9kejGUypv8GPDf84JdPWskK8zMRIJ6xYGm+Kxr8YkPyA0A==
+These instructions tell recipients how to obtain MPL Source Code Form. Preserve them and the MPL notice with distribution.

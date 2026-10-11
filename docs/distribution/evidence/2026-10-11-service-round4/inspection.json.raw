@@ -1,0 +1,115 @@
+{
+  "harnessSha": "482e95cbaed55be6e4f01916b0095c77979d2fdc",
+  "runtimeSource": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+  "runId": 38135977321,
+  "jobId": 114459805179,
+  "artifactId": 11700339615,
+  "archiveSha256": "ffc8269fc388f416e4e9e957a61c0a011ed8f53bef9d3b224b0f36bc3ea80e2c",
+  "originalFiles": 94,
+  "main": {
+    "passed": true,
+    "cleanup": true,
+    "survivors": [],
+    "assertions": [
+      "Dormant external Nix-style target definition refuses adoption and retains bytes; fixture-only removal explicitly consented",
+      "Manual process blocks adoption; explicit fixture stop releases ownership",
+      "Actual external user service disabled and stopped before replacement; definition retained",
+      "Interrupted stopped setup restores only missing owned definition; modified definition is refused",
+      "Actual crash recovery delays at least 9s; repeated crashes exhaust StartLimitBurst",
+      "Enable/disable probes actual enrollment; disable drains worker; maintenance resists direct manager start",
+      "Removal retains owned/external definitions, PM2/Nix fixture records and synthetic checkpoint/waiting gate bytes"
+    ],
+    "crashBackoffMs": 11797,
+    "exhaustion": {
+      "unit": "de.bobs-factory.2d91eda5398ab716.service",
+      "properties": {
+        "RestartUSec": "10s",
+        "MainPID": "0",
+        "ControlPID": "0",
+        "Result": "signal",
+        "NRestarts": "4",
+        "ActiveState": "failed",
+        "SubState": "failed",
+        "Job": "",
+        "StartLimitIntervalUSec": "2min",
+        "StartLimitBurst": "3"
+      },
+      "stableMs": 10524
+    }
+  },
+  "helpers": {
+    "linux-user-service.mjs": "db324ec2fe9e5e61a4721d4def135bd552ce87a2d7e238fe1eaae462fea3bb66",
+    "service-protocol.mjs": "daa10e9ba9f9dddcf492e1293e2c53e2fb267c63a961ba45c2b19b6932bce42d",
+    "owned-command.mjs": "dce9c29eff6dcf8268b4c052867f99f7c88639f1b2126d05536270eb734d4751",
+    "owned-cleanup.mjs": "c1a5f41c0e8cf3e7594747dc5e365966a4ada37668d3718176de14541a4e04c7",
+    "owned-command-child.mjs": "821d37058a89756d3e65209d68f51015102a9646b0505f88b4da6edff7f6bc52",
+    "owned-registry.mjs": "9a0ff90f44f2ff34f7c41340ede63d7ee888a041ba32aa2ef2d593bfd5410d74",
+    "owned-fixture.mjs": "5a511cd7ad2a2ddb2b174ecb6da7fbfe5bc1f414c6d3bf23502fd3da3376c566",
+    "manager-wrapper.mjs": "78935566bb6aaea32b0e6d755396b58e0d712ced7530d02dd1a5511ea823201b"
+  },
+  "cases": [
+    {
+      "receipt": "cancel-initial-install-SIGINT.json.raw",
+      "status": 130,
+      "phase": "initial-install",
+      "signal": "SIGINT",
+      "outerTimeout": false,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-initial-install-SIGTERM.json.raw",
+      "status": 143,
+      "phase": "initial-install",
+      "signal": "SIGTERM",
+      "outerTimeout": false,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-manager-mutation-SIGINT.json.raw",
+      "status": 130,
+      "phase": "manager-mutation",
+      "signal": "SIGINT",
+      "outerTimeout": false,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-manager-mutation-SIGTERM.json.raw",
+      "status": 143,
+      "phase": "manager-mutation",
+      "signal": "SIGTERM",
+      "outerTimeout": false,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-healthy-managed-fixture-SIGINT.json.raw",
+      "status": 130,
+      "phase": "healthy-managed-fixture",
+      "signal": "SIGINT",
+      "outerTimeout": false,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-healthy-managed-fixture-SIGTERM.json.raw",
+      "status": 143,
+      "phase": "healthy-managed-fixture",
+      "signal": "SIGTERM",
+      "outerTimeout": false,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-manager-mutation-outer-timeout.json.raw",
+      "status": 143,
+      "phase": "manager-mutation",
+      "signal": "SIGTERM",
+      "outerTimeout": true,
+      "cleanup": true,
+      "survivors": []
+    }
+  ]
+}

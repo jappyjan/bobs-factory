@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import cp from 'node:child_process';
+import {syncBuiltinESMExports} from 'node:module';
+const original=cp.spawn;
+cp.spawn=function(command,args,options){
+ if(!command.includes('/asar-fix-121-20261011/actual-update-fixed6/'))return original(command,args,options);
+ const log=fs.openSync(process.env.BOBS_FACTORY_TRACE_LAUNCH_LOG,'a',0o600);
+ const child=original(command,args,{...options,stdio:['ignore',log,log]});fs.closeSync(log);
+ const record=value=>fs.appendFileSync(process.env.BOBS_FACTORY_TRACE_LAUNCH_EVENTS,JSON.stringify({...value,at:new Date().toISOString()})+'\n');
+ record({command,args,pid:child.pid,env:options.env,event:'start'});
+ child.once('exit',(code,signal)=>record({pid:child.pid,event:'exit',code,signal}));
+ child.once('error',error=>record({pid:child.pid,event:'error',message:error.message}));
+ return child;
+};
+syncBuiltinESMExports();

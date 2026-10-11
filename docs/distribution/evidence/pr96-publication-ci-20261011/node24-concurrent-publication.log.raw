@@ -1,0 +1,40 @@
+✔ prepared validation rejects modified binary bytes, missing gates and different recipes (531.982417ms)
+✔ publisher dry run makes no remote calls and produces candidate-bound assets digest (538.645042ms)
+✔ publisher cancels an unread rejected upload and cleans snapshot while retaining draft (632.409459ms)
+✔ publisher refuses post-validation corrupt-chunk before verified plan (643.516042ms)
+✔ publisher refuses post-validation corrupt-chunk before publication (627.523417ms)
+✔ publisher refuses post-validation unexpected-asset before verified plan (567.747708ms)
+✔ publisher refuses post-validation unexpected-asset before publication (521.406625ms)
+✔ publisher refuses post-validation manifest before publication (530.290417ms)
+✔ publisher refuses post-validation symlink before publication (521.325291ms)
+✔ publisher refuses post-validation mode before publication (520.135375ms)
+✔ publisher uses pinned snapshot despite original corruption during upload (568.142417ms)
+✔ publisher refuses staging corruption during upload (568.171708ms)
+✔ publisher refuses staging-mode corruption during upload (556.321125ms)
+✔ publisher refuses staging-midstream corruption during upload (585.700917ms)
+✔ publisher reconciles tag-after without duplicate immutable mutations (1023.198334ms)
+✔ publisher reconciles draft-after without duplicate immutable mutations (1026.045458ms)
+✔ publisher reconciles upload-after:build-provenance.json without duplicate immutable mutations (1013.266208ms)
+✔ publisher reconciles publish-after without duplicate immutable mutations (997.676917ms)
+✔ partial upload resumes only missing assets and Pages recovery only dispatches synchronization (1956.0505ms)
+✔ conflicting tag, candidate and immutable assets are never replaced (3931.036875ms)
+✔ stable approval binds exact unsigned asset bytes and stable publication sets latest (889.025709ms)
+✔ a newer unsigned stable blocks older tooling before any publication mutation (558.007084ms)
+✔ unverifiable latest nightly blocks preparation and publication (691.619125ms)
+✔ unverifiable latest nightly blocks preparation and publication despite an older verified nightly (699.2375ms)
+✔ stale nightly candidate does not create a tag or draft (509.916167ms)
+✔ independent simulated publisher is isolated from another fixture's publication lock (501.339542ms)
+✔ publication lock rejects overlapping versions and releases after failure (0.760542ms)
+✔ fresh preparation consumes exact artifact ZIPs and produces unsigned inspectable assets without mutations (1448.639375ms)
+✔ chunk publication resumes exact unsigned inventory after upload-before:source-rebuild.tar.gz.part0002 (1298.514875ms)
+✔ chunk publication resumes exact unsigned inventory after upload-after:source-rebuild.tar.gz.part0002 (1313.113459ms)
+✔ chunk publication refuses unexpected remote monolith or missing public chunk (1317.87675ms)
+✔ unsigned publisher → discovery → prepared/offline chunks → updater preserves integrity and rollback (2008.352125ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 27144.006834

@@ -1,8 +1,13 @@
 import { isDeepStrictEqual } from "node:util";
 import { architectureInstructions } from "./Architecture.js";
 import { feedbackPolicyInstructions } from "./FeedbackPolicy.js";
-import { guideMapInstructions } from "./GuideAuthoring.js";
+import {
+	BRIEF_CONTRACT,
+	briefPrompt,
+	briefVideoInstructions,
+} from "./GuideAuthoring.js";
 import { takeoverLaunchFields } from "./LaunchFields.js";
+import { legacyGuidePrompt } from "./legacyGuidePrompt.js";
 import { legacyScreenshotSteps } from "./legacyScreenshotSteps.js";
 import { QA_CONTRACT } from "./Qa.js";
 import { reviewFixInstructions } from "./ReviewRecovery.js";
@@ -62,7 +67,7 @@ const definitions = [
 		icon: "🏭",
 		name: "Software factory",
 		description:
-			"Clarify → plan → architecture decision → implement → draft PR → requirements → specialist review → CI → QA and screenshot review → human guide.",
+			"Clarify and plan, then review architecture before coding and deliver repository, external ticket or mixed work with independent evidence and explicit human acceptance.",
 		labels: ["workflow:factory", "factory"],
 		steps: [
 			agent(
@@ -154,19 +159,11 @@ Open the actual selected screenshots. Return acceptedScreenshots:[{area,state,im
 					" Include independently generated visual-gate findings as well as reviewer findings. Preserve stable dispositions. Rejected complaints require concrete evidence and reviewer reassessment; rejection cannot waive a failed required criterion. After corrections the pipeline returns through code review, CI, QA scope, execution, review and gate. Failed criteria must be retested before the human guide.",
 				{ next: "code-review", qaContract: QA_CONTRACT },
 			),
-			agent(
-				"guide",
-				"Prepare human review guide",
-				`Write a complete, guided human review of the WHOLE PR at the current revision, including work that existed before takeover and every accepted iteration. This is a product walkthrough, not a recap of the last fix. Consume the QA results in capture explicitly: map executed story/criterion evidence to requirement and chapter evidence. A passed label alone cannot support a requirement. Disclose blocked checks, fixture/tooling limitations, consequential findings and retained nonblocking observations. First read /progress/reviewScope, the clarified requirements, decisions, accepted plan and cumulative capture inventory through factory-context. Inspect the actual base-to-head PR diff, grouping changes by feature/purpose rather than file or review iteration. The first guide always covers the entire feature. Put the core behavior first, consequences next, and supporting changes last.
-Return {"goal":"user goal, at most 30 words","summary":"whole-PR outcome, at most 30 words","decision":{"status":"ready or needs-attention or blocked","summary":"at most 30 words"},"chapters":[{"id":"stable-feature-id","title":"short feature name","summary":"what changed and why, at most 40 words","before":"short original behavior","after":"short new behavior","requirementIndexes":[0],"files":["exact changed repository-relative file"],"screenshots":[{"area":"exact capture area","state":"exact capture state","caption":"what the human should notice"}],"diagrams":[{"title":"how this feature works","steps":[{"label":"short stage","detail":"one short sentence"}]}],"reviewChecks":["specific, short thing to verify"],"risks":["material limitation of this feature"],"evidence":["technical references/test receipts for expandable details"]}],"requirements":[{"criterion":"complete original acceptance criterion","status":"supported or gap or unverified or waived","evidence":["actual evidence"]}],"behavior":[{"scenario":"...","before":"...","after":"..."}],"checks":["actual checks, distinguish current-head CI from earlier local test receipts"],"risks":["material limitations and retained disagreements"],"reviewInstructions":["short final decision checks"]}.
-Produce a small set of cohesive chapters (usually 4-10), one changed thing per chapter. Each requirement must be assigned to at least one chapter using zero-based requirementIndexes. Account for all changed files in chapter files, including tests/migrations/docs and inherited takeover work; supporting files may share a chapter. Use exact relative paths, no globs. Use real cumulative screenshots attached to their relevant chapter, not arbitrary first images or local Markdown image URLs. Keep the whole accepted inventory discoverable, but choose only the useful captures for each chapter. Explain nonvisual processing with a short flow diagram where it helps (e.g. input -> captured terms -> billing -> receipt); diagrams describe the product, not the factory pipeline. No decorative diagrams or invented evidence. Use everyday words; IDs, SHAs, long code descriptions and raw receipts belong in expandable evidence. Disclose fixture/hardware limitations and rejected scope complaints clearly.
-On repeats, update affected chapters and retain unchanged feature chapters, requirements and evidence. A short revision summary may supplement a complete previous guide ONLY when a previous guide was actually human-reviewed and the actual change is a verified typo/documentation-only correction of at most 10 lines with no behavior, visual, dependency or configuration change. Never replace full feature coverage with the revision delta. Set revisionSummary=true and previousHeadSha only for that case, and put its short delta in revisionNote while summary still describes the entire feature. Require fresh explicit human approval of the current revision. Do not modify product code, recapture screenshots, rerun implementation or merge. Human-only merge blockers are remaining human actions, not unsupported implementation requirements.
-Every new guide MUST also include purpose-written compact content: tldr (nonblank, <=90 characters); decision.summaryShort (<=160 characters); every chapter has tldr (<=70), beforeShort and afterShort (<=50 each), risk:{level:"low"|"medium"|"high",text:<=70 characters}, keyChecks:[{do:<=60 characters,expect:<=60 characters}] (1-3 pairs). Do not truncate long prose to produce these fields. Missing fields block publication and require guide-only output correction even with an older accepted prompt. Keep full explanations in the existing fields for expandable detail.
-${guideMapInstructions}
-Optional chapter flow:{title,steps:[{label,detail}]} has 2-8 stages (label <=60, detail <=300 characters), and systemPartIds references whole-guide system:{lanes:[{id,name}],parts:[{id,label,laneId,status:"new"|"changed"|"unchanged"|"legacy"}],before:[{source,target,label?,weak?}],after:[{source,target,label?,weak?}]}. IDs are stable and unique. Connection identity is its directed source/target pair; combine multiple labels for one pair. Lanes/part labels <=60, connection labels <=50 characters; use 1-3 word labels. Screenshot references may include device:"Desktop"|"Mobile"|"Email"|"Reader" and language only when known from accepted evidence. Do not author reviewFiles; the runtime binds the exact whole-PR snapshot.
-`,
-				{ next: "handoff", qaContract: QA_CONTRACT },
-			),
+			agent("guide", "Prepare human review brief", briefPrompt, {
+				next: "handoff",
+				qaContract: QA_CONTRACT,
+				guideContract: BRIEF_CONTRACT,
+			}),
 			tool("handoff", "Verify revision and hand off", "handoff", {
 				branches: [{ when: { path: "fix", equals: true }, next: "ci-fix" }],
 				next: "human-review",
@@ -212,7 +209,10 @@ for (const step of pipeline.steps) {
 	Object.assign(step, { videoContract: "video-v1" });
 	if ("prompt" in step) {
 		previousVideoPrompts.set(step.id, step.prompt);
-		step.prompt += videoPrompts[step.id] ?? "";
+		step.prompt +=
+			"guideContract" in step
+				? briefVideoInstructions
+				: (videoPrompts[step.id] ?? "");
 	}
 }
 
@@ -253,6 +253,7 @@ function installSpecialists(steps: Record<string, any>[]) {
 			step.prompt += inventoryQaInstructions;
 		if (
 			step.id === "guide" &&
+			!step.guideContract &&
 			!step.prompt.includes(inventoryGuideInstructions)
 		)
 			step.prompt += inventoryGuideInstructions;
@@ -280,6 +281,8 @@ const architectureSteps = [
 	}),
 	{
 		...oldPlanReview,
+		id: "architecture-review",
+		name: "Review architecture candidate",
 		prompt:
 			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Assess repository evidence, decisions and their options, the map, plain-language readability, the short plan steps and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
 		architectureContract: "architecture-review-v1",
@@ -294,11 +297,12 @@ const architectureSteps = [
 		{
 			arguments: {
 				proposal: "architecture",
-				review: "plan-review",
+				review: "architecture-review",
 				planOutput: "plan",
 				revise: "architecture",
 				approval: "meaningful",
 			},
+			next: "implement",
 			branches: [
 				{ when: { path: "decision", equals: "revise" }, next: "architecture" },
 			],
@@ -306,11 +310,137 @@ const architectureSteps = [
 	),
 ];
 pipeline.steps.splice(
-	pipeline.steps.findIndex((s) => s.id === "plan-review"),
-	1,
+	pipeline.steps.findIndex((s) => s.id === "implement"),
+	0,
 	...architectureSteps,
 );
 
+// Install only in newly accepted stock definitions; saved run snapshots are never rewritten.
+const deliveryInstructions = ` Delivery mode comes from accepted requirements: repository (including repository docs/config), external (ticket content/relationships), or mixed. Never infer it from an empty diff. No repository changes may authorize external edits; execution deferral remains separate. Runtime owns lifecycle status/comments and PR links. External review follows authorized application and independent verification. Missing integration access blocks execution.`;
+for (const step of pipeline.steps) {
+	if (["clarify", "plan", "plan-review"].includes(step.id) && "prompt" in step)
+		step.prompt += deliveryInstructions;
+	if (step.id === "clarify" && "prompt" in step)
+		step.prompt +=
+			' Include deliveryMode:"repository"|"external"|"mixed". Do not ask to authorize unrelated repository implementation for external tasks.';
+	if (step.id === "plan" && "prompt" in step)
+		step.prompt += ` Include deliveryContract:{format:"delivery-v1",version:1,mode:"repository"|"external"|"mixed",authorization:{status:"authorized"|"deferred",reference:"actual instruction/answer reference"},executionReference:"digest supplied in deliveryExecutionReference",targets:[{key:"stable target ID",resource:{provider:"linear",instance:"https://linear.app",workspaceId:"configured workspace",project:"immutable project or team ID",id:"immutable UUID",url:"verified URL"} OR {provider:"taskbot",server:"configured server",instance:"exact HTTPS origin",project:"project slug",id:"numeric ID as string",url:"exact URL"},capabilities:["read","content","relationships"],baseline:{fields:{title:"observed title",description:"complete observed content"},relationships:[{type:"blocks"|"related",from:"immutable ID",to:"immutable ID"}]},operations:[{id:"stable operation ID",kind:"content",fields:{description:"full desired content"}} OR {id:"stable ID",kind:"add"|"remove",relationship:{type:"blocks"|"related",from:"ID",to:"ID"}}],criteria:[{id:"stable criterion",requirementRef:"accepted requirement reference",description:"observable acceptance criterion",fields:{description:"full expected content"},relationships:[],absentRelationships:[]}],preservedRelationships:[]}]}. Repository mode uses targets:[]; external/mixed need complete targets. Fetch complete before-state and verify coordinates through configured integrations. Do not mutate. Store no credentials. Include full expected fields and preserved relationships. On correction increment version and use new operation IDs for changed intents; retain already-applied history.`;
+	if (step.id === "plan-review" && "prompt" in step)
+		step.prompt +=
+			" Confirm delivery mode, target identities, authorization, complete baseline, allowed operations and every criterion. Return deliveryContractDigest using the supplied deliveryCandidateDigest only when approving that exact contract. Incomplete or contradictory contracts cannot be approved.";
+
+	if (step.id === "merge")
+		Object.assign(step, {
+			branches: [
+				...("branches" in step ? (step.branches as any[]) : []),
+				{
+					when: { path: "externalPending", equals: true },
+					next: "external-final",
+				},
+			],
+		});
+}
+// Mixed feedback renews the external contract before repository work resumes.
+const initialHumanReview = pipeline.steps.find((s) => s.id === "human-review")!;
+for (const branch of (initialHumanReview as Record<string, any>).branches)
+	if (branch.when.path === "decision" && branch.when.equals === "reject")
+		branch.next = "delivery-feedback-route";
+const planReview = pipeline.steps.find((s) => s.id === "plan-review")!;
+Object.assign(planReview, { next: "delivery-route" });
+(pipeline.steps as Record<string, any>[]).push(
+	tool(
+		"delivery-feedback-route",
+		"Route requested delivery corrections",
+		"delivery-mode",
+		{
+			branches: [
+				{
+					when: { path: "mode", equals: "mixed" },
+					next: "external-correction",
+				},
+			],
+			next: "human-fix",
+		},
+	),
+	tool(
+		"delivery-route",
+		"Validate accepted delivery contract",
+		"delivery-route",
+		{
+			branches: [
+				{ when: { path: "deferred", equals: true }, next: "delivery-deferred" },
+				{ when: { path: "mode", equals: "external" }, next: "external-apply" },
+				{ when: { path: "mode", equals: "mixed" }, next: "external-apply" },
+			],
+			next: "architecture",
+		},
+	),
+	agent(
+		"delivery-deferred",
+		"Resolve execution deferral",
+		"The accepted delivery contract defers execution. Do not mutate tickets or files. Ask whether the named external/repository task should remain deferred or may proceed. Return questions while the deferral remains. Read answers; only explicit authorization may return questions:[], then the planner and plan reviewer renew the contract. Never infer execution permission from scope answers.",
+		{ askQuestions: true, next: "plan" },
+	),
+	tool("external-apply", "Apply authorized ticket changes", "external-apply", {
+		next: "external-verify",
+	}),
+	tool(
+		"external-verify",
+		"Independently verify ticket state",
+		"external-verify",
+		{ next: "external-after-verify" },
+	),
+	tool(
+		"external-after-verify",
+		"Route verified deliverables",
+		"delivery-mode",
+		{
+			branches: [
+				{
+					when: { path: "repositoryComplete", equals: true },
+					next: "external-guide",
+				},
+				{ when: { path: "mode", equals: "mixed" }, next: "architecture" },
+			],
+			next: "external-guide",
+		},
+	),
+	tool("external-guide", "Prepare external review", "external-guide", {
+		next: "external-human-review",
+	}),
+	tool(
+		"external-human-review",
+		"Accept completed external work",
+		"human-review",
+		{
+			branches: [
+				{
+					when: { path: "decision", equals: "reject" },
+					next: "external-correction",
+				},
+			],
+			next: "external-final",
+		},
+	),
+	agent(
+		"external-correction",
+		"Plan requested ticket corrections",
+		"Read humanDecisions, the accepted delivery contract, operation receipts and verified state. Applied changes remain; rejection does not roll them back. Preserve feedback and before/after history. Do not mutate tickets or repository files, commit or push. Before repository merge, summarize both ticket and repository feedback for the revised plan; preserve existing repository work and let implementation apply the reviewed corrections. After repository merge, corrections on this path concern external deliverables only. Confirmed repository merges remain retained. Repository changes requested after merge need a separate follow-up, never replay publication or merge. Summarize the requested corrections for a revised plan and independent plan review.",
+		{ next: "plan" },
+	),
+	tool("external-final", "Check accepted external state", "external-final", {
+		branches: [
+			{ when: { path: "drift", equals: true }, next: "external-reverify" },
+		],
+		next: "end",
+	}),
+	tool(
+		"external-reverify",
+		"Verify changed external state",
+		"external-verify",
+		{ next: "external-guide" },
+	),
+);
 export const defaultWorkflows = validateWorkflows([
 	definitions[0],
 	{
@@ -365,11 +495,13 @@ export const defaultWorkflows = validateWorkflows([
 /** Upgrade the original flat Factory definition without losing customized roles. */
 const legacyVisualPrompts: Record<string, string[]> = {
 	guide: [
-		// Recognize the QA stock guide saved before compact content was required.
-		defaultWorkflows
-			.find((workflow) => workflow.id === "factory-pipeline")!
-			.steps.find((step) => step.id === "guide")!
-			.prompt!.split("\nEvery new guide MUST")[0]!,
+		// Chapter-guide stock prompts, as saved by each earlier release.
+		legacyGuidePrompt + videoPrompts.guide + inventoryGuideInstructions,
+		legacyGuidePrompt + videoPrompts.guide,
+		legacyGuidePrompt + inventoryGuideInstructions,
+		legacyGuidePrompt,
+		// The QA stock guide saved before compact content was required.
+		legacyGuidePrompt.split("\nEvery new guide MUST")[0]!,
 		`Write a complete, guided human review of the WHOLE PR at the current revision, including work that existed before takeover and every accepted iteration. This is a product walkthrough, not a recap of the last fix. First read /progress/reviewScope, the clarified requirements, decisions, accepted plan and cumulative capture inventory through factory-context. Inspect the actual base-to-head PR diff, grouping changes by feature/purpose rather than file or review iteration. The first guide always covers the entire feature. Put the core behavior first, consequences next, and supporting changes last.
 Return {"goal":"user goal, at most 30 words","summary":"whole-PR outcome, at most 30 words","decision":{"status":"ready or needs-attention or blocked","summary":"at most 30 words"},"chapters":[{"id":"stable-feature-id","title":"short feature name","summary":"what changed and why, at most 40 words","before":"short original behavior","after":"short new behavior","requirementIndexes":[0],"files":["exact changed repository-relative file"],"screenshots":[{"area":"exact capture area","state":"exact capture state","caption":"what the human should notice"}],"diagrams":[{"title":"how this feature works","steps":[{"label":"short stage","detail":"one short sentence"}]}],"reviewChecks":["specific, short thing to verify"],"risks":["material limitation of this feature"],"evidence":["technical references/test receipts for expandable details"]}],"requirements":[{"criterion":"complete original acceptance criterion","status":"supported or gap or unverified or waived","evidence":["actual evidence"]}],"behavior":[{"scenario":"...","before":"...","after":"..."}],"checks":["actual checks, distinguish current-head CI from earlier local test receipts"],"risks":["material limitations and retained disagreements"],"reviewInstructions":["short final decision checks"]}.
 Produce a small set of cohesive chapters (usually 4-10), one changed thing per chapter. Each requirement must be assigned to at least one chapter using zero-based requirementIndexes. Account for all changed files in chapter files, including tests/migrations/docs and inherited takeover work; supporting files may share a chapter. Use exact relative paths, no globs. Use real cumulative screenshots attached to their relevant chapter, not arbitrary first images or local Markdown image URLs. Keep the whole accepted inventory discoverable, but choose only the useful captures for each chapter. Explain nonvisual processing with a short flow diagram where it helps (e.g. input -> captured terms -> billing -> receipt); diagrams describe the product, not the factory pipeline. No decorative diagrams or invented evidence. Use everyday words; IDs, SHAs, long code descriptions and raw receipts belong in expandable evidence. Disclose fixture/hardware limitations and rejected scope complaints clearly.
@@ -445,29 +577,61 @@ export function upgradeWorkflows(value: unknown): unknown {
 		// Upgrade only untouched stock planning paths; operator edits remain deliberate.
 		const savedPlan = steps.find((s) => s.id === "plan");
 		const savedReview = steps.find((s) => s.id === "plan-review");
+		const deliveryStock = [
+			"plan",
+			"plan-review",
+			"delivery-route",
+			"external-after-verify",
+		].every((id) => {
+			const saved = steps.find((s) => s.id === id);
+			const stock = StepSchema.parse(pipeline.steps.find((s) => s.id === id)!);
+			if (stock.next === "architecture") stock.next = "implement";
+			for (const branch of stock.branches ?? [])
+				if (branch.next === "architecture") branch.next = "implement";
+			return (
+				saved &&
+				isDeepStrictEqual(StepSchema.parse(saved), StepSchema.parse(stock))
+			);
+		});
 		if (
 			!steps.some(
 				(s) => s.architectureContract || s.tool === "architecture-decision",
 			) &&
 			savedPlan &&
 			savedReview &&
-			[oldPlan.prompt, previousPlanPrompt].some(
-				(prompt) =>
+			(deliveryStock ||
+				([oldPlan.prompt, previousPlanPrompt].some(
+					(prompt) =>
+						isDeepStrictEqual(
+							StepSchema.parse({ ...savedPlan, prompt: oldPlan.prompt }),
+							StepSchema.parse(oldPlan),
+						) && savedPlan.prompt === prompt,
+				) &&
 					isDeepStrictEqual(
-						StepSchema.parse({ ...savedPlan, prompt: oldPlan.prompt }),
-						StepSchema.parse(oldPlan),
-					) && savedPlan.prompt === prompt,
-			) &&
-			isDeepStrictEqual(
-				StepSchema.parse(savedReview),
-				StepSchema.parse(oldPlanReview),
-			)
+						StepSchema.parse(savedReview),
+						StepSchema.parse(oldPlanReview),
+					)))
 		) {
-			steps.splice(
-				steps.indexOf(savedReview),
-				1,
-				...structuredClone(architectureSteps),
-			);
+			if (deliveryStock) {
+				steps.splice(
+					steps.findIndex((s) => s.id === "implement"),
+					0,
+					...structuredClone(architectureSteps),
+				);
+				for (const id of ["delivery-route", "external-after-verify"]) {
+					const route = steps.find((s) => s.id === id)!;
+					const stock = StepSchema.parse(
+						pipeline.steps.find((s) => s.id === id)!,
+					);
+					route.next = stock.next;
+					route.branches = structuredClone(stock.branches);
+				}
+			} else
+				steps.splice(
+					steps.indexOf(savedReview),
+					1,
+					...structuredClone(architectureSteps),
+				);
 		}
 		const stockQa = defaultWorkflows.find(
 			(w) => w.id === "factory-pipeline",
@@ -528,6 +692,9 @@ export function upgradeWorkflows(value: unknown): unknown {
 					qaContract: stock.qaContract,
 					...(stock.videoContract
 						? { videoContract: stock.videoContract }
+						: {}),
+					...(stock.guideContract
+						? { guideContract: stock.guideContract }
 						: {}),
 					branches: structuredClone(
 						step.id === "handoff" ? (step.branches ?? []) : stock.branches,

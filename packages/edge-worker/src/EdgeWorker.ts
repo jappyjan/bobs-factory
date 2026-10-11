@@ -17,7 +17,11 @@ import {
 	ClaudeRunner,
 	normalizeMcpHttpTransport,
 } from "bobs-factory-claude-runner";
-import { CodexRunner, callCodexMcpTool } from "bobs-factory-codex-runner";
+import {
+	CodexRunner,
+	callCodexMcpTool,
+	listCodexMcpTools,
+} from "bobs-factory-codex-runner";
 import { ConfigUpdater } from "bobs-factory-config-updater";
 import type {
 	AgentActivityCreateInput,
@@ -144,6 +148,7 @@ import {
 	FactoryContextInfrastructureError,
 	type FailureModesHttpClient,
 	factoryContextInstructions,
+	listConfiguredTools,
 	prepareFactoryContext,
 	type ResolvedSession,
 	verifyFactoryContext,
@@ -177,6 +182,7 @@ import {
 	ArchitectureSchema,
 	assertRevisionChanges,
 } from "./factory/Architecture.js";
+import { TicketDelivery, type TicketTarget } from "./factory/Delivery.js";
 import {
 	executionCapabilities,
 	validateProfileRunner,
@@ -214,13 +220,13 @@ import { isPullRequestSource } from "./factory/GitProviderReference.js";
 import { confirmedGroupedMerge } from "./factory/GroupedTools.js";
 import {
 	attachRequirementCoverage,
-	validateGuideCoverage,
-	validateGuideGeneration,
+	stampGuideContract,
+	validateGuide,
 } from "./factory/Guide.js";
 import {
 	completedAgentResult,
 	incrementalInstructions,
-	incrementalRoleInstructions,
+	roleInstructions,
 	roleProgress,
 } from "./factory/Incremental.js";
 import { issueSnapshot } from "./factory/issueSnapshot.js";
@@ -239,6 +245,15 @@ import {
 	confirmedMerge,
 	pendingMergeConfirmation,
 } from "./factory/MergeRecovery.js";
+import { OperatorConfiguration } from "./factory/OperatorConfiguration.js";
+import { OperatorGrants } from "./factory/OperatorGrants.js";
+import { OperatorServer } from "./factory/OperatorServer.js";
+import { OperatorError, OperatorService } from "./factory/OperatorService.js";
+import {
+	checkOperatorTransport,
+	inspectOperatorTransport,
+	operatorSanitize,
+} from "./factory/OperatorTransport.js";
 import {
 	OutputValidationError,
 	outputValidationError,
@@ -290,6 +305,10 @@ import {
 	type TakeoverPullRequest,
 	ticketIdentifier,
 } from "./factory/Takeover.js";
+import {
+	linearDeliveryAdapter,
+	taskbotDeliveryAdapter,
+} from "./factory/TicketDeliveryAdapters.js";
 import {
 	ensureTicketTranscript,
 	nativeAdapter,
@@ -357,6 +376,7 @@ import { LinearActivitySink } from "./sinks/LinearActivitySink.js";
 import { ToolPermissionResolver } from "./ToolPermissionResolver.js";
 import type { AgentSessionData, EdgeWorkerEvents } from "./types.js";
 import { UserAccessControl } from "./UserAccessControl.js";
+import { UpdateDrain } from "./updates/UpdateDrain.js";
 import { ZulipChatAdapter } from "./ZulipChatAdapter.js";
 
 export declare interface EdgeWorker {
@@ -417,6 +437,8 @@ export class EdgeWorker extends EventEmitter {
 	private preparationStarts = new Map<string, AbortController>();
 	private stopping = false;
 	private factoryServer?: FactoryServer;
+	private operatorServer?: OperatorServer;
+	private operatorSecrets = new Set<string>();
 	private factoryPush?: FactoryPush;
 	private factoryChat = new SessionChat();
 	private chatContinuations = new Set<string>();
@@ -427,6 +449,7 @@ export class EdgeWorker extends EventEmitter {
 	/** @internal - Exposed for testing only */
 	public repositoryRouter: RepositoryRouter; // Repository routing and selection
 	private gitService: GitService;
+	private updateDrain?: UpdateDrain;
 	private activeWebhookCount = 0; // Track number of webhooks currently being processed
 	// GitHub webhook handlers share a PR worktree, so only one may run per PR.
 	private activeGitHubPrSessions = new Set<string>();
@@ -812,8 +835,60 @@ export class EdgeWorker extends EventEmitter {
 	 * Start the edge worker
 	 */
 	async start(): Promise<void> {
-		await this.runnerSlots.ready();
 		const factory = this.getFactoryRuntime();
+		this.updateDrain = new UpdateDrain(
+			this.factoryHome,
+			factory,
+			this.runnerSlots,
+			() =>
+				this.computeStatus() === "busy" ||
+				Boolean(this.ticketTracking?.isBusy()) ||
+				this.inFlightTicketStarts.size > 0 ||
+				this.preparationStarts.size > 0,
+			() => this.recoverAfterUpdate(),
+			() =>
+				this.getAllKnownSessions()
+					.map((session) => ({
+						id: session.id,
+						workspace: session.workspace.path,
+						claude: session.claudeSessionId,
+						codex: session.codexSessionId,
+						cursor: session.cursorSessionId,
+						gemini: session.geminiSessionId,
+						opencode: session.opencodeSessionId,
+						executionSnapshot: session.metadata?.executionSnapshot,
+						pendingExecution: session.metadata?.pendingExecution,
+						pendingChatMessages: session.metadata?.pendingChatMessages,
+					}))
+					.sort((a, b) => a.id.localeCompare(b.id)),
+			(active) => this.getTicketTracking().setUpdateMaintenance(active),
+		);
+		const intake = (request: { method: string; url: string }) =>
+			!["GET", "HEAD"].includes(request.method) &&
+			(/^\/(?:linear|github|gitlab|slack|zulip)-webhook(?:\?|$)/.test(
+				request.url,
+			) ||
+				/^\/webhook(?:\?|$)/.test(request.url) ||
+				request.url.startsWith("/cli/") ||
+				request.url.startsWith("/api/update/"));
+		const application = this.sharedApplicationServer.getFastifyInstance();
+		application.addHook("onRequest", async (request, reply) => {
+			if (!intake(request)) return;
+			if (this.updateDrain?.active())
+				return reply
+					.code(503)
+					.header("Retry-After", "30")
+					.send({ error: "Factory update maintenance; retry after restart" });
+			this.updateDrain?.enter(request);
+		});
+		application.addHook("onResponse", async (request) => {
+			this.updateDrain?.leave(request);
+		});
+		application.addHook("onError", async (request) => {
+			this.updateDrain?.leave(request);
+		});
+
+		await this.runnerSlots.ready();
 		await this.runnerSlots.reconcileQueue((identity) => {
 			const prefix = `${factory.directory}:run:`;
 			if (!identity.startsWith(prefix)) return false;
@@ -993,6 +1068,7 @@ export class EdgeWorker extends EventEmitter {
 			this.factoryPush ??= new FactoryPush(this.factoryHome);
 			this.factoryServer = new FactoryServer(this.getFactoryRuntime(), {
 				onboarding: this.localSetup,
+				updateDrain: this.updateDrain,
 				push: this.factoryPush,
 				capacity: this.runnerSlots,
 				deliveryStatus: () =>
@@ -1106,18 +1182,7 @@ export class EdgeWorker extends EventEmitter {
 				start: (input) => this.startManualFactoryRun(input),
 				followup: (id, feedback) => this.startFactoryFollowup(id, feedback),
 				retryTitle: (id) => this.retryRunTitle(id),
-				stop: (id) => {
-					this.settleTicketLaunch(id);
-					this.factoryRuntime?.runs.has(id) && this.factoryRuntime.stop(id);
-					this.cancelRunTitle(id);
-					const chatHandler = this.chatHandlerForSession(id);
-					if (chatHandler) chatHandler.stopSession(id);
-					else {
-						this.agentSessionManager.requestSessionStop(id);
-						this.titleSession(id)?.agentRunner?.stop();
-					}
-					void this.savePersistedState();
-				},
+				stop: (id) => this.stopFactoryOperatorRun(id),
 			});
 			await this.factoryServer.start(
 				Number(process.env.BOBS_FACTORY_FACTORY_PORT),
@@ -1126,6 +1191,148 @@ export class EdgeWorker extends EventEmitter {
 				`Software factory UI: http://127.0.0.1:${process.env.BOBS_FACTORY_FACTORY_PORT}`,
 			);
 		}
+		const runtime = this.getFactoryRuntime();
+		const grants = new OperatorGrants(this.factoryHome);
+		const configuration = new OperatorConfiguration(
+			this.factoryHome,
+			runtime,
+			() => this.configPath,
+			async (run) => {
+				const resolved = await this.factoryMcpConfig(run);
+				return {
+					allowed: resolved.built.config.allowedTools,
+					denied: resolved.built.config.disallowedTools,
+				};
+			},
+			(id, paths, allowed) => {
+				const repo = this.repositories.get(id);
+				return (
+					JSON.stringify(repo?.mcpConfigPath) === JSON.stringify(paths) &&
+					JSON.stringify(repo?.allowedTools) === JSON.stringify(allowed)
+				);
+			},
+			() => this.configManager.reload(),
+		);
+		const service = new OperatorService(
+			runtime,
+			{
+				chat: (id) => this.factoryChatState(id),
+				message: (id, text, messageId) =>
+					this.sendFactoryChat(id, text, messageId),
+				stop: (id) => this.stopFactoryOperatorRun(id),
+				mcp: (run) =>
+					this.runnerSlots.run(
+						async () => {
+							const resolved = await this.factoryMcpConfig(run);
+							let configRevision: string | undefined,
+								configurationError: string | undefined;
+							try {
+								configRevision = configuration.revision(run);
+							} catch {
+								configurationError = "unsupported_source";
+							}
+							return {
+								instance: grants.instance(),
+								configRevision,
+								configurationError,
+								...inspectOperatorTransport(run, resolved),
+							};
+						},
+						AbortSignal.timeout(15000),
+						{
+							identity: `${this.factoryHome}:operator-inspect:${run.id}:${randomUUID()}`,
+						},
+					),
+				check: (run, server) => {
+					const signal = AbortSignal.timeout(15000);
+					return this.runnerSlots.run(
+						async () => ({
+							instance: grants.instance(),
+							...(await checkOperatorTransport(
+								run,
+								await this.factoryMcpConfig(run),
+								server,
+								signal,
+							)),
+						}),
+						signal,
+						{
+							identity: `${this.factoryHome}:operator-check:${run.id}:${randomUUID()}`,
+						},
+					);
+				},
+				sanitize: (text) => {
+					const sources: unknown[] = [
+						{
+							headers: Object.fromEntries(
+								[...this.operatorSecrets].map((secret, i) => [
+									String(i),
+									secret,
+								]),
+							),
+						},
+						this.config,
+						{
+							env: Object.fromEntries(
+								Object.entries(process.env).filter(([key]) =>
+									/TOKEN|SECRET|PASSWORD|KEY|COOKIE|AUTH/i.test(key),
+								),
+							),
+						},
+					];
+					for (const repo of this.repositories.values())
+						for (const path of repo.mcpConfigPath
+							? Array.isArray(repo.mcpConfigPath)
+								? repo.mcpConfigPath
+								: [repo.mcpConfigPath]
+							: []) {
+							try {
+								sources.push(JSON.parse(readFileSync(path, "utf8")));
+							} catch {}
+						}
+					return operatorSanitize(text, sources);
+				},
+				update: async (run, input) => {
+					const result = await configuration.update(run, input);
+					if (result.applied) {
+						const resolved = await this.factoryMcpConfig(run);
+						const server = resolved.servers[input.server];
+						const verified =
+							!!server &&
+							"url" in server &&
+							server.url === input.connection.url &&
+							input.permissions.every((tool: string) => {
+								try {
+									assertFactoryToolAllowed(
+										`mcp__${input.server}__${tool}`,
+										resolved.built.config.allowedTools,
+										resolved.built.config.disallowedTools,
+									);
+									return true;
+								} catch {
+									return false;
+								}
+							});
+						if (!verified)
+							return {
+								...result,
+								applied: false,
+								appliedRevision: undefined,
+								error: {
+									code: "reload_failure",
+									message:
+										"Saved configuration is not effective for this run. Inspect source precedence and permissions.",
+								},
+							};
+					}
+					return result;
+				},
+			},
+			grants.instance(),
+			this.updateDrain,
+		);
+		this.operatorServer = new OperatorServer(grants, service);
+		await this.operatorServer.start();
 		// 1. Platform-specific initialization
 		if (this.config.platform === "cli") {
 			// CLI mode: ensure a CLIIssueTrackerService exists for each repo workspace.
@@ -1253,6 +1460,10 @@ export class EdgeWorker extends EventEmitter {
 			this.sharedApplicationServer.getFastifyInstance(),
 			this.factoryHome,
 			() => process.env.BOBS_FACTORY_API_KEY || "",
+			(work) =>
+				this.runnerSlots.run(work, AbortSignal.timeout(30000), {
+					identity: `${this.factoryHome}:dashboard-mcp-check:${randomUUID()}`,
+				}),
 		);
 
 		// Register config update routes
@@ -3311,6 +3522,7 @@ ${taskSection}`;
 		await this.titleGenerator?.shutdown();
 		this.ticketTracking?.stop();
 		await this.factoryRuntime?.shutdown();
+		await this.operatorServer?.stop();
 		await this.factoryServer?.stop();
 		// Stop config file watcher
 		await this.configManager.stop();
@@ -4220,9 +4432,23 @@ ${taskSection}`;
 			);
 			teardownService = this.gitService.withEnvironment(resolved.environment);
 		}
-		await teardownService.deleteWorktree(message.workItemIdentifier, {
-			repositories: teardownRepositories,
-		});
+		const owningRun = sessions
+			.map((session) => this.factoryRuntime?.runs.get(session.id))
+			.filter((run): run is FactoryRun => !!run)
+			.sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))[0];
+		await setupExecutionScope.run(
+			{
+				signal: new AbortController().signal,
+				service: this.runnerSlots,
+				capacity: owningRun
+					? this.factoryRuntime!.capacityOptions(owningRun, "teardown")
+					: undefined,
+			},
+			() =>
+				teardownService.deleteWorktree(message.workItemIdentifier, {
+					repositories: teardownRepositories,
+				}),
+		);
 
 		this.logger.info(
 			`Completed cleanup for ${message.workItemIdentifier}: stopped ${sessions.length} session(s)`,
@@ -5394,7 +5620,14 @@ ${taskSection}`;
 			throw new Error("This ticket launch was stopped");
 	}
 
+	private recoverAfterUpdate(): void {
+		if (this.updateDrain?.active()) return;
+		this.recoverFactoryRuns();
+		this.recoverPendingTicketLaunches();
+	}
+
 	private recoverPendingTicketLaunches(): void {
+		if (this.updateDrain?.active()) return;
 		for (const receipt of this.getLaunchAdmission().values()) {
 			if (receipt.phase === "pending") {
 				void this.startAcceptedTicketLaunch(receipt, [
@@ -5591,11 +5824,14 @@ ${taskSection}`;
 		repos: RepositoryConfig[],
 	): Promise<void> {
 		if (
+			this.updateDrain?.active() ||
 			this.inFlightTicketStarts.has(receipt.key) ||
 			receipt.phase === "settled"
 		)
 			return;
 		this.inFlightTicketStarts.add(receipt.key);
+		const operation = {};
+		this.updateDrain?.enter(operation);
 		const { webhook } = receipt;
 		this.pendingTriggerOrigins.set(receipt.sessionId, receipt.origin);
 		try {
@@ -5621,8 +5857,12 @@ ${taskSection}`;
 				`${error instanceof Error ? error.message : String(error)}${phase === "recovery" ? " Startup was interrupted; ownership is retained to prevent duplicate work. Inspect the existing session, or send stop before launching a new session." : " Check the workflow ID, labels, default and ticket-assignment permission in Recipes; no fallback was launched."}`,
 			);
 		} finally {
-			this.inFlightTicketStarts.delete(receipt.key);
-			await this.savePersistedState();
+			try {
+				await this.savePersistedState();
+			} finally {
+				this.inFlightTicketStarts.delete(receipt.key);
+				this.updateDrain?.leave(operation);
+			}
 		}
 	}
 
@@ -7249,7 +7489,13 @@ ${taskSection}`;
 
 	private getFactoryRuntime(): WorkflowRuntime {
 		if (!this.factoryRuntime) {
+			const delivery = new TicketDelivery(
+				(run, target) => this.factoryDeliveryAdapter(run, target),
+				(run) =>
+					this.getFactoryRuntime().save(this.getFactoryRuntime().get(run.id)),
+			);
 			const tools = new FactoryTools({
+				ticketDelivery: delivery,
 				postComment: (id, body) =>
 					this.postFactoryComment(this.getFactoryRuntime().get(id), body),
 				mcp: (context, server, tool) =>
@@ -7565,6 +7811,12 @@ ${taskSection}`;
 			(run) => this.getFactoryRuntime().save(run),
 			(run, message) =>
 				this.getFactoryRuntime().log(run, "ticket-sync", message),
+			(run) =>
+				new TicketDelivery(
+					(r, t) => this.factoryDeliveryAdapter(r, t),
+					(r) =>
+						this.getFactoryRuntime().save(this.getFactoryRuntime().get(r.id)),
+				).finalCheck(run, true),
 		);
 		return this.ticketTracking;
 	}
@@ -7592,6 +7844,19 @@ ${taskSection}`;
 					}
 				: configured;
 		});
+	}
+
+	private stopFactoryOperatorRun(id: string) {
+		this.settleTicketLaunch(id);
+		if (this.factoryRuntime?.runs.has(id)) this.factoryRuntime.stop(id);
+		this.cancelRunTitle(id);
+		const chatHandler = this.chatHandlerForSession(id);
+		if (chatHandler) chatHandler.stopSession(id);
+		else {
+			this.agentSessionManager.requestSessionStop(id);
+			this.titleSession(id)?.agentRunner?.stop();
+		}
+		void this.savePersistedState();
 	}
 
 	private async factoryMcpConfig(run: FactoryRun) {
@@ -7634,59 +7899,185 @@ ${taskSection}`;
 			run.workspace || repository.repositoryPath,
 			this.logger,
 		);
-		return {
-			built,
-			servers,
-			callTool: async (
-				serverName: string,
-				tool: string,
-				args: Record<string, unknown>,
-				signal: AbortSignal,
-			) => {
-				assertFactoryToolAllowed(
-					`mcp__${serverName}__${tool}`,
-					built.config.allowedTools,
-					built.config.disallowedTools,
-				);
-				const server = servers[serverName];
-				if (!server || server.type === "sdk")
-					throw new Error(
-						`MCP server ${serverName} is not configured as a process/HTTP transport`,
-					);
-				try {
-					const result =
-						runnerType === "codex" && "url" in server
-							? await callCodexMcpTool(
-									{ ...built.config, workingDirectory: run.workspace },
+		for (const server of Object.values(servers)) {
+			if (!("headers" in server)) continue;
+			for (const value of Object.values(server.headers ?? {})) {
+				if (!value.includes("${") && value) this.operatorSecrets.add(value);
+				for (const ref of value.matchAll(/\$\{([A-Z][A-Z0-9_]*)\}/g)) {
+					const secret = built.config.childEnvironment
+						? built.config.childEnvironment[ref[1]!]
+						: process.env[ref[1]!];
+					if (secret) this.operatorSecrets.add(secret);
+				}
+			}
+		}
+		const request = (
+			serverName: string,
+			tool: string | undefined,
+			args: Record<string, unknown>,
+			signal: AbortSignal,
+		) =>
+			this.runnerSlots.run(
+				async () => {
+					if (tool !== undefined)
+						assertFactoryToolAllowed(
+							`mcp__${serverName}__${tool}`,
+							built.config.allowedTools,
+							built.config.disallowedTools,
+						);
+					const server = servers[serverName];
+					if (!server || server.type === "sdk")
+						throw new Error(
+							`MCP server ${serverName} is not configured as a process/HTTP transport`,
+						);
+					const transport =
+						"url" in server && server.headers
+							? {
+									...server,
+									headers: Object.fromEntries(
+										Object.entries(server.headers ?? {}).map(([key, value]) => [
+											key,
+											value.replace(
+												/\$\{([A-Z][A-Z0-9_]*)\}/g,
+												(_match, name: string) => {
+													const secret = built.config.childEnvironment
+														? built.config.childEnvironment[name]
+														: process.env[name];
+													if (!secret)
+														throw new OperatorError(
+															"missing_authentication",
+															"A configured header credential reference is unavailable in the accepted execution environment",
+														);
+													return secret;
+												},
+											),
+										]),
+									),
+								}
+							: server;
+
+					try {
+						const nativeConfig = {
+							...built.config,
+							workingDirectory: run.workspace || repository.repositoryPath,
+						};
+						const directConfig =
+							"command" in server
+								? {
+										...server,
+										env: { ...server.env, ...executionEnvironment() },
+									}
+								: transport;
+						if (tool === undefined) {
+							if (runnerType === "codex" && "url" in server)
+								await listCodexMcpTools(
+									nativeConfig,
 									serverName,
-									server,
-									tool,
-									args,
+									transport,
 									signal,
-								)
-							: await callConfiguredTool(
-									"command" in server
-										? {
-												...server,
-												env: { ...server.env, ...executionEnvironment() },
-											}
-										: server,
-									tool,
-									args,
+								);
+							else
+								await listConfiguredTools(
+									directConfig,
 									signal,
 									run.workspace || repository.repositoryPath,
 									built.config.childEnvironment,
 								);
-					return execution
-						? JSON.parse(execution.redact(JSON.stringify(result)))
-						: result;
-				} catch (error) {
-					throw new Error(
-						execution ? execution.redact(String(error)) : String(error),
-					);
-				}
+							return;
+						}
+						const result =
+							runnerType === "codex" && "url" in server
+								? await callCodexMcpTool(
+										nativeConfig,
+										serverName,
+										transport,
+										tool,
+										args,
+										signal,
+									)
+								: await callConfiguredTool(
+										directConfig,
+										tool,
+										args,
+										signal,
+										run.workspace || repository.repositoryPath,
+										built.config.childEnvironment,
+									);
+						return execution
+							? JSON.parse(execution.redact(JSON.stringify(result)))
+							: result;
+					} catch (error) {
+						throw new Error(
+							execution ? execution.redact(String(error)) : String(error),
+						);
+					}
+				},
+				signal,
+				{ identity: `${this.factoryHome}:mcp:${run.id}:${randomUUID()}` },
+			);
+		return {
+			built,
+			servers,
+			runnerType,
+			callTool: (
+				server: string,
+				tool: string,
+				args: Record<string, unknown>,
+				signal: AbortSignal,
+			) => request(server, tool, args, signal),
+			listTools: async (server: string, signal: AbortSignal) => {
+				await request(server, undefined, {}, signal);
 			},
 		};
+	}
+	private async factoryDeliveryAdapter(run: FactoryRun, target: TicketTarget) {
+		const config = await this.factoryMcpConfig(run);
+		if (target.provider === "linear") {
+			if (run.executionSnapshot?.identity || run.executionSnapshot?.tools)
+				throw new Error(
+					"Native Linear ticket delivery requires the retained Legacy integration binding; selected explicit profiles do not declare native tracker credentials. Use a reviewed Legacy run or restore a supported binding; native credentials will not be silently substituted.",
+				);
+			assertFactoryToolAllowed(
+				"mcp__linear__get_issue",
+				config.built.config.allowedTools,
+				config.built.config.disallowedTools,
+			);
+			assertFactoryToolAllowed(
+				"mcp__linear__save_issue",
+				config.built.config.allowedTools,
+				config.built.config.disallowedTools,
+			);
+			const tracker = this.issueTrackers.get(target.workspaceId);
+			if (!tracker) throw new Error("Accepted Linear workspace unavailable");
+			return linearDeliveryAdapter(target, tracker);
+		}
+		if (taskbotServer(target.instance, config.servers) !== target.server)
+			throw new Error("Accepted Taskbot instance/server mismatch");
+		const required = ["get_ticket", "update_ticket", "link", "unlink"];
+		const allowed = required.filter((tool) => {
+			try {
+				assertFactoryToolAllowed(
+					`mcp__${target.server}__${tool}`,
+					config.built.config.allowedTools,
+					config.built.config.disallowedTools,
+				);
+				return true;
+			} catch {
+				return false;
+			}
+		});
+		return taskbotDeliveryAdapter(
+			target,
+			(tool, args) =>
+				config.callTool(target.server, tool, args, AbortSignal.timeout(60000)),
+			[
+				...(allowed.includes("get_ticket") ? ["read" as const] : []),
+				...(allowed.includes("update_ticket") ? ["content" as const] : []),
+				...(allowed.includes("link") && allowed.includes("unlink")
+					? ["relationships" as const]
+					: []),
+			],
+		);
 	}
 	private async factoryTicketAdapter(run: FactoryRun): Promise<TicketAdapter> {
 		const ref = TicketReferenceSchema.parse(run.ticketReference);
@@ -8110,7 +8501,7 @@ ${taskSection}`;
 
 		// Review fixers and QA roles can request assistance without askQuestions;
 		// saved recipes must receive the same question guidance as new ones.
-		const instruction = `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${step.prompt}\n${repositoryScopeInstructions(run)}\nGit provider: ${JSON.stringify(run.gitProvider ?? { gitProvider: repository.gitProvider, githubUrl: repository.githubUrl, gitlabUrl: repository.gitlabUrl })}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${run.gitProvider?.type === "custom" ? (run.gitProvider.instructions ?? "") : repository.gitProvider?.type === "custom" ? (repository.gitProvider.instructions ?? "") : ""}\nOriginating ticket: ${run.ticketReference ? JSON.stringify(run.ticketReference) : "none"}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${questionInstructions(run.id)}\n${workflowTriggerInstructions}\n${incrementalInstructions}\n${incrementalRoleInstructions[step.id] ?? ""}\n${["code-review", "visual-review"].includes(step.id) || ["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") ? reviewCompletionInstructions : ""}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
+		const instruction = `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${step.prompt}\n${repositoryScopeInstructions(run)}\nGit provider: ${JSON.stringify(run.gitProvider ?? { gitProvider: repository.gitProvider, githubUrl: repository.githubUrl, gitlabUrl: repository.gitlabUrl })}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${run.gitProvider?.type === "custom" ? (run.gitProvider.instructions ?? "") : repository.gitProvider?.type === "custom" ? (repository.gitProvider.instructions ?? "") : ""}\nOriginating ticket: ${run.ticketReference ? JSON.stringify(run.ticketReference) : "none"}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${questionInstructions(run.id)}\n${workflowTriggerInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${["code-review", "visual-review"].includes(step.id) || ["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") ? reviewCompletionInstructions : ""}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
 		const built = await this.buildAgentRunnerConfig(
 			session,
 			repository,
@@ -8488,7 +8879,10 @@ ${taskSection}`;
 		try {
 			let output = validateContractOutput(
 				context,
-				step.askQuestions ? normalizeQuestionResult(value) : value,
+				stampGuideContract(
+					step,
+					step.askQuestions ? normalizeQuestionResult(value) : value,
+				),
 			);
 			if (step.architectureContract === "architecture-v1") {
 				output = ArchitectureSchema.parse(output);
@@ -8523,10 +8917,7 @@ ${taskSection}`;
 				);
 				if (issues.length) throw new Error(issues.join("; "));
 			}
-			if (step.id === "guide") {
-				validateGuideGeneration(output);
-				validateGuideCoverage(context, output);
-			}
+			if (step.id === "guide") validateGuide(context, output);
 			if (step.id === "ci-fix") {
 				this.refreshFactoryFeedbackContext(context);
 				output = validateFactoryResult(step.id, output);
@@ -9452,6 +9843,7 @@ ${taskSection}`;
 	}
 
 	private recoverFactoryRuns(): void {
+		if (this.updateDrain?.active()) return;
 		const runtime = this.getFactoryRuntime();
 		for (const run of runtime.runs.values()) {
 			void this.recoverFactoryTicketTracking(run);

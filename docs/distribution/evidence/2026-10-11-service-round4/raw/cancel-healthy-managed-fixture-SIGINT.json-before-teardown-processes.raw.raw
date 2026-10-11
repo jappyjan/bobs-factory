@@ -1,0 +1,2 @@
+  11491    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-kRCiyD/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-kRCiyD/state --port 42407 --no-open service run
+  11493    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-kRCiyD/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-kRCiyD/state --port 42407 --no-open service updates-run

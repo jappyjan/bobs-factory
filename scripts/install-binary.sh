@@ -51,6 +51,10 @@ for required in bobs-factory LICENSE NOTICE build.json THIRD_PARTY_NOTICES.txt; 
 done
 tar -tvzf "$archive" | LC_ALL=C grep -Ev '^[-d]' > /dev/null && { echo 'Links or special files in archive' >&2; exit 1; }
 umask 077
+case "$prefix" in /*) ;; *) echo 'Install prefix must be absolute' >&2; exit 1;; esac
+for path in "$prefix" "$prefix/lib" "$prefix/lib/bobs-factory" "$prefix/lib/bobs-factory/records" "$prefix/bin"; do
+  [ ! -L "$path" ] || { echo 'Installer directories must not be symlinks' >&2; exit 1; }
+done
 mkdir -p "$prefix/lib/bobs-factory" "$prefix/bin"
 versions=$(cd "$prefix/lib/bobs-factory" && pwd)
 lock="$versions/.install-lock"
@@ -73,6 +77,10 @@ tar -xzf "$archive" -C "$stage"
 [ "$(field "$stage/$name/build.json" commit)" = "$commit" ] || { echo 'Build source mismatch' >&2; exit 1; }
 [ "$(field "$stage/$name/build.json" version)" = "$version" ] || { echo 'Build version mismatch' >&2; exit 1; }
 [ "$(field "$stage/$name/build.json" target)" = "$target" ] || { echo 'Build target mismatch' >&2; exit 1; }
+if [ -n "${BOBS_FACTORY_INSTALL_CANDIDATE_DIGEST:-}" ]; then
+  [ "$(field "$stage/$name/build.json" candidateDigest)" = "$BOBS_FACTORY_INSTALL_CANDIDATE_DIGEST" ] || { echo 'Build candidate mismatch' >&2; exit 1; }
+  [ "$(field "$stage/$name/build.json" workflowSha)" = "$BOBS_FACTORY_INSTALL_WORKFLOW_SHA" ] || { echo 'Build tooling mismatch' >&2; exit 1; }
+fi
 [ "$(sha256 "$stage/$name/bobs-factory")" = "$(field "$stage/$name/build.json" sha256)" ] || { echo 'Executable integrity failure' >&2; exit 1; }
 [ "$(wc -c < "$stage/$name/bobs-factory" | tr -d ' ')" = "$(number "$stage/$name/build.json" size)" ] || { echo 'Executable size mismatch' >&2; exit 1; }
 chmod 755 "$stage/$name/bobs-factory"
@@ -82,6 +90,22 @@ if [ -e "$versions/$name" ] || [ -L "$versions/$name" ]; then
   diff -qr "$stage/$name" "$versions/$name" >/dev/null || { echo 'Immutable version differs from verified archive; refusing overwrite' >&2; exit 1; }
 else
   mv "$stage/$name" "$versions/$name"
+fi
+channel=${BOBS_FACTORY_INSTALL_CHANNEL:-manual}
+source=${BOBS_FACTORY_INSTALL_SOURCE:-archive}
+key_id=
+case "$channel" in stable|nightly|beta|manual) ;; *) echo 'Invalid installer channel' >&2; exit 1;; esac
+case "$source" in bootstrap|archive) ;; *) echo 'Invalid installer source' >&2; exit 1;; esac
+mkdir -p "$versions/records"
+record="$versions/records/$name.json"
+record_stage="$stage/$name.install.json"
+printf '{\n  "schemaVersion": 1,\n  "product": "bobs-factory",\n  "owner": "bobs-factory-installer",\n  "source": "%s",\n  "channel": "%s",\n  "version": "%s",\n  "target": "%s",\n  "commit": "%s",\n  "publisherKeyId": "%s"\n}\n' \
+  "$source" "$channel" "$version" "$target" "$commit" "$key_id" > "$record_stage"
+[ ! -L "$record" ] || { echo 'Ownership record must not be a symlink' >&2; exit 1; }
+if [ -e "$record" ]; then
+  diff -q "$record_stage" "$record" >/dev/null || { echo 'Existing installer ownership record differs; refusing to replace it' >&2; exit 1; }
+else
+  mv "$record_stage" "$record"
 fi
 if [ -L "$prefix/bin/bobs-factory" ] && [ "$(readlink "$prefix/bin/bobs-factory")" != "$versions/$name/bobs-factory" ]; then
   readlink "$prefix/bin/bobs-factory" > "$stage/previous-link"

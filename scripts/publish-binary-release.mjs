@@ -23,11 +23,13 @@ import {
 	validateArchive,
 	validateArtifactZip,
 	validateBuildProvenance,
+	validateDesktopReceipt,
 	validateEvidence,
 	validateIdentity,
 	validateLatestVersion,
 	validateNativeHelpers,
 	validatePreparedAgentBoundaries,
+	validatePublicInstaller,
 	validatePublicRepository,
 	validateReleaseManifest,
 } from "./lib/binary-release.mjs";
@@ -37,7 +39,9 @@ import {
 	requireVerifiedNightlyHistory,
 } from "./lib/github-release.mjs";
 import { validatePreparedRelease } from "./lib/prepared-release.mjs";
+import { snapshotPublicationAssets } from "./lib/publication-assets.mjs";
 import { withPublicationLock } from "./lib/publication-lock.mjs";
+import { receiptArchive } from "./lib/receipt-archive.mjs";
 import {
 	candidateIdentity,
 	nightlyEligibility,
@@ -46,9 +50,9 @@ import {
 } from "./lib/release-candidate.mjs";
 import { publishPreparedRelease } from "./lib/release-publication.mjs";
 import {
-	signManifest,
-	verifyManifestSignature,
-} from "./lib/release-signature.mjs";
+	GITHUB_ASSET_LIMIT,
+	splitSourceArchive,
+} from "./lib/source-transport.mjs";
 
 const { values } = parseArgs({
 	options: {
@@ -60,7 +64,6 @@ const { values } = parseArgs({
 		publish: { type: "boolean", default: false },
 		resume: { type: "boolean", default: false },
 		approval: { type: "string" },
-		"key-id": { type: "string" },
 	},
 });
 requireValue(
@@ -224,7 +227,16 @@ if (!values.resume) {
 			join(extracted, "runtime-smoke.txt"),
 			join(assets, `runtime-smoke-${target}.txt`),
 		);
-		for (const receipt of ["native-helpers", "prepared-agent-boundaries"])
+		validatePublicInstaller(
+			JSON.parse(readFileSync(join(extracted, "public-installer.json"))),
+			identity,
+			target,
+		);
+		for (const receipt of [
+			"native-helpers",
+			"prepared-agent-boundaries",
+			"public-installer",
+		])
 			copyFileSync(
 				join(extracted, `${receipt}.json`),
 				join(assets, `${receipt}-${target}.json`),
@@ -244,10 +256,13 @@ if (!values.resume) {
 	}
 	for (const script of ["install.sh", "install-binary.sh"])
 		copyFileSync(join(root, "scripts", script), join(assets, script));
-	copyFileSync(
-		join(evidenceDirectory, "source-rebuild.tar.gz"),
-		join(assets, "source-rebuild.tar.gz"),
-	);
+	const sourcePath = join(evidenceDirectory, evidence.source.file);
+	const sourceTransport =
+		evidence.source.size >= GITHUB_ASSET_LIMIT
+			? splitSourceArchive(sourcePath, evidence.source, assets)
+			: undefined;
+	if (!sourceTransport)
+		copyFileSync(sourcePath, join(assets, evidence.source.file));
 	copyFileSync(evidencePath, join(assets, "release-evidence.json"));
 	const receiptFiles = new Set();
 	function collectReceipts(value) {
@@ -258,22 +273,16 @@ if (!values.resume) {
 	collectReceipts(evidence);
 	const receiptsDirectory = join(output, "receipts");
 	mkdirSync(receiptsDirectory);
-	copyFileSync(
-		join(assets, "source-rebuild.tar.gz"),
-		join(receiptsDirectory, "source-rebuild.tar.gz"),
-	);
+
 	for (const file of receiptFiles) {
 		const destination = join(receiptsDirectory, file);
 		mkdirSync(dirname(destination), { recursive: true });
 		writeFileSync(destination, readFileSync(join(evidenceDirectory, file)));
 	}
-	execFileSync("tar", [
-		"-czf",
+	writeFileSync(
 		join(assets, "validation-receipts.tar.gz"),
-		"-C",
-		receiptsDirectory,
-		...[...receiptFiles].sort(),
-	]);
+		receiptArchive(receiptsDirectory, receiptFiles),
+	);
 	writeFileSync(
 		join(assets, "build-provenance.json"),
 		jsonBytes({
@@ -284,8 +293,43 @@ if (!values.resume) {
 		}),
 	);
 	copyFileSync(resolve(values.candidate), join(assets, "candidate.json"));
+	if (evidence.desktop) {
+		for (const item of evidence.desktop.artifacts ?? []) {
+			for (const record of [
+				item.archive,
+				...(item.updateArchive ? [item.updateArchive] : []),
+				item.updateMetadata,
+				item.validation,
+			]) {
+				requireValue(
+					/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(record?.file) &&
+						!existsSync(join(assets, record.file)),
+					"Unsafe or conflicting delivered desktop filename",
+				);
+				const actual = fileRecord(
+					join(evidenceDirectory, record.file),
+					record.file,
+				);
+				requireValue(
+					actual.sha256 === record.sha256 && actual.size === record.size,
+					"Delivered desktop integrity mismatch",
+				);
+				copyFileSync(
+					join(evidenceDirectory, record.file),
+					join(assets, record.file),
+				);
+			}
+			validateDesktopReceipt(
+				JSON.parse(readFileSync(join(assets, item.validation.file))),
+				identity,
+				item.target,
+			);
+		}
+	}
 	const release = validateReleaseManifest({
 		schemaVersion: 2,
+		publicInstallerValidation: 1,
+		...(evidence.desktop ? { desktop: evidence.desktop } : {}),
 		product: "bobs-factory",
 		repository: REPOSITORY,
 		status: "available",
@@ -301,10 +345,12 @@ if (!values.resume) {
 			join(assets, "install-binary.sh"),
 			"install-binary.sh",
 		),
-		source: fileRecord(
-			join(assets, "source-rebuild.tar.gz"),
-			"source-rebuild.tar.gz",
-		),
+		source: {
+			file: evidence.source.file,
+			sha256: evidence.source.sha256,
+			size: evidence.source.size,
+		},
+		...(sourceTransport ? { sourceTransport } : {}),
 		targets,
 		assets: readdirSync(assets)
 			.sort()
@@ -321,125 +367,122 @@ requireValue(
 	release.buildRunId === identity.runId,
 	"Prepared build run differs from requested run",
 );
-if (
-	!existsSync(join(assetsDirectory, "release.json.sig")) &&
-	process.env.BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE
-) {
-	const signature = signManifest(
-		manifestBytes,
-		readFileSync(process.env.BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE),
-		values["key-id"],
-	);
-	writeFileSync(join(assetsDirectory, "release.json.sig"), signature, {
-		flag: "wx",
-	});
-	writeFileSync(
-		join(assetsDirectory, "release.json.key-id"),
-		`${values["key-id"]}\n`,
-		{ flag: "wx" },
-	);
-}
-const signed = existsSync(join(assetsDirectory, "release.json.sig"));
-if (signed)
-	verifyManifestSignature(
-		manifestBytes,
-		readFileSync(join(assetsDirectory, "release.json.sig")),
-		readFileSync(join(assetsDirectory, "release.json.key-id"), "utf8").trim(),
-	);
-const records = readdirSync(assetsDirectory)
-	.sort()
-	.map((file) => fileRecord(join(assetsDirectory, file), file));
-const assetsDigest = sha256(jsonBytes(records));
-writeFileSync(
-	join(output, "publication-plan.json"),
-	jsonBytes({
-		dryRun: !values.publish,
-		...identity,
-		assetsDigest,
-		assets: records,
-		signature: signed ? "verified" : "blocked: signing key not provisioned",
-	}),
+// Preserve immutable historical sidecars as ordinary inventory bytes; new
+// preparation emits none. This never verifies or claims a publisher signature.
+const historicalSidecars = {};
+for (const file of ["release.json.sig", "release.json.key-id"])
+	if (existsSync(join(assetsDirectory, file)))
+		historicalSidecars[file] = readFileSync(join(assetsDirectory, file));
+const snapshot = snapshotPublicationAssets(
+	assetsDirectory,
+	manifestBytes,
+	historicalSidecars,
 );
-if (!values.publish) {
-	console.log(
-		`Prepared ${candidate.digest}, assets ${assetsDigest}. ${signed ? "Signature verified" : "Signing is a rollout blocker"}. No remote mutation.`,
+try {
+	const records = snapshot.records;
+	const assetsDigest = sha256(jsonBytes(records));
+	writeFileSync(
+		join(output, "publication-plan.json"),
+		jsonBytes({
+			dryRun: !values.publish,
+			...identity,
+			assetsDigest,
+			assets: records,
+			integrity: "github-https-sha256",
+			publisherSignature: Object.keys(historicalSidecars).length
+				? "historical-unverified"
+				: "none",
+		}),
 	);
-} else {
-	requireValue(signed, "Publication blocked: signed manifest required");
-	requireValue(
-		process.env.BOBS_FACTORY_RELEASE_PUBLICATION_LOCK === "repository",
-		"Publication requires repository-wide concurrency lock",
-	);
-	if (identity.channel === "stable") {
-		requireValue(
-			values.approval,
-			"Stable publication requires candidate-bound approval file",
+	if (!values.publish) {
+		console.log(
+			`Prepared ${candidate.digest}, assets ${assetsDigest}. SHA256/size inventory validated; no publisher signature. No remote mutation.`,
 		);
-		const approval = JSON.parse(readFileSync(resolve(values.approval), "utf8"));
+	} else {
 		requireValue(
-			approval.candidateDigest === candidate.digest &&
-				approval.assetsDigest === assetsDigest &&
-				typeof approval.approvedBy === "string" &&
-				approval.approvedBy.trim(),
-			"Stable approval does not bind exact candidate and prepared assets",
+			process.env.BOBS_FACTORY_RELEASE_PUBLICATION_LOCK === "repository",
+			"Publication requires repository-wide concurrency lock",
 		);
-	} else
-		requireValue(
-			process.env.BOBS_FACTORY_AUTOMATIC_NIGHTLIES === "enabled",
-			"Nightly rollout has not been separately enabled",
-		);
-	const recheck = async () => {
-		const state = await discoverReleases(client);
 		if (identity.channel === "stable") {
-			for (const release of state.published.filter((r) => !r.prerelease))
-				validateLatestVersion(identity.version, release);
-		} else {
-			const mainSha = (await api("git/ref/heads/main")).object.sha;
-			const last = requireVerifiedNightlyHistory(state);
-			const relation =
-				last && last.manifest.commit !== identity.commit
-					? await api(`compare/${last.manifest.commit}...${identity.commit}`)
-					: null;
-			const result = nightlyEligibility({
-				mainSha,
-				candidateSha: identity.commit,
-				last: last
-					? {
-							commit: last.manifest.commit,
-							publishedAt: last.release.published_at,
-						}
-					: null,
-				isDescendant: relation?.status === "ahead",
-				now: Date.now(),
-			});
-			if (result.status !== "eligible") {
-				if (result.status === "blocked") throw new Error(result.reason);
-				throw new PublicationSkip(result);
-			}
 			requireValue(
-				identity.sequence >
-					Number(last?.manifest.version.split(".").at(-1) ?? 0),
-				"Nightly ordering regressed",
+				values.approval,
+				"Stable publication requires candidate-bound approval file",
 			);
+			const approval = JSON.parse(
+				readFileSync(resolve(values.approval), "utf8"),
+			);
+			requireValue(
+				approval.candidateDigest === candidate.digest &&
+					approval.assetsDigest === assetsDigest &&
+					typeof approval.approvedBy === "string" &&
+					approval.approvedBy.trim(),
+				"Stable approval does not bind exact candidate and prepared assets",
+			);
+		} else
+			requireValue(
+				process.env.BOBS_FACTORY_AUTOMATIC_NIGHTLIES === "enabled",
+				"Nightly rollout has not been separately enabled",
+			);
+		const recheck = async () => {
+			const state = await discoverReleases(client);
+			if (identity.channel === "stable") {
+				for (const release of state.published.filter((r) => !r.prerelease))
+					validateLatestVersion(identity.version, release);
+			} else {
+				const mainSha = (await api("git/ref/heads/main")).object.sha;
+				const last = requireVerifiedNightlyHistory(state);
+				const relation =
+					last && last.manifest.commit !== identity.commit
+						? await api(`compare/${last.manifest.commit}...${identity.commit}`)
+						: null;
+				const result = nightlyEligibility({
+					mainSha,
+					candidateSha: identity.commit,
+					last: last
+						? {
+								commit: last.manifest.commit,
+								publishedAt: last.release.published_at,
+							}
+						: null,
+					isDescendant: relation?.status === "ahead",
+					now: Date.now(),
+				});
+				if (result.status !== "eligible") {
+					if (result.status === "blocked") throw new Error(result.reason);
+					throw new PublicationSkip(result);
+				}
+				requireValue(
+					identity.sequence >
+						Number(last?.manifest.version.split(".").at(-1) ?? 0),
+					"Nightly ordering regressed",
+				);
+			}
+		};
+		let skipped = false;
+		try {
+			await withPublicationLock(() =>
+				publishPreparedRelease({
+					client,
+					manifest: release,
+					records,
+					assetsDirectory: snapshot.directory,
+					receiptPath: join(output, "publication-receipt.json"),
+					recheck,
+				}),
+			);
+		} catch (error) {
+			if (error instanceof PublicationSkip) {
+				console.log(JSON.stringify({ status: "skipped", ...error.result }));
+				skipped = true;
+			} else {
+				throw error;
+			}
 		}
-	};
-	try {
-		await withPublicationLock(() =>
-			publishPreparedRelease({
-				client,
-				manifest: release,
-				records,
-				assetsDirectory,
-				receiptPath: join(output, "publication-receipt.json"),
-				recheck,
-			}),
-		);
-	} catch (error) {
-		if (error instanceof PublicationSkip) {
-			console.log(JSON.stringify({ status: "skipped", ...error.result }));
-			process.exit(0);
-		}
-		throw error;
+		if (!skipped)
+			console.log(
+				"Publication confirmed; discovery synchronization dispatched.",
+			);
 	}
-	console.log("Publication confirmed; discovery synchronization dispatched.");
+} finally {
+	snapshot.cleanup();
 }

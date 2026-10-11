@@ -1,0 +1,19 @@
+✔ retained standalone helper resolves its full module closure and runs recovery without repository modules (598.97775ms)
+✔ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (1440.194ms)
+(node:38276) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ macOS complete-app staging preserves actual quarantine without changing byte identity (152.913084ms)
+✔ macOS complete-app replacement and rollback preserves actual quarantine without changing byte identity (269.531792ms)
+✔ macOS complete-app interrupted recovery preserves actual quarantine without changing byte identity (277.324084ms)
+✔ historical beta inventory validates old bytes and emits only additive integrity (422.83ms)
+✔ legacy identity rejects new manifest, evidence and source claims without rewriting old bytes (270.736167ms)
+✔ beta attestation refuses retained manifest swap at approval boundary (288.108917ms)
+✔ beta attestation refuses retained manifest swap at output boundary (298.696584ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2094.230667

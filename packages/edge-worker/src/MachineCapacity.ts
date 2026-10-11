@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import {
 	mkdir,
 	open,
@@ -11,11 +12,13 @@ import {
 	writeFile,
 } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { promisify } from "node:util";
 import {
 	type CapacityOwner,
+	type CapacityWorkflow,
+	CapacityWorkflowSchema,
 	executionScope,
 	CapacityOwnerSchema as Owner,
 	type CapacityRequest as PersistedCapacityRequest,
@@ -23,6 +26,8 @@ import {
 	CapacityStateSchema as State,
 } from "bobs-factory-core";
 import { z } from "zod";
+
+import { orderWorkflowPositions } from "./CapacityOrdering.js";
 
 export const DEFAULT_MACHINE_CAPACITY = 4;
 export type CapacityRequest = PersistedCapacityRequest;
@@ -40,6 +45,7 @@ export interface CapacitySnapshot {
 }
 export interface CapacityOptions {
 	identity?: string;
+	workflowRun?: CapacityWorkflow;
 	recoverable?: boolean;
 	background?: boolean;
 	remote?: boolean;
@@ -134,6 +140,21 @@ export async function assertLegacyCapacityDrained(
 }
 /** One durable pool per factory instance, shared by workers using the same home. */
 export class MachineCapacity implements ExecutionCapacity {
+	/** Reuse active role ownership; otherwise retain a durable lease through cleanup. */
+	async run<T>(
+		work: () => Promise<T>,
+		signal?: AbortSignal,
+		options?: CapacityOptions,
+	): Promise<T> {
+		signal?.throwIfAborted();
+		if (executionScope.getStore()) return work();
+		const lease = await this.acquireLease(signal, options);
+		try {
+			return await lease.run(work);
+		} finally {
+			await lease.release();
+		}
+	}
 	readonly directory: string;
 	private owner!: CapacityOwner;
 	private initialized: Promise<void>;
@@ -283,15 +304,21 @@ export class MachineCapacity implements ExecutionCapacity {
 				if (request.recoverable) request.phase = "queued";
 				else state.requests = state.requests.filter((item) => item !== request);
 			}
+			for (const request of state.requests)
+				request.admissionPosition ??= request.sequence;
 			const result = await update(state);
+			State.parse(state);
 			while (
+				!existsSync(
+					join(dirname(this.directory), "updates", "admission-paused"),
+				) &&
 				state.requests.filter((r) => r.phase !== "queued").length < state.limit
 			) {
 				const eligible: CapacityRequest[] = [];
 				for (const r of state.requests)
 					if (r.phase === "queued" && !r.parked && (await isLiving(r.owner)))
 						eligible.push(r);
-				eligible.sort((a, b) => a.sequence - b.sequence);
+				orderWorkflowPositions(eligible);
 				const background = eligible.find((r) => r.background);
 				const next =
 					background && state.bypass >= 8
@@ -386,6 +413,53 @@ export class MachineCapacity implements ExecutionCapacity {
 			);
 		});
 	}
+	async pauseAdmissionsForUpdate(
+		transactionId: string,
+	): Promise<CapacitySnapshot> {
+		await this.initialized;
+		await this.transaction(async (state) => {
+			// Observational barrier: never signal descendants to make an update idle.
+			for (const request of state.requests) {
+				if (
+					request.phase !== "queued" ||
+					(await descendants(request.token)).length
+				)
+					throw new Error(
+						"Active capacity leases/descendants still exist; update remains pending",
+					);
+			}
+			const marker = join(
+				dirname(this.directory),
+				"updates",
+				"admission-paused",
+			);
+			await mkdir(dirname(marker), { recursive: true, mode: 0o700 });
+			if (existsSync(marker)) {
+				if (readFileSync(marker, "utf8") !== transactionId)
+					throw new Error("Another update owns capacity maintenance");
+			} else
+				await writeFile(marker, transactionId, {
+					flag: "wx",
+					mode: 0o600,
+					flush: true,
+				});
+		});
+		return this.lastSnapshot!;
+	}
+	async resumeAdmissionsAfterUpdate(transactionId: string): Promise<void> {
+		await this.initialized;
+		await this.transaction(async () => {
+			const marker = join(
+				dirname(this.directory),
+				"updates",
+				"admission-paused",
+			);
+			if (!existsSync(marker)) return;
+			if (readFileSync(marker, "utf8") !== transactionId)
+				throw new Error("Capacity maintenance transaction mismatch");
+			await unlink(marker);
+		});
+	}
 	async setLimit(value: number): Promise<void> {
 		z.number().int().positive().parse(value);
 		await this.initialized;
@@ -399,23 +473,46 @@ export class MachineCapacity implements ExecutionCapacity {
 		signal?: AbortSignal,
 		options: CapacityOptions = {},
 	): Promise<CapacityLease> {
+		const workflow =
+			options.workflowRun === undefined
+				? undefined
+				: CapacityWorkflowSchema.parse(options.workflowRun);
 		await this.initialized;
 		signal?.throwIfAborted();
 		if (this.closing) throw new Error("Capacity worker shutting down");
 		let request!: CapacityRequest;
 		await this.transaction(async (state) => {
 			signal?.throwIfAborted();
-			const existing =
-				options.identity &&
-				state.requests.find((r) => r.identity === options.identity);
+			const existing = options.identity
+				? state.requests.find((r) => r.identity === options.identity)
+				: undefined;
 			if (
 				existing &&
 				(existing.phase !== "queued" ||
 					(!existing.parked && (await living(existing.owner))))
 			)
 				throw new Error(`Duplicate capacity execution: ${options.identity}`);
+			if (
+				workflow &&
+				state.requests.some(
+					(r) =>
+						r.workflowRun?.identity === workflow.identity &&
+						Date.parse(r.workflowRun.createdAt) !==
+							Date.parse(workflow.createdAt),
+				)
+			)
+				throw new Error("Conflicting capacity workflow age");
+			if (
+				existing?.workflowRun &&
+				workflow &&
+				(existing.workflowRun.identity !== workflow.identity ||
+					Date.parse(existing.workflowRun.createdAt) !==
+						Date.parse(workflow.createdAt))
+			)
+				throw new Error("Conflicting capacity workflow metadata");
 			if (existing) {
 				request = existing;
+				request.workflowRun ??= workflow;
 				request.owner = this.owner;
 				request.token = randomUUID();
 				request.parked = false;
@@ -425,6 +522,8 @@ export class MachineCapacity implements ExecutionCapacity {
 					token: randomUUID(),
 					owner: this.owner,
 					sequence: ++state.sequence,
+					admissionPosition: state.sequence,
+					workflowRun: workflow,
 					queuedAt: new Date().toISOString(),
 					phase: "queued",
 					parked: false,

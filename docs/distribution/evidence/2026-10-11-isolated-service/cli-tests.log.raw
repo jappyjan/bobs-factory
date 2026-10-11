@@ -1,0 +1,13 @@
+
+> bobs-factory@1.0.0-beta test /private/tmp/bobs-factory-taskbot-116-integration/apps/cli
+> vitest run -- src/services/ServiceLifecycle.test.ts src/services/InstanceLock.test.ts
+
+
+ RUN  v4.1.11 /private/tmp/bobs-factory-taskbot-116-integration/apps/cli
+
+
+ Test Files  18 passed (18)
+      Tests  183 passed (183)
+   Start at  12:24:33
+   Duration  7.58s (transform 5.55s, setup 0ms, import 11.94s, tests 18.41s, environment 1ms)
+

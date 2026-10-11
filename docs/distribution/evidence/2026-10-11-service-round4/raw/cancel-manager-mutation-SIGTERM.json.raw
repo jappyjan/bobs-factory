@@ -1,0 +1,48 @@
+{
+  "passed": false,
+  "cleanup": true,
+  "testedAt": "2026-10-11T11:35:38.489Z",
+  "harnessSha": "482e95cbaed55be6e4f01916b0095c77979d2fdc",
+  "protocolSha256": "daa10e9ba9f9dddcf492e1293e2c53e2fb267c63a961ba45c2b19b6932bce42d",
+  "commandHarnessSha256": "dce9c29eff6dcf8268b4c052867f99f7c88639f1b2126d05536270eb734d4751",
+  "cleanupHarnessSha256": "c1a5f41c0e8cf3e7594747dc5e365966a4ada37668d3718176de14541a4e04c7",
+  "harnessSha256": "db324ec2fe9e5e61a4721d4def135bd552ce87a2d7e238fe1eaae462fea3bb66",
+  "ownershipHelperSha256": {
+    "owned-command-child.mjs": "821d37058a89756d3e65209d68f51015102a9646b0505f88b4da6edff7f6bc52",
+    "owned-registry.mjs": "9a0ff90f44f2ff34f7c41340ede63d7ee888a041ba32aa2ef2d593bfd5410d74",
+    "owned-fixture.mjs": "5a511cd7ad2a2ddb2b174ecb6da7fbfe5bc1f414c6d3bf23502fd3da3376c566",
+    "manager-wrapper.mjs": "78935566bb6aaea32b0e6d755396b58e0d712ced7530d02dd1a5511ea823201b"
+  },
+  "source": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+  "assertions": [
+    "Dormant external Nix-style target definition refuses adoption and retains bytes; fixture-only removal explicitly consented",
+    "Manual process blocks adoption; explicit fixture stop releases ownership",
+    "Actual external user service disabled and stopped before replacement; definition retained",
+    "Interrupted stopped setup restores only missing owned definition; modified definition is refused"
+  ],
+  "limits": [
+    "No host/user-manager reboot, login, logout or lingering",
+    "No second-machine UI",
+    "No real PM2 or Nix activation",
+    "Opaque synthetic checkpoint preservation only; no provider/native credentials",
+    "No public trust/signing acceptance"
+  ],
+  "workerDefinition": "[Unit]\nDescription=Bob's Factory (de.bobs-factory.62b17bfbbe50e160)\nStartLimitIntervalSec=120\nStartLimitBurst=3\n\n[Service]\nType=simple\nWorkingDirectory=/tmp/factory-isolated-service-vqdzKH/state\nExecStart=\"/tmp/factory-isolated-service-vqdzKH/state/runtime/desktop-installed/bin/bobs-factory\" \"--home\" \"/tmp/factory-isolated-service-vqdzKH/state\" \"--port\" \"41291\" \"--no-open\" \"service\" \"run\"\nEnvironment=\"BOBS_FACTORY_SERVICE_ID=de.bobs-factory.62b17bfbbe50e160\"\nEnvironment=\"PATH=/tmp/factory-isolated-service-vqdzKH/bin:/opt/hostedtoolcache/node/24.18.0/x64/bin:/snap/bin:/home/runner/.local/bin:/opt/pipx_bin:/home/runner/.cargo/bin:/home/runner/.config/composer/vendor/bin:/usr/local/.ghcup/bin:/home/runner/.dotnet/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"\nRestart=on-failure\nRestartSec=10\nTimeoutStopSec=infinity\nSendSIGKILL=no\nKillMode=mixed\n\n[Install]\nWantedBy=default.target\n",
+  "interruptPhase": "manager-mutation",
+  "managerBoundary": "[\"--user\",\"start\",\"de.bobs-factory.62b17bfbbe50e160.service\"]",
+  "interrupted": "SIGTERM",
+  "error": "Interrupted: SIGTERM",
+  "diagnostics": [
+    "cancel-manager-mutation-SIGTERM.json-before-teardown-factory-acceptance-external-d3dca58f-76f0-4fa2-b22d-007bae35ff8a.service.properties.raw",
+    "cancel-manager-mutation-SIGTERM.json-before-teardown-factory-acceptance-external-d3dca58f-76f0-4fa2-b22d-007bae35ff8a.service.journal.raw",
+    "cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.62b17bfbbe50e160.service.properties.raw",
+    "cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.62b17bfbbe50e160.service.journal.raw",
+    "cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.62b17bfbbe50e160.updates.service.properties.raw",
+    "cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.62b17bfbbe50e160.updates.service.journal.raw",
+    "cancel-manager-mutation-SIGTERM.json-before-teardown-processes.raw"
+  ],
+  "survivors": [],
+  "retainedDefinitionBackups": [],
+  "lateMutation": false,
+  "retainedBackupNames": []
+}

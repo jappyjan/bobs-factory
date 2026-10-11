@@ -29,6 +29,10 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         package-manager-cache: false
+
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.2'
     
     - name: Install dependencies
       uses: ./.github/actions/install-dependencies
@@ -60,7 +64,7 @@ jobs:
       run: pnpm -r test:run
 
     - name: Verify public installation and immutable publication guards
-      run: node --test scripts/tests/public-install.test.mjs scripts/tests/release-material.test.mjs scripts/tests/native-receipts.test.mjs scripts/tests/nix-beta-attestation.test.mjs
+      run: node --test scripts/tests/*.test.mjs
     
     - name: Upload coverage
       uses: codecov/codecov-action@v7
