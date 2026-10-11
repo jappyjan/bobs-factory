@@ -42,6 +42,7 @@ export async function runOwnedFixture(
 	mkdirSync(join(registry, "groups"), { mode: 0o700 });
 	const escalationErrors = [];
 	let escalated = false;
+	let nativeReconciled = false;
 	let boundaryArmed = false;
 	const persistFailure = (error, extra = {}) => {
 		const receipt = loadReceipt(receiptPath);
@@ -77,7 +78,8 @@ export async function runOwnedFixture(
 			// Native manager jobs live outside process groups; reconcile only exact
 			// identities preregistered before any definition write or job submission.
 			try {
-				await reconcileFixtureUnits(registry);
+				await reconcileFixtureUnits(registry, env);
+				nativeReconciled = true;
 			} catch (failure) {
 				escalationErrors.push(failure.message);
 			}
@@ -106,33 +108,48 @@ export async function runOwnedFixture(
 		await drainRegistry(registry);
 		assert.deepEqual(registrySurvivors(registry), []);
 		assert(command.drained, "Outer fixture group did not drain");
-		if (primary?.timedOut && !escalated) await reconcileFixtureUnits(registry);
 	} catch (error) {
 		escalationErrors.push(error.message);
 	}
-	if (primary?.timedOut || escalated || escalationErrors.length) {
-		primary ??= Error("Fixture ownership cleanup failed");
-		const receipt = loadReceipt(receiptPath);
-		if (primary.cleanupError) escalationErrors.push(primary.cleanupError);
-		if (receipt.cleanupError) primary.cleanupError ??= receipt.cleanupError;
-		if (escalated) {
-			receipt.cleanup = escalationErrors.length === 0 && !receipt.cleanupError;
-			receipt.outerEscalated = true;
+	const receipt = loadReceipt(receiptPath);
+	// A lost fixture cannot run its finally block. Drain groups and reconcile
+	// native jobs independently, even when group cleanup itself reports failure.
+	// An ordinary exit without a cleanup receipt also leaves native ownership
+	// unproven. A failed escalation must not skip this final reconciliation.
+	if (
+		!nativeReconciled &&
+		(primary || receipt.cleanup !== true || escalationErrors.length)
+	) {
+		try {
+			await reconcileFixtureUnits(registry, env);
+			nativeReconciled = true;
+		} catch (error) {
+			escalationErrors.push(error.message);
 		}
-		if (escalationErrors.length) {
-			receipt.cleanup = false;
-			receipt.outerCleanupErrors = escalationErrors;
-			primary.cleanupError = escalationErrors.join("; ");
-		}
-		persistFailure(primary, receipt);
 	}
+	if (primary?.cleanupError) escalationErrors.push(primary.cleanupError);
+	if (receipt.cleanupError) escalationErrors.push(receipt.cleanupError);
+	if (nativeReconciled) receipt.cleanup = escalationErrors.length === 0;
+	if (escalationErrors.length) {
+		primary ??= Error("Fixture ownership cleanup failed");
+		receipt.cleanup = false;
+		receipt.outerCleanupErrors = escalationErrors;
+		primary.cleanupError = escalationErrors.join("; ");
+		// Keep the exact manifest and group identities when cleanup is unproven.
+		primary.registryPath = registry;
+		receipt.registryPath = registry;
+	}
+	if (primary || escalated) {
+		primary ??= Error("Fixture ownership cleanup failed");
+		if (escalated) receipt.outerEscalated = true;
+		persistFailure(primary, receipt);
+	} else if (nativeReconciled) persistRegistry(receiptPath, receipt);
 	if (!escalationErrors.length)
 		rmSync(registry, { recursive: true, force: true });
-	else primary.registryPath = registry;
 	if (primary) throw primary;
 }
 
-async function reconcileFixtureUnits(registry) {
+async function reconcileFixtureUnits(registry, env) {
 	const manifest = join(registry, "fixture.json");
 	if (!existsSync(manifest)) return; // No native units registered or mutated yet.
 	const { root, unitDirectory, units } = JSON.parse(readFileSync(manifest));
@@ -143,6 +160,7 @@ async function reconcileFixtureUnits(registry) {
 		startOwnedCommand("systemctl", ["--user", ...args], {
 			timeout: 1000,
 			registry: null,
+			env,
 		}).done;
 	const until = async (check, label, timeout) => {
 		const deadline = Date.now() + timeout;
@@ -184,7 +202,9 @@ async function reconcileFixtureUnits(registry) {
 				),
 			);
 		} catch (error) {
-			errors.push(`${unit}: ${error.message}`);
+			errors.push(
+				`${unit}: ${error.message}${error.stderr ? `: ${error.stderr.trim()}` : ""}`,
+			);
 		}
 	}
 	try {

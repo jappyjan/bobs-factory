@@ -214,7 +214,7 @@ occurrences, incidents38083768/38084076; historical four-occurrence reports abov
 remain historical, not a current clearance. Parent/child statuses remain unchanged.
 
 
-## Round 4 implementation response (2026-10-11; native CI pending)
+## Round 4 implementation response (2026-10-11; exact482 native receipts retained)
 
 The harness fixes are integrated after the source-retention commit
 `d5cde18eab21c01c23b90c4e118d6922094c720d`. Production runtime remains frozen at
@@ -226,8 +226,9 @@ closure or an independent round 4 clearance.
 - Service P2 nonzero-exit stdout: the actual manager wrapper now preserves stdout,
   stderr and exit status. `disabled`/exit 1 remains visible to the unchanged native
   state assertion. Safe wrapper subprocess checks reach the actual gated START
-  descendant for both signal cases and reject delayed fork mutation. CI must still
-  prove the real systemd START boundary for both SIGINT and SIGTERM.
+  descendant for both signal cases and reject delayed fork mutation. The exact482
+  native receipts now prove the real systemd START boundary for both SIGINT and
+  SIGTERM; the later unexpected-death correction has separate acceptance.
 - Service P2 outer timeout: a private registry is created before fixture launch;
   held group leaders wait for registration before target code and prevent PID reuse.
   Outer timeout persists FAIL before cooperative SIGTERM, then permits a bounded
@@ -249,9 +250,12 @@ closure or an independent round 4 clearance.
 Nineteen meaningful local subprocess/protocol tests and acceptance-module syntax
 checks pass. `pnpm biome ci` passes with 19 existing warnings. The focused code commit passed normal lint-staged, workspace build and typecheck
 hooks; the documentation/storage commit retains the same required checks. F1 is not applicable to this acceptance
-harness, raw-storage and documentation change. Fresh Node 22 and Node 24 CI jobs
-and native main/seven-case receipts remain pending; the earlier Node 22 job failed
-at Biome and the Node 24 job was cancelled by fail-fast, not 24 cancelled test cases.
+harness, raw-storage and documentation change. The exact482 native main/seven-case receipts have now been retained and verified
+as described below. Node CI38135979972 failed in factory-operator-recovery F1
+(createLogger constructor import); the separately owned Node correction at943
+addresses concurrent shared-core build output. Its results/review belong to that
+owner; no overall CI-green claim is made here. The earlier Biome failure and
+fail-fast cancellation remain historical.
 
 [Round 3 run/artifact evidence](evidence/2026-10-11-service-round3-failure/README.md)
 is retained separately: main success applies only to `db93374e`, four signal cases
@@ -261,3 +265,42 @@ round 4 result reuses that PASS. Historical 101+53+56 raw files, f48/c3 failure
 artifacts and the d5 source-proof immutable research copies remain preserved.
 All previously listed native/provider/signing/licensing/minimum-host gates remain
 open. GitGuardian's two historical mock UUID incidents remain undisposed.
+
+
+## Remaining review4 P2 correction and exact482 evidence (2026-10-11)
+
+Taskbot #116 comment1283 identified one remaining P2: unexpected fixture death
+before its deadline skipped native unit reconciliation and deleted the ownership
+manifest despite unproven cleanup. The correction reconciles exact registered
+units on unexpected failure or exit without cleanup proof, independently of group
+failures. It retains the closed registry/manifest until verified cleanup, reports
+its retained path, and preserves the primary error plus fixture/manager errors.
+Three safe mocked-manager regressions fail on the old helper and pass after the
+fix; all22 meaningful subprocess/protocol checks pass. No host manager operation
+or native definition write is used in those regressions. This is an implementation
+response requiring fresh review5, not an independent finding clearance.
+
+[Full raw evidence and the receipt inspection](evidence/2026-10-11-service-round4/README.md)
+bind completed-success run38135977321/job114459805179 and artifact11700339615 to
+exact harness482e95cbaed55be6e4f01916b0095c77979d2fdc. ZIP SHA-256
+ffc8269fc388f416e4e9e957a61c0a011ed8f53bef9d3b224b0f36bc3ea80e2c matches GitHub.
+All94 original files, provider metadata and raw job log are retained. Independent
+inspection verifies the main receipt, all six signal receipts, seventh outer
+START-deadline receipt, helper hashes, exit/cancellation identity and diagnostics.
+Main completed all7 assertions with cleanup/no survivors, backoff11797ms and native
+start-limit proof stable10524ms. Each signal exited130/143, stayed passed:false,
+proved cleanup/no survivors, and each gated manager case rejected late mutation.
+The outer case preserved its timeout, exited143 and proved exact START cleanup.
+The seven independent matrix outcomes pass. This supersedes the earlier pending
+CI snapshot; historical db933 mainPASS remains separate and unchanged.
+
+Production source remains frozenb82/.21 digestca323; no new runtime is built.
+Exact482 receipts are not claimed for the subsequent unexpected-death correction
+or Node fix. The service-only integration preserves the Node owner's943 changes.
+Fresh service CI is triggered once by its owned workflow on push, without a manual
+dispatch or polling. All source and historical evidence remain unchanged. F1 is
+not applicable to this acceptance-only delta; normal lint/build/typecheck hooks,
+syntax and focused regressions validate it. Reboot/login/logout/lingering,
+providers/native credentials, physical authentication, second-machine84, minimum
+host coverage, signing/licensing/relink/publication/catalog and GitGuardian
+operator gates remain unchanged. Taskbot #116/#122/#124 statuses remain unchanged.

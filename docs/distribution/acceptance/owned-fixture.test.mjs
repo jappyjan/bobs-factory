@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import {
 	existsSync,
+	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
@@ -165,6 +167,8 @@ await withOwnedCleanup({receipt,
 			if (mode === "cleanup-error") {
 				assert.equal(receipt.cleanup, false);
 				assert.equal(receipt.cleanupError, "intentional cleanup failure");
+				assert.equal(receipt.registryPath, error.registryPath);
+				assert(existsSync(error.registryPath));
 			} else assert.equal(receipt.cleanup, true);
 			if (mode === "forced") assert.equal(receipt.outerEscalated, true);
 			else assert.equal(receipt.interrupted, "SIGTERM");
@@ -174,6 +178,8 @@ await withOwnedCleanup({receipt,
 				"Nested reparented fork mutated after outer return",
 			);
 		} finally {
+			if (error?.registryPath)
+				rmSync(error.registryPath, { recursive: true, force: true });
 			rmSync(root, { recursive: true, force: true });
 		}
 	});
@@ -223,3 +229,128 @@ test("changed leader identity refuses unowned signaling and reports survivors", 
 		rmSync(root, { recursive: true, force: true });
 	}
 });
+
+for (const mode of ["unexpected-death", "manager-failure", "unproven-exit"]) {
+	test(`native cleanup after ${mode} retains evidence until verified`, {
+		timeout: 8000,
+	}, async () => {
+		const root = mkdtempSync(
+			join(tmpdir(), "factory-isolated-service-review-"),
+		);
+		const bin = join(root, "bin");
+		mkdirSync(bin);
+		const state = join(root, "mock-unit-state.json");
+		const calls = join(root, "manager-calls.jsonl");
+		const receiptPath = join(root, "receipt.json");
+		const registryPath = join(root, "registry-path");
+		const unit = `factory-acceptance-external-${randomUUID()}.service`;
+		const unitDirectory = join(homedir(), ".config", "systemd", "user");
+		// There is no real unit/definition. Every manager operation hits this mock,
+		// and only the directly spawned fixture signals itself.
+		assert(!existsSync(join(unitDirectory, unit)));
+		writeFileSync(state, JSON.stringify({ active: true }));
+		writeFileSync(
+			join(bin, "systemctl"),
+			`#!${process.execPath}
+const fs=require('node:fs');
+const args=process.argv.slice(2);
+fs.appendFileSync(${JSON.stringify(calls)}, JSON.stringify(args)+'\\n');
+if (${mode === "manager-failure"} && args.includes('stop')) {
+ process.stderr.write('mock manager permission denied'); process.exit(1);
+}
+if(args.includes('stop')||args.includes('kill')) fs.writeFileSync(${JSON.stringify(state)}, JSON.stringify({active:false}));
+process.stdout.write(JSON.parse(fs.readFileSync(${JSON.stringify(state)})).active
+ ? 'ActiveState=active\\nSubState=running\\nMainPID=100\\nControlPID=0\\nJob=0\\n'
+ : 'ActiveState=inactive\\nSubState=dead\\nMainPID=0\\nControlPID=0\\nJob=0\\n');`,
+			{ mode: 0o700 },
+		);
+		const manifest = {
+			root,
+			unitDirectory,
+			units: [{ unit, bytes: "unused mock definition" }],
+		};
+		const fixture = `
+import {writeFileSync} from 'node:fs';
+import {join} from 'node:path';
+writeFileSync(${JSON.stringify(registryPath)}, process.env.BOBS_FACTORY_ACCEPTANCE_GROUP_REGISTRY);
+writeFileSync(join(process.env.BOBS_FACTORY_ACCEPTANCE_GROUP_REGISTRY,'fixture.json'), ${JSON.stringify(JSON.stringify(manifest))});
+writeFileSync(${JSON.stringify(receiptPath)}, JSON.stringify({passed:false,cleanup:false${mode === "manager-failure" ? ",cleanupError:'fixture cleanup interrupted'" : ""}}));
+${mode === "unproven-exit" ? "process.exit(0);" : "process.kill(process.pid,'SIGKILL');"}`;
+		let error;
+		try {
+			try {
+				await runOwnedFixture(
+					process.execPath,
+					["--input-type=module", "-e", fixture],
+					{
+						receiptPath,
+						timeout: 3000,
+						env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+					},
+				);
+			} catch (caught) {
+				error = caught;
+			}
+			const operations = existsSync(calls)
+				? readFileSync(calls, "utf8")
+						.trim()
+						.split("\n")
+						.map((line) => JSON.parse(line))
+				: [];
+			assert(
+				operations.some((args) => args.includes("show") && args.includes(unit)),
+				"Unexpected fixture exit skipped exact-unit reconciliation",
+			);
+			assert(
+				operations.some((args) => args.includes("stop") && args.includes(unit)),
+			);
+			assert(
+				operations.every(
+					(args) =>
+						args[0] === "--user" &&
+						(args[1] === "daemon-reload" || args.includes(unit)),
+				),
+				"Only exact registered mock units may be operated on",
+			);
+			const receipt = JSON.parse(readFileSync(receiptPath));
+			assert.equal(receipt.passed, false);
+			if (mode === "unproven-exit") {
+				assert.equal(error, undefined);
+				assert.equal(receipt.cleanup, true);
+			} else {
+				assert.equal(error.status, "SIGKILL");
+				assert.match(error.message, /exited SIGKILL/);
+				assert.equal(Boolean(error.timedOut), false);
+				assert.equal(receipt.outerError, error.message);
+			}
+			if (mode === "manager-failure") {
+				assert.equal(JSON.parse(readFileSync(state)).active, true);
+				assert.equal(receipt.cleanup, false);
+				assert.equal(receipt.cleanupError, "fixture cleanup interrupted");
+				assert.match(error.cleanupError, /mock manager permission denied/);
+				assert(
+					receipt.outerCleanupErrors.some((message) =>
+						message.includes("mock manager permission denied"),
+					),
+				);
+				assert.equal(receipt.registryPath, error.registryPath);
+				assert.equal(readFileSync(registryPath, "utf8"), error.registryPath);
+				assert.deepEqual(
+					JSON.parse(readFileSync(join(error.registryPath, "fixture.json"))),
+					manifest,
+				);
+				assert(existsSync(join(error.registryPath, "closed")));
+			} else {
+				assert.equal(JSON.parse(readFileSync(state)).active, false);
+				assert.equal(receipt.cleanup, true);
+				assert.equal(error?.registryPath, undefined);
+				assert(!existsSync(readFileSync(registryPath, "utf8")));
+			}
+		} finally {
+			// Only private test evidence is removed; the mock never writes native definitions.
+			if (error?.registryPath)
+				rmSync(error.registryPath, { recursive: true, force: true });
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+}

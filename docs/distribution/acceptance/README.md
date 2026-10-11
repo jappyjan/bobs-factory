@@ -34,7 +34,10 @@ to the fixture, allowing 30 seconds for `withOwnedCleanup`. Escalation closes th
 registration gate, drains exact registered groups even after reparenting, and
 reconciles preregistered exact units and jobs against their owned definition bytes.
 A changed/missing live leader identity or unknown survivor keeps cleanup nonpassing;
-it never authorizes signaling an unrelated group. Primary timeout and cleanup
+it never authorizes signaling an unrelated group. Unexpected fixture death and exit without cleanup proof also reconcile exact
+registered units, independently of group-cleanup failures. Failed cleanup retains
+the closed ownership registry and reports its path; verified cleanup is required
+before deleting it. Primary fixture/timeout and cleanup
 errors survive in the receipt and every independent matrix outcome. Both worker
 and updater exact unit identities are registered before installation. Definition
 bytes are checked against the frozen b82 Linux contract before cleanup; changed
@@ -140,3 +143,13 @@ failures cannot satisfy it. The original 45-second restart waits are unchanged.
 All maintenance, resume, remove and retained-byte assertions remain required.
 Corrected CI must supply actual verified main, all six signal cancellation receipts and the outer-timeout receipt
 before any full Linux acceptance PASS is claimed. No runtime source was changed.
+
+
+## Exact round 4 evidence and subsequent correction
+
+[Exact482 evidence and remaining P2 response](../evidence/2026-10-11-service-round4/README.md)
+retain run38135977321/artifact11700339615, all94 original files and the provider
+metadata/digest. Main acceptance, all six signal cleanup cases and the seventh
+outer-deadline case pass at that exact harness. The subsequent unexpected-death
+cleanup correction is covered by 22 focused checks; its fresh CI and independent
+review remain separate. No older receipt is relabeled as new-harness acceptance.

@@ -1,0 +1,58 @@
+✖ native cleanup after unexpected-death retains evidence until verified (135.366166ms)
+✖ native cleanup after manager-failure retains evidence until verified (123.359083ms)
+✖ native cleanup after unproven-exit retains evidence until verified (134.7345ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 439.927208
+
+✖ failing tests:
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:230:2
+✖ native cleanup after unexpected-death retains evidence until verified (135.366166ms)
+  AssertionError [ERR_ASSERTION]: Unexpected fixture exit skipped exact-unit reconciliation
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review4-cleanup/docs/distribution/acceptance/owned-fixture.test.mjs:269:4)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:230:2
+✖ native cleanup after manager-failure retains evidence until verified (123.359083ms)
+  AssertionError [ERR_ASSERTION]: Unexpected fixture exit skipped exact-unit reconciliation
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review4-cleanup/docs/distribution/acceptance/owned-fixture.test.mjs:269:4)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/owned-fixture.test.mjs:230:2
+✖ native cleanup after unproven-exit retains evidence until verified (134.7345ms)
+  AssertionError [ERR_ASSERTION]: Unexpected fixture exit skipped exact-unit reconciliation
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review4-cleanup/docs/distribution/acceptance/owned-fixture.test.mjs:269:4)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
