@@ -77,7 +77,11 @@ If macOS blocks an unidentified developer, open **System Settings → Privacy &
 Security → Open Anyway**, then choose **Open** in the next prompt, following
 [Apple's per-app instructions](https://support.apple.com/en-us/102445). Keep the
 quarantine attribute and Gatekeeper enabled; the app/installer/updater never
-clears quarantine or disables system protection. Repeat the per-app approval if
+clears quarantine or disables system protection. Staging carries the installed app's
+`com.apple.quarantine` onto the extracted app, and activation preserves its current
+value on the replacement before renaming. The switch journal retains this OS
+metadata for recovery/rollback independently of the published byte fingerprint;
+inspection/write failures block replacement. Repeat the per-app approval if
 macOS requests it for a later downloaded version. A future first-launch validation
 must use the actually quarantined package and record the user's allow action;
 source-entry execution does not establish this result.

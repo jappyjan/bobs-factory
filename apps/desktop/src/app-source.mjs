@@ -14,6 +14,7 @@ import {
 	validateElectronLicenses,
 	verifyElectronLicenses,
 } from "./app-licenses.mjs";
+import { inheritAppQuarantine } from "./app-quarantine.mjs";
 export function installationKind(path, target) {
 	try {
 		const actual = realpathSync(path),
@@ -206,6 +207,7 @@ export class DesktopAppSource {
 			path = join(work, "Bob.AppImage");
 			writeFileSync(path, bytes, { flag: "wx", mode: 0o755 });
 		}
+		inheritAppQuarantine(this.install, path, this.target);
 		if (appFingerprint(path, this.target) !== metadata.fingerprint)
 			throw Error("Complete app inventory mismatch");
 		writeFileSync(

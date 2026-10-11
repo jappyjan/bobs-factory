@@ -12,6 +12,11 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+	appQuarantine,
+	inheritAppQuarantine,
+	retainAppQuarantine,
+} from "./app-quarantine.mjs";
+import {
 	appExecutable,
 	appFingerprint,
 	installationKind,
@@ -220,6 +225,7 @@ export class DesktopAppLifecycle {
 			previous: `${this.install}.bobs-previous-${id}`,
 			replacement: `${this.install}.bobs-candidate-${id}`,
 			receipt: read(this.receipt),
+			quarantine: appQuarantine(this.install, this.target),
 			healthToken: randomUUID(),
 			worker: this.worker,
 		});
@@ -268,7 +274,13 @@ export class DesktopAppLifecycle {
 		);
 		if (appFingerprint(s.replacement, this.target) !== metadata.fingerprint)
 			throw Error("Copied app integrity failure");
-		save(t.snapshot, { ...s, candidateProof: proof.proof });
+		// Node copies do not retain extended attributes. Preserve staged metadata,
+		// then the installed app's current per-app state, including OS changes
+		// since staging. No absent attribute clears an existing one.
+		inheritAppQuarantine(staged.executable, s.replacement, this.target);
+		const quarantine = appQuarantine(this.install, this.target) ?? s.quarantine;
+		retainAppQuarantine(s.replacement, this.target, quarantine);
+		save(t.snapshot, { ...s, candidateProof: proof.proof, quarantine });
 		renameSync(this.install, s.previous);
 		renameSync(s.replacement, this.install);
 		save(this.receipt, {
@@ -284,6 +296,11 @@ export class DesktopAppLifecycle {
 		const t = this.journal(),
 			s = read(t.snapshot);
 		this.unchangedWorker();
+		retainAppQuarantine(
+			this.install,
+			this.target,
+			appQuarantine(this.install, this.target) ?? s.quarantine,
+		);
 		save(t.snapshot, { ...s, launchPending: true });
 		const child = spawn(
 			appExecutable(this.install, this.target),
@@ -466,6 +483,11 @@ export class DesktopAppLifecycle {
 			if (appFingerprint(s.previous, this.target) !== s.receipt.fingerprint)
 				throw Error("Previous app integrity failure");
 			this.assertRecoveryInstall(transaction, s);
+			retainAppQuarantine(
+				s.previous,
+				this.target,
+				appQuarantine(s.previous, this.target) ?? s.quarantine,
+			);
 			if (appPathPresent(this.install)) {
 				if (appPathPresent(`${this.install}.bobs-failed-${transaction.id}`))
 					throw Error("Retained failed app requires inspection");
@@ -481,6 +503,11 @@ export class DesktopAppLifecycle {
 			appFingerprint(this.install, this.target) !== s.receipt.fingerprint
 		)
 			throw Error("Cannot verify previous app");
+		retainAppQuarantine(
+			this.install,
+			this.target,
+			appQuarantine(this.install, this.target) ?? s.quarantine,
+		);
 		save(this.receipt, s.receipt);
 		if (processStamp(this.uiPid) !== this.uiStamp) {
 			save(transaction.snapshot, {

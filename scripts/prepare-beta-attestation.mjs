@@ -5,16 +5,12 @@ import {
 	mkdirSync,
 	readdirSync,
 	readFileSync,
+	rmSync,
 	writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import {
-	fileRecord,
-	jsonBytes,
-	requireValue,
-	sha256,
-} from "./lib/binary-release.mjs";
+import { jsonBytes, requireValue, sha256 } from "./lib/binary-release.mjs";
 import { validatePreparedRelease } from "./lib/prepared-release.mjs";
 
 const { values } = parseArgs({
@@ -62,14 +58,29 @@ const attestation = jsonBytes({
 	version: manifest.version,
 	tag: manifest.tag,
 	commit: manifest.commit,
-	manifest: fileRecord(join(directory, "release.json"), "release.json"),
+	manifest: {
+		file: "release.json",
+		size: manifestBytes.length,
+		sha256: sha256(manifestBytes),
+	},
 	assets: inventory,
 	approvedBy: approval.approvedBy,
 });
+const unchanged = () =>
+	requireValue(
+		readFileSync(join(directory, "release.json")).equals(manifestBytes),
+		"Historical manifest changed after approval",
+	);
+unchanged();
 mkdirSync(output, { recursive: true });
-writeFileSync(join(output, "release-attestation.json"), attestation, {
-	flag: "wx",
-});
+const destination = join(output, "release-attestation.json");
+writeFileSync(destination, attestation, { flag: "wx" });
+try {
+	unchanged();
+} catch (error) {
+	rmSync(destination);
+	throw error;
+}
 console.log(
 	`Prepared additive integrity only. No existing archive, manifest or tag was modified. Inventory: ${assetsDigest}`,
 );

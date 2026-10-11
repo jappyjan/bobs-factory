@@ -278,3 +278,67 @@ test("legacy identity rejects new manifest, evidence and source claims without r
 		f.cleanup();
 	}
 });
+
+for (const boundary of ["approval", "output"])
+	test(`beta attestation refuses retained manifest swap at ${boundary} boundary`, () => {
+		const f = preparedFixture("beta", { legacy: true });
+		try {
+			const manifestBytes = readFileSync(join(f.assets, "release.json"));
+			const inventory = readdirSync(f.assets)
+				.filter((file) => file !== "release.json")
+				.map((file) => fileRecord(join(f.assets, file), file))
+				.sort((a, b) => a.file.localeCompare(b.file));
+			const approval = join(f.work, "approval.json"),
+				output = join(f.work, "attestation"),
+				preload = join(f.work, "swap-after-approval.mjs");
+			writeFileSync(
+				approval,
+				jsonBytes({
+					manifestSha256: sha256(manifestBytes),
+					assetsDigest: sha256(jsonBytes(inventory)),
+					approvedBy: "controlled-fixture",
+				}),
+			);
+			const replacement = jsonBytes({ ...f.manifest, buildRunId: 124 });
+			const hook =
+				boundary === "approval"
+					? `const original=fs.readFileSync;fs.readFileSync=function(p,...args){const value=original.call(this,p,...args);if(String(p)===${JSON.stringify(approval)})swap();return value;};`
+					: `const original=fs.writeFileSync;fs.writeFileSync=function(p,...args){const value=original.call(this,p,...args);if(String(p)===${JSON.stringify(join(output, "release-attestation.json"))})swap();return value;};`;
+			writeFileSync(
+				preload,
+				`import fs from 'node:fs';import {syncBuiltinESMExports} from 'node:module';const write=fs.writeFileSync;function swap(){write(${JSON.stringify(join(f.assets, "release.json"))},Buffer.from(${JSON.stringify(replacement.toString("base64"))},'base64'));}${hook}syncBuiltinESMExports();`,
+			);
+			const result = spawnSync(
+				process.execPath,
+				[
+					"--import",
+					preload,
+					join(f.work, "scripts/prepare-beta-attestation.mjs"),
+					"--assets",
+					f.assets,
+					"--output",
+					output,
+					"--approval",
+					approval,
+				],
+				{ encoding: "utf8" },
+			);
+			assert.notEqual(
+				result.status,
+				0,
+				"Must never attest unapproved replacement bytes",
+			);
+			assert.match(result.stderr, /Historical manifest changed/);
+			assert.equal(requireOutput(output), false);
+		} finally {
+			f.cleanup();
+		}
+	});
+function requireOutput(output) {
+	try {
+		return readdirSync(output).includes("release-attestation.json");
+	} catch (e) {
+		if (e.code === "ENOENT") return false;
+		throw e;
+	}
+}

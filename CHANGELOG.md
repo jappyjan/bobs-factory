@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Preserve macOS per-app quarantine during unsigned app staging, replacement and recovery; keep historical beta attestation bound to approved manifest bytes and restore the maintained complete-shell F1 driver after publisher-key removal ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
+
 - Publish complete source/rebuild archives through signed ordered transport chunks when they exceed GitHub's asset limit; bind recovery and publication to authenticated manifest bytes, stage the exact signed inventory and verify uploaded bytes, verify exact reconstruction before existing source intake and recover interrupted uploads without changing historical single-file releases ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#95](https://github.com/jappyjan/bobs-factory/pull/95)).
 
 - Let migration inspection recognize unrelated workers launched with global `--home` options before `start` or `local`, without reading their environment; check alternative spaced home paths, including symlink aliases, before excluding a worker and keep ambiguous, unreadable or participating consumers blocked ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#94](https://github.com/jappyjan/bobs-factory/pull/94)).
