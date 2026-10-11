@@ -14,8 +14,21 @@ Initial browser drive: uncommitted implementation on base
 [result](assets/2026-10-11-localhost-noauth/result.json.raw) records source SHA-256
 values, eight passed assertions, actual external-browser requests and fixture
 path. Its commit field names the base, not a committed implementation. The
-[raw log](assets/2026-10-11-localhost-noauth/drive.log) preserves that distinction.
-The later committed-source receipt is recorded below when available.
+[raw log](assets/2026-10-11-localhost-noauth/drive.log.raw) preserves that distinction.
+The later committed-source receipt is recorded below.
+
+Final committed implementation: `812bb468238242f92ca20edef166accc0b1e52f6`,
+rebased onto main `8deb7e7704bb6cf75d3dca757dc917ea8f23ff23`.
+The [committed receipt](assets/2026-10-11-localhost-noauth/committed-result.json.raw)
+and [log](assets/2026-10-11-localhost-noauth/committed-drive.log.raw) record all
+eight assertions passing and normal exit 0 after owned cleanup. This final drive
+also fingerprints all changed runtime sources and the maintained fixture. Later
+commits add only evidence, this report and the changelog PR link.
+
+Committed-source browser captures: [onboarding](assets/2026-10-11-localhost-noauth/onboarding-committed.png),
+[dashboard](assets/2026-10-11-localhost-noauth/dashboard-committed.png),
+[local settings](assets/2026-10-11-localhost-noauth/access-settings-committed.png),
+[external page](assets/2026-10-11-localhost-noauth/external-page-committed.png).
 
 ```sh
 F1_AGENT_MODE=mock F1_LOCAL_ACCESS_HOLD=1 bun run apps/f1/test-drives/assets/localhost-noauth.ts
@@ -71,7 +84,7 @@ Screenshots: [fresh onboarding](assets/2026-10-11-localhost-noauth/onboarding.pn
 
 The first fixture mistakenly replaced mandatory stock workflows when adding its
 script; configuration correctly rejected that with 409. The fixture now appends
-its workflow. The [failed log](assets/2026-10-11-localhost-noauth/failed-fixture-default.log)
+its workflow. The [failed log](assets/2026-10-11-localhost-noauth/failed-fixture-default.log.raw)
 is retained, not relabeled as a passing run.
 
 The browser drive passed all eight assertions and closed its owned listeners and
