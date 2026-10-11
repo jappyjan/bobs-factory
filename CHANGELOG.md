@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Let migration inspection recognize unrelated workers launched with global `--home` options before `start` or `local`, without reading their environment; retain conservative rejection of ambiguous or participating consumers ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#94](https://github.com/jappyjan/bobs-factory/pull/94)).
+- Let migration inspection recognize unrelated workers launched with global `--home` options before `start` or `local`, without reading their environment; check alternative spaced home paths, including symlink aliases, before excluding a worker and keep ambiguous, unreadable or participating consumers blocked ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#94](https://github.com/jappyjan/bobs-factory/pull/94)).
 - Independently verify exact acceptance-fixture units and jobs on every terminal path before removing identity-bound temporary state, including successful child cleanup claims; preserve primary/cleanup errors and ownership evidence on refusal, with separately bound exact482/exact834/exactf6 native receipts. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122), [#124](https://taskbot.apps.janjaap.de/p/bobs-factory/t/124), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 - Keep desktop and operator recovery validation reliable when Node CI runs tests concurrently, without rebuilding shared prerequisites during testing ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
 

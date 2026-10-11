@@ -188,7 +188,24 @@ function liveConsumers(source: string, destination: string): boolean {
 				!/^\s*(?:(?:start|local)(?=\s|$)\s*)?(?:--|$)/.test(homeFlag[2]!)
 			)
 				return true;
-			return homes.includes(canonicalPath(flag));
+			// ps loses argv boundaries. A trailing command or option can instead
+			// belong to a spaced home used by default local. Only exclude the
+			// worker when every longer interpretation is absent, including links.
+			const renderedHome = `${flag}${homeFlag[2]}`;
+			for (const boundary of renderedHome.matchAll(/\s|$/g)) {
+				try {
+					lstatSync(renderedHome.slice(0, boundary.index));
+					if (boundary.index > flag.length) return true;
+				} catch (error) {
+					const code = (error as NodeJS.ErrnoException).code;
+					if (code !== "ENOENT" && code !== "ENOTDIR") return true;
+				}
+			}
+			try {
+				return homes.includes(canonicalPath(flag));
+			} catch {
+				return true;
+			}
 		}
 		// Inspect relevant keys internally; process environments never enter logs.
 		// Unreadable or ambiguous worker homes remain blockers.
