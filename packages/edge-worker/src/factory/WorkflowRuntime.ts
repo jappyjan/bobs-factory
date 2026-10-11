@@ -31,6 +31,7 @@ import {
 	type ArchitectureProposal,
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
+	openDecisions,
 	snapshotProposal,
 	verifyProposal,
 } from "./Architecture.js";
@@ -1943,15 +1944,13 @@ export class WorkflowRuntime {
 					const policy = args.approval ?? "meaningful";
 					if (!["meaningful", "always", "never"].includes(String(policy)))
 						throw new Error("Unknown architecture approval policy");
+					// Open decisions need a human answer whatever the policy says.
 					if (
-						policy === "never" ||
-						(policy === "meaningful" &&
-							proposal.content.classification === "routine")
+						!openDecisions(proposal.content) &&
+						(policy === "never" ||
+							(policy === "meaningful" &&
+								proposal.content.classification === "routine"))
 					) {
-						if (proposal.content.unresolvedDecisions.length)
-							throw new Error(
-								"Cannot bypass unresolved architecture decisions",
-							);
 						proposal.status = "routine";
 						proposal.bypassReason =
 							policy === "never"
@@ -1987,7 +1986,7 @@ export class WorkflowRuntime {
 						await this.waitForAnswers(
 							run,
 							[
-								`Review architecture proposal version ${proposal.version}. Accept this exact candidate in the architecture panel, request changes, or ask for an explanation. Discussion does not authorize implementation.`,
+								`Bob has architecture proposal version ${proposal.version} ready. Open it to approve it, ask a question or ask for changes. Messages never approve it.`,
 							],
 							signal,
 							state,
@@ -2358,12 +2357,9 @@ export class WorkflowRuntime {
 			this.answer(id, decision.feedback!, "explanation");
 			return;
 		}
-		if (
-			decision.decision === "accept" &&
-			proposal.content.unresolvedDecisions.length
-		)
+		if (decision.decision === "accept" && openDecisions(proposal.content))
 			throw new Error(
-				"Request a revision resolving the remaining architecture decisions before acceptance",
+				"Answer Bob's open questions and ask for a new version before approving",
 			);
 		run.architectureDecisions ??= [];
 		run.architectureDecisions.push({

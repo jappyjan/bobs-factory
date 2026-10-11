@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ArchitectureEntry } from "./architecture";
 import {
 	active,
 	ago,
@@ -767,6 +768,8 @@ export function FocusCard({
 			)}
 			{detail.isLoading ? (
 				<p role="status">Bob is loading this run…</p>
+			) : kind === "question" && run.architectureGate ? (
+				<ArchitectureEntry run={run} />
 			) : kind === "question" ? (
 				<QuestionForm
 					key={`${run.id}/${JSON.stringify(run.questions)}`}

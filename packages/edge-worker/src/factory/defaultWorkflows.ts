@@ -281,7 +281,7 @@ const architectureSteps = [
 	{
 		...oldPlanReview,
 		prompt:
-			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Assess repository evidence, interfaces, alternatives, diagram and routine classification. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
+			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Assess repository evidence, decisions and their options, the map, plain-language readability, the short plan steps and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
 		architectureContract: "architecture-review-v1",
 		architectureSource: "architecture",
 		inputs: undefined,

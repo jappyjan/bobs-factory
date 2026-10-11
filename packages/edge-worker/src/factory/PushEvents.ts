@@ -41,7 +41,7 @@ export function runPushEvent(run: FactoryRun): PushEvent | undefined {
 		return {
 			category: "question",
 			identity: digest(["architecture", run.architectureGate.proposalId]),
-			destination,
+			destination: `${destination}/architecture`,
 		};
 	if (unresolved && run.reviewGate?.status === "pending")
 		return {

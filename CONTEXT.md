@@ -3,8 +3,10 @@
 Bob’s Factory is a fork of Cyrus. Preserve upstream attribution and native credential
 stores; maintained product names and migration rules live in `docs/PRODUCT_CONTRACTS.md`.
 
-- An **architecture proposal** combines repository evidence, responsibilities,
-  interfaces, alternatives, trade-offs, visuals and a complete candidate implementation plan.
+- An **architecture proposal** combines a plain summary, choices with options, a map of
+  what changes, repository evidence, risks and a complete candidate implementation plan.
+- A **choice** is decided by Bob when the repository settles it, or **open** when only
+  the human can answer it. Open choices block approval until a new version answers them.
 - A **proposal version** is runtime-owned identity plus a digest of the architecture,
   candidate plan and snapshotted assets. Model output never supplies human acceptance.
 - **Architecture acceptance** authorizes implementation of one reviewed proposal version.

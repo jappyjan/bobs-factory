@@ -172,8 +172,10 @@ import { EgressProxy } from "./EgressProxy.js";
 import { nativeInfrastructureFailure } from "./factory/AgentInfrastructure.js";
 import { resolveAgentSettings } from "./factory/AgentSettings.js";
 import {
+	type Architecture,
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
+	assertRevisionChanges,
 } from "./factory/Architecture.js";
 import {
 	executionCapabilities,
@@ -8488,8 +8490,13 @@ ${taskSection}`;
 				context,
 				step.askQuestions ? normalizeQuestionResult(value) : value,
 			);
-			if (step.architectureContract === "architecture-v1")
+			if (step.architectureContract === "architecture-v1") {
 				output = ArchitectureSchema.parse(output);
+				assertRevisionChanges(
+					output as Architecture,
+					run.architectureProposals?.length ?? 0,
+				);
+			}
 			if (step.architectureContract === "architecture-review-v1")
 				output = ArchitectureReviewSchema.parse(output);
 			if (

@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	type Architecture,
 	ArchitectureSchema,
+	assertRevisionChanges,
 	snapshotProposal,
 	verifyProposal,
 } from "../src/factory/Architecture.js";
@@ -269,7 +270,7 @@ describe("architecture authorization boundary", () => {
 			await restored.shutdown();
 		}
 	});
-	it("rejects malformed diagrams, missing rationale, meaningful proposals without visuals, and model-authored approval", () => {
+	it("rejects malformed maps, missing rationale, meaningful proposals without a map or decisions, and model-authored approval", () => {
 		const value = proposal();
 		expect(
 			ArchitectureSchema.safeParse({ ...value, accepted: true }).success,
@@ -278,9 +279,24 @@ describe("architecture authorization boundary", () => {
 			ArchitectureSchema.safeParse({ ...value, rationale: "" }).success,
 		).toBe(false);
 		expect(
-			ArchitectureSchema.safeParse({ ...value, visual: undefined }).success,
+			ArchitectureSchema.safeParse({ ...value, map: undefined }).success,
 		).toBe(false);
-		value.visual!.system.after[0]!.target = "missing";
+		expect(
+			ArchitectureSchema.safeParse({ ...value, decisions: [] }).success,
+		).toBe(false);
+		const badPick = proposal();
+		badPick.decisions[0]!.pick = "missing";
+		expect(ArchitectureSchema.safeParse(badPick).success).toBe(false);
+		const pickedOpen = proposal();
+		pickedOpen.decisions[0]!.status = "open";
+		pickedOpen.decisions[0]!.why = "Depends on your team.";
+		expect(ArchitectureSchema.safeParse(pickedOpen).success).toBe(false);
+		const badPreview = proposal();
+		badPreview.decisions[0]!.options[1]!.preview!.hide = ["missing"];
+		expect(ArchitectureSchema.safeParse(badPreview).success).toBe(false);
+		expect(() => assertRevisionChanges(proposal(), 1)).toThrow("changed");
+		expect(() => assertRevisionChanges(proposal(), 0)).not.toThrow();
+		value.map!.links[0]!.to = "missing";
 		expect(ArchitectureSchema.safeParse(value).success).toBe(false);
 		expect(
 			validateFactoryResult(
@@ -357,6 +373,68 @@ describe("architecture authorization boundary", () => {
 			decision: "routine",
 			reason: proposal().rationale,
 		});
+	});
+	it("blocks approval and bypass while a decision is open, then accepts the version that answers it", async () => {
+		let versions = 0;
+		const open = (): Architecture => {
+			const value = proposal();
+			if (versions++ > 0) {
+				value.changes = [{ text: "Used your answer.", from: "you" }];
+				value.decisions[0]!.decidedBy = "you";
+				return value;
+			}
+			Object.assign(value.decisions[0]!, {
+				status: "open",
+				pick: undefined,
+				decidedBy: undefined,
+				why: "Depends on how your team reviews.",
+			});
+			return value;
+		};
+		const { runtime, run, implemented } = setup("routine", {
+			agent: async (c) => {
+				if (c.step.architectureContract === "architecture-v1") return open();
+				if (c.step.architectureContract === "architecture-review-v1")
+					return { approved: true, feedback: [] };
+				implemented.push(c.input);
+				return {
+					status: "completed",
+					summary: "done",
+					checks: [],
+					questions: [],
+				};
+			},
+		});
+		// A routine classification never bypasses an open decision.
+		await waiting(run);
+		expect(run.architectureProposals![0]!.status).toBe("pending");
+		expect(implemented).toEqual([]);
+		await runtime.shutdown();
+		versions = 0;
+		const second = setup("meaningful", {
+			agent: async (c) => {
+				if (c.step.architectureContract === "architecture-v1") return open();
+				if (c.step.architectureContract === "architecture-review-v1")
+					return { approved: true, feedback: [] };
+				second.implemented.push(c.input);
+				return {
+					status: "completed",
+					summary: "done",
+					checks: [],
+					questions: [],
+				};
+			},
+		});
+		await waiting(second.run);
+		expect(() => decide(second.runtime, second.run)).toThrow("open questions");
+		decide(second.runtime, second.run, "revise", "Use the run checkpoint.");
+		await vi.waitFor(() =>
+			expect(second.run.architectureProposals).toHaveLength(2),
+		);
+		await waiting(second.run);
+		decide(second.runtime, second.run);
+		await finished(second.runtime, second.run);
+		expect(second.implemented).toHaveLength(1);
 	});
 	it("retains waiting identity and accepted handoff through restart", async () => {
 		const { runtime, run, home, hooks, implemented } = setup();
