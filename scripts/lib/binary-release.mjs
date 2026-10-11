@@ -15,6 +15,7 @@ import { join, resolve } from "node:path";
 import { inspectArchive } from "./bounded-archive.mjs";
 import { releaseChannel } from "./release-candidate.mjs";
 import { validateSourceArchive } from "./release-material.mjs";
+import { sourceTransportRecords } from "./source-transport.mjs";
 
 export const REPOSITORY = "jappyjan/bobs-factory";
 export const TARGETS = [
@@ -228,6 +229,11 @@ export function validateReleaseManifest(value) {
 	validateFile(value.verifier, "install-binary.sh");
 	validateFile(value.source, "source-rebuild.tar.gz");
 	requireValue(
+		value.schemaVersion === 2 || value.sourceTransport === undefined,
+		"New source transport at legacy boundary",
+	);
+	sourceTransportRecords(value.source, value.sourceTransport);
+	requireValue(
 		Object.keys(value.targets ?? {})
 			.sort()
 			.join() === [...TARGETS].sort().join(),
@@ -257,7 +263,7 @@ export function validateReleaseManifest(value) {
 		requireValue(
 			releaseChannel(value.version) &&
 				value.channel === releaseChannel(value.version),
-			"Unsupported signed release channel",
+			"Unsupported release channel",
 		);
 		requireValue(
 			/^[a-f0-9]{64}$/.test(value.candidateDigest) &&
@@ -312,7 +318,7 @@ export function validateReleaseManifest(value) {
 		requireValue(
 			Array.isArray(value.assets) &&
 				new Set(value.assets.map((a) => a.file)).size === value.assets.length,
-			"Ambiguous signed inventory",
+			"Ambiguous release inventory",
 		);
 		if (value.publicInstallerValidation !== undefined) {
 			requireValue(
@@ -324,15 +330,29 @@ export function validateReleaseManifest(value) {
 		for (const file of required)
 			requireValue(
 				value.assets.some((a) => a.file === file),
-				`Missing signed asset: ${file}`,
+				`Missing release asset: ${file}`,
+			);
+		const sourceAssets = sourceTransportRecords(
+			value.source,
+			value.sourceTransport,
+		);
+		if (value.sourceTransport)
+			requireValue(
+				value.assets.length + 1 <= 1000,
+				"Source transport inventory exceeds GitHub asset count limit",
 			);
 		for (const record of value.assets) {
+			if (record.file.startsWith("source-rebuild.tar.gz"))
+				requireValue(
+					sourceAssets.some((a) => a.file === record.file),
+					"Unexpected source transport asset",
+				);
 			requireValue(
 				/^[A-Za-z0-9.-]+$/.test(record.file) &&
 					!["release.json", "release.json.sig", "release.json.key-id"].includes(
 						record.file,
 					),
-				"Unsafe/circular signed inventory",
+				"Unsafe/circular release inventory",
 			);
 			validateFile(record, record.file);
 		}
@@ -344,7 +364,7 @@ export function validateReleaseManifest(value) {
 						a.sha256 === record.sha256 &&
 						a.size === record.size,
 				),
-				`Signed inventory mismatch: ${record.file}`,
+				`Release inventory mismatch: ${record.file}`,
 			);
 	}
 	return value;
@@ -354,7 +374,7 @@ export function releaseAssetRecords(value, inventory = true) {
 	return [
 		value.installer,
 		value.verifier,
-		value.source,
+		...sourceTransportRecords(value.source, value.sourceTransport),
 		...Object.values(value.targets).flatMap((t) => [
 			{ file: t.archive, sha256: t.archiveSha256, size: t.archiveSize },
 			{ file: t.manifest, sha256: t.manifestSha256, size: t.manifestSize },
@@ -884,8 +904,14 @@ export function validatePublicInstaller(receipt, identity, target) {
 				"badSizePreservesInstallation",
 				"badSourcePreservesInstallation",
 				"unavailableTargetPreservesInstallation",
-				"badSignaturePreservesInstallation",
-			].every((check) => receipt.checks?.[check] === "passed"),
+				"badManifestPreservesInstallation",
+			].every(
+				(check) =>
+					receipt.checks?.[check] === "passed" ||
+					(check === "badManifestPreservesInstallation" &&
+						receipt.schemaVersion === 1 &&
+						receipt.checks?.badSignaturePreservesInstallation === "passed"),
+			),
 		`Missing candidate-bound public installer validation: ${target}`,
 	);
 }

@@ -11,7 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const [outputArg] = process.argv.slice(2);
 assert(
 	outputArg,
-	"Usage: node scripts/prepare-signed-delivery-fixture.mjs EMPTY_OUTPUT",
+	"Usage: node scripts/prepare-unsigned-delivery-fixture.mjs EMPTY_OUTPUT",
 );
 const output = resolve(outputArg);
 assert.equal(

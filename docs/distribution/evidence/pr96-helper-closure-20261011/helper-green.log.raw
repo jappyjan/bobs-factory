@@ -1,0 +1,10 @@
+✔ retained standalone helper resolves its full module closure and runs recovery without repository modules (481.466666ms)
+✔ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (1221.749917ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1745.000625

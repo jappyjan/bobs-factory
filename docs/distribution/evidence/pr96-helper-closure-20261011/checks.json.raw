@@ -1,0 +1,69 @@
+{
+  "oldHead": "3e597d0b70ea3a8a169d14576440b3eabd5ab747",
+  "testedImplementation": "493167cd72ba961c758e636fd79e0d8979f17469",
+  "desktop": {
+    "passed": 34,
+    "failed": 0,
+    "skipped": 0
+  },
+  "exactFocused": {
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
+  },
+  "priorBetaAndF1": {
+    "passed": 5,
+    "failed": 0
+  },
+  "exactCompleteShellF1": "five assertions passed; mocked providers/scripted UI",
+  "redExactOldHead": {
+    "failed": 2,
+    "passed": 0
+  },
+  "files": {
+    "desktop-green.log.raw": {
+      "sha256": "0739ca46850aa266ecd0df2e9c610936b4205bf206100e9bd93a82a015523a0e",
+      "size": 4541
+    },
+    "desktop-test-boundary.log.raw": {
+      "sha256": "71280f1c346ecc51bb0e78d15136e1c17c69709070d81f4f3d42f5ba7c64e374",
+      "size": 5564
+    },
+    "exact-green.log.raw": {
+      "sha256": "61d724f3cfb1fcc8ae5835557b1faff94d79acb669688453415c834540169e52",
+      "size": 1292
+    },
+    "helper-green.log.raw": {
+      "sha256": "24e6ee5506a5266eb37035a652318dd64f33bfc2c48821bcf675d35d102dbc9d",
+      "size": 372
+    },
+    "helper-red.log.raw": {
+      "sha256": "7c6fd7423d89cc5ba706fd210f5fd66caabecc001b8021ae2a6487ce2bd7642e",
+      "size": 3936
+    },
+    "prior-green.log.raw": {
+      "sha256": "dfaa6ac0437c32600156b9a476421f67cb82079e4512f463b9e1ffac3fb9cc4c",
+      "size": 618
+    },
+    "reproduction.log.raw": {
+      "sha256": "e1a0ceb27aed4b2870b836cb8b52aadf1e6e43e55dfc732ca20d2417b3b56587",
+      "size": 1924
+    },
+    "shell-green.json.raw": {
+      "sha256": "a7674217ee80252af720b6d8bfbbecf5778e6d56ef4b073595d49f31a9320f25",
+      "size": 826
+    },
+    "shell-green.stderr.raw": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    "source-hooks.log.raw": {
+      "sha256": "3149734f0859d3449ba628659f3534e9e4c665d2a155c90eaf4b60e5bf569105",
+      "size": 6157
+    },
+    "spec-round2.md.raw": {
+      "sha256": "c4f2e7ccfbc023c054b83ccde9bd6f948aade941334140c8381b88b52d4fe0b0",
+      "size": 3810
+    }
+  }
+}

@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { dirname, join, posix } from "node:path";
+import { gunzipSync, gzipSync } from "node:zlib";
 import {
 	existsSync,
 	lstatSync,
@@ -8,9 +10,7 @@ import {
 	readlinkSync,
 	symlinkSync,
 	writeFileSync,
-} from "node:fs";
-import { dirname, join, posix } from "node:path";
-import { gunzipSync, gzipSync } from "node:zlib";
+} from "./app-filesystem.mjs";
 export const digest = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
 const safe = (name) =>
@@ -116,7 +116,7 @@ export function validateEntries(entries) {
 	for (const entry of entries.filter((x) => x.kind === "link"))
 		resolveTarget(entry);
 }
-// Bob's framed gzip archive retains complete signed app bytes, Unix modes and internal
+// Bob's framed gzip archive retains complete app bytes, Unix modes and internal
 // framework symlinks. No external tar/zip extraction, headers or path interpretation.
 export function packApp(directory) {
 	const entries = tree(directory),

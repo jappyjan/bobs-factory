@@ -7,23 +7,28 @@ The desktop lane owns DMG/AppImage/DEB generation and native validation.
 
 ## Preparing a release's entry points
 
-After protected signing and immutable publication have completed, a release
+After complete validation and immutable publication have completed, a release
 maintainer runs this read-only generator from the reviewed checkout:
 
 ```sh
 node scripts/generate-package-recipes.mjs --version EXACT_VERSION --output /tmp/bobs-entry-points-EXACT_VERSION
 ```
 
-It uses the existing publisher signature, candidate, source tag and complete asset
+It uses the GitHub HTTPS integrity, candidate, source tag and complete asset
 inventory verifier. It requires all four desktop targets and downloads/verifies the
 matching DMGs, AppImages and DEBs before emitting desktop recipes. `--kind npm` prepares only the launcher from a
 complete verified native release, independently of desktop delivery; `--kind desktop`
 prepares only the desktop recipes. The default `all` requires both. URLs contain the exact
-version tag, never a mutable latest/nightly pointer. Missing, unsigned, partial or
+version tag, never a mutable latest/nightly pointer. Missing, corrupt, partial or
 conflicting packages fail closed. `verification.json` binds generated recipes to
 the release manifest digest, publisher, candidate, commit and byte checksums.
-The minimum desktop targets are macOS 13+ and Linux glibc 2.35+, ARM64/x64,
-subject to the desktop lane's native proof. Windows and musl are unsupported.
+The first-release supported desktop targets are macOS 15+ and Ubuntu 24.04 /
+glibc 2.39+, ARM64/x64. Native observations are macOS 15.7.9 and Ubuntu
+24.04.5 / glibc 2.39 on both architectures; they do not establish support for
+macOS 15.0, every Ubuntu 24.04 image, or other Linux distributions. The frozen
+macOS app still declares `LSMinimumSystemVersion` 13, an inherited technical
+launch minimum rather than evidence of tested or supported macOS 13/14. Windows
+and musl are unsupported.
 
 The generated material contains:
 
@@ -41,7 +46,7 @@ The generated material contains:
 - An npm package with the release's exact version and default runtime selection.
   `latest` is reserved for stable; `nightly` for nightly. The emitted package is
   deliberately `private: true` until registry ownership is proven. A launcher tag
-  selects a frozen runtime by default; explicit `--channel` follows that signed
+  selects a frozen runtime by default; explicit `--channel` follows that validated
   channel, while `--version` freezes one release. It has no native executable cache: every run
   stages verified bytes in a temporary prefix, removed on exit. npm's launcher
   cache does not make its downloaded runtime permanent.

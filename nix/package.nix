@@ -1,15 +1,7 @@
 # Inputs are reviewed immutable local files. Evaluation never fetches latest.
-{ pkgs, releaseManifest, releaseSignature, releaseKeyId
-, releaseAttestation ? null, releaseAttestationSignature ? null
-, releaseAttestationKeyId ? releaseKeyId }:
+{ pkgs, releaseManifest, releaseAttestation ? null }:
 let
   release = builtins.fromJSON (builtins.readFile releaseManifest);
-  pins = (builtins.fromJSON (builtins.readFile ../docs/distribution/release-keys.json)).keys;
-  pinned = id: let key = pins.${id} or (throw "Unknown publisher key; obtain fresh reviewed release tooling");
-    in if key.status != "active" || key.algorithm != "rsa-sha256" then
-      throw "Unsupported or retired publisher key" else pkgs.writeText "bobs-factory-publisher.pem" key.pem;
-  publicKey = pinned releaseKeyId;
-  attestationKey = pinned releaseAttestationKeyId;
   legacy = release.schemaVersion == 1;
   targets = {
     aarch64-darwin = "darwin-arm64";
@@ -27,8 +19,8 @@ else if !(builtins.elem release.schemaVersion [ 1 2 ]) || release.product != "bo
   || entry.archive != "bobs-factory-${release.version}-${target}.tar.gz"
   || builtins.match "[a-f0-9]{64}" entry.archiveSha256 == null then throw "Invalid release manifest"
 else if legacy && (builtins.match ".*-beta(\\.[0-9]+)?" release.version == null
-  || releaseAttestation == null || releaseAttestationSignature == null) then
-  throw "Historical beta requires a signed complete-inventory attestation"
+  || releaseAttestation == null) then
+  throw "Historical beta requires a reviewed complete-inventory attestation"
 else pkgs.stdenvNoCC.mkDerivation {
   pname = "bobs-factory";
   version = release.version;
@@ -37,14 +29,11 @@ else pkgs.stdenvNoCC.mkDerivation {
     sha256 = entry.archiveSha256;
   };
   sourceRoot = "bobs-factory-${release.version}-${target}";
-  nativeBuildInputs = [ pkgs.openssl pkgs.jq ]
+  nativeBuildInputs = [ pkgs.jq ]
     ++ pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.autoPatchelfHook ];
   buildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.stdenv.cc.cc.lib ];
-  # Authentication happens before unpacking. Archive hashes alone are not identity.
-  preUnpack = ''
-    openssl dgst -sha256 -verify ${publicKey} -signature ${releaseSignature} ${releaseManifest}
-  '' + pkgs.lib.optionalString legacy ''
-    openssl dgst -sha256 -verify ${attestationKey} -signature ${releaseAttestationSignature} ${releaseAttestation}
+  # Reviewed manifest and SHA256 inventory provide integrity over GitHub HTTPS.
+  preUnpack = pkgs.lib.optionalString legacy ''
     jq -e --slurpfile release ${releaseManifest} \
       --arg manifestHash "$(sha256sum ${releaseManifest} | cut -d ' ' -f1)" \
       --argjson manifestSize "$(wc -c < ${releaseManifest} | tr -d ' ')" \

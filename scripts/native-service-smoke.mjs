@@ -84,7 +84,7 @@ try {
 				"login/logout/reboot",
 				"remote host",
 				"physical passkey",
-				"signed publication",
+				"publication",
 			],
 		}),
 	);

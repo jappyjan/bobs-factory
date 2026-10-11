@@ -1,4 +1,5 @@
-import { execFileSync } from "node:child_process";
+import { dirname, join } from "node:path";
+import { digest, tree, unpackApp } from "./app-archive.mjs";
 import {
 	accessSync,
 	constants,
@@ -8,13 +9,12 @@ import {
 	readFileSync,
 	realpathSync,
 	writeFileSync,
-} from "node:fs";
-import { dirname, join } from "node:path";
-import { digest, tree, unpackApp } from "./app-archive.mjs";
+} from "./app-filesystem.mjs";
 import {
 	validateElectronLicenses,
 	verifyElectronLicenses,
 } from "./app-licenses.mjs";
+import { inheritAppQuarantine } from "./app-quarantine.mjs";
 export function installationKind(path, target) {
 	try {
 		const actual = realpathSync(path),
@@ -51,14 +51,7 @@ export function appExecutable(path, target) {
 		: path;
 }
 export function verifyAppProof(proof, candidate, services) {
-	const bytes = Buffer.from(proof.manifest, "base64"),
-		signature = Buffer.from(proof.signature, "base64");
-	services.verifyManifestSignature(
-		bytes,
-		signature,
-		proof.keyId,
-		services.trustedKeys,
-	);
+	const bytes = Buffer.from(proof.manifest, "base64");
 	const manifest = services.validateReleaseManifest(JSON.parse(bytes)),
 		metadataBytes = Buffer.from(proof.metadata, "base64"),
 		metadata = JSON.parse(metadataBytes);
@@ -87,13 +80,13 @@ export function verifyAppProof(proof, candidate, services) {
 		JSON.stringify(metadata.archive) !==
 			JSON.stringify(item.updateArchive ?? item.archive)
 	)
-		throw Error("App receipt publisher proof mismatch");
+		throw Error("App receipt integrity proof mismatch");
 	if (
 		candidate.target.startsWith("darwin") &&
 		(metadata.format !== "bobs-app-v1" ||
-			metadata.osSigning !== "developer-id-notarized")
+			!["unsigned", "ad-hoc"].includes(metadata.osSigning))
 	)
-		throw Error("App receipt lacks authentic macOS signing/notarization");
+		throw Error("App receipt has unsupported macOS integrity metadata");
 	validateElectronLicenses(metadata.electronLicenses);
 	return metadata;
 }
@@ -104,15 +97,14 @@ export class DesktopAppSource {
 		target,
 		services,
 		client = services.githubClient(""),
-		keys = services.trustedKeys,
 	) {
-		Object.assign(this, { directory, install, target, services, client, keys });
+		Object.assign(this, { directory, install, target, services, client });
 	}
 	candidate(v, channel) {
 		const m = v.manifest,
 			item = m.desktop?.artifacts.find((x) => x.target === this.target);
 		if (m.schemaVersion !== 2 || m.channel !== channel || !item)
-			throw Error("No signed app candidate for selected channel/target");
+			throw Error("No validated app candidate for selected channel/target");
 		return {
 			version: m.version,
 			commit: m.commit,
@@ -126,14 +118,13 @@ export class DesktopAppSource {
 		return this.services.verifyPublishedRelease(
 			this.client,
 			await this.client.api(`releases/tags/v${version}`),
-			this.keys,
 		);
 	}
 	async discover(settings) {
 		const v = settings.pin
 			? await this.verified(settings.pin)
 			: (
-					await this.services.discoverReleases(this.client, this.keys, {
+					await this.services.discoverReleases(this.client, {
 						selectedOnly: true,
 						allowBetaFallback: false,
 					})
@@ -146,7 +137,7 @@ export class DesktopAppSource {
 			JSON.stringify(this.candidate(v, candidate.channel)) !==
 			JSON.stringify(candidate)
 		)
-			throw Error("Exact signed app candidate changed");
+			throw Error("Exact validated app candidate changed");
 		const item = v.manifest.desktop.artifacts.find(
 			(x) => x.target === this.target,
 		);
@@ -157,7 +148,7 @@ export class DesktopAppSource {
 				asset.size !== record.size ||
 				asset.digest !== `sha256:${record.sha256}`
 			)
-				throw Error("App asset absent from signed inventory");
+				throw Error("App asset absent from release inventory");
 			const bytes = await this.client.bytes(asset);
 			if (bytes.length !== record.size || digest(bytes) !== record.sha256)
 				throw Error("App asset digest mismatch");
@@ -193,9 +184,9 @@ export class DesktopAppSource {
 		if (this.target.startsWith("darwin")) {
 			if (
 				metadata.format !== "bobs-app-v1" ||
-				metadata.osSigning !== "developer-id-notarized"
+				!["unsigned", "ad-hoc"].includes(metadata.osSigning)
 			)
-				throw Error("macOS app requires authentic signing/notarization");
+				throw Error("Unsupported macOS app integrity metadata");
 			const contents = join(work, "contents");
 			unpackApp(bytes, contents);
 			path = join(contents, "Bob's Factory.app");
@@ -211,18 +202,12 @@ export class DesktopAppSource {
 				join(path, "Contents", "Resources"),
 				metadata.electronLicenses,
 			);
-			execFileSync("/usr/bin/codesign", [
-				"--verify",
-				"--deep",
-				"--strict",
-				path,
-			]);
-			execFileSync("/usr/sbin/spctl", ["--assess", "--type", "execute", path]);
 		} else {
 			if (metadata.format !== "AppImage") throw Error("Unsupported app format");
 			path = join(work, "Bob.AppImage");
 			writeFileSync(path, bytes, { flag: "wx", mode: 0o755 });
 		}
+		inheritAppQuarantine(this.install, path, this.target);
 		if (appFingerprint(path, this.target) !== metadata.fingerprint)
 			throw Error("Complete app inventory mismatch");
 		writeFileSync(
@@ -232,8 +217,6 @@ export class DesktopAppSource {
 				metadata,
 				proof: {
 					manifest: v.bytes.toString("base64"),
-					signature: v.signature.toString("base64"),
-					keyId: v.keyId,
 					metadata: metadataBytes.toString("base64"),
 					fingerprint: metadata.fingerprint,
 				},
@@ -252,7 +235,7 @@ export class DesktopAppSource {
 		const staged = await this.stage(c),
 			fingerprint = appFingerprint(staged.executable, this.target);
 		if (appFingerprint(this.install, this.target) !== fingerprint)
-			throw Error("Installed app differs from authentic release");
+			throw Error("Installed app differs from validated release");
 		return {
 			schema: 1,
 			install: this.install,

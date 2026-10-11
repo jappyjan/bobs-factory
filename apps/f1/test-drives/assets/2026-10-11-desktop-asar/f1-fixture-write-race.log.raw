@@ -1,0 +1,41 @@
+✖ maintained unsigned complete-shell F1 drive preserves worker state and recovers failed replacement (4560.128167ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4601.70125
+
+✖ failing tests:
+
+test at scripts/tests/desktop-shell-drive.test.mjs:8:1
+✖ maintained unsigned complete-shell F1 drive preserves worker state and recovers failed replacement (4560.128167ms)
+  AssertionError [ERR_ASSERTION]: <anonymous_script>:1
+  
+  
+  SyntaxError: Unexpected end of JSON input
+      at JSON.parse (<anonymous>)
+      at read (file:///Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/apps/desktop/src/app-lifecycle.mjs:44:36)
+      at Timeout._onTimeout (file:///Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/apps/f1/test-drives/assets/desktop-shell-update.mjs:166:6)
+      at listOnTimeout (node:internal/timers:685:17)
+      at process.processTimers (node:internal/timers:618:7)
+  
+  Node.js v24.20.0
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/scripts/tests/desktop-shell-drive.test.mjs:24:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

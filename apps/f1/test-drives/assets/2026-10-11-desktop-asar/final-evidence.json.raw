@@ -1,0 +1,218 @@
+{
+  "status": "passed",
+  "scope": "Owned process/listener absence, exact8-module helper source mapping and independently scoped actual functional results; no public release or new built candidate claim",
+  "code": "55fea26ee0b30f96f54fedc62371853bc4d1ae99",
+  "closure": [
+    {
+      "file": "app-archive.mjs",
+      "size": 5679,
+      "sha256": "3916f821aabc7ef186894188b75406116889caaf1e14d882f0194bb83f5bcd57",
+      "exactCommittedSource": true
+    },
+    {
+      "file": "app-filesystem.mjs",
+      "size": 712,
+      "sha256": "eb4755942be215468d0d1bf2cb2d274f7f5b0478f9053b908419a40a8996d452",
+      "exactCommittedSource": true
+    },
+    {
+      "file": "app-helper.mjs",
+      "size": 688,
+      "sha256": "0ccce4feb4c9782eb2da7f6eff933a7303b4d5937ec8e19452c43eb36fdf095b",
+      "exactCommittedSource": true
+    },
+    {
+      "file": "app-licenses.mjs",
+      "size": 1749,
+      "sha256": "89cc61d76bc003df77cbd995ac16efe1087fc5f646c1e425ef02aeef8f8e3b06",
+      "exactCommittedSource": true
+    },
+    {
+      "file": "app-lifecycle.mjs",
+      "size": 16149,
+      "sha256": "43b7bc3f49727171612c27850652b4c4af7d186c11a28cbc44c69288a39f1281",
+      "exactCommittedSource": true
+    },
+    {
+      "file": "app-quarantine.mjs",
+      "size": 1720,
+      "sha256": "c8af4ef973084693496446fb14b77737905ee4d34bd2f21a7ba75314de051725",
+      "exactCommittedSource": true
+    },
+    {
+      "file": "app-source.mjs",
+      "size": 8283,
+      "sha256": "be61c02c0f083401696e8b5d0421a90c36b974ebd20217478617c24fa993a3e2",
+      "exactCommittedSource": true
+    },
+    {
+      "file": "update-services.mjs",
+      "size": 2931410,
+      "sha256": "219ccb41db28804240d70127ca561a465ae49a2052c6201abc942b965843389e"
+    }
+  ],
+  "results": [
+    {
+      "fixture": "actual-update-fixed3",
+      "resultSha256": "7c126ec21352dc350b4428b8288d78d65ebd7f085afbb8dddb20fdd10b4693c8",
+      "checks": [
+        "actual baseline UI",
+        "current actual native worker",
+        "live lease deferral",
+        "fixed source retained helper on actual Electron44.7 Node execution",
+        "precise old UI quit",
+        "actual full app activation",
+        "actual current packaged health",
+        "same native PID/nonce",
+        "mock waiting checkpoint bytes",
+        "unchanged absent quarantine from archive-copy fixture",
+        "exact current full fingerprint"
+      ],
+      "scope": "Actual Mac ARM apps/native; fixed source helper with exact packaged services219ccb; controlled outer release protocol/evidence and completed mock checkpoint. Archive-unpacked baseline has absent quarantine, no artificial OS attr injected or cleared; no quarantined first-launch/public publisher/provider/physical authenticator claims."
+    },
+    {
+      "fixture": "actual-update-fixed6",
+      "resultSha256": "82dd418eba39916b8b0615248b2bf4bd9e26effcba2e9f4b43a3a20b77c49fb2",
+      "checks": [
+        "actual baseline UI",
+        "current actual native worker",
+        "live lease deferral",
+        "fixed source retained helper on actual Electron44.7 Node execution",
+        "precise old UI quit",
+        "actual full app activation",
+        "actual current packaged health",
+        "same native PID/nonce",
+        "mock waiting checkpoint bytes",
+        "real approved00c3 preserved from exact copy-only candidate through staging/switch",
+        "exact current full fingerprint"
+      ],
+      "scope": "Actual Mac ARM apps/native; fixed source helper with exact packaged services219ccb; controlled outer release protocol/evidence and completed mock checkpoint. Baseline archive copy has absent quarantine; actual current6f candidate uses real observed user-approved00c3 carried from same-byte copy-only app through maintained helper. No synthetic approval/attribute clearing/public publisher/provider/physical authenticator claims."
+    }
+  ],
+  "cleanup": {
+    "active": [],
+    "listeners": [],
+    "ports": [
+      45971,
+      45972,
+      45973,
+      46971,
+      46972,
+      46973,
+      47971,
+      47972,
+      47973,
+      48971,
+      48972,
+      48973,
+      49971,
+      49972,
+      49973,
+      50971,
+      50972,
+      50973
+    ]
+  },
+  "files": [
+    {
+      "path": "baseline-readonly.json",
+      "size": 2080,
+      "sha256": "c6c364fbc0d802aae248fbb6c0ec3a4278dd0edd0c4ac65c58f51157689b39a9"
+    },
+    {
+      "path": "fixed-complete-fingerprints.json",
+      "size": 3116,
+      "sha256": "1296ae69b9f9d9b8ae8eb2b9a2e7b04ba53f2c1ef029c468cb5847afca1ed0e4"
+    },
+    {
+      "path": "regression-red.log",
+      "size": 159146,
+      "sha256": "69899f7af893a320f69fdbb92f2c35edd03c32bb5031ff8bc990418df5d95ff2"
+    },
+    {
+      "path": "regression-expanded-green.log",
+      "size": 232,
+      "sha256": "3ad6cee0ebd736896133ba7928e47fead5285b0998a826292c9052a1f69fefe3"
+    },
+    {
+      "path": "desktop-suite-final.log",
+      "size": 4344,
+      "sha256": "05a7cb49c98360c1ce6e5ba2e050d0d0aee7610ad2ac36beb740e05467682b3a"
+    },
+    {
+      "path": "f1-shell.json.raw",
+      "size": 826,
+      "sha256": "586636ae416d26c7676dd6dc4b7440799a6bbdf45f9e092789de7de4fc5b7cc3"
+    },
+    {
+      "path": "f1-regression.log",
+      "size": 1563,
+      "sha256": "71480e134d9d8bc5bb01485f0a52f7aae94522d5191ad15750c9bcefcc780a49"
+    },
+    {
+      "path": "f1-regression-atomic.log",
+      "size": 235,
+      "sha256": "2a36c21ac3cd71f96e7a6b62c382e18d80a03acb07c589e08f05ef80073f1b35"
+    },
+    {
+      "path": "post-user-allow-observation.json",
+      "size": 483,
+      "sha256": "9d14b25b3570e4d273838b48684f56d5a425c5b96b87f07f172a0e745fc4d572"
+    },
+    {
+      "path": "post-second-user-allow-observation.json",
+      "size": 1419,
+      "sha256": "40e4ae3a7efa18d167bb82e3371864c6e84551af4a172b5097a9af72be1af5a4"
+    },
+    {
+      "path": "actual-update-fixed3/result.json",
+      "size": 34850,
+      "sha256": "7c126ec21352dc350b4428b8288d78d65ebd7f085afbb8dddb20fdd10b4693c8"
+    },
+    {
+      "path": "actual-update-fixed6/result.json",
+      "size": 35058,
+      "sha256": "82dd418eba39916b8b0615248b2bf4bd9e26effcba2e9f4b43a3a20b77c49fb2"
+    },
+    {
+      "path": "actual-update-fixed6/approved-copy-only-input.json",
+      "size": 600,
+      "sha256": "2ebb5324c84b06e0136bb03316b42e815cad68d11151b6a87c72e2f59204a0dc"
+    },
+    {
+      "path": "actual-update-fixed6/helper-outcome.json",
+      "size": 2290,
+      "sha256": "29a18a7de24abfe68af38964a1270031a8e49cf02b9240bf2bea0cb57f48ad90"
+    },
+    {
+      "path": "actual-update-fixed/failure.json",
+      "size": 920,
+      "sha256": "597023c2bd304c3c599df9e905376ab6985dc17ab4a9a94271b5556c02c2c612"
+    },
+    {
+      "path": "actual-update-fixed2/failure.json",
+      "size": 934,
+      "sha256": "4aa28bbdff2da503908152b5a68b571a8cce2b56c5cf6ade09ae6492277ef6d5"
+    },
+    {
+      "path": "actual-update-fixed4/failure.json",
+      "size": 914,
+      "sha256": "dd040d404b8464a3d5942a54ca58639c02995e28011fa6cc87533a96d31a156f"
+    },
+    {
+      "path": "actual-update-fixed5/failure.json",
+      "size": 980,
+      "sha256": "f8ad187cf3015ad460692cfba82b75bebc41d01e3f8efe93ec079e1eded52be7"
+    },
+    {
+      "path": "actual-update-fixed6.mjs",
+      "size": 17030,
+      "sha256": "5de109fd3ac89e7289de0bf9c1b8c73b9eb08aa06ab6b2a47a7a28bf49d17ecb"
+    },
+    {
+      "path": "trace-launch6.mjs",
+      "size": 891,
+      "sha256": "c77da852decdc05a75753b7acc006b9b72253df8902ffa4521c9bd0d01f42cc4"
+    }
+  ]
+}

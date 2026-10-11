@@ -1,6 +1,6 @@
 // F1_AGENT_MODE=mock node apps/f1/test-drives/assets/desktop-shell-update.mjs
 // Actual protected FactoryServer/WorkflowRuntime/UpdateDrain + shared owned worker
-// record and external-process shell adapter, signed test payloads; Node scripts stand
+// record and external-process shell adapter, unsigned test payloads; Node scripts stand
 // in for Electron here. Native packaged Electron is validated separately.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -30,7 +30,6 @@ import * as services from "../../../desktop/src/update-services.mjs";
 import {
 	appRelease,
 	fixtureClient,
-	keys,
 } from "../../../desktop/test/shell-fixture.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -119,7 +118,7 @@ const server = new FactoryServer(
 await server.start(port);
 function script(version, fail = false) {
 	return Buffer.from(
-		`#!/usr/bin/env node\nconst fs=require('node:fs'),path=require('node:path'),home=process.env.BOBS_FACTORY_DESKTOP_HOME;fs.writeFileSync(path.join(home,'fixture-ui.json'),JSON.stringify({pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim()}));if(${fail})process.exit(7);if(process.env.BOBS_FACTORY_DESKTOP_HEALTH){const token=process.env.BOBS_FACTORY_DESKTOP_HEALTH;fs.writeFileSync(path.join(home,'desktop','updates','health-'+token+'.json'),JSON.stringify({token,pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim(),install:${JSON.stringify(install)},version:${JSON.stringify(version)},commit:'${"a".repeat(40)}',target:'${target}'}));}setInterval(()=>{},1000);\n`,
+		`#!/usr/bin/env node\nconst fs=require('node:fs'),path=require('node:path'),home=process.env.BOBS_FACTORY_DESKTOP_HOME;const save=(file,value)=>{const temporary=file+'.tmp-'+process.pid;fs.writeFileSync(temporary,JSON.stringify(value));fs.renameSync(temporary,file);};save(path.join(home,'fixture-ui.json'),{pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim()});if(${fail})process.exit(7);if(process.env.BOBS_FACTORY_DESKTOP_HEALTH){const token=process.env.BOBS_FACTORY_DESKTOP_HEALTH;save(path.join(home,'desktop','updates','health-'+token+'.json'),{token,pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim(),install:${JSON.stringify(install)},version:${JSON.stringify(version)},commit:'${"a".repeat(40)}',target:'${target}'});}setInterval(()=>{},1000);\n`,
 	);
 }
 const old = appRelease("stable", script("0.9.0"), target, {
@@ -136,14 +135,13 @@ writeFileSync(install, readFileSync(join(old.assets, "fixture.AppImage")), {
 	mode: 0o755,
 });
 const directory = join(home, "desktop", "updates"),
-	controlled = { ...services, trustedKeys: keys };
+	controlled = services;
 const source = new DesktopAppSource(
 	directory,
 	install,
 	target,
 	controlled,
 	fixtureClient([old, good], services),
-	keys,
 );
 save(join(directory, "installation.json"), await source.enroll(old.identity));
 const ui = spawn(install, [], {
@@ -208,7 +206,7 @@ try {
 	assert.deepEqual(drain.receipt(), receipt);
 	assert.equal(resumed, 2);
 	checks.push(
-		"signed app activation retains exact worker PID/nonce and waiting checkpoints/definitions/outputs/config",
+		"unsigned app activation retains exact worker PID/nonce and waiting checkpoints/definitions/outputs/config",
 	);
 	const newUi = read(join(home, "fixture-ui.json"));
 	life.uiPid = newUi.pid;
@@ -248,7 +246,7 @@ try {
 		saved,
 	);
 	checks.push(
-		"interrupted complete-app switch recovers prior UI from signed receipt without worker resurrection",
+		"interrupted complete-app switch recovers prior UI from candidate-bound integrity receipt without worker resurrection",
 	);
 	const recoveredUi = read(join(home, "fixture-ui.json"));
 	life.uiPid = recoveredUi.pid;

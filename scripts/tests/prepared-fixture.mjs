@@ -24,7 +24,7 @@ import {
 	freezeCandidate,
 	validateCandidate,
 } from "../lib/release-candidate.mjs";
-import { keys, signBytes, testInstaller } from "./release-fixtures.mjs";
+import { splitSourceArchive } from "../lib/source-transport.mjs";
 
 import {
 	fixtureTar,
@@ -41,20 +41,14 @@ export function preparedFixture(
 		desktop = false,
 		legacy = false,
 		frozenCandidate,
+		sourceChunks = false,
 	} = {},
 ) {
 	const work = mkdtempSync(join(tmpdir(), "factory-publication-fixture-"));
 	const scripts = join(work, "scripts");
 	cpSync(join(root, "scripts"), scripts, { recursive: true });
 	mkdirSync(join(work, "docs/distribution"), { recursive: true });
-	writeFileSync(
-		join(work, "docs/distribution/release-keys.json"),
-		jsonBytes({ schemaVersion: 1, keys }),
-	);
-	writeFileSync(
-		join(scripts, "install.sh"),
-		testInstaller(readFileSync(join(scripts, "install.sh"), "utf8")),
-	);
+
 	let workflowSha = "b".repeat(40);
 	if (gitTooling) {
 		const git = (...args) =>
@@ -290,7 +284,7 @@ export function preparedFixture(
 							"badSizePreservesInstallation",
 							"badSourcePreservesInstallation",
 							"unavailableTargetPreservesInstallation",
-							"badSignaturePreservesInstallation",
+							"badManifestPreservesInstallation",
 						].map((c) => [c, "passed"]),
 					),
 				}),
@@ -352,6 +346,15 @@ export function preparedFixture(
 		join(assets, "source-rebuild.tar.gz"),
 		"source-rebuild.tar.gz",
 	);
+	const sourceTransport = sourceChunks
+		? splitSourceArchive(
+				join(assets, sourceRecord.file),
+				sourceRecord,
+				assets,
+				1024,
+			)
+		: undefined;
+	if (sourceTransport) rmSync(join(assets, sourceRecord.file));
 	const evidence = {
 		schemaVersion: 1,
 		product: "bobs-factory",
@@ -468,6 +471,7 @@ export function preparedFixture(
 			"install-binary.sh",
 		),
 		source: sourceRecord,
+		...(sourceTransport ? { sourceTransport } : {}),
 		targets,
 		...(desktop ? { desktop: evidence.desktop } : {}),
 		...(!legacy
@@ -479,11 +483,6 @@ export function preparedFixture(
 			: {}),
 	};
 	writeFileSync(join(assets, "release.json"), jsonBytes(manifest));
-	writeFileSync(
-		join(assets, "release.json.sig"),
-		signBytes(jsonBytes(manifest)),
-	);
-	writeFileSync(join(assets, "release.json.key-id"), "fixture\n");
 	const records = readdirSync(assets)
 		.sort()
 		.map((f) => fileRecord(join(assets, f), f));

@@ -1,0 +1,36 @@
+# PR96 independent review, round 1
+
+PR: https://github.com/jappyjan/bobs-factory/pull/96 (registered to review thread).
+Fixed base: `3b198a1ee3bf26eefa536de3a9f5d1a771abf034`.
+Exact head: `f7ab57ea1699a85272fa610fe9950cb144033cd7`.
+Commits: `81715b61` unsigned delivery; `f7ab57ea` validation documentation.
+Diff: `git diff 3b198a1ee3bf26eefa536de3a9f5d1a771abf034...f7ab57ea1699a85272fa610fe9950cb144033cd7`.
+Read-only checkout: `/Users/jappy/code/jappy/bobs-factory-unsigned-116`.
+User's unsigned-delivery decision overrides prior paid Apple and publisher-signature prerequisites. No nested agents were used.
+
+## Standards
+
+**P2 — Preserve quarantine during the newly enabled unsigned whole-app update.** Changed contract `docs/PRODUCT_CONTRACTS.md:76` explicitly requires “Preserve quarantine and require the user's per-app macOS allow action”; changed guidance `docs/distribution/DESKTOP.md:79` also promises that the updater preserves quarantine. The newly accepted unsigned path in `apps/desktop/src/app-source.mjs:183–203` uses the existing framed archive extraction, which records no extended attributes (`app-archive.mjs:23–40`). Activation copies that extracted app and renames it over the installed app (`app-lifecycle.mjs:250–273`) without transferring the installed app's quarantine attribute. The old attribute survives only on the retained previous app. Thus a successful unsigned whole-app update silently replaces a quarantined installation with an unquarantined one, violating this PR's maintained OS-permission contract.
+
+**Concrete isolated repro:** `node quarantine-repro.mjs` in this report directory. It marks a temporary fixture app with `com.apple.quarantine`, uses the actual `packApp`/`unpackApp`, supplies a valid candidate-bound unsigned integrity proof, and calls the actual `DesktopAppLifecycle.activate()` with only worker ownership simulated as absent. `quarantine-result.json` records before/previous xattr read status **0**, staged/installed-after status **1** (attribute absent), and `fingerprintMatches: true`. No executable launch or Gatekeeper acceptance is claimed.
+
+Preserve the applicable quarantine state through staging/replacement and recovery, and cover this OS-metadata boundary with a focused fixture. This requires no publisher certificates, paid account, notarization, or new physical-authenticator gate.
+
+No additional documented-standard violations or material non-tooling Fowler smells found. Recovery retains exact checked-manifest binding; publication retains immutable asset snapshots and verified upload streams. Native stores and historical evidence remain outside this change.
+
+## Spec
+
+No separate spec findings. Signing/key-pin/Apple assessment prerequisites were removed from maintained release consumers, publisher, workflows, package recipes and instructions. Candidate/version/source/tooling checks, archive SHA256/size verification, complete inventory, stable asset-bound approval, nightly activation/ordering, source semantic intake, ownership, policy and rollback remain. Desktop uses its custom complete-app updater; Squirrel assumptions were not applied.
+
+The quarantine mismatch is reported under Standards against the explicit maintained contract, not duplicated here. Pending actual native ad-hoc packaging and quarantined first-launch validation are honestly scoped in the implementation report; they are not a blanket implementation acceptance gate. No paid infrastructure, live provider, or physical-passkey requirement is added by this review.
+
+## Verification and limits
+
+- `node --test scripts/tests/{release-publication,release-discovery,source-transport,public-install,beta-attestation,unsigned-release-flow}.test.mjs`: **92 passed, 0 failed**. Covers PR95 recovery swaps/publication races and unsigned runtime transport/rollback.
+- `node --test apps/desktop/test/app-updates.test.mjs`: **15 passed, 0 failed**, including unsigned proof, tamper, ownership, consent and interrupted recovery.
+- Quarantine repro: confirmed attribute loss using actual archive and activation methods on this Mac; synthetic app and proof only.
+- Existing generated runtime/desktop bundles were consumed by relevant fixture tests; no builds or checkout modifications were performed. Production source was independently inspected, including update-services import closure.
+- No native release/build dispatch, signing operation, real application launch, provider calls, merge, publication, production change, or ticket closure.
+- Implementation checkout remained clean at the exact head.
+
+Root result: **REQUEST_CHANGES — 1 P2 Standards finding; 0 separate Spec findings.** No P1 findings. Findings concern the new quarantine contract, not superseded signature gates.

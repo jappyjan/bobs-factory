@@ -1,0 +1,97 @@
+import assert from 'node:assert/strict';
+import {execFileSync,spawn} from 'node:child_process';
+import {cpSync,existsSync,mkdirSync,readFileSync,writeFileSync,openSync,closeSync} from 'node:fs';
+import {join,dirname} from 'node:path';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import {digest,unpackApp} from './fixed-helper-source/app-archive.mjs';
+import {DesktopAppSource,appFingerprint,appExecutable} from './fixed-helper-source/app-source.mjs';
+import {DesktopAppLifecycle,processStamp,read,save} from './fixed-helper-source/app-lifecycle.mjs';
+import {appQuarantine,inheritAppQuarantine} from './fixed-helper-source/app-quarantine.mjs';
+import * as services from './fixed-helper-source/update-services.mjs';
+import {fixtureClient} from '/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop/test/shell-fixture.mjs';
+import {fileRecord,jsonBytes} from '/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/scripts/lib/binary-release.mjs';
+import {defaultWorkflows} from '/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/packages/edge-worker/dist/factory/defaultWorkflows.js';
+import {validateWorkflows} from '/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/packages/edge-worker/dist/factory/Workflow.js';
+import {WorkflowRuntime} from '/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/packages/edge-worker/dist/factory/WorkflowRuntime.js';
+import {MachineCapacity} from '/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/packages/edge-worker/dist/MachineCapacity.js';
+import {localRepository} from '/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/cli/dist/src/onboarding.js';
+import {retainAppHelper} from '/Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/apps/desktop/src/app-helper-files.mjs';
+const root=dirname(fileURLToPath(import.meta.url)),fixture=join(root,'actual-update-fixed6'),home=join(fixture,'factory-home'),port=50973;
+retainAppHelper(join(root,'fixed-helper-source'),join(root,'fixed-retained-helper6'));
+mkdirSync(fixture,{mode:0o700});for(const n of ['factory-home','os-home','profile','tmp','runtime'])mkdirSync(join(fixture,n),{mode:0o700});
+process.env.TMPDIR=join(fixture,'tmp');process.env.HOME=join(fixture,'os-home');
+const reviewed='/Users/jappy/code/jappy/bobs-factory-unsigned-review-96';
+// Adapt only the maintained controlled transport fixture in this owned directory.
+// Preserve genuine candidate versions/digests/source/run identities; all outer
+// protocol evidence remains visibly simulated and must never be a release gate.
+let preparedCode=readFileSync(join(reviewed,'scripts/tests/prepared-fixture.mjs'),'utf8');
+preparedCode=preparedCode.replace('gitTooling = false,','gitTooling = false,\n buildRunId,').replace(/\b123\b/g,'buildRunId').replace(/from "\.\.\/lib\//g,`from "${reviewed}/scripts/lib/`).replace('from "./source-material-fixture.mjs"',`from "${reviewed}/scripts/tests/source-material-fixture.mjs"`).replace('const root = fileURLToPath(new URL("../../", import.meta.url));',`const root = ${JSON.stringify(reviewed)};`);
+writeFileSync(join(fixture,'controlled-prepared-fixture.mjs'),preparedCode);
+const {preparedFixture}=await import(pathToFileURL(join(fixture,'controlled-prepared-fixture.mjs')));
+const baselinePath='/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/fresh-pr95-unsigned-20261011/DESKTOP_ACCEPTANCE_INPUTS_DRAFT.json';
+const baseline=read(baselinePath),oldInputs=baseline.targets.find(x=>x.target==='darwin-arm64');
+const current=read('/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/fresh-pr96-unsigned-20261011/DESKTOP_MAC_INPUT_HANDOFF.json');
+const native=read('/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/fresh-pr96-unsigned-20261011/MIGRATION_INPUT_HANDOFF.json');
+function verify(r){const b=readFileSync(r.path);assert.equal(b.length,r.size);assert.equal(digest(b),r.sha256);return b;}
+verify(oldInputs.updateMetadata);const oldArchive=verify(oldInputs.updateArchive);verify(current.updateArchive);verify(current.updateMetadata);
+function realRelease(record,inputs,runId){
+ const f=preparedFixture('nightly',{desktop:true,frozenCandidate:record,buildRunId:runId});
+ const item=f.manifest.desktop.artifacts[0];item.target='darwin-arm64';item.platformRequirements='Actual macOS ARM app payload; controlled transport, simulated outer evidence';
+ for(const [key,r] of [['archive',inputs.installer??inputs.assets[0]],['updateArchive',inputs.updateArchive],['updateMetadata',inputs.updateMetadata]]){verify(r);const name=r.path.split('/').at(-1);cpSync(r.path,join(f.assets,name));item[key]=fileRecord(join(f.assets,name),name);}
+ item.updateArchive=read(inputs.updateMetadata.path).archive;
+ const mockValidation={product:'bobs-factory',status:'passed',version:record.candidate.version,commit:record.candidate.commit,channel:'nightly',target:'darwin-arm64',candidateDigest:record.digest,workflowSha:record.candidate.workflowSha,scope:'SIMULATED OUTER PROTOCOL RECEIPT ONLY. Not actual acceptance or publisher evidence.'};
+ writeFileSync(join(f.assets,item.validation.file),jsonBytes(mockValidation));item.validation=fileRecord(join(f.assets,item.validation.file),item.validation.file);
+ for(const r of [item.archive,item.updateArchive,item.updateMetadata,item.validation])f.manifest.assets=[...f.manifest.assets.filter(x=>x.file!==r.file),r];
+ writeFileSync(join(f.assets,'release.json'),jsonBytes(f.manifest));f.records=[...f.manifest.assets,fileRecord(join(f.assets,'release.json'),'release.json')];return f;
+}
+const old=realRelease(baseline.candidate,oldInputs,baseline.acceptedBinaryBuildRunId),good=realRelease(read(current.candidate.path),current,current.nativeRunId);
+const unpacked=join(fixture,'baseline-extracted');unpackApp(oldArchive,unpacked);
+const install=join(fixture,"Bob's Factory.app");cpSync(join(unpacked,"Bob's Factory.app"),install,{recursive:true,verbatimSymlinks:true});assert.equal(appFingerprint(install,'darwin-arm64'),read(oldInputs.updateMetadata.path).fingerprint);
+const repository=join(fixture,'project');execFileSync('/usr/bin/git',['init','-q','-b','main',repository]);execFileSync('/usr/bin/git',['-C',repository,'-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','--allow-empty','-qm','Isolated shell update fixture']);execFileSync('/usr/bin/git',['-C',repository,'remote','add','origin','https://github.com/f1-test/shell-update']);
+save(join(home,'config.json'),{repositories:[localRepository(repository,home,'fixture')],defaultRunner:'codex'});
+const seed=new WorkflowRuntime(home,{agent:async ctx=>{ctx.checkpointAgent?.({runner:'codex',sessionId:'mock-current-shell-checkpoint',cwd:repository});return {scope:'Completed mock checkpoint; no provider'};},script:async()=>({}),tool:async()=>({headSha:'d'.repeat(40),url:'https://example.invalid/fixture-review'})});
+const workflow=validateWorkflows([...defaultWorkflows,{id:'fixture',name:'Fixture',allowedTriggers:['manual'],steps:[{id:'prepare',name:'Mock completed checkpoint',type:'agent',runner:'codex',prompt:'Mock only',next:'review'},{id:'review',name:'Retained human review',type:'tool',tool:'human-review',next:'end'}]}]).at(-1);
+const run=seed.create({id:'current-shell-wait',title:'Retained checkpoint',repositoryId:'fixture',workspace:repository,input:'fixture',triggerOrigin:{type:'manual',workflowId:'fixture',at:new Date().toISOString()},workflow});run.titleGeneration={...run.titleGeneration,state:'failed',error:'Fixture disables inference'};run.setupComplete=true;seed.save(run);void seed.launch(run);
+const until=async(check,label,timeout=30000)=>{const deadline=Date.now()+timeout;while(!(await check())){assert.ok(Date.now()<deadline,label+' timed out');await new Promise(r=>setTimeout(r,100));}};
+await until(()=>run.status==='waiting','Mock review checkpoint');await seed.shutdown();
+const env={PATH:'/usr/bin:/bin:/usr/sbin:/sbin',HOME:join(fixture,'os-home'),TMPDIR:join(fixture,'tmp'),BOBS_FACTORY_DESKTOP_HOME:home,BOBS_FACTORY_DESKTOP_PORT:String(port),GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null'};
+const executable=join(fixture,'runtime','bobs-factory');verify(native.executable);cpSync(native.executable.path,executable);
+const log=openSync(join(fixture,'worker.log'),'a',0o600),worker=spawn(executable,['--home',home,'--port',String(port),'--no-open','local'],{env:{...env,BOBS_FACTORY_DESKTOP_OWNER:'1'},stdio:['ignore',log,log]});closeSync(log);
+let capacity,uiIdentity,helperPid;
+save(join(fixture,'owned-processes.json'),{workerPid:worker.pid,workerStamp:processStamp(worker.pid),executable,home});
+try{
+ await until(async()=>{try{return (await fetch(`http://127.0.0.1:${port}/api/version`)).ok&&services.workerOwner(home);}catch{return false;}},'Actual native worker startup');
+ const owned=services.workerOwner(home),directory=join(home,'desktop','updates'),source=new DesktopAppSource(directory,install,'darwin-arm64',services,fixtureClient([old,good],services));
+ save(join(directory,'installation.json'),await source.enroll({...old.identity,target:'darwin-arm64'}));
+ const boot=new services.UpdateManager(join(home,'desktop'),source,undefined,{...old.identity,target:'darwin-arm64'});boot.configure({channel:'nightly',paused:true},0);save(boot.file,{...read(boot.file),nextCheckAt:Date.now()+24*3600000});
+ const launchArgs=[`--user-data-dir=${join(fixture,'profile')}`,`--inspect=127.0.0.1:50971`,`--remote-debugging-port=50972`];
+ const openArgs=['-n','--stdout',join(fixture,'ui.stdout.log'),'--stderr',join(fixture,'ui.stderr.log'),...Object.entries(env).flatMap(([k,v])=>['--env',`${k}=${v}`]),install,'--args',...launchArgs];
+ execFileSync('/usr/bin/open',openArgs,{env,timeout:20000});save(join(fixture,'baseline-normal-launch.json'),{openArgs,scope:'Actual sealed historical baseline app from archive (no archive OS xattrs); normal isolated LaunchServices. Not a quarantined baseline approval claim.'});
+ await until(()=>existsSync(join(directory,'ui-session.json')),'Actual baseline UI');uiIdentity=read(join(directory,'ui-session.json'));assert.equal(uiIdentity.identity.version,baseline.candidate.candidate.version);
+ save(join(fixture,'owned-processes.json'),{worker:owned,ui:uiIdentity,executable,home});
+ const life=new DesktopAppLifecycle({home,install,target:'darwin-arm64',port,uiPid:uiIdentity.pid,uiStamp:uiIdentity.stamp,launchArgs},services),manager=new services.UpdateManager(join(home,'desktop'),source,life,{...old.identity,target:'darwin-arm64'});
+ // Controlled quarantine is applied after the baseline has opened. It models
+ // metadata preservation during the actual switch, not historical OS approval.
+ // No artificial quarantine injected. Archive unpack has no OS xattrs; preserve actual attributes unchanged. This does not claim quarantined OS approval.
+ const beforeQuarantine=appQuarantine(install,'darwin-arm64');
+ manager.configure({paused:false,channel:'nightly'},manager.status().revision);await manager.check();await manager.stage();const approvedSource=join(root,'actual-update-fixed2',"Bob's Factory.app"),approvedCopy=join(fixture,'approved-current.app'); assert.equal(appFingerprint(approvedSource,'darwin-arm64'),read(current.updateMetadata.path).fingerprint); const approvedQuarantine=appQuarantine(approvedSource,'darwin-arm64'); assert.match(Buffer.from(approvedQuarantine,'hex').toString(),/^00c3;/); cpSync(approvedSource,approvedCopy,{recursive:true,verbatimSymlinks:true});inheritAppQuarantine(approvedSource,approvedCopy,'darwin-arm64'); assert.equal(appFingerprint(approvedCopy,'darwin-arm64'),read(current.updateMetadata.path).fingerprint); assert.equal(appQuarantine(approvedCopy,'darwin-arm64'),approvedQuarantine); inheritAppQuarantine(approvedCopy,manager.status().pending.staged.executable,'darwin-arm64'); save(join(fixture,'approved-copy-only-input.json'),{approvedSource,approvedCopy,approvedQuarantine,fingerprint:appFingerprint(approvedCopy,'darwin-arm64'),scope:'Copy-only current6f actual app with real user-observed0083->00c3 OS allowance. No clearing/fabricated approval/prior state mutation.'});
+ const stagedQuarantine=appQuarantine(manager.status().pending.staged.executable,'darwin-arm64');assert.equal(stagedQuarantine,approvedQuarantine);
+ capacity=new MachineCapacity(2,join(home,'machine-capacity'));await capacity.ready();const lease=await capacity.acquireLease(undefined,{identity:'current-native-shell-active'});await manager.reconcile();assert.equal(manager.status().transaction.phase,'cancelled');assert.equal(services.workerOwner(home).pid,owned.pid);assert.equal(processStamp(uiIdentity.pid),uiIdentity.stamp);await lease.release();
+ const checkpoint=readFileSync(join(home,'factory/runs',run.id+'.json'));assert.match(checkpoint.toString(),/mock-current-shell-checkpoint/);
+ const request=join(root,'fixed-retained-helper6','current-request.json');save(request,{home,install,target:'darwin-arm64',port,directory,identity:{...old.identity,target:'darwin-arm64'},uiPid:uiIdentity.pid,uiStamp:uiIdentity.stamp,launchArgs});
+ save(join(fixture,'before-helper.json'),{oldCandidate:baseline.candidate,currentCandidate:read(current.candidate.path),owned,uiIdentity,beforeQuarantine,stagedQuarantine,activeLeaseDeferral:'cancelled',checkpointSha256:digest(checkpoint),request,actualHelperSha256:digest(readFileSync(join(root,'fixed-retained-helper6/app-helper.mjs'))),scope:'Actual baseline/current apps + native worker and fixed source helper with exact packaged services219ccb; simulated outer release evidence/transport and completed mock checkpoint; no live provider.'});
+ const hlog=openSync(join(fixture,'helper.log'),'a',0o600),helper=spawn(appExecutable(install,'darwin-arm64'),['--import',join(root,'trace-launch6.mjs'),join(root,'fixed-retained-helper6/app-helper.mjs'),request],{env:{...env,ELECTRON_RUN_AS_NODE:'1',BOBS_FACTORY_TRACE_LAUNCH_LOG:join(fixture,'candidate-launch.log'),BOBS_FACTORY_TRACE_LAUNCH_EVENTS:join(fixture,'candidate-launch-events.jsonl')},stdio:['ignore',hlog,hlog]});closeSync(hlog);helperPid=helper.pid;
+ const helperExit=await new Promise((resolve,reject)=>{helper.once('exit',resolve);helper.once('error',reject);});save(join(fixture,'helper-outcome.json'),{helperPid,helperExit,state:manager.status(),helperLog:readFileSync(join(fixture,'helper.log'),'utf8')});
+ assert.equal(helperExit,0,'Actual helper failed: '+readFileSync(join(fixture,'helper.log'),'utf8'));assert.equal(manager.status().transaction.phase,'succeeded');
+ const snapshot=read(manager.status().transaction.snapshot),after=services.workerOwner(home);assert.equal(after.pid,owned.pid);assert.equal(after.nonce,owned.nonce);assert.deepEqual(readFileSync(join(home,'factory/runs',run.id+'.json')),checkpoint);assert.equal(appQuarantine(install,'darwin-arm64'),approvedQuarantine);assert.equal(appFingerprint(install,'darwin-arm64'),read(current.updateMetadata.path).fingerprint);
+ save(join(fixture,'result.json'),{status:'passed',version:current.version,commit:current.sourceSha,candidateDigest:current.candidateDigest,target:'darwin-arm64',nativeRunId:current.nativeRunId,desktopRunId:current.desktopRunId,checks:['actual baseline UI','current actual native worker','live lease deferral','fixed source retained helper on actual Electron44.7 Node execution','precise old UI quit','actual full app activation','actual current packaged health','same native PID/nonce','mock waiting checkpoint bytes','real approved00c3 preserved from exact copy-only candidate through staging/switch','exact current full fingerprint'],snapshot,owned,after,quarantine:approvedQuarantine,scope:'Actual Mac ARM apps/native; fixed source helper with exact packaged services219ccb; controlled outer release protocol/evidence and completed mock checkpoint. Baseline archive copy has absent quarantine; actual current6f candidate uses real observed user-approved00c3 carried from same-byte copy-only app through maintained helper. No synthetic approval/attribute clearing/public publisher/provider/physical authenticator claims.'});
+ console.log('ACTUAL UPDATE PASSED '+fixture);
+}catch(error){save(join(fixture,'failure.json'),{status:'failed',message:error.message,stack:error.stack,uiIdentity,helperPid,scope:'Retained actual current attempt failure; no overall passed receipt'});console.error(error);process.exitCode=1;}
+finally{
+ await capacity?.shutdown();
+ // Bound every cleanup signal to recorded PID/start identity in this fixture.
+ const statePath=join(home,'desktop/updates/state.json');if(existsSync(statePath)){const t=read(statePath).transaction;if(t?.snapshot&&existsSync(t.snapshot)){const s=read(t.snapshot);if(s.child?.stamp&&processStamp(s.child.pid)===s.child.stamp)try{process.kill(s.child.pid,'SIGTERM');}catch{}}}
+ if(uiIdentity?.stamp&&processStamp(uiIdentity.pid)===uiIdentity.stamp)try{process.kill(uiIdentity.pid,'SIGTERM');}catch{}
+ if(processStamp(worker.pid))worker.kill('SIGTERM');
+ save(join(fixture,'cleanup-requested.json'),{workerPid:worker.pid,uiIdentity,helperPid,scope:'Only owned recorded fixture process signals; actual absence verified separately after exit.'});
+}

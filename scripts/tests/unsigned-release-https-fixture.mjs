@@ -1,7 +1,6 @@
-// TEST ONLY: ephemeral RSA publisher pin and TLS endpoint. No production pin edits.
+// TEST ONLY: unsigned release and ephemeral TLS endpoint.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
-import { generateKeyPairSync } from "node:crypto";
 import { once } from "node:events";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer, request } from "node:https";
@@ -13,25 +12,10 @@ import {
 	TARGETS,
 } from "../lib/binary-release.mjs";
 import { githubClient } from "../lib/github-release.mjs";
-import { installerWithKeys } from "../lib/installer-pins.mjs";
 import { validateCandidate } from "../lib/release-candidate.mjs";
-import { signManifest } from "../lib/release-signature.mjs";
 
-export async function signedHttpsFixture(root, work, builds) {
-	const pair = generateKeyPairSync("rsa", {
-		modulusLength: 3072,
-		publicKeyEncoding: { type: "spki", format: "pem" },
-		privateKeyEncoding: { type: "pkcs8", format: "pem" },
-	});
-	const keyId = "integration-test-only";
-	const keys = {
-		[keyId]: { algorithm: "rsa-sha256", status: "active", pem: pair.publicKey },
-	};
-	const keyFingerprint = sha256(pair.publicKey);
-	const bootstrap = installerWithKeys(
-		readFileSync(join(root, "scripts/install.sh"), "utf8"),
-		keys,
-	);
+export async function unsignedHttpsFixture(root, work, builds) {
+	const bootstrap = readFileSync(join(root, "scripts/install.sh"), "utf8");
 	const verifier = readFileSync(join(root, "scripts/install-binary.sh"));
 	const tls = join(work, "tls");
 	mkdirSync(tls, { recursive: true });
@@ -93,7 +77,7 @@ export async function signedHttpsFixture(root, work, builds) {
 				jsonBytes({
 					fixture: true,
 					status: "not-run",
-					purpose: "signed inventory boundary ONLY; no publication receipt",
+					purpose: "unsigned integrity boundary ONLY; no publication receipt",
 					file: name,
 				}),
 			);
@@ -184,15 +168,8 @@ export async function signedHttpsFixture(root, work, builds) {
 			frozen,
 			selection,
 		};
-		release.resign = () => {
-			files.set("release.json", jsonBytes(manifest));
-			files.set(
-				"release.json.sig",
-				signManifest(files.get("release.json"), pair.privateKey, keyId, keys),
-			);
-			files.set("release.json.key-id", Buffer.from(`${keyId}\n`));
-		};
-		release.resign();
+		release.refresh = () => files.set("release.json", jsonBytes(manifest));
+		release.refresh();
 		releases.push(release);
 		return release;
 	}
@@ -273,12 +250,7 @@ export async function signedHttpsFixture(root, work, builds) {
 			} else if (url.hostname === "jappyjan.github.io") {
 				if (url.pathname.endsWith("/install.sh")) body = Buffer.from(bootstrap);
 				else if (pointer) {
-					const suffix = url.pathname.endsWith(".sig")
-						? ".sig"
-						: url.pathname.endsWith(".key-id")
-							? ".key-id"
-							: "";
-					body = pointer.files.get(`release.json${suffix}`);
+					body = pointer.files.get("release.json");
 				}
 			}
 			if (!body) {
@@ -340,8 +312,6 @@ export async function signedHttpsFixture(root, work, builds) {
 	);
 	return {
 		add,
-		keys,
-		keyFingerprint,
 		requests,
 		transport,
 		client: githubClient("", transport),

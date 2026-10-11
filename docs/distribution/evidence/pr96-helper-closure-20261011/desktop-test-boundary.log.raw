@@ -1,0 +1,76 @@
+
+> bobs-factory-desktop@1.0.0-beta test:run /Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop
+> bun build src/update-services.ts --target node --format esm --outfile src/update-services.mjs && node --test test/*.test.mjs
+
+Bundled 148 modules in 54ms
+
+  update-services.mjs  3.28 MB  (entry point)
+
+✔ TERM-ignoring child escalates; PASS appears only after all child close events (673.443833ms)
+✔ existing PASS and FAIL receipts are rejected before work and preserved byte-for-byte (14.359416ms)
+✔ partial final receipt write keeps the reserved pending FAIL and removes temp file (381.507916ms)
+✔ cleanup failure plus final rename failure leaves only the current pending receipt (30.064ms)
+✔ leader exits first; its TERM-ignoring descendant is still drained (633.56825ms)
+✔ failed owned lock removal fails receipt while unrelated foreground process survives (682.508416ms)
+✔ overwritten lock cannot authorize signaling or removal of unrelated PID (576.133166ms)
+✔ actual controller SIGTERM creates FAIL after cleanup, receipt outside fixture HOME (586.758625ms)
+✔ stale PID stamp never signals a reused unrelated process (347.715875ms)
+✔ cleanup exception produces a failed receipt and nonzero controller exit (39.996167ms)
+✔ replacement fixture home cannot authorize removing a copied lock (563.228542ms)
+✔ retained standalone helper resolves its full module closure and runs recovery without repository modules (728.400709ms)
+✖ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (1920.068917ms)
+✔ packaging requires exact pinned vendor notices; recovery retains bytes and missing/tampered notices fail closed (5.981291ms)
+(node:21615) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ macOS complete-app staging preserves actual quarantine without changing byte identity (223.851209ms)
+✔ macOS complete-app replacement and rollback preserves actual quarantine without changing byte identity (339.194292ms)
+✔ macOS complete-app interrupted recovery preserves actual quarantine without changing byte identity (558.207042ms)
+(node:21616) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ first nightly shell subscribes to nightly idle-auto; saved stable/manual choices survive reopening a nightly app (52.079209ms)
+✔ complete app archive preserves framework symlinks and modes; traversal/special ancestry fails before extraction (5.024584ms)
+✔ intermediate directory symlinks resolve before ..; actual outside sentinel cannot be packed or extracted (1.780792ms)
+✔ unsigned app source binds exact payload, channel, target and full inventory; publisher tamper never stages (160.467083ms)
+✔ user-owned DMG app accepts candidate-bound unsigned integrity receipts; external symlink handoff remains (168.043709ms)
+✔ nightly app replacement keeps runtime state, old app and policy; failed health rolls back and suppresses candidate (1499.323334ms)
+✔ app final authorization rejects raced policy {"paused":true} (596.811833ms)
+✔ app final authorization rejects raced policy {"pin":"2.0.0"} (449.885417ms)
+✔ app final authorization rejects raced policy {"channel":"stable"} (456.081791ms)
+✔ app final authorization rejects raced policy {"policy":"manual"} (395.596583ms)
+✔ stable requires exact candidate Install; Quit is never consent, stale receipt rejects (354.881083ms)
+✔ forged staged fingerprint/receipt never executes, including self-consistent local tampering (369.899041ms)
+✔ interrupted recovery preserves foreign-bytes on repeated attempts; authenticated missing/restored installs still recover (543.494959ms)
+✔ interrupted recovery preserves foreign-symlink on repeated attempts; authenticated missing/restored installs still recover (546.613834ms)
+✔ interrupted recovery preserves foreign-dangling-symlink on repeated attempts; authenticated missing/restored installs still recover (559.191833ms)
+✔ remote origins cannot become local filesystem or insecure bridge targets (1.014792ms)
+✔ open launcher refreshes automatic candidates/results without discarding edits or changing captured consent (5.115583ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 33
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6321.142792
+
+✖ failing tests:
+
+test at test/app-helper.test.mjs:93:1
+✖ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (1920.068917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop/test/app-helper.test.mjs:125:10)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/apps/desktop:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-desktop@1.0.0-beta test:run: `bun build src/update-services.ts --target node --format esm --outfile src/update-services.mjs && node --test test/*.test.mjs`
+Exit status 1

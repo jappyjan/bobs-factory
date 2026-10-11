@@ -12,6 +12,7 @@ import { jsonBytes } from "../lib/binary-release.mjs";
 
 const temporaryPrefixes = [
 	"bobs-signed-integration-",
+	"bobs-unsigned-integration-",
 	"bobs-startup-contention-",
 ];
 
