@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Publish simulated desktop identity and health receipts atomically so the maintained F1 update drive cannot read partially written JSON; retain a delayed-write regression check ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
 - Preserve macOS per-app quarantine during unsigned app staging, replacement and recovery, including the standalone Install helper; keep historical beta attestation bound to approved manifest bytes, restore the maintained complete-shell F1 driver after publisher-key removal, and isolate simulated publishers' locks during concurrent validation ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
 
 - Publish complete source/rebuild archives through signed ordered transport chunks when they exceed GitHub's asset limit; bind recovery and publication to authenticated manifest bytes, stage the exact signed inventory and verify uploaded bytes, verify exact reconstruction before existing source intake and recover interrupted uploads without changing historical single-file releases ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#95](https://github.com/jappyjan/bobs-factory/pull/95)).

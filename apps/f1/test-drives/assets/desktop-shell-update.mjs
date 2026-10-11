@@ -116,9 +116,11 @@ const server = new FactoryServer(
 	{ origins: [`http://localhost:${port}`] },
 );
 await server.start(port);
+// The parent polls these receipts while scripted UI processes start and replace
+// one another. Publish complete JSON through rename, as the real lifecycle does.
 function script(version, fail = false) {
 	return Buffer.from(
-		`#!/usr/bin/env node\nconst fs=require('node:fs'),path=require('node:path'),home=process.env.BOBS_FACTORY_DESKTOP_HOME;fs.writeFileSync(path.join(home,'fixture-ui.json'),JSON.stringify({pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim()}));if(${fail})process.exit(7);if(process.env.BOBS_FACTORY_DESKTOP_HEALTH){const token=process.env.BOBS_FACTORY_DESKTOP_HEALTH;fs.writeFileSync(path.join(home,'desktop','updates','health-'+token+'.json'),JSON.stringify({token,pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim(),install:${JSON.stringify(install)},version:${JSON.stringify(version)},commit:'${"a".repeat(40)}',target:'${target}'}));}setInterval(()=>{},1000);\n`,
+		`#!/usr/bin/env node\nconst fs=require('node:fs'),path=require('node:path'),home=process.env.BOBS_FACTORY_DESKTOP_HOME;const save=(file,value)=>{const tmp=file+'.'+process.pid+'.tmp';fs.writeFileSync(tmp,JSON.stringify(value));fs.renameSync(tmp,file)};save(path.join(home,'fixture-ui.json'),{pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim()});if(${fail})process.exit(7);if(process.env.BOBS_FACTORY_DESKTOP_HEALTH){const token=process.env.BOBS_FACTORY_DESKTOP_HEALTH;save(path.join(home,'desktop','updates','health-'+token+'.json'),{token,pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim(),install:${JSON.stringify(install)},version:${JSON.stringify(version)},commit:'${"a".repeat(40)}',target:'${target}'});}setInterval(()=>{},1000);\n`,
 	);
 }
 const old = appRelease("stable", script("0.9.0"), target, {
