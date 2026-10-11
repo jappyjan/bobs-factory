@@ -184,7 +184,8 @@ function liveConsumers(source: string, destination: string): boolean {
 			if (
 				/["']/.test(flag) ||
 				!isAbsolute(flag) ||
-				!/^\s*(?:--|$)/.test(homeFlag[2]!)
+				[...command.matchAll(/(?:^|\s)--home(?:=|\s+)/g)].length !== 1 ||
+				!/^\s*(?:(?:start|local)(?=\s|$)\s*)?(?:--|$)/.test(homeFlag[2]!)
 			)
 				return true;
 			return homes.includes(canonicalPath(flag));

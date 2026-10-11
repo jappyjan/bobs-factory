@@ -606,6 +606,60 @@ it("distinguishes participating workers from unrelated explicit homes and shell 
 		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
 	);
 });
+it.each([
+	"bobs-factory start --home /unrelated",
+	"bobs-factory --home /unrelated start",
+	"bobs-factory --home=/unrelated start --port 3600",
+	"/usr/local/bin/bobs-factory --home /unrelated local",
+])("accepts an unrelated explicit home without reading its environment: %s", (command) => {
+	const { source, destination } = fixture();
+	vi.mocked(childProcess.execFileSync).mockImplementation((_file, args) => {
+		if (Array.isArray(args) && args.includes("eww"))
+			throw new Error(
+				"Unrelated explicit worker environment must remain private",
+			);
+		return `9999 ${command}\n`;
+	});
+	expect(inspectMigration(source, destination).blockers).toEqual([]);
+	expect(
+		vi
+			.mocked(childProcess.execFileSync)
+			.mock.calls.some(
+				([, args]) => Array.isArray(args) && args.includes("eww"),
+			),
+	).toBe(false);
+});
+it.each([
+	"bobs-factory start --home SOURCE",
+	"bobs-factory --home SOURCE start",
+	"bobs-factory --home DESTINATION local",
+	"bobs-factory --home '/unrelated' start",
+	'bobs-factory --home "/path with spaces" start',
+	"bobs-factory --home /path with spaces start",
+	"bobs-factory --home relative start",
+	"bobs-factory --home /unrelated unknown",
+	"bobs-factory --home /unrelated start extra",
+	"bobs-factory --home /unrelated --home /another start",
+])("blocks related or ambiguous explicit worker homes: %s", (command) => {
+	const { source, destination } = fixture();
+	vi.mocked(childProcess.execFileSync).mockReturnValue(
+		`9999 ${command.replace("SOURCE", source).replace("DESTINATION", destination)}\n`,
+	);
+	expect(inspectMigration(source, destination).blockers).toContain(
+		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
+	);
+});
+it("blocks a worker whose effective home environment cannot be read", () => {
+	const { source, destination } = fixture();
+	vi.mocked(childProcess.execFileSync).mockImplementation((_file, args) => {
+		if (Array.isArray(args) && args.includes("eww"))
+			throw new Error("Process unavailable");
+		return "9999 bobs-factory start\n";
+	});
+	expect(inspectMigration(source, destination).blockers).toContain(
+		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
+	);
+});
 it("resolves process homes without exposing environment secrets and blocks ambiguous homes", () => {
 	const { source, destination } = fixture();
 	const command = "9999 node /repo/apps/cli/dist/src/app.js";
