@@ -1,0 +1,22 @@
+{
+  "state": "acquired; every referenced blob present locally, no network/lazy fetch used",
+  "revision": "2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+  "tree": "01e7ea36e5a23bf0206724ed83c594a2eaec95ed",
+  "entries": 466297,
+  "distinctBlobs": 405295,
+  "directories": 22746,
+  "modes": {
+    "100644": 464114,
+    "100755": 2148,
+    "120000": 35
+  },
+  "expandedBlobBytes": 5474280234,
+  "treeInventorySha256": "368c50fa17e4972719f24f9dce3b9151548aac7f14848b522bfc2dba8d913c43",
+  "sourceInventorySha256": "f8dd766eeb1d59fd90e8c6e120829473d7a2b58b4cd92c60bf2ad578b280849b",
+  "provenance": "https://github.com/oven-sh/WebKit/commit/2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+  "intakeLimits": {
+    "expandedBytes": 17179869184,
+    "headers": 500000
+  },
+  "lowerBoundHeadersWithDirectories": 489044
+}

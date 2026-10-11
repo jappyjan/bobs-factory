@@ -68,7 +68,7 @@ Acceptance descriptions were reread from Taskbot #116 and all children on 2026-1
 
 ## Outstanding release and operator gates
 
-- Full official pinned WebKit has been acquired in the separately coordinated research lane; candidate binding remains under that review, and prior HTTP 422 evidence is retained. All four genuine native object/config/toolchain/link-response/relink inputs and observed relink logs, plus an independent candidate-bound `licensingAndSource` receipt remain **UNASSEMBLED**. Packaged notices and successful native jobs do not supply this receipt or full-payload release approval.
+- Exact pinned WebKit source and the four `.21` candidate-to-upstream-runtime byte relationships are now independently reviewed clear for their concrete research claims; prior HTTP 422 attempts remain historical evidence. The [compact source-proof record](evidence/taskbot116-source-proof/README.md) binds the evidence and records its limits. All four genuine native object/config/toolchain/link-response inputs and actual relink logs, complete dependency/license review, and an independent candidate-bound `licensingAndSource` receipt remain **UNASSEMBLED**. No actual linker or signing invocation is claimed. Packaged notices and successful native jobs do not supply this receipt or full-payload release approval.
 - Genuine publisher trust pin, protected signing and explicit nightly/stable rollout approval. The legacy [`v1.0.0-beta` prerelease](https://github.com/jappyjan/bobs-factory/releases/tag/v1.0.0-beta) exists; **new stable/nightly/native-desktop channels and catalogs have not been activated**. Candidate version/tag fields are preparation identity, not evidence of a published release. No new public tag/channel/installer/package was created by this work.
 - Apple signing/notarization and authentic signed Mac install/activation/rollback; physical passkeys/native credentials, real or isolated headless host acceptance (Taskbot #122), separate second-machine UI acceptance (#84), real provider/native continuation, supported minimum macOS/glibc/CPU acceptance and login/reboot/logout/lingering proofs.
 - Homebrew/AUR catalog ownership, minimal Bob-owned npm package identity/owner and public entry-point activation with clean-machine lifecycle receipts. Existing private/upstream monorepo npm publication stays retired.
@@ -130,13 +130,15 @@ acceptance/cleanup assertions are reviewed.
 The first-release matrix is now chosen: macOS 15, Ubuntu 24.04/glibc 2.39,
 ARM64+x64. Native observations remain macOS 15.7.9 and Ubuntu 24.04.5. No macOS
 15.0 or universal Linux kernel coverage is asserted. Signing, physical passkeys,
-native credentials/providers, reboot/login/logout/lingering, WebKit source/object
-correspondence and independent licensing/catalog ownership remain open. GitGuardian
+native credentials/providers, reboot/login/logout/lingering, actual native relink
+and independent licensing/catalog ownership remain open. Static source/runtime byte
+correspondence is proved; it does not establish installable or trusted signatures.
+GitGuardian
 f48 check 114448313898 references the historical capacity-lease UUID findings;
 incidents 38083768/38084076 remain undisposed in the operator dashboard.
 
 
-## Round 3 service correction response (2026-10-11)
+## Round 2 service failure and correction context (2026-10-11)
 
 Round 2 is **NOT CLEAR** at `c3cc8644ac34c53b185e6b8598966fcf366497ca`,
 reviewed against `f48c51ca9352cbd6caa29b3a3b70882046bfc1ce` and cumulatively
@@ -185,15 +187,28 @@ Actual CI and its separate harnessSha/script hashes still require review. All
 101 historical +53 prior-candidate +56 source-b82 raw files and prior f48/c3 failed
 evidence are preserved; no native rebuild/full matrix or signed23 replay is used.
 
+## Round 3 independent service status (2026-10-11)
+
+The independent round 3 terminal result reports the main native acceptance as
+`CLEAR`/`PASS` and four cancellation cases as `PASS`. Two cancellation cases remain
+P2 failures: stdout-drop handling and outer-timeout handling with nested process
+groups. The complete six-case cancellation set is therefore not passing. These
+results do not establish a production service defect, do not replace the retained
+round 2 failure artifacts, and do not alter the source-proof review scope. The
+assigned round 4 service fix is isolated from this PR #91 documentation/evidence
+checkout; its code and CI results remain separate pending work.
+
 Coordinator handoff retains the original scope: #122 real **or isolated** host
 acceptance, #84 second-machine UI separate, explicit manual PM2/Nix ownership,
 synthetic checkpoint/waiting-gate preservation, and the selected macOS15 /
 Ubuntu24.04-glibc2.39 ARM64+x64 minimums with observed limits. Reboot/login/logout/
 lingering, native providers/credentials, physical authentication, protected signing/
 publication/catalog ownership and complete minimum-platform acceptance remain open.
-Full WebKit acquisition and candidate binding now belong to the separate source
-research lane; acquisition does not establish all-target object correspondence,
-relink success, licensing review or a candidate-bound licensingAndSource receipt.
+Full WebKit acquisition and candidate-to-runtime byte binding are now complete and
+independently reviewed clear for the concrete source claims. Static runtime
+correspondence does not establish native relink success, trusted/installable Mac
+signatures, complete dependency licensing review or a candidate-bound
+licensingAndSource receipt.
 The latest supplied GitGuardian count is **two** undisposed historical mock UUID
 occurrences, incidents38083768/38084076; historical four-occurrence reports above
 remain historical, not a current clearance. Parent/child statuses remain unchanged.

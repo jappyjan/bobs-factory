@@ -1,0 +1,100 @@
+[
+  {
+    "target": "darwin-arm64",
+    "allFileBackedSectionsEqual": true,
+    "allBytesBeforeSignatureAccounted": true,
+    "prefixBytes": 61744416,
+    "allowedMasks": [
+      [
+        [
+          2024,
+          8
+        ],
+        [
+          2040,
+          8
+        ],
+        [
+          2572,
+          4
+        ]
+      ],
+      [
+        [
+          2024,
+          8
+        ],
+        [
+          2040,
+          8
+        ],
+        [
+          2572,
+          4
+        ]
+      ]
+    ],
+    "normalizedPrefixSha256": "955ecc09e9536cebcf16d2547b0b5b70fb0cbff8634dc7cbf3a0f8173a7d27f7",
+    "publishedSignatureBytes": 140048,
+    "signingInvocationObserved": false
+  },
+  {
+    "target": "darwin-x64",
+    "allFileBackedSectionsEqual": true,
+    "allBytesBeforeSignatureAccounted": true,
+    "prefixBytes": 68776480,
+    "allowedMasks": [
+      [
+        [
+          16,
+          8
+        ],
+        [
+          2024,
+          8
+        ],
+        [
+          2040,
+          8
+        ],
+        [
+          2560,
+          16
+        ]
+      ],
+      [
+        [
+          16,
+          8
+        ],
+        [
+          2024,
+          8
+        ],
+        [
+          2040,
+          8
+        ],
+        [
+          2560,
+          16
+        ]
+      ]
+    ],
+    "normalizedPrefixSha256": "bafad05db0e716434c42625a55673cfa9a7c6cdbc8b2fbec700b727464502ae3",
+    "publishedSignatureBytes": 556784,
+    "signingInvocationObserved": false,
+    "candidateRetainedSignatureInvalidCodePageHashes": {
+      "bad": 58,
+      "total": 16792
+    }
+  },
+  {
+    "target": "linux-x64",
+    "zipAndExecutableBytesEqual": true
+  },
+  {
+    "target": "linux-arm64",
+    "zipAndExecutableBytesEqual": true
+  }
+]

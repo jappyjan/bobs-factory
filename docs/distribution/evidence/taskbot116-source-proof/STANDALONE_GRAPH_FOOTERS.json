@@ -1,0 +1,62 @@
+[
+  {
+    "target": "darwin-arm64",
+    "graphOffset": 61554696,
+    "graphBytes": 39121189,
+    "trailer": "\n---- Bun! ----\n",
+    "offsetsStructBytes": 32,
+    "byteCount": 39121141,
+    "modulesOffset": 39121076,
+    "modulesBytes": 52,
+    "entryPointId": 0,
+    "compileExecArgvOffset": 39121140,
+    "compileExecArgvBytes": 0,
+    "flags": "0x17c",
+    "pinnedFormatFooterAndPointerBoundsVerified": true
+  },
+  {
+    "target": "darwin-x64",
+    "graphOffset": 68546568,
+    "graphBytes": 39121137,
+    "trailer": "\n---- Bun! ----\n",
+    "offsetsStructBytes": 32,
+    "byteCount": 39121089,
+    "modulesOffset": 39121024,
+    "modulesBytes": 52,
+    "entryPointId": 0,
+    "compileExecArgvOffset": 39121088,
+    "compileExecArgvBytes": 0,
+    "flags": "0x17c",
+    "pinnedFormatFooterAndPointerBoundsVerified": true
+  },
+  {
+    "target": "linux-x64",
+    "graphOffset": 81260552,
+    "graphBytes": 39115809,
+    "trailer": "\n---- Bun! ----\n",
+    "offsetsStructBytes": 32,
+    "byteCount": 39115761,
+    "modulesOffset": 39115696,
+    "modulesBytes": 52,
+    "entryPointId": 0,
+    "compileExecArgvOffset": 39115760,
+    "compileExecArgvBytes": 0,
+    "flags": "0x17c",
+    "pinnedFormatFooterAndPointerBoundsVerified": true
+  },
+  {
+    "target": "linux-arm64",
+    "graphOffset": 81199112,
+    "graphBytes": 39115861,
+    "trailer": "\n---- Bun! ----\n",
+    "offsetsStructBytes": 32,
+    "byteCount": 39115813,
+    "modulesOffset": 39115748,
+    "modulesBytes": 52,
+    "entryPointId": 0,
+    "compileExecArgvOffset": 39115812,
+    "compileExecArgvBytes": 0,
+    "flags": "0x17c",
+    "pinnedFormatFooterAndPointerBoundsVerified": true
+  }
+]

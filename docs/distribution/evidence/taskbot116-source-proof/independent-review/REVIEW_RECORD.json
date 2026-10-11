@@ -1,0 +1,1897 @@
+{
+  "reviewType": "Independent read-only first review of frozen source research; not release/source/license acceptance",
+  "result": "CLEAR for concrete research claims; zero actionable findings in this scope",
+  "createdAt": "2026-10-11T11:08:35.034225+00:00",
+  "PR": "https://github.com/jappyjan/bobs-factory/pull/91",
+  "reviewedPRHead": "c3cc8644ac34c53b185e6b8598966fcf366497ca",
+  "sourceRoot": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/source-inputs",
+  "reviewRoot": "/private/tmp/taskbot116-source-proof-review.7Wj2Uq",
+  "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+  "candidateSource": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+  "nativeBuildRun": 38086228778,
+  "immutableIndexTooling": "97acf7ba6e00c81a480cd2f8d01c519ea2cf5f05",
+  "researchInputHashes": [
+    {
+      "file": "COORDINATOR_REPORT_CONTINUATION.md",
+      "size": 17110,
+      "sha256": "e4d89774f889ad9eff03a2a52e09163a359f56c18cda1e1ff06c4345e2c31b06"
+    },
+    {
+      "file": "GENUINE_AR_MEMBER_INVENTORIES.json",
+      "size": 1099986,
+      "sha256": "f0c2256f8fcc37966fa1578257d5cec485253a88c332d332ee3cb0e789466b30"
+    },
+    {
+      "file": "LINK_INPUT_DOWNLOAD_MANIFEST.json",
+      "size": 15656,
+      "sha256": "0dce7237a74fae49aec1297a8c7a9a96ea0a6a3fe882cad3dbf1726b56a44b08"
+    },
+    {
+      "file": "LINK_MAP_INPUT_CLOSURE.json",
+      "size": 4945,
+      "sha256": "fc80421c1ef57ec617629ac57a963c8b84680c27650ae2da40faf2d7f7952443"
+    },
+    {
+      "file": "PRESERVATION_MANIFEST.json",
+      "size": 16157,
+      "sha256": "05a62009a278f431c5b6d1a15764a0ca8ac3af4725b5eca4b7f87c5f438e02cd"
+    },
+    {
+      "file": "PROFILE_CONFIG_DOWNLOAD_MANIFEST.json",
+      "size": 7764,
+      "sha256": "ddb37543af9c5f9fdfe018b13223d63afc56fd933171ac530e529ec8453e5f74"
+    },
+    {
+      "file": "PROFILE_ORDER_CORRESPONDENCE.json",
+      "size": 665,
+      "sha256": "9c460c0b8d74fbd3b698f2b026654f82118ec4de539232e6d6eb1a307cc45201"
+    },
+    {
+      "file": "RUNTIME_CACHE_DOWNLOAD_MANIFEST.json",
+      "size": 4982,
+      "sha256": "0f9f8984c548d9d508e9f9b4a0de6706549dc20163cde865eb44fc0a4fa17fec"
+    },
+    {
+      "file": "WEBKIT_ARCHIVE_HEADER_PLAN.json",
+      "size": 144,
+      "sha256": "967a6b48eb9186ef922288dff985d0ae434857cb01a8db49115aa623ffad0723"
+    },
+    {
+      "file": "WEBKIT_ARCHIVE_INDEPENDENT_VERIFICATION.json",
+      "size": 400,
+      "sha256": "d54f7356b3328bcfc83e83e7d2e4b838aaef57cb713f76a08810447dab66513a"
+    },
+    {
+      "file": "WEBKIT_ARCHIVE_RESULT.json",
+      "size": 708,
+      "sha256": "090b309a870691ba4240c7931d7da28a71b1e1376c0b5e9049c43dd349fbddd7"
+    },
+    {
+      "file": "WEBKIT_CACHE_INVENTORIES.json",
+      "size": 1518813,
+      "sha256": "9a2fdd6c091cd58724b86231b4fb5368bba21fe082a327c8064692200a322708"
+    },
+    {
+      "file": "WEBKIT_CHECKOUT.log",
+      "size": 400,
+      "sha256": "05f1527231b21875deceffc55689b42b06afe319087a861240d769befdbfc058"
+    },
+    {
+      "file": "WEBKIT_CURRENT_INTAKE_RESULT.json",
+      "size": 201,
+      "sha256": "3360fc21406cf9a0e3afa4869c1e168303436f5c0c72972c5af27140fcd17c3e"
+    },
+    {
+      "file": "WEBKIT_FETCH_RESULT.json",
+      "size": 678,
+      "sha256": "21533866c27c9891de089b4c93f33fe01cb53395ea74d0d994746d405e305b25"
+    },
+    {
+      "file": "WEBKIT_LOCAL_OBJECT_SIZES.txt",
+      "size": 20513570,
+      "sha256": "575b36b358d0b5d8be0299e53874bbe0f338fd0a9f409db3483696dadd8ca816"
+    },
+    {
+      "file": "WEBKIT_SOURCE_INVENTORY.jsonl",
+      "size": 85877875,
+      "sha256": "f8dd766eeb1d59fd90e8c6e120829473d7a2b58b4cd92c60bf2ad578b280849b"
+    },
+    {
+      "file": "WEBKIT_SOURCE_VERIFICATION.json",
+      "size": 805,
+      "sha256": "e0869d651b9bc96f2795611401b13ea7f0f4c3856df1e5ece66d29106a84c80e"
+    },
+    {
+      "file": "acquire_candidate21.py",
+      "size": 1523,
+      "sha256": "8d2372eb8ea52897d8941812ed5feda3493843f8ba5ff49e2699f2949ac6b913"
+    },
+    {
+      "file": "acquire_link_inputs.py",
+      "size": 1350,
+      "sha256": "49f56cb1796b2b53aca35b366459e2f26208193fe4607e42d79c8b59ded49824"
+    },
+    {
+      "file": "acquire_profile_configs.py",
+      "size": 1560,
+      "sha256": "69ba2af4e341378a205e3eae9877add6acde3b920ea42ff650000916b850382e"
+    },
+    {
+      "file": "acquire_runtime_and_caches.py",
+      "size": 1777,
+      "sha256": "35f3a6914c3572476d7300c9bbbbe99cc684557b99d272c85303246a318da3e0"
+    },
+    {
+      "file": "actual-buildkite-logs/PROVENANCE.json",
+      "size": 1749,
+      "sha256": "d1708078dff6c15809357499031072c9a404740e9efca808b0b62a9571d1a268"
+    },
+    {
+      "file": "actual-buildkite-logs/darwin-arm64.json",
+      "size": 269517,
+      "sha256": "0cc56e51b5a99eb2876a34d5cf859440dd116b156329225694e75cab8088204c"
+    },
+    {
+      "file": "actual-buildkite-logs/darwin-arm64.txt",
+      "size": 110499,
+      "sha256": "a315a2c8e85ab92ad6944fcf087c33bfab086ded6b0d6f706459091c09b1d2c7"
+    },
+    {
+      "file": "actual-buildkite-logs/darwin-x64.json",
+      "size": 258664,
+      "sha256": "518d46190ccb83b20df9d2a741c41dbd768e125c96aa034c3cc667dbe2bb37cc"
+    },
+    {
+      "file": "actual-buildkite-logs/darwin-x64.txt",
+      "size": 105881,
+      "sha256": "22ae86c0429cb5b4f0edd96f6ad3745b1059ca82871cd20d96779502bc2d7863"
+    },
+    {
+      "file": "actual-buildkite-logs/linux-arm64.json",
+      "size": 281260,
+      "sha256": "3cf2c6774c1181e055b9e79902f5f118948d49b2f121679a9017897045d5588f"
+    },
+    {
+      "file": "actual-buildkite-logs/linux-arm64.txt",
+      "size": 115435,
+      "sha256": "ccd58e4bb1883c6a75bd6b0878652468c095a832b701587a04b8d311b1e0d862"
+    },
+    {
+      "file": "actual-buildkite-logs/linux-x64.json",
+      "size": 274616,
+      "sha256": "08a4076fd9a7a1d7665e76ae67fd0c44c6ef0ced74406ddaf50b81b1835d3ec0"
+    },
+    {
+      "file": "actual-buildkite-logs/linux-x64.txt",
+      "size": 112151,
+      "sha256": "7a76fc22a5e332319e43651e1fb9934dfc1a88160af2b4f140a45aacef1bb1bb"
+    },
+    {
+      "file": "actual-cache-configs/CONFIG_PROVENANCE.json",
+      "size": 5081,
+      "sha256": "01aa1b547d77d102c72f61cd14f8eead461a28568073e03519d9526ca81ba668"
+    },
+    {
+      "file": "actual-cache-configs/bun-webkit-linux-amd64-lto-compile_commands.json",
+      "size": 2283124,
+      "sha256": "8ccd24af9098a44cd8b2c6fa0d9930842aae60afddbb956a9de2501bb72414b2"
+    },
+    {
+      "file": "actual-cache-configs/bun-webkit-linux-arm64-lto-compile_commands.json",
+      "size": 2297281,
+      "sha256": "e3983f5f4ad310c58380d19acc37c53eb541eadf0260898bd00edca11a846fcc"
+    },
+    {
+      "file": "actual-inherited-order/ORDER_PROVENANCE.json",
+      "size": 896,
+      "sha256": "815e4c8aede9a42c101d70329b5f8fc9022836ebf02e80ff05705fc2c260e172"
+    },
+    {
+      "file": "actual-inherited-order/darwin-aarch64-build-bun-artifacts.json",
+      "size": 4751,
+      "sha256": "a3a139930151191e7603036599a4b1c3bbaba88778602f3ff2bc5022fd6152b7"
+    },
+    {
+      "file": "actual-inherited-order/darwin-aarch64-steps.json",
+      "size": 3232,
+      "sha256": "c9b8894990632088d9d3fe889b89ad7ab2f74343923755267924edd88c8951fc"
+    },
+    {
+      "file": "actual-inherited-order/darwin-aarch64-trace-order-artifacts.json",
+      "size": 665,
+      "sha256": "49f2c4ed16e05a3164d87c73b606045e96581cabbe744d65de1b129f307993c7"
+    },
+    {
+      "file": "actual-inherited-order/linux-x64-build-bun-artifacts.json",
+      "size": 6733,
+      "sha256": "aa39a3114dc9934ec487ab37de4fcb93c0293e3e4cbd644a55624584026df0c0"
+    },
+    {
+      "file": "actual-inherited-order/linux-x64-steps.json",
+      "size": 5427,
+      "sha256": "0e0b0b8ecd49a01397353811d6de533aada424629d23be857296d46452e4e430"
+    },
+    {
+      "file": "actual-inherited-order/linux-x64-trace-order-artifacts.json",
+      "size": 654,
+      "sha256": "23cdaa4f9604d618dd89d26597840340ec321839c88d5a1ae968de4a3848c33f"
+    },
+    {
+      "file": "actual-inherited-order/top-steps.json",
+      "size": 35055,
+      "sha256": "54ceaef0cb1bff67d2bf8ea15453ef0c23fed5264e3d7a81bd4840b5e30d28d1"
+    },
+    {
+      "file": "actual-profile-configs/bun-darwin-aarch64-profile/features.json",
+      "size": 1041,
+      "sha256": "fc83b2ef9bfd7c5e2593ce7aded967f2e4a5dc5be552314ccfb1bf9e42cbe7f8"
+    },
+    {
+      "file": "actual-profile-configs/bun-darwin-x64-profile/features.json",
+      "size": 1041,
+      "sha256": "75958d896be2be64522666076a7ef3141619ab7558f4342fc26392d7ba015d90"
+    },
+    {
+      "file": "actual-profile-configs/bun-linux-aarch64-profile/features.json",
+      "size": 1041,
+      "sha256": "314995d9199be6bee461954a5587691645c9f732be74ad6ddc44c8d4544661fe"
+    },
+    {
+      "file": "actual-profile-configs/bun-linux-x64-profile/features.json",
+      "size": 1041,
+      "sha256": "e7c0159617b3a5dca0b1f45c393b0b82c6fdec8577a6439905b942a1c289e170"
+    },
+    {
+      "file": "archive_webkit.py",
+      "size": 3241,
+      "sha256": "d9252331bd6fc23eaf0348e67c9e0fae7144b5f46d3124f01870f98df0c7e6a8"
+    },
+    {
+      "file": "candidate-21/ACTUAL_PAYLOAD_VERIFICATION.json",
+      "size": 2013,
+      "sha256": "b26497bf065842b8e9d98aeb8957bc6775f8f2ba7b680c539a06fed81f222402"
+    },
+    {
+      "file": "candidate-21/BASE_RUNTIME_BYTE_BINDING.json",
+      "size": 4539,
+      "sha256": "7b80048b687c447cb4bc28d6648a3d889d99afc431d3708224055f1a9c362281"
+    },
+    {
+      "file": "candidate-21/BASE_RUNTIME_BYTE_BINDING.stdout.jsonl",
+      "size": 4224,
+      "sha256": "b3d071025d687b00bc62a2f1d0ddeff74d3c5d81d6640b6aa669d8cac0945e53"
+    },
+    {
+      "file": "candidate-21/DOWNLOAD_PROVENANCE.json",
+      "size": 1425,
+      "sha256": "5392602408b841d4744a2ec069a029a4454bfcf286db013911f2ea9b631e57ae"
+    },
+    {
+      "file": "candidate-21/FORMAT_INSPECTION.json",
+      "size": 117965,
+      "sha256": "969d08f210d61748df2ee750cdf348891e39bd0b5d9c6a9c0986f8b6e59f2a1c"
+    },
+    {
+      "file": "candidate-21/STANDALONE_GRAPH_FOOTERS.json",
+      "size": 1657,
+      "sha256": "1683b1b0209d8abf21c8f1eac06bc8e42eecac62700deb1e6ed6763742e16f5b"
+    },
+    {
+      "file": "candidate-21/artifact-index.json",
+      "size": 115543,
+      "sha256": "faaa0b644df08aa98c584a4044cf43aefc0f7922c3dd1b2fbb9733370d0655bb"
+    },
+    {
+      "file": "candidate-21/candidate.json",
+      "size": 736,
+      "sha256": "2c3a7de82331a520c03feefa7a6afadfb4c174863adbc71348cc300064c17174"
+    },
+    {
+      "file": "candidate-21/darwin-arm64/bobs-factory-1.0.0-nightly.20261010.21-darwin-arm64/THIRD_PARTY_NOTICES.txt",
+      "size": 2066100,
+      "sha256": "866b01d036da496d54ecc7ceb1fc7e1a09c2bc8e0d86bc1fc0c56f908e7e6f87"
+    },
+    {
+      "file": "candidate-21/darwin-arm64/bobs-factory-1.0.0-nightly.20261010.21-darwin-arm64/build.json",
+      "size": 764,
+      "sha256": "855e97ec640831849e28548918c7c2989da225a615c62529fa6b0bbd20007aff"
+    },
+    {
+      "file": "candidate-21/darwin-arm64/bobs-factory-1.0.0-nightly.20261010.21-darwin-arm64.manifest.json",
+      "size": 556,
+      "sha256": "f13a67f2031bea124da37f37bb7effb959d4368d6543fe994bee87caeea5f806"
+    },
+    {
+      "file": "candidate-21/darwin-arm64/native-helpers.json",
+      "size": 1265,
+      "sha256": "4c76b301b35f618dd16332326ff0f8e9b216d4f8a28ae536f394d93573d7012f"
+    },
+    {
+      "file": "candidate-21/darwin-arm64/prepared-agent-boundaries.json",
+      "size": 2564,
+      "sha256": "73783b69bd47d6819ee7acb5a4231482fb3f08e09df4476bb06057832fecd3d2"
+    },
+    {
+      "file": "candidate-21/darwin-arm64/public-installer.json",
+      "size": 953,
+      "sha256": "d61f55f173943cb4aa7dae901e8fa28342a3a91c5cc494d57f319ea18ebd221d"
+    },
+    {
+      "file": "candidate-21/darwin-arm64/runtime-smoke.txt",
+      "size": 426,
+      "sha256": "267a90b501289dff0e5f54371c3d654f89b028ea7107c440c559351ff5c1b460"
+    },
+    {
+      "file": "candidate-21/darwin-arm64-build.json",
+      "size": 764,
+      "sha256": "855e97ec640831849e28548918c7c2989da225a615c62529fa6b0bbd20007aff"
+    },
+    {
+      "file": "candidate-21/darwin-arm64-github-artifact.json",
+      "size": 792,
+      "sha256": "0bc171a02faf2cb7396b8532a6097e8e0191aba24ab8d6b6e0104039a2a63230"
+    },
+    {
+      "file": "candidate-21/darwin-x64/bobs-factory-1.0.0-nightly.20261010.21-darwin-x64/THIRD_PARTY_NOTICES.txt",
+      "size": 2066100,
+      "sha256": "866b01d036da496d54ecc7ceb1fc7e1a09c2bc8e0d86bc1fc0c56f908e7e6f87"
+    },
+    {
+      "file": "candidate-21/darwin-x64/bobs-factory-1.0.0-nightly.20261010.21-darwin-x64/build.json",
+      "size": 762,
+      "sha256": "d8fcc06a8d5cb5554dde4d1e9861b9841175159381bfa3cce586786b5f9b8693"
+    },
+    {
+      "file": "candidate-21/darwin-x64/bobs-factory-1.0.0-nightly.20261010.21-darwin-x64.manifest.json",
+      "size": 552,
+      "sha256": "769d87051951a37a26df6703530321f63c56eb100789205ed3f942371a67bde3"
+    },
+    {
+      "file": "candidate-21/darwin-x64/native-helpers.json",
+      "size": 1283,
+      "sha256": "e257b31ac65f92959dd01adf37b2df0052da4007ddfbe26433fa60916c7d40a3"
+    },
+    {
+      "file": "candidate-21/darwin-x64/prepared-agent-boundaries.json",
+      "size": 2562,
+      "sha256": "d64924e4ede29b2279c38defa7901388a2c3eb25f3036e89449362a89e2b56c6"
+    },
+    {
+      "file": "candidate-21/darwin-x64/public-installer.json",
+      "size": 951,
+      "sha256": "bb636dbc99958ee69dbc13ce19dc472dc4d44348a29491dd816c952d53f4f09a"
+    },
+    {
+      "file": "candidate-21/darwin-x64/runtime-smoke.txt",
+      "size": 426,
+      "sha256": "267a90b501289dff0e5f54371c3d654f89b028ea7107c440c559351ff5c1b460"
+    },
+    {
+      "file": "candidate-21/darwin-x64-build.json",
+      "size": 762,
+      "sha256": "d8fcc06a8d5cb5554dde4d1e9861b9841175159381bfa3cce586786b5f9b8693"
+    },
+    {
+      "file": "candidate-21/darwin-x64-github-artifact.json",
+      "size": 790,
+      "sha256": "8f5902496883006437e966b70b3b8ea14e7533e0709382480f6bfba40dae0d5b"
+    },
+    {
+      "file": "candidate-21/linux-arm64/bobs-factory-1.0.0-nightly.20261010.21-linux-arm64/THIRD_PARTY_NOTICES.txt",
+      "size": 2066100,
+      "sha256": "d123ec1608e9cbedcbedb8346c59d28cf0615d961e460926192c0047a0f47c55"
+    },
+    {
+      "file": "candidate-21/linux-arm64/bobs-factory-1.0.0-nightly.20261010.21-linux-arm64/build.json",
+      "size": 763,
+      "sha256": "ff0c0d7e1f0486c06791b28ed57f870fe9bb5d0f79925e4c2aeae1d310cd2f58"
+    },
+    {
+      "file": "candidate-21/linux-arm64/bobs-factory-1.0.0-nightly.20261010.21-linux-arm64.manifest.json",
+      "size": 554,
+      "sha256": "742fb4cb887606576df40d17b7438ed2424ecbde640e28c8fcc1eb5c199a48b5"
+    },
+    {
+      "file": "candidate-21/linux-arm64/native-helpers.json",
+      "size": 1271,
+      "sha256": "b383da4cfbbaa91bff3c56188c5501c7bfd646da92ab5d4f4cdc8714d11ea964"
+    },
+    {
+      "file": "candidate-21/linux-arm64/prepared-agent-boundaries.json",
+      "size": 2563,
+      "sha256": "71f911a9c66eb5992842f2950dfe331fe8dd9a1b3fed58e327e00cc4ec65142e"
+    },
+    {
+      "file": "candidate-21/linux-arm64/public-installer.json",
+      "size": 952,
+      "sha256": "245208c25eab2148d95747c29f9e8b85b815bbdce71b5af16cb32ca461985db1"
+    },
+    {
+      "file": "candidate-21/linux-arm64/runtime-smoke.txt",
+      "size": 426,
+      "sha256": "267a90b501289dff0e5f54371c3d654f89b028ea7107c440c559351ff5c1b460"
+    },
+    {
+      "file": "candidate-21/linux-arm64-build.json",
+      "size": 763,
+      "sha256": "ff0c0d7e1f0486c06791b28ed57f870fe9bb5d0f79925e4c2aeae1d310cd2f58"
+    },
+    {
+      "file": "candidate-21/linux-arm64-github-artifact.json",
+      "size": 791,
+      "sha256": "05fd3693fad80e2c28bbc2c3dd9aab77a003945d7dbfef57515d1d97672e49d4"
+    },
+    {
+      "file": "candidate-21/linux-x64/bobs-factory-1.0.0-nightly.20261010.21-linux-x64/THIRD_PARTY_NOTICES.txt",
+      "size": 2066100,
+      "sha256": "cc423e80bad92c026680fa78282aee4e23fd0a28d2129bf86102cc3e6403e986"
+    },
+    {
+      "file": "candidate-21/linux-x64/bobs-factory-1.0.0-nightly.20261010.21-linux-x64/build.json",
+      "size": 761,
+      "sha256": "ea31e0ec819d8cce1ed27c5c3f677a4f4b309d3c390705a6f5f6d5628f459f5c"
+    },
+    {
+      "file": "candidate-21/linux-x64/bobs-factory-1.0.0-nightly.20261010.21-linux-x64.manifest.json",
+      "size": 550,
+      "sha256": "eb485921ea88cb1d27291cc5a9bb662711223ab9050d73b731aa232f5b0f90e0"
+    },
+    {
+      "file": "candidate-21/linux-x64/native-helpers.json",
+      "size": 1291,
+      "sha256": "4d9c2da918cc5e5dd4cd3441ffeb434070ad55028e669e676556001166a2de19"
+    },
+    {
+      "file": "candidate-21/linux-x64/prepared-agent-boundaries.json",
+      "size": 2561,
+      "sha256": "77f5f79a5336d4f9bbcd39cf5fc4912c78900db7cd08e980f2130d808cda3543"
+    },
+    {
+      "file": "candidate-21/linux-x64/public-installer.json",
+      "size": 950,
+      "sha256": "6e6f6538611a7c48c3980d47f512d282c86a4e35def5b5bebba51c39153bf6b4"
+    },
+    {
+      "file": "candidate-21/linux-x64/runtime-smoke.txt",
+      "size": 426,
+      "sha256": "267a90b501289dff0e5f54371c3d654f89b028ea7107c440c559351ff5c1b460"
+    },
+    {
+      "file": "candidate-21/linux-x64-build.json",
+      "size": 761,
+      "sha256": "ea31e0ec819d8cce1ed27c5c3f677a4f4b309d3c390705a6f5f6d5628f459f5c"
+    },
+    {
+      "file": "candidate-21/linux-x64-github-artifact.json",
+      "size": 789,
+      "sha256": "09ab4e9c62c369c40dbb52851918fdee0392e6b131dac80d88b5f531ac92afd0"
+    },
+    {
+      "file": "compare_all_runtimes.py",
+      "size": 3760,
+      "sha256": "c2e601dfeb98053a303d13c975386066609c7654b92568f4deca0b2b1733123f"
+    },
+    {
+      "file": "fetch_exact_webkit.py",
+      "size": 2035,
+      "sha256": "bb37ef14b9890e243f75b2432547a3ce713b6690e424cf80917f3a478d05bd60"
+    },
+    {
+      "file": "inspect_candidate_formats.py",
+      "size": 3230,
+      "sha256": "2f66e73b888601520e91b0a32d03b4d24e49135cd7adce86b5fc3acdb9904569"
+    },
+    {
+      "file": "inventory_ar_objects.py",
+      "size": 1266,
+      "sha256": "ed8e4f0d824d215908a8c0bd4ef9ed9508429a762e75dd406ef0da013d70578a"
+    },
+    {
+      "file": "mac-comparison/MACHO_COMPARISON.json",
+      "size": 48256,
+      "sha256": "9d1275b4895caccf58ed273e7f930a8f2203207acd463d1880095de82af4d91c"
+    },
+    {
+      "file": "mac-comparison/buildkite-codesign-display.txt",
+      "size": 700,
+      "sha256": "f55eb2a845df9ef2006d7a3fac60cf50b4a615ffafe3c129ea53259fda9ba999"
+    },
+    {
+      "file": "mac-comparison/release-codesign-display.txt",
+      "size": 902,
+      "sha256": "84431cc0f3b9a132e809b506bf3524e446f66bfc963de00a292370411aad8042"
+    },
+    {
+      "file": "official-pinned-sources/ARCHIVE_INVENTORY.json",
+      "size": 458,
+      "sha256": "831b321cc05d9346b0698200c2f5dc3536f023b844280729be24db5ef0e652b9"
+    },
+    {
+      "file": "official-pinned-sources/SOURCE_DOWNLOAD_MANIFEST.json",
+      "size": 850,
+      "sha256": "e2e594d3a934c44dbd9e00db1926c66087c06a006a83c8ace24960c17c578493"
+    },
+    {
+      "file": "pinned-bun-research/.buildkite__ci.mjs",
+      "size": 68960,
+      "sha256": "ddbe7e37679349f16b8e63b881b9ecd708399675bc1f4dbf869419b3ed84353d"
+    },
+    {
+      "file": "pinned-bun-research/DOWNLOADS.json",
+      "size": 4809,
+      "sha256": "c421bd94c9aa53dd4aab24197a3ed0ac23e053616df3ecdee5e5511c1d14b43b"
+    },
+    {
+      "file": "pinned-bun-research/LICENSE.md",
+      "size": 5613,
+      "sha256": "b9caf52728691b4057e371232c221a132883198be2f3d2ddf92c90404c984b1a"
+    },
+    {
+      "file": "pinned-intake-check/bounded-archive.mjs",
+      "size": 14511,
+      "sha256": "a59e8a3036e81d1c04cbb1d95e306c55c109e76bdcd36f8bb7a1460a50f8bf2b"
+    },
+    {
+      "file": "pinned-intake-check/check.mjs",
+      "size": 956,
+      "sha256": "46e2e26e517f3f7975aa50be7ad515a7af4331c4e175a5abc5ff0bd420562f35"
+    },
+    {
+      "file": "prior-research/01a06f3a-e25c-425f-928b-689ff8acea39-jobs.json",
+      "size": 4695,
+      "sha256": "41ec46c00f2dd3abab474888cdc19483124f03c6de2eaaee924745b7dbf8509a"
+    },
+    {
+      "file": "prior-research/01a06f3a-e25d-46fd-808e-ac40f1515fdb-jobs.json",
+      "size": 4831,
+      "sha256": "0f54e7f17fcb854d0d2b19f6989800c75c660b8842ea143d9a5b95de1218d31e"
+    },
+    {
+      "file": "prior-research/COORDINATOR_REPORT.md",
+      "size": 9943,
+      "sha256": "7f5e863ea4d779553b422ed53341f9f65ca7011941650d96c6dd6162c1bf4646"
+    },
+    {
+      "file": "prior-research/RESEARCH_DOWNLOAD_MANIFEST.json",
+      "size": 3327,
+      "sha256": "015521105ea45ace06ff321c9d10739a4ae14430a789fdf85e850446d171dad8"
+    },
+    {
+      "file": "prior-research/all-four-upstream-artifacts.json",
+      "size": 16032,
+      "sha256": "d460a816156253de205291f6166745cc381c361b78e8eeaa83f60311f6292900"
+    },
+    {
+      "file": "prior-research/archive-head-results.json",
+      "size": 597,
+      "sha256": "f60f329a0412d0506b9cc66859a1d090101e9561047e20fb2e6649d89823d844"
+    },
+    {
+      "file": "prior-research/buildkite-access-results.json",
+      "size": 1046,
+      "sha256": "65464563aaf43fecd2228beca14038c1efcfdde44ec0bf51fe0d6019aa0404c2"
+    },
+    {
+      "file": "prior-research/buildkite-build-public.json",
+      "size": 4128,
+      "sha256": "e6aaf8cf1bef7c2192f14d6d460b1c966d4e0814a14833bde3899a84443c6876"
+    },
+    {
+      "file": "prior-research/buildkite-darwin-arm64-artifacts.json",
+      "size": 4751,
+      "sha256": "69dfc418f97eac527c32a3e46bafb2111fb481a61977f703acdf19da9d4bf9ac"
+    },
+    {
+      "file": "prior-research/buildkite-steps.json",
+      "size": 39659,
+      "sha256": "f45caae9b76d818a5d53dd0fba97a59329198defe1f3a2402acd0294bb430d78"
+    },
+    {
+      "file": "prior-research/bun-artifact-downloads.json",
+      "size": 1461,
+      "sha256": "ab6569ae2aa77375ae14af242094828720b27f4806179ad682b4a689f01a945b"
+    },
+    {
+      "file": "prior-research/bun-build/.buildkite__ci.mjs",
+      "size": 68960,
+      "sha256": "ddbe7e37679349f16b8e63b881b9ecd708399675bc1f4dbf869419b3ed84353d"
+    },
+    {
+      "file": "prior-research/bun-build/CONTRIBUTING.md",
+      "size": 16140,
+      "sha256": "de16e04136abd2ac77a14c658b0cf94c351bf14d06e24e1bdc0b2912cb37d874"
+    },
+    {
+      "file": "prior-research/bun-build/package.json",
+      "size": 6242,
+      "sha256": "973a3bcc29de16883d77ea51b83c3e657e4c2e771c3c485d408687913a788ece"
+    },
+    {
+      "file": "prior-research/bun-commit-status.json",
+      "size": 4688,
+      "sha256": "cfbf48f1c5dd65fcc4b3546774ed1e3f68294539fa2cdcda8d9427b00be05422"
+    },
+    {
+      "file": "prior-research/bun-executable-comparison.json",
+      "size": 402,
+      "sha256": "6f6ea2111504b1408aedd83d906f491c5aeee9f19447b53ea3f38ac651eb1d12"
+    },
+    {
+      "file": "prior-research/bun-release-api.json",
+      "size": 60752,
+      "sha256": "68a567ea02b51971e6cfbdf2ad8267c8858e1aa664392d3257956aad8ca4fec7"
+    },
+    {
+      "file": "prior-research/bun-tree.json",
+      "size": 5599505,
+      "sha256": "f4551f96814712df41a5640bc482369102a5711fff75030a7eabdba1c446ea06"
+    },
+    {
+      "file": "prior-research/candidate-runtime-binding-gaps.json",
+      "size": 1412,
+      "sha256": "4263cc145ff38153b4d19c7784d5e552a1dd6ae4a1bfcd6853040c70272b3840"
+    },
+    {
+      "file": "prior-research/darwin-aarch64-build-bun-artifacts.json",
+      "size": 4751,
+      "sha256": "69dfc418f97eac527c32a3e46bafb2111fb481a61977f703acdf19da9d4bf9ac"
+    },
+    {
+      "file": "prior-research/darwin-aarch64-steps.json",
+      "size": 3263,
+      "sha256": "33eb2c6c80c0b06e3e9317ac84d848b2723d3591f6f637ba7ae0ce3b41b91fe6"
+    },
+    {
+      "file": "prior-research/darwin-aarch64-trace-order-artifacts.json",
+      "size": 665,
+      "sha256": "a035575141f32ba3adb7196d2233591e343c09b1a4ac35ed2281d785b4aa2d8a"
+    },
+    {
+      "file": "prior-research/darwin-x64-build-bun-artifacts.json",
+      "size": 4714,
+      "sha256": "0a3e2f0238bb07cd902ecb75997fbbf047313bbe1f4be7c00d31c69b92234b52"
+    },
+    {
+      "file": "prior-research/darwin-x64-steps.json",
+      "size": 1628,
+      "sha256": "4406ee31155e7d1734344a0e1e566064300bc07bc1b8fc465c45e91823723af1"
+    },
+    {
+      "file": "prior-research/git-fetch.log",
+      "size": 150,
+      "sha256": "8809d3dd8d710e7d5e330b19221ac3ee14923becaae1389cdbb3a29557ae15b8"
+    },
+    {
+      "file": "prior-research/git-full-fetch-retry-unlocked.log",
+      "size": 81,
+      "sha256": "bbb264853de5c881ebb294751fb320983d0041853fb40d3f950a50d5842e5c0b"
+    },
+    {
+      "file": "prior-research/git-full-fetch-retry.log",
+      "size": 427,
+      "sha256": "9693f6746410fc67c8da26f6e30298f03020cbe39011930e20bddd09e6015e22"
+    },
+    {
+      "file": "prior-research/git-full-fetch.log",
+      "size": 34,
+      "sha256": "e5544bc1a386488c21bf550db6e5c87d583b66032b6255ad8f13eb4ef4e6893c"
+    },
+    {
+      "file": "prior-research/linux-aarch64-build-bun-artifacts.json",
+      "size": 7447,
+      "sha256": "829299f2813db77e60f2ba95566baf748aedef99889978bb057a780717ad6fbc"
+    },
+    {
+      "file": "prior-research/linux-aarch64-steps.json",
+      "size": 3636,
+      "sha256": "3668ed07a4d3a9b5751313c9ee5b8081e634ccfeb2b48439637e69d54b50d8ac"
+    },
+    {
+      "file": "prior-research/linux-x64-build-bun-artifacts.json",
+      "size": 6735,
+      "sha256": "f2ef4e1b29593548c040a65f725014c0b9cda1e1bcb5ce687bff047b1cdeeccd"
+    },
+    {
+      "file": "prior-research/linux-x64-steps.json",
+      "size": 5467,
+      "sha256": "45c77e1ea8faace361aa9b5a9c9bc3a39b7ce5e55e7ccdc3a20ab1a82c88fc21"
+    },
+    {
+      "file": "prior-research/linux-x64-trace-order-artifacts.json",
+      "size": 654,
+      "sha256": "a1c44fdd9334a7d402e87c2d45095d03144582e6afe9bca9de9862ef9631d739"
+    },
+    {
+      "file": "prior-research/remaining-object-downloads.json",
+      "size": 2670,
+      "sha256": "4efceccfd4ba44a014573cff2bddf5680a1bf919d2a6aa06c01f7d2f68ce4293"
+    },
+    {
+      "file": "prior-research/retrieval-results.json",
+      "size": 2262,
+      "sha256": "da8a3c774bf75d8d3eb3462ae6ead787256689899fe0fdd5f10561b628953445"
+    },
+    {
+      "file": "prior-research/webkit-commit-api.json",
+      "size": 13869,
+      "sha256": "aec18c5f377d7679400c37606cfa90106a4a1f8d372216dd5c8bf7ed121a652b"
+    },
+    {
+      "file": "prior-research/webkit-git-object-api.json",
+      "size": 8589,
+      "sha256": "ddb31282d474a4caaa19b1d48f24b40f94ece8ccb1f2c9b73995bfc898a06ba3"
+    },
+    {
+      "file": "prior-research/webkit-official-mirror.json",
+      "size": 13856,
+      "sha256": "be31ebb9bc84680b3955e66a8d8bdf9b7805f13f82db8f5a91d6926e3157426f"
+    },
+    {
+      "file": "prior-research/webkit-partial-pack-rejected.json",
+      "size": 477,
+      "sha256": "48f8a3e9dbdded7c6463523205194df7930e8ea60887359bfb5c68349e9fa5ef"
+    },
+    {
+      "file": "prior-research/webkit-raw-readme.json",
+      "size": 7916,
+      "sha256": "b8ae762d7e833c62da7e8379b038305374737f5e8a7bebeada483c8161a77d17"
+    },
+    {
+      "file": "prior-research/webkit-release-api.json",
+      "size": 74517,
+      "sha256": "c8efc95a97c7aff41fc9195b441385bf508744d62c6e6720fe0317d74b59b79e"
+    },
+    {
+      "file": "prior-research/webkit-tree.txt",
+      "size": 64641065,
+      "sha256": "16ec042bca3c1a238a663f796d04aec30bc0e44b6d2418a0e00795e7cd4cc9ee"
+    },
+    {
+      "file": "public-log-probes/RESULTS.json",
+      "size": 993,
+      "sha256": "67daa59168799a05681d1de90f30eb4484e58d706508f655549cb814779dcd94"
+    },
+    {
+      "file": "public-log-probes/linux-x64-log.txt",
+      "size": 112151,
+      "sha256": "7a76fc22a5e332319e43651e1fb9934dfc1a88160af2b4f140a45aacef1bb1bb"
+    },
+    {
+      "file": "runtime-correspondence/ALL_TARGET_RUNTIME_COMPARISON.json",
+      "size": 27307,
+      "sha256": "076d39c362a2685aac1ec123d50ff8c6482823c5bcf76aec4990326b24556dc2"
+    },
+    {
+      "file": "runtime-correspondence/buildkite-darwin-x64-codesign.txt",
+      "size": 156,
+      "sha256": "8004c797514911e9c1a2c248b5c5595719eae2a3f5fc655e40d2dc247fc8ba0f"
+    },
+    {
+      "file": "runtime-correspondence/release-darwin-x64-codesign.txt",
+      "size": 923,
+      "sha256": "b45bcd3d957fad76a258aba5a69043ca45399deb70ce2a78687cdac69c40b89f"
+    },
+    {
+      "file": "verify_candidate_base_binding.py",
+      "size": 6935,
+      "sha256": "9d703b40f5ebd405ef9840655df9a5874cb6b942ce7f0b37c791fb132ed54dda"
+    },
+    {
+      "file": "verify_source_archive.py",
+      "size": 1640,
+      "sha256": "ecf26d5d86ecc5ab4cc4e0edb1ffa7838206a7b0ad32d9057efaf2db3ed80bc7"
+    },
+    {
+      "file": "verify_webkit.py",
+      "size": 2180,
+      "sha256": "7023eeb00f6977f18714f2e30bdc078963056873314a164852a1e8850ffce529"
+    },
+    {
+      "file": "webkit-fsck.log",
+      "size": 134,
+      "sha256": "efdc987f6d678ca99a88d71b30d8b7a249c7ab1ef04bd3341c9a269e2d929331"
+    },
+    {
+      "file": "webkit-full-fetch.log",
+      "size": 28752,
+      "sha256": "0a85b0878922607abda322fa642cda9730d88692f0ecabc263c5380529c3f4c3"
+    },
+    {
+      "file": "RESEARCH_EVIDENCE_INDEX.json",
+      "size": 28435,
+      "sha256": "674f13dac1e686c1524a9541d032acd5c8db78d3d4245cd0e05d8d220153f9cc"
+    },
+    {
+      "file": "WebKit-2e2aa2290fac856d6f451ceacb58f7f5b44dd057.tar.gz",
+      "size": 1993738581,
+      "sha256": "108dd98cc15bf43debc753cfb597b5635bd936855da2bb48bf0bcacc46881f7d"
+    },
+    {
+      "file": "prior-research/darwin-arm64-libbun-profile.a.gz",
+      "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e294-4650-9f78-dea25e59f504/artifacts/01a06f3c-c84b-44a7-97ce-426c898e48a2",
+      "size": 55738619,
+      "sha256": "f51bfbf5c5160a549d50f609c251f91bb0d16d1bca525f7a1b554977da6e7d53"
+    },
+    {
+      "file": "prior-research/darwin-arm64-libbun-runtime.a.gz",
+      "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e294-4650-9f78-dea25e59f504/artifacts/01a06f3e-268c-42dc-8e82-9750ffe33221",
+      "size": 88918875,
+      "sha256": "4f7acedbd964e2c1ebbabc2eaee5605d752fb26712cd64953d49acd85572a851"
+    },
+    {
+      "file": "prior-research/linux-aarch64-libbun-profile.a.gz",
+      "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f3c-d635-4c6e-a5e1-aefdf6db0ae8",
+      "size": 57964426,
+      "sha256": "618bc4e3f3c0ca30bb7bd4cd4019cae46d22fe6d8f6d2cb4ae009727385f2e22"
+    },
+    {
+      "file": "prior-research/linux-aarch64-libbun-runtime.a.gz",
+      "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f3e-356a-4cad-a997-ee03cd437b85",
+      "size": 88559585,
+      "sha256": "1075ad3162dcd760cfca8cf3bb84fcc7820d630a068b62ac53c7cb4514dc17f4"
+    },
+    {
+      "file": "prior-research/linux-x64-libbun-profile.a.gz",
+      "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3c-fbc2-4ffb-b558-4f7dc83c1dc3",
+      "size": 58318422,
+      "sha256": "9b23771fd04a9264632d43948dfd01faf18a33c80c67811c80d96cab7d508615"
+    },
+    {
+      "file": "prior-research/linux-x64-libbun-runtime.a.gz",
+      "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3e-65ca-4a75-ae23-66869e48b801",
+      "size": 88579341,
+      "sha256": "a6e202069dbc1d3a2ab1c4796efa6ac277d144469c71b89a8908c5ec77593da3"
+    },
+    {
+      "file": "prior-research/darwin-x64-libbun-profile.a.gz",
+      "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts/01a06f3c-ba3b-4ca5-97af-ac6a7efef5ac",
+      "size": 56105242,
+      "sha256": "ec27604fe3ee6a35a1373d67bf73ecd8c71018e40a27996d3046daca70de3d6a"
+    },
+    {
+      "file": "prior-research/darwin-x64-libbun-runtime.a.gz",
+      "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts/01a06f3e-1386-4748-b4af-a59de51e2d27",
+      "size": 89088167,
+      "sha256": "c825b560d4152003ed71c75285c658d904383ba2dd6dd79cf33cf2fc7d090f69"
+    },
+    {
+      "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libbmalloc.a",
+      "size": 485622,
+      "sha256": "40ba926a5f14e0fb74d4bd4467fe6284632b0081e8a355eebbb6780d6d5bfa54"
+    },
+    {
+      "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicuuc.a",
+      "size": 6296428,
+      "sha256": "de34e57a2f63a80e61e568d70ed0c812a3ba9242217b52378418dad2dfb95c6d"
+    },
+    {
+      "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libWTF.a",
+      "size": 7572700,
+      "sha256": "a0c1df4746fcf47cc6a0a890d33395b3a259f54b6dabc25f01787bc5d571ba1f"
+    },
+    {
+      "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicui18n.a",
+      "size": 13337194,
+      "sha256": "2d8710b1ab9f4748cb525652c4c2f83fcb58eeb215ce5abc90e8d5ae7ac73b2b"
+    },
+    {
+      "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicudata.a",
+      "size": 12241950,
+      "sha256": "a8d6db96bd58a1053563098df222950319cbfeeaf83256bc74e572086439b129"
+    },
+    {
+      "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libJavaScriptCore.a",
+      "size": 208594958,
+      "sha256": "55c6f3f8b814bc12305ea0ba341dded2286914daf03955e13a92f9fd3e83c043"
+    },
+    {
+      "file": "official-link-inputs/linux-aarch64-build-bun/bun-linux-aarch64.order",
+      "size": 1163683,
+      "sha256": "41ca700c51b22234de2dacba20bdb97c893e23c4c46dfff9fd18995ab390a544"
+    },
+    {
+      "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libbmalloc.a",
+      "size": 484978,
+      "sha256": "a432f5cc033ab66077d40047f84017937a9e03e55cef05dbad8360a30c7541bd"
+    },
+    {
+      "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libicudata.a",
+      "size": 12242982,
+      "sha256": "6ff546fab4ecce092ad07d96c67e246a826724ac400343973918c1e4053e0839"
+    },
+    {
+      "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libWTF.a",
+      "size": 8317998,
+      "sha256": "3c1860522bd289b6a217d9b2bc5d6c549d272adbb38ed627c81ca6cef306cc14"
+    },
+    {
+      "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libicuuc.a",
+      "size": 6375236,
+      "sha256": "d01f5744de17c2932822c496d6cd6bdd0b3bc7e10b586360d1c32b744d1168e5"
+    },
+    {
+      "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libicui18n.a",
+      "size": 13463432,
+      "sha256": "6f0d8415eeab279de3c74ab00adc84d7dcfd5e7cb9ac3e4e6bfa14d766f552b2"
+    },
+    {
+      "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libJavaScriptCore.a",
+      "size": 209645194,
+      "sha256": "4ff9477f0a72018cecd90918e507f06d4f5a66e9486214ca43f6238bc2215c8d"
+    },
+    {
+      "file": "official-link-inputs/linux-x64-trace-order/bun-linux-x64.order",
+      "size": 1150960,
+      "sha256": "3827bb8f86872377a10f63315dae60893f55569f9c73c7088491ae1d4cec11b5"
+    },
+    {
+      "file": "official-link-inputs/darwin-x64-build-bun/cache/webkit-2e2aa2290fac856d-macos-lto/lib/libbmalloc.a",
+      "size": 504400,
+      "sha256": "4901573071c888ff403ac81b2612c8a9e8bf7716b1141f767928dd5ea4742661"
+    },
+    {
+      "file": "official-link-inputs/darwin-x64-build-bun/cache/webkit-2e2aa2290fac856d-macos-lto/lib/libWTF.a",
+      "size": 8863232,
+      "sha256": "12ee85d253e3c1027cea9b9f5d5cd88ff4963b9ad71b6cb84c3f5fffd5ee2efd"
+    },
+    {
+      "file": "official-link-inputs/darwin-x64-build-bun/cache/webkit-2e2aa2290fac856d-macos-lto/lib/libJavaScriptCore.a",
+      "size": 235846080,
+      "sha256": "6a6b6c414297646131f9be4a912544dc06719e68e50aa75fc728a113f8f386f1"
+    },
+    {
+      "file": "official-link-inputs/darwin-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libbmalloc.a",
+      "size": 506080,
+      "sha256": "096d9e57c91399da348c108f8fdac9134632c9579358b352d2046c033171a7fd"
+    },
+    {
+      "file": "official-link-inputs/darwin-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libWTF.a",
+      "size": 8111312,
+      "sha256": "4fa7d01af3ed4e815eb6800f8849b2a2467a7003dc070dbbd1d6d982b5363700"
+    },
+    {
+      "file": "official-link-inputs/darwin-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libJavaScriptCore.a",
+      "size": 233864728,
+      "sha256": "a3d6c6e028a8bc76ee12cc7a7532edab70befe490b4ff38d29a3f1bf2cbaab61"
+    },
+    {
+      "file": "official-link-inputs/darwin-aarch64-trace-order/bun-darwin-aarch64.order",
+      "size": 1092312,
+      "sha256": "8a63a08b2ecba853329cb5f3fc37113f32f4750b98fae4871be50b62249d317b"
+    },
+    {
+      "file": "official-runtime-and-caches/buildkite-bun-linux-aarch64.zip",
+      "size": 36602920,
+      "sha256": "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7"
+    },
+    {
+      "file": "official-runtime-and-caches/buildkite-bun-linux-x64.zip",
+      "size": 36646985,
+      "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913"
+    },
+    {
+      "file": "official-runtime-and-caches/buildkite-bun-darwin-x64.zip",
+      "size": 27898877,
+      "sha256": "dcdba5981e9622b222fcd304d0b7366ac298d5a2a6eeb844019d9500f61c0892"
+    },
+    {
+      "file": "official-runtime-and-caches/release-bun-darwin-x64.zip",
+      "size": 28440507,
+      "sha256": "80520d7e17526308c9185d261679ac6d27798d3803a0e9f7ff9121ab8affb012"
+    },
+    {
+      "file": "official-runtime-and-caches/release-bun-linux-aarch64.zip",
+      "size": 36602920,
+      "sha256": "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7"
+    },
+    {
+      "file": "official-runtime-and-caches/release-bun-linux-x64.zip",
+      "size": 36646985,
+      "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913"
+    },
+    {
+      "file": "official-runtime-and-caches/bun-webkit-linux-amd64-lto.tar.gz",
+      "size": 247437947,
+      "sha256": "8f68d22b67fc0b72fb81b808aaf996a8a228cbaad193fd574d3b8655258db8b9"
+    },
+    {
+      "file": "official-runtime-and-caches/bun-webkit-linux-arm64-lto.tar.gz",
+      "size": 241291916,
+      "sha256": "b0fd42cfd66490a2f8e6afe67285e06eabe110cf808f5903b68f86e7580400aa"
+    },
+    {
+      "file": "official-runtime-and-caches/bun-webkit-macos-amd64-lto.tar.gz",
+      "size": 145654219,
+      "sha256": "44950d3630d37c7995bf9ddc0d7796f479bf5d4e1b2c0edab8322341202b8ecf"
+    },
+    {
+      "file": "official-runtime-and-caches/bun-webkit-macos-arm64-lto.tar.gz",
+      "size": 141792575,
+      "sha256": "93c79936f3ef5d625dac0fa29deb12406fc6c356d755df654c69691667b3872d"
+    },
+    {
+      "file": "official-pinned-sources/bun-source.tar.gz",
+      "source": "https://codeload.github.com/oven-sh/bun/tar.gz/744846f844374847c902b5e7fd59b4342a51ef99",
+      "revision": "744846f844374847c902b5e7fd59b4342a51ef99",
+      "size": 64602344,
+      "sha256": "25e09a8804535b8fbea1dad9f95af8402fc9133d28127d5594ff00df1549590e",
+      "state": "acquired from official exact-pin codeload; independent full-source/license acceptance UNPROVEN"
+    },
+    {
+      "file": "official-pinned-sources/tinycc-source.tar.gz",
+      "source": "https://codeload.github.com/oven-sh/tinycc/tar.gz/05f0fafaa3be31e31d7b4b5c17dc60f62c991171",
+      "revision": "05f0fafaa3be31e31d7b4b5c17dc60f62c991171",
+      "size": 1036641,
+      "sha256": "50750680312923a59fdd36ae41f7091d8e35e51909d0e0b25b0b33ea9534bc08",
+      "state": "acquired from official exact-pin codeload; independent full-source/license acceptance UNPROVEN"
+    },
+    {
+      "file": "actual-profile-configs/bun-linux-aarch64-profile.zip",
+      "size": 162927992,
+      "sha256": "905c31a277101362e63ddc07f5ff81e73b00fcd5d03eb05ed3a3cefd8fcef08d"
+    },
+    {
+      "file": "actual-profile-configs/bun-linux-x64-profile.zip",
+      "size": 166169010,
+      "sha256": "fad558e312e123abc9abc6fcdc2370b60e8a9726575fc6bcc2fdc93e6b600a7f"
+    },
+    {
+      "file": "actual-profile-configs/bun-darwin-x64-profile.zip",
+      "size": 136487172,
+      "sha256": "4ed3ba449461614be9e08d1444723426732ad930683d95b535a59af6f64f1166"
+    },
+    {
+      "file": "actual-profile-configs/bun-darwin-aarch64-profile.zip",
+      "size": 126681073,
+      "sha256": "8c7eb30c51f88ae2cef313e56f6679684156f02d003fca3e683e9edb89485703"
+    },
+    {
+      "file": "candidate-21/darwin-arm64-github-artifact.zip",
+      "size": 65829971,
+      "sha256": "37dc491f3213c719839d6b89c05c9a2ae75bbb34a5218f0ce07c20e6afbc23f5"
+    },
+    {
+      "file": "candidate-21/darwin-x64-github-artifact.zip",
+      "size": 70191021,
+      "sha256": "9db20a9244b42d8de7be67e752ce97a4672cf3929149c92a4129bf70a8069437"
+    },
+    {
+      "file": "candidate-21/linux-x64-github-artifact.zip",
+      "size": 86717041,
+      "sha256": "8a2b9153853a422d60afeb0eec8dcb7648968827ec609fabb7385c9db9060c77"
+    },
+    {
+      "file": "candidate-21/linux-arm64-github-artifact.zip",
+      "size": 87208903,
+      "sha256": "eea23d59c00a52a03d9f6bc16d905f9147e79104f9a6c19054faaedb89473e26"
+    }
+  ],
+  "independentScriptsResultsAndProviderHashes": [
+    {
+      "file": "archive_audit.py",
+      "size": 3627,
+      "sha256": "5f55c5bfaa86dedb1afd86deb6cf32bcb328fb4cc630efde31f5e6a11ec0b960"
+    },
+    {
+      "file": "archive_audit.result.json",
+      "size": 599,
+      "sha256": "45a582409f4a19aef830ca7884259ba124bf5557600239e4338283faa6315c9e"
+    },
+    {
+      "file": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057.provider.json",
+      "size": 88121,
+      "sha256": "b41b86d1903e7e22e5010d7318a8da5a3686bb8d4d1a692b6981165823b6725d"
+    },
+    {
+      "file": "binding.result.json",
+      "size": 2863,
+      "sha256": "3308bf7a306501d7673bff29b61f8a8b8c402956fbf5ecc070c1fcf1c065054d"
+    },
+    {
+      "file": "binding_audit.py",
+      "size": 9796,
+      "sha256": "45d0adfc58f35b4b7ca4001f217a01d6c5759097a6c33fbf67f70e4cdf39b5da"
+    },
+    {
+      "file": "bun-darwin-aarch64.order.buildkite-provider.json",
+      "size": 780,
+      "sha256": "026bc3e65134100afb3b5440591e34ecc806aa7a9faeec68010a580abad85a6a"
+    },
+    {
+      "file": "bun-linux-x64.order.buildkite-provider.json",
+      "size": 769,
+      "sha256": "e312fa662d93f06625d15a758e50d61d744ed9123b82ad0c93ab4b20f7d2577d"
+    },
+    {
+      "file": "bun-v1.4.2.provider.json",
+      "size": 73143,
+      "sha256": "12a162c451855e564c5d24ef2cfc06a1f4a2f354e2969b64c8d92560e29c3dea"
+    },
+    {
+      "file": "candidate-run.provider.json",
+      "size": 14839,
+      "sha256": "1b3e1d761ca5286c06947aeb24dca8126ca23f098e3bafeafe05308bffba868d"
+    },
+    {
+      "file": "darwin-aarch64-build-bun.buildkite-provider.json",
+      "size": 5544,
+      "sha256": "5c386acda9a0fc051d54339dc544891581c9ee0d68754b7cdbe61f9bf7d1bce1"
+    },
+    {
+      "file": "darwin-aarch64-trace-order.buildkite-provider.json",
+      "size": 780,
+      "sha256": "dd67b265f3e3547a36d72cce26753498e5dfde117cb3f21a1fb1b676f187d2e1"
+    },
+    {
+      "file": "darwin-arm64.provider.json",
+      "size": 875,
+      "sha256": "c83389628e6e10148a2f0b45168570cb717a3bdb65c9f166d5d33defc7f6fd7b"
+    },
+    {
+      "file": "darwin-x64-build-bun.buildkite-provider.json",
+      "size": 5507,
+      "sha256": "4ef389063ae62372786aa4023cf7ddeea44f10fcc514d2495a07703efa68759a"
+    },
+    {
+      "file": "darwin-x64.provider.json",
+      "size": 873,
+      "sha256": "5ac670c0c788e8d3aa1f2edb3f04f6eba765342988727e8dfe2c296d7c52d08d"
+    },
+    {
+      "file": "headers.result.json",
+      "size": 161,
+      "sha256": "5be71943b448c907ec406ff342acecf85de0e195f04d2072cdc7876183b111d6"
+    },
+    {
+      "file": "intake.result.json",
+      "size": 370,
+      "sha256": "26531249aac2dc557b796bb284584d7470e8185dfba9e96d0d6e3c22e80151fc"
+    },
+    {
+      "file": "intake_audit.mjs",
+      "size": 1174,
+      "sha256": "41680c63ce741384a653fcf6473dad542bf270bb7952f9ec34440c5ea6173464"
+    },
+    {
+      "file": "link.result.json",
+      "size": 671974,
+      "sha256": "ea9927faa582ddeb5f4700578933c8c5fed914a2af1da4ac8f04cc5e14674be6"
+    },
+    {
+      "file": "link_audit.py",
+      "size": 4236,
+      "sha256": "8f5436000f6a13cf85c643ca6db270d3b81aa7064e21e445a4d6b4633f382291"
+    },
+    {
+      "file": "linux-aarch64-build-bun.buildkite-provider.json",
+      "size": 8692,
+      "sha256": "1e510e315234ebaf1414e61c9ba7cf949d8b578a379850845702909529ee5e31"
+    },
+    {
+      "file": "linux-arm64.provider.json",
+      "size": 874,
+      "sha256": "06d849d59ba4c9b2dcaa3a7994ef832988028a7fc18443e4747255cf4249758d"
+    },
+    {
+      "file": "linux-x64-build-bun.buildkite-provider.json",
+      "size": 7867,
+      "sha256": "1650bbc2a3da42875d6c4fc798838c299befc9198d9ccb8f71a2c9064a687d19"
+    },
+    {
+      "file": "linux-x64-trace-order.buildkite-provider.json",
+      "size": 769,
+      "sha256": "8fe5ec3ae1dba402479c30a8c14c47d15f92b4049d31cd7cec9a3d96a775f975"
+    },
+    {
+      "file": "linux-x64.provider.json",
+      "size": 872,
+      "sha256": "bddc3bc4bccfd6b6d22d5b7c69475a58d3472809723311064b571ec0c361d818"
+    },
+    {
+      "file": "materials.result.json",
+      "size": 2576,
+      "sha256": "2be5b77b2bda11c39bb6f28351d211bd0ecc49055eaad43659004e3ffbf8752d"
+    },
+    {
+      "file": "materials_audit.py",
+      "size": 7239,
+      "sha256": "eeb52e8127f0edc5339f7b31ece7d36bed3fc0a0127123769e1fdfe93b790d4e"
+    },
+    {
+      "file": "provider.result.json",
+      "size": 4158,
+      "sha256": "05fa750215918c08e386d75f4bf22de78e7e011283b9f08545fba3ea3b416f8c"
+    },
+    {
+      "file": "provider_audit.py",
+      "size": 3043,
+      "sha256": "6e3cc90c337d5a6210076d05a9e8fcfa043f22996959688e20c203ab94d14a6e"
+    },
+    {
+      "file": "signature.result.json",
+      "size": 1164,
+      "sha256": "c41348c477e1cdf7633863a9a889b631ee3adaa22fd11cb2b6d93f051fee149d"
+    },
+    {
+      "file": "signature_audit.py",
+      "size": 1785,
+      "sha256": "7aed606e189357831dd0a81512b212c4a5cbadb93bb1ee00612fb18fedc2ad43"
+    },
+    {
+      "file": "upstream.result.json",
+      "size": 1719,
+      "sha256": "881fe5288ec56b29a1169fdadda72bcf93866f6bf206712d2a5aa7c1d2ac0b5b"
+    },
+    {
+      "file": "upstream_audit.py",
+      "size": 4859,
+      "sha256": "7d04bd99c2d0d58570d6ee11ecb45d55d28609ffb66b9ad24f0b3c55255d3431"
+    },
+    {
+      "file": "webkit.provider.json",
+      "size": 8758,
+      "sha256": "d1d24134c4bb233dbaa5694a7be4a2825dacad01acf116d7eb620ab4a917375c"
+    }
+  ],
+  "independentCommands": [
+    {
+      "command": "GIT_NO_LAZY_FETCH=1 GIT_TERMINAL_PROMPT=0 git -c protocol.allow=never -C /Users/jappy/code/jappy/bobs-factory-delivery-materials-116/source-inputs/webkit-complete.git fsck --full --strict --no-reflogs",
+      "exitCode": 0,
+      "output": "notice: HEAD points to an unborn branch (main); shallow exact-commit store, no corruption"
+    },
+    {
+      "command": "GIT_OPTIONAL_LOCKS=0 GIT_NO_LAZY_FETCH=1 git -c protocol.allow=never -C /Users/jappy/code/jappy/bobs-factory-delivery-materials-116/source-inputs/WebKit-2e2aa2290fac856d6f451ceacb58f7f5b44dd057-checkout status --porcelain --untracked-files=no",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "command": "python3 /private/tmp/taskbot116-source-proof-review.7Wj2Uq/archive_audit.py",
+      "exitCode": 0
+    },
+    {
+      "command": "node /private/tmp/taskbot116-source-proof-review.7Wj2Uq/intake_audit.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 /private/tmp/taskbot116-source-proof-review.7Wj2Uq/binding_audit.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 /private/tmp/taskbot116-source-proof-review.7Wj2Uq/materials_audit.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 /private/tmp/taskbot116-source-proof-review.7Wj2Uq/provider_audit.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 /private/tmp/taskbot116-source-proof-review.7Wj2Uq/upstream_audit.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 /private/tmp/taskbot116-source-proof-review.7Wj2Uq/link_audit.py",
+      "exitCode": 0
+    },
+    {
+      "command": "python3 /private/tmp/taskbot116-source-proof-review.7Wj2Uq/signature_audit.py",
+      "exitCode": 0
+    }
+  ],
+  "results": {
+    "materials.result.json": {
+      "frozenEvidenceFiles": 157,
+      "preservedFilesVerified": 95,
+      "artifactIndexMatchesImmutable97": true,
+      "pinnedBunSourceFilesBoundToArchive": 18,
+      "bunSourceDependencyFiles": [
+        "Cargo.lock",
+        "bench/ffi/src/Cargo.lock",
+        "packages/bun-native-plugin-rs/Cargo.lock",
+        "scripts/build/config.ts",
+        "scripts/verify-baseline-static/Cargo.lock"
+      ],
+      "genuineArInventories": [
+        {
+          "file": "darwin-arm64-libbun-profile.a.gz",
+          "members": 1149,
+          "LLVMBitcodeMembers": 1019,
+          "tinyccMembers": 8,
+          "sha256": "f51bfbf5c5160a549d50f609c251f91bb0d16d1bca525f7a1b554977da6e7d53"
+        },
+        {
+          "file": "darwin-arm64-libbun-runtime.a.gz",
+          "members": 170,
+          "LLVMBitcodeMembers": 168,
+          "tinyccMembers": 1,
+          "sha256": "4f7acedbd964e2c1ebbabc2eaee5605d752fb26712cd64953d49acd85572a851"
+        },
+        {
+          "file": "linux-aarch64-libbun-profile.a.gz",
+          "members": 1148,
+          "LLVMBitcodeMembers": 1018,
+          "tinyccMembers": 7,
+          "sha256": "618bc4e3f3c0ca30bb7bd4cd4019cae46d22fe6d8f6d2cb4ae009727385f2e22"
+        },
+        {
+          "file": "linux-aarch64-libbun-runtime.a.gz",
+          "members": 171,
+          "LLVMBitcodeMembers": 170,
+          "tinyccMembers": 1,
+          "sha256": "1075ad3162dcd760cfca8cf3bb84fcc7820d630a068b62ac53c7cb4514dc17f4"
+        },
+        {
+          "file": "linux-x64-libbun-profile.a.gz",
+          "members": 1172,
+          "LLVMBitcodeMembers": 1001,
+          "tinyccMembers": 7,
+          "sha256": "9b23771fd04a9264632d43948dfd01faf18a33c80c67811c80d96cab7d508615"
+        },
+        {
+          "file": "linux-x64-libbun-runtime.a.gz",
+          "members": 171,
+          "LLVMBitcodeMembers": 170,
+          "tinyccMembers": 1,
+          "sha256": "a6e202069dbc1d3a2ab1c4796efa6ac277d144469c71b89a8908c5ec77593da3"
+        },
+        {
+          "file": "darwin-x64-libbun-profile.a.gz",
+          "members": 1173,
+          "LLVMBitcodeMembers": 1002,
+          "tinyccMembers": 8,
+          "sha256": "ec27604fe3ee6a35a1373d67bf73ecd8c71018e40a27996d3046daca70de3d6a"
+        },
+        {
+          "file": "darwin-x64-libbun-runtime.a.gz",
+          "members": 170,
+          "LLVMBitcodeMembers": 168,
+          "tinyccMembers": 1,
+          "sha256": "c825b560d4152003ed71c75285c658d904383ba2dd6dd79cf33cf2fc7d090f69"
+        }
+      ],
+      "upstreamLinkDownloadsVerified": 21,
+      "all18LibrariesByteEqualInOfficialCaches": true,
+      "profileFilesVerified": [
+        "linux-aarch64-build-bun",
+        "linux-x64-build-bun",
+        "darwin-x64-build-bun",
+        "darwin-aarch64-build-bun"
+      ],
+      "inherited110317OrdersConfirmedDistinctFrom110323": true,
+      "officialGitCommitTreeLiveMatch": true,
+      "result": "PASS"
+    },
+    "binding.result.json": [
+      {
+        "target": "darwin-arm64",
+        "result": "PASS",
+        "baseSha256": "35d20dd0263e5c950194434b925454fdfa9ba6e4467da960410fa05b08a7a5b5",
+        "factorySha256": "1a66bd81f84f7a382ded69db2b588f3ff0a69b08228695124ef834bc35cb9d10",
+        "wholeReconstructedSha256": "1a66bd81f84f7a382ded69db2b588f3ff0a69b08228695124ef834bc35cb9d10",
+        "entireExecutableMatchesIncludingSignature": true,
+        "factoryBytes": 101641074,
+        "payloadOffset": 61554688,
+        "graph": {
+          "length": 39121189,
+          "sha256": "d1aafe7225ee666701ed8978a9ce77c8f8a67d38942b1d3e131bebf20b37a3a2",
+          "modules": 1,
+          "byteCount": 39121141,
+          "flags": "0x17c"
+        },
+        "signatureOffset": 100853024,
+        "signatureSize": 788050,
+        "signaturePageHashes": 24623,
+        "signatureReconstructedWithoutCandidateMetadata": true
+      },
+      {
+        "target": "darwin-x64",
+        "result": "PASS",
+        "baseSha256": "2fa513af22ac59e03aae640cad302e73cb1ddb0f6398501e2ddccf7dcd613596",
+        "factorySha256": "087ee6c64f3c53a499d0ad88b102a8cae97e2f2a0bea2f10a8ddf29f644d4843",
+        "wholeReconstructedSha256": "087ee6c64f3c53a499d0ad88b102a8cae97e2f2a0bea2f10a8ddf29f644d4843",
+        "entireExecutableMatchesIncludingSignature": true,
+        "factoryBytes": 108441872,
+        "payloadOffset": 68546560,
+        "graph": {
+          "length": 39121137,
+          "sha256": "d43b228c8904e4e2452292a10f2eb5be529a85871f03a446aaff315cccf475e1",
+          "modules": 1,
+          "byteCount": 39121089,
+          "flags": "0x17c"
+        },
+        "originalSignaturePreserved": true,
+        "signatureValidityNotEstablished": true
+      },
+      {
+        "target": "linux-x64",
+        "result": "PASS",
+        "baseSha256": "a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c",
+        "factorySha256": "144e32d1894e912072948379210eb1f6e30c688be8aeeee7f8b2d21e27b50caa",
+        "wholeReconstructedSha256": "144e32d1894e912072948379210eb1f6e30c688be8aeeee7f8b2d21e27b50caa",
+        "entireExecutableMatchesIncludingSignature": true,
+        "factoryBytes": 120428000,
+        "payloadOffset": 81260544,
+        "graph": {
+          "length": 39115809,
+          "sha256": "0b271fd865a52ddc38051f96100d31858306b138a3286b8505d3eb861f71e92e",
+          "modules": 1,
+          "byteCount": 39115761,
+          "flags": "0x17c"
+        }
+      },
+      {
+        "target": "linux-arm64",
+        "result": "PASS",
+        "baseSha256": "616f267a34278ff5ac282df37ffdfba1d7141f4f6926bca99af2cd6ef3ad32b1",
+        "factorySha256": "f211479c82733e2c466e5f80ef7f8ffef77b305aafb069e4907c85a2d935a6f8",
+        "wholeReconstructedSha256": "f211479c82733e2c466e5f80ef7f8ffef77b305aafb069e4907c85a2d935a6f8",
+        "entireExecutableMatchesIncludingSignature": true,
+        "factoryBytes": 120375592,
+        "payloadOffset": 81199104,
+        "graph": {
+          "length": 39115861,
+          "sha256": "8f338ad8413c215c26aaf820073dc9c781d7be46ffbe9465596aa1cd443e5a81",
+          "modules": 1,
+          "byteCount": 39115813,
+          "flags": "0x17c"
+        }
+      }
+    ],
+    "upstream.result.json": [
+      {
+        "target": "darwin-arm64",
+        "allFileBackedSectionsEqual": true,
+        "allBytesBeforeSignatureAccounted": true,
+        "prefixBytes": 61744416,
+        "allowedMasks": [
+          [
+            [
+              2024,
+              8
+            ],
+            [
+              2040,
+              8
+            ],
+            [
+              2572,
+              4
+            ]
+          ],
+          [
+            [
+              2024,
+              8
+            ],
+            [
+              2040,
+              8
+            ],
+            [
+              2572,
+              4
+            ]
+          ]
+        ],
+        "normalizedPrefixSha256": "955ecc09e9536cebcf16d2547b0b5b70fb0cbff8634dc7cbf3a0f8173a7d27f7",
+        "publishedSignatureBytes": 140048,
+        "signingInvocationObserved": false
+      },
+      {
+        "target": "darwin-x64",
+        "allFileBackedSectionsEqual": true,
+        "allBytesBeforeSignatureAccounted": true,
+        "prefixBytes": 68776480,
+        "allowedMasks": [
+          [
+            [
+              16,
+              8
+            ],
+            [
+              2024,
+              8
+            ],
+            [
+              2040,
+              8
+            ],
+            [
+              2560,
+              16
+            ]
+          ],
+          [
+            [
+              16,
+              8
+            ],
+            [
+              2024,
+              8
+            ],
+            [
+              2040,
+              8
+            ],
+            [
+              2560,
+              16
+            ]
+          ]
+        ],
+        "normalizedPrefixSha256": "bafad05db0e716434c42625a55673cfa9a7c6cdbc8b2fbec700b727464502ae3",
+        "publishedSignatureBytes": 556784,
+        "signingInvocationObserved": false,
+        "candidateRetainedSignatureInvalidCodePageHashes": {
+          "bad": 58,
+          "total": 16792
+        }
+      },
+      {
+        "target": "linux-x64",
+        "zipAndExecutableBytesEqual": true
+      },
+      {
+        "target": "linux-arm64",
+        "zipAndExecutableBytesEqual": true
+      }
+    ],
+    "archive_audit.result.json": {
+      "result": "PASS",
+      "gitCommit": "2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+      "gitTree": "01e7ea36e5a23bf0206724ed83c594a2eaec95ed",
+      "gitEntries": 466297,
+      "distinctBlobs": 405295,
+      "modes": {
+        "100644": 464114,
+        "100755": 2148,
+        "120000": 35
+      },
+      "directoriesIncludingRoot": 22747,
+      "ordinaryArchiveEntries": 489044,
+      "regularBytes": 5474279499,
+      "symlinks": 35,
+      "testEntries": 385406,
+      "archiveBytes": 1993738581,
+      "archiveSha256": "108dd98cc15bf43debc753cfb597b5635bd936855da2bb48bf0bcacc46881f7d",
+      "sourceAndArchiveEveryGitBlobVerified": true,
+      "seconds": 21.818
+    },
+    "signature.result.json": [
+      {
+        "archive": "prior-research/darwin-arm64-buildkite-bun.zip",
+        "signatureBytes": 483647,
+        "codeDirectories": [
+          {
+            "version": "0x20400",
+            "flags": "0x2",
+            "slots": 15075,
+            "specialSlots": 7,
+            "pageBytes": 4096,
+            "allCodePageHashesMatch": true
+          }
+        ],
+        "certificateTrustAndSigningInvocationNotExamined": true
+      },
+      {
+        "archive": "prior-research/darwin-arm64-release-bun.zip",
+        "signatureBytes": 140048,
+        "codeDirectories": [
+          {
+            "version": "0x20500",
+            "flags": "0x10000",
+            "slots": 3769,
+            "specialSlots": 7,
+            "pageBytes": 16384,
+            "allCodePageHashesMatch": true
+          }
+        ],
+        "certificateTrustAndSigningInvocationNotExamined": true
+      },
+      {
+        "archive": "official-runtime-and-caches/release-bun-darwin-x64.zip",
+        "signatureBytes": 556784,
+        "codeDirectories": [
+          {
+            "version": "0x20500",
+            "flags": "0x10000",
+            "slots": 16792,
+            "specialSlots": 7,
+            "pageBytes": 4096,
+            "allCodePageHashesMatch": true
+          }
+        ],
+        "certificateTrustAndSigningInvocationNotExamined": true
+      }
+    ],
+    "headers.result.json": {
+      "result": "PASS",
+      "headers": 489846,
+      "typeCounts": {
+        "5": 22747,
+        "0": 466262,
+        "x": 802,
+        "2": 35
+      },
+      "paddedMemberBytes": 5600445952
+    },
+    "provider.result.json": {
+      "result": "PASS",
+      "publishedRuntimeAndCacheAssets": [
+        {
+          "repo": "oven-sh/bun",
+          "tag": "bun-v1.4.2",
+          "asset": "bun-darwin-x64.zip",
+          "id": 545329047,
+          "sha256": "80520d7e17526308c9185d261679ac6d27798d3803a0e9f7ff9121ab8affb012",
+          "size": 28440507,
+          "liveProviderDigestMatches": true
+        },
+        {
+          "repo": "oven-sh/bun",
+          "tag": "bun-v1.4.2",
+          "asset": "bun-linux-x64.zip",
+          "id": 545310218,
+          "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+          "size": 36646985,
+          "liveProviderDigestMatches": true
+        },
+        {
+          "repo": "oven-sh/bun",
+          "tag": "bun-v1.4.2",
+          "asset": "bun-linux-aarch64.zip",
+          "id": 545308380,
+          "sha256": "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7",
+          "size": 36602920,
+          "liveProviderDigestMatches": true
+        },
+        {
+          "repo": "oven-sh/bun",
+          "tag": "bun-v1.4.2",
+          "asset": "bun-darwin-aarch64.zip",
+          "id": 545329049,
+          "sha256": "90987a3a16d7db556d886ac3d551e7b6d3edf0a1cf43acaed622e8676be1d12f",
+          "size": 25377591,
+          "liveProviderDigestMatches": true
+        },
+        {
+          "repo": "oven-sh/WebKit",
+          "tag": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+          "asset": "bun-webkit-linux-amd64-lto.tar.gz",
+          "id": 545003856,
+          "sha256": "8f68d22b67fc0b72fb81b808aaf996a8a228cbaad193fd574d3b8655258db8b9",
+          "size": 247437947,
+          "liveProviderDigestMatches": true
+        },
+        {
+          "repo": "oven-sh/WebKit",
+          "tag": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+          "asset": "bun-webkit-linux-arm64-lto.tar.gz",
+          "id": 545004533,
+          "sha256": "b0fd42cfd66490a2f8e6afe67285e06eabe110cf808f5903b68f86e7580400aa",
+          "size": 241291916,
+          "liveProviderDigestMatches": true
+        },
+        {
+          "repo": "oven-sh/WebKit",
+          "tag": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+          "asset": "bun-webkit-macos-amd64-lto.tar.gz",
+          "id": 545000170,
+          "sha256": "44950d3630d37c7995bf9ddc0d7796f479bf5d4e1b2c0edab8322341202b8ecf",
+          "size": 145654219,
+          "liveProviderDigestMatches": true
+        },
+        {
+          "repo": "oven-sh/WebKit",
+          "tag": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+          "asset": "bun-webkit-macos-arm64-lto.tar.gz",
+          "id": 545000215,
+          "sha256": "93c79936f3ef5d625dac0fa29deb12406fc6c356d755df654c69691667b3872d",
+          "size": 141792575,
+          "liveProviderDigestMatches": true
+        }
+      ],
+      "nativeRunSourceAndAttemptMatch": true,
+      "officialBunTagCommitMatch": true,
+      "buildkiteCatalogResponses": [
+        {
+          "target": "linux-aarch64-build-bun",
+          "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts.json",
+          "returnedType": "list",
+          "returnedKeys": null
+        },
+        {
+          "target": "linux-x64-build-bun",
+          "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts.json",
+          "returnedType": "list",
+          "returnedKeys": null
+        },
+        {
+          "target": "linux-x64-trace-order",
+          "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29c-4f47-9784-61c7b3bda70c/artifacts.json",
+          "returnedType": "list",
+          "returnedKeys": null
+        },
+        {
+          "target": "darwin-x64-build-bun",
+          "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts.json",
+          "returnedType": "list",
+          "returnedKeys": null
+        },
+        {
+          "target": "darwin-aarch64-build-bun",
+          "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e294-4650-9f78-dea25e59f504/artifacts.json",
+          "returnedType": "list",
+          "returnedKeys": null
+        },
+        {
+          "target": "darwin-aarch64-trace-order",
+          "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e295-4401-bac6-cd3dd78b77ef/artifacts.json",
+          "returnedType": "list",
+          "returnedKeys": null
+        }
+      ]
+    },
+    "intake.result.json": {
+      "result": "PASS",
+      "pinnedSourceByteEqual": true,
+      "limits": {
+        "maxMembers": 500000,
+        "maxMemberBytes": 4294967296,
+        "maxExpandedBytes": 17179869184,
+        "maxCompressedBytes": 8589934592,
+        "maxControlBytes": 1048576,
+        "maxTextBytes": 16777216,
+        "timeoutMs": 120000
+      },
+      "entries": 489044,
+      "expandedBytes": 5851248128,
+      "elapsedMs": 15053
+    },
+    "link.result.json": {
+      "result": "PASS",
+      "liveBuildkiteCatalogRecordsMatched": 37,
+      "live110317OrderDigestsMatched": true,
+      "mapArchiveMemberCorrespondence": [
+        {
+          "target": "darwin-arm64",
+          "verifiedMapArchiveMemberReferences": 1186,
+          "unverifiedSysrootArchiveMemberReferences": 0
+        },
+        {
+          "target": "darwin-x64",
+          "verifiedMapArchiveMemberReferences": 1231,
+          "unverifiedSysrootArchiveMemberReferences": 0
+        },
+        {
+          "target": "linux-arm64",
+          "verifiedMapArchiveMemberReferences": 23,
+          "unverifiedSysrootArchiveMemberReferences": 88
+        },
+        {
+          "target": "linux-x64",
+          "verifiedMapArchiveMemberReferences": 73,
+          "unverifiedSysrootArchiveMemberReferences": 86
+        }
+      ],
+      "libraryCounts": [
+        {
+          "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libbmalloc.a",
+          "memberCount": 170,
+          "llvmBitcodeMembers": 170
+        },
+        {
+          "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicuuc.a",
+          "memberCount": 202,
+          "llvmBitcodeMembers": 202
+        },
+        {
+          "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libWTF.a",
+          "memberCount": 175,
+          "llvmBitcodeMembers": 175
+        },
+        {
+          "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicui18n.a",
+          "memberCount": 254,
+          "llvmBitcodeMembers": 254
+        },
+        {
+          "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicudata.a",
+          "memberCount": 1,
+          "llvmBitcodeMembers": 0
+        },
+        {
+          "file": "official-link-inputs/linux-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libJavaScriptCore.a",
+          "memberCount": 196,
+          "llvmBitcodeMembers": 196
+        },
+        {
+          "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libbmalloc.a",
+          "memberCount": 170,
+          "llvmBitcodeMembers": 170
+        },
+        {
+          "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libicudata.a",
+          "memberCount": 1,
+          "llvmBitcodeMembers": 0
+        },
+        {
+          "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libWTF.a",
+          "memberCount": 175,
+          "llvmBitcodeMembers": 175
+        },
+        {
+          "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libicuuc.a",
+          "memberCount": 202,
+          "llvmBitcodeMembers": 202
+        },
+        {
+          "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libicui18n.a",
+          "memberCount": 254,
+          "llvmBitcodeMembers": 254
+        },
+        {
+          "file": "official-link-inputs/linux-x64-build-bun/cache/webkit-2e2aa2290fac856d-lto/lib/libJavaScriptCore.a",
+          "memberCount": 196,
+          "llvmBitcodeMembers": 196
+        },
+        {
+          "file": "official-link-inputs/darwin-x64-build-bun/cache/webkit-2e2aa2290fac856d-macos-lto/lib/libbmalloc.a",
+          "memberCount": 171,
+          "llvmBitcodeMembers": 170
+        },
+        {
+          "file": "official-link-inputs/darwin-x64-build-bun/cache/webkit-2e2aa2290fac856d-macos-lto/lib/libWTF.a",
+          "memberCount": 178,
+          "llvmBitcodeMembers": 177
+        },
+        {
+          "file": "official-link-inputs/darwin-x64-build-bun/cache/webkit-2e2aa2290fac856d-macos-lto/lib/libJavaScriptCore.a",
+          "memberCount": 198,
+          "llvmBitcodeMembers": 197
+        },
+        {
+          "file": "official-link-inputs/darwin-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libbmalloc.a",
+          "memberCount": 171,
+          "llvmBitcodeMembers": 170
+        },
+        {
+          "file": "official-link-inputs/darwin-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libWTF.a",
+          "memberCount": 178,
+          "llvmBitcodeMembers": 177
+        },
+        {
+          "file": "official-link-inputs/darwin-aarch64-build-bun/cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libJavaScriptCore.a",
+          "memberCount": 198,
+          "llvmBitcodeMembers": 197
+        }
+      ]
+    }
+  },
+  "staticBindingMethod": "Fresh raw ELF/Mach-O parsing; deterministic pinned injection transformations. Candidate contributes only the bounded length-prefixed standalone graph. Reconstruct every expected byte, including all ARM Mac signature metadata and code-page hashes computed from expected prefix. No arbitrary masks for candidate binding, no unexamined signature bytes, no use of candidate signature metadata to choose predicted sizes. Entire four candidate executables compare byte-for-byte. No binary execution, linking, compiling, signer invocation or output executable was performed.",
+  "scopeLimits": [
+    "No licensingAndSource approval or source-materials schema-2 receipt. Genuine originals are research inputs, not completed four-target objects/build-config/.rsp/relink logs.",
+    "Actual native link response/resolved config and exact LLVM micro/sysroot/CRT file identities remain unproven. Linux sysroot map member references were identified but their source/content identities were not supplied; LTO-generated native objects were not independently reconstructed.",
+    "No unchanged/modified-library native relink or smoke executed. No functional modified-library acceptance.",
+    "Remaining dependency/notices/source closure and legal acceptance require separate independent review, including Bun Cargo/bundled dependencies, ICU, static sysroot inputs, generated materials and TinyCC patch application. Official Bun/TinyCC codeload hashes do not assert independent full-Git equivalence.",
+    "Mac x64 static base correspondence preserves an obsolete DeveloperID signature: 58 of 16792 retained code-page hashes mismatch candidate bytes. No valid Apple signature, platform signing approval or exact upstream DeveloperID invocation is claimed. ARM Mac expected ad-hoc metadata/page hashes match; this does not establish certificate trust or release signing.",
+    "No full PR rereview or new F1. This read-only research audit changes no F1-covered runtime behavior. Actual release full-payload F1/native gates remain coordinator-owned.",
+    "No root/repository/research-evidence edits, new agents, production home/service changes, native credential/signing store mutation, provider inference credits, watch/poll loop, publication/channel/catalog change, merge or ticket status/closure."
+  ],
+  "preservation": {
+    "indexedFilesAtStartAndEnd": 157,
+    "allMatchedFrozenHashes": true,
+    "originalPreservedResearchFilesVerified": 95,
+    "existingRootGitStatusAtStartAndEnd": [
+      "?? CONTEXT.md",
+      "?? docs/adr/",
+      "?? docs/research/"
+    ],
+    "allWritesConfinedToNewReviewRoot": true
+  },
+  "coordination": {
+    "pickupTaskbotComment": 1256,
+    "PR91Linked": true,
+    "watching": false
+  }
+}

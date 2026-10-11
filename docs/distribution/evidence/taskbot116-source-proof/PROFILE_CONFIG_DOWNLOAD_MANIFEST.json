@@ -1,0 +1,224 @@
+[
+  {
+    "path": "bun-linux-aarch64-profile.zip",
+    "size": "155 MB",
+    "sha256": "905c31a277101362e63ddc07f5ff81e73b00fcd5d03eb05ed3a3cefd8fcef08d",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f41-3541-4535-be35-cb47dd9918b5",
+    "expires": "2027-03-04T01:48:59.000Z",
+    "actualSize": 162927992,
+    "actualSha256": "905c31a277101362e63ddc07f5ff81e73b00fcd5d03eb05ed3a3cefd8fcef08d",
+    "target": "linux-aarch64-build-bun",
+    "extracted": [
+      {
+        "file": "actual-profile-configs/bun-linux-aarch64-profile/bun-profile.linker-map",
+        "size": 52858723,
+        "sha256": "6de7fd02f1e854086780d6260955585531ce77bbd5034cb6d8fa7a96aadcecbe",
+        "archivePath": "bun-linux-aarch64-profile/bun-profile.linker-map"
+      },
+      {
+        "file": "actual-profile-configs/bun-linux-aarch64-profile/features.json",
+        "size": 1041,
+        "sha256": "314995d9199be6bee461954a5587691645c9f732be74ad6ddc44c8d4544661fe",
+        "archivePath": "bun-linux-aarch64-profile/features.json"
+      },
+      {
+        "file": "actual-profile-configs/bun-linux-aarch64-profile/linker.order",
+        "size": 1163683,
+        "sha256": "41ca700c51b22234de2dacba20bdb97c893e23c4c46dfff9fd18995ab390a544",
+        "archivePath": "bun-linux-aarch64-profile/linker.order"
+      }
+    ],
+    "inventory": [
+      {
+        "path": "bun-linux-aarch64-profile/",
+        "size": 0
+      },
+      {
+        "path": "bun-linux-aarch64-profile/bun-profile.linker-map",
+        "size": 52858723
+      },
+      {
+        "path": "bun-linux-aarch64-profile/testFFI",
+        "size": 170403400
+      },
+      {
+        "path": "bun-linux-aarch64-profile/features.json",
+        "size": 1041
+      },
+      {
+        "path": "bun-linux-aarch64-profile/bun-profile",
+        "size": 160638328
+      },
+      {
+        "path": "bun-linux-aarch64-profile/linker.order",
+        "size": 1163683
+      }
+    ]
+  },
+  {
+    "path": "bun-linux-x64-profile.zip",
+    "size": "158 MB",
+    "sha256": "fad558e312e123abc9abc6fcdc2370b60e8a9726575fc6bcc2fdc93e6b600a7f",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f40-103f-4c22-afa5-0cb81e649873",
+    "expires": "2027-03-04T01:47:44.000Z",
+    "actualSize": 166169010,
+    "actualSha256": "fad558e312e123abc9abc6fcdc2370b60e8a9726575fc6bcc2fdc93e6b600a7f",
+    "target": "linux-x64-build-bun",
+    "extracted": [
+      {
+        "file": "actual-profile-configs/bun-linux-x64-profile/bun-profile.linker-map",
+        "size": 45599947,
+        "sha256": "4a48829287b652e44a41113e00893db1ebe28bf8fbec9c2610e465c1cc87afbc",
+        "archivePath": "bun-linux-x64-profile/bun-profile.linker-map"
+      },
+      {
+        "file": "actual-profile-configs/bun-linux-x64-profile/features.json",
+        "size": 1041,
+        "sha256": "e7c0159617b3a5dca0b1f45c393b0b82c6fdec8577a6439905b942a1c289e170",
+        "archivePath": "bun-linux-x64-profile/features.json"
+      },
+      {
+        "file": "actual-profile-configs/bun-linux-x64-profile/linker.order",
+        "size": 1156033,
+        "sha256": "32c24058f67945853c9e97c35a8dd6ece17b7c493249dab1a442a20250c20dd3",
+        "archivePath": "bun-linux-x64-profile/linker.order"
+      }
+    ],
+    "inventory": [
+      {
+        "path": "bun-linux-x64-profile/",
+        "size": 0
+      },
+      {
+        "path": "bun-linux-x64-profile/bun-profile.linker-map",
+        "size": 45599947
+      },
+      {
+        "path": "bun-linux-x64-profile/testFFI",
+        "size": 177201960
+      },
+      {
+        "path": "bun-linux-x64-profile/features.json",
+        "size": 1041
+      },
+      {
+        "path": "bun-linux-x64-profile/bun-profile",
+        "size": 158819840
+      },
+      {
+        "path": "bun-linux-x64-profile/linker.order",
+        "size": 1156033
+      }
+    ]
+  },
+  {
+    "path": "bun-darwin-x64-profile.zip",
+    "size": "130 MB",
+    "sha256": "4ed3ba449461614be9e08d1444723426732ad930683d95b535a59af6f64f1166",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts/01a06f3f-ce62-4a36-9640-633e76022ff6",
+    "expires": "2027-03-04T01:47:27.000Z",
+    "actualSize": 136487172,
+    "actualSha256": "4ed3ba449461614be9e08d1444723426732ad930683d95b535a59af6f64f1166",
+    "target": "darwin-x64-build-bun",
+    "extracted": [
+      {
+        "file": "actual-profile-configs/bun-darwin-x64-profile/bun-profile.linker-map",
+        "size": 19608640,
+        "sha256": "c0a3fe270d8931fe38a61407fe07660da889d953da6807de756deea60e49a5f8",
+        "archivePath": "bun-darwin-x64-profile/bun-profile.linker-map"
+      },
+      {
+        "file": "actual-profile-configs/bun-darwin-x64-profile/features.json",
+        "size": 1041,
+        "sha256": "75958d896be2be64522666076a7ef3141619ab7558f4342fc26392d7ba015d90",
+        "archivePath": "bun-darwin-x64-profile/features.json"
+      }
+    ],
+    "inventory": [
+      {
+        "path": "bun-darwin-x64-profile/",
+        "size": 0
+      },
+      {
+        "path": "bun-darwin-x64-profile/bun-profile.linker-map",
+        "size": 19608640
+      },
+      {
+        "path": "bun-darwin-x64-profile/testFFI",
+        "size": 39766248
+      },
+      {
+        "path": "bun-darwin-x64-profile/bun-profile.dSYM",
+        "size": 329886681
+      },
+      {
+        "path": "bun-darwin-x64-profile/features.json",
+        "size": 1041
+      },
+      {
+        "path": "bun-darwin-x64-profile/bun-profile",
+        "size": 83078816
+      }
+    ]
+  },
+  {
+    "path": "bun-darwin-aarch64-profile.zip",
+    "size": "121 MB",
+    "sha256": "8c7eb30c51f88ae2cef313e56f6679684156f02d003fca3e683e9edb89485703",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e294-4650-9f78-dea25e59f504/artifacts/01a06f3f-b607-40e4-995e-bd73a97042d3",
+    "expires": "2027-03-04T01:47:21.000Z",
+    "actualSize": 126681073,
+    "actualSha256": "8c7eb30c51f88ae2cef313e56f6679684156f02d003fca3e683e9edb89485703",
+    "target": "darwin-aarch64-build-bun",
+    "extracted": [
+      {
+        "file": "actual-profile-configs/bun-darwin-aarch64-profile/bun-profile.linker-map",
+        "size": 19364239,
+        "sha256": "4a3f4036ac382880e1190b1b3da16d32107dd36c126c21daf041b8c8eab953b3",
+        "archivePath": "bun-darwin-aarch64-profile/bun-profile.linker-map"
+      },
+      {
+        "file": "actual-profile-configs/bun-darwin-aarch64-profile/features.json",
+        "size": 1041,
+        "sha256": "fc83b2ef9bfd7c5e2593ce7aded967f2e4a5dc5be552314ccfb1bf9e42cbe7f8",
+        "archivePath": "bun-darwin-aarch64-profile/features.json"
+      },
+      {
+        "file": "actual-profile-configs/bun-darwin-aarch64-profile/linker.order",
+        "size": 1089931,
+        "sha256": "edfd0474affcc9dee361452be47cf4394f0f6a4c2ee2d21e4cadbd87db15b6c2",
+        "archivePath": "bun-darwin-aarch64-profile/linker.order"
+      }
+    ],
+    "inventory": [
+      {
+        "path": "bun-darwin-aarch64-profile/",
+        "size": 0
+      },
+      {
+        "path": "bun-darwin-aarch64-profile/bun-profile.linker-map",
+        "size": 19364239
+      },
+      {
+        "path": "bun-darwin-aarch64-profile/testFFI",
+        "size": 36620032
+      },
+      {
+        "path": "bun-darwin-aarch64-profile/bun-profile.dSYM",
+        "size": 322230690
+      },
+      {
+        "path": "bun-darwin-aarch64-profile/features.json",
+        "size": 1041
+      },
+      {
+        "path": "bun-darwin-aarch64-profile/bun-profile",
+        "size": 76272007
+      },
+      {
+        "path": "bun-darwin-aarch64-profile/linker.order",
+        "size": 1089931
+      }
+    ]
+  }
+]

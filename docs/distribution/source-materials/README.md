@@ -14,32 +14,39 @@ retained outside Git in `/tmp/bobs-factory-source-assets-116/`. Bun 1.4.2 resolv
 were compared byte-for-byte with the Bun source archive. The TinyCC COPYING snapshot
 was compared with its archive. The WebKit license snapshot is not WebKit source.
 
-The codeload request and one bounded official GitHub tarball API attempt both returned `HTTP 422: Content creation is blocked` on
-2026-10-10. The official `autobuild-<revision>` release has native prebuilt archives,
-not a source bundle. These do not replace corresponding source or Bun application
-objects. No WebKit source hash or completed source/rebuild archive is claimed here.
-The alternate API error body is retained as an unaccepted diagnostic file, not a
-source-material record.
+The codeload request and one bounded official GitHub tarball API attempt returned
+`HTTP 422: Content creation is blocked` on 2026-10-10. Those original error results
+remain historical evidence. On 2026-10-11, a fresh full Git fetch of exact WebKit
+commit `2e2aa2290fac856d6f451ceacb58f7f5b44dd057` succeeded. Its complete archive
+is 1,993,738,581 bytes with SHA-256
+`108dd98cc15bf43debc753cfb597b5635bd936855da2bb48bf0bcacc46881f7d`; all 466,297
+Git file/symlink entries and every referenced blob were independently matched to
+the retained archive. The actual archive passed the unchanged intake limits
+(500,000 headers, 16 GiB expanded, 8 GiB compressed). The exact source revision,
+archive and evidence are indexed in [the Taskbot 116 source proof](../evidence/taskbot116-source-proof/README.md).
 
-To reacquire the recorded bytes, download each manifest `source` to a fresh directory
-using `curl --fail --location --max-time 180 --max-filesize 268435456`; compare both
-size and SHA-256 with the retained record before accepting them. Never replace an
-existing verified file silently. GitHub archive bytes may change without a source
-revision change: retain mismatches for inspection and review new hashes explicitly.
-A source fetch is not a credential or production operation.
+This acquisition closes the missing WebKit-source input only. It is not a
+candidate-bound schema-2 source-material assembly, successful native relink,
+complete dependency/license review or `licensingAndSource` acceptance receipt.
+The original HTTP 422 diagnostic remains outside the accepted source records.
+
+For the already acquired WebKit archive, use the unchanged file at
+`/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/source-inputs/WebKit-2e2aa2290fac856d6f451ceacb58f7f5b44dd057.tar.gz`; its manifest `source` is the exact upstream tree URL for provenance, not a tarball download URL. For other fetchable records, download
+to a fresh directory with `curl --fail --location --max-time 180
+--max-filesize 268435456`; compare both size and SHA-256 with the retained record
+before accepting them. Never replace a verified file silently. GitHub archive bytes
+may change without a source revision change: retain mismatches for inspection and
+review new hashes explicitly. A source fetch is not a credential or production
+operation.
 
 ## Remaining build inputs and cost boundary
 
-Obtain the complete patched WebKit source at the exact pin from the official
-`oven-sh/WebKit` repository. If codeload remains blocked, first estimate the shallow
-Git transfer and working-tree size; use a disposable directory, fetch the exact
-commit and verify `HEAD`. Retain a complete archive with root
-`WebKit-2e2aa2290fac856d6f451ceacb58f7f5b44dd057/`, including the relevant build
-scripts and license files. Do not relabel a sparse checkout as complete source.
-The validator checks recognizable files and pins, not completeness of every blob;
-a reviewer must compare source/archive inventory to the upstream commit. Source intake rejects external link targets and special files; inspect
-nested source links again before extraction. Validation never extracts or executes these
-upstream archives.
+The complete patched WebKit source at the exact pin is now retained outside Git in
+the durable task directory recorded in the source-proof README. Its complete archive
+root is `WebKit-2e2aa2290fac856d6f451ceacb58f7f5b44dd057/`; all source paths, build
+scripts, tests, links and license files are included. Source intake rejects external
+link targets and special files; inspect nested source links again before extraction.
+Validation never extracts or executes these upstream archives.
 
 No full Bun/WebKit compilation was attempted on this host. The release asset list
 alone puts ordinary native WebKit prebuilts at roughly 193–432 MiB per supported
@@ -154,10 +161,10 @@ responses are capped at 128 MiB. Nested runtime/object archives are inspected,
 never extracted; their decompression has the same byte/header/time limits. These
 are per-pass limits; validation uses a finite set of outer and nested passes.
 
-The checked-in policy accommodates the retained 64,602,344-byte Bun and
-1,036,641-byte TinyCC inputs: actual reader checks observed 213,862,400 and
-4,976,640 expanded bytes respectively. No size or passing intake is claimed for
-unassembled WebKit/native objects. Before increasing a cap for a legitimate
+The checked-in policy accommodates the retained 64,602,344-byte Bun,
+1,036,641-byte TinyCC and 1,993,738,581-byte WebKit inputs: actual reader checks
+observed 213,862,400, 4,976,640 and 5,851,248,128 expanded bytes respectively.
+No size or passing intake is claimed for unassembled native objects. Before increasing a cap for a legitimate
 larger input, review its pinned size/hash, expected expansion, member inventory
 and host budget. Trusted callers can supply `{limits: {...}}` to
 `validateSourceArchive`, `validateSourceMaterials`, `extractEvidenceArchive` or

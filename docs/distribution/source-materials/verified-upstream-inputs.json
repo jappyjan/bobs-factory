@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"purpose": "Verified upstream preparation only; not candidate evidence or a licensing approval",
-	"retrievedAt": "2026-10-10",
+	"retrievedAt": "2026-10-11",
 	"implementationBase": "58cb5e40a5f47bd9508f99c49067c5bc458a8dcc",
 	"bunVersion": "1.4.2",
 	"bunRevision": "744846f844374847c902b5e7fd59b4342a51ef99",
@@ -19,6 +19,12 @@
 			"source": "https://codeload.github.com/oven-sh/tinycc/tar.gz/05f0fafaa3be31e31d7b4b5c17dc60f62c991171",
 			"sha256": "50750680312923a59fdd36ae41f7091d8e35e51909d0e0b25b0b33ea9534bc08",
 			"size": 1036641
+		},
+		{
+			"file": "webkit-source.tar.gz",
+			"source": "https://github.com/oven-sh/WebKit/tree/2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+			"sha256": "108dd98cc15bf43debc753cfb597b5635bd936855da2bb48bf0bcacc46881f7d",
+			"size": 1993738581
 		},
 		{
 			"file": "bun-LICENSE.md",
@@ -58,13 +64,6 @@
 		}
 	],
 	"missing": [
-		{
-			"file": "webkit-source.tar.gz",
-			"source": "https://codeload.github.com/oven-sh/WebKit/tar.gz/2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
-			"observed": "HTTP 422: Content creation is blocked; no source hash claimed",
-			"alternateSource": "https://api.github.com/repos/oven-sh/WebKit/tarball/2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
-			"alternateObserved": "HTTP 422; 32-byte ASCII error body, not accepted as source"
-		},
 		{
 			"input": "Exact frozen candidate.json and matching native runtime/executable hashes"
 		},
