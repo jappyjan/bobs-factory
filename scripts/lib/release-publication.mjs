@@ -1,18 +1,13 @@
-import {
-	createReadStream,
-	existsSync,
-	readFileSync,
-	renameSync,
-	writeFileSync,
-} from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import {
 	jsonBytes,
 	requireValue,
 	validatePublicRepository,
 } from "./binary-release.mjs";
 import { verifyAssetInventory } from "./github-release.mjs";
+import { verifiedPublicationStream } from "./publication-assets.mjs";
 import { PublicationSkip } from "./release-candidate.mjs";
+import { GITHUB_ASSET_LIMIT } from "./source-transport.mjs";
 
 // Caller holds the repository-wide mutation lock. Provider state is authoritative.
 export async function publishPreparedRelease({
@@ -23,6 +18,15 @@ export async function publishPreparedRelease({
 	receiptPath,
 	recheck,
 }) {
+	requireValue(
+		records.length <= 1000,
+		"Release exceeds GitHub asset count limit",
+	);
+	for (const record of records)
+		requireValue(
+			record.size < GITHUB_ASSET_LIMIT,
+			`Release asset exceeds GitHub transport limit: ${record.file}`,
+		);
 	const marker = `<!-- bobs-factory-candidate:${manifest.candidateDigest} -->`;
 	const previous = existsSync(receiptPath)
 		? JSON.parse(readFileSync(receiptPath, "utf8"))
@@ -160,6 +164,7 @@ export async function publishPreparedRelease({
 			release.draft,
 			"Public release is incomplete; never append automatically",
 		);
+		const stream = verifiedPublicationStream(assetsDirectory, record);
 		try {
 			const response = await client.transport(
 				`https://uploads.github.com/repos/jappyjan/bobs-factory/releases/${release.id}/assets?name=${encodeURIComponent(record.file)}`,
@@ -170,7 +175,7 @@ export async function publishPreparedRelease({
 						"Content-Type": "application/octet-stream",
 						"Content-Length": String(record.size),
 					},
-					body: createReadStream(join(assetsDirectory, record.file)),
+					body: stream.body,
 					duplex: "half",
 				},
 			);
@@ -178,12 +183,18 @@ export async function publishPreparedRelease({
 				response.ok,
 				`Upload failed: ${record.file} (${response.status})`,
 			);
+			await stream.completed;
 			verifyAssetInventory([await response.json()], [record]);
 		} catch (error) {
+			stream.body.destroy();
+			await stream.completed.catch(() => {});
+			if (stream.integrityError()) throw stream.integrityError();
 			remote = await client.pages(`releases/${release.id}/assets`);
 			const uploaded = remote.filter((a) => a.name === record.file);
 			if (!uploaded.length) throw error;
 			verifyAssetInventory(uploaded, [record], { complete: true });
+		} finally {
+			stream.body.destroy();
 		}
 	}
 	remote = await client.pages(`releases/${release.id}/assets`);

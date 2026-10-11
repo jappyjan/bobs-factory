@@ -128,9 +128,8 @@ export async function verifyPublishedRelease(client, release, keys) {
 	};
 	const bytes = await client.bytes(asset("release.json"));
 	const signature = await client.bytes(asset("release.json.sig"));
-	const keyId = (await client.bytes(asset("release.json.key-id")))
-		.toString("utf8")
-		.trim();
+	const keyBytes = await client.bytes(asset("release.json.key-id"));
+	const keyId = keyBytes.toString("utf8").trim();
 	verifyManifestSignature(bytes, signature, keyId, keys);
 	const manifest = validateReleaseManifest(JSON.parse(bytes.toString("utf8")));
 	requireValue(
@@ -195,7 +194,22 @@ export async function verifyPublishedRelease(client, release, keys) {
 				"Incomplete beta evidence inventory",
 			);
 	}
-	verifyAssetInventory(assets, records);
+	if (manifest.sourceTransport)
+		records = [
+			...records,
+			...[
+				["release.json", bytes],
+				["release.json.sig", signature],
+				["release.json.key-id", keyBytes],
+			].map(([file, contents]) => ({
+				file,
+				size: contents.length,
+				sha256: sha256(contents),
+			})),
+		];
+	verifyAssetInventory(assets, records, {
+		complete: manifest.sourceTransport !== undefined,
+	});
 	if (manifest.schemaVersion === 2) {
 		const frozen = validateCandidate(
 			JSON.parse(await client.bytes(asset("candidate.json"))),

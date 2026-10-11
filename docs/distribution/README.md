@@ -114,6 +114,11 @@ Cursor's proprietary SDK and native sidecars remain in the operator's separately
 prepared installation. Bob’s Factory does not redistribute or modify those files.
 The archive's runtime dependency inventory excludes them.
 
+Complete source archives that exceed GitHub's individual asset limit use signed
+ordered chunks. They reconstruct the exact full archive before unchanged source
+intake; local source evidence and historical single-file releases remain intact.
+See [source transport and offline recovery](PUBLIC_RELEASES.md#complete-source-transport).
+
 ## Installation and manual replacement
 
 The public installer is the primary installation path. For maintainer validation

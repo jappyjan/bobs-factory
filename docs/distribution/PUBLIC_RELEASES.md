@@ -84,7 +84,7 @@ New `release.json` assets use schema 2, canonical two-space JSON, product
 `candidateDigest` and `workflowSha`. Installer, verifier, source and target
 records retain `file`/hash/size (or the target archive/sidecar equivalents).
 `assets` binds the complete inventory: archives, sidecars, installers,
-source/rebuild archive, candidate, validation evidence/receipt archive, build
+source/rebuild transport, candidate, validation evidence/receipt archive, build
 provenance and native receipts. Detached `release.json.sig` (binary RSA/SHA-256)
 and `release.json.key-id` (one trusted identifier) remain outside that inventory
 so signing has no circular dependency. Publisher verification signs exact bytes;
@@ -114,6 +114,79 @@ Nix takes reviewed immutable `releaseManifest`, `releaseSignature` and
 `releaseKeyId` inputs. It does not fetch mutable latest during evaluation and
 verifies with a pinned key before unpacking/building. Hash-pinned archives alone
 are insufficient publisher authentication. Nix installations remain owned by Nix.
+
+## Complete source transport
+
+Local evidence and source-material intake retain the complete `source-rebuild.tar.gz`
+with its exact size and SHA-256. GitHub requires every individual release asset to
+be under 2 GiB (2,147,483,648 bytes, exclusive). Preparation keeps the existing
+single-file representation for archives below that limit. Larger archives use
+an optional schema-2 manifest extension:
+
+- `source` remains `{file: "source-rebuild.tar.gz", sha256, size}` for the complete
+  reconstructed archive. It is a reconstruction identity, rather than an uploaded
+  monolith, when `sourceTransport` is present.
+- `sourceTransport` is `{schemaVersion: 1, type: "chunks", chunkSize, chunks}`.
+  Production preparation uses `chunkSize: 1073741824` (1 GiB). Each ordered chunk
+  record contains `order` (one-based), `file`, `size` and `sha256`.
+- Filenames are exactly `source-rebuild.tar.gz.part0001`, `.part0002`, and so on.
+  The array order and explicit `order` must agree. Every chunk except the final
+  one has exactly `chunkSize` bytes; the final one has exactly the remainder.
+  The count must equal `ceil(source.size / chunkSize)`. All chunks are positive
+  and at most 1 GiB; the complete compressed archive retains the existing 8 GiB
+  intake ceiling. The complete release must fit GitHub's 1,000-asset count limit.
+- Signed `assets` contains those exact chunk records and excludes the monolith.
+  Missing, duplicate, reordered, extra or mismatched source records fail validation.
+  Detached signatures still authenticate exact manifest bytes. Schema-1 beta
+  cannot carry this extension; its original manifest, inventory and receipt
+  digests remain untouched. Schema-2 single-file releases remain readable.
+
+`source-transport.mjs` owns this policy, deterministic splitting and bounded
+reconstruction. Recovery opens only exact regular files, refuses links and
+special files, never overwrites an existing output, and concatenates in signed
+order with a 1 MiB buffer into an owned temporary directory. It verifies each
+chunk and the exact total archive size/hash before the existing unchanged source
+and release-evidence intake. The signed reconstruction identity must equal the
+local evidence's full-archive record. Transport checks do not replace semantic
+intake, licensing approval or any other release gate.
+
+Keep the complete retained signed assets directory for publication recovery.
+`--resume` validates and uploads the signed chunk inventory; it never reconstructs
+or uploads a monolith as a remote asset. Matching partial draft chunks are reused,
+missing draft chunks are uploaded, and unexpected/conflicting remote assets block
+publication. Discovery requires the exact complete remote inventory, including
+manifest/signature sidecars, for chunk releases. Missing public chunks cannot be
+appended automatically. Preserve conflicting immutable state for inspection.
+
+Publication plans and reconciliation use the inventory from the exact verified
+manifest bytes plus the exact verified signature/key-id sidecar bytes. Before
+emitting a plan, the publisher checks the local filename set and copies regular,
+unlinked files with safe modes into a private temporary snapshot, checking every
+size and hash while copying. Uploads use that snapshot through pinned file
+descriptors and verify the actual streamed bytes before a release can become
+public. A staging integrity failure leaves the release draft and keeps its
+authenticated inventory in the recovery receipt. Temporary snapshot storage must
+fit the complete asset set; it is removed on success, refusal and ordinary retry
+failure. Changed input files never redefine publication expectations.
+
+For offline source recovery from a complete signed schema-2 release, download its
+exact versioned inventory and signature sidecars into a directory, then run the
+reviewed tooling (which contains authentic publisher pins):
+
+```sh
+node scripts/recover-release-source.mjs --assets /path/to/signed-assets \
+  --output /path/to/new-recovered-source
+```
+
+The output directory must not exist. The command authenticates the manifest,
+validates the complete prepared release and unchanged semantic source intake,
+then retains only the verified full archive. Failure removes only its newly owned
+output. It performs no network requests, signing, publication or installation.
+
+Changes to frozen tooling require a new reviewed candidate identity. Transporting
+unchanged accepted source bytes does not authorize relabeling old candidates,
+workflow runs, receipts or signatures; any evidence reuse remains independently
+reviewed against the new identity.
 
 ## Signing keys and historical beta
 
