@@ -23,7 +23,6 @@ import {
 } from "../lib/binary-release.mjs";
 import { ARCHIVE_LIMITS } from "../lib/bounded-archive.mjs";
 import { validatePreparedRelease } from "../lib/prepared-release.mjs";
-import { verifyManifestSignature } from "../lib/release-signature.mjs";
 import {
 	reconstructSourceArchive,
 	SOURCE_CHUNK_BYTES,
@@ -31,7 +30,6 @@ import {
 	splitSourceArchive,
 } from "../lib/source-transport.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
-import { keys } from "./release-fixtures.mjs";
 
 function fixture() {
 	const work = mkdtempSync(join(tmpdir(), "factory-source-transport-test-"));
@@ -201,7 +199,7 @@ test("transport rejects linked directories/outputs and never overwrites conflict
 		f.cleanup();
 	}
 });
-test("signed prepared chunk fixture runs unchanged semantic intake and rejects hybrid/incomplete inventory", () => {
+test("unsigned prepared chunk fixture runs unchanged semantic intake and rejects hybrid/incomplete inventory", () => {
 	const f = preparedFixture("nightly", { sourceChunks: true });
 	try {
 		validatePreparedRelease(f.assets, f.candidate);
@@ -276,7 +274,7 @@ test("genuine legacy single-source manifests cannot claim chunk transport", () =
 	}
 });
 
-test("offline recovery authenticates before retaining source and preserves conflicting output", () => {
+test("offline recovery checks integrity before retaining source and preserves conflicting output", () => {
 	const f = preparedFixture("nightly", { sourceChunks: true });
 	try {
 		const output = join(f.work, "recovered");
@@ -314,11 +312,6 @@ test("offline recovery authenticates before retaining source and preserves confl
 		assert.match(corrupted.stderr, /Prepared asset changed/);
 		assert.equal(existsSync(output), false);
 		writeFileSync(chunk, bytes);
-		writeFileSync(join(f.assets, "release.json.sig"), "corrupt");
-		const unsigned = run();
-		assert.notEqual(unsigned.status, 0);
-		assert.match(unsigned.stderr, /signature/);
-		assert.equal(existsSync(output), false);
 	} finally {
 		f.cleanup();
 	}
@@ -329,7 +322,7 @@ for (const { sourceChunks, duringValidation } of [
 	{ sourceChunks: true, duringValidation: false },
 	{ sourceChunks: true, duringValidation: true },
 ]) {
-	test(`offline recovery refuses unsigned directory swap ${duringValidation ? "during validation" : "after authentication"} (${sourceChunks ? "chunks" : "single archive"})`, () => {
+	test(`offline recovery refuses manifest directory swap ${duringValidation ? "during validation" : "after snapshot"} (${sourceChunks ? "chunks" : "single archive"})`, () => {
 		const f = preparedFixture("nightly", { sourceChunks });
 		const replacement = preparedFixture("nightly", { sourceChunks });
 		try {
@@ -388,25 +381,8 @@ for (const { sourceChunks, duringValidation } of [
 				join(replacement.assets, "release.json"),
 				jsonBytes(manifest),
 			);
-			const originalSignature = readFileSync(
-				join(f.assets, "release.json.sig"),
-			);
-			writeFileSync(
-				join(replacement.assets, "release.json.sig"),
-				originalSignature,
-			);
-			assert.throws(
-				() =>
-					verifyManifestSignature(
-						jsonBytes(manifest),
-						originalSignature,
-						"fixture",
-						keys,
-					),
-				/signature/,
-			);
-			// The replacement passes every semantic check: only authentication binds
-			// recovery to the original archive. No validator or hash check is stubbed.
+			// Both directories are semantically valid; the original checked manifest
+			// snapshot must still bind recovery across a directory swap.
 			validatePreparedRelease(replacement.assets, f.candidate);
 			const output = join(f.work, "swapped-recovery");
 			const temporary = join(f.work, "recovery-temporary");
@@ -445,8 +421,8 @@ syncBuiltinESMExports();
 			assert.match(
 				result.stderr,
 				duringValidation
-					? /Prepared manifest changed during authenticated validation/
-					: /Prepared manifest differs from authenticated bytes/,
+					? /Prepared manifest changed during inventory validation/
+					: /Prepared manifest differs from checked bytes/,
 			);
 			assert.equal(existsSync(output), false);
 			assert.deepEqual(readdirSync(temporary), []);

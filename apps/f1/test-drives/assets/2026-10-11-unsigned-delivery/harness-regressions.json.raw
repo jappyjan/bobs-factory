@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "purpose": "TEST ONLY signed-delivery harness shutdown and fixture cleanup regressions",
+  "passed": true,
+  "harnesses": {
+    "regressionScriptSha256": "2e73e21f243abf14ddf45ecd147c63e1a21157ca5d5a71fe524ab0978af3a859",
+    "processFixtureSha256": "ecb4ba5c98eeb864f0637a41142b73cacc3a91cbef2b4ed879fea8db0f1826b1",
+    "runtimeDriverSha256": "1f32518b2b2a5b2f5a1faf53d13fe4b7d9b4286f8a85282d6e978c37e821024a",
+    "lifecycleHelperSha256": "6f50bd5b482b2288014e9c11ac803edf5a5971a58feb02fa3d95e42c21ae6873"
+  },
+  "results": [
+    {
+      "name": "TERM-ignoring child is escalated and reaped within a bound",
+      "passed": true,
+      "elapsedMs": 339,
+      "result": {
+        "code": null,
+        "signal": "SIGKILL",
+        "timedOut": true,
+        "forcedKill": true,
+        "closeTimedOut": false,
+        "descendantPid": 4938,
+        "unrelatedProcessPreserved": true
+      }
+    },
+    {
+      "name": "exited TERM-responsive leader still escalates its TERM-ignoring descendant",
+      "passed": true,
+      "elapsedMs": 747,
+      "result": {
+        "code": 124,
+        "signal": null,
+        "timedOut": true,
+        "forcedKill": true,
+        "closeTimedOut": false,
+        "descendantPid": 5362,
+        "unrelatedProcessPreserved": true
+      }
+    },
+    {
+      "name": "owned temp HOME is removed after success receipt",
+      "passed": true,
+      "fixtureReceiptPassed": true,
+      "receiptPath": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/bobs-signed-harness-regressions-epQLaX/success.json"
+    },
+    {
+      "name": "owned temp HOME is removed after failure receipt",
+      "passed": true,
+      "fixtureReceiptPassed": false,
+      "receiptPath": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/bobs-signed-harness-regressions-epQLaX/failure.json"
+    },
+    {
+      "name": "receipt inside fixture is retained instead of deleted",
+      "passed": true,
+      "removed": false,
+      "reason": "receipt-inside-fixture"
+    },
+    {
+      "name": "injected removal exception rewrites this run's receipt as failed and retains diagnosis",
+      "passed": true,
+      "processExitCode": 1,
+      "fixtureReceiptPassed": false,
+      "fixtureCleanup": {
+        "removed": false,
+        "reason": "cleanup-failed"
+      },
+      "cleanupError": "Temporary fixture cleanup failed (EACCES): Error: Injected EACCES removing owned fixture",
+      "historicalReceiptUnchanged": true,
+      "fixtureMarkerRetained": true
+    },
+    {
+      "name": "initial-write cannot publish a passing receipt",
+      "passed": true,
+      "processExitCode": 1,
+      "memoryReceipt": {
+        "passed": false,
+        "cleanupErrors": [
+          "Initial receipt write failed (EACCES): Error: Injected EACCES writing receipt\n    at writeReceipt (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:17:29)\n    at finalizeFixtureReceipt (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/scripts/tests/signed-delivery-harness-lifecycle.mjs:80:3)\n    at file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:10:6"
+        ],
+        "finalization": "failed"
+      },
+      "diskReceipt": null,
+      "fixtureRetained": true,
+      "historicalReceiptUnchanged": true
+    },
+    {
+      "name": "final-write cannot publish a passing receipt",
+      "passed": true,
+      "processExitCode": 1,
+      "memoryReceipt": {
+        "passed": false,
+        "cleanupErrors": [
+          "Final receipt write failed (EACCES): Error: Injected EACCES writing receipt\n    at writeReceipt (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:17:29)\n    at finalizeFixtureReceipt (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/scripts/tests/signed-delivery-harness-lifecycle.mjs:116:3)\n    at file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:10:6"
+        ],
+        "finalization": "failed",
+        "fixtureCleanup": {
+          "removed": true,
+          "reason": "receipt-written"
+        }
+      },
+      "diskReceipt": {
+        "passed": false,
+        "cleanupErrors": [],
+        "finalization": "pending"
+      },
+      "fixtureRetained": false,
+      "historicalReceiptUnchanged": true
+    },
+    {
+      "name": "cleanup-and-final-write cannot publish a passing receipt",
+      "passed": true,
+      "processExitCode": 1,
+      "memoryReceipt": {
+        "passed": false,
+        "cleanupErrors": [
+          "Temporary fixture cleanup failed (EACCES): Error: Injected EACCES removing fixture\n    at removeTree (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:25:29)\n    at cleanupFixtureTreeAfterReceipt (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/scripts/tests/signed-delivery-harness-lifecycle.mjs:46:2)\n    at cleanupTree (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:21:33)\n    at finalizeFixtureReceipt (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/scripts/tests/signed-delivery-harness-lifecycle.mjs:95:29)\n    at file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:10:6",
+          "Final receipt write failed (EACCES): Error: Injected EACCES writing receipt\n    at writeReceipt (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:17:29)\n    at finalizeFixtureReceipt (file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/scripts/tests/signed-delivery-harness-lifecycle.mjs:116:3)\n    at file:///Users/jappy/code/jappy/bobs-factory-unsigned-116/[eval1]:10:6"
+        ],
+        "finalization": "failed",
+        "fixtureCleanup": {
+          "removed": false,
+          "reason": "cleanup-failed"
+        }
+      },
+      "diskReceipt": {
+        "passed": false,
+        "cleanupErrors": [],
+        "finalization": "pending"
+      },
+      "fixtureRetained": true,
+      "historicalReceiptUnchanged": true
+    },
+    {
+      "name": "atomic finalization preserves passing run outcome",
+      "passed": true,
+      "fixtureReceiptPassed": true,
+      "finalization": "complete",
+      "fixtureCleanup": {
+        "removed": true,
+        "reason": "receipt-written"
+      }
+    },
+    {
+      "name": "atomic finalization preserves failing run outcome",
+      "passed": true,
+      "fixtureReceiptPassed": false,
+      "finalization": "complete",
+      "fixtureCleanup": {
+        "removed": true,
+        "reason": "receipt-written"
+      }
+    },
+    {
+      "name": "receipt finalization preserves retain-fixture semantics",
+      "passed": true,
+      "fixtureReceiptPassed": true,
+      "fixtureCleanup": {
+        "removed": false,
+        "reason": "retain-fixture"
+      }
+    },
+    {
+      "name": "receipt finalization preserves receipt-inside-fixture semantics",
+      "passed": true,
+      "fixtureReceiptPassed": true,
+      "fixtureCleanup": {
+        "removed": false,
+        "reason": "receipt-inside-fixture"
+      }
+    },
+    {
+      "name": "receipt finalization preserves fixture-close-error semantics",
+      "passed": true,
+      "fixtureReceiptPassed": false,
+      "fixtureCleanup": {
+        "removed": false,
+        "reason": "active-owner-retained"
+      }
+    }
+  ],
+  "limitations": [
+    "No production binary or service was started.",
+    "No provider, signing key, or native credential was used."
+  ]
+}

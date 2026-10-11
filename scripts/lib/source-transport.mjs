@@ -40,7 +40,7 @@ function validateTransportBounds(source, chunkSize, count) {
 }
 
 // One policy for manifest inventory, splitting and reconstruction. No filename
-// sorting can substitute for the explicitly signed order.
+// sorting can substitute for the explicitly inventoried order.
 export function sourceTransportRecords(source, transport) {
 	check(
 		source?.file === "source-rebuild.tar.gz" && validRecord(source),

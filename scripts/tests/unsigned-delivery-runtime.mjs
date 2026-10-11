@@ -43,9 +43,9 @@ import {
 } from "./signed-delivery-harness-lifecycle.mjs";
 import {
 	command,
-	signedHttpsFixture,
 	terminateOwnedProcess,
-} from "./signed-release-https-fixture.mjs";
+	unsignedHttpsFixture,
+} from "./unsigned-release-https-fixture.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const args = process.argv.slice(2);
@@ -55,11 +55,11 @@ const [builds, output] = args
 	.map((value) => resolve(value));
 assert(
 	builds && output,
-	"Usage: node scripts/tests/signed-delivery-runtime.mjs BUILDS RECEIPT_DIRECTORY",
+	"Usage: node scripts/tests/unsigned-delivery-runtime.mjs BUILDS RECEIPT_DIRECTORY",
 );
 mkdirSync(output, { recursive: true });
 const work = realpathSync(
-	mkdtempSync(join(tmpdir(), "bobs-signed-integration-")),
+	mkdtempSync(join(tmpdir(), "bobs-unsigned-integration-")),
 );
 // Workers inherit ONLY this controlled environment, never host provider keys.
 const path = process.env.PATH;
@@ -103,7 +103,7 @@ const settings = (channel = "nightly", pin) => ({
 	paused: false,
 	...(pin ? { pin } : {}),
 });
-const f = await signedHttpsFixture(root, work, builds);
+const f = await unsignedHttpsFixture(root, work, builds);
 const n1 = f.add("1101"),
 	n2 = f.add("1102"),
 	n3 = f.add("1103"),
@@ -142,15 +142,8 @@ for (const r of [n1, n2, n3, stable, stable2, beta]) {
 const newSource = (
 	home,
 	executable = join(nativeDirectory(stable), "bobs-factory"),
-	keys = f.keys,
 ) =>
-	new PublishedUpdateSource(
-		join(home, "stage"),
-		executable,
-		target,
-		f.client,
-		keys,
-	);
+	new PublishedUpdateSource(join(home, "stage"), executable, target, f.client);
 const prefix = join(work, "shell-prefix"),
 	home = join(work, "selected-home");
 mkdirSync(home);
@@ -191,7 +184,7 @@ async function altered(r, fn, run) {
 }
 try {
 	await check(
-		"successful signed discovery, download, extraction and actual native version probe",
+		"successful unsigned discovery, download, extraction and actual native version probe",
 		async () => {
 			f.show([n1, stable, beta]);
 			const s = newSource(join(work, "source-success"));
@@ -248,51 +241,42 @@ try {
 	const rejectedSource = newSource(join(work, "reject-source"));
 	f.show([n1]);
 	const candidate = await rejectedSource.discover(settings(), previous);
-	await check("untrusted TEST signing pin is rejected", async () => {
-		await assert.rejects(
-			newSource(join(work, "untrusted"), undefined, {}).discover(
-				settings("nightly", n1.manifest.version),
-				previous,
-			),
-			/key|publisher/i,
-		);
-	});
 	await check(
-		"signed manifest tampering is rejected before extraction",
+		"manifest identity tampering is rejected before extraction",
 		async () =>
 			altered(
 				n1,
 				() => {
 					n1.files.set(
 						"release.json",
-						Buffer.concat([n1.files.get("release.json"), Buffer.from(" ")]),
+						jsonBytes({ ...n1.manifest, tag: "v2.0.0" }),
 					);
 				},
 				async () => {
-					await assert.rejects(rejectedSource.stage(candidate), /signature/);
+					await assert.rejects(rejectedSource.stage(candidate), /tag/);
 				},
 			),
 	);
-	await check("missing signature is rejected before extraction", async () =>
+	await check("missing manifest is rejected before extraction", async () =>
 		altered(
 			n1,
 			() => {
-				n1.files.delete("release.json.sig");
+				n1.files.delete("release.json");
 			},
 			async () => {
 				await assert.rejects(
 					rejectedSource.stage(candidate),
-					/Missing signature/,
+					/Missing release asset/,
 				);
 			},
 		),
 	);
-	await check("partial signed target inventory is rejected", async () =>
+	await check("partial unsigned target inventory is rejected", async () =>
 		altered(
 			n1,
 			() => {
 				delete n1.manifest.targets["linux-arm64"];
-				n1.resign();
+				n1.refresh();
 			},
 			async () => {
 				await assert.rejects(
@@ -331,7 +315,6 @@ try {
 				join(nativeDirectory(stable), "bobs-factory"),
 				target,
 				githubClient("", transport),
-				f.keys,
 			);
 			await assert.rejects(s.stage(candidate), /checksum mismatch/);
 		},
@@ -347,7 +330,7 @@ try {
 				const rec = n1.manifest.assets.find((a) => a.file === "candidate.json");
 				rec.sha256 = sha256(bytes);
 				rec.size = bytes.length;
-				n1.resign();
+				n1.refresh();
 			},
 			async () => {
 				await assert.rejects(
@@ -357,7 +340,7 @@ try {
 			},
 		),
 	);
-	await check("wrong requested signed channel cannot be staged", async () => {
+	await check("wrong requested unsigned channel cannot be staged", async () => {
 		await assert.rejects(
 			rejectedSource.stage({ ...candidate, channel: "stable" }),
 			/another channel/,
@@ -389,7 +372,7 @@ try {
 		},
 	);
 	await check(
-		"actual signed shell installation grants bound ownership; changed receipt revokes it",
+		"actual unsigned shell installation grants bound ownership; changed receipt revokes it",
 		async () => {
 			const executable = join(prefix, "bin/bobs-factory");
 			const proof = installationProof(home, executable);
@@ -472,7 +455,7 @@ try {
 		},
 	);
 	await check(
-		"signed source offline failure is visible and recoverable",
+		"unsigned source offline failure is visible and recoverable",
 		async () => {
 			f.show([n1]);
 			const manager = new UpdateManager(
@@ -529,7 +512,7 @@ try {
 			"remote",
 			"add",
 			"origin",
-			"https://github.com/example/signed-fixture.git",
+			"https://github.com/example/unsigned-fixture.git",
 		],
 		{ env },
 	);
@@ -542,7 +525,7 @@ try {
 	const workflow = validateWorkflows([
 		...defaultWorkflows,
 		{
-			id: "signed-update-preservation",
+			id: "unsigned-update-preservation",
 			name: "Controlled native update preservation",
 			entry: "question",
 			steps: [
@@ -841,7 +824,7 @@ try {
 		);
 	};
 	await check(
-		"explicit subscription to a later signed nightly replaces one real idle owned worker",
+		"explicit subscription to a later unsigned nightly replaces one real idle owned worker",
 		async () => {
 			const r = await command(
 				link,
@@ -873,7 +856,7 @@ try {
 			);
 			await capacity.ready();
 			const lease = await capacity.acquireLease(undefined, {
-				identity: "signed-update-controlled-descendant",
+				identity: "unsigned-update-controlled-descendant",
 			});
 			const child = spawn(process.execPath, ["-e", "setTimeout(()=>{},1500)"], {
 				env: { ...env, BOBS_FACTORY_EXECUTION_LEASE: lease.token },
@@ -947,7 +930,7 @@ try {
 		},
 	);
 	await check(
-		"manual nightly holds a signed candidate until exact explicit Install, with lost-ack recovery",
+		"manual nightly holds an unsigned candidate until exact explicit Install, with lost-ack recovery",
 		async () => {
 			await selected(n3);
 			cfg({ policy: "manual" });
@@ -1018,7 +1001,7 @@ try {
 		},
 	);
 	await check(
-		"stable manual holds newer signed release; saved idle-auto override activates without consent",
+		"stable manual holds newer unsigned release; saved idle-auto override activates without consent",
 		async () => {
 			lifecycle = new Lifecycle(nativeHome, port);
 			manager = new UpdateManager(
@@ -1059,7 +1042,7 @@ try {
 		},
 	);
 	await check(
-		"failed real signed replacement rolls back compatible owned state and suppresses repeat activation",
+		"failed real unsigned replacement rolls back compatible owned state and suppresses repeat activation",
 		async () => {
 			lifecycle = new Lifecycle(nativeHome, port);
 			manager = new UpdateManager(
@@ -1298,20 +1281,19 @@ try {
 	const receipt = {
 		schemaVersion: 1,
 		purpose:
-			"TEST ONLY signed source/install/runtime integration; NOT release publication evidence",
+			"TEST ONLY unsigned source/install/runtime integration; NOT release publication evidence",
 		passed:
 			completed && results.every((r) => r.passed) && cleanupErrors.length === 0,
 		harnessSha256,
 		sourceCommit: buildsReceipt[0].commit,
 		target,
-		fixtureKeyFingerprint: f.keyFingerprint,
 		builds: buildsReceipt,
 		results,
 		cleanupErrors,
 		requests: f.requests,
 		limitations: [
 			"Other native targets are inventory fixtures with explicit not-run status.",
-			"Ephemeral TEST signing pin is not production publisher trust.",
+			"GitHub HTTPS and SHA256 checks establish integrity, without a publisher signature.",
 			"Mock checkpoint ID is preserved; no real agent continuation/credits.",
 			"Host native credential boundary uses sentinel bytes only; production stores are never read.",
 			"No OS service, actual Electron shell, package manager, login/reboot or publication exercised.",
@@ -1319,11 +1301,11 @@ try {
 	};
 	const cleanup = finalizeFixtureReceipt({
 		work,
-		receiptPath: join(output, "signed-delivery.json"),
+		receiptPath: join(output, "unsigned-delivery.json"),
 		receipt,
 		retainFixture,
 	});
-	console.log(`Receipt ${join(output, "signed-delivery.json")}`);
+	console.log(`Receipt ${join(output, "unsigned-delivery.json")}`);
 	console.log(`Fixture cleanup: ${cleanup.reason}`);
 }
 assert.equal(cleanupErrors.length, 0, cleanupErrors.join("\n"));

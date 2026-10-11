@@ -1,12 +1,10 @@
-// Controlled signed release transport. Test-only keys and outer runtime evidence;
+// Controlled unsigned release transport and simulated outer runtime evidence;
 // this is never a public release or Apple signing/notarization receipt.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileRecord, jsonBytes } from "../../../scripts/lib/binary-release.mjs";
 import { preparedFixture } from "../../../scripts/tests/prepared-fixture.mjs";
-import { keys, signBytes } from "../../../scripts/tests/release-fixtures.mjs";
 
-export { keys };
 // Synthetic notices for scripted test payloads only, never native distribution evidence.
 export const fixtureElectronLicenses = {
 	schemaVersion: 1,
@@ -61,15 +59,9 @@ export function appRelease(channel, appBytes, target, options = {}) {
 			r,
 		];
 	writeFileSync(join(f.assets, "release.json"), jsonBytes(f.manifest));
-	writeFileSync(
-		join(f.assets, "release.json.sig"),
-		signBytes(jsonBytes(f.manifest)),
-	);
 	f.records = [
 		...f.manifest.assets,
-		...["release.json", "release.json.sig", "release.json.key-id"].map((file) =>
-			fileRecord(join(f.assets, file), file),
-		),
+		...["release.json"].map((file) => fileRecord(join(f.assets, file), file)),
 	];
 	return f;
 }

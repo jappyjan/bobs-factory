@@ -117,3 +117,28 @@ the acquisition blocker above; complete object correspondence, actual relinking 
 independent licensing review remain unproved here. No source/licensing gate is closed.
 Taskbot #116/#122/#124 statuses and all previously named native/operator gates remain
 unchanged. Root owns the fresh independent review and actual CI evidence verification.
+
+
+## Current unsigned delivery decision (2026-10-11)
+
+The preceding integration/evidence record is historical. The user now explicitly
+supersedes its Apple Developer ID/notarization/stapling, protected signing,
+publisher RSA signature/key-pin and signed-Mac acceptance prerequisites.
+The maintained [release contract](PUBLIC_RELEASES.md) requires candidate-bound
+SHA256/size inventories over direct GitHub HTTPS and actual functional validation.
+This establishes delivery integrity, without independent publisher authentication.
+Explicit rollout activation and candidate/asset-bound stable approval remain.
+
+Taskbot 119/120 require functional unsigned update/policy/rollback validation;
+121/123 require unsigned download/install and complete-app update validation,
+including the per-app macOS allow-running path while preserving quarantine.
+Taskbot 122/124 require the actual custom launchAgent/service lifecycle paths.
+No new shared keychain group, host credential-store reads or blanket physical
+passkey gate is introduced. Free local ad-hoc signing applies only to technical
+Apple Silicon executable validity. Historical receipts retain their original
+candidate, scope and failures; they are not new unsigned-candidate evidence.
+See [desktop guidance](DESKTOP.md) for the precise OS permission boundary.
+
+This implementation does not authorize publication, a native build dispatch,
+production installation/service changes, merge or ticket closure. Actual final
+candidate, source/licensing, target and workflow validation retain their scope.

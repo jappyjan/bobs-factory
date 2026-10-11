@@ -13,10 +13,6 @@ export {
 	verifyPublishedRelease,
 } from "../../../scripts/lib/github-release.mjs";
 export {
-	trustedKeys,
-	verifyManifestSignature,
-} from "../../../scripts/lib/release-signature.mjs";
-export {
 	desktopStopped,
 	lifecycleGuard,
 } from "../../cli/src/services/DesktopLifecycle.js";

@@ -1,0 +1,21 @@
+# PR96 independent review — round 1
+
+Result: changes requested. Standards: 0 findings. Spec: 2 P2 findings; no P1.
+
+Reviewed head `f7ab57ea1699a85272fa610fe9950cb144033cd7`, fixed base `3b198a1ee3bf26eefa536de3a9f5d1a771abf034`, three-dot diff. Read-only implementation checkout `/Users/jappy/code/jappy/bobs-factory-unsigned-116` remained clean at that head. PR96 was registered and verified linked to this review thread. Read PR body, actual Taskbot #116–124 bodies including October 11 supersession, maintained contracts, affected diff and relevant import/lifecycle closure. No nested agents, builds, native dispatch, publication or production changes.
+
+## Standards
+
+No independent documented-standard or actionable baseline-smell findings. Applied PRODUCT_CONTRACTS, supplied AGENTS instructions and repository contribution/validation conventions with the explicit unsigned-delivery supersession taking precedence.
+
+## Spec
+
+1. **P2 — Bind historical beta attestation to approved manifest bytes.** `scripts/prepare-beta-attestation.mjs:65` hashes a fresh disk read after lines 38–56 validated and approved `manifestBytes`. Removing the detached signature eliminates the former consumer check against that original snapshot. Spec: #117 supersession says “Preserve ... immutable historical evidence ... publication-race safeguards”; PUBLIC_RELEASES.md Historical beta says approval binds `manifestSha256` and the “old manifest’s exact SHA-256/size.” Reproduced with the real legacy prepared fixture: intercept the approval-file read, replace only `release.json` with otherwise identical JSON changing `buildRunId` from 123 to 124, then run actual preparation. It exits 0 and emits the replacement manifest hash rather than the approved hash. Actual `verifyPublishedRelease` accepts run 124, while full prepared validation refuses it because retained provenance is run 123. Compute the emitted manifest record from the validated buffer; refuse a changed retained manifest before completing. Detailed runnable reproduction is alongside this report.
+
+2. **P2 — Update the complete-shell F1 driver when deleting the fixture export.** `apps/desktop/test/shell-fixture.mjs:6–8` removes `keys`, but `apps/f1/test-drives/assets/desktop-shell-update.mjs:30–34` still imports it and uses it later. Spec: #116 shared acceptance requires “Use relevant F1 workflow/restart/update validation”; #121 requires successful/failed desktop updates. Repro: `F1_AGENT_MODE=mock node apps/f1/test-drives/assets/desktop-shell-update.mjs` exits immediately with `SyntaxError: ... does not provide an export named 'keys'`, before any assertion or service starts. Remove obsolete key wiring from the executable driver, or provide a maintained unsigned successor; preserve historical report/receipt bytes. Passing maintenance/lifecycle drives do not cover this broken complete-shell entry point.
+
+## Verification and scope
+
+Independent targeted checks: actual unsigned publisher → discovery → prepared/offline chunks → PublishedUpdateSource extraction/probe → controlled rollback fixture passed (1/1); direct desktop app-updates tests passed (15/15), using existing generated artifacts without rebuilding. Both findings were reproduced in isolated fixtures; the F1 failure occurs at module linking before side effects. Prior PR95 source-recovery snapshots, publication snapshots/pinned upload streams and wrong/corrupt candidate refusal remain in the reviewed code. No additional concrete runtime, entitlement, credential-store or paid-signing-gate defect found.
+
+Native ad-hoc packaging, actual quarantined first launch and native subsequent updates remain pending functional validation, not automatic findings. Documentation’s per-app Open Anyway procedure matches Apple’s current instructions: https://support.apple.com/en-us/102445. Electron’s Squirrel/login-item caveats were checked against https://www.electronjs.org/docs/latest/tutorial/code-signing; this product uses its custom updater/service paths. No paid Apple, live-provider or physical-passkey blanket gate is requested.

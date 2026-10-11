@@ -1,4 +1,4 @@
-# Run only after both publisher signatures have been verified. The inventory
+# Run against the reviewed local manifest and additive inventory. The inventory
 # authenticates all release assets; it does not require downloading other targets.
 def valid_record:
   type == "object"

@@ -21,6 +21,8 @@ export interface VerifiedRelease {
 		assets: ReleaseAsset[];
 	};
 	manifest: {
+		candidateDigest?: string;
+		workflowSha?: string;
 		version: string;
 		commit: string;
 		channel?: string;
@@ -46,7 +48,6 @@ export function githubClient(
 ): ReleaseClient;
 export function discoverReleases(
 	client: ReleaseClient,
-	keys: Record<string, unknown>,
 	options?: { selectedOnly?: boolean; allowBetaFallback?: boolean },
 ): Promise<{
 	stable: VerifiedRelease | null;
@@ -56,5 +57,4 @@ export function discoverReleases(
 export function verifyPublishedRelease(
 	client: ReleaseClient,
 	release: unknown,
-	keys: Record<string, unknown>,
 ): Promise<VerifiedRelease>;

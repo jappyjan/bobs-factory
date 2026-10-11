@@ -116,7 +116,7 @@ export function validateEntries(entries) {
 	for (const entry of entries.filter((x) => x.kind === "link"))
 		resolveTarget(entry);
 }
-// Bob's framed gzip archive retains complete signed app bytes, Unix modes and internal
+// Bob's framed gzip archive retains complete app bytes, Unix modes and internal
 // framework symlinks. No external tar/zip extraction, headers or path interpretation.
 export function packApp(directory) {
 	const entries = tree(directory),

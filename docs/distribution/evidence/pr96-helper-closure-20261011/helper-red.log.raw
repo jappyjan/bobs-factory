@@ -1,0 +1,78 @@
+✖ retained standalone helper resolves its full module closure and runs recovery without repository modules (554.245125ms)
+✖ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (5588.87575ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6186.941875
+
+✖ failing tests:
+
+test at apps/desktop/test/app-helper.test.mjs:70:1
+✖ retained standalone helper resolves its full module closure and runs recovery without repository modules (554.245125ms)
+  AssertionError [ERR_ASSERTION]: node:internal/modules/esm/resolve:272
+      throw new ERR_MODULE_NOT_FOUND(
+            ^
+  
+  Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/retained-app-helper-P5QU1c/home/desktop/updates/helper/app-quarantine.mjs' imported from /private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/retained-app-helper-P5QU1c/home/desktop/updates/helper/app-lifecycle.mjs
+      at finalizeResolution (node:internal/modules/esm/resolve:272:11)
+      at moduleResolve (node:internal/modules/esm/resolve:879:10)
+      at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+      at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)
+      at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)
+      at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)
+      at #resolve (node:internal/modules/esm/loader:687:17)
+      at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)
+      at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33)
+      at ModuleJob.link (node:internal/modules/esm/module_job:381:17) {
+    code: 'ERR_MODULE_NOT_FOUND',
+    url: 'file:///private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/retained-app-helper-P5QU1c/home/desktop/updates/helper/app-quarantine.mjs'
+  }
+  
+  Node.js v24.20.0
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/pr96-red-3e597-lspk8p4a/apps/desktop/test/app-helper.test.mjs:83:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at apps/desktop/test/app-helper.test.mjs:93:1
+✖ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (5588.87575ms)
+  AssertionError [ERR_ASSERTION]: (node:41148) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+  (Use `node --trace-deprecation ...` to show where the warning was created)
+  file:///private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/pr96-red-3e597-lspk8p4a/apps/desktop/test/helper-ui-fixture.mjs:78
+  				throw Error("Install helper never requested exact UI exit");
+  				      ^
+  
+  Error: Install helper never requested exact UI exit
+      at file:///private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/pr96-red-3e597-lspk8p4a/apps/desktop/test/helper-ui-fixture.mjs:78:11
+  
+  Node.js v24.20.0
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/pr96-red-3e597-lspk8p4a/apps/desktop/test/app-helper.test.mjs:96:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

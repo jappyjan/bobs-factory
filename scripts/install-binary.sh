@@ -77,6 +77,10 @@ tar -xzf "$archive" -C "$stage"
 [ "$(field "$stage/$name/build.json" commit)" = "$commit" ] || { echo 'Build source mismatch' >&2; exit 1; }
 [ "$(field "$stage/$name/build.json" version)" = "$version" ] || { echo 'Build version mismatch' >&2; exit 1; }
 [ "$(field "$stage/$name/build.json" target)" = "$target" ] || { echo 'Build target mismatch' >&2; exit 1; }
+if [ -n "${BOBS_FACTORY_INSTALL_CANDIDATE_DIGEST:-}" ]; then
+  [ "$(field "$stage/$name/build.json" candidateDigest)" = "$BOBS_FACTORY_INSTALL_CANDIDATE_DIGEST" ] || { echo 'Build candidate mismatch' >&2; exit 1; }
+  [ "$(field "$stage/$name/build.json" workflowSha)" = "$BOBS_FACTORY_INSTALL_WORKFLOW_SHA" ] || { echo 'Build tooling mismatch' >&2; exit 1; }
+fi
 [ "$(sha256 "$stage/$name/bobs-factory")" = "$(field "$stage/$name/build.json" sha256)" ] || { echo 'Executable integrity failure' >&2; exit 1; }
 [ "$(wc -c < "$stage/$name/bobs-factory" | tr -d ' ')" = "$(number "$stage/$name/build.json" size)" ] || { echo 'Executable size mismatch' >&2; exit 1; }
 chmod 755 "$stage/$name/bobs-factory"
@@ -89,12 +93,9 @@ else
 fi
 channel=${BOBS_FACTORY_INSTALL_CHANNEL:-manual}
 source=${BOBS_FACTORY_INSTALL_SOURCE:-archive}
-key_id=${BOBS_FACTORY_INSTALL_KEY_ID:-}
+key_id=
 case "$channel" in stable|nightly|beta|manual) ;; *) echo 'Invalid installer channel' >&2; exit 1;; esac
 case "$source" in bootstrap|archive) ;; *) echo 'Invalid installer source' >&2; exit 1;; esac
-if [ -n "$key_id" ]; then
-  printf '%s' "$key_id" | LC_ALL=C grep -Eq '^[a-z0-9][a-z0-9-]{0,63}$' || { echo 'Invalid publisher key identifier' >&2; exit 1; }
-fi
 mkdir -p "$versions/records"
 record="$versions/records/$name.json"
 record_stage="$stage/$name.install.json"

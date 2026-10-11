@@ -7,7 +7,7 @@ import { parseArgs } from "node:util";
 import { jsonBytes, REPOSITORY, requireValue } from "./lib/binary-release.mjs";
 import { githubClient, verifyPublishedRelease } from "./lib/github-release.mjs";
 
-export async function generateRecipes(client, version, keys, kind = "all") {
+export async function generateRecipes(client, version, kind = "all") {
 	requireValue(
 		/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-nightly\.[0-9.]+)?$/.test(
 			version,
@@ -15,8 +15,8 @@ export async function generateRecipes(client, version, keys, kind = "all") {
 		"Select an exact stable/nightly version",
 	);
 	const release = await client.api(`releases/tags/v${version}`);
-	const verified = await verifyPublishedRelease(client, release, keys);
-	const { manifest, manifestSha256, keyId } = verified;
+	const verified = await verifyPublishedRelease(client, release);
+	const { manifest, manifestSha256 } = verified;
 	const npmRoot = new URL(
 		"../distribution/npm/bobs-factory-trial/",
 		import.meta.url,
@@ -36,7 +36,7 @@ export async function generateRecipes(client, version, keys, kind = "all") {
 			commit: manifest.commit,
 			candidateDigest: manifest.candidateDigest,
 			manifestSha256,
-			publisherKeyId: keyId,
+			integrity: "github-https-sha256",
 			publication: "not-performed",
 		}),
 		"npm/bin/bobs-factory-trial.mjs": readFileSync(
@@ -85,7 +85,7 @@ export async function generateRecipes(client, version, keys, kind = "all") {
 		for (const ext of formats) {
 			const file = `${expected}.${ext}`;
 			const record = manifest.assets.find((a) => a.file === file);
-			requireValue(record, `Missing signed desktop package: ${file}`);
+			requireValue(record, `Missing validated desktop package: ${file}`);
 			if (ext === "dmg" || ext === "AppImage")
 				requireValue(
 					item.archive.file === file,
@@ -96,7 +96,7 @@ export async function generateRecipes(client, version, keys, kind = "all") {
 				asset?.browser_download_url === `${base}/${file}`,
 				"Package URL must be immutable and project-owned",
 			);
-			await client.bytes(asset); // verifies real published bytes as well as signed inventory
+			await client.bytes(asset); // verifies real published bytes as well as validated inventory
 			files[`${target}.${ext}`] = record;
 		}
 	}
@@ -104,7 +104,7 @@ export async function generateRecipes(client, version, keys, kind = "all") {
 	const cask = `bobs-factory${nightly ? "@nightly" : ""}`;
 	const aur = `bobs-factory-desktop${nightly ? "-nightly" : ""}-bin`;
 	const pkgver = version.replaceAll("-", "_");
-	const stamp = `Verified ${manifest.tag}; source ${manifest.commit}; manifest SHA256 ${manifestSha256}; publisher ${keyId}`;
+	const stamp = `Verified ${manifest.tag}; source ${manifest.commit}; manifest SHA256 ${manifestSha256}; GitHub HTTPS + SHA256/size inventory`;
 	const brew = `# ${stamp}
 cask "${cask}" do
   arch arm: "arm64", intel: "x64"
@@ -122,7 +122,7 @@ end
 `;
 	const source = (arch) => `${base}/${files[`linux-${arch}.deb`].file}`;
 	const pkgbuild = `# ${stamp}
-# Generated from the complete signed published release; do not use latest URLs.
+# Generated from the complete validated published release; do not use latest URLs.
 pkgname=${aur}
 pkgver=${pkgver}
 pkgrel=1
@@ -178,7 +178,7 @@ pkgname = ${aur}
 			commit: manifest.commit,
 			candidateDigest: manifest.candidateDigest,
 			manifestSha256,
-			publisherKeyId: keyId,
+			integrity: "github-https-sha256",
 			files,
 			publication: "not-performed",
 		}),
@@ -200,7 +200,6 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
 	const recipes = await generateRecipes(
 		githubClient(),
 		values.version,
-		undefined,
 		values.kind,
 	);
 	const output = resolve(values.output);

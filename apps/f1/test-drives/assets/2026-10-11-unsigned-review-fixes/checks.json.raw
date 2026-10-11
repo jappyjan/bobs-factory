@@ -1,0 +1,50 @@
+{
+  "sourceCommit": "0aab1ecbf0fb479f1c95a70aed9f45b160a69afd",
+  "checks": {
+    "desktop": {
+      "sha256": "702f1e29317d2ff82acd181dfa584f16ce5539ed187bf06898e7145889b2edc8",
+      "tail": [
+        "\u2714 remote origins cannot become local filesystem or insecure bridge targets (0.791417ms)",
+        "\u2714 open launcher refreshes automatic candidates/results without discarding edits or changing captured consent (11.201041ms)",
+        "\u2139 tests 32",
+        "\u2139 suites 0",
+        "\u2139 pass 32",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 todo 0",
+        "\u2139 duration_ms 6765.106625"
+      ]
+    },
+    "release": {
+      "sha256": "b128a554bad6fd0b88c4c1054b944ab79167abd26a66d20376d4950e08605e7b",
+      "tail": [
+        "\u2714 hash-valid reconstructed transport cannot bypass semantic source intake (309.276917ms)",
+        "\u2714 unsigned publisher \u2192 discovery \u2192 prepared/offline chunks \u2192 updater preserves integrity and rollback (3176.489625ms)",
+        "\u2139 tests 95",
+        "\u2139 suites 0",
+        "\u2139 pass 95",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 todo 0",
+        "\u2139 duration_ms 27359.185417"
+      ]
+    },
+    "hooks": {
+      "sha256": "9a6173f5fc042ade50489c655e51c4a0c76863f637d756c3e53b2193a7cdc9b1",
+      "tail": [
+        "packages/edge-worker typecheck: Done",
+        "apps/cli typecheck$ tsgo --noEmit",
+        "apps/f1 typecheck$ tsgo --noEmit",
+        "apps/f1 typecheck: Done",
+        "apps/cli typecheck: Done",
+        "[unsigned-review-fixes-96 0aab1ecb] fix: retain quarantine and approved release snapshots",
+        " 10 files changed, 361 insertions(+), 18 deletions(-)",
+        " create mode 100644 apps/desktop/src/app-quarantine.mjs",
+        " create mode 100644 apps/desktop/test/app-quarantine.test.mjs",
+        " create mode 100644 scripts/tests/desktop-shell-drive.test.mjs"
+      ]
+    }
+  }
+}

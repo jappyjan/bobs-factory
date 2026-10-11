@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Preserve macOS per-app quarantine during unsigned app staging, replacement and recovery, including the standalone Install helper; keep historical beta attestation bound to approved manifest bytes, restore the maintained complete-shell F1 driver after publisher-key removal, and isolate simulated publishers' locks during concurrent validation ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
+
 - Publish complete source/rebuild archives through signed ordered transport chunks when they exceed GitHub's asset limit; bind recovery and publication to authenticated manifest bytes, stage the exact signed inventory and verify uploaded bytes, verify exact reconstruction before existing source intake and recover interrupted uploads without changing historical single-file releases ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#95](https://github.com/jappyjan/bobs-factory/pull/95)).
 
 - Let migration inspection recognize unrelated workers launched with global `--home` options before `start` or `local`, without reading their environment; check alternative spaced home paths, including symlink aliases, before excluding a worker and keep ambiguous, unreadable or participating consumers blocked ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#94](https://github.com/jappyjan/bobs-factory/pull/94)).
@@ -13,6 +15,8 @@ All notable changes to this project will be documented in this file.
 - Keep desktop and operator recovery validation reliable when Node CI runs tests concurrently, without rebuilding shared prerequisites during testing ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
 
 ### Changed
+
+- Support direct unsigned GitHub releases and updates with candidate-bound SHA256/size inventories; remove paid Apple and publisher-signature prerequisites, preserve corruption/source/recovery/rollback safeguards, and document per-app macOS allow-running ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
 
 - Retain the final isolated Linux service acceptance at exact PR #91 source `1aeb055`; all seven main assertions, six signal cancellations, the outer START deadline and Node 22/24 CI passed. The evidence remains bound to its frozen runtime and does not claim full release acceptance. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 

@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       channel:
-        description: Nightly preparation or stable promotion from a selected signed nightly
+        description: Nightly preparation or stable promotion from a selected validated nightly
         type: choice
         options: [nightly, stable]
         default: nightly

@@ -12,12 +12,8 @@ on:
         description: Publish after separate approval; default is preparation only
         default: false
         type: boolean
-      sign_only:
-        description: Sign prepared bytes in the protected environment without publication
-        default: false
-        type: boolean
       approved_assets_digest:
-        description: Stable only, exact assetsDigest from the signed publication plan
+        description: Stable only, exact assetsDigest from the prepared publication plan
         type: string
   workflow_run:
     workflows: ["Validate and upload Bob's Factory release evidence"]
@@ -33,7 +29,6 @@ jobs:
       digest: ${{ steps.identity.outputs.digest }}
       channel: ${{ steps.identity.outputs.channel }}
       publish: ${{ steps.identity.outputs.publish }}
-      sign: ${{ steps.identity.outputs.sign }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -60,7 +55,6 @@ jobs:
         id: identity
         env:
           REQUEST_PUBLISH: ${{ inputs.publish }}
-          SIGN_ONLY: ${{ inputs.sign_only }}
           PREPARED_ARTIFACT_ID: ${{ inputs.prepared_artifact_id }}
           AUTOMATIC_NIGHTLIES: ${{ vars.BOBS_FACTORY_AUTOMATIC_NIGHTLIES }}
           TOOLING_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -75,8 +69,8 @@ jobs:
           if(r.candidate.workflowSha !== process.env.TOOLING_SHA) throw Error('Dispatch from the frozen tooling ref');
           const automatic=process.env.GITHUB_EVENT_NAME==='workflow_run' && r.candidate.channel==='nightly' && process.env.AUTOMATIC_NIGHTLIES==='enabled';
           const publish=automatic || process.env.REQUEST_PUBLISH==='true';
-          if((publish || process.env.SIGN_ONLY==='true') && !automatic && !prepared) throw Error('Manual publication requires the exact reviewed prepared artifact');
-          appendFileSync(process.env.GITHUB_OUTPUT,`digest=${r.digest}\nchannel=${r.candidate.channel}\npublish=${publish}\nsign=${process.env.SIGN_ONLY==='true'}\n`);
+          if(publish && !automatic && !prepared) throw Error('Manual publication requires the exact reviewed prepared artifact');
+          appendFileSync(process.env.GITHUB_OUTPUT,`digest=${r.digest}\nchannel=${r.candidate.channel}\npublish=${publish}\n`);
           JS
       - uses: actions/upload-artifact@v6
         with:
@@ -97,7 +91,7 @@ jobs:
         with:
           name: release-input-${{ github.run_id }}
           path: ${{ runner.temp }}/input
-      - name: Prepare with read-only credentials; never sign or publish
+      - name: Prepare with read-only credentials
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -117,14 +111,13 @@ jobs:
           if-no-files-found: ignore
   publish:
     needs: [resolve, prepare]
-    if: needs.resolve.outputs.publish == 'true' || needs.resolve.outputs.sign == 'true'
+    if: needs.resolve.outputs.publish == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # All release mutations across versions/channels share this repository lock.
     concurrency:
       group: bobs-factory-repository-publication
       cancel-in-progress: false
-    environment: ${{ needs.resolve.outputs.channel == 'stable' && 'binary-stable-release' || 'binary-nightly-release' }}
     permissions:
       contents: write
       actions: write
@@ -140,11 +133,9 @@ jobs:
         with:
           name: bobs-factory-prepared-release-${{ needs.resolve.outputs.digest }}
           path: ${{ runner.temp }}/public-release
-      - name: Sign and publish only after protected activation or candidate-bound stable approval
+      - name: Publish exact validated assets after rollout activation or candidate-bound stable approval
         env:
           GH_TOKEN: ${{ github.token }}
-          SIGNING_KEY: ${{ secrets.BOBS_FACTORY_RELEASE_SIGNING_KEY }}
-          KEY_ID: ${{ vars.BOBS_FACTORY_RELEASE_KEY_ID }}
           BOBS_FACTORY_AUTOMATIC_NIGHTLIES: ${{ vars.BOBS_FACTORY_AUTOMATIC_NIGHTLIES }}
           BOBS_FACTORY_RELEASE_PUBLICATION_LOCK: repository
           APPROVED_ASSETS_DIGEST: ${{ inputs.approved_assets_digest }}
@@ -152,20 +143,12 @@ jobs:
           CHANNEL: ${{ needs.resolve.outputs.channel }}
           PUBLISH_RELEASE: ${{ needs.resolve.outputs.publish }}
         run: |
-          umask 077
-          trap 'rm -f "$RUNNER_TEMP/release-signing.pem"' EXIT
           candidate="$RUNNER_TEMP/public-release/assets/candidate.json"
           run_id=$(node -p 'JSON.parse(require("fs").readFileSync(process.env.RUNNER_TEMP+"/public-release/assets/release.json")).buildRunId')
-          if [ ! -f "$RUNNER_TEMP/public-release/assets/release.json.sig" ]; then
-            # Stable assets must be signed in a separate protected preparation run before approval.
-            if [ "$CHANNEL" = stable ] && [ "$PUBLISH_RELEASE" = true ]; then echo 'Stable approval requires a previously signed prepared artifact.' >&2; exit 1; fi
-            printf '%s' "$SIGNING_KEY" > "$RUNNER_TEMP/release-signing.pem"
-            export BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE="$RUNNER_TEMP/release-signing.pem"
-          fi
           node --input-type=module -e 'import {readFileSync,writeFileSync} from "node:fs"; const c=JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/public-release/assets/candidate.json")); writeFileSync(process.env.RUNNER_TEMP+"/approval.json",JSON.stringify({candidateDigest:c.digest,assetsDigest:process.env.APPROVED_ASSETS_DIGEST,approvedBy:process.env.APPROVED_BY}))'
           args=()
           if [ "$PUBLISH_RELEASE" = true ]; then args+=(--publish); fi
-          node scripts/publish-binary-release.mjs --candidate "$candidate" --run-id "$run_id" --resume --key-id "$KEY_ID" --approval "$RUNNER_TEMP/approval.json" --output "$RUNNER_TEMP/public-release" "${args[@]}"
+          node scripts/publish-binary-release.mjs --candidate "$candidate" --run-id "$run_id" --resume --approval "$RUNNER_TEMP/approval.json" --output "$RUNNER_TEMP/public-release" "${args[@]}"
       - uses: actions/upload-artifact@v6
         if: always()
         with:

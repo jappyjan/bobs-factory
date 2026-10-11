@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
 	mkdirSync,
 	mkdtempSync,
@@ -9,9 +10,6 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import releaseKeys from "../../../../docs/distribution/release-keys.json" with {
-	type: "json",
-};
 import {
 	discoverReleases,
 	githubClient,
@@ -31,7 +29,7 @@ import type {
 const runFile = promisify(execFile);
 
 /** Public, credential-free canonical discovery; no generic latest or prerelease
- * ordering. The existing release verifier checks signatures, complete signed
+ * ordering. The existing release verifier checks HTTPS digests, complete
  * inventory, frozen source identity and provider tag before choosing a target. */
 export class PublishedUpdateSource implements UpdateSource {
 	constructor(
@@ -41,14 +39,13 @@ export class PublishedUpdateSource implements UpdateSource {
 		private readonly client: ReleaseClient = githubClient("", (url, options) =>
 			fetch(url, { ...options, signal: AbortSignal.timeout(60_000) }),
 		),
-		private readonly keys: Record<string, unknown> = releaseKeys.keys,
 	) {}
 	private candidate(
 		value: VerifiedRelease,
 		channel: UpdateSettings["channel"],
 	): UpdateCandidate {
 		if (value.manifest.channel !== channel)
-			throw new Error("Signed release belongs to another channel.");
+			throw new Error("Release belongs to another channel.");
 		if (!value.manifest.targets[this.target])
 			throw new Error(`Release has no ${this.target} artifact`);
 		return {
@@ -63,16 +60,12 @@ export class PublishedUpdateSource implements UpdateSource {
 	async discover(settings: UpdateSettings, _installed: InstalledUpdate) {
 		if (settings.pin) {
 			const release = await this.client.api(`releases/tags/v${settings.pin}`);
-			const verified = await verifyPublishedRelease(
-				this.client,
-				release,
-				this.keys,
-			);
+			const verified = await verifyPublishedRelease(this.client, release);
 			if (verified.manifest.channel !== settings.channel)
 				throw new Error("Pinned version belongs to another channel.");
 			return this.candidate(verified, settings.channel);
 		}
-		const state = await discoverReleases(this.client, this.keys, {
+		const state = await discoverReleases(this.client, {
 			selectedOnly: true,
 			allowBetaFallback: false,
 		});
@@ -80,11 +73,10 @@ export class PublishedUpdateSource implements UpdateSource {
 		return value ? this.candidate(value, settings.channel) : undefined;
 	}
 	async stage(candidate: UpdateCandidate): Promise<StagedUpdate> {
-		// Reauthenticate immutable release rather than trusting cached local metadata.
+		// Recheck immutable release rather than trusting cached local metadata.
 		const verified = await verifyPublishedRelease(
 			this.client,
 			await this.client.api(`releases/tags/v${candidate.version}`),
-			this.keys,
 		);
 		const selected = this.candidate(verified, candidate.channel);
 		if (JSON.stringify(selected) !== JSON.stringify(candidate))
@@ -97,7 +89,7 @@ export class PublishedUpdateSource implements UpdateSource {
 				(entry) => entry.name === name,
 			);
 			if (!entry || entry.size !== size || entry.digest !== `sha256:${hash}`)
-				throw new Error("Asset is not bound to the signed release");
+				throw new Error("Asset is not bound to the release inventory");
 			return entry;
 		};
 		const downloads = [
@@ -109,18 +101,25 @@ export class PublishedUpdateSource implements UpdateSource {
 				verified.manifest.verifier.sha256,
 			),
 		];
-		for (const entry of downloads)
-			writeFileSync(join(work, entry.name), await this.client.bytes(entry), {
-				flag: "wx",
-				mode: 0o600,
-			});
+		for (const entry of downloads) {
+			const bytes = await this.client.bytes(entry);
+			if (
+				bytes.length !== entry.size ||
+				`sha256:${createHash("sha256").update(bytes).digest("hex")}` !==
+					entry.digest
+			)
+				throw new Error("Downloaded asset integrity mismatch");
+			writeFileSync(join(work, entry.name), bytes, { flag: "wx", mode: 0o600 });
+		}
 		const sidecar = JSON.parse(
 			readFileSync(join(work, target.manifest), "utf8"),
 		);
 		if (
 			sidecar.commit !== candidate.commit ||
 			sidecar.version !== candidate.version ||
-			sidecar.target !== candidate.target
+			sidecar.target !== candidate.target ||
+			sidecar.candidateDigest !== verified.manifest.candidateDigest ||
+			sidecar.workflowSha !== verified.manifest.workflowSha
 		)
 			throw new Error(
 				"Archive manifest identity does not match selected release",
@@ -134,7 +133,16 @@ export class PublishedUpdateSource implements UpdateSource {
 				join(work, target.manifest),
 				prefix,
 			],
-			{ timeout: 120_000 },
+			{
+				timeout: 120_000,
+				env: {
+					...process.env,
+					BOBS_FACTORY_INSTALL_CANDIDATE_DIGEST:
+						verified.manifest.candidateDigest ?? "",
+					BOBS_FACTORY_INSTALL_WORKFLOW_SHA:
+						verified.manifest.workflowSha ?? "",
+				},
+			},
 		);
 		const executable = join(
 			prefix,

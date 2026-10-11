@@ -1,0 +1,29 @@
+# PR96 independent Spec review — round 2
+
+Root result: **REQUEST_CHANGES — 1 P1 Spec finding; no P2 findings.**
+
+PR: https://github.com/jappyjan/bobs-factory/pull/96 (registered; linkage verified).
+Fixed base: `3b198a1ee3bf26eefa536de3a9f5d1a771abf034`.
+Exact head: `3e597d0b70ea3a8a169d14576440b3eabd5ab747`.
+Diff: `git diff BASE...HEAD` using those exact hashes.
+Commits: `81715b61ca17b699d7d4d00c56c4a349dbde1f0a`, `f7ab57ea1699a85272fa610fe9950cb144033cd7`, `0aab1ecbf0fb479f1c95a70aed9f45b160a69afd`, `3e597d0b70ea3a8a169d14576440b3eabd5ab747`.
+Read-only checkout: `/Users/jappy/code/jappy/bobs-factory-unsigned-review-96`; clean before/after. No nested agents or builds.
+
+## Spec
+
+**P1 — Include the new quarantine module in the retained external helper.** The new static import in `apps/desktop/src/app-lifecycle.mjs:14–18` (also `app-source.mjs:17`) requires `app-quarantine.mjs`, but production `app-updates.mjs:72–80` copies only the prior six files outside the app. The retained `app-helper.mjs` therefore fails at module linkage before `reconcile()` or `recover()`. This blocks complete-app Install, automatic activation and recovery on both macOS and Linux: static imports resolve even when the quarantine functions would be platform no-ops. The native-shell validation helper duplicates the omission at `apps/desktop/test/native-shell-update.mjs:356–363`.
+
+Spec: the user requires “the only requirement is that the stuff works”; maintained unsigned acceptance requires “functional unsigned update/policy/rollback validation” (DELIVERY_INTEGRATION_116.md, current supersession). The PR claims functional unsigned complete-app updates through its custom updater.
+
+Concrete isolated repro: `node helper-repro.mjs` in this report directory calls actual `appUpdates.action()` for enrollment, channel configuration, discovery and Install using controlled release fixtures. Staging succeeds; the spawned helper exits without starting an activation transaction. Executing that exact retained helper independently exits **1**, `ERR_MODULE_NOT_FOUND: .../helper/app-quarantine.mjs`. The old app remains untouched. See `helper-repro.log`. Retain this dependency in both helper copy sites and check the actual external helper closure.
+
+Round1 beta approval/output races and the complete-shell F1 linkage defect are corrected. Real macOS xattr preservation also passes. The repaired F1 driver invokes lifecycle methods directly and does not exercise production helper retention, so its PASS cannot catch this new omission. No other concrete spec finding; signature removal is explicitly authorized. Historical identity, immutable inventory/race checks and native credentials remain preserved. Native ad-hoc packaging/quarantined first launch are honestly pending, without new paid, live-provider or physical-passkey gates.
+
+## Independent verification and limits
+
+- **72/72 passed, zero skips:** actual macOS quarantine staging/replacement/recovery; beta attestation approval/output swaps; executable complete-shell F1; unsigned publisher/discovery/source reconstruction/runtime staging/rollback; publication snapshot/upload races and recovery manifest swaps. Exact command/log: `focused-tests.log`.
+- Reproduced the production retained-helper failure separately; no fixture app executable launched.
+- Read current consumers/import closure, publisher snapshots, recovery, installer/package paths, workflows and maintained supersession beyond prior findings.
+- Original round1 reports remain unchanged; both supplied SHA256 values verified.
+- Provider PR head matches the review head. CI: four SUCCESS checks and one SKIPPED deploy; no failures. Recorded in `pr.json`.
+- No checkout edits, native build/freeze/dispatch, signing, merge, publication, production operations or ticket closure.

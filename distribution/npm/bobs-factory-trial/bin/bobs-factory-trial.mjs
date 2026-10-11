@@ -23,8 +23,8 @@ function usage() {
 	console.log(`Usage: npx --yes bobs-factory-trial [options] [-- FACTORY_ARGS...]
 
 Options:
-  --channel stable|nightly   Select the signed release channel (default: stable)
-  --version VERSION          Run one exact signed release version
+  --channel stable|nightly   Select the release channel (default: stable)
+  --version VERSION          Run one exact release version
   --no-open                  Start the dashboard without opening a browser
   --port PORT                Dashboard port (default: 4560; also reserves PORT+1)
   --help                     Show this help

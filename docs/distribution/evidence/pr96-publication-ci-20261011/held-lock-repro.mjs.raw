@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import {spawnSync} from "node:child_process";
+import {pathToFileURL} from "node:url";
+import {join} from "node:path";
+const root=process.argv[2];
+const {withPublicationLock}=await import(pathToFileURL(join(root,"scripts/lib/publication-lock.mjs")));
+await withPublicationLock(async()=>{
+ const result=spawnSync(process.execPath,["--test","--test-name-pattern=partial upload resumes",join(root,"scripts/tests/release-publication.test.mjs")],{cwd:root,encoding:"utf8"});
+ console.log(JSON.stringify({node:process.version,status:result.status,stdout:result.stdout,stderr:result.stderr},null,2));
+ assert.equal(result.status,1);
+ assert.match(result.stdout,/Cannot read properties|Another publication/);
+});

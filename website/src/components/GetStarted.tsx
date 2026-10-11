@@ -92,7 +92,7 @@ export function GetStarted() {
 							<h3 className="font-bold text-ink">1. Install</h3>
 							<p className="mt-1">
 								Paste the install command into your terminal. Bob picks the
-								right binary, verifies the publisher signature and download and
+								right binary, checks the SHA-256 inventory and download and
 								installs it for your user.
 							</p>
 						</li>

@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
 	cpSync,
 	existsSync,
@@ -27,7 +27,6 @@ export function prepareDesktopUpdate({
 	output,
 	candidate,
 	target,
-	unsigned = false,
 	electronLicenses = prepareElectronLicenses(
 		resolve(dirname(fileURLToPath(import.meta.url)), "../apps/desktop"),
 	),
@@ -58,24 +57,26 @@ export function prepareDesktopUpdate({
 			identity.target !== target
 		)
 			throw Error("App differs from frozen desktop candidate");
-		if (!unsigned) {
+		osSigning = "unsigned";
+		if (process.platform === "darwin" && target === "darwin-arm64") {
 			execFileSync("/usr/bin/codesign", [
 				"--verify",
 				"--deep",
 				"--strict",
 				app,
 			]);
-			const result = execFileSync(
+			const detail = spawnSync(
 				"/usr/bin/codesign",
-				["-dv", "--verbose=4", app],
-				{ encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+				["-d", "--verbose=4", app],
+				{ encoding: "utf8" },
 			);
-			// codesign emits certificate detail to stderr; Gatekeeper assessment below is
-			// authoritative for notarized distribution, beyond an ad-hoc valid signature.
-			void result;
-			execFileSync("/usr/sbin/spctl", ["--assess", "--type", "execute", app]);
-			osSigning = "developer-id-notarized";
-		} else osSigning = "unsigned";
+			if (detail.status !== 0 || !/^Signature=adhoc$/m.test(detail.stderr))
+				throw Error(
+					"Apple Silicon packaging requires a local ad-hoc Mach-O signature",
+				);
+			osSigning = "ad-hoc";
+		}
+
 		const container = join(output, "app-update-container");
 		if (existsSync(container))
 			throw Error("Retained app update container requires inspection");
@@ -92,9 +93,8 @@ export function prepareDesktopUpdate({
 			writeFileSync(join(output, archive.file), packApp(container), {
 				flag: "wx",
 			});
-			// Validate the deliverable itself, including OS assessment after the exact
-			// extraction used by clients. Never infer preserved notarization from the
-			// original bundle or relabel an unsigned recovery archive as signed.
+			// Validate the deliverable itself, after the exact
+			// extraction used by clients. The complete fingerprint binds every retained app byte.
 			const extracted = join(container, "roundtrip");
 			unpackApp(readFileSync(join(output, archive.file)), extracted);
 			const restored = join(extracted, "Bob's Factory.app");
@@ -103,21 +103,7 @@ export function prepareDesktopUpdate({
 				electronLicenses,
 			);
 			if (appFingerprint(restored, target) !== appFingerprint(app, target))
-				throw Error("Recovered app differs from original signed bundle");
-			if (!unsigned) {
-				execFileSync("/usr/bin/codesign", [
-					"--verify",
-					"--deep",
-					"--strict",
-					restored,
-				]);
-				execFileSync("/usr/sbin/spctl", [
-					"--assess",
-					"--type",
-					"execute",
-					restored,
-				]);
-			}
+				throw Error("Recovered app differs from original bundle");
 		} finally {
 			rmSync(container, { recursive: true, force: true });
 		}
@@ -167,7 +153,6 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 			output: { type: "string" },
 			candidate: { type: "string" },
 			target: { type: "string" },
-			unsigned: { type: "boolean", default: false },
 		},
 	});
 	if (!values.app || !values.output || !values.candidate || !values.target)
