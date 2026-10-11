@@ -1,3 +1,5 @@
+import { dirname, join } from "node:path";
+import { digest, tree, unpackApp } from "./app-archive.mjs";
 import {
 	accessSync,
 	constants,
@@ -7,9 +9,7 @@ import {
 	readFileSync,
 	realpathSync,
 	writeFileSync,
-} from "node:fs";
-import { dirname, join } from "node:path";
-import { digest, tree, unpackApp } from "./app-archive.mjs";
+} from "./app-filesystem.mjs";
 import {
 	validateElectronLicenses,
 	verifyElectronLicenses,

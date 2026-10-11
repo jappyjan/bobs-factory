@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { lstatSync } from "node:fs";
+import { lstatSync } from "./app-filesystem.mjs";
 
 // Host-owned per-app OS metadata is separate from the published byte inventory.
 // Never delete quarantine or change Gatekeeper settings; metadata errors block.

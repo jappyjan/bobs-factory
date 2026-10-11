@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { dirname, join, posix } from "node:path";
+import { gunzipSync, gzipSync } from "node:zlib";
 import {
 	existsSync,
 	lstatSync,
@@ -8,9 +10,7 @@ import {
 	readlinkSync,
 	symlinkSync,
 	writeFileSync,
-} from "node:fs";
-import { dirname, join, posix } from "node:path";
-import { gunzipSync, gzipSync } from "node:zlib";
+} from "./app-filesystem.mjs";
 export const digest = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
 const safe = (name) =>
