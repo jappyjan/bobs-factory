@@ -250,10 +250,12 @@ try {
 			origin: base,
 		});
 		assert.equal(status.cookie, null);
-		assert.equal(
-			(await request("/api/config", "GET", undefined, {}, base)).status,
-			200,
-		);
+		const config = await request("/api/config", "GET", undefined, {}, base);
+		assert.equal(config.status, 200);
+		assert.equal(config.value.onboarding.required, true);
+		const setup = await request("/api/onboarding", "GET", undefined, {}, base);
+		assert.equal(setup.status, 200);
+		assert.equal(setup.value.required, true);
 	}
 	check(
 		"actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment",
@@ -271,14 +273,17 @@ try {
 		)
 			await new Promise((done) => setTimeout(done, 100));
 	}
-	const configured = await request("/api/onboarding/project", "POST", {
-		repositoryPath: repository,
-		runner: "codex",
-	});
+	const configured = await request(
+		"/api/onboarding/project",
+		"POST",
+		{ repositoryPath: repository, runner: "codex" },
+		{},
+		`http://[::1]:${port}`,
+	);
 	assert.equal(configured.status, 200, JSON.stringify(configured.value));
 	assert.equal(configured.value.required, false);
 	check(
-		"project onboarding mutation completes without authentication (prepared-tool stubs only)",
+		"IPv6 project onboarding mutation completes without authentication (prepared-tool stubs only)",
 	);
 	const recipe = {
 		id: "local-access",

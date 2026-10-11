@@ -584,10 +584,7 @@ export class FactoryServer {
 		this.app.get("/api/config", async (request) => ({
 			updates: updates.status(),
 			onboarding:
-				hooks.onboarding &&
-				["localhost", "127.0.0.1"].includes(
-					new URL(originFor(request)!).hostname,
-				)
+				hooks.onboarding && localFor(request)
 					? await hooks.onboarding.status()
 					: undefined,
 			capacity: await hooks.capacity?.snapshot(),
@@ -614,11 +611,7 @@ export class FactoryServer {
 		}));
 		const localOnboarding = (request: FastifyRequest) => {
 			if (!hooks.onboarding) throw new Error("Local setup is unavailable");
-			if (
-				!["localhost", "127.0.0.1"].includes(
-					new URL(originFor(request)!).hostname,
-				)
-			)
+			if (!localFor(request))
 				throw new Error("Complete machine setup at the localhost address");
 			return hooks.onboarding;
 		};
