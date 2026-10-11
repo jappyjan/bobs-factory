@@ -6,6 +6,9 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+import sys
+
+sys.dont_write_bytecode = True
 
 spec = importlib.util.spec_from_file_location("relink", Path(__file__).with_name("linux-x64.py"))
 relink = importlib.util.module_from_spec(spec)

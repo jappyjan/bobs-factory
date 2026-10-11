@@ -70,7 +70,7 @@ class Diagnostic:
         self.budget_checked = 0
         self.env = dict(os.environ)
         for key in list(self.env):
-            if key in ("CI", "BUILDKITE", "GITHUB_TOKEN", "GH_TOKEN") or "TOKEN" in key:
+            if key in ("CI", "BUILDKITE", "GITHUB_ACTIONS", "GITHUB_TOKEN", "GH_TOKEN") or "TOKEN" in key:
                 self.env.pop(key)
         self.receipt = {"purpose": "engineering diagnostic; no release/license acceptance",
                         "unchangedRelink": False, "modifiedLibraryRelink": False,
@@ -90,8 +90,14 @@ class Diagnostic:
         # Incremental reservations bound extraction/downloads before every write.
         # Periodic inventories also capture output growth by owned subprocesses.
         if time.monotonic() - self.budget_checked >= 10:
-            self.reserved = sum(p.lstat().st_size for folder in (self.root, self.evidence)
-                                for p in folder.rglob("*") if not p.is_symlink())
+            self.reserved = 0
+            for folder in (self.root, self.evidence):
+                for p in folder.rglob("*"):
+                    try:
+                        if not p.is_symlink():
+                            self.reserved += p.lstat().st_size
+                    except FileNotFoundError:
+                        pass  # Owned linker temporaries can disappear during inventory.
             self.budget_checked = time.monotonic()
         if self.reserved + additional > 25 * GIB:
             raise RuntimeError("25 GiB owned task budget would be exceeded")
@@ -115,7 +121,10 @@ class Diagnostic:
                         raise RuntimeError(f"{name}: command deadline exceeded")
                     time.sleep(2)
             except BaseException:
-                os.killpg(proc.pid, signal.SIGKILL)
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
                 proc.wait()
                 raise
         record["exitCode"] = proc.returncode
@@ -207,6 +216,8 @@ class Diagnostic:
             self.extract(files[kind], dest, 1)
             self.run(["sh", dest / "install.sh", "--prefix=" + str(self.root / "rust-toolchain"),
                       "--disable-ldconfig"], "install-" + kind)
+        for directory in ("llvm", "rust-toolchain", "node"):
+            self.inventory(self.root / directory, directory + "-files.jsonl")
         sysroot.mkdir()
         for r, deb in sysroot_debs:
             self.run(["dpkg-deb", "-x", deb, sysroot], "extract-" + r["package"])
@@ -227,7 +238,12 @@ class Diagnostic:
             r = next(r for r in manifest["downloads"] if r["kind"] == kind)
             self.guard(r["expandedSize"])
             with gzip.open(files[kind]) as src, out.open("xb") as dst:
-                shutil.copyfileobj(src, dst)
+                size = 0
+                while block := src.read(4 * 1024**2):
+                    size += len(block)
+                    if size > r["expandedSize"]:
+                        raise RuntimeError(f"Expanded object bound exceeded: {kind}")
+                    dst.write(block)
             if out.stat().st_size != r["expandedSize"] or sha256(out) != r["expandedSha256"]:
                 raise RuntimeError(f"Expanded object identity mismatch: {kind}")
         webkit = cache / "webkit-2e2aa2290fac856d-lto"
@@ -248,8 +264,12 @@ class Diagnostic:
         base = self.root / "published-bun"
         base.mkdir()
         with zipfile.ZipFile(files["base-runtime"]) as z:
-            data = z.read("bun-linux-x64/bun")
-        (base / "bun").write_bytes(data)
+            entry = z.getinfo("bun-linux-x64/bun")
+            if entry.file_size > GIB:
+                raise RuntimeError("Published runtime expansion bound exceeded")
+            self.guard(entry.file_size)
+            with z.open(entry) as src, (base / "bun").open("xb") as dst:
+                shutil.copyfileobj(src, dst)
         (base / "bun").chmod(0o755)
         if sha256(base / "bun") != manifest["expectedBaseRuntimeSha256"]:
             raise RuntimeError("Published base runtime identity mismatch")
@@ -274,6 +294,8 @@ class Diagnostic:
                  "llvm-objcopy": str(self.root / "llvm/bin/llvm-objcopy")}
         tools.update({k: cfg[k] for k in ("cc", "cxx", "ar", "ranlib", "ld", "strip", "cargo") if cfg.get(k)})
         tools["rustc"] = str(self.root / "rust-toolchain/bin/rustc")
+        tools.update({name: shutil.which(name, path=self.env["PATH"])
+                      for name in ("ninja", "cmake", "readelf")})
         identities = []
         for name, path in tools.items():
             version = self.run([path, "-vV" if name == "rustc" else "--version"], "version-" + name, source)
@@ -352,6 +374,10 @@ def main():
         task.receipt["phase"] = "FAIL"
         raise
     finally:
+        for name in ("build.ninja", "configure.json", "linker.order", "bun-profile.rsp", "bun-profile.linker-map"):
+            path = task.root / "build" / name
+            if path.is_file():
+                shutil.copyfile(path, task.evidence / name)
         task.receipt["elapsedSeconds"] = round(time.monotonic() - task.start, 3)
         task.save()
 
