@@ -32,7 +32,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node docs/distribution/acceptance/verify-frozen-runtime.mjs "$RUNNER_TEMP/frozen-service-runtime"
       - name: Verify cancellation cleanup protocol
-        run: node --test docs/distribution/acceptance/owned-cleanup.test.mjs docs/distribution/acceptance/service-protocol.test.mjs
+        run: node --test docs/distribution/acceptance/owned-cleanup.test.mjs docs/distribution/acceptance/service-protocol.test.mjs docs/distribution/acceptance/owned-fixture.test.mjs
       - name: Exercise only disposable per-home user services
         env:
           BOBS_FACTORY_ACCEPTANCE_HANDOFF: fixture-only

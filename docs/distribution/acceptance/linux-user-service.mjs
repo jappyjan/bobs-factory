@@ -20,8 +20,10 @@ import { homedir, tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { desktopExecutable } from "../../../apps/desktop/src/local-runtime.mjs";
+import { managerWrapper } from "./manager-wrapper.mjs";
 import { withOwnedCleanup } from "./owned-cleanup.mjs";
 import { startOwnedCommand } from "./owned-command.mjs";
+import { persistRegistry, registryVariable } from "./owned-registry.mjs";
 import {
 	properties,
 	startLimitEvidence,
@@ -64,6 +66,19 @@ const receipt = {
 	harnessSha256: createHash("sha256")
 		.update(readFileSync(new URL(import.meta.url)))
 		.digest("hex"),
+	ownershipHelperSha256: Object.fromEntries(
+		[
+			"owned-command-child.mjs",
+			"owned-registry.mjs",
+			"owned-fixture.mjs",
+			"manager-wrapper.mjs",
+		].map((name) => [
+			name,
+			createHash("sha256")
+				.update(readFileSync(new URL(name, import.meta.url)))
+				.digest("hex"),
+		]),
+	),
 	source: JSON.parse(readFileSync(join(process.argv[2], "build.json"))).commit,
 	assertions: [],
 	limits: [
@@ -151,7 +166,12 @@ const command = async (...args) => {
 	);
 	receipt.interruptPhase = interruptPhase;
 	receipt.managerBoundary = readFileSync(marker, "utf8");
-	process.kill(process.pid, interrupt);
+	if (process.env.BOBS_FACTORY_ACCEPTANCE_OUTER_TIMEOUT === "true") {
+		persistRegistry(`${receiptPath}.manager-boundary`, {
+			phase: interruptPhase,
+			args: JSON.parse(receipt.managerBoundary),
+		});
+	} else process.kill(process.pid, interrupt);
 	const result = await outcome;
 	if (result.error) throw result.error;
 	assert.fail("Cancelled manager command unexpectedly completed");
@@ -214,8 +234,22 @@ const updaterId = managedId.replace(/\.service$/, ".updates.service");
 // Register before ANY installation can write either definition or submit a job.
 units.push(externalId, managedId, updaterId);
 const definitions = new Map();
+const groupRegistry = process.env[registryVariable];
+const registerFixture = () => {
+	if (groupRegistry)
+		persistRegistry(join(groupRegistry, "fixture.json"), {
+			root,
+			unitDirectory,
+			units: units.map((unit) => ({
+				unit,
+				bytes: definitions.get(unit) ?? null,
+			})),
+		});
+};
+registerFixture();
 const writeOwnedDefinition = (path, bytes, options) => {
 	definitions.set(basename(path), bytes);
+	registerFixture();
 	writeFileSync(path, bytes, options);
 };
 const verifyDefinition = (unit) => {
@@ -398,7 +432,7 @@ await withOwnedCleanup({
 			"local",
 		);
 		assert(!existsSync(join(home, "runtime", "service.json")));
-		foreground.child.kill("SIGTERM");
+		foreground.signal("SIGTERM");
 		await until(
 			async () => !alive(foreground.child.pid) && !(await status()).owner,
 			"manual graceful handoff",
@@ -444,26 +478,9 @@ await withOwnedCleanup({
 			// Gate the real execFileSync descendant. The delayed manager command would
 			// mutate after parent exit unless the owned group is drained. start --no-block
 			// also submits an actual manager job before cancellation/reconciliation.
-			writeFileSync(
-				join(bin, "systemctl"),
-				`#!${process.execPath}
-const {execFileSync,spawn}=require('node:child_process');
-const {writeFileSync}=require('node:fs');
-const args=process.argv.slice(2), gate=process.env.BOBS_FACTORY_ACCEPTANCE_MANAGER_GATE;
-const real=${JSON.stringify(systemctl)};
-if(gate && (args.includes('daemon-reload') || args.includes('start'))) {
-  if(args.includes('start')) execFileSync(real,[...args,'--no-block']);
-  const script="setTimeout(()=>{require('node:fs').writeFileSync(process.argv[1],'escaped');require('node:child_process').execFileSync(process.argv[2],JSON.parse(process.argv[3]));},500);";
-  spawn(process.execPath,['-e',script,process.env.BOBS_FACTORY_ACCEPTANCE_LATE_MUTATION,real,JSON.stringify(args)],{stdio:'ignore'});
-  writeFileSync(gate,JSON.stringify(args));
-  setInterval(()=>{},1000);
-} else {
-  try { process.stdout.write(execFileSync(real,args,{encoding:'utf8'})); }
-  catch(e) { process.stderr.write(String(e.stderr)); process.exit(e.status || 1); }
-}
-`,
-				{ mode: 0o700 },
-			);
+			writeFileSync(join(bin, "systemctl"), managerWrapper(systemctl), {
+				mode: 0o700,
+			});
 			cliEnvironment = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
 		}
 		for (const [unit, updater] of [
@@ -486,6 +503,7 @@ if(gate && (args.includes('daemon-reload') || args.includes('start'))) {
 				`[Unit]\nDescription=Bob's Factory (${id})\nStartLimitIntervalSec=120\nStartLimitBurst=3\n\n[Service]\nType=simple\nWorkingDirectory=${home.replaceAll("%", "%%")}\nExecStart=${args.map(quote).join(" ")}\nEnvironment=${quote(`BOBS_FACTORY_SERVICE_ID=${id}`)}\nEnvironment=${quote(`PATH=${cliEnvironment.PATH}`)}\nRestart=on-failure\nRestartSec=10\nTimeoutStopSec=infinity\nSendSIGKILL=no\nKillMode=mixed\n\n[Install]\nWantedBy=default.target\n`,
 			);
 		}
+		registerFixture();
 		if (interruptPhase === "initial-install") gateOperation = "install";
 		await command("install", "--executable", executable, "--mode", "local");
 		record = await status();
@@ -663,7 +681,6 @@ if(gate && (args.includes('daemon-reload') || args.includes('start'))) {
 	},
 	cleanup: async () => {
 		cleaning = true;
-		await capture("before-teardown");
 		if (probe.listening) await new Promise((resolve) => probe.close(resolve));
 		const cleanupErrors = [];
 		foreground?.kill();
@@ -676,6 +693,7 @@ if(gate && (args.includes('daemon-reload') || args.includes('start'))) {
 			cleanupErrors.push(
 				"Command group did not drain before manager reconciliation",
 			);
+		await capture("before-teardown");
 		for (const unit of new Set(units)) {
 			try {
 				await stopOwnedUnit({
