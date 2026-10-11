@@ -43,6 +43,7 @@ test("unsigned publisher → discovery → prepared/offline chunks → updater p
 				encoding: "utf8",
 				env: {
 					...process.env,
+					TMPDIR: f.work,
 					GH_TOKEN: "synthetic-test-token",
 					BOBS_FACTORY_TEST_PROVIDER: provider,
 					BOBS_FACTORY_AUTOMATIC_NIGHTLIES: "enabled",

@@ -75,6 +75,9 @@ function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
 				timeout,
 				env: {
 					...process.env,
+					// Each fixture has its own simulated repository/provider. Share its
+					// lock across retries without contending with unrelated test files.
+					TMPDIR: f.work,
 					GH_TOKEN: "synthetic-test-token",
 					BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE: "",
 					BOBS_FACTORY_AUTOMATIC_NIGHTLIES: "enabled",
@@ -351,7 +354,11 @@ test("partial upload resumes only missing assets and Pages recovery only dispatc
 	const f = setup("nightly", { fault: "upload-before:candidate.json" });
 	try {
 		const first = f.run();
-		assert.notEqual(first.status, 0);
+		assert.equal(first.status, 1, first.stderr || first.error?.message);
+		assert.match(
+			first.stderr,
+			/Simulated timeout: upload-before:candidate.json/,
+		);
 		const partial = f.state();
 		assert.equal(partial.release.draft, true);
 		assert.ok(partial.assets.length > 0);
@@ -585,6 +592,20 @@ test("stale nightly candidate does not create a tag or draft", () => {
 			f.state().operations.filter((o) => o.method !== "GET"),
 			[],
 		);
+	} finally {
+		f.cleanup();
+	}
+});
+
+test("independent simulated publisher is isolated from another fixture's publication lock", async () => {
+	const f = setup();
+	try {
+		await withPublicationLock(async () => {
+			const result = f.run();
+			assert.equal(result.status, 0, result.stderr || result.error?.message);
+			assert.equal(f.state().release.draft, false);
+			assert.equal(f.state().assets.length, f.records.length);
+		});
 	} finally {
 		f.cleanup();
 	}
