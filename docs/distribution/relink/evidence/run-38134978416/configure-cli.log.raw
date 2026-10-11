@@ -1,0 +1,10 @@
+[configured] bun-profile → bun (stripped)
+  target       linux-x64-gnu
+  build type   Release
+  build dir    ./../build
+  revision     744846f844
+  features     lto, baseline, canary:off, mode:link-only
+
+0 deps, 0 codegen, 0 objects in 175ms
+
+run: ninja -C /home/runner/work/_temp/relink-task-38134978416-1/build

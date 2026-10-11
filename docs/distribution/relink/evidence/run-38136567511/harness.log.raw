@@ -1,0 +1,80 @@
+install-rustc
+install-cargo
+extract-libc6
+extract-libc6-dev
+extract-linux-libc-dev
+extract-libcrypt1
+extract-libcrypt-dev
+extract-gcc13-cpp-13_13.1.0-8ubuntu1~20.04.2_amd64
+extract-gcc13-g++-13_13.1.0-8ubuntu1~20.04.2_amd64
+extract-gcc13-gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64
+extract-gcc13-gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64
+extract-gcc13-gcc-13_13.1.0-8ubuntu1~20.04.2_amd64
+extract-gcc13-gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libasan6_11.5.0-10ubuntu1~20~ppa3_amd64
+extract-gcc13-libasan8_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64
+extract-gcc13-libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libitm1_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64
+extract-gcc13-libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64
+extract-gcc13-libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64
+extract-gcc13-libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64
+configure-cli
+capture-config
+version-node
+version-llvm-objcopy
+version-cc
+version-cxx
+version-ar
+version-ranlib
+version-ld
+version-strip
+version-cargo
+version-rustc
+version-ninja
+version-cmake
+version-readelf
+original-ninja-commands
+restricted-ninja-commands
+link-dry-run
+unchanged-link
+relinked-elf
+published-elf
+unchanged-native-version
+unchanged-native-revision
+unchanged-native-full-identity
+unchanged-native-hello
+unchanged-native-library-behavior
+injection-compile
+injection-native
+webkit-original-object
+webkit-compile-unmodified
+webkit-compile-modified
+webkit-replace-member
+modified-library-link
+modified-native-version
+modified-native-revision
+modified-native-full-identity
+modified-native-hello
+modified-native-library-behavior
+Traceback (most recent call last):
+  File "/home/runner/work/bobs-factory/bobs-factory/docs/distribution/relink/linux-x64.py", line 432, in <module>
+    main()
+  File "/home/runner/work/bobs-factory/bobs-factory/docs/distribution/relink/linux-x64.py", line 407, in main
+    task.execute(manifest, here, args.mode)
+  File "/home/runner/work/bobs-factory/bobs-factory/docs/distribution/relink/linux-x64.py", line 373, in execute
+    modified_library_trial(self, manifest, files, source, build, webkit, sysroot)
+  File "/home/runner/work/bobs-factory/bobs-factory/docs/distribution/relink/webkit_trial.py", line 206, in modified_library_trial
+    task.native_smoke(build / "bun", bun_source, manifest, "modified", 116000000)
+  File "/home/runner/work/bobs-factory/bobs-factory/docs/distribution/relink/linux-x64.py", line 392, in native_smoke
+    raise RuntimeError(f"Unexpected native library behavior: {output!r}")
+RuntimeError: Unexpected native library behavior: '[86400000,172800000,42]\n'

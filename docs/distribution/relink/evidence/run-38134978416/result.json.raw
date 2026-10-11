@@ -1,0 +1,214 @@
+{
+  "purpose": "engineering diagnostic; no release/license acceptance",
+  "unchangedRelink": true,
+  "modifiedLibraryRelink": false,
+  "nativeSmoke": false,
+  "exactBaseBytes": true,
+  "phase": "FAIL",
+  "host": {
+    "system": "Linux",
+    "node": "runnervmmprz5",
+    "release": "6.17.0-1022-azure",
+    "version": "#22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026",
+    "machine": "x86_64",
+    "processor": "x86_64"
+  },
+  "pins": {
+    "schemaVersion": 1,
+    "purpose": "Engineering diagnostic only; no schema-2 source/license acceptance",
+    "bunRevision": "744846f844374847c902b5e7fd59b4342a51ef99",
+    "webkitRevision": "2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+    "factoryBase": "c3cc8644ac34c53b185e6b8598966fcf366497ca",
+    "expectedBaseRuntimeSha256": "a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c",
+    "originalHost": "aarch64 Debian13; original compiler micro-version and sysroot digests unobserved",
+    "sysrootReconstruction": "focal debs and upstream GCC13 overlay; original ubuntu image layer and package digests unobserved; equivalence requires actual compare",
+    "researchBindings": {
+      "report": "e4d89774f889ad9eff03a2a52e09163a359f56c18cda1e1ff06c4345e2c31b06",
+      "index": "674f13dac1e686c1524a9541d032acd5c8db78d3d4245cd0e05d8d220153f9cc",
+      "baseRecord": "7b80048b687c447cb4bc28d6648a3d889d99afc431d3708224055f1a9c362281"
+    },
+    "downloads": [
+      {
+        "file": "bun-source.tar.gz",
+        "url": "https://codeload.github.com/oven-sh/bun/tar.gz/744846f844374847c902b5e7fd59b4342a51ef99",
+        "sha256": "25e09a8804535b8fbea1dad9f95af8402fc9133d28127d5594ff00df1549590e",
+        "size": 64602344,
+        "kind": "bun-source"
+      },
+      {
+        "file": "linux-x64-libbun-profile.a.gz",
+        "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3c-fbc2-4ffb-b558-4f7dc83c1dc3",
+        "sha256": "9b23771fd04a9264632d43948dfd01faf18a33c80c67811c80d96cab7d508615",
+        "size": 58318422,
+        "kind": "cpp",
+        "expandedSha256": "df05f203601386b2d46502c7f0a383dc1bb4374d428624becb35bbbf80a0af6f",
+        "expandedSize": 110919020
+      },
+      {
+        "file": "linux-x64-libbun-runtime.a.gz",
+        "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3e-65ca-4a75-ae23-66869e48b801",
+        "sha256": "a6e202069dbc1d3a2ab1c4796efa6ac277d144469c71b89a8908c5ec77593da3",
+        "size": 88579341,
+        "kind": "rust",
+        "expandedSha256": "d3f22508ee8ffc35563502844d0ebe53089b10c486193b28590c6963c4918539",
+        "expandedSize": 212759566
+      },
+      {
+        "file": "release-bun-linux-x64.zip",
+        "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-x64.zip",
+        "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+        "size": 36646985,
+        "kind": "base-runtime"
+      },
+      {
+        "file": "bun-webkit-linux-amd64-lto.tar.gz",
+        "url": "https://github.com/oven-sh/WebKit/releases/download/autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057/bun-webkit-linux-amd64-lto.tar.gz",
+        "sha256": "8f68d22b67fc0b72fb81b808aaf996a8a228cbaad193fd574d3b8655258db8b9",
+        "size": 247437947,
+        "kind": "webkit-cache"
+      },
+      {
+        "file": "bun-linux-x64.order",
+        "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110317/jobs/01a06f18-d628-4b82-90e0-c0ed541825f0/artifacts/01a06f1e-c69b-4e77-9d98-7dbcd407f6e4",
+        "sha256": "32c24058f67945853c9e97c35a8dd6ece17b7c493249dab1a442a20250c20dd3",
+        "size": 1156033,
+        "kind": "order"
+      },
+      {
+        "kind": "llvm",
+        "file": "LLVM-21.1.8-Linux-X64.tar.xz",
+        "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/LLVM-21.1.8-Linux-X64.tar.xz",
+        "sha256": "b3b7f2801d15d50736acea3c73982994d025b01c2f035b91ae3b49d1b575732b",
+        "size": 2019005384
+      },
+      {
+        "kind": "gcc13",
+        "file": "gcc-13-focal-amd64.tar.gz",
+        "url": "https://github.com/oven-sh/WebKit/releases/download/gcc-13-focal-debs/gcc-13-focal-amd64.tar.gz",
+        "sha256": "a2b3b6e10b175bbaaefeb3e9e703ca26a97ed6c1f19ca842d3e0b0c8f941e65b",
+        "size": 222044996
+      },
+      {
+        "kind": "node",
+        "file": "node-v26.3.0-linux-x64.tar.xz",
+        "url": "https://nodejs.org/dist/v26.3.0/node-v26.3.0-linux-x64.tar.xz",
+        "sha256": "0ce210831380ab75a5fec0d3fb6b5af0958898016b2cae51cc2fa11057d2f77e",
+        "maxBytes": 83886080
+      },
+      {
+        "kind": "rustc",
+        "file": "rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+        "url": "https://static.rust-lang.org/dist/2026-07-20/rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+        "sha256": "a0e461ac8f2ec75b38cd9590188db2d90e0acde3279434194a0ecebd7c099fa0",
+        "maxBytes": 419430400
+      },
+      {
+        "kind": "cargo",
+        "file": "cargo-nightly-x86_64-unknown-linux-gnu.tar.xz",
+        "url": "https://static.rust-lang.org/dist/2026-07-20/cargo-nightly-x86_64-unknown-linux-gnu.tar.xz",
+        "sha256": "4e5500fc62034d3b42450a921f408ee9e4aacd5e6de52a78fd736d6215889a38",
+        "maxBytes": 419430400
+      },
+      {
+        "file": "focal-updates-Packages.gz",
+        "url": "https://archive.ubuntu.com/ubuntu/dists/focal-updates/main/binary-amd64/Packages.gz",
+        "size": 4849575,
+        "sha256": "5d5f00c4b3b398a0c3e8066a99fc5e8673fcb59368139e941da288c99e421ca2",
+        "kind": "sysroot-index"
+      },
+      {
+        "file": "focal-Packages.gz",
+        "url": "https://archive.ubuntu.com/ubuntu/dists/focal/main/binary-amd64/Packages.gz",
+        "size": 1274738,
+        "sha256": "f25bb719a900d962a4df25cbb20f0a54a23d9f16c3fcdc4f4872ead131f5a604",
+        "kind": "sysroot-index"
+      },
+      {
+        "file": "libc6_2.31-0ubuntu9.18_amd64.deb",
+        "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.31-0ubuntu9.18_amd64.deb",
+        "size": 2720364,
+        "sha256": "1b2281aac4935dfea1f89dfc19e445fdbb45303202af60679ccb8bf035f081a0",
+        "package": "libc6",
+        "version": "2.31-0ubuntu9.18",
+        "kind": "sysroot-deb"
+      },
+      {
+        "file": "libc6-dev_2.31-0ubuntu9.18_amd64.deb",
+        "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6-dev_2.31-0ubuntu9.18_amd64.deb",
+        "size": 2519636,
+        "sha256": "11029900f2315b93ce487792ae1bf15f0927e5e50880c091e6a440b14d4e164a",
+        "package": "libc6-dev",
+        "version": "2.31-0ubuntu9.18",
+        "kind": "sysroot-deb"
+      },
+      {
+        "file": "linux-libc-dev_5.4.0-216.236_amd64.deb",
+        "url": "https://archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-libc-dev_5.4.0-216.236_amd64.deb",
+        "size": 1110608,
+        "sha256": "70c9addd36aabd2d031d5ea0fc444f8b193027aef79ff3d8275d25800aed8ede",
+        "package": "linux-libc-dev",
+        "version": "5.4.0-216.236",
+        "kind": "sysroot-deb"
+      },
+      {
+        "file": "libcrypt1_4.4.10-10ubuntu4_amd64.deb",
+        "url": "https://archive.ubuntu.com/ubuntu/pool/main/libx/libxcrypt/libcrypt1_4.4.10-10ubuntu4_amd64.deb",
+        "size": 78204,
+        "sha256": "231b4dbbe5865775f118cfa61394f1e16fa7102b6953a327e672499a20876d73",
+        "package": "libcrypt1",
+        "version": "1:4.4.10-10ubuntu4",
+        "kind": "sysroot-deb"
+      },
+      {
+        "file": "libcrypt-dev_4.4.10-10ubuntu4_amd64.deb",
+        "url": "https://archive.ubuntu.com/ubuntu/pool/main/libx/libxcrypt/libcrypt-dev_4.4.10-10ubuntu4_amd64.deb",
+        "size": 104104,
+        "sha256": "f0a41d8e8cf379dbbdfc43169f34851ed452b3581e72c6654f2e290caf4e1b20",
+        "package": "libcrypt-dev",
+        "version": "1:4.4.10-10ubuntu4",
+        "kind": "sysroot-deb"
+      }
+    ],
+    "webkitLibraries": [
+      {
+        "file": "libbmalloc.a",
+        "size": 484978,
+        "sha256": "a432f5cc033ab66077d40047f84017937a9e03e55cef05dbad8360a30c7541bd"
+      },
+      {
+        "file": "libicudata.a",
+        "size": 12242982,
+        "sha256": "6ff546fab4ecce092ad07d96c67e246a826724ac400343973918c1e4053e0839"
+      },
+      {
+        "file": "libWTF.a",
+        "size": 8317998,
+        "sha256": "3c1860522bd289b6a217d9b2bc5d6c549d272adbb38ed627c81ca6cef306cc14"
+      },
+      {
+        "file": "libicuuc.a",
+        "size": 6375236,
+        "sha256": "d01f5744de17c2932822c496d6cd6bdd0b3bc7e10b586360d1c32b744d1168e5"
+      },
+      {
+        "file": "libicui18n.a",
+        "size": 13463432,
+        "sha256": "6f0d8415eeab279de3c74ab00adc84d7dcfd5e7cb9ac3e4e6bfa14d766f552b2"
+      },
+      {
+        "file": "libJavaScriptCore.a",
+        "size": 209645194,
+        "sha256": "4ff9477f0a72018cecd90918e507f06d4f5a66e9486214ca43f6238bc2215c8d"
+      }
+    ]
+  },
+  "configure": true,
+  "outputSha256": "a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c",
+  "profileSha256": "45b419f6b15af79a913836a2ccca6a72528eaf464be71b7bd31b56339b602ec7",
+  "outputSize": 79500640,
+  "profileSize": 158819840,
+  "residualAnalysis": "byte-identical",
+  "error": "Unexpected native revision: '1.4.2+744846f84\\n'",
+  "failedPhase": "unchanged-link",
+  "elapsedSeconds": 613.079
+}
