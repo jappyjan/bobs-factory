@@ -22,8 +22,13 @@ prepares only the desktop recipes. The default `all` requires both. URLs contain
 version tag, never a mutable latest/nightly pointer. Missing, corrupt, partial or
 conflicting packages fail closed. `verification.json` binds generated recipes to
 the release manifest digest, publisher, candidate, commit and byte checksums.
-The minimum desktop targets are macOS 13+ and Linux glibc 2.35+, ARM64/x64,
-subject to the desktop lane's native proof. Windows and musl are unsupported.
+The first-release supported desktop targets are macOS 15+ and Ubuntu 24.04 /
+glibc 2.39+, ARM64/x64. Native observations are macOS 15.7.9 and Ubuntu
+24.04.5 / glibc 2.39 on both architectures; they do not establish support for
+macOS 15.0, every Ubuntu 24.04 image, or other Linux distributions. The frozen
+macOS app still declares `LSMinimumSystemVersion` 13, an inherited technical
+launch minimum rather than evidence of tested or supported macOS 13/14. Windows
+and musl are unsupported.
 
 The generated material contains:
 

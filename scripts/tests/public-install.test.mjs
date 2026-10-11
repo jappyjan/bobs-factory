@@ -1114,8 +1114,20 @@ test("recipes require unsigned complete published desktop packages and immutable
 
 		assert.match(recipes["Casks/bobs-factory.rb"], /mac-#\{arch\}.dmg/);
 		assert.match(
+			recipes["Casks/bobs-factory.rb"],
+			/depends_on macos: ">= :sequoia"/,
+		);
+		assert.match(
 			recipes["aur/bobs-factory-desktop-bin/PKGBUILD"],
 			/sha256sums_aarch64/,
+		);
+		assert.match(
+			recipes["aur/bobs-factory-desktop-bin/PKGBUILD"],
+			/depends=\('glibc>=2\.39'/,
+		);
+		assert.match(
+			recipes["aur/bobs-factory-desktop-bin/.SRCINFO"],
+			/depends = glibc>=2\.39/,
 		);
 		const desktop = manifest.desktop;
 		delete manifest.desktop;
