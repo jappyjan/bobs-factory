@@ -382,3 +382,27 @@ changes occur. Taskbot116/122/124 statuses and macOS15/Ubuntu24.04-glibc2.39 min
 second-machine84, provider/auth/reboot/login/logout/lingering, minimum-host,
 trust/signing/licensing/relink/publication/catalog and historical GitGuardian
 38083768/38084076 gates remain open. No full native/signed23 rerun or release claim.
+
+
+## Final isolated service acceptance at exact 1aeb (2026-10-11)
+
+Service run [38139582770](https://github.com/jappyjan/bobs-factory/actions/runs/38139582770),
+job 114470479566, completed SUCCESS at the exact `1aeb055458f2cf943f007338d0b98a9f91a7d472`
+harness, using frozen runtime source `b82c37c4fb9a3e18d1cb222c6d56d3fef852096f`.
+The official 184122-byte artifact 11702895383 (SHA-256
+`ea5819ba72a3c95f83c095a8ae1f8e4a0840cbf6b86fbb6acdf6a0b892d51e63`) and all 94
+original files/eight receipts are retained with independent inspection and exact
+helper/source hashes in [the final service evidence folder](evidence/2026-10-11-service-1aeb/README.md).
+Main passed all seven assertions with cleanup/no survivors; crash backoff11956 ms,
+start-limit state stable for 10640 ms. Six signal cancellations and the actual outer START
+deadline passed with expected exits, cleanup and no survivors. All 46 provider tests
+passed. Node CI [38139586901](https://github.com/jappyjan/bobs-factory/actions/runs/38139586901)
+passed on the same SHA for Node22/24. Review 7 was CLEAR for all prior service findings. This records actual `1aeb`
+results; the documentation commit did not produce or relabel those results.
+
+All 1058 prior tracked evidence/F1 files and prior provider archives remain unchanged.
+Release minimums remain macOS 15 and Ubuntu 24.04/glibc 2.39. This isolated fixture
+acceptance does not establish physical provider/native credential use, reboot/login/
+logout/lingering, minimum-host coverage, signing/trust/licensing or full release
+acceptance. PR #92 relink remains separate and pending; Taskbot #116/#122/#124 statuses
+are unchanged.
