@@ -1,0 +1,54 @@
+2026-10-11T20:45:19.852Z [WARN ] [EdgeWorker] Bundled skills not found at /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker/src/bobs-factory-skills-plugin/skills — cannot deploy defaults
+2026-10-11T20:45:19.853Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-ONV0hW/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-11T20:45:19.853Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-11T20:45:19.853Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-11T20:45:19.863Z [INFO ] [EdgeWorker] ✅ CLI RPC server registered
+2026-10-11T20:45:19.863Z [INFO ] [EdgeWorker]    RPC endpoint: /cli/rpc
+2026-10-11T20:45:19.863Z [INFO ] [EdgeWorker] ✅ CLI event transport registered
+2026-10-11T20:45:19.863Z [INFO ] [EdgeWorker]    Event listener: listening for AgentSessionCreated events
+2026-10-11T20:45:19.864Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-11T20:45:19.864Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-11T20:45:19.864Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-11T20:45:19.864Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-11T20:45:19.864Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-11T20:45:19.864Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-11T20:45:19.864Z [WARN ] [EdgeWorker] No repositories or workspaces configured — Slack sessions will not have access to MCP tools
+2026-10-11T20:45:19.864Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-11T20:45:19.864Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-11T20:45:19.865Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-11T20:45:19.865Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-11T20:45:19.865Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-11T20:45:19.872Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-11T20:45:19.872Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-11T20:45:19.872Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-11T20:45:19.872Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-11T20:45:19.876Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:3633
+PASS actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment
+PASS fresh first-launch project/provider onboarding accessible before passkey setup
+2026-10-11T20:45:19.967Z [INFO ] [EdgeWorker] ➕ Adding repository: repository (local)
+2026-10-11T20:45:19.967Z [INFO ] [EdgeWorker] ✅ Repository added successfully: repository
+PASS project onboarding mutation completes without authentication (prepared-tool stubs only)
+2026-10-11T20:45:19.974Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-11T20:45:19.974Z [INFO ] [SharedApplicationServer] Shared application server stopped
+{"success":false,"commit":"6f40898469c9083dda4d74f37dc1c408718eaa67","sourceSha256":{"packages/edge-worker/src/factory/FactoryServer.ts":"9cb44a64b91528613cd37fe20c0121766572d83056038bbbbfb38d4e826d7aff","packages/edge-worker/src/factory/LocalFactoryAccess.ts":"99af07ef5039844d486a9749422a5442a7ded1fdc8c49c1b7c65b6dc58634c2a","packages/edge-worker/src/factory/web/auth-state.ts":"556b997cb1c8d5013129e553d5742d02c895c3e4621d152950fdd90791ad8325","packages/edge-worker/src/factory/web/auth.tsx":"0ce1fd2c9b9eb9cb94607b9ecc14adf9f92383cbf56b9f7cad5378e6a79ba041","apps/desktop/src/main.mjs":"5e7f1933e0cd768878ca25cb5787cb254a731ef2b2640caa7a6d0b4c70679a74","apps/cli/src/local.ts":"15b72fc7d5c6f07b679a7c707313bb0c3d7b5d2625e976d498b6382de8230be2"},"checks":["actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment","fresh first-launch project/provider onboarding accessible before passkey setup","project onboarding mutation completes without authentication (prepared-tool stubs only)"],"directory":"/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-ONV0hW","limitations":"Mock agents, disposable prepared-tool stubs, scripted workflow, software WebAuthn authenticator and self-signed local TLS proxy. No provider calls, OS desktop packaging or physical authenticator proof. Fixture retained; listeners and worker stopped."}
+262 | 				type: "script",
+263 | 				script: "printf '{\"local\":true}\\n'",
+264 | 			},
+265 | 		],
+266 | 	};
+267 | 	assert.equal(
+              ^
+AssertionError: Expected values to be strictly equal:
+
+409 !== 200
+
+ generatedMessage: true,
+     actual: 409,
+   expected: 200,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/apps/f1/test-drives/assets/localhost-noauth.ts:267:9
+
+Bun v1.3.5 (macOS arm64)

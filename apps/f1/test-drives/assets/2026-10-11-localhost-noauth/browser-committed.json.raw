@@ -1,0 +1,45 @@
+{
+  "implementation": "812bb468238242f92ca20edef166accc0b1e52f6",
+  "access": {
+    "toolIcon": {
+      "_tag": "website",
+      "pageUrl": "http://localhost:3631/#/settings/access"
+    },
+    "value": {
+      "url": "http://localhost:3631/#/settings/access",
+      "text": "Skip to content\nBob's Factory\nToday 1\nRecipes\nSettings\nInstall app\nNotifications\n🖥️\n⌨\nSettings\n\nConfigure how the factory runs. Choose a section to manage its settings.\n\nUpdates\nRelease channel, policy and pending installation\nProject setup\nProject, coding agent and GitHub\nAccess\nLocal access and remote passkeys\nExecution defaults\nFactory and repository choices\nIdentity profiles\nGit, accounts and authentication\nTool profiles\nMCP servers and permissions\nInstance capacity\nInstance execution slot limit\nRun titles\nAgent for naming new runs\nAccess\n\nLocal Factory opens without sign-in.\n\nRemote HTTPS hosts require their own passkey session. Connect to the remote address to manage its passkeys.",
+      "cookie": "",
+      "authButtons": []
+    }
+  },
+  "externalPage": {
+    "toolIcon": {
+      "_tag": "website",
+      "pageUrl": "http://localhost:3634/"
+    },
+    "value": {
+      "url": "http://localhost:3634/",
+      "text": "External origin fixture\n requests completed",
+      "html": "<h1>External origin fixture</h1><iframe src=\"http://localhost:3631/\"></iframe><script>Promise.allSettled([fetch('http://localhost:3631/api/config'),fetch('http://localhost:3631/api/runs/manual-c0e249f4-887e-4637-810f-26d91c35570d/stop',{method:'POST'})]).then(r=>{document.body.dataset.results=JSON.stringify(r.map(x=>({status:x.status,error:x.reason?.name})));document.body.append(' requests completed')})</script> requests completed"
+    }
+  },
+  "externalFetch": {
+    "toolIcon": {
+      "_tag": "website",
+      "pageUrl": "http://localhost:3634/"
+    },
+    "value": {
+      "url": "http://localhost:3634/",
+      "results": [
+        {
+          "status": "rejected",
+          "error": "TypeError"
+        },
+        {
+          "status": "rejected",
+          "error": "TypeError"
+        }
+      ]
+    }
+  }
+}

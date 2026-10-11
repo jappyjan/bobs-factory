@@ -1,6 +1,6 @@
 import type { RunnerType } from "bobs-factory-core";
 
-/** Local-launch setup is provided by the machine-owning CLI, behind passkey access. */
+/** Local-launch setup is provided by the machine-owning CLI, behind validated local access or a remote passkey session. */
 export interface FactoryOnboarding {
 	status(): unknown | Promise<unknown>;
 	configure(input: {

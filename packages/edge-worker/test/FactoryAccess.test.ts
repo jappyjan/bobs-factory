@@ -1,7 +1,9 @@
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
+import { factoryAccess } from "../src/factory/FactoryAuth.js";
 import { requestFactoryTerminalSession } from "../src/factory/FactoryAuthOperator.js";
 import { FactoryServer } from "../src/factory/FactoryServer.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
@@ -14,7 +16,7 @@ const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
 	for (const close of cleanups.splice(0)) await close();
 });
-function fixture(useEnvironment = false) {
+function fixture(useEnvironment = false, localPort?: number) {
 	const home = mkdtempSync(join(tmpdir(), "factory-access-test-"));
 	const runtime = new WorkflowRuntime(home, {
 		agent: async () => ({}),
@@ -27,7 +29,11 @@ function fixture(useEnvironment = false) {
 	const server = new FactoryServer(
 		runtime,
 		{ repositories, sessions: () => [], entries, start, stop: vi.fn() },
-		useEnvironment ? undefined : { origins: [origin, "http://localhost"] },
+		useEnvironment
+			? undefined
+			: localPort
+				? factoryAccess(localPort, origin)
+				: { origins: [origin, "http://localhost"] },
 	);
 	cleanups.push(async () => {
 		await server.stop();
@@ -71,7 +77,202 @@ function fixture(useEnvironment = false) {
 		enroll,
 	};
 }
-it("denies every protected GET/HEAD/write before hooks, including unknown paths and localhost/forwarded identities", async () => {
+
+it("grants local operator access without credentials, cookies, enrollment or transferable sessions", async () => {
+	const f = fixture();
+	const credentials = structuredClone(f.server.auth.store.state);
+	for (const peer of ["127.0.0.1", "::1", "::ffff:127.0.0.1"])
+		for (const host of ["localhost", "[::1]"]) {
+			const headers = { host };
+			const status = await f.server.app.inject({
+				url: "/api/auth/status",
+				headers,
+				remoteAddress: peer,
+			});
+			expect(status.json()).toEqual({
+				authenticated: true,
+				access: "local",
+				setupRequired: false,
+				origin: `http://${host}`,
+			});
+			expect(status.headers["set-cookie"]).toBeUndefined();
+			for (const url of ["/api/config", "/api/runs", "/api/updates"])
+				expect(
+					(await f.server.app.inject({ url, headers, remoteAddress: peer }))
+						.statusCode,
+				).toBe(200);
+			const result = await f.server.app.inject({
+				method: "POST",
+				url: "/api/runs/missing/stop",
+				headers: { host, origin: `http://${host}`, "x-factory-request": "1" },
+				remoteAddress: peer,
+			});
+			expect(result.statusCode).toBe(404); // Reached the handler without any login.
+		}
+	expect(f.server.auth.store.state).toEqual(credentials);
+	expect(f.server.auth.store.state.sessions).toEqual([]);
+	// The local capability grants no remote passkey-management authority.
+	expect(
+		(
+			await f.server.app.inject({
+				url: "/api/auth/credentials",
+				headers: { host: "localhost" },
+			})
+		).statusCode,
+	).not.toBe(200);
+	expect(
+		(
+			await f.server.app.inject({
+				url: "/api/runs",
+				headers: { host, cookie: "factory-local-session=local-operator" },
+				remoteAddress: "203.0.113.1",
+			})
+		).statusCode,
+	).toBe(401);
+});
+
+it("rejects rebinding, remote peers, forwarding and external web pages before protected handlers", async () => {
+	const f = fixture();
+	const cases = [
+		{ host: "evil.example" },
+		{ host: "localhost.evil.example" },
+		{ host: "localhost:9999" },
+		{ host: "127.0.0.2" },
+		{ host: "localhost", origin: "https://evil.example" },
+		{ host: "localhost", origin: "null" },
+		{ host: "localhost", "sec-fetch-site": "cross-site" },
+		{ host: "localhost", "sec-fetch-site": "same-site" },
+		{ host: "localhost", referer: "https://evil.example/page" },
+		{ host: "localhost", forwarded: "for=127.0.0.1;host=localhost;proto=http" },
+		{ host: "localhost", "x-forwarded-for": "127.0.0.1" },
+		{ host: "localhost", "x-forwarded-host": "localhost" },
+		{ host: "localhost", "x-forwarded-proto": "http" },
+		{ host: "localhost", "x-real-ip": "127.0.0.1" },
+		{ host: "localhost", via: "1.1 proxy" },
+	];
+	for (const headers of cases)
+		for (const url of ["/", "/api/config", "/api/runs", "/api/events"])
+			expect(
+				(await f.server.app.inject({ url, headers })).statusCode,
+				JSON.stringify(headers),
+			).toBe(403);
+	for (const peer of [
+		"203.0.113.1",
+		"192.168.1.2",
+		"2001:db8::1",
+		"::ffff:192.168.1.2",
+	])
+		for (const host of ["localhost", "[::1]"])
+			expect(
+				(
+					await f.server.app.inject({
+						url: "/api/config",
+						remoteAddress: peer,
+						headers: { host, "x-forwarded-for": "127.0.0.1" },
+					})
+				).statusCode,
+			).toBe(403);
+	for (const headers of [
+		{ host: "localhost" },
+		{ host: "localhost", origin: "http://localhost" },
+		{ host: "localhost", "x-factory-request": "1" },
+		{
+			host: "localhost",
+			origin: "https://evil.example",
+			"x-factory-request": "1",
+		},
+		{
+			host: "localhost",
+			origin: "http://localhost",
+			"x-factory-request": "1",
+			"sec-fetch-site": "cross-site",
+		},
+	])
+		expect(
+			(
+				await f.server.app.inject({
+					method: "POST",
+					url: "/api/runs",
+					headers,
+					payload: {},
+				})
+			).statusCode,
+		).toBe(403);
+	expect(f.start).not.toHaveBeenCalled();
+	expect(f.entries).not.toHaveBeenCalled();
+	expect(f.repositories).not.toHaveBeenCalled();
+});
+
+it("serves real IPv4 and IPv6 loopback APIs and streams without auth while preserving public-host authentication", async () => {
+	const reservation = createServer();
+	await new Promise<void>((resolve) =>
+		reservation.listen(0, "127.0.0.1", resolve),
+	);
+	const address = reservation.address();
+	if (!address || typeof address === "string") throw Error("Missing test port");
+	const port = address.port;
+	await new Promise<void>((resolve) => reservation.close(() => resolve()));
+	const f = fixture(false, port);
+	await f.server.start(port);
+	for (const hostname of ["127.0.0.1", "localhost", "[::1]"]) {
+		const local = `http://${hostname}:${port}`;
+		const status = await fetch(`${local}/api/auth/status`);
+		expect(await status.json()).toEqual({
+			authenticated: true,
+			access: "local",
+			setupRequired: false,
+			origin: local,
+		});
+		expect(status.headers.get("set-cookie")).toBeNull();
+		expect((await fetch(`${local}/api/config`)).status).toBe(200);
+		const events = await fetch(`${local}/api/events`);
+		expect(events.status).toBe(200);
+		const reader = events.body!.getReader();
+		expect(new TextDecoder().decode((await reader.read()).value)).toContain(
+			"event: ready",
+		);
+		await reader.cancel();
+		expect(
+			(
+				await fetch(`${local}/api/runs/missing/stop`, {
+					method: "POST",
+					headers: { Origin: local, "X-Factory-Request": "1" },
+				})
+			).status,
+		).toBe(404);
+	}
+	const url = `http://127.0.0.1:${port}/api/runs`;
+	expect(
+		(await factoryHttp(url, { host, "x-forwarded-for": "203.0.113.1" })).status,
+	).toBe(401);
+	const cookie = (await f.enroll()).split(";")[0]!;
+	expect(
+		(
+			await factoryHttp(url, {
+				host,
+				cookie,
+				"x-forwarded-for": "203.0.113.1",
+				"x-forwarded-proto": "https",
+			})
+		).status,
+	).toBe(200);
+	expect(
+		(
+			await factoryHttp(url, {
+				host: `localhost:${port}`,
+				cookie,
+				"x-forwarded-for": "203.0.113.1",
+			})
+		).status,
+	).toBe(403);
+	expect((await factoryHttp(url, { host: "evil.example" })).status).toBe(403);
+	await f.server.stop();
+	for (const hostname of ["127.0.0.1", "[::1]"])
+		await expect(
+			fetch(`http://${hostname}:${port}/api/config`),
+		).rejects.toThrow();
+});
+it("denies remote protected GET/HEAD/write before hooks, including unknown paths and spoofed identities", async () => {
 	const f = fixture();
 	for (const url of [
 		"/api/runs",
@@ -111,8 +312,14 @@ it("denies every protected GET/HEAD/write before hooks, including unknown paths 
 		{ host, origin: "http://localhost" },
 	]) {
 		expect(
-			(await f.server.app.inject({ url: "/api/runs", headers })).statusCode,
-		).toBe(headers.origin ? 403 : 401);
+			(
+				await f.server.app.inject({
+					url: "/api/runs",
+					headers,
+					remoteAddress: "203.0.113.1",
+				})
+			).statusCode,
+		).toBe(headers.origin || headers.host === "localhost" ? 403 : 401);
 	}
 	expect(
 		(
@@ -251,7 +458,7 @@ it.each([
 	).toBe(401);
 });
 
-it("redirects the IP dashboard entrypoint to localhost while protecting both data surfaces", async () => {
+it("opens the IP and localhost dashboard without enrollment", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-loopback-redirect-"));
 	const runtime = new WorkflowRuntime(home, {
 		agent: async () => ({}),
@@ -286,7 +493,7 @@ it("redirects the IP dashboard entrypoint to localhost while protecting both dat
 		expect(
 			(await server.app.inject({ url: "/api/runs", headers: { host } }))
 				.statusCode,
-		).toBe(401);
+		).toBe(200);
 });
 
 // The existing public-tunnel setting must remain usable after adding authentication.
@@ -327,7 +534,7 @@ it.each([
 		vi.unstubAllEnvs();
 	}
 });
-it("accepts local terminal sessions as Bearer tokens on the localhost authority only", async () => {
+it("keeps terminal tokens confined to local access and rejects transplant to a remote authority", async () => {
 	const f = fixture();
 	const token = requestFactoryTerminalSession(f.home);
 	const local = { host: "localhost", authorization: `Bearer ${token}` };
@@ -353,7 +560,7 @@ it("accepts local terminal sessions as Bearer tokens on the localhost authority 
 				},
 			})
 		).statusCode,
-	).toBe(401);
+	).toBe(200);
 	// Writes keep the browser CSRF requirements.
 	expect(
 		(

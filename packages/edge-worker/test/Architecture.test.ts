@@ -577,18 +577,22 @@ describe("architecture authorization boundary", () => {
 	});
 });
 
-it("protects architecture decisions, rejects stale tabs, and routes chat feedback through regeneration", async () => {
+it("protects remote architecture decisions, rejects stale tabs, and routes chat feedback through regeneration", async () => {
 	const { runtime, run, implemented } = setup();
 	await waiting(run);
-	const server = new FactoryServer(runtime, {
-		repositories: () => [],
-		sessions: () => [],
-		entries: () => [],
-		start: async () => {
-			throw new Error("unused");
+	const server = new FactoryServer(
+		runtime,
+		{
+			repositories: () => [],
+			sessions: () => [],
+			entries: () => [],
+			start: async () => {
+				throw new Error("unused");
+			},
+			stop: (id) => runtime.stop(id),
 		},
-		stop: (id) => runtime.stop(id),
-	});
+		"https://architecture.example.test",
+	);
 	const p = run.architectureProposals![0]!;
 	const body = {
 		proposalId: p.id,
@@ -599,6 +603,7 @@ it("protects architecture decisions, rejects stale tabs, and routes chat feedbac
 	try {
 		const denied = await server.app.inject({
 			method: "POST",
+			remoteAddress: "203.0.113.1",
 			url: `/api/runs/${run.id}/architecture-decision`,
 			headers: { cookie: "", "x-factory-request": "1" },
 			payload: body,
@@ -606,6 +611,7 @@ it("protects architecture decisions, rejects stale tabs, and routes chat feedbac
 		expect(denied.statusCode).toBe(401);
 		const stale = await server.app.inject({
 			method: "POST",
+			remoteAddress: "203.0.113.1",
 			url: `/api/runs/${run.id}/architecture-decision`,
 			headers: { "x-factory-request": "1" },
 			payload: { ...body, digest: "stale" },
@@ -614,6 +620,7 @@ it("protects architecture decisions, rejects stale tabs, and routes chat feedbac
 		expect(implemented).toHaveLength(0);
 		const chat = await server.app.inject({
 			method: "POST",
+			remoteAddress: "203.0.113.1",
 			url: `/api/runs/${run.id}/messages`,
 			headers: { "x-factory-request": "1" },
 			payload: { text: "Keep inherited Takeover work in the revised plan" },
@@ -624,6 +631,7 @@ it("protects architecture decisions, rejects stale tabs, and routes chat feedbac
 		const next = run.architectureProposals!.at(-1)!;
 		const accepted = await server.app.inject({
 			method: "POST",
+			remoteAddress: "203.0.113.1",
 			url: `/api/runs/${run.id}/architecture-decision`,
 			headers: { "x-factory-request": "1" },
 			payload: {
@@ -636,6 +644,7 @@ it("protects architecture decisions, rejects stale tabs, and routes chat feedbac
 		expect(accepted.statusCode).toBe(202);
 		const duplicate = await server.app.inject({
 			method: "POST",
+			remoteAddress: "203.0.113.1",
 			url: `/api/runs/${run.id}/architecture-decision`,
 			headers: { "x-factory-request": "1" },
 			payload: body,

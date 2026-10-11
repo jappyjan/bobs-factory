@@ -1,0 +1,49 @@
+{
+  "success": true,
+  "commit": "812bb468238242f92ca20edef166accc0b1e52f6",
+  "sourceSha256": {
+    "packages/edge-worker/src/factory/FactoryServer.ts": "9cb44a64b91528613cd37fe20c0121766572d83056038bbbbfb38d4e826d7aff",
+    "packages/edge-worker/src/factory/LocalFactoryAccess.ts": "99af07ef5039844d486a9749422a5442a7ded1fdc8c49c1b7c65b6dc58634c2a",
+    "packages/edge-worker/src/factory/FactoryAuth.ts": "8e89376821a4ece3e2db7ad8467865d27dd2a8cde10f456c09b6ccb3208c823e",
+    "packages/edge-worker/src/factory/FactoryOnboarding.ts": "6f4f61d5efc5e849135d51b8dd6f373bd7727e165d708149edffe17426bc8985",
+    "packages/edge-worker/src/factory/Workflow.ts": "10a7ba90e071bec11aa38987aad1d7f7d2c852948ed2f81bdb59c4ced1037973",
+    "packages/edge-worker/src/factory/web/auth-state.ts": "556b997cb1c8d5013129e553d5742d02c895c3e4621d152950fdd90791ad8325",
+    "packages/edge-worker/src/factory/web/auth.tsx": "0ce1fd2c9b9eb9cb94607b9ecc14adf9f92383cbf56b9f7cad5378e6a79ba041",
+    "packages/edge-worker/src/factory/web/settings.tsx": "78e0370edc7398fec77523d236b8987d0bada7f04d8283a415ba81c8231451a1",
+    "apps/desktop/src/main.mjs": "5e7f1933e0cd768878ca25cb5787cb254a731ef2b2640caa7a6d0b4c70679a74",
+    "apps/desktop/src/launcher.html": "36834b1e2dc8e922743f30f896abf324c9a6dd4d870b8937243f29a34ccc75f4",
+    "apps/cli/src/local.ts": "15b72fc7d5c6f07b679a7c707313bb0c3d7b5d2625e976d498b6382de8230be2",
+    "apps/f1/test-drives/assets/localhost-noauth.ts": "9abde379920e3cf5612aa7154819ef7db3436cf884ff32666cdd3540a5b0eb1c"
+  },
+  "checks": [
+    "actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment",
+    "fresh first-launch project/provider onboarding accessible before passkey setup",
+    "project onboarding mutation completes without authentication (prepared-tool stubs only)",
+    "noauth dashboard recipe save/start creates actual EdgeWorker worktree, executes script and returns completed run",
+    "actual socket external Origin/Fetch Metadata and forwarded localhost reads/mutations rejected",
+    "actual TLS Host-preserving forwarded proxy retains remote passkey enrollment/login/logout, opaque cookie and no local transplant",
+    "local SSE opens without a session and remote enrollment does not revoke local authority",
+    "actual external-origin browser navigation/read/POST all denied with no run mutation"
+  ],
+  "externalRequests": [
+    {
+      "method": "GET",
+      "path": "/api/config",
+      "status": 403,
+      "origin": "http://localhost:3634"
+    },
+    {
+      "method": "POST",
+      "path": "/api/runs/manual-c0e249f4-887e-4637-810f-26d91c35570d/stop",
+      "status": 403,
+      "origin": "http://localhost:3634"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 403
+    }
+  ],
+  "directory": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-hb52K9",
+  "limitations": "Mock agents, disposable prepared-tool stubs, scripted workflow, software WebAuthn authenticator and self-signed local TLS proxy. No provider calls, OS desktop packaging or physical authenticator proof. Fixture retained; listeners and worker stopped."
+}

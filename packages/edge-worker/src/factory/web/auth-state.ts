@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 export type AccessState = {
 	status: "checking" | "authenticated" | "required";
 	setupRequired?: boolean;
+	access?: "local";
 	expires?: number;
 	error?: string;
 };
@@ -107,7 +108,9 @@ export async function checkAccess() {
 		const result = await response.json();
 		if (id !== request || epoch !== generation) return;
 		if (deadline) clearTimeout(deadline);
-		if (result.authenticated && result.expires > Date.now()) {
+		if (result.authenticated && result.access === "local") {
+			publish({ status: "authenticated", access: "local" });
+		} else if (result.authenticated && result.expires > Date.now()) {
 			publish({ status: "authenticated", expires: result.expires });
 			deadline = setTimeout(
 				() => accessRequired("Your session expired. Sign in again.", true),
@@ -130,4 +133,6 @@ const channel =
 		? new BroadcastChannel("factory-auth")
 		: undefined;
 if (channel)
-	channel.onmessage = () => accessRequired("Signed out in another tab");
+	channel.onmessage = () => {
+		if (state.access !== "local") accessRequired("Signed out in another tab");
+	};

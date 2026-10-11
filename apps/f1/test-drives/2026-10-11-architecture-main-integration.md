@@ -69,3 +69,34 @@ tracker mutation, remote delivery or real-agent design quality is claimed.
 No new visual layout was introduced by this integration. Existing architecture
 and review-brief screenshot evidence remains at its original revision; it is
 not a fresh browser walkthrough of this merge.
+
+## Latest main integration
+
+Main advanced during validation to `599a67d12cb204de7e6c5387b83e6d05e28b659e`
+(PR #99). The follow-up merge preserves direct same-origin localhost access
+and HTTPS passkey protection. Capability prompts and their full-string test
+expectations retain both localhost and architecture behavior.
+
+The architecture HTTP regression now uses an explicit HTTPS origin and remote
+peer with a fixture session. It proves anonymous rejection, stale/duplicate
+rejection, discussion regeneration and valid exact-version acceptance. The
+shared test fixture accepts an optional origin; its existing default is unchanged.
+The initial localhost denial assertion was incompatible with the new local
+operator contract and was corrected to test the protected remote surface.
+
+The same five-scenario F1 command reran against this final merge tree and exited
+0 (`/tmp/pr74-latest-main-f1.log`). Final focused validation passed **113 tests in
+8 files**, covering architecture, remote/local access, server, onboarding,
+ticket delivery, web client, full routing prompts and machine capacity.
+
+The broad rerun before the HTTP fixture correction recorded 1932 passes, one
+skip and 15 failures: 13 missing-FFmpeg fixture failures, the obsolete localhost
+assertion, and a macOS capacity-lock `readlink EINVAL` in the concurrent
+cross-process test. The corrected HTTP check and all capacity tests passed in
+the final focused run; no capacity implementation was changed. A clean full
+suite with FFmpeg is still delegated to CI. Logs:
+`/tmp/pr74-latest-main-tests.log`, `/tmp/pr74-latest-main-targeted.log`.
+
+Workspace typecheck and repository lint pass on the combined sources (19 lint
+warnings). The commit hook builds and typechecks the entire workspace. No
+production tracker writes or real agents were used in either F1 run.

@@ -88,24 +88,27 @@ agents, Git identity/signing configuration, keychains and agent credentials inta
    descendants are proven stopped.
 10. Verify dashboard/API, configured integrations, workflow selection/permissions,
     waiting-run recovery, queue order, native continuation and ticket identity.
-    Check unauthenticated dashboard API denial and successful passkey sign-in.
+    Check direct localhost dashboard/API access without enrollment, remote API
+    denial before authentication and successful remote passkey sign-in.
     Completed steps stay completed. Interrupted scripts/external tools retain
     reconciliation semantics; do not promise exactly-once execution. Finish only
     when preservation checks pass or clearly report the remaining blocker.
 
 ## Dashboard access after cutover
 
-Every dashboard address, including localhost, requires a passkey session for data,
-live updates, media and actions. For remote access, configure the exact HTTPS browser
+Direct HTTP localhost dashboard data, live updates, media and actions open without
+enrollment or login after validating the actual loopback socket peer, loopback
+Host and same-origin browser context. Remote addresses require a passkey session.
+For remote access, configure the exact HTTPS browser
 origin with `--origin https://YOUR_HOST` for local launch or
 `BOBS_FACTORY_FACTORY_ORIGIN=https://YOUR_HOST` for configured services. The proxy
 must preserve that authority and browser Origin; unconfigured origins are denied.
 Webhook ingress retains its separate provider signature checks.
 
-Preserve existing authentication files and origin settings. For first setup, start
+Preserve existing authentication files and origin settings. For first remote setup, start
 the replacement, privately read the ten-minute, single-use `token` value from
 `<home>/factory/auth/enroll.json`, and enter it in the setup screen to create a
-passkey. Localhost and the public hostname need separate passkeys. For another
+passkey for that public hostname. Localhost needs no passkey. For another
 enrollment, use Settings with a recent passkey verification, or generate a new code
 on the service machine with `bobs-factory --home /absolute/service/home factory-auth`.
 Use the running service's home; codes are invalidated on restart and stay out of
@@ -118,7 +121,8 @@ recover authentication. For lost keys or corrupt authentication state, run
 preserving runs and integrations. If startup was blocked, start the service again;
 then re-enroll with the new code. Follow
 [passkey setup and recovery](../../docs/FACTORY.md#passkey-access-and-first-setup)
-for the complete access contract. Confirm sign-in before declaring cutover complete.
+for the complete access contract. Confirm direct local access and configured remote
+sign-in before declaring cutover complete.
 
 ## Recovery
 
