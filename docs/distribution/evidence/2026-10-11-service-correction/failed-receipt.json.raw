@@ -1,0 +1,25 @@
+{
+  "passed": false,
+  "cleanup": true,
+  "testedAt": "2026-10-11T10:28:56.221Z",
+  "harnessSha": "f48c51ca9352cbd6caa29b3a3b70882046bfc1ce",
+  "harnessSha256": "5760b57f45faa6ab90f817d0a6a32d61b34f613b687c7c9f9b8cc24953df2dac",
+  "source": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+  "assertions": [
+    "Dormant external Nix-style target definition refuses adoption and retains bytes; fixture-only removal explicitly consented",
+    "Manual process blocks adoption; explicit fixture stop releases ownership",
+    "Actual external user service disabled and stopped before replacement; definition retained",
+    "Interrupted stopped setup restores only missing owned definition; modified definition is refused"
+  ],
+  "limits": [
+    "No host/user-manager reboot, login, logout or lingering",
+    "No second-machine UI",
+    "No real PM2 or Nix activation",
+    "Opaque synthetic checkpoint preservation only; no provider/native credentials",
+    "No public trust/signing acceptance"
+  ],
+  "crashBackoffMs": 11178,
+  "error": "Timed out: native crash restart or burst exhaustion",
+  "survivors": [],
+  "retainedBackupNames": []
+}

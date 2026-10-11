@@ -1,0 +1,2 @@
+  14325    1048 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-L5uU7B/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-L5uU7B/state --port 41559 --no-open service run
+  14327    1048 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-L5uU7B/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-L5uU7B/state --port 41559 --no-open service updates-run

@@ -1,0 +1,5 @@
+install: creating uninstall script at /home/runner/work/_temp/relink-task-38134978416-1/rust-toolchain/lib/rustlib/uninstall.sh
+install: installing component 'cargo'
+
+    cargo installed.
+

@@ -1,0 +1,579 @@
+[
+  {
+    "argv": [
+      "sh",
+      "/home/runner/work/_temp/relink-task-38134978416-1/rustc-installer/install.sh",
+      "--prefix=/home/runner/work/_temp/relink-task-38134978416-1/rust-toolchain",
+      "--disable-ldconfig"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "install-rustc.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "sh",
+      "/home/runner/work/_temp/relink-task-38134978416-1/cargo-installer/install.sh",
+      "--prefix=/home/runner/work/_temp/relink-task-38134978416-1/rust-toolchain",
+      "--disable-ldconfig"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "install-cargo.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/downloads/libc6_2.31-0ubuntu9.18_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-libc6.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/downloads/libc6-dev_2.31-0ubuntu9.18_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-libc6-dev.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/downloads/linux-libc-dev_5.4.0-216.236_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-linux-libc-dev.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/downloads/libcrypt1_4.4.10-10ubuntu4_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-libcrypt1.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/downloads/libcrypt-dev_4.4.10-10ubuntu4_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-libcrypt-dev.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/cpp-13_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-cpp-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/g++-13_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-g++-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/gcc-13_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-gcc-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libasan6_11.5.0-10ubuntu1~20~ppa3_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libasan6_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libasan8_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libasan8_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libitm1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libitm1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38134978416-1/gcc13/libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "extract-gcc13-libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/node/bin/node",
+      "--experimental-strip-types",
+      "scripts/build.ts",
+      "--profile=ci-link-only",
+      "--os=linux",
+      "--arch=x64",
+      "--abi=gnu",
+      "--canary=off",
+      "--buildkite=off",
+      "--configure-only",
+      "--build-dir=/home/runner/work/_temp/relink-task-38134978416-1/build",
+      "--cache-dir=/home/runner/work/_temp/relink-task-38134978416-1/cache",
+      "--linux-sysroot=/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "configure-cli.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/node/bin/node",
+      "/home/runner/work/bobs-factory/bobs-factory/docs/distribution/relink/capture-config.mjs",
+      "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+      "/home/runner/work/_temp/relink-task-38134978416-1/build",
+      "/home/runner/work/_temp/relink-evidence/resolved-config.json"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "capture-config.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/node/bin/node",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-node.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/llvm/bin/llvm-objcopy",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-llvm-objcopy.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/llvm/bin/clang",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-cc.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/llvm/bin/clang++",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-cxx.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/llvm/bin/llvm-ar",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-ar.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/llvm/bin/llvm-ranlib",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-ranlib.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/rust-toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-ld.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/usr/bin/x86_64-linux-gnu-strip",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-strip.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/rust-toolchain/bin/cargo",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-cargo.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/rust-toolchain/bin/rustc",
+      "-vV"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-rustc.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/usr/local/bin/ninja",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-ninja.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/usr/local/bin/cmake",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-cmake.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/usr/bin/readelf",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "version-readelf.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38134978416-1/build",
+      "-t",
+      "commands",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "original-ninja-commands.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38134978416-1/build",
+      "-f",
+      "relink-only.ninja",
+      "-t",
+      "commands",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "restricted-ninja-commands.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38134978416-1/build",
+      "-f",
+      "relink-only.ninja",
+      "-n",
+      "-v",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "link-dry-run.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38134978416-1/build",
+      "-f",
+      "relink-only.ninja",
+      "-v",
+      "-d",
+      "keeprsp",
+      "-j1",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "unchanged-link.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "readelf",
+      "-aW",
+      "/home/runner/work/_temp/relink-task-38134978416-1/build/bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "relinked-elf.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "readelf",
+      "-aW",
+      "/home/runner/work/_temp/relink-task-38134978416-1/published-bun/bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1",
+    "log": "published-elf.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/build/bun",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "native-version.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38134978416-1/build/bun",
+      "--revision"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38134978416-1/bun-source",
+    "log": "native-revision.log",
+    "exitCode": 0
+  }
+]

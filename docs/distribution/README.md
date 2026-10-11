@@ -13,6 +13,15 @@ latest authenticated beta before the first stable release. Nightly is explicit
 available, the homepage and installer report unavailable downloads. CI artifacts
 remain maintainer validation material.
 
+The maintained [downloads page](https://jappyjan.github.io/bobs-factory/downloads/)
+is the index for all supported entry points. It lists the verified CLI bootstrap
+and marks desktop, package-manager and npm paths unavailable until their actual
+assets and package identities exist. No Homebrew cask, Linux desktop package or
+public npm launcher is currently published. A public npm launcher is a separate,
+minimal product from private workspace packages and must execute the same signed
+release contract; npm/Node is a launcher prerequisite only, not a Factory runtime
+prerequisite.
+
 The artifact contract is `bobs-factory-VERSION-TARGET.tar.gz` with a matching
 `.manifest.json`: schema version, product, exact version, commit, target, byte size
 and SHA-256. `build.json` inside adds tooling, executable hash and resource digest.
@@ -74,8 +83,12 @@ Checkout development continues to use its own installed SDK. This change does
 not relocate or convert native conversations. Authenticated Cursor validation was
 waived by the human for this implementation; it is not claimed as passing evidence.
 
-Linux builds target glibc. macOS minimum version, minimum glibc and native/CPU
-constraints need native-runner evidence; musl and Windows are not claimed.
+First-release minimums are macOS 15 and Ubuntu 24.04 / glibc 2.39, for ARM64
+and x64 (user decision, October 11). Observed CI is macOS 15.7.9 and Ubuntu
+24.04.5 / glibc 2.39 on both architectures; it does not prove macOS 15.0, all
+Ubuntu kernel/image variants or other Linux distributions. Remaining native
+acceptance is documented in [the final report](FINAL_NATIVE_116.md); musl and
+Windows are not claimed.
 Official packaging references: [Bun executables](https://bun.sh/docs/bundler/executables)
 and [Node SEA fallback](https://nodejs.org/api/single-executable-applications.html).
 Bun reached actual worker startup; resources/helpers require the explicit boundary
@@ -122,7 +135,21 @@ and stop workers/descendants before replacing the active executable. Verify one
 worker, preserved home/config and continuation after restart. To roll back, stop
 replacement consumers, point the executable link to the retained previous version
 and restore separately backed-up mutable state only if needed. Do not run old and
-new workers together. Automatic polling/updating is deferred.
+new workers together. The [per-instance updater](UPDATES.md) implements signed
+discovery, remembered stable/nightly policy and owned staged replacement with
+recovery. [User services](SERVICES.md) and [desktop app updates](DESKTOP.md)
+have separate lifecycle owners; rollout still requires genuine release evidence
+and protected signing.
+
+Bootstrap installs also keep an ownership record under
+`PREFIX/lib/bobs-factory/records/`. It records the exact release channel, version,
+target, source commit and trusted publisher key ID, separately from
+`~/.bobs-factory`. Reinstalling does not reset per-instance settings. Package
+managers and Nix retain ownership of their own paths; do not replace those
+executables with the bootstrap installer. See
+[package entry points and safe removal](PACKAGE_ENTRY_POINTS.md) for updater handoff,
+receipt-checked uninstall, generated Homebrew/AUR recipes and npm operator gates.
+The trial retains separate state in `~/.bobs-factory-trial`.
 
 The binary CI workflow remains build/verification only, with immutable candidate
 input. The separate [public release workflow](PUBLIC_RELEASES.md) defaults to a

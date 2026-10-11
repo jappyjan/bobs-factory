@@ -1,0 +1,680 @@
+[
+  {
+    "file": "DateMath-modified.cpp.o.raw",
+    "size": 106232,
+    "sha256": "6b2b6b38a4903d9828cadeacbc9d6d968a74e5a5138daca8bf32c81cd28ae39a",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-modified.cpp.raw",
+    "size": 40819,
+    "sha256": "27180046c7e84d795c41f63ada255796958b6de10fd85961e6e087435cacfcc7",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-original.cpp.o.raw",
+    "size": 103628,
+    "sha256": "105da2e5c0fbf851ab404699117ec7f1c5742e2c503ee631b279728217f5e5ec",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-original.cpp.raw",
+    "size": 40526,
+    "sha256": "65b1066ee8ec153db043d1e2d8967ddb068b9aea84dc6258994aad13e631d9cc",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-trial.patch",
+    "size": 675,
+    "sha256": "938e78402ae094f46a06a15cd520817841619deb7008fe650f7041e6689a6765",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-unmodified.cpp.o.raw",
+    "size": 105352,
+    "sha256": "57dcc30e31bad09562346f5a325dcbe678bcbca3d2407b33a78c7333dce5c7f1",
+    "compactUpload": true
+  },
+  {
+    "file": "WTF-config.h.raw",
+    "size": 1152,
+    "sha256": "38cea97eedc4257199fb0d3645af0d5b29dbdb80e67aa9d2f976b4d8939733b8",
+    "compactUpload": true
+  },
+  {
+    "file": "build.ninja",
+    "size": 15199,
+    "sha256": "8be535abd73f7289e884185d32f31ac4a3f3f90a01f13ca3973b4239bc85c25c",
+    "compactUpload": true
+  },
+  {
+    "file": "bun-profile.linker-map",
+    "size": 45739907,
+    "sha256": "8daae8acc74e43d7323aafc2a660664195ad97de80edeec29b91372019323160",
+    "compactUpload": false
+  },
+  {
+    "file": "bun-profile.rsp",
+    "size": 403,
+    "sha256": "9249d7ada46057685456a822b4b0c13f98c492016ae79dce5181c3118b038ac6",
+    "compactUpload": true
+  },
+  {
+    "file": "capture-config.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "commands.json",
+    "size": 29502,
+    "sha256": "04e9dd18b3818a33e7201bed2a6fc01a8e11e84b120c5aac72b242e4afbe6eee",
+    "compactUpload": true
+  },
+  {
+    "file": "configure-cli.log",
+    "size": 315,
+    "sha256": "4a7b311bf1b601402acc44f28c691fb42378ddd7b75bedd3772db4b509909c66",
+    "compactUpload": true
+  },
+  {
+    "file": "configure.json",
+    "size": 385,
+    "sha256": "6d05dca31023d0cf9e54e1fb296657157b138e55e5fec4b37ad3da42bbd11c38",
+    "compactUpload": true
+  },
+  {
+    "file": "cpu.txt",
+    "size": 3339,
+    "sha256": "e2df535c811efa12c233d27957938e328c559882432955ed0a31588554b3338b",
+    "compactUpload": true
+  },
+  {
+    "file": "disk.txt",
+    "size": 616,
+    "sha256": "e3884028e8b98a0830c515b7861e194e56353c03b3c3906d8235184875591c23",
+    "compactUpload": true
+  },
+  {
+    "file": "downloads.json",
+    "size": 8297,
+    "sha256": "753eb644123357216c0ad8ca04203272526c4a05d04d277d4faa53befbbea54e",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-cpp-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-g++-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-gcc-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libasan6_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libasan8_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libitm1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-libc6-dev.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-libc6.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-libcrypt-dev.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-libcrypt1.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-linux-libc-dev.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "generator-files.jsonl",
+    "size": 7569,
+    "sha256": "72bf186b688844baadb64892e87747012e35464fb29af81d1c7e0d9ea5942cbf",
+    "compactUpload": true
+  },
+  {
+    "file": "harness-files.json",
+    "size": 456,
+    "sha256": "05872c4d81e7fe837483610993149036f08c617b62b19a5f63eb8e5013cef70d",
+    "compactUpload": true
+  },
+  {
+    "file": "harness.log",
+    "size": 3176,
+    "sha256": "dd96856c46300d6e7daa552cbd26408ced654f85d20243fff5c93b7f8691713b",
+    "compactUpload": true
+  },
+  {
+    "file": "injection-compile.log",
+    "size": 113,
+    "sha256": "b3204161c733a7bf72867b507d9af12ff6ab5c2c81e2d34b41995d93d6aac791",
+    "compactUpload": true
+  },
+  {
+    "file": "injection-native.log",
+    "size": 28,
+    "sha256": "ce2b9aaac0a7818d109173144d1c6d56e2a94653c873073aafab4eb8fe42cd57",
+    "compactUpload": true
+  },
+  {
+    "file": "install-cargo.log",
+    "size": 189,
+    "sha256": "da69db67abd178528ff802711cd8d526bdc78377680a4f1039623dde5adb47fa",
+    "compactUpload": true
+  },
+  {
+    "file": "install-rustc.log",
+    "size": 189,
+    "sha256": "2115eb37266bfb9bfed1dd3e1ecbce3b99e0845e57f295b82b3b122ba0652936",
+    "compactUpload": true
+  },
+  {
+    "file": "link-dry-run.log",
+    "size": 2928,
+    "sha256": "1483bfd75fa333c4749da45d1573de0de3df709862cee3397d20975544d8826b",
+    "compactUpload": true
+  },
+  {
+    "file": "linker.lds",
+    "size": 6073,
+    "sha256": "a365da6e5ee059e4debb1a605bd9433e1cd334ea26f0c142a968757c7d657345",
+    "compactUpload": true
+  },
+  {
+    "file": "linker.order",
+    "size": 1156033,
+    "sha256": "32c24058f67945853c9e97c35a8dd6ece17b7c493249dab1a442a20250c20dd3",
+    "compactUpload": true
+  },
+  {
+    "file": "llvm-files.jsonl",
+    "size": 79048,
+    "sha256": "f1b99c78d6d636b4a71d6b3c5d08c91323b4e1230c3170ac86d2ead77e3a7726",
+    "compactUpload": true
+  },
+  {
+    "file": "memory.txt",
+    "size": 207,
+    "sha256": "1c2b439ce411d949b6f58f4c6d440fdbf085aa21321fc4adaf3d35da893c9b9b",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-bun-profile.linker-map",
+    "size": 45739907,
+    "sha256": "8daae8acc74e43d7323aafc2a660664195ad97de80edeec29b91372019323160",
+    "compactUpload": false
+  },
+  {
+    "file": "modified-bun-profile.rsp",
+    "size": 403,
+    "sha256": "9249d7ada46057685456a822b4b0c13f98c492016ae79dce5181c3118b038ac6",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-library-link.log",
+    "size": 2928,
+    "sha256": "1483bfd75fa333c4749da45d1573de0de3df709862cee3397d20975544d8826b",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-full-identity.log",
+    "size": 47,
+    "sha256": "355b20b4d9a74cf44a847bd5a14b58aa6654090c86b21fb198cd183a4d4e1da8",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-hello.log",
+    "size": 24,
+    "sha256": "5049596b0af505b36bcf4ad48cb67628cb09663fb90c666a543f6418057f3795",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-library-behavior.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-revision.log",
+    "size": 16,
+    "sha256": "9be88dde8b69dbe59e415265fef0e6afa91607e6ef3e0de5ed3d0886844f52e2",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-version.log",
+    "size": 6,
+    "sha256": "b99b4c7cdf236f59bc9f65d963deaecae3b16a7dad87939cacb9057f7664daee",
+    "compactUpload": true
+  },
+  {
+    "file": "node-files.jsonl",
+    "size": 794429,
+    "sha256": "72f09d22e4068f7020015f4922f8224e346b9357c30b7db230b081e05fa54422",
+    "compactUpload": true
+  },
+  {
+    "file": "original-ninja-commands.log",
+    "size": 2832,
+    "sha256": "db5c8ce4869cde4661a89ebd98519a855a9d19bd86a86afbb78659426620a539",
+    "compactUpload": true
+  },
+  {
+    "file": "original-webkit-compile-command.json",
+    "size": 2443,
+    "sha256": "a379f63cbac0bdf9f0c350225ce6479d42ecf7beffd23ed1da791c1e3104e91e",
+    "compactUpload": true
+  },
+  {
+    "file": "os-release.txt",
+    "size": 400,
+    "sha256": "87458b3b1f1ca0e5c693ade771de7007c3783bdc692fa6b39eb6414bf2af2763",
+    "compactUpload": true
+  },
+  {
+    "file": "prelink-files.jsonl",
+    "size": 897,
+    "sha256": "5297761153007e23431f0d75df32d512f65668d9dc317812f961ff9ac9512033",
+    "compactUpload": true
+  },
+  {
+    "file": "published-elf.log",
+    "size": 261350,
+    "sha256": "24a795b330b511005d5d6c2cd9f3100098c2cfdcda1764212d48c8ba6c95d449",
+    "compactUpload": true
+  },
+  {
+    "file": "relink-only.ninja",
+    "size": 3640,
+    "sha256": "1ac10d7c945cb3d2ec79554092ba87843428ead03a05b3933b303de6a7efc180",
+    "compactUpload": true
+  },
+  {
+    "file": "relinked-elf.log",
+    "size": 261350,
+    "sha256": "24a795b330b511005d5d6c2cd9f3100098c2cfdcda1764212d48c8ba6c95d449",
+    "compactUpload": true
+  },
+  {
+    "file": "resolved-config.json",
+    "size": 11164,
+    "sha256": "446a3d4cacb9601036189c8e4aa020e25c7b14b7d4bbb72ba540e2f49be8e3e8",
+    "compactUpload": true
+  },
+  {
+    "file": "restricted-ninja-commands.log",
+    "size": 2832,
+    "sha256": "db5c8ce4869cde4661a89ebd98519a855a9d19bd86a86afbb78659426620a539",
+    "compactUpload": true
+  },
+  {
+    "file": "result.json",
+    "size": 11430,
+    "sha256": "eff69b98d3d8062620dcedade1fb2f86f025fef8f78ca48160431822a3592a0b",
+    "compactUpload": true
+  },
+  {
+    "file": "runner.json",
+    "size": 204,
+    "sha256": "ea0a7d4fcf6cef3a6aa5650b44c9461fd3fc339b3f764de07903660c403256b3",
+    "compactUpload": true
+  },
+  {
+    "file": "rust-toolchain-files.jsonl",
+    "size": 12355,
+    "sha256": "a0c43be6154124a49bd14826e101b36e350161ca5226745af66b2e4ea11efd1c",
+    "compactUpload": true
+  },
+  {
+    "file": "rust-toolchain.toml",
+    "size": 1579,
+    "sha256": "85ec7da6d5a6eb4a0262cc8525e39edbcc9c61fb0693eb1f6733ef45ef896fb7",
+    "compactUpload": true
+  },
+  {
+    "file": "symbols.dyn",
+    "size": 21846,
+    "sha256": "cd986901b7f7cdf3e40acaad0520d022612b122a8864e5e12bd2a1ebf6205f88",
+    "compactUpload": true
+  },
+  {
+    "file": "sysroot-files.jsonl",
+    "size": 417819,
+    "sha256": "3cc725fc704d248304c45e637825813738e8b4bdac611f27cb4f86b859ffc5dc",
+    "compactUpload": true
+  },
+  {
+    "file": "tool-identities.json",
+    "size": 5524,
+    "sha256": "c91bc98c867174484c179e24c19f36248a2521d6cb8bb0c26d92330638229531",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-bun-profile.linker-map",
+    "size": 45739306,
+    "sha256": "02dc505de595ab26fbc6036590b3ff8466ce514464c22cbbeb61c75040166487",
+    "compactUpload": false
+  },
+  {
+    "file": "unchanged-link.log",
+    "size": 2928,
+    "sha256": "1483bfd75fa333c4749da45d1573de0de3df709862cee3397d20975544d8826b",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-full-identity.log",
+    "size": 47,
+    "sha256": "355b20b4d9a74cf44a847bd5a14b58aa6654090c86b21fb198cd183a4d4e1da8",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-hello.log",
+    "size": 24,
+    "sha256": "5049596b0af505b36bcf4ad48cb67628cb09663fb90c666a543f6418057f3795",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-library-behavior.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-revision.log",
+    "size": 16,
+    "sha256": "9be88dde8b69dbe59e415265fef0e6afa91607e6ef3e0de5ed3d0886844f52e2",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-version.log",
+    "size": 6,
+    "sha256": "b99b4c7cdf236f59bc9f65d963deaecae3b16a7dad87939cacb9057f7664daee",
+    "compactUpload": true
+  },
+  {
+    "file": "version-ar.log",
+    "size": 66,
+    "sha256": "0cd061b54d9fabd10472fb5d41faa0d4c11ba220b23a9da140226ed4f35c7179",
+    "compactUpload": true
+  },
+  {
+    "file": "version-cargo.log",
+    "size": 44,
+    "sha256": "eead13b33714ef18c9cb5b27e1e7aba3f4bc4471ecda1b548ecc6b57b19cdd4d",
+    "compactUpload": true
+  },
+  {
+    "file": "version-cc.log",
+    "size": 227,
+    "sha256": "3e0e0a977d99346465940d41179308b84b6bb7f214cfa4a45188786170bb1105",
+    "compactUpload": true
+  },
+  {
+    "file": "version-cmake.log",
+    "size": 91,
+    "sha256": "f6e81c2559f3ce00c5fdad01d7b226c301f5d6b07ee04f65db6dbfdc1cc5970b",
+    "compactUpload": true
+  },
+  {
+    "file": "version-cxx.log",
+    "size": 227,
+    "sha256": "3e0e0a977d99346465940d41179308b84b6bb7f214cfa4a45188786170bb1105",
+    "compactUpload": true
+  },
+  {
+    "file": "version-ld.log",
+    "size": 116,
+    "sha256": "75d97113b00a0e1b0f05985e72865d64d9f2a7d462b24241254d199adfed3291",
+    "compactUpload": true
+  },
+  {
+    "file": "version-llvm-objcopy.log",
+    "size": 108,
+    "sha256": "a663242bddab0451382e69f6dc50a7149a449dca55b4715635f6b5566a4a3cd9",
+    "compactUpload": true
+  },
+  {
+    "file": "version-ninja.log",
+    "size": 7,
+    "sha256": "810ab97f4b3fccb9adf1db7959945b479635931ccc4a0243c34a41b739eae25a",
+    "compactUpload": true
+  },
+  {
+    "file": "version-node.log",
+    "size": 8,
+    "sha256": "08f6347c6bc47b1f68fb3e5b85f789b6baabb1c94d2006983a485d4501048459",
+    "compactUpload": true
+  },
+  {
+    "file": "version-ranlib.log",
+    "size": 66,
+    "sha256": "0cd061b54d9fabd10472fb5d41faa0d4c11ba220b23a9da140226ed4f35c7179",
+    "compactUpload": true
+  },
+  {
+    "file": "version-readelf.log",
+    "size": 288,
+    "sha256": "6aca4321453ac381865f3d353ea7896b150c05026483cb9db0047eee6916723d",
+    "compactUpload": true
+  },
+  {
+    "file": "version-rustc.log",
+    "size": 212,
+    "sha256": "e77b488815717bdfbdcae905649313903f93857826034d5421687672887caab9",
+    "compactUpload": true
+  },
+  {
+    "file": "version-strip.log",
+    "size": 286,
+    "sha256": "c7ec30a0d74e492add5e84a46392b6be6137f3d29883c0a1417389936dfd09bb",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-cache-files.jsonl",
+    "size": 399262,
+    "sha256": "5c40dd9b26e03dfe4e5f40b31b9e7e5072fe2909ed916e73fc5e0c88a307ba80",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-compile-modified.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-compile-remaps.json",
+    "size": 13525,
+    "sha256": "8dfca22ee0d1c7a26cd0e914aad4339eb7e30c5578b7656eb8b08119c7a74758",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-compile-unmodified.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-modified-compile-closure.json",
+    "size": 123532,
+    "sha256": "cadd7fd95047a179bb51f0b2a80a2ddc814050ddb0ab6ebe2b44ca164df8f4b9",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-modified.d",
+    "size": 65859,
+    "sha256": "ee3fc36373e4d71bbd34630bcc2b0d1ccd8a194e2fa9c9f3357618aca3bb7db3",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-original-object.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-replace-member.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-trial-identities.json",
+    "size": 55953,
+    "sha256": "0c753b8c36e15eb37d5e2973602123246da93379e1ca09244bcc79d696e8a9d5",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-unmodified-compile-closure.json",
+    "size": 123532,
+    "sha256": "40d37b3daf44f36a4fe46816b4630e69c258bd2c6cd874bd11aa54177373f5eb",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-unmodified.d",
+    "size": 65859,
+    "sha256": "ee3fc36373e4d71bbd34630bcc2b0d1ccd8a194e2fa9c9f3357618aca3bb7db3",
+    "compactUpload": true
+  }
+]

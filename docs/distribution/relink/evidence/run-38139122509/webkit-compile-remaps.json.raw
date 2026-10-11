@@ -1,0 +1,220 @@
+{
+  "original": {
+    "directory": "/webkitbuild",
+    "command": "/usr/bin/clang++-21 -DBUILDING_JSCONLY__ -DBUILDING_WEBKIT -DBUILDING_WITH_CMAKE -DBUILDING_WTF -DHAVE_CONFIG_H -DPAS_BMALLOC -DSTATICALLY_LINKED_WITH_bmalloc -D_GLIBCXX_ASSERTIONS -I/webkitbuild/Source/WTF/wtf/WTF-framework-headers.hmap -I/webkitbuild/Source/WTF/wtf/WTF-project-headers.hmap -I/webkit/Source/WTF/wtf/bun/BannedIncludes -I/webkitbuild -I/webkitbuild/WTF/DerivedSources -I/webkit/Source/WTF -I/webkit/Source/WTF/wtf -I/webkit/Source/WTF/wtf/dtoa -I/webkit/Source/WTF/wtf/fast_float -I/webkit/Source/WTF/wtf/persistence -I/webkit/Source/WTF/wtf/simdutf -I/webkit/Source/WTF/wtf/text -I/webkit/Source/WTF/wtf/text/icu -I/webkit/Source/WTF/wtf/threads -I/webkit/Source/WTF/wtf/unicode -I/webkitbuild/bmalloc/Headers -I/webkitbuild/bmalloc/PrivateHeaders -I/webkitbuild/Source/bmalloc/bmalloc-framework-headers.hmap -fdiagnostics-color=always -fcolor-diagnostics -Wextra -Wall -Wno-character-conversion -Werror=undefined-internal -Werror=undefined-inline -Wl,-u,_Bun__reportUnhandledError -Wl,-u,_Bun__errorInstance__finalize -Wl,-u,_WTFTimer__cancel -Wl,-u,_WTFTimer__secondsUntilTimer -Wl,-u,_WTFTimer__isActive -Wl,-u,_WTFTimer__deinit -Wl,-u,_WTFTimer__update -Wl,-u,_WTFTimer__create -pipe -Wno-noexcept-type -Wno-nullability-completeness -Wno-psabi -Wno-misleading-indentation -Wno-parentheses-equality -Qunused-arguments -Wundef -Wpointer-arith -Wmissing-format-attribute -Wformat-security -Wcast-align -Wno-tautological-compare -fasynchronous-unwind-tables -mllvm -dwarf-linkage-names=Abstract -gsimple-template-names -fdebug-types-section -mno-omit-leaf-frame-pointer -g -fno-omit-frame-pointer -ffunction-sections -fdata-sections -faddrsig -fno-unwind-tables -fno-asynchronous-unwind-tables -DU_STATIC_IMPLEMENTATION=1  --target=x86_64-unknown-linux-gnu -march=nehalem  -stdlib=libstdc++ -g1 -flto=thin -fno-split-lto-unit -fwhole-program-vtables -fforce-emit-vtables -fno-c++-static-destructors -ffile-prefix-map=/webkit/Source=vendor/WebKit/Source -ffile-prefix-map=/webkitbuild/=. -fno-strict-aliasing -fno-exceptions -fno-rtti -fcoroutines -ffunction-sections -fdata-sections -O3 -DNDEBUG=1 -std=c++23 -fvisibility=hidden -fvisibility-inlines-hidden -o Source/WTF/wtf/CMakeFiles/WTF.dir/DateMath.cpp.o -c /webkit/Source/WTF/wtf/DateMath.cpp",
+    "file": "/webkit/Source/WTF/wtf/DateMath.cpp",
+    "output": "/webkitbuild/Source/WTF/wtf/CMakeFiles/WTF.dir/DateMath.cpp.o"
+  },
+  "remaps": [
+    {
+      "original": "/usr/bin/clang++-21",
+      "replacement": "/home/runner/work/_temp/relink-task-38139122509-1/llvm/bin/clang++"
+    },
+    {
+      "original": "-I/webkitbuild/Source/WTF/wtf/WTF-framework-headers.hmap",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkitbuild/Source/WTF/wtf/WTF-project-headers.hmap",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/bun/BannedIncludes",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkitbuild",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkitbuild/WTF/DerivedSources",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/dtoa",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/fast_float",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/persistence",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/simdutf",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/text",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/text/icu",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/threads",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkit/Source/WTF/wtf/unicode",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkitbuild/bmalloc/Headers",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkitbuild/bmalloc/PrivateHeaders",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-I/webkitbuild/Source/bmalloc/bmalloc-framework-headers.hmap",
+      "replacement": [
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+        "-I/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial"
+      ]
+    },
+    {
+      "original": "-ffile-prefix-map=/webkit/Source=vendor/WebKit/Source",
+      "replacement": "owned source/cache prefix mappings"
+    },
+    {
+      "original": "-ffile-prefix-map=/webkitbuild/=.",
+      "replacement": "owned source/cache prefix mappings"
+    },
+    {
+      "original": [
+        "-o",
+        "Source/WTF/wtf/CMakeFiles/WTF.dir/DateMath.cpp.o"
+      ],
+      "replacement": "per-stage owned output/source"
+    },
+    {
+      "original": [
+        "-c",
+        "/webkit/Source/WTF/wtf/DateMath.cpp"
+      ],
+      "replacement": "per-stage owned output/source"
+    }
+  ],
+  "addedTargetClosureAndPrefixFlags": [
+    "--sysroot=/home/runner/work/_temp/relink-task-38139122509-1/sysroot",
+    "--gcc-toolchain=/home/runner/work/_temp/relink-task-38139122509-1/sysroot/usr",
+    "-ffile-prefix-map=/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial=vendor/WebKit/Source/WTF/wtf",
+    "-ffile-prefix-map=/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/include=webkit-cache/include"
+  ],
+  "headerStrategy": "official verified cache exported headers, including cmakeconfig.h; no invented generated header",
+  "compileCommands": {
+    "path": "/home/runner/work/_temp/relink-task-38139122509-1/cache/webkit-2e2aa2290fac856d-lto/compile_commands.json",
+    "size": 2283124,
+    "sha256": "8ccd24af9098a44cd8b2c6fa0d9930842aae60afddbb956a9de2501bb72414b2"
+  },
+  "source": {
+    "path": "/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial/DateMath.cpp",
+    "size": 40526,
+    "sha256": "65b1066ee8ec153db043d1e2d8967ddb068b9aea84dc6258994aad13e631d9cc"
+  },
+  "config": {
+    "path": "/home/runner/work/_temp/relink-task-38139122509-1/webkit-trial/config.h",
+    "size": 1152,
+    "sha256": "38cea97eedc4257199fb0d3645af0d5b29dbdb80e67aa9d2f976b4d8939733b8"
+  }
+}

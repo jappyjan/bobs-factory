@@ -1,0 +1,17 @@
+{
+  "file": "WebKit-2e2aa2290fac856d6f451ceacb58f7f5b44dd057.tar.gz",
+  "sha256": "108dd98cc15bf43debc753cfb597b5635bd936855da2bb48bf0bcacc46881f7d",
+  "size": 1993738581,
+  "revision": "2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+  "tree": "01e7ea36e5a23bf0206724ed83c594a2eaec95ed",
+  "source": "https://github.com/oven-sh/WebKit/commit/2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+  "headers": 489846,
+  "regularFileBytes": 5474279499,
+  "gitEntries": 466297,
+  "directories": 22747,
+  "symlinks": 35,
+  "entireTreeIncluded": true,
+  "blobSha1VerifiedOnWrite": true,
+  "elapsedSeconds": 107.41348958399999,
+  "state": "acquired; full source preservation archive; release intake/licensing receipt UNPROVEN"
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "phase": "initial-install",
+    "signal": "SIGINT",
+    "passed": true
+  },
+  {
+    "phase": "initial-install",
+    "signal": "SIGTERM",
+    "passed": true
+  },
+  {
+    "phase": "manager-mutation",
+    "signal": "SIGINT",
+    "passed": false,
+    "error": "Expected values to be strictly equal:\n\n1 !== 130\n"
+  },
+  {
+    "phase": "manager-mutation",
+    "signal": "SIGTERM",
+    "passed": false,
+    "error": "Expected values to be strictly equal:\n\n1 !== 143\n"
+  },
+  {
+    "phase": "healthy-managed-fixture",
+    "signal": "SIGINT",
+    "passed": true
+  },
+  {
+    "phase": "healthy-managed-fixture",
+    "signal": "SIGTERM",
+    "passed": true
+  }
+]

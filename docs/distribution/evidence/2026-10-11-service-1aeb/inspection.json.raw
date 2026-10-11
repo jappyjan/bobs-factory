@@ -1,0 +1,111 @@
+{
+  "harnessSha": "1aeb055458f2cf943f007338d0b98a9f91a7d472",
+  "runtimeSource": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+  "runId": 38139582770,
+  "jobId": 114470479566,
+  "artifactId": 11702895383,
+  "archiveSha256": "ea5819ba72a3c95f83c095a8ae1f8e4a0840cbf6b86fbb6acdf6a0b892d51e63",
+  "archiveBytes": 184122,
+  "rawMembers": 94,
+  "receipts": 8,
+  "mainPassed": true,
+  "cleanup": true,
+  "survivors": [],
+  "assertions": 7,
+  "crashBackoffMs": 11956,
+  "exhaustion": {
+    "unit": "de.bobs-factory.737e6f843c8ecdde.service",
+    "properties": {
+      "RestartUSec": "10s",
+      "MainPID": "0",
+      "ControlPID": "0",
+      "Result": "signal",
+      "NRestarts": "4",
+      "ActiveState": "failed",
+      "SubState": "failed",
+      "Job": "",
+      "StartLimitIntervalUSec": "2min",
+      "StartLimitBurst": "3"
+    },
+    "stableMs": 10640
+  },
+  "helpers": {
+    "linux-user-service.mjs": "176bdce7277f36e7591b4d640296d81fed7ad6ecff5336cd71ecef603ea29454",
+    "service-protocol.mjs": "daa10e9ba9f9dddcf492e1293e2c53e2fb267c63a961ba45c2b19b6932bce42d",
+    "owned-command.mjs": "dce9c29eff6dcf8268b4c052867f99f7c88639f1b2126d05536270eb734d4751",
+    "owned-cleanup.mjs": "c1a5f41c0e8cf3e7594747dc5e365966a4ada37668d3718176de14541a4e04c7",
+    "owned-command-child.mjs": "821d37058a89756d3e65209d68f51015102a9646b0505f88b4da6edff7f6bc52",
+    "owned-registry.mjs": "9a0ff90f44f2ff34f7c41340ede63d7ee888a041ba32aa2ef2d593bfd5410d74",
+    "owned-fixture.mjs": "d0e8582f394f9fc683360d612bf70c63eefddc84013f77ab7586233d6c888346",
+    "owned-filesystem.mjs": "2fb54a0c19b6c07ffda120e4f8a9714f971a5cfa5e9d3c6cb121dfbc35a069d7",
+    "manager-wrapper.mjs": "78935566bb6aaea32b0e6d755396b58e0d712ced7530d02dd1a5511ea823201b"
+  },
+  "cases": [
+    {
+      "receipt": "cancel-initial-install-SIGINT.json",
+      "phase": "initial-install",
+      "signal": "SIGINT",
+      "outerTimeout": false,
+      "status": 130,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-initial-install-SIGTERM.json",
+      "phase": "initial-install",
+      "signal": "SIGTERM",
+      "outerTimeout": false,
+      "status": 143,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-manager-mutation-SIGINT.json",
+      "phase": "manager-mutation",
+      "signal": "SIGINT",
+      "outerTimeout": false,
+      "status": 130,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-manager-mutation-SIGTERM.json",
+      "phase": "manager-mutation",
+      "signal": "SIGTERM",
+      "outerTimeout": false,
+      "status": 143,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-healthy-managed-fixture-SIGINT.json",
+      "phase": "healthy-managed-fixture",
+      "signal": "SIGINT",
+      "outerTimeout": false,
+      "status": 130,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-healthy-managed-fixture-SIGTERM.json",
+      "phase": "healthy-managed-fixture",
+      "signal": "SIGTERM",
+      "outerTimeout": false,
+      "status": 143,
+      "cleanup": true,
+      "survivors": []
+    },
+    {
+      "receipt": "cancel-manager-mutation-outer-timeout.json",
+      "phase": "manager-mutation",
+      "signal": "SIGTERM",
+      "outerTimeout": true,
+      "status": 143,
+      "cleanup": true,
+      "survivors": []
+    }
+  ],
+  "providerTests": 46,
+  "nodeRun": 38139586901,
+  "node22And24": "success"
+}

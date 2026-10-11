@@ -1,0 +1,21 @@
+{
+  "result": "PASS",
+  "gitCommit": "2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+  "gitTree": "01e7ea36e5a23bf0206724ed83c594a2eaec95ed",
+  "gitEntries": 466297,
+  "distinctBlobs": 405295,
+  "modes": {
+    "100644": 464114,
+    "100755": 2148,
+    "120000": 35
+  },
+  "directoriesIncludingRoot": 22747,
+  "ordinaryArchiveEntries": 489044,
+  "regularBytes": 5474279499,
+  "symlinks": 35,
+  "testEntries": 385406,
+  "archiveBytes": 1993738581,
+  "archiveSha256": "108dd98cc15bf43debc753cfb597b5635bd936855da2bb48bf0bcacc46881f7d",
+  "sourceAndArchiveEveryGitBlobVerified": true,
+  "seconds": 21.818
+}

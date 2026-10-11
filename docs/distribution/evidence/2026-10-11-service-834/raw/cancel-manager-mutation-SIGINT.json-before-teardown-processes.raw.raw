@@ -1,0 +1,1 @@
+   9810    1257 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-9h6ln5/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-9h6ln5/state --port 39643 --no-open service run
