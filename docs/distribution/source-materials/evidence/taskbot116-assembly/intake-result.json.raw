@@ -1,0 +1,107 @@
+{
+  "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+  "sourceRecord": {
+    "file": "source-rebuild.tar.gz",
+    "size": 4123580131,
+    "sha256": "c1ff95d783333f3422736bba5bd82e5c5e6bb637b432d9a07bcb41e0621ec8a1"
+  },
+  "archivePath": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/output/source-rebuild.tar.gz",
+  "manifestPath": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/output/source-rebuild/source-materials.json",
+  "manifest": {
+    "file": "source-materials.json",
+    "size": 128224,
+    "sha256": "0013fb39d0ab893e9adafab715cf4cfe93b540b859a2540dc6df2b8440caf7ec"
+  },
+  "materialRecordCount": 80,
+  "materialRecordBytes": 4091185920,
+  "outerRegularFiles": 86,
+  "outerTarDeclaredExpandedBytesIncludingPadding": 4150240768,
+  "limits": {
+    "maxCompressedBytes": 8589934592,
+    "maxMemberBytes": 4294967296,
+    "maxExpandedBytes": 17179869184,
+    "maxNestedHeaders": 500000,
+    "maxOuterHeaders": 256,
+    "workerTimeoutMs": 120000,
+    "maxControlBytes": 1048576,
+    "captureBudgetBytes": 8388608
+  },
+  "hostFreeBytes": 213652656128,
+  "ownedLogicalBytes": 21388088623,
+  "ownedMaxBytes": 42949672960,
+  "hostFreeFloorBytes": 107374182400,
+  "elapsedSeconds": 264.695,
+  "directoryIntake": {
+    "status": "PASS",
+    "milliseconds": 22646,
+    "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+    "records": 80,
+    "recordBytes": 4091185920,
+    "scope": "actual directory under unchanged default validator; no completeness or legal acceptance"
+  },
+  "archiveIntake": {
+    "status": "PASS",
+    "milliseconds": 31825,
+    "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+    "scope": "actual complete flat source archive under unchanged default validator; no completeness/legal acceptance"
+  },
+  "fourTargetStagingChecks": [
+    {
+      "target": "darwin-arm64",
+      "status": "PASS",
+      "scope": "actual material/source/cache staging, hash-verified archive/link input closure and real Ninja dry-run; no compiler/linker execution",
+      "milliseconds": 7613,
+      "inputClosure": {
+        "target": "darwin-arm64",
+        "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+        "verifiedApplicationArchives": 2,
+        "verifiedLinkedLibraries": 3,
+        "stagedOnly": true,
+        "executed": false
+      }
+    },
+    {
+      "target": "darwin-x64",
+      "status": "PASS",
+      "scope": "actual material/source/cache staging, hash-verified archive/link input closure and real Ninja dry-run; no compiler/linker execution",
+      "milliseconds": 7311,
+      "inputClosure": {
+        "target": "darwin-x64",
+        "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+        "verifiedApplicationArchives": 2,
+        "verifiedLinkedLibraries": 3,
+        "stagedOnly": true,
+        "executed": false
+      }
+    },
+    {
+      "target": "linux-x64",
+      "status": "PASS",
+      "scope": "actual material/source/cache staging, hash-verified archive/link input closure and real Ninja dry-run; no compiler/linker execution",
+      "milliseconds": 7839,
+      "inputClosure": {
+        "target": "linux-x64",
+        "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+        "verifiedApplicationArchives": 2,
+        "verifiedLinkedLibraries": 6,
+        "stagedOnly": true,
+        "executed": false
+      }
+    },
+    {
+      "target": "linux-arm64",
+      "status": "PASS",
+      "scope": "actual material/source/cache staging, hash-verified archive/link input closure and real Ninja dry-run; no compiler/linker execution",
+      "milliseconds": 7741,
+      "inputClosure": {
+        "target": "linux-arm64",
+        "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+        "verifiedApplicationArchives": 2,
+        "verifiedLinkedLibraries": 6,
+        "stagedOnly": true,
+        "executed": false
+      }
+    }
+  ],
+  "licenseAcceptance": "not issued; independent review pending"
+}

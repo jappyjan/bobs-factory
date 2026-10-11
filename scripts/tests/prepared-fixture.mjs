@@ -24,6 +24,7 @@ import {
 	freezeCandidate,
 	validateCandidate,
 } from "../lib/release-candidate.mjs";
+import { splitSourceArchive } from "../lib/source-transport.mjs";
 import { keys, signBytes, testInstaller } from "./release-fixtures.mjs";
 
 import {
@@ -41,6 +42,7 @@ export function preparedFixture(
 		desktop = false,
 		legacy = false,
 		frozenCandidate,
+		sourceChunks = false,
 	} = {},
 ) {
 	const work = mkdtempSync(join(tmpdir(), "factory-publication-fixture-"));
@@ -352,6 +354,15 @@ export function preparedFixture(
 		join(assets, "source-rebuild.tar.gz"),
 		"source-rebuild.tar.gz",
 	);
+	const sourceTransport = sourceChunks
+		? splitSourceArchive(
+				join(assets, sourceRecord.file),
+				sourceRecord,
+				assets,
+				1024,
+			)
+		: undefined;
+	if (sourceTransport) rmSync(join(assets, sourceRecord.file));
 	const evidence = {
 		schemaVersion: 1,
 		product: "bobs-factory",
@@ -468,6 +479,7 @@ export function preparedFixture(
 			"install-binary.sh",
 		),
 		source: sourceRecord,
+		...(sourceTransport ? { sourceTransport } : {}),
 		targets,
 		...(desktop ? { desktop: evidence.desktop } : {}),
 		...(!legacy

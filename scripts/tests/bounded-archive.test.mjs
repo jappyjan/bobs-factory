@@ -202,21 +202,29 @@ test("member/header/control limits reject before oversized payloads are material
 	}));
 
 test("unknown outer payload and wrong candidate never reach an extraction directory", () =>
-	fixture((_work, archive) => {
-		const before = readdirSync(tmpdir()).filter((n) =>
-			n.startsWith("factory-source-intake-"),
-		);
-		const malformed = archive([
-			tarMember("source-rebuild/candidate.json", Buffer.from("{}")),
-			tarMember("source-rebuild/payload", Buffer.alloc(32 * 1024 ** 2)),
-		]);
-		assert.throws(() => validateSourceArchive(malformed, {}), /candidate/i);
-		assert.deepEqual(
-			readdirSync(tmpdir()).filter((n) =>
+	fixture((work, archive) => {
+		// Isolate this no-extraction assertion from other test processes.
+		const previousTemp = process.env.TMPDIR;
+		process.env.TMPDIR = work;
+		try {
+			const before = readdirSync(tmpdir()).filter((n) =>
 				n.startsWith("factory-source-intake-"),
-			),
-			before,
-		);
+			);
+			const malformed = archive([
+				tarMember("source-rebuild/candidate.json", Buffer.from("{}")),
+				tarMember("source-rebuild/payload", Buffer.alloc(32 * 1024 ** 2)),
+			]);
+			assert.throws(() => validateSourceArchive(malformed, {}), /candidate/i);
+			assert.deepEqual(
+				readdirSync(tmpdir()).filter((n) =>
+					n.startsWith("factory-source-intake-"),
+				),
+				before,
+			);
+		} finally {
+			if (previousTemp === undefined) delete process.env.TMPDIR;
+			else process.env.TMPDIR = previousTemp;
+		}
 	}));
 
 test("owned intake worker has an enforced deadline and leaves no partial output", () =>

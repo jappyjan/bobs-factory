@@ -1,7 +1,11 @@
 # Candidate source/rebuild preparation
 
 This lane prepares inputs for the maintained [release contract](../PUBLIC_RELEASES.md).
-It does not issue licensing approval. It was implemented from frozen PR89 source
+It does not issue licensing approval. The later frozen `.21` assembly and its actual
+bounded intake results are recorded in [ASSEMBLY_116.md](ASSEMBLY_116.md).
+The original acquisition/preparation status below is historical evidence, not the
+current inventory of that separately assembled material. The original lane was
+implemented from frozen PR89 source
 `58cb5e40a5f47bd9508f99c49067c5bc458a8dcc`; that implementation base is not a
 new frozen release candidate and does not supersede the historical ed7/23/58 receipts.
 
@@ -85,9 +89,13 @@ For each `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64` target, retain
 - Application object/static-library files needed to relink, including generated
   code and a link response (`.rsp` or `.response`), in a regular-only
   `objects/` archive. `objectInventory` must enumerate all regular archive entries.
-- Actual log demonstrating the retained objects can relink against the selected
-  modified library and rebuild the final application. Include invocation, inputs,
-  output hashes and smoke result. A nonempty placeholder is not verification.
+- Actual upstream/relink provenance logs, scoped to the target and retained
+  inputs. A representative executed modified-library proof can establish the
+  mechanism while all four targets retain complete relink kits and recipes;
+  assembly alone does not require four new modified native runs. Clearly label
+  source-derived responses/configurations and unexecuted recipes. Include actual
+  invocations, input/output hashes and smoke results for any execution claimed.
+  A nonempty placeholder is not verification.
 
 With the rebuilt runtime, rebuild the exact Factory source using its frozen lockfile
 and native target recipe. The maintained command is:

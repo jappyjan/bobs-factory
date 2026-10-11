@@ -195,6 +195,7 @@ test("evidence intake rejects a dirty version edit before retrieving build prove
 		for (const file of [
 			"prepare-release-evidence.mjs",
 			"lib/binary-release.mjs",
+			"lib/source-transport.mjs",
 			"lib/release-material.mjs",
 			"lib/bounded-archive.mjs",
 			"lib/release-candidate.mjs",
