@@ -15,6 +15,7 @@ import {
 	FactoryAuthStore,
 	privateFile,
 } from "./FactoryAuthStore.js";
+import { loopbackHost } from "./LocalFactoryAccess.js";
 
 const secret = () => randomBytes(32).toString("base64url");
 const hash = (value: string) =>
@@ -94,8 +95,7 @@ export class FactoryAuth {
 				url.hostname.includes("*") ||
 				!(
 					url.protocol === "https:" ||
-					(url.protocol === "http:" &&
-						["localhost", "127.0.0.1"].includes(url.hostname))
+					(url.protocol === "http:" && loopbackHost(url.hostname))
 				)
 			)
 				throw new Error("Invalid Factory authentication origin");

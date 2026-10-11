@@ -162,7 +162,7 @@ it("starts guided setup from any folder without Git, an agent or a repository", 
 it.each([
 	false,
 	true,
-])("opens a first-launch fragment only with no existing credentials (existing: %s)", async (existing) => {
+])("opens local onboarding without exposing enrollment grants (existing: %s)", async (existing) => {
 	const { EdgeWorker } = await import("bobs-factory-edge-worker");
 	const root = mkdtempSync(join(tmpdir(), "factory-first-authority-"));
 	roots.push(root);
@@ -185,11 +185,8 @@ it.each([
 		} as unknown as InstanceType<typeof EdgeWorker>;
 	});
 	await launchLocal({ port: "3457", home });
-	expect(open).toHaveBeenCalledWith(
-		`http://localhost:3457/${existing ? "" : `#setup=${token}`}`,
-		{ wait: false },
-	);
-	expect(JSON.stringify(log.mock.calls).includes(token)).toBe(!existing);
+	expect(open).toHaveBeenCalledWith("http://localhost:3457/", { wait: false });
+	expect(JSON.stringify(log.mock.calls).includes(token)).toBe(false);
 	expect(readFileSync(join(auth, "enroll.json"), "utf8")).toBe(grant);
 });
 
