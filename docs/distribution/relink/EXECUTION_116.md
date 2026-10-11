@@ -3,10 +3,12 @@
 The first actual Linux x64 modified trial failed its revision assertion before
 the native effect requirement could be evaluated. The second trial compiled and
 linked the modified source but failed the native effect check. A third run passed
-the complete modified diagnostic on the exact PR92 source head. All three results
-remain preserved as historical evidence; the third is a disposable engineering
-PASS for Linux x64 only. It does not establish production default behavior,
-source/license acceptance, or release readiness.
+the complete modified diagnostic on the exact PR92 source head. An independent
+read-only review of that run's native evidence found no concrete P1/P2 findings
+and cleared the result for Linux x64 only. All three results remain preserved as
+historical evidence; the third is a disposable engineering PASS. This does not
+establish production default behavior, other-platform results, source/license
+acceptance, signing, publication, or release readiness.
 
 The separately identified run `38138403930` used exact source head
 `53f6e03d0f28f53d7b305384d869d9d892328c52`. This documentation update did not
