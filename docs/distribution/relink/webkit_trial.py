@@ -163,48 +163,62 @@ def modified_library_trial(task, manifest, files, bun_source, build, cache, sysr
                 raise RuntimeError(f"Compilation used a header outside the owned closure: {resolved}")
             closure.append(file_record(resolved))
         (task.evidence / ("webkit-" + stage + "-compile-closure.json")).write_text(json.dumps(closure, indent=2) + "\n")
-    task.receipt["phase"] = "webkit-single-member-replacement"
-    task.save()
-    task.run([task.root / "llvm/bin/llvm-ar", "rD", "--format=gnu", library, obj], "webkit-replace-member", trial)
-    after = archive_members(library)
-    assert_single_replacement(before, after, member, file_record(obj))
-    identities = {"originalLibrary": file_record(original_lib), "modifiedLibrary": file_record(library),
-                  "originalObject": file_record(original_obj),
-                  "unmodifiedRecompiledObject": file_record(trial / "DateMath-unmodified.cpp.o"),
-                  "modifiedObject": file_record(obj), "modifiedSource": file_record(source),
-                  "beforeMembers": before, "afterMembers": after}
-    # Every other genuine application/WebKit link input must be unchanged.
-    for r in manifest["webkitLibraries"]:
-        if r["file"] != "libWTF.a" and file_record(cache / "lib" / r["file"])["sha256"] != r["sha256"]:
-            raise RuntimeError(f"Unexpected change to other WebKit input: {r['file']}")
-    for r in manifest["downloads"]:
-        if r["kind"] in ("cpp", "rust"):
-            path = build / ("libbun-profile.a" if r["kind"] == "cpp" else "rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a")
-            if file_record(path)["sha256"] != r["expandedSha256"]:
-                raise RuntimeError("Application archive changed during library trial")
-    (task.evidence / "webkit-trial-identities.json").write_text(json.dumps(identities, indent=2) + "\n")
-    task.receipt["modifiedLibrary"] = identities["modifiedLibrary"]
-    task.receipt["phase"] = "modified-library-link"
-    task.save()
-    # The cached library is an explicit generated link input. Require the real
-    # unchanged link/strip commands and force only their owned output rebuild.
+    # Retain the byte-identical cached-input runtime before either replacement.
+    # The unmodified recompiled TU must also link and run correctly: compilation
+    # alone would not prove this header/ABI reconstruction preserves behavior.
     unchanged_binary = trial / "bun-unchanged"
     shutil.copyfile(build / "bun", unchanged_binary)
-    for name in ("bun", "bun-profile"):
-        (build / name).unlink()
-    task.run(["ninja", "-C", build, "-f", "relink-only.ninja", "-v", "-d", "keeprsp", "-j1", "bun"],
-             "modified-library-link", timeout=15 * 60)
-    for name in ("bun-profile.rsp", "bun-profile.linker-map"):
-        shutil.copyfile(build / name, task.evidence / ("modified-" + name))
-    task.receipt["modifiedOutput"] = file_record(build / "bun")
-    task.receipt["modifiedProfile"] = file_record(build / "bun-profile")
-    if task.receipt["modifiedOutput"]["sha256"] == task.receipt["outputSha256"]:
-        raise RuntimeError("Modified source library produced unchanged runtime bytes")
-    task.receipt["modifiedLibraryRelink"] = True
-    task.receipt["phase"] = "modified-library-native-smoke"
-    task.save()
-    task.native_smoke(build / "bun", bun_source, manifest, "modified", 116000000)
-    # Recheck retained unmodified output against the same test after the trial.
+    for stage, prefix, expected_date in (("unmodified", "recompiled", 86400000),
+                                         ("modified", "modified", 116000000)):
+        task.receipt["phase"] = stage + "-webkit-single-member-replacement"
+        task.save()
+        shutil.copyfile(trial / ("DateMath-" + stage + ".cpp.o"), obj)
+        task.run([task.root / "llvm/bin/llvm-ar", "rD", "--format=gnu", library, obj],
+                 "webkit-replace-member-" + stage, trial)
+        after = archive_members(library)
+        assert_single_replacement(before, after, member, file_record(obj))
+        identities = {"originalLibrary": file_record(original_lib), "replacementLibrary": file_record(library),
+                      "originalObject": file_record(original_obj), "replacementObject": file_record(obj),
+                      "replacementSource": file_record(task.evidence / (
+                          "DateMath-original.cpp.raw" if stage == "unmodified" else "DateMath-modified.cpp.raw")),
+                      "unmodifiedRecompiledObject": file_record(trial / "DateMath-unmodified.cpp.o"),
+                      "modifiedObject": file_record(trial / "DateMath-modified.cpp.o"),
+                      "beforeMembers": before, "afterMembers": after}
+        # Every other genuine application/WebKit link input must be unchanged.
+        for r in manifest["webkitLibraries"]:
+            if r["file"] != "libWTF.a" and file_record(cache / "lib" / r["file"])["sha256"] != r["sha256"]:
+                raise RuntimeError(f"Unexpected change to other WebKit input: {r['file']}")
+        for r in manifest["downloads"]:
+            if r["kind"] in ("cpp", "rust"):
+                path = build / ("libbun-profile.a" if r["kind"] == "cpp" else "rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a")
+                if file_record(path)["sha256"] != r["expandedSha256"]:
+                    raise RuntimeError("Application archive changed during library trial")
+        (task.evidence / (stage + "-webkit-trial-identities.json")).write_text(json.dumps(identities, indent=2) + "\n")
+        task.receipt[prefix + "Library"] = identities["replacementLibrary"]
+        task.receipt["phase"] = prefix + "-library-link"
+        task.save()
+        # The cached library is an explicit generated link input. Require the real
+        # unchanged link/strip commands and force only their owned output rebuild.
+        for name in ("bun", "bun-profile"):
+            (build / name).unlink()
+        try:
+            task.run(["ninja", "-C", build, "-f", "relink-only.ninja", "-v", "-d", "keeprsp", "-j1", "bun"],
+                     prefix + "-library-link", timeout=15 * 60)
+        finally:
+            for name in ("bun-profile.rsp", "bun-profile.linker-map"):
+                if (build / name).is_file():
+                    shutil.copyfile(build / name, task.evidence / (prefix + "-" + name))
+        task.receipt[prefix + "Output"] = file_record(build / "bun")
+        task.receipt[prefix + "Profile"] = file_record(build / "bun-profile")
+        if stage == "modified" and task.receipt["modifiedOutput"]["sha256"] in (
+                task.receipt["outputSha256"], task.receipt["recompiledOutput"]["sha256"]):
+            raise RuntimeError("Modified source library produced unchanged runtime bytes")
+        task.receipt[prefix + "LibraryRelink"] = True
+        task.receipt["phase"] = prefix + "-library-native-smoke"
+        task.save()
+        task.native_smoke(build / "bun", bun_source, manifest, prefix, expected_date)
+        task.receipt[prefix + "NativeSmoke"] = True
+        task.save()
+    # Recheck retained cached-input runtime against the same native controls.
     task.native_smoke(unchanged_binary, bun_source, manifest, "unchanged-recheck", 86400000)
-    task.receipt["modifiedNativeSmoke"] = True
     task.receipt["phase"] = "modified-library-and-smoke-completed"

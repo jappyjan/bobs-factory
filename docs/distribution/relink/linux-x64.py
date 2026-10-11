@@ -34,6 +34,11 @@ def validate_native_identity(version, revision, javascript_identity, manifest):
         raise RuntimeError(f"Unexpected native identity: {(version, revision, javascript_identity)!r}")
 
 
+def validate_native_library_behavior(output, expected_date):
+    if output != f"[{expected_date},172800000,42]\n":
+        raise RuntimeError(f"Unexpected native library behavior: {output!r}")
+
+
 def sha256(path):
     h = hashlib.sha256()
     with Path(path).open("rb") as f:
@@ -85,11 +90,13 @@ class Diagnostic:
         self.budget_checked = 0
         self.env = dict(os.environ)
         for key in list(self.env):
-            if key in ("CI", "BUILDKITE", "GITHUB_ACTIONS", "GITHUB_TOKEN", "GH_TOKEN") or "TOKEN" in key:
+            if (key in ("CI", "BUILDKITE", "GITHUB_ACTIONS", "GITHUB_TOKEN", "GH_TOKEN")
+                    or "TOKEN" in key or key.startswith(("BUN_JSC_", "JSC_"))):
                 self.env.pop(key)
         self.receipt = {"purpose": "engineering diagnostic; no release/license acceptance",
                         "status": "pending", "unchangedNativeSmoke": False,
                         "modifiedNativeSmoke": False,
+                        "recompiledNativeSmoke": False, "recompiledLibraryRelink": False,
                         "unchangedRelink": False, "modifiedLibraryRelink": False,
                         "nativeSmoke": False, "exactBaseBytes": False,
                         "phase": "initializing", "host": platform.uname()._asdict()}
@@ -383,13 +390,21 @@ class Diagnostic:
                          prefix + "-native-hello", source, timeout=60)
         if hello != "taskbot116-relink-hello\n":
             raise RuntimeError(f"Unexpected native hello: {hello!r}")
-        # The same JS runs against both outputs. The trial modifies only the
-        # first date; the second date and ordinary startup must remain usable.
+        # Bun explicitly enables the V8 parser, which bypasses WTF::parseES5Date.
+        # Select both real native backends via Bun's pinned debug option, and
+        # require their actual option dumps. No JS changes between binaries.
         script = ("console.log(JSON.stringify([Date.parse('1970-01-02T00:00:00.000Z'),"
                   "Date.parse('1970-01-03T00:00:00.000Z'), 6*7]))")
-        output = self.run([binary, "-e", script], prefix + "-native-library-behavior", source, timeout=60)
-        if output != f"[{expected_date},172800000,42]\n":
-            raise RuntimeError(f"Unexpected native library behavior: {output!r}")
+        for backend, option, expected in (("v8", "true", 86400000), ("wtf", "false", expected_date)):
+            argv = ["env", "BUN_JSC_useV8DateParser=" + option]
+            dump = self.run(argv + ["BUN_JSC_dumpOptions=2", binary, "-e", "0"],
+                            prefix + "-native-date-backend-" + backend, source, timeout=60)
+            observed = re.findall(r"^\s*useV8DateParser=(true|false) \(default: false\)$", dump, re.M)
+            if observed != [option]:
+                raise RuntimeError(f"Native date backend {backend} was not selected: {observed!r}")
+            output = self.run(argv + [binary, "-e", script],
+                              prefix + "-native-library-behavior-" + backend, source, timeout=60)
+            validate_native_library_behavior(output, expected)
 
 
 def main():
@@ -408,6 +423,8 @@ def main():
         if args.mode != "configure" and not task.receipt["nativeSmoke"]:
             raise RuntimeError("Required native smoke did not complete")
         if args.mode == "modified" and not (task.receipt["exactBaseBytes"] and
+                                           task.receipt["recompiledLibraryRelink"] and
+                                           task.receipt["recompiledNativeSmoke"] and
                                            task.receipt["modifiedLibraryRelink"] and
                                            task.receipt["modifiedNativeSmoke"]):
             raise RuntimeError("Required unchanged equivalence/modified library proof did not complete")

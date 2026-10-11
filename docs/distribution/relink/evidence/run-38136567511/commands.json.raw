@@ -1,0 +1,908 @@
+[
+  {
+    "argv": [
+      "sh",
+      "/home/runner/work/_temp/relink-task-38136567511-1/rustc-installer/install.sh",
+      "--prefix=/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain",
+      "--disable-ldconfig"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "install-rustc.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "sh",
+      "/home/runner/work/_temp/relink-task-38136567511-1/cargo-installer/install.sh",
+      "--prefix=/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain",
+      "--disable-ldconfig"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "install-cargo.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/downloads/libc6_2.31-0ubuntu9.18_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-libc6.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/downloads/libc6-dev_2.31-0ubuntu9.18_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-libc6-dev.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/downloads/linux-libc-dev_5.4.0-216.236_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-linux-libc-dev.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/downloads/libcrypt1_4.4.10-10ubuntu4_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-libcrypt1.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/downloads/libcrypt-dev_4.4.10-10ubuntu4_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-libcrypt-dev.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/cpp-13_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-cpp-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/g++-13_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-g++-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/gcc-13_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-gcc-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libasan6_11.5.0-10ubuntu1~20~ppa3_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libasan6_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libasan8_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libasan8_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libitm1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libitm1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "dpkg-deb",
+      "-x",
+      "/home/runner/work/_temp/relink-task-38136567511-1/gcc13/libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64.deb",
+      "/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "extract-gcc13-libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/node/bin/node",
+      "--experimental-strip-types",
+      "scripts/build.ts",
+      "--profile=ci-link-only",
+      "--os=linux",
+      "--arch=x64",
+      "--abi=gnu",
+      "--canary=off",
+      "--buildkite=off",
+      "--configure-only",
+      "--build-dir=/home/runner/work/_temp/relink-task-38136567511-1/build",
+      "--cache-dir=/home/runner/work/_temp/relink-task-38136567511-1/cache",
+      "--linux-sysroot=/home/runner/work/_temp/relink-task-38136567511-1/sysroot"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "configure-cli.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/node/bin/node",
+      "/home/runner/work/bobs-factory/bobs-factory/docs/distribution/relink/capture-config.mjs",
+      "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+      "/home/runner/work/_temp/relink-task-38136567511-1/build",
+      "/home/runner/work/_temp/relink-evidence/resolved-config.json"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "capture-config.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/node/bin/node",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-node.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-objcopy",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-llvm-objcopy.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/clang",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-cc.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/clang++",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-cxx.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-ar",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-ar.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-ranlib",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-ranlib.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-ld.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/usr/bin/x86_64-linux-gnu-strip",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-strip.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/bin/cargo",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-cargo.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/bin/rustc",
+      "-vV"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-rustc.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/usr/local/bin/ninja",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-ninja.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/usr/local/bin/cmake",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-cmake.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/usr/bin/readelf",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "version-readelf.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38136567511-1/build",
+      "-t",
+      "commands",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "original-ninja-commands.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38136567511-1/build",
+      "-f",
+      "relink-only.ninja",
+      "-t",
+      "commands",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "restricted-ninja-commands.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38136567511-1/build",
+      "-f",
+      "relink-only.ninja",
+      "-n",
+      "-v",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "link-dry-run.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38136567511-1/build",
+      "-f",
+      "relink-only.ninja",
+      "-v",
+      "-d",
+      "keeprsp",
+      "-j1",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "unchanged-link.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "readelf",
+      "-aW",
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "relinked-elf.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "readelf",
+      "-aW",
+      "/home/runner/work/_temp/relink-task-38136567511-1/published-bun/bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "published-elf.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "unchanged-native-version.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "--revision"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "unchanged-native-revision.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "-e",
+      "console.log(Bun.version + '+' + Bun.revision)"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "unchanged-native-full-identity.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "-e",
+      "console.log('taskbot116-relink-hello')"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "unchanged-native-hello.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "-e",
+      "console.log(JSON.stringify([Date.parse('1970-01-02T00:00:00.000Z'),Date.parse('1970-01-03T00:00:00.000Z'), 6*7]))"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "unchanged-native-library-behavior.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "build",
+      "/home/runner/work/_temp/relink-task-38136567511-1/standalone-smoke.js",
+      "--compile",
+      "--outfile",
+      "/home/runner/work/_temp/relink-task-38136567511-1/standalone-smoke"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "injection-compile.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/standalone-smoke"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "injection-native.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "sh",
+      "-c",
+      "\"$1\" p \"$2\" \"$3\" > \"$4\"",
+      "owned-ar-extract",
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-ar",
+      "/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/lib/libWTF.a",
+      "DateMath.cpp.o",
+      "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial/DateMath-original.cpp.o"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "webkit-original-object.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/clang++",
+      "-DBUILDING_JSCONLY__",
+      "-DBUILDING_WEBKIT",
+      "-DBUILDING_WITH_CMAKE",
+      "-DBUILDING_WTF",
+      "-DHAVE_CONFIG_H",
+      "-DPAS_BMALLOC",
+      "-DSTATICALLY_LINKED_WITH_bmalloc",
+      "-D_GLIBCXX_ASSERTIONS",
+      "-fdiagnostics-color=always",
+      "-fcolor-diagnostics",
+      "-Wextra",
+      "-Wall",
+      "-Wno-character-conversion",
+      "-Werror=undefined-internal",
+      "-Werror=undefined-inline",
+      "-Wl,-u,_Bun__reportUnhandledError",
+      "-Wl,-u,_Bun__errorInstance__finalize",
+      "-Wl,-u,_WTFTimer__cancel",
+      "-Wl,-u,_WTFTimer__secondsUntilTimer",
+      "-Wl,-u,_WTFTimer__isActive",
+      "-Wl,-u,_WTFTimer__deinit",
+      "-Wl,-u,_WTFTimer__update",
+      "-Wl,-u,_WTFTimer__create",
+      "-pipe",
+      "-Wno-noexcept-type",
+      "-Wno-nullability-completeness",
+      "-Wno-psabi",
+      "-Wno-misleading-indentation",
+      "-Wno-parentheses-equality",
+      "-Qunused-arguments",
+      "-Wundef",
+      "-Wpointer-arith",
+      "-Wmissing-format-attribute",
+      "-Wformat-security",
+      "-Wcast-align",
+      "-Wno-tautological-compare",
+      "-fasynchronous-unwind-tables",
+      "-mllvm",
+      "-dwarf-linkage-names=Abstract",
+      "-gsimple-template-names",
+      "-fdebug-types-section",
+      "-mno-omit-leaf-frame-pointer",
+      "-g",
+      "-fno-omit-frame-pointer",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-faddrsig",
+      "-fno-unwind-tables",
+      "-fno-asynchronous-unwind-tables",
+      "-DU_STATIC_IMPLEMENTATION=1",
+      "--target=x86_64-unknown-linux-gnu",
+      "-march=nehalem",
+      "-stdlib=libstdc++",
+      "-g1",
+      "-flto=thin",
+      "-fno-split-lto-unit",
+      "-fwhole-program-vtables",
+      "-fforce-emit-vtables",
+      "-fno-c++-static-destructors",
+      "-fno-strict-aliasing",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-fcoroutines",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-O3",
+      "-DNDEBUG=1",
+      "-std=c++23",
+      "-fvisibility=hidden",
+      "-fvisibility-inlines-hidden",
+      "-I/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/include",
+      "-I/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+      "-I/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+      "-I/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial",
+      "--sysroot=/home/runner/work/_temp/relink-task-38136567511-1/sysroot",
+      "--gcc-toolchain=/home/runner/work/_temp/relink-task-38136567511-1/sysroot/usr",
+      "-ffile-prefix-map=/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial=vendor/WebKit/Source/WTF/wtf",
+      "-ffile-prefix-map=/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/include=webkit-cache/include",
+      "-MD",
+      "-MF",
+      "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial/unmodified.d",
+      "-o",
+      "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial/DateMath.cpp.o",
+      "-c",
+      "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial/DateMath.cpp"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial",
+    "log": "webkit-compile-unmodified.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/clang++",
+      "-DBUILDING_JSCONLY__",
+      "-DBUILDING_WEBKIT",
+      "-DBUILDING_WITH_CMAKE",
+      "-DBUILDING_WTF",
+      "-DHAVE_CONFIG_H",
+      "-DPAS_BMALLOC",
+      "-DSTATICALLY_LINKED_WITH_bmalloc",
+      "-D_GLIBCXX_ASSERTIONS",
+      "-fdiagnostics-color=always",
+      "-fcolor-diagnostics",
+      "-Wextra",
+      "-Wall",
+      "-Wno-character-conversion",
+      "-Werror=undefined-internal",
+      "-Werror=undefined-inline",
+      "-Wl,-u,_Bun__reportUnhandledError",
+      "-Wl,-u,_Bun__errorInstance__finalize",
+      "-Wl,-u,_WTFTimer__cancel",
+      "-Wl,-u,_WTFTimer__secondsUntilTimer",
+      "-Wl,-u,_WTFTimer__isActive",
+      "-Wl,-u,_WTFTimer__deinit",
+      "-Wl,-u,_WTFTimer__update",
+      "-Wl,-u,_WTFTimer__create",
+      "-pipe",
+      "-Wno-noexcept-type",
+      "-Wno-nullability-completeness",
+      "-Wno-psabi",
+      "-Wno-misleading-indentation",
+      "-Wno-parentheses-equality",
+      "-Qunused-arguments",
+      "-Wundef",
+      "-Wpointer-arith",
+      "-Wmissing-format-attribute",
+      "-Wformat-security",
+      "-Wcast-align",
+      "-Wno-tautological-compare",
+      "-fasynchronous-unwind-tables",
+      "-mllvm",
+      "-dwarf-linkage-names=Abstract",
+      "-gsimple-template-names",
+      "-fdebug-types-section",
+      "-mno-omit-leaf-frame-pointer",
+      "-g",
+      "-fno-omit-frame-pointer",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-faddrsig",
+      "-fno-unwind-tables",
+      "-fno-asynchronous-unwind-tables",
+      "-DU_STATIC_IMPLEMENTATION=1",
+      "--target=x86_64-unknown-linux-gnu",
+      "-march=nehalem",
+      "-stdlib=libstdc++",
+      "-g1",
+      "-flto=thin",
+      "-fno-split-lto-unit",
+      "-fwhole-program-vtables",
+      "-fforce-emit-vtables",
+      "-fno-c++-static-destructors",
+      "-fno-strict-aliasing",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-fcoroutines",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-O3",
+      "-DNDEBUG=1",
+      "-std=c++23",
+      "-fvisibility=hidden",
+      "-fvisibility-inlines-hidden",
+      "-I/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/include",
+      "-I/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/include/wtf",
+      "-I/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/include/bmalloc",
+      "-I/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial",
+      "--sysroot=/home/runner/work/_temp/relink-task-38136567511-1/sysroot",
+      "--gcc-toolchain=/home/runner/work/_temp/relink-task-38136567511-1/sysroot/usr",
+      "-ffile-prefix-map=/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial=vendor/WebKit/Source/WTF/wtf",
+      "-ffile-prefix-map=/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/include=webkit-cache/include",
+      "-MD",
+      "-MF",
+      "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial/modified.d",
+      "-o",
+      "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial/DateMath.cpp.o",
+      "-c",
+      "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial/DateMath.cpp"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial",
+    "log": "webkit-compile-modified.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-ar",
+      "rD",
+      "--format=gnu",
+      "/home/runner/work/_temp/relink-task-38136567511-1/cache/webkit-2e2aa2290fac856d-lto/lib/libWTF.a",
+      "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial/DateMath.cpp.o"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/webkit-trial",
+    "log": "webkit-replace-member.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "ninja",
+      "-C",
+      "/home/runner/work/_temp/relink-task-38136567511-1/build",
+      "-f",
+      "relink-only.ninja",
+      "-v",
+      "-d",
+      "keeprsp",
+      "-j1",
+      "bun"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1",
+    "log": "modified-library-link.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "--version"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "modified-native-version.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "--revision"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "modified-native-revision.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "-e",
+      "console.log(Bun.version + '+' + Bun.revision)"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "modified-native-full-identity.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "-e",
+      "console.log('taskbot116-relink-hello')"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "modified-native-hello.log",
+    "exitCode": 0
+  },
+  {
+    "argv": [
+      "/home/runner/work/_temp/relink-task-38136567511-1/build/bun",
+      "-e",
+      "console.log(JSON.stringify([Date.parse('1970-01-02T00:00:00.000Z'),Date.parse('1970-01-03T00:00:00.000Z'), 6*7]))"
+    ],
+    "cwd": "/home/runner/work/_temp/relink-task-38136567511-1/bun-source",
+    "log": "modified-native-library-behavior.log",
+    "exitCode": 0
+  }
+]

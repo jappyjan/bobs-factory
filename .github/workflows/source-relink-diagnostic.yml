@@ -70,7 +70,7 @@ jobs:
           python3 - <<'PY'
           import hashlib, json, os, pathlib
           p = pathlib.Path(os.environ['RUNNER_TEMP']) / 'relink-evidence'
-          omitted = ('bun-profile.linker-map', 'unchanged-bun-profile.linker-map', 'modified-bun-profile.linker-map')
+          omitted = ('bun-profile.linker-map', 'unchanged-bun-profile.linker-map', 'recompiled-bun-profile.linker-map', 'modified-bun-profile.linker-map')
           records = [{ 'file': f.name, 'size': f.stat().st_size, 'sha256': hashlib.sha256(f.read_bytes()).hexdigest(),
               'compactUpload': f.name not in omitted } for f in sorted(p.iterdir()) if f.is_file()]
           (p / 'captured-evidence.json').write_text(json.dumps(records, indent=2) + '\n')

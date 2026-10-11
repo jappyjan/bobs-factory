@@ -18,6 +18,14 @@ from webkit_trial import assert_single_replacement, archive_members
 
 
 class SafetyTests(unittest.TestCase):
+    def test_modified_effect_cannot_pass_with_baseline_or_broken_control(self):
+        relink.validate_native_library_behavior("[86400000,172800000,42]\n", 86400000)
+        relink.validate_native_library_behavior("[116000000,172800000,42]\n", 116000000)
+        for output in ("[86400000,172800000,42]\n", "[116000000,116000000,42]\n",
+                       "[116000000,172800000,0]\n", "[116000000,172800000,42]"):
+            with self.assertRaises(RuntimeError):
+                relink.validate_native_library_behavior(output, 116000000)
+
     def test_gnu_archive_inventory_and_single_compiled_member_replacement(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "library.a"

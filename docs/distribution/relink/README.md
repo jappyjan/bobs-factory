@@ -69,16 +69,28 @@ the owned task directory fails the trial. This is an engineering compile recipe,
 not a claim of byte-identical recompilation of the original object.
 
 The controlled change makes WTF's `parseES5Date` return `116000000` only for
-`1970-01-02T00:00:00.000Z`. Normal JSC returns `86400000`. `llvm-ar rD --format=gnu`
-replaces only `DateMath.cpp.o` in the extracted real `libWTF.a`, retaining its
-original copy. Inventories require all 175 member names/order and every other
-member's size/hash to agree; the replacement must match newly compiled LLVM
-bitcode. The other five WebKit libraries and both application archives must
-remain hash-identical. The same generated link/strip edges run again. The
-relinked executable must show the changed date, normal second-date parsing and
-JS startup, plus exact version and full revision. The retained unchanged
-executable is rechecked afterward. Overall `modified` result PASS is set only
-after all required stages succeed.
+`1970-01-02T00:00:00.000Z`. Normal JSC returns `86400000`. Pinned Bun enables
+the V8 date parser by default; that path bypasses the changed WTF function.
+Every smoke now explicitly selects both native backends with the pinned Bun
+debug option `BUN_JSC_useV8DateParser=true|false`. Separate actual option dumps
+must confirm the selection; inherited JSC option overrides are removed from
+the diagnostic's child environment. The identical JS script must show the
+sentinel change only with the WTF backend. The V8 backend, second date and JS
+arithmetic remain controls. This uses native engine configuration; it changes
+neither the JS script nor the default parser in the runtime.
+
+`llvm-ar rD --format=gnu` first replaces only `DateMath.cpp.o` with the unmodified
+recompiled TU in the extracted real `libWTF.a`. The same generated link/strip
+edges run, and both native backends must preserve baseline behavior, exact
+version and full revision. Only then is that same member replaced with the
+modified TU, linked and executed under the same controls. Each inventory compares
+against the original archive: all 175 member names/order and every other
+member's size/hash must agree; each replacement must match newly compiled LLVM
+bitcode. The other five WebKit libraries and both application archives remain
+hash-identical. Modified output bytes must differ from both earlier runtimes.
+The retained byte-identical cached-input executable is rechecked afterward.
+Overall `modified` PASS requires all three real link/strip executions, the
+unmodified recompiled baseline and the modified native effect.
 
 The manual workflow and initial owned-branch push use read-only contents/actions
 permissions and no secret inputs. A job has a 45-minute timeout; the harness has
@@ -109,9 +121,10 @@ run that mode. The shell uses `pipefail`, so assertions or missing compile input
 fail the workflow step while `always()` retains the nonpassing receipt.
 Workflow/check status alone is never substituted for `result.json`.
 
-The [first execution report](EXECUTION_116.md) distinguishes its exact unchanged
-output proof from the preserved smoke FAIL and the new trial's pending result.
-Its compact raw evidence index binds the complete original artifact.
+The [execution report](EXECUTION_116.md) distinguishes the exact unchanged output
+proof, both preserved FAILs, the diagnosed parser bypass and the corrected trial's
+pending result. Compact indexes bind both complete original artifacts; the
+second upload omits maps, whose captured hashes remain explicit.
 
 F1 is not applicable: this change tests external pinned native-link tooling and
 does not change Factory product workflows or the F1 harness. Syntax, graph safety,
