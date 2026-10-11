@@ -1,0 +1,35 @@
+{
+  "passed": true,
+  "fixture": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-native-dashboard-validation-Wbc3dJ",
+  "original": {
+    "code": 1,
+    "stdout": "Original native assertion: expected401, actual200\n",
+    "stderr": ""
+  },
+  "electron": {
+    "passed": true,
+    "electron": "44.7.0",
+    "originalPrompt": false,
+    "runtime": {
+      "version": "0.2.73",
+      "commit": null,
+      "dirty": null,
+      "target": null,
+      "resourceDigest": null,
+      "packaged": false
+    },
+    "checks": [
+      "actual onboarding UI and no-cookie local API/identity",
+      "isolated preload bridge invokes controlled IPC",
+      "public Host401 and foreign/cross-site/forwarded403",
+      "logout/reload preserves local authority"
+    ],
+    "scope": "source FactoryServer + actual Electron; controlled IPC handler; no packaged worker/menu lifecycle"
+  },
+  "checks": [
+    "old401 assertion reproduced against real loopback200",
+    "same maintained OS curl probes pass on real FactoryServer",
+    "same maintained actual Electron dashboard assertions pass"
+  ],
+  "scope": "source assertion correction only; packaged startup/MCP/menu/service/native all4 remain next-candidate gates"
+}

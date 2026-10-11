@@ -1,0 +1,27 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: file:///Users/jappy/code/jappy/bobs-factory-delivery-materials-116/native-localhost-validation-20261011/checkout/apps/f1/test-drives/assets/native-dashboard-validation.mjs:27
+	app.setPath("userData", join(root, "electron-profile"));
+	    ^
+
+TypeError: Cannot read properties of undefined (reading 'setPath')
+    at file:///Users/jappy/code/jappy/bobs-factory-delivery-materials-116/native-localhost-validation-20261011/checkout/apps/f1/test-drives/assets/native-dashboard-validation.mjs:27:6
+
+Node.js v24.21.0
+
+
+1 !== 0
+
+    at file:///Users/jappy/code/jappy/bobs-factory-delivery-materials-116/native-localhost-validation-20261011/checkout/apps/f1/test-drives/assets/native-dashboard-validation.mjs:194:10
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.20.0

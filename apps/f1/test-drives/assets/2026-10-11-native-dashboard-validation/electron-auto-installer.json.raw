@@ -1,0 +1,13 @@
+{
+  "invocation": "node -p require(existing electron package)",
+  "stdout": "Downloading Electron binary...\n/Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/node_modules/.pnpm/electron@44.7.0/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron\n",
+  "electronVersion": "44.7.0",
+  "path": "/Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/node_modules/.pnpm/electron@44.7.0/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+  "sha256": "6c7bfa625e72ad31e564b262c916aa6a9d5b88f570dea195dec52255e9c6305d",
+  "size": 33968,
+  "pathFileMtime": 1791753916.3077242,
+  "networkTransfer": "not observed; installer may have reused local download cache; cannot claim no network",
+  "newBytes": "auto installer materialized package dist/path.txt, not a provider candidate artifact; earlier absence inferred from index auto-install branch",
+  "pathFile": "/Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/node_modules/.pnpm/electron@44.7.0/node_modules/electron/path.txt",
+  "pathFileContents": "Electron.app/Contents/MacOS/Electron"
+}

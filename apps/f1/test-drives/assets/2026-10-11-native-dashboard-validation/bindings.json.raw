@@ -1,0 +1,90 @@
+{
+  "testedCommit": "1c3c887fc84909ecde075a2e3fd0e70affe20d2c",
+  "base": "599a67d12cb204de7e6c5387b83e6d05e28b659e",
+  "paths": {
+    "scripts/smoke-binary.sh": "315f05c3fb97df4108401f8a14ded3df9d7a1704b3c00609a1474d435432db68",
+    "scripts/lib/smoke-dashboard-access.sh": "eec82fcbbecec74a9d5f94483e7ce83ff1cf841e8793b58be1fe11286e675828",
+    "apps/desktop/test/native-smoke.mjs": "ac9a6a6e8128bc65e4c866ef5916b0351341448255368b4b694114f07b19277f",
+    "apps/desktop/test/dashboard-access.mjs": "98f41f4c65fbafb8aa838f522d9e67361a3eb423da1f5899244c6c459292ae6e",
+    "apps/f1/test-drives/assets/native-dashboard-validation.mjs": "ef646639b5ebccd8624f6675eeeeae92a787c233f50d758ca62b32b0b62abd55"
+  },
+  "scope": "source assertion correction; no new native candidate",
+  "rawFiles": {
+    "original-stale401-red.json.raw": {
+      "size": 99,
+      "sha256": "71fa6b257e2a4c9bca8e07b66bfc5cdd32900d674c85abf0fbe275288cfd9ca9"
+    },
+    "code-hooks.log.raw": {
+      "size": 6360,
+      "sha256": "7e29f9523ad763b635a0b26456434fb6be16f895ac10e8215159a8944cfdc8db"
+    },
+    "forwarded-local403.json.raw": {
+      "size": 55,
+      "sha256": "a5b2dd098ec97eae8a556ff2d66487d101c186728e94c7b2483005218e4f73d7"
+    },
+    "f1-committed.json.raw": {
+      "size": 1205,
+      "sha256": "f002393c81fc692de5c0dc334023a4f6ce1223543f128573e6bd92c406959a87"
+    },
+    "fixture-first-stop-method-failure.log.raw": {
+      "size": 464,
+      "sha256": "c77449f6f16093da0a95ab6e0e3c8db75e23b961267b9447f904b4667b69cb1c"
+    },
+    "electron-dashboard-green.json.raw": {
+      "size": 576,
+      "sha256": "1bfcb719a5127f5cbc677006f669b37d7dbc1ab74f17bad30135d072320e6cac"
+    },
+    "cross-site403.json.raw": {
+      "size": 55,
+      "sha256": "a5b2dd098ec97eae8a556ff2d66487d101c186728e94c7b2483005218e4f73d7"
+    },
+    "foreign-origin403.json.raw": {
+      "size": 26,
+      "sha256": "21c92bc1e8cfc5226b2d0df8dfe3a2ea11c8f773d9f48796ac04c73851ccec01"
+    },
+    "fixture-esm-readiness-timeout.log.raw": {
+      "size": 572,
+      "sha256": "0a3f34d605cd78df69b9c445708a623b95d087fe48c1c3312c145088cb1dfcb9"
+    },
+    "remote-denied401.json.raw": {
+      "size": 65,
+      "sha256": "ed83a698de93bdf3d6f8b804afda751d4a98bb143a8a22e3920b40d423032f9e"
+    },
+    "desktop35.log.raw": {
+      "size": 4701,
+      "sha256": "38513e5c0448a368b8e80477728ff8828ef8ebc1e5293e6dfe623a5fe53d2362"
+    },
+    "local-access.json.raw": {
+      "size": 94,
+      "sha256": "271106029d3bed86254534146f9c2dd50bab706d0fb6436d49ec524a99fb0fa0"
+    },
+    "electron-process-green.json.raw": {
+      "size": 48,
+      "sha256": "b8155bc7dc340db60f4819d65af7d615dafffe12803c3e98c1200e8ed22bc79e"
+    },
+    "electron-version-readonly.json.raw": {
+      "size": 2043,
+      "sha256": "52fca0b69ee7d7f8931a72d3b40fffd8b1969e503c69d0cd0693ed492ee61e4b"
+    },
+    "typed-consumer-negative.json.raw": {
+      "size": 634,
+      "sha256": "0c6b373067931d5b13c14f019332a1e63e1e4e027f0696a13b8605488ac0c4c4"
+    },
+    "electron-auto-installer.json.raw": {
+      "size": 1101,
+      "sha256": "1ecf39ea614a6a5fcd28124ab8aa688df7fe8296e609eaf18224d913e675139f"
+    },
+    "fixture-inherited-node-mode-failure.log.raw": {
+      "size": 1040,
+      "sha256": "3c53005af3941a659bef739c556577783f2d6730eed1ab7ab1e3bb51a0c5cdf2"
+    },
+    "shell-probes-green.json.raw": {
+      "size": 48,
+      "sha256": "b8155bc7dc340db60f4819d65af7d615dafffe12803c3e98c1200e8ed22bc79e"
+    },
+    "auth-server32.log.raw": {
+      "size": 966,
+      "sha256": "ef8b86f043ec5326e8f8d25f5174c7bbcc2602bef029f8e626b40fc47ca29853"
+    }
+  }
+}

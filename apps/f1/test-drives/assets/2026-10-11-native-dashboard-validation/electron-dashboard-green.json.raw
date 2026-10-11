@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "electron": "44.7.0",
+  "originalPrompt": false,
+  "runtime": {
+    "version": "0.2.73",
+    "commit": null,
+    "dirty": null,
+    "target": null,
+    "resourceDigest": null,
+    "packaged": false
+  },
+  "checks": [
+    "actual onboarding UI and no-cookie local API/identity",
+    "isolated preload bridge invokes controlled IPC",
+    "public Host401 and foreign/cross-site/forwarded403",
+    "logout/reload preserves local authority"
+  ],
+  "scope": "source FactoryServer + actual Electron; controlled IPC handler; no packaged worker/menu lifecycle"
+}
