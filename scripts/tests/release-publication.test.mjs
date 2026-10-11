@@ -20,9 +20,7 @@ import {
 import { verifyPublishedRelease } from "../lib/github-release.mjs";
 import { validatePreparedRelease } from "../lib/prepared-release.mjs";
 import { withPublicationLock } from "../lib/publication-lock.mjs";
-import { verifyManifestSignature } from "../lib/release-signature.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
-import { keys, signBytes } from "./release-fixtures.mjs";
 
 const transport = fileURLToPath(
 	new URL("./publication-transport.mjs", import.meta.url),
@@ -137,7 +135,7 @@ test("publisher dry run makes no remote calls and produces candidate-bound asset
 test("publisher cancels an unread rejected upload and cleans snapshot while retaining draft", () => {
 	const f = setup("nightly", {}, { sourceChunks: true });
 	try {
-		// A genuinely signed supplemental fixture asset exceeds stream buffering;
+		// A genuinely inventoried supplemental fixture asset exceeds stream buffering;
 		// the provider returns HTTP 413 without reading any body bytes.
 		const file = "extra-data.bin";
 		writeFileSync(join(f.assets, file), Buffer.alloc(2 * 1024 ** 2, 0x61));
@@ -146,7 +144,6 @@ test("publisher cancels an unread rejected upload and cleans snapshot while reta
 			assets: [...f.manifest.assets, fileRecord(join(f.assets, file), file)],
 		});
 		writeFileSync(join(f.assets, "release.json"), bytes);
-		writeFileSync(join(f.assets, "release.json.sig"), signBytes(bytes));
 		const preload = join(f.work, "reject-unread-upload.mjs");
 		writeFileSync(
 			preload,
@@ -182,8 +179,6 @@ for (const fault of [
 	"corrupt-chunk",
 	"unexpected-asset",
 	"manifest",
-	"signature",
-	"key-id",
 	"symlink",
 	"mode",
 ]) {
@@ -200,8 +195,6 @@ for (const fault of [
 					"corrupt-chunk": `const bytes = original(${JSON.stringify(chunk)}); bytes[0] ^= 255; fs.writeFileSync(${JSON.stringify(chunk)}, bytes);`,
 					"unexpected-asset": `fs.writeFileSync(${JSON.stringify(join(f.assets, "unsigned-extra.txt"))}, "unsigned extra");`,
 					manifest: `fs.appendFileSync(${JSON.stringify(join(f.assets, "release.json"))}, "\\n");`,
-					signature: `fs.appendFileSync(${JSON.stringify(join(f.assets, "release.json.sig"))}, "\\n");`,
-					"key-id": `fs.appendFileSync(${JSON.stringify(join(f.assets, "release.json.key-id"))}, "\\n");`,
 					symlink: `fs.renameSync(${JSON.stringify(chunk)}, ${JSON.stringify(join(f.work, "linked-chunk"))}); fs.symlinkSync(${JSON.stringify(join(f.work, "linked-chunk"))}, ${JSON.stringify(chunk)});`,
 					mode: `fs.chmodSync(${JSON.stringify(chunk)}, 0o666);`,
 				};
@@ -209,14 +202,13 @@ for (const fault of [
 					preload,
 					`import fs from "node:fs";
 import {syncBuiltinESMExports} from "node:module";
-const original = fs.readFileSync; let done = false;
-fs.readFileSync = function(path, ...args) {
- const bytes = original.call(this, path, ...args);
- if (!done && path === ${JSON.stringify(join(f.assets, fault === "key-id" ? "release.json.key-id" : "release.json.sig"))}) {
-  done = true;
-  ${mutations[fault]}
+const originalRead = fs.readFileSync; const original = fs.rmSync; let done = false;
+fs.rmSync = function(path, ...args) {
+ const result = original.call(this, path, ...args);
+ if (!done && String(path).includes("factory-prepared-evidence-")) {
+  done = true; ${mutations[fault].replace("original(", "originalRead(")}
  }
- return bytes;
+ return result;
 }; syncBuiltinESMExports();
 `,
 				);
@@ -320,7 +312,6 @@ fs.createReadStream = function(path, ...args) {
 							path.startsWith("git/ref/") ? state.tag : state.annotation,
 					},
 					state.release,
-					keys,
 				);
 			}
 		} finally {
@@ -423,7 +414,7 @@ test("conflicting tag, candidate and immutable assets are never replaced", () =>
 		}
 	}
 });
-test("stable approval binds exact signed asset bytes and stable publication sets latest", () => {
+test("stable approval binds exact unsigned asset bytes and stable publication sets latest", () => {
 	const f = setup("stable");
 	try {
 		writeFileSync(
@@ -452,22 +443,12 @@ test("stable approval binds exact signed asset bytes and stable publication sets
 		f.cleanup();
 	}
 });
-test("a newer stable signed by an unknown key blocks older tooling before any publication mutation", () => {
+test("a newer unsigned stable blocks older tooling before any publication mutation", () => {
 	const f = setup("stable"),
 		newer = preparedFixture("stable", { stableVersion: "2.0.0" });
 	try {
-		const bytes = readFileSync(join(newer.assets, "release.json")),
-			signature = readFileSync(join(newer.assets, "release.json.sig"));
-		// The published signature is valid, but its newly named key is absent
-		// from the older candidate's frozen trust store.
-		verifyManifestSignature(bytes, signature, "rotated", {
-			rotated: keys.fixture,
-		});
 		const assets = newer.records.map((record) => {
-			const content =
-				record.file === "release.json.key-id"
-					? Buffer.from("rotated\n")
-					: readFileSync(join(newer.assets, record.file));
+			const content = readFileSync(join(newer.assets, record.file));
 			return {
 				name: record.file,
 				state: "uploaded",
@@ -484,6 +465,7 @@ test("a newer stable signed by an unknown key blocks older tooling before any pu
 				history: [
 					{
 						id: 100,
+						commit: newer.manifest.commit,
 						tag_name: newer.manifest.tag,
 						draft: false,
 						prerelease: false,
@@ -512,40 +494,33 @@ for (const fallback of [false, true])
 			latest = preparedFixture("nightly", { sequence: 9 }),
 			older = preparedFixture("nightly", { sequence: 8 });
 		try {
-			verifyManifestSignature(
-				readFileSync(join(latest.assets, "release.json")),
-				readFileSync(join(latest.assets, "release.json.sig")),
-				"rotated",
-				{ rotated: keys.fixture },
-			);
-			const historical = (fixture, id, keyId = "fixture") => ({
+			const historical = (fixture, id, incomplete = false) => ({
 				id,
 				tag_name: fixture.manifest.tag,
 				commit: fixture.manifest.commit,
 				draft: false,
 				prerelease: true,
 				published_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-				assets: fixture.records.map((record) => {
-					const bytes =
-						record.file === "release.json.key-id"
-							? Buffer.from(`${keyId}\n`)
-							: readFileSync(join(fixture.assets, record.file));
-					return {
-						name: record.file,
-						state: "uploaded",
-						size: bytes.length,
-						digest: `sha256:${sha256(bytes)}`,
-						bytes: bytes.toString("base64"),
-						browser_download_url: `https://github.com/jappyjan/bobs-factory/releases/download/${fixture.manifest.tag}/${record.file}`,
-					};
-				}),
+				assets: fixture.records
+					.filter((record) => !incomplete || record.file !== "candidate.json")
+					.map((record) => {
+						const bytes = readFileSync(join(fixture.assets, record.file));
+						return {
+							name: record.file,
+							state: "uploaded",
+							size: bytes.length,
+							digest: `sha256:${sha256(bytes)}`,
+							bytes: bytes.toString("base64"),
+							browser_download_url: `https://github.com/jappyjan/bobs-factory/releases/download/${fixture.manifest.tag}/${record.file}`,
+						};
+					}),
 			});
 			writeFileSync(
 				f.provider,
 				JSON.stringify({
 					...f.state(),
 					history: [
-						historical(latest, 100, "rotated"),
+						historical(latest, 100, true),
 						...(fallback ? [historical(older, 101)] : []),
 					],
 				}),
@@ -741,7 +716,8 @@ test("fresh preparation consumes exact artifact ZIPs and produces unsigned inspe
 			readFileSync(join(output, "publication-plan.json")),
 		);
 		assert.equal(plan.candidateDigest, f.candidate.digest);
-		assert.match(plan.signature, /blocked/);
+		assert.equal(plan.publisherSignature, "none");
+		assert.equal(plan.integrity, "github-https-sha256");
 		const prepared = validatePreparedRelease(
 			join(output, "assets"),
 			f.candidate,
@@ -759,7 +735,7 @@ for (const fault of [
 	"upload-before:source-rebuild.tar.gz.part0002",
 	"upload-after:source-rebuild.tar.gz.part0002",
 ]) {
-	test(`chunk publication resumes exact signed inventory after ${fault}`, () => {
+	test(`chunk publication resumes exact unsigned inventory after ${fault}`, () => {
 		const f = setup("nightly", { fault }, { sourceChunks: true });
 		try {
 			const dry = f.run(false);

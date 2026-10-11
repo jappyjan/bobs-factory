@@ -21,7 +21,8 @@ The first-release minimums selected by the user are macOS 15 and Ubuntu 24.04 /
 glibc 2.39, on ARM64 and x64. Observed native CI coverage is macOS 15.7.9 and
 Ubuntu 24.04.5 / glibc 2.39 on both architectures. These observations do not prove
 macOS 15.0, every Ubuntu 24.04 kernel/image variant, or other Linux distributions.
-Signing, physical authentication and native provider acceptance remain open.
+Functional first-launch/authentication, update and OS lifecycle validation remain
+required for the actual delivered target; paid signing is not a release gate.
 Windows/musl are excluded. Artifact names:
 
 - `bobs-factory-desktop-VERSION-mac-ARCH.dmg`, with Bob's Factory.app and Applications link.
@@ -33,7 +34,7 @@ System/external managers own their upgrades. DEB/AUR/system paths, Homebrew
 Caskroom/Cellar links and non-writable/non-user-owned apps show an owner handoff.
 A normal DMG app in Applications is eligible when the app is user-owned,
 both app and parent are writable, and its complete bytes
-match an authentic signed release.
+match a validated release inventory.
 An arbitrary writable executable or symlink is insufficient update authority.
 
 ## Complete app updates
@@ -45,9 +46,10 @@ backend's settings. Shell settings live in `<factoryHome>/desktop/updates/state.
 and use the same `UpdateManager` policy, revisions, consent and candidate rules as
 runtime updates. Stable defaults to Notify/manual Install; nightly defaults to
 Automatic when idle. Both channel overrides persist, along with pause and exact pin.
-Verify installed app enrolls only a byte-matching signed release. Without that
-receipt the app checks/notifies but cannot activate. Missing production pins or
-unpublished inventories remain visible verification failures, never unsigned fallback.
+Verify installed app enrolls only a byte-matching published release inventory. Without that
+receipt the app checks/notifies but cannot activate. Missing, corrupt or
+unpublished inventories remain visible integrity failures. No publisher key pins
+or Apple Developer account are required.
 
 Install authorizes the displayed exact candidate at the displayed settings
 revision. Cancel pauses queued activation. The supervisor rechecks policy and idle
@@ -57,15 +59,28 @@ An intentional older stable shell requires explicit Install even in automatic mo
 Polling/backoff/coalescing use the existing shared manager. Changing the shell
 policy cannot change or activate any local/remote backend's policy.
 
-The signed desktop inventory binds the installer, `updateArchive`, update metadata
+The complete desktop inventory binds the installer, `updateArchive`, update metadata
 and validation to channel/version/commit/target, candidate digest and tooling SHA.
-Linux updates replace the exact signed AppImage bytes. macOS additionally delivers
+Linux updates replace the exact hash-bound AppImage bytes. macOS additionally delivers
 a complete `.bobsapp.gz` recovery archive: a framed gzip inventory retaining file
 bytes, modes and internal framework links, rejecting traversal/link ancestry and
 special files. The DMG remains the drag/drop installer. `prepare-desktop-update.mjs`
-verifies an already signed/notarized app, never signs it. Its explicit `--unsigned`
-preparation produces metadata that the macOS updater refuses. Production staging
-requires real codesign verification and Gatekeeper assessment after extraction.
+verifies candidate identity, retained notices and the exact extracted app
+fingerprint. macOS metadata describes `unsigned` or free local `ad-hoc` signing;
+activation requires neither Developer ID nor notarization/Gatekeeper assessment.
+Apple Silicon packaging uses an after-pack local `codesign --sign -` operation for
+Mach-O execution, without publisher certificates, keychain discovery or Apple
+credentials. Existing Bun/Electron runtime signatures retain their technical role.
+
+For a downloaded DMG, drag Bob's Factory.app into Applications and try opening it.
+If macOS blocks an unidentified developer, open **System Settings → Privacy &
+Security → Open Anyway**, then choose **Open** in the next prompt, following
+[Apple's per-app instructions](https://support.apple.com/en-us/102445). Keep the
+quarantine attribute and Gatekeeper enabled; the app/installer/updater never
+clears quarantine or disables system protection. Repeat the per-app approval if
+macOS requests it for a later downloaded version. A future first-launch validation
+must use the actually quarantined package and record the user's allow action;
+source-entry execution does not establish this result.
 
 Before replacement an external helper retained outside the app acquires the
 existing per-home lifecycle guard/update fence and the authenticated local drain.
@@ -95,7 +110,8 @@ for both source and tooling, never the synthetic merge. One candidate is shared
 across all native jobs. This lets review obtain unsigned native evidence without
 merging the product to register a dispatch workflow. Read-only permissions and
 credential-free checkouts accompany builds with publication disabled; no signing
-or publication secrets are supplied. It never signs, notarizes or publishes. Local build:
+or publication secrets are supplied. It never uses publisher certificates, notarizes or publishes. Native Apple Silicon
+packaging applies only free local ad-hoc signing for executable validity. Local build:
 
 ```sh
 node scripts/build-desktop.mjs --candidate /private/candidate.json \
@@ -117,18 +133,21 @@ release gates.
 The [complete-shell validation report](../../apps/f1/test-drives/2026-10-10-desktop-shell-update.md)
 preserves exact candidate hashes, actual native notice receipts and their limits.
 
-Electron 44 Touch ID requires an approved code-signing keychain access group and
-matching entitlement. `BOBS_FACTORY_WEBAUTHN_ACCESS_GROUP` enables the configured
-native authenticator; it does not create signing identities or entitlements. Native
-Touch ID needs Apple silicon or a T2 Intel Mac. Linux requires a supported user-
-verifying security-key/authenticator path; do not assume browser/PWA passkeys are
-portable. See [Electron's native WebAuthn contract](https://www.electronjs.org/docs/latest/api/app#appconfigurewebauthnoptions-macos).
-No authentication bypass or browser credential import is provided. A missing native
-authenticator remains a real first-launch blocker for a physical passkey ceremony.
+Native WebAuthn availability is a capability of the installed OS/authenticator.
+The existing optional `BOBS_FACTORY_WEBAUTHN_ACCESS_GROUP` configuration is
+host-owned; this delivery creates no shared access group, entitlement or keychain
+material, and does not read credential stores. Keep protected enrollment and
+session boundaries, and validate the supported authentication paths at their
+actual scope; physical passkeys are not a blanket gate for every release test.
+Electron documents potential Keychain prompts across unsigned updates and limits
+for its own login-item/Squirrel.Mac APIs in [its signing guidance](https://www.electronjs.org/docs/latest/tutorial/code-signing).
+Bob uses its custom complete-app updater and user-owned launchAgent/service
+manager, rather than Squirrel.Mac or `setLoginItemSettings`. Validate those paths
+functionally; these upstream limitations are not paid-account prerequisites.
 
 Before release, retain actual isolated native receipts for DMG drag/open, Linux
 packages, local/remote authentication enrollment/login/logout, secure-origin/session
 isolation, window close/reopen while jobs run, explicit Stop, crash restart, workflow
 and native-session continuation, client-version mismatch, and successful/failed
-updates. Signing/notarization/publication remain separately approved #117 stages;
+updates. Publication remains a separately authorized #117 stage;
 this preparation workflow is not proof those checks passed.

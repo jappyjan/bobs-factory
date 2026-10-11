@@ -142,7 +142,6 @@ try {
 		output,
 		candidate,
 		target,
-		unsigned: true,
 		electronLicenses,
 	});
 	const assets = readdirSync(output)
@@ -178,7 +177,7 @@ try {
 	};
 	writeFileSync(
 		join(output, "desktop-build.json"),
-		`${JSON.stringify({ schemaVersion: 1, product: "bobs-factory-desktop", candidateDigest: candidate.digest, version: candidate.candidate.version, commit, target, runtime: identity, assets, update, licenseValidation, signing: "unsigned preparation only", validation: "native install/auth/lifecycle receipts required", publication: false }, null, 2)}\n`,
+		`${JSON.stringify({ schemaVersion: 1, product: "bobs-factory-desktop", candidateDigest: candidate.digest, version: candidate.candidate.version, commit, target, runtime: identity, assets, update, licenseValidation, publisherSigning: "none", validation: "native install/auth/lifecycle receipts required", publication: false }, null, 2)}\n`,
 	);
 } finally {
 	rmSync(runtime, { recursive: true, force: true });

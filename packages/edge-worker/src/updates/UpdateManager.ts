@@ -808,7 +808,7 @@ export class UpdateManager {
 		}, true);
 	}
 	/** Supervisor timer: 15-minute release checks, capped exponential offline
-	 * backoff; pending candidates coalesce to the current signed channel target. */
+	 * backoff; pending candidates coalesce to the current validated channel target. */
 	async tick() {
 		if (Date.now() >= this.read().nextCheckAt) await this.check();
 		const state = this.read();

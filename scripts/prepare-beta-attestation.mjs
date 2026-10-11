@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Produces additive authentication assets for historical beta; never edits/releases it.
+// Produces additive integrity assets for historical beta; never edits/releases it.
 import {
 	existsSync,
 	mkdirSync,
@@ -16,22 +16,17 @@ import {
 	sha256,
 } from "./lib/binary-release.mjs";
 import { validatePreparedRelease } from "./lib/prepared-release.mjs";
-import { signManifest } from "./lib/release-signature.mjs";
 
 const { values } = parseArgs({
 	options: {
 		assets: { type: "string" },
 		output: { type: "string" },
 		approval: { type: "string" },
-		"key-id": { type: "string" },
 	},
 });
 requireValue(
-	values.assets &&
-		values.output &&
-		values.approval &&
-		process.env.BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE,
-	"Historical beta needs immutable assets, explicit inventory approval and protected signing binding",
+	values.assets && values.output && values.approval,
+	"Historical beta needs immutable assets, explicit inventory approval",
 );
 const directory = resolve(values.assets),
 	output = resolve(values.output);
@@ -60,9 +55,6 @@ requireValue(
 		approval.approvedBy.trim(),
 	"Approval must bind exact historical manifest and full inventory",
 );
-const privateKey = readFileSync(
-	process.env.BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE,
-);
 const attestation = jsonBytes({
 	schemaVersion: 1,
 	product: "bobs-factory",
@@ -74,17 +66,10 @@ const attestation = jsonBytes({
 	assets: inventory,
 	approvedBy: approval.approvedBy,
 });
-const signature = signManifest(manifestBytes, privateKey, values["key-id"]);
-const attSignature = signManifest(attestation, privateKey, values["key-id"]);
 mkdirSync(output, { recursive: true });
-for (const [file, bytes] of [
-	["release.json.sig", signature],
-	["release.json.key-id", `${values["key-id"]}\n`],
-	["release-attestation.json", attestation],
-	["release-attestation.json.sig", attSignature],
-	["release-attestation.json.key-id", `${values["key-id"]}\n`],
-])
-	writeFileSync(join(output, file), bytes, { flag: "wx" });
+writeFileSync(join(output, "release-attestation.json"), attestation, {
+	flag: "wx",
+});
 console.log(
-	`Prepared additive authentication only. No existing archive, manifest or tag was modified. Inventory: ${assetsDigest}`,
+	`Prepared additive integrity only. No existing archive, manifest or tag was modified. Inventory: ${assetsDigest}`,
 );

@@ -50,7 +50,7 @@ export async function appUpdates({
 				? "This desktop app is externally managed. Update through Homebrew/DEB/AUR or your installation owner."
 				: existsSync(receipt)
 					? "App receipt retained; activation rechecks ownership/integrity and preserves the local worker."
-					: "Verify this installed app against its signed release to enable self-updates.",
+					: "Verify this installed app against its published release inventory to enable self-updates.",
 	});
 	let busy = false;
 	async function helper(recover = false) {

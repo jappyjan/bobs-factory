@@ -50,10 +50,6 @@ import {
 } from "./lib/release-candidate.mjs";
 import { publishPreparedRelease } from "./lib/release-publication.mjs";
 import {
-	signManifest,
-	verifyManifestSignature,
-} from "./lib/release-signature.mjs";
-import {
 	GITHUB_ASSET_LIMIT,
 	splitSourceArchive,
 } from "./lib/source-transport.mjs";
@@ -68,7 +64,6 @@ const { values } = parseArgs({
 		publish: { type: "boolean", default: false },
 		resume: { type: "boolean", default: false },
 		approval: { type: "string" },
-		"key-id": { type: "string" },
 	},
 });
 requireValue(
@@ -372,43 +367,16 @@ requireValue(
 	release.buildRunId === identity.runId,
 	"Prepared build run differs from requested run",
 );
-if (
-	!existsSync(join(assetsDirectory, "release.json.sig")) &&
-	process.env.BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE
-) {
-	const signature = signManifest(
-		manifestBytes,
-		readFileSync(process.env.BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE),
-		values["key-id"],
-	);
-	writeFileSync(join(assetsDirectory, "release.json.sig"), signature, {
-		flag: "wx",
-	});
-	writeFileSync(
-		join(assetsDirectory, "release.json.key-id"),
-		`${values["key-id"]}\n`,
-		{ flag: "wx" },
-	);
-}
-const signed = existsSync(join(assetsDirectory, "release.json.sig"));
-const sidecars = {};
-if (signed) {
-	sidecars["release.json.sig"] = readFileSync(
-		join(assetsDirectory, "release.json.sig"),
-	);
-	sidecars["release.json.key-id"] = readFileSync(
-		join(assetsDirectory, "release.json.key-id"),
-	);
-	verifyManifestSignature(
-		manifestBytes,
-		sidecars["release.json.sig"],
-		sidecars["release.json.key-id"].toString("utf8").trim(),
-	);
-}
+// Preserve immutable historical sidecars as ordinary inventory bytes; new
+// preparation emits none. This never verifies or claims a publisher signature.
+const historicalSidecars = {};
+for (const file of ["release.json.sig", "release.json.key-id"])
+	if (existsSync(join(assetsDirectory, file)))
+		historicalSidecars[file] = readFileSync(join(assetsDirectory, file));
 const snapshot = snapshotPublicationAssets(
 	assetsDirectory,
 	manifestBytes,
-	sidecars,
+	historicalSidecars,
 );
 try {
 	const records = snapshot.records;
@@ -420,15 +388,17 @@ try {
 			...identity,
 			assetsDigest,
 			assets: records,
-			signature: signed ? "verified" : "blocked: signing key not provisioned",
+			integrity: "github-https-sha256",
+			publisherSignature: Object.keys(historicalSidecars).length
+				? "historical-unverified"
+				: "none",
 		}),
 	);
 	if (!values.publish) {
 		console.log(
-			`Prepared ${candidate.digest}, assets ${assetsDigest}. ${signed ? "Signature verified" : "Signing is a rollout blocker"}. No remote mutation.`,
+			`Prepared ${candidate.digest}, assets ${assetsDigest}. SHA256/size inventory validated; no publisher signature. No remote mutation.`,
 		);
 	} else {
-		requireValue(signed, "Publication blocked: signed manifest required");
 		requireValue(
 			process.env.BOBS_FACTORY_RELEASE_PUBLICATION_LOCK === "repository",
 			"Publication requires repository-wide concurrency lock",

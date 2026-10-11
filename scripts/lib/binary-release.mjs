@@ -263,7 +263,7 @@ export function validateReleaseManifest(value) {
 		requireValue(
 			releaseChannel(value.version) &&
 				value.channel === releaseChannel(value.version),
-			"Unsupported signed release channel",
+			"Unsupported release channel",
 		);
 		requireValue(
 			/^[a-f0-9]{64}$/.test(value.candidateDigest) &&
@@ -318,7 +318,7 @@ export function validateReleaseManifest(value) {
 		requireValue(
 			Array.isArray(value.assets) &&
 				new Set(value.assets.map((a) => a.file)).size === value.assets.length,
-			"Ambiguous signed inventory",
+			"Ambiguous release inventory",
 		);
 		if (value.publicInstallerValidation !== undefined) {
 			requireValue(
@@ -330,7 +330,7 @@ export function validateReleaseManifest(value) {
 		for (const file of required)
 			requireValue(
 				value.assets.some((a) => a.file === file),
-				`Missing signed asset: ${file}`,
+				`Missing release asset: ${file}`,
 			);
 		const sourceAssets = sourceTransportRecords(
 			value.source,
@@ -338,7 +338,7 @@ export function validateReleaseManifest(value) {
 		);
 		if (value.sourceTransport)
 			requireValue(
-				value.assets.length + 3 <= 1000,
+				value.assets.length + 1 <= 1000,
 				"Source transport inventory exceeds GitHub asset count limit",
 			);
 		for (const record of value.assets) {
@@ -352,7 +352,7 @@ export function validateReleaseManifest(value) {
 					!["release.json", "release.json.sig", "release.json.key-id"].includes(
 						record.file,
 					),
-				"Unsafe/circular signed inventory",
+				"Unsafe/circular release inventory",
 			);
 			validateFile(record, record.file);
 		}
@@ -364,7 +364,7 @@ export function validateReleaseManifest(value) {
 						a.sha256 === record.sha256 &&
 						a.size === record.size,
 				),
-				`Signed inventory mismatch: ${record.file}`,
+				`Release inventory mismatch: ${record.file}`,
 			);
 	}
 	return value;
@@ -904,8 +904,14 @@ export function validatePublicInstaller(receipt, identity, target) {
 				"badSizePreservesInstallation",
 				"badSourcePreservesInstallation",
 				"unavailableTargetPreservesInstallation",
-				"badSignaturePreservesInstallation",
-			].every((check) => receipt.checks?.[check] === "passed"),
+				"badManifestPreservesInstallation",
+			].every(
+				(check) =>
+					receipt.checks?.[check] === "passed" ||
+					(check === "badManifestPreservesInstallation" &&
+						receipt.schemaVersion === 1 &&
+						receipt.checks?.badSignaturePreservesInstallation === "passed"),
+			),
 		`Missing candidate-bound public installer validation: ${target}`,
 	);
 }

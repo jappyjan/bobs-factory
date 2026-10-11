@@ -22,8 +22,6 @@ import { parseArgs } from "node:util";
 import { fileRecord, jsonBytes, REPOSITORY } from "./lib/binary-release.mjs";
 import { releaseChannel } from "./lib/release-candidate.mjs";
 
-import { signBytes, testInstaller } from "./tests/release-fixtures.mjs";
-
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const { values } = parseArgs({
 	options: { artifacts: { type: "string", default: "artifacts" } },
@@ -82,20 +80,18 @@ try {
 			},
 		},
 	};
-	// Synthetic signing keys exercise OpenSSL with the real native archive.
+	// Controlled HTTPS downloads exercise the real native archive.
 	// This transport fixture is never published or used as release approval.
 	const bootstrap = join(work, "install.sh");
 	writeFileSync(
 		bootstrap,
-		testInstaller(readFileSync(join(root, "scripts/install.sh"), "utf8")),
+		readFileSync(join(root, "scripts/install.sh"), "utf8"),
 	);
 	const metadataFiles = ["latest.json", "nightly.json", "release.json"];
 	const updateManifest = () => {
 		const bytes = jsonBytes(manifest);
 		for (const file of metadataFiles) {
 			writeFileSync(join(downloads, file), bytes);
-			writeFileSync(join(downloads, `${file}.sig`), signBytes(bytes));
-			writeFileSync(join(downloads, `${file}.key-id`), "fixture\n");
 		}
 	};
 	updateManifest();
@@ -187,8 +183,8 @@ try {
 	manifest.targets = good.targets;
 	updateManifest();
 	writeFileSync(
-		join(downloads, "release.json.sig"),
-		Buffer.from("invalid-signature"),
+		join(downloads, "release.json"),
+		Buffer.from("invalid-manifest"),
 	);
 	assert.notEqual(install(...exactArgs).status, 0);
 	assert.equal(readlinkSync(join(prefix, "bin/bobs-factory")), link);
@@ -241,7 +237,7 @@ try {
 			target,
 			scope: "native-archive-controlled-downloads",
 			checks: {
-				badSignaturePreservesInstallation: "passed",
+				badManifestPreservesInstallation: "passed",
 				ownershipReceipt: "passed",
 				foreignRemovalRefused: "passed",
 				ownedRemovalRetainsState: "passed",

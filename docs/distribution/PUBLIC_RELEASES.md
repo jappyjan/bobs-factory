@@ -6,12 +6,15 @@ The supported bootstrap is downloaded over the documented HTTPS Pages endpoint:
 curl -fsSL https://jappyjan.github.io/bobs-factory/install.sh | sh
 ```
 
-The bootstrap is the initial trust boundary. Obtain it from that endpoint or a
-reviewed immutable checkout, not from release-supplied code. It uses pinned
-publisher keys and system OpenSSL to authenticate the exact manifest bytes
-before reading release fields, executing a downloaded verifier or changing an
-installation. Standard macOS/Linux tools and curl are required; Node, Bun, npm,
-GitHub sign-in, GitHub CLI and sudo are not installer prerequisites.
+The bootstrap comes from that HTTPS endpoint or a reviewed immutable checkout.
+Public releases use GitHub HTTPS plus candidate-bound SHA-256 and byte-size
+inventories. Downloads must match that inventory before the verifier runs or an
+installation changes. This checks integrity and consistency with the GitHub
+repository; it does not authenticate a publisher independently of GitHub.
+No Apple Developer account, Developer ID, notarization, stapling, publisher
+manifest signature or signing infrastructure is required. Standard macOS/Linux
+tools and curl are required; Node, Bun, npm, GitHub login and sudo are not
+installer prerequisites. Native credential stores remain host-owned.
 
 Default installation selects verified stable, with a clearly labeled verified
 beta fallback until the first stable exists. Nightly is opt-in:
@@ -21,9 +24,9 @@ curl -fsSL https://jappyjan.github.io/bobs-factory/install.sh | sh -s -- --chann
 ```
 
 Use `--version VERSION --channel stable|nightly` for an immutable exact version.
-The signed version must match the requested channel. Explicit `--channel stable`
+The release version must match the requested channel. Explicit `--channel stable`
 rejects beta; use the default channel (optionally with `--version VERSION`) for
-the authenticated beta compatibility fallback. `--prefix /absolute/path`
+the inventoried beta compatibility fallback. `--prefix /absolute/path`
 and `--no-modify-path` retain their existing meaning. Installation keeps owned
 immutable versions and an atomic executable link, preserves the prior rollback
 link, and refuses foreign executables or changed installed bytes. Shell settings
@@ -49,7 +52,7 @@ provider release ID. Build run/attempt and provider artifact IDs are recorded in
 `release-channel.yml` polls hourly and supports manual preparation. It resolves
 main once for nightly. Stable preparation requires the operator to supply an
 exact published `nightly_tag` in the workflow, or `--nightly-tag vVERSION` to
-`prepare-release-candidate.mjs`. The selected nightly must have a complete signed
+`prepare-release-candidate.mjs`. The selected nightly must have a complete validated
 release; an older verified nightly remains selectable after a newer one appears.
 Stable freezes that nightly's source even if main or nightly advances afterward. Stable bytes embed the requested stable version and require
 new native builds and byte-bound validation. Source-only assessments can be
@@ -67,7 +70,7 @@ has no cooldown. Failed preparation does not reset the clock. A frozen candidate
 that no longer matches main skips publication. Eligibility is checked inside the
 repository publication lock and again immediately before making a draft public.
 Nightly preparation and publication block if the highest published nightly sequence
-cannot be verified, including after signing-key rotation or with incomplete
+cannot be verified, including with incomplete
 assets. They never substitute an older verified nightly to establish source,
 cooldown or sequence eligibility. Refresh trusted release tooling or repair the
 release evidence before retrying.
@@ -76,44 +79,39 @@ The four targets are `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`.
 Windows and musl are unsupported. Minimum OS/libc/CPU claims require observed
 native execution; cross-compilation is insufficient.
 
-## Signed release contract and discovery
+## Release integrity contract and discovery
 
-New `release.json` assets use schema 2, canonical two-space JSON, product
-`bobs-factory`, canonical repository, `status: available`, exact `channel`
-(`stable`, `nightly`, or `beta`), `version`, `tag`, source `commit`, `buildRunId`,
-`candidateDigest` and `workflowSha`. Installer, verifier, source and target
-records retain `file`/hash/size (or the target archive/sidecar equivalents).
-`assets` binds the complete inventory: archives, sidecars, installers,
-source/rebuild transport, candidate, validation evidence/receipt archive, build
-provenance and native receipts. Detached `release.json.sig` (binary RSA/SHA-256)
-and `release.json.key-id` (one trusted identifier) remain outside that inventory
-so signing has no circular dependency. Publisher verification signs exact bytes;
-consumers never reserialize a signed pointer.
+New `release.json` assets use schema 2 and canonical two-space JSON. They bind
+product/repository, availability, channel/version/tag, source commit, actual
+build run, frozen candidate digest and tooling SHA to a complete `assets` inventory
+of archives, installers, source/rebuild transport, candidate, evidence, validation
+receipts and provenance. Every record has its exact filename, SHA-256 and size.
+The manifest itself is outside its inventory to avoid a circular hash; GitHub's
+uploaded asset digest and size bind its downloaded bytes. New publication emits
+no `.sig` or `.key-id` files. Historical signature sidecars are retained and may
+be checked as ordinary hash-bound bytes, without a verified-signature claim.
 
-Pages verifies signatures, candidate identity, provider tag/source, complete
-asset inventory and digests before preparing stable/default and nightly pointers
-in one website build. `/releases/latest.json` remains the default compatibility
-endpoint; `/releases/stable.json` has the same stable/beta selection;
-`/releases/nightly.json` is independent. Each available pointer has matching
-`.sig` and `.key-id` sidecars. Drafts, incomplete releases and untrusted signatures
-are excluded. Invalid newer candidates cannot displace older valid candidates.
-Transport failure aborts the build without deploying new pointers. An empty
-channel produces an unavailable notice, never a fabricated download. Pagination
-fails explicitly above 10,000 entries rather than selecting from an incomplete list.
+Pages checks manifest/candidate identity, provider tag/source and the complete
+remote inventory before producing stable/default and nightly pointers together.
+`/releases/latest.json` and `/releases/stable.json` share the stable/beta selection;
+`/releases/nightly.json` is independent. Pointers preserve exact manifest bytes.
+Drafts and incomplete/conflicting releases are excluded. A transport or checksum
+failure aborts the website build, preserving prior deployed pointers. Empty
+channels remain unavailable. Pagination fails above 10,000 entries.
 
-Website synchronization uses the workflow's read-only GitHub token. It verifies
-candidates in channel order and stops after finding each usable target, avoiding
-API requests for older history. Publication ordering uses the complete published
-provider list, including releases that frozen tooling cannot verify after key
-rotation; an older stable candidate cannot move latest backwards.
-Unsigned `pending` website metadata can only stop installation with an
-unavailable-channel message. Every installable release still requires a pinned
-publisher signature before release assets are downloaded or executed.
+Synchronization uses a read-only GitHub token and checks each channel until a
+usable target is found. Publication ordering still uses the complete published
+provider history, including rejected releases: incomplete metadata cannot erase
+newer stable releases or bypass nightly eligibility. The public installer and
+updaters download directly over HTTPS and reject wrong channel/version/source,
+size, hash and candidate identity before installation. SHA-256 alone cannot
+detect coordinated replacement of both manifest and payload by a compromised
+GitHub account. No stronger publisher-authentication guarantee is claimed.
 
-Nix takes reviewed immutable `releaseManifest`, `releaseSignature` and
-`releaseKeyId` inputs. It does not fetch mutable latest during evaluation and
-verifies with a pinned key before unpacking/building. Hash-pinned archives alone
-are insufficient publisher authentication. Nix installations remain owned by Nix.
+Nix takes a reviewed immutable local `releaseManifest` and fixes archive downloads
+to its versioned GitHub URL and SHA-256. Legacy beta additionally takes the reviewed
+`releaseAttestation` complete inventory. Evaluation never fetches mutable latest,
+and Nix continues to own its installations.
 
 ## Complete source transport
 
@@ -135,31 +133,31 @@ an optional schema-2 manifest extension:
   The count must equal `ceil(source.size / chunkSize)`. All chunks are positive
   and at most 1 GiB; the complete compressed archive retains the existing 8 GiB
   intake ceiling. The complete release must fit GitHub's 1,000-asset count limit.
-- Signed `assets` contains those exact chunk records and excludes the monolith.
+- The `assets` inventory contains those exact chunk records and excludes the monolith.
   Missing, duplicate, reordered, extra or mismatched source records fail validation.
-  Detached signatures still authenticate exact manifest bytes. Schema-1 beta
+  The exact manifest snapshot binds reconstruction. Schema-1 beta
   cannot carry this extension; its original manifest, inventory and receipt
   digests remain untouched. Schema-2 single-file releases remain readable.
 
 `source-transport.mjs` owns this policy, deterministic splitting and bounded
 reconstruction. Recovery opens only exact regular files, refuses links and
-special files, never overwrites an existing output, and concatenates in signed
+special files, never overwrites an existing output, and concatenates in inventoried
 order with a 1 MiB buffer into an owned temporary directory. It verifies each
 chunk and the exact total archive size/hash before the existing unchanged source
-and release-evidence intake. The signed reconstruction identity must equal the
+and release-evidence intake. The inventoried reconstruction identity must equal the
 local evidence's full-archive record. Transport checks do not replace semantic
 intake, licensing approval or any other release gate.
 
-Keep the complete retained signed assets directory for publication recovery.
-`--resume` validates and uploads the signed chunk inventory; it never reconstructs
+Keep the complete retained assets directory for publication recovery.
+`--resume` validates and uploads the chunk inventory; it never reconstructs
 or uploads a monolith as a remote asset. Matching partial draft chunks are reused,
 missing draft chunks are uploaded, and unexpected/conflicting remote assets block
 publication. Discovery requires the exact complete remote inventory, including
-manifest/signature sidecars, for chunk releases. Missing public chunks cannot be
+manifest bytes, for chunk releases. Missing public chunks cannot be
 appended automatically. Preserve conflicting immutable state for inspection.
 
 Publication plans and reconciliation use the inventory from the exact verified
-manifest bytes plus the exact verified signature/key-id sidecar bytes. Before
+manifest bytes. Before
 emitting a plan, the publisher checks the local filename set and copies regular,
 unlinked files with safe modes into a private temporary snapshot, checking every
 size and hash while copying. Uploads use that snapshot through pinned file
@@ -169,12 +167,12 @@ authenticated inventory in the recovery receipt. Temporary snapshot storage must
 fit the complete asset set; it is removed on success, refusal and ordinary retry
 failure. Changed input files never redefine publication expectations.
 
-For offline source recovery from a complete signed schema-2 release, download its
-exact versioned inventory and signature sidecars into a directory, then run the
-reviewed tooling (which contains authentic publisher pins):
+For offline source recovery from a complete schema-2 release, download its
+exact versioned inventory and manifest into a directory, then run the
+reviewed tooling:
 
 ```sh
-node scripts/recover-release-source.mjs --assets /path/to/signed-assets \
+node scripts/recover-release-source.mjs --assets /path/to/assets \
   --output /path/to/new-recovered-source
 ```
 
@@ -185,48 +183,25 @@ output. It performs no network requests, signing, publication or installation.
 
 Changes to frozen tooling require a new reviewed candidate identity. Transporting
 unchanged accepted source bytes does not authorize relabeling old candidates,
-workflow runs, receipts or signatures; any evidence reuse remains independently
+workflow runs or receipts; any evidence reuse remains independently
 reviewed against the new identity.
 
-## Signing keys and historical beta
+## Historical beta
 
-The reviewed inventory is `docs/distribution/release-keys.json`. It intentionally
-contains no production key. **Rollout is blocked** until the authentic publisher
-public key is supplied through a reviewed change and protected signing is configured.
-Never invent a key, commit private keys, copy a host signing store or send credentials
-in tickets. Set the protected `BOBS_FACTORY_RELEASE_SIGNING_KEY` secret and
-`BOBS_FACTORY_RELEASE_KEY_ID` variable in release environments; local tools take
-only `BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE`, an infrastructure-owned file binding.
+Historical schema-1 manifests and evidence remain immutable. A reviewed additive
+`release-attestation.json` binds the old manifest's exact SHA-256/size and complete
+validated asset inventory. `prepare-beta-attestation.mjs --assets IMMUTABLE_ASSETS
+--output EMPTY_DIRECTORY --approval APPROVAL.json` validates existing native,
+source and evidence gates. Approval binds `manifestSha256`, sorted inventory
+`assetsDigest` and `approvedBy`. It emits only the additive inventory and never
+changes archives, the original manifest or tag, or uploads anything. Publication
+of that additive file remains separate. An incomplete historical beta remains
+unavailable; nightly never silently replaces the stable/default channel.
 
-Identifiers are lowercase letters/digits/hyphens, at most 64 characters. Keys
-use RSA of at least 3072 bits with SHA-256; `status: active` pins are accepted.
-Unknown, malformed, retired or revoked keys fail closed. A downloaded key ID
-selects an existing pin; it cannot introduce a key. For rotation, add the next
-public key as active, run `node scripts/sync-release-keys.mjs`, review/redeploy the
-bootstrap and release tooling, then sign with the new key. Keep overlapping active
-keys until consumers have the new bootstrap. Retire/revoke by changing status
-and rebuilding the trusted consumers. An older bootstrap must be reacquired from
-the HTTPS endpoint to learn a new key; changing release metadata cannot do that.
-Revocation can make old releases unavailable to updated consumers. Tests use
-only ephemeral keys. `node scripts/sync-release-keys.mjs --check` detects pin drift.
-
-Historical beta manifests remain immutable schema 1. Authenticating one requires
-additive detached manifest signatures plus signed `release-attestation.json` and
-its signature/key-ID sidecars, binding the exact old manifest and complete validated
-asset inventory. `prepare-beta-attestation.mjs --assets IMMUTABLE_ASSETS --output
-EMPTY_DIRECTORY --approval APPROVAL.json --key-id KEY_ID` validates all existing
-native/source/evidence gates. Approval binds `manifestSha256`, the sorted inventory's
-`assetsDigest` and `approvedBy`. It prepares additive authentication only, never
-changes archives, the old manifest or tag, and never uploads anything. Separate
-publication approval is required for those additive assets. Nix additionally takes
-`releaseAttestation`, `releaseAttestationSignature` and its pinned key ID. Without
-that genuine material, unsigned beta is unavailable and nightly never replaces it
-as default. Checked-in website pointers currently show this verification blocker.
-
-## Preparation, signing, approval and recovery
+## Preparation, approval and recovery
 
 Publication is disabled by default. Do not dispatch publication, install on a
-production host or provision signing secrets as part of implementation validation.
+production host as part of implementation validation.
 
 1. Freeze with `release-channel.yml`. It calls `binary-build.yml` at the same immutable
    workflow revision for native validation only. Manual builds dispatch from the
@@ -245,30 +220,28 @@ production host or provision signing secrets as part of implementation validatio
    it never invents passed or not-applicable gates. Candidate review, full-payload F1,
    migration/state preservation and licensing/source evidence must actually exist.
 3. `binary-release.yml` prepares on successful evidence intake or manual dispatch.
-   Preparation has read-only repository credentials and no signing secret. Inspect
+   Preparation has read-only repository credentials. Inspect
    its `bobs-factory-prepared-release-DIGEST` artifact and `publication-plan.json`.
-   Signing remains a reported blocker when unconfigured. Local equivalent:
+   Complete validation produces the exact unsigned asset digest. Local equivalent:
 
    ```sh
    node scripts/publish-binary-release.mjs --candidate candidate.json --run-id RUN_ID \
      --evidence /path/to/release-evidence.json --output /path/to/empty-output
    ```
 
-4. For stable, dispatch `binary-release.yml` with that prepared artifact ID and
-   `sign_only: true`. Protected signing returns the signed publication plan in a
-   retained artifact. Review its exact `assetsDigest`, then dispatch with that artifact
-   ID, `publish: true` and `approved_assets_digest`. Configure required reviewers in
-   `binary-stable-release`; approval binds both candidate and signed asset inventory.
-   Stable publication sets GitHub latest only after all gates pass.
-5. Automatic nightlies require separate rollout approval, protected environment
-   `binary-nightly-release`, keys and explicit `BOBS_FACTORY_AUTOMATIC_NIGHTLIES=enabled`.
-   A successful evidence workflow then signs/publishes eligible nightlies without
-   per-nightly approval. Missing review/migration/F1/license evidence still blocks
-   intake; the hourly poll cannot fabricate it. Manual nightlies enforce the same
-   eligibility and activation. Nightlies use prerelease=true and make_latest=false.
-   Automatic triggers also require the workflow entrypoint SHA to match frozen
-   tooling. If workflow code advanced since evidence, manually dispatch from the
-   frozen tooling ref; retain the original runtime source and prepared bytes.
+4. For stable, review the prepared `publication-plan.json` and dispatch
+   `binary-release.yml` with that exact retained `prepared_artifact_id`, `publish:
+   true` and `approved_assets_digest`. Approval binds both the frozen candidate and
+   full unsigned inventory. No sign-only phase or protected signing environment
+   is required. Stable sets GitHub latest only after all gates pass.
+5. Automatic nightlies require separate rollout activation and explicit
+   `BOBS_FACTORY_AUTOMATIC_NIGHTLIES=enabled`. Successful evidence intake then
+   publishes eligible nightlies, still subject to all review/migration/F1/license
+   gates and changed-main/six-hour history checks. Manual publication has the
+   same eligibility and activation requirements. Nightlies are prereleases and
+   never move stable latest. Automatic entrypoint SHA must equal frozen tooling;
+   if it has advanced, dispatch manually from that frozen ref and retain the
+   original source and prepared bytes.
 
 All mutations share `bobs-factory-repository-publication` concurrency; builds may
 run in parallel. Never run another mutation client outside that lock. Local
@@ -278,7 +251,7 @@ implement a distributed lock. A local directory lock also serializes publishers
 on the same host; an interrupted owner requires inspection before clearing it. Local preparation/dry run performs no tag, draft,
 upload, dispatch, channel deployment or host installation.
 
-Recovery uses the exact retained prepared/signed artifact (`--resume` locally),
+Recovery uses the exact retained prepared artifact (`--resume` locally),
 not a rebuild or refreshed clock. `publication-receipt.json` tracks candidate,
 tag/release IDs, expected assets, completed stages and synchronization. Annotated
 tags include the candidate digest and point to frozen runtime source. Matching
@@ -290,12 +263,12 @@ Pages synchronization is retried. The publisher explicitly dispatches `website.y
 after publication because token-created release events may not start workflows.
 A synchronization failure preserves publication success and prior deployed pointers;
 retry the retained publication artifact. Partial/failed-run artifacts remain usable
-for recovery only after fresh identity, signature and full validation checks.
+for recovery only after fresh identity, integrity and full validation checks.
 
 Artifact transport is authenticated for maintainers only. End users never receive
 `GH_TOKEN`. `--artifact-zips DIRECTORY` supplies offline TARGET.zip build artifacts
 whose digests must still match provider provenance. No repository token is forwarded
-to signed archive storage or operator-supplied evidence URLs.
+to temporary HTTPS artifact storage or operator-supplied evidence URLs.
 
 ## Required evidence
 
@@ -372,13 +345,13 @@ coverage is marked passed by the publisher.
 ## Installer validation and delivered desktop assets
 
 The native matrix also runs `scripts/smoke-public-install.mjs` against the freshly
-built archive with controlled downloads and synthetic signing keys. It verifies
-channel/exact-version resolution, repeat installation, signature rejection and
+built archive with controlled unsigned downloads. It verifies
+channel/exact-version resolution, repeat installation, malformed-manifest rejection and
 preservation of the existing executable when hash, size, source or target checks
-fail. This does not exercise production signing keys or public GitHub downloads.
+fail. This does not exercise public GitHub downloads.
 New prepared manifests declare `publicInstallerValidation: 1`; publication and
 recovery require each target's matching `public-installer-TARGET.json` receipt,
-including the frozen candidate digest and tooling SHA. Older signed manifests
+including the frozen candidate digest and tooling SHA. Historical manifests
 without this extension remain readable; their immutable assets are never rewritten.
 
 Desktop packaging remains owned by its separate delivery. When evidence includes
@@ -387,13 +360,14 @@ version, source commit and channel, a unique target and observed
 `platformRequirements`. Its `archive`, `updateMetadata` and `validation` records
 carry file, size and SHA-256. Preparation copies and validates these assets;
 an optional `updateArchive` record separately inventories the complete recovery
-payload (macOS `.bobsapp.gz`, Linux AppImage). It is copied, signed and verified with
+payload (macOS `.bobsapp.gz`, Linux AppImage). It is copied and verified with
 the other assets, never resolved from a detached URL. `updateMetadata` binds that
-payload's format/full-app fingerprint and authentic macOS signing status to the
-same candidate. The unsigned preparation workflow cannot satisfy macOS activation.
+payload's format/full-app fingerprint and local Mach-O signing status to the
+same candidate. macOS activation accepts the hash-bound unsigned app; actual functional validation
+and per-app OS permission remain separate from metadata integrity.
 The validation JSON must report `product: "bobs-factory"`, `status: "passed"`,
 matching version/commit/channel/target, `candidateDigest` and `workflowSha`.
-All records must also match the signed `assets` inventory. Missing, duplicated or
+All records must also match the `assets` inventory. Missing, duplicated or
 altered validation receipts block discovery and stable promotion. Recovery checks
 the receipt identity again. No desktop downloads are advertised until delivered.
 

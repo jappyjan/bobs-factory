@@ -74,7 +74,7 @@ jobs:
         run: |
           ./tooling/scripts/install-binary.sh "$RUNNER_TEMP/artifacts/bobs-factory-$VERSION-$TARGET.tar.gz" "$RUNNER_TEMP/artifacts/bobs-factory-$VERSION-$TARGET.manifest.json" "$RUNNER_TEMP/factory-prefix"
           ./tooling/scripts/smoke-binary.sh "$RUNNER_TEMP/factory-prefix/bin/bobs-factory" | tee "$RUNNER_TEMP/artifacts/runtime-smoke.txt"
-      - name: Public installer with native archives and controlled signed downloads
+      - name: Public installer with native archives and controlled unsigned downloads
         run: node tooling/scripts/smoke-public-install.mjs --artifacts "$RUNNER_TEMP/artifacts"
       - name: Native scoped helpers with controlled HTTPS
         run: node tooling/scripts/smoke-native-helpers.mjs --binary "$RUNNER_TEMP/factory-prefix/bin/bobs-factory" --output "$RUNNER_TEMP/artifacts"
@@ -85,8 +85,6 @@ jobs:
           VERSION: ${{ fromJSON(inputs.candidate_json).candidate.version }}
           TARGET: ${{ matrix.target }}
         run: BOBS_FACTORY_TRIAL_SMOKE_BINARY="$RUNNER_TEMP/factory-prefix/bin/bobs-factory" node --test tooling/scripts/tests/trial-launcher.test.mjs tooling/scripts/tests/trial-launcher-bootstrap.test.mjs
-      - name: Publisher signature interoperability
-        run: node --test tooling/scripts/tests/release-signature.test.mjs
       - uses: actions/upload-artifact@v6
         with:
           name: bobs-factory-${{ matrix.target }}-${{ fromJSON(inputs.candidate_json).digest }}-${{ github.run_attempt }}

@@ -17,7 +17,7 @@ import {
 	cleanupFixtureTreeAfterReceipt,
 	finalizeFixtureReceipt,
 } from "./signed-delivery-harness-lifecycle.mjs";
-import { command } from "./signed-release-https-fixture.mjs";
+import { command } from "./unsigned-release-https-fixture.mjs";
 
 const [outputArg] = process.argv.slice(2);
 assert(
@@ -412,11 +412,11 @@ try {
 
 	const script = fileURLToPath(import.meta.url);
 	const fixtureHelper = new URL(
-		"./signed-release-https-fixture.mjs",
+		"./unsigned-release-https-fixture.mjs",
 		import.meta.url,
 	);
 	const runtimeDriver = new URL(
-		"./signed-delivery-runtime.mjs",
+		"./unsigned-delivery-runtime.mjs",
 		import.meta.url,
 	);
 	const lifecycleHelper = new URL(

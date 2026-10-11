@@ -8,7 +8,6 @@ import {
 	validateReleaseManifest,
 } from "./binary-release.mjs";
 import { releaseChannel, validateCandidate } from "./release-candidate.mjs";
-import { verifyManifestSignature } from "./release-signature.mjs";
 export function githubClient(token = process.env.GH_TOKEN, transport = fetch) {
 	const headers = {
 		Accept: "application/vnd.github+json",
@@ -110,7 +109,7 @@ export function verifyAssetInventory(
 			"Unexpected immutable release assets",
 		);
 }
-export async function verifyPublishedRelease(client, release, keys) {
+export async function verifyPublishedRelease(client, release) {
 	requireValue(
 		!release.draft && release.published_at,
 		"Release is not published",
@@ -118,7 +117,7 @@ export async function verifyPublishedRelease(client, release, keys) {
 	const assets = await client.pages(`releases/${release.id}/assets`);
 	const asset = (file) => {
 		const a = assets.filter((a) => a.name === file);
-		requireValue(a.length === 1, `Missing signature or manifest: ${file}`);
+		requireValue(a.length === 1, `Missing release asset: ${file}`);
 		requireValue(
 			a[0].browser_download_url ===
 				`https://github.com/${REPOSITORY}/releases/download/${release.tag_name}/${file}`,
@@ -126,11 +125,20 @@ export async function verifyPublishedRelease(client, release, keys) {
 		);
 		return a[0];
 	};
-	const bytes = await client.bytes(asset("release.json"));
-	const signature = await client.bytes(asset("release.json.sig"));
-	const keyBytes = await client.bytes(asset("release.json.key-id"));
-	const keyId = keyBytes.toString("utf8").trim();
-	verifyManifestSignature(bytes, signature, keyId, keys);
+	const download = async (file) => {
+		const entry = asset(file);
+		const bytes = await client.bytes(entry);
+		requireValue(
+			entry.state === "uploaded" &&
+				Number.isSafeInteger(entry.size) &&
+				entry.size > 0 &&
+				entry.digest === `sha256:${sha256(bytes)}` &&
+				bytes.length === entry.size,
+			"Published asset checksum mismatch",
+		);
+		return bytes;
+	};
+	const bytes = await download("release.json");
 	const manifest = validateReleaseManifest(JSON.parse(bytes.toString("utf8")));
 	requireValue(
 		manifest.status === "available" &&
@@ -143,17 +151,10 @@ export async function verifyPublishedRelease(client, release, keys) {
 	if (manifest.schemaVersion === 1) {
 		requireValue(
 			/-beta(?:\.\d+)?$/.test(manifest.version),
-			"Only historical beta supports signed attestation",
+			"Only historical beta supports inventory attestation",
 		);
-		const attBytes = await client.bytes(asset("release-attestation.json"));
-		verifyManifestSignature(
-			attBytes,
-			await client.bytes(asset("release-attestation.json.sig")),
-			(await client.bytes(asset("release-attestation.json.key-id")))
-				.toString()
-				.trim(),
-			keys,
-		);
+		const attBytes = await download("release-attestation.json");
+
 		attestation = JSON.parse(attBytes);
 		requireValue(
 			attestation.schemaVersion === 1 &&
@@ -194,25 +195,33 @@ export async function verifyPublishedRelease(client, release, keys) {
 				"Incomplete beta evidence inventory",
 			);
 	}
-	if (manifest.sourceTransport)
+	// Historical detached signatures are retained bytes, never publisher identity.
+	// New releases contain only the manifest and its complete hash/size inventory.
+	const extras = [
+		"release.json",
+		...(attestation ? ["release-attestation.json"] : []),
+		...assets
+			.filter((a) =>
+				/^(release\.json|release-attestation\.json)\.(sig|key-id)$/.test(
+					a.name,
+				),
+			)
+			.map((a) => a.name),
+	];
+	for (const file of extras) {
+		const contents = file === "release.json" ? bytes : await download(file);
 		records = [
 			...records,
-			...[
-				["release.json", bytes],
-				["release.json.sig", signature],
-				["release.json.key-id", keyBytes],
-			].map(([file, contents]) => ({
-				file,
-				size: contents.length,
-				sha256: sha256(contents),
-			})),
+			{ file, size: contents.length, sha256: sha256(contents) },
 		];
+	}
+
 	verifyAssetInventory(assets, records, {
-		complete: manifest.sourceTransport !== undefined,
+		complete: true,
 	});
 	if (manifest.schemaVersion === 2) {
 		const frozen = validateCandidate(
-			JSON.parse(await client.bytes(asset("candidate.json"))),
+			JSON.parse(await download("candidate.json")),
 		);
 		requireValue(
 			frozen.digest === manifest.candidateDigest &&
@@ -234,15 +243,13 @@ export async function verifyPublishedRelease(client, release, keys) {
 		release: { ...release, assets },
 		manifest,
 		bytes,
-		signature,
-		keyId,
+		integrity: "github-https-sha256",
 		attestation,
 		manifestSha256: sha256(bytes),
 	};
 }
 export async function discoverReleases(
 	client,
-	keys,
 	{ selectedOnly = false, allowBetaFallback = true } = {},
 ) {
 	validatePublicRepository(await client.api(""));
@@ -257,7 +264,7 @@ export async function discoverReleases(
 		)
 			return;
 		try {
-			verified.push(await verifyPublishedRelease(client, release, keys));
+			verified.push(await verifyPublishedRelease(client, release));
 		} catch (error) {
 			// Transport failure cannot turn into an empty channel or stale successful build.
 			if (
@@ -299,7 +306,7 @@ export async function discoverReleases(
 	};
 	return {
 		// Provider publication history remains authoritative for ordering, even
-		// when this frozen tool's pinned keys cannot verify a newer release.
+		// when a newer release has incomplete or conflicting validation material.
 		published: releases.filter((r) => !r.draft),
 		stable: select("stable"),
 		nightly: select("nightly"),
@@ -324,7 +331,7 @@ export function requireVerifiedNightlyHistory(state) {
 					sequence(r) < sequence(last.release) ||
 					(sequence(r) === sequence(last.release) && r.id === last.release.id),
 			),
-		"Nightly preparation/publication blocked: latest published nightly cannot be verified; refresh trusted release tooling or repair release evidence",
+		"Nightly preparation/publication blocked: latest published nightly cannot be verified; refresh release tooling or repair release evidence",
 	);
 	return last;
 }
@@ -340,7 +347,7 @@ export function selectVerifiedPromotionNightly(state, tag) {
 	);
 	requireValue(
 		selected.length === 1,
-		"Stable promotion blocked: selected nightly is not a complete signed published release",
+		"Stable promotion blocked: selected nightly is not a complete validated published release",
 	);
 	return selected[0];
 }

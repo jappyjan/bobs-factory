@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Support direct unsigned GitHub releases and updates with candidate-bound SHA256/size inventories; remove paid Apple and publisher-signature prerequisites, preserve corruption/source/recovery/rollback safeguards, and document per-app macOS allow-running ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116)).
+
 - Retain the final isolated Linux service acceptance at exact PR #91 source `1aeb055`; all seven main assertions, six signal cancellations, the outer START deadline and Node 22/24 CI passed. The evidence remains bound to its frozen runtime and does not claim full release acceptance. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 
 - Record exact pinned WebKit source acquisition, hash-verified archive intake, static byte correspondence for all four frozen candidate runtimes, and the independent review's source-claim scope; document that native relink, licensing acceptance and valid macOS x64 signing remain open. Refresh Taskbot #116 source-preparation status without rewriting prior HTTP 422 evidence. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91))

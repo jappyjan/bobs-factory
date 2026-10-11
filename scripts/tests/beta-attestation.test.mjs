@@ -18,12 +18,10 @@ import {
 	validateNativeHelpers,
 	validateReleaseManifest,
 } from "../lib/binary-release.mjs";
-import { verifyManifestSignature } from "../lib/release-signature.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
-import { keys, privateKey } from "./release-fixtures.mjs";
 import { fixtureTar } from "./source-material-fixture.mjs";
 
-test("historical beta signing validates old bytes and emits only additive authentication", () => {
+test("historical beta inventory validates old bytes and emits only additive integrity", () => {
 	const f = preparedFixture("beta", { legacy: true });
 	try {
 		const legacy = f.manifest;
@@ -43,9 +41,7 @@ test("historical beta signing validates old bytes and emits only additive authen
 			.map((file) => fileRecord(join(f.assets, file), file))
 			.sort((a, b) => a.file.localeCompare(b.file));
 		const approval = join(f.work, "approval.json"),
-			key = join(f.work, "ephemeral.pem"),
 			output = join(f.work, "authentication");
-		writeFileSync(key, privateKey, { mode: 0o600 });
 		const call = () =>
 			spawnSync(
 				process.execPath,
@@ -57,12 +53,9 @@ test("historical beta signing validates old bytes and emits only additive authen
 					output,
 					"--approval",
 					approval,
-					"--key-id",
-					"fixture",
 				],
 				{
 					encoding: "utf8",
-					env: { ...process.env, BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE: key },
 				},
 			);
 		writeFileSync(
@@ -86,26 +79,8 @@ test("historical beta signing validates old bytes and emits only additive authen
 		assert.equal(result.status, 0, result.stderr);
 		for (const [file, bytes] of immutable)
 			assert.deepEqual(readFileSync(join(f.assets, file)), bytes);
-		assert.deepEqual(readdirSync(output).sort(), [
-			"release-attestation.json",
-			"release-attestation.json.key-id",
-			"release-attestation.json.sig",
-			"release.json.key-id",
-			"release.json.sig",
-		]);
-		verifyManifestSignature(
-			jsonBytes(legacy),
-			readFileSync(join(output, "release.json.sig")),
-			"fixture",
-			keys,
-		);
+		assert.deepEqual(readdirSync(output).sort(), ["release-attestation.json"]);
 		const att = readFileSync(join(output, "release-attestation.json"));
-		verifyManifestSignature(
-			att,
-			readFileSync(join(output, "release-attestation.json.sig")),
-			"fixture",
-			keys,
-		);
 		assert.equal(JSON.parse(att).manifest.sha256, sha256(jsonBytes(legacy)));
 	} finally {
 		f.cleanup();

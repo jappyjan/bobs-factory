@@ -25,7 +25,6 @@ import {
 	validateCandidate,
 } from "../lib/release-candidate.mjs";
 import { splitSourceArchive } from "../lib/source-transport.mjs";
-import { keys, signBytes, testInstaller } from "./release-fixtures.mjs";
 
 import {
 	fixtureTar,
@@ -49,14 +48,7 @@ export function preparedFixture(
 	const scripts = join(work, "scripts");
 	cpSync(join(root, "scripts"), scripts, { recursive: true });
 	mkdirSync(join(work, "docs/distribution"), { recursive: true });
-	writeFileSync(
-		join(work, "docs/distribution/release-keys.json"),
-		jsonBytes({ schemaVersion: 1, keys }),
-	);
-	writeFileSync(
-		join(scripts, "install.sh"),
-		testInstaller(readFileSync(join(scripts, "install.sh"), "utf8")),
-	);
+
 	let workflowSha = "b".repeat(40);
 	if (gitTooling) {
 		const git = (...args) =>
@@ -292,7 +284,7 @@ export function preparedFixture(
 							"badSizePreservesInstallation",
 							"badSourcePreservesInstallation",
 							"unavailableTargetPreservesInstallation",
-							"badSignaturePreservesInstallation",
+							"badManifestPreservesInstallation",
 						].map((c) => [c, "passed"]),
 					),
 				}),
@@ -491,11 +483,6 @@ export function preparedFixture(
 			: {}),
 	};
 	writeFileSync(join(assets, "release.json"), jsonBytes(manifest));
-	writeFileSync(
-		join(assets, "release.json.sig"),
-		signBytes(jsonBytes(manifest)),
-	);
-	writeFileSync(join(assets, "release.json.key-id"), "fixture\n");
 	const records = readdirSync(assets)
 		.sort()
 		.map((f) => fileRecord(join(assets, f), f));

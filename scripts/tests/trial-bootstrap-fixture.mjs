@@ -15,7 +15,6 @@ import {
 	sha256,
 	TARGETS,
 } from "../lib/binary-release.mjs";
-import { signBytes, testInstaller } from "./release-fixtures.mjs";
 
 const commit = "a".repeat(40);
 const native = `${process.platform}-${process.arch}`;
@@ -46,6 +45,8 @@ export function trialBootstrapFixture(version, { slowCurl = false } = {}) {
 			schemaVersion: 1,
 			product: "bobs-factory",
 			version,
+			candidateDigest: "d".repeat(64),
+			workflowSha: commit,
 			commit,
 			target: native,
 			sha256: sha256(executable),
@@ -64,6 +65,8 @@ export function trialBootstrapFixture(version, { slowCurl = false } = {}) {
 			schemaVersion: 1,
 			product: "bobs-factory",
 			version,
+			candidateDigest: "d".repeat(64),
+			workflowSha: commit,
 			commit,
 			dirty: false,
 			target: native,
@@ -120,18 +123,11 @@ export function trialBootstrapFixture(version, { slowCurl = false } = {}) {
 	for (const file of ["latest.json", "nightly.json", "release.json"]) {
 		const bytes = jsonBytes(metadata);
 		writeFileSync(join(downloads, file), bytes);
-		writeFileSync(join(downloads, `${file}.sig`), signBytes(bytes));
-		writeFileSync(join(downloads, `${file}.key-id`), "fixture\n");
 	}
 	const bootstrapPath = join(downloads, "install.sh");
 	writeFileSync(
 		bootstrapPath,
-		testInstaller(
-			readFileSync(
-				new URL("../../scripts/install.sh", import.meta.url),
-				"utf8",
-			),
-		),
+		readFileSync(new URL("../../scripts/install.sh", import.meta.url), "utf8"),
 		{ mode: 0o700 },
 	);
 	const curlPid = join(work, "curl.pid");
