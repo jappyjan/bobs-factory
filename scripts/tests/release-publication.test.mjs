@@ -11,13 +11,18 @@ import {
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { sha256, sha256File } from "../lib/binary-release.mjs";
+import {
+	fileRecord,
+	jsonBytes,
+	sha256,
+	sha256File,
+} from "../lib/binary-release.mjs";
 import { verifyPublishedRelease } from "../lib/github-release.mjs";
 import { validatePreparedRelease } from "../lib/prepared-release.mjs";
 import { withPublicationLock } from "../lib/publication-lock.mjs";
 import { verifyManifestSignature } from "../lib/release-signature.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
-import { keys } from "./release-fixtures.mjs";
+import { keys, signBytes } from "./release-fixtures.mjs";
 
 const transport = fileURLToPath(
 	new URL("./publication-transport.mjs", import.meta.url),
@@ -43,7 +48,11 @@ function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
 			approvedBy: "fixture-maintainer",
 		}),
 	);
-	const run = (publish = true, extra = [], { preload, env = {} } = {}) =>
+	const run = (
+		publish = true,
+		extra = [],
+		{ preload, env = {}, timeout } = {},
+	) =>
 		spawnSync(
 			process.execPath,
 			[
@@ -65,6 +74,7 @@ function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
 			],
 			{
 				encoding: "utf8",
+				timeout,
 				env: {
 					...process.env,
 					GH_TOKEN: "synthetic-test-token",
@@ -119,6 +129,50 @@ test("publisher dry run makes no remote calls and produces candidate-bound asset
 		);
 		assert.equal(plan.assetsDigest, f.assetsDigest);
 		assert.equal(plan.candidateDigest, f.candidate.digest);
+	} finally {
+		f.cleanup();
+	}
+});
+
+test("publisher cancels an unread rejected upload and cleans snapshot while retaining draft", () => {
+	const f = setup("nightly", {}, { sourceChunks: true });
+	try {
+		// A genuinely signed supplemental fixture asset exceeds stream buffering;
+		// the provider returns HTTP 413 without reading any body bytes.
+		const file = "extra-data.bin";
+		writeFileSync(join(f.assets, file), Buffer.alloc(2 * 1024 ** 2, 0x61));
+		const bytes = jsonBytes({
+			...f.manifest,
+			assets: [...f.manifest.assets, fileRecord(join(f.assets, file), file)],
+		});
+		writeFileSync(join(f.assets, "release.json"), bytes);
+		writeFileSync(join(f.assets, "release.json.sig"), signBytes(bytes));
+		const preload = join(f.work, "reject-unread-upload.mjs");
+		writeFileSync(
+			preload,
+			`const original = globalThis.fetch;
+globalThis.fetch = async (url, options) => {
+ if (new URL(url).hostname === "uploads.github.com" && new URL(url).searchParams.get("name") === ${JSON.stringify(file)})
+  return new Response("rejected fixture upload", {status: 413});
+ return original(url, options);
+};
+`,
+		);
+		const temporary = join(f.work, "rejected-upload-temporary");
+		mkdirSync(temporary);
+		const result = f.run(true, [], {
+			preload,
+			env: { TMPDIR: temporary },
+			timeout: 5000,
+		});
+		assert.equal(result.status, 1, result.stderr);
+		assert.match(result.stderr, /Upload failed: extra-data.bin \(413\)/);
+		assert.equal(f.state().release.draft, true);
+		assert.equal(
+			f.state().operations.some((o) => o.method === "PATCH"),
+			false,
+		);
+		assert.deepEqual(readdirSync(temporary), []);
 	} finally {
 		f.cleanup();
 	}
