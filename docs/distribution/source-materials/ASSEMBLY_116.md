@@ -60,3 +60,7 @@ Cargo.lock registry records are inventory/review inputs, not a claim that every 
 Next: independent technical functional-completeness review and independent candidate-bound licensing/source review using the actual archive. Acceptance may be issued only after those reviews clear real material. Historical exact compiler/linker/sysroot/SDK identity remains unobserved; actual Linux reconstruction equivalence establishes function and bytes, not old historical identity. Other target link recipes and modified Factory rebuild are unexecuted. Later Mac DeveloperID signing invocation/trust is unobserved. These limitations stay explicit rather than becoming synthetic receipts.
 
 Protected signing/authentic publisher pins, separate public-release/rollout approval, remaining operator evidence and GitGuardian reviews remain separate gates. The user-selected product minimums remain macOS15 and Ubuntu24.04/glibc2.39 on ARM64+x64; upstream reconstruction flags do not add older-platform product support. This pickup does not close Taskbot116 or change ticket status, activate public assets, or touch production homes/services/providers/native stores.
+
+## Subsequent review1 correction kit
+
+The original archive/80-record inventory above remains preserved. See the separately identified [review1 correction handoff](CORRECTIONS_REVIEW1_116.md) for the new 93-record kit, five per-finding responses, unchanged bounded intake, maintained future notice fixes and the frozen `.21` payload notice defect requiring candidate reissue. No acceptance receipt is issued.

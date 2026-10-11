@@ -1,0 +1,76 @@
+{
+	"component": "web-push@3.6.7",
+	"license": "MPL-2.0",
+	"sourceArchive": {
+		"kind": "mpl-source",
+		"file": "web-push-3.6.7.tgz",
+		"source": "https://registry.npmjs.org/web-push/-/web-push-3.6.7.tgz",
+		"revision": "web-push@3.6.7",
+		"size": 13481,
+		"sha256": "85774fffee09f70bde084cebcebae20b3cf6f48239f61659e45aed9fd513463e",
+		"integrity": "sha512-OpiIUe8cuGjrj3mMBFWY+e4MMIkW3SVT+7vEIjvD9kejGUypv8GPDf84JdPWskK8zMRIJ6xYGm+Kxr8YkPyA0A==",
+		"candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+		"sourceFiles": [
+			{
+				"path": "package/LICENSE",
+				"size": 228,
+				"sha256": "1fe5dbc03ffe518da23f1297de78ab5612532eddca93cca287a8dfaf4ad7ddce"
+			},
+			{
+				"path": "package/src/cli.js",
+				"size": 2945,
+				"sha256": "8e3229a5f425a047203b47b2bfa07758a4c2db48409fa42c532c10197b46026a"
+			},
+			{
+				"path": "package/src/encryption-helper.js",
+				"size": 1609,
+				"sha256": "ab2db6043bbc1b2cbce97d84ae357b0390e463e724ca3431d70c1a77236c7d8d"
+			},
+			{
+				"path": "package/src/index.js",
+				"size": 785,
+				"sha256": "bcf84f1ab741b784fa99ad010761443b5b9267aeb44e2b57603e8a8e03fa56dc"
+			},
+			{
+				"path": "package/src/urlsafe-base64-helper.js",
+				"size": 188,
+				"sha256": "ae8648efb46ca8aa62ff1f3e307fb1fb7670733f0c01213e5a3033f695009eaf"
+			},
+			{
+				"path": "package/src/vapid-helper.js",
+				"size": 7732,
+				"sha256": "3c31f66b096265ff7bcf67ce8c7b1e03adf5e7e8714542ab927b0711b4c7cf3b"
+			},
+			{
+				"path": "package/src/web-push-constants.js",
+				"size": 294,
+				"sha256": "e3c8476dee4ee969c25ce4ceadf283c463927f048db1e09e9956b17d684c58ae"
+			},
+			{
+				"path": "package/src/web-push-error.js",
+				"size": 388,
+				"sha256": "c97cd24b20b8ee6f577013a7fed89626cd674187eccecaf8d1e10c2bea43c68f"
+			},
+			{
+				"path": "package/src/web-push-lib.js",
+				"size": 13735,
+				"sha256": "4a724b5452b0c51143808cdfd4e58efd3876fc5728af152635b8fcb340bbbff3"
+			},
+			{
+				"path": "package/package.json",
+				"size": 1448,
+				"sha256": "b979933af768f8b930b6d9dc74db9728fccd7a2c62e24160ec2874edf65bcafd"
+			},
+			{
+				"path": "package/README.md",
+				"size": 18891,
+				"sha256": "9eaa88c342d4aa0c18ad3d1106a77b5477c30a89d2f2e064fa735a897f34a5b0"
+			}
+		]
+	},
+	"derivation": "Recipient source retrieval directions for exact frozen lockfile integrity; complete unmodified package input verified. Source and LICENSE are in retained tarball.",
+	"output": {
+		"file": "web-push-source.txt",
+		"sha256": "137b86230aa3ebf8afc02ec38a137b94fb57bb03507cb1c92cec3db3d89df437"
+	}
+}

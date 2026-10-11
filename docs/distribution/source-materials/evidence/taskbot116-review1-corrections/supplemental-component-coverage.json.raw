@@ -1,0 +1,210 @@
+{
+  "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+  "version": "1.0.0-nightly.20261010.21",
+  "scope": "Additive corrections to review material; original frozen payload and 110 snapshots/12 notice records are unchanged. Complete source/license acceptance is withheld pending independent review. Desktop payload excluded.",
+  "ICU": {
+    "sourceRevision": "21d1eb0f306e1141c10931e914dfc038c06121da",
+    "licenseRecord": {
+      "kind": "supplemental-notice",
+      "file": "ICU-78.3-LICENSE.txt",
+      "source": "https://raw.githubusercontent.com/unicode-org/icu/21d1eb0f306e1141c10931e914dfc038c06121da/LICENSE",
+      "revision": "21d1eb0f306e1141c10931e914dfc038c06121da",
+      "size": 27718,
+      "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
+      "component": "ICU78.3",
+      "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+      "pinnedSourceArchive": {
+        "source": "https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz",
+        "file": "icu4c-78.3-sources.tgz",
+        "size": 27977255,
+        "sha256": "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0",
+        "revision": "21d1eb0f306e1141c10931e914dfc038c06121da",
+        "licenseArchiveMember": "icu/LICENSE"
+      }
+    },
+    "archiveReceipt": {
+      "source": "https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz",
+      "file": "icu4c-78.3-sources.tgz",
+      "size": 27977255,
+      "sha256": "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0",
+      "revision": "21d1eb0f306e1141c10931e914dfc038c06121da",
+      "licenseArchiveMember": "icu/LICENSE"
+    },
+    "licenseScope": "full ICU78.3 root LICENSE including every third-party notice, byte-identical to exact pinned archive member",
+    "targets": [
+      {
+        "target": "darwin-arm64",
+        "runtimeSha256": "35d20dd0263e5c950194434b925454fdfa9ba6e4467da960410fa05b08a7a5b5",
+        "executableSha256": "1a66bd81f84f7a382ded69db2b588f3ff0a69b08228695124ef834bc35cb9d10",
+        "staticLibraryInputs": []
+      },
+      {
+        "target": "darwin-x64",
+        "runtimeSha256": "2fa513af22ac59e03aae640cad302e73cb1ddb0f6398501e2ddccf7dcd613596",
+        "executableSha256": "087ee6c64f3c53a499d0ad88b102a8cae97e2f2a0bea2f10a8ddf29f644d4843",
+        "staticLibraryInputs": []
+      },
+      {
+        "target": "linux-x64",
+        "runtimeSha256": "a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c",
+        "executableSha256": "144e32d1894e912072948379210eb1f6e30c688be8aeeee7f8b2d21e27b50caa",
+        "staticLibraryInputs": [
+          {
+            "path": "objects/cache/webkit-2e2aa2290fac856d-lto/lib/libicudata.a",
+            "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3c-21a1-4c27-800e-35b5bd43a92f",
+            "size": 12242982,
+            "sha256": "6ff546fab4ecce092ad07d96c67e246a826724ac400343973918c1e4053e0839",
+            "role": "exact linked WebKit/ICU library"
+          },
+          {
+            "path": "objects/cache/webkit-2e2aa2290fac856d-lto/lib/libicuuc.a",
+            "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3c-21a2-4b70-9111-6463dd0ea1e5",
+            "size": 6375236,
+            "sha256": "d01f5744de17c2932822c496d6cd6bdd0b3bc7e10b586360d1c32b744d1168e5",
+            "role": "exact linked WebKit/ICU library"
+          },
+          {
+            "path": "objects/cache/webkit-2e2aa2290fac856d-lto/lib/libicui18n.a",
+            "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3c-21a2-4bbb-849e-daef3423d720",
+            "size": 13463432,
+            "sha256": "6f0d8415eeab279de3c74ab00adc84d7dcfd5e7cb9ac3e4e6bfa14d766f552b2",
+            "role": "exact linked WebKit/ICU library"
+          }
+        ]
+      },
+      {
+        "target": "linux-arm64",
+        "runtimeSha256": "616f267a34278ff5ac282df37ffdfba1d7141f4f6926bca99af2cd6ef3ad32b1",
+        "executableSha256": "f211479c82733e2c466e5f80ef7f8ffef77b305aafb069e4907c85a2d935a6f8",
+        "staticLibraryInputs": [
+          {
+            "path": "objects/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicuuc.a",
+            "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f3b-fe27-4f83-8c52-1bfc92eecd57",
+            "size": 6296428,
+            "sha256": "de34e57a2f63a80e61e568d70ed0c812a3ba9242217b52378418dad2dfb95c6d",
+            "role": "exact linked WebKit/ICU library"
+          },
+          {
+            "path": "objects/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicui18n.a",
+            "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f3b-fe27-4734-9ea4-20905af519fb",
+            "size": 13337194,
+            "sha256": "2d8710b1ab9f4748cb525652c4c2f83fcb58eeb215ce5abc90e8d5ae7ac73b2b",
+            "role": "exact linked WebKit/ICU library"
+          },
+          {
+            "path": "objects/cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicudata.a",
+            "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f3b-fe27-4b50-b2cf-0132ccc7550f",
+            "size": 12241950,
+            "sha256": "a8d6db96bd58a1053563098df222950319cbfeeaf83256bc74e572086439b129",
+            "role": "exact linked WebKit/ICU library"
+          }
+        ]
+      }
+    ],
+    "distributionBlocker": "Frozen .21 THIRD_PARTY_NOTICES ICU block remains symlink target string ../LICENSE. Canonical full notices in payload requires new frozen candidate/review after maintained notice correction; no .21 acceptance/publish/sign action is authorized here."
+  },
+  "Rust": {
+    "mapRecord": {
+      "kind": "component-license-map",
+      "file": "RUST-TOOLCHAIN-COMPONENT-MAP.json",
+      "source": "https://static.rust-lang.org/dist/2026-07-20/rust-src-nightly.tar.xz",
+      "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0",
+      "size": 127033,
+      "sha256": "25599f3931b9bb2eb4efc60114b4c44708d266710869351ef048ac66b075cd63"
+    },
+    "librarySourceRecord": {
+      "kind": "toolchain-library-source",
+      "file": "rust-src-nightly.tar.xz",
+      "source": "https://static.rust-lang.org/dist/2026-07-20/rust-src-nightly.tar.xz",
+      "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0",
+      "size": 5804680,
+      "sha256": "d4ffe57cc99d8846761bdbefc631bfd8f06fc001d7208576887e381c5709341a",
+      "component": "Rust std/core/alloc/compiler_builtins nightly-2026-07-20",
+      "officialReceipt": {
+        "package": "rust-src",
+        "target": "*",
+        "source": "https://static.rust-lang.org/dist/2026-07-20/rust-src-nightly.tar.xz",
+        "file": "rust-src-nightly.tar.xz",
+        "size": 5804680,
+        "sha256": "d4ffe57cc99d8846761bdbefc631bfd8f06fc001d7208576887e381c5709341a",
+        "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+      }
+    },
+    "classification": "actual Bun custom build-std objects mapped to exact official rust-src and generated library copyright inventory; full compiler license selection is not inferred"
+  },
+  "web-push": {
+    "sourceRecord": {
+      "kind": "mpl-source",
+      "file": "web-push-3.6.7.tgz",
+      "source": "https://registry.npmjs.org/web-push/-/web-push-3.6.7.tgz",
+      "revision": "web-push@3.6.7",
+      "size": 13481,
+      "sha256": "85774fffee09f70bde084cebcebae20b3cf6f48239f61659e45aed9fd513463e",
+      "integrity": "sha512-OpiIUe8cuGjrj3mMBFWY+e4MMIkW3SVT+7vEIjvD9kejGUypv8GPDf84JdPWskK8zMRIJ6xYGm+Kxr8YkPyA0A==",
+      "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+      "sourceFiles": [
+        {
+          "path": "package/LICENSE",
+          "size": 228,
+          "sha256": "1fe5dbc03ffe518da23f1297de78ab5612532eddca93cca287a8dfaf4ad7ddce"
+        },
+        {
+          "path": "package/src/cli.js",
+          "size": 2945,
+          "sha256": "8e3229a5f425a047203b47b2bfa07758a4c2db48409fa42c532c10197b46026a"
+        },
+        {
+          "path": "package/src/encryption-helper.js",
+          "size": 1609,
+          "sha256": "ab2db6043bbc1b2cbce97d84ae357b0390e463e724ca3431d70c1a77236c7d8d"
+        },
+        {
+          "path": "package/src/index.js",
+          "size": 785,
+          "sha256": "bcf84f1ab741b784fa99ad010761443b5b9267aeb44e2b57603e8a8e03fa56dc"
+        },
+        {
+          "path": "package/src/urlsafe-base64-helper.js",
+          "size": 188,
+          "sha256": "ae8648efb46ca8aa62ff1f3e307fb1fb7670733f0c01213e5a3033f695009eaf"
+        },
+        {
+          "path": "package/src/vapid-helper.js",
+          "size": 7732,
+          "sha256": "3c31f66b096265ff7bcf67ce8c7b1e03adf5e7e8714542ab927b0711b4c7cf3b"
+        },
+        {
+          "path": "package/src/web-push-constants.js",
+          "size": 294,
+          "sha256": "e3c8476dee4ee969c25ce4ceadf283c463927f048db1e09e9956b17d684c58ae"
+        },
+        {
+          "path": "package/src/web-push-error.js",
+          "size": 388,
+          "sha256": "c97cd24b20b8ee6f577013a7fed89626cd674187eccecaf8d1e10c2bea43c68f"
+        },
+        {
+          "path": "package/src/web-push-lib.js",
+          "size": 13735,
+          "sha256": "4a724b5452b0c51143808cdfd4e58efd3876fc5728af152635b8fcb340bbbff3"
+        },
+        {
+          "path": "package/package.json",
+          "size": 1448,
+          "sha256": "b979933af768f8b930b6d9dc74db9728fccd7a2c62e24160ec2874edf65bcafd"
+        },
+        {
+          "path": "package/README.md",
+          "size": 18891,
+          "sha256": "9eaa88c342d4aa0c18ad3d1106a77b5477c30a89d2f2e064fa735a897f34a5b0"
+        }
+      ]
+    },
+    "frozenLockIntegrityVerified": true,
+    "sourceModificationAssessment": "No source patch to web-push in frozen Factory source/config. Frozen builder Bun.build/bun build bundles installed source as executable code. Exact unmodified package input and full file hashes retained; no historical node_modules byte observation is asserted.",
+    "receiverInstructions": "RECIPIENT-SOURCES-NOTICES.md",
+    "license": "MPL-2.0",
+    "retainedSourcePath": "package/src/",
+    "retainedLicensePath": "package/LICENSE"
+  }
+}

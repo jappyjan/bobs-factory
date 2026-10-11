@@ -134,8 +134,8 @@
 		"packages": ["bun-runtime"]
 	},
 	"bun-icu.txt": {
-		"source": "https://raw.githubusercontent.com/unicode-org/icu/main/icu4c/LICENSE",
-		"sha256": "1e881ecf2862d01e6e5bc2b861e46886d2a6fb01499c0c508a209a7271b13cf2",
+		"source": "https://raw.githubusercontent.com/unicode-org/icu/21d1eb0f306e1141c10931e914dfc038c06121da/LICENSE",
+		"sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
 		"packages": ["bun-runtime"]
 	},
 	"bun-libbase64.txt": {
@@ -349,5 +349,19 @@
 		"packages": ["bun-runtime"],
 		"derived": true,
 		"provenance": "bun-cargo-production-notices.provenance.json"
+	},
+	"bun-rust-toolchain.txt": {
+		"source": "https://static.rust-lang.org/dist/2026-07-20/rust-src-nightly.tar.xz",
+		"sha256": "db10322aeaf9e32db410fca321bd05228a17d13f77e1a064410542eb440f7f57",
+		"packages": ["bun-runtime"],
+		"derived": true,
+		"provenance": "bun-rust-toolchain.provenance.json"
+	},
+	"web-push-source.txt": {
+		"source": "https://registry.npmjs.org/web-push/-/web-push-3.6.7.tgz",
+		"sha256": "137b86230aa3ebf8afc02ec38a137b94fb57bb03507cb1c92cec3db3d89df437",
+		"packages": ["web-push"],
+		"derived": true,
+		"provenance": "web-push-source.provenance.json"
 	}
 }

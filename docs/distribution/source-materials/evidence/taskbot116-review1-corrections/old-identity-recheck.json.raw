@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "oldArchiveSize": 4123580131,
+  "oldArchiveSha256": "c1ff95d783333f3422736bba5bd82e5c5e6bb637b432d9a07bcb41e0621ec8a1",
+  "oldManifestSha256": "0013fb39d0ab893e9adafab715cf4cfe93b540b859a2540dc6df2b8440caf7ec",
+  "oldRecords": 80,
+  "scope": "read-only final rehash; no prior archive/manifest/raw evidence modified"
+}
