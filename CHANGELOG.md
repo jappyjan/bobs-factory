@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep desktop and operator recovery validation reliable when Node CI runs tests concurrently, without rebuilding shared prerequisites during testing ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
+
 ### Changed
 
 - Record exact pinned WebKit source acquisition, hash-verified archive intake, static byte correspondence for all four frozen candidate runtimes, and the independent review's source-claim scope; document that native relink, licensing acceptance and valid macOS x64 signing remain open. Refresh Taskbot #116 source-preparation status without rewriting prior HTTP 422 evidence. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91))

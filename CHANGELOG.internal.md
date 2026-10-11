@@ -20,6 +20,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Fixed
 
+- Remove the desktop test commands' redundant core rebuild to prevent concurrent recursive tests from importing partially rewritten compiled logging exports. Keep the complete compiled-stdio MCP recovery test and build prerequisites intact ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
+
 - Finalize native acceptance receipts only after bounded cleanup of all owned fixture groups, direct children and identity-verified locks; preserve failed/cancelled receipts and unrelated process ownership ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#88](https://github.com/jappyjan/bobs-factory/pull/88)).
 
 - Fix video evidence CI validation and base integration by formatting styles, installing media test tools and preserving both video and refinement recommendation guidance in the full prompt. Keep video-contract validation enforced through question-result normalization and preserve video finalization alongside feedback and review recovery. Integrate passkey access, renamed Bob’s Factory packages, compact review history and CI revision recovery without weakening video media restrictions. Keep context snapshot isolation checks compatible with both source and binary launch arguments. ([#33](https://github.com/Attraccess/bobs-factory/pull/33))
