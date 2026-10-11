@@ -1,7 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { getAllTools } from "bobs-factory-claude-runner";
-import { type RunnerType, resolvePath } from "bobs-factory-core";
+import {
+	type EdgeWorkerConfig,
+	type RunnerType,
+	resolvePath,
+} from "bobs-factory-core";
 import { EdgeWorker } from "bobs-factory-edge-worker";
 import open from "open";
 import {
@@ -11,6 +16,8 @@ import {
 	localRepository,
 	savePrivateJson,
 } from "./onboarding.js";
+import { acquireInstanceLock } from "./services/InstanceLock.js";
+import { assertServiceLaunch } from "./services/ServiceLifecycle.js";
 
 export async function launchLocal(values: {
 	repo?: string;
@@ -31,6 +38,9 @@ export async function launchLocal(values: {
 		!["claude", "codex", "gemini", "cursor", "opencode"].includes(values.agent)
 	)
 		throw new Error("Unknown agent");
+	process.env.BOBS_FACTORY_FACTORY_PORT = String(port);
+	assertServiceLaunch(home);
+	const releaseOwnership = await acquireInstanceLock(home);
 	const config = loadLocalConfig(home);
 	const repository = values.repo
 		? localRepository(values.repo, home)
@@ -43,38 +53,57 @@ export async function launchLocal(values: {
 			`Install the selected ${selected} coding agent before launching this project, or run bobs-factory without --repo to use guided setup.`,
 		);
 	const configPath = join(home, "config.json");
-	if (!existsSync(configPath)) savePrivateJson(configPath, config);
+
 	process.env.BOBS_FACTORY_FACTORY_PORT = String(port);
 	process.env.BOBS_FACTORY_HOME = home;
 	if (values.origin) process.env.BOBS_FACTORY_FACTORY_ORIGIN = values.origin;
 	if (values.sessionHours !== undefined)
 		process.env.BOBS_FACTORY_FACTORY_SESSION_HOURS = values.sessionHours;
+	// Persist the effective launch settings so operator repair reloads use the same runner and model.
+	const effective: EdgeWorkerConfig = {
+		...config,
+		platform: "cli",
+		factoryHome: home,
+		serverPort: port + 1,
+		serverHost: "127.0.0.1",
+		...(selected ? { defaultRunner: selected as RunnerType } : {}),
+		linearAllowedTools: config.linearAllowedTools ?? getAllTools(),
+		...(values.agent || values.repo || values.model
+			? {
+					claudeDefaultModel: values.model,
+					codexDefaultModel: values.model,
+					geminiDefaultModel: values.model,
+					cursorDefaultModel: values.model,
+					opencodeDefaultModel: values.model,
+				}
+			: {}),
+		repositories: config.repositories,
+	};
+	// Zod parsing can reorder keys without changing settings. Keep the original
+	// bytes so restarting an identical owned runtime preserves the update receipt.
+	const unchanged =
+		existsSync(configPath) &&
+		isDeepStrictEqual(
+			JSON.parse(readFileSync(configPath, "utf8")),
+			JSON.parse(JSON.stringify(effective)),
+		);
+	if (!unchanged) {
+		if (existsSync(join(home, "updates", "maintenance.json")))
+			throw new Error(
+				"Local startup would change configuration during update maintenance",
+			);
+		savePrivateJson(configPath, effective);
+	}
 	let worker: EdgeWorker;
 	const onboarding = new LocalOnboarding(home, (repository, runner) =>
 		worker.configureLocalRepository(repository, runner),
 	);
-	worker = new EdgeWorker(
-		{
-			...config,
-			platform: "cli",
-			factoryHome: home,
-			serverPort: port + 1,
-			serverHost: "127.0.0.1",
-			...(selected ? { defaultRunner: selected as RunnerType } : {}),
-			linearAllowedTools: config.linearAllowedTools ?? getAllTools(),
-			...(values.model
-				? {
-						claudeDefaultModel: values.model,
-						codexDefaultModel: values.model,
-						geminiDefaultModel: values.model,
-						cursorDefaultModel: values.model,
-						opencodeDefaultModel: values.model,
-					}
-				: {}),
-			repositories: config.repositories,
-		},
-		onboarding,
-	);
+	worker = new EdgeWorker(effective, onboarding);
+	const originalStop = worker.stop?.bind(worker);
+	worker.stop = async () => {
+		if (originalStop) await originalStop();
+		releaseOwnership();
+	};
 	worker.setConfigPath(configPath);
 	await worker.start();
 	if (repository && selected)

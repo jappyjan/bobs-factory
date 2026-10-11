@@ -1,0 +1,35 @@
+✔ SIGTERM unwinds work, cleans its child once and persists FAIL (68.259167ms)
+✔ SIGINT unwinds work, cleans its child once and persists FAIL (63.309458ms)
+✔ failure and cleanup failure remain nonpassing and persist both errors (0.368125ms)
+✔ exact manager wrapper preserves disabled stdout, stderr and exit 1 (376.494667ms)
+✔ exact START descendant boundary precedes SIGINT; delayed fork cannot mutate (1085.561084ms)
+✔ exact START descendant boundary precedes SIGTERM; delayed fork cannot mutate (1119.398084ms)
+✔ outer timeout cooperative accounts for real nested detached groups and a delayed fork (2027.418375ms)
+✔ outer timeout forced accounts for real nested detached groups and a delayed fork (2231.5465ms)
+✔ outer timeout cleanup-error accounts for real nested detached groups and a delayed fork (3038.711542ms)
+✔ closed registry handshake refuses target execution (40.739958ms)
+✔ changed leader identity refuses unowned signaling and reports survivors (2194.25525ms)
+✔ native cleanup after unexpected-death retains evidence until verified (1344.185417ms)
+✔ native cleanup after manager-failure retains evidence until verified (913.7535ms)
+✔ native cleanup after unproven-exit retains evidence until verified (1302.09625ms)
+✔ native cleanup after root-symlink retains evidence until verified (1329.869166ms)
+✔ native cleanup after root-replaced retains evidence until verified (1311.2075ms)
+✔ native cleanup after untrusted-manifest retains evidence until verified (177.986125ms)
+✔ native cleanup after filesystem-permission retains evidence until verified (1445.135083ms)
+✔ native cleanup after receipt-symlink retains evidence until verified (1398.299166ms)
+✔ v255 preserved signal result proves exhaustion only with exact-unit rejection and terminal state (0.861334ms)
+✔ already-inactive unloaded unit with a retained owned definition needs no force kill (0.840875ms)
+✔ queued manager start is replaced by exact-unit stop and must reach terminal state (0.13275ms)
+✔ manager permission errors and changed ownership are never hidden by terminal state (0.2905ms)
+✔ a genuine state-query error cannot be erased by a successful kill fallback (0.119084ms)
+✔ unloaded stop race is accepted only after independent terminal verification (0.176459ms)
+✔ owned process group drains detached-pipe descendant on abort (849.886417ms)
+✔ owned process group drains detached-pipe descendant on leader-exit (852.183667ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21417.51225

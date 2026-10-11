@@ -46,6 +46,33 @@ webhook listener and is intended for one operator. Every browser dashboard addre
 requires a passkey session, including localhost. Provider webhooks and OAuth
 callbacks stay independent of dashboard authentication.
 
+## Protected remote access design
+
+Factory uses application passkeys for one operator and retains separate dashboard
+and provider listeners. Network reachability and browser identity are separate
+checks: a permitted network connection still needs a verified Factory session.
+
+| Design | Practical consequence |
+| --- | --- |
+| Application passkeys, separate listeners (selected) | Protects dashboard data and actions independently of the proxy. Provider webhooks and OAuth keep their own verification and do not need a human login. |
+| Tailnet or proxy identity | Can limit network reachability, but trusting forwarded identity requires securing every direct-port path and the forwarding proxy. It is not Factory's authentication mechanism. |
+| Shared listener with public routes | Possible with strict public-route isolation, but adds routing risk. Existing separate listeners avoid that restructuring. |
+
+Local desktop browsers use `http://localhost:3457`; the IP entrypoint redirects
+there for WebAuthn. Remote desktop and mobile browsers use the exact configured
+HTTPS origin and enroll a key at that address. Neither path bypasses login.
+The HTTPS proxy terminates TLS and forwards to the loopback dashboard while
+preserving the external **Host** authority and browser **Origin** header.
+Its loopback TCP connection and `X-Forwarded-*` headers never establish identity.
+Direct requests to the dashboard port also require a session.
+
+The hostname in the example below is deployment context from Taskbot #40, not a
+request to change tunnels. Keep the operator's currently configured webhook/OAuth
+URL and confirm it still routes to the separate provider listener before rollout.
+Historical tickets contain differing provider hostnames; do not use either as a
+replacement integration URL. Production zrok2/Nix setup and retirement of the
+legacy Tailscale proxy belong to the separate host setup work.
+
 ## Passkey access and first setup
 
 Factory requires a server-verified passkey session for browser dashboard data and
@@ -105,8 +132,11 @@ to `http://localhost:3457` because WebAuthn rejects IP addresses as RP IDs.
 Both addresses protect data; the redirect provides a usable local login.
 `Settings` in the main navigation contains passkey management and sign-out.
 The sign-in screen folds new-key setup under `Set up a new passkey` once the
-first key exists. First-time setup opens automatically. In Settings, add a named
-phone/security key or remove a saved key; each change explicitly verifies an
+first key exists. First-time setup opens automatically. A new key can be enrolled
+from that screen with a fresh machine-authorized code while signed out, or from
+Settings using recent passkey verification without a setup code. A stale signed-in
+session must verify again; a code does not bypass that requirement. In Settings,
+add a named phone/security key or remove a saved key; each change explicitly verifies an
 existing passkey first. Viewing keys also requires verification within the last
 five minutes, with a verification button when that window has expired. Keep at least one key per enrolled address;
 removing the last key requires local recovery. Removing a key revokes its sessions
@@ -126,7 +156,10 @@ origin/RP binding and a single-use browser-bound challenge valid for five minute
 Sign out warns that unsent edits and review comments will be discarded across
 tabs. Expiry/revocation also clears sensitive views and
 stops retries, streams and late responses. Reopening, restored navigation and
-reconnection recheck the session. Offline access shows an inert sign-in screen.
+reconnection recheck the session. Connection loss clears private views and unsent
+edits, while active runs continue on the server. Offline access shows an inert
+sign-in screen. Reconnecting verifies the existing session before restoring
+private views.
 The service worker caches only the static shell, never auth/API/media responses.
 Theme and settled-view preferences are retained.
 
@@ -151,29 +184,68 @@ or deliberately recover rather than silently rebinding existing keys.
 
 | Surface | Access |
 | --- | --- |
-| Local and public dashboard data/actions/media/SSE | Passkey session required |
+| Local and public browser dashboard data/actions/media/SSE | Passkey session required |
 | Terminal dashboard on localhost | Private local-operator request; expiring Bearer session, bound to localhost |
 | Static app shell, version, access status and ceremonies | Public; no run or configuration data |
 | First or recovery enrollment | Operator setup code; one key only |
-| Additional enrollment/removal | Recently verified session or a fresh operator code |
+| Additional enrollment | Recently verified session, or operator code from an unauthenticated setup screen |
+| Credential listing/removal | Recently verified session; setup codes do not authorize removal |
 | Provider webhook/OAuth listener (3456 in production) | Existing provider signature/OAuth checks; independent of dashboard login |
 
 ### Rollout and device checks
 
-This change does not deploy, restart or alter production Nix/zrok2 services.
-The parent must review the code, configure the reserved HTTPS origin, confirm
-that zrok2 preserves authority/Origin and retire the legacy localhost-rewriting
-proxy before public rollout. The UI tunnel can keep target `127.0.0.1:3457`;
-authentication applies even to rewritten localhost requests. Verify signed
-Linear deliveries, rejection of unsigned deliveries and OAuth callback access
-on the separate provider listener.
+Production deployment is separate from this implementation. Before rollout,
+configure the exact HTTPS origin, confirm that zrok2 preserves Host/Origin and
+retire the legacy localhost-rewriting proxy in the host setup thread. The UI
+tunnel can keep target `127.0.0.1:3457`; authentication still applies to direct
+or rewritten localhost requests, but rewriting Host prevents correct remote
+origin checks. Verify signed Linear deliveries, rejection of unsigned deliveries
+and OAuth callback routing on the independent provider listener. Do not perform
+live provider authorization merely to check dashboard access.
 
 Physical iPhone Safari and installed-PWA validation remains a human check: enroll
-at the public HTTPS origin, log out/in, add a second key, revoke it, test expiry
-and reopen the installed app. Chromium emulation and a virtual authenticator do
-not prove biometric, Safari or synced-phone behavior. Connection failure means
-reconnect to sign in; a browser cancellation means retry with a fresh setup code
-when enrollment has consumed its previous authorization.
+at the configured public origin, log out/in, add a second key, revoke it, test
+expiry and reopen the installed app. Headless Chromium with a software
+authenticator does not establish biometric, Safari, synced-key or cross-device
+QR behavior. A local HTTPS proxy test does not establish production zrok2 routing.
+
+| Mobile symptom | Next step |
+| --- | --- |
+| Offline or disconnected | Reconnect, then let Factory verify the session before using controls. Private content is not available offline. |
+| Session expired or key revoked | Sign in again with a remaining key at this address. Recover locally if all keys are lost. |
+| Ceremony cancelled | Retry login. For code-based enrollment, obtain a fresh code if the previous authorization was consumed. |
+| Browser does not support passkeys | Use a current browser with WebAuthn and a supported secure origin; test the intended Safari/installed-app flow on the physical phone. |
+| Wrong origin or no matching key | Check the exact HTTPS hostname and port, proxy Host/Origin preservation and configured origin. Enroll a separate key for this address; do not silently rebind existing keys. |
+
+### Access and validation map
+
+The dashboard rejects private requests before their handlers run. Its public
+allowlist serves only static assets, version and authentication bootstrap or
+ceremonies; it does not expose runs, settings or credentials. Unknown routes also
+require authentication. Private responses use `Cache-Control: no-store`.
+
+| Surface and representative routes | Boundary and existing verification |
+| --- | --- |
+| Run reads, provenance and delivery/configuration (`/api/runs`, `/api/config`, `/api/delivery-status`) | Session for GET/HEAD; `FactoryAccess.test.ts`, `FactoryServer.test.ts`. |
+| Settings, recipes, capacity, execution profiles and onboarding (`/api/workflows`, `/api/capacity`, `/api/execution-profiles`, `/api/onboarding/*`) | Session plus exact Origin and action header for writes; `FactoryServer.test.ts`, `FactoryAccess.test.ts`. |
+| Transcripts/raw activity (`/api/runs/:id/activity`, `/activity/entries/:index`) | Session before entry hooks; `FactoryAccess.test.ts`, `FactoryServer.test.ts`. |
+| Screenshots and question images (`/api/runs/:id/screenshots/:index`, `/question-images/:name`) | Session, no private offline cache; `FactoryAccess.test.ts`, `FactoryPwa.test.ts`. |
+| Artifacts and review files (`/api/runs/:id/artifacts/:name`, `/review-files/*`) | Session plus existing path/file boundaries; `FactoryAccess.test.ts`, `ReviewFiles.test.ts`. |
+| Video media, posters and captions (`/api/runs/:id/videos/:id/*`) | Same session boundary; `FactoryAccess.test.ts`, `Video.test.ts`. |
+| Live events (`/api/events`) | Session at connection and reconnect; idle streams close on logout, expiry or recovery; `FactoryAccess.test.ts`. |
+| Run actions (messages, answers, review, follow-up, stop, retry, ticket sync) | Session plus Origin/action header before mutation; `FactoryAccess.test.ts`, `FactoryServer.test.ts`. |
+| Public shell, `/api/version`, `/api/auth/status`, login/register ceremonies | No sensitive data. Enrollment requires operator code or recent session; exact Origin, browser-bound challenge, user verification and replay checks; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
+| Credential management and logout (`/api/auth/credentials`, `/api/auth/logout`) | Listing/removal need verification within five minutes. Logout revokes session/streams; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
+| Provider listener (`/linear-webhook`, OAuth callback routes) | Independent provider signature/OAuth checks, no dashboard cookie; `packages/linear-event-transport/test/LinearEventTransport.test.ts`, `apps/cli/src/commands/SelfAuthCommand.test.ts`. |
+
+Browser evidence must complement these server checks: actual registration/login
+through a Host/Origin-preserving HTTPS proxy, secure cookies, authenticated
+read/action, logout, offline/reconnect, expiry/revocation, restart/reopen and
+mobile-width setup/data/error screens. Record the tested revision and limitations
+with fresh evidence; historical passkey reports do not validate a new revision.
+Local recovery checks must preserve run records, worktrees, integrations and
+host-owned credentials. Use isolated homes/services and test certificates without
+changing host trust or production configuration.
 
 ## Terminal dashboard
 
@@ -739,9 +811,8 @@ Resolve the access, tooling or application setup and answer in the dashboard or
 ticket. The same run retries capture and visual review, reusing verified accepted
 screenshots when their provenance still matches. Repeated blockers wait for another
 answer; an answer never waives missing evidence or approves the PR. This checkpoint
-survives restart. The dashboard displays those images and a guide organized around the goal,
-before/after behavior, requirements, checks, risks and human review instructions,
-inspired by Rocky's visual recap.
+survives restart. The dashboard displays those images as proof inside the review
+brief, attached to the requirement or decision they demonstrate.
 
 ## QA and screenshot roles
 
@@ -776,7 +847,7 @@ Answers cannot waive testing or approve the PR. Custom recipes need the supporte
 with a configuration error instead of routing access failures into product edits.
 The dashboard shows criterion outcomes, execution receipts, blocked reasons,
 findings and optional observations alongside the gallery. The complete human
-guide maps actual story evidence to requirements and discloses limitations.
+brief quotes observed story evidence per requirement and discloses limitations.
 
 Recognized stock saved recipes upgrade coherently and idempotently, preserving
 runner/model choices. Customized affected prompts or routes remain unchanged.
@@ -1141,9 +1212,10 @@ Large structured role results can use `submit_result_artifact` on the scoped
 directory, submit its relative path, then return the small envelope unchanged.
 The runtime rereads the bounded file (8 MiB maximum), verifies its digest and
 run/role/head/base binding, and applies the same result and evidence validation as
-inline JSON. Guide chapters may use `fileIndexes` into the complete runtime-owned
-`reviewScope.files` inventory; `scope.files: "runtime"` keeps scope authoritative.
-Every changed file must still be covered; shared files may belong to several feature chapters. Rejected candidates and
+inline JSON. Brief requirement lines, beyond-the-ask items and `sinceLastReview`
+changes (or legacy guide chapters) may use `fileIndexes` into the complete
+runtime-owned `reviewScope.files` inventory. Every changed file must still be
+covered; shared files may belong to several lines. Rejected candidates and
 correction diagnostics remain separate from accepted outputs.
 
 Finalization is coordinated for overlapping repository/base-branch scopes, including
@@ -1234,6 +1306,20 @@ it admits queued work; decreasing it lets existing execution drain. A deliberate
 configuration edit updates the policy, and removing the numeric setting restores
 four. Unrelated config reloads and stale startup settings do not reset it.
 
+Eligible jobs from older workflow runs take priority over newer workflow jobs.
+The original run creation time applies to agents, setup hooks and nested intensive
+work. Multiple leaves from the oldest run can fill the pool; newer jobs use any
+spare slots. Executing work is never interrupted. Interactive foreground jobs
+keep their admission positions. Background titles still receive a turn after at
+most eight foreground admissions while waiting.
+
+Workflow jobs exchange persisted admission positions, while their original queue
+sequence and timestamp remain unchanged. Recovery retains exchanged positions,
+so admitting one older job does not move a newer job ahead of an interactive job.
+Parked and otherwise ineligible jobs reserve no usable slot. All processes sharing
+a home must use compatible scheduler versions: older versions can strip scheduling
+fields or apply the earlier FIFO policy.
+
 The coordinator lives at `<factoryHome>/machine-capacity`. Separate `--home`
 directories have independent limits and queues, so temporary F1 instances do not
 compete with the instance running their parent QA step. Processes using the same
@@ -1301,64 +1387,75 @@ new admission with a visible error; they are not reclaimed by heartbeat expiry.
 Reconcile the external execution before repairing its coordinator record. Never delete
 coordinator state while participating execution may still be running. Corrupt state,
 failed storage writes and unknown process state prevent ungated execution.
-### Guided human review
+### Review brief
 
-The shared reader opens **Overview → one page per chapter → Changed files → Decide**.
-The retained run header, PR links and revision notices stay available. Segments,
-Back/Next, the page selector and Up/k or Down/j navigate the guide. Page links use
-`?page=overview`, `chapter:<id>`, `files` or `decide` in the hash route. Page,
-visited steps, reviewed markers, disclosures and individual checks stay local to
-this browser and this exact guide revision. Moving forward marks a chapter read;
-jumping or moving back does not. A replacement guide resets progress. Reading
-markers never gate approval, and navigation never submits a human decision.
+The stock guide step writes a **review brief** (`guideContract: "brief-v1"`). It
+answers one question for the human — does this PR deliver what was asked? — in a
+fixed order on one scrolling page:
 
-New guide results require purpose-written `tldr` (90 characters maximum) and
-`decision.summaryShort` (160). Every chapter requires `tldr` (70), `beforeShort`
-and `afterShort` (50 each), `risk: {level: "low" | "medium" | "high", text}` (70),
-and 1–3 `keyChecks: [{do, expect}]` pairs (60 characters per field). Fields must
-be nonblank; do not truncate full prose into short fields. Existing full summary,
-before/after, checks, risks, files, diagrams and evidence remain in More detail.
-Incomplete new output is rejected and sent back to the same guide role for bounded
-correction. Older saved guides remain readable without migration or invented
-compact text or risk levels.
+1. **What you asked for**: the original request, quoted, then every
+   interpretation the run had to make (scope, UX, defaults, migration), marked
+   *You decided*, *In the ticket* or *Bob decided*. Bob-decided rows are
+   highlighted.
+2. **Does it do that?**: one line per requirement group with one decisive
+   proof — a cropped screenshot, an observed-values table, a code or test
+   excerpt, a command, linear steps, or a link to steps of a system flow.
+   Status is honest about the kind of proof: shown working, tests only, partly,
+   no evidence, gap (not met) or waived.
+3. **Your call**: only judgments a person must make (taste, trade-offs,
+   consequences, compatibility), each with what Bob chose. An empty section is
+   valid for mechanical changes.
+4. **How it’s built** (only when components interact differently, data is stored
+   differently or the trust boundary moves): sequence diagrams, one per real
+   trigger, with real endpoints and a Before/After toggle for changed flows, plus
+   fact tables for endpoints, stored data and dependencies. Rows that move the
+   trust boundary or change behavior for existing users are marked risk.
+5. **Changed beyond the ask**, **Not verified** and **Noticed along the way**.
 
-Optional `flow: {title, steps: [{label, detail}]}` reveals one of 2–8 stages at a
-time. Newly authored guides declare `scope: {kind: "purely-visual" | "nonvisual",
-rationale, files}` from the complete PR diff and accepted requirements. The files
-must match the whole-PR inventory exactly. Screenshots alone never establish the
-purely visual exemption. Technical, logic, structural, nonvisual supporting and
-mixed guides require `system: {lanes, parts, before, after}` with 3–6 meaningful
-lanes and nonempty chapter `systemPartIds` for every changed or logic chapter.
-Empty connection sets are allowed when truthful. Runtime instructions and
-validation apply even to older frozen/custom authoring definitions; saved older
-artifacts retain their permissive reading schema. Lanes use `{id, name}`; parts
-use `{id, label, laneId, status}` with status
-`new`, `changed`, `unchanged` or `legacy`. Connections use `{source, target,
-label?, weak?}` and are identified by directed endpoints. Chapter
-`systemPartIds` must reference existing parts. Before/After toggles work
-independently; route hover or focus highlights relevant parts. Screenshot
-references retain accepted area/state/caption, with optional known `device`
-(`Desktop`, `Mobile`, `Email`, `Reader`) and `language`. Mixed chapters show
-one visual mode at a time. Image and diff dialogs support arrows and Escape.
+Every changed file belongs to a requirement line or a beyond-the-ask item; the
+Changed files view groups the diff that way. The runtime adds CI results, diff
+statistics and process hygiene items, binds the exact file snapshot and attaches
+specialist coverage, shown as review notes under each line.
 
-The page card follows the progress segments directly. On mobile, segments remain
-through 14 pages; larger guides use a compact selector. The sticky feedback count
-opens the collected comments on Decide, including an empty list. Item comments,
-drafts and checks remain available throughout; collected-feedback submission,
-additional feedback and page-level PR/diff links live on Decide. Heading focus
-moves after navigation with an outline only for keyboard use. Screenshot device
-tags use accepted capture context or an honest unknown-device fallback.
+Validation rejects a brief whose lines do not account for every active frozen
+inventory requirement (process criteria may sit in `hygiene`), whose status
+contradicts review coverage (`not_met` must be `gap`, `deliberately_skipped`
+must be `waived`), that leaves a changed file unexplained, names files outside
+the PR, references screenshots outside the accepted capture inventory or stale
+videos, breaks a flow reference, or puts local absolute paths or commit SHAs in
+prose. Rejected output returns to the guide role for bounded correction. A gap or
+`not-ready` verdict routes handoff to the configured correction route, as before.
+`sinceLastReview` summarizes changes after a real human review; it is rejected
+otherwise.
 
-Maps use direct curves with separate endpoints, supplied labels and sample legends.
-Six lanes fit desktop; narrow screens scroll within the map. Individual apps,
-nested plugins, packages and libraries have distinct stable area identities and a
-separate palette. Areas owned by one chapter show ONLY THIS STEP.
+The sticky decision panel shows how many lines you marked. ✓ records agreement
+locally; ✕ opens a comment on that exact line, which becomes part of the
+submitted change request. Approve is disabled while comments are drafted, so
+feedback is never lost by approving; marking lines is optional. Approval still
+binds the exact pending revision. The brief is also published to the PR
+description and, without a ticket, as a run comment.
+
+Saved recipes still carrying any released stock chapter-guide prompt upgrade to
+the brief prompt and contract. Customized guide prompts keep the chapter guide
+unless the Recipes editor’s Review format selects the brief. Runs keep the
+contract they started with: frozen definitions continue to produce and read
+chapter guides, and historical guides remain readable in the chapter reader.
+
+#### Chapter guides (legacy)
+
+Chapter guides open **Overview → one page per chapter → Changed files → Decide**.
+Back/Next, the page selector and Up/k or Down/j navigate. Page links use
+`?page=overview`, `chapter:<id>`, `files` or `decide`. Reading markers stay local
+to this browser and guide revision and never gate approval. Chapter-guide results
+keep their compact fields (`tldr`, `decision.summaryShort`, per-chapter `tldr`,
+`beforeShort`, `afterShort`, `risk`, `keyChecks`), `scope`, and for nonvisual
+changes a `system` lane map with `systemPartIds`, validated as before.
 
 Changed files loads a runtime-owned, immutable snapshot of the guide’s complete
 PR merge-base/head pair. The file inventory and bounded per-file patches live
 under run evidence, outside dashboard payloads. Later commits, guide refreshes
 or completed runs cannot replace that saved diff. Binary or patches over 2 MB
-show an explanation and PR link. Chapter claims group real files; shared files
+show an explanation and PR link. Requirement lines (or legacy chapters) group real files; shared files
 appear in each group but overall counts include them once. Unassigned files are
 shown defensively for old/incomplete guides; new guide coverage still rejects
 omitted files. Trees distinguish tests, renames and line counts. Split and unified
@@ -1439,7 +1536,11 @@ Selection and authentication signals remain attached to elicitations. Confirm re
 authorized Linear test session when changing this policy.
 
 Synchronization receipts live on the run as `ticketReference` and `ticketSync`.
-Failures appear in run activity and retain pending work across restart. Access
+Milestones and PR links are saved before external delivery. Synchronization runs
+in the background and holds neither repository admission nor execution capacity.
+Newer lifecycle intent supersedes only an older pending status change; its
+documentation and links remain pending. Failures appear in run activity and
+retain pending work across restart. Access
 failures retry every 30 seconds while the worker runs; Taskbot status conflicts
 require reassessment and do not blindly retry. After restoring configuration or
 checking a conflict, call the protected `POST /api/runs/:id/ticket-sync` endpoint.
@@ -1448,6 +1549,11 @@ Inspect `ticketSync.error` and receipt limitations in its response. Comments use
 stable run/milestone markers; attachments deduplicate by PR URL. Ambiguous writes
 are reread before retrying; providers without idempotency cannot guarantee
 exactly-once delivery. Terminal tickets are retained for ownership review.
+
+Completed runs stay in attention while ticket synchronization has an error or
+undelivered, nonsuperseded receipts. Review and Run story settlement controls,
+including Today’s `e` shortcut, wait until tracking succeeds. The run list exposes
+compact tracking state so Today uses the same check as the detailed views.
 
 Native Linear requests, including lazy SDK relationship fetches, share a budget per
 credential/workspace. Provider rate-limit/reset responses delay subsequent requests.
@@ -1465,6 +1571,44 @@ preserved. Source validation remains separate from mandatory signature verificat
 Taskbot comments and status mutations identify `bobs-factory` as author. Its
 attachment tool has no author field; the accompanying milestone comment records
 attribution using the supported provider contract.
+
+### Delivery admission and shared QA
+
+Factory and Takeover reserve repository/base targets for publication and
+integration corrections. Dirty worktrees, committed or inherited changes and
+saved publication receipts establish the affected targets. Unchanged selected
+repositories remain context. Before admission, the complete target set is
+reconciled atomically, including newly affected repositories in a grouped run.
+Missing Git state is treated conservatively. Older eligible runs retain priority;
+stopping releases ownership, and restart restores admission only for unfinished
+operations in frozen workflow checkpoints.
+
+Independent worktree reviews, QA and guide preparation use normal machine
+capacity. CI supervision polls without repository ownership. Merge reserves the
+affected targets for each fresh inspection and provider mutation, releasing them
+between provider polls. Every merge attempt still checks the approved revision,
+accepted scope, review evidence and provider rules. A queued CI fixer refreshes
+head/base, checks, comments and scope before starting; a resolved failure follows
+the existing no-change route, while dirty work, new instructions and failed
+review or QA gates retain corrective work and required approval.
+
+Custom agent, script and tool leaves can declare `"delivery":"exclusive"` for
+integration or publication operations, and `"resources":["qa:shared-cluster"]`
+for a shared environment. These fields belong to leaves, not workflow/fanout
+parents. Automatic mutation detection also covers the configured correction
+branches of frozen workflows.
+
+QA scope declares `environment: {"isolation":"worktree"}` only when its server,
+database and fixtures are independent. Shared QA declares, for example,
+`environment: {"isolation":"shared","resources":["qa:staging-database"]}`.
+Use the same identity across every run and repository using that resource.
+The capture role reserves these resources separately from repository integration.
+Legacy QA plans without an environment retain conservative exclusion per
+repository. A custom QA role with another step ID declares `resources` directly.
+
+Run activity coalesces unchanged admission waits and identifies the blocking run,
+operation and target. The dashboard distinguishes delivery admission and shared
+QA contention from provider CI, pending ticket synchronization and human waits.
 
 
 ### Specialist review and complete requirement coverage

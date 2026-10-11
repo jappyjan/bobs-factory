@@ -1,0 +1,47 @@
+[
+  {
+    "archive": "prior-research/darwin-arm64-buildkite-bun.zip",
+    "signatureBytes": 483647,
+    "codeDirectories": [
+      {
+        "version": "0x20400",
+        "flags": "0x2",
+        "slots": 15075,
+        "specialSlots": 7,
+        "pageBytes": 4096,
+        "allCodePageHashesMatch": true
+      }
+    ],
+    "certificateTrustAndSigningInvocationNotExamined": true
+  },
+  {
+    "archive": "prior-research/darwin-arm64-release-bun.zip",
+    "signatureBytes": 140048,
+    "codeDirectories": [
+      {
+        "version": "0x20500",
+        "flags": "0x10000",
+        "slots": 3769,
+        "specialSlots": 7,
+        "pageBytes": 16384,
+        "allCodePageHashesMatch": true
+      }
+    ],
+    "certificateTrustAndSigningInvocationNotExamined": true
+  },
+  {
+    "archive": "official-runtime-and-caches/release-bun-darwin-x64.zip",
+    "signatureBytes": 556784,
+    "codeDirectories": [
+      {
+        "version": "0x20500",
+        "flags": "0x10000",
+        "slots": 16792,
+        "specialSlots": 7,
+        "pageBytes": 4096,
+        "allCodePageHashesMatch": true
+      }
+    ],
+    "certificateTrustAndSigningInvocationNotExamined": true
+  }
+]

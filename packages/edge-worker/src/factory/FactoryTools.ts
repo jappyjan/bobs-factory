@@ -14,6 +14,14 @@ import {
 	spawnExecution as spawn,
 } from "bobs-factory-core";
 import { z } from "zod";
+import {
+	DeliveryContractSchema,
+	digest,
+	freezeDelivery,
+	repositoryCompletionProven,
+	type TicketDelivery,
+} from "./Delivery.js";
+import { externalGuideEvidence } from "./ExternalGuide.js";
 import { feedbackInstructionFingerprint } from "./FeedbackPolicy.js";
 import {
 	executeGithubApi,
@@ -96,6 +104,7 @@ export function toolArguments(
 }
 
 import type { GuideSchema } from "./FactoryResults.js";
+import { briefMarkdown, guideReady, isReviewBrief } from "./ReviewBrief.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 function blockRevisionMismatch(
@@ -351,6 +360,7 @@ export function verifiedScreenshot(path: string, directory: string): string {
 }
 
 export interface FactoryToolHooks {
+	ticketDelivery?: TicketDelivery;
 	postComment(
 		runId: string,
 		body: string,
@@ -543,7 +553,11 @@ export class FactoryTools {
 	async tool(context: ExecutionContext): Promise<unknown> {
 		// Projected grouped runs share retry identities and immutable check receipts.
 		context.run.ciSupervision ??= { retries: [] };
-		if (runRepositories(context.run).length > 1) {
+		if (
+			runRepositories(context.run).length > 1 &&
+			context.run.delivery?.contract.mode !== "external" &&
+			context.step.id !== "external-human-review"
+		) {
 			if (context.step.tool === "handoff" && context.step.qaContract) {
 				const gate = await this.qaGate(context, (exe, args) =>
 					scopeCommand(context, this.command.bind(this), exe, args),
@@ -559,15 +573,30 @@ export class FactoryTools {
 						"Grouped QA evidence changed or is incomplete; handoff blocked",
 					);
 			}
-			return groupedTool(context, this.command.bind(this), (child) =>
-				this.repositoryTool(
-					child.run === context.run
-						? child
-						: { ...child, step: { ...child.step, qaContract: undefined } },
-				),
+			const output = await groupedTool(
+				context,
+				this.command.bind(this),
+				(child) => {
+					const execute = () =>
+						this.repositoryTool(
+							child.run === context.run
+								? child
+								: { ...child, step: { ...child.step, qaContract: undefined } },
+						);
+					return child.step.tool === "draft-pr" && child.coordinateDelivery
+						? child.coordinateDelivery(execute)
+						: execute();
+				},
 			);
+			if (context.step.tool === "ci-fix-readiness") {
+				context.run.outputs.ci = output;
+				context.save?.();
+			}
+			return output;
 		}
-		return this.repositoryTool(context);
+		return context.step.tool === "draft-pr" && context.coordinateDelivery
+			? context.coordinateDelivery(() => this.repositoryTool(context))
+			: this.repositoryTool(context);
 	}
 	private command(
 		context: ExecutionContext,
@@ -649,6 +678,122 @@ export class FactoryTools {
 						`${pr?.baseRefName ?? readPath(run.outputs, "repository.baseBranch")}...HEAD`,
 					]),
 				};
+			}
+			case "delivery-mode":
+				return {
+					mode: run.delivery?.contract.mode ?? "repository",
+					repositoryComplete:
+						run.delivery?.contract.mode === "mixed" &&
+						(run.humanDecisions ?? []).some(
+							(decision) =>
+								decision.decision === "approve" &&
+								repositoryCompletionProven({
+									...run,
+									humanDecisions: [decision],
+								}),
+						),
+				};
+			case "delivery-route": {
+				const contract = DeliveryContractSchema.parse(
+					readPath(run.outputs, "plan.deliveryContract"),
+				);
+				if (
+					readPath(run.outputs, "plan-review.approved") !== true ||
+					readPath(run.outputs, "plan-review.deliveryContractDigest") !==
+						digest(contract)
+				)
+					throw new Error(
+						"Plan review must confirm the exact delivery contract digest",
+					);
+				if (
+					readPath(run.outputs, "clarify.deliveryMode") !==
+						readPath(contract, "mode") &&
+					!(run.deliveryRecovery && contract.mode === "external")
+				)
+					throw new Error(
+						"Clarified delivery mode must match the reviewed contract",
+					);
+				if (readPath(contract, "authorization.status") === "deferred")
+					return { deferred: true };
+				const delivery = freezeDelivery(run, contract);
+				context.save?.();
+				return { mode: delivery.contract.mode };
+			}
+			case "external-apply": {
+				if (!this.hooks.ticketDelivery)
+					throw new Error("Ticket delivery integration unavailable");
+				await this.hooks.ticketDelivery.apply(run);
+				return { applied: true, receipts: run.delivery!.receipts };
+			}
+			case "external-verify": {
+				if (!this.hooks.ticketDelivery)
+					throw new Error("Ticket delivery integration unavailable");
+				return this.hooks.ticketDelivery.verify(run);
+			}
+			case "external-guide": {
+				const delivery = run.delivery,
+					snapshot = delivery?.verification;
+				if (!snapshot || snapshot.criteria.some((c) => !c.passed))
+					throw new Error(
+						"Independent verification required before external guide",
+					);
+				const externalEvidence = externalGuideEvidence(run);
+				const guide = {
+					...externalEvidence,
+					deliveryMode: "external",
+					externalDigest: snapshot.digest,
+					goal: run.title,
+					summary:
+						"Authorized ticket changes applied and independently verified.",
+					decision: {
+						status: "ready",
+						summary:
+							"Accept the verified state or request changes. Applied changes remain after rejection.",
+					},
+					requirements: delivery.contract.targets.flatMap((t) =>
+						t.criteria.map((c) => ({
+							requirementId: c.id,
+							criterion: c.description,
+							status: "supported",
+							evidence: [
+								JSON.stringify(snapshot.criteria.find((x) => x.id === c.id)),
+							],
+						})),
+					),
+					behavior: delivery.receipts.map((r) => ({
+						scenario: r.intent.id,
+						before: JSON.stringify(r.before),
+						after: JSON.stringify(r.after),
+					})),
+					checks: [
+						"Complete ticket content and relationships fetched twice independently; every accepted criterion passed.",
+					],
+					risks: [...new Set(delivery.receipts.map((r) => r.limitation))],
+					reviewInstructions: [
+						"Open each linked ticket and inspect the applied changes. Accept completed work or request changes.",
+					],
+					resources: delivery.contract.targets.map((t) => ({
+						key: t.key,
+						url: t.resource.url,
+					})),
+					receipts: delivery.receipts,
+					verification: snapshot,
+				};
+				run.outputs.guide =
+					delivery.contract.mode === "mixed"
+						? {
+								...(run.outputs.guide as Record<string, unknown>),
+								...externalEvidence,
+							}
+						: guide;
+				context.save?.();
+				return run.outputs.guide;
+			}
+			case "external-final": {
+				if (!this.hooks.ticketDelivery)
+					throw new Error("Ticket delivery integration unavailable");
+				const valid = await this.hooks.ticketDelivery.finalCheck(run);
+				return { drift: !valid, complete: valid };
 			}
 			case "record-decisions": {
 				const decisions = run.outputs.clarify;
@@ -872,7 +1017,9 @@ export class FactoryTools {
 				if (readiness.headSha !== headSha)
 					blockRevisionMismatch(readiness, headSha);
 				const previousBase =
-					aggregate?.baseline.baseSha ?? readPath(run.outputs, "ci.baseSha");
+					aggregate?.baseline.baseSha ??
+					readPath(run.outputs, "ci.correctionBaseSha") ??
+					readPath(run.outputs, "ci.baseSha");
 				assessFeedback(context, readiness);
 				const feedback = readPath(run.outputs, "ci.blockers") as
 					| { kind: string; action?: string }[]
@@ -1037,7 +1184,78 @@ export class FactoryTools {
 					await delay(context.signal);
 				}
 			}
+			case "ci-fix-readiness": {
+				const previous = run.outputs.ci as MergeReadiness | undefined;
+				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
+				const snapshot = await inspectReadinessWithRetry(context, command, url);
+				assessFeedback(context, snapshot);
+				const head = (await command("git", ["rev-parse", "HEAD"])).trim();
+				const dirty = Boolean(
+					(await command("git", ["status", "--porcelain"])).trim(),
+				);
+				if (snapshot.headSha !== head) blockRevisionMismatch(snapshot, head);
+				const digest = scopeContextDigest(
+					context.currentScope?.() ?? context.input,
+				);
+				const aggregate = aggregateForContext(context);
+				const scopeUnchanged =
+					previous?.scopeDigest === digest ||
+					Boolean(
+						aggregate?.baseline.context &&
+							scopeContextDigest(aggregate.baseline.context) === digest,
+					);
+				const skipFix =
+					snapshot.state === "OPEN" &&
+					!snapshot.fix &&
+					!dirty &&
+					scopeUnchanged &&
+					!readPath(run.outputs, "handoff.guideRecovery") &&
+					readPath(run.outputs, "visual-gate.approved") !== false &&
+					readPath(run.outputs, "review-gate.approved") !== false;
+				const refreshed = {
+					...snapshot,
+					scopeDigest: digest,
+					correctionBaseSha: previous?.correctionBaseSha ?? previous?.baseSha,
+				};
+				run.outputs.ci = refreshed;
+				reportReadiness(context, snapshot);
+				context.save?.();
+				return { ...refreshed, skipFix };
+			}
 			case "human-review": {
+				if (
+					run.delivery?.contract.mode === "external" ||
+					context.step.id === "external-human-review"
+				) {
+					const delivery = run.delivery;
+					if (!delivery)
+						throw new Error("Accepted external delivery contract required");
+					const snapshot = delivery.verification;
+					if (
+						!snapshot ||
+						readPath(run.outputs, "guide.externalDigest") !== snapshot.digest
+					)
+						throw new Error(
+							"External guide must bind current independent verification",
+						);
+					if (delivery.contract.mode === "mixed") {
+						if (readPath(run.outputs, "merge.merged") !== true)
+							throw new Error(
+								"Mixed external reacceptance requires retained confirmed repository merge proof",
+							);
+						return {
+							...(run.outputs["draft-pr"] as Record<string, unknown>),
+							mode: "mixed",
+							externalDigest: snapshot.digest,
+						};
+					}
+					return {
+						headSha: "",
+						url: "",
+						mode: "external",
+						externalDigest: snapshot.digest,
+					};
+				}
 				const headSha = await command("git", ["rev-parse", "HEAD"]);
 				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
 				const snapshot = await inspectReadinessWithRetry(context, command, url);
@@ -1074,6 +1292,22 @@ export class FactoryTools {
 					throw new Error(
 						"Review guide revision changed; retry review before approving",
 					);
+				if (run.delivery?.contract.mode === "mixed") {
+					if (!this.hooks.ticketDelivery)
+						throw new Error("Ticket delivery integration unavailable");
+					const snapshot = await this.hooks.ticketDelivery.verify(run);
+					if (readPath(run.outputs, "guide.externalDigest") !== snapshot.digest)
+						return {
+							rework: true,
+							reason: "External evidence changed after guide; review it again",
+						};
+					return {
+						headSha,
+						url,
+						mode: "mixed",
+						externalDigest: snapshot.digest,
+					};
+				}
 				return { headSha, url };
 			}
 			case "merge": {
@@ -1083,72 +1317,84 @@ export class FactoryTools {
 				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
 				let submitted = false;
 				for (;;) {
-					const snapshot = await inspectReadinessWithRetry(
-						context,
-						command,
-						url,
-					);
-					const merged = confirmedMerge(run, snapshot);
-					if (merged) {
-						reportReadiness(context, snapshot);
-						return merged;
-					}
-					assessFeedback(context, snapshot);
-					reportReadiness(context, snapshot);
-					if (snapshot.ciAssistance?.length) return snapshot;
-					const aggregate = aggregateForContext(context);
-					if (
-						aggregate &&
-						(aggregate.baseline.baseSha !== snapshot.baseSha ||
-							this.scopeChanged(context, aggregate.baseline.context))
-					) {
-						delete run.reviewGate;
-						return {
-							...snapshot,
-							rework: true,
-							reason: "Base or accepted scope changed after specialist review",
-						};
-					}
-					if (aggregate)
-						assertAggregateRevision(
-							aggregate,
-							approved.headSha,
-							snapshot.baseSha,
-						);
-					if (
-						snapshot.headSha !== approved.headSha ||
-						(await command("git", ["rev-parse", "HEAD"])) !==
-							approved.headSha ||
-						(await command("git", ["status", "--porcelain"]))
-					) {
-						delete run.reviewGate;
-						return {
-							...snapshot,
-							fix: true,
-							rework: false,
-							reason:
-								"Revision changed after human approval; synchronize the local and remote branch without discarding work, commit/push pending changes, then repeat all review gates",
-						};
-					}
-					if (snapshot.state !== "OPEN")
-						throw new Error("PR closed without merging");
-					if (snapshot.isDraft) {
-						await (await provider(url)).draft(url, false);
-						continue;
-					}
-					if (snapshot.fix) return { ...snapshot, fix: true };
-					if (snapshot.approved && !snapshot.queued && !submitted) {
-						await (await provider(url)).merge(
+					let immediate = false;
+					const inspectAndMerge = async () => {
+						const invalid = await context.validateDelivery?.();
+						if (invalid) return invalid;
+						const snapshot = await inspectReadinessWithRetry(
+							context,
+							command,
 							url,
-							approved.headSha,
-							snapshot.mergeMethod,
 						);
-						submitted = true;
-						context.log(
-							"Merge requested; waiting for the provider to confirm merge or queue completion.",
-						);
-					}
-					await delay(context.signal);
+						const merged = confirmedMerge(run, snapshot);
+						if (merged) {
+							reportReadiness(context, snapshot);
+							return merged;
+						}
+						assessFeedback(context, snapshot);
+						reportReadiness(context, snapshot);
+						if (snapshot.ciAssistance?.length) return snapshot;
+						const aggregate = aggregateForContext(context);
+						if (
+							aggregate &&
+							(aggregate.baseline.baseSha !== snapshot.baseSha ||
+								this.scopeChanged(context, aggregate.baseline.context))
+						) {
+							delete run.reviewGate;
+							return {
+								...snapshot,
+								rework: true,
+								reason:
+									"Base or accepted scope changed after specialist review",
+							};
+						}
+						if (aggregate)
+							assertAggregateRevision(
+								aggregate,
+								approved.headSha,
+								snapshot.baseSha,
+							);
+						if (
+							snapshot.headSha !== approved.headSha ||
+							(await command("git", ["rev-parse", "HEAD"])) !==
+								approved.headSha ||
+							(await command("git", ["status", "--porcelain"]))
+						) {
+							delete run.reviewGate;
+							return {
+								...snapshot,
+								fix: true,
+								rework: false,
+								reason:
+									"Revision changed after human approval; synchronize the local and remote branch without discarding work, commit/push pending changes, then repeat all review gates",
+							};
+						}
+						if (snapshot.state !== "OPEN")
+							throw new Error("PR closed without merging");
+						if (snapshot.isDraft) {
+							await (await provider(url)).draft(url, false);
+							immediate = true;
+							return undefined;
+						}
+						if (snapshot.fix) return { ...snapshot, fix: true };
+						if (snapshot.approved && !snapshot.queued && !submitted) {
+							await (await provider(url)).merge(
+								url,
+								approved.headSha,
+								snapshot.mergeMethod,
+							);
+							submitted = true;
+							context.log(
+								"Merge requested; waiting for the provider to confirm merge or queue completion.",
+							);
+						}
+						return undefined;
+					};
+					const result = await (context.coordinateDelivery
+						? context.coordinateDelivery(inspectAndMerge)
+						: inspectAndMerge());
+					if (result) return result;
+					if (!immediate) await delay(context.signal);
 				}
 			}
 			case "handoff": {
@@ -1260,7 +1506,7 @@ export class FactoryTools {
 					run.outputs.ci = recovery;
 					return recovery;
 				}
-				if (readPath(run.outputs, "guide.decision.status") !== "ready")
+				if (!guideReady(run.outputs.guide))
 					throw new Error(
 						"Review guide reports unresolved gaps; handoff blocked",
 					);
@@ -1278,7 +1524,9 @@ export class FactoryTools {
 							"QA evidence changed or is incomplete; handoff blocked",
 						);
 				}
-				const guide = reviewGuideMarkdown(run.outputs.guide, headSha);
+				const guide = isReviewBrief(run.outputs.guide)
+					? briefMarkdown(run.outputs.guide, headSha)
+					: reviewGuideMarkdown(run.outputs.guide, headSha);
 				await (await provider(url)).description(url, guide);
 				if (!run.ticketReference)
 					await this.hooks.postComment(

@@ -1,0 +1,30 @@
+Oct 11 12:14:40.062556 runnervmmprz5 systemd[1048]: Started factory-acceptance-external-ed532526-88b5-4f80-80ad-906d55dc0153.service - Disposable external owner fixture.
+Oct 11 12:14:40.532910 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.532Z [INFO ] [EdgeWorker] 👀 Watching config file for changes: /tmp/factory-isolated-service-L5uU7B/state/config.json
+Oct 11 12:14:40.534422 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.534Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+Oct 11 12:14:40.559626 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.559Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:41559
+Oct 11 12:14:40.563251 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.563Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+Oct 11 12:14:40.563251 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.563Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+Oct 11 12:14:40.563251 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.563Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+Oct 11 12:14:40.563550 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.563Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+Oct 11 12:14:40.563550 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.563Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+Oct 11 12:14:40.563550 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.563Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+Oct 11 12:14:40.563930 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.563Z [WARN ] [EdgeWorker] No repositories or workspaces configured — Slack sessions will not have access to MCP tools
+Oct 11 12:14:40.564302 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.564Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+Oct 11 12:14:40.564386 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.564Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+Oct 11 12:14:40.565415 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.565Z [INFO ] [EdgeWorker] ✅ Config updater registered
+Oct 11 12:14:40.565522 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.565Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+Oct 11 12:14:40.565569 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.565Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+Oct 11 12:14:40.568531 runnervmmprz5 bobs-factory[13905]: ✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+Oct 11 12:14:40.568942 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.568Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+Oct 11 12:14:40.568942 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.568Z [INFO ] [EdgeWorker]    Route: GET /status
+Oct 11 12:14:40.569104 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.569Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+Oct 11 12:14:40.569104 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.569Z [INFO ] [EdgeWorker]    Route: GET /version
+Oct 11 12:14:40.571293 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:40.571Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:41560
+Oct 11 12:14:40.572060 runnervmmprz5 bobs-factory[13905]: Bob's Factory: http://localhost:41559
+Oct 11 12:14:40.572060 runnervmmprz5 bobs-factory[13905]: State: /tmp/factory-isolated-service-L5uU7B/state
+Oct 11 12:14:40.572060 runnervmmprz5 bobs-factory[13905]: First passkey setup code (private, expires in ten minutes): rE526bxsP83L-b1uqbbzXBE6nUL309kJfllR8V9H79c
+Oct 11 12:14:41.086663 runnervmmprz5 systemd[1048]: Stopping factory-acceptance-external-ed532526-88b5-4f80-80ad-906d55dc0153.service - Disposable external owner fixture...
+Oct 11 12:14:41.088921 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:41.088Z [INFO ] [EdgeWorker] ✅ Config file watcher stopped
+Oct 11 12:14:41.090514 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:41.090Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+Oct 11 12:14:41.090823 runnervmmprz5 bobs-factory[13905]: 2026-10-11T12:14:41.090Z [INFO ] [SharedApplicationServer] Shared application server stopped
+Oct 11 12:14:41.097791 runnervmmprz5 systemd[1048]: Stopped factory-acceptance-external-ed532526-88b5-4f80-80ad-906d55dc0153.service - Disposable external owner fixture.

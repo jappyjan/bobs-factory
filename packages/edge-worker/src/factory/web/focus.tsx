@@ -15,6 +15,7 @@ import {
 	workingLabel,
 } from "./client";
 import { activitiesOf } from "./conversation";
+import { ExternalRecovery } from "./external-recovery";
 import { useCurrentForm, useFormState } from "./form-state";
 import {
 	type AnswerDraft,
@@ -25,6 +26,7 @@ import {
 } from "./question-answers";
 import { revisionOf } from "./restoration";
 import { GuidedReview } from "./review";
+import { useApproval } from "./review-approval";
 import {
 	type FeedbackController,
 	useFeedbackController,
@@ -37,7 +39,12 @@ import {
 	hasFeedback,
 	serializeFeedback,
 } from "./review-feedback";
-import { guideMatchesGate, reviewRevision, signature } from "./review-state";
+import {
+	guideMatchesGate,
+	reviewRevision,
+	signature,
+	ticketTrackingPending,
+} from "./review-state";
 import { Bob, Button, ConfirmStop, External, Markdown, useToast } from "./ui";
 export const labels: Record<string, string> = {
 	question: "💬 Question",
@@ -347,7 +354,8 @@ export function ReviewEntry({ run }: { run: any }) {
 		<div className="review-entry">
 			<p>
 				{String(
-					guide.summary ??
+					guide.verdict?.headline ??
+						guide.summary ??
 						guide.goal ??
 						"Read the changes, evidence and final checks before deciding.",
 				).slice(0, 320)}
@@ -467,7 +475,7 @@ function ReviewDecisions({
 }: DecisionProps & { controller: FeedbackController }) {
 	const toast = useToast(),
 		navigate = useNavigate(),
-		action = useAction(`review/${run.id}`, controller.context),
+		{ action, approve } = useApproval(run, controller),
 		[validationError, setValidationError] = useFormState(
 			controller.context,
 			"",
@@ -481,6 +489,7 @@ function ReviewDecisions({
 	const guide = run.outputs?.guide,
 		gate = run.reviewGate,
 		waiting = gate?.status === "pending",
+		trackingPending = ticketTrackingPending(run),
 		matching = !waiting || (run.status === "waiting" && guideMatchesGate(run)),
 		url = run.outputs?.["draft-pr"]?.url ?? gate?.url;
 	const reject = async () => {
@@ -492,7 +501,11 @@ function ReviewDecisions({
 				guide
 					? {
 							revision: reviewRevision(run) || "historical",
-							goal: guide.goal ?? guide.summary ?? "Review guide",
+							goal:
+								guide.verdict?.headline ??
+								guide.goal ??
+								guide.summary ??
+								"Review guide",
 							identity,
 						}
 					: undefined,
@@ -510,6 +523,7 @@ function ReviewDecisions({
 					body: {
 						reviewId: gate.id,
 						headSha: gate.headSha,
+						externalDigest: gate.externalDigest,
 						decision: "reject",
 						feedback,
 					},
@@ -580,7 +594,9 @@ function ReviewDecisions({
 							requiresConnection
 							disabled={!hasFeedback(draft) || !matching}
 						>
-							Submit feedback to Bob
+							{gate?.mode === "external"
+								? "Request changes"
+								: "Submit feedback to Bob"}
 						</Button>
 						{!decisionPage && (
 							<Button
@@ -616,6 +632,7 @@ function ReviewDecisions({
 			{(guide || !feedbackOpen) && (
 				<div className="actions">
 					{(!guide || decisionPage) &&
+						(waiting || !trackingPending) &&
 						!["running", "interrupted"].includes(run.status) && (
 							<Button
 								variant={guide ? "rainbow" : "primary"}
@@ -625,62 +642,75 @@ function ReviewDecisions({
 									busy || !matching || (!waiting && !finished(run.status))
 								}
 								onClick={() => {
-									if (!matching || action.isPending || !controller.lock())
+									if (waiting) return approve();
+									if (
+										trackingPending ||
+										!matching ||
+										action.isPending ||
+										!controller.lock()
+									)
 										return;
-									if (!waiting) {
-										onSettled();
-										controller.unlock();
-										return;
-									}
+									onSettled();
+									controller.unlock();
+								}}
+							>
+								{waiting
+									? gate.mode === "external"
+										? "Accept completed work"
+										: "Approve this PR"
+									: guide
+										? "Settle"
+										: "Got it — settle"}
+							</Button>
+						)}
+
+					{finished(run.status) &&
+						gate?.externalDigest &&
+						run.ticketSync?.error && (
+							<Button
+								variant="secondary"
+								requiresConnection
+								busy={busy || action.isPending}
+								onClick={() => {
+									if (!controller.lock()) return;
 									void action
 										.mutateAsync({
-											path: `/api/runs/${run.id}/review`,
-											body: {
-												reviewId: gate.id,
-												headSha: gate.headSha,
-												decision: "approve",
-											},
+											path: `/api/runs/${run.id}/external-reverify`,
+											body: {},
+										})
+										.catch(() => {})
+										.finally(() => controller.unlock());
+								}}
+							>
+								Reverify ticket changes
+							</Button>
+						)}
+					{waiting &&
+						gate?.mode !== "external" &&
+						!run.step?.endsWith("external-human-review") && (
+							<Button
+								variant="ghost"
+								requiresConnection
+								busy={busy || action.isPending}
+								onClick={() => {
+									if (!controller.lock()) return;
+									void action
+										.mutateAsync({
+											path: `/api/runs/${run.id}/guide/refresh`,
+											body: { reviewId: gate.id },
 										})
 										.then(() =>
 											toast({
-												text: "Approved — Bob is checking merge criteria",
+												text: "Refreshing the guide — existing reviews and images are retained",
 											}),
 										)
 										.catch(() => {})
 										.finally(() => controller.unlock());
 								}}
 							>
-								{waiting
-									? "Approve this PR"
-									: guide
-										? "Settle"
-										: "Got it — settle"}
+								Refresh guide
 							</Button>
 						)}
-					{waiting && (
-						<Button
-							variant="ghost"
-							requiresConnection
-							busy={busy || action.isPending}
-							onClick={() => {
-								if (!controller.lock()) return;
-								void action
-									.mutateAsync({
-										path: `/api/runs/${run.id}/guide/refresh`,
-										body: { reviewId: gate.id },
-									})
-									.then(() =>
-										toast({
-											text: "Refreshing the guide — existing reviews and images are retained",
-										}),
-									)
-									.catch(() => {})
-									.finally(() => controller.unlock());
-							}}
-						>
-							Refresh guide
-						</Button>
-					)}
 					{url && (
 						<External className="button secondary" href={reviewDiffUrl(url)}>
 							Open diff ↗
@@ -710,8 +740,9 @@ function ReviewDecisions({
 
 			{waiting && (
 				<small className="muted">
-					Approval applies to {gate.headSha.slice(0, 8)}. Settles after the Git
-					provider confirms the merge.
+					{gate.mode === "external"
+						? "Acceptance applies to the verified ticket state. Completion requires a fresh matching state check."
+						: `Approval applies to ${gate.headSha.slice(0, 8)}. Settles after the Git provider confirms the merge.`}
 				</small>
 			)}
 			{action.error && (
@@ -774,6 +805,7 @@ export function FocusCard({
 				/>
 			) : kind === "stuck" ? (
 				<>
+					<ExternalRecovery key={run.id} run={run} />
 					<div className="stuck-panel">
 						<Bob mood="oops" size={48} />
 						<div>

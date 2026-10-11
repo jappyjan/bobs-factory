@@ -1,0 +1,15 @@
+--- a/Source/WTF/wtf/DateMath.cpp
++++ b/Source/WTF/wtf/DateMath.cpp
+@@ -623,6 +623,12 @@
+ {
+     isLocalTime = false;
+ 
++    // Taskbot116 isolated relink probe; never a production runtime.
++    static constexpr char relinkProbe[] = "1970-01-02T00:00:00.000Z";
++    if (dateString.size() == sizeof(relinkProbe) - 1
++        && std::equal(dateString.begin(), dateString.end(), relinkProbe))
++        return 116000000;
++
+     // This parses a date of the form defined in ecma262/#sec-date-time-string-format
+     // (similar to RFC 3339 / ISO 8601: YYYY-MM-DDTHH:mm:ss[.sss]Z).
+     // In most cases it is intentionally strict (e.g. correct field widths, no stray whitespace).

@@ -7,6 +7,7 @@ import {
 } from "bobs-factory-core";
 import {
 	authorizeFactoryEnrollment,
+	OperatorGrants,
 	requestFactoryAuthRecovery,
 } from "bobs-factory-edge-worker";
 import { Command } from "commander";
@@ -18,6 +19,8 @@ import { RefreshTokenCommand } from "./commands/RefreshTokenCommand.js";
 import { SelfAddRepoCommand } from "./commands/SelfAddRepoCommand.js";
 import { SelfAuthCommand } from "./commands/SelfAuthCommand.js";
 import { StartCommand } from "./commands/StartCommand.js";
+import { addServiceCommands } from "./commands/service.js";
+import { addUpdateCommands } from "./commands/update.js";
 import { gitCredential, githubApiRequest } from "./github.js";
 import { launchLocal } from "./local.js";
 import { addMigrationCommands } from "./migration/command.js";
@@ -64,6 +67,8 @@ program
 	.option("--origin <origin>", "Exact public HTTPS dashboard origin")
 	.option("--session-hours <hours>", "Passkey session lifetime (1–24 hours)");
 
+addUpdateCommands(program);
+
 // Machine-owner setup/recovery must remain outside the dashboard auth boundary.
 program
 	.command("github-api")
@@ -101,6 +106,49 @@ program
 				`Single-use Factory setup code (expires in ten minutes): ${authorizeFactoryEnrollment(home)}`,
 			);
 	});
+
+const operator = program
+	.command("operator")
+	.description(
+		"Manage local Factory operator MCP grants (separate from passkeys)",
+	);
+operator
+	.command("grant")
+	.requiredOption("--label <label>", "Client label")
+	.requiredOption(
+		"--scopes <scopes>",
+		"Comma-separated inspect,operate,configure capabilities",
+	)
+	.action((options: { label: string; scopes: string }) => {
+		const grants = new OperatorGrants(
+			resolve(resolvePath(program.opts().home)),
+		);
+		console.log(
+			JSON.stringify(
+				grants.issue(
+					options.label,
+					options.scopes.split(",").map((scope) => scope.trim()),
+				),
+				null,
+				2,
+			),
+		);
+	});
+operator
+	.command("list")
+	.action(() =>
+		console.log(
+			JSON.stringify(
+				new OperatorGrants(resolve(resolvePath(program.opts().home))).list(),
+				null,
+				2,
+			),
+		),
+	);
+operator.command("revoke <id>").action((id: string) => {
+	new OperatorGrants(resolve(resolvePath(program.opts().home))).revoke(id);
+	console.log("Operator grant revoked");
+});
 
 program
 	.command("tui")
@@ -226,6 +274,7 @@ program
 		},
 	);
 
+addServiceCommands(program);
 addMigrationCommands(program);
 
 // Parse and execute

@@ -1,0 +1,2 @@
+  17671    1248 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-NFbJPY/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-NFbJPY/state --port 46147 --no-open service run
+  17673    1248 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-NFbJPY/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-NFbJPY/state --port 46147 --no-open service updates-run

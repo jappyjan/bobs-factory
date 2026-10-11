@@ -12,7 +12,9 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { releaseChannel, validateCandidate } from "./release-candidate.mjs";
+import { inspectArchive } from "./bounded-archive.mjs";
+import { releaseChannel } from "./release-candidate.mjs";
+import { validateSourceArchive } from "./release-material.mjs";
 
 export const REPOSITORY = "jappyjan/bobs-factory";
 export const TARGETS = [
@@ -178,7 +180,24 @@ function validateFile(record, expected) {
 		`Invalid size: ${expected}`,
 	);
 }
+// Legacy identities cannot discard new-candidate claims at any input boundary.
+function validateCandidateBoundary(value, identity, label) {
+	if (identity.candidateDigest) return;
+	const pending = [value];
+	while (pending.length) {
+		const current = pending.pop();
+		if (!current || typeof current !== "object") continue;
+		requireValue(
+			!Object.hasOwn(current, "candidateDigest") &&
+				!Object.hasOwn(current, "workflowSha"),
+			`New candidate metadata at legacy boundary: ${label}`,
+		);
+		for (const child of Object.values(current)) pending.push(child);
+	}
+}
 export function validateReleaseManifest(value) {
+	if (value?.schemaVersion === 1)
+		validateCandidateBoundary(value, {}, "release manifest");
 	requireValue(
 		[1, 2].includes(value?.schemaVersion) &&
 			value.product === "bobs-factory" &&
@@ -245,6 +264,40 @@ export function validateReleaseManifest(value) {
 				/^[a-f0-9]{40}$/.test(value.workflowSha),
 			"Missing frozen candidate identity",
 		);
+		if (value.desktop !== undefined) {
+			requireValue(
+				value.desktop.schemaVersion === 1 &&
+					Array.isArray(value.desktop.artifacts) &&
+					value.desktop.artifacts.length > 0,
+				"Invalid delivered desktop inventory",
+			);
+			const targets = new Set();
+			for (const item of value.desktop.artifacts) {
+				requireValue(
+					item.version === value.version &&
+						item.commit === value.commit &&
+						item.channel === value.channel &&
+						typeof item.target === "string" &&
+						!targets.has(item.target) &&
+						typeof item.platformRequirements === "string" &&
+						item.platformRequirements.length > 0,
+					"Desktop identity/platform requirements mismatch",
+				);
+				targets.add(item.target);
+				for (const record of [
+					item.archive,
+					...(item.updateArchive ? [item.updateArchive] : []),
+					item.updateMetadata,
+					item.validation,
+				]) {
+					requireValue(
+						/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(record?.file),
+						"Unsafe desktop filename",
+					);
+					validateFile(record, record.file);
+				}
+			}
+		}
 		const required = [
 			"candidate.json",
 			"release-evidence.json",
@@ -261,6 +314,13 @@ export function validateReleaseManifest(value) {
 				new Set(value.assets.map((a) => a.file)).size === value.assets.length,
 			"Ambiguous signed inventory",
 		);
+		if (value.publicInstallerValidation !== undefined) {
+			requireValue(
+				value.publicInstallerValidation === 1,
+				"Unsupported public installer validation",
+			);
+			required.push(...TARGETS.map((t) => `public-installer-${t}.json`));
+		}
 		for (const file of required)
 			requireValue(
 				value.assets.some((a) => a.file === file),
@@ -298,6 +358,12 @@ export function releaseAssetRecords(value, inventory = true) {
 		...Object.values(value.targets).flatMap((t) => [
 			{ file: t.archive, sha256: t.archiveSha256, size: t.archiveSize },
 			{ file: t.manifest, sha256: t.manifestSha256, size: t.manifestSize },
+		]),
+		...(value.desktop?.artifacts ?? []).flatMap((item) => [
+			item.archive,
+			...(item.updateArchive ? [item.updateArchive] : []),
+			item.updateMetadata,
+			item.validation,
 		]),
 	];
 }
@@ -399,6 +465,7 @@ export function validateArtifactZip(
 		"runtime-smoke.txt",
 		"native-helpers.json",
 		"prepared-agent-boundaries.json",
+		"public-installer.json",
 	];
 	for (const file of needed) {
 		requireValue(
@@ -418,6 +485,7 @@ export function validateArtifactZip(
 export function validateArchive(archivePath, manifestPath, identity, target) {
 	const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 	const name = `bobs-factory-${identity.version}-${target}`;
+	validateCandidateBoundary(manifest, identity, "archive manifest");
 	requireValue(
 		manifest.schemaVersion === 1 &&
 			manifest.product === "bobs-factory" &&
@@ -480,6 +548,7 @@ export function validateArchive(archivePath, manifestPath, identity, target) {
 		const build = JSON.parse(
 			readFileSync(join(work, name, "build.json"), "utf8"),
 		);
+		validateCandidateBoundary(build, identity, "embedded build");
 		requireValue(
 			build.schemaVersion === 1 &&
 				build.product === "bobs-factory" &&
@@ -532,6 +601,8 @@ export function validateArchive(archivePath, manifestPath, identity, target) {
 	return manifest;
 }
 export function validateEvidence(evidence, directory, identity) {
+	validateCandidateBoundary(identity, identity, "release identity");
+	validateCandidateBoundary(evidence, identity, "release evidence");
 	requireValue(
 		evidence?.schemaVersion === 1 &&
 			evidence.product === "bobs-factory" &&
@@ -611,75 +682,56 @@ export function validateEvidence(evidence, directory, identity) {
 			sha256File(sourcePath) === evidence.source.sha256,
 		"Source/rebuild archive integrity failure",
 	);
-	const listing = execFileSync("tar", ["-tzf", sourcePath], {
-		encoding: "utf8",
-	})
-		.trim()
-		.split("\n");
-	requireValue(
-		listing.length === new Set(listing).size &&
-			listing.every(
-				(entry) =>
-					entry.startsWith("source-rebuild/") &&
-					!entry.includes("\\") &&
-					!entry.split("/").some((part) => part === "." || part === ".."),
-			),
-		"Unsafe source/rebuild archive inventory",
-	);
-	const verbose = execFileSync("tar", ["-tvzf", sourcePath], {
-		encoding: "utf8",
-	})
-		.trim()
-		.split("\n");
-	requireValue(
-		verbose.every((line) => /^[d-]/.test(line)),
-		"Links/special files in source/rebuild archive",
-	);
-	for (const file of [
-		"commit.txt",
-		"README.md",
-		"pnpm-lock.yaml",
-		"bun-source.tar.gz",
-	])
-		requireValue(
-			listing.includes(`source-rebuild/${file}`),
-			`Source/rebuild material missing: ${file}`,
-		);
-	const commit = execFileSync(
-		"tar",
-		["-xOzf", sourcePath, "source-rebuild/commit.txt"],
-		{ encoding: "utf8" },
-	).trim();
-	requireValue(
-		commit === identity.commit,
-		"Source/rebuild archive commit mismatch",
-	);
 	if (identity.candidateDigest) {
+		validateSourceArchive(sourcePath, identity);
+	} else {
+		// Genuine beta source/receipts stay untouched; new-candidate inputs cannot be
+		// reclassified by deleting only the caller's identity or manifest fields.
+		const prefix = "source-rebuild/";
+		const scanned = inspectArchive(sourcePath, {
+			prefix,
+			regularOnly: true,
+			limits: { maxMembers: 256 },
+			collect: [
+				"commit.txt",
+				"source-materials.json",
+				"candidate.json",
+				"release-tooling.tar.gz",
+			].map((f) => prefix + f),
+		});
+		const listing = scanned.entries.map((e) => e.name);
 		for (const file of [
-			"candidate.json",
-			"release-tooling.tar.gz",
-			"factory-source.tar.gz",
-			"source-materials.json",
+			"commit.txt",
+			"README.md",
+			"pnpm-lock.yaml",
+			"bun-source.tar.gz",
 		])
 			requireValue(
-				listing.includes(`source-rebuild/${file}`),
+				listing.includes(prefix + file),
 				`Source/rebuild material missing: ${file}`,
 			);
-		const frozen = validateCandidate(
-			JSON.parse(
-				execFileSync(
-					"tar",
-					["-xOzf", sourcePath, "source-rebuild/candidate.json"],
-					{ encoding: "utf8" },
-				),
-			),
+		requireValue(
+			scanned.texts[`${prefix}commit.txt`].trim() === identity.commit,
+			"Source/rebuild archive commit mismatch",
 		);
 		requireValue(
-			frozen.digest === identity.candidateDigest &&
-				frozen.candidate?.workflowSha === identity.workflowSha &&
-				frozen.candidate?.recipe?.versionOverride === identity.version,
-			"Source recipe mismatch",
+			!listing.some((e) =>
+				["candidate.json", "release-tooling.tar.gz"].includes(
+					e.slice(prefix.length),
+				),
+			),
+			"New candidate inputs at legacy boundary",
 		);
+		if (scanned.texts[`${prefix}source-materials.json`] !== undefined) {
+			const material = JSON.parse(
+				scanned.texts[`${prefix}source-materials.json`],
+			);
+			validateCandidateBoundary(material, identity, "source materials");
+			requireValue(
+				material.schemaVersion === 1,
+				"New source schema at legacy boundary",
+			);
+		}
 	}
 	return evidence;
 }
@@ -691,6 +743,8 @@ function validateNativeReceiptIdentity(
 	build,
 	validation,
 ) {
+	validateCandidateBoundary(receipt, identity, "native receipt");
+	validateCandidateBoundary(build, identity, "native build");
 	if (identity.candidateDigest)
 		requireValue(
 			receipt.candidateDigest === identity.candidateDigest &&
@@ -808,4 +862,43 @@ export function validatePreparedAgentBoundaries(
 	}
 	// Required release checks use mocks; authenticated live tests are manual-only.
 	return receipt;
+}
+
+export function validatePublicInstaller(receipt, identity, target) {
+	requireValue(
+		receipt?.schemaVersion === 1 &&
+			receipt.product === "bobs-factory" &&
+			receipt.validation === "public-installer" &&
+			receipt.status === "passed" &&
+			receipt.scope === "native-archive-controlled-downloads" &&
+			receipt.version === identity.version &&
+			receipt.commit === identity.commit &&
+			receipt.target === target &&
+			receipt.candidateDigest === identity.candidateDigest &&
+			receipt.workflowSha === identity.workflowSha &&
+			[
+				"channelResolution",
+				"exactVersion",
+				"repeatInstall",
+				"badHashPreservesInstallation",
+				"badSizePreservesInstallation",
+				"badSourcePreservesInstallation",
+				"unavailableTargetPreservesInstallation",
+				"badSignaturePreservesInstallation",
+			].every((check) => receipt.checks?.[check] === "passed"),
+		`Missing candidate-bound public installer validation: ${target}`,
+	);
+}
+export function validateDesktopReceipt(receipt, identity, target) {
+	requireValue(
+		receipt?.product === "bobs-factory" &&
+			receipt.status === "passed" &&
+			receipt.version === identity.version &&
+			receipt.commit === identity.commit &&
+			receipt.channel === identity.channel &&
+			receipt.target === target &&
+			receipt.candidateDigest === identity.candidateDigest &&
+			receipt.workflowSha === identity.workflowSha,
+		"Missing candidate-bound desktop validation; retain desktop delivery as blocked",
+	);
 }

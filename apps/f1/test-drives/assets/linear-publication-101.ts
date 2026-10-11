@@ -351,6 +351,8 @@ try {
 	assert.equal(providerStates.get(sessionId), "awaitingInput");
 	runtime.answer(run.id, "English");
 	await completion;
+	// Publication releases execution before background ticket tracking completes.
+	await tracking.flush(run);
 	assert.equal(run.status, "completed");
 	assert.equal(comments.length, 4);
 	assert.equal(providerStates.get(sessionId), "complete");

@@ -21,16 +21,20 @@ curl -fsSL https://jappyjan.github.io/bobs-factory/install.sh | sh -s -- --chann
 ```
 
 Use `--version VERSION --channel stable|nightly` for an immutable exact version.
-The signed version must match the requested channel. `--prefix /absolute/path`
+The signed version must match the requested channel. Explicit `--channel stable`
+rejects beta; use the default channel (optionally with `--version VERSION`) for
+the authenticated beta compatibility fallback. `--prefix /absolute/path`
 and `--no-modify-path` retain their existing meaning. Installation keeps owned
 immutable versions and an atomic executable link, preserves the prior rollback
 link, and refuses foreign executables or changed installed bytes. Shell settings
 are backed up before PATH changes; managed profiles are left to their owner.
 Installation and launch remain separate. Factory state, workflows/results,
 checkpoints, gates, worktrees, native session IDs and host credentials are never
-migrated or modified by release tooling. Worker restart, update polling, per-instance
-policy, pause/pin controls, desktop packages and package-manager delivery belong
-to their respective follow-up tickets (#118–#124).
+migrated or modified by release tooling. [Per-instance updates](UPDATES.md),
+[user-service lifecycle](SERVICES.md), [desktop packages and app updates](DESKTOP.md)
+and [package-manager entry points](PACKAGE_ENTRY_POINTS.md) document the integrated
+delivery mechanisms. Their native acceptance and publication gates remain separate
+from installer integrity; installation never silently enrolls a service.
 
 ## Frozen candidates and channels
 
@@ -43,9 +47,11 @@ provider release ID. Build run/attempt and provider artifact IDs are recorded in
 `build-provenance.json` after building; they never regenerate candidate identity.
 
 `release-channel.yml` polls hourly and supports manual preparation. It resolves
-main once for nightly or the latest complete signed published nightly once for
-stable promotion. Stable freezes that nightly's source even if main or nightly
-advances afterward. Stable bytes embed the requested stable version and require
+main once for nightly. Stable preparation requires the operator to supply an
+exact published `nightly_tag` in the workflow, or `--nightly-tag vVERSION` to
+`prepare-release-candidate.mjs`. The selected nightly must have a complete signed
+release; an older verified nightly remains selectable after a newer one appears.
+Stable freezes that nightly's source even if main or nightly advances afterward. Stable bytes embed the requested stable version and require
 new native builds and byte-bound validation. Source-only assessments can be
 reused only with a reviewed explanation of why they still apply.
 
@@ -60,7 +66,7 @@ nightly, and at least six hours since successful publication. The first nightly
 has no cooldown. Failed preparation does not reset the clock. A frozen candidate
 that no longer matches main skips publication. Eligibility is checked inside the
 repository publication lock and again immediately before making a draft public.
-Preparation and publication block if the highest published nightly sequence
+Nightly preparation and publication block if the highest published nightly sequence
 cannot be verified, including after signing-key rotation or with incomplete
 assets. They never substitute an older verified nightly to establish source,
 cooldown or sequence eligibility. Refresh trusted release tooling or repair the
@@ -259,11 +265,16 @@ release so the exact approval and validation remain inspectable.
 To assemble reviewed material, use `scripts/build-release-source.mjs --sha
 FULL_SHA --candidate FILE --materials DIRECTORY --output EMPTY_DIRECTORY`. The input directory
 contains precise reviewed rebuild/relink instructions in `README.md`, regular
-source files/archives, and `source-materials.json` with `schemaVersion: 1`, exact
-`commit`, `bunVersion: "1.4.2"` and `records`. Each record names its `kind`, flat
+source files/archives, and `source-materials.json` with `schemaVersion: 2`, exact
+`commit`, `version`, `workflowSha`, `candidateDigest`, `bunVersion: "1.4.2"`,
+`records`, `patches` and per-target `builds`. Each record names its `kind`, flat
 `file`, HTTPS `source`, exact `revision`, byte `size` and `sha256`. Include a
 `bun` record named `bun-source.tar.gz`, the exact patched `webkit` source and
 any corresponding dependency/library source required by the licensing review.
+Native object, build-config and actual relink-log records bind the same frozen
+candidate and target. Follow the maintained
+[source-material assembly and bounded intake contract](source-materials/README.md);
+legacy beta source bytes and independent approval receipts remain unchanged.
 The tool adds `factory-source.tar.gz`
 from the exact committed Git tree, its lockfile, commit and material inventory,
 then emits `source-rebuild.tar.gz` and its `source-record.json`. These integrity
@@ -284,3 +295,35 @@ outside distributed archives.
 Current release blockers described in [RELEASING.md](../../apps/cli/RELEASING.md)
 remain blockers until the corresponding real evidence is supplied. No missing
 coverage is marked passed by the publisher.
+
+## Installer validation and delivered desktop assets
+
+The native matrix also runs `scripts/smoke-public-install.mjs` against the freshly
+built archive with controlled downloads and synthetic signing keys. It verifies
+channel/exact-version resolution, repeat installation, signature rejection and
+preservation of the existing executable when hash, size, source or target checks
+fail. This does not exercise production signing keys or public GitHub downloads.
+New prepared manifests declare `publicInstallerValidation: 1`; publication and
+recovery require each target's matching `public-installer-TARGET.json` receipt,
+including the frozen candidate digest and tooling SHA. Older signed manifests
+without this extension remain readable; their immutable assets are never rewritten.
+
+Desktop packaging remains owned by its separate delivery. When evidence includes
+`desktop: {schemaVersion: 1, artifacts: [...]}`, each item declares the same exact
+version, source commit and channel, a unique target and observed
+`platformRequirements`. Its `archive`, `updateMetadata` and `validation` records
+carry file, size and SHA-256. Preparation copies and validates these assets;
+an optional `updateArchive` record separately inventories the complete recovery
+payload (macOS `.bobsapp.gz`, Linux AppImage). It is copied, signed and verified with
+the other assets, never resolved from a detached URL. `updateMetadata` binds that
+payload's format/full-app fingerprint and authentic macOS signing status to the
+same candidate. The unsigned preparation workflow cannot satisfy macOS activation.
+The validation JSON must report `product: "bobs-factory"`, `status: "passed"`,
+matching version/commit/channel/target, `candidateDigest` and `workflowSha`.
+All records must also match the signed `assets` inventory. Missing, duplicated or
+altered validation receipts block discovery and stable promotion. Recovery checks
+the receipt identity again. No desktop downloads are advertised until delivered.
+
+Receipt archives use canonical USTAR headers and fixed metadata so the same receipt
+bytes produce the same archive across retries on different hosts. Publication
+recovery still reuses the exact retained prepared assets and never rebuilds them.

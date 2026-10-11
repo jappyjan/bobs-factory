@@ -9,9 +9,11 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Guide } from "../FactoryResults";
+import type { ReviewBrief } from "../ReviewBrief";
 import { api, client } from "./client";
 import { useReadingPosition } from "./reading-position";
 import { revisionOf, useRestorableState } from "./restoration";
+import { BriefReview } from "./review-brief";
 import {
 	CollectedFeedback,
 	Commentable,
@@ -141,6 +143,16 @@ export function GuidedReview({
 				)}
 			</div>
 		);
+	if (isBrief(guide))
+		return (
+			<BriefSession
+				key={key}
+				storageKey={key}
+				brief={guide}
+				run={run}
+				controls={controls}
+			/>
+		);
 	return (
 		<ReviewSession
 			key={key}
@@ -151,6 +163,25 @@ export function GuidedReview({
 			documentPage={documentPage}
 			controls={controls}
 		/>
+	);
+}
+/** Briefs come from steps declaring the brief contract; chapter guides stay readable. */
+export const isBrief = (guide: unknown): guide is ReviewBrief =>
+	(guide as { contract?: unknown } | undefined)?.contract === "brief-v1";
+function BriefSession(props: React.ComponentProps<typeof BriefReview>) {
+	const controller = useFeedbackController(
+		feedbackKey(props.storageKey, props.run.reviewGate?.id),
+		revisionOf([
+			feedbackKey(props.storageKey, props.run.reviewGate?.id),
+			props.run.reviewGate,
+			props.run.status,
+			props.run.chat?.mode,
+		]),
+	);
+	return (
+		<FeedbackContext.Provider value={props.controls ? controller : null}>
+			<BriefReview {...props} />
+		</FeedbackContext.Provider>
 	);
 }
 function ReviewSession(props: React.ComponentProps<typeof ReviewReader>) {
@@ -193,7 +224,7 @@ function ReviewReader({
 		titles = [
 			"Overview",
 			...chapters.map((c) => c.title),
-			"Changed files",
+			guide.deliveryMode === "external" ? "Ticket changes" : "Changed files",
 			"Decide",
 		],
 		location = useLocation(),
@@ -516,7 +547,9 @@ function ReviewReader({
 					{page === 0
 						? "OVERVIEW"
 						: files
-							? "CHANGED FILES"
+							? guide.deliveryMode === "external"
+								? "TICKET CHANGES"
+								: "CHANGED FILES"
 							: final
 								? "LAST STEP · DECIDE"
 								: `STEP ${page} OF ${chapters.length} · ${kind}`}
@@ -552,11 +585,13 @@ function ReviewReader({
 								{chapters.length} {chapters.length === 1 ? "step" : "steps"}
 							</span>
 							<span className="chip">
-								{fileQuery.data
-									? `${fileQuery.data.manifest.files.length} ${fileQuery.data.manifest.files.length === 1 ? "file" : "files"}`
-									: fileQuery.isPending
-										? "Files loading…"
-										: "File count unavailable"}
+								{guide.deliveryMode === "external"
+									? `${guide.externalResources?.length ?? 0} tickets`
+									: fileQuery.data
+										? `${fileQuery.data.manifest.files.length} ${fileQuery.data.manifest.files.length === 1 ? "file" : "files"}`
+										: fileQuery.isPending
+											? "Files loading…"
+											: "File count unavailable"}
 							</span>
 							{shots.length > 0 && (
 								<span className="chip">
@@ -666,16 +701,58 @@ function ReviewReader({
 				) : files ? (
 					<>
 						<p className="guide-lead">
-							Every changed file, grouped by step. Look for files that don’t fit
-							their step.
+							{guide.deliveryMode === "external"
+								? "Applied ticket changes remain after requesting corrections. Review the before and after content and every verified criterion."
+								: "Every changed file, grouped by step. Look for files that don’t fit their step."}
 						</p>
-						<ChangedFiles
-							query={fileQuery}
-							chapters={chapters}
-							run={run}
-							onChapter={(i) => go(i)}
-							reviewed={progress.reviewed}
-						/>
+						{guide.externalResources?.map((resource) => (
+							<p key={resource.key}>
+								<a href={resource.url} target="_blank" rel="noreferrer">
+									{resource.key} ↗
+								</a>
+							</p>
+						))}
+						{guide.externalChanges?.map((change, i) =>
+							annotate(
+								`/externalChanges/${i}`,
+								change.target,
+								"Ticket change",
+								change.outcome,
+								[i + 1],
+								<div key={change.id}>
+									<h3>
+										{change.target}: {change.outcome}
+									</h3>
+									<h4>Before</h4>
+									<pre>{change.before}</pre>
+									<h4>After</h4>
+									<pre>{change.after}</pre>
+									<p>{change.limitation}</p>
+								</div>,
+							),
+						)}
+						{guide.externalCriteria?.map((criterion, i) =>
+							annotate(
+								`/externalCriteria/${i}`,
+								criterion.criterion,
+								"Verified criterion",
+								criterion.observed,
+								[i + 100],
+								<details key={criterion.id}>
+									<summary>✓ {criterion.criterion}</summary>
+									<pre>{criterion.observed}</pre>
+								</details>,
+							),
+						)}
+						{guide.deliveryMode !== "external" && (
+							<ChangedFiles
+								query={fileQuery}
+								chapters={chapters}
+								run={run}
+								onChapter={(i) => go(i)}
+								reviewed={progress.reviewed}
+							/>
+						)}
 					</>
 				) : final ? (
 					<>
@@ -1079,7 +1156,9 @@ function ReviewReader({
 					{page === 0
 						? "Overview"
 						: files
-							? "Files"
+							? guide.deliveryMode === "external"
+								? "Tickets"
+								: "Files"
 							: final
 								? "Decide"
 								: `${page} / ${chapters.length}`}
@@ -1111,7 +1190,9 @@ function ReviewReader({
 							: files
 								? "Decide →"
 								: page === chapters.length
-									? "Files →"
+									? guide.deliveryMode === "external"
+										? "Tickets →"
+										: "Files →"
 									: "Next →"}
 					</Button>
 				)}

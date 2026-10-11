@@ -1,0 +1,34 @@
+[
+  {
+    "target": "darwin-arm64",
+    "artifactId": 11682123495,
+    "source": "https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/artifacts/11682123495",
+    "containerSize": 65829971,
+    "containerSha256": "37dc491f3213c719839d6b89c05c9a2ae75bbb34a5218f0ce07c20e6afbc23f5",
+    "sourceSha": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f"
+  },
+  {
+    "target": "darwin-x64",
+    "artifactId": 11682007647,
+    "source": "https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/artifacts/11682007647",
+    "containerSize": 70191021,
+    "containerSha256": "9db20a9244b42d8de7be67e752ce97a4672cf3929149c92a4129bf70a8069437",
+    "sourceSha": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f"
+  },
+  {
+    "target": "linux-x64",
+    "artifactId": 11682662326,
+    "source": "https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/artifacts/11682662326",
+    "containerSize": 86717041,
+    "containerSha256": "8a2b9153853a422d60afeb0eec8dcb7648968827ec609fabb7385c9db9060c77",
+    "sourceSha": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f"
+  },
+  {
+    "target": "linux-arm64",
+    "artifactId": 11681708067,
+    "source": "https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/artifacts/11681708067",
+    "containerSize": 87208903,
+    "containerSha256": "eea23d59c00a52a03d9f6bc16d905f9147e79104f9a6c19054faaedb89473e26",
+    "sourceSha": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f"
+  }
+]

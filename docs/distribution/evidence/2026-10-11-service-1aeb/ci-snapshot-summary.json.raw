@@ -1,0 +1,57 @@
+{
+  "service": {
+    "id": 38139582770,
+    "head_sha": "1aeb055458f2cf943f007338d0b98a9f91a7d472",
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "html_url": "https://github.com/jappyjan/bobs-factory/actions/runs/38139582770",
+    "jobs": [
+      {
+        "id": 114470479566,
+        "name": "linux-user-service",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "1aeb055458f2cf943f007338d0b98a9f91a7d472"
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 11702895383,
+        "name": "isolated-service-1aeb055458f2cf943f007338d0b98a9f91a7d472-1",
+        "bytes": 184122,
+        "sha256": "ea5819ba72a3c95f83c095a8ae1f8e4a0840cbf6b86fbb6acdf6a0b892d51e63"
+      }
+    ]
+  },
+  "node": {
+    "id": 38139586901,
+    "head_sha": "1aeb055458f2cf943f007338d0b98a9f91a7d472",
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "html_url": "https://github.com/jappyjan/bobs-factory/actions/runs/38139586901",
+    "jobs": [
+      {
+        "id": 114470491864,
+        "name": "test (24.x)",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "1aeb055458f2cf943f007338d0b98a9f91a7d472"
+      },
+      {
+        "id": 114470492067,
+        "name": "test (22.x)",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "1aeb055458f2cf943f007338d0b98a9f91a7d472"
+      }
+    ]
+  },
+  "f6Official": {
+    "artifactId": 11701878395,
+    "sha256": "c8c23aad06a62248cbd24b977d10971e10054b3e375a1229e6b6dab5214ddd89",
+    "bytes": 182161,
+    "retainedZipByteEqual": true
+  }
+}

@@ -1,0 +1,2 @@
+   3494    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-6A3QS4/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-6A3QS4/state --port 45815 --no-open service run
+   3496    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-6A3QS4/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-6A3QS4/state --port 45815 --no-open service updates-run

@@ -229,7 +229,7 @@ export async function verifyPublishedRelease(client, release, keys) {
 export async function discoverReleases(
 	client,
 	keys,
-	{ selectedOnly = false } = {},
+	{ selectedOnly = false, allowBetaFallback = true } = {},
 ) {
 	validatePublicRepository(await client.api(""));
 	const releases = await client.pages("releases");
@@ -257,7 +257,10 @@ export async function discoverReleases(
 		// Fully verify the newest usable target in each channel, without spending
 		// provider quota on older releases once that target is established.
 		for (const channel of ["stable", "nightly"]) {
-			let remaining = [...releases];
+			let remaining =
+				channel === "stable" && !allowBetaFallback
+					? releases.filter((r) => !r.prerelease)
+					: [...releases];
 			while (remaining.length) {
 				const release = selectPublicRelease(remaining, channel);
 				if (!release) break;
@@ -271,7 +274,11 @@ export async function discoverReleases(
 	}
 	const select = (channel) => {
 		const r = selectPublicRelease(
-			verified.map((v) => v.release),
+			verified
+				.map((v) => v.release)
+				.filter(
+					(r) => channel !== "stable" || allowBetaFallback || !r.prerelease,
+				),
 			channel,
 		);
 		return verified.find((v) => v.release.id === r?.id) ?? null;
@@ -306,4 +313,20 @@ export function requireVerifiedNightlyHistory(state) {
 		"Nightly preparation/publication blocked: latest published nightly cannot be verified; refresh trusted release tooling or repair release evidence",
 	);
 	return last;
+}
+
+// Stable promotion is an operator selection, independent of nightly eligibility.
+export function selectVerifiedPromotionNightly(state, tag) {
+	requireValue(
+		tag?.startsWith("v") && releaseChannel(tag.slice(1)) === "nightly",
+		"Stable promotion requires --nightly-tag with an exact published nightly tag",
+	);
+	const selected = state.verified.filter(
+		(n) => n.manifest.tag === tag && n.manifest.channel === "nightly",
+	);
+	requireValue(
+		selected.length === 1,
+		"Stable promotion blocked: selected nightly is not a complete signed published release",
+	);
+	return selected[0];
 }

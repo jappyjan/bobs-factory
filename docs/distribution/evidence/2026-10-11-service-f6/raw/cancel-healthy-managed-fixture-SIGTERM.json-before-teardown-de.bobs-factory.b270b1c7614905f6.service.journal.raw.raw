@@ -1,0 +1,25 @@
+Oct 11 12:14:46.968583 runnervmmprz5 systemd[1048]: Started de.bobs-factory.b270b1c7614905f6.service - Bob's Factory (de.bobs-factory.b270b1c7614905f6).
+Oct 11 12:14:47.605740 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.605Z [INFO ] [EdgeWorker] 👀 Watching config file for changes: /tmp/factory-isolated-service-L5uU7B/state/config.json
+Oct 11 12:14:47.606976 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.606Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+Oct 11 12:14:47.630914 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.630Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:41559
+Oct 11 12:14:47.637026 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.636Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+Oct 11 12:14:47.637026 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.636Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+Oct 11 12:14:47.637026 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.637Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+Oct 11 12:14:47.637291 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.637Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+Oct 11 12:14:47.637291 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.637Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+Oct 11 12:14:47.637291 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.637Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+Oct 11 12:14:47.637627 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.637Z [WARN ] [EdgeWorker] No repositories or workspaces configured — Slack sessions will not have access to MCP tools
+Oct 11 12:14:47.637976 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.637Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+Oct 11 12:14:47.637976 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.637Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+Oct 11 12:14:47.639045 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.638Z [INFO ] [EdgeWorker] ✅ Config updater registered
+Oct 11 12:14:47.639045 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.638Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+Oct 11 12:14:47.639045 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.638Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+Oct 11 12:14:47.641795 runnervmmprz5 bobs-factory[14325]: ✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+Oct 11 12:14:47.642081 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.642Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+Oct 11 12:14:47.642081 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.642Z [INFO ] [EdgeWorker]    Route: GET /status
+Oct 11 12:14:47.642247 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.642Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+Oct 11 12:14:47.642247 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.642Z [INFO ] [EdgeWorker]    Route: GET /version
+Oct 11 12:14:47.642991 runnervmmprz5 bobs-factory[14325]: 2026-10-11T12:14:47.642Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:41560
+Oct 11 12:14:47.645385 runnervmmprz5 bobs-factory[14325]: Bob's Factory: http://localhost:41559
+Oct 11 12:14:47.645385 runnervmmprz5 bobs-factory[14325]: State: /tmp/factory-isolated-service-L5uU7B/state
+Oct 11 12:14:47.645385 runnervmmprz5 bobs-factory[14325]: First passkey setup code (private, expires in ten minutes): lCZy8oUUWa0MFp1MgcF1w4l7UI9n7reu0Ux2d5ZQ1ss

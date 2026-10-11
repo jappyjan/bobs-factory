@@ -1,0 +1,1 @@
+   9091    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-RTJCIH/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-RTJCIH/state --port 35551 --no-open service run

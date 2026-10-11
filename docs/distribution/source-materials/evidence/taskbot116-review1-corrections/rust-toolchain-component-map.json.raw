@@ -1,0 +1,1978 @@
+{
+  "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+  "bunRevision": "744846f844374847c902b5e7fd59b4342a51ef99",
+  "rustSourceCommit": "9f36de775bc636c8e88c31a173c2bcb6995956a0",
+  "toolchain": "nightly-2026-07-20",
+  "sourceReceipt": {
+    "package": "rust-src",
+    "target": "*",
+    "source": "https://static.rust-lang.org/dist/2026-07-20/rust-src-nightly.tar.xz",
+    "file": "rust-src-nightly.tar.xz",
+    "size": 5804680,
+    "sha256": "d4ffe57cc99d8846761bdbefc631bfd8f06fc001d7208576887e381c5709341a",
+    "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+  },
+  "copyrightComponentReceipt": {
+    "package": "rustc",
+    "target": "x86_64-unknown-linux-gnu",
+    "source": "https://static.rust-lang.org/dist/2026-07-20/rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "file": "rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "size": 80585304,
+    "sha256": "a0e461ac8f2ec75b38cd9590188db2d90e0acde3279434194a0ecebd7c099fa0",
+    "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+  },
+  "noticeMembers": [
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/adler2-2.0.1/LICENSE-0BSD",
+      "size": 665,
+      "sha256": "861399f8c21c042b110517e76dc6b63a2b334276c8cf17412fc3c8908ca8dc17"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/cc-1.2.0/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/shlex-1.3.0/LICENSE-APACHE",
+      "size": 566,
+      "sha256": "553fffcd9b1cb158bc3e9edc35da85ca5c3b3d7d2e61c883ebcfa8a65814b583"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand_xorshift-0.4.0/LICENSE-APACHE",
+      "size": 9724,
+      "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/gimli-0.34.0/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/moto-rt-0.16.0/LICENSE-APACHE",
+      "size": 10851,
+      "sha256": "69fef7b0f322a65554156141f2bc6256ed0bb78cba7e49f0d8829d7ec4ee62cd"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/addr2line-0.27.0/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/unwinding-0.2.10/LICENSE-APACHE",
+      "size": 9723,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/adler2-2.0.1/LICENSE-APACHE",
+      "size": 10860,
+      "sha256": "8ada45cd9f843acf64e4722ae262c622a2b3b3007c7310ef36ac1061a30f6adb"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/hashbrown-0.17.1/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wit-bindgen-0.57.1/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/object-0.39.1/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/hermit-abi-0.5.2/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand-0.9.2/LICENSE-APACHE",
+      "size": 9724,
+      "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand_core-0.9.3/LICENSE-APACHE",
+      "size": 10282,
+      "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/dlmalloc-0.2.13/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/cfg-if-1.0.4/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/getopts-0.2.24/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wasip3-0.6.0+wasi-0.3.0-rc-2026-03-15/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/libc-0.2.185/LICENSE-APACHE",
+      "size": 9723,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rustc-literal-escaper-0.0.8/LICENSE-APACHE",
+      "size": 9723,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rustc-demangle-0.1.28/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wasip2-1.0.3+wasi-0.2.9/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/portable-simd/LICENSE-APACHE",
+      "size": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/portable-simd/crates/core_simd/LICENSE-APACHE",
+      "size": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/backtrace/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/stdarch/crates/core_arch/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/stdarch/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/stdarch/crates/intrinsic-test/LICENSE-APACHE",
+      "size": 10847,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+    },
+    {
+      "path": "rust-src-nightly/LICENSE-APACHE",
+      "size": 9723,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/foldhash-0.2.0/LICENSE",
+      "size": 856,
+      "sha256": "b1181a40b2a7b25cf66fd01481713bc1005df082c53ef73e851e55071b102744"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/miniz_oxide-0.9.1/LICENSE",
+      "size": 1213,
+      "sha256": "4108245a1f2df9d4e94df8abed5b4ba0759bb2f9b40a6b939f1be141077ae50b"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand_xorshift-0.4.0/COPYRIGHT",
+      "size": 569,
+      "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand-0.9.2/COPYRIGHT",
+      "size": 569,
+      "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand_core-0.9.3/COPYRIGHT",
+      "size": 569,
+      "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5"
+    },
+    {
+      "path": "rust-src-nightly/COPYRIGHT",
+      "size": 1571,
+      "sha256": "172020dbfd5b53a226dfde77616190a48dcff519b0bc0e6deb91a8450782c4af"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/cc-1.2.0/LICENSE-MIT",
+      "size": 1057,
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/shlex-1.3.0/LICENSE-MIT",
+      "size": 1092,
+      "sha256": "4455bf75a91154108304cb283e0fea9948c14f13e20d60887cf2552449dea3b1"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand_xorshift-0.4.0/LICENSE-MIT",
+      "size": 1117,
+      "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/gimli-0.34.0/LICENSE-MIT",
+      "size": 1071,
+      "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/moto-rt-0.16.0/LICENSE-MIT",
+      "size": 1075,
+      "sha256": "a7c936ff1ed8fa340172d42a98185afee078f818e907da69f3a8e336b1623b4b"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/addr2line-0.27.0/LICENSE-MIT",
+      "size": 1069,
+      "sha256": "e99d88d232bf57d70f0fb87f6b496d44b6653f99f8a63d250a54c61ea4bcde40"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/unwinding-0.2.10/LICENSE-MIT",
+      "size": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/adler2-2.0.1/LICENSE-MIT",
+      "size": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/hashbrown-0.17.1/LICENSE-MIT",
+      "size": 1060,
+      "sha256": "ff8f68cb076caf8cefe7a6430d4ac086ce6af2ca8ce2c4e5a2004d4552ef52a2"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wit-bindgen-0.57.1/LICENSE-MIT",
+      "size": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/object-0.39.1/LICENSE-MIT",
+      "size": 1064,
+      "sha256": "0b74dfa0bcee5c420c6b7f67b4b2658f9ab8388c97b8e733975f2cecbdd668a6"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/hermit-abi-0.5.2/LICENSE-MIT",
+      "size": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand-0.9.2/LICENSE-MIT",
+      "size": 1117,
+      "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rand_core-0.9.3/LICENSE-MIT",
+      "size": 1117,
+      "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/dlmalloc-0.2.13/LICENSE-MIT",
+      "size": 1057,
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/cfg-if-1.0.4/LICENSE-MIT",
+      "size": 1057,
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/getopts-0.2.24/LICENSE-MIT",
+      "size": 1071,
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wasip3-0.6.0+wasi-0.3.0-rc-2026-03-15/LICENSE-MIT",
+      "size": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/libc-0.2.185/LICENSE-MIT",
+      "size": 1066,
+      "sha256": "123a331b5dbf04c30097fa43b8f858bc85df671fe776de498d01f3d6b7c1f69e"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/memchr-2.7.6/LICENSE-MIT",
+      "size": 1081,
+      "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rustc-literal-escaper-0.0.8/LICENSE-MIT",
+      "size": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/rustc-demangle-0.1.28/LICENSE-MIT",
+      "size": 1057,
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wasip2-1.0.3+wasi-0.2.9/LICENSE-MIT",
+      "size": 1023,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/portable-simd/LICENSE-MIT",
+      "size": 1071,
+      "sha256": "eb07d497d26e6d68fbc76e793f5e5c9cfa197df2a580e47383569c287a55edf9"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/portable-simd/crates/core_simd/LICENSE-MIT",
+      "size": 1071,
+      "sha256": "eb07d497d26e6d68fbc76e793f5e5c9cfa197df2a580e47383569c287a55edf9"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/backtrace/LICENSE-MIT",
+      "size": 1057,
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/stdarch/crates/core_arch/LICENSE-MIT",
+      "size": 1071,
+      "sha256": "29662666b44dff84977b46e05642cdef910bc3a93a17b5fd86e632bafa59cf21"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/stdarch/LICENSE-MIT",
+      "size": 1071,
+      "sha256": "29662666b44dff84977b46e05642cdef910bc3a93a17b5fd86e632bafa59cf21"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/stdarch/crates/intrinsic-test/LICENSE-MIT",
+      "size": 1076,
+      "sha256": "8bc20184c0ddf3006df05e89fdf7193b33dbe4c751ae59d6bb1835f71bbe70da"
+    },
+    {
+      "path": "rust-src-nightly/LICENSE-MIT",
+      "size": 1068,
+      "sha256": "b71bd43a069ca0641a9ecfe585ca7b3c53b5cc1608f8b68321168698e28b5ea1"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/src/llvm-project/libunwind/LICENSE.TXT",
+      "size": 16706,
+      "sha256": "b5efebcaca80879234098e52d1725e6d9eb8fb96a19fce625d39184b705f7b6d"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/miniz_oxide-0.9.1/LICENSE-ZLIB.md",
+      "size": 984,
+      "sha256": "0a54e647fe54104658b5e563c04c6f9edf251710e47bce692e0bd990a4ddaa39"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/miniz_oxide-0.9.1/LICENSE-APACHE.md",
+      "size": 10174,
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/miniz_oxide-0.9.1/LICENSE-MIT.md",
+      "size": 1212,
+      "sha256": "799e9ca9d179295ef372f25d3769cdda7d25bb2668add6a6a1e22d1e4c678b8d"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/compiler-builtins/compiler-builtins/Cargo.toml",
+      "size": 2005,
+      "sha256": "d89e31fed70f2cad9c6e91b787bf4c0fb680c631196b2a7215c81745aaf7fb7e"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/compiler-builtins/Cargo.toml",
+      "size": 2641,
+      "sha256": "c536e10f5e7a2f932ed1ab62f767f64abca3afd723f8bd8d8a5b7a1d21c3fc1c"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wit-bindgen-0.57.1/LICENSE-Apache-2.0_WITH_LLVM-exception",
+      "size": 12243,
+      "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wasip3-0.6.0+wasi-0.3.0-rc-2026-03-15/LICENSE-Apache-2.0_WITH_LLVM-exception",
+      "size": 12243,
+      "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/vendor/wasip2-1.0.3+wasi-0.2.9/LICENSE-Apache-2.0_WITH_LLVM-exception",
+      "size": 12243,
+      "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/compiler-builtins/libm/LICENSE.txt",
+      "size": 14088,
+      "sha256": "3823dda7cf046602f4b4e77ec8e227863dc4736037cc85bb33d9f19febe16bb7"
+    },
+    {
+      "path": "rust-src-nightly/rust-src/lib/rustlib/src/rust/library/compiler-builtins/LICENSE.txt",
+      "size": 15078,
+      "sha256": "ab6eec6caf0fa5775e411c7a8bc6a45c4ef2956b0980b157ab74fc5cd62a928b"
+    },
+    {
+      "path": "rustc-nightly-x86_64-unknown-linux-gnu/rustc/share/doc/rust/COPYRIGHT-library.html",
+      "size": 1512523,
+      "sha256": "f25299afac027876825bd276286e0c5fd5df559004154b58ed7ba14180ee2731",
+      "componentArchive": {
+        "package": "rustc",
+        "target": "x86_64-unknown-linux-gnu",
+        "source": "https://static.rust-lang.org/dist/2026-07-20/rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+        "file": "rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+        "size": 80585304,
+        "sha256": "a0e461ac8f2ec75b38cd9590188db2d90e0acde3279434194a0ecebd7c099fa0",
+        "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+      }
+    }
+  ],
+  "targets": [
+    {
+      "target": "darwin-arm64",
+      "candidateExecutableSha256": "1a66bd81f84f7a382ded69db2b588f3ff0a69b08228695124ef834bc35cb9d10",
+      "runtimeSha256": "35d20dd0263e5c950194434b925454fdfa9ba6e4467da960410fa05b08a7a5b5",
+      "applicationArchive": {
+        "path": "objects/build/rust-target/aarch64-apple-darwin/release/libbun_runtime.a",
+        "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e294-4650-9f78-dea25e59f504/artifacts/01a06f3e-268c-42dc-8e82-9750ffe33221",
+        "compressedInput": {
+          "file": "darwin-arm64-libbun-runtime.a.gz",
+          "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e294-4650-9f78-dea25e59f504/artifacts/01a06f3e-268c-42dc-8e82-9750ffe33221",
+          "size": 88918875,
+          "sha256": "4f7acedbd964e2c1ebbabc2eaee5605d752fb26712cd64953d49acd85572a851"
+        },
+        "size": 217326336,
+        "sha256": "31392644ea3125d6d1032a33db9c6ee7248bc75ce3fc1cba6f544d520254113a",
+        "role": "application objects (all archive members preserved)"
+      },
+      "mapSha256": "4a3f4036ac382880e1190b1b3da16d32107dd36c126c21daf041b8c8eab953b3",
+      "members": [
+        {
+          "name": "panic_abort-b424f00535b2878d.panic_abort.eea722012e7a22e7-cgu.0.rcgu.o",
+          "size": 4624,
+          "sha256": "0474808999f6e9e200080bb1b1962947bf159ef4115b813ab745993a9b663fef",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [
+            {
+              "line": 887,
+              "text": "[883] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(panic_abort-b424f00535b2878d.panic_abort.eea722012e7a22e7-cgu.0.rcgu.o)",
+              "following": [
+                "[884] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(std-1b6dd55b21cc0f4a.std.c1bf44a0f4f0969d-cgu.0.rcgu.o)",
+                "[885] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(rustc_demangle-e79a866cdc0047e3.rustc_demangle.84e5f6c178c98ff3-cgu.0.rcgu.o)"
+              ]
+            },
+            {
+              "line": 166189,
+              "text": "<<dead>>\t0x0000000C\t[883] __RNvCs9YweXYGWBoB_7___rustc18___rust_start_panic"
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "std-1b6dd55b21cc0f4a.std.c1bf44a0f4f0969d-cgu.0.rcgu.o",
+          "size": 3324208,
+          "sha256": "f940a71f42927a2c906864f766c04c4409be47a6b94db90650dde9e4bc4acc11",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [
+            {
+              "line": 888,
+              "text": "[884] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(std-1b6dd55b21cc0f4a.std.c1bf44a0f4f0969d-cgu.0.rcgu.o)",
+              "following": [
+                "[885] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(rustc_demangle-e79a866cdc0047e3.rustc_demangle.84e5f6c178c98ff3-cgu.0.rcgu.o)",
+                "[886] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(hashbrown-1e5ec786a18d9ff1.hashbrown.38e0da92bffadcfb-cgu.0.rcgu.o)"
+              ]
+            },
+            {
+              "line": 2481,
+              "text": "0x10000482C\t0x00000220\t[884] __RNvMs8_NtNtNtCsgDjjlAkh7TR_3std4sync9nonpoison6rwlockINtB5_6RwLockNtNtBb_9panicking4HookE7replaceBb_"
+            },
+            {
+              "line": 2528,
+              "text": "0x10000C650\t0x000001DC\t[884] __RNvMNtNtNtNtCsgDjjlAkh7TR_3std3sys4sync4once5queueNtB2_4Once4call"
+            },
+            {
+              "line": 2552,
+              "text": "0x10001791C\t0x000000DC\t[884] __RNvNtNtNtNtCsgDjjlAkh7TR_3std3sys12thread_local11destructors4list8register"
+            },
+            {
+              "line": 2553,
+              "text": "0x1000179F8\t0x00000060\t[884] __RNvMs4_NtCscov32iVYUMU_5alloc7raw_vecINtB5_6RawVecTOhFUKCBN_EuENtNtCsgDjjlAkh7TR_3std5alloc6SystemE8grow_oneB13_"
+            },
+            {
+              "line": 2627,
+              "text": "0x100018278\t0x00000000\t[884] __RNvMs4_NtCscov32iVYUMU_5alloc7raw_vecINtB5_6RawVecPaE8grow_oneCsgDjjlAkh7TR_3std"
+            },
+            {
+              "line": 2813,
+              "text": "0x1000522B4\t0x000001A0\t[884] __RNvMs_NtNtCsgDjjlAkh7TR_3std6thread6threadNtB4_6Thread3new"
+            },
+            {
+              "line": 2818,
+              "text": "0x100054F84\t0x00000084\t[884] __RINvMNtNtNtCsgDjjlAkh7TR_3std3sys4sync8once_boxINtB3_7OnceBoxNtNtNtNtNtB7_3pal4unix4sync5mutex5MutexE10initializeNCNvMNtNtB5_5mutex7pthreadNtB1S_5Mutex3get0EB9_"
+            },
+            {
+              "line": 2819,
+              "text": "0x100055008\t0x000000D0\t[884] __RNvMNtNtNtNtNtCsgDjjlAkh7TR_3std3sys3pal4unix4sync5mutexNtB2_5Mutex4init"
+            },
+            {
+              "line": 2976,
+              "text": "0x10005925C\t0x00000088\t[884] __RNvXse_NtCscov32iVYUMU_5alloc5boxedINtB5_3BoxShENtNtCsiXPYa49MLKv_4core5clone5Clone5cloneCsgDjjlAkh7TR_3std"
+            },
+            {
+              "line": 4905,
+              "text": "0x10015DB3C\t0x00000134\t[884] __RNvYINtNtCscov32iVYUMU_5alloc3vec3VechENtNtNtCsiXPYa49MLKv_4core2io5write5Write9write_fmtCsgDjjlAkh7TR_3std"
+            },
+            {
+              "line": 4911,
+              "text": "0x10015DE24\t0x00000000\t[884] __RNvXNvNtNtCsiXPYa49MLKv_4core2io5write17default_write_fmtINtB2_7AdapterINtNtCscov32iVYUMU_5alloc3vec3VechEENtNtB8_3fmt5Write9write_strCsgDjjlAkh7TR_3std"
+            },
+            {
+              "line": 6212,
+              "text": "0x10026D5AC\t0x0000006C\t[884] __RNvMsn_NtCscov32iVYUMU_5alloc4syncINtB5_3ArcNtNtNtCsgDjjlAkh7TR_3std6thread6thread5InnerNtNtBM_5alloc6SystemE9drop_slowBM_"
+            },
+            {
+              "line": 7528,
+              "text": "0x100336718\t0x00000110\t[884] __RNvMNtNtNtNtCsgDjjlAkh7TR_3std3sys12thread_local6native5eagerINtB2_7StorageINtNtCsiXPYa49MLKv_4core4cell4CellNtNtNtBa_6thread9spawnhook10SpawnHooksEE16get_or_init_slowBa_"
+            },
+            {
+              "line": 7530,
+              "text": "0x100336904\t0x0000013C\t[884] __RNvXNtNtCscov32iVYUMU_5alloc3vec21spec_from_iter_nestedINtB4_3VecINtNtB6_5boxed3BoxDINtNtNtCsiXPYa49MLKv_4core3ops8function6FnOnceuEp6OutputuNtNtB1r_6marker4SendEL_EEINtB2_18SpecFromIterNestedB11_INtNtNtNtB1r_4iter8adapters3map3MapINtNtNtB3f_7sources10successors10SuccessorsRNtNtNtCsgDjjlAkh7TR_3std6thread9spawnhook9SpawnHookNCNvB4r_15run_spawn_hookss_0ENCB5g_s0_0EE9from_iterB4v_"
+            },
+            {
+              "line": 7531,
+              "text": "0x100336A40\t0x00000204\t[884] __RNvMs0_NtNtNtCsgDjjlAkh7TR_3std3sys6thread4unixNtB5_6Thread3new"
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "rustc_std_workspace_alloc-095de3761df84d46.rustc_std_workspace_alloc.40e612c4c1521387-cgu.0.rcgu.o",
+          "size": 2672,
+          "sha256": "ddd5bf06605e9189d685d43d6805d2407e25f6b86dae27464ff06b3e9c0e3ae2",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "unwind-dfe29567cdfacd70.unwind.bff9335e362e24bb-cgu.0.rcgu.o",
+          "size": 2576,
+          "sha256": "8264b75f843bfb496cbc1c9d2b78aef2cd40f0449a3fabcf074c3d9a46ec7236",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "rustc_std_workspace_core-2c057dc994c93b46.rustc_std_workspace_core.5e7328bae617eb4d-cgu.0.rcgu.o",
+          "size": 2672,
+          "sha256": "0ad334ee21f3d75dc70d7902e5a768665afaad5f738495a60aea76256749b20e",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "alloc-2d3d776a48f33559.alloc.905fcf673f04b62a-cgu.0.rcgu.o",
+          "size": 469840,
+          "sha256": "478bf4249e9ebdf7246072bbb51e8233a824ebdf9db3c6ed2aa6695c957aa135",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [
+            {
+              "line": 891,
+              "text": "[887] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(alloc-2d3d776a48f33559.alloc.905fcf673f04b62a-cgu.0.rcgu.o)",
+              "following": [
+                "[888] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(core-fa5bf687d584c268.core.dce60cb55468ed11-cgu.0.rcgu.o)",
+                "[889] cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libWTF.a(ASCIICType.cpp.o)"
+              ]
+            },
+            {
+              "line": 2629,
+              "text": "0x1000182E0\t0x00000000\t[887] __RNvMs5_NtCscov32iVYUMU_5alloc7raw_vecNtB5_11RawVecInner11finish_growB7_"
+            },
+            {
+              "line": 2828,
+              "text": "0x100055BC8\t0x00000000\t[887] __RINvNvMs2_NtCscov32iVYUMU_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalEBa_"
+            },
+            {
+              "line": 5640,
+              "text": "0x1001F6A54\t0x00000000\t[887] __RNvXs2_NtNtCscov32iVYUMU_5alloc3vec11spec_extendINtB7_3VechEINtB5_10SpecExtendRhINtNtNtCsiXPYa49MLKv_4core5slice4iter4IterhEE11spec_extendB9_"
+            },
+            {
+              "line": 6222,
+              "text": "0x10026DA78\t0x000000AC\t[887] __RNvMs5_NtCscov32iVYUMU_5alloc7raw_vecNtB5_11RawVecInner14grow_amortizedB7_"
+            },
+            {
+              "line": 6259,
+              "text": "0x10026DD64\t0x00000000\t[887] __RNvMs_NtCscov32iVYUMU_5alloc3vecINtB4_3VechE16into_boxed_sliceB6_"
+            },
+            {
+              "line": 9591,
+              "text": "0x10049A1B0\t0x00000000\t[887] __RNvMs4_NtCscov32iVYUMU_5alloc7raw_vecINtB5_6RawVechE8grow_oneB7_"
+            },
+            {
+              "line": 10541,
+              "text": "0x100555188\t0x00000090\t[887] __RNvMs2_NtCscov32iVYUMU_5alloc7raw_vecNtB5_11RawVecInner13reserve_exactB7_"
+            },
+            {
+              "line": 10804,
+              "text": "0x100592A9C\t0x00000000\t[887] __RNvYNtNvXsf_NtNtCscov32iVYUMU_5alloc5boxed7convertINtBc_3BoxDNtNtCsiXPYa49MLKv_4core5error5ErrorNtNtB11_6marker4SyncNtB1y_4SendEL_EINtNtB11_7convert4FromNtNtBe_6string6StringE4from11StringErrorBX_5causeBe_"
+            },
+            {
+              "line": 31948,
+              "text": "0x1012119A4\t0x00000000\t[887] __RNvXs1_NtCscov32iVYUMU_5alloc7raw_vecINtB5_6RawVechENtNtNtCsiXPYa49MLKv_4core3ops4drop4Drop4dropB7_"
+            },
+            {
+              "line": 36667,
+              "text": "0x101577ACC\t0x00000000\t[887] __RNvXs_NvXsf_NtNtCscov32iVYUMU_5alloc5boxed7convertINtBc_3BoxDNtNtCsiXPYa49MLKv_4core5error5ErrorNtNtB11_6marker4SyncNtB1y_4SendEL_EINtNtB11_7convert4FromNtNtBe_6string6StringE4fromNtB4_11StringErrorNtNtB11_3fmt7Display3fmt"
+            },
+            {
+              "line": 47969,
+              "text": "0x101D24208\t0x00000000\t[887] __RNvXs0_NvXsf_NtNtCscov32iVYUMU_5alloc5boxed7convertINtBd_3BoxDNtNtCsiXPYa49MLKv_4core5error5ErrorNtNtB12_6marker4SyncNtB1z_4SendEL_EINtNtB12_7convert4FromNtNtBf_6string6StringE4fromNtB5_11StringErrorNtNtB12_3fmt5Debug3fmt"
+            },
+            {
+              "line": 48863,
+              "text": "0x101D86D24\t0x00000070\t[887] __RINvMs_NtCscov32iVYUMU_5alloc3vecINtB5_3VechE5drainINtNtNtCsiXPYa49MLKv_4core3ops5range5RangejEEB7_"
+            },
+            {
+              "line": 48864,
+              "text": "0x101D86D94\t0x0000003C\t[887] __RINvNtNtCsiXPYa49MLKv_4core5slice5index5rangeINtNtNtB6_3ops5range5RangejEECscov32iVYUMU_5alloc"
+            },
+            {
+              "line": 48865,
+              "text": "0x101D86DD0\t0x00000228\t[887] __RNvMNtCscov32iVYUMU_5alloc6stringNtB2_6String15from_utf8_lossy"
+            },
+            {
+              "line": 48866,
+              "text": "0x101D86FF8\t0x000000C8\t[887] __RNvMs2_NtCscov32iVYUMU_5alloc7raw_vecNtB5_11RawVecInner11try_reserveB7_"
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "core-fa5bf687d584c268.core.dce60cb55468ed11-cgu.0.rcgu.o",
+          "size": 1444864,
+          "sha256": "0edd6c1c23d4cae36b4b4fe3fb601e4defc3463b3e122e093ea6d851b524270b",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [
+            {
+              "line": 892,
+              "text": "[888] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(core-fa5bf687d584c268.core.dce60cb55468ed11-cgu.0.rcgu.o)",
+              "following": [
+                "[889] cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libWTF.a(ASCIICType.cpp.o)",
+                "[890] cache/webkit-2e2aa2290fac856d-macos-arm64-lto/lib/libWTF.a(Assertions.cpp.o)"
+              ]
+            },
+            {
+              "line": 4906,
+              "text": "0x10015DC70\t0x000001B4\t[888] __RNvNtCsiXPYa49MLKv_4core3fmt5write"
+            },
+            {
+              "line": 6126,
+              "text": "0x100255C68\t0x00000000\t[888] __RNvXs1i_NtCsiXPYa49MLKv_4core3fmtReNtB6_7Display3fmtB8_"
+            },
+            {
+              "line": 6127,
+              "text": "0x100255C84\t0x00000310\t[888] __RNvMsa_NtCsiXPYa49MLKv_4core3fmtNtB5_9Formatter3pad"
+            },
+            {
+              "line": 6130,
+              "text": "0x100256190\t0x00000140\t[888] __RNvXse_NtNtNtCsiXPYa49MLKv_4core3fmt3num3impxNtB9_7Display3fmt"
+            },
+            {
+              "line": 6131,
+              "text": "0x100256190\t0x00000000\t[888] __RNvXsj_NtNtNtCsiXPYa49MLKv_4core3fmt3num3impiNtB9_7Display3fmt"
+            },
+            {
+              "line": 6132,
+              "text": "0x1002562D0\t0x000003AC\t[888] __RNvMsa_NtCsiXPYa49MLKv_4core3fmtNtB5_9Formatter12pad_integral"
+            },
+            {
+              "line": 6724,
+              "text": "0x1002E52BC\t0x000001CC\t[888] __RNvXs2_NtNtCsiXPYa49MLKv_4core3str5lossyNtB5_10Utf8ChunksNtNtNtNtB9_4iter6traits8iterator8Iterator4next"
+            },
+            {
+              "line": 6725,
+              "text": "0x1002E5488\t0x000000FC\t[888] __RNvXs3_NtNtNtCsiXPYa49MLKv_4core3fmt3num3imptNtB9_7Display3fmt"
+            },
+            {
+              "line": 8498,
+              "text": "0x1003C2D98\t0x00000130\t[888] __RNvXs8_NtNtNtCsiXPYa49MLKv_4core3fmt3num3impmNtB9_7Display3fmt"
+            },
+            {
+              "line": 9501,
+              "text": "0x10048EF14\t0x0000001C\t[888] __RNvXs8_NtCsiXPYa49MLKv_4core3fmtNtB5_9ArgumentsNtB5_7Display3fmt"
+            },
+            {
+              "line": 9565,
+              "text": "0x100499FCC\t0x00000108\t[888] __RNvMs3_NtNtCsiXPYa49MLKv_4core3ffi5c_strNtB5_4CStr19from_bytes_with_nul"
+            },
+            {
+              "line": 9900,
+              "text": "0x1004C1E28\t0x00000040\t[888] __RNvXs7_NtNtCsiXPYa49MLKv_4core3fmt5floatdNtB7_7Display3fmt"
+            },
+            {
+              "line": 10108,
+              "text": "0x1004F6C54\t0x00000070\t[888] __RNvXs6_NtNtCsiXPYa49MLKv_4core3fmt3numjNtB7_8LowerHex3fmt"
+            },
+            {
+              "line": 10109,
+              "text": "0x1004F6C54\t0x00000000\t[888] __RNvXs7_NtNtCsiXPYa49MLKv_4core3fmt3numiNtB7_8LowerHex3fmt"
+            },
+            {
+              "line": 10110,
+              "text": "0x1004F6C54\t0x00000000\t[888] __RNvXsC_NtNtCsiXPYa49MLKv_4core3fmt3numyNtB7_8LowerHex3fmt"
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "compiler_builtins-a2077f720fa51cb1.compiler_builtins.19d2bf226091ea21-cgu.0.rcgu.o",
+          "size": 848368,
+          "sha256": "b5fa67fcd6d087902d32c7771c90afc8c4c1ba87ce657d7e239c64dabaf56a6e",
+          "magic": "cffaedfe0c000001",
+          "linkedMapExamples": [
+            {
+              "line": 1198,
+              "text": "[1194] rust-target/aarch64-apple-darwin/release/libbun_runtime.a(compiler_builtins-a2077f720fa51cb1.compiler_builtins.19d2bf226091ea21-cgu.0.rcgu.o)",
+              "following": [
+                "[1195] /var/lib/buildkite-agent/build/build/release/bun-profile.lto.o/0.arm64.lto.o",
+                "[1196] /var/lib/buildkite-agent/build/build/release/bun-profile.lto.o/1.arm64.lto.o"
+              ]
+            },
+            {
+              "line": 8434,
+              "text": "0x1003B8C24\t0x00000078\t[1194] ___divti3"
+            },
+            {
+              "line": 8435,
+              "text": "0x1003B8C9C\t0x00000348\t[1194] __RNvNtNtCs2dsiySYhOGP_17compiler_builtins3int19specialized_div_rem12u128_div_rem"
+            },
+            {
+              "line": 11945,
+              "text": "0x100697BD0\t0x000000A8\t[1194] ___fixdfti"
+            },
+            {
+              "line": 11946,
+              "text": "0x100697C78\t0x000000A0\t[1194] ___floattidf"
+            },
+            {
+              "line": 11947,
+              "text": "0x100697D18\t0x00000088\t[1194] ___floatuntidf"
+            },
+            {
+              "line": 11948,
+              "text": "0x100697DA0\t0x00000070\t[1194] ___modti3"
+            },
+            {
+              "line": 11949,
+              "text": "0x100697E10\t0x00000050\t[1194] ___powidf2"
+            },
+            {
+              "line": 11950,
+              "text": "0x100697E60\t0x00000034\t[1194] ___udivti3"
+            },
+            {
+              "line": 11951,
+              "text": "0x100697E94\t0x00000034\t[1194] ___umodti3"
+            },
+            {
+              "line": 170174,
+              "text": "<<dead>>\t0x00000000\t[1194] ltmp0"
+            },
+            {
+              "line": 170175,
+              "text": "<<dead>>\t0x00000234\t[1194] __RINvNtNtCs2dsiySYhOGP_17compiler_builtins5float3add3addC3f16EB6_"
+            },
+            {
+              "line": 170176,
+              "text": "<<dead>>\t0x00000000\t[1194] ltmp1"
+            },
+            {
+              "line": 170177,
+              "text": "<<dead>>\t0x00000010\t[1194] lCPI1_0"
+            },
+            {
+              "line": 170178,
+              "text": "<<dead>>\t0x00000010\t[1194] lCPI1_1"
+            },
+            {
+              "line": 170179,
+              "text": "<<dead>>\t0x00000428\t[1194] __RINvNtNtCs2dsiySYhOGP_17compiler_builtins5float3add3addC4f128EB6_"
+            }
+          ],
+          "classification": "compiler_builtins: MIT AND Apache-2.0 WITH LLVM-exception; complete exact mixed notice retained"
+        }
+      ],
+      "officialPrebuiltComponentReceipt": {
+        "package": "rust-std",
+        "target": "aarch64-apple-darwin",
+        "source": "https://static.rust-lang.org/dist/2026-07-20/rust-std-nightly-aarch64-apple-darwin.tar.xz",
+        "file": "rust-std-nightly-aarch64-apple-darwin.tar.xz",
+        "size": 30046456,
+        "sha256": "26e71f6c916374821d05d7d3b9c4f80430228d834d4fea7dd91330c62f1884de",
+        "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+      },
+      "binding": "Bun pinned scripts/build/rust.ts rebuilds std with -Zbuild-std and release ThinLTO flags; official prebuilt std rlib member names/hashes differ and are NOT claimed to equal these objects. Pinned rust-src and Cargo source recipe establish source/license correspondence; historical original compiler micro-identity remains unobserved."
+    },
+    {
+      "target": "darwin-x64",
+      "candidateExecutableSha256": "087ee6c64f3c53a499d0ad88b102a8cae97e2f2a0bea2f10a8ddf29f644d4843",
+      "runtimeSha256": "2fa513af22ac59e03aae640cad302e73cb1ddb0f6398501e2ddccf7dcd613596",
+      "applicationArchive": {
+        "path": "objects/build/rust-target/x86_64-apple-darwin/release/libbun_runtime.a",
+        "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts/01a06f3e-1386-4748-b4af-a59de51e2d27",
+        "compressedInput": {
+          "file": "darwin-x64-libbun-runtime.a.gz",
+          "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts/01a06f3e-1386-4748-b4af-a59de51e2d27",
+          "size": 89088167,
+          "sha256": "c825b560d4152003ed71c75285c658d904383ba2dd6dd79cf33cf2fc7d090f69"
+        },
+        "size": 217656504,
+        "sha256": "4c8d5992a82f9854196cdf8bf1f3de5396b75c2cacee31ba42110d1cbad373c8",
+        "role": "application objects (all archive members preserved)"
+      },
+      "mapSha256": "c0a3fe270d8931fe38a61407fe07660da889d953da6807de756deea60e49a5f8",
+      "members": [
+        {
+          "name": "panic_abort-20921d3e5a58494c.panic_abort.340ba3e02cbc75a0-cgu.0.rcgu.o",
+          "size": 4640,
+          "sha256": "f30fd489fa98a6bbaab7a48d25ca2af86aa1a548ec78678a6af8d4b2a0ee2033",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [
+            {
+              "line": 932,
+              "text": "[928] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(panic_abort-20921d3e5a58494c.panic_abort.340ba3e02cbc75a0-cgu.0.rcgu.o)",
+              "following": [
+                "[929] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(std-add3d7fadcf4141b.std.61a0a1ef5046eee5-cgu.0.rcgu.o)",
+                "[930] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(rustc_demangle-e2043b5b83fba63c.rustc_demangle.d407b8b4ff78d9e9-cgu.0.rcgu.o)"
+              ]
+            },
+            {
+              "line": 168525,
+              "text": "<<dead>>\t0x00000009\t[928] __RNvCs9YweXYGWBoB_7___rustc18___rust_start_panic"
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "std-add3d7fadcf4141b.std.61a0a1ef5046eee5-cgu.0.rcgu.o",
+          "size": 3347248,
+          "sha256": "636a2de053ec10adb8e0c0625d1e5ba152ecfff0e16de0450d8f82e8bc1bf5e8",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [
+            {
+              "line": 933,
+              "text": "[929] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(std-add3d7fadcf4141b.std.61a0a1ef5046eee5-cgu.0.rcgu.o)",
+              "following": [
+                "[930] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(rustc_demangle-e2043b5b83fba63c.rustc_demangle.d407b8b4ff78d9e9-cgu.0.rcgu.o)",
+                "[931] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(std_detect-acbe4476e36500c2.std_detect.5b313c3c2d9c0db-cgu.0.rcgu.o)"
+              ]
+            },
+            {
+              "line": 26388,
+              "text": "0x100F2FFE0\t0x00000000\t[929] __RNvMs4_NtCs61Tvbo1hJkl_5alloc7raw_vecINtB5_6RawVecNtNtNtCs8nFsCJwPy8z_3std3ffi6os_str8OsStringE8grow_oneBS_"
+            },
+            {
+              "line": 26458,
+              "text": "0x100F30050\t0x00000000\t[929] __RNvMs4_NtCs61Tvbo1hJkl_5alloc7raw_vecINtB5_6RawVecPaE8grow_oneCs8nFsCJwPy8z_3std"
+            },
+            {
+              "line": 28979,
+              "text": "0x1011A71F0\t0x00000000\t[929] __RNvXNvNtNtCs4LvyVzIOZ90_4core2io5write17default_write_fmtINtB2_7AdapterINtNtCs61Tvbo1hJkl_5alloc3vec3VechEENtNtB8_3fmt5Write9write_strCs8nFsCJwPy8z_3std"
+            },
+            {
+              "line": 29373,
+              "text": "0x1011D91C0\t0x00000000\t[929] __RNvXs2_NvNtCs8nFsCJwPy8z_3std9panicking13panic_handlerNtB5_16StaticStrPayloadNtNtCs4LvyVzIOZ90_4core3fmt7Display3fmt"
+            },
+            {
+              "line": 29467,
+              "text": "0x1011E2480\t0x00000000\t[929] __RNvYINtNvNtNtCs4LvyVzIOZ90_4core2io5write17default_write_fmt7AdapterINtNtCs61Tvbo1hJkl_5alloc3vec3VechEENtNtBb_3fmt5Write10write_charCs8nFsCJwPy8z_3std"
+            },
+            {
+              "line": 43434,
+              "text": "0x101D637D0\t0x000000D0\t[929] __RINvMNtNtNtCs8nFsCJwPy8z_3std3sys4sync8once_boxINtB3_7OnceBoxNtNtNtNtNtB7_3pal4unix4sync5mutex5MutexE10initializeNCNvMNtNtB5_5mutex7pthreadNtB1S_5Mutex3get0EB9_"
+            },
+            {
+              "line": 43435,
+              "text": "0x101D638A0\t0x000000C0\t[929] __RINvMNtNtNtCs8nFsCJwPy8z_3std3sys4sync8once_boxINtB3_7OnceBoxNtNtNtNtNtB7_3pal4unix4sync7condvar7CondvarE10initializeNCNvMNtNtB5_7condvar7pthreadNtB1W_7Condvar3get0EB9_"
+            },
+            {
+              "line": 43449,
+              "text": "0x101D650B8\t0x0000003C\t[929] __RINvNtCs4LvyVzIOZ90_4core9panicking13assert_failedllECs8nFsCJwPy8z_3std"
+            },
+            {
+              "line": 43453,
+              "text": "0x101D65540\t0x00000010\t[929] __RINvNtNtNtNtCs8nFsCJwPy8z_3std3sys12thread_local6native5eager7destroyINtNtCs4LvyVzIOZ90_4core4cell4CellNtNtNtBa_6thread9spawnhook10SpawnHooksEEBa_"
+            },
+            {
+              "line": 43459,
+              "text": "0x101D65980\t0x00000010\t[929] __RNvCs9YweXYGWBoB_7___rustc12___rust_abort"
+            },
+            {
+              "line": 43460,
+              "text": "0x101D65990\t0x00000020\t[929] __RNvCs9YweXYGWBoB_7___rustc17rust_begin_unwind"
+            },
+            {
+              "line": 43461,
+              "text": "0x101D659B0\t0x00000020\t[929] __RNvCs9YweXYGWBoB_7___rustc26___rust_alloc_error_handler"
+            },
+            {
+              "line": 43462,
+              "text": "0x101D659D0\t0x00000040\t[929] __RNvMNtCs8nFsCJwPy8z_3std4timeNtB2_7Instant14duration_since"
+            },
+            {
+              "line": 43463,
+              "text": "0x101D65A10\t0x00000060\t[929] __RNvMNtCs8nFsCJwPy8z_3std4timeNtB2_7Instant7elapsed"
+            },
+            {
+              "line": 43466,
+              "text": "0x101D65B50\t0x00000130\t[929] __RNvMNtNtNtCs8nFsCJwPy8z_3std4sync4mpmc7contextNtB2_7Context3new"
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "rustc_std_workspace_alloc-efcb3952092a1897.rustc_std_workspace_alloc.f15260eb049203c2-cgu.0.rcgu.o",
+          "size": 2688,
+          "sha256": "24fb21f79599b7844105da6e2e3e8f0bbee9d781c7789dd3807fce739065cfac",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "unwind-83fe0f47cae754ad.unwind.1bbcd55d75b17ddf-cgu.0.rcgu.o",
+          "size": 2608,
+          "sha256": "b3daab267d58097c23613d648e0d12f7e6bafbda6eb6fdf63ec7789626c5f481",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "rustc_std_workspace_core-686e509402a2ffb8.rustc_std_workspace_core.f63e7e94e9367ae4-cgu.0.rcgu.o",
+          "size": 2688,
+          "sha256": "f68273e5e7503a901a8c9d6e796b810f60681ea977e0c95c1d24ad6bf4a4d1c0",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "alloc-c9f80605c864c881.alloc.463de3997283d06b-cgu.0.rcgu.o",
+          "size": 469312,
+          "sha256": "611a90d42e3a3638ec3d448687a3e5d0063472e53e8bb8dcb6a42cc84215680d",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [
+            {
+              "line": 937,
+              "text": "[933] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(alloc-c9f80605c864c881.alloc.463de3997283d06b-cgu.0.rcgu.o)",
+              "following": [
+                "[934] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(core-cb5a7ec5e51d804f.core.378408d4ef9b8334-cgu.0.rcgu.o)",
+                "[935] cache/webkit-2e2aa2290fac856d-macos-lto/lib/libWTF.a(ASCIICType.cpp.o)"
+              ]
+            },
+            {
+              "line": 23479,
+              "text": "0x100D40550\t0x00000000\t[933] __RNvXs1_NtCs61Tvbo1hJkl_5alloc7raw_vecINtB5_6RawVechENtNtNtCs4LvyVzIOZ90_4core3ops4drop4Drop4dropB7_"
+            },
+            {
+              "line": 26816,
+              "text": "0x100F30FA0\t0x00000000\t[933] __RNvMs4_NtCs61Tvbo1hJkl_5alloc7raw_vecINtB5_6RawVechE8grow_oneB7_"
+            },
+            {
+              "line": 29418,
+              "text": "0x1011DECE0\t0x00000000\t[933] __RNvXs_NvXsf_NtNtCs61Tvbo1hJkl_5alloc5boxed7convertINtBc_3BoxDNtNtCs4LvyVzIOZ90_4core5error5ErrorNtNtB11_6marker4SendNtB1y_4SyncEL_EINtNtB11_7convert4FromNtNtBe_6string6StringE4fromNtB4_11StringErrorNtNtB11_3fmt7Display3fmt"
+            },
+            {
+              "line": 32709,
+              "text": "0x1014349E0\t0x00000000\t[933] __RNvMs_NtCs61Tvbo1hJkl_5alloc3vecINtB4_3VechE16into_boxed_sliceB6_"
+            },
+            {
+              "line": 35381,
+              "text": "0x1017823D0\t0x00000000\t[933] __RINvNvMs2_NtCs61Tvbo1hJkl_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalEBa_"
+            },
+            {
+              "line": 35432,
+              "text": "0x101798930\t0x00000000\t[933] __RNvMs5_NtCs61Tvbo1hJkl_5alloc7raw_vecNtB5_11RawVecInner11finish_growB7_"
+            },
+            {
+              "line": 35460,
+              "text": "0x10179D5C0\t0x00000000\t[933] __RNvXs2_NtNtCs61Tvbo1hJkl_5alloc3vec11spec_extendINtB7_3VechEINtB5_10SpecExtendRhINtNtNtCs4LvyVzIOZ90_4core5slice4iter4IterhEE11spec_extendB9_"
+            },
+            {
+              "line": 43571,
+              "text": "0x101D70210\t0x00000060\t[933] __RINvMs_NtCs61Tvbo1hJkl_5alloc3vecINtB5_3VechE5drainINtNtNtCs4LvyVzIOZ90_4core3ops5range5RangejEEB7_"
+            },
+            {
+              "line": 43572,
+              "text": "0x101D70270\t0x00000030\t[933] __RINvNtNtCs4LvyVzIOZ90_4core5slice5index5rangeINtNtNtB6_3ops5range5RangejEECs61Tvbo1hJkl_5alloc"
+            },
+            {
+              "line": 43573,
+              "text": "0x101D702A0\t0x000002C0\t[933] __RNvMNtCs61Tvbo1hJkl_5alloc6stringNtB2_6String15from_utf8_lossy"
+            },
+            {
+              "line": 43574,
+              "text": "0x101D70560\t0x000000B0\t[933] __RNvMs2_NtCs61Tvbo1hJkl_5alloc7raw_vecNtB5_11RawVecInner11try_reserveB7_"
+            },
+            {
+              "line": 43575,
+              "text": "0x101D70610\t0x00000070\t[933] __RNvMs2_NtCs61Tvbo1hJkl_5alloc7raw_vecNtB5_11RawVecInner13reserve_exactB7_"
+            },
+            {
+              "line": 43576,
+              "text": "0x101D70680\t0x000000A0\t[933] __RNvMs2_NtCs61Tvbo1hJkl_5alloc7raw_vecNtB5_11RawVecInner16shrink_uncheckedB7_"
+            },
+            {
+              "line": 43577,
+              "text": "0x101D70720\t0x00000080\t[933] __RNvMs2_NtCs61Tvbo1hJkl_5alloc7raw_vecNtB5_11RawVecInner17try_reserve_exactB7_"
+            },
+            {
+              "line": 43578,
+              "text": "0x101D707A0\t0x00000020\t[933] __RNvMs3_NtCs61Tvbo1hJkl_5alloc7raw_vecNtB5_11RawVecInner10deallocateB7_"
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "core-cb5a7ec5e51d804f.core.378408d4ef9b8334-cgu.0.rcgu.o",
+          "size": 1448256,
+          "sha256": "7ca9879380c0ef51f5d40ef28346e405e2e9d38740d1d2de1a722dba1089c5a2",
+          "magic": "dec0170b00000000",
+          "linkedMapExamples": [
+            {
+              "line": 938,
+              "text": "[934] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(core-cb5a7ec5e51d804f.core.378408d4ef9b8334-cgu.0.rcgu.o)",
+              "following": [
+                "[935] cache/webkit-2e2aa2290fac856d-macos-lto/lib/libWTF.a(ASCIICType.cpp.o)",
+                "[936] cache/webkit-2e2aa2290fac856d-macos-lto/lib/libWTF.a(Assertions.cpp.o)"
+              ]
+            },
+            {
+              "line": 29297,
+              "text": "0x1011CC050\t0x00000000\t[934] __RNvXsb_NtCs4LvyVzIOZ90_4core3fmtNtB5_9FormatterNtB5_5Write9write_str"
+            },
+            {
+              "line": 35212,
+              "text": "0x101776CF0\t0x00000000\t[934] __RNvXsb_NtCs4LvyVzIOZ90_4core3fmtNtB5_9FormatterNtB5_5Write10write_char"
+            },
+            {
+              "line": 35636,
+              "text": "0x1017B47D0\t0x00000000\t[934] __RNvXs1i_NtCs4LvyVzIOZ90_4core3fmtReNtB6_7Display3fmtB8_"
+            },
+            {
+              "line": 35681,
+              "text": "0x1017BAB70\t0x00000000\t[934] __RNvXsg_NtCs4LvyVzIOZ90_4core3fmtbNtB5_7Display3fmt"
+            },
+            {
+              "line": 43602,
+              "text": "0x101D71470\t0x000001F0\t[934] __RINvMs6_NtNtCs4LvyVzIOZ90_4core3fmt8buildersNtB6_9DebugList7entriesRhINtNtNtBa_5slice4iter4IterhEEBa_"
+            },
+            {
+              "line": 43603,
+              "text": "0x101D71660\t0x00000034\t[934] __RINvNtCs4LvyVzIOZ90_4core9panicking13assert_failedjjEB4_"
+            },
+            {
+              "line": 43616,
+              "text": "0x101D73950\t0x00000190\t[934] __RNvMs2_NtNtCs4LvyVzIOZ90_4core3fmt8buildersNtB5_11DebugStruct5field"
+            },
+            {
+              "line": 43619,
+              "text": "0x101D73F90\t0x00000110\t[934] __RNvMs3_NtNtCs4LvyVzIOZ90_4core3ffi5c_strNtB5_4CStr19from_bytes_with_nul"
+            },
+            {
+              "line": 43620,
+              "text": "0x101D740A0\t0x000000F0\t[934] __RNvMs3_NtNtCs4LvyVzIOZ90_4core3ffi5c_strNtB5_4CStr20from_bytes_until_nul"
+            },
+            {
+              "line": 43621,
+              "text": "0x101D74190\t0x00000130\t[934] __RNvMs3_NtNtCs4LvyVzIOZ90_4core3fmt8buildersNtB5_10DebugTuple5field"
+            },
+            {
+              "line": 43622,
+              "text": "0x101D742C0\t0x00000090\t[934] __RNvMs3_NtNtCs4LvyVzIOZ90_4core3fmt8buildersNtB5_10DebugTuple6finish"
+            },
+            {
+              "line": 43623,
+              "text": "0x101D74350\t0x00000120\t[934] __RNvMs6_NtNtCs4LvyVzIOZ90_4core3fmt8buildersNtB5_9DebugList5entry"
+            },
+            {
+              "line": 43627,
+              "text": "0x101D74950\t0x00000480\t[934] __RNvMsa_NtCs4LvyVzIOZ90_4core3fmtNtB5_9Formatter12pad_integral"
+            },
+            {
+              "line": 43630,
+              "text": "0x101D752D0\t0x00000140\t[934] __RNvMsa_NtCs4LvyVzIOZ90_4core3fmtNtB5_9Formatter25debug_tuple_field1_finish"
+            },
+            {
+              "line": 43631,
+              "text": "0x101D75410\t0x000001A0\t[934] __RNvMsa_NtCs4LvyVzIOZ90_4core3fmtNtB5_9Formatter25debug_tuple_field2_finish"
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "compiler_builtins-c3467b0c3ef3d689.compiler_builtins.169179771483a430-cgu.0.rcgu.o",
+          "size": 932280,
+          "sha256": "8ed064d407b41c54f3f8d0409d9ff458b72f8a4dd3eb191a444a86e7c989321a",
+          "magic": "cffaedfe07000001",
+          "linkedMapExamples": [
+            {
+              "line": 1243,
+              "text": "[1239] rust-target/x86_64-apple-darwin/release/libbun_runtime.a(compiler_builtins-c3467b0c3ef3d689.compiler_builtins.169179771483a430-cgu.0.rcgu.o)",
+              "following": [
+                "[1240] /var/lib/buildkite-agent/build/build/release/bun-profile.lto.o/1.x86_64.lto.o",
+                "[1241] /var/lib/buildkite-agent/build/build/release/bun-profile.lto.o/2.x86_64.lto.o"
+              ]
+            },
+            {
+              "line": 3254,
+              "text": "0x100049CA0\t0x00000100\t[1239] ___divti3"
+            },
+            {
+              "line": 3255,
+              "text": "0x100049DA0\t0x000000B0\t[1239] ___fixdfti"
+            },
+            {
+              "line": 3256,
+              "text": "0x100049E50\t0x000000B0\t[1239] ___floattidf"
+            },
+            {
+              "line": 3257,
+              "text": "0x100049F00\t0x00000110\t[1239] ___modti3"
+            },
+            {
+              "line": 3258,
+              "text": "0x10004A010\t0x00000060\t[1239] ___powidf2"
+            },
+            {
+              "line": 3259,
+              "text": "0x10004A070\t0x000000C0\t[1239] ___udivti3"
+            },
+            {
+              "line": 3260,
+              "text": "0x10004A130\t0x000000D0\t[1239] ___umodti3"
+            },
+            {
+              "line": 172418,
+              "text": "<<dead>>\t0x00000007\t[1239] .Lfunc_end___RNvCs9YweXYGWBoB_7___rustc17___rust_probestack"
+            },
+            {
+              "line": 172419,
+              "text": "<<dead>>\t0x00000280\t[1239] __RINvNtNtCs1W84W630KTQ_17compiler_builtins5float3add3addC3f16EB6_"
+            },
+            {
+              "line": 172420,
+              "text": "<<dead>>\t0x00000420\t[1239] __RINvNtNtCs1W84W630KTQ_17compiler_builtins5float3add3addC4f128EB6_"
+            },
+            {
+              "line": 172421,
+              "text": "<<dead>>\t0x00000190\t[1239] __RNCNvNtNtCs1W84W630KTQ_17compiler_builtins3mem5impls13compare_bytess1_0B7_"
+            },
+            {
+              "line": 172422,
+              "text": "<<dead>>\t0x00000039\t[1239] __RNvCs9YweXYGWBoB_7___rustc17___rust_probestack"
+            },
+            {
+              "line": 172423,
+              "text": "<<dead>>\t0x000000D0\t[1239] __RNvNtCs1W84W630KTQ_17compiler_builtins3mem4bcmp"
+            },
+            {
+              "line": 172424,
+              "text": "<<dead>>\t0x000000D0\t[1239] __RNvNtCs1W84W630KTQ_17compiler_builtins3mem6memcmp"
+            },
+            {
+              "line": 172425,
+              "text": "<<dead>>\t0x00000040\t[1239] __RNvNtCs1W84W630KTQ_17compiler_builtins3mem6memcpy"
+            }
+          ],
+          "classification": "compiler_builtins: MIT AND Apache-2.0 WITH LLVM-exception; complete exact mixed notice retained"
+        }
+      ],
+      "officialPrebuiltComponentReceipt": {
+        "package": "rust-std",
+        "target": "x86_64-apple-darwin",
+        "source": "https://static.rust-lang.org/dist/2026-07-20/rust-std-nightly-x86_64-apple-darwin.tar.xz",
+        "file": "rust-std-nightly-x86_64-apple-darwin.tar.xz",
+        "size": 30068840,
+        "sha256": "10bf53acde39c9935b3c4a46a6fb7867c999b811f0eaf4ed0b6d72d7b304221b",
+        "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+      },
+      "binding": "Bun pinned scripts/build/rust.ts rebuilds std with -Zbuild-std and release ThinLTO flags; official prebuilt std rlib member names/hashes differ and are NOT claimed to equal these objects. Pinned rust-src and Cargo source recipe establish source/license correspondence; historical original compiler micro-identity remains unobserved."
+    },
+    {
+      "target": "linux-x64",
+      "candidateExecutableSha256": "144e32d1894e912072948379210eb1f6e30c688be8aeeee7f8b2d21e27b50caa",
+      "runtimeSha256": "a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c",
+      "applicationArchive": {
+        "path": "objects/build/rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a",
+        "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3e-65ca-4a75-ae23-66869e48b801",
+        "compressedInput": {
+          "file": "linux-x64-libbun-runtime.a.gz",
+          "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3e-65ca-4a75-ae23-66869e48b801",
+          "size": 88579341,
+          "sha256": "a6e202069dbc1d3a2ab1c4796efa6ac277d144469c71b89a8908c5ec77593da3"
+        },
+        "size": 212759566,
+        "sha256": "d3f22508ee8ffc35563502844d0ebe53089b10c486193b28590c6963c4918539",
+        "role": "application objects (all archive members preserved)"
+      },
+      "mapSha256": "4a48829287b652e44a41113e00893db1ebe28bf8fbec9c2610e465c1cc87afbc",
+      "members": [
+        {
+          "name": "panic_abort-853f92221b8e0fae.panic_abort.7f3b9dddb39a782e-cgu.0.rcgu.o",
+          "size": 4424,
+          "sha256": "87ce0dfef7fcb6dde6b74d7bbab03127ddd8e5608214f8de8c25edca26a26d78",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [
+            {
+              "line": 188655,
+              "text": "         29c9e7e          29c9e7e       2a     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(panic_abort-853f92221b8e0fae.panic_abort.7f3b9dddb39a782e-cgu.0.rcgu.o at 71361386).o:(.debug_info)",
+              "following": [
+                "         29c9ea8          29c9ea8     aea4     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(rustc_demangle-2d3e6f8aa07aa12c.rustc_demangle.c4b513c446efd502-cgu.0.rcgu.o at 209385838).o:(.debug_info)",
+                "         29d4d4c          29d4d4c      8e5     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std_detect-4f3e13fe00acff23.std_detect.a15b1bc82e95a68-cgu.0.rcgu.o at 209651406).o:(.debug_info)"
+              ]
+            },
+            {
+              "line": 190160,
+              "text": "           41367            41367       14     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(panic_abort-853f92221b8e0fae.panic_abort.7f3b9dddb39a782e-cgu.0.rcgu.o at 71361386).o:(.debug_abbrev)",
+              "following": [
+                "           4137b            4137b      230     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(rustc_demangle-2d3e6f8aa07aa12c.rustc_demangle.c4b513c446efd502-cgu.0.rcgu.o at 209385838).o:(.debug_abbrev)",
+                "           415ab            415ab       e2     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std_detect-4f3e13fe00acff23.std_detect.a15b1bc82e95a68-cgu.0.rcgu.o at 209651406).o:(.debug_abbrev)"
+              ]
+            },
+            {
+              "line": 191692,
+              "text": "         17563b3          17563b3       45     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(panic_abort-853f92221b8e0fae.panic_abort.7f3b9dddb39a782e-cgu.0.rcgu.o at 71361386).o:(.debug_line)",
+              "following": [
+                "         17563f8          17563f8     581d     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(rustc_demangle-2d3e6f8aa07aa12c.rustc_demangle.c4b513c446efd502-cgu.0.rcgu.o at 209385838).o:(.debug_line)",
+                "         175bc15          175bc15      43e     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std_detect-4f3e13fe00acff23.std_detect.a15b1bc82e95a68-cgu.0.rcgu.o at 209651406).o:(.debug_line)"
+              ]
+            },
+            {
+              "line": 197446,
+              "text": "          273b48           273b48       38     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(panic_abort-853f92221b8e0fae.panic_abort.7f3b9dddb39a782e-cgu.0.rcgu.o at 71361386).o:(.debug_frame)",
+              "following": [
+                "          273b80           273b80      9c0     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(rustc_demangle-2d3e6f8aa07aa12c.rustc_demangle.c4b513c446efd502-cgu.0.rcgu.o at 209385838).o:(.debug_frame)",
+                "          274540           274540       78     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std_detect-4f3e13fe00acff23.std_detect.a15b1bc82e95a68-cgu.0.rcgu.o at 209651406).o:(.debug_frame)"
+              ]
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o",
+          "size": 3317336,
+          "sha256": "820e8f60add6d7c25fa9f6700741594f2ce0bf74cb822ce1105d48f5b46a9754",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [
+            {
+              "line": 28787,
+              "text": "         12a97a0          12a97a0       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata.unlikely._RNvMs0_NtNtNtNtCs2onMIOukud4_3std3sys4sync4once5futexNtB5_4Once4call)",
+              "following": [
+                "         12a97c0          12a97c0       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata._RNvNtCs2onMIOukud4_3std3env11current_exe)",
+                "         12a97e0          12a97e0      4c0     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata._RNvNtNtNtCs2onMIOukud4_3std3sys6random5linux9getrandom.llvm.16816452458082812699)"
+              ]
+            },
+            {
+              "line": 28788,
+              "text": "         12a97c0          12a97c0       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata._RNvNtCs2onMIOukud4_3std3env11current_exe)",
+              "following": [
+                "         12a97e0          12a97e0      4c0     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata._RNvNtNtNtCs2onMIOukud4_3std3sys6random5linux9getrandom.llvm.16816452458082812699)",
+                "         12a9ca0          12a9ca0       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata..Lanon.16eb34e211c488f8879678839ceea0d0.5)"
+              ]
+            },
+            {
+              "line": 28789,
+              "text": "         12a97e0          12a97e0      4c0     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata._RNvNtNtNtCs2onMIOukud4_3std3sys6random5linux9getrandom.llvm.16816452458082812699)",
+              "following": [
+                "         12a9ca0          12a9ca0       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata..Lanon.16eb34e211c488f8879678839ceea0d0.5)",
+                "         12a9cc8          12a9cc8       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata..Lanon.16eb34e211c488f8879678839ceea0d0.23)"
+              ]
+            },
+            {
+              "line": 28790,
+              "text": "         12a9ca0          12a9ca0       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata..Lanon.16eb34e211c488f8879678839ceea0d0.5)",
+              "following": [
+                "         12a9cc8          12a9cc8       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata..Lanon.16eb34e211c488f8879678839ceea0d0.23)",
+                "         12a9ce8          12a9ce8       30     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata.anon.16eb34e211c488f8879678839ceea0d0.25.llvm.16816452458082812699)"
+              ]
+            },
+            {
+              "line": 28791,
+              "text": "         12a9cc8          12a9cc8       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata..Lanon.16eb34e211c488f8879678839ceea0d0.23)",
+              "following": [
+                "         12a9ce8          12a9ce8       30     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata.anon.16eb34e211c488f8879678839ceea0d0.25.llvm.16816452458082812699)",
+                "         12a9ce8          12a9ce8       30     1                 anon.16eb34e211c488f8879678839ceea0d0.25.llvm.16816452458082812699"
+              ]
+            },
+            {
+              "line": 28792,
+              "text": "         12a9ce8          12a9ce8       30     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata.anon.16eb34e211c488f8879678839ceea0d0.25.llvm.16816452458082812699)",
+              "following": [
+                "         12a9ce8          12a9ce8       30     1                 anon.16eb34e211c488f8879678839ceea0d0.25.llvm.16816452458082812699",
+                "         12a9d18          12a9d18       30     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata.anon.16eb34e211c488f8879678839ceea0d0.27.llvm.16816452458082812699)"
+              ]
+            },
+            {
+              "line": 28794,
+              "text": "         12a9d18          12a9d18       30     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata.anon.16eb34e211c488f8879678839ceea0d0.27.llvm.16816452458082812699)",
+              "following": [
+                "         12a9d18          12a9d18       30     1                 anon.16eb34e211c488f8879678839ceea0d0.27.llvm.16816452458082812699",
+                "         12a9d48          12a9d48       30     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata.anon.16eb34e211c488f8879678839ceea0d0.30.llvm.16816452458082812699)"
+              ]
+            },
+            {
+              "line": 28796,
+              "text": "         12a9d48          12a9d48       30     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata.anon.16eb34e211c488f8879678839ceea0d0.30.llvm.16816452458082812699)",
+              "following": [
+                "         12a9d48          12a9d48       30     1                 anon.16eb34e211c488f8879678839ceea0d0.30.llvm.16816452458082812699",
+                "         12a9d78          12a9d78       1b     1         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-3e2f2b661b4769c7.std.1be045d4d68616a4-cgu.0.rcgu.o at 206065878).o:(.rodata..Lanon.16eb34e211c488f8879678839ceea0d0.34)"
+              ]
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "rustc_std_workspace_alloc-729b7d20e209db33.rustc_std_workspace_alloc.79cf4c393e8909fd-cgu.0.rcgu.o",
+          "size": 2664,
+          "sha256": "d759ff79ef98d00cd67be08d170f56e21851fdc52edc500e8b66a732a7c4aba2",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "unwind-f06d8afef79e89bb.unwind.7e18a8b184da9ca4-cgu.0.rcgu.o",
+          "size": 2568,
+          "sha256": "5d0201c5e45c2441af7efa15f574db0ebe05d9000e9ba161aa0d7c571693571e",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "rustc_std_workspace_core-759d896fd64fed0a.rustc_std_workspace_core.196351cae72ff723-cgu.0.rcgu.o",
+          "size": 2660,
+          "sha256": "09b22a3d6057ab45d66edb26360b59517c4e9b642ca3517dc09377c3af730869",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o",
+          "size": 445000,
+          "sha256": "d5f05ca7e9ae6faa34afbbc9c7eb6ad0909661dc723a14470bcb67b84d66460b",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [
+            {
+              "line": 28869,
+              "text": "         12aa548          12aa548       30     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.rodata.anon.a6ceb55cf4fca6474b26e61268f37beb.28.llvm.904751217735878197)",
+              "following": [
+                "         12aa548          12aa548       30     1                 anon.a6ceb55cf4fca6474b26e61268f37beb.28.llvm.904751217735878197",
+                "         12aa578          12aa578       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float29float_to_decimal_common_exactdEB6_.llvm.7068507547563595766)"
+              ]
+            },
+            {
+              "line": 47012,
+              "text": "         1a22160          1a22160       8a    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RNvMs5_NtCsizwtUhOg2tx_5alloc7raw_vecNtB5_11RawVecInner14grow_amortizedB7_)",
+              "following": [
+                "         1a22160          1a22160       8a     1                 <alloc::raw_vec::RawVecInner>::grow_amortized",
+                "         1a221f0          1a221f0       e3    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(bun_sys-95513f1d9c1dd03c.bun_sys.5c2d10d82395d6-cgu.0.rcgu.o at 200278602).o:(.text._RNvNtCs1UPqDY25sE_7bun_sys10posix_impl5fstat)"
+              ]
+            },
+            {
+              "line": 54112,
+              "text": "         1d575d0          1d575d0       6b    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RNvMs2_NtCsizwtUhOg2tx_5alloc7raw_vecNtB5_11RawVecInner13reserve_exactB7_)",
+              "following": [
+                "         1d575d0          1d575d0       6b     1                 <alloc::raw_vec::RawVecInner>::reserve_exact",
+                "         1d57640          1d57640      10c    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(bun_bundler-d2aa1a11e3a1955c.bun_bundler.fae41169f5ce5312-cgu.0.rcgu.o at 113325958).o:(.text._RNvMs1_NtCsizwtUhOg2tx_5alloc3vecINtB5_3VecmE6resizeCslxu9qEBpWHS_11bun_bundler)"
+              ]
+            },
+            {
+              "line": 130340,
+              "text": "         3902910          3902910       5d    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RINvMs_NtCsizwtUhOg2tx_5alloc3vecINtB5_3VechE5drainINtNtNtCsfFj2YxrZumz_4core3ops5range5RangejEEB7_)",
+              "following": [
+                "         3902910          3902910       5d     1                 <alloc::vec::Vec<u8>>::drain::<core::ops::range::Range<usize>>",
+                "         3902970          3902970       2c    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RINvNtNtCsfFj2YxrZumz_4core5slice5index5rangeINtNtNtB6_3ops5range5RangejEECsizwtUhOg2tx_5alloc)"
+              ]
+            },
+            {
+              "line": 130342,
+              "text": "         3902970          3902970       2c    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RINvNtNtCsfFj2YxrZumz_4core5slice5index5rangeINtNtNtB6_3ops5range5RangejEECsizwtUhOg2tx_5alloc)",
+              "following": [
+                "         3902970          3902970       2c     1                 core::slice::index::range::<core::ops::range::Range<usize>>",
+                "         39029a0          39029a0       32    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RINvNvNtNtCsizwtUhOg2tx_5alloc2io5error21custom_owner_from_box12drop_box_rawDNtNtCsfFj2YxrZumz_4core5error5ErrorNtNtB1h_6marker4SendNtB1O_4SyncEL_EB8_.llvm.904751217735878197)"
+              ]
+            },
+            {
+              "line": 130344,
+              "text": "         39029a0          39029a0       32    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RINvNvNtNtCsizwtUhOg2tx_5alloc2io5error21custom_owner_from_box12drop_box_rawDNtNtCsfFj2YxrZumz_4core5error5ErrorNtNtB1h_6marker4SendNtB1O_4SyncEL_EB8_.llvm.904751217735878197)",
+              "following": [
+                "         39029a0          39029a0       32     1                 alloc::io::error::custom_owner_from_box::drop_box_raw::<dyn core::error::Error + core::marker::Send + core::marker::Sync> (.llvm.904751217735878197)",
+                "         39029e0          39029e0       21    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RINvNvNtNtCsizwtUhOg2tx_5alloc2io5error21custom_owner_from_box12drop_box_rawNtNtNtCsfFj2YxrZumz_4core2io5error6CustomEB8_.llvm.904751217735878197)"
+              ]
+            },
+            {
+              "line": 130346,
+              "text": "         39029e0          39029e0       21    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RINvNvNtNtCsizwtUhOg2tx_5alloc2io5error21custom_owner_from_box12drop_box_rawNtNtNtCsfFj2YxrZumz_4core2io5error6CustomEB8_.llvm.904751217735878197)",
+              "following": [
+                "         39029e0          39029e0       21     1                 alloc::io::error::custom_owner_from_box::drop_box_raw::<core::io::error::Custom> (.llvm.904751217735878197)",
+                "         3902a10          3902a10      256    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RNvMNtCsizwtUhOg2tx_5alloc6stringNtB2_6String15from_utf8_lossy)"
+              ]
+            },
+            {
+              "line": 130348,
+              "text": "         3902a10          3902a10      256    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RNvMNtCsizwtUhOg2tx_5alloc6stringNtB2_6String15from_utf8_lossy)",
+              "following": [
+                "         3902a10          3902a10      256     1                 <alloc::string::String>::from_utf8_lossy",
+                "         3902c70          3902c70       a6    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-6a195916011e42a4.alloc.d854b0ff99ed2b31-cgu.0.rcgu.o at 209714434).o:(.text._RNvMs2_NtCsizwtUhOg2tx_5alloc7raw_vecNtB5_11RawVecInner11try_reserveB7_)"
+              ]
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o",
+          "size": 1381848,
+          "sha256": "a2c4bad7531995051db4cf65f06ca364fb9d395c3b1def01f565e1c8b274734c",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [
+            {
+              "line": 28871,
+              "text": "         12aa578          12aa578       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float29float_to_decimal_common_exactdEB6_.llvm.7068507547563595766)",
+              "following": [
+                "         12aa5a0          12aa5a0       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float29float_to_decimal_common_exactfEB6_)",
+                "         12aa5c8          12aa5c8       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float32float_to_decimal_common_shortestdEB6_.llvm.7068507547563595766)"
+              ]
+            },
+            {
+              "line": 28872,
+              "text": "         12aa5a0          12aa5a0       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float29float_to_decimal_common_exactfEB6_)",
+              "following": [
+                "         12aa5c8          12aa5c8       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float32float_to_decimal_common_shortestdEB6_.llvm.7068507547563595766)",
+                "         12aa5f0          12aa5f0       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float32float_to_decimal_common_shortestfEB6_)"
+              ]
+            },
+            {
+              "line": 28873,
+              "text": "         12aa5c8          12aa5c8       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float32float_to_decimal_common_shortestdEB6_.llvm.7068507547563595766)",
+              "following": [
+                "         12aa5f0          12aa5f0       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float32float_to_decimal_common_shortestfEB6_)",
+                "         12aa618          12aa618       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float33float_to_exponential_common_exactdEB6_)"
+              ]
+            },
+            {
+              "line": 28874,
+              "text": "         12aa5f0          12aa5f0       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float32float_to_decimal_common_shortestfEB6_)",
+              "following": [
+                "         12aa618          12aa618       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float33float_to_exponential_common_exactdEB6_)",
+                "         12aa640          12aa640       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float36float_to_exponential_common_shortestdEB6_)"
+              ]
+            },
+            {
+              "line": 28875,
+              "text": "         12aa618          12aa618       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float33float_to_exponential_common_exactdEB6_)",
+              "following": [
+                "         12aa640          12aa640       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float36float_to_exponential_common_shortestdEB6_)",
+                "         12aa668          12aa668       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float36float_to_exponential_common_shortestfEB6_)"
+              ]
+            },
+            {
+              "line": 28876,
+              "text": "         12aa640          12aa640       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float36float_to_exponential_common_shortestdEB6_)",
+              "following": [
+                "         12aa668          12aa668       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float36float_to_exponential_common_shortestfEB6_)",
+                "         12aa690          12aa690      140     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RNvMNtNtCsfFj2YxrZumz_4core4char7methodsc16escape_debug_ext.llvm.7068507547563595766)"
+              ]
+            },
+            {
+              "line": 28877,
+              "text": "         12aa668          12aa668       28     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RINvNtNtCsfFj2YxrZumz_4core3fmt5float36float_to_exponential_common_shortestfEB6_)",
+              "following": [
+                "         12aa690          12aa690      140     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RNvMNtNtCsfFj2YxrZumz_4core4char7methodsc16escape_debug_ext.llvm.7068507547563595766)",
+                "         12aa7d0          12aa7d0       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RNvMsa_NtCsfFj2YxrZumz_4core3fmtNtB5_9Formatter12pad_integral)"
+              ]
+            },
+            {
+              "line": 28878,
+              "text": "         12aa690          12aa690      140     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RNvMNtNtCsfFj2YxrZumz_4core4char7methodsc16escape_debug_ext.llvm.7068507547563595766)",
+              "following": [
+                "         12aa7d0          12aa7d0       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RNvMsa_NtCsfFj2YxrZumz_4core3fmtNtB5_9Formatter12pad_integral)",
+                "         12aa7f0          12aa7f0       20     8         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-9b5ad3f88b9f5bd6.core.b67975aeb5a8c199-cgu.0.rcgu.o at 210159494).o:(.rodata._RNvMsa_NtCsfFj2YxrZumz_4core3fmtNtB5_9Formatter19pad_formatted_parts)"
+              ]
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o",
+          "size": 1218104,
+          "sha256": "2db14840fffce707f00542c527351ad34a98006e2aeeb332d73925e8903d0153",
+          "magic": "7f454c4602010100",
+          "linkedMapExamples": [
+            {
+              "line": 249,
+              "text": "          3449c0           3449c0       18     8         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.rodata..Lanon.1b79c394146c1930b1b966c9fbb5db5a.0)",
+              "following": [
+                "          3449e0           3449e0   bacd24    16         cache/webkit-2e2aa2290fac856d-lto/lib/libicudata.a(icudt78l_dat.o):(.rodata)",
+                "          3449e0           3449e0        0     1                 icudt78_dat"
+              ]
+            },
+            {
+              "line": 50179,
+              "text": "         1b7b630          1b7b630      100    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text.__divti3)",
+              "following": [
+                "         1b7b630          1b7b630      100     1                 __divti3",
+                "         1b7b730          1b7b730     1988    16         rust-target/x86_64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(bun_runtime-74b60c4638a587eb.bun_runtime.3696e0cfe284bac4-cgu.0.rcgu.o at 4471858).o:(.text._RNvMs3_NtNtCs4GzPxvOYlhM_11bun_runtime3cli12test_commandNtB5_11TestCommand3run)"
+              ]
+            },
+            {
+              "line": 52458,
+              "text": "         1c63d70          1c63d70        a    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text.fmod)",
+              "following": [
+                "         1c63d70          1c63d70        a     1                 fmod",
+                "         1c63d80          1c63d80      307    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtCs1OcfROIswvx_17compiler_builtins4math17full_availability4fmod)"
+              ]
+            },
+            {
+              "line": 52460,
+              "text": "         1c63d80          1c63d80      307    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtCs1OcfROIswvx_17compiler_builtins4math17full_availability4fmod)",
+              "following": [
+                "         1c63d80          1c63d80      307     1                 compiler_builtins::math::full_availability::fmod",
+                "         1c64090          1c64090       41    16         cache/webkit-2e2aa2290fac856d-lto/lib/bun-profile.lto.libWTF.a(WTFString.cpp.o at 7704762).o:(.text._ZN3WTF6StringC1EPKc)"
+              ]
+            },
+            {
+              "line": 58027,
+              "text": "         1f616e0          1f616e0      486    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtCs1OcfROIswvx_17compiler_builtins4math17full_availability4cbrt)",
+              "following": [
+                "         1f616e0          1f616e0      486     1                 compiler_builtins::math::full_availability::cbrt",
+                "         1f61b70          1f61b70      24f    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtCs1OcfROIswvx_17compiler_builtins4math17full_availability5fmodf)"
+              ]
+            },
+            {
+              "line": 58029,
+              "text": "         1f61b70          1f61b70      24f    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtCs1OcfROIswvx_17compiler_builtins4math17full_availability5fmodf)",
+              "following": [
+                "         1f61b70          1f61b70      24f     1                 compiler_builtins::math::full_availability::fmodf",
+                "         1f61dc0          1f61dc0       12    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtNtCsfFj2YxrZumz_4core9core_arch3x865xsave7__xgetbv)"
+              ]
+            },
+            {
+              "line": 58031,
+              "text": "         1f61dc0          1f61dc0       12    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtNtCsfFj2YxrZumz_4core9core_arch3x865xsave7__xgetbv)",
+              "following": [
+                "         1f61dc0          1f61dc0       12     1                 core::core_arch::x86::xsave::_xgetbv",
+                "         1f61dc0          1f61dc0       12     1                 core::core_arch::x86::xsave::_xgetbv"
+              ]
+            },
+            {
+              "line": 58034,
+              "text": "         1f61de0          1f61de0      44c    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtNtNtNtCs1OcfROIswvx_17compiler_builtins4math9libm_math4arch3x863fma12fma_fallback)",
+              "following": [
+                "         1f61de0          1f61de0      44c     1                 compiler_builtins::math::libm_math::arch::x86::fma::fma_fallback",
+                "         1f62230          1f62230        b    16         rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-75915eb86cb53b84.compiler_builtins.1513f7864d031185-cgu.0.rcgu.o):(.text._RNvNtNtNtNtNtCs1OcfROIswvx_17compiler_builtins4math9libm_math4arch3x863fma12fma_with_fma)"
+              ]
+            }
+          ],
+          "classification": "compiler_builtins: MIT AND Apache-2.0 WITH LLVM-exception; complete exact mixed notice retained"
+        }
+      ],
+      "officialPrebuiltComponentReceipt": {
+        "package": "rust-std",
+        "target": "x86_64-unknown-linux-gnu",
+        "source": "https://static.rust-lang.org/dist/2026-07-20/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz",
+        "file": "rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz",
+        "size": 31035624,
+        "sha256": "4b746e74f07cc3e3a16e1c0d367183eb5ca5374d6e87b9ab2002bbd463b3f8f0",
+        "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+      },
+      "binding": "Bun pinned scripts/build/rust.ts rebuilds std with -Zbuild-std and release ThinLTO flags; official prebuilt std rlib member names/hashes differ and are NOT claimed to equal these objects. Pinned rust-src and Cargo source recipe establish source/license correspondence; historical original compiler micro-identity remains unobserved."
+    },
+    {
+      "target": "linux-arm64",
+      "candidateExecutableSha256": "f211479c82733e2c466e5f80ef7f8ffef77b305aafb069e4907c85a2d935a6f8",
+      "runtimeSha256": "616f267a34278ff5ac282df37ffdfba1d7141f4f6926bca99af2cd6ef3ad32b1",
+      "applicationArchive": {
+        "path": "objects/build/rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a",
+        "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f3e-356a-4cad-a997-ee03cd437b85",
+        "compressedInput": {
+          "file": "linux-aarch64-libbun-runtime.a.gz",
+          "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f3e-356a-4cad-a997-ee03cd437b85",
+          "size": 88559585,
+          "sha256": "1075ad3162dcd760cfca8cf3bb84fcc7820d630a068b62ac53c7cb4514dc17f4"
+        },
+        "size": 212861886,
+        "sha256": "79369bebf13a4cd26e4bc905e8397c8092850d25871165cef83db1b4da0f24e5",
+        "role": "application objects (all archive members preserved)"
+      },
+      "mapSha256": "6de7fd02f1e854086780d6260955585531ce77bbd5034cb6d8fa7a96aadcecbe",
+      "members": [
+        {
+          "name": "panic_abort-e21d772d592ed536.panic_abort.d9a5dc21544718c6-cgu.0.rcgu.o",
+          "size": 4684,
+          "sha256": "6c527024822e66659c601b088de184eb14b4735bca19d561b267e786456f46c8",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [
+            {
+              "line": 293936,
+              "text": "         294968b          294968b       2a     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(panic_abort-e21d772d592ed536.panic_abort.d9a5dc21544718c6-cgu.0.rcgu.o at 71385746).o:(.debug_info)",
+              "following": [
+                "         294968b          294968b        0     1                 $d",
+                "         29496b5          29496b5     b060     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(rustc_demangle-09df472225e6d501.rustc_demangle.ee9a88babb698093-cgu.0.rcgu.o at 209362630).o:(.debug_info)"
+              ]
+            },
+            {
+              "line": 296915,
+              "text": "           41ae1            41ae1       14     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(panic_abort-e21d772d592ed536.panic_abort.d9a5dc21544718c6-cgu.0.rcgu.o at 71385746).o:(.debug_abbrev)",
+              "following": [
+                "           41ae1            41ae1        0     1                 $d",
+                "           41af5            41af5      223     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(rustc_demangle-09df472225e6d501.rustc_demangle.ee9a88babb698093-cgu.0.rcgu.o at 209362630).o:(.debug_abbrev)"
+              ]
+            },
+            {
+              "line": 299927,
+              "text": "         1925f21          1925f21       45     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(panic_abort-e21d772d592ed536.panic_abort.d9a5dc21544718c6-cgu.0.rcgu.o at 71385746).o:(.debug_line)",
+              "following": [
+                "         1925f21          1925f21        0     1                 $d",
+                "         1925f66          1925f66     5899     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(rustc_demangle-09df472225e6d501.rustc_demangle.ee9a88babb698093-cgu.0.rcgu.o at 209362630).o:(.debug_line)"
+              ]
+            },
+            {
+              "line": 311411,
+              "text": "          201588           201588       38     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(panic_abort-e21d772d592ed536.panic_abort.d9a5dc21544718c6-cgu.0.rcgu.o at 71385746).o:(.debug_frame)",
+              "following": [
+                "          201588           201588        0     1                 $d",
+                "          2015c0           2015c0      748     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(rustc_demangle-09df472225e6d501.rustc_demangle.ee9a88babb698093-cgu.0.rcgu.o at 209362630).o:(.debug_frame)"
+              ]
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o",
+          "size": 3305544,
+          "sha256": "ed77b5076445941e076c7d8899d1c85144fd4aba3cb12469d1df986f5f958a22",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [
+            {
+              "line": 51278,
+              "text": "         11d7470          11d7470       28     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata..Lanon.44ba779733377a420434be1f92b51ec3.5)",
+              "following": [
+                "         11d7470          11d7470        0     1                 $d",
+                "         11d7498          11d7498       20     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata..Lanon.44ba779733377a420434be1f92b51ec3.22)"
+              ]
+            },
+            {
+              "line": 51280,
+              "text": "         11d7498          11d7498       20     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata..Lanon.44ba779733377a420434be1f92b51ec3.22)",
+              "following": [
+                "         11d7498          11d7498        0     1                 $d",
+                "         11d74b8          11d74b8       1b     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata..Lanon.44ba779733377a420434be1f92b51ec3.26)"
+              ]
+            },
+            {
+              "line": 51282,
+              "text": "         11d74b8          11d74b8       1b     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata..Lanon.44ba779733377a420434be1f92b51ec3.26)",
+              "following": [
+                "         11d74b8          11d74b8        0     1                 $d",
+                "         11d74d8          11d74d8       18     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata..Lanon.44ba779733377a420434be1f92b51ec3.27)"
+              ]
+            },
+            {
+              "line": 51284,
+              "text": "         11d74d8          11d74d8       18     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata..Lanon.44ba779733377a420434be1f92b51ec3.27)",
+              "following": [
+                "         11d74d8          11d74d8        0     1                 $d",
+                "         11d74f0          11d74f0       30     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata.anon.44ba779733377a420434be1f92b51ec3.28.llvm.25079691392096720)"
+              ]
+            },
+            {
+              "line": 51286,
+              "text": "         11d74f0          11d74f0       30     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata.anon.44ba779733377a420434be1f92b51ec3.28.llvm.25079691392096720)",
+              "following": [
+                "         11d74f0          11d74f0        0     1                 $d",
+                "         11d74f0          11d74f0       30     1                 anon.44ba779733377a420434be1f92b51ec3.28.llvm.25079691392096720"
+              ]
+            },
+            {
+              "line": 51289,
+              "text": "         11d7520          11d7520       30     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata.anon.44ba779733377a420434be1f92b51ec3.30.llvm.25079691392096720)",
+              "following": [
+                "         11d7520          11d7520        0     1                 $d",
+                "         11d7520          11d7520       30     1                 anon.44ba779733377a420434be1f92b51ec3.30.llvm.25079691392096720"
+              ]
+            },
+            {
+              "line": 51292,
+              "text": "         11d7550          11d7550       30     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata.anon.44ba779733377a420434be1f92b51ec3.33.llvm.25079691392096720)",
+              "following": [
+                "         11d7550          11d7550        0     1                 $d",
+                "         11d7550          11d7550       30     1                 anon.44ba779733377a420434be1f92b51ec3.33.llvm.25079691392096720"
+              ]
+            },
+            {
+              "line": 51295,
+              "text": "         11d7580          11d7580       18     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(std-e7ca989902e1ce37.std.b090eea2eef132f7-cgu.0.rcgu.o at 206054462).o:(.rodata.anon.44ba779733377a420434be1f92b51ec3.38.llvm.25079691392096720)",
+              "following": [
+                "         11d7580          11d7580        0     1                 $d",
+                "         11d7580          11d7580       18     1                 anon.44ba779733377a420434be1f92b51ec3.38.llvm.25079691392096720"
+              ]
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "rustc_std_workspace_alloc-8f218ba2eff1683a.rustc_std_workspace_alloc.80b19f6b36cfa5ca-cgu.0.rcgu.o",
+          "size": 2660,
+          "sha256": "8f468df480347b05f8ebb5307ef9fb14e336d14976297d61ed15bab5049b44bc",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "unwind-5b0ad7fa28332e96.unwind.3f2d65ccf0d4c188-cgu.0.rcgu.o",
+          "size": 2568,
+          "sha256": "52f875e1ce73e0f09d5542db9d49d86fa0e5ad0170e7813df2e5b1adfbbf53e2",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "rustc_std_workspace_core-82fe3ea1811338c4.rustc_std_workspace_core.9a1c363285ed8586-cgu.0.rcgu.o",
+          "size": 2656,
+          "sha256": "7edeaf1dae7a787c230907dbe2889a08127a1fae5389faa82e3e7bf0b19423c8",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o",
+          "size": 447676,
+          "sha256": "235bf0e19b565661ccad302e3922124a68c0faf37ebd43b00bcc8d93173e49cd",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [
+            {
+              "line": 51419,
+              "text": "         11d7d58          11d7d58       30     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o at 209721798).o:(.rodata.anon.c4093f05cec461f1102cf1eab698c0a0.28.llvm.5963729770871742086)",
+              "following": [
+                "         11d7d58          11d7d58        0     1                 $d",
+                "         11d7d58          11d7d58       30     1                 anon.c4093f05cec461f1102cf1eab698c0a0.28.llvm.5963729770871742086"
+              ]
+            },
+            {
+              "line": 76466,
+              "text": "         183479c          183479c       14     4         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o at 209721798).o:(.text.OUTLINED_FUNCTION_0)",
+              "following": [
+                "         183479c          183479c       14     1                 OUTLINED_FUNCTION_0",
+                "         183479c          183479c        0     1                 $x"
+              ]
+            },
+            {
+              "line": 76505,
+              "text": "         18348d4          18348d4       20     4         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o at 209721798).o:(.text.OUTLINED_FUNCTION_1)",
+              "following": [
+                "         18348d4          18348d4       20     1                 OUTLINED_FUNCTION_1",
+                "         18348d4          18348d4        0     1                 $x"
+              ]
+            },
+            {
+              "line": 91163,
+              "text": "         1c19380          1c19380       8c    64         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o at 209721798).o:(.text._RNvMs2_NtCs2oRKRzl7NMK_5alloc7raw_vecNtB5_11RawVecInner13reserve_exactB7_)",
+              "following": [
+                "         1c19380          1c19380        0     1                 $x",
+                "         1c19380          1c19380       8c     1                 <alloc::raw_vec::RawVecInner>::reserve_exact"
+              ]
+            },
+            {
+              "line": 206123,
+              "text": "         38c5280          38c5280       70    64         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o at 209721798).o:(.text._RINvMs_NtCs2oRKRzl7NMK_5alloc3vecINtB5_3VechE5drainINtNtNtCs9TRC5nyl7KE_4core3ops5range5RangejEEB7_)",
+              "following": [
+                "         38c5280          38c5280        0     1                 $x",
+                "         38c5280          38c5280       70     1                 <alloc::vec::Vec<u8>>::drain::<core::ops::range::Range<usize>>"
+              ]
+            },
+            {
+              "line": 206126,
+              "text": "         38c5300          38c5300       3c    64         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o at 209721798).o:(.text._RINvNtNtCs9TRC5nyl7KE_4core5slice5index5rangeINtNtNtB6_3ops5range5RangejEECs2oRKRzl7NMK_5alloc)",
+              "following": [
+                "         38c5300          38c5300        0     1                 $x",
+                "         38c5300          38c5300       3c     1                 core::slice::index::range::<core::ops::range::Range<usize>>"
+              ]
+            },
+            {
+              "line": 206129,
+              "text": "         38c5340          38c5340       48    64         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o at 209721798).o:(.text._RINvNvNtNtCs2oRKRzl7NMK_5alloc2io5error21custom_owner_from_box12drop_box_rawDNtNtCs9TRC5nyl7KE_4core5error5ErrorNtNtB1h_6marker4SendNtB1O_4SyncEL_EB8_.llvm.5963729770871742086)",
+              "following": [
+                "         38c5340          38c5340        0     1                 $x",
+                "         38c5340          38c5340       48     1                 alloc::io::error::custom_owner_from_box::drop_box_raw::<dyn core::error::Error + core::marker::Send + core::marker::Sync> (.llvm.5963729770871742086)"
+              ]
+            },
+            {
+              "line": 206132,
+              "text": "         38c53c0          38c53c0       30    64         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(alloc-df2a4a7cce6f4aba.alloc.1bf78540c52f248c-cgu.0.rcgu.o at 209721798).o:(.text._RINvNvNtNtCs2oRKRzl7NMK_5alloc2io5error21custom_owner_from_box12drop_box_rawNtNtNtCs9TRC5nyl7KE_4core2io5error6CustomEB8_.llvm.5963729770871742086)",
+              "following": [
+                "         38c53c0          38c53c0        0     1                 $x",
+                "         38c53c0          38c53c0       30     1                 alloc::io::error::custom_owner_from_box::drop_box_raw::<core::io::error::Custom> (.llvm.5963729770871742086)"
+              ]
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o",
+          "size": 1382664,
+          "sha256": "9c9eb9ddfec38b69d53a927230296b038ca09cde819901324e8f2e0c3700aeb9",
+          "magic": "4243c0de35140000",
+          "linkedMapExamples": [
+            {
+              "line": 51422,
+              "text": "         11d7d88          11d7d88      5ef     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata._RNvNtNtNtCs9TRC5nyl7KE_4core7unicode12unicode_data10alphabetic7OFFSETS)",
+              "following": [
+                "         11d7d88          11d7d88      5ef     1                 core::unicode::unicode_data::alphabetic::OFFSETS",
+                "         11d7d88          11d7d88        0     1                 $d"
+              ]
+            },
+            {
+              "line": 51425,
+              "text": "         11d8377          11d8377      5b5     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata._RNvNtNtNtCs9TRC5nyl7KE_4core7unicode12unicode_data13cn_planes_0_37OFFSETS)",
+              "following": [
+                "         11d8377          11d8377      5b5     1                 core::unicode::unicode_data::cn_planes_0_3::OFFSETS",
+                "         11d8377          11d8377        0     1                 $d"
+              ]
+            },
+            {
+              "line": 51428,
+              "text": "         11d892c          11d892c      2ff     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata._RNvNtNtNtCs9TRC5nyl7KE_4core7unicode12unicode_data15grapheme_extend7OFFSETS)",
+              "following": [
+                "         11d892c          11d892c      2ff     1                 core::unicode::unicode_data::grapheme_extend::OFFSETS",
+                "         11d892c          11d892c        0     1                 $d"
+              ]
+            },
+            {
+              "line": 51431,
+              "text": "         11d8c2b          11d8c2b      123     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata._RNvNtNtNtCs9TRC5nyl7KE_4core7unicode12unicode_data1n7OFFSETS)",
+              "following": [
+                "         11d8c2b          11d8c2b      123     1                 core::unicode::unicode_data::n::OFFSETS",
+                "         11d8c2b          11d8c2b        0     1                 $d"
+              ]
+            },
+            {
+              "line": 51434,
+              "text": "         11d8d4e          11d8d4e       23     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata._RNvNtNtNtCs9TRC5nyl7KE_4core7unicode12unicode_data28default_ignorable_code_point7OFFSETS)",
+              "following": [
+                "         11d8d4e          11d8d4e       23     1                 core::unicode::unicode_data::default_ignorable_code_point::OFFSETS",
+                "         11d8d4e          11d8d4e        0     1                 $d"
+              ]
+            },
+            {
+              "line": 51437,
+              "text": "         11d8d71          11d8d71       2b     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata._RNvNtNtNtCs9TRC5nyl7KE_4core7unicode12unicode_data2cf7OFFSETS)",
+              "following": [
+                "         11d8d71          11d8d71       2b     1                 core::unicode::unicode_data::cf::OFFSETS",
+                "         11d8d71          11d8d71        0     1                 $d"
+              ]
+            },
+            {
+              "line": 51440,
+              "text": "         11d8da0          11d8da0       80     8         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata..Lanon.5aa95d7bbe8cdcc11421116e65099923.2)",
+              "following": [
+                "         11d8da0          11d8da0        0     1                 $d",
+                "         11d8e20          11d8e20      100     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata.anon.5aa95d7bbe8cdcc11421116e65099923.4.llvm.15390037107201056988)"
+              ]
+            },
+            {
+              "line": 51442,
+              "text": "         11d8e20          11d8e20      100     1         rust-target/aarch64-unknown-linux-gnu/release/bun-profile.lto.libbun_runtime.a(core-bc0661a2e1e35387.core.7352d696bf05d742-cgu.0.rcgu.o at 210169534).o:(.rodata.anon.5aa95d7bbe8cdcc11421116e65099923.4.llvm.15390037107201056988)",
+              "following": [
+                "         11d8e20          11d8e20        0     1                 $d",
+                "         11d8e20          11d8e20      100     1                 anon.5aa95d7bbe8cdcc11421116e65099923.4.llvm.15390037107201056988"
+              ]
+            }
+          ],
+          "classification": "Rust-authored library: MIT selected; full generated library third-party copyright inventory retained"
+        },
+        {
+          "name": "compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o",
+          "size": 1309568,
+          "sha256": "a04beebc8c4de185d030a15a56d40caa0433fef28d39b0a395565eaf9b1c7b53",
+          "magic": "7f454c4602010100",
+          "linkedMapExamples": [
+            {
+              "line": 66,
+              "text": "          321390           321390       18     8         rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o):(.rodata..Lanon.d149bd6595a24f793bc19147f57b8b74.0)",
+              "following": [
+                "          321390           321390        0     1                 $d",
+                "          3213b0           3213b0   bac904    16         cache/webkit-2e2aa2290fac856d-arm64-lto/lib/libicudata.a(icudt78l_dat.o):(.rodata)"
+              ]
+            },
+            {
+              "line": 65464,
+              "text": "         16067c0          16067c0       1c    64         rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o):(.text.__rust_enable_lse)",
+              "following": [
+                "         16067c0          16067c0        0     1                 $x",
+                "         16067c0          16067c0       1c     1                 __rust_enable_lse"
+              ]
+            },
+            {
+              "line": 65476,
+              "text": "         1606c2c          1606c2c       30     4         rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o):(.text.__aarch64_cas8_acq_rel)",
+              "following": [
+                "         1606c2c          1606c2c        0     1                 $x",
+                "         1606c2c          1606c2c       30     1                 __aarch64_cas8_acq_rel"
+              ]
+            },
+            {
+              "line": 65497,
+              "text": "         16088b0          16088b0       2c     4         rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o):(.text.__aarch64_ldadd8_relax)",
+              "following": [
+                "         16088b0          16088b0        0     1                 $x",
+                "         16088b0          16088b0       2c     1                 __aarch64_ldadd8_relax"
+              ]
+            },
+            {
+              "line": 65500,
+              "text": "         16088dc          16088dc       30     4         rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o):(.text.__aarch64_cas8_rel)",
+              "following": [
+                "         16088dc          16088dc        0     1                 $x",
+                "         16088dc          16088dc       30     1                 __aarch64_cas8_rel"
+              ]
+            },
+            {
+              "line": 65552,
+              "text": "         160ba50          160ba50       2c     4         rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o):(.text.__aarch64_ldadd8_acq_rel)",
+              "following": [
+                "         160ba50          160ba50        0     1                 $x",
+                "         160ba50          160ba50       2c     1                 __aarch64_ldadd8_acq_rel"
+              ]
+            },
+            {
+              "line": 65608,
+              "text": "         160ed68          160ed68       2c     4         rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o):(.text.__aarch64_ldset8_acq_rel)",
+              "following": [
+                "         160ed68          160ed68        0     1                 $x",
+                "         160ed68          160ed68       2c     1                 __aarch64_ldset8_acq_rel"
+              ]
+            },
+            {
+              "line": 65626,
+              "text": "         1611a10          1611a10       2c     4         rust-target/aarch64-unknown-linux-gnu/release/libbun_runtime.a(compiler_builtins-6f0df539adffb3c5.compiler_builtins.549f81edf0eabeee-cgu.0.rcgu.o):(.text.__aarch64_ldclr8_acq_rel)",
+              "following": [
+                "         1611a10          1611a10        0     1                 $x",
+                "         1611a10          1611a10       2c     1                 __aarch64_ldclr8_acq_rel"
+              ]
+            }
+          ],
+          "classification": "compiler_builtins: MIT AND Apache-2.0 WITH LLVM-exception; complete exact mixed notice retained"
+        }
+      ],
+      "officialPrebuiltComponentReceipt": {
+        "package": "rust-std",
+        "target": "aarch64-unknown-linux-gnu",
+        "source": "https://static.rust-lang.org/dist/2026-07-20/rust-std-nightly-aarch64-unknown-linux-gnu.tar.xz",
+        "file": "rust-std-nightly-aarch64-unknown-linux-gnu.tar.xz",
+        "size": 31066744,
+        "sha256": "997c94ea0fecc7ce95d212030cba2772cbed34fdb348ce15def6bedb645d0fb3",
+        "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+      },
+      "binding": "Bun pinned scripts/build/rust.ts rebuilds std with -Zbuild-std and release ThinLTO flags; official prebuilt std rlib member names/hashes differ and are NOT claimed to equal these objects. Pinned rust-src and Cargo source recipe establish source/license correspondence; historical original compiler micro-identity remains unobserved."
+    }
+  ],
+  "observedLinuxReconstructionRustc": "rustc 1.99.0-nightly (9f36de775 2026-07-19)\nbinary: rustc\ncommit-hash: 9f36de775bc636c8e88c31a173c2bcb6995956a0\ncommit-date: 2026-07-19\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0-nightly\nLLVM version: 22.1.8\n",
+  "sourceRecipe": {
+    "source": "https://github.com/oven-sh/bun/blob/744846f844374847c902b5e7fd59b4342a51ef99/scripts/build/rust.ts",
+    "buildStd": "-Zbuild-std=core,alloc,std,proc_macro,panic_abort",
+    "releaseFeatures": "-Zbuild-std-features=panic-unwind,default"
+  },
+  "scope": "library subset, not entire compiler. Actual object member hashes retained from genuine inventories. Official downloaded component identities verified against dated channel hashes; not a historical byte-equivalence assertion."
+}

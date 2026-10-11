@@ -1,0 +1,56 @@
+[
+  {
+    "package": "rust-src",
+    "target": "*",
+    "source": "https://static.rust-lang.org/dist/2026-07-20/rust-src-nightly.tar.xz",
+    "file": "rust-src-nightly.tar.xz",
+    "size": 5804680,
+    "sha256": "d4ffe57cc99d8846761bdbefc631bfd8f06fc001d7208576887e381c5709341a",
+    "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+  },
+  {
+    "package": "rust-std",
+    "target": "x86_64-unknown-linux-gnu",
+    "source": "https://static.rust-lang.org/dist/2026-07-20/rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "file": "rust-std-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "size": 31035624,
+    "sha256": "4b746e74f07cc3e3a16e1c0d367183eb5ca5374d6e87b9ab2002bbd463b3f8f0",
+    "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+  },
+  {
+    "package": "rust-std",
+    "target": "aarch64-unknown-linux-gnu",
+    "source": "https://static.rust-lang.org/dist/2026-07-20/rust-std-nightly-aarch64-unknown-linux-gnu.tar.xz",
+    "file": "rust-std-nightly-aarch64-unknown-linux-gnu.tar.xz",
+    "size": 31066744,
+    "sha256": "997c94ea0fecc7ce95d212030cba2772cbed34fdb348ce15def6bedb645d0fb3",
+    "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+  },
+  {
+    "package": "rust-std",
+    "target": "x86_64-apple-darwin",
+    "source": "https://static.rust-lang.org/dist/2026-07-20/rust-std-nightly-x86_64-apple-darwin.tar.xz",
+    "file": "rust-std-nightly-x86_64-apple-darwin.tar.xz",
+    "size": 30068840,
+    "sha256": "10bf53acde39c9935b3c4a46a6fb7867c999b811f0eaf4ed0b6d72d7b304221b",
+    "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+  },
+  {
+    "package": "rust-std",
+    "target": "aarch64-apple-darwin",
+    "source": "https://static.rust-lang.org/dist/2026-07-20/rust-std-nightly-aarch64-apple-darwin.tar.xz",
+    "file": "rust-std-nightly-aarch64-apple-darwin.tar.xz",
+    "size": 30046456,
+    "sha256": "26e71f6c916374821d05d7d3b9c4f80430228d834d4fea7dd91330c62f1884de",
+    "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+  },
+  {
+    "package": "rustc",
+    "target": "x86_64-unknown-linux-gnu",
+    "source": "https://static.rust-lang.org/dist/2026-07-20/rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "file": "rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "size": 80585304,
+    "sha256": "a0e461ac8f2ec75b38cd9590188db2d90e0acde3279434194a0ecebd7c099fa0",
+    "revision": "9f36de775bc636c8e88c31a173c2bcb6995956a0"
+  }
+]

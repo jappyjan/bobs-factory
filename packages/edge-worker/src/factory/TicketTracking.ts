@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { IIssueTrackerService, McpServerConfig } from "bobs-factory-core";
 import { z } from "zod";
+import { externalCompletionProven } from "./Delivery.js";
 import { isPullRequestSource } from "./GitProviderReference.js";
 import { issueSnapshot } from "./issueSnapshot.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
@@ -42,8 +43,11 @@ export interface TicketMilestone {
 	purpose?: "documentation" | "operational";
 	deliveryId?: string;
 	stage?: TicketStage;
+	stageSuperseded?: boolean;
+	stageApplied?: boolean;
 	pr?: string;
 	merged?: boolean;
+	completion?: { mode: "external" | "mixed"; digest: string; reviewId: string };
 	delivered?: boolean;
 	superseded?: boolean;
 	error?: string;
@@ -529,10 +533,56 @@ export function nativeAdapter(
 	};
 }
 
+/** Persist first; newer status intent does not discard pending documentation or links. */
+export function recordTicketMilestone(
+	run: FactoryRun,
+	milestone: TicketMilestone,
+): void {
+	if (!run.ticketReference || run.workflow.id === "simple") return;
+	if (milestone.stage === "done") {
+		if (
+			run.delivery?.contract.mode === "external" ||
+			run.delivery?.contract.mode === "mixed"
+		) {
+			if (
+				!externalCompletionProven(run) ||
+				!milestone.completion ||
+				milestone.completion.digest !== run.delivery.verification?.digest ||
+				(run.delivery.contract.mode === "mixed" &&
+					(run.outputs.merge as { merged?: boolean } | undefined)?.merged !==
+						true)
+			)
+				throw new Error(
+					"Done requires the accepted external completion proof and all mixed repository merges",
+				);
+		} else if (!milestone.merged)
+			throw new Error("Done requires a confirmed merge receipt");
+	}
+	run.ticketSync ??= { receipts: [] };
+	if (run.ticketSync.receipts.some((receipt) => receipt.key === milestone.key))
+		return;
+	if (milestone.stage)
+		for (const receipt of run.ticketSync.receipts)
+			if (!receipt.delivered && receipt.stage && !receipt.merged)
+				receipt.stageSuperseded = true;
+	run.ticketSync.receipts.push({ ...milestone });
+}
+
 /** Durable outbox. Errors are visible but do not replay development or merge. */
 export class TicketTracking {
 	private queues = new Map<string, Promise<void>>();
 	private stopped = false;
+	private updateMaintenance = false;
+	isBusy(): boolean {
+		return this.queues.size > 0;
+	}
+	setUpdateMaintenance(active: boolean): void {
+		this.updateMaintenance = active;
+		if (active) {
+			for (const timer of this.retries.values()) clearTimeout(timer);
+			this.retries.clear();
+		}
+	}
 	private retries = new Map<string, ReturnType<typeof setTimeout>>();
 	stop(): void {
 		this.stopped = true;
@@ -543,24 +593,17 @@ export class TicketTracking {
 		private adapter: (run: FactoryRun) => Promise<TicketAdapter>,
 		private save: (run: FactoryRun) => void,
 		private log: (run: FactoryRun, message: string) => void,
+		private checkExternal?: (run: FactoryRun) => Promise<boolean>,
 	) {}
 	async record(run: FactoryRun, milestone: TicketMilestone): Promise<void> {
 		if (!run.ticketReference || run.workflow.id === "simple") return;
-		if (milestone.stage === "done" && !milestone.merged)
-			throw new Error("Done requires a confirmed merge receipt");
-		run.ticketSync ??= { receipts: [] };
-		const sync = run.ticketSync;
-		if (!sync.receipts.some((r) => r.key === milestone.key)) {
-			if (milestone.stage)
-				for (const r of sync.receipts)
-					if (!r.delivered && r.stage && !r.merged) r.superseded = true;
-			sync.receipts.push({ ...milestone });
-			this.save(run);
-		}
+		recordTicketMilestone(run, milestone);
+		this.save(run);
 		await this.flush(run);
 	}
 	async flush(run: FactoryRun, reassess = false): Promise<void> {
-		if (!run.ticketReference || !run.ticketSync) return;
+		if (!run.ticketReference || !run.ticketSync || this.updateMaintenance)
+			return;
 		const ref = TicketReferenceSchema.parse(run.ticketReference);
 		const ticketKey =
 			ref.provider === "taskbot"
@@ -579,6 +622,18 @@ export class TicketTracking {
 					)
 						continue;
 					try {
+						if (receipt.stage === "done" && receipt.completion) {
+							if (
+								!externalCompletionProven(run) ||
+								receipt.completion.digest !==
+									run.delivery?.verification?.digest ||
+								!this.checkExternal ||
+								!(await this.checkExternal(run))
+							)
+								throw new StatusConflict(
+									"Accepted external state changed or could not be verified. Renew independent verification and human acceptance before closing the ticket.",
+								);
+						}
 						const adapter = await this.adapter(run);
 						let snapshot = await adapter.read();
 						const statusOf = (snapshot: TicketSnapshot) =>
@@ -588,13 +643,21 @@ export class TicketTracking {
 									"",
 							);
 						const merged = sync.receipts.some((r) => r.merged && !r.superseded);
-						const applyStage = receipt.stage && (!merged || receipt.merged);
+						const applyStage =
+							receipt.stage &&
+							!receipt.stageSuperseded &&
+							(!merged || receipt.merged || receipt.completion);
 						const terminal =
 							["done", "cancelled"].includes(String(snapshot.status)) ||
 							["completed", "canceled"].includes(
 								String((snapshot.state as { type?: string } | undefined)?.type),
 							);
-						if (terminal && !receipt.merged && !reassess) {
+						if (
+							terminal &&
+							!receipt.merged &&
+							!receipt.completion &&
+							!reassess
+						) {
 							// Late progress from an older attempt is obsolete once the
 							// ticket is closed. Persist that decision to keep restarts quiet.
 							// Confirmed merges still deliver their evidence and PR link.
@@ -627,10 +690,13 @@ export class TicketTracking {
 							snapshot = await adapter.read();
 						}
 
-						receipt.limitation =
-							receipt.stage && (!merged || receipt.merged)
-								? await adapter.stage(receipt.stage, snapshot)
-								: undefined;
+						if (applyStage && !receipt.stageApplied) {
+							receipt.limitation = await adapter.stage(
+								receipt.stage!,
+								snapshot,
+							);
+							receipt.stageApplied = true;
+						}
 						sync.lastStatus = statusOf(await adapter.read());
 						this.save(run);
 						const marker = `<!-- factory:${run.id}:${createHash("sha256").update(receipt.key).digest("hex").slice(0, 20)} -->`;
@@ -681,6 +747,7 @@ export class TicketTracking {
 		if (
 			pending &&
 			!this.stopped &&
+			!this.updateMaintenance &&
 			!pending.conflict &&
 			!this.retries.has(run.id)
 		) {

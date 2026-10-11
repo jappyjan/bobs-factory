@@ -1,0 +1,30 @@
+✔ SIGTERM unwinds work, cleans its child once and persists FAIL (32.949459ms)
+✔ SIGINT unwinds work, cleans its child once and persists FAIL (32.063875ms)
+✔ failure and cleanup failure remain nonpassing and persist both errors (0.287041ms)
+✔ exact manager wrapper preserves disabled stdout, stderr and exit 1 (397.744625ms)
+✔ exact START descendant boundary precedes SIGINT; delayed fork cannot mutate (1004.174416ms)
+✔ exact START descendant boundary precedes SIGTERM; delayed fork cannot mutate (1030.050334ms)
+✔ outer timeout cooperative accounts for real nested detached groups and a delayed fork (1931.312292ms)
+✔ outer timeout forced accounts for real nested detached groups and a delayed fork (2123.018291ms)
+✔ outer timeout cleanup-error accounts for real nested detached groups and a delayed fork (2917.632958ms)
+✔ closed registry handshake refuses target execution (42.765542ms)
+✔ changed leader identity refuses unowned signaling and reports survivors (2148.669958ms)
+✔ native cleanup after unexpected-death retains evidence until verified (934.554875ms)
+✔ native cleanup after manager-failure retains evidence until verified (692.7515ms)
+✔ native cleanup after unproven-exit retains evidence until verified (935.924959ms)
+✔ v255 preserved signal result proves exhaustion only with exact-unit rejection and terminal state (0.944125ms)
+✔ already-inactive unloaded unit with a retained owned definition needs no force kill (0.494125ms)
+✔ queued manager start is replaced by exact-unit stop and must reach terminal state (0.1275ms)
+✔ manager permission errors and changed ownership are never hidden by terminal state (0.234042ms)
+✔ a genuine state-query error cannot be erased by a successful kill fallback (0.119625ms)
+✔ unloaded stop race is accepted only after independent terminal verification (0.1615ms)
+✔ owned process group drains detached-pipe descendant on abort (790.209125ms)
+✔ owned process group drains detached-pipe descendant on leader-exit (804.571542ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14202.090625

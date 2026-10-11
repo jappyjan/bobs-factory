@@ -1,0 +1,93 @@
+[
+  {
+    "name": "node",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/node/bin/node",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/node/bin/node",
+    "sha256": "5325ac9da58541494afcc136f0880279a2a853609bf4dae7755e04fb682b6926",
+    "version": "v26.3.0\n"
+  },
+  {
+    "name": "llvm-objcopy",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-objcopy",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-objcopy",
+    "sha256": "74c01c79af762a0fa63192fc1d8149b297b69e890d76d382496b93f631e355ae",
+    "version": "llvm-objcopy, compatible with GNU objcopy\nLLVM (http://llvm.org/):\n  LLVM version 21.1.8\n  Optimized build.\n"
+  },
+  {
+    "name": "cc",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/clang",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/clang-21",
+    "sha256": "d85d72c5c33bedce519504c4646b1356bf5205188ec60e4f753d1c4197cb0687",
+    "version": "clang version 21.1.8 (https://github.com/llvm/llvm-project 2078da43e25a4623cab2d0d60decddf709aaea28)\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /home/runner/work/_temp/relink-task-38136567511-1/llvm/bin\n"
+  },
+  {
+    "name": "cxx",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/clang++",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/clang-21",
+    "sha256": "d85d72c5c33bedce519504c4646b1356bf5205188ec60e4f753d1c4197cb0687",
+    "version": "clang version 21.1.8 (https://github.com/llvm/llvm-project 2078da43e25a4623cab2d0d60decddf709aaea28)\nTarget: x86_64-unknown-linux-gnu\nThread model: posix\nInstalledDir: /home/runner/work/_temp/relink-task-38136567511-1/llvm/bin\n"
+  },
+  {
+    "name": "ar",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-ar",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-ar",
+    "sha256": "2a69b1406070607c758117083752bd05597a5539ec13888a524b9aa4bdb85703",
+    "version": "LLVM (http://llvm.org/):\n  LLVM version 21.1.8\n  Optimized build.\n"
+  },
+  {
+    "name": "ranlib",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-ranlib",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/llvm/bin/llvm-ar",
+    "sha256": "2a69b1406070607c758117083752bd05597a5539ec13888a524b9aa4bdb85703",
+    "version": "LLVM (http://llvm.org/):\n  LLVM version 21.1.8\n  Optimized build.\n"
+  },
+  {
+    "name": "ld",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld/ld.lld",
+    "sha256": "9648de562a118e36b87e9f8b86642d07db79312d96778812726f18615aeec69e",
+    "version": "LLD 22.1.8 (/checkout/src/llvm-project/llvm 52ed14fcd56afc30f9cccd8ca8ce237c2eef7e04) (compatible with GNU linkers)\n"
+  },
+  {
+    "name": "strip",
+    "path": "/usr/bin/x86_64-linux-gnu-strip",
+    "resolvedPath": "/usr/bin/x86_64-linux-gnu-strip",
+    "sha256": "0d980587ada7ab12193f39271f060d5663aa2f289b0e80d2a0274ce7306e4e42",
+    "version": "GNU strip (GNU Binutils for Ubuntu) 2.42\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) any later version.\nThis program has absolutely no warranty.\n"
+  },
+  {
+    "name": "cargo",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/bin/cargo",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/bin/cargo",
+    "sha256": "5f3132fa701aad42b156b91b44b377e83d46bd7f9a07981c75b7f5b7a736bad9",
+    "version": "cargo 1.99.0-nightly (3efb1f477 2026-07-17)\n"
+  },
+  {
+    "name": "rustc",
+    "path": "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/bin/rustc",
+    "resolvedPath": "/home/runner/work/_temp/relink-task-38136567511-1/rust-toolchain/bin/rustc",
+    "sha256": "3986befbd4aa48994e478d50f8d185876e8cceab10cf823b558e9adb3e92b7ae",
+    "version": "rustc 1.99.0-nightly (9f36de775 2026-07-19)\nbinary: rustc\ncommit-hash: 9f36de775bc636c8e88c31a173c2bcb6995956a0\ncommit-date: 2026-07-19\nhost: x86_64-unknown-linux-gnu\nrelease: 1.99.0-nightly\nLLVM version: 22.1.8\n"
+  },
+  {
+    "name": "ninja",
+    "path": "/usr/local/bin/ninja",
+    "resolvedPath": "/usr/local/bin/ninja",
+    "sha256": "607e668f90dd6cd82e1a42ae572647ad1b1fd43063964295b9547836d8c15d99",
+    "version": "1.13.2\n"
+  },
+  {
+    "name": "cmake",
+    "path": "/usr/local/bin/cmake",
+    "resolvedPath": "/usr/local/bin/cmake",
+    "sha256": "c4b3b237dc7a013590db9e90f70fca2dfdedde09521e920d3339569ea364230a",
+    "version": "cmake version 3.31.6\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).\n"
+  },
+  {
+    "name": "readelf",
+    "path": "/usr/bin/readelf",
+    "resolvedPath": "/usr/bin/x86_64-linux-gnu-readelf",
+    "sha256": "64c58e15274bbbb5153f31078e455e9e77ee5f51489e709bba5bb788ce9df2b0",
+    "version": "GNU readelf (GNU Binutils for Ubuntu) 2.42\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) any later version.\nThis program has absolutely no warranty.\n"
+  }
+]

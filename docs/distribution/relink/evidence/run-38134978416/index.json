@@ -1,0 +1,570 @@
+{
+	"runId": 38134978416,
+	"jobId": 114456890512,
+	"head": "41c5b5bc3147b45baf3300595b5912319109ba5b",
+	"workflowConclusion": "success",
+	"engineeringResult": "FAIL",
+	"artifact": {
+		"id": 11700568368,
+		"size": 4625402,
+		"sha256": "d4376514c06fed216b8cad0dd7a600a0443fb392eb3cc8c55d1df92504a7a98a",
+		"url": "https://api.github.com/repos/jappyjan/bobs-factory/actions/artifacts/11700568368/zip"
+	},
+	"completeRawPreservation": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/relink-execution/run-38134978416/raw",
+	"files": [
+		{
+			"file": "build.ninja",
+			"size": 15199,
+			"sha256": "da7ec0840d74d034cdd841ee82b7e64f9aa235e930f4a71837d5cdc18f9b5d44",
+			"retainedInGit": true,
+			"copy": "build.ninja.raw"
+		},
+		{
+			"file": "bun-profile.linker-map",
+			"size": 45739306,
+			"sha256": "c15407550e314644e2c3c7bf34a95d1762ac62648a235eb80e0a0ed9ecd0f774",
+			"retainedInGit": false
+		},
+		{
+			"file": "bun-profile.rsp",
+			"size": 403,
+			"sha256": "9249d7ada46057685456a822b4b0c13f98c492016ae79dce5181c3118b038ac6",
+			"retainedInGit": true,
+			"copy": "bun-profile.rsp.raw"
+		},
+		{
+			"file": "capture-config.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "capture-config.log.raw"
+		},
+		{
+			"file": "commands.json",
+			"size": 18164,
+			"sha256": "cefbaf96c1d655508dad3113a612d614245497ecac1c3274cf4542147d8719c2",
+			"retainedInGit": true,
+			"copy": "commands.json.raw"
+		},
+		{
+			"file": "configure-cli.log",
+			"size": 315,
+			"sha256": "e7e428c7e44f10dcb738e6dc8f274a59487e4f0e2dfc3e123611b0ecd038f3c2",
+			"retainedInGit": true,
+			"copy": "configure-cli.log.raw"
+		},
+		{
+			"file": "configure.json",
+			"size": 385,
+			"sha256": "cb5181439d975d9b712076beb0dc631eeabb96c0763ac1df1a9511cdda8ddf62",
+			"retainedInGit": true,
+			"copy": "configure.json.raw"
+		},
+		{
+			"file": "cpu.txt",
+			"size": 3459,
+			"sha256": "954a722d8e0c26bb60ba6de8931b220986f74f5928af8a6e1298801e42554bfb",
+			"retainedInGit": true,
+			"copy": "cpu.txt.raw"
+		},
+		{
+			"file": "disk.txt",
+			"size": 532,
+			"sha256": "e5cd04090bc693f31ca374fe0c5d16d5b36cd63f8719b66173b697a5ba04554d",
+			"retainedInGit": true,
+			"copy": "disk.txt.raw"
+		},
+		{
+			"file": "downloads.json",
+			"size": 7255,
+			"sha256": "bd2e29afe68f8fb41c8f9f954cbbf14467ea9b98cfedb1016014ed03427ac603",
+			"retainedInGit": true,
+			"copy": "downloads.json.raw"
+		},
+		{
+			"file": "extract-gcc13-cpp-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-cpp-13_13.1.0-8ubuntu1~20.04.2_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-g++-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-g++-13_13.1.0-8ubuntu1~20.04.2_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-gcc-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-gcc-13_13.1.0-8ubuntu1~20.04.2_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libasan6_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libasan6_11.5.0-10ubuntu1~20~ppa3_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libasan8_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libasan8_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libitm1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libitm1_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-gcc13-libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-gcc13-libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64.log.raw"
+		},
+		{
+			"file": "extract-libc6-dev.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-libc6-dev.log.raw"
+		},
+		{
+			"file": "extract-libc6.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-libc6.log.raw"
+		},
+		{
+			"file": "extract-libcrypt-dev.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-libcrypt-dev.log.raw"
+		},
+		{
+			"file": "extract-libcrypt1.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-libcrypt1.log.raw"
+		},
+		{
+			"file": "extract-linux-libc-dev.log",
+			"size": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"retainedInGit": true,
+			"copy": "extract-linux-libc-dev.log.raw"
+		},
+		{
+			"file": "generator-files.jsonl",
+			"size": 7569,
+			"sha256": "72bf186b688844baadb64892e87747012e35464fb29af81d1c7e0d9ea5942cbf",
+			"retainedInGit": true,
+			"copy": "generator-files.jsonl.raw"
+		},
+		{
+			"file": "harness.log",
+			"size": 2343,
+			"sha256": "b68d0d299899dcab73978d800105b44505ad50c9a4bc587c8da7816f03bb11bf",
+			"retainedInGit": true,
+			"copy": "harness.log.raw"
+		},
+		{
+			"file": "install-cargo.log",
+			"size": 189,
+			"sha256": "eccb4dbb3820908ee8d1c943f29ece292bad09498373423e70570a409ef5654b",
+			"retainedInGit": true,
+			"copy": "install-cargo.log.raw"
+		},
+		{
+			"file": "install-rustc.log",
+			"size": 189,
+			"sha256": "d9dd20692f4c08e9dc8dd0444f95a5d92946eb9d40735a6cbebd65965c03c7de",
+			"retainedInGit": true,
+			"copy": "install-rustc.log.raw"
+		},
+		{
+			"file": "link-dry-run.log",
+			"size": 2928,
+			"sha256": "3318db43d65083c8af0ebdf624b19db304a07124e310ebf5d12dbeec14475b60",
+			"retainedInGit": true,
+			"copy": "link-dry-run.log.raw"
+		},
+		{
+			"file": "linker.lds",
+			"size": 6073,
+			"sha256": "a365da6e5ee059e4debb1a605bd9433e1cd334ea26f0c142a968757c7d657345",
+			"retainedInGit": true,
+			"copy": "linker.lds.raw"
+		},
+		{
+			"file": "linker.order",
+			"size": 1156033,
+			"sha256": "32c24058f67945853c9e97c35a8dd6ece17b7c493249dab1a442a20250c20dd3",
+			"retainedInGit": true,
+			"copy": "linker.order.raw"
+		},
+		{
+			"file": "llvm-files.jsonl",
+			"size": 79048,
+			"sha256": "f1b99c78d6d636b4a71d6b3c5d08c91323b4e1230c3170ac86d2ead77e3a7726",
+			"retainedInGit": false
+		},
+		{
+			"file": "memory.txt",
+			"size": 207,
+			"sha256": "2fccbe01563b92d346503c6e63948819fe338ef8defcfcb12320e56179822768",
+			"retainedInGit": true,
+			"copy": "memory.txt.raw"
+		},
+		{
+			"file": "native-revision.log",
+			"size": 16,
+			"sha256": "9be88dde8b69dbe59e415265fef0e6afa91607e6ef3e0de5ed3d0886844f52e2",
+			"retainedInGit": true,
+			"copy": "native-revision.log.raw"
+		},
+		{
+			"file": "native-version.log",
+			"size": 6,
+			"sha256": "b99b4c7cdf236f59bc9f65d963deaecae3b16a7dad87939cacb9057f7664daee",
+			"retainedInGit": true,
+			"copy": "native-version.log.raw"
+		},
+		{
+			"file": "node-files.jsonl",
+			"size": 794429,
+			"sha256": "72f09d22e4068f7020015f4922f8224e346b9357c30b7db230b081e05fa54422",
+			"retainedInGit": false
+		},
+		{
+			"file": "original-ninja-commands.log",
+			"size": 2832,
+			"sha256": "595cebf3d90495ed8bdf44ddda3b8e6ab3f29dbe19a7d8058e2465dd4e21b61d",
+			"retainedInGit": true,
+			"copy": "original-ninja-commands.log.raw"
+		},
+		{
+			"file": "os-release.txt",
+			"size": 400,
+			"sha256": "87458b3b1f1ca0e5c693ade771de7007c3783bdc692fa6b39eb6414bf2af2763",
+			"retainedInGit": true,
+			"copy": "os-release.txt.raw"
+		},
+		{
+			"file": "prelink-files.jsonl",
+			"size": 897,
+			"sha256": "c61b5c0f6a7f2d2eb784f341f505226b1104defd1cd047d1a8330efbd3039f2e",
+			"retainedInGit": true,
+			"copy": "prelink-files.jsonl.raw"
+		},
+		{
+			"file": "published-elf.log",
+			"size": 261350,
+			"sha256": "24a795b330b511005d5d6c2cd9f3100098c2cfdcda1764212d48c8ba6c95d449",
+			"retainedInGit": true,
+			"copy": "published-elf.log.raw"
+		},
+		{
+			"file": "relink-only.ninja",
+			"size": 3640,
+			"sha256": "c7f2cfd3f38aaee9b07020edb91e09a10da6150f915993632a0c76214eccf858",
+			"retainedInGit": true,
+			"copy": "relink-only.ninja.raw"
+		},
+		{
+			"file": "relinked-elf.log",
+			"size": 261350,
+			"sha256": "24a795b330b511005d5d6c2cd9f3100098c2cfdcda1764212d48c8ba6c95d449",
+			"retainedInGit": true,
+			"copy": "relinked-elf.log.raw"
+		},
+		{
+			"file": "resolved-config.json",
+			"size": 11164,
+			"sha256": "8d1dedc642e8eb4118877ca8a39acfbf60f44866d558fa84c29668876a4c1c32",
+			"retainedInGit": true,
+			"copy": "resolved-config.json.raw"
+		},
+		{
+			"file": "restricted-ninja-commands.log",
+			"size": 2832,
+			"sha256": "595cebf3d90495ed8bdf44ddda3b8e6ab3f29dbe19a7d8058e2465dd4e21b61d",
+			"retainedInGit": true,
+			"copy": "restricted-ninja-commands.log.raw"
+		},
+		{
+			"file": "result.json",
+			"size": 9329,
+			"sha256": "391bde082aa26c24ab88f0b0203f0a175ce38559b0fe12eed5eb5bc20a45b45e",
+			"retainedInGit": true,
+			"copy": "result.json.raw"
+		},
+		{
+			"file": "runner.json",
+			"size": 205,
+			"sha256": "abf405a5cd0420c956e7048f35a966649e995ea8d93df6f6978eceb8c12ba2de",
+			"retainedInGit": true,
+			"copy": "runner.json.raw"
+		},
+		{
+			"file": "rust-toolchain-files.jsonl",
+			"size": 12355,
+			"sha256": "53916234ce134da067d1f2ab8b0e7395ad7011927f75721504c6c3557e875953",
+			"retainedInGit": false
+		},
+		{
+			"file": "rust-toolchain.toml",
+			"size": 1579,
+			"sha256": "85ec7da6d5a6eb4a0262cc8525e39edbcc9c61fb0693eb1f6733ef45ef896fb7",
+			"retainedInGit": true,
+			"copy": "rust-toolchain.toml.raw"
+		},
+		{
+			"file": "symbols.dyn",
+			"size": 21846,
+			"sha256": "cd986901b7f7cdf3e40acaad0520d022612b122a8864e5e12bd2a1ebf6205f88",
+			"retainedInGit": true,
+			"copy": "symbols.dyn.raw"
+		},
+		{
+			"file": "sysroot-files.jsonl",
+			"size": 417819,
+			"sha256": "37ab39442cd228f15e231df08580758844e84e59daf31b286d228fb99225d45e",
+			"retainedInGit": false
+		},
+		{
+			"file": "tool-identities.json",
+			"size": 5524,
+			"sha256": "ce89ae2c6add7562461344a878cda1df2aa16627ddf18f458c8e7d4bde8d603b",
+			"retainedInGit": true,
+			"copy": "tool-identities.json.raw"
+		},
+		{
+			"file": "unchanged-link.log",
+			"size": 2928,
+			"sha256": "3318db43d65083c8af0ebdf624b19db304a07124e310ebf5d12dbeec14475b60",
+			"retainedInGit": true,
+			"copy": "unchanged-link.log.raw"
+		},
+		{
+			"file": "version-ar.log",
+			"size": 66,
+			"sha256": "0cd061b54d9fabd10472fb5d41faa0d4c11ba220b23a9da140226ed4f35c7179",
+			"retainedInGit": true,
+			"copy": "version-ar.log.raw"
+		},
+		{
+			"file": "version-cargo.log",
+			"size": 44,
+			"sha256": "eead13b33714ef18c9cb5b27e1e7aba3f4bc4471ecda1b548ecc6b57b19cdd4d",
+			"retainedInGit": true,
+			"copy": "version-cargo.log.raw"
+		},
+		{
+			"file": "version-cc.log",
+			"size": 227,
+			"sha256": "8a70a3811ad83e314260469301a5374c0420044469cddd961050a9ccf64b4fd6",
+			"retainedInGit": true,
+			"copy": "version-cc.log.raw"
+		},
+		{
+			"file": "version-cmake.log",
+			"size": 91,
+			"sha256": "f6e81c2559f3ce00c5fdad01d7b226c301f5d6b07ee04f65db6dbfdc1cc5970b",
+			"retainedInGit": true,
+			"copy": "version-cmake.log.raw"
+		},
+		{
+			"file": "version-cxx.log",
+			"size": 227,
+			"sha256": "8a70a3811ad83e314260469301a5374c0420044469cddd961050a9ccf64b4fd6",
+			"retainedInGit": true,
+			"copy": "version-cxx.log.raw"
+		},
+		{
+			"file": "version-ld.log",
+			"size": 116,
+			"sha256": "75d97113b00a0e1b0f05985e72865d64d9f2a7d462b24241254d199adfed3291",
+			"retainedInGit": true,
+			"copy": "version-ld.log.raw"
+		},
+		{
+			"file": "version-llvm-objcopy.log",
+			"size": 108,
+			"sha256": "a663242bddab0451382e69f6dc50a7149a449dca55b4715635f6b5566a4a3cd9",
+			"retainedInGit": true,
+			"copy": "version-llvm-objcopy.log.raw"
+		},
+		{
+			"file": "version-ninja.log",
+			"size": 7,
+			"sha256": "810ab97f4b3fccb9adf1db7959945b479635931ccc4a0243c34a41b739eae25a",
+			"retainedInGit": true,
+			"copy": "version-ninja.log.raw"
+		},
+		{
+			"file": "version-node.log",
+			"size": 8,
+			"sha256": "08f6347c6bc47b1f68fb3e5b85f789b6baabb1c94d2006983a485d4501048459",
+			"retainedInGit": true,
+			"copy": "version-node.log.raw"
+		},
+		{
+			"file": "version-ranlib.log",
+			"size": 66,
+			"sha256": "0cd061b54d9fabd10472fb5d41faa0d4c11ba220b23a9da140226ed4f35c7179",
+			"retainedInGit": true,
+			"copy": "version-ranlib.log.raw"
+		},
+		{
+			"file": "version-readelf.log",
+			"size": 288,
+			"sha256": "6aca4321453ac381865f3d353ea7896b150c05026483cb9db0047eee6916723d",
+			"retainedInGit": true,
+			"copy": "version-readelf.log.raw"
+		},
+		{
+			"file": "version-rustc.log",
+			"size": 212,
+			"sha256": "e77b488815717bdfbdcae905649313903f93857826034d5421687672887caab9",
+			"retainedInGit": true,
+			"copy": "version-rustc.log.raw"
+		},
+		{
+			"file": "version-strip.log",
+			"size": 286,
+			"sha256": "c7ec30a0d74e492add5e84a46392b6be6137f3d29883c0a1417389936dfd09bb",
+			"retainedInGit": true,
+			"copy": "version-strip.log.raw"
+		},
+		{
+			"file": "webkit-cache-files.jsonl",
+			"size": 399262,
+			"sha256": "5c40dd9b26e03dfe4e5f40b31b9e7e5072fe2909ed916e73fc5e0c88a307ba80",
+			"retainedInGit": false
+		}
+	]
+}
