@@ -1,0 +1,48 @@
+{
+  "sourceCommit": "81715b61ca17b699d7d4d00c56c4a349dbde1f0a",
+  "scope": "Implementation validation; provider/evidence simulated in release fixture; no public release or native build",
+  "checks": {
+    "release-tests": {
+      "logSha256": "9ec43208f90ead430152a5f31d3d3682507fed4e823115734a5c7c3cecb83563",
+      "tail": [
+        "\u2714 unsigned publisher \u2192 discovery \u2192 prepared/offline chunks \u2192 updater preserves integrity and rollback (3795.217ms)",
+        "\u2139 tests 123",
+        "\u2139 suites 0",
+        "\u2139 pass 123",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 todo 0",
+        "\u2139 duration_ms 43236.631584"
+      ]
+    },
+    "desktop-tests": {
+      "logSha256": "c331f3b00bfd6507d6721142160b63eca5897e351aa6d8b6c96c82686262ca29",
+      "tail": [
+        "\u2714 open launcher refreshes automatic candidates/results without discarding edits or changing captured consent (6.951833ms)",
+        "\u2139 tests 29",
+        "\u2139 suites 0",
+        "\u2139 pass 29",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 todo 0",
+        "\u2139 duration_ms 9447.820375"
+      ]
+    },
+    "worker-tests": {
+      "logSha256": "a41acadcde48c3f30f5958d3014264968290cc9fdfaa66880de341adaa1d203b",
+      "tail": [
+        "",
+        " RUN  v4.1.11 /Users/jappy/code/jappy/bobs-factory-unsigned-116/packages/edge-worker",
+        "",
+        "",
+        " Test Files  2 passed (2)",
+        "      Tests  58 passed (58)",
+        "   Start at  20:45:36",
+        "   Duration  12.37s (transform 272ms, setup 48ms, import 383ms, tests 11.93s, environment 0ms)",
+        ""
+      ]
+    }
+  }
+}

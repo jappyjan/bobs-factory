@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it, vi } from "vitest";
@@ -9,9 +9,9 @@ import type {
 } from "../../../scripts/lib/github-release.mjs";
 import { PublishedUpdateSource } from "../src/updates/PublishedUpdateSource.js";
 
-it("reauthenticates staging with compiled publisher pins before writing or executing downloaded artifacts", async () => {
+it("rechecks staging integrity against the GitHub asset digest before writing or executing downloaded artifacts", async () => {
 	const home = mkdtempSync(join(tmpdir(), "published-update-source-"));
-	const names = ["release.json", "release.json.sig", "release.json.key-id"];
+	const names = ["release.json"];
 	const client: ReleaseClient = {
 		api: vi.fn(async () => ({
 			id: 1,
@@ -22,15 +22,14 @@ it("reauthenticates staging with compiled publisher pins before writing or execu
 		pages: vi.fn(async () =>
 			names.map((name) => ({
 				name,
+				state: "uploaded",
+				size: 15,
+				digest: `sha256:${"a".repeat(64)}`,
 				browser_download_url: `https://github.com/jappyjan/bobs-factory/releases/download/v1.1.0/${name}`,
 			})),
 		),
-		bytes: vi.fn(async (asset: ReleaseAsset) =>
-			Buffer.from(
-				asset.name === "release.json.key-id"
-					? "untrusted-publisher"
-					: "untrusted bytes",
-			),
+		bytes: vi.fn(async (_asset: ReleaseAsset) =>
+			Buffer.from("corrupt payload"),
 		),
 	};
 	const source = new PublishedUpdateSource(
@@ -49,16 +48,17 @@ it("reauthenticates staging with compiled publisher pins before writing or execu
 				publishedAt: "2026-10-10T16:00:00.000Z",
 				manifestSha256: "b".repeat(64),
 			}),
-		).rejects.toThrow("publisher key");
+		).rejects.toThrow("checksum mismatch");
 		expect(
 			vi.mocked(client.bytes).mock.calls.map(([asset]) => asset.name),
 		).toEqual(names);
+		expect(readdirSync(home)).toEqual([]);
 	} finally {
 		rmSync(home, { recursive: true, force: true });
 	}
 });
 
-it("rejects canonical beta fallback instead of relabeling its signed channel", () => {
+it("rejects canonical beta fallback instead of relabeling its release channel", () => {
 	const source = new PublishedUpdateSource(
 		"/unused",
 		"/unused/previous",
@@ -90,9 +90,9 @@ it("rejects canonical beta fallback instead of relabeling its signed channel", (
 		},
 		manifestSha256: "c".repeat(64),
 	};
-	// Tests the conversion boundary only; does not claim signature evidence.
+	// Tests the conversion boundary only; does not claim published release evidence.
 	expect(() => (source as any).candidate(verified, "stable")).toThrow(
-		"Signed release belongs to another channel",
+		"Release belongs to another channel",
 	);
 	expect(() => (source as any).candidate(verified, "nightly")).toThrow(
 		"another channel",

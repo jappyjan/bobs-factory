@@ -8,7 +8,7 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 | --- | --- | --- | --- |
 | Executable / service | CLI, launcher, install / service docs | `bobs-factory` | Replace approved service command; no alias |
 | Workspace packages | manifests, imports, filters, lockfile | `bobs-factory-*`, private | Build-time only; upstream monorepo npm publishing stays retired |
-| Public trial launcher | Proposed npm package `bobs-factory-trial`, website download guide | Small `npx` launcher for stable/nightly verified native artifacts; npm/Node required for launcher only | Registry name was unclaimed when checked on 2026-10-10; confirm authenticated project ownership before publishing. Never publish workspace packages or bypass signed release verification |
+| Public trial launcher | Proposed npm package `bobs-factory-trial`, website download guide | Small `npx` launcher for stable/nightly verified native artifacts; npm/Node required for launcher only | Registry name was unclaimed when checked on 2026-10-10; confirm authenticated project ownership before publishing. Never publish workspace packages or bypass release integrity verification |
 | Product environment | CLI, worker, runners, capacity, helpers | `BOBS_FACTORY_*` | Rename keys, refuse collisions; keep provider keys |
 | Home configuration | application, worker, config | `factoryHome`, `~/.bobs-factory` | Transform config field and owned paths only |
 | Persistence | worker state, factory runs / chats / evidence | `<home>/state`, `<home>/factory` | Preserve versions, IDs, receipts, gates, accepted definitions |
@@ -18,12 +18,12 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 | Stock skills / plugin | deployer, runner configs, instructions | `bobs-factory-skills`, `bobs-factory-skills-plugin` | Preserve custom skills and prompts |
 | Certificates / sandbox | worker home, runner environment | `<home>/certs`, `BOBS_FACTORY_*` | Preserve keys, normalize path fields |
 | Prepared Cursor SDK | binary runner / external Node host | `BOBS_FACTORY_CURSOR_SDK_PATH`, `BOBS_FACTORY_CURSOR_NODE` | Keep SDK/native files external; preserve native IDs |
-| Distribution | build, CI, installer, metadata | frozen stable/nightly candidates with explicitly selected signed nightly promotion sources, four-target archives, signed schema-2 manifest + SHA-256 inventory | Stage replacement separately from mutable state; immutable schema-1 beta requires additive signed attestation |
-| Source transport | publisher, prepared-release validation and offline recovery | signed ordered 1 GiB chunks reconstructing the exact full source archive when it exceeds GitHub asset limits | Keep local source/evidence monolith and unchanged semantic intake; preserve genuine single-file and schema-1 beta inventories; new tooling requires a new reviewed candidate identity |
-| Release discovery | installer, Pages, Nix, runtime and desktop updaters | stable/default (authenticated beta fallback only without an explicit channel), explicit stable/nightly, exact version; pinned RSA/SHA-256 keys | Preserve signed bytes; refresh trusted bootstrap for key rotation; no unsigned fallback |
+| Distribution | build, CI, installer, metadata | frozen stable/nightly candidates with explicitly selected validated nightly promotion sources, four-target archives, unsigned schema-2 manifest + candidate-bound SHA-256/size inventory | Stage replacement separately from mutable state; immutable schema-1 beta requires additive reviewed inventory attestation |
+| Source transport | publisher, prepared-release validation and offline recovery | hash-bound ordered 1 GiB chunks reconstructing the exact full source archive when it exceeds GitHub asset limits | Keep local source/evidence monolith and unchanged semantic intake; preserve genuine single-file and schema-1 beta inventories; new tooling requires a new reviewed candidate identity |
+| Release discovery | installer, Pages, Nix, runtime and desktop updaters | stable/default (inventoried beta fallback only without an explicit channel), explicit stable/nightly, exact version; GitHub HTTPS and SHA-256/size inventory | Preserve exact manifest bytes; no independent publisher signature claim |
 | Instance updates | authenticated dashboard, CLI, external owned supervisor | `<factoryHome>/updates/state.json`, per-channel overrides, pause/pin and durable restart receipts | Preserve settings across entry points; snapshot only compatible Factory-owned state; native stores and Factory authentication stay outside rollback |
-| Desktop shell updates | local installed Electron launcher, external app helper | `<factoryHome>/desktop/updates/state.json`, shared policy/consent rules, signed complete-app ownership receipt and health journal | Replace only the verified user-owned app; retain old UI; fence the local worker without restarting it; selected remote instances keep their own update settings |
-| Publication | release workflows, publisher | repository-wide lock; retained asset/approval digests and recovery receipts; ordering against complete published provider history | Publication disabled until protected key/rollout setup; stable approval binds exact signed bytes; unknown signing keys cannot hide newer stable releases or bypass nightly eligibility |
+| Desktop shell updates | local installed Electron launcher, external app helper | `<factoryHome>/desktop/updates/state.json`, shared policy/consent rules, hash-bound complete-app ownership receipt and health journal | Replace only the verified user-owned app; retain old UI; fence the local worker without restarting it; selected remote instances keep their own update settings |
+| Publication | release workflows, publisher | repository-wide lock; retained asset/approval digests and recovery receipts; ordering against complete published provider history | Publication disabled until explicit rollout activation; stable approval binds exact unsigned bytes; rejected releases cannot hide provider history |
 | External wire protocol | upstream HTTP adapters / MCP contexts | `X-Cyrus-Team-Id`, `X-Cyrus-Config-Capabilities`, `x-cyrus-mcp-context-id` | Retain ASCII protocol names; no hosted enrollment |
 | Operator MCP | CLI, worker, operator grant store | `bobs-factory-operator`, `operator`, `operator-mcp`, `<home>/factory/operator` | Local owner grants; dashboard passkeys and accepted run profiles remain separate |
 | Dashboard access | CLI, FactoryServer, private authentication store; client clears private views on connection loss and rechecks sessions on reconnect | `factory-auth`, `--origin`, `--session-hours`, `BOBS_FACTORY_FACTORY_*`, `<home>/factory/auth` | Preserve authentication files; existing origin bindings require explicit recovery when changed |
@@ -64,16 +64,17 @@ The issued egress certificate keeps its existing `cyrus-egress-ca.pem` filename
 inside the new home. Migration preserves certificate/key bytes and system trust;
 this retained artifact name does not enable an old command or home fallback.
 
-Optional desktop artifacts must match the signed complete inventory, including
-candidate-bound validation receipts. New native builds also retain public installer
-validation against controlled downloads with synthetic signing keys. These receipts
-are tied to the frozen source, release version, tooling SHA and candidate digest;
-production signing and release approval remain separate gates.
-Complete shell updates consume candidate-bound `updateArchive` and `updateMetadata`
-records in that inventory, independently of runtime candidates. macOS app archives
-must preserve and pass authentic OS signing/notarization; unsigned preparation is
-never update trust. DMG/user AppImage installs need actual writable ownership plus
-publisher-proven complete installed bytes. External packages use their owner.
+Optional desktop artifacts match the complete inventory, including candidate-bound
+functional validation receipts. Native builds retain public-installer validation
+with controlled unsigned downloads, tied to source/version/tooling/candidate.
+Release approval and actual native validation remain gates; paid Apple signing,
+notarization/stapling and publisher RSA signatures/key pins are not requirements.
+Complete shell updates consume hash-bound `updateArchive` and `updateMetadata`
+records independently of runtime candidates. Apple Silicon packaging may retain
+free local ad-hoc Mach-O signing solely for execution, without identity/keychain
+access or a publisher-authentication claim. DMG/user AppImage updates require
+writable ownership and a complete installed-byte match. External packages use
+their owner. Preserve quarantine and require the user's per-app macOS allow action.
 See [the desktop update contract](distribution/DESKTOP.md#complete-app-updates).
 
 ## Factory external ticket delivery

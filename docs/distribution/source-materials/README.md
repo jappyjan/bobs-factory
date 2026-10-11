@@ -229,7 +229,7 @@ claims in manifests, evidence, native archives/builds/receipts and source materi
 even if those fields are malformed or null. New source schemas and frozen
 candidate/tooling inputs also cannot enter through that legacy path. Genuine
 historical material remains accepted with its original inventory and receipt
-bytes; additive authentication still requires protected signing and exact
+bytes; additive inventory attestation still requires exact
 inventory approval. Do not delete contradictory metadata to force acceptance.
 
 The operator still reviews the entire frozen payload: all runtime dependencies,
@@ -237,6 +237,6 @@ required notices/source/rebuild inputs, generated or modified code, actual objec
 relink correspondence, and desktop installer/update archives. The shell owner
 handles Electron 44.7 notices and package inclusion; no automatic entire-Chromium
 source requirement is asserted. Only an actual candidate-matched receipt satisfies
-`licensingAndSource`. Authentic publisher pins/protected signing, rollout approval,
+`licensingAndSource`. Rollout approval,
 full-payload native/F1 evidence and GitGuardian reviews 38083768/38084076 remain
 separate gates. This preparation changes none of them.

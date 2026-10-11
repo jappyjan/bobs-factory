@@ -1,0 +1,6 @@
+{
+  "node": "v22.21.1",
+  "status": 1,
+  "stdout": "TAP version 13\n# Subtest: partial upload resumes only missing assets and Pages recovery only dispatches synchronization\nnot ok 1 - partial upload resumes only missing assets and Pages recovery only dispatches synchronization\n  ---\n  duration_ms: 573.511375\n  type: 'test'\n  location: '/private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/pr96-ci-old-88a-pe8gsvk7/scripts/tests/release-publication.test.mjs:350:1'\n  failureType: 'testCodeFailure'\n  error: \"Cannot read properties of undefined (reading 'draft')\"\n  code: 'ERR_TEST_FAILURE'\n  name: 'TypeError'\n  stack: |-\n    TestContext.<anonymous> (file:///private/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/pr96-ci-old-88a-pe8gsvk7/scripts/tests/release-publication.test.mjs:356:32)\n    Test.runInAsyncScope (node:async_hooks:214:14)\n    Test.run (node:internal/test_runner/test:1047:25)\n    Test.start (node:internal/test_runner/test:944:17)\n    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 0\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 616.205416\n",
+  "stderr": ""
+}

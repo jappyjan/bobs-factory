@@ -7,19 +7,19 @@ The desktop lane owns DMG/AppImage/DEB generation and native validation.
 
 ## Preparing a release's entry points
 
-After protected signing and immutable publication have completed, a release
+After complete validation and immutable publication have completed, a release
 maintainer runs this read-only generator from the reviewed checkout:
 
 ```sh
 node scripts/generate-package-recipes.mjs --version EXACT_VERSION --output /tmp/bobs-entry-points-EXACT_VERSION
 ```
 
-It uses the existing publisher signature, candidate, source tag and complete asset
+It uses the GitHub HTTPS integrity, candidate, source tag and complete asset
 inventory verifier. It requires all four desktop targets and downloads/verifies the
 matching DMGs, AppImages and DEBs before emitting desktop recipes. `--kind npm` prepares only the launcher from a
 complete verified native release, independently of desktop delivery; `--kind desktop`
 prepares only the desktop recipes. The default `all` requires both. URLs contain the exact
-version tag, never a mutable latest/nightly pointer. Missing, unsigned, partial or
+version tag, never a mutable latest/nightly pointer. Missing, corrupt, partial or
 conflicting packages fail closed. `verification.json` binds generated recipes to
 the release manifest digest, publisher, candidate, commit and byte checksums.
 The minimum desktop targets are macOS 13+ and Linux glibc 2.35+, ARM64/x64,
@@ -41,7 +41,7 @@ The generated material contains:
 - An npm package with the release's exact version and default runtime selection.
   `latest` is reserved for stable; `nightly` for nightly. The emitted package is
   deliberately `private: true` until registry ownership is proven. A launcher tag
-  selects a frozen runtime by default; explicit `--channel` follows that signed
+  selects a frozen runtime by default; explicit `--channel` follows that validated
   channel, while `--version` freezes one release. It has no native executable cache: every run
   stages verified bytes in a temporary prefix, removed on exit. npm's launcher
   cache does not make its downloaded runtime permanent.

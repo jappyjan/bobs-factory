@@ -36,13 +36,13 @@ export function validatePreparedRelease(
 	{ legacyBeta = false, recoveredSourceDirectory, expectedManifestBytes } = {},
 ) {
 	const manifestBytes = readFileSync(join(directory, "release.json"));
-	// Callers that authenticate outside this validator must bind that exact read.
+	// Callers that check integrity outside this validator must bind that exact read.
 	// All reconstruction records below come from this checked byte snapshot.
 	if (expectedManifestBytes !== undefined)
 		requireValue(
 			Buffer.isBuffer(expectedManifestBytes) &&
 				manifestBytes.equals(expectedManifestBytes),
-			"Prepared manifest differs from authenticated bytes",
+			"Prepared manifest differs from checked bytes",
 		);
 	const manifest = validateReleaseManifest(JSON.parse(manifestBytes));
 	requireValue(
@@ -51,7 +51,7 @@ export function validatePreparedRelease(
 				(legacyBeta &&
 					manifest.schemaVersion === 1 &&
 					/-beta(?:\.\d+)?$/.test(manifest.version))),
-		"Prepared publication requires schema 2 or explicitly authenticated historical beta",
+		"Prepared publication requires schema 2 or explicitly inventoried historical beta",
 	);
 	const inventory =
 		manifest.schemaVersion === 2
@@ -265,13 +265,13 @@ export function validatePreparedRelease(
 			evidence.source?.file === manifest.source.file &&
 				evidence.source.sha256 === manifest.source.sha256 &&
 				evidence.source.size === manifest.source.size,
-			"Evidence source differs from signed reconstruction",
+			"Evidence source differs from inventory reconstruction",
 		);
 		validateEvidence(evidence, temporary, identity);
 		if (expectedManifestBytes !== undefined)
 			requireValue(
 				readFileSync(join(directory, "release.json")).equals(manifestBytes),
-				"Prepared manifest changed during authenticated validation",
+				"Prepared manifest changed during inventory validation",
 			);
 		if (recoveredSourceDirectory) {
 			requireValue(

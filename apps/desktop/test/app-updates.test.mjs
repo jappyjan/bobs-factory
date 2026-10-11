@@ -15,7 +15,6 @@ import test from "node:test";
 import { gzipSync } from "node:zlib";
 import { fileRecord, jsonBytes } from "../../../scripts/lib/binary-release.mjs";
 import { preparedFixture } from "../../../scripts/tests/prepared-fixture.mjs";
-import { keys, signBytes } from "../../../scripts/tests/release-fixtures.mjs";
 import {
 	digest,
 	packApp,
@@ -166,7 +165,7 @@ test("intermediate directory symlinks resolve before ..; actual outside sentinel
 		rmSync(w, { recursive: true, force: true });
 	}
 });
-test("signed app source binds exact payload, channel, target and full inventory; publisher tamper never stages", async () => {
+test("unsigned app source binds exact payload, channel, target and full inventory; publisher tamper never stages", async () => {
 	const f = preparedFixture("nightly", { desktop: true });
 	try {
 		const item = f.manifest.desktop.artifacts[0];
@@ -209,15 +208,9 @@ test("signed app source binds exact payload, channel, target and full inventory;
 				r,
 			];
 		writeFileSync(join(f.assets, "release.json"), jsonBytes(f.manifest));
-		writeFileSync(
-			join(f.assets, "release.json.sig"),
-			signBytes(jsonBytes(f.manifest)),
-		);
 		const records = [
 			...f.manifest.assets,
-			...["release.json", "release.json.sig", "release.json.key-id"].map(
-				(file) => fileRecord(join(f.assets, file), file),
-			),
+			...["release.json"].map((file) => fileRecord(join(f.assets, file), file)),
 		];
 		const release = {
 			id: 1,
@@ -247,7 +240,6 @@ test("signed app source binds exact payload, channel, target and full inventory;
 			"linux-arm64",
 			services,
 			client,
-			keys,
 		);
 		const selected = await source.discover({
 			channel: "nightly",
@@ -272,7 +264,7 @@ test("signed app source binds exact payload, channel, target and full inventory;
 		f.cleanup();
 	}
 });
-function signedProof(fingerprint, target = candidate.target) {
+function inventoryProof(fingerprint, target = candidate.target) {
 	const f = preparedFixture("nightly", { desktop: true });
 	try {
 		const item = f.manifest.desktop.artifacts[0];
@@ -298,17 +290,15 @@ function signedProof(fingerprint, target = candidate.target) {
 			r.file === item.updateMetadata.file ? item.updateMetadata : r,
 		);
 		const manifest = jsonBytes(f.manifest),
-			signedCandidate = {
+			inventoryCandidate = {
 				...candidate,
 				target,
 				manifestSha256: digest(manifest),
 			};
 		return {
-			candidate: signedCandidate,
+			candidate: inventoryCandidate,
 			proof: {
 				manifest: manifest.toString("base64"),
-				signature: signBytes(manifest).toString("base64"),
-				keyId: "fixture",
 				metadata: bytes.toString("base64"),
 				fingerprint,
 			},
@@ -317,7 +307,7 @@ function signedProof(fingerprint, target = candidate.target) {
 		f.cleanup();
 	}
 }
-test("user-owned DMG app is eligible but unsigned macOS publisher receipts cannot authorize it; external symlink handoff remains", () => {
+test("user-owned DMG app accepts candidate-bound unsigned integrity receipts; external symlink handoff remains", () => {
 	const w = work();
 	try {
 		const app = join(w, "Bob.app");
@@ -328,14 +318,19 @@ test("user-owned DMG app is eligible but unsigned macOS publisher receipts canno
 			installationKind(join(w, "External.app"), "darwin-arm64"),
 			"external",
 		);
-		const signed = signedProof("a".repeat(64), "darwin-arm64");
+		const value = inventoryProof("a".repeat(64), "darwin-arm64");
+		assert.equal(
+			verifyAppProof(value.proof, value.candidate, services).osSigning,
+			"unsigned",
+		);
 		assert.throws(
 			() =>
-				verifyAppProof(signed.proof, signed.candidate, {
-					...services,
-					trustedKeys: keys,
-				}),
-			/authentic macOS signing/,
+				verifyAppProof(
+					value.proof,
+					{ ...value.candidate, manifestSha256: "f".repeat(64) },
+					services,
+				),
+			/integrity proof mismatch/,
 		);
 	} finally {
 		rmSync(w, { recursive: true, force: true });
@@ -348,7 +343,7 @@ function setup() {
 		directory = join(home, "desktop", "updates");
 	mkdirSync(directory, { recursive: true });
 	writeFileSync(install, "old", { mode: 0o755 });
-	const selected = signedProof(digest(Buffer.from("new")));
+	const selected = inventoryProof(digest(Buffer.from("new")));
 	const source = {
 		discover: async () => selected.candidate,
 		stage: async () => {
@@ -372,13 +367,12 @@ function setup() {
 		install,
 		target: identity.target,
 		fingerprint: appFingerprint(install, identity.target),
-		...signedProof(appFingerprint(install, identity.target)),
+		...inventoryProof(appFingerprint(install, identity.target)),
 	};
 	save(join(directory, "installation.json"), receipt);
 	const events = [];
 	const s = {
 		...services,
-		trustedKeys: keys,
 		workerOwner: () => undefined,
 		lifecycleGuard: async () => () => {},
 		FactoryClient: class {},

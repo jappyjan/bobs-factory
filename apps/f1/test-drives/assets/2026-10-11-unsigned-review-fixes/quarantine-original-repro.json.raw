@@ -1,0 +1,21 @@
+{
+  "before": {
+    "status": 0,
+    "value": "0081;67090000;ReviewFixture;"
+  },
+  "staged": {
+    "status": 1,
+    "value": ""
+  },
+  "previous": {
+    "status": 0,
+    "value": "0081;67090000;ReviewFixture;"
+  },
+  "after": {
+    "status": 1,
+    "value": ""
+  },
+  "fingerprintMatches": true
+}
+(node:97760) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)

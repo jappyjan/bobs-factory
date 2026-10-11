@@ -18,12 +18,10 @@ import {
 	validateNativeHelpers,
 	validateReleaseManifest,
 } from "../lib/binary-release.mjs";
-import { verifyManifestSignature } from "../lib/release-signature.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
-import { keys, privateKey } from "./release-fixtures.mjs";
 import { fixtureTar } from "./source-material-fixture.mjs";
 
-test("historical beta signing validates old bytes and emits only additive authentication", () => {
+test("historical beta inventory validates old bytes and emits only additive integrity", () => {
 	const f = preparedFixture("beta", { legacy: true });
 	try {
 		const legacy = f.manifest;
@@ -43,9 +41,7 @@ test("historical beta signing validates old bytes and emits only additive authen
 			.map((file) => fileRecord(join(f.assets, file), file))
 			.sort((a, b) => a.file.localeCompare(b.file));
 		const approval = join(f.work, "approval.json"),
-			key = join(f.work, "ephemeral.pem"),
 			output = join(f.work, "authentication");
-		writeFileSync(key, privateKey, { mode: 0o600 });
 		const call = () =>
 			spawnSync(
 				process.execPath,
@@ -57,12 +53,9 @@ test("historical beta signing validates old bytes and emits only additive authen
 					output,
 					"--approval",
 					approval,
-					"--key-id",
-					"fixture",
 				],
 				{
 					encoding: "utf8",
-					env: { ...process.env, BOBS_FACTORY_RELEASE_SIGNING_KEY_FILE: key },
 				},
 			);
 		writeFileSync(
@@ -86,26 +79,8 @@ test("historical beta signing validates old bytes and emits only additive authen
 		assert.equal(result.status, 0, result.stderr);
 		for (const [file, bytes] of immutable)
 			assert.deepEqual(readFileSync(join(f.assets, file)), bytes);
-		assert.deepEqual(readdirSync(output).sort(), [
-			"release-attestation.json",
-			"release-attestation.json.key-id",
-			"release-attestation.json.sig",
-			"release.json.key-id",
-			"release.json.sig",
-		]);
-		verifyManifestSignature(
-			jsonBytes(legacy),
-			readFileSync(join(output, "release.json.sig")),
-			"fixture",
-			keys,
-		);
+		assert.deepEqual(readdirSync(output).sort(), ["release-attestation.json"]);
 		const att = readFileSync(join(output, "release-attestation.json"));
-		verifyManifestSignature(
-			att,
-			readFileSync(join(output, "release-attestation.json.sig")),
-			"fixture",
-			keys,
-		);
 		assert.equal(JSON.parse(att).manifest.sha256, sha256(jsonBytes(legacy)));
 	} finally {
 		f.cleanup();
@@ -303,3 +278,67 @@ test("legacy identity rejects new manifest, evidence and source claims without r
 		f.cleanup();
 	}
 });
+
+for (const boundary of ["approval", "output"])
+	test(`beta attestation refuses retained manifest swap at ${boundary} boundary`, () => {
+		const f = preparedFixture("beta", { legacy: true });
+		try {
+			const manifestBytes = readFileSync(join(f.assets, "release.json"));
+			const inventory = readdirSync(f.assets)
+				.filter((file) => file !== "release.json")
+				.map((file) => fileRecord(join(f.assets, file), file))
+				.sort((a, b) => a.file.localeCompare(b.file));
+			const approval = join(f.work, "approval.json"),
+				output = join(f.work, "attestation"),
+				preload = join(f.work, "swap-after-approval.mjs");
+			writeFileSync(
+				approval,
+				jsonBytes({
+					manifestSha256: sha256(manifestBytes),
+					assetsDigest: sha256(jsonBytes(inventory)),
+					approvedBy: "controlled-fixture",
+				}),
+			);
+			const replacement = jsonBytes({ ...f.manifest, buildRunId: 124 });
+			const hook =
+				boundary === "approval"
+					? `const original=fs.readFileSync;fs.readFileSync=function(p,...args){const value=original.call(this,p,...args);if(String(p)===${JSON.stringify(approval)})swap();return value;};`
+					: `const original=fs.writeFileSync;fs.writeFileSync=function(p,...args){const value=original.call(this,p,...args);if(String(p)===${JSON.stringify(join(output, "release-attestation.json"))})swap();return value;};`;
+			writeFileSync(
+				preload,
+				`import fs from 'node:fs';import {syncBuiltinESMExports} from 'node:module';const write=fs.writeFileSync;function swap(){write(${JSON.stringify(join(f.assets, "release.json"))},Buffer.from(${JSON.stringify(replacement.toString("base64"))},'base64'));}${hook}syncBuiltinESMExports();`,
+			);
+			const result = spawnSync(
+				process.execPath,
+				[
+					"--import",
+					preload,
+					join(f.work, "scripts/prepare-beta-attestation.mjs"),
+					"--assets",
+					f.assets,
+					"--output",
+					output,
+					"--approval",
+					approval,
+				],
+				{ encoding: "utf8" },
+			);
+			assert.notEqual(
+				result.status,
+				0,
+				"Must never attest unapproved replacement bytes",
+			);
+			assert.match(result.stderr, /Historical manifest changed/);
+			assert.equal(requireOutput(output), false);
+		} finally {
+			f.cleanup();
+		}
+	});
+function requireOutput(output) {
+	try {
+		return readdirSync(output).includes("release-attestation.json");
+	} catch (e) {
+		if (e.code === "ENOENT") return false;
+		throw e;
+	}
+}

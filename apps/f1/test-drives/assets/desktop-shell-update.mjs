@@ -1,6 +1,6 @@
 // F1_AGENT_MODE=mock node apps/f1/test-drives/assets/desktop-shell-update.mjs
 // Actual protected FactoryServer/WorkflowRuntime/UpdateDrain + shared owned worker
-// record and external-process shell adapter, signed test payloads; Node scripts stand
+// record and external-process shell adapter, unsigned test payloads; Node scripts stand
 // in for Electron here. Native packaged Electron is validated separately.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -30,7 +30,6 @@ import * as services from "../../../desktop/src/update-services.mjs";
 import {
 	appRelease,
 	fixtureClient,
-	keys,
 } from "../../../desktop/test/shell-fixture.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -136,14 +135,13 @@ writeFileSync(install, readFileSync(join(old.assets, "fixture.AppImage")), {
 	mode: 0o755,
 });
 const directory = join(home, "desktop", "updates"),
-	controlled = { ...services, trustedKeys: keys };
+	controlled = services;
 const source = new DesktopAppSource(
 	directory,
 	install,
 	target,
 	controlled,
 	fixtureClient([old, good], services),
-	keys,
 );
 save(join(directory, "installation.json"), await source.enroll(old.identity));
 const ui = spawn(install, [], {
@@ -208,7 +206,7 @@ try {
 	assert.deepEqual(drain.receipt(), receipt);
 	assert.equal(resumed, 2);
 	checks.push(
-		"signed app activation retains exact worker PID/nonce and waiting checkpoints/definitions/outputs/config",
+		"unsigned app activation retains exact worker PID/nonce and waiting checkpoints/definitions/outputs/config",
 	);
 	const newUi = read(join(home, "fixture-ui.json"));
 	life.uiPid = newUi.pid;
@@ -248,7 +246,7 @@ try {
 		saved,
 	);
 	checks.push(
-		"interrupted complete-app switch recovers prior UI from signed receipt without worker resurrection",
+		"interrupted complete-app switch recovers prior UI from candidate-bound integrity receipt without worker resurrection",
 	);
 	const recoveredUi = read(join(home, "fixture-ui.json"));
 	life.uiPid = recoveredUi.pid;

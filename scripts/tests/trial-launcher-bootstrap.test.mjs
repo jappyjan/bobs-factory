@@ -40,7 +40,7 @@ async function waitFor(check, label, timeoutMs = 2500) {
 	throw new Error(`Timed out waiting for ${label}`);
 }
 
-test("explicit stable channel reaches the signed bootstrap and rejects beta", {
+test("explicit stable channel reaches the unsigned bootstrap and rejects beta", {
 	timeout: 30000,
 }, async () => {
 	const f = trialBootstrapFixture("1.0.0-beta");
@@ -58,7 +58,7 @@ test("explicit stable channel reaches the signed bootstrap and rejects beta", {
 		assert.notEqual(result.code, 0, run.output());
 		assert.match(
 			run.output(),
-			/Requested channel does not match the signed version/,
+			/Requested channel does not match the release version/,
 		);
 		assert.equal(
 			existsSync(join(f.home, ".bobs-factory-trial/.launcher-lock")),
@@ -88,7 +88,7 @@ for (const release of [
 	{ version: "1.0.0", channel: "stable" },
 	{ version: "1.0.0-nightly.20261009.1", channel: "nightly" },
 ])
-	test(`generated ${release.channel} package identity reaches the signed bootstrap`, {
+	test(`generated ${release.channel} package identity reaches the unsigned bootstrap`, {
 		timeout: 30000,
 	}, async () => {
 		const f = trialBootstrapFixture(release.version);

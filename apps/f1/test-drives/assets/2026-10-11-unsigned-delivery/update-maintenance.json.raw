@@ -1,0 +1,37 @@
+{
+  "mode": "mock",
+  "testedCommit": "working-tree",
+  "home": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-update-maintenance-kC1sBe",
+  "receipts": [
+    "actual EdgeWorker reboot skips pending dispatch/preflight and retains receipt, waiting question and mock-native checkpoint",
+    "actual worker-owned OperatorServer rejects seven mutation tools during freeze and preserves authenticated inspection",
+    "exact successful release deliberately resumes production pending dispatcher/preflight once; mismatched release does not resume",
+    "pre-freeze awaited configuration and real tools/list descendant share one exact durable capacity owner; drain stays busy through natural stdin-close exit and lease release",
+    "post-freeze transport checks/configuration inspection refuse before preparation or spawn; stored run inspection remains available before and after idle barrier",
+    "authenticated dashboard MCP check shares durable descendant ownership and accepted intake through natural exit; new dashboard checks refuse during freeze",
+    "active-role transport callback remains available during drain and reuses its exact lease without starting a second role",
+    "awaited authenticated operator mutation admitted before freeze drains through final retained-state write before idle acknowledgment",
+    "actual production ticket preflight admitted before freeze drains through routing and state persistence before idle acknowledgment"
+  ],
+  "fetches": 2,
+  "routes": 2,
+  "transportObservations": [
+    {
+      "operation": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-update-maintenance-kC1sBe:operator-check:retained-wait:8f27e5bd-2a2d-4c30-848a-96304b2719f7",
+      "token": "3cb849e4-39b1-4d49-8de0-9a7ae768b347",
+      "owner": {
+        "pid": 15005,
+        "start": "Sun Oct 11 20:47:00 2026",
+        "incarnation": "663ca7cf-fdab-4519-89bd-354c93ae84db"
+      },
+      "descendant": 17247,
+      "beforeCloseIdle": false
+    }
+  ],
+  "limitations": [
+    "Actual EdgeWorker startup/listeners; controlled tracker detail fetch and final route instead of agents/network",
+    "Synthetic operator grant and seeded waiting checkpoint; no native session execution",
+    "No PublishedUpdateSource successful signature/extraction or OwnedUpdateLifecycle/OS restart is exercised",
+    "No production homes, real agent credits, signing or publication"
+  ]
+}

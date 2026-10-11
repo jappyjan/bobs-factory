@@ -36,7 +36,7 @@ if [ -n "$factory_home" ]; then
 fi
 case "$update_policy" in ''|manual|idle-auto) ;; *) fail 'Update policy must be manual or idle-auto.';; esac
 [ -z "$update_policy" ] || [ -n "$factory_home" ] || fail '--update-policy requires --home for the intended instance.'
-for tool in openssl curl tar sed awk grep cut wc uname mktemp diff find; do
+for tool in curl tar sed awk grep cut wc uname mktemp diff find; do
   command -v "$tool" >/dev/null 2>&1 || fail "Required system tool is missing: $tool"
 done
 if ! command -v sha256sum >/dev/null 2>&1 && ! command -v shasum >/dev/null 2>&1; then
@@ -102,20 +102,8 @@ if [ "$(field "$work/release.json" status)" = pending ]; then
   [ "$(field "$work/release.json" repository)" = "$repository" ] || fail 'Unexpected release repository.'
   fail "No verified $channel release is available. Please check the homepage for availability."
 fi
-# Authenticate exact bytes before accepting any installable release fields or code.
-verify_signature() {
-  key_id=$(cat "$3")
-  printf '%s' "$key_id" | LC_ALL=C grep -Eq '^[a-z0-9][a-z0-9-]{0,63}$' || fail 'Malformed publisher key identifier.'
-# BEGIN PINNED RELEASE KEYS
-case "$key_id" in
-  *) fail 'Unknown or retired publisher key. Obtain a fresh trusted installer; release rollout may still be pending.';;
-esac
-# END PINNED RELEASE KEYS
-  openssl dgst -sha256 -verify "$work/publisher.pem" -signature "$2" "$1" >/dev/null 2>&1 || fail 'Invalid publisher signature. No installed files were changed.'
-}
-download "$metadata.sig" "$work/release.json.sig"
-download "$metadata.key-id" "$work/release.json.key-id"
-verify_signature "$work/release.json" "$work/release.json.sig" "$work/release.json.key-id"
+# GitHub/Pages HTTPS supplies the manifest. SHA256 and sizes below detect
+# conflicting/corrupt payloads; this is integrity, not publisher authentication.
 schema=$(number "$work/release.json" schemaVersion)
 case "$schema" in 1|2) ;; *) fail 'Unsupported release metadata. Download a fresh installer.';; esac
 [ "$(field "$work/release.json" product)" = bobs-factory ] || fail 'Unexpected product in release metadata.'
@@ -133,13 +121,13 @@ case "$release_version" in
 esac
 case "$channel:$release_channel" in
   stable:stable|nightly:nightly) ;;
-  stable:beta) [ "$channel_explicit" = false ] || fail 'Requested channel does not match the signed version.';;
-  *) fail 'Requested channel does not match the signed version.';;
+  stable:beta) [ "$channel_explicit" = false ] || fail 'Requested channel does not match the release version.';;
+  *) fail 'Requested channel does not match the release version.';;
 esac
 if [ "$schema" = 2 ]; then
-  [ "$(field "$work/release.json" channel)" = "$release_channel" ] || fail 'Signed release channel mismatch.'
+  [ "$(field "$work/release.json" channel)" = "$release_channel" ] || fail 'Release channel mismatch.'
 else
-  [ "$release_channel" = beta ] || fail 'Legacy metadata is supported only for an authenticated beta.'
+  [ "$release_channel" = beta ] || fail 'Legacy metadata is supported only for an inventoried beta.'
 fi
 tag=$(field "$work/release.json" tag)
 [ "$tag" = "v$release_version" ] || fail 'Invalid immutable release tag.'
@@ -156,9 +144,6 @@ verifier=$(field "$work/verifier.json" file)
 base="https://github.com/$repository/releases/download/$tag"
 if [ "$schema" = 1 ]; then
   download "$base/release-attestation.json" "$work/attestation.json"
-  download "$base/release-attestation.json.sig" "$work/attestation.sig"
-  download "$base/release-attestation.json.key-id" "$work/attestation.key-id"
-  verify_signature "$work/attestation.json" "$work/attestation.sig" "$work/attestation.key-id"
   section "$work/attestation.json" manifest "$work/attested-manifest.json"
   verify "$work/release.json" "$(field "$work/attested-manifest.json" sha256)" "$(number "$work/attested-manifest.json" size)"
 fi
@@ -172,10 +157,20 @@ verify "$work/$manifest" "$(field "$work/target.json" manifestSha256)" "$(number
 verify "$work/$verifier" "$(field "$work/verifier.json" sha256)" "$(number "$work/verifier.json" size)"
 [ "$(field "$work/$manifest" commit)" = "$commit" ] || fail 'Archive source does not match the release.'
 [ "$(field "$work/$manifest" version)" = "$release_version" ] || fail 'Archive version does not match the release.'
-key_id=$(cat "$work/release.json.key-id")
+candidate_digest=
+workflow_sha=
+if [ "$schema" = 2 ]; then
+  candidate_digest=$(field "$work/release.json" candidateDigest)
+  workflow_sha=$(field "$work/release.json" workflowSha)
+  printf '%s' "$candidate_digest" | LC_ALL=C grep -Eq '^[a-f0-9]{64}$' || fail 'Invalid frozen candidate digest.'
+  printf '%s' "$workflow_sha" | LC_ALL=C grep -Eq '^[a-f0-9]{40}$' || fail 'Invalid frozen tooling SHA.'
+  [ "$(field "$work/$manifest" candidateDigest)" = "$candidate_digest" ] || fail 'Archive candidate does not match the release.'
+  [ "$(field "$work/$manifest" workflowSha)" = "$workflow_sha" ] || fail 'Archive tooling does not match the release.'
+fi
 BOBS_FACTORY_INSTALL_CHANNEL="$release_channel" \
 BOBS_FACTORY_INSTALL_SOURCE=bootstrap \
-BOBS_FACTORY_INSTALL_KEY_ID="$key_id" \
+BOBS_FACTORY_INSTALL_CANDIDATE_DIGEST="$candidate_digest" \
+BOBS_FACTORY_INSTALL_WORKFLOW_SHA="$workflow_sha" \
   sh "$work/$verifier" "$work/$archive" "$work/$manifest" "$prefix"
 
 shell_quote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"; }

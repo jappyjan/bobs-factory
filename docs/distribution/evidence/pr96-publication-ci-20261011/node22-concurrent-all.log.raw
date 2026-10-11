@@ -1,0 +1,869 @@
+TAP version 13
+# Subtest: member names reject separator aliases before collection, duplicates and link lookup
+ok 1 - member names reject separator aliases before collection, duplicates and link lookup
+  ---
+  duration_ms: 444.004875
+  type: 'test'
+  ...
+# Subtest: one GNU root prefix is canonicalized for controls and duplicate detection
+ok 2 - one GNU root prefix is canonicalized for controls and duplicate detection
+  ---
+  duration_ms: 122.805875
+  type: 'test'
+  ...
+# Subtest: portable aliases cover Unicode, implicit prefixes and directory/file collisions on every host
+ok 3 - portable aliases cover Unicode, implicit prefixes and directory/file collisions on every host
+  ---
+  duration_ms: 652.064167
+  type: 'test'
+  ...
+# Subtest: actual case and Unicode alias sentinel reads are rejected on macOS
+ok 4 - actual case and Unicode alias sentinel reads are rejected on macOS
+  ---
+  duration_ms: 62.491167
+  type: 'test'
+  ...
+# Subtest: full candidate-bound source intake rejects hash-valid nested case, Unicode and separator alias escapes
+ok 5 - full candidate-bound source intake rejects hash-valid nested case, Unicode and separator alias escapes
+  ---
+  duration_ms: 763.724917
+  type: 'test'
+  ...
+# Subtest: full legacy intake rejects aliased new controls and preserves genuine historical bytes
+ok 6 - full legacy intake rejects aliased new controls and preserves genuine historical bytes
+  ---
+  duration_ms: 866.623541
+  type: 'test'
+  ...
+# Subtest: historical beta inventory validates old bytes and emits only additive integrity
+ok 7 - historical beta inventory validates old bytes and emits only additive integrity
+  ---
+  duration_ms: 403.910833
+  type: 'test'
+  ...
+# Subtest: legacy identity rejects new manifest, evidence and source claims without rewriting old bytes
+ok 8 - legacy identity rejects new manifest, evidence and source claims without rewriting old bytes
+  ---
+  duration_ms: 210.236292
+  type: 'test'
+  ...
+# Subtest: beta attestation refuses retained manifest swap at approval boundary
+ok 9 - beta attestation refuses retained manifest swap at approval boundary
+  ---
+  duration_ms: 211.736292
+  type: 'test'
+  ...
+# Subtest: beta attestation refuses retained manifest swap at output boundary
+ok 10 - beta attestation refuses retained manifest swap at output boundary
+  ---
+  duration_ms: 236.430208
+  type: 'test'
+  ...
+# Subtest: nested links resolve intermediate symlinks before parent traversal, reject cycles, and accept framework chains
+ok 11 - nested links resolve intermediate symlinks before parent traversal, reject cycles, and accept framework chains
+  ---
+  duration_ms: 127.526083
+  type: 'test'
+  ...
+# Subtest: compressed bomb is stopped during decompression without extracting any payload
+ok 12 - compressed bomb is stopped during decompression without extracting any payload
+  ---
+  duration_ms: 94.382666
+  type: 'test'
+  ...
+# Subtest: member/header/control limits reject before oversized payloads are materialized
+ok 13 - member/header/control limits reject before oversized payloads are materialized
+  ---
+  duration_ms: 165.882708
+  type: 'test'
+  ...
+# Subtest: unknown outer payload and wrong candidate never reach an extraction directory
+ok 14 - unknown outer payload and wrong candidate never reach an extraction directory
+  ---
+  duration_ms: 111.960583
+  type: 'test'
+  ...
+# Subtest: owned intake worker has an enforced deadline and leaves no partial output
+ok 15 - owned intake worker has an enforced deadline and leaves no partial output
+  ---
+  duration_ms: 59.241375
+  type: 'test'
+  ...
+# Subtest: nested inspection bounds concatenated gzip streams and accepts bounded normal bytes
+ok 16 - nested inspection bounds concatenated gzip streams and accepts bounded normal bytes
+  ---
+  duration_ms: 153.654833
+  type: 'test'
+  ...
+# Subtest: semantic runtime source inspection enforces decompression limits on hash-valid nested bytes
+ok 17 - semantic runtime source inspection enforces decompression limits on hash-valid nested bytes
+  ---
+  duration_ms: 128.81875
+  type: 'test'
+  ...
+# Subtest: installer staging rejects a different runtime and tampered executable
+ok 18 - installer staging rejects a different runtime and tampered executable
+  ---
+  duration_ms: 1.439833
+  type: 'test'
+  ...
+# Subtest: maintained unsigned complete-shell F1 drive preserves worker state and recovers failed replacement
+ok 19 - maintained unsigned complete-shell F1 drive preserves worker state and recovers failed replacement
+  ---
+  duration_ms: 3188.92925
+  type: 'test'
+  ...
+# Subtest: requires candidate-bound native helper evidence for each actual target
+ok 20 - requires candidate-bound native helper evidence for each actual target
+  ---
+  duration_ms: 1.358958
+  type: 'test'
+  ...
+# Subtest: separates scripted agent boundaries from authenticated provider execution
+ok 21 - separates scripted agent boundaries from authenticated provider execution
+  ---
+  duration_ms: 0.474208
+  type: 'test'
+  ...
+# Subtest: Nix beta inventory validation requires complete, manifest-bound records
+    # Subtest: complete historical beta inventory passes
+    ok 1 - complete historical beta inventory passes
+      ---
+      duration_ms: 8.808375
+      type: 'test'
+      ...
+    # Subtest: three signed placeholder records cannot stand in for the inventory
+    ok 2 - three signed placeholder records cannot stand in for the inventory
+      ---
+      duration_ms: 5.53225
+      type: 'test'
+      ...
+    # Subtest: every required asset must be present
+    ok 3 - every required asset must be present
+      ---
+      duration_ms: 135.822917
+      type: 'test'
+      ...
+    # Subtest: identity and exact manifest bytes must match
+    ok 4 - identity and exact manifest bytes must match
+      ---
+      duration_ms: 35.786625
+      type: 'test'
+      ...
+    # Subtest: archive, sidecar and installer/source digests and sizes must match
+    ok 5 - archive, sidecar and installer/source digests and sizes must match
+      ---
+      duration_ms: 109.48575
+      type: 'test'
+      ...
+    # Subtest: malformed and ambiguous records fail
+    ok 6 - malformed and ambiguous records fail
+      ---
+      duration_ms: 55.523875
+      type: 'test'
+      ...
+    1..6
+ok 22 - Nix beta inventory validation requires complete, manifest-bound records
+  ---
+  duration_ms: 529.444625
+  type: 'test'
+  ...
+# Subtest: anonymous install configures PATH once, retains old version, and safely repeats
+ok 23 - anonymous install configures PATH once, retains old version, and safely repeats
+  ---
+  duration_ms: 1837.393291
+  type: 'test'
+  ...
+# Subtest: first public beta installs anonymously by default or exact version
+ok 24 - first public beta installs anonymously by default or exact version
+  ---
+  duration_ms: 1304.95125
+  type: 'test'
+  ...
+# Subtest: release selection exposes verified beta before stable and keeps stable thereafter
+ok 25 - release selection exposes verified beta before stable and keeps stable thereafter
+  ---
+  duration_ms: 0.776875
+  type: 'test'
+  ...
+# Subtest: Pages synchronizes a verified beta manifest and preserves prior metadata on digest failure
+ok 26 - Pages synchronizes a verified beta manifest and preserves prior metadata on digest failure
+  ---
+  duration_ms: 98.4255
+  type: 'test'
+  ...
+# Subtest: checksum mismatch stops before installing or changing shell settings
+ok 27 - checksum mismatch stops before installing or changing shell settings
+  ---
+  duration_ms: 277.32825
+  type: 'test'
+  ...
+# Subtest: downloaded verifier must match manifest checksum before execution
+ok 28 - downloaded verifier must match manifest checksum before execution
+  ---
+  duration_ms: 289.213917
+  type: 'test'
+  ...
+# Subtest: foreign executable and modified immutable installation are preserved
+ok 29 - foreign executable and modified immutable installation are preserved
+  ---
+  duration_ms: 1162.896583
+  type: 'test'
+  ...
+# Subtest: pending public release gives clear availability guidance
+ok 30 - pending public release gives clear availability guidance
+  ---
+  duration_ms: 195.058625
+  type: 'test'
+  ...
+# Subtest: publication provenance requires exact SHA, canonical workflow, all native jobs and artifact digests
+ok 31 - publication provenance requires exact SHA, canonical workflow, all native jobs and artifact digests
+  ---
+  duration_ms: 0.641
+  type: 'test'
+  ...
+# Subtest: publisher rejects private, internal, unknown-visibility and redirected repositories
+ok 32 - publisher rejects private, internal, unknown-visibility and redirected repositories
+  ---
+  duration_ms: 0.3415
+  type: 'test'
+  ...
+# Subtest: publisher never replaces an existing version or moves stable backwards
+ok 33 - publisher never replaces an existing version or moves stable backwards
+  ---
+  duration_ms: 0.16425
+  type: 'test'
+  ...
+# Subtest: release/archive validation rejects target omissions, source mismatch and unreviewed evidence
+ok 34 - release/archive validation rejects target omissions, source mismatch and unreviewed evidence
+  ---
+  duration_ms: 22.434625
+  type: 'test'
+  ...
+# Subtest: unsigned install rejects wrong manifest identity before changing the installation
+ok 35 - unsigned install rejects wrong manifest identity before changing the installation
+  ---
+  duration_ms: 1102.717417
+  type: 'test'
+  ...
+# Subtest: unsigned pending channels stop with availability guidance and preserve an existing installation
+ok 36 - unsigned pending channels stop with availability guidance and preserve an existing installation
+  ---
+  duration_ms: 616.890208
+  type: 'test'
+  ...
+# Subtest: nightly installation is opt-in and exact versions must match the selected channel
+ok 37 - nightly installation is opt-in and exact versions must match the selected channel
+  ---
+  duration_ms: 723.241708
+  type: 'test'
+  ...
+# Subtest: legacy beta requires inventory attestation without rewriting its manifest
+ok 38 - legacy beta requires inventory attestation without rewriting its manifest
+  ---
+  duration_ms: 726.594208
+  type: 'test'
+  ...
+# Subtest: removal validates all ownership before deleting and preserves state and unknown files
+ok 39 - removal validates all ownership before deleting and preserves state and unknown files
+  ---
+  duration_ms: 648.031209
+  type: 'test'
+  ...
+# Subtest: installer refuses redirected stores and removal refuses foreign links
+ok 40 - installer refuses redirected stores and removal refuses foreign links
+  ---
+  duration_ms: 910.135208
+  type: 'test'
+  ...
+# Subtest: settings handoff names the chosen instance without supplying an implicit policy reset
+ok 41 - settings handoff names the chosen instance without supplying an implicit policy reset
+  ---
+  duration_ms: 1285.792625
+  type: 'test'
+  ...
+# Subtest: recipes require unsigned complete published desktop packages and immutable URLs
+ok 42 - recipes require unsigned complete published desktop packages and immutable URLs
+  ---
+  duration_ms: 16.140375
+  type: 'test'
+  ...
+# Subtest: candidate digest freezes version, recipe and promotion source across retries
+ok 43 - candidate digest freezes version, recipe and promotion source across retries
+  ---
+  duration_ms: 2.426875
+  type: 'test'
+  ...
+# Subtest: nightly eligibility uses successful publication time and never bypasses manual gates
+ok 44 - nightly eligibility uses successful publication time and never bypasses manual gates
+  ---
+  duration_ms: 0.126291
+  type: 'test'
+  ...
+# Subtest: stable defaults exclude nightlies and nightly ordering survives a core-version change
+ok 45 - stable defaults exclude nightlies and nightly ordering survives a core-version change
+  ---
+  duration_ms: 0.430458
+  type: 'test'
+  ...
+# Subtest: native build provenance binds separate workflow SHA and candidate artifact identity
+ok 46 - native build provenance binds separate workflow SHA and candidate artifact identity
+  ---
+  duration_ms: 0.406875
+  type: 'test'
+  ...
+# Subtest: stable preparation retries retain the selected nightly and reject changed selection
+ok 47 - stable preparation retries retain the selected nightly and reject changed selection
+  ---
+  duration_ms: 94.476667
+  type: 'test'
+  ...
+# Subtest: unsigned desktop discovery requires intact archive, update metadata and validation inventory
+ok 48 - unsigned desktop discovery requires intact archive, update metadata and validation inventory
+  ---
+  duration_ms: 136.835333
+  type: 'test'
+  ...
+# Subtest: discovery separates unsigned stable/nightly, excludes incomplete candidates and aborts network failures
+ok 49 - discovery separates unsigned stable/nightly, excludes incomplete candidates and aborts network failures
+  ---
+  duration_ms: 559.468041
+  type: 'test'
+  ...
+# Subtest: nightly history uses global sequence even without manifests and tolerates unverified older history
+ok 50 - nightly history uses global sequence even without manifests and tolerates unverified older history
+  ---
+  duration_ms: 0.280125
+  type: 'test'
+  ...
+# Subtest: channel-only discovery authenticates API calls and skips older verified history
+ok 51 - channel-only discovery authenticates API calls and skips older verified history
+  ---
+  duration_ms: 420.25625
+  type: 'test'
+  ...
+# Subtest: stable promotion selects an older unsigned nightly and refuses unavailable or invalid selections
+ok 52 - stable promotion selects an older unsigned nightly and refuses unavailable or invalid selections
+  ---
+  duration_ms: 339.04525
+  type: 'test'
+  ...
+# Subtest: unsigned chunk discovery requires exact complete remote inventory
+ok 53 - unsigned chunk discovery requires exact complete remote inventory
+  ---
+  duration_ms: 129.083375
+  type: 'test'
+  ...
+# Subtest: controlled nightly installer smoke uses frozen identity and preserves installation after failures
+ok 54 - controlled nightly installer smoke uses frozen identity and preserves installation after failures
+  ---
+  duration_ms: 2618.537625
+  type: 'test'
+  ...
+# Subtest: controlled stable installer smoke uses frozen identity and preserves installation after failures
+ok 55 - controlled stable installer smoke uses frozen identity and preserves installation after failures
+  ---
+  duration_ms: 2434.072042
+  type: 'test'
+  ...
+# Subtest: controlled beta installer smoke uses frozen identity and preserves installation after failures
+ok 56 - controlled beta installer smoke uses frozen identity and preserves installation after failures
+  ---
+  duration_ms: 2670.23875
+  type: 'test'
+  ...
+# Subtest: prepared recovery rejects desktop validation for a different frozen candidate
+ok 57 - prepared recovery rejects desktop validation for a different frozen candidate
+  ---
+  duration_ms: 514.087875
+  type: 'test'
+  ...
+# Subtest: receipt archive bytes are independent of file ordering and timestamps
+ok 58 - receipt archive bytes are independent of file ordering and timestamps
+  ---
+  duration_ms: 103.911667
+  type: 'test'
+  ...
+# Subtest: source packaging binds exact committed factory source and reviewed runtime material without approving gates
+ok 59 - source packaging binds exact committed factory source and reviewed runtime material without approving gates
+  ---
+  duration_ms: 5370.510709
+  type: 'test'
+  ...
+# Subtest: evidence archive import rejects links and never extracts traversal bytes
+ok 60 - evidence archive import rejects links and never extracts traversal bytes
+  ---
+  duration_ms: 163.97525
+  type: 'test'
+  ...
+# Subtest: evidence intake rejects a dirty version edit before retrieving build provenance
+ok 61 - evidence intake rejects a dirty version edit before retrieving build provenance
+  ---
+  duration_ms: 224.95675
+  type: 'test'
+  ...
+# Subtest: semantic intake rejects omitted, substituted and tampered rebuild materials even in a valid outer archive
+ok 62 - semantic intake rejects omitted, substituted and tampered rebuild materials even in a valid outer archive
+  ---
+  duration_ms: 1339.575417
+  type: 'test'
+  ...
+# Subtest: prepared validation rejects modified binary bytes, missing gates and different recipes
+ok 63 - prepared validation rejects modified binary bytes, missing gates and different recipes
+  ---
+  duration_ms: 458.454083
+  type: 'test'
+  ...
+# Subtest: publisher dry run makes no remote calls and produces candidate-bound assets digest
+ok 64 - publisher dry run makes no remote calls and produces candidate-bound assets digest
+  ---
+  duration_ms: 500.260084
+  type: 'test'
+  ...
+# Subtest: publisher cancels an unread rejected upload and cleans snapshot while retaining draft
+ok 65 - publisher cancels an unread rejected upload and cleans snapshot while retaining draft
+  ---
+  duration_ms: 518.883125
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation corrupt-chunk before verified plan
+ok 66 - publisher refuses post-validation corrupt-chunk before verified plan
+  ---
+  duration_ms: 496.815458
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation corrupt-chunk before publication
+ok 67 - publisher refuses post-validation corrupt-chunk before publication
+  ---
+  duration_ms: 492.095833
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation unexpected-asset before verified plan
+ok 68 - publisher refuses post-validation unexpected-asset before verified plan
+  ---
+  duration_ms: 491.822625
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation unexpected-asset before publication
+ok 69 - publisher refuses post-validation unexpected-asset before publication
+  ---
+  duration_ms: 483.123583
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation manifest before publication
+ok 70 - publisher refuses post-validation manifest before publication
+  ---
+  duration_ms: 503.487542
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation symlink before publication
+ok 71 - publisher refuses post-validation symlink before publication
+  ---
+  duration_ms: 500.394292
+  type: 'test'
+  ...
+# Subtest: publisher refuses post-validation mode before publication
+ok 72 - publisher refuses post-validation mode before publication
+  ---
+  duration_ms: 509.842667
+  type: 'test'
+  ...
+# Subtest: publisher uses pinned snapshot despite original corruption during upload
+ok 73 - publisher uses pinned snapshot despite original corruption during upload
+  ---
+  duration_ms: 555.2575
+  type: 'test'
+  ...
+# Subtest: publisher refuses staging corruption during upload
+ok 74 - publisher refuses staging corruption during upload
+  ---
+  duration_ms: 541.719667
+  type: 'test'
+  ...
+# Subtest: publisher refuses staging-mode corruption during upload
+ok 75 - publisher refuses staging-mode corruption during upload
+  ---
+  duration_ms: 545.712583
+  type: 'test'
+  ...
+# Subtest: publisher refuses staging-midstream corruption during upload
+ok 76 - publisher refuses staging-midstream corruption during upload
+  ---
+  duration_ms: 566.742
+  type: 'test'
+  ...
+# Subtest: publisher reconciles tag-after without duplicate immutable mutations
+ok 77 - publisher reconciles tag-after without duplicate immutable mutations
+  ---
+  duration_ms: 950.247709
+  type: 'test'
+  ...
+# Subtest: publisher reconciles draft-after without duplicate immutable mutations
+ok 78 - publisher reconciles draft-after without duplicate immutable mutations
+  ---
+  duration_ms: 942.234125
+  type: 'test'
+  ...
+# Subtest: publisher reconciles upload-after:build-provenance.json without duplicate immutable mutations
+ok 79 - publisher reconciles upload-after:build-provenance.json without duplicate immutable mutations
+  ---
+  duration_ms: 1030.461667
+  type: 'test'
+  ...
+# Subtest: publisher reconciles publish-after without duplicate immutable mutations
+ok 80 - publisher reconciles publish-after without duplicate immutable mutations
+  ---
+  duration_ms: 931.581125
+  type: 'test'
+  ...
+# Subtest: partial upload resumes only missing assets and Pages recovery only dispatches synchronization
+ok 81 - partial upload resumes only missing assets and Pages recovery only dispatches synchronization
+  ---
+  duration_ms: 1823.548375
+  type: 'test'
+  ...
+# Subtest: conflicting tag, candidate and immutable assets are never replaced
+ok 82 - conflicting tag, candidate and immutable assets are never replaced
+  ---
+  duration_ms: 3393.213458
+  type: 'test'
+  ...
+# Subtest: stable approval binds exact unsigned asset bytes and stable publication sets latest
+ok 83 - stable approval binds exact unsigned asset bytes and stable publication sets latest
+  ---
+  duration_ms: 835.170208
+  type: 'test'
+  ...
+# Subtest: a newer unsigned stable blocks older tooling before any publication mutation
+ok 84 - a newer unsigned stable blocks older tooling before any publication mutation
+  ---
+  duration_ms: 553.080084
+  type: 'test'
+  ...
+# Subtest: unverifiable latest nightly blocks preparation and publication
+ok 85 - unverifiable latest nightly blocks preparation and publication
+  ---
+  duration_ms: 687.030042
+  type: 'test'
+  ...
+# Subtest: unverifiable latest nightly blocks preparation and publication despite an older verified nightly
+ok 86 - unverifiable latest nightly blocks preparation and publication despite an older verified nightly
+  ---
+  duration_ms: 666.145959
+  type: 'test'
+  ...
+# Subtest: stale nightly candidate does not create a tag or draft
+ok 87 - stale nightly candidate does not create a tag or draft
+  ---
+  duration_ms: 449.049875
+  type: 'test'
+  ...
+# Subtest: independent simulated publisher is isolated from another fixture's publication lock
+ok 88 - independent simulated publisher is isolated from another fixture's publication lock
+  ---
+  duration_ms: 485.923166
+  type: 'test'
+  ...
+# Subtest: publication lock rejects overlapping versions and releases after failure
+ok 89 - publication lock rejects overlapping versions and releases after failure
+  ---
+  duration_ms: 0.718042
+  type: 'test'
+  ...
+# Subtest: fresh preparation consumes exact artifact ZIPs and produces unsigned inspectable assets without mutations
+ok 90 - fresh preparation consumes exact artifact ZIPs and produces unsigned inspectable assets without mutations
+  ---
+  duration_ms: 1377.734708
+  type: 'test'
+  ...
+# Subtest: chunk publication resumes exact unsigned inventory after upload-before:source-rebuild.tar.gz.part0002
+ok 91 - chunk publication resumes exact unsigned inventory after upload-before:source-rebuild.tar.gz.part0002
+  ---
+  duration_ms: 1239.679791
+  type: 'test'
+  ...
+# Subtest: chunk publication resumes exact unsigned inventory after upload-after:source-rebuild.tar.gz.part0002
+ok 92 - chunk publication resumes exact unsigned inventory after upload-after:source-rebuild.tar.gz.part0002
+  ---
+  duration_ms: 1230.2995
+  type: 'test'
+  ...
+# Subtest: chunk publication refuses unexpected remote monolith or missing public chunk
+ok 93 - chunk publication refuses unexpected remote monolith or missing public chunk
+  ---
+  duration_ms: 1162.927959
+  type: 'test'
+  ...
+# Subtest: streamed deterministic chunks reconstruct exact input bytes/hash/size
+ok 94 - streamed deterministic chunks reconstruct exact input bytes/hash/size
+  ---
+  duration_ms: 5.060458
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects order before output
+ok 95 - source chunk metadata rejects order before output
+  ---
+  duration_ms: 2.189917
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects duplicate before output
+ok 96 - source chunk metadata rejects duplicate before output
+  ---
+  duration_ms: 1.708792
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects count before output
+ok 97 - source chunk metadata rejects count before output
+  ---
+  duration_ms: 1.4375
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects extra before output
+ok 98 - source chunk metadata rejects extra before output
+  ---
+  duration_ms: 1.414459
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects filename before output
+ok 99 - source chunk metadata rejects filename before output
+  ---
+  duration_ms: 1.710375
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects traversal before output
+ok 100 - source chunk metadata rejects traversal before output
+  ---
+  duration_ms: 1.638625
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects absolute before output
+ok 101 - source chunk metadata rejects absolute before output
+  ---
+  duration_ms: 1.532792
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects chunkSize before output
+ok 102 - source chunk metadata rejects chunkSize before output
+  ---
+  duration_ms: 1.740708
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects oversize before output
+ok 103 - source chunk metadata rejects oversize before output
+  ---
+  duration_ms: 1.793917
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects archiveLimit before output
+ok 104 - source chunk metadata rejects archiveLimit before output
+  ---
+  duration_ms: 1.4915
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects hash before output
+ok 105 - source chunk metadata rejects hash before output
+  ---
+  duration_ms: 1.433833
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects zero before output
+ok 106 - source chunk metadata rejects zero before output
+  ---
+  duration_ms: 1.328417
+  type: 'test'
+  ...
+# Subtest: source chunk metadata rejects fraction before output
+ok 107 - source chunk metadata rejects fraction before output
+  ---
+  duration_ms: 1.48625
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject missing and clean owned output
+ok 108 - source chunk bytes reject missing and clean owned output
+  ---
+  duration_ms: 1.877541
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject changed and clean owned output
+ok 109 - source chunk bytes reject changed and clean owned output
+  ---
+  duration_ms: 1.817375
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject truncated and clean owned output
+ok 110 - source chunk bytes reject truncated and clean owned output
+  ---
+  duration_ms: 2.130541
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject oversized and clean owned output
+ok 111 - source chunk bytes reject oversized and clean owned output
+  ---
+  duration_ms: 1.75725
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject symlink and clean owned output
+ok 112 - source chunk bytes reject symlink and clean owned output
+  ---
+  duration_ms: 1.341042
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject hardlink and clean owned output
+ok 113 - source chunk bytes reject hardlink and clean owned output
+  ---
+  duration_ms: 1.570459
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject directory and clean owned output
+ok 114 - source chunk bytes reject directory and clean owned output
+  ---
+  duration_ms: 1.578291
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject fifo and clean owned output
+ok 115 - source chunk bytes reject fifo and clean owned output
+  ---
+  duration_ms: 4.336584
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject swapped and clean owned output
+ok 116 - source chunk bytes reject swapped and clean owned output
+  ---
+  duration_ms: 1.643042
+  type: 'test'
+  ...
+# Subtest: source chunk bytes reject totalHash and clean owned output
+ok 117 - source chunk bytes reject totalHash and clean owned output
+  ---
+  duration_ms: 1.558083
+  type: 'test'
+  ...
+# Subtest: transport rejects linked directories/outputs and never overwrites conflicts
+ok 118 - transport rejects linked directories/outputs and never overwrites conflicts
+  ---
+  duration_ms: 1.866209
+  type: 'test'
+  ...
+# Subtest: unsigned prepared chunk fixture runs unchanged semantic intake and rejects hybrid/incomplete inventory
+ok 119 - unsigned prepared chunk fixture runs unchanged semantic intake and rejects hybrid/incomplete inventory
+  ---
+  duration_ms: 528.954459
+  type: 'test'
+  ...
+# Subtest: genuine legacy single-source manifests cannot claim chunk transport
+ok 120 - genuine legacy single-source manifests cannot claim chunk transport
+  ---
+  duration_ms: 148.292542
+  type: 'test'
+  ...
+# Subtest: offline recovery checks integrity before retaining source and preserves conflicting output
+ok 121 - offline recovery checks integrity before retaining source and preserves conflicting output
+  ---
+  duration_ms: 550.916
+  type: 'test'
+  ...
+# Subtest: offline recovery refuses manifest directory swap after snapshot (single archive)
+ok 122 - offline recovery refuses manifest directory swap after snapshot (single archive)
+  ---
+  duration_ms: 586.244083
+  type: 'test'
+  ...
+# Subtest: offline recovery refuses manifest directory swap after snapshot (chunks)
+ok 123 - offline recovery refuses manifest directory swap after snapshot (chunks)
+  ---
+  duration_ms: 669.405833
+  type: 'test'
+  ...
+# Subtest: offline recovery refuses manifest directory swap during validation (chunks)
+ok 124 - offline recovery refuses manifest directory swap during validation (chunks)
+  ---
+  duration_ms: 950.858417
+  type: 'test'
+  ...
+# Subtest: split failures remove only new partial chunks and preserve retained collisions
+ok 125 - split failures remove only new partial chunks and preserve retained collisions
+  ---
+  duration_ms: 2.82125
+  type: 'test'
+  ...
+# Subtest: hash-valid reconstructed transport cannot bypass semantic source intake
+ok 126 - hash-valid reconstructed transport cannot bypass semantic source intake
+  ---
+  duration_ms: 188.247292
+  type: 'test'
+  ...
+# Subtest: explicit stable channel reaches the unsigned bootstrap and rejects beta
+ok 127 - explicit stable channel reaches the unsigned bootstrap and rejects beta
+  ---
+  duration_ms: 385.332334
+  type: 'test'
+  ...
+# Subtest: unbound default selection retains the authenticated beta fallback
+ok 128 - unbound default selection retains the authenticated beta fallback
+  ---
+  duration_ms: 1069.8845
+  type: 'test'
+  ...
+# Subtest: generated stable package identity reaches the unsigned bootstrap
+ok 129 - generated stable package identity reaches the unsigned bootstrap
+  ---
+  duration_ms: 982.67
+  type: 'test'
+  ...
+# Subtest: generated nightly package identity reaches the unsigned bootstrap
+ok 130 - generated nightly package identity reaches the unsigned bootstrap
+  ---
+  duration_ms: 1133.84525
+  type: 'test'
+  ...
+# Subtest: TERM during bootstrap download stops its owned process group before cleanup
+ok 131 - TERM during bootstrap download stops its owned process group before cleanup
+  ---
+  duration_ms: 362.004792
+  type: 'test'
+  ...
+# Subtest: npm exits after TERM reaches a packed launcher during bootstrap download
+ok 132 - npm exits after TERM reaches a packed launcher during bootstrap download
+  ---
+  duration_ms: 1223.907292
+  type: 'test'
+  ...
+# Subtest: packed npm trial usable dashboard, browser, exclusivity and retained state (controlled protocol)
+ok 133 - packed npm trial usable dashboard, browser, exclusivity and retained state (controlled protocol)
+  ---
+  duration_ms: 2288.687208
+  type: 'test'
+  ...
+# Subtest: packed npm trial usable dashboard, no-browser, exclusivity and retained state (controlled protocol)
+ok 134 - packed npm trial usable dashboard, no-browser, exclusivity and retained state (controlled protocol)
+  ---
+  duration_ms: 1141.081917
+  type: 'test'
+  ...
+# Subtest: occupied port rejects launch and leaves no stale lock
+ok 135 - occupied port rejects launch and leaves no stale lock
+  ---
+  duration_ms: 37.498833
+  type: 'test'
+  ...
+# Subtest: invalid options cannot override trial home
+ok 136 - invalid options cannot override trial home
+  ---
+  duration_ms: 27.740708
+  type: 'test'
+  ...
+# Subtest: unsigned publisher → discovery → prepared/offline chunks → updater preserves integrity and rollback
+ok 137 - unsigned publisher → discovery → prepared/offline chunks → updater preserves integrity and rollback
+  ---
+  duration_ms: 1857.643291
+  type: 'test'
+  ...
+1..137
+# tests 143
+# suites 0
+# pass 143
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 28240.9745

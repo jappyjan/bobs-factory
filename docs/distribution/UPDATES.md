@@ -43,7 +43,7 @@ preflight must still pass.
 The external owner supervisor calls `UpdateManager.tick()` on a bounded timer.
 Release discovery polls every 15 minutes with exponential offline backoff capped
 at six hours. Publication cadence is separate. Offline errors remain visible;
-previously verified pending state survives. Discovery uses the canonical signed
+previously verified pending state survives. Discovery uses the canonical hash-bound
 published-release verifier, complete inventory, exact target/channel and frozen
 source checks. Stage reauthenticates the immutable release, downloads only bound
 assets, runs its verified archive installer into an isolated staging prefix and
@@ -103,5 +103,5 @@ human gates, failed trial/rollback and independent homes. They use controlled
 candidates/supervisors and do **not** establish native OS service behavior or
 release publication. The lifecycle lane supplies and separately validates the
 owned service/desktop adapter. Final integrated macOS/Linux target receipts,
-authentic publisher pins, protected signing and exact-candidate publication
-remain necessary before rollout. No production signing key is generated here.
+complete byte-bound integrity/functional evidence and exact-candidate publication
+remain necessary before rollout. No publisher signing keys are required.

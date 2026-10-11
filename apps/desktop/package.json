@@ -21,6 +21,7 @@
 	},
 	"build": {
 		"appId": "de.bobs-factory.desktop",
+		"afterPack": "../../scripts/adhoc-sign-macos.cjs",
 		"productName": "Bob's Factory",
 		"directories": {
 			"output": "../../artifacts/desktop"
@@ -58,7 +59,9 @@
 				"dmg"
 			],
 			"category": "public.app-category.developer-tools",
-			"hardenedRuntime": true
+			"hardenedRuntime": false,
+			"identity": null,
+			"notarize": false
 		},
 		"dmg": {
 			"contents": [

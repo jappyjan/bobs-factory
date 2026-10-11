@@ -19,7 +19,7 @@ import {
 import { UpdateManager } from "../../packages/edge-worker/dist/updates/UpdateManager.js";
 import { jsonBytes, sha256 } from "../lib/binary-release.mjs";
 import { cleanupFixtureTreeAfterReceipt } from "./signed-delivery-harness-lifecycle.mjs";
-import { terminateOwnedProcess } from "./signed-release-https-fixture.mjs";
+import { terminateOwnedProcess } from "./unsigned-release-https-fixture.mjs";
 
 const args = process.argv.slice(2);
 const retainFixture = args.includes("--retain-fixture");
