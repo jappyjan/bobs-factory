@@ -788,6 +788,7 @@ export function ArchitecturePage() {
 			.join("\n\n");
 	};
 	const submit = async (decision: "accept" | "revise" | "explain") => {
+		if (decision === "accept" && !isLatest) return;
 		try {
 			await action.mutateAsync({
 				path: `/api/runs/${run.id}/architecture-decision`,
@@ -1067,7 +1068,9 @@ export function ArchitecturePage() {
 								<Button
 									requiresConnection
 									className="arch-approve-button"
-									disabled={!pending || !!blocker || action.isPending}
+									disabled={
+										!isLatest || !pending || !!blocker || action.isPending
+									}
 									onClick={() => void submit("accept")}
 								>
 									Approve version {latest.version}

@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Prevent acceptance while an older architecture proposal is displayed, and refuse stale accept callbacks while preserving approval of the current version ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#101](https://github.com/jappyjan/bobs-factory/pull/101)).
+
 - Validate direct localhost onboarding and native desktop APIs without passkey sessions while separately checking remote authentication and origin denials; retain packaged runtime identity, restart, helper and Stop/maintenance checks ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#100](https://github.com/jappyjan/bobs-factory/pull/100)).
 
 - Verify and copy complete macOS desktop apps using physical ASAR bytes, file modes and symlinks in the retained Electron updater; preserve full inventory checks and ordinary archive module access, and publish scripted shell F1 process receipts atomically ([Taskbot #121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#98](https://github.com/jappyjan/bobs-factory/pull/98)).
