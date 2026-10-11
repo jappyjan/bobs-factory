@@ -4,7 +4,7 @@ This is implementation validation for draft [PR #91](https://github.com/jappyjan
 
 ## Verified corrected-source candidate
 
-The corrected push [run 38086228778](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778), attempt 1, completed successfully: freeze plus all four binary and all four desktop jobs. Its exact source/tooling is `b82c37c4fb9a3e18d1cb222c6d56d3fef852096f`, version `1.0.0-nightly.20261010.21`, committed package `1.0.0-beta`, digest `ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec`, Bun `1.4.2`, Node `24.18.0`. The workflow blob is `dd1e7d78d4a32a303147ac1c84cdb428dde23e00`, identical at the reviewed `ad6f0f85` correction, integration `22e8b08d`, source `b82c37c4` and documentation head `2673564a`. Changes after `b82c37c4` contain documentation/raw evidence only, so these receipts remain bound to that candidate rather than being relabeled as a later source freeze.
+The corrected push [run 38086228778](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778), attempt 1, completed successfully: freeze plus all four binary and all four desktop jobs. Its exact source/tooling is `b82c37c4fb9a3e18d1cb222c6d56d3fef852096f`, version `1.0.0-nightly.20261010.21`, committed package `1.0.0-beta`, digest `ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec`, Bun `1.4.2`, Node `24.18.0`. The workflow blob is `dd1e7d78d4a32a303147ac1c84cdb428dde23e00`, identical at the reviewed `ad6f0f85` correction, integration `22e8b08d`, source `b82c37c4` and documentation head `2673564a`. Changes after `b82c37c4` contain documentation/raw evidence and isolated acceptance tooling only, so these receipts remain bound to that candidate rather than being relabeled as a later source freeze.
 
 All eight artifacts were downloaded outside the checkout (about 1.9 GiB). Each actual binary archive, desktop installer and complete-app update archive matched its manifest/build-inventory size and SHA-256. The runtime archive reused in each desktop artifact is byte-identical to the corresponding binary archive. Every binary archive member was inventoried and hashed against its downloaded extracted counterpart, including executable, build metadata, LICENSE, NOTICE and THIRD_PARTY_NOTICES. Large binaries/installers are excluded from Git.
 
@@ -68,7 +68,7 @@ Acceptance descriptions were reread from Taskbot #116 and all children on 2026-1
 
 ## Outstanding release and operator gates
 
-- Full official pinned WebKit source (the official HTTP 422 remains recorded), all four genuine native object/config/toolchain/link-response/relink inputs and observed relink logs, plus an independent candidate-bound `licensingAndSource` receipt remain **UNASSEMBLED**. Packaged notices and successful native jobs do not supply this receipt or full-payload release approval.
+- Full official pinned WebKit has been acquired in the separately coordinated research lane; candidate binding remains under that review, and prior HTTP 422 evidence is retained. All four genuine native object/config/toolchain/link-response/relink inputs and observed relink logs, plus an independent candidate-bound `licensingAndSource` receipt remain **UNASSEMBLED**. Packaged notices and successful native jobs do not supply this receipt or full-payload release approval.
 - Genuine publisher trust pin, protected signing and explicit nightly/stable rollout approval. The legacy [`v1.0.0-beta` prerelease](https://github.com/jappyjan/bobs-factory/releases/tag/v1.0.0-beta) exists; **new stable/nightly/native-desktop channels and catalogs have not been activated**. Candidate version/tag fields are preparation identity, not evidence of a published release. No new public tag/channel/installer/package was created by this work.
 - Apple signing/notarization and authentic signed Mac install/activation/rollback; physical passkeys/native credentials, real or isolated headless host acceptance (Taskbot #122), separate second-machine UI acceptance (#84), real provider/native continuation, supported minimum macOS/glibc/CPU acceptance and login/reboot/logout/lingering proofs.
 - Homebrew/AUR catalog ownership, minimal Bob-owned npm package identity/owner and public entry-point activation with clean-machine lifecycle receipts. Existing private/upstream monorepo npm publication stays retired.
@@ -134,3 +134,66 @@ native credentials/providers, reboot/login/logout/lingering, WebKit source/objec
 correspondence and independent licensing/catalog ownership remain open. GitGuardian
 f48 check 114448313898 references the historical capacity-lease UUID findings;
 incidents 38083768/38084076 remain undisposed in the operator dashboard.
+
+
+## Round 3 service correction response (2026-10-11)
+
+Round 2 is **NOT CLEAR** at `c3cc8644ac34c53b185e6b8598966fcf366497ca`,
+reviewed against `f48c51ca9352cbd6caa29b3a3b70882046bfc1ce` and cumulatively
+`97acf7ba6e00c81a480cd2f8d01c519ea2cf5f05`. Actual failed
+[run38132934881/job114450836918](https://github.com/jappyjan/bobs-factory/actions/runs/38132934881/job/114450836918)
+and its ZIP, both receipts and all properties/journal/process diagnostics are
+[byte-preserved separately](evidence/2026-10-11-service-round2-failure/README.md).
+The main receipt failed observation of exhausted native start limits while cleanup
+passed; SIGINT cleanup failed and SIGTERM never ran. Later main assertions remained
+unexecuted. The latest correction is implementation pending independent review and
+actual owned CI receipts, not acceptance PASS.
+
+- P1 cause: systemd v255 preserves `Result=signal` after start-limit rejection.
+  The exact worker journal and failed/no-PID/NRestarts=4 properties establish the
+  harness predicate error. Updater activity belongs to a separate unit; the earlier
+  blocking-descendant hypothesis is unsupported by these diagnostics. The fix
+  requires a fresh exact-unit JSON journal rejection, known StartLimit properties,
+  failed/inactive terminal state, no main/control PID or queued job, and stable
+  NRestarts for more than RestartSec. Arbitrary signal failures cannot satisfy it.
+  Original 45-second crash waits and full maintenance/resume/remove/retention
+  assertions remain; no production defect or runtime correction is established.
+- P2 cleanup cause: force kill of an already-inactive external fixture raised an
+  unloaded error; reloading its retained definition did not mean a live process.
+  Cleanup now checks exact definition bytes and independently terminal state,
+  skips unnecessary force kill, replaces queued start/restart jobs with an exact
+  stop, and confirms no PID/job. Genuine manager/ownership errors remain failures.
+- P2 cancellation gaps: both exact worker/updater identities and their expected
+  frozen definition bytes are registered before initial installation. CLI/manager
+  processes use private groups; cancellation, timeout and leader exit drain their
+  inherited descendants before cleanup, including closed-pipe asynchronous manager
+  mutations. No host process group or manager-wide shutdown is used. Six independent
+  native CI cases interrupt initial install, an actual manager start submission,
+  and healthy units with both SIGINT and SIGTERM. A prior case failure cannot skip
+  another receipt. Every cancellation remains nonpassing until verified cleanup.
+- P2 crash PID: the round 2 CLEAR exact-unit main-process signaling is retained;
+  no retained owner PID is used to inject crashes.
+
+Local focused verification: eleven meaningful tests cover both real signals/repeated
+signals, combined work/cleanup errors, the preserved-result exhaustion predicate,
+wrong-unit/arbitrary failure rejection, inactive unloaded definitions, queued-job
+reconciliation, genuine permission/ownership failures, and late descendant mutation
+on cancellation and leader exit. JavaScript syntax, scoped Biome, YAML parsing,
+non-runner refusal and preservation checks are recorded in PR91. Normal commit
+hooks remain required. F1 is not applicable to this tooling/docs-only change.
+Actual CI and its separate harnessSha/script hashes still require review. All
+101 historical +53 prior-candidate +56 source-b82 raw files and prior f48/c3 failed
+evidence are preserved; no native rebuild/full matrix or signed23 replay is used.
+
+Coordinator handoff retains the original scope: #122 real **or isolated** host
+acceptance, #84 second-machine UI separate, explicit manual PM2/Nix ownership,
+synthetic checkpoint/waiting-gate preservation, and the selected macOS15 /
+Ubuntu24.04-glibc2.39 ARM64+x64 minimums with observed limits. Reboot/login/logout/
+lingering, native providers/credentials, physical authentication, protected signing/
+publication/catalog ownership and complete minimum-platform acceptance remain open.
+Full WebKit acquisition and candidate binding now belong to the separate source
+research lane; acquisition does not establish all-target object correspondence,
+relink success, licensing review or a candidate-bound licensingAndSource receipt.
+The latest supplied GitGuardian count is **two** undisposed historical mock UUID
+occurrences, incidents38083768/38084076; historical four-occurrence reports above
+remain historical, not a current clearance. Parent/child statuses remain unchanged.

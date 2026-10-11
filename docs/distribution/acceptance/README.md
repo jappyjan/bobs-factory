@@ -23,14 +23,30 @@ bytes must remain unchanged. These opaque markers prove retention, not executabl
 workflow recovery; the historical mock F1/native workflow receipts supply their
 own separately scoped continuation evidence.
 
-Every service operation is bounded and active harness subprocesses can be cancelled.
-SIGINT/SIGTERM unwind work into one cleanup path and persist a nonpassing receipt
-with exit status 130/143. The workflow separately interrupts healthy fixture units
-with both signals and requires cleanup and no survivors. Cleanup disables/stops only fixture units,
-uses an owned-unit kill fallback, checks all observed PIDs and process arguments
-for unobserved fixture descendants, removes fixture definitions and reloads the
-manager. PASS is written only after cleanup succeeds. A fresh nonpassing receipt
-is reserved before work starts, and reused receipt paths are rejected.
+Every CLI/manager command runs in a newly owned session/process group. Cancellation,
+timeout and leader exit terminate and drain its inherited descendants before the
+command resolves; the host/harness process group is never signaled. Both worker
+and updater exact unit identities are registered before installation. Definition
+bytes are checked against the frozen b82 Linux contract before cleanup; changed
+or linked definitions cause a nonpassing result and are preserved for diagnosis.
+
+The workflow generates six independent cancellation receipts: SIGINT and SIGTERM
+at initial installation's real manager descendant, a real manager start submission,
+and healthy managed units. A fixture-only PATH gate exposes the frozen CLI's actual
+execFileSync descendant and schedules a delayed real systemctl mutation with closed
+pipes. Cancellation must drain it, reconcile the exact unit's manager jobs, and
+leave no late-mutation marker. Every case runs even if another case fails. Signal
+receipts must remain `passed:false`, exit130/143, with `cleanup:true` and no survivors;
+these intentional cancellations are not runtime acceptance PASS.
+
+Cleanup independently verifies terminal unit state, MainPID/ControlPID zero and no
+queued job, tolerates already-inactive unloaded fixtures without force-killing them,
+and disables/stops only registered fixture units. Force kill is an exact-owned-unit
+fallback for a bounded stop timeout. Unloaded/stopped races are tolerated only with
+specific errors and independently terminal state; permission/ownership errors remain
+failures. Fixture definitions/backups and temporary state are removed only after
+ownership and cleanup checks. Fresh FAIL receipts are reserved before work; a reused
+receipt path is refused. Main PASS requires every original assertion and cleanup.
 
 No VM/container PID1 restart, host/user-manager reboot, login, logout or lingering
 is simulated. Those proofs remain open. No physical authentication, native
@@ -95,9 +111,18 @@ and captures the unit properties/journal plus matching process/cgroup details
 before each crash and before teardown, including failure/cancellation. Killing an
 entire cgroup would change the tested failure and is reserved for owned cleanup.
 
-One diagnostic hypothesis is surviving unit descendants: systemd explicitly says
-`SendSIGKILL=no` with `KillMode=mixed` can prevent restart when prior processes
-remain in the cgroup ([systemd v255 kill contract](https://github.com/systemd/systemd/blob/v255/man/systemd.kill.xml)).
-Actual properties/journal are needed to distinguish that from a start-limit or
-harness observation error. No production setting or frozen source has been changed,
-and no timeout increase or passing result has been substituted for the failure.
+The c3 diagnostic [run38132934881](https://github.com/jappyjan/bobs-factory/actions/runs/38132934881)
+establishes a harness observation error, not a production defect: the worker's
+journal records native start-limit rejection while its failure result stays
+`signal`. [Raw failed receipts and diagnostics](../evidence/2026-10-11-service-round2-failure/README.md)
+are preserved separately. systemd v255 retains a preceding failure result in
+[service_enter_dead](https://raw.githubusercontent.com/systemd/systemd/v255/src/core/service.c).
+
+Exhaustion now requires a fresh exact-unit JSON journal rejection since the crash
+series began, known StartLimitBurst/StartLimitInterval/RestartSec properties,
+failed/inactive terminal state with MainPID/ControlPID zero and no queued job,
+and stable NRestarts/terminal state across more than RestartSec. Arbitrary signal
+failures cannot satisfy it. The original 45-second restart waits are unchanged.
+All maintenance, resume, remove and retained-byte assertions remain required.
+Corrected CI must supply actual verified main and all six cancellation receipts
+before any full Linux acceptance PASS is claimed. No runtime source was changed.

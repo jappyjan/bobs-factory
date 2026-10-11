@@ -1,9 +1,10 @@
 // Native manager acceptance, restricted to ephemeral GitHub Linux runners.
 import assert from "node:assert/strict";
-import { execFile, execFileSync, spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import {
 	existsSync,
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readdirSync,
@@ -20,6 +21,13 @@ import { basename, dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { desktopExecutable } from "../../../apps/desktop/src/local-runtime.mjs";
 import { withOwnedCleanup } from "./owned-cleanup.mjs";
+import { startOwnedCommand } from "./owned-command.mjs";
+import {
+	properties,
+	startLimitEvidence,
+	stopOwnedUnit,
+	terminal,
+} from "./service-protocol.mjs";
 
 assert.equal(
 	process.env.GITHUB_ACTIONS,
@@ -44,6 +52,12 @@ const receipt = {
 	harnessSha: execFileSync("git", ["rev-parse", "HEAD"], {
 		encoding: "utf8",
 	}).trim(),
+	protocolSha256: createHash("sha256")
+		.update(readFileSync(new URL("./service-protocol.mjs", import.meta.url)))
+		.digest("hex"),
+	commandHarnessSha256: createHash("sha256")
+		.update(readFileSync(new URL("./owned-command.mjs", import.meta.url)))
+		.digest("hex"),
 	cleanupHarnessSha256: createHash("sha256")
 		.update(readFileSync(new URL("./owned-cleanup.mjs", import.meta.url)))
 		.digest("hex"),
@@ -83,40 +97,65 @@ const pids = new Set();
 let foreground;
 let record;
 const commands = new Set();
-const execute = (program, args, timeout) =>
-	new Promise((resolve, reject) => {
-		checkCancellation();
-		const child = execFile(
-			program,
-			args,
-			{
-				encoding: "utf8",
-				timeout,
-				killSignal: "SIGKILL",
-			},
-			(error, stdout, stderr) => {
-				commands.delete(child);
-				if (error) {
-					error.stdout = stdout;
-					error.stderr = stderr;
-					error.status = error.code;
-					reject(error);
-				} else resolve(stdout);
-			},
-		);
-		commands.add(child);
-		const abort = () => child.kill("SIGKILL");
-		if (!cleaning) {
-			cancellation?.addEventListener("abort", abort, { once: true });
-			child.once("exit", () =>
-				cancellation?.removeEventListener("abort", abort),
-			);
-		}
+const execute = async (program, args, timeout, env) => {
+	checkCancellation();
+	const owned = startOwnedCommand(program, args, {
+		timeout,
+		env,
+		signal: cleaning ? undefined : cancellation,
 	});
-const manager = (...args) =>
-	execute("systemctl", ["--user", ...args], cleaning ? 500 : 5000);
-const command = (...args) =>
-	execute(executable, [...prefix, "service", ...args], 30000);
+	commands.add(owned);
+	try {
+		return await owned.done;
+	} finally {
+		if (owned.drained) commands.delete(owned);
+	}
+};
+const manager = (...args) => execute("systemctl", ["--user", ...args], 5000);
+const interrupt = process.env.BOBS_FACTORY_ACCEPTANCE_INTERRUPT;
+const interruptPhase = process.env.BOBS_FACTORY_ACCEPTANCE_INTERRUPT_PHASE;
+if (interrupt) {
+	assert(["SIGINT", "SIGTERM"].includes(interrupt));
+	assert(
+		["initial-install", "manager-mutation", "healthy-managed-fixture"].includes(
+			interruptPhase,
+		),
+	);
+}
+let gateOperation;
+let cliEnvironment = process.env;
+const lateMutation = `${receiptPath}.late-mutation`;
+const command = async (...args) => {
+	if (!gateOperation || args[0] !== gateOperation)
+		return execute(
+			executable,
+			[...prefix, "service", ...args],
+			30000,
+			cliEnvironment,
+		);
+	const marker = join(root, "manager-entered");
+	const pending = execute(executable, [...prefix, "service", ...args], 30000, {
+		...cliEnvironment,
+		BOBS_FACTORY_ACCEPTANCE_MANAGER_GATE: marker,
+		BOBS_FACTORY_ACCEPTANCE_LATE_MUTATION: lateMutation,
+	});
+	// Attach rejection before waiting for the real descendant manager boundary.
+	const outcome = pending.then(
+		(output) => ({ output }),
+		(error) => ({ error }),
+	);
+	await until(
+		() => existsSync(marker),
+		"CLI descendant entered manager call",
+		10000,
+	);
+	receipt.interruptPhase = interruptPhase;
+	receipt.managerBoundary = readFileSync(marker, "utf8");
+	process.kill(process.pid, interrupt);
+	const result = await outcome;
+	if (result.error) throw result.error;
+	assert.fail("Cancelled manager command unexpectedly completed");
+};
 const status = async () => JSON.parse(await command("status"));
 const alive = (pid) => {
 	try {
@@ -170,6 +209,30 @@ const retained = [
 const unitDirectory = join(homedir(), ".config", "systemd", "user");
 const externalId = `factory-acceptance-external-${randomUUID()}.service`;
 const externalDefinition = join(unitDirectory, externalId);
+const managedId = `de.bobs-factory.${createHash("sha256").update(home).digest("hex").slice(0, 16)}.service`;
+const updaterId = managedId.replace(/\.service$/, ".updates.service");
+// Register before ANY installation can write either definition or submit a job.
+units.push(externalId, managedId, updaterId);
+const definitions = new Map();
+const writeOwnedDefinition = (path, bytes, options) => {
+	definitions.set(basename(path), bytes);
+	writeFileSync(path, bytes, options);
+};
+const verifyDefinition = (unit) => {
+	assert(units.includes(unit));
+	const path = join(unitDirectory, unit);
+	if (!existsSync(path)) return false;
+	assert(
+		!lstatSync(path).isSymbolicLink(),
+		"Fixture definition became a symlink",
+	);
+	assert.equal(
+		readFileSync(path, "utf8"),
+		definitions.get(unit),
+		"Fixture definition ownership changed",
+	);
+	return true;
+};
 let before;
 const capture = async (label) => {
 	const files = [];
@@ -292,21 +355,18 @@ await withOwnedCleanup({
 		);
 		mkdirSync(unitDirectory, { recursive: true });
 		// Fixture paths come from mkdtemp and contain no quoting-sensitive characters.
-		writeFileSync(
+		writeOwnedDefinition(
 			externalDefinition,
 			`[Unit]\nDescription=Disposable external owner fixture\n[Service]\nExecStart=${executable} ${prefix.join(" ")} local\nRestart=on-failure\nRestartSec=1\n[Install]\nWantedBy=default.target\n`,
 			{ flag: "wx", mode: 0o600 },
 		);
-		units.push(externalId);
 		await manager("show", "default.target", "--property=ActiveState");
-		const managedId = `de.bobs-factory.${createHash("sha256").update(home).digest("hex").slice(0, 16)}.service`;
 		const nixDefinition = join(unitDirectory, managedId);
-		writeFileSync(
+		writeOwnedDefinition(
 			nixDefinition,
 			"[Service]\nExecStart=/nix/store/fixture-only/bobs-factory\n",
 			{ flag: "wx", mode: 0o600 },
 		);
-		units.push(managedId);
 		const nixHash = hash(nixDefinition);
 		await expectRefusal(
 			"install",
@@ -323,8 +383,12 @@ await withOwnedCleanup({
 			"Dormant external Nix-style target definition refuses adoption and retains bytes; fixture-only removal explicitly consented",
 		);
 		// A manual owner must exit before the manager can acquire the same home.
-		foreground = spawn(executable, [...prefix, "local"], { stdio: "ignore" });
-		pids.add(foreground.pid);
+		foreground = startOwnedCommand(executable, [...prefix, "local"], {
+			signal,
+			timeout: 60000,
+		});
+		foreground.done.catch(() => {});
+		pids.add(foreground.child.pid);
 		await until(async () => (await status()).owner, "manual owner lock");
 		await expectRefusal(
 			"install",
@@ -334,9 +398,9 @@ await withOwnedCleanup({
 			"local",
 		);
 		assert(!existsSync(join(home, "runtime", "service.json")));
-		foreground.kill("SIGTERM");
+		foreground.child.kill("SIGTERM");
 		await until(
-			async () => !alive(foreground.pid) && !(await status()).owner,
+			async () => !alive(foreground.child.pid) && !(await status()).owner,
 			"manual graceful handoff",
 		);
 		observed(
@@ -366,9 +430,68 @@ await withOwnedCleanup({
 		observed(
 			"Actual external user service disabled and stopped before replacement; definition retained",
 		);
+		// This renderer is the exact Linux definition contract of frozen source b82.
+		// Prepare byte ownership before initial install, including interrupted setup.
+		const quote = (v) =>
+			`"${v.replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("%", "%%").replaceAll("$", "$$")}"`;
+		if (
+			interruptPhase === "initial-install" ||
+			interruptPhase === "manager-mutation"
+		) {
+			const bin = join(root, "bin");
+			mkdirSync(bin);
+			const systemctl = (await execute("which", ["systemctl"], 5000)).trim();
+			// Gate the real execFileSync descendant. The delayed manager command would
+			// mutate after parent exit unless the owned group is drained. start --no-block
+			// also submits an actual manager job before cancellation/reconciliation.
+			writeFileSync(
+				join(bin, "systemctl"),
+				`#!${process.execPath}
+const {execFileSync,spawn}=require('node:child_process');
+const {writeFileSync}=require('node:fs');
+const args=process.argv.slice(2), gate=process.env.BOBS_FACTORY_ACCEPTANCE_MANAGER_GATE;
+const real=${JSON.stringify(systemctl)};
+if(gate && (args.includes('daemon-reload') || args.includes('start'))) {
+  if(args.includes('start')) execFileSync(real,[...args,'--no-block']);
+  const script="setTimeout(()=>{require('node:fs').writeFileSync(process.argv[1],'escaped');require('node:child_process').execFileSync(process.argv[2],JSON.parse(process.argv[3]));},500);";
+  spawn(process.execPath,['-e',script,process.env.BOBS_FACTORY_ACCEPTANCE_LATE_MUTATION,real,JSON.stringify(args)],{stdio:'ignore'});
+  writeFileSync(gate,JSON.stringify(args));
+  setInterval(()=>{},1000);
+} else {
+  try { process.stdout.write(execFileSync(real,args,{encoding:'utf8'})); }
+  catch(e) { process.stderr.write(String(e.stderr)); process.exit(e.status || 1); }
+}
+`,
+				{ mode: 0o700 },
+			);
+			cliEnvironment = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
+		}
+		for (const [unit, updater] of [
+			[managedId, false],
+			[updaterId, true],
+		]) {
+			const id = unit.slice(0, -8);
+			const args = [
+				executable,
+				"--home",
+				home,
+				"--port",
+				String(port),
+				"--no-open",
+				"service",
+				updater ? "updates-run" : "run",
+			];
+			definitions.set(
+				unit,
+				`[Unit]\nDescription=Bob's Factory (${id})\nStartLimitIntervalSec=120\nStartLimitBurst=3\n\n[Service]\nType=simple\nWorkingDirectory=${home.replaceAll("%", "%%")}\nExecStart=${args.map(quote).join(" ")}\nEnvironment=${quote(`BOBS_FACTORY_SERVICE_ID=${id}`)}\nEnvironment=${quote(`PATH=${cliEnvironment.PATH}`)}\nRestart=on-failure\nRestartSec=10\nTimeoutStopSec=infinity\nSendSIGKILL=no\nKillMode=mixed\n\n[Install]\nWantedBy=default.target\n`,
+			);
+		}
+		if (interruptPhase === "initial-install") gateOperation = "install";
 		await command("install", "--executable", executable, "--mode", "local");
 		record = await status();
-		units.push(`${record.id}.service`, `${record.id}.updates.service`);
+		assert.equal(`${record.id}.service`, managedId);
+		verifyDefinition(managedId);
+		verifyDefinition(updaterId);
 		assert.equal(record.startup, false);
 		assert.equal(record.desired, "stopped");
 		const updaterDefinition = record.definition.replace(
@@ -382,7 +505,10 @@ await withOwnedCleanup({
 		await command("install", "--executable", executable, "--mode", "local");
 		assert.equal(readFileSync(updaterDefinition, "utf8"), updaterBytes);
 		unlinkSync(updaterDefinition);
-		writeFileSync(record.definition, "External definition; do not adopt\n");
+		writeOwnedDefinition(
+			record.definition,
+			"External definition; do not adopt\n",
+		);
 		await expectRefusal(
 			"install",
 			"--executable",
@@ -394,7 +520,7 @@ await withOwnedCleanup({
 			readFileSync(record.definition, "utf8"),
 			"External definition; do not adopt\n",
 		);
-		writeFileSync(record.definition, workerBytes);
+		writeOwnedDefinition(record.definition, workerBytes);
 		await command("install", "--executable", executable, "--mode", "local");
 		observed(
 			"Interrupted stopped setup restores only missing owned definition; modified definition is refused",
@@ -407,11 +533,10 @@ await withOwnedCleanup({
 		await command("disable");
 		assert.match((await status()).startupActual, /disabled/);
 		assert.equal((await status()).owner, null);
+		if (interruptPhase === "manager-mutation") gateOperation = "start";
 		await command("start");
 		const first = await healthy();
-		const interrupt = process.env.BOBS_FACTORY_ACCEPTANCE_INTERRUPT;
 		if (interrupt) {
-			assert(["SIGINT", "SIGTERM"].includes(interrupt));
 			receipt.interruptPhase = "healthy-managed-fixture";
 			process.kill(process.pid, interrupt);
 			await delay(1000, undefined, { signal });
@@ -419,6 +544,7 @@ await withOwnedCleanup({
 		}
 		assert.equal(first.owner.dashboardPort, port);
 		await manager("reset-failed", `${record.id}.service`);
+		const crashSince = `@${(Date.now() / 1000).toFixed(3)}`;
 		const killedAt = Date.now();
 		await capture("before-first-crash");
 		await crash();
@@ -436,12 +562,35 @@ await withOwnedCleanup({
 			await crash();
 			const previousPid = current.owner.pid;
 			current = await until(async () => {
-				if (
-					/Result=start-limit-hit/.test(
-						await manager("show", `${record.id}.service`, "--property=Result"),
-					)
-				)
-					return { exhausted: true };
+				const unit = `${record.id}.service`;
+				const p = properties(
+					await manager(
+						"show",
+						unit,
+						"--property=ActiveState,SubState,MainPID,ControlPID,Job,Result,NRestarts,StartLimitIntervalUSec,StartLimitBurst,RestartUSec",
+					),
+				);
+				if (terminal(p)) {
+					const journal = await execute(
+						"journalctl",
+						[
+							"--user",
+							"-u",
+							unit,
+							"--since",
+							crashSince,
+							"--no-pager",
+							"--quiet",
+							"-o",
+							"json",
+						],
+						5000,
+					);
+					if (startLimitEvidence(unit, p, journal)) {
+						receipt.exhaustion = { unit, properties: p, journal };
+						return { exhausted: true };
+					}
+				}
 				const s = await status();
 				if (!s.healthy || s.owner.pid === previousPid) return false;
 				pids.add(s.owner.pid);
@@ -450,6 +599,22 @@ await withOwnedCleanup({
 			exhausted = Boolean(current.exhausted);
 		}
 		assert(exhausted, "Repeated crashes must exhaust native start limit");
+		// Observe beyond RestartSec without extending the original restart wait.
+		const stableStarted = Date.now();
+		const stableUntil = stableStarted + 10500;
+		while (Date.now() < stableUntil) {
+			await delay(200, undefined, { signal });
+			const p = properties(
+				await manager(
+					"show",
+					`${record.id}.service`,
+					"--property=ActiveState,SubState,MainPID,ControlPID,Job,NRestarts",
+				),
+			);
+			assert(terminal(p), "Exhausted unit queued or resumed a restart");
+			assert.equal(p.NRestarts, receipt.exhaustion.properties.NRestarts);
+		}
+		receipt.exhaustion.stableMs = Date.now() - stableStarted;
 		observed(
 			"Actual crash recovery delays at least 9s; repeated crashes exhaust StartLimitBurst",
 		);
@@ -500,59 +665,36 @@ await withOwnedCleanup({
 		cleaning = true;
 		await capture("before-teardown");
 		if (probe.listening) await new Promise((resolve) => probe.close(resolve));
-		// Bound every manager call. Kill only the exact fixture units if graceful stop fails.
-		let cleanupError;
-		// ChildProcess.kill refuses an exited/reaped child rather than using a retained PID.
-		foreground?.kill(receipt.interrupted ? "SIGKILL" : "SIGTERM");
-		if (foreground && !receipt.interrupted) {
-			try {
-				await until(
-					async () =>
-						foreground.exitCode !== null || foreground.signalCode !== null,
-					"manual fixture graceful exit",
-					receipt.interrupted ? 200 : 2000,
-				);
-			} catch {
-				foreground.kill("SIGKILL");
-			}
-		}
-		for (const child of commands) child.kill("SIGKILL");
+		const cleanupErrors = [];
+		foreground?.kill();
+		if (foreground) await foreground.done.catch(() => {});
+		if (foreground && !foreground.drained)
+			cleanupErrors.push("Manual fixture group did not drain");
+		for (const owned of commands) owned.kill();
+		await Promise.allSettled([...commands].map((owned) => owned.done));
+		if ([...commands].some((owned) => !owned.drained))
+			cleanupErrors.push(
+				"Command group did not drain before manager reconciliation",
+			);
 		for (const unit of new Set(units)) {
 			try {
-				if (receipt.interrupted)
-					await manager("kill", "--kill-whom=all", "--signal=SIGKILL", unit);
-				await manager("disable", unit);
-				await manager("stop", "--no-block", unit);
-				await until(
-					async () =>
-						/ActiveState=(inactive|failed)/.test(
-							await manager("show", unit, "--property=ActiveState"),
-						),
-					"fixture unit stopped",
-					receipt.interrupted ? 200 : 2000,
-				);
-			} catch {
-				try {
-					await manager("kill", "--kill-whom=all", "--signal=SIGKILL", unit);
-					await manager("stop", "--no-block", unit);
-				} catch (error) {
-					if (
-						!/LoadState=not-found/.test(
-							await manager("show", unit, "--property=LoadState"),
-						)
-					)
-						cleanupError = error.message;
-				}
+				await stopOwnedUnit({
+					unit,
+					manager,
+					verifyDefinition: () => verifyDefinition(unit),
+					until,
+				});
+				if (verifyDefinition(unit)) unlinkSync(join(unitDirectory, unit));
+			} catch (error) {
+				cleanupErrors.push(`${unit}: ${error.message}`);
 			}
-			const path = join(unitDirectory, unit);
-			if (existsSync(path)) unlinkSync(path);
 		}
 		try {
 			await manager("daemon-reload");
 			await until(
 				() => [...pids].every((pid) => !alive(pid)),
 				"fixture processes exit",
-				receipt.interrupted ? 1000 : 15000,
+				15000,
 			);
 			// Check descendants by fixture paths as well as every observed manager PID.
 			const processes = await execute(
@@ -572,13 +714,15 @@ await withOwnedCleanup({
 				"Unobserved fixture descendant survived",
 			);
 			for (const unit of new Set(units)) {
-				const properties = await manager(
+				const finalProperties = await manager(
 					"show",
 					unit,
-					"--property=ActiveState,MainPID",
+					"--property=ActiveState,SubState,MainPID,ControlPID,Job",
 				);
-				assert.match(properties, /^MainPID=0$/m);
-				assert.match(properties, /^ActiveState=(inactive|failed)$/m);
+				assert(
+					terminal(properties(finalProperties)),
+					"Unit still has a process or manager job",
+				);
 			}
 			// remove retains definitions outside the state home. Record then remove
 			// only backups belonging to these exact ephemeral fixture identities.
@@ -587,11 +731,30 @@ await withOwnedCleanup({
 				if (!units.some((unit) => name.startsWith(`${unit}.removed-`)))
 					continue;
 				const path = join(unitDirectory, name);
+				assert(
+					!lstatSync(path).isSymbolicLink(),
+					"Retained definition became a symlink",
+				);
+				assert.equal(
+					readFileSync(path, "utf8"),
+					definitions.get(name.slice(0, name.indexOf(".removed-"))),
+				);
 				receipt.retainedDefinitionBackups.push({ name, sha256: hash(path) });
 				unlinkSync(path);
 			}
-			assert(!cleanupError, cleanupError);
-			receipt.cleanup = true;
+			if (
+				interruptPhase === "initial-install" ||
+				interruptPhase === "manager-mutation"
+			) {
+				await delay(650);
+				receipt.lateMutation = existsSync(lateMutation);
+				assert.equal(
+					receipt.lateMutation,
+					false,
+					"CLI descendant mutated after cleanup began",
+				);
+			}
+			assert.equal(cleanupErrors.length, 0, cleanupErrors.join("; "));
 			receipt.survivors = [];
 			receipt.retainedBackupNames = (
 				existsSync(join(home, "runtime"))
@@ -599,6 +762,7 @@ await withOwnedCleanup({
 					: []
 			).filter((name) => name.includes(".removed-"));
 			rmSync(root, { recursive: true, force: true });
+			receipt.cleanup = true;
 		} catch (error) {
 			receipt.cleanupError = error.message;
 			receipt.passed = false;

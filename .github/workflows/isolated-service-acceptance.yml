@@ -32,32 +32,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node docs/distribution/acceptance/verify-frozen-runtime.mjs "$RUNNER_TEMP/frozen-service-runtime"
       - name: Verify cancellation cleanup protocol
-        run: node --test docs/distribution/acceptance/owned-cleanup.test.mjs
+        run: node --test docs/distribution/acceptance/owned-cleanup.test.mjs docs/distribution/acceptance/service-protocol.test.mjs
       - name: Exercise only disposable per-home user services
         env:
           BOBS_FACTORY_ACCEPTANCE_HANDOFF: fixture-only
         run: |
           mkdir -p "$RUNNER_TEMP/service-evidence"
           node docs/distribution/acceptance/linux-user-service.mjs "$RUNNER_TEMP/frozen-service-runtime/bobs-factory-1.0.0-nightly.20261010.21-linux-x64" "$RUNNER_TEMP/service-evidence/receipt.json"
-      - name: Interrupt healthy owned fixtures and require cleanup FAIL receipts
+      - name: Independently interrupt installation, manager mutations and healthy units
         if: always()
         env:
           BOBS_FACTORY_ACCEPTANCE_HANDOFF: fixture-only
-        run: |
-          mkdir -p "$RUNNER_TEMP/service-evidence"
-          for signal in SIGINT SIGTERM; do
-            receipt="$RUNNER_TEMP/service-evidence/cancel-$signal.json"
-            if BOBS_FACTORY_ACCEPTANCE_INTERRUPT="$signal" node docs/distribution/acceptance/linux-user-service.mjs "$RUNNER_TEMP/frozen-service-runtime/bobs-factory-1.0.0-nightly.20261010.21-linux-x64" "$receipt"; then
-              echo "Cancellation unexpectedly passed"
-              exit 1
-            else
-              result=$?
-            fi
-            expected=130
-            if [ "$signal" = SIGTERM ]; then expected=143; fi
-            test "$result" = "$expected"
-            node --input-type=module -e 'import assert from "node:assert/strict"; import {readFileSync} from "node:fs"; const r=JSON.parse(readFileSync(process.argv[1])); assert.equal(r.passed,false); assert.equal(r.cleanup,true); assert.equal(r.interrupted,process.argv[2]); assert.equal(r.interruptPhase,"healthy-managed-fixture"); assert.deepEqual(r.survivors,[]);' "$receipt" "$signal"
-          done
+        run: node docs/distribution/acceptance/cancellation-matrix.mjs "$RUNNER_TEMP/frozen-service-runtime/bobs-factory-1.0.0-nightly.20261010.21-linux-x64" "$RUNNER_TEMP/service-evidence"
       - uses: actions/upload-artifact@v6
         if: always()
         with:

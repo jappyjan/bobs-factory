@@ -66,8 +66,9 @@ These are separate inputs or actual platform acceptance observations, not invent
 implementation failures or assumed PASS receipts:
 
 - [ ] Root's independent combined review of exact final tip and differences above.
-- [ ] Complete patched WebKit source at the maintained pin; prior official HTTP422
-  fetches remain recorded, not replaced by a sparse/incomplete archive.
+- [ ] Independently review the separately acquired full pinned WebKit and candidate
+  binding; prior official HTTP422 fetches remain recorded. Acquisition does not
+  complete source correspondence, relinking or licensing.
 - [ ] Genuine native objects/static libraries, exact build configs and toolchains,
   link response and observed relink logs for darwin-arm64/darwin-x64/linux-x64/
   linux-arm64, matched to final executable/runtime hashes. All four remain
@@ -95,8 +96,24 @@ implementation failures or assumed PASS receipts:
   on isolated hosts. User-selected minimums: macOS 15, Ubuntu 24.04/glibc 2.39,
   ARM64+x64. Observed macOS 15.7.9 / Ubuntu 24.04.5 success does not prove macOS
   15.0 or every Linux kernel/image variant.
-- [ ] Scoped operator GitGuardian reviews38083768/38084076 (four occurrences).
+- [ ] Scoped operator GitGuardian reviews38083768/38084076 (latest supplied count: two historical mock UUID occurrences; dashboard undisposed).
   Preserve sanitization intent and historical evidence; no bypass/history rewrite.
 
 No production/service/home/key changes, signing, publication, tags, catalog
 submission, original PR closure or remote merge are authorized by this integration.
+
+
+## Round 3 service implementation handoff
+
+The [round 3 finding response](FINAL_NATIVE_116.md#round-3-service-correction-response-2026-10-11)
+records actual failed c3 evidence, root causes, corrections and pending acceptance.
+The frozen runtime remains b82 / `.21`; harness provenance is recorded separately.
+No Linux overall PASS is established before the main exhaustion/maintenance/resume/
+remove/retention receipt and all six SIGINT/SIGTERM cancellation receipts are reviewed.
+The exact c3 failed ZIP/receipts/diagnostics are preserved in their own folder.
+
+Full WebKit acquisition/candidate binding is now separate research work, superseding
+the acquisition blocker above; complete object correspondence, actual relinking and
+independent licensing review remain unproved here. No source/licensing gate is closed.
+Taskbot #116/#122/#124 statuses and all previously named native/operator gates remain
+unchanged. Root owns the fresh independent review and actual CI evidence verification.
