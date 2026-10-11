@@ -33,9 +33,17 @@ import { reconstructSourceArchive } from "./source-transport.mjs";
 export function validatePreparedRelease(
 	directory,
 	expectedCandidate,
-	{ legacyBeta = false, recoveredSourceDirectory } = {},
+	{ legacyBeta = false, recoveredSourceDirectory, expectedManifestBytes } = {},
 ) {
 	const manifestBytes = readFileSync(join(directory, "release.json"));
+	// Callers that authenticate outside this validator must bind that exact read.
+	// All reconstruction records below come from this checked byte snapshot.
+	if (expectedManifestBytes !== undefined)
+		requireValue(
+			Buffer.isBuffer(expectedManifestBytes) &&
+				manifestBytes.equals(expectedManifestBytes),
+			"Prepared manifest differs from authenticated bytes",
+		);
 	const manifest = validateReleaseManifest(JSON.parse(manifestBytes));
 	requireValue(
 		manifest.status === "available" &&
@@ -260,6 +268,11 @@ export function validatePreparedRelease(
 			"Evidence source differs from signed reconstruction",
 		);
 		validateEvidence(evidence, temporary, identity);
+		if (expectedManifestBytes !== undefined)
+			requireValue(
+				readFileSync(join(directory, "release.json")).equals(manifestBytes),
+				"Prepared manifest changed during authenticated validation",
+			);
 		if (recoveredSourceDirectory) {
 			requireValue(
 				lstatSync(recoveredSourceDirectory).isDirectory(),

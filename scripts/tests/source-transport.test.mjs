@@ -5,6 +5,7 @@ import {
 	linkSync,
 	mkdirSync,
 	mkdtempSync,
+	readdirSync,
 	readFileSync,
 	rmSync,
 	symlinkSync,
@@ -22,6 +23,7 @@ import {
 } from "../lib/binary-release.mjs";
 import { ARCHIVE_LIMITS } from "../lib/bounded-archive.mjs";
 import { validatePreparedRelease } from "../lib/prepared-release.mjs";
+import { verifyManifestSignature } from "../lib/release-signature.mjs";
 import {
 	reconstructSourceArchive,
 	SOURCE_CHUNK_BYTES,
@@ -29,6 +31,7 @@ import {
 	splitSourceArchive,
 } from "../lib/source-transport.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
+import { keys } from "./release-fixtures.mjs";
 
 function fixture() {
 	const work = mkdtempSync(join(tmpdir(), "factory-source-transport-test-"));
@@ -320,6 +323,139 @@ test("offline recovery authenticates before retaining source and preserves confl
 		f.cleanup();
 	}
 });
+
+for (const { sourceChunks, duringValidation } of [
+	{ sourceChunks: false, duringValidation: false },
+	{ sourceChunks: true, duringValidation: false },
+	{ sourceChunks: true, duringValidation: true },
+]) {
+	test(`offline recovery refuses unsigned directory swap ${duringValidation ? "during validation" : "after authentication"} (${sourceChunks ? "chunks" : "single archive"})`, () => {
+		const f = preparedFixture("nightly", { sourceChunks });
+		const replacement = preparedFixture("nightly", { sourceChunks });
+		try {
+			assert.equal(f.candidate.digest, replacement.candidate.digest);
+			const root = join(replacement.work, "source-rebuild");
+			writeFileSync(
+				join(root, "README.md"),
+				"UNSIGNED replacement rebuild instructions, different from authenticated source.",
+			);
+			const materialsPath = join(root, "source-materials.json");
+			const materials = JSON.parse(readFileSync(materialsPath));
+			materials.records = materials.records.map((record) =>
+				record.file === "README.md"
+					? { ...record, ...fileRecord(join(root, record.file), record.file) }
+					: record,
+			);
+			writeFileSync(materialsPath, jsonBytes(materials));
+			const archive = join(replacement.assets, "source-rebuild.tar.gz");
+			execFileSync(
+				"tar",
+				["-czf", archive, "-C", replacement.work, "source-rebuild"],
+				{
+					env: { ...process.env, COPYFILE_DISABLE: "1" },
+				},
+			);
+			const source = fileRecord(archive, "source-rebuild.tar.gz");
+			assert.notEqual(source.sha256, f.manifest.source.sha256);
+			const manifest = { ...replacement.manifest, source };
+			if (sourceChunks) {
+				for (const chunk of manifest.sourceTransport.chunks)
+					rmSync(join(replacement.assets, chunk.file));
+				manifest.sourceTransport = splitSourceArchive(
+					archive,
+					source,
+					replacement.assets,
+					1024,
+				);
+				rmSync(archive);
+			}
+			const evidencePath = join(replacement.assets, "release-evidence.json");
+			const evidence = JSON.parse(readFileSync(evidencePath));
+			evidence.source = source;
+			writeFileSync(evidencePath, jsonBytes(evidence));
+			manifest.assets = readdirSync(replacement.assets)
+				.filter(
+					(file) =>
+						![
+							"release.json",
+							"release.json.sig",
+							"release.json.key-id",
+						].includes(file),
+				)
+				.sort()
+				.map((file) => fileRecord(join(replacement.assets, file), file));
+			writeFileSync(
+				join(replacement.assets, "release.json"),
+				jsonBytes(manifest),
+			);
+			const originalSignature = readFileSync(
+				join(f.assets, "release.json.sig"),
+			);
+			writeFileSync(
+				join(replacement.assets, "release.json.sig"),
+				originalSignature,
+			);
+			assert.throws(
+				() =>
+					verifyManifestSignature(
+						jsonBytes(manifest),
+						originalSignature,
+						"fixture",
+						keys,
+					),
+				/signature/,
+			);
+			// The replacement passes every semantic check: only authentication binds
+			// recovery to the original archive. No validator or hash check is stubbed.
+			validatePreparedRelease(replacement.assets, f.candidate);
+			const output = join(f.work, "swapped-recovery");
+			const temporary = join(f.work, "recovery-temporary");
+			mkdirSync(temporary);
+			const preload = join(f.work, "swap-after-authentication.mjs");
+			writeFileSync(
+				preload,
+				`import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+const original = fs.${duringValidation ? "readFileSync" : "mkdirSync"};
+fs.${duringValidation ? "readFileSync" : "mkdirSync"} = function(path, ...args) {
+ const result = original.call(this, path, ...args);
+ if (path === ${JSON.stringify(duringValidation ? join(f.assets, "release-evidence.json") : output)}) {
+  fs.rmSync(${JSON.stringify(f.assets)}, {recursive: true, force: true});
+  fs.cpSync(${JSON.stringify(replacement.assets)}, ${JSON.stringify(f.assets)}, {recursive: true});
+ }
+ return result;
+};
+syncBuiltinESMExports();
+`,
+			);
+			const result = spawnSync(
+				process.execPath,
+				[
+					"--import",
+					preload,
+					join(f.work, "scripts/recover-release-source.mjs"),
+					"--assets",
+					f.assets,
+					"--output",
+					output,
+				],
+				{ encoding: "utf8", env: { ...process.env, TMPDIR: temporary } },
+			);
+			assert.notEqual(result.status, 0, result.stdout);
+			assert.match(
+				result.stderr,
+				duringValidation
+					? /Prepared manifest changed during authenticated validation/
+					: /Prepared manifest differs from authenticated bytes/,
+			);
+			assert.equal(existsSync(output), false);
+			assert.deepEqual(readdirSync(temporary), []);
+		} finally {
+			f.cleanup();
+			replacement.cleanup();
+		}
+	});
+}
 
 test("split failures remove only new partial chunks and preserve retained collisions", () => {
 	const f = fixture();

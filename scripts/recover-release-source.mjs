@@ -40,6 +40,7 @@ mkdirSync(output, { mode: 0o700 });
 try {
 	const { manifest } = validatePreparedRelease(assets, undefined, {
 		recoveredSourceDirectory: output,
+		expectedManifestBytes: bytes,
 	});
 	console.log(
 		`Recovered ${manifest.source.file}: ${manifest.source.size} bytes, SHA256 ${manifest.source.sha256}`,
