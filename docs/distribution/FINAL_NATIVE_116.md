@@ -395,8 +395,9 @@ original files/eight receipts are retained with independent inspection and exact
 helper/source hashes in [the final service evidence folder](evidence/2026-10-11-service-1aeb/README.md).
 Main passed all seven assertions with cleanup/no survivors; crash backoff11956 ms,
 start-limit state stable for 10640 ms. Six signal cancellations and the actual outer START
-deadline passed with expected exits, cleanup and no survivors. All 46 provider tests
-passed. Node CI [38139586901](https://github.com/jappyjan/bobs-factory/actions/runs/38139586901)
+deadline passed with expected exits, cleanup and no survivors. All 46 focused
+acceptance-harness tests passed; they exercise owned cleanup, service protocol and
+owned-fixture helper files, not real provider workflows. Node CI [38139586901](https://github.com/jappyjan/bobs-factory/actions/runs/38139586901)
 passed on the same SHA for Node22/24. Review 7 was CLEAR for all prior service findings. This records actual `1aeb`
 results; the documentation commit did not produce or relabel those results.
 
