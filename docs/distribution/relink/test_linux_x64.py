@@ -3,6 +3,7 @@
 import importlib.util
 import io
 from pathlib import Path
+import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -14,10 +15,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 spec = importlib.util.spec_from_file_location("relink", Path(__file__).with_name("linux-x64.py"))
 relink = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(relink)
-from webkit_trial import assert_single_replacement, archive_members
+from webkit_trial import assert_single_replacement, archive_members, copy_executable
 
 
 class SafetyTests(unittest.TestCase):
+    def test_copied_cached_runtime_remains_directly_executable(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root / "cached-runtime"
+            copied = root / "unchanged-runtime"
+            source.write_text("#!/bin/sh\nprintf 'native runtime ran\\n'\n")
+            source.chmod(0o755)
+
+            copy_executable(source, copied)
+            result = subprocess.run([copied], check=True, capture_output=True, text=True)
+            self.assertEqual(result.stdout, "native runtime ran\n")
+
     def test_modified_effect_cannot_pass_with_baseline_or_broken_control(self):
         relink.validate_native_library_behavior("[86400000,172800000,42]\n", 86400000)
         relink.validate_native_library_behavior("[116000000,172800000,42]\n", 116000000)

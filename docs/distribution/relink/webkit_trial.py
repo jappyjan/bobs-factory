@@ -14,6 +14,12 @@ def file_record(path):
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
 
 
+def copy_executable(source, destination):
+    """Copy executable bytes and their mode so retained native probes stay runnable."""
+    shutil.copyfile(source, destination)
+    shutil.copymode(source, destination)
+
+
 def archive_members(path):
     """Inventory GNU ar members, including long names, without extracting files."""
     records, names = [], b""
@@ -167,7 +173,7 @@ def modified_library_trial(task, manifest, files, bun_source, build, cache, sysr
     # The unmodified recompiled TU must also link and run correctly: compilation
     # alone would not prove this header/ABI reconstruction preserves behavior.
     unchanged_binary = trial / "bun-unchanged"
-    shutil.copyfile(build / "bun", unchanged_binary)
+    copy_executable(build / "bun", unchanged_binary)
     for stage, prefix, expected_date in (("unmodified", "recompiled", 86400000),
                                          ("modified", "modified", 116000000)):
         task.receipt["phase"] = stage + "-webkit-single-member-replacement"
