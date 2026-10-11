@@ -163,7 +163,7 @@ unlinked files with safe modes into a private temporary snapshot, checking every
 size and hash while copying. Uploads use that snapshot through pinned file
 descriptors and verify the actual streamed bytes before a release can become
 public. A staging integrity failure leaves the release draft and keeps its
-authenticated inventory in the recovery receipt. Temporary snapshot storage must
+validated inventory in the recovery receipt. Temporary snapshot storage must
 fit the complete asset set; it is removed on success, refusal and ordinary retry
 failure. Changed input files never redefine publication expectations.
 
@@ -176,7 +176,7 @@ node scripts/recover-release-source.mjs --assets /path/to/assets \
   --output /path/to/new-recovered-source
 ```
 
-The output directory must not exist. The command authenticates the manifest,
+The output directory must not exist. The command binds the original manifest bytes,
 validates the complete prepared release and unchanged semantic source intake,
 then retains only the verified full archive. Failure removes only its newly owned
 output. It performs no network requests, signing, publication or installation.
