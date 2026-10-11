@@ -355,3 +355,45 @@ test("split failures remove only new partial chunks and preserve retained collis
 		f.cleanup();
 	}
 });
+
+test("hash-valid reconstructed transport cannot bypass semantic source intake", () => {
+	const f = preparedFixture();
+	try {
+		const archive = join(f.assets, f.manifest.source.file);
+		writeFileSync(archive, "Exact hashed bytes that are not a source archive");
+		const source = fileRecord(archive, f.manifest.source.file);
+		const transport = splitSourceArchive(archive, source, f.assets, 16);
+		rmSync(archive);
+		const evidence = JSON.parse(
+			readFileSync(join(f.assets, "release-evidence.json")),
+		);
+		evidence.source = source;
+		writeFileSync(join(f.assets, "release-evidence.json"), jsonBytes(evidence));
+		const manifest = { ...f.manifest, source, sourceTransport: transport };
+		manifest.assets = manifest.assets
+			.filter((a) => a.file !== source.file)
+			.map((a) =>
+				a.file === "release-evidence.json"
+					? fileRecord(join(f.assets, a.file), a.file)
+					: a,
+			);
+		manifest.assets.push(...sourceTransportRecords(source, transport));
+		writeFileSync(join(f.assets, "release.json"), jsonBytes(manifest));
+		validateReleaseManifest(manifest);
+		const output = join(f.work, "semantic");
+		mkdirSync(output);
+		assert.deepEqual(
+			fileRecord(
+				reconstructSourceArchive(f.assets, source, transport, output),
+				source.file,
+			),
+			source,
+		);
+		assert.throws(
+			() => validatePreparedRelease(f.assets, f.candidate),
+			/incorrect header check/,
+		);
+	} finally {
+		f.cleanup();
+	}
+});

@@ -149,84 +149,82 @@ test("compressed bomb is stopped during decompression without extracting any pay
 	}));
 
 test("member/header/control limits reject before oversized payloads are materialized", () =>
+	fixture((_work, archive) => {
+		const oversized = archive([
+			tarMember("source-rebuild/payload", undefined, { size: 8 * 1024 ** 2 }),
+		]);
+		assert.throws(
+			() =>
+				validateSourceArchive(
+					oversized,
+					{},
+					{ limits: { maxMemberBytes: 1024 } },
+				),
+			/member byte limit.*writtenBytes=0/,
+		);
+		const hugeControl = archive([
+			tarMember("source-rebuild/candidate.json", Buffer.alloc(2 * 1024 ** 2)),
+		]);
+		assert.throws(
+			() => validateSourceArchive(hugeControl, {}),
+			/control file byte limit.*writtenBytes=0/,
+		);
+		const evidenceControl = archive([
+			tarMember(
+				"release-evidence/release-evidence.json",
+				Buffer.alloc(2 * 1024 ** 2),
+			),
+			tarMember(
+				"release-evidence/source-rebuild.tar.gz",
+				Buffer.from("fixture"),
+			),
+		]);
+		assert.throws(
+			() => extractEvidenceArchive(evidenceControl, "unused-output"),
+			/control file byte limit.*writtenBytes=0/,
+		);
+		const many = archive(
+			Array.from({ length: 50 }, (_, i) => tarMember(`source/file-${i}`)),
+		);
+		assert.throws(
+			() =>
+				inspectArchive(many, { prefix: "source/", limits: { maxMembers: 10 } }),
+			/member count limit.*writtenBytes=0/,
+		);
+		assert.throws(
+			() =>
+				inspectArchive(many, {
+					prefix: "source/",
+					limits: { maxCompressedBytes: 1 },
+				}),
+			/compressed byte limit/,
+		);
+	}));
+
+test("unknown outer payload and wrong candidate never reach an extraction directory", () =>
 	fixture((work, archive) => {
+		// Isolate this no-extraction assertion from other test processes.
 		const previousTemp = process.env.TMPDIR;
 		process.env.TMPDIR = work;
 		try {
-			const oversized = archive([
-				tarMember("source-rebuild/payload", undefined, { size: 8 * 1024 ** 2 }),
-			]);
-			assert.throws(
-				() =>
-					validateSourceArchive(
-						oversized,
-						{},
-						{ limits: { maxMemberBytes: 1024 } },
-					),
-				/member byte limit.*writtenBytes=0/,
+			const before = readdirSync(tmpdir()).filter((n) =>
+				n.startsWith("factory-source-intake-"),
 			);
-			const hugeControl = archive([
-				tarMember("source-rebuild/candidate.json", Buffer.alloc(2 * 1024 ** 2)),
+			const malformed = archive([
+				tarMember("source-rebuild/candidate.json", Buffer.from("{}")),
+				tarMember("source-rebuild/payload", Buffer.alloc(32 * 1024 ** 2)),
 			]);
-			assert.throws(
-				() => validateSourceArchive(hugeControl, {}),
-				/control file byte limit.*writtenBytes=0/,
-			);
-			const evidenceControl = archive([
-				tarMember(
-					"release-evidence/release-evidence.json",
-					Buffer.alloc(2 * 1024 ** 2),
+			assert.throws(() => validateSourceArchive(malformed, {}), /candidate/i);
+			assert.deepEqual(
+				readdirSync(tmpdir()).filter((n) =>
+					n.startsWith("factory-source-intake-"),
 				),
-				tarMember(
-					"release-evidence/source-rebuild.tar.gz",
-					Buffer.from("fixture"),
-				),
-			]);
-			assert.throws(
-				() => extractEvidenceArchive(evidenceControl, "unused-output"),
-				/control file byte limit.*writtenBytes=0/,
-			);
-			const many = archive(
-				Array.from({ length: 50 }, (_, i) => tarMember(`source/file-${i}`)),
-			);
-			assert.throws(
-				() =>
-					inspectArchive(many, {
-						prefix: "source/",
-						limits: { maxMembers: 10 },
-					}),
-				/member count limit.*writtenBytes=0/,
-			);
-			assert.throws(
-				() =>
-					inspectArchive(many, {
-						prefix: "source/",
-						limits: { maxCompressedBytes: 1 },
-					}),
-				/compressed byte limit/,
+				before,
 			);
 		} finally {
 			if (previousTemp === undefined) delete process.env.TMPDIR;
 			else process.env.TMPDIR = previousTemp;
 		}
-	}));
-
-test("unknown outer payload and wrong candidate never reach an extraction directory", () =>
-	fixture((_work, archive) => {
-		const before = readdirSync(tmpdir()).filter((n) =>
-			n.startsWith("factory-source-intake-"),
-		);
-		const malformed = archive([
-			tarMember("source-rebuild/candidate.json", Buffer.from("{}")),
-			tarMember("source-rebuild/payload", Buffer.alloc(32 * 1024 ** 2)),
-		]);
-		assert.throws(() => validateSourceArchive(malformed, {}), /candidate/i);
-		assert.deepEqual(
-			readdirSync(tmpdir()).filter((n) =>
-				n.startsWith("factory-source-intake-"),
-			),
-			before,
-		);
 	}));
 
 test("owned intake worker has an enforced deadline and leaves no partial output", () =>
