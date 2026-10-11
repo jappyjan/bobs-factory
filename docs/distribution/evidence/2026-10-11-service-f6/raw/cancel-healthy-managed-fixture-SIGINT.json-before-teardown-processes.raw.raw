@@ -1,0 +1,2 @@
+  13065    1048 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-kkYyVn/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-kkYyVn/state --port 43095 --no-open service run
+  13067    1048 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-kkYyVn/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-kkYyVn/state --port 43095 --no-open service updates-run

@@ -1,0 +1,1 @@
+  15810    1048 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-LHr6y3/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-LHr6y3/state --port 46065 --no-open service run

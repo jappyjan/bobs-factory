@@ -343,3 +343,42 @@ authentication, login/reboot/logout/lingering, licensing/relink/trust/signing,
 publication/catalog and GitGuardian38083768/38084076 operator gates remain open
 and unchanged. No production home/credentials/host services, full native or
 signed23 replay, release, merge or ticket closure operation is performed.
+
+
+## Review6 remaining-P2 implementation response (2026-10-11)
+
+Taskbot116 comment1313 cleared the prior SIGKILL/filesystem fix but found that f6
+trusted a successful child's cleanup:true and deleted its tree/registry while a
+mocked unit remained active. All terminal paths now await child completion and
+registered-group draining, independently reconcile exact units/jobs, verify terminal
+state after reload, then permit identity-bound filesystem cleanup. Claimed PASS
+cannot bypass manager proof. Missing/malformed receipts and compromised records
+fail closed; cleanup errors retain state/registry evidence and its reported path.
+Original work/exit/signal/deadline errors remain primary, including combined manager
+errors. Escalation shares the final native proof after child completion.
+
+All27 prior checks plus19 behavioral cases pass (**46/46**); the initial12 new cases
+produced7 failures against untouched f6. Tests use private mocked systemctl, absent
+random units and owned temporary state, without host-manager operations.
+[The per-finding response and raw checks](evidence/2026-10-11-service-f6/README.md)
+retain the reproduction and distinguish historical results from the correction.
+F1 is inapplicable to acceptance-only tooling/docs; normal lint-staged/build/typecheck,
+Biome and syntax checks apply. Production payload remains frozenb82/.21/ca323.
+
+That separate folder retains exactf6 completed-success service run38138356861/
+job114466824699, artifact11701878395, official ZIP SHA-256
+`c8c23aad06a62248cbd24b977d10971e10054b3e375a1229e6b6dab5214ddd89`, all94 raw
+members, eight receipts and exactf6 helper/source identities. MainPASS proves all7
+assertions, cleanup/no survivors, 11289ms backoff and exact start-limit rejection
+stable10546ms. Six signals plus actual outer deadline pass; receipts stay nonPASS,
+exit130/143, cleanup/no survivors, no late mutation/errors/backups. The bounded
+Node CI38138360041 lookup now confirms SUCCESS at f6, superseding the pending snapshot.
+Neither native nor Node results are relabelled as validation of this correction.
+
+All historical evidence remains byte-identical. One normal PR91 push triggers its
+owned service and Node CI; root owns fresh review7 against the original brief and
+cumulative findings/responses. No watch/poll/duplicate dispatch, children or PR92
+changes occur. Taskbot116/122/124 statuses and macOS15/Ubuntu24.04-glibc2.39 minimums,
+second-machine84, provider/auth/reboot/login/logout/lingering, minimum-host,
+trust/signing/licensing/relink/publication/catalog and historical GitGuardian
+38083768/38084076 gates remain open. No full native/signed23 rerun or release claim.

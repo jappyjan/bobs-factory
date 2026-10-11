@@ -27,10 +27,17 @@ import {
 } from "./owned-registry.mjs";
 import { properties, stopOwnedUnit, terminal } from "./service-protocol.mjs";
 
-const loadReceipt = (path) =>
-	existsSync(path)
-		? JSON.parse(readFileSync(path))
-		: { passed: false, cleanup: false };
+const loadReceipt = (path, allowMissing = false) => {
+	try {
+		const receipt = JSON.parse(readFileSync(path));
+		assert(receipt && typeof receipt === "object" && !Array.isArray(receipt));
+		return receipt;
+	} catch (error) {
+		if (allowMissing && error.code === "ENOENT")
+			return { passed: false, cleanup: false };
+		return { passed: false, cleanup: false, receiptError: error.message };
+	}
+};
 
 export async function runOwnedFixture(
 	program,
@@ -49,10 +56,10 @@ export async function runOwnedFixture(
 	persistRegistry(join(registry, "filesystem.json"), filesystem);
 	const escalationErrors = [];
 	let escalated = false;
-	let nativeReconciled = false;
 	let boundaryArmed = false;
 	const persistFailure = (error, extra = {}) => {
-		const receipt = loadReceipt(receiptPath);
+		// A deadline may arrive before the child has written its first receipt.
+		const receipt = loadReceipt(receiptPath, true);
 		persistRegistry(receiptPath, {
 			...receipt,
 			...extra,
@@ -86,14 +93,8 @@ export async function runOwnedFixture(
 			} catch (failure) {
 				escalationErrors.push(failure.message);
 			}
-			// Native manager jobs live outside process groups; reconcile only exact
-			// identities preregistered before any definition write or job submission.
-			try {
-				await reconcileFixtureUnits(registry, env, filesystem);
-				nativeReconciled = true;
-			} catch (failure) {
-				escalationErrors.push(failure.message);
-			}
+			// Native jobs are reconciled by finalization after command.done and the
+			// final group drain, so no live child can submit another manager job.
 		},
 	});
 	const boundaryTimer =
@@ -123,21 +124,15 @@ export async function runOwnedFixture(
 		escalationErrors.push(error.message);
 	}
 	const receipt = loadReceipt(receiptPath);
-	// A lost fixture cannot run its finally block. Drain groups and reconcile
-	// native jobs independently, even when group cleanup itself reports failure.
-	// An ordinary exit without a cleanup receipt also leaves native ownership
-	// unproven. A failed escalation must not skip this final reconciliation.
-	if (
-		!nativeReconciled &&
-		(primary || receipt.cleanup !== true || escalationErrors.length)
-	) {
-		try {
-			await reconcileFixtureUnits(registry, env, filesystem);
-			nativeReconciled = true;
-		} catch (error) {
-			escalationErrors.push(error.message);
-		}
+	// Every terminal path requires independent native proof. A successful child's
+	// cleanup:true is a claim, not confirmation that units or queued jobs drained.
+	// Reconcile even after a group error, but retain state/evidence if any proof fails.
+	try {
+		await reconcileFixtureUnits(registry, env, filesystem);
+	} catch (error) {
+		escalationErrors.push(error.message);
 	}
+	if (receipt.receiptError) escalationErrors.push(receipt.receiptError);
 	if (primary?.cleanupError) escalationErrors.push(primary.cleanupError);
 	if (receipt.cleanupError) escalationErrors.push(receipt.cleanupError);
 	// Cleanup proof includes mutable filesystem state, even after cooperative exit.
@@ -165,22 +160,57 @@ export async function runOwnedFixture(
 		primary.registryPath = registry;
 		receipt.registryPath = registry;
 	}
-	if (primary || escalated) {
-		primary ??= Error("Fixture ownership cleanup failed");
-		if (escalated) receipt.outerEscalated = true;
-		persistFailure(primary, receipt);
-	} else if (nativeReconciled) persistRegistry(receiptPath, receipt);
-	if (!escalationErrors.length)
-		rmSync(registry, { recursive: true, force: true });
+	try {
+		if (primary || escalated) {
+			primary ??= Error("Fixture ownership cleanup failed");
+			if (escalated) receipt.outerEscalated = true;
+			persistFailure(primary, receipt);
+		} else persistRegistry(receiptPath, receipt);
+		if (!escalationErrors.length)
+			rmSync(registry, { recursive: true, force: true });
+	} catch (error) {
+		// Receipt publication or registry removal must not erase an earlier exit,
+		// signal or deadline. Keep the registry location on the thrown failure.
+		primary ??= error;
+		primary.cleanupError = [primary.cleanupError, error.message]
+			.filter(Boolean)
+			.join("; ");
+		primary.registryPath = registry;
+	}
 	if (primary) throw primary;
 }
 
 async function reconcileFixtureUnits(registry, env, filesystem) {
+	const binding = join(registry, "filesystem.json");
+	assert(
+		lstatSync(binding).isFile(),
+		"Fixture filesystem record is not a file",
+	);
+	assert.deepEqual(
+		JSON.parse(readFileSync(binding)),
+		filesystem,
+		"Fixture filesystem record changed",
+	);
 	const manifest = join(registry, "fixture.json");
-	if (!existsSync(manifest)) return; // No native units registered or mutated yet.
+	try {
+		assert(lstatSync(manifest).isFile(), "Fixture manifest is not a file");
+	} catch (error) {
+		if (error.code === "ENOENT") return; // No native units registered or mutated yet.
+		throw error;
+	}
 	const { root, unitDirectory, units } = JSON.parse(readFileSync(manifest));
 	assert.equal(root, filesystem.root, "Fixture root is not provider-owned");
 	assert.equal(unitDirectory, join(homedir(), ".config", "systemd", "user"));
+	assert(Array.isArray(units), "Fixture unit registry is invalid");
+	// Validate the entire record before operating on any manager identity.
+	for (const { unit, bytes } of units) {
+		assert(
+			/^(factory-acceptance-external-[a-f0-9-]+|de\.bobs-factory\.[a-f0-9]{16}(\.updates)?)\.service$/.test(
+				unit,
+			),
+		);
+		assert(bytes === null || typeof bytes === "string");
+	}
 	const errors = [];
 	const manager = (...args) =>
 		startOwnedCommand("systemctl", ["--user", ...args], {
@@ -198,11 +228,6 @@ async function reconcileFixtureUnits(registry, env, filesystem) {
 	};
 	for (const { unit, bytes } of units) {
 		try {
-			assert(
-				/^(factory-acceptance-external-[a-f0-9-]+|de\.bobs-factory\.[a-f0-9]{16}(\.updates)?)\.service$/.test(
-					unit,
-				),
-			);
 			const path = join(unitDirectory, unit);
 			const verifyDefinition = () => {
 				if (!existsSync(path)) return false;
@@ -235,6 +260,20 @@ async function reconcileFixtureUnits(registry, env, filesystem) {
 	}
 	try {
 		await manager("daemon-reload");
+		for (const { unit } of units) {
+			assert(
+				terminal(
+					properties(
+						await manager(
+							"show",
+							unit,
+							"--property=ActiveState,SubState,MainPID,ControlPID,Job",
+						),
+					),
+				),
+				"Owned unit has a process or queued manager job after reload",
+			);
+		}
 		const survivors = execFileSync("ps", ["-eo", "pid=,ppid=,stat=,args="], {
 			encoding: "utf8",
 			timeout: 1000,

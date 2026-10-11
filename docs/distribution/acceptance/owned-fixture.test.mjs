@@ -109,6 +109,171 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 	});
 }
 
+for (const mode of [
+	"verified-pass",
+	"false-pass-active",
+	"false-pass-job",
+	"false-pass-manager-error",
+	"false-pass-query-error",
+	"false-pass-reload-job",
+	"failed-exit",
+	"failed-exit-manager-error",
+	"SIGINT",
+	"SIGTERM",
+	"SIGTERM-manager-error",
+	"forced-deadline",
+	"missing-receipt",
+	"malformed-receipt",
+	"malformed-manifest",
+	"manifest-symlink",
+	"invalid-unit",
+	"filesystem-record-changed",
+	"corrupt-group-record",
+]) {
+	test(`child cleanup claim ${mode} requires independent native proof`, {
+		timeout: 12000,
+	}, async () => {
+		const failedExit = mode.startsWith("failed-exit");
+		const signal = mode.startsWith("SIG") ? mode.split("-")[0] : undefined;
+		const evidence = mkdtempSync(join(tmpdir(), "factory-receipt-proof-"));
+		const bin = join(evidence, "bin");
+		mkdirSync(bin);
+		const receiptPath = join(evidence, "receipt.json");
+		const pointer = join(evidence, "pointer.json");
+		const calls = join(evidence, "calls.jsonl");
+		const state = join(evidence, "active");
+		writeFileSync(state, "true");
+		const unit = `factory-acceptance-external-${randomUUID()}.service`;
+		const unitDirectory = join(homedir(), ".config", "systemd", "user");
+		assert(!existsSync(join(unitDirectory, unit)));
+		// Mock only: no native definitions or host-manager operations.
+		writeFileSync(
+			join(bin, "systemctl"),
+			`#!${process.execPath}
+const fs=require('node:fs'),args=process.argv.slice(2);
+fs.appendFileSync(${JSON.stringify(calls)},JSON.stringify(args)+'\\n');
+if (${mode.endsWith("manager-error")} && args.includes('stop') || ${mode === "false-pass-query-error"} && args.includes('show')) {
+ process.stderr.write('mock manager permission denied'); process.exit(1);
+}
+if (${!["false-pass-active", "false-pass-job"].includes(mode)} && args.includes('stop')) fs.writeFileSync(${JSON.stringify(state)},'false');
+if (${mode === "false-pass-reload-job"} && args.includes('daemon-reload')) fs.writeFileSync(${JSON.stringify(state)},'true');
+process.stdout.write(JSON.parse(fs.readFileSync(${JSON.stringify(state)}))
+ ? ${JSON.stringify(["false-pass-job", "false-pass-reload-job"].includes(mode) ? "ActiveState=inactive\nSubState=dead\nMainPID=0\nControlPID=0\nJob=99\n" : "ActiveState=active\nSubState=running\nMainPID=100\nControlPID=0\nJob=0\n")}
+ : 'ActiveState=inactive\\nSubState=dead\\nMainPID=0\\nControlPID=0\\nJob=0\\n');`,
+			{ mode: 0o700 },
+		);
+		const fixture = `
+const fs=require('node:fs'),path=require('node:path');
+const root=process.env.BOBS_FACTORY_ACCEPTANCE_FIXTURE_ROOT;
+const registry=process.env.BOBS_FACTORY_ACCEPTANCE_GROUP_REGISTRY;
+fs.mkdirSync(path.join(root,'state'));fs.writeFileSync(path.join(root,'state','bytes'),'owned mutable state');
+fs.writeFileSync(${JSON.stringify(pointer)},JSON.stringify({root,registry}));
+fs.writeFileSync(path.join(registry,'fixture.json'),${mode === "malformed-manifest" ? JSON.stringify("{invalid") : `JSON.stringify({root,unitDirectory:${JSON.stringify(unitDirectory)},units:[{unit:${JSON.stringify(mode === "invalid-unit" ? "unowned.service" : unit)},bytes:null}]})`});
+${mode === "manifest-symlink" ? "fs.renameSync(path.join(registry,'fixture.json'),path.join(root,'manifest'));fs.symlinkSync(path.join(root,'manifest'),path.join(registry,'fixture.json'));" : ""}
+${mode === "filesystem-record-changed" ? "fs.writeFileSync(path.join(registry,'filesystem.json'),JSON.stringify({root}));" : ""}
+${mode === "corrupt-group-record" ? "fs.writeFileSync(path.join(registry,'groups','invalid.json'),'{invalid');" : ""}
+${mode === "missing-receipt" ? "" : `fs.writeFileSync(${JSON.stringify(receiptPath)},${mode === "malformed-receipt" ? JSON.stringify("{invalid") : `JSON.stringify({passed:${!failedExit && !signal && mode !== "forced-deadline"},cleanup:true,survivors:[]${failedExit ? ",error:'original work failure'" : ""}})`});`}
+${failedExit ? "process.exit(7);" : signal ? `process.kill(process.pid,${JSON.stringify(signal)});` : mode === "forced-deadline" ? "process.on('SIGTERM',()=>{});setInterval(()=>{},1000);" : ""}`;
+		let error;
+		try {
+			try {
+				await runOwnedFixture(process.execPath, ["-e", fixture], {
+					receiptPath,
+					timeout: mode === "forced-deadline" ? 500 : 3000,
+					cleanupGrace: 100,
+					env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+				});
+			} catch (caught) {
+				error = caught;
+			}
+			const { root, registry } = JSON.parse(readFileSync(pointer));
+			const operations = existsSync(calls)
+				? readFileSync(calls, "utf8").trim().split("\n").map(JSON.parse)
+				: [];
+			if (
+				[
+					"malformed-manifest",
+					"manifest-symlink",
+					"invalid-unit",
+					"filesystem-record-changed",
+				].includes(mode)
+			)
+				assert.deepEqual(operations, []);
+			else {
+				assert(
+					operations.some(
+						(args) => args.includes("show") && args.includes(unit),
+					),
+					"A cleanup:true receipt skipped native verification",
+				);
+				assert(
+					operations.every(
+						(args) =>
+							args[0] === "--user" &&
+							(args[1] === "daemon-reload" || args.includes(unit)),
+					),
+				);
+			}
+			const receipt = JSON.parse(readFileSync(receiptPath));
+			if (
+				mode.startsWith("false-pass") ||
+				mode.endsWith("manager-error") ||
+				[
+					"missing-receipt",
+					"malformed-receipt",
+					"malformed-manifest",
+					"manifest-symlink",
+					"invalid-unit",
+					"filesystem-record-changed",
+					"corrupt-group-record",
+				].includes(mode)
+			) {
+				assert(error, "Unproven native cleanup must reject a claimed PASS");
+				assert.equal(receipt.passed, false);
+				assert.equal(receipt.cleanup, false);
+				assert.equal(receipt.registryPath, registry);
+				assert.equal(error.registryPath, registry);
+				assert(existsSync(join(registry, "closed")));
+				assert.equal(
+					readFileSync(join(root, "state", "bytes"), "utf8"),
+					"owned mutable state",
+				);
+				if (mode.includes("error"))
+					assert.match(error.cleanupError, /mock manager permission denied/);
+				if (failedExit || signal) {
+					assert.equal(error.status, failedExit ? 7 : signal);
+					assert.equal(receipt.outerError, error.message);
+					if (failedExit) assert.equal(receipt.error, "original work failure");
+				}
+			} else {
+				assert(!existsSync(root));
+				assert(!existsSync(registry));
+				assert.equal(JSON.parse(readFileSync(state)), false);
+				assert.equal(receipt.cleanup, true);
+				assert.equal(receipt.passed, mode === "verified-pass");
+				if (mode === "verified-pass") assert.equal(error, undefined);
+				else {
+					assert(error);
+					assert.equal(receipt.outerError, error.message);
+					if (mode === "forced-deadline") {
+						assert.equal(error.timedOut, true);
+						assert.equal(receipt.outerEscalated, true);
+					} else assert.equal(error.status, mode === "failed-exit" ? 7 : mode);
+					if (mode === "failed-exit")
+						assert.equal(receipt.error, "original work failure");
+				}
+			}
+		} finally {
+			if (existsSync(pointer)) {
+				const { root, registry } = JSON.parse(readFileSync(pointer));
+				rmSync(root, { recursive: true, force: true });
+				rmSync(registry, { recursive: true, force: true });
+			}
+			rmSync(evidence, { recursive: true, force: true });
+		}
+	});
+}
+
 for (const mode of ["cooperative", "forced", "cleanup-error"]) {
 	test(`outer timeout ${mode} accounts for real nested detached groups and a delayed fork`, {
 		timeout: 8000,
