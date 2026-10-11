@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
-import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { retainAppHelper } from "./app-helper-files.mjs";
 import { processStamp, read, save } from "./app-lifecycle.mjs";
 import { DesktopAppSource, installationKind } from "./app-source.mjs";
 export async function appUpdates({
@@ -68,16 +69,7 @@ export async function appUpdates({
 		// Retain helper JS outside the bundle that will be renamed. Electron starts it
 		// in Node mode BEFORE exit; it waits for this precise UI process to finish.
 		const retained = join(directory, "helper");
-		mkdirSync(retained, { recursive: true, mode: 0o700 });
-		for (const file of [
-			"app-helper.mjs",
-			"app-lifecycle.mjs",
-			"app-source.mjs",
-			"app-archive.mjs",
-			"app-licenses.mjs",
-			"update-services.mjs",
-		])
-			cpSync(join(sourceDirectory, file), join(retained, file));
+		retainAppHelper(sourceDirectory, retained);
 		const request = join(directory, "helper-request.json");
 		const recoveryInstall =
 			recover && state.transaction?.snapshot

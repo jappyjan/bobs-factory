@@ -1,4 +1,4 @@
-// Linux-only actual packaged AppImage + native Factory worker. Controlled RSA
+// Linux-only actual packaged AppImage + native Factory worker. Controlled unsigned
 // publisher/transport and simulated outer release evidence, no OS/provider claim.
 import assert from "node:assert/strict";
 import { execFileSync, spawn } from "node:child_process";
@@ -15,7 +15,6 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import { defaultWorkflows } from "../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { validateWorkflows } from "../../../packages/edge-worker/dist/factory/Workflow.js";
 import { WorkflowRuntime } from "../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
@@ -23,6 +22,7 @@ import { MachineCapacity } from "../../../packages/edge-worker/dist/MachineCapac
 import { prepareElectronLicenses } from "../../../scripts/lib/desktop-licenses.mjs";
 import { freezeCandidate } from "../../../scripts/lib/release-candidate.mjs";
 import { localRepository } from "../../cli/dist/src/onboarding.js";
+import { retainAppHelper } from "../src/app-helper-files.mjs";
 import {
 	DesktopAppLifecycle,
 	processStamp,
@@ -352,21 +352,7 @@ try {
 	// The actual main.mjs reads its exact quit ticket, exits, and the production
 	// lifecycle launches/health-checks the replacement actual packaged Electron.
 	const retained = join(root, "external-helper");
-	mkdirSync(retained);
-	for (const file of [
-		"app-helper.mjs",
-		"app-lifecycle.mjs",
-		"app-source.mjs",
-		"app-archive.mjs",
-		"app-licenses.mjs",
-	])
-		cpSync(join(app, "src", file), join(retained, file));
-	// Only this isolated test module supplies the generated public RSA key. The
-	// installed product has no publisher-key flag or OS permission bypass.
-	writeFileSync(
-		join(retained, "update-services.mjs"),
-		`export * from ${JSON.stringify(pathToFileURL(join(app, "src", "update-services.mjs")).href)};\n`,
-	);
+	retainAppHelper(join(app, "src"), retained);
 	const request = join(retained, "request.json");
 	save(request, {
 		home,
