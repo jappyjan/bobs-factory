@@ -1,11 +1,12 @@
 # Taskbot116 Linux relink execution and follow-up
 
-The first two actual Linux x64 modified trials correctly failed their native
-effect requirement. A third run passed the complete modified diagnostic on the
-exact PR92 source head. The two failures remain preserved as historical evidence;
-the third result is a disposable engineering PASS for Linux x64 only. It does not
-establish production default behavior, source/license acceptance, or release
-readiness.
+The first actual Linux x64 modified trial failed its revision assertion before
+the native effect requirement could be evaluated. The second trial compiled and
+linked the modified source but failed the native effect check. A third run passed
+the complete modified diagnostic on the exact PR92 source head. All three results
+remain preserved as historical evidence; the third is a disposable engineering
+PASS for Linux x64 only. It does not establish production default behavior,
+source/license acceptance, or release readiness.
 
 The separately identified run `38138403930` used exact source head
 `53f6e03d0f28f53d7b305384d869d9d892328c52`. This documentation update did not
