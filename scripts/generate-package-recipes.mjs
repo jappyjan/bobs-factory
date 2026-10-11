@@ -114,7 +114,7 @@ cask "${cask}" do
   name "Bob's Factory"
   desc "Factory dashboard with a managed local runtime"
   homepage "https://jappyjan.github.io/bobs-factory/"
-  depends_on macos: ">= :ventura"
+  depends_on macos: ">= :sequoia"
   conflicts_with cask: "bobs-factory${nightly ? "" : "@nightly"}"
   app "Bob's Factory.app"
   # Homebrew owns replacement/removal. No service enrollment or state deletion.
@@ -130,7 +130,7 @@ pkgdesc="Bob's Factory desktop and managed native runtime"
 arch=('x86_64' 'aarch64')
 url='https://jappyjan.github.io/bobs-factory/'
 license=('Apache-2.0')
-depends=('glibc>=2.35' 'gtk3' 'nss' 'alsa-lib' 'libxss' 'libxtst' 'xdg-utils')
+depends=('glibc>=2.39' 'gtk3' 'nss' 'alsa-lib' 'libxss' 'libxtst' 'xdg-utils')
 options=('!strip')
 provides=('bobs-factory-desktop')
 conflicts=('bobs-factory-desktop')
@@ -155,7 +155,7 @@ package() {
 \tarch = x86_64
 \tarch = aarch64
 \tlicense = Apache-2.0
-${["glibc>=2.35", "gtk3", "nss", "alsa-lib", "libxss", "libxtst", "xdg-utils"].map((d) => `\tdepends = ${d}\n`).join("")}\tprovides = bobs-factory-desktop
+${["glibc>=2.39", "gtk3", "nss", "alsa-lib", "libxss", "libxtst", "xdg-utils"].map((d) => `\tdepends = ${d}\n`).join("")}\tprovides = bobs-factory-desktop
 \tconflicts = bobs-factory-desktop
 \toptions = !strip
 \tsource_x86_64 = ${source("x64")}
