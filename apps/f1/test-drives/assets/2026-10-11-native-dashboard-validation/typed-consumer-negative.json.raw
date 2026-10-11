@@ -1,0 +1,19 @@
+{
+  "scope": "read-only historical raw diagnostic consumer audit, no new-candidate receipt",
+  "raw": {
+    "path": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/fresh-pr96-unsigned-20261011/artifacts/desktop-darwin-arm64/payload/desktop/native-electron-receipt.json",
+    "size": 456,
+    "sha256": "6ae6de072b45b81444af166b025bc4e1834126a86799c98ee528f077adb4624a"
+  },
+  "rejection": "Missing candidate-bound desktop validation; retain desktop delivery as blocked",
+  "required": [
+    "product",
+    "status",
+    "version",
+    "commit",
+    "channel",
+    "target",
+    "candidateDigest",
+    "workflowSha"
+  ]
+}

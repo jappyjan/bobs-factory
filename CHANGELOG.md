@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Validate direct localhost onboarding and native desktop APIs without passkey sessions while separately checking remote authentication and origin denials; retain packaged runtime identity, restart, helper and Stop/maintenance checks ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#100](https://github.com/jappyjan/bobs-factory/pull/100)).
+
 - Verify and copy complete macOS desktop apps using physical ASAR bytes, file modes and symlinks in the retained Electron updater; preserve full inventory checks and ordinary archive module access, and publish scripted shell F1 process receipts atomically ([Taskbot #121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#98](https://github.com/jappyjan/bobs-factory/pull/98)).
 
 - Open the desktop and direct localhost dashboard, APIs and first-launch onboarding, including IPv6 setup, without passkey setup or login; validate socket peer, loopback authority and browser origin while preserving remote passkey sessions and cross-origin protections ([Taskbot #121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#99](https://github.com/jappyjan/bobs-factory/pull/99)).
