@@ -304,3 +304,42 @@ syntax and focused regressions validate it. Reboot/login/logout/lingering,
 providers/native credentials, physical authentication, second-machine84, minimum
 host coverage, signing/licensing/relink/publication/catalog and GitGuardian
 operator gates remain unchanged. Taskbot #116/#122/#124 statuses remain unchanged.
+
+
+## Review5 filesystem P2 implementation response (2026-10-11)
+
+Taskbot #116 comment1304 reproduces a remaining defect at834: after unexpected
+SIGKILL, exact units stopped but home/state remained while the supervisor reported
+cleanup true and deleted the registry. The review5 fix binds a supervisor-allocated
+private temporary root before child execution, verifies its canonical parent/path,
+device/inode/owner/birth identity and receipt separation, then removes exact owned
+state only after successful process and native cleanup. It does not follow symlinks
+into unowned homes or remove retained reports. Untrusted/replaced paths and actual
+filesystem removal errors preserve SIGKILL/nonPASS, cleanup false, all primary and
+manager/fixture errors, and the registry with its identity manifest and reported path.
+
+Safe mocked-manager checks reproduce7/8 failures at original834 and pass27/27 after
+this correction, including all22 prior checks. Added cases verify actual home/state
+removal, nested-link target preservation, root symlink/inode replacement refusal,
+forged same-prefix temporary paths, read-only-state deletion failure and retained
+receipt symlink refusal. Syntax/Biome and normal build/typecheck hooks verify this
+acceptance-only delta. F1 is inapplicable; no F1 report or production payload changes.
+
+[Separately retained actual834 evidence and per-finding response](evidence/2026-10-11-service-834/README.md)
+bind completed SUCCESS run38137269848/job114463594296, artifact11702185760,
+ZIP SHA-2561a93e40dc9e915311133650bf33a3ceb9d7585ca1bc02aad904e23931c6938f8,
+all94 original members, eight exact834 receipts and all helper hashes. Main and all
+seven cancellation/deadline outcomes pass at834; this native run does not exercise
+unexpected death and does not resolve the filesystem finding. Exact482 and all
+historical evidence, including the entire round4 folder, remain byte-identical.
+Frozenb82/.21/ca323 remains unchanged. Fresh service and Node22/24 CI trigger once
+on push; root owns independent review6 against the original brief and cumulative
+findings. No watch/poll or duplicate dispatch is performed. Relink38136567511 is
+separate and is not polled or reclassified here.
+
+Taskbot #116/#122/#124 pickup/statuses, second-machine #84, macOS15 and
+Ubuntu24.04/glibc2.39 ARM64+x64 minimums, provider/native continuation, physical
+authentication, login/reboot/logout/lingering, licensing/relink/trust/signing,
+publication/catalog and GitGuardian38083768/38084076 operator gates remain open
+and unchanged. No production home/credentials/host services, full native or
+signed23 replay, release, merge or ticket closure operation is performed.

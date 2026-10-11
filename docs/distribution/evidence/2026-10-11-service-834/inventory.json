@@ -1,0 +1,572 @@
+{
+	"runId": 38137269848,
+	"artifactId": 11702185760,
+	"headSha": "834088bcd4406dc2b0b5950d022a5a8b72134d57",
+	"archiveSha256": "1a93e40dc9e915311133650bf33a3ceb9d7585ca1bc02aad904e23931c6938f8",
+	"files": [
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGINT.json",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGINT.json.raw",
+			"bytes": 3654,
+			"sha256": "0ffce0217d2f1351be74ac721f1dce9bd214f3fc18e19efd2d023e138aeda85c"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGINT.json-before-teardown-de.bobs-factory.9b39d6996007e21b.service.journal.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGINT.json-before-teardown-de.bobs-factory.9b39d6996007e21b.service.journal.raw.raw",
+			"bytes": 3836,
+			"sha256": "4f48d06e9cdc2b8d2408e6cd339fdca37752adabe17b1ce7cca4865890792759"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGINT.json-before-teardown-de.bobs-factory.9b39d6996007e21b.service.properties.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGINT.json-before-teardown-de.bobs-factory.9b39d6996007e21b.service.properties.raw.raw",
+			"bytes": 8620,
+			"sha256": "5a0b4a6e73d9d4ca7f2000a8767ffec7887d5c2472ee875a7d808dd0178827c3"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGINT.json-before-teardown-de.bobs-factory.9b39d6996007e21b.updates.service.journal.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGINT.json-before-teardown-de.bobs-factory.9b39d6996007e21b.updates.service.journal.raw.raw",
+			"bytes": 169,
+			"sha256": "81adfb80fbc27b8cb2823077f58bc3d391fdc9e7446e634c896f2aecd078bfaa"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGINT.json-before-teardown-de.bobs-factory.9b39d6996007e21b.updates.service.properties.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGINT.json-before-teardown-de.bobs-factory.9b39d6996007e21b.updates.service.properties.raw.raw",
+			"bytes": 8684,
+			"sha256": "e1e6727030e8a2f54016c89434e5dbeddf4cfca01bfa422d293e072c1b5a6e72"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGINT.json-before-teardown-factory-acceptance-external-de81020e-a3fa-429a-a1bb-45b7a4b3b040.service.journal.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGINT.json-before-teardown-factory-acceptance-external-de81020e-a3fa-429a-a1bb-45b7a4b3b040.service.journal.raw.raw",
+			"bytes": 4627,
+			"sha256": "acb6b98db9860f12956f0c1855c04b267052147bf9aaf195f5ccd2cfdcb77b89"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGINT.json-before-teardown-factory-acceptance-external-de81020e-a3fa-429a-a1bb-45b7a4b3b040.service.properties.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGINT.json-before-teardown-factory-acceptance-external-de81020e-a3fa-429a-a1bb-45b7a4b3b040.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "b4b03eaa1a294e316a7cdebee30e3e68dfbb147a3317c61e0060e5472a1f17bb"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGINT.json-before-teardown-processes.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGINT.json-before-teardown-processes.raw.raw",
+			"bytes": 437,
+			"sha256": "32359f4a2e9183d70a6f860e1d9a608890ce13011bf47ea69bfcc2d7659b464c"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGTERM.json",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGTERM.json.raw",
+			"bytes": 3662,
+			"sha256": "bfadace8208eb0075c76c76df8ac7207835dd94d18c6af7e14b50746a273635f"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.941c09ca90d7b5b0.service.journal.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.941c09ca90d7b5b0.service.journal.raw.raw",
+			"bytes": 3836,
+			"sha256": "428b0af37efea94d49de56414d79059c088769e13953c4b0d279219ebb4b7edd"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.941c09ca90d7b5b0.service.properties.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.941c09ca90d7b5b0.service.properties.raw.raw",
+			"bytes": 8620,
+			"sha256": "d4325779713de5ee6d0a2e444cb06e6d7cb46af714df3ea46a764ab4d82accfc"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.941c09ca90d7b5b0.updates.service.journal.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.941c09ca90d7b5b0.updates.service.journal.raw.raw",
+			"bytes": 169,
+			"sha256": "b23226bd728ef8c2063807ae638590dd3e4ea97de2393d13dc039713c597b460"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.941c09ca90d7b5b0.updates.service.properties.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.941c09ca90d7b5b0.updates.service.properties.raw.raw",
+			"bytes": 8684,
+			"sha256": "170420107e0906ad84763de1b7dda13f09b339ac3aed3e0c8231ab107f9d4ac6"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-factory-acceptance-external-9ca6cc45-562a-4c51-92f2-b0a24dda2abd.service.journal.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-factory-acceptance-external-9ca6cc45-562a-4c51-92f2-b0a24dda2abd.service.journal.raw.raw",
+			"bytes": 4820,
+			"sha256": "649d1e9f5e1eef960b9e23ed0dc27075ff1fed467dedf67f1985d41da9d1ea19"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-factory-acceptance-external-9ca6cc45-562a-4c51-92f2-b0a24dda2abd.service.properties.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-factory-acceptance-external-9ca6cc45-562a-4c51-92f2-b0a24dda2abd.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "2ee828e74f399d09c52599a13303517f5e940f665edcb54232de0ce50f6d60c2"
+		},
+		{
+			"archivePath": "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-processes.raw",
+			"retainedPath": "raw/cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-processes.raw.raw",
+			"bytes": 437,
+			"sha256": "f0c21874cfc4315aceba2c0866e23e5e10caf069a176f71fed0e8274b3a6f58b"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGINT.json",
+			"retainedPath": "raw/cancel-initial-install-SIGINT.json.raw",
+			"bytes": 2589,
+			"sha256": "f8ee63b1db6db9d1fef3124ffd9cf0c34231ed6993b03adcaa082f51695e2c5e"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGINT.json-before-teardown-de.bobs-factory.acf48dfe6674146f.service.journal.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGINT.json-before-teardown-de.bobs-factory.acf48dfe6674146f.service.journal.raw.raw",
+			"bytes": 17,
+			"sha256": "19c4e28b2f54ea8f217db4e622b0a5c758efa7b77ce2dc0394b6d159568c0b2e"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGINT.json-before-teardown-de.bobs-factory.acf48dfe6674146f.service.properties.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGINT.json-before-teardown-de.bobs-factory.acf48dfe6674146f.service.properties.raw.raw",
+			"bytes": 8134,
+			"sha256": "ea1036ec62caae42b6305ae3a83757157647b4deee7df92c2f8e03202d6504a9"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGINT.json-before-teardown-de.bobs-factory.acf48dfe6674146f.updates.service.journal.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGINT.json-before-teardown-de.bobs-factory.acf48dfe6674146f.updates.service.journal.raw.raw",
+			"bytes": 17,
+			"sha256": "19c4e28b2f54ea8f217db4e622b0a5c758efa7b77ce2dc0394b6d159568c0b2e"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGINT.json-before-teardown-de.bobs-factory.acf48dfe6674146f.updates.service.properties.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGINT.json-before-teardown-de.bobs-factory.acf48dfe6674146f.updates.service.properties.raw.raw",
+			"bytes": 8190,
+			"sha256": "9716d2477415d347105fbaa912e7a9a6710f5815f55795fc442dff6c93db1c44"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGINT.json-before-teardown-factory-acceptance-external-04752ec6-1724-43a8-8ebc-927fb4b285bb.service.journal.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGINT.json-before-teardown-factory-acceptance-external-04752ec6-1724-43a8-8ebc-927fb4b285bb.service.journal.raw.raw",
+			"bytes": 4793,
+			"sha256": "1c30f7df1e09b5016df773f849bd11454c7ab26f1d094614ad758e70d0d79d85"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGINT.json-before-teardown-factory-acceptance-external-04752ec6-1724-43a8-8ebc-927fb4b285bb.service.properties.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGINT.json-before-teardown-factory-acceptance-external-04752ec6-1724-43a8-8ebc-927fb4b285bb.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "e7daeb52a068f54f1b7dcc30b37995233ee0d3d6f5d1ed2b654f579fe6d8abb8"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGINT.json-before-teardown-processes.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGINT.json-before-teardown-processes.raw.raw",
+			"bytes": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGTERM.json",
+			"retainedPath": "raw/cancel-initial-install-SIGTERM.json.raw",
+			"bytes": 2598,
+			"sha256": "964eccdb5e77d74953f5675b0ddc42418dab46b8b44358668db9d37d2d6b6e42"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.519af3a61c625cd2.service.journal.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.519af3a61c625cd2.service.journal.raw.raw",
+			"bytes": 17,
+			"sha256": "19c4e28b2f54ea8f217db4e622b0a5c758efa7b77ce2dc0394b6d159568c0b2e"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.519af3a61c625cd2.service.properties.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.519af3a61c625cd2.service.properties.raw.raw",
+			"bytes": 8134,
+			"sha256": "083ea44920ee6d78eebcf638d1e081aeec29540d3215c1d23d6e577baa9480c7"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.519af3a61c625cd2.updates.service.journal.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.519af3a61c625cd2.updates.service.journal.raw.raw",
+			"bytes": 17,
+			"sha256": "19c4e28b2f54ea8f217db4e622b0a5c758efa7b77ce2dc0394b6d159568c0b2e"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.519af3a61c625cd2.updates.service.properties.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.519af3a61c625cd2.updates.service.properties.raw.raw",
+			"bytes": 8190,
+			"sha256": "936e9046e79b8e64b44f814c14693f4e8628f814bf6f63e8107af2a3987a0199"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGTERM.json-before-teardown-factory-acceptance-external-73333cd9-330b-4ced-81ac-027dfcbe8970.service.journal.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGTERM.json-before-teardown-factory-acceptance-external-73333cd9-330b-4ced-81ac-027dfcbe8970.service.journal.raw.raw",
+			"bytes": 4793,
+			"sha256": "0fb45d0f2fe8bf34309127912a4dbcad1f453093e7f47586b84363e521efa71b"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGTERM.json-before-teardown-factory-acceptance-external-73333cd9-330b-4ced-81ac-027dfcbe8970.service.properties.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGTERM.json-before-teardown-factory-acceptance-external-73333cd9-330b-4ced-81ac-027dfcbe8970.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "b8a5bff63e4adbebf62fd2f5b1fb704b9a3738f3fa8c92e85cffa09c66e6a05f"
+		},
+		{
+			"archivePath": "cancel-initial-install-SIGTERM.json-before-teardown-processes.raw",
+			"retainedPath": "raw/cancel-initial-install-SIGTERM.json-before-teardown-processes.raw.raw",
+			"bytes": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGINT.json",
+			"retainedPath": "raw/cancel-manager-mutation-SIGINT.json.raw",
+			"bytes": 3742,
+			"sha256": "6a68d881e635d428f1ecad7d1da28da93300645013b6f3e5f7a9fb9bdd9dfc09"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGINT.json-before-teardown-de.bobs-factory.0a5dbbcd556433c8.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGINT.json-before-teardown-de.bobs-factory.0a5dbbcd556433c8.service.journal.raw.raw",
+			"bytes": 153,
+			"sha256": "ceea8dd7a0fb093c5e262fa46c48b891796d2caab565fbcc2af46d1607b84ce3"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGINT.json-before-teardown-de.bobs-factory.0a5dbbcd556433c8.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGINT.json-before-teardown-de.bobs-factory.0a5dbbcd556433c8.service.properties.raw.raw",
+			"bytes": 8653,
+			"sha256": "7208761aeaec6698b3f93924d831456892a8f599e2cf25524b0831ee544dc518"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGINT.json-before-teardown-de.bobs-factory.0a5dbbcd556433c8.updates.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGINT.json-before-teardown-de.bobs-factory.0a5dbbcd556433c8.updates.service.journal.raw.raw",
+			"bytes": 17,
+			"sha256": "19c4e28b2f54ea8f217db4e622b0a5c758efa7b77ce2dc0394b6d159568c0b2e"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGINT.json-before-teardown-de.bobs-factory.0a5dbbcd556433c8.updates.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGINT.json-before-teardown-de.bobs-factory.0a5dbbcd556433c8.updates.service.properties.raw.raw",
+			"bytes": 8190,
+			"sha256": "fa3aa6f6010957f42f6327df0db6a8a83c7efe504775698cd69b266eb4d0607a"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGINT.json-before-teardown-factory-acceptance-external-97ca7111-4042-443f-9599-6ea5dfc9ef5c.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGINT.json-before-teardown-factory-acceptance-external-97ca7111-4042-443f-9599-6ea5dfc9ef5c.service.journal.raw.raw",
+			"bytes": 4793,
+			"sha256": "248284814790b61ca23e5180888ff6b8b930d6cc58f4355531a0fdabeab4da86"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGINT.json-before-teardown-factory-acceptance-external-97ca7111-4042-443f-9599-6ea5dfc9ef5c.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGINT.json-before-teardown-factory-acceptance-external-97ca7111-4042-443f-9599-6ea5dfc9ef5c.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "910062e4c20539acb1bddd4dfc99c7b15fcc5d45f9698a17462905167b0ba2d4"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGINT.json-before-teardown-processes.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGINT.json-before-teardown-processes.raw.raw",
+			"bytes": 214,
+			"sha256": "b7773adfd923c2563ab651defbdd8f4abea201cecf68550f76e26150be761c83"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGTERM.json",
+			"retainedPath": "raw/cancel-manager-mutation-SIGTERM.json.raw",
+			"bytes": 3751,
+			"sha256": "a0d51e66dd70bc9a79fa662c284685d520322cab3309be504ad09481fe575b7e"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.e3855b2ff53527ea.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.e3855b2ff53527ea.service.journal.raw.raw",
+			"bytes": 153,
+			"sha256": "2be9454cbd8e74b709b5b3571cd5925fdbb5b92257d3644b3e0e94f3732a1b58"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.e3855b2ff53527ea.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.e3855b2ff53527ea.service.properties.raw.raw",
+			"bytes": 8657,
+			"sha256": "81a906683123328bdc5aaddabe7f5e17df7ab28b72ab08020eb8f31f29ec553d"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.e3855b2ff53527ea.updates.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.e3855b2ff53527ea.updates.service.journal.raw.raw",
+			"bytes": 17,
+			"sha256": "19c4e28b2f54ea8f217db4e622b0a5c758efa7b77ce2dc0394b6d159568c0b2e"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.e3855b2ff53527ea.updates.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGTERM.json-before-teardown-de.bobs-factory.e3855b2ff53527ea.updates.service.properties.raw.raw",
+			"bytes": 8190,
+			"sha256": "65e8c642e5ef0eb49d80cd7798c338583dcd859fe0c1d085330001e2c6923830"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGTERM.json-before-teardown-factory-acceptance-external-7e6bac3d-731b-423a-852b-eb19d4e44b27.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGTERM.json-before-teardown-factory-acceptance-external-7e6bac3d-731b-423a-852b-eb19d4e44b27.service.journal.raw.raw",
+			"bytes": 4627,
+			"sha256": "4a4e6950f4e09022862fceac309e7b649f28902a63020e215d48e32533c9214c"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGTERM.json-before-teardown-factory-acceptance-external-7e6bac3d-731b-423a-852b-eb19d4e44b27.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGTERM.json-before-teardown-factory-acceptance-external-7e6bac3d-731b-423a-852b-eb19d4e44b27.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "ddee9a9c95f114dd5b7557a6852ec5ed6f3fdb6cf628a3bc3661947a7e51fd8d"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-SIGTERM.json-before-teardown-processes.raw",
+			"retainedPath": "raw/cancel-manager-mutation-SIGTERM.json-before-teardown-processes.raw.raw",
+			"bytes": 214,
+			"sha256": "b06c169c3008110dc4a0dd5ce3ac156c92b2d717867145ca26cd99669118f338"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json.raw",
+			"bytes": 3800,
+			"sha256": "36c82eb69306d579e10b757af3c38d0b8a079b4fcedddfc055425fef3f760122"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json-before-teardown-de.bobs-factory.8d87bf8362d8fc56.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json-before-teardown-de.bobs-factory.8d87bf8362d8fc56.service.journal.raw.raw",
+			"bytes": 153,
+			"sha256": "d4ae5237abdb01d3f6030840d25fdfab980580fcc06a15bd2b6e9a2a793fb826"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json-before-teardown-de.bobs-factory.8d87bf8362d8fc56.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json-before-teardown-de.bobs-factory.8d87bf8362d8fc56.service.properties.raw.raw",
+			"bytes": 8659,
+			"sha256": "4add708642aefefe154608e68baa3079a14f89486d08759cb0df51b90a00af2d"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json-before-teardown-de.bobs-factory.8d87bf8362d8fc56.updates.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json-before-teardown-de.bobs-factory.8d87bf8362d8fc56.updates.service.journal.raw.raw",
+			"bytes": 17,
+			"sha256": "19c4e28b2f54ea8f217db4e622b0a5c758efa7b77ce2dc0394b6d159568c0b2e"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json-before-teardown-de.bobs-factory.8d87bf8362d8fc56.updates.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json-before-teardown-de.bobs-factory.8d87bf8362d8fc56.updates.service.properties.raw.raw",
+			"bytes": 8190,
+			"sha256": "414bbbed56ee0e10c2bc25f0b317989753cdbff58a11b6be9a378f4554047594"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json-before-teardown-factory-acceptance-external-bb6de659-9a42-4f34-adc7-e5253964aa4c.service.journal.raw",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json-before-teardown-factory-acceptance-external-bb6de659-9a42-4f34-adc7-e5253964aa4c.service.journal.raw.raw",
+			"bytes": 4820,
+			"sha256": "3ede016f4f80db344e6f71587c522b0ae239c871d7e904eec7b06e169f09f6f4"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json-before-teardown-factory-acceptance-external-bb6de659-9a42-4f34-adc7-e5253964aa4c.service.properties.raw",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json-before-teardown-factory-acceptance-external-bb6de659-9a42-4f34-adc7-e5253964aa4c.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "4d05b8881b47220e02c7f065ef9e258dc59fcfb1a1bd233a586aa5ebf7053fb6"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json-before-teardown-processes.raw",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json-before-teardown-processes.raw.raw",
+			"bytes": 214,
+			"sha256": "6f4d896561f31becb95aa31aa2cd83becf34c239b51a26a9f919a5c4d8555a5d"
+		},
+		{
+			"archivePath": "cancel-manager-mutation-outer-timeout.json.manager-boundary",
+			"retainedPath": "raw/cancel-manager-mutation-outer-timeout.json.manager-boundary.raw",
+			"bytes": 97,
+			"sha256": "26621ab0e0a00d5108fdd57f2c348a1b5a75fcaeeeaa008f8bc23310cb3a6b69"
+		},
+		{
+			"archivePath": "cancellation-matrix.json",
+			"retainedPath": "raw/cancellation-matrix.json.raw",
+			"bytes": 26034,
+			"sha256": "39a6143ec993896f4532a72d5236ac61d1040facdc8794d16695a638c7c6bb47"
+		},
+		{
+			"archivePath": "receipt.json",
+			"retainedPath": "raw/receipt.json.raw",
+			"bytes": 169862,
+			"sha256": "df5a208a52855b0a09d0ee1cd82774c13bb40f748a05a28d36f3316c8d385799"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-0-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-0-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw.raw",
+			"bytes": 8361,
+			"sha256": "4b0e69b0d9a2a2e2c58deb6b0fdcd4bffb8e8ac03daa020deb7a7b4cacba50cd"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-0-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-0-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw.raw",
+			"bytes": 8723,
+			"sha256": "dca3a0d1a839e38a22488390e443f4aef82d09f6861512602f0714a76099e0f3"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-0-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-0-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw.raw",
+			"bytes": 169,
+			"sha256": "ab813405223dbe54bb9c6a7c09748af26813b7e60494d16eca56129ed7760af2"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-0-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-0-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw.raw",
+			"bytes": 8674,
+			"sha256": "d872ba92ae5dc92d7db0ec9d7c2783dd7133c1b0518004a76222370665c7c73f"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-0-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-0-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw.raw",
+			"bytes": 4793,
+			"sha256": "45a96036ce9b92a78790578d1393cbd824702949334cf6bd7a5b911f13f41960"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-0-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-0-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "d9210df6cf3533d447a665103d8a548244fa750037fdcd0634becbcfd554e514"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-0-processes.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-0-processes.raw.raw",
+			"bytes": 437,
+			"sha256": "c9412c25d36a57b36d3cb9dd6f13ce6564c2f1270a1e115559825578dcc41619"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-1-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-1-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw.raw",
+			"bytes": 12910,
+			"sha256": "232ab371bb7b44af697970b722ff51739795bafb9f2cdd1da7b636a4605ac034"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-1-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-1-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw.raw",
+			"bytes": 8722,
+			"sha256": "aa2bc4a0fa1a214f88cf733ffeef3fb8357e76be00f44cec3221211e16d18c67"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-1-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-1-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw.raw",
+			"bytes": 169,
+			"sha256": "ab813405223dbe54bb9c6a7c09748af26813b7e60494d16eca56129ed7760af2"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-1-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-1-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw.raw",
+			"bytes": 8674,
+			"sha256": "0e89c5b4456836e7b6219880b0ddc11415bc8a6254437726264231bbdf02c77f"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-1-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-1-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw.raw",
+			"bytes": 4793,
+			"sha256": "45a96036ce9b92a78790578d1393cbd824702949334cf6bd7a5b911f13f41960"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-1-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-1-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "276ce6a6b48acbde124acd12a2688fbb02f184f0ea6ddf19bd04db178d2fe6ca"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-1-processes.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-1-processes.raw.raw",
+			"bytes": 437,
+			"sha256": "8734c26ef9422acfcbd8a15934a95995cb69c2d850274a44966c26fc642ee774"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-2-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-2-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw.raw",
+			"bytes": 17459,
+			"sha256": "3bbe2325f6fe8c13575c56dc24096f9477402b59f1c38e76719f4ae3d944c344"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-2-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-2-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw.raw",
+			"bytes": 8725,
+			"sha256": "a575ce59f0a6fdf80160ba62786a02665474a731b3de3ab34e5fc637447513a5"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-2-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-2-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw.raw",
+			"bytes": 169,
+			"sha256": "ab813405223dbe54bb9c6a7c09748af26813b7e60494d16eca56129ed7760af2"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-2-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-2-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw.raw",
+			"bytes": 8674,
+			"sha256": "29f6cebb1bf2174bd3bdbcd736d744c167c49728d3f802f424ed94c9fe0ac4cd"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-2-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-2-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw.raw",
+			"bytes": 4793,
+			"sha256": "45a96036ce9b92a78790578d1393cbd824702949334cf6bd7a5b911f13f41960"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-2-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-2-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "fc9ccfdeb2f00e2ef8dd7c0144c9c00067426e2f62a19ea8c317d6c15ca17852"
+		},
+		{
+			"archivePath": "receipt.json-before-burst-crash-2-processes.raw",
+			"retainedPath": "raw/receipt.json-before-burst-crash-2-processes.raw.raw",
+			"bytes": 437,
+			"sha256": "0fed6bd9e1cc8567c43e21cb2996dd8ac01a32a0d27806b53be7a0ff0abaaa19"
+		},
+		{
+			"archivePath": "receipt.json-before-first-crash-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-first-crash-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw.raw",
+			"bytes": 3812,
+			"sha256": "af19c5de16f92829de9bd32daeab3e4374e3feb9d431a359756c78618a6f1190"
+		},
+		{
+			"archivePath": "receipt.json-before-first-crash-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-first-crash-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw.raw",
+			"bytes": 8610,
+			"sha256": "e5cd97458e3cbcfacab6ea644329d1a19d206f856f316522716a2f2ceb042824"
+		},
+		{
+			"archivePath": "receipt.json-before-first-crash-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-first-crash-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw.raw",
+			"bytes": 169,
+			"sha256": "ab813405223dbe54bb9c6a7c09748af26813b7e60494d16eca56129ed7760af2"
+		},
+		{
+			"archivePath": "receipt.json-before-first-crash-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-first-crash-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw.raw",
+			"bytes": 8674,
+			"sha256": "efb73c171d384aedeaa27ab15b67bbee7d374b261f1fbf2540c04fef08f0e901"
+		},
+		{
+			"archivePath": "receipt.json-before-first-crash-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-first-crash-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw.raw",
+			"bytes": 4793,
+			"sha256": "45a96036ce9b92a78790578d1393cbd824702949334cf6bd7a5b911f13f41960"
+		},
+		{
+			"archivePath": "receipt.json-before-first-crash-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-first-crash-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "78ec2fdd034153a322222f6d444bd19310df204d7a740133145f6c743f7a3da2"
+		},
+		{
+			"archivePath": "receipt.json-before-first-crash-processes.raw",
+			"retainedPath": "raw/receipt.json-before-first-crash-processes.raw.raw",
+			"bytes": 437,
+			"sha256": "c4687a940e97aacb6744c56261f1d1a7debdd336c45ee86d98dc2629fcf10781"
+		},
+		{
+			"archivePath": "receipt.json-before-teardown-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-teardown-de.bobs-factory.b3fc9baf0ef31474.service.journal.raw.raw",
+			"bytes": 24210,
+			"sha256": "979ce5175b2bf44c97461f2ae1a1028525ede8ceba45328bf29657fe50a81199"
+		},
+		{
+			"archivePath": "receipt.json-before-teardown-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-teardown-de.bobs-factory.b3fc9baf0ef31474.service.properties.raw.raw",
+			"bytes": 6658,
+			"sha256": "3aec358c49e3b3cf1d8a989b73af108d1dd71fd14facba0051f2eb413f112d30"
+		},
+		{
+			"archivePath": "receipt.json-before-teardown-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-teardown-de.bobs-factory.b3fc9baf0ef31474.updates.service.journal.raw.raw",
+			"bytes": 2338,
+			"sha256": "c42dd5c176f18d7dd4a810ac12c98c4fe01aa7c65bd3fc2d95694f9a0e5ce9bd"
+		},
+		{
+			"archivePath": "receipt.json-before-teardown-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-teardown-de.bobs-factory.b3fc9baf0ef31474.updates.service.properties.raw.raw",
+			"bytes": 6690,
+			"sha256": "36dff112e6b923a2343038894e07b2f03b6b4dc6367ef61dc4ff1fdecd21be23"
+		},
+		{
+			"archivePath": "receipt.json-before-teardown-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw",
+			"retainedPath": "raw/receipt.json-before-teardown-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.journal.raw.raw",
+			"bytes": 4793,
+			"sha256": "45a96036ce9b92a78790578d1393cbd824702949334cf6bd7a5b911f13f41960"
+		},
+		{
+			"archivePath": "receipt.json-before-teardown-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw",
+			"retainedPath": "raw/receipt.json-before-teardown-factory-acceptance-external-c6c02f6f-3526-4e2c-ba9b-e64023a25d01.service.properties.raw.raw",
+			"bytes": 7693,
+			"sha256": "c0e9da7872bda21b02ea5e1f781755e353c52bbaceeec2117bbded6ae16ad373"
+		},
+		{
+			"archivePath": "receipt.json-before-teardown-processes.raw",
+			"retainedPath": "raw/receipt.json-before-teardown-processes.raw.raw",
+			"bytes": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+		}
+	]
+}

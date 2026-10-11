@@ -1,0 +1,175 @@
+✖ native cleanup after unexpected-death retains evidence until verified (1353.028209ms)
+✔ native cleanup after manager-failure retains evidence until verified (928.152ms)
+✖ native cleanup after unproven-exit retains evidence until verified (1302.648417ms)
+✖ native cleanup after root-symlink retains evidence until verified (1298.868416ms)
+✖ native cleanup after root-replaced retains evidence until verified (1371.940459ms)
+✖ native cleanup after untrusted-manifest retains evidence until verified (1302.987167ms)
+✖ native cleanup after filesystem-permission retains evidence until verified (1314.28475ms)
+✖ native cleanup after receipt-symlink retains evidence until verified (1305.898084ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 1
+ℹ fail 7
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10257.493583
+
+✖ failing tests:
+
+test at docs/distribution/acceptance/review5-before.test.mjs:245:2
+✖ native cleanup after unexpected-death retains evidence until verified (1353.028209ms)
+  AssertionError [ERR_ASSERTION]: Cleanup proof requires owned home/state removal
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review5-filesystem/docs/distribution/acceptance/review5-before.test.mjs:406:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/review5-before.test.mjs:245:2
+✖ native cleanup after unproven-exit retains evidence until verified (1302.648417ms)
+  AssertionError [ERR_ASSERTION]: Cleanup proof requires owned home/state removal
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review5-filesystem/docs/distribution/acceptance/review5-before.test.mjs:406:5)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/review5-before.test.mjs:245:2
+✖ native cleanup after root-symlink retains evidence until verified (1298.868416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review5-filesystem/docs/distribution/acceptance/review5-before.test.mjs:376:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/review5-before.test.mjs:245:2
+✖ native cleanup after root-replaced retains evidence until verified (1371.940459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review5-filesystem/docs/distribution/acceptance/review5-before.test.mjs:376:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/review5-before.test.mjs:245:2
+✖ native cleanup after untrusted-manifest retains evidence until verified (1302.987167ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   [
+  +     '--user',
+  +     'show',
+  +     'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service',
+  +     '--property=ActiveState,SubState,MainPID,ControlPID,Job'
+  +   ],
+  +   [
+  +     '--user',
+  +     'stop',
+  +     '--no-block',
+  +     'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service'
+  +   ],
+  +   [
+  +     '--user',
+  +     'show',
+  +     'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service',
+  +     '--property=ActiveState,SubState,MainPID,ControlPID,Job'
+  +   ],
+  +   [
+  +     '--user',
+  +     'show',
+  +     'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service',
+  +     '--property=ActiveState,SubState,MainPID,ControlPID,Job'
+  +   ],
+  +   [
+  +     '--user',
+  +     'show',
+  +     'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service',
+  +     '--property=ActiveState,SubState,MainPID,ControlPID,Job'
+  +   ],
+  +   [
+  +     '--user',
+  +     'daemon-reload'
+  +   ]
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review5-filesystem/docs/distribution/acceptance/review5-before.test.mjs:327:46)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ [ '--user', 'show', 'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service', '--property=ActiveState,SubState,MainPID,ControlPID,Job' ], [ '--user', 'stop', '--no-block', 'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service' ], [ '--user', 'show', 'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service', '--property=ActiveState,SubState,MainPID,ControlPID,Job' ], [ '--user', 'show', 'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service', '--property=ActiveState,SubState,MainPID,ControlPID,Job' ], [ '--user', 'show', 'factory-acceptance-external-5e8a03dc-00cc-44bf-b06f-648d0d8268f9.service', '--property=ActiveState,SubState,MainPID,ControlPID,Job' ], [ '--user', 'daemon-reload' ] ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/review5-before.test.mjs:245:2
+✖ native cleanup after filesystem-permission retains evidence until verified (1314.28475ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review5-filesystem/docs/distribution/acceptance/review5-before.test.mjs:376:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at docs/distribution/acceptance/review5-before.test.mjs:245:2
+✖ native cleanup after receipt-symlink retains evidence until verified (1305.898084ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot116-service-review5-filesystem/docs/distribution/acceptance/review5-before.test.mjs:376:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1208:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

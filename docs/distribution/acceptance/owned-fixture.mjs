@@ -15,6 +15,11 @@ import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { startOwnedCommand } from "./owned-command.mjs";
 import {
+	createFixtureDirectory,
+	fixtureRootVariable,
+	removeFixtureDirectory,
+} from "./owned-filesystem.mjs";
+import {
 	drainRegistry,
 	persistRegistry,
 	registrySurvivors,
@@ -40,6 +45,8 @@ export async function runOwnedFixture(
 ) {
 	const registry = mkdtempSync(join(tmpdir(), "factory-command-registry-"));
 	mkdirSync(join(registry, "groups"), { mode: 0o700 });
+	const filesystem = createFixtureDirectory();
+	persistRegistry(join(registry, "filesystem.json"), filesystem);
 	const escalationErrors = [];
 	let escalated = false;
 	let nativeReconciled = false;
@@ -59,7 +66,11 @@ export async function runOwnedFixture(
 		cleanupGrace,
 		cooperative: true,
 		registry,
-		env: { ...env, [registryVariable]: registry },
+		env: {
+			...env,
+			[registryVariable]: registry,
+			[fixtureRootVariable]: filesystem.root,
+		},
 		onTimeout: (error) => persistFailure(error, { cleanup: false }),
 		onEscalate: async (error) => {
 			escalated = true;
@@ -78,7 +89,7 @@ export async function runOwnedFixture(
 			// Native manager jobs live outside process groups; reconcile only exact
 			// identities preregistered before any definition write or job submission.
 			try {
-				await reconcileFixtureUnits(registry, env);
+				await reconcileFixtureUnits(registry, env, filesystem);
 				nativeReconciled = true;
 			} catch (failure) {
 				escalationErrors.push(failure.message);
@@ -121,7 +132,7 @@ export async function runOwnedFixture(
 		(primary || receipt.cleanup !== true || escalationErrors.length)
 	) {
 		try {
-			await reconcileFixtureUnits(registry, env);
+			await reconcileFixtureUnits(registry, env, filesystem);
 			nativeReconciled = true;
 		} catch (error) {
 			escalationErrors.push(error.message);
@@ -129,7 +140,22 @@ export async function runOwnedFixture(
 	}
 	if (primary?.cleanupError) escalationErrors.push(primary.cleanupError);
 	if (receipt.cleanupError) escalationErrors.push(receipt.cleanupError);
-	if (nativeReconciled) receipt.cleanup = escalationErrors.length === 0;
+	// Cleanup proof includes mutable filesystem state, even after cooperative exit.
+	if (!escalationErrors.length) {
+		try {
+			const manifest = join(registry, "fixture.json");
+			if (existsSync(manifest))
+				assert.equal(
+					JSON.parse(readFileSync(manifest)).root,
+					filesystem.root,
+					"Fixture root is not provider-owned",
+				);
+			removeFixtureDirectory(filesystem, receiptPath);
+			receipt.cleanup = true;
+		} catch (error) {
+			escalationErrors.push(error.message);
+		}
+	}
 	if (escalationErrors.length) {
 		primary ??= Error("Fixture ownership cleanup failed");
 		receipt.cleanup = false;
@@ -149,11 +175,11 @@ export async function runOwnedFixture(
 	if (primary) throw primary;
 }
 
-async function reconcileFixtureUnits(registry, env) {
+async function reconcileFixtureUnits(registry, env, filesystem) {
 	const manifest = join(registry, "fixture.json");
 	if (!existsSync(manifest)) return; // No native units registered or mutated yet.
 	const { root, unitDirectory, units } = JSON.parse(readFileSync(manifest));
-	assert(root.startsWith(`${tmpdir()}/factory-isolated-service-`));
+	assert.equal(root, filesystem.root, "Fixture root is not provider-owned");
 	assert.equal(unitDirectory, join(homedir(), ".config", "systemd", "user"));
 	const errors = [];
 	const manager = (...args) =>

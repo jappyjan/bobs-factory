@@ -6,23 +6,25 @@ import {
 	existsSync,
 	lstatSync,
 	mkdirSync,
-	mkdtempSync,
 	readdirSync,
 	readFileSync,
-	realpathSync,
 	renameSync,
-	rmSync,
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { createServer } from "node:net";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { desktopExecutable } from "../../../apps/desktop/src/local-runtime.mjs";
 import { managerWrapper } from "./manager-wrapper.mjs";
 import { withOwnedCleanup } from "./owned-cleanup.mjs";
 import { startOwnedCommand } from "./owned-command.mjs";
+import {
+	createFixtureDirectory,
+	fixtureRootVariable,
+	removeFixtureDirectory,
+} from "./owned-filesystem.mjs";
 import { persistRegistry, registryVariable } from "./owned-registry.mjs";
 import {
 	properties,
@@ -71,6 +73,7 @@ const receipt = {
 			"owned-command-child.mjs",
 			"owned-registry.mjs",
 			"owned-fixture.mjs",
+			"owned-filesystem.mjs",
 			"manager-wrapper.mjs",
 		].map((name) => [
 			name,
@@ -93,9 +96,12 @@ writeFileSync(receiptPath, JSON.stringify(receipt, null, 2), {
 	flag: "wx",
 	mode: 0o600,
 });
-const root = realpathSync(
-	mkdtempSync(join(tmpdir(), "factory-isolated-service-")),
-);
+const groupRegistry = process.env[registryVariable];
+const filesystem = groupRegistry
+	? JSON.parse(readFileSync(join(groupRegistry, "filesystem.json")))
+	: createFixtureDirectory();
+const root = filesystem.root;
+if (groupRegistry) assert.equal(root, process.env[fixtureRootVariable]);
 const home = join(root, "state");
 mkdirSync(home);
 const executable = desktopExecutable(home, process.argv[2]);
@@ -234,7 +240,6 @@ const updaterId = managedId.replace(/\.service$/, ".updates.service");
 // Register before ANY installation can write either definition or submit a job.
 units.push(externalId, managedId, updaterId);
 const definitions = new Map();
-const groupRegistry = process.env[registryVariable];
 const registerFixture = () => {
 	if (groupRegistry)
 		persistRegistry(join(groupRegistry, "fixture.json"), {
@@ -779,7 +784,7 @@ await withOwnedCleanup({
 					? readdirSync(join(home, "runtime"))
 					: []
 			).filter((name) => name.includes(".removed-"));
-			rmSync(root, { recursive: true, force: true });
+			removeFixtureDirectory(filesystem, receiptPath);
 			receipt.cleanup = true;
 		} catch (error) {
 			receipt.cleanupError = error.message;

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import {
+	chmodSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -180,6 +181,7 @@ await withOwnedCleanup({receipt,
 		} finally {
 			if (error?.registryPath)
 				rmSync(error.registryPath, { recursive: true, force: true });
+
 			rmSync(root, { recursive: true, force: true });
 		}
 	});
@@ -230,12 +232,21 @@ test("changed leader identity refuses unowned signaling and reports survivors", 
 	}
 });
 
-for (const mode of ["unexpected-death", "manager-failure", "unproven-exit"]) {
+for (const mode of [
+	"unexpected-death",
+	"manager-failure",
+	"unproven-exit",
+	"root-symlink",
+	"root-replaced",
+	"untrusted-manifest",
+	"filesystem-permission",
+	"receipt-symlink",
+]) {
 	test(`native cleanup after ${mode} retains evidence until verified`, {
 		timeout: 8000,
 	}, async () => {
 		const root = mkdtempSync(
-			join(tmpdir(), "factory-isolated-service-review-"),
+			join(tmpdir(), "factory-service-review-evidence-"),
 		);
 		const bin = join(root, "bin");
 		mkdirSync(bin);
@@ -243,6 +254,11 @@ for (const mode of ["unexpected-death", "manager-failure", "unproven-exit"]) {
 		const calls = join(root, "manager-calls.jsonl");
 		const receiptPath = join(root, "receipt.json");
 		const registryPath = join(root, "registry-path");
+		const fixturePointer = join(root, "fixture-root");
+		const foreign = mkdtempSync(
+			join(tmpdir(), "factory-isolated-service-unowned-"),
+		);
+		writeFileSync(join(foreign, "credentials"), "unowned bytes must survive");
 		const unit = `factory-acceptance-external-${randomUUID()}.service`;
 		const unitDirectory = join(homedir(), ".config", "systemd", "user");
 		// There is no real unit/definition. Every manager operation hits this mock,
@@ -270,11 +286,22 @@ process.stdout.write(JSON.parse(fs.readFileSync(${JSON.stringify(state)})).activ
 			units: [{ unit, bytes: "unused mock definition" }],
 		};
 		const fixture = `
-import {writeFileSync} from 'node:fs';
+import {writeFileSync,mkdirSync,mkdtempSync,symlinkSync,renameSync,chmodSync,unlinkSync} from 'node:fs';
 import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+const root=process.env.BOBS_FACTORY_ACCEPTANCE_FIXTURE_ROOT ?? mkdtempSync(join(tmpdir(),'factory-isolated-service-review-'));
+writeFileSync(${JSON.stringify(fixturePointer)},root);
+mkdirSync(join(root,'state'));
+writeFileSync(join(root,'state','fixture-bytes'),'owned mutable state');
+symlinkSync(${JSON.stringify(foreign)},join(root,'foreign-link'));
+symlinkSync(${JSON.stringify(join(foreign, "absent"))},join(root,'dangling-link'));
+${["root-symlink", "root-replaced"].includes(mode) ? `renameSync(root,root+'.original'); ${mode === "root-symlink" ? `symlinkSync(${JSON.stringify(foreign)},root);` : `mkdirSync(root); writeFileSync(join(root,'replacement'),'unowned replacement');`}` : ""}
+${mode === "filesystem-permission" ? `chmodSync(join(root,'state'),0o500);` : ""}
+const manifest={...${JSON.stringify(manifest)},root:${mode === "untrusted-manifest" ? JSON.stringify(foreign) : "root"}};
 writeFileSync(${JSON.stringify(registryPath)}, process.env.BOBS_FACTORY_ACCEPTANCE_GROUP_REGISTRY);
-writeFileSync(join(process.env.BOBS_FACTORY_ACCEPTANCE_GROUP_REGISTRY,'fixture.json'), ${JSON.stringify(JSON.stringify(manifest))});
+writeFileSync(join(process.env.BOBS_FACTORY_ACCEPTANCE_GROUP_REGISTRY,'fixture.json'),JSON.stringify(manifest));
 writeFileSync(${JSON.stringify(receiptPath)}, JSON.stringify({passed:false,cleanup:false${mode === "manager-failure" ? ",cleanupError:'fixture cleanup interrupted'" : ""}}));
+${mode === "receipt-symlink" ? `writeFileSync(join(root,'retained-receipt'),JSON.stringify({passed:false,cleanup:false})); unlinkSync(${JSON.stringify(receiptPath)}); symlinkSync(join(root,'retained-receipt'),${JSON.stringify(receiptPath)});` : ""}
 ${mode === "unproven-exit" ? "process.exit(0);" : "process.kill(process.pid,'SIGKILL');"}`;
 		let error;
 		try {
@@ -297,22 +324,34 @@ ${mode === "unproven-exit" ? "process.exit(0);" : "process.kill(process.pid,'SIG
 						.split("\n")
 						.map((line) => JSON.parse(line))
 				: [];
-			assert(
-				operations.some((args) => args.includes("show") && args.includes(unit)),
-				"Unexpected fixture exit skipped exact-unit reconciliation",
-			);
-			assert(
-				operations.some((args) => args.includes("stop") && args.includes(unit)),
-			);
-			assert(
-				operations.every(
-					(args) =>
-						args[0] === "--user" &&
-						(args[1] === "daemon-reload" || args.includes(unit)),
-				),
-				"Only exact registered mock units may be operated on",
-			);
+			if (mode === "untrusted-manifest") assert.deepEqual(operations, []);
+			else {
+				assert(
+					operations.some(
+						(args) => args.includes("show") && args.includes(unit),
+					),
+					"Unexpected fixture exit skipped exact-unit reconciliation",
+				);
+				assert(
+					operations.some(
+						(args) => args.includes("stop") && args.includes(unit),
+					),
+				);
+				assert(
+					operations.every(
+						(args) =>
+							args[0] === "--user" &&
+							(args[1] === "daemon-reload" || args.includes(unit)),
+					),
+					"Only exact registered mock units may be operated on",
+				);
+			}
 			const receipt = JSON.parse(readFileSync(receiptPath));
+			const fixtureRoot = readFileSync(fixturePointer, "utf8");
+			assert.equal(
+				readFileSync(join(foreign, "credentials"), "utf8"),
+				"unowned bytes must survive",
+			);
 			assert.equal(receipt.passed, false);
 			if (mode === "unproven-exit") {
 				assert.equal(error, undefined);
@@ -323,24 +362,62 @@ ${mode === "unproven-exit" ? "process.exit(0);" : "process.kill(process.pid,'SIG
 				assert.equal(Boolean(error.timedOut), false);
 				assert.equal(receipt.outerError, error.message);
 			}
-			if (mode === "manager-failure") {
-				assert.equal(JSON.parse(readFileSync(state)).active, true);
+			if (
+				[
+					"manager-failure",
+					"root-symlink",
+					"root-replaced",
+					"untrusted-manifest",
+					"filesystem-permission",
+					"receipt-symlink",
+				].includes(mode)
+			) {
+				assert(existsSync(fixtureRoot), "Unproven directory must be retained");
 				assert.equal(receipt.cleanup, false);
-				assert.equal(receipt.cleanupError, "fixture cleanup interrupted");
-				assert.match(error.cleanupError, /mock manager permission denied/);
-				assert(
-					receipt.outerCleanupErrors.some((message) =>
-						message.includes("mock manager permission denied"),
-					),
-				);
 				assert.equal(receipt.registryPath, error.registryPath);
-				assert.equal(readFileSync(registryPath, "utf8"), error.registryPath);
-				assert.deepEqual(
-					JSON.parse(readFileSync(join(error.registryPath, "fixture.json"))),
-					manifest,
-				);
 				assert(existsSync(join(error.registryPath, "closed")));
+				if (mode !== "manager-failure") {
+					assert.match(
+						error.cleanupError,
+						mode === "filesystem-permission"
+							? /EACCES|EPERM|ENOTEMPTY/
+							: /Fixture (directory|root)/,
+					);
+					assert(existsSync(join(error.registryPath, "filesystem.json")));
+					if (mode === "filesystem-permission")
+						assert.equal(
+							readFileSync(join(fixtureRoot, "state", "fixture-bytes"), "utf8"),
+							"owned mutable state",
+						);
+					if (mode === "receipt-symlink")
+						assert.equal(
+							JSON.parse(readFileSync(join(fixtureRoot, "retained-receipt")))
+								.passed,
+							false,
+						);
+				} else {
+					assert.equal(JSON.parse(readFileSync(state)).active, true);
+					assert.equal(receipt.cleanup, false);
+					assert.equal(receipt.cleanupError, "fixture cleanup interrupted");
+					assert.match(error.cleanupError, /mock manager permission denied/);
+					assert(
+						receipt.outerCleanupErrors.some((message) =>
+							message.includes("mock manager permission denied"),
+						),
+					);
+					assert.equal(receipt.registryPath, error.registryPath);
+					assert.equal(readFileSync(registryPath, "utf8"), error.registryPath);
+					assert.deepEqual(
+						JSON.parse(readFileSync(join(error.registryPath, "fixture.json"))),
+						{ ...manifest, root: fixtureRoot },
+					);
+					assert(existsSync(join(error.registryPath, "closed")));
+				}
 			} else {
+				assert(
+					!existsSync(fixtureRoot),
+					"Cleanup proof requires owned home/state removal",
+				);
 				assert.equal(JSON.parse(readFileSync(state)).active, false);
 				assert.equal(receipt.cleanup, true);
 				assert.equal(error?.registryPath, undefined);
@@ -350,7 +427,18 @@ ${mode === "unproven-exit" ? "process.exit(0);" : "process.kill(process.pid,'SIG
 			// Only private test evidence is removed; the mock never writes native definitions.
 			if (error?.registryPath)
 				rmSync(error.registryPath, { recursive: true, force: true });
+			if (existsSync(fixturePointer)) {
+				const fixtureRoot = readFileSync(fixturePointer, "utf8");
+				if (
+					mode === "filesystem-permission" &&
+					existsSync(join(fixtureRoot, "state"))
+				)
+					chmodSync(join(fixtureRoot, "state"), 0o700);
+				rmSync(fixtureRoot, { recursive: true, force: true });
+				rmSync(`${fixtureRoot}.original`, { recursive: true, force: true });
+			}
 			rmSync(root, { recursive: true, force: true });
+			rmSync(foreign, { recursive: true, force: true });
 		}
 	});
 }

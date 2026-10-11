@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Reconcile exact owned acceptance-fixture units after unexpected fixture death and retain ownership evidence when cleanup cannot be proved; preserve primary and cleanup errors, and retain the separately verified exact482 native service receipts without relabeling them for the new helper. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122), [#124](https://taskbot.apps.janjaap.de/p/bobs-factory/t/124), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
+- Reconcile exact owned acceptance-fixture units and identity-bound temporary state after unexpected fixture death; preserve primary and cleanup errors plus ownership evidence on refusal or removal failure, with separately bound exact482/exact834 native receipts. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122), [#124](https://taskbot.apps.janjaap.de/p/bobs-factory/t/124), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 - Keep desktop and operator recovery validation reliable when Node CI runs tests concurrently, without rebuilding shared prerequisites during testing ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
 
 ### Changed

@@ -36,8 +36,13 @@ reconciles preregistered exact units and jobs against their owned definition byt
 A changed/missing live leader identity or unknown survivor keeps cleanup nonpassing;
 it never authorizes signaling an unrelated group. Unexpected fixture death and exit without cleanup proof also reconcile exact
 registered units, independently of group-cleanup failures. Failed cleanup retains
-the closed ownership registry and reports its path; verified cleanup is required
-before deleting it. Primary fixture/timeout and cleanup
+the closed ownership registry and reports its path. The supervisor allocates the
+private temporary root before child execution and retains its canonical parent,
+device/inode/owner/birth identity in memory and `filesystem.json`. Removal checks
+that identity and the exact manifest root after native/group cleanup, refuses
+untrusted/replaced/linked roots, and preserves symlink targets and external
+receipts. Filesystem errors keep cleanup nonpassing and the registry retained;
+verified unit, group and filesystem cleanup is required before deleting it. Primary fixture/timeout and cleanup
 errors survive in the receipt and every independent matrix outcome. Both worker
 and updater exact unit identities are registered before installation. Definition
 bytes are checked against the frozen b82 Linux contract before cleanup; changed
@@ -153,3 +158,10 @@ metadata/digest. Main acceptance, all six signal cleanup cases and the seventh
 outer-deadline case pass at that exact harness. The subsequent unexpected-death
 cleanup correction is covered by 22 focused checks; its fresh CI and independent
 review remain separate. No older receipt is relabeled as new-harness acceptance.
+
+
+[Exact834 native receipts and review5 filesystem correction](../evidence/2026-10-11-service-834/README.md)
+retain run38137269848/artifact11702185760 and all94 original files. Those eight
+receipts pass at834 but do not exercise unexpected death. The subsequent
+identity-bound filesystem fallback has27 focused safe checks; it needs fresh
+review6 and its own CI and is not represented by an older native PASS.
