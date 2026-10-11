@@ -365,20 +365,6 @@ async function openDashboard(origin) {
 				`${description}\nUse Factory → Connect to retry.`,
 			);
 	});
-	let fragment = "";
-	if (selected.local) {
-		const grant = join(home, "factory", "auth", "enroll.json");
-		const state = join(home, "factory", "auth", "state.json");
-		if (
-			existsSync(grant) &&
-			existsSync(state) &&
-			JSON.parse(readFileSync(state, "utf8")).credentials.length === 0
-		) {
-			const value = JSON.parse(readFileSync(grant, "utf8"));
-			if (value.expires > Date.now())
-				fragment = `#setup=${encodeURIComponent(value.token)}`;
-		}
-	}
 	const versionResponse = await fetch(`${origin}/api/version`, {
 		signal: AbortSignal.timeout(5000),
 	});
@@ -393,7 +379,7 @@ async function openDashboard(origin) {
 		);
 	// The server supplies its own versioned dashboard, so same-protocol runtime and
 	// shell versions may differ safely. Never swap its runtime to match this app.
-	await window.loadURL(`${origin}/${fragment}`);
+	await window.loadURL(`${origin}/`);
 }
 async function stopLocal() {
 	if (!selected?.local)

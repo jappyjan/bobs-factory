@@ -100,8 +100,7 @@ export function GetStarted() {
 							<h3 className="font-bold text-ink">2. Launch</h3>
 							<p className="mt-1">
 								Run the launch command in the same terminal. Your browser opens
-								automatically. Create your passkey using the setup code Bob
-								shows you.
+								automatically without enrollment or login.
 							</p>
 						</li>
 						<li>
