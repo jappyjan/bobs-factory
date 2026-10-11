@@ -1,0 +1,137 @@
+{
+  "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+  "sourceRecord": {
+    "file": "source-rebuild.tar.gz",
+    "size": 4130049606,
+    "sha256": "4a8d3bfbe38dc47fedb041a77d4e37179267cc13207cc7e9bba3858b6dac17c2"
+  },
+  "archivePath": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/output/source-rebuild.tar.gz",
+  "manifestPath": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/output/source-rebuild/source-materials.json",
+  "manifest": {
+    "file": "source-materials.json",
+    "size": 158164,
+    "sha256": "542fd9881fa92168667cc9f74443fb40a891fb578904ce9479dfc2dc060a540b"
+  },
+  "materialRecordCount": 93,
+  "materialRecordBytes": 4100287418,
+  "outerRegularFiles": 99,
+  "outerTarDeclaredExpandedBytesIncludingPadding": 4159382528,
+  "limits": {
+    "maxCompressedBytes": 8589934592,
+    "maxMemberBytes": 4294967296,
+    "maxExpandedBytes": 17179869184,
+    "maxNestedHeaders": 500000,
+    "maxOuterHeaders": 256,
+    "workerTimeoutMs": 120000,
+    "maxControlBytes": 1048576,
+    "captureBudgetBytes": 8388608
+  },
+  "hostFreeBytes": 201335640064,
+  "ownedLogicalBytes": 19109794993,
+  "ownedMaxBytes": 42949672960,
+  "hostFreeFloorBytes": 107374182400,
+  "elapsedSeconds": 128.676,
+  "directoryIntake": {
+    "status": "PASS",
+    "milliseconds": 23441,
+    "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+    "records": 93,
+    "recordBytes": 4100287418,
+    "scope": "actual directory under unchanged default validator; no completeness or legal acceptance"
+  },
+  "archiveIntake": {
+    "status": "PASS",
+    "milliseconds": 33357,
+    "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+    "scope": "actual complete flat source archive under unchanged default validator; no completeness/legal acceptance"
+  },
+  "fourTargetStagingChecks": [
+    {
+      "target": "darwin-arm64",
+      "status": "PASS",
+      "scope": "actual source/objects/cache staging and Ninja dry run; no native execution",
+      "inputClosure": {
+        "target": "darwin-arm64",
+        "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+        "verifiedApplicationArchives": 2,
+        "verifiedLinkedLibraries": 3,
+        "stagedOnly": true,
+        "executed": false
+      },
+      "elapsedSeconds": 7.564
+    },
+    {
+      "target": "darwin-x64",
+      "status": "PASS",
+      "scope": "actual source/objects/cache staging and Ninja dry run; no native execution",
+      "inputClosure": {
+        "target": "darwin-x64",
+        "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+        "verifiedApplicationArchives": 2,
+        "verifiedLinkedLibraries": 3,
+        "stagedOnly": true,
+        "executed": false
+      },
+      "elapsedSeconds": 7.297
+    },
+    {
+      "target": "linux-x64",
+      "status": "PASS",
+      "scope": "actual source/objects/cache staging and Ninja dry run; no native execution",
+      "inputClosure": {
+        "target": "linux-x64",
+        "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+        "verifiedApplicationArchives": 2,
+        "verifiedLinkedLibraries": 6,
+        "stagedOnly": true,
+        "executed": false
+      },
+      "isolatedPATH": {
+        "PATH": "/usr/bin:/bin",
+        "returncode": 0,
+        "providedTool": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/fixture-tools/llvm/bin/llvm-objcopy",
+        "command": [
+          "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/tools-env/bin/ninja",
+          "-C",
+          "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/staging-checks/linux-x64/build",
+          "-f",
+          "relink-recipe.ninja",
+          "-v",
+          "bun-profile"
+        ],
+        "scope": "real staged recipe/Ninja/Node process, mocked clang++/objcopy; no compiler/linker/native runtime execution"
+      },
+      "elapsedSeconds": 9.382
+    },
+    {
+      "target": "linux-arm64",
+      "status": "PASS",
+      "scope": "actual source/objects/cache staging and Ninja dry run; no native execution",
+      "inputClosure": {
+        "target": "linux-arm64",
+        "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+        "verifiedApplicationArchives": 2,
+        "verifiedLinkedLibraries": 6,
+        "stagedOnly": true,
+        "executed": false
+      },
+      "isolatedPATH": {
+        "PATH": "/usr/bin:/bin",
+        "returncode": 0,
+        "providedTool": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/fixture-tools/llvm/bin/llvm-objcopy",
+        "command": [
+          "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/tools-env/bin/ninja",
+          "-C",
+          "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-review1-corrections/staging-checks/linux-arm64/build",
+          "-f",
+          "relink-recipe.ninja",
+          "-v",
+          "bun-profile"
+        ],
+        "scope": "real staged recipe/Ninja/Node process, mocked clang++/objcopy; no compiler/linker/native runtime execution"
+      },
+      "elapsedSeconds": 8.46
+    }
+  ],
+  "licenseAcceptance": "not issued; independent review pending"
+}

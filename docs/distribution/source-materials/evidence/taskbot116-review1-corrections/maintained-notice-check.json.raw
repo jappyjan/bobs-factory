@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "scope": "executed unchanged actual builder supplemental runtime and web-push notice loops; no native payload built",
+  "runtimeBlocks": 59,
+  "icuBytes": 27718,
+  "rustBytes": 1894438,
+  "webPushDirectionsIncluded": true
+}
