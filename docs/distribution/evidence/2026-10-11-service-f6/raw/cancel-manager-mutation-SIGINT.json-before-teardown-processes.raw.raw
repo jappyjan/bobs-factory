@@ -1,0 +1,1 @@
+  10406    1048 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-tVlHGj/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-tVlHGj/state --port 41889 --no-open service run

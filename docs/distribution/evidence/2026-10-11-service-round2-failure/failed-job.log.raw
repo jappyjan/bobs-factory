@@ -1,0 +1,318 @@
+﻿2026-10-11T10:42:58.8960589Z Current runner version: '2.337.0'
+2026-10-11T10:42:58.8986927Z ##[group]Runner Image Provisioner
+2026-10-11T10:42:58.8987845Z Hosted Compute Agent
+2026-10-11T10:42:58.8988417Z Version: 20261002.596
+2026-10-11T10:42:58.8989130Z Commit: c3d12f3313a95f25162a1503be624f3b0617f8c0
+2026-10-11T10:42:58.8989846Z Build Date: 2026-10-02T22:28:27Z
+2026-10-11T10:42:58.8990561Z Worker ID: {f8075c15-5cbc-484d-a4a5-160ec14881ec}
+2026-10-11T10:42:58.8991348Z Region: westus
+2026-10-11T10:42:58.8991888Z Cloud: Azure
+2026-10-11T10:42:58.8992470Z ##[endgroup]
+2026-10-11T10:42:58.8994220Z ##[group]Operating System
+2026-10-11T10:42:58.8995618Z Ubuntu
+2026-10-11T10:42:58.8996230Z 24.04.5
+2026-10-11T10:42:58.8996751Z LTS
+2026-10-11T10:42:58.8997310Z ##[endgroup]
+2026-10-11T10:42:58.8997878Z ##[group]Runner Image
+2026-10-11T10:42:58.8998500Z Image: ubuntu-24.04
+2026-10-11T10:42:58.8999143Z Version: 20261004.327.1
+2026-10-11T10:42:58.9000407Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261004.327/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-11T10:42:58.9002037Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261004.327
+2026-10-11T10:42:58.9003016Z ##[endgroup]
+2026-10-11T10:42:58.9004336Z ##[group]GITHUB_TOKEN Permissions
+2026-10-11T10:42:58.9006724Z Actions: read
+2026-10-11T10:42:58.9007435Z Contents: read
+2026-10-11T10:42:58.9008076Z Metadata: read
+2026-10-11T10:42:58.9008700Z ##[endgroup]
+2026-10-11T10:42:58.9010883Z Secret source: Actions
+2026-10-11T10:42:58.9011932Z Cache mode: write
+2026-10-11T10:42:58.9012696Z Prepare workflow directory
+2026-10-11T10:42:58.9369894Z Prepare all required actions
+2026-10-11T10:42:58.9422309Z Getting action download info
+2026-10-11T10:42:59.3297313Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-11T10:42:59.4377177Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-10-11T10:42:59.9157771Z Download action repository 'actions/download-artifact@v6' (SHA:018cc2cf5baa6db3ef3c5f8a56943fffe632ef53)
+2026-10-11T10:43:00.3270443Z Download action repository 'actions/upload-artifact@v6' (SHA:b7c566a772e6b6bfb58ed0dc250532a479d7789f)
+2026-10-11T10:43:00.5919396Z Complete job name: linux-user-service
+2026-10-11T10:43:00.6780699Z ##[group]Run actions/checkout@v7
+2026-10-11T10:43:00.6781690Z with:
+2026-10-11T10:43:00.6782208Z   persist-credentials: false
+2026-10-11T10:43:00.6782809Z   repository: jappyjan/bobs-factory
+2026-10-11T10:43:00.6786884Z   token: ***
+2026-10-11T10:43:00.6787442Z   ssh-strict: true
+2026-10-11T10:43:00.6787873Z   ssh-user: git
+2026-10-11T10:43:00.6788298Z   clean: true
+2026-10-11T10:43:00.6788727Z   sparse-checkout-cone-mode: true
+2026-10-11T10:43:00.6789247Z   fetch-depth: 1
+2026-10-11T10:43:00.6789672Z   fetch-tags: false
+2026-10-11T10:43:00.6790117Z   show-progress: true
+2026-10-11T10:43:00.6790559Z   lfs: false
+2026-10-11T10:43:00.6790976Z   submodules: false
+2026-10-11T10:43:00.6791414Z   set-safe-directory: true
+2026-10-11T10:43:00.6791952Z   allow-unsafe-pr-checkout: false
+2026-10-11T10:43:00.6792754Z ##[endgroup]
+2026-10-11T10:43:00.7879944Z Syncing repository: jappyjan/bobs-factory
+2026-10-11T10:43:00.7883314Z ##[group]Getting Git version info
+2026-10-11T10:43:00.7884934Z Working directory is '/home/runner/work/bobs-factory/bobs-factory'
+2026-10-11T10:43:00.7887505Z [command]/usr/bin/git version
+2026-10-11T10:43:00.7959528Z git version 2.55.0
+2026-10-11T10:43:00.8002257Z ##[endgroup]
+2026-10-11T10:43:00.8013284Z Temporarily overriding HOME='/home/runner/work/_temp/c6f7700e-25f0-4d76-8c9f-e04a7155250b' before making global git config changes
+2026-10-11T10:43:00.8016634Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-11T10:43:00.8019239Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/bobs-factory/bobs-factory
+2026-10-11T10:43:00.8065617Z Deleting the contents of '/home/runner/work/bobs-factory/bobs-factory'
+2026-10-11T10:43:00.8071488Z ##[group]Determining repository object format
+2026-10-11T10:43:00.8074004Z ##[endgroup]
+2026-10-11T10:43:00.8075935Z ##[group]Initializing the repository
+2026-10-11T10:43:00.8079257Z [command]/usr/bin/git init /home/runner/work/bobs-factory/bobs-factory
+2026-10-11T10:43:00.8209859Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-11T10:43:00.8212133Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-11T10:43:00.8214154Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-11T10:43:00.8216376Z hint: call:
+2026-10-11T10:43:00.8217571Z hint:
+2026-10-11T10:43:00.8218908Z hint: 	git config --global init.defaultBranch <name>
+2026-10-11T10:43:00.8220292Z hint:
+2026-10-11T10:43:00.8221740Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-11T10:43:00.8223883Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-11T10:43:00.8225750Z hint:
+2026-10-11T10:43:00.8226956Z hint: 	git branch -m <name>
+2026-10-11T10:43:00.8228184Z hint:
+2026-10-11T10:43:00.8229316Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-11T10:43:00.8231495Z Initialized empty Git repository in /home/runner/work/bobs-factory/bobs-factory/.git/
+2026-10-11T10:43:00.8236070Z [command]/usr/bin/git remote add origin https://github.com/jappyjan/bobs-factory
+2026-10-11T10:43:00.8298546Z ##[endgroup]
+2026-10-11T10:43:00.8300185Z ##[group]Disabling automatic garbage collection
+2026-10-11T10:43:00.8303057Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-11T10:43:00.8348203Z ##[endgroup]
+2026-10-11T10:43:00.8350416Z ##[group]Setting up auth
+2026-10-11T10:43:00.8351717Z Removing SSH command configuration
+2026-10-11T10:43:00.8358915Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-11T10:43:00.8402108Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-11T10:43:00.8891351Z Removing HTTP extra header
+2026-10-11T10:43:00.8898136Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-11T10:43:00.8937273Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-11T10:43:00.9167758Z Removing includeIf entries pointing to credentials config files
+2026-10-11T10:43:00.9172912Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-11T10:43:00.9214810Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-11T10:43:00.9458126Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-11T10:43:00.9511537Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/bobs-factory/bobs-factory/.git.path /home/runner/work/_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config
+2026-10-11T10:43:00.9552324Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/bobs-factory/bobs-factory/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config
+2026-10-11T10:43:00.9598457Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config
+2026-10-11T10:43:00.9642605Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config
+2026-10-11T10:43:00.9680427Z ##[endgroup]
+2026-10-11T10:43:00.9682391Z ##[group]Fetching the repository
+2026-10-11T10:43:00.9688450Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +c3cc8644ac34c53b185e6b8598966fcf366497ca:refs/remotes/origin/delivery/taskbot-116-integration
+2026-10-11T10:43:03.0363535Z From https://github.com/jappyjan/bobs-factory
+2026-10-11T10:43:03.0367063Z  * [new ref]         c3cc8644ac34c53b185e6b8598966fcf366497ca -> origin/delivery/taskbot-116-integration
+2026-10-11T10:43:03.0372420Z [command]/usr/bin/git branch --list --remote origin/delivery/taskbot-116-integration
+2026-10-11T10:43:03.0402584Z   origin/delivery/taskbot-116-integration
+2026-10-11T10:43:03.0411680Z [command]/usr/bin/git rev-parse refs/remotes/origin/delivery/taskbot-116-integration
+2026-10-11T10:43:03.0440629Z c3cc8644ac34c53b185e6b8598966fcf366497ca
+2026-10-11T10:43:03.0446073Z ##[endgroup]
+2026-10-11T10:43:03.0447528Z ##[group]Determining the checkout info
+2026-10-11T10:43:03.0539568Z ##[endgroup]
+2026-10-11T10:43:03.0541316Z [command]/usr/bin/git sparse-checkout disable
+2026-10-11T10:43:03.0546258Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-11T10:43:03.0563757Z ##[group]Checking out the ref
+2026-10-11T10:43:03.0570230Z [command]/usr/bin/git checkout --progress --force -B delivery/taskbot-116-integration refs/remotes/origin/delivery/taskbot-116-integration
+2026-10-11T10:43:03.2814889Z Switched to a new branch 'delivery/taskbot-116-integration'
+2026-10-11T10:43:03.2821865Z branch 'delivery/taskbot-116-integration' set up to track 'origin/delivery/taskbot-116-integration'.
+2026-10-11T10:43:03.2836490Z ##[endgroup]
+2026-10-11T10:43:03.2891040Z [command]/usr/bin/git log -1 --format=%H
+2026-10-11T10:43:03.2921532Z c3cc8644ac34c53b185e6b8598966fcf366497ca
+2026-10-11T10:43:03.2931629Z ##[group]Removing auth
+2026-10-11T10:43:03.2934515Z Removing SSH command configuration
+2026-10-11T10:43:03.2936949Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-11T10:43:03.2980892Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-11T10:43:03.3219265Z Removing HTTP extra header
+2026-10-11T10:43:03.3223052Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-11T10:43:03.3262789Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-11T10:43:03.3499083Z Removing includeIf entries pointing to credentials config files
+2026-10-11T10:43:03.3501943Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-11T10:43:03.3533338Z includeif.gitdir:/home/runner/work/bobs-factory/bobs-factory/.git.path
+2026-10-11T10:43:03.3537374Z includeif.gitdir:/home/runner/work/bobs-factory/bobs-factory/.git/worktrees/*.path
+2026-10-11T10:43:03.3540685Z includeif.gitdir:/github/workspace/.git.path
+2026-10-11T10:43:03.3543268Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-11T10:43:03.3548074Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/bobs-factory/bobs-factory/.git.path
+2026-10-11T10:43:03.3571697Z /home/runner/work/_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config
+2026-10-11T10:43:03.3583576Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/bobs-factory/bobs-factory/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-a5de4e0c\-7d28\-4ac7\-9503\-d6a4e362e92f\.config
+2026-10-11T10:43:03.3628831Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/bobs-factory/bobs-factory/.git/worktrees/*.path
+2026-10-11T10:43:03.3659635Z /home/runner/work/_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config
+2026-10-11T10:43:03.3670082Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/bobs-factory/bobs-factory/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-a5de4e0c\-7d28\-4ac7\-9503\-d6a4e362e92f\.config
+2026-10-11T10:43:03.3709941Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-11T10:43:03.3758186Z /github/runner_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config
+2026-10-11T10:43:03.3768788Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-a5de4e0c\-7d28\-4ac7\-9503\-d6a4e362e92f\.config
+2026-10-11T10:43:03.3809447Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-11T10:43:03.3855545Z /github/runner_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config
+2026-10-11T10:43:03.3863909Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-a5de4e0c\-7d28\-4ac7\-9503\-d6a4e362e92f\.config
+2026-10-11T10:43:03.3903234Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-11T10:43:03.4137255Z Removing credentials config '/home/runner/work/_temp/git-credentials-a5de4e0c-7d28-4ac7-9503-d6a4e362e92f.config'
+2026-10-11T10:43:03.4144996Z ##[endgroup]
+2026-10-11T10:43:03.4516214Z ##[group]Run actions/setup-node@v7
+2026-10-11T10:43:03.4517316Z with:
+2026-10-11T10:43:03.4518091Z   node-version: 24.18.0
+2026-10-11T10:43:03.4519067Z   package-manager-cache: false
+2026-10-11T10:43:03.4520086Z   check-latest: false
+2026-10-11T10:43:03.4529354Z   token: ***
+2026-10-11T10:43:03.4530158Z ##[endgroup]
+2026-10-11T10:43:03.5867381Z Attempting to download 24.18.0...
+2026-10-11T10:43:04.1828893Z Acquiring 24.18.0 - x64 from https://github.com/actions/node-versions/releases/download/24.18.0-28070977815/node-24.18.0-linux-x64.tar.gz
+2026-10-11T10:43:04.6788786Z Extracting ...
+2026-10-11T10:43:04.6912848Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/19f89b03-f8c6-4370-b27b-0098eaf77034 -f /home/runner/work/_temp/4e8c1794-9875-4566-aa00-644b63fabd5a
+2026-10-11T10:43:05.9150257Z Adding to the cache ...
+2026-10-11T10:43:08.0341147Z ##[group]Environment details
+2026-10-11T10:43:08.3915665Z node: v24.18.0
+2026-10-11T10:43:08.3916180Z npm: 11.16.0
+2026-10-11T10:43:08.3916619Z yarn: 1.22.22
+2026-10-11T10:43:08.3917318Z ##[endgroup]
+2026-10-11T10:43:08.4170068Z ##[group]Run actions/download-artifact@v6
+2026-10-11T10:43:08.4170581Z with:
+2026-10-11T10:43:08.4175103Z   github-token: ***
+2026-10-11T10:43:08.4175717Z   run-id: 38086228778
+2026-10-11T10:43:08.4176090Z   artifact-ids: 11682662326
+2026-10-11T10:43:08.4176582Z   path: /home/runner/work/_temp/frozen-service-runtime
+2026-10-11T10:43:08.4177136Z   merge-multiple: false
+2026-10-11T10:43:08.4177540Z   repository: jappyjan/bobs-factory
+2026-10-11T10:43:08.4177981Z ##[endgroup]
+2026-10-11T10:43:08.5791863Z Downloading artifacts by ID
+2026-10-11T10:43:08.5793677Z Fetching artifact list for workflow run 38086228778 in repository jappyjan/bobs-factory
+2026-10-11T10:43:08.5803402Z (node:2437) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-11T10:43:08.5804951Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-11T10:43:08.8377066Z Found 8 artifact(s)
+2026-10-11T10:43:08.8396933Z Preparing to download the following artifacts:
+2026-10-11T10:43:08.8399339Z - bobs-factory-linux-x64-ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec-1 (ID: 11682662326, Size: 86717041, Expected Digest: sha256:8a2b9153853a422d60afeb0eec8dcb7648968827ec609fabb7385c9db9060c77)
+2026-10-11T10:43:08.8401961Z Downloading artifact '11682662326' from 'jappyjan/bobs-factory'
+2026-10-11T10:43:09.0698916Z Redirecting to blob download url: https://productionresultssa7.blob.core.windows.net/actions-results/489e1e13-cec7-8519-8c91-2457c8f443b3/workflow-job-run-f27fa7f1-947b-530c-b6f0-cf5675d61f75/artifacts/ca11d8d7d41354e13b5dfbe05e35c7ada6997d105e23219ba738c45b45b27480.zip
+2026-10-11T10:43:09.0701317Z Starting download of artifact to: /home/runner/work/_temp/frozen-service-runtime
+2026-10-11T10:43:09.3778717Z (node:2437) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-11T10:43:13.0932060Z SHA256 digest of downloaded artifact is 8a2b9153853a422d60afeb0eec8dcb7648968827ec609fabb7385c9db9060c77
+2026-10-11T10:43:13.0933176Z Artifact download completed successfully.
+2026-10-11T10:43:13.0933773Z Total of 1 artifact(s) downloaded
+2026-10-11T10:43:13.0940193Z Download artifact has finished successfully
+2026-10-11T10:43:13.1099152Z ##[group]Run node docs/distribution/acceptance/verify-frozen-runtime.mjs "$RUNNER_TEMP/frozen-service-runtime"
+2026-10-11T10:43:13.1100392Z [36;1mnode docs/distribution/acceptance/verify-frozen-runtime.mjs "$RUNNER_TEMP/frozen-service-runtime"[0m
+2026-10-11T10:43:13.1373422Z shell: /usr/bin/bash -e {0}
+2026-10-11T10:43:13.1373799Z env:
+2026-10-11T10:43:13.1377646Z   GH_TOKEN: ***
+2026-10-11T10:43:13.1377945Z ##[endgroup]
+2026-10-11T10:43:14.2832381Z {"source":"b82c37c4fb9a3e18d1cb222c6d56d3fef852096f","candidateDigest":"ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec","archiveSha256":"d75afb47d49de95e87832c9eb987277375de8d112d794e041534883dda7b6c62","artifactId":11682662326,"runId":38086228778,"publisherTrust":"unsigned preparation only"}
+2026-10-11T10:43:14.2939331Z ##[group]Run node --test docs/distribution/acceptance/owned-cleanup.test.mjs
+2026-10-11T10:43:14.2939981Z [36;1mnode --test docs/distribution/acceptance/owned-cleanup.test.mjs[0m
+2026-10-11T10:43:14.3005551Z shell: /usr/bin/bash -e {0}
+2026-10-11T10:43:14.3005843Z ##[endgroup]
+2026-10-11T10:43:14.4352256Z ✔ SIGTERM unwinds work, cleans its child once and persists FAIL (44.193933ms)
+2026-10-11T10:43:14.4708158Z ✔ SIGINT unwinds work, cleans its child once and persists FAIL (39.327215ms)
+2026-10-11T10:43:14.4711786Z ✔ failure and cleanup failure remain nonpassing and persist both errors (0.769078ms)
+2026-10-11T10:43:14.4793335Z ℹ tests 3
+2026-10-11T10:43:14.4794033Z ℹ suites 0
+2026-10-11T10:43:14.4794498Z ℹ pass 3
+2026-10-11T10:43:14.4794917Z ℹ fail 0
+2026-10-11T10:43:14.4795856Z ℹ cancelled 0
+2026-10-11T10:43:14.4796359Z ℹ skipped 0
+2026-10-11T10:43:14.4796766Z ℹ todo 0
+2026-10-11T10:43:14.4797269Z ℹ duration_ms 141.432811
+2026-10-11T10:43:14.4877329Z ##[group]Run mkdir -p "$RUNNER_TEMP/service-evidence"
+2026-10-11T10:43:14.4877769Z [36;1mmkdir -p "$RUNNER_TEMP/service-evidence"[0m
+2026-10-11T10:43:14.4878673Z [36;1mnode docs/distribution/acceptance/linux-user-service.mjs "$RUNNER_TEMP/frozen-service-runtime/bobs-factory-1.0.0-nightly.20261010.21-linux-x64" "$RUNNER_TEMP/service-evidence/receipt.json"[0m
+2026-10-11T10:43:14.4964824Z shell: /usr/bin/bash -e {0}
+2026-10-11T10:43:14.4965617Z env:
+2026-10-11T10:43:14.4966052Z   BOBS_FACTORY_ACCEPTANCE_HANDOFF: fixture-only
+2026-10-11T10:43:14.4966683Z ##[endgroup]
+2026-10-11T10:44:47.4555708Z {"passed":false,"cleanup":true,"testedAt":"2026-10-11T10:43:14.546Z","harnessSha":"c3cc8644ac34c53b185e6b8598966fcf366497ca","cleanupHarnessSha256":"c1a5f41c0e8cf3e7594747dc5e365966a4ada37668d3718176de14541a4e04c7","harnessSha256":"4e14b593180fc99501f36f8c07bf6a0f5f621350903df481e45403f0ece96cc5","source":"b82c37c4fb9a3e18d1cb222c6d56d3fef852096f","assertions":["Dormant external Nix-style target definition refuses adoption and retains bytes; fixture-only removal explicitly consented","Manual process blocks adoption; explicit fixture stop releases ownership","Actual external user service disabled and stopped before replacement; definition retained","Interrupted stopped setup restores only missing owned definition; modified definition is refused"],"limits":["No host/user-manager reboot, login, logout or lingering","No second-machine UI","No real PM2 or Nix activation","Opaque synthetic checkpoint preservation only; no provider/native credentials","No public trust/signing acceptance"],"workerDefinition":"[Unit]\nDescription=Bob's Factory (de.bobs-factory.5ef5b0fb4a1bfba4)\nStartLimitIntervalSec=120\nStartLimitBurst=3\n\n[Service]\nType=simple\nWorkingDirectory=/tmp/factory-isolated-service-oOkcL7/state\nExecStart=\"/tmp/factory-isolated-service-oOkcL7/state/runtime/desktop-installed/bin/bobs-factory\" \"--home\" \"/tmp/factory-isolated-service-oOkcL7/state\" \"--port\" \"44399\" \"--no-open\" \"service\" \"run\"\nEnvironment=\"BOBS_FACTORY_SERVICE_ID=de.bobs-factory.5ef5b0fb4a1bfba4\"\nEnvironment=\"PATH=/opt/hostedtoolcache/node/24.18.0/x64/bin:/snap/bin:/home/runner/.local/bin:/opt/pipx_bin:/home/runner/.cargo/bin:/home/runner/.config/composer/vendor/bin:/usr/local/.ghcup/bin:/home/runner/.dotnet/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"\nRestart=on-failure\nRestartSec=10\nTimeoutStopSec=infinity\nSendSIGKILL=no\nKillMode=mixed\n\n[Install]\nWantedBy=default.target\n","diagnostics":["receipt.json-before-first-crash-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.properties.raw","receipt.json-before-first-crash-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.journal.raw","receipt.json-before-first-crash-de.bobs-factory.5ef5b0fb4a1bfba4.service.properties.raw","receipt.json-before-first-crash-de.bobs-factory.5ef5b0fb4a1bfba4.service.journal.raw","receipt.json-before-first-crash-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.properties.raw","receipt.json-before-first-crash-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.journal.raw","receipt.json-before-first-crash-processes.raw","receipt.json-before-burst-crash-0-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.properties.raw","receipt.json-before-burst-crash-0-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.journal.raw","receipt.json-before-burst-crash-0-de.bobs-factory.5ef5b0fb4a1bfba4.service.properties.raw","receipt.json-before-burst-crash-0-de.bobs-factory.5ef5b0fb4a1bfba4.service.journal.raw","receipt.json-before-burst-crash-0-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.properties.raw","receipt.json-before-burst-crash-0-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.journal.raw","receipt.json-before-burst-crash-0-processes.raw","receipt.json-before-burst-crash-1-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.properties.raw","receipt.json-before-burst-crash-1-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.journal.raw","receipt.json-before-burst-crash-1-de.bobs-factory.5ef5b0fb4a1bfba4.service.properties.raw","receipt.json-before-burst-crash-1-de.bobs-factory.5ef5b0fb4a1bfba4.service.journal.raw","receipt.json-before-burst-crash-1-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.properties.raw","receipt.json-before-burst-crash-1-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.journal.raw","receipt.json-before-burst-crash-1-processes.raw","receipt.json-before-burst-crash-2-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.properties.raw","receipt.json-before-burst-crash-2-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.journal.raw","receipt.json-before-burst-crash-2-de.bobs-factory.5ef5b0fb4a1bfba4.service.properties.raw","receipt.json-before-burst-crash-2-de.bobs-factory.5ef5b0fb4a1bfba4.service.journal.raw","receipt.json-before-burst-crash-2-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.properties.raw","receipt.json-before-burst-crash-2-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.journal.raw","receipt.json-before-burst-crash-2-processes.raw","receipt.json-before-teardown-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.properties.raw","receipt.json-before-teardown-factory-acceptance-external-f5668772-27fd-4fb7-aa8e-415b82fccfd2.service.journal.raw","receipt.json-before-teardown-de.bobs-factory.5ef5b0fb4a1bfba4.service.properties.raw","receipt.json-before-teardown-de.bobs-factory.5ef5b0fb4a1bfba4.service.journal.raw","receipt.json-before-teardown-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.properties.raw","receipt.json-before-teardown-de.bobs-factory.5ef5b0fb4a1bfba4.updates.service.journal.raw","receipt.json-before-teardown-processes.raw"],"crashBackoffMs":11352,"error":"Timed out: native crash restart or burst exhaustion","survivors":[],"retainedDefinitionBackups":[],"retainedBackupNames":[]}
+2026-10-11T10:44:47.4589615Z node:internal/modules/run_main:107
+2026-10-11T10:44:47.4589946Z     triggerUncaughtException(
+2026-10-11T10:44:47.4590203Z     ^
+2026-10-11T10:44:47.4590312Z 
+2026-10-11T10:44:47.4590695Z AssertionError [ERR_ASSERTION]: Acceptance or owned cleanup failed; receipt is nonpassing
+2026-10-11T10:44:47.4591511Z     at file:///home/runner/work/bobs-factory/bobs-factory/docs/distribution/acceptance/linux-user-service.mjs:617:2
+2026-10-11T10:44:47.4592367Z     at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+2026-10-11T10:44:47.4592836Z   generatedMessage: false,
+2026-10-11T10:44:47.4593080Z   code: 'ERR_ASSERTION',
+2026-10-11T10:44:47.4593313Z   actual: false,
+2026-10-11T10:44:47.4593524Z   expected: true,
+2026-10-11T10:44:47.4593732Z   operator: '==',
+2026-10-11T10:44:47.4593932Z   diff: 'simple'
+2026-10-11T10:44:47.4594126Z }
+2026-10-11T10:44:47.4594228Z 
+2026-10-11T10:44:47.4594311Z Node.js v24.18.0
+2026-10-11T10:44:47.4604632Z ##[error]Process completed with exit code 1.
+2026-10-11T10:44:47.4657526Z ##[group]Run mkdir -p "$RUNNER_TEMP/service-evidence"
+2026-10-11T10:44:47.4657971Z [36;1mmkdir -p "$RUNNER_TEMP/service-evidence"[0m
+2026-10-11T10:44:47.4658301Z [36;1mfor signal in SIGINT SIGTERM; do[0m
+2026-10-11T10:44:47.4658677Z [36;1m  receipt="$RUNNER_TEMP/service-evidence/cancel-$signal.json"[0m
+2026-10-11T10:44:47.4659668Z [36;1m  if BOBS_FACTORY_ACCEPTANCE_INTERRUPT="$signal" node docs/distribution/acceptance/linux-user-service.mjs "$RUNNER_TEMP/frozen-service-runtime/bobs-factory-1.0.0-nightly.20261010.21-linux-x64" "$receipt"; then[0m
+2026-10-11T10:44:47.4660621Z [36;1m    echo "Cancellation unexpectedly passed"[0m
+2026-10-11T10:44:47.4660918Z [36;1m    exit 1[0m
+2026-10-11T10:44:47.4661118Z [36;1m  else[0m
+2026-10-11T10:44:47.4661311Z [36;1m    result=$?[0m
+2026-10-11T10:44:47.4661524Z [36;1m  fi[0m
+2026-10-11T10:44:47.4661718Z [36;1m  expected=130[0m
+2026-10-11T10:44:47.4661989Z [36;1m  if [ "$signal" = SIGTERM ]; then expected=143; fi[0m
+2026-10-11T10:44:47.4662349Z [36;1m  test "$result" = "$expected"[0m
+2026-10-11T10:44:47.4663768Z [36;1m  node --input-type=module -e 'import assert from "node:assert/strict"; import {readFileSync} from "node:fs"; const r=JSON.parse(readFileSync(process.argv[1])); assert.equal(r.passed,false); assert.equal(r.cleanup,true); assert.equal(r.interrupted,process.argv[2]); assert.equal(r.interruptPhase,"healthy-managed-fixture"); assert.deepEqual(r.survivors,[]);' "$receipt" "$signal"[0m
+2026-10-11T10:44:47.4665430Z [36;1mdone[0m
+2026-10-11T10:44:47.4729498Z shell: /usr/bin/bash -e {0}
+2026-10-11T10:44:47.4729768Z env:
+2026-10-11T10:44:47.4730015Z   BOBS_FACTORY_ACCEPTANCE_HANDOFF: fixture-only
+2026-10-11T10:44:47.4730318Z ##[endgroup]
+2026-10-11T10:45:03.5648902Z {"passed":false,"cleanup":false,"testedAt":"2026-10-11T10:44:47.517Z","harnessSha":"c3cc8644ac34c53b185e6b8598966fcf366497ca","cleanupHarnessSha256":"c1a5f41c0e8cf3e7594747dc5e365966a4ada37668d3718176de14541a4e04c7","harnessSha256":"4e14b593180fc99501f36f8c07bf6a0f5f621350903df481e45403f0ece96cc5","source":"b82c37c4fb9a3e18d1cb222c6d56d3fef852096f","assertions":["Dormant external Nix-style target definition refuses adoption and retains bytes; fixture-only removal explicitly consented","Manual process blocks adoption; explicit fixture stop releases ownership","Actual external user service disabled and stopped before replacement; definition retained","Interrupted stopped setup restores only missing owned definition; modified definition is refused"],"limits":["No host/user-manager reboot, login, logout or lingering","No second-machine UI","No real PM2 or Nix activation","Opaque synthetic checkpoint preservation only; no provider/native credentials","No public trust/signing acceptance"],"workerDefinition":"[Unit]\nDescription=Bob's Factory (de.bobs-factory.1633e190920ec1f0)\nStartLimitIntervalSec=120\nStartLimitBurst=3\n\n[Service]\nType=simple\nWorkingDirectory=/tmp/factory-isolated-service-X8m17w/state\nExecStart=\"/tmp/factory-isolated-service-X8m17w/state/runtime/desktop-installed/bin/bobs-factory\" \"--home\" \"/tmp/factory-isolated-service-X8m17w/state\" \"--port\" \"41441\" \"--no-open\" \"service\" \"run\"\nEnvironment=\"BOBS_FACTORY_SERVICE_ID=de.bobs-factory.1633e190920ec1f0\"\nEnvironment=\"PATH=/opt/hostedtoolcache/node/24.18.0/x64/bin:/snap/bin:/home/runner/.local/bin:/opt/pipx_bin:/home/runner/.cargo/bin:/home/runner/.config/composer/vendor/bin:/usr/local/.ghcup/bin:/home/runner/.dotnet/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"\nRestart=on-failure\nRestartSec=10\nTimeoutStopSec=infinity\nSendSIGKILL=no\nKillMode=mixed\n\n[Install]\nWantedBy=default.target\n","interruptPhase":"healthy-managed-fixture","interrupted":"SIGINT","error":"The operation was aborted","diagnostics":["cancel-SIGINT.json-before-teardown-factory-acceptance-external-2c91bb74-5cbf-42d7-b740-5d9304b0fb14.service.properties.raw","cancel-SIGINT.json-before-teardown-factory-acceptance-external-2c91bb74-5cbf-42d7-b740-5d9304b0fb14.service.journal.raw","cancel-SIGINT.json-before-teardown-de.bobs-factory.1633e190920ec1f0.service.properties.raw","cancel-SIGINT.json-before-teardown-de.bobs-factory.1633e190920ec1f0.service.journal.raw","cancel-SIGINT.json-before-teardown-de.bobs-factory.1633e190920ec1f0.updates.service.properties.raw","cancel-SIGINT.json-before-teardown-de.bobs-factory.1633e190920ec1f0.updates.service.journal.raw","cancel-SIGINT.json-before-teardown-processes.raw"],"survivors":[],"retainedDefinitionBackups":[],"cleanupError":"Command failed: systemctl --user kill --kill-whom=all --signal=SIGKILL factory-acceptance-external-2c91bb74-5cbf-42d7-b740-5d9304b0fb14.service\nFailed to kill unit factory-acceptance-external-2c91bb74-5cbf-42d7-b740-5d9304b0fb14.service: Unit factory-acceptance-external-2c91bb74-5cbf-42d7-b740-5d9304b0fb14.service not loaded.\n"}
+2026-10-11T10:45:03.5948277Z node:internal/modules/run_main:107
+2026-10-11T10:45:03.5949330Z     triggerUncaughtException(
+2026-10-11T10:45:03.5949964Z     ^
+2026-10-11T10:45:03.5950337Z 
+2026-10-11T10:45:03.5951124Z AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+2026-10-11T10:45:03.5951765Z 
+2026-10-11T10:45:03.5951923Z false !== true
+2026-10-11T10:45:03.5952135Z 
+2026-10-11T10:45:03.5952587Z     at file:///home/runner/work/bobs-factory/bobs-factory/[eval1]:1:168
+2026-10-11T10:45:03.5953497Z     at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+2026-10-11T10:45:03.5954283Z     at async node:internal/modules/esm/loader:224:26
+2026-10-11T10:45:03.5955508Z     at async ModuleLoader.executeModuleJob (node:internal/modules/esm/loader:221:20)
+2026-10-11T10:45:03.5956809Z     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+2026-10-11T10:45:03.5957473Z   generatedMessage: true,
+2026-10-11T10:45:03.5957817Z   code: 'ERR_ASSERTION',
+2026-10-11T10:45:03.5958135Z   actual: false,
+2026-10-11T10:45:03.5958651Z   expected: true,
+2026-10-11T10:45:03.5959129Z   operator: 'strictEqual',
+2026-10-11T10:45:03.5959708Z   diff: 'simple'
+2026-10-11T10:45:03.5960191Z }
+2026-10-11T10:45:03.5960433Z 
+2026-10-11T10:45:03.5960636Z Node.js v24.18.0
+2026-10-11T10:45:03.5978659Z ##[error]Process completed with exit code 1.
+2026-10-11T10:45:03.6037903Z ##[group]Run actions/upload-artifact@v6
+2026-10-11T10:45:03.6038203Z with:
+2026-10-11T10:45:03.6038504Z   name: isolated-service-c3cc8644ac34c53b185e6b8598966fcf366497ca-1
+2026-10-11T10:45:03.6038915Z   path: /home/runner/work/_temp/service-evidence/
+2026-10-11T10:45:03.6039224Z   if-no-files-found: warn
+2026-10-11T10:45:03.6039462Z   compression-level: 6
+2026-10-11T10:45:03.6039857Z   overwrite: false
+2026-10-11T10:45:03.6040073Z   include-hidden-files: false
+2026-10-11T10:45:03.6040312Z ##[endgroup]
+2026-10-11T10:45:03.7907306Z With the provided path, there will be 44 files uploaded
+2026-10-11T10:45:03.7908324Z Artifact name is valid!
+2026-10-11T10:45:03.7908854Z Root directory input is valid!
+2026-10-11T10:45:04.1636345Z Beginning upload of artifact content to blob storage
+2026-10-11T10:45:04.6387583Z Uploaded bytes 81747
+2026-10-11T10:45:04.7147685Z Finished uploading artifact content to blob storage!
+2026-10-11T10:45:04.7149478Z SHA256 digest of uploaded artifact zip is 3be06acbbf201b9b0bd36f0b016cc4bde6390eb5b5a7e8f7b2e28976b6eacd3f
+2026-10-11T10:45:04.7150787Z Finalizing artifact upload
+2026-10-11T10:45:05.0999769Z Artifact isolated-service-c3cc8644ac34c53b185e6b8598966fcf366497ca-1.zip successfully finalized. Artifact ID 11699348770
+2026-10-11T10:45:05.1002559Z Artifact isolated-service-c3cc8644ac34c53b185e6b8598966fcf366497ca-1 has been successfully uploaded! Final size is 81747 bytes. Artifact ID is 11699348770
+2026-10-11T10:45:05.1005630Z Artifact download URL: https://github.com/jappyjan/bobs-factory/actions/runs/38132934881/artifacts/11699348770
+2026-10-11T10:45:05.1201215Z Post job cleanup.
+2026-10-11T10:45:05.2062731Z [command]/usr/bin/git version
+2026-10-11T10:45:05.2108328Z git version 2.55.0
+2026-10-11T10:45:05.2157102Z Temporarily overriding HOME='/home/runner/work/_temp/0b037d0a-228d-4e9b-b2ae-f11ecaf15870' before making global git config changes
+2026-10-11T10:45:05.2158863Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-11T10:45:05.2162987Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/bobs-factory/bobs-factory
+2026-10-11T10:45:05.2197714Z Removing SSH command configuration
+2026-10-11T10:45:05.2205992Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-11T10:45:05.2242938Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-11T10:45:05.2507211Z Removing HTTP extra header
+2026-10-11T10:45:05.2514140Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-11T10:45:05.2568683Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-11T10:45:05.2833263Z Removing includeIf entries pointing to credentials config files
+2026-10-11T10:45:05.2842192Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-11T10:45:05.2888686Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-11T10:45:05.3317729Z Cleaning up orphan processes
+2026-10-11T10:45:05.3640609Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/download-artifact@v6. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

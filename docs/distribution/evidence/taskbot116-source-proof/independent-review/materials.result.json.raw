@@ -1,0 +1,82 @@
+{
+  "frozenEvidenceFiles": 157,
+  "preservedFilesVerified": 95,
+  "artifactIndexMatchesImmutable97": true,
+  "pinnedBunSourceFilesBoundToArchive": 18,
+  "bunSourceDependencyFiles": [
+    "Cargo.lock",
+    "bench/ffi/src/Cargo.lock",
+    "packages/bun-native-plugin-rs/Cargo.lock",
+    "scripts/build/config.ts",
+    "scripts/verify-baseline-static/Cargo.lock"
+  ],
+  "genuineArInventories": [
+    {
+      "file": "darwin-arm64-libbun-profile.a.gz",
+      "members": 1149,
+      "LLVMBitcodeMembers": 1019,
+      "tinyccMembers": 8,
+      "sha256": "f51bfbf5c5160a549d50f609c251f91bb0d16d1bca525f7a1b554977da6e7d53"
+    },
+    {
+      "file": "darwin-arm64-libbun-runtime.a.gz",
+      "members": 170,
+      "LLVMBitcodeMembers": 168,
+      "tinyccMembers": 1,
+      "sha256": "4f7acedbd964e2c1ebbabc2eaee5605d752fb26712cd64953d49acd85572a851"
+    },
+    {
+      "file": "linux-aarch64-libbun-profile.a.gz",
+      "members": 1148,
+      "LLVMBitcodeMembers": 1018,
+      "tinyccMembers": 7,
+      "sha256": "618bc4e3f3c0ca30bb7bd4cd4019cae46d22fe6d8f6d2cb4ae009727385f2e22"
+    },
+    {
+      "file": "linux-aarch64-libbun-runtime.a.gz",
+      "members": 171,
+      "LLVMBitcodeMembers": 170,
+      "tinyccMembers": 1,
+      "sha256": "1075ad3162dcd760cfca8cf3bb84fcc7820d630a068b62ac53c7cb4514dc17f4"
+    },
+    {
+      "file": "linux-x64-libbun-profile.a.gz",
+      "members": 1172,
+      "LLVMBitcodeMembers": 1001,
+      "tinyccMembers": 7,
+      "sha256": "9b23771fd04a9264632d43948dfd01faf18a33c80c67811c80d96cab7d508615"
+    },
+    {
+      "file": "linux-x64-libbun-runtime.a.gz",
+      "members": 171,
+      "LLVMBitcodeMembers": 170,
+      "tinyccMembers": 1,
+      "sha256": "a6e202069dbc1d3a2ab1c4796efa6ac277d144469c71b89a8908c5ec77593da3"
+    },
+    {
+      "file": "darwin-x64-libbun-profile.a.gz",
+      "members": 1173,
+      "LLVMBitcodeMembers": 1002,
+      "tinyccMembers": 8,
+      "sha256": "ec27604fe3ee6a35a1373d67bf73ecd8c71018e40a27996d3046daca70de3d6a"
+    },
+    {
+      "file": "darwin-x64-libbun-runtime.a.gz",
+      "members": 170,
+      "LLVMBitcodeMembers": 168,
+      "tinyccMembers": 1,
+      "sha256": "c825b560d4152003ed71c75285c658d904383ba2dd6dd79cf33cf2fc7d090f69"
+    }
+  ],
+  "upstreamLinkDownloadsVerified": 21,
+  "all18LibrariesByteEqualInOfficialCaches": true,
+  "profileFilesVerified": [
+    "linux-aarch64-build-bun",
+    "linux-x64-build-bun",
+    "darwin-x64-build-bun",
+    "darwin-aarch64-build-bun"
+  ],
+  "inherited110317OrdersConfirmedDistinctFrom110323": true,
+  "officialGitCommitTreeLiveMatch": true,
+  "result": "PASS"
+}

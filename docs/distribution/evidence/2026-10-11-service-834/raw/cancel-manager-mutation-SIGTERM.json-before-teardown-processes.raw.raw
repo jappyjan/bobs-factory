@@ -1,0 +1,1 @@
+  11255    1257 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-GdFctu/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-GdFctu/state --port 43731 --no-open service run

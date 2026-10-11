@@ -1,0 +1,40 @@
+{
+  "passed": false,
+  "cleanup": true,
+  "testedAt": "2026-10-11T11:03:50.041Z",
+  "harnessSha": "db93374eb480aa7d252f233bf543c97097a70560",
+  "protocolSha256": "daa10e9ba9f9dddcf492e1293e2c53e2fb267c63a961ba45c2b19b6932bce42d",
+  "commandHarnessSha256": "599eb8e5510482352682dc3fbe78651f03a4f0dcaabdbb1d9f3452a6937ad5bc",
+  "cleanupHarnessSha256": "c1a5f41c0e8cf3e7594747dc5e365966a4ada37668d3718176de14541a4e04c7",
+  "harnessSha256": "a310fc05572c04708524524608ddf326927182a34e5094367a815f0a3e9e87e9",
+  "source": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+  "assertions": [
+    "Dormant external Nix-style target definition refuses adoption and retains bytes; fixture-only removal explicitly consented",
+    "Manual process blocks adoption; explicit fixture stop releases ownership",
+    "Actual external user service disabled and stopped before replacement; definition retained"
+  ],
+  "limits": [
+    "No host/user-manager reboot, login, logout or lingering",
+    "No second-machine UI",
+    "No real PM2 or Nix activation",
+    "Opaque synthetic checkpoint preservation only; no provider/native credentials",
+    "No public trust/signing acceptance"
+  ],
+  "interruptPhase": "initial-install",
+  "managerBoundary": "[\"--user\",\"daemon-reload\"]",
+  "interrupted": "SIGTERM",
+  "error": "Interrupted: SIGTERM",
+  "diagnostics": [
+    "cancel-initial-install-SIGTERM.json-before-teardown-factory-acceptance-external-e11a1a05-d7a8-4442-a2f7-d41eb9b103eb.service.properties.raw",
+    "cancel-initial-install-SIGTERM.json-before-teardown-factory-acceptance-external-e11a1a05-d7a8-4442-a2f7-d41eb9b103eb.service.journal.raw",
+    "cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.5f4ef5e69ee3d0a7.service.properties.raw",
+    "cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.5f4ef5e69ee3d0a7.service.journal.raw",
+    "cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.5f4ef5e69ee3d0a7.updates.service.properties.raw",
+    "cancel-initial-install-SIGTERM.json-before-teardown-de.bobs-factory.5f4ef5e69ee3d0a7.updates.service.journal.raw",
+    "cancel-initial-install-SIGTERM.json-before-teardown-processes.raw"
+  ],
+  "survivors": [],
+  "retainedDefinitionBackups": [],
+  "lateMutation": false,
+  "retainedBackupNames": []
+}

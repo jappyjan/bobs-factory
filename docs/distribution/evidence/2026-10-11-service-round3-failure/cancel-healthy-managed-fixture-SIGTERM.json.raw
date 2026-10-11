@@ -1,0 +1,40 @@
+{
+  "passed": false,
+  "cleanup": true,
+  "testedAt": "2026-10-11T11:04:31.425Z",
+  "harnessSha": "db93374eb480aa7d252f233bf543c97097a70560",
+  "protocolSha256": "daa10e9ba9f9dddcf492e1293e2c53e2fb267c63a961ba45c2b19b6932bce42d",
+  "commandHarnessSha256": "599eb8e5510482352682dc3fbe78651f03a4f0dcaabdbb1d9f3452a6937ad5bc",
+  "cleanupHarnessSha256": "c1a5f41c0e8cf3e7594747dc5e365966a4ada37668d3718176de14541a4e04c7",
+  "harnessSha256": "a310fc05572c04708524524608ddf326927182a34e5094367a815f0a3e9e87e9",
+  "source": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+  "assertions": [
+    "Dormant external Nix-style target definition refuses adoption and retains bytes; fixture-only removal explicitly consented",
+    "Manual process blocks adoption; explicit fixture stop releases ownership",
+    "Actual external user service disabled and stopped before replacement; definition retained",
+    "Interrupted stopped setup restores only missing owned definition; modified definition is refused"
+  ],
+  "limits": [
+    "No host/user-manager reboot, login, logout or lingering",
+    "No second-machine UI",
+    "No real PM2 or Nix activation",
+    "Opaque synthetic checkpoint preservation only; no provider/native credentials",
+    "No public trust/signing acceptance"
+  ],
+  "workerDefinition": "[Unit]\nDescription=Bob's Factory (de.bobs-factory.146d3dc2b2a4ccb6)\nStartLimitIntervalSec=120\nStartLimitBurst=3\n\n[Service]\nType=simple\nWorkingDirectory=/tmp/factory-isolated-service-RvVwCN/state\nExecStart=\"/tmp/factory-isolated-service-RvVwCN/state/runtime/desktop-installed/bin/bobs-factory\" \"--home\" \"/tmp/factory-isolated-service-RvVwCN/state\" \"--port\" \"41323\" \"--no-open\" \"service\" \"run\"\nEnvironment=\"BOBS_FACTORY_SERVICE_ID=de.bobs-factory.146d3dc2b2a4ccb6\"\nEnvironment=\"PATH=/opt/hostedtoolcache/node/24.18.0/x64/bin:/snap/bin:/home/runner/.local/bin:/opt/pipx_bin:/home/runner/.cargo/bin:/home/runner/.config/composer/vendor/bin:/usr/local/.ghcup/bin:/home/runner/.dotnet/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\"\nRestart=on-failure\nRestartSec=10\nTimeoutStopSec=infinity\nSendSIGKILL=no\nKillMode=mixed\n\n[Install]\nWantedBy=default.target\n",
+  "interruptPhase": "healthy-managed-fixture",
+  "interrupted": "SIGTERM",
+  "error": "The operation was aborted",
+  "diagnostics": [
+    "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-factory-acceptance-external-74ef3a82-fda1-483e-8c3b-3660aea2b879.service.properties.raw",
+    "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-factory-acceptance-external-74ef3a82-fda1-483e-8c3b-3660aea2b879.service.journal.raw",
+    "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.146d3dc2b2a4ccb6.service.properties.raw",
+    "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.146d3dc2b2a4ccb6.service.journal.raw",
+    "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.146d3dc2b2a4ccb6.updates.service.properties.raw",
+    "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-de.bobs-factory.146d3dc2b2a4ccb6.updates.service.journal.raw",
+    "cancel-healthy-managed-fixture-SIGTERM.json-before-teardown-processes.raw"
+  ],
+  "survivors": [],
+  "retainedDefinitionBackups": [],
+  "retainedBackupNames": []
+}

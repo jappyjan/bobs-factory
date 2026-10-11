@@ -1,0 +1,16 @@
+{
+  "result": "PASS",
+  "pinnedSourceByteEqual": true,
+  "limits": {
+    "maxMembers": 500000,
+    "maxMemberBytes": 4294967296,
+    "maxExpandedBytes": 17179869184,
+    "maxCompressedBytes": 8589934592,
+    "maxControlBytes": 1048576,
+    "maxTextBytes": 16777216,
+    "timeoutMs": 120000
+  },
+  "entries": 489044,
+  "expandedBytes": 5851248128,
+  "elapsedMs": 15053
+}

@@ -1,0 +1,117 @@
+{
+  "result": "PASS",
+  "publishedRuntimeAndCacheAssets": [
+    {
+      "repo": "oven-sh/bun",
+      "tag": "bun-v1.4.2",
+      "asset": "bun-darwin-x64.zip",
+      "id": 545329047,
+      "sha256": "80520d7e17526308c9185d261679ac6d27798d3803a0e9f7ff9121ab8affb012",
+      "size": 28440507,
+      "liveProviderDigestMatches": true
+    },
+    {
+      "repo": "oven-sh/bun",
+      "tag": "bun-v1.4.2",
+      "asset": "bun-linux-x64.zip",
+      "id": 545310218,
+      "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+      "size": 36646985,
+      "liveProviderDigestMatches": true
+    },
+    {
+      "repo": "oven-sh/bun",
+      "tag": "bun-v1.4.2",
+      "asset": "bun-linux-aarch64.zip",
+      "id": 545308380,
+      "sha256": "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7",
+      "size": 36602920,
+      "liveProviderDigestMatches": true
+    },
+    {
+      "repo": "oven-sh/bun",
+      "tag": "bun-v1.4.2",
+      "asset": "bun-darwin-aarch64.zip",
+      "id": 545329049,
+      "sha256": "90987a3a16d7db556d886ac3d551e7b6d3edf0a1cf43acaed622e8676be1d12f",
+      "size": 25377591,
+      "liveProviderDigestMatches": true
+    },
+    {
+      "repo": "oven-sh/WebKit",
+      "tag": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+      "asset": "bun-webkit-linux-amd64-lto.tar.gz",
+      "id": 545003856,
+      "sha256": "8f68d22b67fc0b72fb81b808aaf996a8a228cbaad193fd574d3b8655258db8b9",
+      "size": 247437947,
+      "liveProviderDigestMatches": true
+    },
+    {
+      "repo": "oven-sh/WebKit",
+      "tag": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+      "asset": "bun-webkit-linux-arm64-lto.tar.gz",
+      "id": 545004533,
+      "sha256": "b0fd42cfd66490a2f8e6afe67285e06eabe110cf808f5903b68f86e7580400aa",
+      "size": 241291916,
+      "liveProviderDigestMatches": true
+    },
+    {
+      "repo": "oven-sh/WebKit",
+      "tag": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+      "asset": "bun-webkit-macos-amd64-lto.tar.gz",
+      "id": 545000170,
+      "sha256": "44950d3630d37c7995bf9ddc0d7796f479bf5d4e1b2c0edab8322341202b8ecf",
+      "size": 145654219,
+      "liveProviderDigestMatches": true
+    },
+    {
+      "repo": "oven-sh/WebKit",
+      "tag": "autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057",
+      "asset": "bun-webkit-macos-arm64-lto.tar.gz",
+      "id": 545000215,
+      "sha256": "93c79936f3ef5d625dac0fa29deb12406fc6c356d755df654c69691667b3872d",
+      "size": 141792575,
+      "liveProviderDigestMatches": true
+    }
+  ],
+  "nativeRunSourceAndAttemptMatch": true,
+  "officialBunTagCommitMatch": true,
+  "buildkiteCatalogResponses": [
+    {
+      "target": "linux-aarch64-build-bun",
+      "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts.json",
+      "returnedType": "list",
+      "returnedKeys": null
+    },
+    {
+      "target": "linux-x64-build-bun",
+      "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts.json",
+      "returnedType": "list",
+      "returnedKeys": null
+    },
+    {
+      "target": "linux-x64-trace-order",
+      "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29c-4f47-9784-61c7b3bda70c/artifacts.json",
+      "returnedType": "list",
+      "returnedKeys": null
+    },
+    {
+      "target": "darwin-x64-build-bun",
+      "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts.json",
+      "returnedType": "list",
+      "returnedKeys": null
+    },
+    {
+      "target": "darwin-aarch64-build-bun",
+      "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e294-4650-9f78-dea25e59f504/artifacts.json",
+      "returnedType": "list",
+      "returnedKeys": null
+    },
+    {
+      "target": "darwin-aarch64-trace-order",
+      "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e295-4401-bac6-cd3dd78b77ef/artifacts.json",
+      "returnedType": "list",
+      "returnedKeys": null
+    }
+  ]
+}

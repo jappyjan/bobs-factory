@@ -1,0 +1,1 @@
+  14034    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-QL3a5F/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-QL3a5F/state --port 45465 --no-open service run

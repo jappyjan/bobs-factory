@@ -1,0 +1,1 @@
+  15117    1248 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-z16SWO/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-z16SWO/state --port 39577 --no-open service run

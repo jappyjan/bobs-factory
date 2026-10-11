@@ -1,0 +1,2 @@
+  12618    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-7thGLp/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-7thGLp/state --port 38899 --no-open service run
+  12621    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-7thGLp/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-7thGLp/state --port 38899 --no-open service updates-run

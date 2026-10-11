@@ -1,0 +1,2 @@
+   6960    1095 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-zSNmMy/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-zSNmMy/state --port 44431 --no-open service run
+   6962    1095 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-zSNmMy/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-zSNmMy/state --port 44431 --no-open service updates-run

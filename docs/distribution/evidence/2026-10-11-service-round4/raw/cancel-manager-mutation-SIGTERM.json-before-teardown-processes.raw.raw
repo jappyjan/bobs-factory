@@ -1,0 +1,1 @@
+  10415    1206 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-vqdzKH/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-vqdzKH/state --port 41291 --no-open service run

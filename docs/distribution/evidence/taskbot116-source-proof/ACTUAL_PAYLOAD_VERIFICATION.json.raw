@@ -1,0 +1,38 @@
+[
+  {
+    "target": "darwin-arm64",
+    "archive": "darwin-arm64/bobs-factory-1.0.0-nightly.20261010.21-darwin-arm64.tar.gz",
+    "archiveSha256": "02ab491ad4f2c64136f324502796f96ce737338aeb9530afcda39961f8bcbfec",
+    "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+    "sourceSha": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+    "allArchiveMembersVerified": true,
+    "factoryExecutableSha256": "1a66bd81f84f7a382ded69db2b588f3ff0a69b08228695124ef834bc35cb9d10"
+  },
+  {
+    "target": "darwin-x64",
+    "archive": "darwin-x64/bobs-factory-1.0.0-nightly.20261010.21-darwin-x64.tar.gz",
+    "archiveSha256": "216cc56ce97a6b66f37b15d2d96d7136fccc6375be6ae51489267dc92f7e4274",
+    "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+    "sourceSha": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+    "allArchiveMembersVerified": true,
+    "factoryExecutableSha256": "087ee6c64f3c53a499d0ad88b102a8cae97e2f2a0bea2f10a8ddf29f644d4843"
+  },
+  {
+    "target": "linux-x64",
+    "archive": "linux-x64/bobs-factory-1.0.0-nightly.20261010.21-linux-x64.tar.gz",
+    "archiveSha256": "d75afb47d49de95e87832c9eb987277375de8d112d794e041534883dda7b6c62",
+    "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+    "sourceSha": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+    "allArchiveMembersVerified": true,
+    "factoryExecutableSha256": "144e32d1894e912072948379210eb1f6e30c688be8aeeee7f8b2d21e27b50caa"
+  },
+  {
+    "target": "linux-arm64",
+    "archive": "linux-arm64/bobs-factory-1.0.0-nightly.20261010.21-linux-arm64.tar.gz",
+    "archiveSha256": "c8f276447a1d846e0e82b6dbb501097d4471d0253ea3f4db61bdaebabfe9826a",
+    "candidateDigest": "ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec",
+    "sourceSha": "b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+    "allArchiveMembersVerified": true,
+    "factoryExecutableSha256": "f211479c82733e2c466e5f80ef7f8ffef77b305aafb069e4907c85a2d935a6f8"
+  }
+]

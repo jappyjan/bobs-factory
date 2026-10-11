@@ -1,0 +1,2 @@
+   7507    1095 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-RvVwCN/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-RvVwCN/state --port 41323 --no-open service run
+   7510    1095 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-RvVwCN/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-RvVwCN/state --port 41323 --no-open service updates-run

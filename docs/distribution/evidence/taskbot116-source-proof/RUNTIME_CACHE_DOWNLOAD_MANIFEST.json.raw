@@ -1,0 +1,91 @@
+[
+  {
+    "path": "bun-linux-aarch64.zip",
+    "size": "34.9 MB",
+    "sha256": "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f41-3541-4752-ba17-4ff226771cfa",
+    "expires": "2027-03-04T01:48:59.000Z",
+    "file": "buildkite-bun-linux-aarch64.zip",
+    "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e299-497f-9c14-2ca788217380/artifacts/01a06f41-3541-4752-ba17-4ff226771cfa",
+    "actualSha256": "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7",
+    "actualSize": 36602920
+  },
+  {
+    "path": "bun-linux-x64.zip",
+    "size": "34.9 MB",
+    "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f40-103e-4262-aafe-d143bded20fa",
+    "expires": "2027-03-04T01:47:44.000Z",
+    "file": "buildkite-bun-linux-x64.zip",
+    "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f40-103e-4262-aafe-d143bded20fa",
+    "actualSha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+    "actualSize": 36646985
+  },
+  {
+    "path": "bun-darwin-x64.zip",
+    "size": "26.6 MB",
+    "sha256": "dcdba5981e9622b222fcd304d0b7366ac298d5a2a6eeb844019d9500f61c0892",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts/01a06f3f-ce62-4d46-aafb-133653f46b83",
+    "expires": "2027-03-04T01:47:27.000Z",
+    "file": "buildkite-bun-darwin-x64.zip",
+    "source": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e298-445b-96cd-075f3c08b1d5/artifacts/01a06f3f-ce62-4d46-aafb-133653f46b83",
+    "actualSha256": "dcdba5981e9622b222fcd304d0b7366ac298d5a2a6eeb844019d9500f61c0892",
+    "actualSize": 27898877
+  },
+  {
+    "file": "release-bun-darwin-x64.zip",
+    "source": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-darwin-x64.zip",
+    "sha256": "80520d7e17526308c9185d261679ac6d27798d3803a0e9f7ff9121ab8affb012",
+    "expectedSize": 28440507,
+    "actualSha256": "80520d7e17526308c9185d261679ac6d27798d3803a0e9f7ff9121ab8affb012",
+    "actualSize": 28440507
+  },
+  {
+    "file": "release-bun-linux-aarch64.zip",
+    "source": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-aarch64.zip",
+    "sha256": "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7",
+    "expectedSize": 36602920,
+    "actualSha256": "54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7",
+    "actualSize": 36602920
+  },
+  {
+    "file": "release-bun-linux-x64.zip",
+    "source": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-x64.zip",
+    "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+    "expectedSize": 36646985,
+    "actualSha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+    "actualSize": 36646985
+  },
+  {
+    "file": "bun-webkit-linux-amd64-lto.tar.gz",
+    "source": "https://github.com/oven-sh/WebKit/releases/download/autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057/bun-webkit-linux-amd64-lto.tar.gz",
+    "sha256": "8f68d22b67fc0b72fb81b808aaf996a8a228cbaad193fd574d3b8655258db8b9",
+    "expectedSize": 247437947,
+    "actualSha256": "8f68d22b67fc0b72fb81b808aaf996a8a228cbaad193fd574d3b8655258db8b9",
+    "actualSize": 247437947
+  },
+  {
+    "file": "bun-webkit-linux-arm64-lto.tar.gz",
+    "source": "https://github.com/oven-sh/WebKit/releases/download/autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057/bun-webkit-linux-arm64-lto.tar.gz",
+    "sha256": "b0fd42cfd66490a2f8e6afe67285e06eabe110cf808f5903b68f86e7580400aa",
+    "expectedSize": 241291916,
+    "actualSha256": "b0fd42cfd66490a2f8e6afe67285e06eabe110cf808f5903b68f86e7580400aa",
+    "actualSize": 241291916
+  },
+  {
+    "file": "bun-webkit-macos-amd64-lto.tar.gz",
+    "source": "https://github.com/oven-sh/WebKit/releases/download/autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057/bun-webkit-macos-amd64-lto.tar.gz",
+    "sha256": "44950d3630d37c7995bf9ddc0d7796f479bf5d4e1b2c0edab8322341202b8ecf",
+    "expectedSize": 145654219,
+    "actualSha256": "44950d3630d37c7995bf9ddc0d7796f479bf5d4e1b2c0edab8322341202b8ecf",
+    "actualSize": 145654219
+  },
+  {
+    "file": "bun-webkit-macos-arm64-lto.tar.gz",
+    "source": "https://github.com/oven-sh/WebKit/releases/download/autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057/bun-webkit-macos-arm64-lto.tar.gz",
+    "sha256": "93c79936f3ef5d625dac0fa29deb12406fc6c356d755df654c69691667b3872d",
+    "expectedSize": 141792575,
+    "actualSha256": "93c79936f3ef5d625dac0fa29deb12406fc6c356d755df654c69691667b3872d",
+    "actualSize": 141792575
+  }
+]
