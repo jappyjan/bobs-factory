@@ -1,0 +1,47 @@
+TAP version 13
+# Subtest: independent simulated publisher is isolated from another fixture's publication lock
+not ok 1 - independent simulated publisher is isolated from another fixture's publication lock
+  ---
+  duration_ms: 461.646333
+  type: 'test'
+  location: '/Users/jappy/code/jappy/bobs-factory-unsigned-review-96/scripts/tests/release-publication.test.mjs:594:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    file:///private/tmp/pr96-ci-publication-investigation/regression-temp/factory-publication-fixture-JdjBvo/scripts/lib/publication-lock.mjs:13
+    			throw new Error(
+    			      ^
+    
+    Error: Another publication or interrupted publisher owns /tmp/pr96-ci-publication-investigation/regression-temp/bobs-factory-jappyjan-publication-lock; inspect its owner before retrying
+        at withPublicationLock (file:///private/tmp/pr96-ci-publication-investigation/regression-temp/factory-publication-fixture-JdjBvo/scripts/lib/publication-lock.mjs:13:10)
+        at file:///private/tmp/pr96-ci-publication-investigation/regression-temp/factory-publication-fixture-JdjBvo/scripts/publish-binary-release.mjs:463:10
+    
+    Node.js v22.21.1
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    withPublicationLock (file:///private/tmp/pr96-ci-publication-investigation/regression-temp/factory-publication-fixture-JdjBvo/scripts/lib/publication-lock.mjs:13:10)
+    file:///private/tmp/pr96-ci-publication-investigation/regression-temp/factory-publication-fixture-JdjBvo/scripts/publish-binary-release.mjs:463:10
+    file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/scripts/tests/release-publication.test.mjs:599:11
+    withPublicationLock (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/scripts/lib/publication-lock.mjs:28:16)
+    TestContext.<anonymous> (file:///Users/jappy/code/jappy/bobs-factory-unsigned-review-96/scripts/tests/release-publication.test.mjs:597:9)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 502.37875
