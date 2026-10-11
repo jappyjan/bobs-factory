@@ -1,0 +1,18 @@
+(node:51725) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ macOS complete-app staging preserves actual quarantine without changing byte identity (141.924875ms)
+✔ macOS complete-app replacement and rollback preserves actual quarantine without changing byte identity (219.270042ms)
+✔ macOS complete-app interrupted recovery preserves actual quarantine without changing byte identity (213.431417ms)
+✔ historical beta inventory validates old bytes and emits only additive integrity (378.287ms)
+✔ legacy identity rejects new manifest, evidence and source claims without rewriting old bytes (256.921792ms)
+✔ beta attestation refuses retained manifest swap at approval boundary (254.736833ms)
+✔ beta attestation refuses retained manifest swap at output boundary (264.580417ms)
+✔ maintained unsigned complete-shell F1 drive preserves worker state and recovers failed replacement (2934.616ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2973.575208
