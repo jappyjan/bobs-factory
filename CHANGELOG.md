@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Publish simulated desktop identity and health receipts atomically so the maintained F1 update drive cannot read partially written JSON; retain a delayed-write regression check ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+- Protect atomic simulated desktop receipt publication with a delayed-write regression check for the maintained F1 update drive ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+- Verify and copy complete macOS desktop apps using physical ASAR bytes, file modes and symlinks in the retained Electron updater; preserve full inventory checks and ordinary archive module access, and publish scripted shell F1 process receipts atomically ([Taskbot #121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#98](https://github.com/jappyjan/bobs-factory/pull/98)).
 
 - Preserve macOS per-app quarantine during unsigned app staging, replacement and recovery, including the standalone Install helper; keep historical beta attestation bound to approved manifest bytes, restore the maintained complete-shell F1 driver after publisher-key removal, and isolate simulated publishers' locks during concurrent validation ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
 

@@ -1,5 +1,6 @@
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { dirname, join } from "node:path";
 import {
 	cpSync,
 	existsSync,
@@ -9,8 +10,7 @@ import {
 	renameSync,
 	rmSync,
 	writeFileSync,
-} from "node:fs";
-import { dirname, join } from "node:path";
+} from "./app-filesystem.mjs";
 import {
 	appQuarantine,
 	inheritAppQuarantine,
