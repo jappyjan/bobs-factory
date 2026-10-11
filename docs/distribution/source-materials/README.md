@@ -7,7 +7,15 @@ new frozen release candidate and does not supersede the historical ed7/23/58 rec
 
 [Verified upstream inputs](verified-upstream-inputs.json) records actual downloads
 from official repositories, their byte lengths and SHA-256 values. Large files are
-retained outside Git in `/tmp/bobs-factory-source-assets-116/`. Bun 1.4.2 resolves to
+retained outside Git under
+`/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/source-inputs/`:
+Bun and TinyCC archives are in `official-pinned-sources/` as `bun-source.tar.gz`
+(64,602,344 bytes, SHA-256 `25e09a8804535b8fbea1dad9f95af8402fc9133d28127d5594ff00df1549590e`)
+and `tinycc-source.tar.gz` (1,036,641 bytes, SHA-256
+`50750680312923a59fdd36ae41f7091d8e35e51909d0e0b25b0b33ea9534bc08`).
+The exact WebKit archive is directly in `source-inputs/`, at the path and hash
+below. These are durable local evidence references; verify sizes/hashes before
+reuse. Bun 1.4.2 resolves to
 `744846f844374847c902b5e7fd59b4342a51ef99`; its dependency scripts pin patched WebKit
 `2e2aa2290fac856d6f451ceacb58f7f5b44dd057` and TinyCC
 `05f0fafaa3be31e31d7b4b5c17dc60f62c991171`. The downloaded license and TinyCC patch

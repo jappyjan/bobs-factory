@@ -212,3 +212,52 @@ licensingAndSource receipt.
 The latest supplied GitGuardian count is **two** undisposed historical mock UUID
 occurrences, incidents38083768/38084076; historical four-occurrence reports above
 remain historical, not a current clearance. Parent/child statuses remain unchanged.
+
+
+## Round 4 implementation response (2026-10-11; native CI pending)
+
+The harness fixes are integrated after the source-retention commit
+`d5cde18eab21c01c23b90c4e118d6922094c720d`. Production runtime remains frozen at
+`b82c37c4fb9a3e18d1cb222c6d56d3fef852096f`, `.21` candidate digest
+`ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec`.
+This is the Taskbot #116/#122/#124 per-finding implementation response, not ticket
+closure or an independent round 4 clearance.
+
+- Service P2 nonzero-exit stdout: the actual manager wrapper now preserves stdout,
+  stderr and exit status. `disabled`/exit 1 remains visible to the unchanged native
+  state assertion. Safe wrapper subprocess checks reach the actual gated START
+  descendant for both signal cases and reject delayed fork mutation. CI must still
+  prove the real systemd START boundary for both SIGINT and SIGTERM.
+- Service P2 outer timeout: a private registry is created before fixture launch;
+  held group leaders wait for registration before target code and prevent PID reuse.
+  Outer timeout persists FAIL before cooperative SIGTERM, then permits a bounded
+  30-second cleanup grace. Escalation closes the gate, drains registered nested
+  groups after reparenting, and reconciles only preregistered exact unit/jobs after
+  definition-byte checks. Unknown survivors or changed identities cannot claim
+  clean. Primary timeout, work and cleanup errors are preserved. All six signal
+  cases still run independently; a seventh real outer-timeout case is armed at
+  START and added to the same owned Linux CI workflow.
+- Source-retention P1 raw-storage CI: all 27 original JSON copies and the original
+  review module now use `.raw` extensions with unchanged bytes/hashes. The original
+  research index/report and external archives are unchanged; the maintained
+  retention mapping, README and checksum inventory explain the new paths. No
+  global Biome file-size increase or broad lint exclusion was added.
+- Source-retention P2 archive path: the source-materials guide now points precisely
+  to Bun/TinyCC in the durable `source-inputs/official-pinned-sources/` directory
+  and WebKit directly in `source-inputs/`, with the retained sizes and hashes.
+
+Nineteen meaningful local subprocess/protocol tests and acceptance-module syntax
+checks pass. `pnpm biome ci` passes with 19 existing warnings. The focused code commit passed normal lint-staged, workspace build and typecheck
+hooks; the documentation/storage commit retains the same required checks. F1 is not applicable to this acceptance
+harness, raw-storage and documentation change. Fresh Node 22 and Node 24 CI jobs
+and native main/seven-case receipts remain pending; the earlier Node 22 job failed
+at Biome and the Node 24 job was cancelled by fail-fast, not 24 cancelled test cases.
+
+[Round 3 run/artifact evidence](evidence/2026-10-11-service-round3-failure/README.md)
+is retained separately: main success applies only to `db93374e`, four signal cases
+passed, two manager-mutation cases failed before interruption, and the complete
+six-case matrix failed. Its ZIP and all seven receipt hashes are unchanged; no
+round 4 result reuses that PASS. Historical 101+53+56 raw files, f48/c3 failure
+artifacts and the d5 source-proof immutable research copies remain preserved.
+All previously listed native/provider/signing/licensing/minimum-host gates remain
+open. GitGuardian's two historical mock UUID incidents remain undisposed.

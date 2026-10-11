@@ -23,19 +23,33 @@ bytes must remain unchanged. These opaque markers prove retention, not executabl
 workflow recovery; the historical mock F1/native workflow receipts supply their
 own separately scoped continuation evidence.
 
-Every CLI/manager command runs in a newly owned session/process group. Cancellation,
-timeout and leader exit terminate and drain its inherited descendants before the
-command resolves; the host/harness process group is never signaled. Both worker
+Every CLI/manager command has a held leader in a newly owned session/process
+group. The leader waits for a durable registration handshake before target code
+runs and stays alive through target exit; Linux start ticks bind the identity
+before any group signal. Cancellation and target exit drain inherited descendants,
+including closed-pipe forks. The host/harness process group is never signaled.
+For the cancellation matrix, nested groups share a precreated private registry.
+An outer 90-second deadline first persists a nonpassing timeout and sends SIGTERM
+to the fixture, allowing 30 seconds for `withOwnedCleanup`. Escalation closes the
+registration gate, drains exact registered groups even after reparenting, and
+reconciles preregistered exact units and jobs against their owned definition bytes.
+A changed/missing live leader identity or unknown survivor keeps cleanup nonpassing;
+it never authorizes signaling an unrelated group. Primary timeout and cleanup
+errors survive in the receipt and every independent matrix outcome. Both worker
 and updater exact unit identities are registered before installation. Definition
 bytes are checked against the frozen b82 Linux contract before cleanup; changed
 or linked definitions cause a nonpassing result and are preserved for diagnosis.
 
-The workflow generates six independent cancellation receipts: SIGINT and SIGTERM
+The workflow generates six independent signal cancellation receipts: SIGINT and SIGTERM
 at initial installation's real manager descendant, a real manager start submission,
 and healthy managed units. A fixture-only PATH gate exposes the frozen CLI's actual
 execFileSync descendant and schedules a delayed real systemctl mutation with closed
 pipes. Cancellation must drain it, reconcile the exact unit's manager jobs, and
-leave no late-mutation marker. Every case runs even if another case fails. Signal
+leave no late-mutation marker. A seventh case arms an actual outer deadline at the same START descendant boundary
+and verifies cooperative timeout, exact-unit cleanup and no late mutation. The
+wrapper preserves nonzero-exit stdout, stderr and status: `is-enabled` returning
+`disabled` with exit 1 remains an actual disabled state, not a globally successful
+exit. Every case runs even if another case fails. Signal
 receipts must remain `passed:false`, exit130/143, with `cleanup:true` and no survivors;
 these intentional cancellations are not runtime acceptance PASS.
 
@@ -124,5 +138,5 @@ failed/inactive terminal state with MainPID/ControlPID zero and no queued job,
 and stable NRestarts/terminal state across more than RestartSec. Arbitrary signal
 failures cannot satisfy it. The original 45-second restart waits are unchanged.
 All maintenance, resume, remove and retained-byte assertions remain required.
-Corrected CI must supply actual verified main and all six cancellation receipts
+Corrected CI must supply actual verified main, all six signal cancellation receipts and the outer-timeout receipt
 before any full Linux acceptance PASS is claimed. No runtime source was changed.

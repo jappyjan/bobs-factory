@@ -1,0 +1,2 @@
+   2706    1095 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-5L2gRD/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-5L2gRD/state --port 34041 --no-open service run
+   2708    1095 0::/user.slice/user-1001.sl /tmp/factory-isolated-service-5L2gRD/state/runtime/desktop-installed/bin/bobs-factory --home /tmp/factory-isolated-service-5L2gRD/state --port 34041 --no-open service updates-run
