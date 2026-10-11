@@ -152,6 +152,24 @@
 			"package": "libcrypt-dev",
 			"version": "1:4.4.10-10ubuntu4",
 			"kind": "sysroot-deb"
+		},
+		{
+			"kind": "webkit-date-source",
+			"file": "webkit-DateMath.cpp",
+			"url": "https://raw.githubusercontent.com/oven-sh/WebKit/2e2aa2290fac856d6f451ceacb58f7f5b44dd057/Source/WTF/wtf/DateMath.cpp",
+			"size": 40526,
+			"sha256": "65b1066ee8ec153db043d1e2d8967ddb068b9aea84dc6258994aad13e631d9cc",
+			"gitBlob": "1f64056ab9c35a0976a411e1d4011773361e6e75",
+			"sourcePath": "Source/WTF/wtf/DateMath.cpp"
+		},
+		{
+			"kind": "webkit-config-source",
+			"file": "webkit-config.h",
+			"url": "https://raw.githubusercontent.com/oven-sh/WebKit/2e2aa2290fac856d6f451ceacb58f7f5b44dd057/Source/WTF/config.h",
+			"size": 1152,
+			"sha256": "38cea97eedc4257199fb0d3645af0d5b29dbdb80e67aa9d2f976b4d8939733b8",
+			"gitBlob": "6e1840ced0b4e38cfc9dac01d61a6b4f11099d6a",
+			"sourcePath": "Source/WTF/config.h"
 		}
 	],
 	"webkitLibraries": [
@@ -185,5 +203,7 @@
 			"size": 209645194,
 			"sha256": "4ff9477f0a72018cecd90918e507f06d4f5a66e9486214ca43f6238bc2215c8d"
 		}
-	]
+	],
+	"bunVersion": "1.4.2",
+	"webkitCompileCommandsSha256": "8ccd24af9098a44cd8b2c6fa0d9930842aae60afddbb956a9de2501bb72414b2"
 }

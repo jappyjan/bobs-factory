@@ -1,0 +1,160 @@
+[
+  {
+    "file": "bun-source.tar.gz",
+    "url": "https://codeload.github.com/oven-sh/bun/tar.gz/744846f844374847c902b5e7fd59b4342a51ef99",
+    "sha256": "25e09a8804535b8fbea1dad9f95af8402fc9133d28127d5594ff00df1549590e",
+    "size": 64602344,
+    "kind": "bun-source",
+    "actualSize": 64602344,
+    "actualSha256": "25e09a8804535b8fbea1dad9f95af8402fc9133d28127d5594ff00df1549590e"
+  },
+  {
+    "file": "linux-x64-libbun-profile.a.gz",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3c-fbc2-4ffb-b558-4f7dc83c1dc3",
+    "sha256": "9b23771fd04a9264632d43948dfd01faf18a33c80c67811c80d96cab7d508615",
+    "size": 58318422,
+    "kind": "cpp",
+    "expandedSha256": "df05f203601386b2d46502c7f0a383dc1bb4374d428624becb35bbbf80a0af6f",
+    "expandedSize": 110919020,
+    "actualSize": 58318422,
+    "actualSha256": "9b23771fd04a9264632d43948dfd01faf18a33c80c67811c80d96cab7d508615"
+  },
+  {
+    "file": "linux-x64-libbun-runtime.a.gz",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110323/jobs/01a06f3a-e29b-4307-a93a-9970fa81e859/artifacts/01a06f3e-65ca-4a75-ae23-66869e48b801",
+    "sha256": "a6e202069dbc1d3a2ab1c4796efa6ac277d144469c71b89a8908c5ec77593da3",
+    "size": 88579341,
+    "kind": "rust",
+    "expandedSha256": "d3f22508ee8ffc35563502844d0ebe53089b10c486193b28590c6963c4918539",
+    "expandedSize": 212759566,
+    "actualSize": 88579341,
+    "actualSha256": "a6e202069dbc1d3a2ab1c4796efa6ac277d144469c71b89a8908c5ec77593da3"
+  },
+  {
+    "file": "release-bun-linux-x64.zip",
+    "url": "https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-linux-x64.zip",
+    "sha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913",
+    "size": 36646985,
+    "kind": "base-runtime",
+    "actualSize": 36646985,
+    "actualSha256": "36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913"
+  },
+  {
+    "file": "bun-webkit-linux-amd64-lto.tar.gz",
+    "url": "https://github.com/oven-sh/WebKit/releases/download/autobuild-2e2aa2290fac856d6f451ceacb58f7f5b44dd057/bun-webkit-linux-amd64-lto.tar.gz",
+    "sha256": "8f68d22b67fc0b72fb81b808aaf996a8a228cbaad193fd574d3b8655258db8b9",
+    "size": 247437947,
+    "kind": "webkit-cache",
+    "actualSize": 247437947,
+    "actualSha256": "8f68d22b67fc0b72fb81b808aaf996a8a228cbaad193fd574d3b8655258db8b9"
+  },
+  {
+    "file": "bun-linux-x64.order",
+    "url": "https://buildkite.com/organizations/bun/pipelines/bun/builds/110317/jobs/01a06f18-d628-4b82-90e0-c0ed541825f0/artifacts/01a06f1e-c69b-4e77-9d98-7dbcd407f6e4",
+    "sha256": "32c24058f67945853c9e97c35a8dd6ece17b7c493249dab1a442a20250c20dd3",
+    "size": 1156033,
+    "kind": "order",
+    "actualSize": 1156033,
+    "actualSha256": "32c24058f67945853c9e97c35a8dd6ece17b7c493249dab1a442a20250c20dd3"
+  },
+  {
+    "kind": "llvm",
+    "file": "LLVM-21.1.8-Linux-X64.tar.xz",
+    "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/LLVM-21.1.8-Linux-X64.tar.xz",
+    "sha256": "b3b7f2801d15d50736acea3c73982994d025b01c2f035b91ae3b49d1b575732b",
+    "size": 2019005384,
+    "actualSize": 2019005384,
+    "actualSha256": "b3b7f2801d15d50736acea3c73982994d025b01c2f035b91ae3b49d1b575732b"
+  },
+  {
+    "kind": "gcc13",
+    "file": "gcc-13-focal-amd64.tar.gz",
+    "url": "https://github.com/oven-sh/WebKit/releases/download/gcc-13-focal-debs/gcc-13-focal-amd64.tar.gz",
+    "sha256": "a2b3b6e10b175bbaaefeb3e9e703ca26a97ed6c1f19ca842d3e0b0c8f941e65b",
+    "size": 222044996,
+    "actualSize": 222044996,
+    "actualSha256": "a2b3b6e10b175bbaaefeb3e9e703ca26a97ed6c1f19ca842d3e0b0c8f941e65b"
+  },
+  {
+    "kind": "node",
+    "file": "node-v26.3.0-linux-x64.tar.xz",
+    "url": "https://nodejs.org/dist/v26.3.0/node-v26.3.0-linux-x64.tar.xz",
+    "sha256": "0ce210831380ab75a5fec0d3fb6b5af0958898016b2cae51cc2fa11057d2f77e",
+    "maxBytes": 83886080,
+    "actualSize": 33248860,
+    "actualSha256": "0ce210831380ab75a5fec0d3fb6b5af0958898016b2cae51cc2fa11057d2f77e"
+  },
+  {
+    "kind": "rustc",
+    "file": "rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "url": "https://static.rust-lang.org/dist/2026-07-20/rustc-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "sha256": "a0e461ac8f2ec75b38cd9590188db2d90e0acde3279434194a0ecebd7c099fa0",
+    "maxBytes": 419430400,
+    "actualSize": 80585304,
+    "actualSha256": "a0e461ac8f2ec75b38cd9590188db2d90e0acde3279434194a0ecebd7c099fa0"
+  },
+  {
+    "kind": "cargo",
+    "file": "cargo-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "url": "https://static.rust-lang.org/dist/2026-07-20/cargo-nightly-x86_64-unknown-linux-gnu.tar.xz",
+    "sha256": "4e5500fc62034d3b42450a921f408ee9e4aacd5e6de52a78fd736d6215889a38",
+    "maxBytes": 419430400,
+    "actualSize": 11627936,
+    "actualSha256": "4e5500fc62034d3b42450a921f408ee9e4aacd5e6de52a78fd736d6215889a38"
+  },
+  {
+    "file": "libc6_2.31-0ubuntu9.18_amd64.deb",
+    "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.31-0ubuntu9.18_amd64.deb",
+    "size": 2720364,
+    "sha256": "1b2281aac4935dfea1f89dfc19e445fdbb45303202af60679ccb8bf035f081a0",
+    "package": "libc6",
+    "version": "2.31-0ubuntu9.18",
+    "kind": "sysroot-deb",
+    "actualSize": 2720364,
+    "actualSha256": "1b2281aac4935dfea1f89dfc19e445fdbb45303202af60679ccb8bf035f081a0"
+  },
+  {
+    "file": "libc6-dev_2.31-0ubuntu9.18_amd64.deb",
+    "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/libc6-dev_2.31-0ubuntu9.18_amd64.deb",
+    "size": 2519636,
+    "sha256": "11029900f2315b93ce487792ae1bf15f0927e5e50880c091e6a440b14d4e164a",
+    "package": "libc6-dev",
+    "version": "2.31-0ubuntu9.18",
+    "kind": "sysroot-deb",
+    "actualSize": 2519636,
+    "actualSha256": "11029900f2315b93ce487792ae1bf15f0927e5e50880c091e6a440b14d4e164a"
+  },
+  {
+    "file": "linux-libc-dev_5.4.0-216.236_amd64.deb",
+    "url": "https://archive.ubuntu.com/ubuntu/pool/main/l/linux/linux-libc-dev_5.4.0-216.236_amd64.deb",
+    "size": 1110608,
+    "sha256": "70c9addd36aabd2d031d5ea0fc444f8b193027aef79ff3d8275d25800aed8ede",
+    "package": "linux-libc-dev",
+    "version": "5.4.0-216.236",
+    "kind": "sysroot-deb",
+    "actualSize": 1110608,
+    "actualSha256": "70c9addd36aabd2d031d5ea0fc444f8b193027aef79ff3d8275d25800aed8ede"
+  },
+  {
+    "file": "libcrypt1_4.4.10-10ubuntu4_amd64.deb",
+    "url": "https://archive.ubuntu.com/ubuntu/pool/main/libx/libxcrypt/libcrypt1_4.4.10-10ubuntu4_amd64.deb",
+    "size": 78204,
+    "sha256": "231b4dbbe5865775f118cfa61394f1e16fa7102b6953a327e672499a20876d73",
+    "package": "libcrypt1",
+    "version": "1:4.4.10-10ubuntu4",
+    "kind": "sysroot-deb",
+    "actualSize": 78204,
+    "actualSha256": "231b4dbbe5865775f118cfa61394f1e16fa7102b6953a327e672499a20876d73"
+  },
+  {
+    "file": "libcrypt-dev_4.4.10-10ubuntu4_amd64.deb",
+    "url": "https://archive.ubuntu.com/ubuntu/pool/main/libx/libxcrypt/libcrypt-dev_4.4.10-10ubuntu4_amd64.deb",
+    "size": 104104,
+    "sha256": "f0a41d8e8cf379dbbdfc43169f34851ed452b3581e72c6654f2e290caf4e1b20",
+    "package": "libcrypt-dev",
+    "version": "1:4.4.10-10ubuntu4",
+    "kind": "sysroot-deb",
+    "actualSize": 104104,
+    "actualSha256": "f0a41d8e8cf379dbbdfc43169f34851ed452b3581e72c6654f2e290caf4e1b20"
+  }
+]

@@ -16,7 +16,22 @@ import time
 import urllib.request
 import zipfile
 
+from webkit_trial import modified_library_trial
+
 GIB = 1024**3
+
+
+def validate_native_identity(version, revision, javascript_identity, manifest):
+    """Pinned Bun CLI abbreviates to nine characters; JS exposes the full SHA.
+
+    The short CLI identifier alone cannot distinguish different source revisions
+    with a common prefix. Inputs and output hashes provide the other bindings.
+    """
+    expected = (manifest["bunVersion"] + "\n",
+                manifest["bunVersion"] + "+" + manifest["bunRevision"][:9] + "\n",
+                manifest["bunVersion"] + "+" + manifest["bunRevision"] + "\n")
+    if (version, revision, javascript_identity) != expected:
+        raise RuntimeError(f"Unexpected native identity: {(version, revision, javascript_identity)!r}")
 
 
 def sha256(path):
@@ -73,6 +88,8 @@ class Diagnostic:
             if key in ("CI", "BUILDKITE", "GITHUB_ACTIONS", "GITHUB_TOKEN", "GH_TOKEN") or "TOKEN" in key:
                 self.env.pop(key)
         self.receipt = {"purpose": "engineering diagnostic; no release/license acceptance",
+                        "status": "pending", "unchangedNativeSmoke": False,
+                        "modifiedNativeSmoke": False,
                         "unchangedRelink": False, "modifiedLibraryRelink": False,
                         "nativeSmoke": False, "exactBaseBytes": False,
                         "phase": "initializing", "host": platform.uname()._asdict()}
@@ -194,6 +211,10 @@ class Diagnostic:
                 out.write(json.dumps(r) + "\n")
 
     def execute(self, manifest, here, mode):
+        self.receipt["requestedMode"] = mode
+        self.receipt["harnessSha256"] = sha256(here / "linux-x64.py")
+        self.receipt["trialHarnessSha256"] = sha256(here / "webkit_trial.py")
+        self.receipt["inputManifestSha256"] = sha256(here / "linux-x64-inputs.json")
         self.receipt["phase"] = "acquisition"
         self.receipt["pins"] = manifest
         self.save()
@@ -337,29 +358,45 @@ class Diagnostic:
         self.run(["readelf", "-aW", base / "bun"], "published-elf")
         # This evidence records differences, never silently normalizes/masks them.
         self.receipt["residualAnalysis"] = "byte-identical" if self.receipt["exactBaseBytes"] else "UNPROVEN: inspect ELF reports/maps and tool/sysroot identities"
-        for name, args in [("version", ["--version"]), ("revision", ["--revision"]),
-                           ("hello", ["-e", "console.log('taskbot116-relink-hello')"])]:
-            output = self.run([build / "bun", *args], "native-" + name, source, timeout=60)
-            expected = {"version": "1.4.2", "revision": "1.4.2+744846f844", "hello": "taskbot116-relink-hello"}[name]
-            if output.strip() != expected:
-                raise RuntimeError(f"Unexpected native {name}: {output!r}")
+        shutil.copyfile(build / "bun-profile.linker-map", self.evidence / "unchanged-bun-profile.linker-map")
+        self.native_smoke(build / "bun", source, manifest, "unchanged", 86400000)
         test_js = self.root / "standalone-smoke.js"
         test_js.write_text("console.log('taskbot116-relink-injection')\n")
         standalone = self.root / "standalone-smoke"
         self.run([build / "bun", "build", test_js, "--compile", "--outfile", standalone], "injection-compile", source)
         if self.run([standalone], "injection-native", source, timeout=60).strip() != "taskbot116-relink-injection":
             raise RuntimeError("Standalone injection smoke failed")
-        self.receipt["nativeSmoke"] = True
+        self.receipt["unchangedNativeSmoke"] = True
         self.receipt["phase"] = "unchanged-link-and-smoke-completed"
-        with (build / "bun").open("rb") as src, gzip.open(self.evidence / "relinked-bun.gz", "wb") as dst:
-            shutil.copyfileobj(src, dst)
+        self.save()
+        if mode == "modified":
+            modified_library_trial(self, manifest, files, source, build, webkit, sysroot)
+        self.receipt["nativeSmoke"] = True
+
+    def native_smoke(self, binary, source, manifest, prefix, expected_date):
+        version = self.run([binary, "--version"], prefix + "-native-version", source, timeout=60)
+        revision = self.run([binary, "--revision"], prefix + "-native-revision", source, timeout=60)
+        identity = self.run([binary, "-e", "console.log(Bun.version + '+' + Bun.revision)"],
+                            prefix + "-native-full-identity", source, timeout=60)
+        validate_native_identity(version, revision, identity, manifest)
+        hello = self.run([binary, "-e", "console.log('taskbot116-relink-hello')"],
+                         prefix + "-native-hello", source, timeout=60)
+        if hello != "taskbot116-relink-hello\n":
+            raise RuntimeError(f"Unexpected native hello: {hello!r}")
+        # The same JS runs against both outputs. The trial modifies only the
+        # first date; the second date and ordinary startup must remain usable.
+        script = ("console.log(JSON.stringify([Date.parse('1970-01-02T00:00:00.000Z'),"
+                  "Date.parse('1970-01-03T00:00:00.000Z'), 6*7]))")
+        output = self.run([binary, "-e", script], prefix + "-native-library-behavior", source, timeout=60)
+        if output != f"[{expected_date},172800000,42]\n":
+            raise RuntimeError(f"Unexpected native library behavior: {output!r}")
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--evidence", required=True, type=Path)
-    parser.add_argument("--mode", choices=("configure", "unchanged"), default="configure")
+    parser.add_argument("--mode", choices=("configure", "unchanged", "modified"), default="configure")
     args = parser.parse_args()
     if platform.system() != "Linux" or platform.machine() != "x86_64":
         parser.error("Requires an isolated native Linux x64 host")
@@ -368,10 +405,19 @@ def main():
     task = Diagnostic(args.root, args.evidence)
     try:
         task.execute(manifest, here, args.mode)
+        if args.mode != "configure" and not task.receipt["nativeSmoke"]:
+            raise RuntimeError("Required native smoke did not complete")
+        if args.mode == "modified" and not (task.receipt["exactBaseBytes"] and
+                                           task.receipt["modifiedLibraryRelink"] and
+                                           task.receipt["modifiedNativeSmoke"]):
+            raise RuntimeError("Required unchanged equivalence/modified library proof did not complete")
+        task.receipt["status"] = "passed"
+        task.receipt["phase"] = "PASS"
     except BaseException as error:
         task.receipt["error"] = str(error)
         task.receipt["failedPhase"] = task.receipt["phase"]
         task.receipt["phase"] = "FAIL"
+        task.receipt["status"] = "failed"
         raise
     finally:
         for name in ("build.ninja", "configure.json", "linker.order", "bun-profile.rsp", "bun-profile.linker-map"):

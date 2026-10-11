@@ -11,7 +11,10 @@ the **used #110317** order file, and actual published Bun runtime. Every acquire
 archive is checked before extraction. The acquired research report, index and
 candidate base-binding record are identified by SHA-256; they remain outside Git.
 Large inputs, WebKit's complete source archive and frozen Factory artifacts are
-not copied into this repository or into the diagnostic evidence upload.
+not copied into this repository or into the diagnostic evidence upload. The
+modified trial acquires only the exact `Source/WTF/wtf/DateMath.cpp` and
+`Source/WTF/config.h` from official commit URLs, with SHA-256/size and Git-blob
+identities independently verified against the retained complete source tree.
 
 The test provisions Node 26.3.0, LLVM 21.1.8 and Rust nightly 2026-07-20 beneath
 its fresh task directory. Official source/provider checksum records pin them.
@@ -47,9 +50,35 @@ base SHA-256 `a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c`
 and runs version/revision/hello/standalone-injection smoke with the **relinked**
 runtime. Any byte differences remain unresolved until ELF reports, maps,
 toolchain and sysroot identities explain them. A mismatch does not become an
-equivalence PASS. Modified-JSC/library compilation and relinking remain a later
-step contingent on this real unchanged-link outcome; TinyCC-only substitution
-would not satisfy that step.
+equivalence PASS. The `modified` mode requires actual byte-identical unchanged
+output and completed unchanged native smoke before its library trial. Pinned Bun's
+CLI prints `1.4.2+744846f84` (nine SHA characters); smoke also requires the exact
+full `Bun.version + '+' + Bun.revision` value. The full source pin and all
+input/output hashes remain explicit provenance bindings.
+
+The trial reads the real `DateMath.cpp` compile entry from the official cache's
+hash-verified `compile_commands.json`. It retains every define, target, CPU, ABI,
+ThinLTO and optimization flag. Original compiler/include/output/source/debug
+prefix paths are remapped explicitly in `webkit-compile-remaps.json`: exported
+cache headers replace unshipped build-host hmaps/build directories, the pinned
+LLVM compiler replaces `/usr/bin/clang++-21`, and the reconstructed Focal/GCC13
+closure replaces host system headers. No PCH is needed by this translation unit.
+Both unmodified and changed source are compiled under those same flags. Actual
+compiler dependency files enumerate and hash every header; a dependency outside
+the owned task directory fails the trial. This is an engineering compile recipe,
+not a claim of byte-identical recompilation of the original object.
+
+The controlled change makes WTF's `parseES5Date` return `116000000` only for
+`1970-01-02T00:00:00.000Z`. Normal JSC returns `86400000`. `llvm-ar rD --format=gnu`
+replaces only `DateMath.cpp.o` in the extracted real `libWTF.a`, retaining its
+original copy. Inventories require all 175 member names/order and every other
+member's size/hash to agree; the replacement must match newly compiled LLVM
+bitcode. The other five WebKit libraries and both application archives must
+remain hash-identical. The same generated link/strip edges run again. The
+relinked executable must show the changed date, normal second-date parsing and
+JS startup, plus exact version and full revision. The retained unchanged
+executable is rechecked afterward. Overall `modified` result PASS is set only
+after all required stages succeed.
 
 The manual workflow and initial owned-branch push use read-only contents/actions
 permissions and no secret inputs. A job has a 45-minute timeout; the harness has
@@ -57,8 +86,12 @@ a 42-minute deadline, a 25 GiB owned-file budget and a 10 GiB free-space reserve
 Only its fresh temp tree is written. Command timeouts kill the owned process
 group; hosted-runner disposal handles the remaining temporary files. Evidence
 uploads run even after failure and contain phase/error results, commands/logs,
-config and hashes, actual response/map when present, and a compressed relinked
-runtime only after smoke succeeds. No signing, release publication, channel
+config and hashes, actual response files, source patch, original/recompiled/changed
+objects, member inventories, compile dependency closure and output hashes.
+Maps are hashed in `captured-evidence.json` and omitted from compact uploads;
+the first run's complete raw map and tool/sysroot inventories are preserved in
+the durable outside-Git directory. Actual runtimes and libraries remain in the
+owned task until runner disposal; large binaries are not uploaded. No signing, release publication, channel
 activation or production installation is performed.
 
 Run on a disposable Linux x64 host with Python 3.12+, Ninja, CMake, binutils and
@@ -70,6 +103,15 @@ python3 docs/distribution/relink/linux-x64.py \
   --root /absolute/new-owned-task-directory \
   --evidence /absolute/owned-evidence-directory --mode unchanged
 ```
+
+Use `--mode modified` for the complete engineering trial; owned branch pushes
+run that mode. The shell uses `pipefail`, so assertions or missing compile inputs
+fail the workflow step while `always()` retains the nonpassing receipt.
+Workflow/check status alone is never substituted for `result.json`.
+
+The [first execution report](EXECUTION_116.md) distinguishes its exact unchanged
+output proof from the preserved smoke FAIL and the new trial's pending result.
+Its compact raw evidence index binds the complete original artifact.
 
 F1 is not applicable: this change tests external pinned native-link tooling and
 does not change Factory product workflows or the F1 harness. Syntax, graph safety,

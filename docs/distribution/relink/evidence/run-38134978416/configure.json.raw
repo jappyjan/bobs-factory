@@ -1,0 +1,13 @@
+{
+  "profile": "ci-link-only",
+  "overrides": {
+    "os": "linux",
+    "arch": "x64",
+    "abi": "gnu",
+    "canary": false,
+    "buildkite": false,
+    "buildDir": "/home/runner/work/_temp/relink-task-38134978416-1/build",
+    "cacheDir": "/home/runner/work/_temp/relink-task-38134978416-1/cache",
+    "linuxSysroot": "/home/runner/work/_temp/relink-task-38134978416-1/sysroot"
+  }
+}

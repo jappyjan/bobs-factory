@@ -9,13 +9,55 @@ import unittest
 import sys
 
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 spec = importlib.util.spec_from_file_location("relink", Path(__file__).with_name("linux-x64.py"))
 relink = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(relink)
+from webkit_trial import assert_single_replacement, archive_members
 
 
 class SafetyTests(unittest.TestCase):
+    def test_gnu_archive_inventory_and_single_compiled_member_replacement(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "library.a"
+            data = b"!<arch>\n"
+            for name, content in [("DateMath.cpp.o/", b"BC\xc0\xdeoriginal"), ("other.cpp.o/", b"BC\xc0\xdeother")]:
+                header = f"{name:<16}{0:<12}{0:<6}{0:<6}{'644':<8}{len(content):<10}`\n".encode()
+                data += header + content + (b"\n" if len(content) % 2 else b"")
+            path.write_bytes(data)
+            before = archive_members(path)
+            self.assertEqual([r["member"] for r in before], ["DateMath.cpp.o", "other.cpp.o"])
+            after = [{**before[0], "size": 100, "sha256": "compiled-object-sha"}, before[1]]
+            assert_single_replacement(before, after, "DateMath.cpp.o", {"size": 100, "sha256": "compiled-object-sha"})
+
+    def test_extra_member_change_or_wrong_replacement_is_rejected(self):
+        before = [{"member": "DateMath.cpp.o", "size": 10, "sha256": "original"},
+                  {"member": "other.cpp.o", "size": 20, "sha256": "other"}]
+        replacement = {"size": 11, "sha256": "compiled"}
+        after = [{"member": "DateMath.cpp.o", **replacement}, before[1]]
+        for invalid in [before, after[::-1], after + [before[1]],
+                        [after[0], {**before[1], "sha256": "also-changed"}],
+                        [{**after[0], "sha256": "wrong-object"}, before[1]]]:
+            with self.assertRaises(RuntimeError):
+                assert_single_replacement(before, invalid, "DateMath.cpp.o", replacement)
+
+    def test_actual_pinned_native_identity_format(self):
+        manifest = {"bunVersion": "1.4.2", "bunRevision": "744846f844374847c902b5e7fd59b4342a51ef99"}
+        relink.validate_native_identity("1.4.2\n", "1.4.2+744846f84\n",
+                                        "1.4.2+744846f844374847c902b5e7fd59b4342a51ef99\n", manifest)
+
+    def test_wrong_revision_or_same_short_prefix_does_not_pass(self):
+        manifest = {"bunVersion": "1.4.2", "bunRevision": "744846f844374847c902b5e7fd59b4342a51ef99"}
+        for version, short, full in [
+            ("1.4.2\n", "1.4.2+744846f844\n", "1.4.2+744846f844374847c902b5e7fd59b4342a51ef99\n"),
+            ("1.4.2\n", "1.4.2+744846f85\n", "1.4.2+744846f844374847c902b5e7fd59b4342a51ef99\n"),
+            ("1.4.2\n", "1.4.2+744846f84\n", "1.4.2+744846f844374847c902b5e7fd59b4342a51ef90\n"),
+            ("1.4.3\n", "1.4.2+744846f84\n", "1.4.2+744846f844374847c902b5e7fd59b4342a51ef99\n"),
+        ]:
+            with self.assertRaises(RuntimeError):
+                relink.validate_native_identity(version, short, full, manifest)
+
     def test_restricted_graph_preserves_commands_and_removes_rebuild_edges(self):
         link = "rule link\n  command = clang++ @$out.rsp $ldflags -o $out\n  rspfile = $out.rsp\n  rspfile_content = $in_newline\n\n"
         strip = "rule strip\n  command = strip $in -o $out\n\n"

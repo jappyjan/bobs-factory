@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Configure only, or execute unchanged link and native smoke
+        description: Configure only, unchanged relink, or genuine modified WTF relink
         type: choice
-        options: [configure, unchanged]
+        options: [configure, unchanged, modified]
         default: configure
   push:
     branches: [delivery/taskbot-116-source-relink]
@@ -34,7 +34,7 @@ jobs:
           WORKFLOW_SHA: ${{ github.sha }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
-          RELINK_MODE: ${{ inputs.mode || 'unchanged' }}
+          RELINK_MODE: ${{ inputs.mode || 'modified' }}
         run: |
           mkdir -p "$RUNNER_TEMP/relink-evidence"
           python3 - <<'PY'
@@ -44,23 +44,43 @@ jobs:
           assert head == os.environ['WORKFLOW_SHA']
           keys = ['WORKFLOW_SHA', 'RUN_ID', 'RUN_ATTEMPT', 'RELINK_MODE', 'ImageOS', 'ImageVersion']
           (p / 'runner.json').write_text(json.dumps({k: os.environ.get(k) for k in keys}, indent=2) + '\n')
+          import hashlib
+          files = pathlib.Path('docs/distribution/relink')
+          (p / 'harness-files.json').write_text(json.dumps({f.name: hashlib.sha256(f.read_bytes()).hexdigest()
+              for f in files.iterdir() if f.suffix in ('.py', '.mjs', '.json')}, indent=2) + '\n')
           PY
           cat /etc/os-release > "$RUNNER_TEMP/relink-evidence/os-release.txt"
           lscpu > "$RUNNER_TEMP/relink-evidence/cpu.txt"
           free -b > "$RUNNER_TEMP/relink-evidence/memory.txt"
           df -B1 > "$RUNNER_TEMP/relink-evidence/disk.txt"
       - name: Configure and optionally relink genuine native inputs
+        shell: bash
         env:
-          RELINK_MODE: ${{ inputs.mode || 'unchanged' }}
+          RELINK_MODE: ${{ inputs.mode || 'modified' }}
         run: |
+          set -euo pipefail
           python3 docs/distribution/relink/linux-x64.py \
             --root "$RUNNER_TEMP/relink-task-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
             --evidence "$RUNNER_TEMP/relink-evidence" --mode "$RELINK_MODE" \
             2>&1 | tee "$RUNNER_TEMP/relink-evidence/harness.log"
+      - name: Inventory all captured evidence before compact upload
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          p = pathlib.Path(os.environ['RUNNER_TEMP']) / 'relink-evidence'
+          omitted = ('bun-profile.linker-map', 'unchanged-bun-profile.linker-map', 'modified-bun-profile.linker-map')
+          records = [{ 'file': f.name, 'size': f.stat().st_size, 'sha256': hashlib.sha256(f.read_bytes()).hexdigest(),
+              'compactUpload': f.name not in omitted } for f in sorted(p.iterdir()) if f.is_file()]
+          (p / 'captured-evidence.json').write_text(json.dumps(records, indent=2) + '\n')
+          PY
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: source-relink-linux-x64-${{ github.sha }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/relink-evidence/
+          path: |
+            ${{ runner.temp }}/relink-evidence/
+            !${{ runner.temp }}/relink-evidence/*bun-profile.linker-map
           retention-days: 14
           if-no-files-found: error
