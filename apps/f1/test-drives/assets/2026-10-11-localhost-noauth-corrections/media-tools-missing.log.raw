@@ -1,0 +1,226 @@
+
+> bobs-factory-edge-worker@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker
+> vitest run test/FactoryOnboarding.test.ts test/Video.test.ts
+
+
+ RUN  v4.1.11 /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker
+
+(node:36898) ExperimentalWarning: The supports Web Crypto API method is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36898) ExperimentalWarning: The ML-DSA-44 Web Crypto API algorithm is an experimental feature and might change at any time
+ ❯ test/FactoryOnboarding.test.ts (3 tests | 1 failed) 78ms
+   × keeps all setup and token endpoints behind a real passkey ceremony 46ms
+ ❯ test/Video.test.ts (17 tests | 13 failed) 1270ms
+   × validates actual media, stamps provenance, preserves original capture revision on accepted unaffected reuse 113ms
+   × validates grouped recording sources and rejects changes in a secondary repository 92ms
+   × requires fresh recordings after linked scenario changes but permits unrelated story changes 88ms
+   × rejects escaped assets, truncated media, fabricated metadata, absent captions and changed bytes 91ms
+   × reports optional missing tools without blocking fresh QA; required video or product failure cannot pass 93ms
+   × streams full/HEAD/open/suffix ranges and rejects stale, malformed, replaced and expired media 103ms
+   × serves grouped assets from retained worktrees and rejects any stale, dirty or missing repository 105ms
+   × cleans only expired terminal evidence and keeps active referenced files and metadata 92ms
+   × expires superseded recordings and their posters/captions retained in capture history 102ms
+   × makes progress across cleanup passes without deleted or missing assets consuming the budget 110ms
+   × enforces duration, file size, caption and poster validation before accepting evidence 99ms
+   × rejects every malformed caption cue while preserving valid WebVTT timing variants 96ms
+   × does not let terminal cleanup follow a run-directory symlink or crash on a dangling temporary link 80ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/FactoryOnboarding.test.ts > keeps all setup and token endpoints behind a real passkey ceremony
+AssertionError: expected 200 to be 401 // Object.is equality
+
+- Expected
++ Received
+
+- 401
++ 200
+
+ ❯ test/FactoryOnboarding.test.ts:94:31
+     92|    payload: route.endsWith("onboarding") ? undefined : {},
+     93|   });
+     94|   expect(response.statusCode).toBe(401);
+       |                               ^
+     95|  }
+     96|  expect(f.onboarding.status).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  test/Video.test.ts > validates actual media, stamps provenance, preserves original capture revision on accepted unaffected reuse
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:230:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  test/Video.test.ts > validates grouped recording sources and rejects changes in a secondary repository
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:291:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  test/Video.test.ts > requires fresh recordings after linked scenario changes but permits unrelated story changes
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:351:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  test/Video.test.ts > rejects escaped assets, truncated media, fabricated metadata, absent captions and changed bytes
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:411:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  test/Video.test.ts > reports optional missing tools without blocking fresh QA; required video or product failure cannot pass
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:435:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  test/Video.test.ts > streams full/HEAD/open/suffix ranges and rejects stale, malformed, replaced and expired media
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:458:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  test/Video.test.ts > serves grouped assets from retained worktrees and rejects any stale, dirty or missing repository
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:538:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  test/Video.test.ts > cleans only expired terminal evidence and keeps active referenced files and metadata
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:622:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  test/Video.test.ts > expires superseded recordings and their posters/captions retained in capture history
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:637:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  test/Video.test.ts > makes progress across cleanup passes without deleted or missing assets consuming the budget
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:678:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  test/Video.test.ts > enforces duration, file size, caption and poster validation before accepting evidence
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:745:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  test/Video.test.ts > rejects every malformed caption cue while preserving valid WebVTT timing variants
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:818:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  test/Video.test.ts > does not let terminal cleanup follow a run-directory symlink or crash on a dangling temporary link
+Error: spawnSync ffmpeg ENOENT
+ ❯ setup test/Video.test.ts:124:2
+    122|  const path = join(evidenceDir, "save.mp4"),
+    123|   posterPath = join(evidenceDir, "save.png");
+    124|  execFileSync("ffmpeg", [
+       |  ^
+    125|   "-v",
+    126|   "error",
+ ❯ test/Video.test.ts:888:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  14 failed | 6 passed (20)
+   Start at  23:02:47
+   Duration  2.02s (transform 569ms, setup 36ms, import 1.33s, tests 1.35s, environment 0ms)
+
+/Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 test:run: `vitest run test/FactoryOnboarding.test.ts test/Video.test.ts`
+Exit status 1

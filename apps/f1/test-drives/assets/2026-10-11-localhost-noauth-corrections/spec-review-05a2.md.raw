@@ -1,0 +1,20 @@
+# PR99 independent SPEC review — CLEAR
+
+PR: https://github.com/jappyjan/bobs-factory/pull/99
+Base: `8deb7e7704bb6cf75d3dca757dc917ea8f23ff23`
+Head: `05a2c7d314c6b1afa62905e6e8026d331f2d82e5`
+Implementation: `812bb468238242f92ca20edef166accc0b1e52f6`
+
+No actionable P1/P2 defect found against the supplied specification. This is the SPEC axis only. No source edits, nested agents, merge or release action.
+
+Read code-review skill, AGENTS guidance, product contracts, canonical F1 applicability and verification policy. Independently compared the fixed commits; base is their merge-base. Inspected all changed runtime paths and FactoryServer public/protected/auth/onboarding/media routes, shared request hooks, SSE, launcher/UI access, remote credential/session boundaries and listener lifecycle. No dashboard WebSocket handler exists.
+
+Direct local access requires the original socket peer and configured HTTP loopback Host/port; forwarding signals and foreign Origin/Referer/Fetch Metadata reject before handlers. Local authority does not mint a cookie, token or session deadline. Mutation headers, build/config guards, remote origin-bound WebAuthn sessions and credential-management verification remain. IPv6 aliases do not rewrite persisted credential origins. Local UI removes passkey/sign-out controls; launcher changes remove enrollment-grant reads/fragments while preserving desktop navigation/session isolation.
+
+Independent validation: 47 existing FactoryAccess/FactoryAuth/FactoryWebClient tests passed, plus three temporary targeted reproducer tests. Actual TCP checks covered 88 foreign-origin/metadata/empty-forwarding requests across shell, public auth/version, onboarding, configuration, SSE, media and unknown paths; public Host protected reads remained 401. IPv6 bind collision released IPv4; recovery retained local access; shutdown closed active IPv6 SSE and released both ports. Logs/config/reproducer are beside this report.
+
+The initial reproducer assumed duplicate Host meant HTTP400. Node consumes the first Host; corrected checks confirm a foreign first Host and external Origin/forwarding signals still reject. Initial failed log retained. A separate initial test attempt encountered stale shared compiled core; source-pinned imports passed. These were verification setup/assumption failures, not established PR defects.
+
+F1 evidence reviewed, including committed screenshots and raw browser/API receipts. All eleven runtime fingerprints plus fixture match the pinned head; receipt SHA256 is `9a7303bc91b18cb274a7ed124f2c1d81c6ce00b6f1da3bc651220fa5cec06d7c`. All 41 changed snapshot paths remain byte-identical to head.
+
+CLEAR assumes documented Host-preserving public exposure. A signal-stripping localhost-rewriting/raw TCP forward exposes operator authority and is explicitly unsupported. Evidence proves source workflows with mocked/scripted agents and software WebAuthn, not packaged/native/minimum-platform acceptance. Candidate and merge decisions remain coordinator-owned. PR99 registration verified.

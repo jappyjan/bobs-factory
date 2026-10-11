@@ -1,0 +1,54 @@
+
+> bobs-factory-edge-worker@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker
+> vitest run test/FactoryOnboarding.test.ts
+
+
+ RUN  v4.1.11 /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker
+
+(node:51346) ExperimentalWarning: The supports Web Crypto API method is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51346) ExperimentalWarning: The ML-DSA-44 Web Crypto API algorithm is an experimental feature and might change at any time
+ ❯ test/FactoryOnboarding.test.ts (4 tests | 1 failed) 121ms
+   × opens onboarding and project/GitHub setup over actual IPv4, IPv6 and localhost sockets without enrollment 80ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/FactoryOnboarding.test.ts > opens onboarding and project/GitHub setup over actual IPv4, IPv6 and localhost sockets without enrollment
+AssertionError: [::1]: expected { config: undefined, setup: 409, …(2) } to deeply equal { …(4) }
+
+- Expected
++ Received
+
+  {
+-   "config": {
+-     "available": true,
+-     "required": true,
+-   },
+-   "github": 200,
+-   "project": 200,
+-   "setup": 200,
++   "config": undefined,
++   "github": 409,
++   "project": 409,
++   "setup": 409,
+  }
+
+ ❯ test/FactoryOnboarding.test.ts:129:5
+    127|    },
+    128|    hostname,
+    129|   ).toEqual({
+       |     ^
+    130|    config: { available: true, required: true },
+    131|    setup: 200,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  23:06:18
+   Duration  904ms (transform 394ms, setup 16ms, import 695ms, tests 121ms, environment 0ms)
+
+/Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 test:run: `vitest run test/FactoryOnboarding.test.ts`
+Exit status 1
