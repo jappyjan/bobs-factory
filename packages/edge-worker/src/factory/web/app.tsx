@@ -12,6 +12,7 @@ import {
 	useParams,
 } from "react-router-dom";
 import { deliveryTargetLabel } from "../RunAttention";
+import { ArchitectureEntry, ArchitecturePage } from "./architecture";
 import { ArtifactCard, Inspector } from "./artifacts";
 import { AccessBoundary } from "./auth";
 import {
@@ -919,6 +920,9 @@ function RunPage({
 					)}
 				</div>
 			</header>
+			{!(run.status === "waiting" && run.architectureGate) && (
+				<ArchitectureEntry run={run} />
+			)}
 			<ExecutionDetails run={run} />
 			{run.deliveryCoordination?.phase === "queued" && (
 				<p role="status">
@@ -1199,6 +1203,10 @@ function App() {
 							/>
 							<Route path="/recipes" element={<Recipes />} />
 							<Route path="/settings/*" element={<Settings />} />
+							<Route
+								path="/runs/:id/architecture"
+								element={<ArchitecturePage key={location.pathname} />}
+							/>
 							<Route
 								path="/runs/:id/review"
 								element={

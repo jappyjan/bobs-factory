@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+import { architectureInstructions } from "./Architecture.js";
 import { feedbackPolicyInstructions } from "./FeedbackPolicy.js";
 import {
 	BRIEF_CONTRACT,
@@ -15,7 +17,11 @@ import {
 	specialistSteps,
 } from "./specialistSteps.js";
 import { videoPrompts } from "./videoPrompts.js";
-import { validateWorkflows, type WorkflowStep } from "./Workflow.js";
+import {
+	StepSchema,
+	validateWorkflows,
+	type WorkflowStep,
+} from "./Workflow.js";
 
 const agent = (id: string, name: string, prompt: string, extra = {}) => ({
 	id,
@@ -61,7 +67,7 @@ const definitions = [
 		icon: "🏭",
 		name: "Software factory",
 		description:
-			"Clarify and plan, then deliver repository, external ticket or mixed work with independent evidence and explicit human acceptance.",
+			"Clarify and plan, then review architecture before coding and deliver repository, external ticket or mixed work with independent evidence and explicit human acceptance.",
 		labels: ["workflow:factory", "factory"],
 		steps: [
 			agent(
@@ -254,6 +260,61 @@ function installSpecialists(steps: Record<string, any>[]) {
 	}
 }
 installSpecialists(pipeline.steps);
+const stockPlanReview = pipeline.steps.find((s) => s.id === "plan-review")!;
+if (!("prompt" in stockPlanReview))
+	throw new Error("Stock plan reviewer unavailable");
+const oldPlanReview = {
+	...structuredClone(stockPlanReview),
+	branches: back("approved", "plan"),
+};
+const oldPlan: Record<string, any> = structuredClone(
+	pipeline.steps.find((s) => s.id === "plan")!,
+);
+const implementationStep = pipeline.steps.find((s) => s.id === "implement")!;
+if (!("prompt" in implementationStep))
+	throw new Error("Stock implementer unavailable");
+implementationStep.prompt +=
+	" If subsequent answers or steering materially change the accepted architecture, preserve completed work and return status=blocked, architectureRevision=true, summary explaining the changed requirement, checks, and questions=[]. The runtime returns to architecture proposal/review and requires fresh acceptance when meaningful. Never implement a materially changed architecture using acceptance of an earlier version.";
+const architectureSteps = [
+	agent("architecture", "Discuss architecture", architectureInstructions, {
+		architectureContract: "architecture-v1",
+	}),
+	{
+		...oldPlanReview,
+		id: "architecture-review",
+		name: "Review architecture candidate",
+		prompt:
+			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Assess repository evidence, decisions and their options, the map, plain-language readability, the short plan steps and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
+		architectureContract: "architecture-review-v1",
+		architectureSource: "architecture",
+		inputs: undefined,
+		branches: back("approved", "architecture"),
+	},
+	tool(
+		"architecture-decision",
+		"Accept architecture proposal",
+		"architecture-decision",
+		{
+			arguments: {
+				proposal: "architecture",
+				review: "architecture-review",
+				planOutput: "plan",
+				revise: "architecture",
+				approval: "meaningful",
+			},
+			next: "implement",
+			branches: [
+				{ when: { path: "decision", equals: "revise" }, next: "architecture" },
+			],
+		},
+	),
+];
+pipeline.steps.splice(
+	pipeline.steps.findIndex((s) => s.id === "implement"),
+	0,
+	...architectureSteps,
+);
+
 // Install only in newly accepted stock definitions; saved run snapshots are never rewritten.
 const deliveryInstructions = ` Delivery mode comes from accepted requirements: repository (including repository docs/config), external (ticket content/relationships), or mixed. Never infer it from an empty diff. No repository changes may authorize external edits; execution deferral remains separate. Runtime owns lifecycle status/comments and PR links. External review follows authorized application and independent verification. Missing integration access blocks execution.`;
 for (const step of pipeline.steps) {
@@ -311,7 +372,7 @@ Object.assign(planReview, { next: "delivery-route" });
 				{ when: { path: "mode", equals: "external" }, next: "external-apply" },
 				{ when: { path: "mode", equals: "mixed" }, next: "external-apply" },
 			],
-			next: "implement",
+			next: "architecture",
 		},
 	),
 	agent(
@@ -339,7 +400,7 @@ Object.assign(planReview, { next: "delivery-route" });
 					when: { path: "repositoryComplete", equals: true },
 					next: "external-guide",
 				},
-				{ when: { path: "mode", equals: "mixed" }, next: "implement" },
+				{ when: { path: "mode", equals: "mixed" }, next: "architecture" },
 			],
 			next: "external-guide",
 		},
@@ -513,6 +574,65 @@ export function upgradeWorkflows(value: unknown): unknown {
 		upgradeHandoffCapacity(steps);
 		if (!["factory-pipeline", "factory"].includes(String(definition.id)))
 			continue;
+		// Upgrade only untouched stock planning paths; operator edits remain deliberate.
+		const savedPlan = steps.find((s) => s.id === "plan");
+		const savedReview = steps.find((s) => s.id === "plan-review");
+		const deliveryStock = [
+			"plan",
+			"plan-review",
+			"delivery-route",
+			"external-after-verify",
+		].every((id) => {
+			const saved = steps.find((s) => s.id === id);
+			const stock = StepSchema.parse(pipeline.steps.find((s) => s.id === id)!);
+			if (stock.next === "architecture") stock.next = "implement";
+			for (const branch of stock.branches ?? [])
+				if (branch.next === "architecture") branch.next = "implement";
+			return (
+				saved &&
+				isDeepStrictEqual(StepSchema.parse(saved), StepSchema.parse(stock))
+			);
+		});
+		if (
+			!steps.some(
+				(s) => s.architectureContract || s.tool === "architecture-decision",
+			) &&
+			savedPlan &&
+			savedReview &&
+			(deliveryStock ||
+				([oldPlan.prompt, previousPlanPrompt].some(
+					(prompt) =>
+						isDeepStrictEqual(
+							StepSchema.parse({ ...savedPlan, prompt: oldPlan.prompt }),
+							StepSchema.parse(oldPlan),
+						) && savedPlan.prompt === prompt,
+				) &&
+					isDeepStrictEqual(
+						StepSchema.parse(savedReview),
+						StepSchema.parse(oldPlanReview),
+					)))
+		) {
+			if (deliveryStock) {
+				steps.splice(
+					steps.findIndex((s) => s.id === "implement"),
+					0,
+					...structuredClone(architectureSteps),
+				);
+				for (const id of ["delivery-route", "external-after-verify"]) {
+					const route = steps.find((s) => s.id === id)!;
+					const stock = StepSchema.parse(
+						pipeline.steps.find((s) => s.id === id)!,
+					);
+					route.next = stock.next;
+					route.branches = structuredClone(stock.branches);
+				}
+			} else
+				steps.splice(
+					steps.indexOf(savedReview),
+					1,
+					...structuredClone(architectureSteps),
+				);
+		}
 		const stockQa = defaultWorkflows.find(
 			(w) => w.id === "factory-pipeline",
 		)!.steps;
