@@ -13,6 +13,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Command } from "commander";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	applyMigration,
@@ -602,6 +603,190 @@ it("distinguishes participating workers from unrelated explicit homes and shell 
 	vi.mocked(childProcess.execFileSync).mockReturnValue(
 		`9999 bobs-factory start --home ${source}\n`,
 	);
+	expect(inspectMigration(source, destination).blockers).toContain(
+		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
+	);
+});
+it.each([
+	"bobs-factory start --home /unrelated",
+	"bobs-factory --home /unrelated start",
+	"bobs-factory --home=/unrelated start --port 3600",
+	"/usr/local/bin/bobs-factory --home /unrelated local",
+])("accepts an unrelated explicit home without reading its environment: %s", (command) => {
+	const { source, destination } = fixture();
+	vi.mocked(childProcess.execFileSync).mockImplementation((_file, args) => {
+		if (Array.isArray(args) && args.includes("eww"))
+			throw new Error(
+				"Unrelated explicit worker environment must remain private",
+			);
+		return `9999 ${command}\n`;
+	});
+	expect(inspectMigration(source, destination).blockers).toEqual([]);
+	expect(
+		vi
+			.mocked(childProcess.execFileSync)
+			.mock.calls.some(
+				([, args]) => Array.isArray(args) && args.includes("eww"),
+			),
+	).toBe(false);
+});
+it.each([
+	"bobs-factory start --home SOURCE",
+	"bobs-factory --home SOURCE start",
+	"bobs-factory --home DESTINATION local",
+	"bobs-factory --home '/unrelated' start",
+	'bobs-factory --home "/path with spaces" start',
+	"bobs-factory --home /path with spaces start",
+	"bobs-factory --home relative start",
+	"bobs-factory --home /unrelated unknown",
+	"bobs-factory --home /unrelated start extra",
+	"bobs-factory --home /unrelated --home /another start",
+])("blocks related or ambiguous explicit worker homes: %s", (command) => {
+	const { source, destination } = fixture();
+	vi.mocked(childProcess.execFileSync).mockReturnValue(
+		`9999 ${command.replace("SOURCE", source).replace("DESTINATION", destination)}\n`,
+	);
+	expect(inspectMigration(source, destination).blockers).toContain(
+		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
+	);
+});
+it.each([
+	{ suffix: "start", equals: false, target: "source" },
+	{ suffix: "local", equals: false, target: "source" },
+	{ suffix: "start", equals: true, target: "source" },
+	{ suffix: "local", equals: true, target: "destination" },
+	{ suffix: "start ", equals: false, target: "source" },
+	{ suffix: "local  ", equals: false, target: "source" },
+	{ suffix: "start --port 3600", equals: false, target: "source" },
+	{ suffix: "local --port 3600", equals: true, target: "source" },
+	{ suffix: "--port 3600", equals: false, target: "source" },
+])("blocks default local's spaced symlink home: $suffix, equals=$equals, $target", ({
+	suffix,
+	equals,
+	target,
+}) => {
+	const { root, source, destination, backup } = fixture();
+	const unrelated = join(root, "unrelated");
+	mkdirSync(unrelated);
+	const alias = `${unrelated} ${suffix}`;
+	const related = target === "source" ? source : destination;
+	if (target === "destination") mkdirSync(destination);
+	symlinkSync(related, alias);
+	expect(canonicalPath(unrelated)).not.toBe(source);
+	expect(canonicalPath(alias)).toBe(related);
+	// Use the installed parser with the maintained CLI's global home and
+	// default local registration, without starting any worker.
+	const program = new Command().option("--home <path>");
+	let launched: string | undefined;
+	program.command("local", { isDefault: true }).action(() => {
+		launched = "local";
+	});
+	program.command("start").action(() => {
+		launched = "start";
+	});
+	const argv = equals ? [`--home=${alias}`] : ["--home", alias];
+	program.parse(argv, { from: "user" });
+	expect(launched).toBe("local");
+	expect(program.opts().home).toBe(alias);
+	vi.mocked(childProcess.execFileSync).mockImplementation((_file, args) => {
+		if (Array.isArray(args) && args.includes("eww"))
+			throw new Error("Explicit worker environment must remain private");
+		return `9999 bobs-factory ${argv.join(" ")}\n`;
+	});
+	const manifest = inspectMigration(source, destination);
+	expect(manifest.blockers).toContain(
+		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
+	);
+	expect(() => applyMigration(manifest, backup)).toThrow(/worker or agent/);
+	expect(existsSync(backup)).toBe(false);
+	expect(existsSync(destination)).toBe(target === "destination");
+	expect(
+		vi
+			.mocked(childProcess.execFileSync)
+			.mock.calls.some(
+				([, args]) => Array.isArray(args) && args.includes("eww"),
+			),
+	).toBe(false);
+});
+it.each([
+	"start",
+	"local",
+])("accepts an existing unrelated home before %s when longer homes are absent", (subcommand) => {
+	const { root, source, destination } = fixture();
+	const unrelated = join(root, "unrelated");
+	mkdirSync(unrelated);
+	const argv = ["--home", unrelated, subcommand, "--port", "3600"];
+	const program = new Command().option("--home <path>").option("--port <port>");
+	let launched: string | undefined;
+	program.command("local", { isDefault: true }).action(() => {
+		launched = "local";
+	});
+	program.command("start").action(() => {
+		launched = "start";
+	});
+	program.parse(argv, { from: "user" });
+	expect(launched).toBe(subcommand);
+	expect(program.opts()).toEqual({ home: unrelated, port: "3600" });
+	vi.mocked(childProcess.execFileSync).mockImplementation((_file, args) => {
+		if (Array.isArray(args) && args.includes("eww"))
+			throw new Error("Explicit worker environment must remain private");
+		return `9999 bobs-factory ${argv.join(" ")}\n`;
+	});
+	expect(inspectMigration(source, destination).blockers).toEqual([]);
+	expect(
+		vi
+			.mocked(childProcess.execFileSync)
+			.mock.calls.some(
+				([, args]) => Array.isArray(args) && args.includes("eww"),
+			),
+	).toBe(false);
+});
+it.each([
+	"directory",
+	"dangling link",
+])("blocks an ambiguous spaced home even when it is an unrelated %s", (kind) => {
+	const { root, source, destination } = fixture();
+	const unrelated = join(root, "unrelated");
+	mkdirSync(unrelated);
+	const spaced = `${unrelated} start`;
+	if (kind === "directory") mkdirSync(spaced);
+	else symlinkSync(join(root, "absent"), spaced);
+	vi.mocked(childProcess.execFileSync).mockReturnValue(
+		`9999 bobs-factory --home ${spaced}\n`,
+	);
+	expect(inspectMigration(source, destination).blockers).toContain(
+		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
+	);
+});
+it.skipIf(process.getuid?.() === 0)(
+	"blocks explicit homes beneath an unreadable ancestor",
+	() => {
+		const { root, source, destination } = fixture();
+		const parent = join(root, "unreadable");
+		mkdirSync(parent);
+		const unrelated = join(parent, "home");
+		mkdirSync(unrelated);
+		symlinkSync(source, `${unrelated} start`);
+		vi.mocked(childProcess.execFileSync).mockReturnValue(
+			`9999 bobs-factory --home ${unrelated} start\n`,
+		);
+		chmodSync(parent, 0o000);
+		try {
+			expect(inspectMigration(source, destination).blockers).toContain(
+				"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
+			);
+		} finally {
+			chmodSync(parent, 0o700);
+		}
+	},
+);
+it("blocks a worker whose effective home environment cannot be read", () => {
+	const { source, destination } = fixture();
+	vi.mocked(childProcess.execFileSync).mockImplementation((_file, args) => {
+		if (Array.isArray(args) && args.includes("eww"))
+			throw new Error("Process unavailable");
+		return "9999 bobs-factory start\n";
+	});
 	expect(inspectMigration(source, destination).blockers).toContain(
 		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
 	);
