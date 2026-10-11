@@ -1,0 +1,26 @@
+[
+  {
+    "archive": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/materials/bun-webkit-linux-amd64-lto.tar.gz",
+    "status": "PASS",
+    "members": 2789,
+    "milliseconds": 1387
+  },
+  {
+    "archive": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/materials/bun-webkit-linux-arm64-lto.tar.gz",
+    "status": "PASS",
+    "members": 2789,
+    "milliseconds": 1193
+  },
+  {
+    "archive": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/materials/bun-webkit-macos-amd64-lto.tar.gz",
+    "status": "PASS",
+    "members": 3048,
+    "milliseconds": 695
+  },
+  {
+    "archive": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/schema2-assembly/materials/bun-webkit-macos-arm64-lto.tar.gz",
+    "status": "PASS",
+    "members": 3048,
+    "milliseconds": 686
+  }
+]
