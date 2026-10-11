@@ -15,6 +15,7 @@ import { join, resolve } from "node:path";
 import { inspectArchive } from "./bounded-archive.mjs";
 import { releaseChannel } from "./release-candidate.mjs";
 import { validateSourceArchive } from "./release-material.mjs";
+import { sourceTransportRecords } from "./source-transport.mjs";
 
 export const REPOSITORY = "jappyjan/bobs-factory";
 export const TARGETS = [
@@ -228,6 +229,11 @@ export function validateReleaseManifest(value) {
 	validateFile(value.verifier, "install-binary.sh");
 	validateFile(value.source, "source-rebuild.tar.gz");
 	requireValue(
+		value.schemaVersion === 2 || value.sourceTransport === undefined,
+		"New source transport at legacy boundary",
+	);
+	sourceTransportRecords(value.source, value.sourceTransport);
+	requireValue(
 		Object.keys(value.targets ?? {})
 			.sort()
 			.join() === [...TARGETS].sort().join(),
@@ -326,7 +332,21 @@ export function validateReleaseManifest(value) {
 				value.assets.some((a) => a.file === file),
 				`Missing signed asset: ${file}`,
 			);
+		const sourceAssets = sourceTransportRecords(
+			value.source,
+			value.sourceTransport,
+		);
+		if (value.sourceTransport)
+			requireValue(
+				value.assets.length + 3 <= 1000,
+				"Source transport inventory exceeds GitHub asset count limit",
+			);
 		for (const record of value.assets) {
+			if (record.file.startsWith("source-rebuild.tar.gz"))
+				requireValue(
+					sourceAssets.some((a) => a.file === record.file),
+					"Unexpected source transport asset",
+				);
 			requireValue(
 				/^[A-Za-z0-9.-]+$/.test(record.file) &&
 					!["release.json", "release.json.sig", "release.json.key-id"].includes(
@@ -354,7 +374,7 @@ export function releaseAssetRecords(value, inventory = true) {
 	return [
 		value.installer,
 		value.verifier,
-		value.source,
+		...sourceTransportRecords(value.source, value.sourceTransport),
 		...Object.values(value.targets).flatMap((t) => [
 			{ file: t.archive, sha256: t.archiveSha256, size: t.archiveSize },
 			{ file: t.manifest, sha256: t.manifestSha256, size: t.manifestSize },

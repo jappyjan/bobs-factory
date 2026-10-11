@@ -320,3 +320,44 @@ test("stable promotion selects an older signed nightly and refuses unavailable o
 		for (const f of [older, latest, stable]) f.cleanup();
 	}
 });
+
+test("signed chunk discovery requires exact complete remote inventory", async () => {
+	const f = preparedFixture("nightly", { sourceChunks: true });
+	try {
+		const p = provider([f]);
+		const assets = structuredClone(p.releaseList[0].assets);
+		assert.equal(
+			(await discoverReleases(p.client, keys)).nightly.manifest.source.sha256,
+			f.manifest.source.sha256,
+		);
+		for (const fault of [
+			"missing",
+			"duplicate",
+			"size",
+			"digest",
+			"unexpected",
+		]) {
+			p.releaseList[0].assets = structuredClone(assets);
+			const chunk = p.releaseList[0].assets.find(
+				(a) => a.name === f.manifest.sourceTransport.chunks[0].file,
+			);
+			if (fault === "missing")
+				p.releaseList[0].assets = p.releaseList[0].assets.filter(
+					(a) => a !== chunk,
+				);
+			if (fault === "duplicate") p.releaseList[0].assets.push({ ...chunk });
+			if (fault === "size") chunk.size++;
+			if (fault === "digest") chunk.digest = `sha256:${"f".repeat(64)}`;
+			if (fault === "unexpected")
+				p.releaseList[0].assets.push({
+					...chunk,
+					name: "source-rebuild.tar.gz",
+				});
+			const result = await discoverReleases(p.client, keys);
+			assert.equal(result.nightly, null, fault);
+			assert.equal(result.rejected.length, 1);
+		}
+	} finally {
+		f.cleanup();
+	}
+});

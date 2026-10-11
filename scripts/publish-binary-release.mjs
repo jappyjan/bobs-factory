@@ -52,6 +52,10 @@ import {
 	signManifest,
 	verifyManifestSignature,
 } from "./lib/release-signature.mjs";
+import {
+	GITHUB_ASSET_LIMIT,
+	splitSourceArchive,
+} from "./lib/source-transport.mjs";
 
 const { values } = parseArgs({
 	options: {
@@ -256,10 +260,13 @@ if (!values.resume) {
 	}
 	for (const script of ["install.sh", "install-binary.sh"])
 		copyFileSync(join(root, "scripts", script), join(assets, script));
-	copyFileSync(
-		join(evidenceDirectory, "source-rebuild.tar.gz"),
-		join(assets, "source-rebuild.tar.gz"),
-	);
+	const sourcePath = join(evidenceDirectory, evidence.source.file);
+	const sourceTransport =
+		evidence.source.size >= GITHUB_ASSET_LIMIT
+			? splitSourceArchive(sourcePath, evidence.source, assets)
+			: undefined;
+	if (!sourceTransport)
+		copyFileSync(sourcePath, join(assets, evidence.source.file));
 	copyFileSync(evidencePath, join(assets, "release-evidence.json"));
 	const receiptFiles = new Set();
 	function collectReceipts(value) {
@@ -270,10 +277,7 @@ if (!values.resume) {
 	collectReceipts(evidence);
 	const receiptsDirectory = join(output, "receipts");
 	mkdirSync(receiptsDirectory);
-	copyFileSync(
-		join(assets, "source-rebuild.tar.gz"),
-		join(receiptsDirectory, "source-rebuild.tar.gz"),
-	);
+
 	for (const file of receiptFiles) {
 		const destination = join(receiptsDirectory, file);
 		mkdirSync(dirname(destination), { recursive: true });
@@ -345,10 +349,12 @@ if (!values.resume) {
 			join(assets, "install-binary.sh"),
 			"install-binary.sh",
 		),
-		source: fileRecord(
-			join(assets, "source-rebuild.tar.gz"),
-			"source-rebuild.tar.gz",
-		),
+		source: {
+			file: evidence.source.file,
+			sha256: evidence.source.sha256,
+			size: evidence.source.size,
+		},
+		...(sourceTransport ? { sourceTransport } : {}),
 		targets,
 		assets: readdirSync(assets)
 			.sort()

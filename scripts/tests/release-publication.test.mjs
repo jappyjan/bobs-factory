@@ -20,8 +20,8 @@ import { keys } from "./release-fixtures.mjs";
 const transport = fileURLToPath(
 	new URL("./publication-transport.mjs", import.meta.url),
 );
-function setup(channel = "nightly", state = {}) {
-	const f = preparedFixture(channel),
+function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
+	const f = preparedFixture(channel, fixtureOptions),
 		provider = join(f.work, "provider.json"),
 		approval = join(f.work, "approval.json");
 	writeFileSync(
@@ -540,6 +540,82 @@ test("fresh preparation consumes exact artifact ZIPs and produces unsigned inspe
 		assert.equal(
 			prepared.manifest.desktop.artifacts[0].validation.file,
 			"desktop-validation.json",
+		);
+	} finally {
+		f.cleanup();
+	}
+});
+
+for (const fault of [
+	"upload-before:source-rebuild.tar.gz.part0002",
+	"upload-after:source-rebuild.tar.gz.part0002",
+]) {
+	test(`chunk publication resumes exact signed inventory after ${fault}`, () => {
+		const f = setup("nightly", { fault }, { sourceChunks: true });
+		try {
+			const dry = f.run(false);
+			assert.equal(dry.status, 0, dry.stderr);
+			assert.equal(f.state().operations.length, 0);
+			const plan = JSON.parse(
+				readFileSync(join(f.output, "publication-plan.json")),
+			);
+			assert.equal(plan.assetsDigest, f.assetsDigest);
+			assert.ok(!plan.assets.some((r) => r.file === "source-rebuild.tar.gz"));
+			assert.ok(f.manifest.sourceTransport.chunks.length > 1);
+			const first = f.run();
+			if (fault.includes("before")) assert.notEqual(first.status, 0);
+			else assert.equal(first.status, 0, first.stderr);
+			const partial = f.state();
+			const retry = f.run();
+			assert.equal(retry.status, 0, retry.stderr);
+			const after = f.state();
+			assert.equal(after.assets.length, f.records.length);
+			for (const asset of partial.assets)
+				assert.equal(
+					after.assets.filter((a) => a.name === asset.name).length,
+					1,
+				);
+			assert.ok(!after.assets.some((a) => a.name === "source-rebuild.tar.gz"));
+			const verified = JSON.parse(
+				readFileSync(join(f.output, "publication-receipt.json")),
+			);
+			assert.deepEqual(verified.assets, f.records);
+		} finally {
+			f.cleanup();
+		}
+	});
+}
+test("chunk publication refuses unexpected remote monolith or missing public chunk", () => {
+	const f = setup("nightly", {}, { sourceChunks: true });
+	try {
+		const first = f.run();
+		assert.equal(first.status, 0, first.stderr);
+		const good = f.state();
+		const unexpected = structuredClone(good);
+		unexpected.assets.push({
+			name: "source-rebuild.tar.gz",
+			state: "uploaded",
+			size: f.manifest.source.size,
+			digest: `sha256:${f.manifest.source.sha256}`,
+		});
+		writeFileSync(f.provider, JSON.stringify(unexpected));
+		const rejected = f.run();
+		assert.notEqual(rejected.status, 0);
+		assert.match(rejected.stderr, /Unexpected immutable release asset/);
+		const missing = structuredClone(good);
+		missing.assets = missing.assets.filter(
+			(a) => a.name !== f.manifest.sourceTransport.chunks[0].file,
+		);
+		writeFileSync(f.provider, JSON.stringify(missing));
+		const incomplete = f.run();
+		assert.notEqual(incomplete.status, 0);
+		assert.match(incomplete.stderr, /Public release is incomplete/);
+		assert.deepEqual(
+			f
+				.state()
+				.operations.slice(missing.operations.length)
+				.filter((o) => o.method !== "GET"),
+			[],
 		);
 	} finally {
 		f.cleanup();

@@ -13,6 +13,7 @@ import {
 } from "./binary-release.mjs";
 import { verifyAssetInventory } from "./github-release.mjs";
 import { PublicationSkip } from "./release-candidate.mjs";
+import { GITHUB_ASSET_LIMIT } from "./source-transport.mjs";
 
 // Caller holds the repository-wide mutation lock. Provider state is authoritative.
 export async function publishPreparedRelease({
@@ -23,6 +24,15 @@ export async function publishPreparedRelease({
 	receiptPath,
 	recheck,
 }) {
+	requireValue(
+		records.length <= 1000,
+		"Release exceeds GitHub asset count limit",
+	);
+	for (const record of records)
+		requireValue(
+			record.size < GITHUB_ASSET_LIMIT,
+			`Release asset exceeds GitHub transport limit: ${record.file}`,
+		);
 	const marker = `<!-- bobs-factory-candidate:${manifest.candidateDigest} -->`;
 	const previous = existsSync(receiptPath)
 		? JSON.parse(readFileSync(receiptPath, "utf8"))
