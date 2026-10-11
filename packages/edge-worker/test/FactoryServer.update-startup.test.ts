@@ -89,7 +89,7 @@ it("serves protected API health after an owned starting observation despite a li
 					headers: { host: "localhost:3457" },
 				})
 			).statusCode,
-		).toBe(401);
+		).toBe(200);
 		expect(readFileSync(updates.file, "utf8")).toBe(before);
 		expect(readFileSync(lock, "utf8")).toBe(String(process.pid));
 	} finally {

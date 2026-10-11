@@ -6,8 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Preserve readable Linear publication while integrating external ticket delivery and background tracking; retain status deduplication and refresh the simulated workflow's tracking wait. ([#73](https://github.com/jappyjan/bobs-factory/pull/73), [F1 validation](apps/f1/test-drives/2026-10-11-linear-publication-main-merge.md))
+- Preserve readable Linear publication while integrating external ticket delivery and background tracking; retain status deduplication, refresh the simulated workflow's tracking wait, and keep the localhost access and Linear publication capability descriptions together. ([#73](https://github.com/jappyjan/bobs-factory/pull/73), [F1 validation](apps/f1/test-drives/2026-10-11-linear-publication-main-merge.md))
 - Verify and copy complete macOS desktop apps using physical ASAR bytes, file modes and symlinks in the retained Electron updater; preserve full inventory checks and ordinary archive module access, and publish scripted shell F1 process receipts atomically ([Taskbot #121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#98](https://github.com/jappyjan/bobs-factory/pull/98)).
+
+- Open the desktop and direct localhost dashboard, APIs and first-launch onboarding, including IPv6 setup, without passkey setup or login; validate socket peer, loopback authority and browser origin while preserving remote passkey sessions and cross-origin protections ([Taskbot #121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#99](https://github.com/jappyjan/bobs-factory/pull/99)).
 
 - Preserve macOS per-app quarantine during unsigned app staging, replacement and recovery, including the standalone Install helper; keep historical beta attestation bound to approved manifest bytes, restore the maintained complete-shell F1 driver after publisher-key removal, and isolate simulated publishers' locks during concurrent validation ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
 

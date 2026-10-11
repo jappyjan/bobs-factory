@@ -1,0 +1,45 @@
+2026-10-11T20:54:53.180Z [WARN ] [EdgeWorker] Bundled skills not found at /Users/jappy/.t3/worktrees/bobs-factory/feat-desktop-localhost-noauth-121/packages/edge-worker/src/bobs-factory-skills-plugin/skills — cannot deploy defaults
+2026-10-11T20:54:53.180Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-hb52K9/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-11T20:54:53.181Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-11T20:54:53.181Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker] ✅ CLI RPC server registered
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker]    RPC endpoint: /cli/rpc
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker] ✅ CLI event transport registered
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker]    Event listener: listening for AgentSessionCreated events
+2026-10-11T20:54:53.188Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-11T20:54:53.188Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-11T20:54:53.188Z [WARN ] [EdgeWorker] No repositories or workspaces configured — Slack sessions will not have access to MCP tools
+2026-10-11T20:54:53.188Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-11T20:54:53.188Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-11T20:54:53.189Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-11T20:54:53.189Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-11T20:54:53.189Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-11T20:54:53.196Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-11T20:54:53.196Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-11T20:54:53.196Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-11T20:54:53.196Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-11T20:54:53.200Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:3633
+PASS actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment
+PASS fresh first-launch project/provider onboarding accessible before passkey setup
+ONBOARDING_READY /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-hb52K9
+2026-10-11T20:55:11.549Z [INFO ] [EdgeWorker] ➕ Adding repository: repository (local)
+2026-10-11T20:55:11.549Z [INFO ] [EdgeWorker] ✅ Repository added successfully: repository
+PASS project onboarding mutation completes without authentication (prepared-tool stubs only)
+2026-10-11T20:55:11.564Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=local, overrideValue=undefined
+2026-10-11T20:55:11.565Z [INFO ] [GitService] createSingleRepoWorktree for repository (id=local): baseBranchOverride=undefined
+2026-10-11T20:55:11.703Z [INFO ] [GitService] Creating git worktree at /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-hb52K9/home/worktrees/MANUAL-1c35570d from origin/main (tracking main)
+2026-10-11T20:55:11.730Z [INFO ] [AgentSessionManager] {session=manual-c, platform=manual} Creating chat session
+PASS noauth dashboard recipe save/start creates actual EdgeWorker worktree, executes script and returns completed run
+PASS actual socket external Origin/Fetch Metadata and forwarded localhost reads/mutations rejected
+PASS actual TLS Host-preserving forwarded proxy retains remote passkey enrollment/login/logout, opaque cookie and no local transplant
+PASS local SSE opens without a session and remote enrollment does not revoke local authority
+BROWSER_READY /var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-hb52K9
+PASS actual external-origin browser navigation/read/POST all denied with no run mutation
+2026-10-11T20:55:43.178Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-11T20:55:43.178Z [INFO ] [SharedApplicationServer] Shared application server stopped
+{"success":true,"commit":"812bb468238242f92ca20edef166accc0b1e52f6","sourceSha256":{"packages/edge-worker/src/factory/FactoryServer.ts":"9cb44a64b91528613cd37fe20c0121766572d83056038bbbbfb38d4e826d7aff","packages/edge-worker/src/factory/LocalFactoryAccess.ts":"99af07ef5039844d486a9749422a5442a7ded1fdc8c49c1b7c65b6dc58634c2a","packages/edge-worker/src/factory/FactoryAuth.ts":"8e89376821a4ece3e2db7ad8467865d27dd2a8cde10f456c09b6ccb3208c823e","packages/edge-worker/src/factory/FactoryOnboarding.ts":"6f4f61d5efc5e849135d51b8dd6f373bd7727e165d708149edffe17426bc8985","packages/edge-worker/src/factory/Workflow.ts":"10a7ba90e071bec11aa38987aad1d7f7d2c852948ed2f81bdb59c4ced1037973","packages/edge-worker/src/factory/web/auth-state.ts":"556b997cb1c8d5013129e553d5742d02c895c3e4621d152950fdd90791ad8325","packages/edge-worker/src/factory/web/auth.tsx":"0ce1fd2c9b9eb9cb94607b9ecc14adf9f92383cbf56b9f7cad5378e6a79ba041","packages/edge-worker/src/factory/web/settings.tsx":"78e0370edc7398fec77523d236b8987d0bada7f04d8283a415ba81c8231451a1","apps/desktop/src/main.mjs":"5e7f1933e0cd768878ca25cb5787cb254a731ef2b2640caa7a6d0b4c70679a74","apps/desktop/src/launcher.html":"36834b1e2dc8e922743f30f896abf324c9a6dd4d870b8937243f29a34ccc75f4","apps/cli/src/local.ts":"15b72fc7d5c6f07b679a7c707313bb0c3d7b5d2625e976d498b6382de8230be2","apps/f1/test-drives/assets/localhost-noauth.ts":"9abde379920e3cf5612aa7154819ef7db3436cf884ff32666cdd3540a5b0eb1c"},"checks":["actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment","fresh first-launch project/provider onboarding accessible before passkey setup","project onboarding mutation completes without authentication (prepared-tool stubs only)","noauth dashboard recipe save/start creates actual EdgeWorker worktree, executes script and returns completed run","actual socket external Origin/Fetch Metadata and forwarded localhost reads/mutations rejected","actual TLS Host-preserving forwarded proxy retains remote passkey enrollment/login/logout, opaque cookie and no local transplant","local SSE opens without a session and remote enrollment does not revoke local authority","actual external-origin browser navigation/read/POST all denied with no run mutation"],"externalRequests":[{"method":"GET","path":"/api/config","status":403,"origin":"http://localhost:3634"},{"method":"POST","path":"/api/runs/manual-c0e249f4-887e-4637-810f-26d91c35570d/stop","status":403,"origin":"http://localhost:3634"},{"method":"GET","path":"/","status":403}],"directory":"/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-localhost-noauth-hb52K9","limitations":"Mock agents, disposable prepared-tool stubs, scripted workflow, software WebAuthn authenticator and self-signed local TLS proxy. No provider calls, OS desktop packaging or physical authenticator proof. Fixture retained; listeners and worker stopped."}

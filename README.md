@@ -28,8 +28,8 @@ The installer detects your platform, checks the download and installs it under
 future terminals; the launch command above also works immediately. No GitHub
 account, GitHub CLI, Node, npm or Bun is required to install Bob.
 
-Your browser opens at http://localhost:3457. Create a passkey using the setup
-code shown in the same terminal. Bob then helps you choose an existing Git
+Your browser opens at http://localhost:3457 without enrollment or login.
+Bob helps you choose an existing Git
 project and an installed coding agent. Connect GitHub in the browser when you
 want to deliver PRs. The GitHub CLI is optional; Bob handles PRs, checks and
 merges through GitHub's API.
@@ -77,7 +77,7 @@ existing session and retain its accepted definition. See [Factory docs](docs/FAC
 
 The dashboard retains runs, chats, evidence, review decisions and checkpoints.
 PWA installation still requires a browser-supported secure origin; a service
-worker/version guard cannot make an insecure remote dashboard safe. Every browser dashboard address requires a passkey session, including localhost.
+worker/version guard cannot make an insecure remote dashboard safe. Direct HTTP loopback access opens without login; remote HTTPS addresses require a passkey session.
 Configure the exact public HTTPS origin and enroll a passkey using the local
 operator setup code; see [passkey setup and recovery](docs/FACTORY.md#passkey-access-and-first-setup).
 Current ngrok support remains; zrok2 (#39) and identity configuration (#57) are

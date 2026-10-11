@@ -20,7 +20,11 @@ const pages = [
 		name: "Project setup",
 		description: "Project, coding agent and GitHub",
 	},
-	{ id: "access", name: "Access", description: "Passkeys and sign-out" },
+	{
+		id: "access",
+		name: "Access",
+		description: "Local access and remote passkeys",
+	},
 	{
 		id: "execution",
 		name: "Execution defaults",

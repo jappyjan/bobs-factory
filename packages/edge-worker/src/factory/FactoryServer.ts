@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import type { ServerResponse } from "node:http";
+import { createServer, type Server, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
 import { factoryRuntimeIdentity } from "bobs-factory-core";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
@@ -29,6 +29,12 @@ import {
 	type ResolvedLaunchRequest,
 	resolveLaunchRequest,
 } from "./LaunchFields.js";
+import {
+	directLocalFactoryRequest,
+	factoryRequestOrigins,
+	localFactoryBrowserRequest,
+	localFactoryOrigin,
+} from "./LocalFactoryAccess.js";
 import { OperatorService } from "./OperatorService.js";
 import { runProvenance } from "./Provenance.js";
 import {
@@ -93,11 +99,12 @@ interface ServerHooks {
 
 export class FactoryServer {
 	readonly app: FastifyInstance;
+	private ipv6?: Server;
 	private streams = new Set<ServerResponse>();
 	readonly auth: FactoryAuth;
 	private streamSessions = new Map<
 		ServerResponse,
-		{ token: string; origin: string }
+		{ token?: string; origin: string; local: boolean }
 	>();
 	constructor(
 		runtime: WorkflowRuntime,
@@ -127,6 +134,14 @@ export class FactoryServer {
 			);
 		this.auth = new FactoryAuth(runtime.directory, access);
 		this.app = Fastify({ logger: false, bodyLimit: 2 * 1024 * 1024 });
+		this.app.addHook("onClose", async () => {
+			if (!this.ipv6) return;
+			const listener = this.ipv6;
+			this.ipv6 = undefined;
+			await new Promise<void>((resolve, reject) =>
+				listener.close((error) => (error ? reject(error) : resolve())),
+			);
+		});
 		if (factoryRuntimeIdentity.packaged)
 			this.app.addHook("onReady", async () => {
 				await updates.observeInstalled(factoryRuntimeIdentity);
@@ -144,7 +159,8 @@ export class FactoryServer {
 		);
 		const unsubscribeAuth = this.auth.subscribe(() => {
 			for (const [stream, session] of this.streamSessions)
-				if (!this.auth.session(session.token, session.origin)) stream.end();
+				if (!session.local && !this.auth.session(session.token, session.origin))
+					stream.end();
 		});
 		const pendingIds = new Set<string>();
 		let configChanged = false;
@@ -161,7 +177,11 @@ export class FactoryServer {
 				configChanged = false;
 				for (const stream of this.streams) {
 					const session = this.streamSessions.get(stream);
-					if (!session || !this.auth.session(session.token, session.origin))
+					if (
+						!session ||
+						(!session.local &&
+							!this.auth.session(session.token, session.origin))
+					)
 						stream.end();
 					else if (stream.destroyed || stream.writableEnded)
 						this.streams.delete(stream);
@@ -206,8 +226,9 @@ export class FactoryServer {
 				reply.header("X-Factory-Build", shell.build);
 			}
 		});
+		const requestOrigins = factoryRequestOrigins(access.origins);
 		const originFor = (request: FastifyRequest) =>
-			access.origins.find(
+			requestOrigins.find(
 				(origin) => new URL(origin).host === request.headers.host,
 			);
 		const cookieName = (origin: string) =>
@@ -226,6 +247,14 @@ export class FactoryServer {
 			/^Bearer ([A-Za-z0-9_-]{43})$/.exec(
 				request.headers.authorization ?? "",
 			)?.[1];
+		// Local operator authority belongs to this validated request, never a transferable token.
+		const localFor = (request: FastifyRequest) =>
+			localFactoryOrigin(originFor(request)!) &&
+			directLocalFactoryRequest(request);
+		const sessionFor = (request: FastifyRequest) =>
+			localFor(request)
+				? { credential: "local-operator", expires: undefined }
+				: this.auth.session(tokenFor(request), originFor(request)!);
 		const setCookie = (
 			reply: import("fastify").FastifyReply,
 			origin: string,
@@ -261,6 +290,13 @@ export class FactoryServer {
 			const origin = originFor(request);
 			if (!origin)
 				return reply.code(403).send({ error: "Invalid Factory authority" });
+			if (
+				localFactoryOrigin(origin) &&
+				(!localFor(request) || !localFactoryBrowserRequest(request, origin))
+			)
+				return reply
+					.code(403)
+					.send({ error: "Direct same-origin loopback access required" });
 			if (request.headers.origin && request.headers.origin !== origin)
 				return reply.code(403).send({ error: "Invalid origin" });
 			if (!["GET", "HEAD"].includes(request.method)) {
@@ -280,10 +316,7 @@ export class FactoryServer {
 						code: "FACTORY_VERSION_MISMATCH",
 					});
 			}
-			if (
-				!publicPaths.has(request.url.split("?")[0]!) &&
-				!this.auth.session(tokenFor(request), origin)
-			)
+			if (!publicPaths.has(request.url.split("?")[0]!) && !sessionFor(request))
 				return reply.code(401).send({
 					error: "Sign in with a passkey",
 					code: "FACTORY_AUTH_REQUIRED",
@@ -291,10 +324,7 @@ export class FactoryServer {
 			if (controlIntake(request)) hooks.updateDrain?.enter(request);
 		});
 		this.app.addHook("preHandler", async (request, reply) => {
-			if (
-				!publicPaths.has(request.url.split("?")[0]!) &&
-				!this.auth.session(tokenFor(request), originFor(request)!)
-			)
+			if (!publicPaths.has(request.url.split("?")[0]!) && !sessionFor(request))
 				return reply.code(401).send({
 					error: "Sign in with a passkey",
 					code: "FACTORY_AUTH_REQUIRED",
@@ -374,13 +404,15 @@ export class FactoryServer {
 		});
 		this.app.get("/api/auth/status", (request) => {
 			const origin = originFor(request)!;
-			const session = this.auth.session(tokenFor(request), origin);
+			const session = sessionFor(request);
+			const local = localFor(request);
 			return {
+				...(local ? { access: "local" } : {}),
 				authenticated: Boolean(session),
 				expires: session?.expires,
-				setupRequired: !this.auth.store.state.credentials.some(
-					(c) => c.origin === origin,
-				),
+				setupRequired:
+					!local &&
+					!this.auth.store.state.credentials.some((c) => c.origin === origin),
 				origin,
 			};
 		});
@@ -430,7 +462,7 @@ export class FactoryServer {
 			const origin = originFor(request)!;
 			this.auth.logout(tokenFor(request), origin);
 			setCookie(reply, origin, "", 0);
-			return { authenticated: false };
+			return { authenticated: localFor(request) };
 		});
 		this.app.get("/api/auth/credentials", (request) =>
 			this.auth.credentials(tokenFor(request), originFor(request)!),
@@ -527,20 +559,24 @@ export class FactoryServer {
 			this.streams.add(stream);
 			const origin = originFor(request)!,
 				token = tokenFor(request)!;
-			const session = this.auth.session(token, origin)!;
-			this.streamSessions.set(stream, { token, origin });
-			const expiry = setTimeout(
-				() => stream.end(),
-				Math.max(0, session.expires - Date.now()),
-			);
+			const local = localFor(request);
+			const session = sessionFor(request)!;
+			this.streamSessions.set(stream, { token, origin, local });
+			const expiry =
+				session.expires === undefined
+					? undefined
+					: setTimeout(
+							() => stream.end(),
+							Math.max(0, session.expires - Date.now()),
+						);
 			stream.write("event: ready\ndata: {}\n\n");
 			const heartbeat = setInterval(() => {
-				if (!this.auth.session(token, origin)) stream.end();
+				if (!local && !this.auth.session(token, origin)) stream.end();
 				else stream.write(": heartbeat\n\n");
 			}, 15000);
 			stream.on("close", () => {
 				clearInterval(heartbeat);
-				clearTimeout(expiry);
+				if (expiry) clearTimeout(expiry);
 				this.streamSessions.delete(stream);
 				this.streams.delete(stream);
 			});
@@ -548,10 +584,7 @@ export class FactoryServer {
 		this.app.get("/api/config", async (request) => ({
 			updates: updates.status(),
 			onboarding:
-				hooks.onboarding &&
-				["localhost", "127.0.0.1"].includes(
-					new URL(originFor(request)!).hostname,
-				)
+				hooks.onboarding && localFor(request)
 					? await hooks.onboarding.status()
 					: undefined,
 			capacity: await hooks.capacity?.snapshot(),
@@ -578,11 +611,7 @@ export class FactoryServer {
 		}));
 		const localOnboarding = (request: FastifyRequest) => {
 			if (!hooks.onboarding) throw new Error("Local setup is unavailable");
-			if (
-				!["localhost", "127.0.0.1"].includes(
-					new URL(originFor(request)!).hostname,
-				)
-			)
+			if (!localFor(request))
 				throw new Error("Complete machine setup at the localhost address");
 			return hooks.onboarding;
 		};
@@ -1010,10 +1039,7 @@ export class FactoryServer {
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/external-reverify",
 			(request, reply) => {
-				const session = this.auth.session(
-					tokenFor(request),
-					originFor(request)!,
-				)!;
+				const session = sessionFor(request)!;
 				runtime.reverifyExternal(request.params.id, session.credential);
 				return reply.code(202).send({ accepted: true });
 			},
@@ -1028,10 +1054,7 @@ export class FactoryServer {
 						reviewedDigest: z.string().regex(/^[a-f0-9]{64}$/),
 					})
 					.parse(request.body);
-				const session = this.auth.session(
-					tokenFor(request),
-					originFor(request)!,
-				)!;
+				const session = sessionFor(request)!;
 				runtime.recoverExternal(
 					request.params.id,
 					body.requestId,
@@ -1265,6 +1288,33 @@ export class FactoryServer {
 			throw new Error("Invalid factory UI port");
 		try {
 			await this.app.listen({ port, host: "127.0.0.1" });
+			const address = this.app.server.address();
+			if (!address || typeof address === "string")
+				throw new Error("Factory listener unavailable");
+			const ipv6 = createServer((request, reply) =>
+				this.app.server.emit("request", request, reply),
+			);
+			try {
+				await new Promise<void>((resolve, reject) => {
+					ipv6.once("error", reject);
+					ipv6.listen(
+						{ host: "::1", port: address.port, ipv6Only: true },
+						() => {
+							ipv6.removeListener("error", reject);
+							resolve();
+						},
+					);
+				});
+				this.ipv6 = ipv6;
+			} catch (error) {
+				// Hosts with IPv6 disabled can still use normal IPv4 localhost access.
+				if (
+					!["EAFNOSUPPORT", "EADDRNOTAVAIL"].includes(
+						(error as NodeJS.ErrnoException).code ?? "",
+					)
+				)
+					throw error;
+			}
 		} catch (error) {
 			await this.app.close();
 			throw error;

@@ -112,26 +112,10 @@ export async function launchLocal(values: {
 			runner: selected as RunnerType,
 		});
 	const address = `http://localhost:${port}`;
-	let setupCode: string | undefined;
-	// Only the local launcher reads machine authority. Never expose enrollment grants via HTTP.
-	const statePath = join(home, "factory", "auth", "state.json");
-	const grantPath = join(home, "factory", "auth", "enroll.json");
-	if (existsSync(statePath) && existsSync(grantPath)) {
-		const state = JSON.parse(readFileSync(statePath, "utf8"));
-		if (state.credentials.length === 0) {
-			const grant = JSON.parse(readFileSync(grantPath, "utf8"));
-			if (grant.expires > Date.now()) setupCode = grant.token;
-		}
-	}
 	console.log(`Bob's Factory: ${address}\nState: ${home}`);
-	if (setupCode)
-		console.log(
-			`First passkey setup code (private, expires in ten minutes): ${setupCode}`,
-		);
 	if (values.open !== false) {
 		try {
-			// Fragments stay on the local machine, outside HTTP requests and server logs.
-			await open(`${address}/${setupCode ? `#setup=${setupCode}` : ""}`, {
+			await open(`${address}/`, {
 				wait: false,
 			});
 		} catch {

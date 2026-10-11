@@ -17,17 +17,19 @@ upstream hosted enrollment, auth key or paid control service is supported.
 The dashboard binds to loopback on 3457. OAuth/webhooks normally use port 3456
 (or local repository launcher port + 1). Use your existing webhook ingress for
 the webhook listener. ngrok remains supported; zrok2 (#39) is separate work.
-Every dashboard address, including localhost, requires a passkey session for APIs,
-live updates, media and actions. To expose the dashboard through HTTPS, configure
+Direct HTTP localhost access (actual loopback peer and validated Host/origin) opens
+the dashboard, APIs, live updates, media and actions without login. Public HTTPS
+addresses require a passkey session. Local requests with forwarding headers or
+cross-origin browser context are rejected. To expose the dashboard through HTTPS, configure
 the exact browser origin with `--origin https://YOUR_HOST` for local startup, or
 `BOBS_FACTORY_FACTORY_ORIGIN=https://YOUR_HOST` for configured services. Your proxy
 must preserve that authority and browser Origin; unconfigured origins are denied.
 Keep webhook ingress separate, with its provider signature checks.
 
-Foreground first launch prints the ten-minute passkey setup code in its own
-terminal and opens the browser. For a service, read the private code from
-`<home>/factory/auth/enroll.json` on the service machine, then enter it in the
-setup screen and create a passkey. For additional enrollment, either sign out
+Foreground local launch opens project/provider onboarding directly. To enroll a
+remote HTTPS address, run `bobs-factory --home /absolute/service/home factory-auth`
+on the service machine and enter its private ten-minute code in the remote setup
+screen. Local access has no passkey setup gate. For additional enrollment, either sign out
 and use a fresh machine-authorized code from
 `bobs-factory --home /absolute/service/home factory-auth`, or add a key in Settings
 with recent passkey verification and no code. Listing/removing keys requires a

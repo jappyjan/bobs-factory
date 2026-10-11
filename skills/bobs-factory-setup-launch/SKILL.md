@@ -5,8 +5,8 @@ description: Start a prepared Bob’s Factory installation in the foreground or 
 
 # Launch
 
-Run `bobs-factory` for guided local startup; it prints first-passkey authorization
-and opens the browser to choose a project and available agent. Use `--no-open`
+Run `bobs-factory` for guided local startup; it opens the browser directly to
+choose a project and available agent without passkey enrollment or login. Use `--no-open`
 for headless operation. An explicit launch uses `--repo REPOSITORY --agent AGENT`;
 configured integrations use `bobs-factory --home STATE_HOME start`. Confirm
 the selected executable, service account, home and env-file before starting.
@@ -16,3 +16,7 @@ Use the systemd or launchd examples in `SELF_HOSTING.md` for background startup.
 Fresh users do not need npm or pm2. Existing pm2 services should be migrated
 using `bobs-factory-migrate`, preserving service definitions and disabling old
 consumers before cutover. Dashboard ingress remains separate from webhook ingress.
+
+Remote dashboard connections require the exact configured HTTPS origin and its
+passkey session. Proxies preserve public Host/Origin; use the local access boundary
+and proxy guidance in `docs/FACTORY.md#protected-remote-access-design`.

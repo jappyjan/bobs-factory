@@ -228,6 +228,22 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 type Passkey = { id: string; label: string; origin: string; createdAt: number };
 
 export function AccessSettings() {
+	const access = useAccess();
+	if (access.access === "local")
+		return (
+			<div className="access-settings">
+				<h2>Access</h2>
+				<p className="intro">Local Factory opens without sign-in.</p>
+				<p>
+					Remote HTTPS hosts require their own passkey session. Connect to the
+					remote address to manage its passkeys.
+				</p>
+			</div>
+		);
+	return <PasskeySettings />;
+}
+
+function PasskeySettings() {
 	const [keys, setKeys] = useState<Passkey[]>(),
 		[error, setError] = useState<string>(),
 		[busy, setBusy] = useState(false),
