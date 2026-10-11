@@ -179,11 +179,11 @@ export async function publishPreparedRelease({
 					duplex: "half",
 				},
 			);
-			await stream.completed;
 			requireValue(
 				response.ok,
 				`Upload failed: ${record.file} (${response.status})`,
 			);
+			await stream.completed;
 			verifyAssetInventory([await response.json()], [record]);
 		} catch (error) {
 			stream.body.destroy();
