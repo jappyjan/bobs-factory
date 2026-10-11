@@ -1,0 +1,24 @@
+[
+  {
+    "executable": "/Users/jappy/.nvm/versions/node/v24.20.0/bin/node",
+    "args": [
+      "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/readonly-helper-fingerprint.mjs",
+      "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/Bob's Factory.app",
+      "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/factory-home/desktop/updates/installation.json"
+    ],
+    "status": 0,
+    "stdout": "{\"pid\":34620,\"node\":\"24.20.0\",\"electron\":null,\"noAsar\":null,\"asarDirectory\":false,\"asarFile\":true,\"asarSize\":41739706,\"installationKind\":\"bob-owned\",\"fingerprint\":\"c5d07506f7beebe69490b71fad770527ca8ee219259e87beb65e9b32991d4d26\",\"expected\":\"c5d07506f7beebe69490b71fad770527ca8ee219259e87beb65e9b32991d4d26\"}\n",
+    "stderr": ""
+  },
+  {
+    "executable": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/Bob's Factory.app/Contents/MacOS/Bob's Factory",
+    "args": [
+      "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/readonly-helper-fingerprint.mjs",
+      "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/Bob's Factory.app",
+      "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/test-preparation-pr96-20261011-195337/desktop-update-attempt2/factory-home/desktop/updates/installation.json"
+    ],
+    "status": 0,
+    "stdout": "{\"pid\":34621,\"node\":\"24.21.0\",\"electron\":\"44.7.0\",\"noAsar\":null,\"asarDirectory\":true,\"asarFile\":false,\"asarSize\":0,\"installationKind\":\"bob-owned\",\"fingerprint\":\"e6abea3221922d310e6375341a13b588a2be735ccbdcec7d64ea5058ba62ae8d\",\"expected\":\"c5d07506f7beebe69490b71fad770527ca8ee219259e87beb65e9b32991d4d26\"}\n",
+    "stderr": ""
+  }
+]

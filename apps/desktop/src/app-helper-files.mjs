@@ -10,6 +10,7 @@ export function retainAppHelper(sourceDirectory, retained) {
 		"app-lifecycle.mjs",
 		"app-source.mjs",
 		"app-archive.mjs",
+		"app-filesystem.mjs",
 		"app-licenses.mjs",
 		"app-quarantine.mjs",
 		"update-services.mjs",

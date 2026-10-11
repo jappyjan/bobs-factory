@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { lstatSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { lstatSync, readFileSync } from "./app-filesystem.mjs";
 
 export const electronLicenseFiles = ["LICENSE", "LICENSES.chromium.html"];
 export function validateElectronLicenses(value) {
