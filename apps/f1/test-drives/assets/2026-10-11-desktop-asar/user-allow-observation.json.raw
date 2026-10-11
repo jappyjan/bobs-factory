@@ -1,0 +1,32 @@
+[
+  {
+    "path": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/asar-fix-121-20261011/actual-update-fixed/Bob's Factory.app.bobs-failed-3cca4d5d-e76e-4cb6-ae45-42385d35ca64",
+    "quarantine": "0083;6acbf4b4;T3-Controlled-Update;",
+    "xattrStatus": 0
+  },
+  {
+    "path": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/asar-fix-121-20261011/actual-update-fixed/Bob's Factory.app",
+    "quarantine": "0083;6acbf4b4;T3-Controlled-Update;",
+    "xattrStatus": 0
+  },
+  {
+    "path": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/asar-fix-121-20261011/actual-update-fixed2/Bob's Factory.app.bobs-previous-ef763766-c978-48ad-8b05-ae80b40e4057",
+    "quarantine": "0083;6acbf529;T3-Controlled-Update;",
+    "xattrStatus": 0
+  },
+  {
+    "path": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/asar-fix-121-20261011/actual-update-fixed2/Bob's Factory.app",
+    "quarantine": "00c3;6acbf529;T3-Controlled-Update;",
+    "xattrStatus": 0
+  },
+  {
+    "path": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/asar-fix-121-20261011/actual-update-fixed3/Bob's Factory.app.bobs-previous-ca09102c-31ca-48f1-b950-d1f3497dfb31",
+    "quarantine": "",
+    "xattrStatus": 1
+  },
+  {
+    "path": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/asar-fix-121-20261011/actual-update-fixed3/Bob's Factory.app",
+    "quarantine": "",
+    "xattrStatus": 1
+  }
+]

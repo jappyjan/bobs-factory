@@ -1,0 +1,3865 @@
+✖ pinned Electron Node helper inventories and archives the physical ASAR bytes, mode and symlinks (744.896417ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 816.635541
+
+✖ failing tests:
+
+test at apps/desktop/test/app-asar.test.mjs:19:1
+✖ pinned Electron Node helper inventories and archives the physical ASAR bytes, mode and symlinks (744.896417ms)
+  AssertionError [ERR_ASSERTION]: Electron helper must match system Node's complete physical inventory
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        kind: 'directory',
+        path: 'Contents'
+      },
+  ...
+      {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar'
+  +   },
+  +   {
+        kind: 'file',
+        mode: 420,
+  +     path: 'Contents/Resources/app.asar/LICENSE',
+  +     sha256: 'c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4',
+  +     size: 11357
+  -     path: 'Contents/Resources/app.asar',
+  -     sha256: 'e90ee5abfdd969ba6d6486a034e0497bf0c1869efcd390b359227d522143997d',
+  -     size: 41739706
+      },
+      {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/NOTICE',
+  +     sha256: 'acff42efa272fe95675d914d1a1a8ebca9003f0eef5d176731d8a9d75c11107c',
+  +     size: 302
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules'
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/@graphql-typed-document-node'
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/@graphql-typed-document-node/core'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@graphql-typed-document-node/core/LICENSE',
+  +     sha256: '37431eb2e9e265d8d9a67161ba96394537fbc164ef546bf2140238a582cd59b2',
+  +     size: 1073
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@graphql-typed-document-node/core/package.json',
+  +     sha256: '6a8cb02d2cfe1aa65f0b4760c0bec4215d78d91796e19922d58ae1add957bf04',
+  +     size: 480
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear'
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk'
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/_generated_documents.d.ts.map',
+  +     sha256: 'a6de5ac106bb953477d365982c94bd458c384372964bbeb42d7ac040fdc9042a',
+  +     size: 1747723
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/_generated_sdk.d.ts.map',
+  +     sha256: '76c8f254d4cb0ba7bd1730f9107c1ff7c73c00fd692f4c016b8e33add7275f9b',
+  +     size: 366746
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/client.d.ts.map',
+  +     sha256: '3edca2369a172e73c47977ef8a1c4a1bbfe5fa9478b48b3fa2fa32c4f7f6e281',
+  +     size: 374
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/error.d.ts.map',
+  +     sha256: '422425eed88258326ae5a63a54c43031b062736f367cf98b03aa6a043f116be8',
+  +     size: 2615
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/graphql-client.d.ts.map',
+  +     sha256: '85a1b4695261a2665142cacf6d48dc80e9b04b8a605fdf649c5d1ae97c5f7db8',
+  +     size: 1189
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.js',
+  +     sha256: '0382f485bd5a0b6c472512b97c92e532f88fd047f8c9a2cd03b3b759539c3361',
+  +     size: 4408570
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.js.map',
+  +     sha256: '5f71d52f837fb9b73356d2dbaeb7a839ec3a22a9f09f232d0cf28b4a66e3696a',
+  +     size: 3248660
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.min.js',
+  +     sha256: 'd73db21f696766b7e788f17e494ec69c6125a5b24aa3d56476a1c512b1a34229',
+  +     size: 1914643
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.min.js.br',
+  +     sha256: '53d17ea6e608eb4045ae47c3cbd58ab8c341bc3080cb4e8793fd69a92bb14d62',
+  +     size: 120086
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.min.js.gz',
+  +     sha256: '257a2c13c8078ac1f8e3d9a606f5b908854272e3fd856ccb23c253157bbc74b2',
+  +     size: 184418
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.min.js.map',
+  +     sha256: '620a068f39a8577e4a3220c405963f3b1d1d3d3c30a360139b862d3865f4762a',
+  +     size: 1847938
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.js',
+  +     sha256: 'd54d7f59f0f7144f2b4ba303301535042ddcef014a97e238e6dbed8a7c08e70d',
+  +     size: 4371667
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.js.map',
+  +     sha256: 'b3050dec539869c9dd486305c5ae96488f05252395ecbed5065b8ae9ac3d7183',
+  +     size: 3246018
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.min.js',
+  +     sha256: 'bec250f72957eed2fe7b7ac6c1d249bea5d8064c4472c01d5200cf0c824091cb',
+  +     size: 1904525
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.min.js.br',
+  +     sha256: '233fd1a46663471eb9466ed75111ab2c19f2c97a379309610c71d1f67c484858',
+  +     size: 119689
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.min.js.gz',
+  +     sha256: '55fb44e5a72794bbad48872c165cb4acca138b9b19c1de60da21e700a38ab53d',
+  +     size: 183470
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.min.js.map',
+  +     sha256: '9c8ef7d395ecfdbf458fad6e4b619200091a56673cd2126d703375709a75bd61',
+  +     size: 1853680
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.js',
+  +     sha256: 'b7bd1eec4b2bf8abe47952b3c2d608cbd779496d65df5ca2680445533d2ebcdc',
+  +     size: 4130326
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.js.map',
+  +     sha256: '07c0f93184d87968738904ceb4a5b4ddcd3dd50dd261b1bd8e21ff4a047aa1f6',
+  +     size: 2933802
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.min.js',
+  +     sha256: '88d63630152425964c8d697f4fa25ff2f545ba339e795bf5e6d1511350247a00',
+  +     size: 1595054
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.min.js.br',
+  +     sha256: '8f56624c583d9a854ad93e5aa2513744cf1d97d1409021a08590aee24fe2ac7e',
+  +     size: 76012
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.min.js.gz',
+  +     sha256: 'ca9b12705107f55207c8969dfbc64fba6f86d9176bd523c1cb1105df58797232',
+  +     size: 105978
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.min.js.map',
+  +     sha256: '145798e96d9917e9c0ae635b9ad0f3eec026206986dfdfbec9afd46e61610162',
+  +     size: 1665629
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index.d.ts.map',
+  +     sha256: '39d6430120b5775ddb0311d2ab888fb0a0f4ef264fd4f5b1c7f93dd9d1731dae',
+  +     size: 210
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index_umd.d.ts.map',
+  +     sha256: '4f1bde0f9f174336413f409507a7fbba4fa8af44bc2b5a4f7e60d04b2c629b04',
+  +     size: 257
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/types.d.ts.map',
+  +     sha256: '11f9c60482e5785c9a2b6cd5b94785ef39934cd2f02ca3602d2217769f0606df',
+  +     size: 1959
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/utils.d.ts.map',
+  +     sha256: '1767a2877d2951641cc72f888ffda5090597e480a9f933fd6a18385b662e0d6f',
+  +     size: 526
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/client.d.ts.map',
+  +     sha256: '78567675248ab999bc42cdc98ab9e1ea4273bdc72f7fd2d9222026523052d483',
+  +     size: 846
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.js',
+  +     sha256: '27348f41b90abfb3013a0ca00aff70980488148090c4be1a4be2a2e648844794',
+  +     size: 13285
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.js.map',
+  +     sha256: '87675d070a23fad5e436ca2648806638208d433ced522c2f6d9362b567e019d5',
+  +     size: 29232
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.min.js',
+  +     sha256: '821a16580f421a0813679b8b91384f0a5e00b1b4c09dd6ad195b41b01c857c04',
+  +     size: 3920
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.min.js.br',
+  +     sha256: '3e5e00811658652d41046023fcf5a6eb4012df1d7889bd7db07005d0aacc0e5d',
+  +     size: 1480
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.min.js.gz',
+  +     sha256: 'e846b03a60bdd4b9e6dff13ad09cfb02584f966b18acb994fc24a986232b05f3',
+  +     size: 1672
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.min.js.map',
+  +     sha256: '48cf4f4fd8c7f28fa3795885058b88bfcf316a79641e5c0b160b54af574b737c',
+  +     size: 25807
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.js',
+  +     sha256: 'bc04bace92ea9f8f18307b53727f0e01c0bf95f72c4da8708110034c7c8a8f84',
+  +     size: 12884
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.js.map',
+  +     sha256: '893256bc96eb13e905e7da096c22cba4c36f699aea96ccc315c2690b3ecea2de',
+  +     size: 29209
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.min.js',
+  +     sha256: '66c14ef17c08ebf60ba7e2846ae8120db52d162fcd023e7c195d28b7c0fdbdc4',
+  +     size: 3758
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.min.js.br',
+  +     sha256: 'd48d81be1dd6724eaae33c3ce9f8bfb1f308409a7016c9aedfbe6ebeafc5c2ac',
+  +     size: 1433
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.min.js.gz',
+  +     sha256: '3c2dde93dad990b8c640fda313461de2ed5b4a49db51e3e91a9930d62896994d',
+  +     size: 1608
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.min.js.map',
+  +     sha256: '17f598aa55848013b206097cbc702496f7d47bd6cd01e5dec09ed881b2fb605a',
+  +     size: 25861
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index.d.ts.map',
+  +     sha256: '48622ae15c1b25981539e9bdbcc3df8ec6b384dac23c31536371b95124a4e4af',
+  +     size: 156
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/types.d.ts.map',
+  +     sha256: '0e8508c6c68a687e0f198ff8d8518349771a0b4287ace57b4b79ab1b303d5e46',
+  +     size: 4797
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/package.json',
+  +     sha256: '6318cd02125f244e2c266328f68033c46a347006ab0a9030ba1e7722af913fe1',
+  +     size: 1892
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/webhooks'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/webhooks/package.json',
+  +     sha256: '597eecbd5a20a444badf108a6b6ae99ada298b59f8684d666c83812df9686e1c',
+  +     size: 148
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/LICENSE',
+  +     sha256: '35a11da7e877009ddc57405844209908cfc567adda0ec1daf410368c9f5b0d01',
+  +     size: 1072
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/GraphQLError.js',
+  +     sha256: 'ff4f6ee8baeb4f7ebf525d8db28e967aea9c4a1d7f965c44f7f95c7a968320d9',
+  +     size: 13587
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/GraphQLError.js.flow',
+  +     sha256: '98849acac5424d2eefd33c58259fb31063c3b5dc1cf751a02056f53a4585c375',
+  +     size: 7874
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/GraphQLError.mjs',
+  +     sha256: 'bd0e31960a805032f8114cc8cba86fb350beb4c7b007d98d132f025169977498',
+  +     size: 13167
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/formatError.js',
+  +     sha256: '2d233ac6395a3662f002197d0dfacad133020472a45869540650c8a0c7732026',
+  +     size: 269
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/formatError.js.flow',
+  +     sha256: 'e1d0f17caf9786cea5eee72c6dbc5e0556a0c0234c43021c2440a24278eacc14',
+  +     size: 123
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/formatError.mjs',
+  +     sha256: '91120256728f55302e78430dcf7741fdf2ccb2428958936d5f33c99e7cfee531',
+  +     size: 50
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/index.js',
+  +     sha256: 'fb159b2837b013e6c7c3a068c0f900fc7dbb8149a06d755e315f361c3e9174fa',
+  +     size: 970
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/index.js.flow',
+  +     sha256: 'bea715d434b5e1a278ed6a5755f9bb29afc8e9bb1ca6d8cbcd236a91ac6eb184',
+  +     size: 275
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/index.mjs',
+  +     sha256: '78faa20ada1b8d5aab2e3cb781cc31b464fe80c54ed6524203e835c7ca92ee42',
+  +     size: 212
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/locatedError.js',
+  +     sha256: '02eb951babb35fb2aa47d7a22449a80cd9c48da3d23dc1ad9e95b92825971fe7',
+  +     size: 1266
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/locatedError.js.flow',
+  +     sha256: '563ed67e017ca5e3ab043f50849d6d3dfebdba925f4e0596add55675820dc02c',
+  +     size: 1210
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/locatedError.mjs',
+  +     sha256: '538285f2fddf217b89437604ae04e9d86bf26c39093472bef667eef906bb9712',
+  +     size: 1003
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/syntaxError.js',
+  +     sha256: 'bafe4459fdc27f626424e02c7e26796918124974f36d00bc0618dbb2880206a1',
+  +     size: 491
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/syntaxError.js.flow',
+  +     sha256: 'd443d7663b1586a3576fe242d2cda6b5a41629cf3afc8825d5607ce1714ece38',
+  +     size: 482
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/error/syntaxError.mjs',
+  +     sha256: '7b74e3ef16a87cecd9893864e83bd4a1a8b14a1cf7fd48e3ac850194f083e0cb',
+  +     size: 369
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/execute.js',
+  +     sha256: 'acae21969bcb5455d6fa6212349679c405ad67f7a03fd522d8f18cba3924c54a',
+  +     size: 31921
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/execute.js.flow',
+  +     sha256: '694d37e868039810a645d22786958a9474c19ae9d8f282296d90bed20df72d70',
+  +     size: 36376
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/execute.mjs',
+  +     sha256: '5cabd2dcb6427d4c0755f65b5aedb7ed73221eece0c814602e21c50c7fb1b757',
+  +     size: 30928
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/index.js',
+  +     sha256: '08ed1b00650e767a6b9cfc02665c0175a57e05eb13421aa595fbc6335186da4e',
+  +     size: 1046
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/index.js.flow',
+  +     sha256: '63bed9d6c16d1e336a3017c1bc6b73e98650207a49dc8e70e6f1f77be459f63b',
+  +     size: 336
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/index.mjs',
+  +     sha256: 'e9777392802dfdb1ee98ac166561a431e3206ed0ade8e1810e8747b83eda4753',
+  +     size: 222
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/values.js',
+  +     sha256: 'ca23a009b875cb8b6fe947b1d9d3974e9fa90f444508f11e786ae4585db0ed8e',
+  +     size: 9397
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/values.js.flow',
+  +     sha256: '8076917dd1870b77fe4e68abcc533da419ccd8e74c48f5af0c9cf613501fb26d',
+  +     size: 8327
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/execution/values.mjs',
+  +     sha256: 'b04db3ed6e4d00bf4555cd0290be013fc0c10bd560858a0737a10b3d17bd6167',
+  +     size: 8523
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/graphql.js',
+  +     sha256: 'eb706b624fae592ddc19aa6142875e476eba6389aaa3b708837fccc4b51eab3d',
+  +     size: 3390
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/graphql.js.flow',
+  +     sha256: 'fc79da402c2ececbb35435024587a94ff70fb102d6eb848dc1f95bc683f5b937',
+  +     size: 6192
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/graphql.mjs',
+  +     sha256: 'aa32b93f5feb3f8f4bd0f672950312c75d105d00c106fcaaff26501a9bf719f4',
+  +     size: 4943
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/index.js',
+  +     sha256: '506816f876aa40d9e70c2bdbf56fefe6e4a6c5a3fd9439dd126f48eed0680f3f',
+  +     size: 28769
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/index.js.flow',
+  +     sha256: '66f7183839cc61a863e7659ba375df53310c4d38cedb51bbbbf2f4cc0ef2d67f',
+  +     size: 11542
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/index.mjs',
+  +     sha256: 'b115f16b908bcdd036e6b95998f4e200d4c239ceabde1f4e7de6dc246efa8c5b',
+  +     size: 7600
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/ObjMap.js',
+  +     sha256: '77f5eec38c5ef075e11892244ccf9e249d82937e07401398df98319568775a17',
+  +     size: 14
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/ObjMap.js.flow',
+  +     sha256: '1f251e6c2977498b99c173b400481fe7955948a13bda363eb651ebfab02c1d70',
+  +     size: 319
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/ObjMap.mjs',
+  +     sha256: '01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b',
+  +     size: 1
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/Path.js',
+  +     sha256: '283885d797c3be6fd0686b3f1870182b4f4546a8d8b1c32484c2764965cfa8d0',
+  +     size: 569
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/Path.js.flow',
+  +     sha256: 'd15b2e2c996cacaac6b10b14e6517708b8029a82fb89619b87d9f0407b0a4517',
+  +     size: 635
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/Path.mjs',
+  +     sha256: '431fde6d3a948c8d6458f88832e4b7af635615c02b2c0fa0ced5c0ac9597cc4d',
+  +     size: 439
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/PromiseOrValue.js',
+  +     sha256: '77f5eec38c5ef075e11892244ccf9e249d82937e07401398df98319568775a17',
+  +     size: 14
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/PromiseOrValue.js.flow',
+  +     sha256: 'fd4230d983183e7ae7207fca41565487bf972f34daff6ca636141c0cc9a84bf4',
+  +     size: 65
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/PromiseOrValue.mjs',
+  +     sha256: '01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b',
+  +     size: 1
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/defineInspect.js',
+  +     sha256: 'ac62caa82d669af018b8b7895b75c5dba98e2a053984887eb54b9ae6e06aa4fc',
+  +     size: 858
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/defineInspect.js.flow',
+  +     sha256: '049e7a371e8d4be7fc52785dc9ca4363051bcd44cb543e208bccb371989332d1',
+  +     size: 641
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/defineInspect.mjs',
+  +     sha256: '86abd416edf6eb694c93969bda97e1da242b280ca41dbebcbedb804779e3f46b',
+  +     size: 575
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/devAssert.js',
+  +     sha256: 'c45b8a9fb4328f42f986fc9e6cdd6b9a45b20a5ebb2a1ac3aaf77d387e7aff50',
+  +     size: 346
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/devAssert.js.flow',
+  +     sha256: '15ae62412f7823f74db8c64bdf8fac5bb63184524a3883c722f688090222c6be',
+  +     size: 291
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/devAssert.mjs',
+  +     sha256: '7f8f1212d8f7985afe8945e69bc887ae698a27cee50dd49119487b6456ac9a4d',
+  +     size: 251
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/didYouMean.js',
+  +     sha256: 'd7fc3a84b2bc25dd4cb3428883cfbb390ac8c1176f604b9b1a058e2869105ddc',
+  +     size: 990
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/didYouMean.js.flow',
+  +     sha256: '788e3aa557fbaa5c9746850c72a54f68e069b31d009a48d80a0bfb1bee33f50b',
+  +     size: 1078
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/didYouMean.mjs',
+  +     sha256: '13d362056322e6a090106b1a5e11ebd3cde17c0765c6b488255ea3615c76213d',
+  +     size: 895
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/identityFunc.js',
+  +     sha256: '015a18a5849b212055611d2a4b5a12439de22f8d94563b06aa912d5d11c536ba',
+  +     size: 205
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/identityFunc.js.flow',
+  +     sha256: '597a9e040527b65dbf4088e40a0b464a65cd2e13acad13012aacd083fdec8849',
+  +     size: 132
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/identityFunc.mjs',
+  +     sha256: '6cb0dda6a2ab87963f73887f2aed072ef332ece26593659a1c1ab251f174094c',
+  +     size: 107
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/inspect.js',
+  +     sha256: 'e6587e257879558e5e4f5132dfa91092934f4f1f262bdf37e3059f9e6f175735',
+  +     size: 3479
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/inspect.js.flow',
+  +     sha256: 'da52655d21441d5125e6525283f7cc106d1aa8f4096620dba6a1c5b2b4e8cb95',
+  +     size: 3122
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/inspect.mjs',
+  +     sha256: '4abca747d5b9c88a61e43b535ce2c2f568c7c44b62edf38844c410078baad040',
+  +     size: 3296
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/instanceOf.js',
+  +     sha256: '6425d203ad149f4fec8ca450bd86bc458008094fb9fdece74d9c6d72c15e9dbf',
+  +     size: 2483
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/instanceOf.js.flow',
+  +     sha256: 'f829551c6d2b29d5c822f266fc09f87c9c35f2939be807ce4d1e4d1aaabf4dc4',
+  +     size: 2098
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/instanceOf.mjs',
+  +     sha256: 'd752a61cf70c67ef0e53181871db8e12334a4742e2c129332bdaaabb21eae9f2',
+  +     size: 2328
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/invariant.js',
+  +     sha256: '2e5b660d9918be93172483cb1d529c0cda109490c03f679a79ab13a7c1da78b8',
+  +     size: 400
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/invariant.js.flow',
+  +     sha256: 'fc1ac6753bf0109ff2e28a183f3ccf14b7f154dee3ff806b96cf3a9a1630ac32',
+  +     size: 359
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/invariant.mjs',
+  +     sha256: 'f44cd1da4cfffe42b0b3907981fbb36bcdb5336add3038b3baa371ba4972d379',
+  +     size: 305
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isAsyncIterable.js',
+  +     sha256: '38cc7569ef732a09209e76118e336fb64797a3cfe203285e16cf17b6471ba78d',
+  +     size: 415
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isAsyncIterable.js.flow',
+  +     sha256: '7f53e39d3069bb02d15a5c285e4125d96525e2ec4e38346f95176d8f1d6da618',
+  +     size: 528
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isAsyncIterable.mjs',
+  +     sha256: 'b02be70a185f182a1e6a30c01cc00652707f06821c8ed8a6914662831bdaa43d',
+  +     size: 488
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isObjectLike.js',
+  +     sha256: '4bf7e68b60e7475d9b2571ed2d97c2fcc5ae4221596c636a478424dad456cd2f',
+  +     size: 715
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isObjectLike.js.flow',
+  +     sha256: '279205bebff4b7982304626d66327337d8cece43ad71772f417d91776433587c',
+  +     size: 275
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isObjectLike.mjs',
+  +     sha256: '1a8d41e3c1ea1a1dec0eda562f5a6eb0637df6e59dd34db0af9bc79b52b42b2d',
+  +     size: 617
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isPromise.js',
+  +     sha256: '7e183c486f1f9ca1ba222440f402e57ec9f05c966ad1c8665e3f2438f7bfea09',
+  +     size: 386
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isPromise.js.flow',
+  +     sha256: '0346b83a038893a140793571bd6d5c634ce0aa0f8f19a4cb9c714e3049c22549',
+  +     size: 348
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/isPromise.mjs',
+  +     sha256: '50770ffffb191babca874042d7e733eb19cba69b4eedde1893e9231c3960fb33',
+  +     size: 291
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/keyMap.js',
+  +     sha256: 'daec98f6031abc50964af33ce4f356a5c949149068bafea9c6d88d3a55f34e20',
+  +     size: 916
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/keyMap.js.flow',
+  +     sha256: 'f148d00fcb8f6442056362ac1966a535589a80cf6b1506288b135fd3359f0e2b',
+  +     size: 936
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/keyMap.mjs',
+  +     sha256: '663da509f7db2faf3186691424334df66f570a8aa5e7b394443292196cb54eb8',
+  +     size: 824
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/keyValMap.js',
+  +     sha256: '335ec037a207bab9d95375ea603e4efda022856d71a44ead6b62b6b5d031e9fb',
+  +     size: 741
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/keyValMap.js.flow',
+  +     sha256: '6c37ce39d1f3054376850af10170d8acd7d73615e13291cf8ba3ba6f9f15c0d8',
+  +     size: 779
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/keyValMap.mjs',
+  +     sha256: '4e3884fcf7f01444a31772c8c68d291c388251c0bd214665ea52ddc195783510',
+  +     size: 646
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/mapValue.js',
+  +     sha256: '916bfc80532852b13b9aa1cb1df1968c3e3b3aab881da756c284faa19f77420a',
+  +     size: 751
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/mapValue.js.flow',
+  +     sha256: '72c14c9df3c8f05f677b7c8a7eccf956dc369909fedfacd906215a286ae80532',
+  +     size: 497
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/mapValue.mjs',
+  +     sha256: '0d6aa03fee08c2dafc4b0de85cbac1cda9d2d4062c04225cfe882e381cba10a1',
+  +     size: 517
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/memoize3.js',
+  +     sha256: 'ada732c320c8fcd14f412dc31f9bfb83d189ee119d913d0dd32362af52a1ccde',
+  +     size: 813
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/memoize3.js.flow',
+  +     sha256: '454ea4d90103bfe4b56a2262397bf6bb9da98efdb2fc63de9e6f10c09174a471',
+  +     size: 904
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/memoize3.mjs',
+  +     sha256: '46d7c79942acb084ce1729b1139459f9e1087ee643c344fce5241494b7ced844',
+  +     size: 719
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/naturalCompare.js',
+  +     sha256: '00f6ee6860cc9daec0703252c3ddf0ee0371b05bf16c7444defe753783f6bfa2',
+  +     size: 1357
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/naturalCompare.js.flow',
+  +     sha256: 'e80553980a2f698227103e74cc163d444aea2ae0dca8bb12c7fe35063885c2a9',
+  +     size: 1314
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/naturalCompare.mjs',
+  +     sha256: '6758982e0529b3e92a3ed68497db69455727537b8c66bddec495568d516fccf3',
+  +     size: 1256
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/nodejsCustomInspectSymbol.js',
+  +     sha256: 'abe69dfe70fb1efa0c55c3ec37c8e4432fcc07568974adc8e7ebaec4c640b04d',
+  +     size: 412
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/nodejsCustomInspectSymbol.js.flow',
+  +     sha256: '6a627c480a3c7d8d86a514831d8126a6b2ae3d73993c97ad7e159baa173e3d8f',
+  +     size: 307
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/nodejsCustomInspectSymbol.mjs',
+  +     sha256: 'cf1435aaec7feb96314907f521d7831cbb50f284f90ea8c0fccaa17abacd3491',
+  +     size: 278
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/printPathArray.js',
+  +     sha256: 'd05f48977d694334efea7680b5315a3203b5195e58082da5b0f5ba0097c42406',
+  +     size: 323
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/printPathArray.js.flow',
+  +     sha256: 'c962c226d0a1c03220c3346e825f2c35a5fd37e51d40aee8a0ba4268f2ac2a26',
+  +     size: 283
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/printPathArray.mjs',
+  +     sha256: '3e6b774128f3be3920cf6836cae46a9161026fa71e4b7cf947e14a59057874d7',
+  +     size: 223
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/promiseForObject.js',
+  +     sha256: 'c0b1af897ca4723472a352b4be5bfdb48e66e5e91556ee887dd659f602a36c10',
+  +     size: 755
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/promiseForObject.js.flow',
+  +     sha256: 'dd992c016c1c47cb4bc3c9d61c660a95980b814b46e3b097c3dc617d5c863f56',
+  +     size: 716
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/promiseForObject.mjs',
+  +     sha256: '1b903c72c025fb255a1cd571eb32bd5ba149419a63447c22ece5218846818591',
+  +     size: 653
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/promiseReduce.js',
+  +     sha256: 'e7170db7bc7846465e118179955f1881d046bd3371c0f632e3da1917fce1e339',
+  +     size: 843
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/promiseReduce.js.flow',
+  +     sha256: '4884ff36f16f6f9e9790761735b7a3a73ca285220608502fa1f764b0aead75e4',
+  +     size: 759
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/promiseReduce.mjs',
+  +     sha256: '760d31660d3a174acf21dbfcdd8a3af43e542cfc350cc256a25bbf49ab00b3a8',
+  +     size: 606
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/safeArrayFrom.js',
+  +     sha256: 'e1ed66f64739759755b4261ba6852110e0c729d177f4e06699f71378b2703163',
+  +     size: 2063
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/safeArrayFrom.js.flow',
+  +     sha256: '3ae820d3ebe0f3c6a86f49520778fad96c56098e0749cac2d32439315b9d4abc',
+  +     size: 1574
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/safeArrayFrom.mjs',
+  +     sha256: '85e483e0c69bc98d2be01c9b561db8f63f8e2eaa7ee1b1b5ff4143b06c73a46d',
+  +     size: 1964
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/suggestionList.js',
+  +     sha256: '88d013b63e5a3eab386e2e09b383228d5e95c071681872d93ed46db69248ca89',
+  +     size: 4054
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/suggestionList.js.flow',
+  +     sha256: 'c7de4e345e604344269f89525ca69ed77245a1f98134fa629e59c8e72b9779d0',
+  +     size: 3954
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/suggestionList.mjs',
+  +     sha256: 'ef34f5901325a579ecdeb57384276f22af5d94bff5a940448bb5735e8aff14ca',
+  +     size: 3815
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/toObjMap.js',
+  +     sha256: '4d429c44a751d8f2f3cba7a3ec764f665d56bb0ae6f6cb7f1ac280389e78bb5a',
+  +     size: 698
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/toObjMap.js.flow',
+  +     sha256: '9e8f416d995730e530d023ee5e3a5e82cb987aa7b82dd844282a5353339f5204',
+  +     size: 613
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/toObjMap.mjs',
+  +     sha256: '2658e4a476c4f97991c0f16663b446bce364eb5405d653d54dbff375f2fec06c',
+  +     size: 463
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/ast.js',
+  +     sha256: 'e2ff8090c2deab33d1ac36dca438a067484fb3a7153a9babdd8b4a041091795e',
+  +     size: 2826
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/ast.js.flow',
+  +     sha256: '805cd6ec752fd2d8534bb13a6bef6da981450a350ec398dacdf00219db7352e4',
+  +     size: 15070
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/ast.mjs',
+  +     sha256: '4870e51dcc83f7338ea06eb9ce72da387a1e2bd5702223fda4e771d20aa7ecbe',
+  +     size: 2492
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/blockString.js',
+  +     sha256: '5b763abd2c63796117c28b2de4170e8ebc8b4a78957fdc8e034413cac69fcbdf',
+  +     size: 3579
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/blockString.js.flow',
+  +     sha256: '3618b79b3b333840f8b5bd9ae57cf54306bd723e4b0ef3a3a3416838c972e061',
+  +     size: 3261
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/blockString.mjs',
+  +     sha256: '739bfc9adffc20b5fba162d4338a4a3b062f504f22a2b51451fa2e1e37a88542',
+  +     size: 3353
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/directiveLocation.js',
+  +     sha256: '7da14e84a590204938aef83d0bf836d97bec179f18b0f02c38cc008995251df5',
+  +     size: 966
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/directiveLocation.js.flow',
+  +     sha256: '84ed80c1fdfa930ad435c0198a6a296f7891e9b2f8c7855e50fa921f6bc893bf',
+  +     size: 899
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/directiveLocation.mjs',
+  +     sha256: '91cfd7d66d8b6cb6524c83ea069ace833c3a3be7ecaa90b59cd68786dfc0183e',
+  +     size: 808
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/grammar.js',
+  +     sha256: '0344e097cce091e6c067e2f6e5fa2dffc304a46a896608bb59ba83d56f706f5a',
+  +     size: 19477
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/grammar.js.flow',
+  +     sha256: '6c668d7f64a9b2b3a423972a8064638fca934cc0423ba4fa80a7b069461e30c1',
+  +     size: 22537
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/grammar.mjs',
+  +     sha256: 'f667e7ab950fd0e635860ea5ec2289587765bac43a82405f215a219a752d8197',
+  +     size: 19343
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/index.js',
+  +     sha256: '08d472797d1266845f3b23572384b24ae9a18e04e61859b667ea4f183a51ce55',
+  +     size: 687
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/index.js.flow',
+  +     sha256: '7587e4d18b5bac8d89fc2410ea3312a2f1a8d11938354f82159aa9e068405636',
+  +     size: 112
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/index.mjs',
+  +     sha256: 'cecc1195a2c879e8bd866f5cdc9f15422f698458739109c2bd9d89d7a229d8a0',
+  +     size: 91
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/onlineParser.js',
+  +     sha256: '4351bbac90a590b26a8fca57d301e8a7b716813e9b8717d4adb5f59c5e3a35ed',
+  +     size: 18632
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/onlineParser.js.flow',
+  +     sha256: '21957561da632b4cebf9d1d6b66b7977ac48431e264a28661deec98385db8629',
+  +     size: 17949
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/experimentalOnlineParser/onlineParser.mjs',
+  +     sha256: 'ee41f7452a56c5278b000ba80f5788b436b45a298bb76f3afa2e0a95f032cd43',
+  +     size: 18262
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/index.js',
+  +     sha256: '726b1bc4dbd957c8e8f513cfeb21262797377e621a5289e32a57dc6d7a67cc00',
+  +     size: 4287
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/index.js.flow',
+  +     sha256: '81931a2ac2d579b9adf0780635b1ff4d864bedad11b7760d5a0e6352dd49ff21',
+  +     size: 2370
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/index.mjs',
+  +     sha256: '3549b2f2fdc70852db47a3ccec4cfa0bc6796feb5b700281dafb58338184cb14',
+  +     size: 779
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/kinds.js',
+  +     sha256: '6d5819b1935c846683ae204f4a07739a397b2ce974fd14ebdb8f2ab60dd13880',
+  +     size: 2098
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/kinds.js.flow',
+  +     sha256: 'c7740aae049cabce8a9b719fe88f48d533fa4c919453f0fcaffc92991775d6db',
+  +     size: 2054
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/kinds.mjs',
+  +     sha256: '9202f4fd1d8d430cfef8147d722387295b82d0b83ff23245219688fd1703fc60',
+  +     size: 1979
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/lexer.js',
+  +     sha256: 'd984a55f5af2947c782bad2e6c6f02100cd03594a0f90489da20ea34ff2cc7bb',
+  +     size: 17079
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/lexer.js.flow',
+  +     sha256: '3f566f780935f5007afbebf243161ab8d48fa82d5bac1b6747d74182fc43c46f',
+  +     size: 17229
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/lexer.mjs',
+  +     sha256: 'a5122b92c5bae06ada854850d2ce72546d7a649514b02bfda9bd7d81d44fc450',
+  +     size: 16190
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/location.js',
+  +     sha256: '0abcbbe8c9747f27b09abf9e139bc939fa43395c31d1d3c2833976797eb490cf',
+  +     size: 635
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/location.js.flow',
+  +     sha256: 'e339ae6469866df2d909b266e78abf10d4edb4d9eea9e49e342ebabf1b2a861c',
+  +     size: 663
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/location.mjs',
+  +     sha256: '03ddf697c1584f9c6c16c55208a337a230fb276afef1babc63f3f3c8a6103a2c',
+  +     size: 526
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/parser.js',
+  +     sha256: '5a9e509803c385bd86e116cb7d80790a72290f414e55617dc47220f1b7bf0cf7',
+  +     size: 43035
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/parser.js.flow',
+  +     sha256: '9dfaa7abb1d8d6d923be8756c9f7950b2ee25f6540e94e9c33efc7c9aac09f8a',
+  +     size: 42608
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/parser.mjs',
+  +     sha256: 'a178f394bf51fa2956a88f0a3d8c2d2d73efb9bca49a27a7f80a0ae2317104d2',
+  +     size: 41622
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/predicates.js',
+  +     sha256: '6e98043d355eda2f414e7d142136624c891fb458b0d7b2a53e8b1cb8d1269bb2',
+  +     size: 2592
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/predicates.js.flow',
+  +     sha256: 'a20fff752ecd2149884f0b2a05931cdab0746ce50dc694763e83ecd369a1057b',
+  +     size: 2369
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/predicates.mjs',
+  +     sha256: '07585a87059adf77ac7f472899717f9ae2f8b8fc0676dea7b9a266dee5de136d',
+  +     size: 1888
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/printLocation.js',
+  +     sha256: 'f5e6274b9554512abd52167603c81b641799076ec72d53c9a7096812c1bda38f',
+  +     size: 2655
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/printLocation.js.flow',
+  +     sha256: 'd7c02fdc8ef6bc7b6b8d1914fda6d246452248b5fdb9c9a577f4c8db487c1ff3',
+  +     size: 2679
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/printLocation.mjs',
+  +     sha256: '803eeea4eb6e05dec1b2f464011cc1aa5fcd754cbb87f537b51553ae881a6f22',
+  +     size: 2486
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/printer.js',
+  +     sha256: 'd65b3508f0fc7b086b19ddc12a3f1a5fa0b2fe783c2259d213a5b0d695597816',
+  +     size: 11637
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/printer.js.flow',
+  +     sha256: 'dee202d8be23742a736f4b650fae6330b2e4749de9802be6e2e64d9d4b9ec26c',
+  +     size: 8271
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/printer.mjs',
+  +     sha256: 'cb1cf8a83f56a688c049424a153f0b9975baecc0d04e5214a7354467d8e412ba',
+  +     size: 11511
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/source.js',
+  +     sha256: '0c73e6ec6addc05b234c410e08ab5c2107c09d633c0d8aa56d606ccd5a98f481',
+  +     size: 2741
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/source.js.flow',
+  +     sha256: '3a743f29c89a382c62ffaf295888ecd1763a79dd53cb7c38ad61282adf724826',
+  +     size: 1816
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/source.mjs',
+  +     sha256: 'aa5ec34f686b9f5c4ff559639610ee973ae6326323cc333a68bac80e6c4273b2',
+  +     size: 2347
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/tokenKind.js',
+  +     sha256: '40c64ea5d1e536cc217d756d11fa4a55f4c21333cc6796d2f76758d362e7a947',
+  +     size: 695
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/tokenKind.js.flow',
+  +     sha256: 'f43efd7ed71a03363096a6fa1903c04ef7a682400c748f852658b4e6b0787f68',
+  +     size: 636
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/tokenKind.mjs',
+  +     sha256: 'a6d42fadc22c35f3d623a9aafb7c83ac32f19ee422cf8b76f4ecbaad14f14697',
+  +     size: 561
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/visitor.js',
+  +     sha256: '09fec4f3f68df25175b2cb1f3bf0015990ef1a09bcdeb9a1a258208b1b0e50b8',
+  +     size: 11567
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/visitor.js.flow',
+  +     sha256: '789b239d59409f617031bccb930bd7b30aa2c3d0240fa5904f628f8bbf0e38a7',
+  +     size: 12791
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/language/visitor.mjs',
+  +     sha256: '35bf27d51b4d9d3b915f21a426331efc642c376884522c96187a2ef72b97e2f1',
+  +     size: 11282
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/package.json',
+  +     sha256: '6e65648ca18ff46a304b2812d98fb72016079ece88cb13d73bb3b7acde6126e9',
+  +     size: 479
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/arrayFrom.js',
+  +     sha256: '918d9208ce3e25e12c33978fedfd121ac4d51ace7b4191ed0a41e25c63453299',
+  +     size: 1423
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/arrayFrom.js.flow',
+  +     sha256: 'e42bdb8878f106d910d9907e3afd54c47c29ac6b67174845ab34a87e625bdf99',
+  +     size: 1635
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/arrayFrom.mjs',
+  +     sha256: 'fd92e2f9beb2258ac91d240f962b28073d11670b322813bea082eb7bc001ddec',
+  +     size: 1288
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/find.js',
+  +     sha256: 'd4d0a6083f7282f37a3c292c489be388d698c590145c29ab25a36d6c74ff24b4',
+  +     size: 510
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/find.js.flow',
+  +     sha256: 'ea0f9094e1b417e217938ed65c89a7710a0108ee0bc33bfb57b730dbc74edbb5',
+  +     size: 485
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/find.mjs',
+  +     sha256: '2381058ccf3494228122c83fabcf5c12048e351401cf885b65c3716824ea3c29',
+  +     size: 375
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/isFinite.js',
+  +     sha256: 'd63a68fb5ae2c03c779234bbe2d0a698cec83319a29b6026887274c1c9a8d479',
+  +     size: 417
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/isFinite.js.flow',
+  +     sha256: '2a42d8d01af320c39ced3e5f9ec338c4df6c00d2c17d2b836b1bbabbd45b93f5',
+  +     size: 406
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/isFinite.mjs',
+  +     sha256: '591e969e57f1a3b99c636454ac33187f8bdbf61fcb3ce3ae99ed6ed94858014d',
+  +     size: 282
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/isInteger.js',
+  +     sha256: '9027127bcd548a61f1ae6ccc7e1812825f3499a433bf9dd1780114b894997264',
+  +     size: 435
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/isInteger.js.flow',
+  +     sha256: '0e28bcc2eb5e508fd86573278918a1414b44d0132db17157717fda29d0c5b8b0',
+  +     size: 440
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/isInteger.mjs',
+  +     sha256: '4c1790edc4f4ca8650573e079f1d9127498c11ffb3b4f0e7e85e07cfb0faf8b2',
+  +     size: 300
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/objectEntries.js',
+  +     sha256: 'b11ef14626432d99c4fff88c0ef24f541bcd8db1aa4a2f48a8266181e3c8878a',
+  +     size: 434
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/objectEntries.js.flow',
+  +     sha256: '7af0613c8c1fd72ea448731344cc6aa39a393f65cab41de922cb915e1138bf15',
+  +     size: 399
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/objectEntries.mjs',
+  +     sha256: '72cdfa2b26c72e704dd6735b041c703ff79175e080e56c4df27d05e941b9fdd0',
+  +     size: 299
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/objectValues.js',
+  +     sha256: '7e88e97f4a2908e3c53e4816c07500d8837bca1de7613bcb2d8140fc14c3b774',
+  +     size: 424
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/objectValues.js.flow',
+  +     sha256: 'e94eae04b52bd082d4b0af211591f8a0d9148c9194c7daa38d2bc67d9e696b7f',
+  +     size: 377
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/objectValues.mjs',
+  +     sha256: '88306a1cbccaacfd9d55c87d97499ad5c524d0d6a04959fe71069232cfdbff7b',
+  +     size: 289
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/symbols.js',
+  +     sha256: '94e628dbd9518ae1ca645081b067d082fa07711cf1cfceac7fccaf04638657a8',
+  +     size: 1101
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/symbols.js.flow',
+  +     sha256: '0e57bc5dac199011b9c280f258d511880de97063e0a79cf4add85e10c829d2f8',
+  +     size: 870
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/polyfills/symbols.mjs',
+  +     sha256: 'ec181cfdd8686f61d5ff863f50cafe2d841f85793c5dde956c38f5ece4567aa8',
+  +     size: 794
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/index.js',
+  +     sha256: '7739dbda695471d484346c31b2b0c5dc8c06ebc5d2720e3ccfb8859b17fbab6a',
+  +     size: 415
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/index.js.flow',
+  +     sha256: '4ad03eed8990c3e926bbabbcd1ebcaaee15f600947493c731b1636125889868a',
+  +     size: 135
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/index.mjs',
+  +     sha256: '013c8db2edfd1d89d4c146a5abf7117e891bee2c186fc52b55ded55673e2390c',
+  +     size: 70
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/mapAsyncIterator.js',
+  +     sha256: 'a95e8bf8929d07366229d88a3286180732338d8f68e57f477426e66bd4125f07',
+  +     size: 2394
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/mapAsyncIterator.js.flow',
+  +     sha256: 'ff10009a9b6403c2d5c640f0c8d361fa0c40fe26a13d119284becaf334d72283',
+  +     size: 2343
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/mapAsyncIterator.mjs',
+  +     sha256: 'd344f9cdb348666c634441d0f91c8b823a5f08c7fa14d12228590149459cff88',
+  +     size: 2289
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/subscribe.js',
+  +     sha256: 'f18d8b07eef23d8a80c820db72f27e91f84c770a3b4cabd94f687fddc348e466',
+  +     size: 8463
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/subscribe.js.flow',
+  +     sha256: '5fa4517d34fe974e987551e5523462924d56d3ddb743ebad36e5122189491fc6',
+  +     size: 10201
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/subscription/subscribe.mjs',
+  +     sha256: '19932f10dda96b1e33b3693483728ed6922989b86fbce53c0dd66ede8ae2da74',
+  +     size: 7972
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/definition.js',
+  +     sha256: '383aeb9e62d8855ec2a5c15fc6f2b9c39e490cf0ef2a309a91016aa11c81674c',
+  +     size: 40026
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/definition.js.flow',
+  +     sha256: '39402edb66b1efc2c338a1012d25526e0556de4d0b06dae056862f9f75ea9fb0',
+  +     size: 48641
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/definition.mjs',
+  +     sha256: '1509950f793f8f50ce9eb056a58a70d87bf8ea0f22e30168a3a19c500f8869d3',
+  +     size: 36157
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/directives.js',
+  +     sha256: '5287687f1fd12298e941448c37f5e5d6762dddf2c170782fe5057f7036be0a54',
+  +     size: 8058
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/directives.js.flow',
+  +     sha256: '0557e143670558c8205b370def7a2a6dddfda98203d1918ead732fa5a6f8575c',
+  +     size: 6834
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/directives.mjs',
+  +     sha256: 'd0ee72a122f03e1aebd7a5bc702b2ee6fa6c88de78fac9ae677f10706b390203',
+  +     size: 6642
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/index.js',
+  +     sha256: '8213866eb4547f1ad4754182a6a3316e8a34ab0a613a883e41da919f644e0096',
+  +     size: 12159
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/index.js.flow',
+  +     sha256: '84d0be898acf13991732e7efab21c1ba536faf6d17efcebef87c77ebeccef9f1',
+  +     size: 3398
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/index.mjs',
+  +     sha256: '549de428c4d56f3df5158b5b9a1137bbc8e5b9f9e2cf6d52e4a5c1264779df66',
+  +     size: 2072
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/introspection.js',
+  +     sha256: '848ae6fecabb2092450de00dbeb8d281aade3eff9abaaba529461d67ae69cba8',
+  +     size: 21760
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/introspection.js.flow',
+  +     sha256: '0ebbace27e19030a4e38699ea17f77079dad490868eb18c81abee22324faa08b',
+  +     size: 18301
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/introspection.mjs',
+  +     sha256: 'ba98f92d94490ef2a669fc863c9c128a1a2b166d7924160a7467a93abb40e940',
+  +     size: 19384
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/scalars.js',
+  +     sha256: 'a67004a75496ca0644bad6bec5ab0ea18a3ee69893e2c45a5752a850a8bd6def',
+  +     size: 9667
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/scalars.js.flow',
+  +     sha256: '1d2930361479e8c78161d4cd62809455eadeb8f01e1ac9488933fa7946b61fa3',
+  +     size: 8578
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/scalars.mjs',
+  +     sha256: '06b7e1607e5cb1fd47d6416c2259975a1db1dd377bb6552250bc91993c23e823',
+  +     size: 8263
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/schema.js',
+  +     sha256: '20b09ece9ce687b2ed8e412376e24c9c818778b5c278f13b6387aadf52e8d943',
+  +     size: 14427
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/schema.js.flow',
+  +     sha256: '792efa57e9d5d7fed33c58b2f6b155bf0abbceb3f4335561093ad04e904c5fb6',
+  +     size: 13507
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/schema.mjs',
+  +     sha256: '3140271d414cb89f7d68b4fe353e52367636748bcdc54a1808eb03460032a32f',
+  +     size: 13620
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/validate.js',
+  +     sha256: '6a24953bb3be1cdb37af5bdae8951dde6e6242a0de99dae5f486e518e278be10',
+  +     size: 23194
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/validate.js.flow',
+  +     sha256: '07c9eee6cd946ad0e626bc3d158f03cd97f02e35b5ef03377e76a858be810e6e',
+  +     size: 20734
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/type/validate.mjs',
+  +     sha256: '7c6afee334bb0bc0565f8c6d266a450f33b1b060656a1c4b7058b6486f5c57ba',
+  +     size: 22227
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/TypeInfo.js',
+  +     sha256: '5e967b2d1e93b4b963da70a5a34334884d08dfb30c99183ceef3131ef46c0a62',
+  +     size: 10968
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/TypeInfo.js.flow',
+  +     sha256: '44b109fdd475c51a9ff54e0cffae18bb0454b16d22b266744f02bb22beebcc62',
+  +     size: 10733
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/TypeInfo.mjs',
+  +     sha256: 'dd7f550db83b800fff108edbcc71b40b15ca89235df7f37e981d823891f95f1d',
+  +     size: 10153
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/assertValidName.js',
+  +     sha256: '318dbef002fd834381c2828c3a002e82df8a242773b5174192cf724e36b9cb2b',
+  +     size: 1171
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/assertValidName.js.flow',
+  +     sha256: 'c3f38d198ba020616614d0a9306c0edcd807490124d9324ad10bab60e68bd968',
+  +     size: 898
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/assertValidName.mjs',
+  +     sha256: 'bdd6d030630cfb90bc984877e782882653efb74d1427e1db9a599ecd6c2778b1',
+  +     size: 848
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/astFromValue.js',
+  +     sha256: '1b215a56ab72255097c51bb4cb8d054179dd0e6d1d99166b772918d626c61558',
+  +     size: 5559
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/astFromValue.js.flow',
+  +     sha256: '93ac815a9ec90d6985b7fd7b15df84b2a0c7854758d13ad75e5d81ae2b5c25bd',
+  +     size: 4747
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/astFromValue.mjs',
+  +     sha256: 'eeee07b4ed3612757280ccbca4a1dc6a5401da8b917c20d44c4fcd732e731075',
+  +     size: 4964
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/buildASTSchema.js',
+  +     sha256: '40d1eb9f56299e5d3fb2b9b73c8accbde8e71db510401c38db4474cdf819aeec',
+  +     size: 3966
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/buildASTSchema.js.flow',
+  +     sha256: '8957dab4f82540de3b0331eb72617ad712314b0d038097ac52ca2660025229b1',
+  +     size: 3889
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/buildASTSchema.mjs',
+  +     sha256: '0cbecb67e95cb7e3e4cf2a2ce7f2b2ef271ca5a69c5b76abb2fd5eb8b5133306',
+  +     size: 3622
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/buildClientSchema.js',
+  +     sha256: '680de7a8aa6afa85399db55a702f686453032c93e9681cef41ed2247bf87b6e7',
+  +     size: 12684
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/buildClientSchema.js.flow',
+  +     sha256: 'd807e57a0da3d47359594dedba202fd130d3b23b81beb71b8c69312c1fb60bba',
+  +     size: 13327
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/buildClientSchema.mjs',
+  +     sha256: '8bd979b3d2ff51bd32d0e7f24c06375d69bd510bbd03f0b7f7bce8379c51b962',
+  +     size: 11908
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/coerceInputValue.js',
+  +     sha256: '1a6b32101add8978136f3234fe91aa86fb4ba2f2480b5cc78fac9593a176f00e',
+  +     size: 6718
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/coerceInputValue.js.flow',
+  +     sha256: 'ebfb6481ccb8bdd9188f0229ae81bd8a43d7a6f7fc33ef0e4cf5f962d0c46796',
+  +     size: 5319
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/coerceInputValue.mjs',
+  +     sha256: 'a05abff9a9687a0830aa4134726295299652b41ae1caffc4c9243d732ec734da',
+  +     size: 5903
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/concatAST.js',
+  +     sha256: 'dddd40d0f44a1669294cdf1fb93d896eab10eeeda205a4270e4cba1e88e08a04',
+  +     size: 616
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/concatAST.js.flow',
+  +     sha256: '56b514d14437517c65a84035b8641984709960cde99188661e3426d2d100cb21',
+  +     size: 555
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/concatAST.mjs',
+  +     sha256: 'f93a1a08d6b61551a49747ccd4489bf3f558920a39762af994cbec0abf0accf8',
+  +     size: 511
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/extendSchema.js',
+  +     sha256: '3c2a6903dee4e382516426d496db8ea4ac41512539b2d53435a9e133e4a32a55',
+  +     size: 27043
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/extendSchema.js.flow',
+  +     sha256: '13635c15928f9aa910f04f8c00a35a4a7c71e7784096424b418875824934c073',
+  +     size: 24264
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/extendSchema.mjs',
+  +     sha256: 'ab0b2a99c46a981d5e686bb0eed597a350662d345be3f5f490d6c6bb69295787',
+  +     size: 26211
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/findBreakingChanges.js',
+  +     sha256: '5358b305ca3406d3e78b7a7a665813e4156b4ec639e8e542de04f1e26ad8d304',
+  +     size: 21868
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/findBreakingChanges.js.flow',
+  +     sha256: '56995ccd331bfb0f513e95a3edc46e80f1d8c55e0963083077634333c9d6cb88',
+  +     size: 18322
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/findBreakingChanges.mjs',
+  +     sha256: '94d46cf4db056e263e4e0e71f03506162f44b9490f3758bdc7bb4a25df161b58',
+  +     size: 20702
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/findDeprecatedUsages.js',
+  +     sha256: '3d5fdc8601afc0e2741903b10ad0f05521cb021f59b836635bad13bf58570b73',
+  +     size: 802
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/findDeprecatedUsages.js.flow',
+  +     sha256: '6a5cad207ec754705dd2315b3103c32cd56a0bdf4acc5f059685d76bc877320c',
+  +     size: 879
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/findDeprecatedUsages.mjs',
+  +     sha256: '456065ecaaf0bf7b7cff0eac94d54890f3880f6c3a1b77357806f62535db8cb0',
+  +     size: 637
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getIntrospectionQuery.js',
+  +     sha256: 'c53fac0c25379c780f0dc5bd908c9e6dbfeea3cedddd3f483f95854eaab59c1d',
+  +     size: 4122
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getIntrospectionQuery.js.flow',
+  +     sha256: 'cb5fbd15e424514d78fc29f1e1c31611f6be197948372b0aaf3ceea88c0240d8',
+  +     size: 7736
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getIntrospectionQuery.mjs',
+  +     sha256: '25607ccecb33b672e0fb9f981528eeac35dd2d85f1235adf0f7a15c1da611dd9',
+  +     size: 3993
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getOperationAST.js',
+  +     sha256: '2a21be81252c2d82d7869a401f1e57937a39115d6cb3ed71a52281bda5758eb8',
+  +     size: 1228
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getOperationAST.js.flow',
+  +     sha256: '190b776b9491f626d5297ecafb6b50ace3c07081265b441485e11892f4e3a975',
+  +     size: 1016
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getOperationAST.mjs',
+  +     sha256: 'e5da009120475dd18a7a099dd2e798a467934d8dcc7392361dad34696d5ca31e',
+  +     size: 1104
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getOperationRootType.js',
+  +     sha256: '92874fa55d620a0e5befb5ab37303c170c3076c31b7f1e3a19b565210275339f',
+  +     size: 1210
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getOperationRootType.js.flow',
+  +     sha256: 'f093d8a298722153979e4e8c1f9c66a530a6043c3915a24d83f7f4d50526d1eb',
+  +     size: 1438
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/getOperationRootType.mjs',
+  +     sha256: '785d006f3739957c7fe56d049d178dcbdab9c2408a2093bc6f96bfb9c2efa8bf',
+  +     size: 1028
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/index.js',
+  +     sha256: '1a124c48a8f9192da6eaf9f70d088a5b71e8326653d20560e770956fc54efdf9',
+  +     size: 6370
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/index.js.flow',
+  +     sha256: '784a750db9662449b70609d513915c731a5676994c1a1decfe3321c8bb01f13e',
+  +     size: 3739
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/index.mjs',
+  +     sha256: '7bc0c5be497c3db66a80c47538b85622ffc676f022524d21410dc972bca579b6',
+  +     size: 3008
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/introspectionFromSchema.js',
+  +     sha256: '2fcc33e9c2682d8eecf5c0d713ec294d1b116d3580cb1c64512440e58ccf9df8',
+  +     size: 2460
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/introspectionFromSchema.js.flow',
+  +     sha256: '90f7a15b54392fafd31d22b6c3fdb74d2282846b14bec1ec79a81596df0df8b7',
+  +     size: 1236
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/introspectionFromSchema.mjs',
+  +     sha256: '4aee9abf5c2c8b4d1de8775558e389d5c26d4e87f7ea094eb0261cae7135916f',
+  +     size: 2137
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/lexicographicSortSchema.js',
+  +     sha256: '318f00d465dbd8d862e22d94599d120f71b0a0e77e749f1562de52f0d014d8f6',
+  +     size: 6946
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/lexicographicSortSchema.js.flow',
+  +     sha256: 'ea9c116aa16e586baa1c161478c7eae9ddb8c123f7499bfcb007ab9291ae3518',
+  +     size: 5346
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/lexicographicSortSchema.mjs',
+  +     sha256: 'ab9de51c1e9fdde4f77345d49a78c9dafd3e407f4acd24da2600de2c2cc3b9f7',
+  +     size: 6499
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/printSchema.js',
+  +     sha256: '4bfec426f8d762fa466894d51b69a8fe97aecd70253161a11a9df44a03461339',
+  +     size: 9334
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/printSchema.js.flow',
+  +     sha256: '28ae7ab43536461f9bf24fc60df37c40e549fa949fc4285b9092219cc0589d09',
+  +     size: 10185
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/printSchema.mjs',
+  +     sha256: '2aa6fb19eaac6a5f4240bbc4ef8c7deb8487f9c93accba71add4d618e29ec52d',
+  +     size: 8708
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/separateOperations.js',
+  +     sha256: 'b452abc93d6acbbbb8dd53532c3ceee443155ee7c62a1005b933e8315da5bee3',
+  +     size: 3086
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/separateOperations.js.flow',
+  +     sha256: 'b6d239f5ea2b4c100041f57aa175dcafccf1c10368b6a1ba21dd156de852e8dc',
+  +     size: 2931
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/separateOperations.mjs',
+  +     sha256: '1a3c8610c9a1fd362b30e4276d87cbfbbc492e749dedb2e19b32fd51939ecea4',
+  +     size: 2919
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/stripIgnoredCharacters.js',
+  +     sha256: '8479103030954b639e7224353f8e515d8f788c062960574a450a46d1c70660d4',
+  +     size: 3309
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/stripIgnoredCharacters.js.flow',
+  +     sha256: 'e0a2f7286ecec49080c7d11da175e295f78bc2a81edadb97bb13e2015a2e76d7',
+  +     size: 3205
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/stripIgnoredCharacters.mjs',
+  +     sha256: '173331dae390b8eff0423e12d940ca7d752e902fa811380fa970650407b0a36f',
+  +     size: 3141
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/typeComparators.js',
+  +     sha256: '699d40d537ffab55c317724c9294580c84c8e5efd4fd684907b09e618f4e743f',
+  +     size: 3656
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/typeComparators.js.flow',
+  +     sha256: '3c30aeeca3a63407174ad3097412b61cec87ea3fce07c404f29e23a42be822d5',
+  +     size: 3599
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/typeComparators.mjs',
+  +     sha256: 'e05fff1cecb619d19152599eab1d901f9f99db228180864f24a57cc5f5b2de28',
+  +     size: 3266
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/typeFromAST.js',
+  +     sha256: 'f362dfb347355e96c0f7824f601f9fc3142e922b889d040e558d9136b9f0fab9',
+  +     size: 1281
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/typeFromAST.js.flow',
+  +     sha256: 'f3e4f4b64f97648eb7f2c17bb5585e72f2c671a9a84bf8adea17ba65f117c5ed',
+  +     size: 1915
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/typeFromAST.mjs',
+  +     sha256: 'a2b759fe9a2e8d03b38ae28d8d1a314557f5bb632abe80fec1cef43833d50854',
+  +     size: 1371
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/valueFromAST.js',
+  +     sha256: '12625906fe4d350b5acd50dc028e0f4597dbcaa90e5059d03bbbe0e61a5d0d75',
+  +     size: 5879
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/valueFromAST.js.flow',
+  +     sha256: '892af8ee5ffdcade2a7f21c99eca061349d37c8503d5bb6a342a83d051c45b4a',
+  +     size: 5456
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/valueFromAST.mjs',
+  +     sha256: '243448292750c86314d2e839acc111d1e64e3dea8b43a5446c80fca6e9875c95',
+  +     size: 5385
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/valueFromASTUntyped.js',
+  +     sha256: '1347cf92b18daa0882b21e9d547c8a79d2c7fccad6fe2082ec9bfb7d8b3adc16',
+  +     size: 2177
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/valueFromASTUntyped.js.flow',
+  +     sha256: '9d047d6d2c46eb97785f4094f1a02f53e248ef0e06400891ef211acfbfe5f216',
+  +     size: 1808
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/utilities/valueFromASTUntyped.mjs',
+  +     sha256: '5e18d58e8b90f62de7b3117deb3d136dbc6ea9b15d9863e961bf0bd7b94e670e',
+  +     size: 1766
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/ValidationContext.js',
+  +     sha256: '62430aacb8065881018202b8bca17e0e48de9c767d171c55518053c61d760a0c',
+  +     size: 6857
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/ValidationContext.js.flow',
+  +     sha256: 'eab3cc9c14d26e813da85be5771e73b9e71cac947a0e694b75da048696e62661',
+  +     size: 7049
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/ValidationContext.mjs',
+  +     sha256: 'd837996bcfdc4ff3f13f35e00b34e1ab5308ba0d7340a04c7e579a5e940f107e',
+  +     size: 6505
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/index.js',
+  +     sha256: '2795bdf71e9cb4f9f1666ef9e4e3459d209afffbd6449aeeb18a6f7325f29648',
+  +     size: 10154
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/index.js.flow',
+  +     sha256: '886b22c30f529390b953aa8927e7a4ad579cb0aa7947004eecb40fd674a3f54c',
+  +     size: 4429
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/index.mjs',
+  +     sha256: '3006c6dbdc2a2cb00b3abf28b0bd7fb95392fb603d90b6ef0483798c754b2396',
+  +     size: 4507
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ExecutableDefinitions.js',
+  +     sha256: 'c1168df7e8c9ebbea3125f6b84fb99666e9208ddad3392f5673e658254deb53e',
+  +     size: 332
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ExecutableDefinitions.js.flow',
+  +     sha256: '05529eb258a065cbfecb278c2bff43d6e33c1546cb5a644199780456bfe44ab7',
+  +     size: 317
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ExecutableDefinitions.mjs',
+  +     sha256: '211eb3994d87c3ce507ed0b5889c1df275d32a5ce30a216b451727ec01d158ed',
+  +     size: 305
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ExecutableDefinitionsRule.js',
+  +     sha256: '83ddfc0cc6cd27008316fcb5b5e704ad0f649f72b622a78dfde4f25437bf8fa5',
+  +     size: 1154
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ExecutableDefinitionsRule.js.flow',
+  +     sha256: '9ae6597030f01611ee5aeaf5830824eef36b4cf4d2ac875c0f43fb6cebc21e29',
+  +     size: 1145
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ExecutableDefinitionsRule.mjs',
+  +     sha256: '40d2cba00ff8f53294bf58cf11571248c4be5ddb34463057f223f3ca5485918f',
+  +     size: 988
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/FieldsOnCorrectTypeRule.js',
+  +     sha256: 'f0b99926907b63fe6fb760d227ad784dd7b9a71bb5dc6a41431af8b0a0bdab86',
+  +     size: 4522
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/FieldsOnCorrectTypeRule.js.flow',
+  +     sha256: 'e67edb6d111cfe1833656f0f02957ab69467de9579b840c98299761442a48897',
+  +     size: 4402
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/FieldsOnCorrectTypeRule.mjs',
+  +     sha256: 'e1f16969aef8e0b8f569a43fb06e5b8c4d02bea88126dcf399e239295843d817',
+  +     size: 4046
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/FragmentsOnCompositeTypesRule.js',
+  +     sha256: 'c12d70db08fd2d245b969adff5c26695e7077f73560f2e473b4eba08a5d1c250',
+  +     size: 1697
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/FragmentsOnCompositeTypesRule.js.flow',
+  +     sha256: '86dbd5c660a0a58c2877b475ab19cc01ab66862eabcacd8d066ff4362a731f9a',
+  +     size: 1635
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/FragmentsOnCompositeTypesRule.mjs',
+  +     sha256: '31317d07ca79250d9a2421d5e69a8769b5c7673125622b4f4214ae8511b4a827',
+  +     size: 1430
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownArgumentNamesRule.js',
+  +     sha256: '45bdcbb44a5ed3370e0ee08de44528c2a38a9e007e9f0bcd588b0b1093dd2d78',
+  +     size: 4569
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownArgumentNamesRule.js.flow',
+  +     sha256: '678ae1d2a70caf2f87f665bd1430d4b1c699953c54eec162e275a6f6e9dd55ea',
+  +     size: 2955
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownArgumentNamesRule.mjs',
+  +     sha256: '0a2a259f7c6a7166a8046d3a5072e26c026673d244bf91432954f711260ece82',
+  +     size: 4116
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownDirectivesRule.js',
+  +     sha256: 'd099243fa2cc5a9863ba4d67b29806fa207b50afbb058cd4908b2a8d86181439',
+  +     size: 5055
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownDirectivesRule.js.flow',
+  +     sha256: '971e90a1ae4a36fbd5c960f5971d6adc5f2819316ee4abbcbe8656c859d7d5b1',
+  +     size: 4544
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownDirectivesRule.mjs',
+  +     sha256: 'f6aa67c1d21967800dec6c297c4b13828b3aa3305820d30168add009e702f426',
+  +     size: 4168
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownFragmentNamesRule.js',
+  +     sha256: 'a91cfc9941d9aaf570e24e690a1e891dcd1a39992bc4c44b6c5756aaca856962',
+  +     size: 732
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownFragmentNamesRule.js.flow',
+  +     sha256: 'b4eef24360f4422cf0f9acbc02ff96e2a1942b3b328ada675e61e685c0c37dba',
+  +     size: 742
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownFragmentNamesRule.mjs',
+  +     sha256: '0b0df618ee3c9bbbb3322ef3a54de452fae63e6ac4fcf7988b612f527639460c',
+  +     size: 588
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownTypeNamesRule.js',
+  +     sha256: '1bd8f34a778a74b3a41e96c82b36ea9a39baff818437927a75c680fc842c3568',
+  +     size: 2573
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownTypeNamesRule.js.flow',
+  +     sha256: '125c44769fd27c09416ab61cb6af45ab4a26beb307370341315e826d9fb6b22a',
+  +     size: 2463
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/KnownTypeNamesRule.mjs',
+  +     sha256: '5891b5f570722990ac7377343c5caceb24b9fd13ee48ba3439c19c3c662d3450',
+  +     size: 2263
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneAnonymousOperationRule.js',
+  +     sha256: 'f6d58ef423c0256210e6dacd827ff91968dce2dabcff4a6dcb0c890cedb6dd72',
+  +     size: 1002
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneAnonymousOperationRule.js.flow',
+  +     sha256: '8190e43c95658475b15135d2b3b41a0f4cbda9b286a143fbcd6b8f2021853ada',
+  +     size: 1010
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneAnonymousOperationRule.mjs',
+  +     sha256: '8da46c04b5c14abaef15208ad9b6277453361a94f01ae1834480f3d0ad3f0318',
+  +     size: 842
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneSchemaDefinition.js',
+  +     sha256: '5e49f5336c7af6e46eb0296e95f865ece155c5eeb18442ac0d8c4a6f11a11864',
+  +     size: 327
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneSchemaDefinition.js.flow',
+  +     sha256: 'fee04acbd1fdfa74426f7c2f36f7777b9339a0b9ff8b489060c8fc4e4ceae510',
+  +     size: 312
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneSchemaDefinition.mjs',
+  +     sha256: '23bfebbc32f4f77bc1be71b0d82a5df36cc1421fc6f4bf04fc4eb167f3cfde27',
+  +     size: 300
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneSchemaDefinitionRule.js',
+  +     sha256: '27b9002c7307a115384926720f27e88868761473ed0a10953f8ddcee43dd8282',
+  +     size: 1452
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneSchemaDefinitionRule.js.flow',
+  +     sha256: '1951086b839cd2da8e02cd0c9a7b921e9f64d4a47127f5c54fccd886de0a7683',
+  +     size: 1113
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/LoneSchemaDefinitionRule.mjs',
+  +     sha256: '9218525845c247be206e372dddb5cec2f2f230774e60244e117acff08850ff02',
+  +     size: 1290
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/MaxIntrospectionDepthRule.js',
+  +     sha256: '11e1e506527b4de1bf045b53d9b7497c3bfe4f76680b0a6e71e0f3bb8ad4131b',
+  +     size: 2813
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/MaxIntrospectionDepthRule.js.flow',
+  +     sha256: '722d9a62bb8b8a62347d14dedd138a22d7b20a0e006cdd390d614c8cce103edc',
+  +     size: 2778
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/MaxIntrospectionDepthRule.mjs',
+  +     sha256: 'e15f7a43040bee8eb2a9c2a89b244e378326142ad5dfdc678d6f6d4dc2be21b1',
+  +     size: 2646
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoFragmentCyclesRule.js',
+  +     sha256: '8bc301bc87fdd4401b6ff1564a04d1f37454f932402808e4e16a9b7fae5b5364',
+  +     size: 2257
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoFragmentCyclesRule.js.flow',
+  +     sha256: 'b5d976a9fde9a0af34a6ed01d30c77288f9fe66d1a1e5be0019bddfb19630029',
+  +     size: 2334
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoFragmentCyclesRule.mjs',
+  +     sha256: 'a6cbfaa0c9f7a3c29d1af9aeb73b91a41629b1d3bcef812db46e9d7742ad731d',
+  +     size: 2116
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUndefinedVariablesRule.js',
+  +     sha256: 'b04386f1cb741ed3ae3db3157f249e534bc2f0bb478f203b3d681846d26f68c2',
+  +     size: 1367
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUndefinedVariablesRule.js.flow',
+  +     sha256: '97e1ed192656b801dfdad5ba1180d586e0653ea8c86641721a3e38f4b94d5528',
+  +     size: 1330
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUndefinedVariablesRule.mjs',
+  +     sha256: '31c21d7743bd2c0a2a25930456582c9903757188a21f7397d7aeea1c558c7a73',
+  +     size: 1219
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUnusedFragmentsRule.js',
+  +     sha256: '73204a9c9f76d5d5b0096e91c7e2e58cc55515af52185c3c364b5f1d67d569ad',
+  +     size: 1617
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUnusedFragmentsRule.js.flow',
+  +     sha256: 'ee9b82a193270a64e4cac702fa1d31fd388766a99597e14750e546574beed6b9',
+  +     size: 1437
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUnusedFragmentsRule.mjs',
+  +     sha256: '1d70fd11d75017a4f10a3eb235a9126c7db86fd82d4a04553711c3a49fcfd090',
+  +     size: 1475
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUnusedVariablesRule.js',
+  +     sha256: '6beba9a15879e31f860a72825898db62e9bc0100ad3e510386c8935f3f6f512a',
+  +     size: 1555
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUnusedVariablesRule.js.flow',
+  +     sha256: '40d79fc343c711250dafa6da7f8387e1f3a693cc511ffa8d23dbbdd2e4027b08',
+  +     size: 1427
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/NoUnusedVariablesRule.mjs',
+  +     sha256: 'e1d00408b0d90012de5493e00d83003e53271b8ccf76f26c22d2e7aa9614eb28',
+  +     size: 1413
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/OverlappingFieldsCanBeMergedRule.js',
+  +     sha256: '316f203c0e0c3ac602217b743684c5a4234f0a360b760cf3748c2bd659298c0b',
+  +     size: 25114
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/OverlappingFieldsCanBeMergedRule.js.flow',
+  +     sha256: '256e1604f767ca3670ab6728fe38c403bdd83129ff4d81df6955ce2d22958ffd',
+  +     size: 26509
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/OverlappingFieldsCanBeMergedRule.mjs',
+  +     sha256: 'c518d585451b74af1cd0c37a00a8cf6f09fbd31f8614f7aaeae8a59bd21079e0',
+  +     size: 24457
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleFragmentSpreadsRule.js',
+  +     sha256: 'a51932e74e41f4342cd920f4b2196e26e65cd9fded7cabcb3b5ef7bfca95d696',
+  +     size: 2502
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleFragmentSpreadsRule.js.flow',
+  +     sha256: '49d4cc5c9c5819b040299450423c071a73eaa2b9e317429f9257cf9cec7d6321',
+  +     size: 2415
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleFragmentSpreadsRule.mjs',
+  +     sha256: '54a63be27c39f4e3756410e665d16e170b45a5517d9bf2a621e3ff1244ed3a50',
+  +     size: 2044
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleTypeExtensions.js',
+  +     sha256: '9b555ae352c0fea8dfbc81ad6c621a163584933faf6160ba32ca2c15fc9183de',
+  +     size: 337
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleTypeExtensions.js.flow',
+  +     sha256: '2646aafeb4a82481b5e67862dfe90d01ec8f1110ecde374aa19a188ee62e136d',
+  +     size: 322
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleTypeExtensions.mjs',
+  +     sha256: '88919dab3dde62903b6655b11380b47da0287bd87048c3e330e323e8f28a0ea4',
+  +     size: 310
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleTypeExtensionsRule.js',
+  +     sha256: '8c691103798881c360db343d296971e4db4f889b6be1a9e32b40c33e9cc1ac4c',
+  +     size: 5228
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleTypeExtensionsRule.js.flow',
+  +     sha256: 'd762cd262c146c366d296615e1e301843d9e50652c0d2f6ea938815440bd8f57',
+  +     size: 4446
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/PossibleTypeExtensionsRule.mjs',
+  +     sha256: '6f2edf2884d13b6b33912285e36815e52e6e96c527a4f8973207b8d2f9ea8a27',
+  +     size: 4567
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ProvidedRequiredArgumentsRule.js',
+  +     sha256: 'b0a5e17ecfd513356eb3ba696a7c3859ac171a47b818711087029e14387488a7',
+  +     size: 6032
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ProvidedRequiredArgumentsRule.js.flow',
+  +     sha256: '7a91cd2f9f3af01aac1bad407089d89f354360bf4e6a28b970343e5d9a872c77',
+  +     size: 4110
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ProvidedRequiredArgumentsRule.mjs',
+  +     sha256: '4113b1954c3bf6a3ac57a564fd3c5e461bdb0dbe11a3a110a05c73e0b4d04aa6',
+  +     size: 5470
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ScalarLeafsRule.js',
+  +     sha256: '1dab753eff0bd70bdcb2b9318245299258f0aabddd294cc5aea173ec3fdb8df5',
+  +     size: 1551
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ScalarLeafsRule.js.flow',
+  +     sha256: 'c55e6429209b12ad8c475daaed5eef14dcae32ca47e810bb89b280806aa9fa3b',
+  +     size: 1533
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ScalarLeafsRule.mjs',
+  +     sha256: '23fa381f4a4871d70fd22599e4b43e1642baaec363cc40aef3948829e03c32e2',
+  +     size: 1234
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/SingleFieldSubscriptionsRule.js',
+  +     sha256: '354c5eb8bf4965b18ed4ba8564c35b05015491c19b8caf283c232415e1662ff7',
+  +     size: 867
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/SingleFieldSubscriptionsRule.js.flow',
+  +     sha256: 'ab62d9631b5dc4df2def3d86c432104cc86381d96a58ee71984dc6f3b83b2a3c',
+  +     size: 1039
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/SingleFieldSubscriptionsRule.mjs',
+  +     sha256: 'c04ec36c68227c50223a45dae756a5aafbff3a4d8475c471bbbc7e7b7ad91dd6',
+  +     size: 711
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueArgumentNamesRule.js',
+  +     sha256: '938a5ee758bb9cb35c9858fc3d58dd494e0df2b662ca03b635cebcde51fc478f',
+  +     size: 977
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueArgumentNamesRule.js.flow',
+  +     sha256: 'bdd97e3c1563a68adf61cb3091db7bf4c83e3e3ddbe529365e6e4062e7b3334c',
+  +     size: 999
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueArgumentNamesRule.mjs',
+  +     sha256: '1e8684a0f9ac2eb811f034b2cdfc8c4cffa44dccd7a2927e26ba9709bb4b9fe2',
+  +     size: 831
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectiveNames.js',
+  +     sha256: '1a9b530486175cf497377036886d3f970f8d151d67b334c951e0634ad26714bf',
+  +     size: 327
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectiveNames.js.flow',
+  +     sha256: '4b6a09d343f497bbf6b4571d3e859d5a6486d7258b06150142ffa83e09434ce7',
+  +     size: 312
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectiveNames.mjs',
+  +     sha256: '1d4c534734d62675d2de94b83ec8bc20edfcab324d61c1b458c065ff091231e2',
+  +     size: 300
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectiveNamesRule.js',
+  +     sha256: '0a42782b69bd0c8edc8d860a395ba8fb1d186aebae45c94c2a7662c066960f5a',
+  +     size: 1197
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectiveNamesRule.js.flow',
+  +     sha256: 'aa705f2aabae55b112e25dfa7afc3b75c6f28b2a9f25d0828bbbfbdb89055de5',
+  +     size: 1242
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectiveNamesRule.mjs',
+  +     sha256: '954f2e6efbcdb93cbaf25b9401fc0afb6f26a6c414a5c385246c51e28d63944b',
+  +     size: 1035
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectivesPerLocationRule.js',
+  +     sha256: 'ea634aca30026eded24a661c251135d5cba3efb347aac249774f8aa27761c799',
+  +     size: 2810
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectivesPerLocationRule.js.flow',
+  +     sha256: 'c70c7790cd9a186341b328795f64387b62e90c3603763d5a89420b15a874ebb6',
+  +     size: 2713
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueDirectivesPerLocationRule.mjs',
+  +     sha256: 'f611397beae789dc50d8f75d7d76349542df3ee1a6fa3151bb7045be1a78e848',
+  +     size: 2620
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueEnumValueNames.js',
+  +     sha256: 'b81ea93704b13d455ae2a9759e5d21dc2307b919966dc1adc7cf5a2f0c94b842',
+  +     size: 327
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueEnumValueNames.js.flow',
+  +     sha256: 'be216bfb24ec777d12c4c3a9b281328a24c9bf088613a97f7db9ee2c441a5297',
+  +     size: 312
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueEnumValueNames.mjs',
+  +     sha256: 'a949550a0cec275a7e6f8f035f3206b9dcd69f57dd067158ffdba4e1cb3814ef',
+  +     size: 300
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueEnumValueNamesRule.js',
+  +     sha256: '76d50c45d6af31c7706f8b42141df163ee29f64caa513e3e10c1b68885642903',
+  +     size: 1954
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueEnumValueNamesRule.js.flow',
+  +     sha256: 'aec091493b6141409dedf567fda833ad9632686b57797aea32be64ff095031df',
+  +     size: 2050
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueEnumValueNamesRule.mjs',
+  +     sha256: 'aaba9ac9a2092230c3c3daf27d1af0040f20fb29cb1470e1efe093a302a84c82',
+  +     size: 1775
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFieldDefinitionNames.js',
+  +     sha256: 'f3f4380c1c9d82f9f0dafdaa5ec74a473bb57e959881aea755307cbf3845c099',
+  +     size: 357
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFieldDefinitionNames.js.flow',
+  +     sha256: 'f5b40bf0d709fd865c38a3178ef446c598a6c44a5335ec063e378abfab1e4055',
+  +     size: 342
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFieldDefinitionNames.mjs',
+  +     sha256: 'b3359d1b02a22b6177cb789f1013ece9cc842befe581e776f7323752ce90794c',
+  +     size: 330
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js',
+  +     sha256: 'b053f59b07ba58c859fff718776f0b427ff734040896a06477ee7c11b3f42d51',
+  +     size: 2338
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.js.flow',
+  +     sha256: 'cdd37c4b8e0292d5ded07b760f9b7ea46d4c10c1e8fdbc3fc7dbb839ec2f0be8',
+  +     size: 2597
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFieldDefinitionNamesRule.mjs',
+  +     sha256: '14660b69f5f8db87a0a98a9ec2f4ae47fbccc10f4a09a3768ed5f2a2bcbd4aa7',
+  +     size: 2151
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFragmentNamesRule.js',
+  +     sha256: '05930cf53cd9621925f7c66fe30cd0828f0c20cce13b223fc20cd25f16891dd7',
+  +     size: 944
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFragmentNamesRule.js.flow',
+  +     sha256: '25c282e28215be6c2fbee64fead9e9c5cc5d9c4c4f484d0469f8aacf853b3641',
+  +     size: 948
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueFragmentNamesRule.mjs',
+  +     sha256: '4dd7d4e19c9748bb7e2b38486b192e9fd820a1e7edc6b023300fc508c9d603bf',
+  +     size: 798
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueInputFieldNamesRule.js',
+  +     sha256: 'fe8d7c6414a81b848582c970fbe25d9b49d66fc1855fb58e4a79e2d8bba6aa10',
+  +     size: 1061
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueInputFieldNamesRule.js.flow',
+  +     sha256: '95c0417dc90ffd4886d2c0ee57697c474fa78cb2140a3b8ac3706f9168cc1d5e',
+  +     size: 1086
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueInputFieldNamesRule.mjs',
+  +     sha256: 'd2b0f61cf0220c84fd8b3432de942bcee1c3379e366f067f4fa0ff1deef381da',
+  +     size: 911
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationNamesRule.js',
+  +     sha256: '227267b3d75122522ff7a9f744a4f79892b44fc46d1d992c468b809128711cfe',
+  +     size: 1030
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationNamesRule.js.flow',
+  +     sha256: 'd47e2935999559017e95b5364bf91a745aa0d584019a968ba665206b581de016',
+  +     size: 1042
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationNamesRule.mjs',
+  +     sha256: '7cf6d1bc26f5ff7fa408b4e9ca7f8632990d68a81d6d2c85aa4ab7102329ce12',
+  +     size: 882
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationTypes.js',
+  +     sha256: '88b8d40e4e8b8fc09b2997b20914f7f3730c16305e2a6c797b263c895576b69c',
+  +     size: 327
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationTypes.js.flow',
+  +     sha256: 'c1c8d6f8f25189ee9d06ee618cc551f1a633b84d529d5641836040ecfccd0885',
+  +     size: 312
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationTypes.mjs',
+  +     sha256: '5302a9e59fff622ac3f09d7e11340d3d2d0f51ba6cd2e69939631ca393f3de2a',
+  +     size: 300
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationTypesRule.js',
+  +     sha256: 'df0d28818d28a3edbcdab60af04a51d7f1914ba2577a1d54dd5793673201fecf',
+  +     size: 1810
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationTypesRule.js.flow',
+  +     sha256: '1ebeea26a6b18f40e080e44bbe465c8b2381a24b91727002fa1704ebdcb670a0',
+  +     size: 1919
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueOperationTypesRule.mjs',
+  +     sha256: '84c061316aa217a12dd1f9bdbb01602077fa559685bc7df3e9fc24902abf56e3',
+  +     size: 1648
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueTypeNames.js',
+  +     sha256: '2780457f651266a109970f4c17a954a9a97a1fd48fb3c671c41d67c7812d5a52',
+  +     size: 302
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueTypeNames.js.flow',
+  +     sha256: 'be548cdc1cbd96b87e237bc5c5b5123ac5a47a7524e9f92c256216624012755f',
+  +     size: 287
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueTypeNames.mjs',
+  +     sha256: '3a0cb83a9dfbab35497212f722bf41dadfd9311b8c3649af9bc87804ba2611d6',
+  +     size: 275
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueTypeNamesRule.js',
+  +     sha256: '935c8b14f285ef51df03243533e392a5d1512fbfea62f4aaa336848088e09e7e',
+  +     size: 1325
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueTypeNamesRule.js.flow',
+  +     sha256: '2e97ba10c3345aa879b03d209e9754a8ef9529444ce40db19dde59327c4a7e99',
+  +     size: 1468
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueTypeNamesRule.mjs',
+  +     sha256: '6cd8cec880002e63dd8f4223613a105726e121667de3469b15412d56ce7bc102',
+  +     size: 1173
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueVariableNamesRule.js',
+  +     sha256: 'a0f2ace4ec6569f509afcee497d9cc9a3d48d034b6b894ca69a0016189414c4d',
+  +     size: 977
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueVariableNamesRule.js.flow',
+  +     sha256: '12a1bedc18c3502bfcd726c9797467af24a754ca9ee3e4e6222654825a334700',
+  +     size: 1087
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/UniqueVariableNamesRule.mjs',
+  +     sha256: '119f7680869cb709829ce3ba588fa3e174fa52c8ee89ef830cc929c77c47a1dc',
+  +     size: 831
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ValuesOfCorrectTypeRule.js',
+  +     sha256: 'e21044ec6203b732f4598a5ad1af0853f3698141ded1d14411873b6d22cf6af8',
+  +     size: 5418
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ValuesOfCorrectTypeRule.js.flow',
+  +     sha256: 'f811abd9a2e98749c972fad16450029badb136f0d49290a97a1ba4ac82480003',
+  +     size: 4884
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/ValuesOfCorrectTypeRule.mjs',
+  +     sha256: 'b91458eec157c0c35e8e7bc132f5470512e93f9ea4a88a2cb9a83a8bc434a226',
+  +     size: 4693
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/VariablesAreInputTypesRule.js',
+  +     sha256: '9ab5c250d81334cbc0f6a2d1273bc4e70bb14970459e873b1cb04ff2182d7d00',
+  +     size: 1096
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/VariablesAreInputTypesRule.js.flow',
+  +     sha256: '4b245a773bfbe215bc9d3fcd0ae419be02b818a1705fd48e9bd05f3fb96943be',
+  +     size: 1173
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/VariablesAreInputTypesRule.mjs',
+  +     sha256: '04c49c8ba8999b3082f803645355afabcf7b215663dc085f51555090eeb21f45',
+  +     size: 894
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/VariablesInAllowedPositionRule.js',
+  +     sha256: '313cad4a71d3fc88c93cf327066233b06ce0fd447d5fb947898ad1e27b5c13b5',
+  +     size: 3369
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/VariablesInAllowedPositionRule.js.flow',
+  +     sha256: 'a43609f5c15fe940e8601ab1ada4c5d33fd4a73ebe95d97661fbd441f277fcda',
+  +     size: 3367
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/VariablesInAllowedPositionRule.mjs',
+  +     sha256: 'bc071b3e31638f4a7d2ddcd0a24406ebebc40b030d81280e285fe97d62f46a01',
+  +     size: 2954
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/custom'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/custom/NoDeprecatedCustomRule.js',
+  +     sha256: 'c232ec9c27492d6298b4b21a27d83f48438cf928e520984a981e109ab332773f',
+  +     size: 3718
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/custom/NoDeprecatedCustomRule.js.flow',
+  +     sha256: 'adaf22a82c3330f2a9af1db64d7bdc007b1bec862c8a0cf1ed3c6c12565e2700',
+  +     size: 3377
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/custom/NoDeprecatedCustomRule.mjs',
+  +     sha256: '5d3d9918ab2f8cad99dc2a7b9788483654375cf08029996819ae4bbf15dc61fd',
+  +     size: 3321
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/custom/NoSchemaIntrospectionCustomRule.js',
+  +     sha256: '2cfbae6e3f41685d692de9ac0e5b6e6368700aa185c734061cb9565758b16270',
+  +     size: 1188
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/custom/NoSchemaIntrospectionCustomRule.js.flow',
+  +     sha256: '80d6d490472305b1ef29b586ae5d30a711092b4663f035287a91838ac0e3b9b9',
+  +     size: 1266
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/rules/custom/NoSchemaIntrospectionCustomRule.mjs',
+  +     sha256: '043c000e0c358e937b099caa21ff3b2e677a868d187ec243b42e29018011e7d5',
+  +     size: 997
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/specifiedRules.js',
+  +     sha256: '23a8f181e6e9a17caf78a9d4cae04e506214957c89ca76ed562fb5854d26c0e2',
+  +     size: 6994
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/specifiedRules.js.flow',
+  +     sha256: '00d9b247c51f13bebfe97868182f12c9282306c048b9e9bf09b4ff2217343179',
+  +     size: 5725
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/specifiedRules.mjs',
+  +     sha256: 'ea9f9c096b3ce4adfde5316274a20c06e5f6b4fdc1a397aa179b880e48d4c7e9',
+  +     size: 5745
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/validate.js',
+  +     sha256: '5304b8f9457ec85f526f24895e7106da891d9e86adc5393f9ecbf7e7628fd17a',
+  +     size: 4163
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/validate.js.flow',
+  +     sha256: '4137b5e4dfa4ae5eb7c307eb66f9385bd1a3c9528a81de7d9c23976b2df38ea9',
+  +     size: 3891
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/validation/validate.mjs',
+  +     sha256: 'cf1b98a61b1c7a3654ae12c8566a53548676f227b5a4692b9f5e5c8d5d2a028a',
+  +     size: 3709
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/version.js',
+  +     sha256: '4314c7ffb0582d56996af153d26a89420bd69d9e01fd3d76ddbd284dff6a99eb',
+  +     size: 604
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/version.js.flow',
+  +     sha256: 'ff7741f0fa262f6f8df216568284ab7fc4dd5ccf3da6a00db3de2ce022dd4a02',
+  +     size: 448
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/graphql/version.mjs',
+  +     sha256: '3a74211bdd8eb887b35d3e4b5c0367c865f11b44ee7e1477b67e486e4aa0759a',
+  +     size: 427
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/isomorphic-unfetch'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/isomorphic-unfetch/browser.js',
+  +     sha256: '4b078247e8d2d5f552e04c3efbfa9f077292a7bf83171f3c91675213ad243e0a',
+  +     size: 96
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/isomorphic-unfetch/index.js',
+  +     sha256: '89a02badfc0e23f1f2e2801de680702a5993b9e611f530eb537fa1ba2a8b1446',
+  +     size: 261
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/isomorphic-unfetch/package.json',
+  +     sha256: 'c1b61b78761bce00442169c5e661f7b7895733d47fe4164008954d5942c1f71b',
+  +     size: 413
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/node-fetch'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/node-fetch/LICENSE.md',
+  +     sha256: '84eaa985e1ef71b8c630e8aba73404c219ff425c6fdb45c62e998b58d4fbdc8e',
+  +     size: 1079
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/node-fetch/browser.js',
+  +     sha256: '2f59898f0efeaf430d2277e2519819e8e4fd365cb27f9d88d275cf43e1b1344f',
+  +     size: 781
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/node-fetch/lib'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/node-fetch/lib/index.es.js',
+  +     sha256: 'f786ccb522a08d5296a808bd0aef4bcfb8d9c9b4347e874fbbf6a64c6c1f8b97',
+  +     size: 45346
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/node-fetch/lib/index.js',
+  +     sha256: '79541f01338e70f4ff6f8a1d12f5c2914d4c6ab2ba96b7ddf48d2add01c13813',
+  +     size: 45775
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/node-fetch/lib/index.mjs',
+  +     sha256: '751ad19bb1be0a02e9d453eedd4a034e68b433bfbf4789c1645ab058882d11f6',
+  +     size: 45272
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/node-fetch/package.json',
+  +     sha256: 'e2b1a3d41d811213df8d9ba6642937e93559ae17084dc0b80ccf2c86a5f1e8a1',
+  +     size: 1756
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/tr46'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/tr46/index.js',
+  +     sha256: '8194f9425ce9ab06ea9aebcd64a85ec064d95d61bb349f8f1c98762ad256638e',
+  +     size: 7567
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/tr46/lib'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/tr46/lib/mappingTable.json',
+  +     sha256: 'b6b39724dca9011113a08d9d6910204062b58169e98952acdfbd19bf2c31bbff',
+  +     size: 260049
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/tr46/package.json',
+  +     sha256: 'bb7b622deed9936ada577a7ea52a59cee5162825305a45b1be2278907d899bf1',
+  +     size: 431
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/LICENSE.md',
+  +     sha256: '48847c33de7ee90f023d97dd90055cb8fe1e54edb7b956c90e19db852773ce18',
+  +     size: 1079
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/dist'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/dist/unfetch.es.js',
+  +     sha256: 'af93be5426fc365a9626c573fa8d5deb8810ee7a7771c0b6f53c971d3b64ec4f',
+  +     size: 949
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/dist/unfetch.js',
+  +     sha256: '31bc63f19f0ddd26717a0110ed4b75ab37d781c8c79b45275f5823ee8a557304',
+  +     size: 943
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/dist/unfetch.js.map',
+  +     sha256: '180d3dfbabf125dc73e673b4593d221c08ceca5e136f6395c563923a1e071ae0',
+  +     size: 2873
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/dist/unfetch.module.js',
+  +     sha256: 'af93be5426fc365a9626c573fa8d5deb8810ee7a7771c0b6f53c971d3b64ec4f',
+  +     size: 949
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/dist/unfetch.module.js.map',
+  +     sha256: 'f6d2141fc3f6c7a397430b2caa736b1f7a8492a8ad6dc273db6a575463b6dc06',
+  +     size: 2880
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/dist/unfetch.umd.js',
+  +     sha256: '08304dabdcc1ee773ecd79e97f4e8ae1208f974e1a993dd66523defbf7b73a78',
+  +     size: 1107
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/dist/unfetch.umd.js.map',
+  +     sha256: 'a990217ee39a972f213ab0f46c8ca726bc36bbad0dcfcd7b683ff9d302ebfa87',
+  +     size: 2878
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/package.json',
+  +     sha256: 'e9e9a80eafde15bd1e5ac9119f5421300f09e98adcd298ebbbe60d2efbd7842a',
+  +     size: 1096
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/polyfill'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/polyfill/index.js',
+  +     sha256: 'a6f9d3a1d46a9707a9f9ad56e19fbd13da9942cc26ac55bb5816e76110842fa3',
+  +     size: 917
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/polyfill/package.json',
+  +     sha256: '45395de3dadaaef86c9909c6a2090d0c5010cc62254e496fb62cf5724e802a39',
+  +     size: 89
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/polyfill/polyfill.mjs',
+  +     sha256: '49e7506902d15772452e131450b92a11920a3be0ecc037a0d261eda719f6132f',
+  +     size: 65
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/src'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/unfetch/src/index.mjs',
+  +     sha256: 'ab450c75ac0a7b16bbf4f9d236a67573ec0c87669d2737eac666c5a1d123d9cc',
+  +     size: 1317
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/webidl-conversions'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/webidl-conversions/LICENSE.md',
+  +     sha256: 'a889cc4dbee2ae172c179856b25d75b0b7a5a136e1b97109b9b590b2ff1a879c',
+  +     size: 1323
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/webidl-conversions/lib'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/webidl-conversions/lib/index.js',
+  +     sha256: '0b29621626c38ddda2a8e20787c32d09db10dd031ea743c5e270b59d46754a84',
+  +     size: 5056
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/webidl-conversions/package.json',
+  +     sha256: '4d8bfba25f8d4222ebd3399f651703272da73572dd9862f4924c7ead6c55e25c',
+  +     size: 402
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url/LICENSE.txt',
+  +     sha256: '6b7a1792144374d84dc5ed3655b8bbe2754d06f4f1f64a9fb8b9de2d6f448b85',
+  +     size: 1088
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url/lib'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url/lib/URL-impl.js',
+  +     sha256: 'e60103ff74b8bfc4001f5c05eea482f554de610cb5fc4e7ccbfc5aef9e443706',
+  +     size: 3804
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url/lib/URL.js',
+  +     sha256: '3bd67335fc72b50924fa35523c2b0b73dce9cb814f6bae82644ccb1f22560706',
+  +     size: 4212
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url/lib/public-api.js',
+  +     sha256: '0cbda6401c6179c4fb2ef0cebeccfb127485fee6f0ed5c129a8a539d4cd29018',
+  +     size: 625
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url/lib/url-state-machine.js',
+  +     sha256: 'e038db71d8a2313d7d20ad6dd1116a2fcb34b41e39f7a2364c70ff1aff548850',
+  +     size: 33573
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url/lib/utils.js',
+  +     sha256: '96b941934b9050815f9397bc6796ea8611bfa00c5886587d81da64a23841e3b9',
+  +     size: 562
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/node_modules/whatwg-url/package.json',
+  +     sha256: 'b8574d4e255ba0988d1522857aa06f1494631fd324702db2b4b334697153b2be',
+  +     size: 572
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/package.json',
+  +     sha256: '246fd8457dad33b14f439910d4d08965f62cd3dafe91874061c9d66ebabfd330',
+  +     size: 384
+  +   },
+  +   {
+  +     kind: 'directory',
+  +     path: 'Contents/Resources/app.asar/src'
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/app-archive.mjs',
+  +     sha256: 'ab39bfa13ff59ceec9c8d4235c125e2c5a26e161215ed6d44f053bb106a3e644',
+  +     size: 5673
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/app-helper.mjs',
+  +     sha256: '0ccce4feb4c9782eb2da7f6eff933a7303b4d5937ec8e19452c43eb36fdf095b',
+  +     size: 688
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/app-licenses.mjs',
+  +     sha256: '85c4f7d5620d7990389a426ab96347e169b9821cc9569d8c43dcbf183367615e',
+  +     size: 1736
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/app-lifecycle.mjs',
+  +     sha256: '4962b56713a9670278f77d92e4c1a2bd4f7932b0589118ee6a4bc5bc1e778131',
+  +     size: 15170
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/app-source.mjs',
+  +     sha256: '8e6397075b9061548d3eaccde06e82982b769c85800b5faa52649071edc543be',
+  +     size: 8661
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/app-updates.mjs',
+  +     sha256: 'c523ddfb281eaf4d95c0105c44037b806e49cea1b2c9023dd416d619a6028c10',
+  +     size: 5816
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/contracts.mjs',
+  +     sha256: '4903fe6152b4410ffbd37bbdf3ac8cfaaa0e63fb7f194837168978c40baa1838',
+  +     size: 1049
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/dashboard-preload.cjs',
+  +     sha256: '5c7debd283f98892b26786c822d648c14cff1ed7ab636e50b7fd285424db8334',
+  +     size: 333
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/launcher.css',
+  +     sha256: '4dbabe5adec8129dac97b5e1b6c006ad8941f2f052b464e066a5d1ffb93cf761',
+  +     size: 720
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/launcher.html',
+  +     sha256: 'a52857d870f8bf5e63fb1629a93af80adf41ec7aacaaf3481e20fd928965605b',
+  +     size: 2210
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/launcher.js',
+  +     sha256: '71bbf58e9acd2d6868367803c2643b3a8ad900e9ea52f467feb8f95a5e588e27',
+  +     size: 4943
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/local-runtime.mjs',
+  +     sha256: 'e13eb7f08c423a29a222c5fda49f67aa2ba5765c965b226a3638ee823a4c25d5',
+  +     size: 2648
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/main.mjs',
+  +     sha256: '7434eb12b1baa0a3bad9cf0a69719935ed17e7a8f4b3562ffb95390427f49baa',
+  +     size: 13313
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/preload.cjs',
+  +     sha256: '225672f9b161938ad64c727035626be7b009d44f159954fbde08084438042a7e',
+  +     size: 374
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/update-services.mjs',
+  +     sha256: 'dc4e3d74460a91deca76bcfe346bb7a7a0576c91f96e2d52cf2b5900e69929ed',
+  +     size: 2932511
+  +   },
+  +   {
+  +     kind: 'file',
+  +     mode: 420,
+  +     path: 'Contents/Resources/app.asar/src/update-services.ts',
+  +     sha256: '8e41fbf40d712d2a6d5149f5e8d4f2281a92633ee9b2f6f36a84ee3694274efe',
+  +     size: 872
+  +   },
+  +   {
+        kind: 'link',
+        link: 'app.asar',
+        path: 'Contents/Resources/archive-link'
+      }
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/apps/desktop/test/app-asar.test.mjs:36:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { path: 'Contents', kind: 'directory' }, { path: 'Contents/Resources', kind: 'directory' }, { path: 'Contents/Resources/app.asar', kind: 'directory' }, { path: 'Contents/Resources/app.asar/LICENSE', kind: 'file', mode: 420, size: 11357, sha256: 'c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4' }, { path: 'Contents/Resources/app.asar/NOTICE', kind: 'file', mode: 420, size: 302, sha256: 'acff42efa272fe95675d914d1a1a8ebca9003f0eef5d176731d8a9d75c11107c' }, { path: 'Contents/Resources/app.asar/node_modules', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/@graphql-typed-document-node', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/@graphql-typed-document-node/core', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/@graphql-typed-document-node/core/LICENSE', kind: 'file', mode: 420, size: 1073, sha256: '37431eb2e9e265d8d9a67161ba96394537fbc164ef546bf2140238a582cd59b2' }, { path: 'Contents/Resources/app.asar/node_modules/@graphql-typed-document-node/core/package.json', kind: 'file', mode: 420, size: 480, sha256: '6a8cb02d2cfe1aa65f0b4760c0bec4215d78d91796e19922d58ae1add957bf04' }, { path: 'Contents/Resources/app.asar/node_modules/@linear', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/_generated_documents.d.ts.map', kind: 'file', mode: 420, size: 1747723, sha256: 'a6de5ac106bb953477d365982c94bd458c384372964bbeb42d7ac040fdc9042a' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/_generated_sdk.d.ts.map', kind: 'file', mode: 420, size: 366746, sha256: '76c8f254d4cb0ba7bd1730f9107c1ff7c73c00fd692f4c016b8e33add7275f9b' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/client.d.ts.map', kind: 'file', mode: 420, size: 374, sha256: '3edca2369a172e73c47977ef8a1c4a1bbfe5fa9478b48b3fa2fa32c4f7f6e281' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/error.d.ts.map', kind: 'file', mode: 420, size: 2615, sha256: '422425eed88258326ae5a63a54c43031b062736f367cf98b03aa6a043f116be8' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/graphql-client.d.ts.map', kind: 'file', mode: 420, size: 1189, sha256: '85a1b4695261a2665142cacf6d48dc80e9b04b8a605fdf649c5d1ae97c5f7db8' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.js', kind: 'file', mode: 420, size: 4408570, sha256: '0382f485bd5a0b6c472512b97c92e532f88fd047f8c9a2cd03b3b759539c3361' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.js.map', kind: 'file', mode: 420, size: 3248660, sha256: '5f71d52f837fb9b73356d2dbaeb7a839ec3a22a9f09f232d0cf28b4a66e3696a' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.min.js', kind: 'file', mode: 420, size: 1914643, sha256: 'd73db21f696766b7e788f17e494ec69c6125a5b24aa3d56476a1c512b1a34229' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.min.js.br', kind: 'file', mode: 420, size: 120086, sha256: '53d17ea6e608eb4045ae47c3cbd58ab8c341bc3080cb4e8793fd69a92bb14d62' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.min.js.gz', kind: 'file', mode: 420, size: 184418, sha256: '257a2c13c8078ac1f8e3d9a606f5b908854272e3fd856ccb23c253157bbc74b2' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-cjs.min.js.map', kind: 'file', mode: 420, size: 1847938, sha256: '620a068f39a8577e4a3220c405963f3b1d1d3d3c30a360139b862d3865f4762a' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.js', kind: 'file', mode: 420, size: 4371667, sha256: 'd54d7f59f0f7144f2b4ba303301535042ddcef014a97e238e6dbed8a7c08e70d' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.js.map', kind: 'file', mode: 420, size: 3246018, sha256: 'b3050dec539869c9dd486305c5ae96488f05252395ecbed5065b8ae9ac3d7183' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.min.js', kind: 'file', mode: 420, size: 1904525, sha256: 'bec250f72957eed2fe7b7ac6c1d249bea5d8064c4472c01d5200cf0c824091cb' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.min.js.br', kind: 'file', mode: 420, size: 119689, sha256: '233fd1a46663471eb9466ed75111ab2c19f2c97a379309610c71d1f67c484858' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.min.js.gz', kind: 'file', mode: 420, size: 183470, sha256: '55fb44e5a72794bbad48872c165cb4acca138b9b19c1de60da21e700a38ab53d' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-es.min.js.map', kind: 'file', mode: 420, size: 1853680, sha256: '9c8ef7d395ecfdbf458fad6e4b619200091a56673cd2126d703375709a75bd61' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.js', kind: 'file', mode: 420, size: 4130326, sha256: 'b7bd1eec4b2bf8abe47952b3c2d608cbd779496d65df5ca2680445533d2ebcdc' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.js.map', kind: 'file', mode: 420, size: 2933802, sha256: '07c0f93184d87968738904ceb4a5b4ddcd3dd50dd261b1bd8e21ff4a047aa1f6' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.min.js', kind: 'file', mode: 420, size: 1595054, sha256: '88d63630152425964c8d697f4fa25ff2f545ba339e795bf5e6d1511350247a00' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.min.js.br', kind: 'file', mode: 420, size: 76012, sha256: '8f56624c583d9a854ad93e5aa2513744cf1d97d1409021a08590aee24fe2ac7e' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.min.js.gz', kind: 'file', mode: 420, size: 105978, sha256: 'ca9b12705107f55207c8969dfbc64fba6f86d9176bd523c1cb1105df58797232' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index-umd.min.js.map', kind: 'file', mode: 420, size: 1665629, sha256: '145798e96d9917e9c0ae635b9ad0f3eec026206986dfdfbec9afd46e61610162' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index.d.ts.map', kind: 'file', mode: 420, size: 210, sha256: '39d6430120b5775ddb0311d2ab888fb0a0f4ef264fd4f5b1c7f93dd9d1731dae' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/index_umd.d.ts.map', kind: 'file', mode: 420, size: 257, sha256: '4f1bde0f9f174336413f409507a7fbba4fa8af44bc2b5a4f7e60d04b2c629b04' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/types.d.ts.map', kind: 'file', mode: 420, size: 1959, sha256: '11f9c60482e5785c9a2b6cd5b94785ef39934cd2f02ca3602d2217769f0606df' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/utils.d.ts.map', kind: 'file', mode: 420, size: 526, sha256: '1767a2877d2951641cc72f888ffda5090597e480a9f933fd6a18385b662e0d6f' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/client.d.ts.map', kind: 'file', mode: 420, size: 846, sha256: '78567675248ab999bc42cdc98ab9e1ea4273bdc72f7fd2d9222026523052d483' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.js', kind: 'file', mode: 420, size: 13285, sha256: '27348f41b90abfb3013a0ca00aff70980488148090c4be1a4be2a2e648844794' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.js.map', kind: 'file', mode: 420, size: 29232, sha256: '87675d070a23fad5e436ca2648806638208d433ced522c2f6d9362b567e019d5' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.min.js', kind: 'file', mode: 420, size: 3920, sha256: '821a16580f421a0813679b8b91384f0a5e00b1b4c09dd6ad195b41b01c857c04' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.min.js.br', kind: 'file', mode: 420, size: 1480, sha256: '3e5e00811658652d41046023fcf5a6eb4012df1d7889bd7db07005d0aacc0e5d' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.min.js.gz', kind: 'file', mode: 420, size: 1672, sha256: 'e846b03a60bdd4b9e6dff13ad09cfb02584f966b18acb994fc24a986232b05f3' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-cjs.min.js.map', kind: 'file', mode: 420, size: 25807, sha256: '48cf4f4fd8c7f28fa3795885058b88bfcf316a79641e5c0b160b54af574b737c' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.js', kind: 'file', mode: 420, size: 12884, sha256: 'bc04bace92ea9f8f18307b53727f0e01c0bf95f72c4da8708110034c7c8a8f84' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.js.map', kind: 'file', mode: 420, size: 29209, sha256: '893256bc96eb13e905e7da096c22cba4c36f699aea96ccc315c2690b3ecea2de' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.min.js', kind: 'file', mode: 420, size: 3758, sha256: '66c14ef17c08ebf60ba7e2846ae8120db52d162fcd023e7c195d28b7c0fdbdc4' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.min.js.br', kind: 'file', mode: 420, size: 1433, sha256: 'd48d81be1dd6724eaae33c3ce9f8bfb1f308409a7016c9aedfbe6ebeafc5c2ac' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.min.js.gz', kind: 'file', mode: 420, size: 1608, sha256: '3c2dde93dad990b8c640fda313461de2ed5b4a49db51e3e91a9930d62896994d' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index-es.min.js.map', kind: 'file', mode: 420, size: 25861, sha256: '17f598aa55848013b206097cbc702496f7d47bd6cd01e5dec09ed881b2fb605a' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/index.d.ts.map', kind: 'file', mode: 420, size: 156, sha256: '48622ae15c1b25981539e9bdbcc3df8ec6b384dac23c31536371b95124a4e4af' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/dist/webhooks/types.d.ts.map', kind: 'file', mode: 420, size: 4797, sha256: '0e8508c6c68a687e0f198ff8d8518349771a0b4287ace57b4b79ab1b303d5e46' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/package.json', kind: 'file', mode: 420, size: 1892, sha256: '6318cd02125f244e2c266328f68033c46a347006ab0a9030ba1e7722af913fe1' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/webhooks', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/@linear/sdk/webhooks/package.json', kind: 'file', mode: 420, size: 148, sha256: '597eecbd5a20a444badf108a6b6ae99ada298b59f8684d666c83812df9686e1c' }, { path: 'Contents/Resources/app.asar/node_modules/graphql', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/LICENSE', kind: 'file', mode: 420, size: 1072, sha256: '35a11da7e877009ddc57405844209908cfc567adda0ec1daf410368c9f5b0d01' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/GraphQLError.js', kind: 'file', mode: 420, size: 13587, sha256: 'ff4f6ee8baeb4f7ebf525d8db28e967aea9c4a1d7f965c44f7f95c7a968320d9' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/GraphQLError.js.flow', kind: 'file', mode: 420, size: 7874, sha256: '98849acac5424d2eefd33c58259fb31063c3b5dc1cf751a02056f53a4585c375' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/GraphQLError.mjs', kind: 'file', mode: 420, size: 13167, sha256: 'bd0e31960a805032f8114cc8cba86fb350beb4c7b007d98d132f025169977498' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/formatError.js', kind: 'file', mode: 420, size: 269, sha256: '2d233ac6395a3662f002197d0dfacad133020472a45869540650c8a0c7732026' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/formatError.js.flow', kind: 'file', mode: 420, size: 123, sha256: 'e1d0f17caf9786cea5eee72c6dbc5e0556a0c0234c43021c2440a24278eacc14' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/formatError.mjs', kind: 'file', mode: 420, size: 50, sha256: '91120256728f55302e78430dcf7741fdf2ccb2428958936d5f33c99e7cfee531' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/index.js', kind: 'file', mode: 420, size: 970, sha256: 'fb159b2837b013e6c7c3a068c0f900fc7dbb8149a06d755e315f361c3e9174fa' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/index.js.flow', kind: 'file', mode: 420, size: 275, sha256: 'bea715d434b5e1a278ed6a5755f9bb29afc8e9bb1ca6d8cbcd236a91ac6eb184' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/index.mjs', kind: 'file', mode: 420, size: 212, sha256: '78faa20ada1b8d5aab2e3cb781cc31b464fe80c54ed6524203e835c7ca92ee42' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/locatedError.js', kind: 'file', mode: 420, size: 1266, sha256: '02eb951babb35fb2aa47d7a22449a80cd9c48da3d23dc1ad9e95b92825971fe7' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/locatedError.js.flow', kind: 'file', mode: 420, size: 1210, sha256: '563ed67e017ca5e3ab043f50849d6d3dfebdba925f4e0596add55675820dc02c' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/locatedError.mjs', kind: 'file', mode: 420, size: 1003, sha256: '538285f2fddf217b89437604ae04e9d86bf26c39093472bef667eef906bb9712' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/syntaxError.js', kind: 'file', mode: 420, size: 491, sha256: 'bafe4459fdc27f626424e02c7e26796918124974f36d00bc0618dbb2880206a1' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/syntaxError.js.flow', kind: 'file', mode: 420, size: 482, sha256: 'd443d7663b1586a3576fe242d2cda6b5a41629cf3afc8825d5607ce1714ece38' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/error/syntaxError.mjs', kind: 'file', mode: 420, size: 369, sha256: '7b74e3ef16a87cecd9893864e83bd4a1a8b14a1cf7fd48e3ac850194f083e0cb' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/execute.js', kind: 'file', mode: 420, size: 31921, sha256: 'acae21969bcb5455d6fa6212349679c405ad67f7a03fd522d8f18cba3924c54a' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/execute.js.flow', kind: 'file', mode: 420, size: 36376, sha256: '694d37e868039810a645d22786958a9474c19ae9d8f282296d90bed20df72d70' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/execute.mjs', kind: 'file', mode: 420, size: 30928, sha256: '5cabd2dcb6427d4c0755f65b5aedb7ed73221eece0c814602e21c50c7fb1b757' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/index.js', kind: 'file', mode: 420, size: 1046, sha256: '08ed1b00650e767a6b9cfc02665c0175a57e05eb13421aa595fbc6335186da4e' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/index.js.flow', kind: 'file', mode: 420, size: 336, sha256: '63bed9d6c16d1e336a3017c1bc6b73e98650207a49dc8e70e6f1f77be459f63b' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/index.mjs', kind: 'file', mode: 420, size: 222, sha256: 'e9777392802dfdb1ee98ac166561a431e3206ed0ade8e1810e8747b83eda4753' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/values.js', kind: 'file', mode: 420, size: 9397, sha256: 'ca23a009b875cb8b6fe947b1d9d3974e9fa90f444508f11e786ae4585db0ed8e' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/values.js.flow', kind: 'file', mode: 420, size: 8327, sha256: '8076917dd1870b77fe4e68abcc533da419ccd8e74c48f5af0c9cf613501fb26d' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/execution/values.mjs', kind: 'file', mode: 420, size: 8523, sha256: 'b04db3ed6e4d00bf4555cd0290be013fc0c10bd560858a0737a10b3d17bd6167' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/graphql.js', kind: 'file', mode: 420, size: 3390, sha256: 'eb706b624fae592ddc19aa6142875e476eba6389aaa3b708837fccc4b51eab3d' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/graphql.js.flow', kind: 'file', mode: 420, size: 6192, sha256: 'fc79da402c2ececbb35435024587a94ff70fb102d6eb848dc1f95bc683f5b937' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/graphql.mjs', kind: 'file', mode: 420, size: 4943, sha256: 'aa32b93f5feb3f8f4bd0f672950312c75d105d00c106fcaaff26501a9bf719f4' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/index.js', kind: 'file', mode: 420, size: 28769, sha256: '506816f876aa40d9e70c2bdbf56fefe6e4a6c5a3fd9439dd126f48eed0680f3f' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/index.js.flow', kind: 'file', mode: 420, size: 11542, sha256: '66f7183839cc61a863e7659ba375df53310c4d38cedb51bbbbf2f4cc0ef2d67f' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/index.mjs', kind: 'file', mode: 420, size: 7600, sha256: 'b115f16b908bcdd036e6b95998f4e200d4c239ceabde1f4e7de6dc246efa8c5b' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils', kind: 'directory' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/ObjMap.js', kind: 'file', mode: 420, size: 14, sha256: '77f5eec38c5ef075e11892244ccf9e249d82937e07401398df98319568775a17' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/ObjMap.js.flow', kind: 'file', mode: 420, size: 319, sha256: '1f251e6c2977498b99c173b400481fe7955948a13bda363eb651ebfab02c1d70' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/ObjMap.mjs', kind: 'file', mode: 420, size: 1, sha256: '01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/Path.js', kind: 'file', mode: 420, size: 569, sha256: '283885d797c3be6fd0686b3f1870182b4f4546a8d8b1c32484c2764965cfa8d0' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/Path.js.flow', kind: 'file', mode: 420, size: 635, sha256: 'd15b2e2c996cacaac6b10b14e6517708b8029a82fb89619b87d9f0407b0a4517' }, { path: 'Contents/Resources/app.asar/node_modules/graphql/jsutils/Path.mjs', kind: 'file', mode: 420, size: 439, sha256: '431fde6d3a948c8d6458f88832e4b7af635615c02b2c0fa0ced5c0ac9597cc4d' }, ... 464 more items ],
+    expected: [ { path: 'Contents', kind: 'directory' }, { path: 'Contents/Resources', kind: 'directory' }, { path: 'Contents/Resources/app.asar', kind: 'file', mode: 420, size: 41739706, sha256: 'e90ee5abfdd969ba6d6486a034e0497bf0c1869efcd390b359227d522143997d' }, { path: 'Contents/Resources/archive-link', kind: 'link', link: 'app.asar' } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
