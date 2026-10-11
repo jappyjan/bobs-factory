@@ -23,7 +23,10 @@ bytes must remain unchanged. These opaque markers prove retention, not executabl
 workflow recovery; the historical mock F1/native workflow receipts supply their
 own separately scoped continuation evidence.
 
-Every service operation is bounded. Cleanup disables/stops only fixture units,
+Every service operation is bounded and active harness subprocesses can be cancelled.
+SIGINT/SIGTERM unwind work into one cleanup path and persist a nonpassing receipt
+with exit status 130/143. The workflow separately interrupts healthy fixture units
+with both signals and requires cleanup and no survivors. Cleanup disables/stops only fixture units,
 uses an owned-unit kill fallback, checks all observed PIDs and process arguments
 for unobserved fixture descendants, removes fixture definitions and reloads the
 manager. PASS is written only after cleanup succeeds. A fresh nonpassing receipt
@@ -33,7 +36,9 @@ No VM/container PID1 restart, host/user-manager reboot, login, logout or lingeri
 is simulated. Those proofs remain open. No physical authentication, native
 credential store, real PM2/Nix activation, second-machine UI or genuine provider
 continuation is exercised. Ubuntu 24.04 is the runner environment, not a declared
-minimum supported OS/libc version. A CI run is acceptance evidence only after
+compatibility proof for every supported OS/kernel variant. The user-selected first
+release minimums are macOS 15 and Ubuntu 24.04/glibc 2.39 on ARM64+x64; observed
+native runs are macOS 15.7.9 and Ubuntu 24.04.5. A CI run is acceptance evidence only after
 its actual receipt and cleanup are reviewed; this workflow file is not a PASS.
 
 ## External ownership and explicit manual migration
@@ -76,3 +81,23 @@ with `systemctl --user reset-failed UNIT` before `service start`/`restart`.
 The CLI currently does not clear systemd's failure counter itself. The fixture
 records exhaustion and uses that explicit owned-unit recovery; it does not claim
 automatic recovery beyond the configured burst limit.
+
+
+## Crash failure diagnosis
+
+The original harness f48 run38132078627 failed at repeated crash restart or burst
+exhaustion after one 11178 ms recovery. Later assertions never completed. Its raw
+[failed evidence](../evidence/2026-10-11-service-correction/README.md) remains unchanged.
+It did not record systemd properties/journal, so no actual cause can be established
+from that receipt. The corrected harness retains the original timeout/assertions,
+uses `systemctl --user kill --kill-whom=main --signal=SIGKILL EXACT_FIXTURE_UNIT`,
+and captures the unit properties/journal plus matching process/cgroup details
+before each crash and before teardown, including failure/cancellation. Killing an
+entire cgroup would change the tested failure and is reserved for owned cleanup.
+
+One diagnostic hypothesis is surviving unit descendants: systemd explicitly says
+`SendSIGKILL=no` with `KillMode=mixed` can prevent restart when prior processes
+remain in the cgroup ([systemd v255 kill contract](https://github.com/systemd/systemd/blob/v255/man/systemd.kill.xml)).
+Actual properties/journal are needed to distinguish that from a start-limit or
+harness observation error. No production setting or frozen source has been changed,
+and no timeout increase or passing result has been substituted for the failure.

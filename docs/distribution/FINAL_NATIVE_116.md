@@ -17,7 +17,7 @@ The separate [source-b82 artifact index](evidence/taskbot116-source-b82/artifact
 | `linux-x64` | [job 114313238604](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/job/114313238604) / [artifact 11682662326](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/artifacts/11682662326) | [job 114313825609](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/job/114313825609) / [artifact 11682198644](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/artifacts/11682198644) | `43233224`; `d75afb47d49de95e87832c9eb987277375de8d112d794e041534883dda7b6c62` |
 | `linux-arm64` | [job 114313238622](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/job/114313238622) / [artifact 11681708067](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/artifacts/11681708067) | [job 114313825654](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/job/114313825654) / [artifact 11682588144](https://github.com/jappyjan/bobs-factory/actions/runs/38086228778/artifacts/11682588144) | `43213238`; `c8f276447a1d846e0e82b6dbb501097d4471d0253ea3f4db61bdaebabfe9826a` |
 
-All binary receipts report native runtime/installer/helper/prepared-agent boundary checks passed with synthetic scoped credentials and mocked/synthetic adapters, without authenticated provider inference; Gemini has one skipped adapter test. Observed platforms were macOS 15.7.9 (ARM virtual M1 and Intel runner) and Ubuntu 24.04.5/glibc 2.39 (both architectures). This is observed CI coverage, not a supported minimum-platform acceptance decision.
+All binary receipts report native runtime/installer/helper/prepared-agent boundary checks passed with synthetic scoped credentials and mocked/synthetic adapters, without authenticated provider inference; Gemini has one skipped adapter test. Observed platforms were macOS 15.7.9 (ARM virtual M1 and Intel runner) and Ubuntu 24.04.5/glibc 2.39 (both architectures). The October 11 user decision selects first-release minimums of macOS 15 and Ubuntu 24.04/glibc 2.39 on ARM64+x64. Observed coverage does not prove macOS 15.0, every Ubuntu kernel/image variant or other Linux distributions.
 
 All four desktop service and Electron receipts passed. Electron 44.7.0 used CDP virtual authenticator enrollment/login/logout; close-window worker retention, same-PID reopen, explicit Stop and maintenance-race rejection passed. Native credentials explicitly remain untested. Mac packages/update archives are unsigned; virtual-auth/service checks do not prove Apple signing, signed app activation/rollback, physical passkeys or login/reboot behavior. Factory LICENSE/NOTICE/THIRD_PARTY and packaged Electron/Chromium notice checks passed, but do not complete redistribution/relink licensing acceptance.
 
@@ -61,7 +61,7 @@ Acceptance descriptions were reread from Taskbot #116 and all children on 2026-1
 | [#118](https://taskbot.apps.janjaap.de/p/bobs-factory/t/118) verified installer/bootstrap | `in_review` | Four native controlled-download installer receipts passed integrity, identity, repeat-install, removal/state and ownership guards. | Genuinely trusted published stable/nightly bootstrap on clean supported-minimum hosts; unavailable/offline/interrupted staging and saved-policy handoff across upgrades with host prerequisites/credentials intact. |
 | [#119](https://taskbot.apps.janjaap.de/p/bobs-factory/t/119) safe update/restart/recovery | `in_progress` | Combined mock runtime/drain/recovery evidence and both actual Linux shell-upgrade/failed-health rollback receipts passed. Shell replacement kept the worker unchanged. | Authentically signed runtime replacement with real provider/native conversation continuation, interruption/reboot recovery and remote-instance isolation; preserve config, accepted results, drafts, waiting gates and native stores under supported ownership. |
 | [#120](https://taskbot.apps.janjaap.de/p/bobs-factory/t/120) nightly subscription/update policy | `in_progress` | Controlled defaults, both overrides, pause/pin, queued-consent reconciliation and independent shell/backend policy evidence passed. | Published install → subscribe → later nightly automatic-idle update and stable manual/override flows; offline/coalescing, durable settings across entry points, pause/pin and safe compatibility-checked stable return on real installations. |
-| [#121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121) native desktop | `in_progress` | Four unsigned packaged targets; Electron CDP virtual enrollment/login/logout, close/reopen same worker and explicit Stop passed. Linux AppImage update/rollback passed under test trust. | Signed/notarized macOS DMG drag/open and first-launch onboarding; genuine signed app activation/rollback; physical passkeys/native credentials, local/remote attachment and real provider continuation; explicit supported minimum OS/libc/CPU matrix and mismatch behavior. |
+| [#121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121) native desktop | `in_progress` | Four unsigned packaged targets; Electron CDP virtual enrollment/login/logout, close/reopen same worker and explicit Stop passed. Linux AppImage update/rollback passed under test trust. | Signed/notarized macOS DMG drag/open and first-launch onboarding; genuine signed app activation/rollback; physical passkeys/native credentials, local/remote attachment and real provider continuation; acceptance against the selected macOS 15 / Ubuntu 24.04-glibc 2.39 ARM64+x64 matrix and mismatch behavior. |
 | [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122) headless/service delivery | `in_progress` | Native disposable user-service ownership receipts and controlled protected remote/API lifecycle evidence passed; backend does not depend on a desktop window. | Real or isolated headless host, same-user service restart/reboot and real credential/provider access; separate second-machine UI acceptance coordinates with #84; connection loss, busy/idle runtime updates and native continuation under actual launchd/systemd constraints. |
 | [#123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123) installation entry points | `in_review` | DMG, AppImage, DEB and Mac complete-app archive hashes verified; controlled trial/recipe and ownership checks passed. | Choose/verify Homebrew tap or catalog, AUR maintainers and Bob-owned minimal npm launcher identity; publish only genuine signed eligible assets, then clean-machine install/trial/open/upgrade/remove and ownership-conflict acceptance for each advertised entry point. Upstream monorepo npm remains retired. |
 | [#124](https://taskbot.apps.janjaap.de/p/bobs-factory/t/124) startup/service lifecycle | `in_progress` | Disposable install/status/start/stop/restart/remove, close/reopen and Stop-versus-maintenance receipts passed. | Isolated login/reboot/logout/lingering, enable/disable, crash/backoff and interrupted-setup acceptance; deliberate PM2/manual/Nix adoption/migration without duplicate workers; workflow/native-session/waiting-gate recovery. macOS GUI LaunchAgent does not prove pre-login keychain access. |
@@ -90,7 +90,7 @@ Linux x64 artifact. They test actual foreground/external systemd processes,
 interrupted setup, native crash/backoff/burst limits, enrollment and maintenance.
 PM2/Nix definitions and native/waiting markers are explicitly synthetic fixtures.
 The workflow is reviewable preparation, not an executed Linux PASS. No supported
-minimum OS/libc is inferred from the runner. No production payload changed.
+minimum-platform compatibility is inferred beyond the observed runner versions. No production payload changed.
 
 Product audit: automatic arbitrary PM2/manual/Nix adoption is unsupported; active
 owners and target-definition conflicts are refused. Dormant arbitrary external
@@ -105,3 +105,32 @@ Actions passed. F1 is not applicable to this CI/native-acceptance tooling and
 manual procedure delta: no product runtime or F1 harness behavior changed.
 All historical101, prior53 and source-b82 raw56 evidence files remain unchanged.
 CI results and the new receipt require coordinator review when the run completes.
+
+
+## Service correction and failed evidence (2026-10-11)
+
+Run [38132078627](https://github.com/jappyjan/bobs-factory/actions/runs/38132078627),
+job 114448312709, at harness f48 failed the repeated-crash assertion after observing
+11178 ms first-crash recovery. Exhaustion, maintenance, resume, removal and retained
+state assertions did not complete. Its actual receipt says `passed:false`,
+`cleanup:true`, `survivors:[]`; it is not Linux acceptance PASS. The receipt, ZIP and
+job log are preserved byte-for-byte in the separate
+[correction evidence folder](evidence/2026-10-11-service-correction/README.md).
+
+The correction keeps the same crash assertions and bounds. It signals the exact
+fixture unit's main process through systemd, captures actual unit properties,
+bounded journal and matching process/cgroup details before teardown, and uses
+one cancellation-aware cleanup/final-receipt path. SIGINT/SIGTERM actual fixture
+checks require nonpassing receipts and complete cleanup. A production cause is
+not established by the old receipt; the diagnostic run is pending. The frozen
+runtime remains b82 / candidate `.21`; the new harness SHA is separate. No PASS
+or resolution of the crash finding is claimed before actual diagnostics and all
+acceptance/cleanup assertions are reviewed.
+
+The first-release matrix is now chosen: macOS 15, Ubuntu 24.04/glibc 2.39,
+ARM64+x64. Native observations remain macOS 15.7.9 and Ubuntu 24.04.5. No macOS
+15.0 or universal Linux kernel coverage is asserted. Signing, physical passkeys,
+native credentials/providers, reboot/login/logout/lingering, WebKit source/object
+correspondence and independent licensing/catalog ownership remain open. GitGuardian
+f48 check 114448313898 references the historical capacity-lease UUID findings;
+incidents 38083768/38084076 remain undisposed in the operator dashboard.

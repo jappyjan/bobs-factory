@@ -17,9 +17,12 @@ and targets only the selected desktop-owned worker, verifying its nonce, executa
 home and process start identity. Independently managed services/remote hosts require
 their own controls. No client action supplies update consent.
 
-Four intended targets are macOS ARM64/x64 (macOS 13+ proposed baseline) and Linux
-glibc ARM64/x64 (glibc 2.35+ proposed baseline). Minimum versions are proposals,
-not native-tested compatibility claims. Windows/musl are excluded. Artifact names:
+The first-release minimums selected by the user are macOS 15 and Ubuntu 24.04 /
+glibc 2.39, on ARM64 and x64. Observed native CI coverage is macOS 15.7.9 and
+Ubuntu 24.04.5 / glibc 2.39 on both architectures. These observations do not prove
+macOS 15.0, every Ubuntu 24.04 kernel/image variant, or other Linux distributions.
+Signing, physical authentication and native provider acceptance remain open.
+Windows/musl are excluded. Artifact names:
 
 - `bobs-factory-desktop-VERSION-mac-ARCH.dmg`, with Bob's Factory.app and Applications link.
 - `bobs-factory-desktop-VERSION-linux-ARCH.AppImage`.

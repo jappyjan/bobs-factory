@@ -92,7 +92,9 @@ implementation failures or assumed PASS receipts:
   remain explicitly scoped. Real providers require separate credit authorization.
 - [ ] Native minimum macOS/glibc/CPU and clean-machine package-manager install/
   upgrade/remove acceptance, login/logout/reboot/lingering and crash/startup proofs
-  on isolated hosts. Modern runner success does not prove proposed minimums.
+  on isolated hosts. User-selected minimums: macOS 15, Ubuntu 24.04/glibc 2.39,
+  ARM64+x64. Observed macOS 15.7.9 / Ubuntu 24.04.5 success does not prove macOS
+  15.0 or every Linux kernel/image variant.
 - [ ] Scoped operator GitGuardian reviews38083768/38084076 (four occurrences).
   Preserve sanitization intent and historical evidence; no bypass/history rewrite.
 

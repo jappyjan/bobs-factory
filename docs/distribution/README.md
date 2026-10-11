@@ -83,8 +83,12 @@ Checkout development continues to use its own installed SDK. This change does
 not relocate or convert native conversations. Authenticated Cursor validation was
 waived by the human for this implementation; it is not claimed as passing evidence.
 
-Linux builds target glibc. macOS minimum version, minimum glibc and native/CPU
-constraints need native-runner evidence; musl and Windows are not claimed.
+First-release minimums are macOS 15 and Ubuntu 24.04 / glibc 2.39, for ARM64
+and x64 (user decision, October 11). Observed CI is macOS 15.7.9 and Ubuntu
+24.04.5 / glibc 2.39 on both architectures; it does not prove macOS 15.0, all
+Ubuntu kernel/image variants or other Linux distributions. Remaining native
+acceptance is documented in [the final report](FINAL_NATIVE_116.md); musl and
+Windows are not claimed.
 Official packaging references: [Bun executables](https://bun.sh/docs/bundler/executables)
 and [Node SEA fallback](https://nodejs.org/api/single-executable-applications.html).
 Bun reached actual worker startup; resources/helpers require the explicit boundary
