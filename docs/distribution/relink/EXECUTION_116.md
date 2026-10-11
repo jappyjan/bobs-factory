@@ -1,10 +1,16 @@
 # Taskbot116 Linux relink execution and follow-up
 
-Both actual Linux x64 runs prove unchanged Bun configure/link/strip byte
-equivalence. The second completed unchanged native smoke and a genuine modified
-WTF source/member/link trial, but its changed native effect failed. Neither run
-proves a successful modified-library effect. The correction below remains
-pending fresh hosted execution and independent round3 review.
+The first two actual Linux x64 modified trials correctly failed their native
+effect requirement. A third run passed the complete modified diagnostic on the
+exact PR92 source head. The two failures remain preserved as historical evidence;
+the third result is a disposable engineering PASS for Linux x64 only. It does not
+establish production default behavior, source/license acceptance, or release
+readiness.
+
+The separately identified run `38138403930` used exact source head
+`53f6e03d0f28f53d7b305384d869d9d892328c52`. This documentation update did not
+refresh its provider status or consume a new receipt; its outcome is not merged
+with the failures below or attributed to the passing 46373dd run.
 
 [Run 38134978416](https://github.com/jappyjan/bobs-factory/actions/runs/38134978416),
 job `114456890512`, executed exact PR92 head
@@ -97,6 +103,81 @@ modified stripped output was 79,504,832 bytes, SHA
 `3b7cbf717041dd558da05234f32705e6a6c4d3975c8e9b4c007982c310063046`.
 These are failed-trial identities, not accepted artifacts.
 
+## Third actual run: Linux x64 modified native effect PASS
+
+[Run 38139122509](https://github.com/jappyjan/bobs-factory/actions/runs/38139122509),
+attempt 1, job `114469122766`, was a push for exact commit
+`46373dd964bed8752cd283bc93adcecb57c27380`. The GitHub Actions workflow and
+`linux-x64` job both concluded success. Its official artifact is
+`source-relink-linux-x64-46373dd964bed8752cd283bc93adcecb57c27380-1`, ID
+`11702782070`, 1,114,753 bytes, provider digest
+`sha256:46458411db546143d69b62759b6321188aec234003e1c4ba05ac2d5bf12caae7`.
+The downloaded ZIP matches that digest and size. It contains 137 members
+(4,625,277 uncompressed bytes); [the complete member index](evidence/run-38139122509/index.json)
+binds each name, size and SHA-256. All member bytes, including the provider ZIP,
+are also preserved outside Git at
+`/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/relink-execution/run-38139122509/`.
+Compact raw copies of every uploaded member are retained alongside the index.
+The artifact's captured-evidence list has 140 entries; all 136 entries marked
+for compact upload match the artifact exactly. Its four large linker maps remain
+represented by their captured size/hash records rather than being uploaded.
+
+The run's original `result.json` reports `status=passed`, `phase=PASS`,
+`exactBaseBytes=true`, and successful unchanged, recompiled-baseline and
+modified native/link checks. The unchanged Bun 1.4.2 linux-x64 runtime was
+79,500,640 bytes with SHA-256
+`a83d263767d839e4d2649ca8e35d07159c7afc99afdc96d731ced29e056dda0c`, equal to
+the pinned published runtime. After both native relinks, the cached-input
+runtime was rechecked against the same hash and native smoke outputs.
+
+The native outputs establish the changed-source effect through the explicit
+WTF backend while retaining the V8 parser as a control:
+
+- Unmodified recompiled source: both WTF and V8 return
+  `[86400000,172800000,42]`.
+- Modified source: WTF returns `[116000000,172800000,42]`; V8 remains
+  `[86400000,172800000,42]`.
+- The unchanged cached runtime recheck returns the original values on both
+  backends.
+
+Each genuine DateMath source compilation used the pinned ThinLTO compile entry.
+The original `DateMath.cpp.o` SHA-256 was
+`105da2e5c0fbf851ab404699117ec7f1c5742e2c503ee631b279728217f5e5ec`; the
+unmodified recompiled object was 105,352 bytes,
+`3dbdb23c6fa5c94692d9c663318162b978b4c0471ac14358fd46f8515e0ba076`; and the
+modified 40,819-byte source produced a 106,232-byte object,
+`1f154fb43b1927dbf55a37da610d3752ada79bf16794ceb1b4c38537790036d2`. The
+actual generated restricted Ninja link/strip edges and each run-created `.rsp`
+are retained as `original-ninja-commands.log.raw`,
+`restricted-ninja-commands.log.raw`, `relink-only.ninja.raw`, and the three
+`*-bun-profile.rsp.raw` files in the evidence directory. Both archive stages
+retain all 175 `libWTF.a` member names and their order; only `DateMath.cpp.o`
+changes, and each replacement hash matches its corresponding compiled bitcode.
+The five other WebKit libraries and two Bun application archives remain pinned.
+
+Evidence identities bind the executed harness to
+`linux-x64.py` SHA-256
+`e6fdf647e32a9714f7d0297b763902ad140c7ddc4533b88798a0cb5d7bc91285`,
+`webkit_trial.py` SHA-256
+`d45e1bf7b6f39e373ef66eb641e50f30e52aa09f4538d4a1eb741082467286ad`,
+`test_linux_x64.py` SHA-256
+`a32f2f9e3f7be55cc453c659481716ea109e948129b61ce3f88309a9320d5879`,
+`capture-config.mjs` SHA-256
+`c309c2b8cb65ac35bd08d9d9235c3513910b9d748ffb7652e73df13621759221`, and
+`linux-x64-inputs.json` SHA-256
+`6ea269a1d0efbb873d4cc2de6d9312c8426f4b2a03125af9dc183096279a23f5`.
+Tool versions, downloaded source/cache identities, compile dependency closures,
+configuration, commands, sysroot inventory and source/object/member proofs are
+preserved in the compact artifact. The original source and toolchain pins remain
+as documented above; the original historical compiler micro-version and full
+sysroot digests remain unobserved.
+
+The run took 1533.877 seconds. It validates this isolated engineering diagnostic
+on Linux x64. It does not change Bun's production default backend, rebuild V8,
+prove the other three native targets, or complete schema-2 source/license,
+signing, release, catalog or operator acceptance. No release candidate or
+production installation was changed.
+
 ## Concrete diagnosis and correction
 
 Pinned Bun `src/jsc/bindings/ZigGlobalObject.cpp:316` sets
@@ -126,8 +207,9 @@ member, genuinely linked/stripped and required to preserve both native baselines
 before the modified-member trial. Both stages retain complete member inventories,
 actual response files, captured map hashes and separate runtime hashes/flags.
 Overall PASS requires recompiled baseline and modified effect completion, followed
-by cached-input runtime recheck. One added focused regression rejects accepting
-the unchanged sentinel, corrupt second-date/arithmetic control or malformed output.
+by cached-input runtime recheck. Nine focused tests include a regression that
+rejects accepting the unchanged sentinel, corrupt second-date/arithmetic control
+or malformed output.
 
 The first reconstructed Focal/GCC13 package and tool input pins remain unchanged.
 Original historical sysroot file identities/compiler micro-version are still
@@ -138,8 +220,8 @@ This lane leaves Factory source `b82c37c4fb9a3e18d1cb222c6d56d3fef852096f`, vers
 `1.0.0-nightly.20261010.21`, candidate digest
 `ca323a599f606523965d996ff871eeee784d7f5a419ce9158675077b3e4e43ec`
 unchanged. The modified runtime is an engineering probe, not a production candidate.
-Independent round3 review and coordinator integration remain required. Full
-dependency/source-license acceptance and the other three native relink targets
+Independent fresh evidence retention review and coordinator integration remain
+required. Full dependency/source-license acceptance and the other three native relink targets
 remain open. Selected macOS15/Ubuntu24.04-glibc2.39 ARM64/x64 minimums, reboot,
 native credentials/providers, Apple signing, catalogs and parent release gates
 remain coordinator-owned. F1 is not applicable to this tooling-only change.

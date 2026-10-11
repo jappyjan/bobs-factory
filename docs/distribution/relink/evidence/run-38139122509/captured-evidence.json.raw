@@ -1,0 +1,842 @@
+[
+  {
+    "file": "DateMath-modified.cpp.o.raw",
+    "size": 106232,
+    "sha256": "1f154fb43b1927dbf55a37da610d3752ada79bf16794ceb1b4c38537790036d2",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-modified.cpp.raw",
+    "size": 40819,
+    "sha256": "27180046c7e84d795c41f63ada255796958b6de10fd85961e6e087435cacfcc7",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-original.cpp.o.raw",
+    "size": 103628,
+    "sha256": "105da2e5c0fbf851ab404699117ec7f1c5742e2c503ee631b279728217f5e5ec",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-original.cpp.raw",
+    "size": 40526,
+    "sha256": "65b1066ee8ec153db043d1e2d8967ddb068b9aea84dc6258994aad13e631d9cc",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-trial.patch",
+    "size": 675,
+    "sha256": "938e78402ae094f46a06a15cd520817841619deb7008fe650f7041e6689a6765",
+    "compactUpload": true
+  },
+  {
+    "file": "DateMath-unmodified.cpp.o.raw",
+    "size": 105352,
+    "sha256": "3dbdb23c6fa5c94692d9c663318162b978b4c0471ac14358fd46f8515e0ba076",
+    "compactUpload": true
+  },
+  {
+    "file": "WTF-config.h.raw",
+    "size": 1152,
+    "sha256": "38cea97eedc4257199fb0d3645af0d5b29dbdb80e67aa9d2f976b4d8939733b8",
+    "compactUpload": true
+  },
+  {
+    "file": "build.ninja",
+    "size": 15199,
+    "sha256": "96029ebf20912cc8a926d420025671a026dc8e7042ee80a6ae96eb130ea92de4",
+    "compactUpload": true
+  },
+  {
+    "file": "bun-profile.linker-map",
+    "size": 45739907,
+    "sha256": "25f81f4c2750c0f101573b6a06eae9644fcaabe65f3c5c25ce56a354ddbd0c84",
+    "compactUpload": false
+  },
+  {
+    "file": "bun-profile.rsp",
+    "size": 403,
+    "sha256": "9249d7ada46057685456a822b4b0c13f98c492016ae79dce5181c3118b038ac6",
+    "compactUpload": true
+  },
+  {
+    "file": "capture-config.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "commands.json",
+    "size": 38251,
+    "sha256": "bd30c5bba8331fc7e560d12ccb18cc1eecc22d0a641bca6e85f947ed64a7fde5",
+    "compactUpload": true
+  },
+  {
+    "file": "configure-cli.log",
+    "size": 315,
+    "sha256": "17686c11e6b9d2c64a89692795599c653e486b06ae9a4201d2d1aff2b9c1d56d",
+    "compactUpload": true
+  },
+  {
+    "file": "configure.json",
+    "size": 385,
+    "sha256": "5ab8b5811bbe6768ca2a68f68ffa82ce03181fdce9752632c09d5b951d0dd671",
+    "compactUpload": true
+  },
+  {
+    "file": "cpu.txt",
+    "size": 3339,
+    "sha256": "f714a1ad57457d4b047ce52351754eb0eca05dc8afa599139612cda2bf4ee4b5",
+    "compactUpload": true
+  },
+  {
+    "file": "disk.txt",
+    "size": 616,
+    "sha256": "6e8d5824a328811046e15c950578b0e2aabc92d794ea972d08753797c341f1ec",
+    "compactUpload": true
+  },
+  {
+    "file": "downloads.json",
+    "size": 8297,
+    "sha256": "753eb644123357216c0ad8ca04203272526c4a05d04d277d4faa53befbbea54e",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-cpp-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-g++-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-gcc-11-base_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-gcc-13-base_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-gcc-13_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-gcc-16-base_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libasan6_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libasan8_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libatomic1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libcc1-0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libgcc-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libgcc-s1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libgfortran5_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libgomp1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libhwasan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libitm1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-liblsan0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libquadmath0_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libstdc++-13-dev_13.1.0-8ubuntu1~20.04.2_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libstdc++6_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libtsan0_11.5.0-10ubuntu1~20~ppa3_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libtsan2_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-gcc13-libubsan1_16-20260315-1ubuntu1~20~ppa1_amd64.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-libc6-dev.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-libc6.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-libcrypt-dev.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-libcrypt1.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "extract-linux-libc-dev.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "generator-files.jsonl",
+    "size": 7569,
+    "sha256": "72bf186b688844baadb64892e87747012e35464fb29af81d1c7e0d9ea5942cbf",
+    "compactUpload": true
+  },
+  {
+    "file": "harness-files.json",
+    "size": 456,
+    "sha256": "c6dfa92fc240e9590197f3a3316eb88ef5e477954e24b1746ff328b79fea3a5f",
+    "compactUpload": true
+  },
+  {
+    "file": "harness.log",
+    "size": 3029,
+    "sha256": "738d544abe29eaf80f468e38f1fb36e35fb9d4a18990fa0dad251a2bc8700884",
+    "compactUpload": true
+  },
+  {
+    "file": "injection-compile.log",
+    "size": 113,
+    "sha256": "171cd010d31c451871b797227556cb21aaec1727061274a47cd35cdfb550dcb9",
+    "compactUpload": true
+  },
+  {
+    "file": "injection-native.log",
+    "size": 28,
+    "sha256": "ce2b9aaac0a7818d109173144d1c6d56e2a94653c873073aafab4eb8fe42cd57",
+    "compactUpload": true
+  },
+  {
+    "file": "install-cargo.log",
+    "size": 189,
+    "sha256": "d3fce67905587815ae4f14722b6f655d4a1985be230c20711fe5c938a350f222",
+    "compactUpload": true
+  },
+  {
+    "file": "install-rustc.log",
+    "size": 189,
+    "sha256": "874e135bcde9ce686c902c34fc7e94922e298fdc54721eb9a392aead821a2a8d",
+    "compactUpload": true
+  },
+  {
+    "file": "link-dry-run.log",
+    "size": 2928,
+    "sha256": "ac0a7b0bea12440e81ba051f303e5870f1685c67d74a9d788a0aa265818f1b46",
+    "compactUpload": true
+  },
+  {
+    "file": "linker.lds",
+    "size": 6073,
+    "sha256": "a365da6e5ee059e4debb1a605bd9433e1cd334ea26f0c142a968757c7d657345",
+    "compactUpload": true
+  },
+  {
+    "file": "linker.order",
+    "size": 1156033,
+    "sha256": "32c24058f67945853c9e97c35a8dd6ece17b7c493249dab1a442a20250c20dd3",
+    "compactUpload": true
+  },
+  {
+    "file": "llvm-files.jsonl",
+    "size": 79048,
+    "sha256": "f1b99c78d6d636b4a71d6b3c5d08c91323b4e1230c3170ac86d2ead77e3a7726",
+    "compactUpload": true
+  },
+  {
+    "file": "memory.txt",
+    "size": 207,
+    "sha256": "603690d1fdcd8914b081262118a7ce51d628215544d7ee354fb533d9c2b9bb36",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-bun-profile.linker-map",
+    "size": 45739907,
+    "sha256": "25f81f4c2750c0f101573b6a06eae9644fcaabe65f3c5c25ce56a354ddbd0c84",
+    "compactUpload": false
+  },
+  {
+    "file": "modified-bun-profile.rsp",
+    "size": 403,
+    "sha256": "9249d7ada46057685456a822b4b0c13f98c492016ae79dce5181c3118b038ac6",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-library-link.log",
+    "size": 2928,
+    "sha256": "ac0a7b0bea12440e81ba051f303e5870f1685c67d74a9d788a0aa265818f1b46",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-date-backend-v8.log",
+    "size": 18797,
+    "sha256": "b3672a5c6364c301e59cee01ddc707378f65b74acb389a2581c3183144a37104",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-date-backend-wtf.log",
+    "size": 18798,
+    "sha256": "e232574b58a2a749bc019230791b91f59de539e65b6e2e0c05aec267f5151631",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-full-identity.log",
+    "size": 47,
+    "sha256": "355b20b4d9a74cf44a847bd5a14b58aa6654090c86b21fb198cd183a4d4e1da8",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-hello.log",
+    "size": 24,
+    "sha256": "5049596b0af505b36bcf4ad48cb67628cb09663fb90c666a543f6418057f3795",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-library-behavior-v8.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-library-behavior-wtf.log",
+    "size": 25,
+    "sha256": "477a9580af1ae0705f251481405c416666a7618a06371ffdaacf762e7ac27d53",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-revision.log",
+    "size": 16,
+    "sha256": "9be88dde8b69dbe59e415265fef0e6afa91607e6ef3e0de5ed3d0886844f52e2",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-native-version.log",
+    "size": 6,
+    "sha256": "b99b4c7cdf236f59bc9f65d963deaecae3b16a7dad87939cacb9057f7664daee",
+    "compactUpload": true
+  },
+  {
+    "file": "modified-webkit-trial-identities.json",
+    "size": 56182,
+    "sha256": "0b67ad7d74dccfd9c34714bf0ba5b733a72d3ffa9a14fc4b0b33357b7d19bc92",
+    "compactUpload": true
+  },
+  {
+    "file": "node-files.jsonl",
+    "size": 794429,
+    "sha256": "72f09d22e4068f7020015f4922f8224e346b9357c30b7db230b081e05fa54422",
+    "compactUpload": true
+  },
+  {
+    "file": "original-ninja-commands.log",
+    "size": 2832,
+    "sha256": "717ec1416db2d03f4fd61c8333b3cd386ef0de778a507f5b008c76c0a1d740e9",
+    "compactUpload": true
+  },
+  {
+    "file": "original-webkit-compile-command.json",
+    "size": 2443,
+    "sha256": "a379f63cbac0bdf9f0c350225ce6479d42ecf7beffd23ed1da791c1e3104e91e",
+    "compactUpload": true
+  },
+  {
+    "file": "os-release.txt",
+    "size": 400,
+    "sha256": "87458b3b1f1ca0e5c693ade771de7007c3783bdc692fa6b39eb6414bf2af2763",
+    "compactUpload": true
+  },
+  {
+    "file": "prelink-files.jsonl",
+    "size": 897,
+    "sha256": "9aaee7fc7c90b8a4f2e21e8a9efdb018d545a4d652d60bb27e5e99b7c4654902",
+    "compactUpload": true
+  },
+  {
+    "file": "published-elf.log",
+    "size": 261350,
+    "sha256": "24a795b330b511005d5d6c2cd9f3100098c2cfdcda1764212d48c8ba6c95d449",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-bun-profile.linker-map",
+    "size": 45739907,
+    "sha256": "03b21508fe30e18bbb663b1f9a70584f6f71ca02c423305893817f3d1c365a8b",
+    "compactUpload": false
+  },
+  {
+    "file": "recompiled-bun-profile.rsp",
+    "size": 403,
+    "sha256": "9249d7ada46057685456a822b4b0c13f98c492016ae79dce5181c3118b038ac6",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-library-link.log",
+    "size": 2928,
+    "sha256": "ac0a7b0bea12440e81ba051f303e5870f1685c67d74a9d788a0aa265818f1b46",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-native-date-backend-v8.log",
+    "size": 18797,
+    "sha256": "b3672a5c6364c301e59cee01ddc707378f65b74acb389a2581c3183144a37104",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-native-date-backend-wtf.log",
+    "size": 18798,
+    "sha256": "e232574b58a2a749bc019230791b91f59de539e65b6e2e0c05aec267f5151631",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-native-full-identity.log",
+    "size": 47,
+    "sha256": "355b20b4d9a74cf44a847bd5a14b58aa6654090c86b21fb198cd183a4d4e1da8",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-native-hello.log",
+    "size": 24,
+    "sha256": "5049596b0af505b36bcf4ad48cb67628cb09663fb90c666a543f6418057f3795",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-native-library-behavior-v8.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-native-library-behavior-wtf.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-native-revision.log",
+    "size": 16,
+    "sha256": "9be88dde8b69dbe59e415265fef0e6afa91607e6ef3e0de5ed3d0886844f52e2",
+    "compactUpload": true
+  },
+  {
+    "file": "recompiled-native-version.log",
+    "size": 6,
+    "sha256": "b99b4c7cdf236f59bc9f65d963deaecae3b16a7dad87939cacb9057f7664daee",
+    "compactUpload": true
+  },
+  {
+    "file": "relink-only.ninja",
+    "size": 3640,
+    "sha256": "056ce1b29b67f7f93ce40a0e64e37672cb219f49fbee4d0279c22bbba01a8477",
+    "compactUpload": true
+  },
+  {
+    "file": "relinked-elf.log",
+    "size": 261350,
+    "sha256": "24a795b330b511005d5d6c2cd9f3100098c2cfdcda1764212d48c8ba6c95d449",
+    "compactUpload": true
+  },
+  {
+    "file": "resolved-config.json",
+    "size": 11164,
+    "sha256": "b5fe7a362910e1b1a1dce880b4298d7d1295951115d6bc30f09c561710c30327",
+    "compactUpload": true
+  },
+  {
+    "file": "restricted-ninja-commands.log",
+    "size": 2832,
+    "sha256": "717ec1416db2d03f4fd61c8333b3cd386ef0de778a507f5b008c76c0a1d740e9",
+    "compactUpload": true
+  },
+  {
+    "file": "result.json",
+    "size": 12035,
+    "sha256": "f11544198304e6b2a8d459b08d564606afa76d0161fd10cc0dec9778d39c9e23",
+    "compactUpload": true
+  },
+  {
+    "file": "runner.json",
+    "size": 204,
+    "sha256": "ff7327de2df23f803dbd6199f50f93d52a6282bd1733f6ab2d8a97f4735f3623",
+    "compactUpload": true
+  },
+  {
+    "file": "rust-toolchain-files.jsonl",
+    "size": 12355,
+    "sha256": "dc99625fc34ff4594bbe5d04a2790576a2a17fe305cbdef3fe04f9613139ba38",
+    "compactUpload": true
+  },
+  {
+    "file": "rust-toolchain.toml",
+    "size": 1579,
+    "sha256": "85ec7da6d5a6eb4a0262cc8525e39edbcc9c61fb0693eb1f6733ef45ef896fb7",
+    "compactUpload": true
+  },
+  {
+    "file": "symbols.dyn",
+    "size": 21846,
+    "sha256": "cd986901b7f7cdf3e40acaad0520d022612b122a8864e5e12bd2a1ebf6205f88",
+    "compactUpload": true
+  },
+  {
+    "file": "sysroot-files.jsonl",
+    "size": 417819,
+    "sha256": "d86020cb486f5898e6e011de545b8e745fea27198529b31cd47a66ddce313f32",
+    "compactUpload": true
+  },
+  {
+    "file": "tool-identities.json",
+    "size": 5524,
+    "sha256": "8eb984e3e602b7581dd1f9bedbe9a5fab1f962cb951bc751b9ac1717911ae885",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-bun-profile.linker-map",
+    "size": 45739306,
+    "sha256": "6c7843e639714edb5e282dd99151ec20bb0a00f52caf05b2b230f815716343ab",
+    "compactUpload": false
+  },
+  {
+    "file": "unchanged-link.log",
+    "size": 2928,
+    "sha256": "ac0a7b0bea12440e81ba051f303e5870f1685c67d74a9d788a0aa265818f1b46",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-date-backend-v8.log",
+    "size": 18797,
+    "sha256": "b3672a5c6364c301e59cee01ddc707378f65b74acb389a2581c3183144a37104",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-date-backend-wtf.log",
+    "size": 18798,
+    "sha256": "e232574b58a2a749bc019230791b91f59de539e65b6e2e0c05aec267f5151631",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-full-identity.log",
+    "size": 47,
+    "sha256": "355b20b4d9a74cf44a847bd5a14b58aa6654090c86b21fb198cd183a4d4e1da8",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-hello.log",
+    "size": 24,
+    "sha256": "5049596b0af505b36bcf4ad48cb67628cb09663fb90c666a543f6418057f3795",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-library-behavior-v8.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-library-behavior-wtf.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-revision.log",
+    "size": 16,
+    "sha256": "9be88dde8b69dbe59e415265fef0e6afa91607e6ef3e0de5ed3d0886844f52e2",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-native-version.log",
+    "size": 6,
+    "sha256": "b99b4c7cdf236f59bc9f65d963deaecae3b16a7dad87939cacb9057f7664daee",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-recheck-native-date-backend-v8.log",
+    "size": 18797,
+    "sha256": "b3672a5c6364c301e59cee01ddc707378f65b74acb389a2581c3183144a37104",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-recheck-native-date-backend-wtf.log",
+    "size": 18798,
+    "sha256": "e232574b58a2a749bc019230791b91f59de539e65b6e2e0c05aec267f5151631",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-recheck-native-full-identity.log",
+    "size": 47,
+    "sha256": "355b20b4d9a74cf44a847bd5a14b58aa6654090c86b21fb198cd183a4d4e1da8",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-recheck-native-hello.log",
+    "size": 24,
+    "sha256": "5049596b0af505b36bcf4ad48cb67628cb09663fb90c666a543f6418057f3795",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-recheck-native-library-behavior-v8.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-recheck-native-library-behavior-wtf.log",
+    "size": 24,
+    "sha256": "10f74ff1565ef4a3f71556502beaba6bdf764a9ca044b78d0b73dffa0d5ab2f5",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-recheck-native-revision.log",
+    "size": 16,
+    "sha256": "9be88dde8b69dbe59e415265fef0e6afa91607e6ef3e0de5ed3d0886844f52e2",
+    "compactUpload": true
+  },
+  {
+    "file": "unchanged-recheck-native-version.log",
+    "size": 6,
+    "sha256": "b99b4c7cdf236f59bc9f65d963deaecae3b16a7dad87939cacb9057f7664daee",
+    "compactUpload": true
+  },
+  {
+    "file": "unmodified-webkit-trial-identities.json",
+    "size": 56182,
+    "sha256": "da5f6d00a292610d4cc3187d14bc08ef7ca6499b3375e5b8d5e2d86e35a29a4a",
+    "compactUpload": true
+  },
+  {
+    "file": "version-ar.log",
+    "size": 66,
+    "sha256": "0cd061b54d9fabd10472fb5d41faa0d4c11ba220b23a9da140226ed4f35c7179",
+    "compactUpload": true
+  },
+  {
+    "file": "version-cargo.log",
+    "size": 44,
+    "sha256": "eead13b33714ef18c9cb5b27e1e7aba3f4bc4471ecda1b548ecc6b57b19cdd4d",
+    "compactUpload": true
+  },
+  {
+    "file": "version-cc.log",
+    "size": 227,
+    "sha256": "ccd1fa830e7b7471074ecc2db9a48a746a363879cd76783d2bac16f09dbdc46b",
+    "compactUpload": true
+  },
+  {
+    "file": "version-cmake.log",
+    "size": 91,
+    "sha256": "f6e81c2559f3ce00c5fdad01d7b226c301f5d6b07ee04f65db6dbfdc1cc5970b",
+    "compactUpload": true
+  },
+  {
+    "file": "version-cxx.log",
+    "size": 227,
+    "sha256": "ccd1fa830e7b7471074ecc2db9a48a746a363879cd76783d2bac16f09dbdc46b",
+    "compactUpload": true
+  },
+  {
+    "file": "version-ld.log",
+    "size": 116,
+    "sha256": "75d97113b00a0e1b0f05985e72865d64d9f2a7d462b24241254d199adfed3291",
+    "compactUpload": true
+  },
+  {
+    "file": "version-llvm-objcopy.log",
+    "size": 108,
+    "sha256": "a663242bddab0451382e69f6dc50a7149a449dca55b4715635f6b5566a4a3cd9",
+    "compactUpload": true
+  },
+  {
+    "file": "version-ninja.log",
+    "size": 7,
+    "sha256": "810ab97f4b3fccb9adf1db7959945b479635931ccc4a0243c34a41b739eae25a",
+    "compactUpload": true
+  },
+  {
+    "file": "version-node.log",
+    "size": 8,
+    "sha256": "08f6347c6bc47b1f68fb3e5b85f789b6baabb1c94d2006983a485d4501048459",
+    "compactUpload": true
+  },
+  {
+    "file": "version-ranlib.log",
+    "size": 66,
+    "sha256": "0cd061b54d9fabd10472fb5d41faa0d4c11ba220b23a9da140226ed4f35c7179",
+    "compactUpload": true
+  },
+  {
+    "file": "version-readelf.log",
+    "size": 288,
+    "sha256": "6aca4321453ac381865f3d353ea7896b150c05026483cb9db0047eee6916723d",
+    "compactUpload": true
+  },
+  {
+    "file": "version-rustc.log",
+    "size": 212,
+    "sha256": "e77b488815717bdfbdcae905649313903f93857826034d5421687672887caab9",
+    "compactUpload": true
+  },
+  {
+    "file": "version-strip.log",
+    "size": 286,
+    "sha256": "c7ec30a0d74e492add5e84a46392b6be6137f3d29883c0a1417389936dfd09bb",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-cache-files.jsonl",
+    "size": 399262,
+    "sha256": "5c40dd9b26e03dfe4e5f40b31b9e7e5072fe2909ed916e73fc5e0c88a307ba80",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-compile-modified.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-compile-remaps.json",
+    "size": 13525,
+    "sha256": "f5510f5a3aebe50051ff06adf0cb9c6e0a4745b7191dff051ab24bdc2f7702e8",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-compile-unmodified.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-modified-compile-closure.json",
+    "size": 123532,
+    "sha256": "03936f509b9bda59923d086025b12ac163faeb7a6fb0478d90604288c0b2637f",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-modified.d",
+    "size": 65859,
+    "sha256": "fd9b20bf50dd63e26df2d184b06882f42871e2115dde73635e9d02200d5a92c3",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-original-object.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-replace-member-modified.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-replace-member-unmodified.log",
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-unmodified-compile-closure.json",
+    "size": 123532,
+    "sha256": "7006a07ad753e4cd213001984f76f7ed67b61f6d3cb0e9dd360e8d07d64d8aea",
+    "compactUpload": true
+  },
+  {
+    "file": "webkit-unmodified.d",
+    "size": 65859,
+    "sha256": "fd9b20bf50dd63e26df2d184b06882f42871e2115dde73635e9d02200d5a92c3",
+    "compactUpload": true
+  }
+]

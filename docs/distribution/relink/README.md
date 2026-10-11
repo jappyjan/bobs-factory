@@ -122,9 +122,13 @@ fail the workflow step while `always()` retains the nonpassing receipt.
 Workflow/check status alone is never substituted for `result.json`.
 
 The [execution report](EXECUTION_116.md) distinguishes the exact unchanged output
-proof, both preserved FAILs, the diagnosed parser bypass and the corrected trial's
-pending result. Compact indexes bind both complete original artifacts; the
-second upload omits maps, whose captured hashes remain explicit.
+proof, both preserved FAILs, the diagnosed parser bypass and the successful third
+Linux x64 modified-source run. The [third run's compact index](evidence/run-38139122509/index.json)
+binds all 137 provider-artifact members and every retained raw copy; its four
+large linker maps remain identified by captured size and hash. The complete ZIP
+and all uploaded member bytes are preserved outside Git. This PASS is limited to
+the isolated Linux x64 diagnostic and does not imply default production behavior,
+other-platform relinking, source/license acceptance or release approval.
 
 F1 is not applicable: this change tests external pinned native-link tooling and
 does not change Factory product workflows or the F1 harness. Syntax, graph safety,

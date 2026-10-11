@@ -1,0 +1,8 @@
+libbun-profile.a
+rust-target/x86_64-unknown-linux-gnu/release/libbun_runtime.a
+../cache/webkit-2e2aa2290fac856d-lto/lib/libWTF.a
+../cache/webkit-2e2aa2290fac856d-lto/lib/libJavaScriptCore.a
+../cache/webkit-2e2aa2290fac856d-lto/lib/libicudata.a
+../cache/webkit-2e2aa2290fac856d-lto/lib/libicui18n.a
+../cache/webkit-2e2aa2290fac856d-lto/lib/libicuuc.a
+../cache/webkit-2e2aa2290fac856d-lto/lib/libbmalloc.a
