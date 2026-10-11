@@ -39,6 +39,7 @@ import {
 	requireVerifiedNightlyHistory,
 } from "./lib/github-release.mjs";
 import { validatePreparedRelease } from "./lib/prepared-release.mjs";
+import { snapshotPublicationAssets } from "./lib/publication-assets.mjs";
 import { withPublicationLock } from "./lib/publication-lock.mjs";
 import { receiptArchive } from "./lib/receipt-archive.mjs";
 import {
@@ -390,106 +391,128 @@ if (
 	);
 }
 const signed = existsSync(join(assetsDirectory, "release.json.sig"));
-if (signed)
+const sidecars = {};
+if (signed) {
+	sidecars["release.json.sig"] = readFileSync(
+		join(assetsDirectory, "release.json.sig"),
+	);
+	sidecars["release.json.key-id"] = readFileSync(
+		join(assetsDirectory, "release.json.key-id"),
+	);
 	verifyManifestSignature(
 		manifestBytes,
-		readFileSync(join(assetsDirectory, "release.json.sig")),
-		readFileSync(join(assetsDirectory, "release.json.key-id"), "utf8").trim(),
+		sidecars["release.json.sig"],
+		sidecars["release.json.key-id"].toString("utf8").trim(),
 	);
-const records = readdirSync(assetsDirectory)
-	.sort()
-	.map((file) => fileRecord(join(assetsDirectory, file), file));
-const assetsDigest = sha256(jsonBytes(records));
-writeFileSync(
-	join(output, "publication-plan.json"),
-	jsonBytes({
-		dryRun: !values.publish,
-		...identity,
-		assetsDigest,
-		assets: records,
-		signature: signed ? "verified" : "blocked: signing key not provisioned",
-	}),
+}
+const snapshot = snapshotPublicationAssets(
+	assetsDirectory,
+	manifestBytes,
+	sidecars,
 );
-if (!values.publish) {
-	console.log(
-		`Prepared ${candidate.digest}, assets ${assetsDigest}. ${signed ? "Signature verified" : "Signing is a rollout blocker"}. No remote mutation.`,
+try {
+	const records = snapshot.records;
+	const assetsDigest = sha256(jsonBytes(records));
+	writeFileSync(
+		join(output, "publication-plan.json"),
+		jsonBytes({
+			dryRun: !values.publish,
+			...identity,
+			assetsDigest,
+			assets: records,
+			signature: signed ? "verified" : "blocked: signing key not provisioned",
+		}),
 	);
-} else {
-	requireValue(signed, "Publication blocked: signed manifest required");
-	requireValue(
-		process.env.BOBS_FACTORY_RELEASE_PUBLICATION_LOCK === "repository",
-		"Publication requires repository-wide concurrency lock",
-	);
-	if (identity.channel === "stable") {
-		requireValue(
-			values.approval,
-			"Stable publication requires candidate-bound approval file",
+	if (!values.publish) {
+		console.log(
+			`Prepared ${candidate.digest}, assets ${assetsDigest}. ${signed ? "Signature verified" : "Signing is a rollout blocker"}. No remote mutation.`,
 		);
-		const approval = JSON.parse(readFileSync(resolve(values.approval), "utf8"));
+	} else {
+		requireValue(signed, "Publication blocked: signed manifest required");
 		requireValue(
-			approval.candidateDigest === candidate.digest &&
-				approval.assetsDigest === assetsDigest &&
-				typeof approval.approvedBy === "string" &&
-				approval.approvedBy.trim(),
-			"Stable approval does not bind exact candidate and prepared assets",
+			process.env.BOBS_FACTORY_RELEASE_PUBLICATION_LOCK === "repository",
+			"Publication requires repository-wide concurrency lock",
 		);
-	} else
-		requireValue(
-			process.env.BOBS_FACTORY_AUTOMATIC_NIGHTLIES === "enabled",
-			"Nightly rollout has not been separately enabled",
-		);
-	const recheck = async () => {
-		const state = await discoverReleases(client);
 		if (identity.channel === "stable") {
-			for (const release of state.published.filter((r) => !r.prerelease))
-				validateLatestVersion(identity.version, release);
-		} else {
-			const mainSha = (await api("git/ref/heads/main")).object.sha;
-			const last = requireVerifiedNightlyHistory(state);
-			const relation =
-				last && last.manifest.commit !== identity.commit
-					? await api(`compare/${last.manifest.commit}...${identity.commit}`)
-					: null;
-			const result = nightlyEligibility({
-				mainSha,
-				candidateSha: identity.commit,
-				last: last
-					? {
-							commit: last.manifest.commit,
-							publishedAt: last.release.published_at,
-						}
-					: null,
-				isDescendant: relation?.status === "ahead",
-				now: Date.now(),
-			});
-			if (result.status !== "eligible") {
-				if (result.status === "blocked") throw new Error(result.reason);
-				throw new PublicationSkip(result);
-			}
 			requireValue(
-				identity.sequence >
-					Number(last?.manifest.version.split(".").at(-1) ?? 0),
-				"Nightly ordering regressed",
+				values.approval,
+				"Stable publication requires candidate-bound approval file",
 			);
+			const approval = JSON.parse(
+				readFileSync(resolve(values.approval), "utf8"),
+			);
+			requireValue(
+				approval.candidateDigest === candidate.digest &&
+					approval.assetsDigest === assetsDigest &&
+					typeof approval.approvedBy === "string" &&
+					approval.approvedBy.trim(),
+				"Stable approval does not bind exact candidate and prepared assets",
+			);
+		} else
+			requireValue(
+				process.env.BOBS_FACTORY_AUTOMATIC_NIGHTLIES === "enabled",
+				"Nightly rollout has not been separately enabled",
+			);
+		const recheck = async () => {
+			const state = await discoverReleases(client);
+			if (identity.channel === "stable") {
+				for (const release of state.published.filter((r) => !r.prerelease))
+					validateLatestVersion(identity.version, release);
+			} else {
+				const mainSha = (await api("git/ref/heads/main")).object.sha;
+				const last = requireVerifiedNightlyHistory(state);
+				const relation =
+					last && last.manifest.commit !== identity.commit
+						? await api(`compare/${last.manifest.commit}...${identity.commit}`)
+						: null;
+				const result = nightlyEligibility({
+					mainSha,
+					candidateSha: identity.commit,
+					last: last
+						? {
+								commit: last.manifest.commit,
+								publishedAt: last.release.published_at,
+							}
+						: null,
+					isDescendant: relation?.status === "ahead",
+					now: Date.now(),
+				});
+				if (result.status !== "eligible") {
+					if (result.status === "blocked") throw new Error(result.reason);
+					throw new PublicationSkip(result);
+				}
+				requireValue(
+					identity.sequence >
+						Number(last?.manifest.version.split(".").at(-1) ?? 0),
+					"Nightly ordering regressed",
+				);
+			}
+		};
+		let skipped = false;
+		try {
+			await withPublicationLock(() =>
+				publishPreparedRelease({
+					client,
+					manifest: release,
+					records,
+					assetsDirectory: snapshot.directory,
+					receiptPath: join(output, "publication-receipt.json"),
+					recheck,
+				}),
+			);
+		} catch (error) {
+			if (error instanceof PublicationSkip) {
+				console.log(JSON.stringify({ status: "skipped", ...error.result }));
+				skipped = true;
+			} else {
+				throw error;
+			}
 		}
-	};
-	try {
-		await withPublicationLock(() =>
-			publishPreparedRelease({
-				client,
-				manifest: release,
-				records,
-				assetsDirectory,
-				receiptPath: join(output, "publication-receipt.json"),
-				recheck,
-			}),
-		);
-	} catch (error) {
-		if (error instanceof PublicationSkip) {
-			console.log(JSON.stringify({ status: "skipped", ...error.result }));
-			process.exit(0);
-		}
-		throw error;
+		if (!skipped)
+			console.log(
+				"Publication confirmed; discovery synchronization dispatched.",
+			);
 	}
-	console.log("Publication confirmed; discovery synchronization dispatched.");
+} finally {
+	snapshot.cleanup();
 }

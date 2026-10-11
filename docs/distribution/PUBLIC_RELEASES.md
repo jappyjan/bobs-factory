@@ -158,6 +158,17 @@ publication. Discovery requires the exact complete remote inventory, including
 manifest/signature sidecars, for chunk releases. Missing public chunks cannot be
 appended automatically. Preserve conflicting immutable state for inspection.
 
+Publication plans and reconciliation use the inventory from the exact verified
+manifest bytes plus the exact verified signature/key-id sidecar bytes. Before
+emitting a plan, the publisher checks the local filename set and copies regular,
+unlinked files with safe modes into a private temporary snapshot, checking every
+size and hash while copying. Uploads use that snapshot through pinned file
+descriptors and verify the actual streamed bytes before a release can become
+public. A staging integrity failure leaves the release draft and keeps its
+authenticated inventory in the recovery receipt. Temporary snapshot storage must
+fit the complete asset set; it is removed on success, refusal and ordinary retry
+failure. Changed input files never redefine publication expectations.
+
 For offline source recovery from a complete signed schema-2 release, download its
 exact versioned inventory and signature sidecars into a directory, then run the
 reviewed tooling (which contains authentic publisher pins):

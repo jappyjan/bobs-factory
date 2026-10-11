@@ -4,6 +4,7 @@ import {
 	copyFileSync,
 	existsSync,
 	mkdirSync,
+	readdirSync,
 	readFileSync,
 	writeFileSync,
 } from "node:fs";
@@ -11,6 +12,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { sha256, sha256File } from "../lib/binary-release.mjs";
+import { verifyPublishedRelease } from "../lib/github-release.mjs";
 import { validatePreparedRelease } from "../lib/prepared-release.mjs";
 import { withPublicationLock } from "../lib/publication-lock.mjs";
 import { verifyManifestSignature } from "../lib/release-signature.mjs";
@@ -41,12 +43,13 @@ function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
 			approvedBy: "fixture-maintainer",
 		}),
 	);
-	const run = (publish = true, extra = []) =>
+	const run = (publish = true, extra = [], { preload, env = {} } = {}) =>
 		spawnSync(
 			process.execPath,
 			[
 				"--import",
 				transport,
+				...(preload ? ["--import", preload] : []),
 				join(f.work, "scripts/publish-binary-release.mjs"),
 				"--candidate",
 				join(f.assets, "candidate.json"),
@@ -69,6 +72,7 @@ function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
 					BOBS_FACTORY_AUTOMATIC_NIGHTLIES: "enabled",
 					BOBS_FACTORY_RELEASE_PUBLICATION_LOCK: "repository",
 					BOBS_FACTORY_TEST_PROVIDER: provider,
+					...env,
 				},
 			},
 		);
@@ -119,6 +123,157 @@ test("publisher dry run makes no remote calls and produces candidate-bound asset
 		f.cleanup();
 	}
 });
+
+for (const fault of [
+	"corrupt-chunk",
+	"unexpected-asset",
+	"manifest",
+	"signature",
+	"key-id",
+	"symlink",
+	"mode",
+]) {
+	for (const publish of fault === "corrupt-chunk" ||
+	fault === "unexpected-asset"
+		? [false, true]
+		: [true]) {
+		test(`publisher refuses post-validation ${fault} before ${publish ? "publication" : "verified plan"}`, () => {
+			const f = setup("nightly", {}, { sourceChunks: true });
+			try {
+				const chunk = join(f.assets, f.manifest.sourceTransport.chunks[0].file);
+				const preload = join(f.work, "post-validation-mutation.mjs");
+				const mutations = {
+					"corrupt-chunk": `const bytes = original(${JSON.stringify(chunk)}); bytes[0] ^= 255; fs.writeFileSync(${JSON.stringify(chunk)}, bytes);`,
+					"unexpected-asset": `fs.writeFileSync(${JSON.stringify(join(f.assets, "unsigned-extra.txt"))}, "unsigned extra");`,
+					manifest: `fs.appendFileSync(${JSON.stringify(join(f.assets, "release.json"))}, "\\n");`,
+					signature: `fs.appendFileSync(${JSON.stringify(join(f.assets, "release.json.sig"))}, "\\n");`,
+					"key-id": `fs.appendFileSync(${JSON.stringify(join(f.assets, "release.json.key-id"))}, "\\n");`,
+					symlink: `fs.renameSync(${JSON.stringify(chunk)}, ${JSON.stringify(join(f.work, "linked-chunk"))}); fs.symlinkSync(${JSON.stringify(join(f.work, "linked-chunk"))}, ${JSON.stringify(chunk)});`,
+					mode: `fs.chmodSync(${JSON.stringify(chunk)}, 0o666);`,
+				};
+				writeFileSync(
+					preload,
+					`import fs from "node:fs";
+import {syncBuiltinESMExports} from "node:module";
+const original = fs.readFileSync; let done = false;
+fs.readFileSync = function(path, ...args) {
+ const bytes = original.call(this, path, ...args);
+ if (!done && path === ${JSON.stringify(join(f.assets, fault === "key-id" ? "release.json.key-id" : "release.json.sig"))}) {
+  done = true;
+  ${mutations[fault]}
+ }
+ return bytes;
+}; syncBuiltinESMExports();
+`,
+				);
+				const temporary = join(f.work, "publication-temporary");
+				mkdirSync(temporary);
+				const result = f.run(publish, [], {
+					preload,
+					env: { TMPDIR: temporary },
+				});
+				assert.notEqual(result.status, 0, result.stdout);
+				assert.match(
+					result.stderr,
+					/Publication asset|publication asset|ELOOP/,
+				);
+				assert.equal(
+					existsSync(join(f.output, "publication-plan.json")),
+					false,
+				);
+				assert.deepEqual(f.state().operations, []);
+				assert.deepEqual(readdirSync(temporary), []);
+			} finally {
+				f.cleanup();
+			}
+		});
+	}
+}
+
+for (const target of [
+	"original",
+	"staging",
+	"staging-mode",
+	"staging-midstream",
+]) {
+	test(`publisher ${target !== "original" ? `refuses ${target} corruption` : "uses pinned snapshot despite original corruption"} during upload`, async () => {
+		const f = setup("nightly", {}, { sourceChunks: true });
+		try {
+			const file = f.manifest.sourceTransport.chunks[0].file;
+			const preload = join(f.work, "upload-mutation.mjs");
+			writeFileSync(
+				preload,
+				`import fs from "node:fs";
+import {syncBuiltinESMExports} from "node:module";
+const original = fs.createReadStream; let done = false;
+function mutate(path) {
+ const changed = ${target !== "original" ? "path" : JSON.stringify(join(f.assets, file))};
+ fs.chmodSync(changed, 0o600);
+ const bytes = fs.readFileSync(changed); bytes[${target === "staging-midstream" ? 100 : 0}] ^= 255;
+ fs.writeFileSync(changed, bytes);
+ ${target === "staging" || target === "staging-midstream" ? "fs.chmodSync(changed, 0o400);" : ""}
+}
+fs.createReadStream = function(path, ...args) {
+ const stream = original.call(this, path, ${target === "staging-midstream" ? "{...args[0], highWaterMark: 64}" : "...args"});
+ if (!done && path.endsWith(${JSON.stringify(file)})) {
+  done = true;
+  ${target === "staging-midstream" ? 'stream.once("data", () => mutate(path));' : "mutate(path);"}
+ }
+ return stream;
+}; syncBuiltinESMExports();
+`,
+			);
+			const temporary = join(f.work, "upload-temporary");
+			mkdirSync(temporary);
+			const result = f.run(true, [], { preload, env: { TMPDIR: temporary } });
+			assert.deepEqual(readdirSync(temporary), []);
+			if (target !== "original") {
+				assert.notEqual(result.status, 0, result.stdout);
+				assert.match(
+					result.stderr,
+					/Publication upload mode changed|Publication upload bytes differ/,
+				);
+				assert.equal(f.state().release.draft, true);
+				assert.equal(
+					f
+						.state()
+						.operations.some(
+							(o) =>
+								o.method === "PATCH" ||
+								o.path.endsWith("website.yml/dispatches"),
+						),
+					false,
+				);
+				const receipt = JSON.parse(
+					readFileSync(join(f.output, "publication-receipt.json")),
+				);
+				assert.deepEqual(receipt.assets, f.records);
+				assert.equal(receipt.stages.includes("published"), false);
+			} else {
+				assert.equal(result.status, 0, result.stderr);
+				assert.equal(f.state().release.draft, false);
+				const uploaded = f.state().assets.find((a) => a.name === file);
+				assert.equal(
+					uploaded.digest,
+					`sha256:${f.manifest.sourceTransport.chunks[0].sha256}`,
+				);
+				const state = f.state();
+				await verifyPublishedRelease(
+					{
+						pages: async () => state.assets,
+						bytes: async (asset) => Buffer.from(asset.bytes, "base64"),
+						api: async (path) =>
+							path.startsWith("git/ref/") ? state.tag : state.annotation,
+					},
+					state.release,
+					keys,
+				);
+			}
+		} finally {
+			f.cleanup();
+		}
+	});
+}
 for (const fault of [
 	"tag-after",
 	"draft-after",
