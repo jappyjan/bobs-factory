@@ -1,0 +1,21 @@
+{
+	"localDate": "2026-10-11",
+	"baseline": "97acf7ba6e00c81a480cd2f8d01c519ea2cf5f05",
+	"productionPayload": "unchanged b82c37c4fb9a3e18d1cb222c6d56d3fef852096f",
+	"cliTests": {
+		"files": 18,
+		"passed": 183,
+		"log": "cli-tests.log.raw"
+	},
+	"cliBuild": "passed",
+	"biome": "passed",
+	"javascriptSyntax": "passed",
+	"workflowYaml": "parsed with Ruby Psych",
+	"nonRunnerGuard": {
+		"exitCode": 1,
+		"log": "non-runner-refusal.log.raw"
+	},
+	"historicalEvidence": "no changes against baseline",
+	"linuxNativeExecution": "pending CI; not a PASS",
+	"f1": "not applicable: no product or F1 harness change"
+}

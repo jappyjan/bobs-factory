@@ -25,7 +25,7 @@ Both Linux shell-update receipts report actual unsigned AppImage/Electron/native
 
 Linux Electron stdout contains DBus diagnostics before the trailing JSON. Both [x64 raw output](evidence/taskbot116-source-b82/desktop/linux-x64/native-electron-receipt.json.raw) and [arm64 raw output](evidence/taskbot116-source-b82/desktop/linux-arm64/native-electron-receipt.json.raw) are copied unchanged. Parsing locates a complete trailing JSON object and rejects any non-whitespace suffix; both objects report `passed: true`. These diagnostics are retained as headless-test observations; no production defect is inferred from them.
 
-[Node CI 38086231619](https://github.com/jappyjan/bobs-factory/actions/runs/38086231619) for source `b82c37c4` and [Node CI 38086852959](https://github.com/jappyjan/bobs-factory/actions/runs/38086852959) for documentation head `2673564a38202e258b20c2627eae7121e4e5d556` both passed Node 22 and Node 24. These results do not substitute for CI on a subsequent documentation commit. GitGuardian [check 114315123906](https://github.com/jappyjan/bobs-factory/runs/114315123906) failed with four generic high-entropy findings across 97 commits, zero annotations. Public output references incidents `38083768`/`38084076` in historical F1 maintenance receipts; private dashboard disposition was unavailable. No assumption is made that all findings are synthetic or classified. Operator disposition remains a gate.
+[Node CI 38086231619](https://github.com/jappyjan/bobs-factory/actions/runs/38086231619) for source `b82c37c4` and [Node CI 38086852959](https://github.com/jappyjan/bobs-factory/actions/runs/38086852959) for documentation head `2673564a38202e258b20c2627eae7121e4e5d556` both passed Node 22 and Node 24. These results do not substitute for CI on a subsequent documentation commit. GitGuardian [check 114315123906](https://github.com/jappyjan/bobs-factory/runs/114315123906) failed with four generic high-entropy findings across 97 commits, zero annotations. Public output references incidents `38083768`/`38084076` in historical F1 maintenance receipts; private dashboard disposition was unavailable. The coordinator’s code audit identifies all four historical findings as capacity UUID fixture identifiers rather than credentials. The private dashboard incidents remain undisposed; operator disposition remains a gate.
 
 ## Verified historical candidate run
 
@@ -62,7 +62,7 @@ Acceptance descriptions were reread from Taskbot #116 and all children on 2026-1
 | [#119](https://taskbot.apps.janjaap.de/p/bobs-factory/t/119) safe update/restart/recovery | `in_progress` | Combined mock runtime/drain/recovery evidence and both actual Linux shell-upgrade/failed-health rollback receipts passed. Shell replacement kept the worker unchanged. | Authentically signed runtime replacement with real provider/native conversation continuation, interruption/reboot recovery and remote-instance isolation; preserve config, accepted results, drafts, waiting gates and native stores under supported ownership. |
 | [#120](https://taskbot.apps.janjaap.de/p/bobs-factory/t/120) nightly subscription/update policy | `in_progress` | Controlled defaults, both overrides, pause/pin, queued-consent reconciliation and independent shell/backend policy evidence passed. | Published install → subscribe → later nightly automatic-idle update and stable manual/override flows; offline/coalescing, durable settings across entry points, pause/pin and safe compatibility-checked stable return on real installations. |
 | [#121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121) native desktop | `in_progress` | Four unsigned packaged targets; Electron CDP virtual enrollment/login/logout, close/reopen same worker and explicit Stop passed. Linux AppImage update/rollback passed under test trust. | Signed/notarized macOS DMG drag/open and first-launch onboarding; genuine signed app activation/rollback; physical passkeys/native credentials, local/remote attachment and real provider continuation; explicit supported minimum OS/libc/CPU matrix and mismatch behavior. |
-| [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122) headless/service delivery | `in_progress` | Native disposable user-service ownership receipts and controlled protected remote/API lifecycle evidence passed; backend does not depend on a desktop window. | Second physical headless host controlled from another machine, same-user service restart/reboot and real credential/provider access; connection loss, busy/idle runtime updates and native continuation under actual launchd/systemd constraints. |
+| [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122) headless/service delivery | `in_progress` | Native disposable user-service ownership receipts and controlled protected remote/API lifecycle evidence passed; backend does not depend on a desktop window. | Real or isolated headless host, same-user service restart/reboot and real credential/provider access; separate second-machine UI acceptance coordinates with #84; connection loss, busy/idle runtime updates and native continuation under actual launchd/systemd constraints. |
 | [#123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123) installation entry points | `in_review` | DMG, AppImage, DEB and Mac complete-app archive hashes verified; controlled trial/recipe and ownership checks passed. | Choose/verify Homebrew tap or catalog, AUR maintainers and Bob-owned minimal npm launcher identity; publish only genuine signed eligible assets, then clean-machine install/trial/open/upgrade/remove and ownership-conflict acceptance for each advertised entry point. Upstream monorepo npm remains retired. |
 | [#124](https://taskbot.apps.janjaap.de/p/bobs-factory/t/124) startup/service lifecycle | `in_progress` | Disposable install/status/start/stop/restart/remove, close/reopen and Stop-versus-maintenance receipts passed. | Isolated login/reboot/logout/lingering, enable/disable, crash/backoff and interrupted-setup acceptance; deliberate PM2/manual/Nix adoption/migration without duplicate workers; workflow/native-session/waiting-gate recovery. macOS GUI LaunchAgent does not prove pre-login keychain access. |
 
@@ -70,9 +70,38 @@ Acceptance descriptions were reread from Taskbot #116 and all children on 2026-1
 
 - Full official pinned WebKit source (the official HTTP 422 remains recorded), all four genuine native object/config/toolchain/link-response/relink inputs and observed relink logs, plus an independent candidate-bound `licensingAndSource` receipt remain **UNASSEMBLED**. Packaged notices and successful native jobs do not supply this receipt or full-payload release approval.
 - Genuine publisher trust pin, protected signing and explicit nightly/stable rollout approval. The legacy [`v1.0.0-beta` prerelease](https://github.com/jappyjan/bobs-factory/releases/tag/v1.0.0-beta) exists; **new stable/nightly/native-desktop channels and catalogs have not been activated**. Candidate version/tag fields are preparation identity, not evidence of a published release. No new public tag/channel/installer/package was created by this work.
-- Apple signing/notarization and authentic signed Mac install/activation/rollback; physical passkeys/native credentials, second physical host, real provider/native continuation, supported minimum macOS/glibc/CPU acceptance and login/reboot/logout/lingering proofs.
+- Apple signing/notarization and authentic signed Mac install/activation/rollback; physical passkeys/native credentials, real or isolated headless host acceptance (Taskbot #122), separate second-machine UI acceptance (#84), real provider/native continuation, supported minimum macOS/glibc/CPU acceptance and login/reboot/logout/lingering proofs.
 - Homebrew/AUR catalog ownership, minimal Bob-owned npm package identity/owner and public entry-point activation with clean-machine lifecycle receipts. Existing private/upstream monorepo npm publication stays retired.
 - Operator GitGuardian incident disposition for check `114315123906`; four findings/97 commits, zero annotations, no private disposition. Historical evidence is preserved rather than edited to hide findings.
 - Coordinator independent review of the final documentation/raw-evidence commit and any resulting CI status. No approval or missing acceptance receipt is fabricated.
 
-This assembly changes only documentation and compact evidence. Direct JSON/provenance/link/hash checks and normal commit hooks verify this delta; no new tests, native builds/drives, historical signed23 replay, signing, publishing, catalogs, production homes/services, merge or ticket closure are performed. The native and F1 receipts above remain tied to their actual tested source and scope.
+The preceding 2026-10-10 assembly changed only documentation and compact evidence. Direct JSON/provenance/link/hash checks and normal commit hooks verify this delta; no new tests, native builds/drives, historical signed23 replay, signing, publishing, catalogs, production homes/services, merge or ticket closure were performed by that assembly. The native and F1 receipts above remain tied to their actual tested source and scope.
+
+## Isolated service acceptance follow-up (2026-10-11)
+
+Taskbot #122 permits a real **or isolated** headless host. Its core service work
+is independent of #84's second-machine UI acceptance; a second physical machine
+is not a prerequisite for every #122 criterion. Reboot and genuine provider
+continuation remain unproved.
+
+The new [bounded Linux acceptance workflow](../../.github/workflows/isolated-service-acceptance.yml)
+and [ownership/handoff procedure](acceptance/README.md) reuse the frozen `.21`
+Linux x64 artifact. They test actual foreground/external systemd processes,
+interrupted setup, native crash/backoff/burst limits, enrollment and maintenance.
+PM2/Nix definitions and native/waiting markers are explicitly synthetic fixtures.
+The workflow is reviewable preparation, not an executed Linux PASS. No supported
+minimum OS/libc is inferred from the runner. No production payload changed.
+
+Product audit: automatic arbitrary PM2/manual/Nix adoption is unsupported; active
+owners and target-definition conflicts are refused. Dormant arbitrary external
+startup must be inventoried and disabled by its owner with explicit consent. Nix
+remains declaratively owned. Native crash limit exhaustion requires deliberate
+`systemctl --user reset-failed` before CLI start/restart; the CLI does not reset it.
+These limits are documented rather than represented as completed real takeover.
+
+Local validation: CLI build passed; all 183 existing CLI tests passed (18 files),
+including service/lock cases. JavaScript syntax, Biome and refusal outside GitHub
+Actions passed. F1 is not applicable to this CI/native-acceptance tooling and
+manual procedure delta: no product runtime or F1 harness behavior changed.
+All historical101, prior53 and source-b82 raw56 evidence files remain unchanged.
+CI results and the new receipt require coordinator review when the run completes.

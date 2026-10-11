@@ -1,0 +1,44 @@
+name: Isolated Linux service acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [delivery/taskbot-116-integration]
+    paths:
+      - '.github/workflows/isolated-service-acceptance.yml'
+      - 'docs/distribution/acceptance/**'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  linux-user-service:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.18.0'
+          package-manager-cache: false
+      - uses: actions/download-artifact@v6
+        with:
+          github-token: ${{ github.token }}
+          run-id: 38086228778
+          artifact-ids: '11682662326'
+          path: ${{ runner.temp }}/frozen-service-runtime
+      - name: Verify frozen artifact provenance before execution
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node docs/distribution/acceptance/verify-frozen-runtime.mjs "$RUNNER_TEMP/frozen-service-runtime"
+      - name: Exercise only disposable per-home user services
+        env:
+          BOBS_FACTORY_ACCEPTANCE_HANDOFF: fixture-only
+        run: |
+          mkdir -p "$RUNNER_TEMP/service-evidence"
+          node docs/distribution/acceptance/linux-user-service.mjs "$RUNNER_TEMP/frozen-service-runtime/bobs-factory-1.0.0-nightly.20261010.21-linux-x64" "$RUNNER_TEMP/service-evidence/receipt.json"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: isolated-service-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/service-evidence/
