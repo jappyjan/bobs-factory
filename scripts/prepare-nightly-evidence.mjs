@@ -353,10 +353,19 @@ try {
 		}
 		// Get the official upstream base selected by this pinned Bun compiler. Only
 		// equality with the independently accepted object's runtime hash permits reuse.
+		const upstreamTarget = {
+			"darwin-arm64": "darwin-aarch64",
+			"darwin-x64": "darwin-x64",
+			"linux-x64": "linux-x64",
+			"linux-arm64": "linux-aarch64",
+		}[target];
 		const baseResponse = await fetch(
-			`https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-${target}.zip`,
+			`https://github.com/oven-sh/bun/releases/download/bun-v1.4.2/bun-${upstreamTarget}.zip`,
 		);
-		requireValue(baseResponse.ok, "Pinned Bun base unavailable");
+		requireValue(
+			baseResponse.ok,
+			`Pinned Bun base unavailable for ${target} (${baseResponse.status})`,
+		);
 		const baseZip = join(temporary, `${target}-base.zip`);
 		let baseCount = 0;
 		await pipeline(
@@ -377,7 +386,7 @@ try {
 		const basePath = join(temporary, `${target}-base`);
 		writeFileSync(
 			basePath,
-			execFileSync("unzip", ["-p", baseZip, `bun-${target}/bun`], {
+			execFileSync("unzip", ["-p", baseZip, `bun-${upstreamTarget}/bun`], {
 				maxBuffer: 512 * 1024 ** 2,
 			}),
 		);
