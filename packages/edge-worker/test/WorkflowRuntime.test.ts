@@ -24,6 +24,10 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
 
+// Graph transitions await real disk commits, including when other tests run.
+const waitFor: typeof vi.waitFor = (callback, options) =>
+	vi.waitFor(callback, options ?? { timeout: 5000 });
+
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
 afterEach(async () => {
@@ -289,7 +293,7 @@ describe("workflow trigger permissions", () => {
 		runtime.updateWorkflows([...defaultWorkflows, parent, child]);
 		const run = start(runtime, runtime.selectWorkflow([], "manual", "custom"));
 		void runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		const call = {
 			type: "workflow",
 			callerWorkflowId: "custom",
@@ -309,9 +313,9 @@ describe("workflow trigger permissions", () => {
 		const restored = restarted.get(run.id);
 		expect(restored.triggerOrigin).toEqual(run.triggerOrigin);
 		void restarted.launch(restored);
-		await vi.waitFor(() => expect(restored.status).toBe("waiting"));
+		await waitFor(() => expect(restored.status).toBe("waiting"));
 		restarted.answer(restored.id, "Yes");
-		await vi.waitFor(() => expect(restored.status).toBe("completed"));
+		await waitFor(() => expect(restored.status).toBe("completed"));
 		expect(restored.events.filter((e) => e.call).map((e) => e.call)).toEqual([
 			call,
 		]);
@@ -464,7 +468,7 @@ describe("workflow runtime", () => {
 		fail = false;
 		runtime.retry(run.id);
 		expect(() => runtime.retry(run.id)).toThrow("Only failed");
-		await vi.waitFor(() => expect(run.status).toBe("completed"));
+		await waitFor(() => expect(run.status).toBe("completed"));
 		expect(run.error).toBeUndefined();
 		expect(run.history.slice(0, history.length)).toEqual(history);
 		expect(run.history.map((item) => item.step)).toEqual([
@@ -549,7 +553,7 @@ describe("workflow runtime", () => {
 			workflow([agent("clarify", { askQuestions: true })]),
 		);
 		const promise = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		expect(execute).toHaveBeenCalledTimes(1);
 		await runtime.flush();
 		expect(
@@ -606,12 +610,12 @@ describe("workflow runtime", () => {
 			]),
 		);
 		const done = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		runtime.answer(
 			run.id,
 			"Please explain this more simply. I have not chosen an option or authorized paid tests.",
 		);
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(run.questions).toEqual([
 				"Use simulated tests or authorize paid tests?",
 			]),
@@ -646,9 +650,9 @@ describe("workflow runtime", () => {
 			workflow([agent("clarify", { askQuestions: true })]),
 		);
 		const first = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		runtime.answer(run.id, "Rephrase this please", "explanation");
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(run.questions).toEqual(["Clearer pending decision?"]),
 		);
 		const batch = run.questionBatchId;
@@ -663,7 +667,7 @@ describe("workflow runtime", () => {
 		});
 		const restored = restarted.get(run.id);
 		const second = restarted.launch(restored);
-		await vi.waitFor(() => expect(restored.status).toBe("waiting"));
+		await waitFor(() => expect(restored.status).toBe("waiting"));
 		expect(restored.questions).toEqual(["Clearer pending decision?"]);
 		expect(restored.questionBatchId).toBe(batch);
 		expect(restored.answers).toEqual([]);
@@ -692,7 +696,7 @@ describe("workflow runtime", () => {
 			]),
 		);
 		const done = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		runtime.answer(run.id, "Please explain");
 		await done;
 		expect(run.status).toBe("failed");
@@ -708,7 +712,7 @@ describe("workflow runtime", () => {
 			workflow([agent("clarify", { askQuestions: true }), agent("implement")]),
 		);
 		const promise = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		runtime.stop(run.id);
 		await promise;
 		expect(run.status).toBe("stopped");
@@ -950,7 +954,7 @@ it("calls frozen reusable workflows with shared plan/history and human checkpoin
 	runtime.updateWorkflows(definitions);
 	const run = start(runtime, runtime.selectWorkflow([], "manual", "parent"));
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const changed = runtime.listWorkflows();
 	changed.find((item) => item.id === "shared")!.steps = [];
 	// Saved configuration cannot alter the definition captured by an active run.
@@ -1099,7 +1103,7 @@ it.each([
 	);
 	const run = start(runtime, runtime.selectWorkflow([], "manual", "parent"));
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(first).toHaveBeenCalledTimes(2));
+	await waitFor(() => expect(first).toHaveBeenCalledTimes(2));
 	await runtime.shutdown();
 	expect(run.status).toBe("running");
 	expect(run.history.map((item) => item.step)).toEqual(["pipeline/review"]);
@@ -1125,9 +1129,7 @@ it.each([
 	const restarted = reload(home, { agent: resumed });
 	restarted.resumeAll();
 	restarted.resumeAll(); // Repeated startup recovery cannot launch a duplicate executor.
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(resumed.mock.calls.map(([context]) => context.step.id)).toEqual([
 		"fix",
 		"review",
@@ -1163,7 +1165,7 @@ it("recovers partial fanout with isolated outputs, skipping the finished branch"
 		]),
 	);
 	void runtime.launch(run);
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(run.history.map((item) => item.step)).toEqual(["parallel/0/fast"]),
 	);
 	await runtime.shutdown();
@@ -1179,9 +1181,7 @@ it("recovers partial fanout with isolated outputs, skipping the finished branch"
 	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook });
 	restarted.resumeAll();
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(agentHook).toHaveBeenCalledTimes(1);
 	expect(restarted.get(run.id).outputs.parallel).toEqual([
 		{ fast: { value: "retained" } },
@@ -1210,7 +1210,7 @@ it.each([
 		]),
 	);
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(question).toHaveBeenCalledTimes(1));
+	await waitFor(() => expect(question).toHaveBeenCalledTimes(1));
 	await runtime.shutdown();
 	expect(run.status).toBe("waiting");
 	const batch = run.questionBatchId;
@@ -1228,7 +1228,7 @@ it.each([
 	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook, question });
 	restarted.resumeAll();
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(restarted.get(run.id).events.at(-1)?.message).toBe(
 			"Which provider?",
 		),
@@ -1244,9 +1244,7 @@ it.each([
 	expect(question).toHaveBeenCalledTimes(1);
 	expect(agentHook).not.toHaveBeenCalled();
 	restarted.answer(run.id, "Codex");
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(agentHook.mock.calls.map(([context]) => context.step.id)).toEqual([
 		"clarify",
 		"implement",
@@ -1264,7 +1262,7 @@ it("keeps an accepted answer across a crash before the clarifier continues", asy
 		workflow([agent("clarify", { askQuestions: true, maxVisits: 2 })]),
 	);
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	runtime.answer(run.id, "Yes");
 	await runtime.flush();
 	const snapshot = readFileSync(
@@ -1280,9 +1278,7 @@ it("keeps an accepted answer across a crash before the clarifier continues", asy
 	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook });
 	restarted.resumeAll();
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(agentHook).toHaveBeenCalledTimes(1);
 	expect(restarted.get(run.id).answers).toHaveLength(1);
 });
@@ -1352,7 +1348,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	]);
 	const run = start(runtime, definition);
 	const launched = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const gate = structuredClone(run.reviewGate!);
 	expect(() =>
 		runtime.decide(run.id, {
@@ -1377,7 +1373,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	});
 	restarted.resumeAll();
 	const restored = restarted.get(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("waiting"));
+	await waitFor(() => expect(restored.status).toBe("waiting"));
 	expect(restored.reviewGate).toEqual(gate);
 	expect(order).toEqual(["human-review"]);
 	restarted.decide(run.id, {
@@ -1386,7 +1382,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 		decision: "reject",
 		feedback: "Fix label",
 	});
-	await vi.waitFor(() => expect(restored.reviewGate?.headSha).toBe("second"));
+	await waitFor(() => expect(restored.reviewGate?.headSha).toBe("second"));
 	expect(restored.status).toBe("waiting");
 	expect(() =>
 		restarted.decide(run.id, {
@@ -1400,7 +1396,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 		headSha: "second",
 		decision: "approve",
 	});
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(restored.humanDecisions?.map((x) => x.decision)).toEqual([
 		"reject",
 		"approve",
@@ -1541,7 +1537,7 @@ it("grants a bounded persisted retry budget only to the exhausted nested step", 
 	});
 	const prior = structuredClone(run.history);
 	runtime.retry(run.id);
-	await vi.waitFor(() => expect(run.status).toBe("failed"));
+	await waitFor(() => expect(run.status).toBe("failed"));
 	expect(run.history).toHaveLength(5);
 	expect(run.iterationLimit).toEqual({
 		step: "pipeline/review",
@@ -1558,7 +1554,7 @@ it("grants a bounded persisted retry budget only to the exhausted nested step", 
 	expect(restored.history.slice(0, prior.length)).toEqual(prior);
 	approve = true;
 	restarted.retry(restored.id);
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(
 		restored.history.filter((x) => x.step === "pipeline/review"),
 	).toHaveLength(6);
@@ -1662,7 +1658,7 @@ it.each([
 	const restarted = new WorkflowRuntime(home, hooks);
 	const restored = restarted.get(run.id);
 	restarted.retry(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("failed"));
+	await waitFor(() => expect(restored.status).toBe("failed"));
 	expect(calls).toHaveLength(1);
 	// Automatic restart cannot replenish an exhausted budget.
 	await runtime.flush();
@@ -1678,7 +1674,7 @@ it.each([
 	expect(again.get(run.id).status).toBe("failed");
 	recovered = true;
 	restarted.retry(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(calls).toHaveLength(2);
 	expect(restored.history.slice(0, retained.length)).toEqual(retained);
 	expect(restored.outputs.implementation).toEqual(run.outputs.implementation);
@@ -1751,7 +1747,7 @@ it.each([
 	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, hooks);
 	const restored = restarted.retry(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(calls.map((ctx) => ctx.stepKey)).toEqual([key]);
 	expect(restored.history.slice(0, retained.history.length)).toEqual(
 		retained.history,
@@ -1852,7 +1848,7 @@ it.each([
 		saved.rejected = { output: { summary: "Keep" }, issues: [], attempts: 1 };
 	const prior = structuredClone(saved);
 	runtime.retry(run.id);
-	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	await waitFor(() => expect(run.status).toBe("completed"));
 	expect(resumed).toEqual(prior);
 	expect(
 		run.events.some((event) =>
@@ -1970,7 +1966,7 @@ it("recovers a saved nested handoff through its existing fixer without replaying
 	};
 	await runtime.save(run);
 	runtime.retry(run.id);
-	await vi.waitFor(() => expect(run.status).toBe("failed"));
+	await waitFor(() => expect(run.status).toBe("failed"));
 	expect(called).toEqual(["handoff", "ci-fix", "after-ci-fix"]);
 	expect(run.history[0]).toEqual(history[0]);
 	expect(run.history.slice(1).map((x) => x.step)).toEqual([
@@ -2011,7 +2007,7 @@ it("keeps an unresolved guide assistance wait in progress instead of announcing 
 		url: "https://example.test/ticket",
 	};
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const milestone = track.mock.calls.find(([, receipt]) =>
 		receipt.key.startsWith("handoff:"),
 	)?.[1];
@@ -2178,11 +2174,11 @@ it("regenerates only the pending guide in a nested pipeline without approval or 
 	runtime.updateWorkflows([...defaultWorkflows, child, parent]);
 	const run = start(runtime, parent);
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const original = run.reviewGate!;
 	const history = run.history.map((h) => h.step);
 	await runtime.refreshGuide(run.id, original.id);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(order).toEqual([
 		"capture",
 		"guide",
@@ -2306,9 +2302,9 @@ it("continues a finished simple run once with the same conversation and persists
 			tool: async () => ({}),
 		}).chatMessages(run.id),
 	).toEqual([message]);
-	await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+	await waitFor(() => expect(finish).toBeTypeOf("function"));
 	finish();
-	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	await waitFor(() => expect(run.status).toBe("completed"));
 	expect(run.workspace).toBe(home);
 	expect(run.input).toBe("Original");
 });
@@ -2352,9 +2348,7 @@ it("keeps legacy run definitions stable on load and audits contract migration at
 	});
 	expect(restarted.get(run.id).workflowDefinitions).toEqual(definitions);
 	restarted.retry(run.id);
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(restarted.get(run.id).contractVersion).toBe(2);
 	expect(
 		restarted
@@ -2413,9 +2407,7 @@ it("runs nested intensive fanout at limit one and cancels queued leaves without 
 	]);
 	const run = start(runtime, definition);
 	const done = runtime.launch(run);
-	await vi.waitFor(() =>
-		expect(capacityRunStatus(run)).toBe("capacity-waiting"),
-	);
+	await waitFor(() => expect(capacityRunStatus(run)).toBe("capacity-waiting"));
 	expect(Object.keys(run.capacityLeaves!)).toEqual([
 		"parallel/0/a",
 		"parallel/1/b",
@@ -2587,13 +2579,13 @@ it.each([
 	if (passiveTool === "handoff")
 		run.workflow.steps[0]!.groups![1]![0]!.computeIntensive = true;
 	const done = runtime.launch(run);
-	await vi.waitFor(() => expect(script).toHaveBeenCalledOnce());
-	await vi.waitFor(() =>
+	await waitFor(() => expect(script).toHaveBeenCalledOnce());
+	await waitFor(() =>
 		expect(run.capacityLeaves).toMatchObject({
 			"parallel/1/ci": { phase: "waiting-ci" },
 		}),
 	);
-	await vi.waitFor(
+	await waitFor(
 		async () => expect((await capacity.snapshot()).active).toBe(0),
 		{ timeout: 10000 },
 	);
@@ -2714,7 +2706,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	const run = start(runtime, definition);
 	run.outputs["visual-scope"] = { changed: false, areas: [] };
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const prefix = structuredClone(run.history);
 	const frozen = structuredClone(run.workflow);
 	const batch = run.questionBatchId;
@@ -2730,7 +2722,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	});
 	const same = restored.get(run.id);
 	restored.resumeAll();
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(tool).toHaveBeenCalledTimes(2);
 		expect(same.events.at(-1)?.message).toBe(same.questions.join("\n"));
 		expect(same.status).toBe("waiting");
@@ -2743,7 +2735,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	expect(question).toHaveBeenCalledTimes(1);
 	expect(agentHook).toHaveBeenCalledTimes(2);
 	restored.answer(same.id, "Access still unavailable; please approve anyway");
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(
 			same.status === "waiting" && same.history.length > prefix.length,
 		).toBe(true),
@@ -2757,7 +2749,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 		same.id,
 		"Account restored; execute CLI save with fixture 42",
 	);
-	await vi.waitFor(() => expect(same.status).toBe("completed"));
+	await waitFor(() => expect(same.status).toBe("completed"));
 	expect(same.answers).toHaveLength(2);
 	expect(
 		agentHook.mock.calls.filter(([c]) => c.step.id === "capture"),
@@ -2798,7 +2790,7 @@ it.each([
 		]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const batch = run.questionBatchId;
 	await runtime.shutdown();
 	await execution;
@@ -2810,7 +2802,7 @@ it.each([
 	const restarted = reload(home, { tool, question, agent: agentHook });
 	const restored = restarted.get(run.id);
 	restarted.resumeAll();
-	await vi.waitFor(() => expect(question).toHaveBeenCalledTimes(2));
+	await waitFor(() => expect(question).toHaveBeenCalledTimes(2));
 	expect(restored.status).toBe("waiting");
 	expect(restored.questionBatchId).not.toBe(batch);
 	expect(restored.questions).toEqual(output.questions);
@@ -2870,9 +2862,9 @@ it.each([
 		]),
 	);
 	const first = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	runtime.answer(run.id, "Please explain", "explanation");
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(run.status).toBe("waiting");
 		expect(run.questions).toEqual(["Can you restore deployment access?"]);
 	});
@@ -2901,7 +2893,7 @@ it.each([
 		output.questions = ["Which deployment account is available?"];
 	}
 	const second = restarted.launch(restored);
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(tool).toHaveBeenCalledTimes(2);
 		expect(restored.status).toBe("waiting");
 	});
@@ -3011,7 +3003,7 @@ it("assigns new identities to repeated question batches and labels ticket sugges
 		server: "taskbot",
 	};
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const batch = run.questionBatchId;
 	expect(run.answers).toEqual([]);
 	expect(track.mock.calls.at(-1)?.[1].body).toContain("Suggested answer: Wait");
@@ -3019,7 +3011,7 @@ it("assigns new identities to repeated question batches and labels ticket sugges
 		"explicit reply or Send answers",
 	);
 	runtime.answer(run.id, "Wait");
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(run.questionBatchId).not.toBe(batch);
 	expect(run.answers).toHaveLength(1);
 	runtime.stop(run.id);
@@ -3084,7 +3076,7 @@ it("recovers saved QA waits into the fixer while retaining completed roles and h
 		script: async () => ({}),
 	});
 	restored.resumeAll();
-	await vi.waitFor(() => expect(restored.get(run.id).status).toBe("completed"));
+	await waitFor(() => expect(restored.get(run.id).status).toBe("completed"));
 	expect(called).toEqual(["visual-fix"]);
 	expect(restored.get(run.id).questions).toEqual([]);
 	expect(restored.get(run.id).history.slice(0, originalHistory.length)).toEqual(
@@ -3156,7 +3148,7 @@ it.each([
 		workflow([agent(fixer, { askQuestions: false, next: "end" })]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(calls).toEqual([fixer]);
 	runtime.answer(run.id, "External access restored");
 	await execution;
@@ -3216,23 +3208,21 @@ it.each([
 		]),
 	);
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	await runtime.shutdown();
 	await runtime.flush();
 	const restarted = reload(home, hooks);
 	restarted.resumeAll();
 	const recovered = restarted.get(run.id);
-	await vi.waitFor(() =>
-		expect(restarted.pendingAnswers.has(run.id)).toBe(true),
-	);
+	await waitFor(() => expect(restarted.pendingAnswers.has(run.id)).toBe(true));
 	expect(calls).toEqual(["completed", fixer]);
 	restarted.answer(run.id, "Please explain. I have not decided.");
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(recovered.questions).toEqual([
 			"Should I retry with the restored test account?",
 		]),
 	);
-	await vi.waitFor(() => expect(recovered.status).toBe("waiting"));
+	await waitFor(() => expect(recovered.status).toBe("waiting"));
 	expect(recovered.outputs.receipt).toBeUndefined();
 	expect(resumes).toEqual([undefined, undefined]);
 	expect(recovered.answers).toEqual([]);
@@ -3240,7 +3230,7 @@ it.each([
 		conversation.sessionId,
 	);
 	restarted.answer(run.id, "Use the restored test account.");
-	await vi.waitFor(() => expect(recovered.status).toBe("completed"));
+	await waitFor(() => expect(recovered.status).toBe("completed"));
 	expect(calls).toEqual([
 		"completed",
 		fixer,
@@ -3289,7 +3279,7 @@ it.each([
 		]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(calls).toEqual(["review"]);
 	expect(run.outputs.gate).toMatchObject({ approved: false });
 	runtime.answer(run.id, "Deployment restored");
@@ -3332,7 +3322,7 @@ it.each([
 		]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(question).toHaveBeenCalledTimes(1));
+	await waitFor(() => expect(question).toHaveBeenCalledTimes(1));
 	const batch = run.questionBatchId;
 	const history = structuredClone(run.history);
 	const frozen = structuredClone(run.workflow);
@@ -3343,7 +3333,7 @@ it.each([
 	const restarted = reload(home, { tool, question, agent: agentHook });
 	const restored = restarted.get(run.id);
 	restarted.resumeAll();
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(tool).toHaveBeenCalledTimes(2);
 		expect(restored.status).toBe("waiting");
 		expect(restored.events.at(-1)?.message).toBe(output.questions.join("\n"));
@@ -3357,7 +3347,7 @@ it.each([
 	expect(restored.answers).toEqual([]);
 	expect(agentHook).toHaveBeenCalledTimes(1);
 	restarted.answer(restored.id, "Deployment access restored");
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(agentHook.mock.calls.map(([ctx]) => ctx.step.id)).toEqual([
 		"visual-review",
 		"visual-fix",
@@ -3426,7 +3416,7 @@ it("waits for CI assistance and retries the existing fixer after an answer witho
 		]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(calls).toEqual(["ci-fix"]);
 	runtime.answer(run.id, "Build infrastructure restored");
 	await execution;

@@ -557,14 +557,17 @@ it("validates the selected workflow's fields, accepts source-only Takeover, and 
 	}
 });
 
-it("loads large artifacts lazily and persists view state without changing a run", async () => {
+it.each([
+	"current",
+	"legacy",
+])("loads large %s artifacts lazily and persists view state without changing a run", async (storage) => {
 	const home = mkdtempSync(join(tmpdir(), "factory-lazy-"));
-	const runtime = new WorkflowRuntime(home, {
+	let runtime = new WorkflowRuntime(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
 	});
-	const run = runtime.create({
+	let run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
 			workflowId: "factory",
@@ -587,7 +590,18 @@ it("loads large artifacts lazily and persists view state without changing a run"
 	};
 	run.outputs.custom = { summary: "Big evidence", notes: "x".repeat(250000) };
 	run.outputs.other = { summary: "Big evidence", notes: "y".repeat(250000) };
+	let legacyBytes: string | undefined;
 	await runtime.save(run);
+	if (storage === "legacy") {
+		await runtime.shutdown();
+		legacyBytes = JSON.stringify(run);
+		writeFileSync(
+			join(runtime.directory, "runs", `${run.id}.json`),
+			legacyBytes,
+		);
+		runtime = new WorkflowRuntime(home, {});
+		run = runtime.get(run.id);
+	}
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],
@@ -615,6 +629,13 @@ it("loads large artifacts lazily and persists view state without changing a run"
 			summary: "Big evidence",
 		});
 		expect(detail.outputs.custom.notes).toBeUndefined();
+		if (legacyBytes)
+			expect(
+				readFileSync(
+					join(runtime.directory, "runs", `${run.id}.json.legacy`),
+					"utf8",
+				),
+			).toBe(legacyBytes);
 		if (run.outputs.other)
 			expect(detail.outputs.custom.__artifactHash).not.toBe(
 				detail.outputs.other.__artifactHash,
@@ -648,6 +669,7 @@ it("loads large artifacts lazily and persists view state without changing a run"
 		expect(run.status).toBe("completed");
 	} finally {
 		await server.stop();
+		await runtime.shutdown();
 		rmSync(home, { recursive: true, force: true });
 	}
 });

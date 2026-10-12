@@ -569,7 +569,9 @@ Restart loads manifests and summaries first. Transcript cursor selection uses
 timestamp indexes and loads only selected pages, with a bounded cache for
 immutable entries. Dashboard previews use committed artifact hashes instead of
 serializing whole artifacts on every poll. Full details remain available on
-demand, and video cleanup uses retained summary references. Copy manifests **and**
+demand, and video cleanup uses retained summary references. Completed legacy runs
+receive committed preview metadata on their first dashboard read, retaining their
+original bytes before replacement. Copy manifests **and**
 their chunk directories together when backing up or moving a home. Older binaries
 cannot read version 5; downgrade through a compatible whole-home backup rather
 than replacing the executable alone. Unreferenced chunks are retained; automatic

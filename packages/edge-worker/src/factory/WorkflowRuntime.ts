@@ -426,6 +426,7 @@ export class WorkflowRuntime {
 	private pendingSaves = new Map<string, Promise<void>>();
 	private activitySaves = new Map<string, Promise<void>>();
 	private dirtyActivity = new Set<string>();
+	private legacyRuns = new Set<string>();
 	private summaries = new Map<
 		string,
 		Record<string, any> & { id: string; createdAt: string }
@@ -479,6 +480,7 @@ export class WorkflowRuntime {
 					? this.snapshots.load<FactoryRun>(path)
 					: undefined;
 			const run: FactoryRun = loaded?.value ?? stored;
+			if (!loaded) this.legacyRuns.add(run.id);
 			if (loaded)
 				this.summaries.set(
 					run.id,
@@ -3319,6 +3321,7 @@ export class WorkflowRuntime {
 		// receive and propagate the original rejection.
 		void save.then(
 			() => {
+				this.legacyRuns.delete(run.id);
 				this.summaries.set(run.id, summary);
 				this.changed({ id: run.id });
 			},
@@ -3383,6 +3386,16 @@ export class WorkflowRuntime {
 				? (this.summaries.get(run.id)?.history ?? [])
 				: run.history.map(({ step, at, call }) => ({ step, at, call })),
 		};
+	}
+	async prepareDashboard(run: FactoryRun): Promise<void> {
+		// Completed legacy runs may never execute another step. Give their first
+		// dashboard read committed preview metadata, keeping the original bytes
+		// in the store's legacy backup rather than returning whole artifacts.
+		if (this.legacyRuns.has(run.id)) {
+			await this.pendingSaves.get(run.id)?.catch(() => {});
+			if (this.legacyRuns.has(run.id)) await this.save(run);
+		}
+		await this.flush(run.id);
 	}
 	outputPreviews(run: FactoryRun): Record<string, unknown> {
 		return Object.fromEntries(

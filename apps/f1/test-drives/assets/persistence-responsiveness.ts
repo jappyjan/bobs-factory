@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { monitorEventLoopDelay } from "node:perf_hooks";
@@ -246,6 +252,16 @@ try {
 		"Scripted human gate was not reached",
 	);
 	const run = runtime.get(started.id);
+	const legacyBytes = JSON.stringify({
+		...run,
+		id: "legacy-completed",
+		status: "completed",
+		outputs: {
+			large: { summary: "Legacy retained artifact", text: content.repeat(2) },
+		},
+		history: [],
+		events: [],
+	});
 	run.outputs.large = {
 		summary: "Synthetic retained artifact",
 		text: content.repeat(8),
@@ -259,6 +275,8 @@ try {
 	await responsiveDuring(runtime.save(run));
 	await worker.stop();
 	worker = undefined;
+	const legacyPath = join(home, "factory", "runs", "legacy-completed.json");
+	writeFileSync(legacyPath, legacyBytes);
 	worker = new EdgeWorker(config);
 	await worker.start();
 	const restored = internals(worker).getFactoryRuntime();
@@ -279,6 +297,16 @@ try {
 	};
 	assert.equal(detail.outputs.large.__artifactPreview, true);
 	assert(detail.history.length >= 48);
+	const legacyDetail = (await (
+		await fetch(`${dashboard}/api/runs/legacy-completed?view=dashboard`)
+	).json()) as {
+		status: string;
+		outputs: { large: { __artifactPreview: boolean; text?: string } };
+	};
+	assert.equal(legacyDetail.status, "completed");
+	assert.equal(legacyDetail.outputs.large.__artifactPreview, true);
+	assert.equal(legacyDetail.outputs.large.text, undefined);
+	assert.equal(readFileSync(`${legacyPath}.legacy`, "utf8"), legacyBytes);
 	const activity = (await (
 		await fetch(`${dashboard}/api/runs/${id}/activity?limit=8`)
 	).json()) as { entries: unknown[]; total: number };
@@ -317,6 +345,7 @@ try {
 			"large retained run artifact",
 			"restart retains native session and pending human gate",
 			"lazy dashboard and activity pages",
+			"legacy completed-run dashboard migration preserves original bytes",
 			"one explicit answer resumes workflow",
 			"shutdown flush and restored tail",
 		],

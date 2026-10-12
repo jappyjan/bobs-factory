@@ -775,8 +775,9 @@ export class FactoryServer {
 					.find((item) => item.id === request.params.id);
 				if (!run && !session)
 					return reply.code(404).send({ error: "Run not found" });
-				await runtime.flush(request.params.id);
 				const dashboard = request.query.view === "dashboard";
+				if (run && dashboard) await runtime.prepareDashboard(run);
+				else await runtime.flush(request.params.id);
 				const hidden = new Set([
 					"checkpoint",
 					"sessionSnapshot",
