@@ -212,11 +212,10 @@ it.each([
 				"second:test",
 			]),
 		);
-		await new Promise((resolve) => setTimeout(resolve, 20));
-		expect(providers).toEqual(["first:draft-pr"]);
 		await waitFor(() =>
 			expect(second.deliveryCoordination?.phase).toBe("queued"),
 		);
+		expect(providers).toEqual(["first:draft-pr"]);
 	} finally {
 		release();
 		await Promise.all([a, b]);
@@ -501,6 +500,7 @@ it("restores passive guide work without reacquiring legacy broad ownership", asy
 	// Replay an interrupted checkpoint written by a previous runtime, retaining its old lock receipt.
 	old.status = "interrupted";
 	runtime.log(old, "run", "Interrupted recovery fixture");
+	await runtime.flush(old.id);
 	const visits: string[] = [];
 	const recovered = new WorkflowRuntime(directory, {
 		agent: async ({ run, step, signal }) => {
@@ -522,8 +522,7 @@ it("restores passive guide work without reacquiring legacy broad ownership", asy
 	const restored = recovered.get(old.id);
 	restored.status = "running";
 	const a = recovered.launch(restored);
-	await new Promise((resolve) => setTimeout(resolve, 20));
-	expect(visits).toContain("old:guide");
+	await waitFor(() => expect(visits).toContain("old:guide"));
 	recovered.stop(current.id);
 	await Promise.all([a, b]);
 	expect(restored.status).toBe("completed");
@@ -701,7 +700,6 @@ it("recognizes two native worktrees of the same repository without configured fo
 	await waitFor(() => expect(first.step).toBe("draft-pr"));
 	const b = runtime.launch(second);
 	await waitFor(() => expect(roles).toContain("second:implement"));
-	await new Promise((resolve) => setTimeout(resolve, 20));
 	await waitFor(() =>
 		expect(second.deliveryCoordination?.phase).toBe("queued"),
 	);
