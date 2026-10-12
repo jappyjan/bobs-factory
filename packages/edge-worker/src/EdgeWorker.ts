@@ -66,6 +66,7 @@ import {
 	executionEnvironment,
 	factoryRuntimeIdentity,
 	GitHubTokenStore,
+	immutableJson,
 	isAgentSessionCreatedWebhook,
 	isAgentSessionPromptedWebhook,
 	isContentUpdateMessage,
@@ -9602,11 +9603,13 @@ ${taskSection}`;
 						throw new Error("Grouped merge cannot complete the saved workflow");
 					run.outputs[pending.step.id] = output;
 					if (pending.checkpoint.active!.phase === "executing")
-						run.history.push({
-							step: pending.key,
-							output,
-							at: new Date().toISOString(),
-						});
+						run.history.push(
+							immutableJson({
+								step: pending.key,
+								output,
+								at: new Date().toISOString(),
+							}),
+						);
 					pending.checkpoint.active!.phase = "result";
 					this.getFactoryRuntime().log(
 						run,
@@ -9643,11 +9646,13 @@ ${taskSection}`;
 				if (output && pendingMergeConfirmation(run, output)) {
 					run.outputs[pending.step.id] = output;
 					if (pending.checkpoint.active!.phase === "executing")
-						run.history.push({
-							step: pending.key,
-							output,
-							at: new Date().toISOString(),
-						});
+						run.history.push(
+							immutableJson({
+								step: pending.key,
+								output,
+								at: new Date().toISOString(),
+							}),
+						);
 					pending.checkpoint.active!.phase = "result";
 					this.getFactoryRuntime().log(
 						run,

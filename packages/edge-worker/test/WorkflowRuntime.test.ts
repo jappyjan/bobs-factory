@@ -112,6 +112,44 @@ function start(runtime: WorkflowRuntime, definition: Workflow) {
 	});
 }
 
+it("keeps completed receipts independent of mutable live outputs and immutable after restart", async () => {
+	const output = { nested: { text: "accepted result" } };
+	const { runtime, home } = create({
+		agent: async () => output,
+		script: async ({ outputs }) => {
+			(outputs.first as typeof output).nested.text = "later live result";
+			return {};
+		},
+	});
+	const run = start(
+		runtime,
+		workflow([
+			agent("first"),
+			{ id: "later", name: "Later", type: "script", script: "unused" },
+		]),
+	);
+	await runtime.launch(run);
+	expect(run.status).toBe("completed");
+	expect(run.outputs.first).toEqual({ nested: { text: "later live result" } });
+	expect(run.history[0]!.output).toEqual({
+		nested: { text: "accepted result" },
+	});
+	await runtime.shutdown();
+	const restarted = new WorkflowRuntime(home, {
+		agent: async () => ({}),
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	runtimes.push(restarted);
+	const receipt = restarted.get(run.id).history[0]!;
+	expect(Object.isFrozen(receipt)).toBe(true);
+	expect(Object.isFrozen((receipt.output as typeof output).nested)).toBe(true);
+	await restarted.save(restarted.get(run.id));
+	expect(restarted.get(run.id).history[0]!.output).toEqual({
+		nested: { text: "accepted result" },
+	});
+});
+
 describe("workflow trigger permissions", () => {
 	it.each([
 		false,
