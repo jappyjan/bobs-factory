@@ -1,0 +1,25 @@
+{
+	"passed": true,
+	"mode": "mock/scripted",
+	"logicalTranscriptBytes": 1073741824,
+	"versionRequests": 356,
+	"p99VersionMs": 2.3784160000000156,
+	"maxVersionMs": 4.524999999999864,
+	"maxEventLoopDelayMs": 805.603,
+	"appendBytesWritten": 131,
+	"maxCaptureMs": 0.45524999999997817,
+	"checks": [
+		"CLI issue/session and visible response",
+		"1 GiB persistence with responsive HTTP",
+		"incremental transcript append",
+		"large retained run artifact",
+		"restart retains native session and pending human gate",
+		"loaded structured history remains immutable through resumed checkpoints",
+		"lazy dashboard and activity pages",
+		"legacy completed-run dashboard migration preserves original bytes",
+		"one explicit answer resumes workflow",
+		"shutdown flush and restored tail"
+	],
+	"limitations": "Synthetic strings repeat and deduplicate; this checks logical-history scaling, not 1 GiB of unique disk writes. No live provider or production service was used.",
+	"testedSource": "2fc8fb2a1e5a2e2ff3b8addcc7468867251a72d7"
+}
