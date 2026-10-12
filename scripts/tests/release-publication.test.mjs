@@ -20,6 +20,7 @@ import {
 import { verifyPublishedRelease } from "../lib/github-release.mjs";
 import { validatePreparedRelease } from "../lib/prepared-release.mjs";
 import { withPublicationLock } from "../lib/publication-lock.mjs";
+import { freezeCandidate } from "../lib/release-candidate.mjs";
 import { preparedFixture } from "./prepared-fixture.mjs";
 
 const transport = fileURLToPath(
@@ -823,6 +824,53 @@ test("chunk publication refuses unexpected remote monolith or missing public chu
 				.filter((o) => o.method !== "GET"),
 			[],
 		);
+	} finally {
+		f.cleanup();
+	}
+});
+
+test("beta requires exact asset approval and stays prerelease without moving stable latest", () => {
+	const f = setup(
+		"beta",
+		{},
+		{
+			frozenCandidate: freezeCandidate({
+				channel: "beta",
+				version: "1.0.1-beta",
+				committedVersion: "1.0.0-beta",
+				commit: "a".repeat(40),
+				workflowSha: "b".repeat(40),
+			}),
+		},
+	);
+	try {
+		writeFileSync(
+			f.approval,
+			JSON.stringify({
+				candidateDigest: f.candidate.digest,
+				assetsDigest: "f".repeat(64),
+				approvedBy: "fixture-maintainer",
+			}),
+		);
+		const blocked = f.run();
+		assert.notEqual(blocked.status, 0);
+		assert.match(blocked.stderr, /approval does not bind exact candidate/);
+		assert.equal(f.state().operations.length, 0);
+		writeFileSync(
+			f.approval,
+			JSON.stringify({
+				candidateDigest: f.candidate.digest,
+				assetsDigest: f.assetsDigest,
+				approvedBy: "fixture-maintainer",
+			}),
+		);
+		const published = f.run(true, [], {
+			env: { BOBS_FACTORY_AUTOMATIC_NIGHTLIES: "" },
+		});
+		assert.equal(published.status, 0, published.stderr);
+		assert.equal(f.state().release.tag_name, "v1.0.1-beta");
+		assert.equal(f.state().release.prerelease, true);
+		assert.equal(f.state().release.make_latest, "false");
 	} finally {
 		f.cleanup();
 	}

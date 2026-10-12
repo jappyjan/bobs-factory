@@ -23,15 +23,19 @@
 
 		<section>
 			<h2>Verified command-line install</h2>
-			<p>Available for macOS Apple Silicon/Intel and Linux ARM64/x64 with glibc. The bootstrap verifies the signed release before installing an immutable version under your user prefix. It does not install or start a service.</p>
+			<p>Available for macOS Apple Silicon/Intel and Linux ARM64/x64 with glibc. The bootstrap verifies the GitHub HTTPS release inventory and SHA-256 checksums before installing an immutable version under your user prefix. It does not install or start a service.</p>
 			<pre><code>curl -fsSL https://jappyjan.github.io/bobs-factory/install.sh | sh</code></pre>
 			<p><a href="https://github.com/jappyjan/bobs-factory/blob/main/docs/distribution/PUBLIC_RELEASES.md">Channel, version, trust and recovery guide</a></p>
-			<p class="status">A channel is installable only after a complete signed release is published. The bootstrap reports unavailable channels otherwise.</p>
+			<p class="status">A channel is installable only after a complete validated release is published. The bootstrap reports unavailable channels otherwise.</p>
 		</section>
 
 		<section>
 			<h2>Native desktop app</h2>
-			<p class="status">Not available yet. The macOS DMG/Applications workflow and Linux desktop packages depend on the native app and real release assets. No terminal setup is claimed for this path.</p>
+			<p>macOS: download the DMG, drag Bob’s Factory into Applications and open it. Linux: choose an AppImage or DEB for your processor.</p>
+			<p>Requires macOS 15 or newer, or Ubuntu 24.04 / glibc 2.39 or newer. macOS downloads are unsigned: if macOS blocks the app, use Privacy &amp; Security → Open Anyway for this app. Keep quarantine enabled.</p>
+			<!-- verified-desktop-downloads:start -->
+			<p class="status">No validated desktop release is available yet.</p>
+			<!-- verified-desktop-downloads:end -->
 		</section>
 
 		<section>
@@ -41,7 +45,7 @@
 
 		<section>
 			<h2>Linux packages</h2>
-			<p class="status">AppImage, DEB and AUR stable/nightly packages are not published yet. Current verified Linux downloads are the CLI archives installed by the bootstrap above.</p>
+			<p class="status">Published AppImage and DEB downloads are listed above when available. AUR is deferred. For headless Linux, use the verified CLI bootstrap above.</p>
 		</section>
 
 		<section>
