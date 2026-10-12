@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Resolve Bun's upstream ARM64 archive and ZIP member names when assembling release evidence, preserving native target identities and accepted runtime hash checks ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131)).
+- Resolve Bun's upstream ARM64 archive and ZIP member names when assembling release evidence, preserving native target identities and accepted runtime hash checks ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#109](https://github.com/jappyjan/bobs-factory/pull/109)).
 
 - Wait for shared and legacy QA blocker records to be visible before asserting isolation, avoiding a race with asynchronous persistence ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#108](https://github.com/jappyjan/bobs-factory/pull/108)).
 
