@@ -46,7 +46,7 @@ export async function superviseCI(
 	) {
 		if (!coordination.waitingSince) {
 			coordination.waitingSince = new Date().toISOString();
-			context.save?.();
+			await context.save?.();
 		}
 		if (Date.now() - Date.parse(coordination.waitingSince) >= 120000) {
 			releaseDelivery(
@@ -56,11 +56,11 @@ export async function superviseCI(
 			context.log(
 				"Provider checks are still queued or unavailable. Releasing the delivery target for other eligible work; completed evidence remains subject to current revision/base validation.",
 			);
-			context.save?.();
+			await context.save?.();
 		}
 	} else if (coordination?.waitingSince) {
 		delete coordination.waitingSince;
-		context.save?.();
+		await context.save?.();
 	}
 	const failed = snapshot.checks.filter((check) => check.bucket === "fail");
 	if (
@@ -185,7 +185,7 @@ export async function superviseCI(
 			state: "requested",
 		};
 		supervision.retries.push(receipt);
-		context.save?.();
+		await context.save?.();
 		context.log(
 			`CI infrastructure failure: ${check.name}. Runtime requests bounded retry ${attempts + 1}/2; no agent is kept running to poll checks.`,
 		);
@@ -200,7 +200,7 @@ export async function superviseCI(
 				`CI retry outcome is uncertain for ${check.name}: ${receipt.error}. Inspect the provider before retrying; the runtime will not duplicate a potentially accepted request.`,
 			);
 		}
-		context.save?.();
+		await context.save?.();
 	}
 	for (const blocker of snapshot.blockers)
 		if (blocker.kind === "checks" && blocker.action === "fix") {

@@ -203,6 +203,13 @@ export {
 	isIssueUnassignedWebhook,
 	isNewCommentEvent,
 } from "./issue-tracker/index.js";
+export {
+	immutableJson,
+	immutableTranscript,
+	type JsonSnapshot,
+	JsonSnapshotStore,
+	snapshotArrayTimestamps,
+} from "./JsonSnapshotStore.js";
 // Internal Message Bus
 export type {
 	ContentChanges,

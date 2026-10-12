@@ -313,7 +313,7 @@ export function taskbotAdapter(
 export async function ensureTicketTranscript(
 	run: FactoryRun,
 	tracker: IIssueTrackerService,
-	save: (run: FactoryRun) => void,
+	save: (run: FactoryRun) => void | Promise<void>,
 	existingSessionId?: string,
 	externalLink?: string,
 ): Promise<string> {
@@ -329,7 +329,7 @@ export async function ensureTicketTranscript(
 	if (existingSessionId) {
 		binding.sessionId = existingSessionId;
 		delete binding.error;
-		save(run);
+		await save(run);
 		return existingSessionId;
 	}
 	if (!externalLink || !tracker.findAgentSessionForExternalLink)
@@ -362,7 +362,7 @@ export async function ensureTicketTranscript(
 		if (found) {
 			binding.sessionId = found;
 			delete binding.error;
-			save(run);
+			await save(run);
 			return found;
 		}
 		if (binding.createAttempted)
@@ -370,7 +370,7 @@ export async function ensureTicketTranscript(
 				"Manual Linear transcript creation remains unconfirmed; retain the original identity until the provider confirms it",
 			);
 		binding.createAttempted = true;
-		save(run);
+		await save(run);
 		creatingNow = true;
 		const result = await tracker.createAgentSessionOnIssue({
 			issueId: ref.id,
@@ -385,7 +385,7 @@ export async function ensureTicketTranscript(
 			throw new Error("Linear transcript creation returned no session receipt");
 		binding.sessionId = id;
 		delete binding.error;
-		save(run);
+		await save(run);
 		return id;
 	} catch (error) {
 		const type = (error as { type?: string }).type;
@@ -400,7 +400,7 @@ export async function ensureTicketTranscript(
 		)
 			binding.createAttempted = false;
 		binding.error = error instanceof Error ? error.message : String(error);
-		save(run);
+		await save(run);
 		throw error;
 	}
 }
@@ -591,17 +591,21 @@ export class TicketTracking {
 	}
 	constructor(
 		private adapter: (run: FactoryRun) => Promise<TicketAdapter>,
-		private save: (run: FactoryRun) => void,
+		private save: (run: FactoryRun) => void | Promise<void>,
 		private log: (run: FactoryRun, message: string) => void,
 		private checkExternal?: (run: FactoryRun) => Promise<boolean>,
 	) {}
 	async record(run: FactoryRun, milestone: TicketMilestone): Promise<void> {
 		if (!run.ticketReference || run.workflow.id === "simple") return;
 		recordTicketMilestone(run, milestone);
-		this.save(run);
-		await this.flush(run);
+		const persisted = Promise.resolve(this.save(run));
+		await this.flush(run, false, persisted);
 	}
-	async flush(run: FactoryRun, reassess = false): Promise<void> {
+	async flush(
+		run: FactoryRun,
+		reassess = false,
+		persisted: Promise<void> = Promise.resolve(),
+	): Promise<void> {
 		if (!run.ticketReference || !run.ticketSync || this.updateMaintenance)
 			return;
 		const ref = TicketReferenceSchema.parse(run.ticketReference);
@@ -613,6 +617,7 @@ export class TicketTracking {
 		const work = previous
 			.catch(() => {})
 			.then(async () => {
+				await persisted;
 				const sync = run.ticketSync!;
 				for (const receipt of sync.receipts) {
 					if (
@@ -698,7 +703,7 @@ export class TicketTracking {
 							receipt.stageApplied = true;
 						}
 						sync.lastStatus = statusOf(await adapter.read());
-						this.save(run);
+						await this.save(run);
 						const marker = `<!-- factory:${run.id}:${createHash("sha256").update(receipt.key).digest("hex").slice(0, 20)} -->`;
 						const alreadyDocumented =
 							receipt.purpose === "documentation" &&
@@ -713,7 +718,7 @@ export class TicketTracking {
 							!snapshot.comments.some((c) => c.body.includes(marker))
 						) {
 							receipt.deliveryId ??= randomUUID();
-							this.save(run);
+							await this.save(run);
 							const body = `${receipt.body}${receipt.limitation ? `\n\nTracking limitation: ${receipt.limitation}` : ""}\n\n${marker}`;
 							if (adapter.publish) await adapter.publish(receipt, body);
 							else await adapter.comment(body);
@@ -735,7 +740,7 @@ export class TicketTracking {
 						sync.error = sync.receipts.find(
 							(r) => !r.delivered && !r.superseded && r.error,
 						)?.error;
-						this.save(run);
+						await this.save(run);
 					}
 				}
 			});

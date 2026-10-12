@@ -654,6 +654,7 @@ export function cleanupVideoEvidence(
 	root: string,
 	runs: Iterable<FactoryRun>,
 	now = Date.now(),
+	assetsFor?: (run: FactoryRun) => string[] | undefined,
 ): void {
 	let budget = 200;
 	for (const run of runs) {
@@ -668,10 +669,12 @@ export function cleanupVideoEvidence(
 			continue;
 		const terminalExpired =
 			now - Date.parse(run.updatedAt) > videoLimits.terminalMs;
-		const referenced = new Set([
-			...videoAssetPaths(run.outputs.capture),
-			...run.history.flatMap((entry) => videoAssetPaths(entry.output)),
-		]);
+		const referenced = new Set(
+			assetsFor?.(run) ?? [
+				...videoAssetPaths(run.outputs.capture),
+				...run.history.flatMap((entry) => videoAssetPaths(entry.output)),
+			],
+		);
 		const assets = terminalExpired ? [...referenced] : [];
 		for (const name of readdirSync(directory).slice(0, 200))
 			if (/^video-temp-[\w.-]+\.(mp4|webm|vtt|png|jpe?g)$/.test(name)) {
@@ -704,7 +707,7 @@ export function cleanupVideoEvidence(
 	}
 }
 
-function videoAssetPaths(output: unknown): string[] {
+export function videoAssetPaths(output: unknown): string[] {
 	if (!output || typeof output !== "object") return [];
 	const videos = (output as VideoCapture).videos;
 	if (!Array.isArray(videos)) return [];

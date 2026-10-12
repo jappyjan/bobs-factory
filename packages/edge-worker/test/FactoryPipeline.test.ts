@@ -28,6 +28,12 @@ import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
 import { qaExecution, qaScope } from "./fixtures/qa.js";
 
 const directories: string[] = [];
+const runtimes: WorkflowRuntime[] = [];
+function createRuntime(...args: ConstructorParameters<typeof WorkflowRuntime>) {
+	const runtime = new WorkflowRuntime(...args);
+	runtimes.push(runtime);
+	return runtime;
+}
 it("keeps internal provider stdout quiet while preserving explicit CLI output and errors", async () => {
 	const input = context();
 	input.step.tool = "ci";
@@ -102,7 +108,8 @@ console.log(JSON.stringify({characters:value.detail.length, inline:process.env.F
 		),
 	).toEqual(input.input);
 });
-afterEach(() => {
+afterEach(async () => {
+	await Promise.all(runtimes.splice(0).map((runtime) => runtime.shutdown()));
 	for (const path of directories.splice(0))
 		rmSync(path, { recursive: true, force: true });
 });
@@ -118,7 +125,7 @@ it("returns visual and CI fixes through code review, keeping dispute history", a
 		codeReviews = 0,
 		visualReviews = 0,
 		ci = 0;
-	const runtime = new WorkflowRuntime(home(), {
+	const runtime = createRuntime(home(), {
 		agent: async (context) => {
 			const step = context.step.id;
 			order.push(step);
@@ -197,15 +204,16 @@ it("returns visual and CI fixes through code review, keeping dispute history", a
 				};
 			if (step === "ci") return { approved: ++ci > 1, fix: ci === 1 };
 			if (step === "human-review") {
-				setTimeout(
-					() =>
-						runtime.decide(context.run.id, {
-							reviewId: context.run.reviewGate!.id,
-							headSha: context.run.reviewGate!.headSha,
-							decision: "approve",
-						}),
-					0,
-				);
+				setTimeout(async () => {
+					await vi.waitFor(() =>
+						expect(context.run.reviewGate?.status).toBe("pending"),
+					);
+					runtime.decide(context.run.id, {
+						reviewId: context.run.reviewGate!.id,
+						headSha: context.run.reviewGate!.headSha,
+						decision: "approve",
+					});
+				}, 0);
 				return {
 					headSha: "test-sha",
 					url: "https://github.com/test/repo/pull/1",
@@ -273,7 +281,7 @@ it("returns visual and CI fixes through code review, keeping dispute history", a
 
 function context(): ExecutionContext {
 	const directory = home();
-	const runtime = new WorkflowRuntime(directory, {
+	const runtime = createRuntime(directory, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
@@ -874,7 +882,7 @@ it("waits on blocked implementation across restart and supplies the answer witho
 		});
 	});
 	const tool = vi.fn(async () => ({}));
-	const runtime = new WorkflowRuntime(directory, {
+	const runtime = createRuntime(directory, {
 		agent: agents,
 		tool,
 		script: async () => ({}),
@@ -920,7 +928,7 @@ it("waits on blocked implementation across restart and supplies the answer witho
 			questions: [],
 		});
 	});
-	const restarted = new WorkflowRuntime(directory, {
+	const restarted = createRuntime(directory, {
 		agent: resumedAgent,
 		script: async () => ({}),
 		tool: async (context) => {
@@ -1011,7 +1019,7 @@ it.each([
 		tool: (ctx: ExecutionContext) => tools.tool(ctx),
 		question: questionPosted,
 	};
-	const runtime = new WorkflowRuntime(directory, hooks);
+	const runtime = createRuntime(directory, hooks);
 	const definitions = runtime.listWorkflows();
 	const pipeline = definitions.find((w) => w.id === "factory-pipeline")!;
 	pipeline.steps = pipeline.steps.filter((s) =>
@@ -1062,10 +1070,10 @@ it.each([
 		run.history.pop(); // The old gate threw before producing a receipt.
 		delete run.outputs["visual-gate"];
 		run.checkpoint!.active!.children![0]!.active = { phase: "executing" };
-		runtime.save(run);
+		await runtime.save(run);
 		questionPosted.mockClear();
 	}
-	const restarted = new WorkflowRuntime(directory, hooks);
+	const restarted = createRuntime(directory, hooks);
 	if (legacy) restarted.retry(run.id);
 	else restarted.resumeAll();
 	const restored = restarted.get(run.id);
@@ -1132,7 +1140,7 @@ it("waits again when capture remains blocked after an answer, and stops without 
 	const directory = home();
 	const tools = new FactoryTools({ postComment: vi.fn() });
 	const handoff = vi.fn();
-	const runtime = new WorkflowRuntime(directory, {
+	const runtime = createRuntime(directory, {
 		agent: async (ctx) =>
 			ctx.step.id === "capture"
 				? {
@@ -1213,7 +1221,7 @@ it("fails safely when a custom visual gate has no capture recovery path", async 
 	};
 	const tools = new FactoryTools({ postComment: vi.fn() });
 	const question = vi.fn();
-	const runtime = new WorkflowRuntime(ctx.evidenceDir, {
+	const runtime = createRuntime(ctx.evidenceDir, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: (input) => tools.tool(input),

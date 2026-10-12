@@ -22,8 +22,10 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 
 const homes: string[] = [];
+const runtimes: WorkflowRuntime[] = [];
 const services: TicketTracking[] = [];
-afterEach(() => {
+afterEach(async () => {
+	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
 	for (const s of services.splice(0)) s.stop();
 	for (const h of homes.splice(0)) rmSync(h, { recursive: true, force: true });
 });
@@ -65,6 +67,7 @@ function fixture() {
 		script: async () => ({}),
 		tool: async () => ({}),
 	});
+	runtimes.push(runtime);
 	const run = runtime.create({
 		repositoryId: "repo",
 		workflow: defaultWorkflows.find((w) => w.id === "factory")!,
@@ -477,6 +480,7 @@ it.each([
 	f.ticket.status = status;
 	f.call.mockImplementation(original);
 	f.calls.splice(0);
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async () => ({}),
 		script: async () => ({}),
@@ -1045,6 +1049,7 @@ it("persists publication before delayed tracking and lets another delivery advan
 		return original(tool, args);
 	});
 	const published: string[] = [];
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async () => ({}),
 		script: async () => ({}),

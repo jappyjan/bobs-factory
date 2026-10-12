@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type {
@@ -8,10 +8,11 @@ import type {
 	IssueContext,
 	IssueMinimal,
 } from "./CyrusAgentSession.js";
+import { JsonSnapshotStore } from "./JsonSnapshotStore.js";
 import { createLogger, type ILogger } from "./logging/index.js";
 
 /** Current persistence format version */
-export const PERSISTENCE_VERSION = "4.0";
+export const PERSISTENCE_VERSION = "5.0";
 
 // Serialized versions with Date fields as strings
 export type SerializedCyrusAgentSession = CyrusAgentSession;
@@ -74,57 +75,6 @@ export interface SerializableEdgeWorkerState {
 	issueRepositoryCache?: Record<string, string[]>;
 }
 
-/** Serialize individual transcript entries, rather than the entire history at once. */
-function* stateFragments(
-	state: SerializableEdgeWorkerState,
-	savedAt: string,
-): Generator<string> {
-	yield `{"version":${JSON.stringify(PERSISTENCE_VERSION)},"savedAt":${JSON.stringify(savedAt)},"state":{`;
-	let fieldSeparator = "";
-	for (const [field, record] of Object.entries(state)) {
-		if (record === undefined) continue;
-		yield `${fieldSeparator}${JSON.stringify(field)}:{`;
-		fieldSeparator = ",";
-		let recordSeparator = "";
-		for (const [key, value] of Object.entries(record)) {
-			if (Array.isArray(value)) {
-				yield `${recordSeparator}${JSON.stringify(key)}:[`;
-				let entrySeparator = "";
-				for (const entry of value) {
-					yield `${entrySeparator}${JSON.stringify(entry) ?? "null"}`;
-					entrySeparator = ",";
-				}
-				yield "]";
-			} else {
-				const serialized = JSON.stringify(value);
-				if (serialized === undefined) continue;
-				yield `${recordSeparator}${JSON.stringify(key)}:${serialized}`;
-			}
-			recordSeparator = ",";
-		}
-		yield "}";
-	}
-	yield "}}";
-}
-
-function* stateChunks(
-	state: SerializableEdgeWorkerState,
-	savedAt: string,
-): Generator<string> {
-	let fragments: string[] = [];
-	let length = 0;
-	for (const fragment of stateFragments(state, savedAt)) {
-		fragments.push(fragment);
-		length += fragment.length;
-		if (length >= 128 * 1024) {
-			yield fragments.join("");
-			fragments = [];
-			length = 0;
-		}
-	}
-	if (length > 0) yield fragments.join("");
-}
-
 /**
  * v3.0 nested state format (for migration purposes)
  */
@@ -144,11 +94,19 @@ export interface V3SerializableEdgeWorkerState {
 export class PersistenceManager {
 	private persistencePath: string;
 	private logger: ILogger;
+	private snapshots: JsonSnapshotStore;
 
 	constructor(persistencePath?: string, logger?: ILogger) {
 		this.persistencePath =
 			persistencePath || join(homedir(), ".bobs-factory", "state");
 		this.logger = logger ?? createLogger({ component: "PersistenceManager" });
+		this.snapshots = new JsonSnapshotStore(
+			join(this.persistencePath, "chunks"),
+		);
+	}
+
+	get metrics() {
+		return { ...this.snapshots.metrics };
 	}
 
 	/**
@@ -159,33 +117,24 @@ export class PersistenceManager {
 	}
 
 	/**
-	 * Ensure the persistence directory exists
-	 */
-	private async ensurePersistenceDirectory(): Promise<void> {
-		await mkdir(this.persistencePath, { recursive: true });
-	}
-
-	/**
 	 * Save EdgeWorker state to disk (single file for all repositories)
 	 */
 	async saveEdgeWorkerState(state: SerializableEdgeWorkerState): Promise<void> {
 		try {
-			await this.ensurePersistenceDirectory();
 			const stateFile = this.getEdgeWorkerStateFilePath();
-			// Write-then-rename so the state file is always a complete document.
-			// A plain writeFile interrupted mid-write (SIGKILL, OOM kill, power
-			// loss) leaves truncated JSON that the next boot cannot parse, which
-			// orphans every in-flight session.
-			const tmpFile = `${stateFile}.tmp`;
-			// writeFile awaits each iterable chunk, letting HTTP requests and runner
-			// events progress between batches. A whole-history JSON.stringify can
-			// otherwise block the event loop for seconds on long-lived instances.
-			await writeFile(
-				tmpFile,
-				stateChunks(state, new Date().toISOString()),
-				"utf8",
+			// Capture and queue synchronously before any I/O can reorder saves or
+			// let a caller's later mutations alter this checkpoint. The store owns
+			// directory creation, legacy backup and atomic publication.
+			await this.snapshots.write(
+				stateFile,
+				state as Record<string, unknown>,
+				{
+					version: PERSISTENCE_VERSION,
+					savedAt: new Date().toISOString(),
+				},
+				["agentSessionEntries"],
+				["agentSessionEntries"],
 			);
-			await rename(tmpFile, stateFile);
 		} catch (error) {
 			this.logger.error("Failed to save EdgeWorker state:", error);
 			throw error;
@@ -197,6 +146,7 @@ export class PersistenceManager {
 	 * Automatically migrates from v2.0 to v3.0 format if needed.
 	 */
 	async loadEdgeWorkerState(): Promise<SerializableEdgeWorkerState | null> {
+		let snapshot = false;
 		try {
 			const stateFile = this.getEdgeWorkerStateFilePath();
 			if (!existsSync(stateFile)) {
@@ -209,7 +159,17 @@ export class PersistenceManager {
 				// empty file is "no state", not a parse error.
 				return null;
 			}
+			snapshot = rawState
+				.trimStart()
+				.startsWith('{"format":"bobs-factory-json-snapshot-1"');
 			const stateData = JSON.parse(rawState);
+			if (stateData.format === "bobs-factory-json-snapshot-1") {
+				snapshot = true;
+				if (stateData.summary?.version !== PERSISTENCE_VERSION)
+					throw new Error("Unsupported snapshot state version");
+				return this.snapshots.load<SerializableEdgeWorkerState>(stateFile)
+					.value;
+			}
 
 			// Validate state structure exists
 			if (!stateData.state) {
@@ -241,7 +201,7 @@ export class PersistenceManager {
 				return migratedState;
 			}
 
-			if (stateData.version !== PERSISTENCE_VERSION) {
+			if (!["4.0", PERSISTENCE_VERSION].includes(stateData.version)) {
 				this.logger.warn(
 					`Unknown state file version ${stateData.version}, ignoring`,
 				);
@@ -251,6 +211,7 @@ export class PersistenceManager {
 			return stateData.state;
 		} catch (error) {
 			this.logger.error("Failed to load EdgeWorker state:", error);
+			if (snapshot) throw error;
 			return null;
 		}
 	}

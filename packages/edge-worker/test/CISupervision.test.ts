@@ -257,14 +257,16 @@ it("waits for a provider-confirmed running retry and refreshes failed-check evid
 		expect(run.status).toBe("running");
 		expect(agent).not.toHaveBeenCalled();
 		expect(retries).toBe(1);
-		expect(run.outputs["merge-readiness"]).toMatchObject({
-			checks: [
-				{ bucket: "fail", retry: { attempt: 2, status: "in_progress" } },
-			],
-			fix: false,
-			approved: false,
-			reviewReady: false,
-		});
+		await vi.waitFor(() =>
+			expect(run.outputs["merge-readiness"]).toMatchObject({
+				checks: [
+					{ bucket: "fail", retry: { attempt: 2, status: "in_progress" } },
+				],
+				fix: false,
+				approved: false,
+				reviewReady: false,
+			}),
+		);
 		expect(detailReads).toBe(2);
 		status = "completed";
 		evidence = "Assertion failed: checkout must reject unauthorized users";
@@ -616,9 +618,11 @@ it("asks for visible assistance when two provider-proven infrastructure retries 
 	const finished = scenario.runtime.launch(scenario.run);
 	await vi.waitFor(() => expect(scenario.retries()).toBe(1));
 	await vi.advanceTimersByTimeAsync(20000);
-	expect(scenario.retries()).toBe(2);
+	await vi.waitFor(() => expect(scenario.retries()).toBe(2));
+	await scenario.runtime.flush();
+	await vi.advanceTimersByTimeAsync(10000);
 	expect(scenario.agent).not.toHaveBeenCalled();
-	expect(scenario.run.status).toBe("waiting");
+	await vi.waitFor(() => expect(scenario.run.status).toBe("waiting"));
 	expect(scenario.run.questions.join(" ")).toContain(
 		"Two runtime retries are exhausted",
 	);

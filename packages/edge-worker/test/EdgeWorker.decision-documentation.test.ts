@@ -125,7 +125,7 @@ it("publishes the actual record-decisions hook as one durable Linear comment whi
 		questions: [],
 		requirements: [],
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	vi.stubEnv("BOBS_FACTORY_FACTORY_PORT", "0");
 	vi.stubEnv("CLOUDFLARE_TOKEN", "");
 	vi.stubEnv("WEBHOOK_IP_VALIDATION", "false");
@@ -166,10 +166,12 @@ it("publishes the actual record-decisions hook as one durable Linear comment whi
 			provider.comments[0].body.replace(/\n\n<!-- factory:[^\n]+ -->$/, ""),
 		).toBe(expected);
 		expect(receipt.delivered).toBe(true);
-		expect(provider.activities.map((entry) => entry.content.type)).toEqual([
-			"thought",
-			"response",
-		]);
+		await vi.waitFor(() =>
+			expect(provider.activities.map((entry) => entry.content.type)).toEqual([
+				"thought",
+				"response",
+			]),
+		);
 	} finally {
 		await worker.stop();
 		vi.unstubAllEnvs();

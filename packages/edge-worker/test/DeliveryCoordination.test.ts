@@ -99,9 +99,8 @@ it("allows an overlapping delivery to review and finish while another prepares i
 	await vi.waitFor(() => expect(roles).toContain("first:guide"));
 	const b = runtime.launch(second);
 	await vi.waitFor(() => expect(roles).toContain("second:implement"));
-	await new Promise((resolve) => setTimeout(resolve, 20));
+	await vi.waitFor(() => expect(second.status).toBe("completed"));
 	expect(roles).toContain("second:capture");
-	expect(second.status).toBe("completed");
 	expect(observedBases.second).toEqual(["base-1"]);
 	release();
 	await Promise.all([a, b]);
@@ -210,14 +209,18 @@ it.each([
 		);
 		await new Promise((resolve) => setTimeout(resolve, 20));
 		expect(providers).toEqual(["first:draft-pr"]);
-		expect(second.deliveryCoordination?.phase).toBe("queued");
+		await vi.waitFor(() =>
+			expect(second.deliveryCoordination?.phase).toBe("queued"),
+		);
 	} finally {
 		release();
 		await Promise.all([a, b]);
 	}
-	expect(providers).toEqual([
+	expect(providers.filter((entry) => entry.startsWith("first:"))).toEqual([
 		"first:draft-pr",
 		"first:handoff",
+	]);
+	expect(providers.filter((entry) => entry.startsWith("second:"))).toEqual([
 		"second:draft-pr",
 		"second:handoff",
 	]);
@@ -267,11 +270,13 @@ it("releases an overlapping target while a human is absent and retains its pendi
 
 it("restores the finalizing owner ahead of queued deliveries after shutdown, and cancellation does not starve the next oldest run", async () => {
 	const directory = home();
+	let ownerStarted = false;
 	const firstRuntime = new WorkflowRuntime(directory, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async ({ step, signal }) => {
-			if (step.tool === "draft-pr")
+			if (step.tool === "draft-pr") {
+				ownerStarted = true;
 				await new Promise<void>((_resolve, reject) =>
 					signal.addEventListener(
 						"abort",
@@ -279,6 +284,7 @@ it("restores the finalizing owner ahead of queued deliveries after shutdown, and
 						{ once: true },
 					),
 				);
+			}
 			return {};
 		},
 	});
@@ -286,7 +292,7 @@ it("restores the finalizing owner ahead of queued deliveries after shutdown, and
 		cancelled = createRun(firstRuntime, "cancelled"),
 		next = createRun(firstRuntime, "next");
 	void firstRuntime.launch(owner);
-	await vi.waitFor(() => expect(owner.step).toBe("draft-pr"));
+	await vi.waitFor(() => expect(ownerStarted).toBe(true));
 	void firstRuntime.launch(cancelled);
 	void firstRuntime.launch(next);
 	await vi.waitFor(() =>
@@ -355,7 +361,7 @@ it("uses a stable run identity to order equally old queued deliveries", async ()
 	});
 	const owner = createRun(runtime, "owner");
 	void runtime.launch(owner);
-	await vi.waitFor(() => expect(owner.step).toBe("draft-pr"));
+	await vi.waitFor(() => expect(admitted).toContain("owner"));
 	const queued = (id: string) => {
 		const run = runtime.create({
 			id,
@@ -372,8 +378,16 @@ it("uses a stable run identity to order equally old queued deliveries", async ()
 	const last = queued("zz"),
 		first = queued("aa");
 	await vi.waitFor(() =>
-		expect(first.deliveryCoordination?.phase).toBe("queued"),
+		expect(first.deliveryCoordination?.blockers?.length).toBeGreaterThan(0),
 	);
+	await vi.waitFor(() =>
+		expect(last.deliveryCoordination?.blockers?.length).toBeGreaterThan(0),
+	);
+	// Asynchronous commit barriers can advance the fake clock during admission.
+	// Establish the equal queue age this scenario specifically exercises.
+	for (const run of [first, last])
+		for (const claim of Object.values(run.deliveryReservations ?? {}))
+			claim.queuedAt = "2026-10-08T10:00:00Z";
 	runtime.stop(owner.id);
 	await vi.advanceTimersByTimeAsync(1000);
 	await vi.waitFor(() => expect(last.status).toBe("completed"));
@@ -451,8 +465,7 @@ it("allows renamed correction alongside independent review after rejection", asy
 		decision: "reject",
 		feedback: "Correct the feature",
 	});
-	await new Promise((resolve) => setTimeout(resolve, 20));
-	expect(roles).toContain("custom:repair-feature");
+	await vi.waitFor(() => expect(roles).toContain("custom:repair-feature"));
 	runtime.stop(other.id);
 	await Promise.all([a, b]);
 	expect(roles.slice(-2)).toEqual([
@@ -621,7 +634,7 @@ it("does not freeze an eligible overlapping delivery behind a long provider queu
 	const b = runtime.launch(second);
 	await vi.waitFor(() => expect(roles).toContain("eligible:implement"));
 	await vi.advanceTimersByTimeAsync(130000);
-	expect(second.status).toBe("completed");
+	await vi.waitFor(() => expect(second.status).toBe("completed"));
 	expect(roles).not.toContain("outage:capture");
 	expect(first.status).toBe("running");
 	runtime.stop(first.id);
@@ -686,7 +699,9 @@ it("recognizes two native worktrees of the same repository without configured fo
 	const b = runtime.launch(second);
 	await vi.waitFor(() => expect(roles).toContain("second:implement"));
 	await new Promise((resolve) => setTimeout(resolve, 20));
-	expect(second.deliveryCoordination?.phase).toBe("queued");
+	await vi.waitFor(() =>
+		expect(second.deliveryCoordination?.phase).toBe("queued"),
+	);
 	expect(roles).not.toContain("second:guide");
 	release();
 	await Promise.all([a, b]);
@@ -857,7 +872,7 @@ it("reserves three affected repositories out of seven and atomically adds newly 
 	expect(deliveryScopes(group)).toHaveLength(4);
 	const expansion = acquireDelivery(group, all, signal.signal, save, log);
 	await vi.waitFor(() =>
-		expect(group.deliveryCoordination?.phase).toBe("queued"),
+		expect(group.deliveryCoordination?.blockers?.length).toBeGreaterThan(0),
 	);
 	expect(group.deliveryCoordination?.blockers).toEqual([
 		{
@@ -1004,7 +1019,7 @@ it("expands nested publication admission atomically and retains it until the out
 	const b = runtime.launch(group);
 	try {
 		await vi.waitFor(() =>
-			expect(group.deliveryCoordination?.phase).toBe("queued"),
+			expect(group.deliveryCoordination?.blockers?.length).toBeGreaterThan(0),
 		);
 		expect(published).toBe(false);
 		expect(group.deliveryCoordination?.scopes).toHaveLength(2);

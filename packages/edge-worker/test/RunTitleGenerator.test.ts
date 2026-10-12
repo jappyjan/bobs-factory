@@ -388,6 +388,7 @@ it("persists global settings independently of recipes and frozen run snapshots",
 	runtime.updateTitleSettings({ runner: "gemini" });
 	runtime.updateWorkflows(runtime.listWorkflows());
 	expect(run.titleGeneration?.settings.model).toBe("cheap");
+	await runtime.flush();
 	const restored = new WorkflowRuntime(directory, hooks);
 	expect(restored.resolveTitleSettings()).toEqual({
 		runner: "gemini",
@@ -400,6 +401,7 @@ it("persists global settings independently of recipes and frozen run snapshots",
 		{ ...run.titleGeneration!, state: "completed" },
 		"Useful task name",
 	);
+	await runtime.flush();
 	expect(new WorkflowRuntime(directory, hooks).get(run.id).title).toBe(
 		"Useful task name",
 	);
@@ -409,7 +411,7 @@ it("persists global settings independently of recipes and frozen run snapshots",
 	await runtime.shutdown();
 	await restored.shutdown();
 });
-it("migrates mutable title fields, retains frozen definitions, and ignores legacy request titles", () => {
+it("migrates mutable title fields, retains frozen definitions, and ignores legacy request titles", async () => {
 	const directory = home();
 	const runtime = new WorkflowRuntime(directory, {
 		agent: async () => ({}),
@@ -437,6 +439,7 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 		join(directory, "factory", "workflows.json"),
 		JSON.stringify(old),
 	);
+	await runtime.flush();
 	const restored = new WorkflowRuntime(directory, {
 		agent: async () => ({}),
 		script: async () => ({}),

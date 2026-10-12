@@ -145,7 +145,7 @@ function setup() {
 		(r) => runtime.save(r),
 	);
 	freezeDelivery(run, contract);
-	runtime.save(run);
+	void runtime.save(run);
 	return {
 		home,
 		runtime,
@@ -321,6 +321,7 @@ it("routes the standard Factory through independent external verification and a 
 			throw new Error("External delivery must not invoke Git/forge commands");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async (ctx) => {
 			if (ctx.step.id === "clarify")
@@ -541,7 +542,7 @@ it("recovers already-applied external work without replaying mutations and prese
 		id: 1,
 		url: f.contract.targets[0]!.resource.url,
 	};
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const original = structuredClone(f.run.workflow),
 		history = structuredClone(f.run.history),
 		checkpoint = structuredClone(f.run.checkpoint);
@@ -552,6 +553,7 @@ it("recovers already-applied external work without replaying mutations and prese
 			throw new Error("No Git during external recovery");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async () => {
 			throw new Error("Recovery must not replay implementation");
@@ -754,7 +756,7 @@ it("renews verification after delayed completion drift without replaying ticket 
 		],
 		error: "External state changed",
 	};
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const tools = new FactoryTools({
 		postComment: async () => {},
 		ticketDelivery: f.service,
@@ -762,6 +764,7 @@ it("renews verification after delayed completion drift without replaying ticket 
 			throw new Error("Reverification must not invoke Git");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async () => {
 			throw new Error("No mutation agent allowed");
@@ -852,7 +855,7 @@ it("corrects mixed external feedback after merge without repeating repository im
 		defaultWorkflows.find((w) => w.id === "factory-pipeline")!,
 	);
 	f.run.checkpoint = { current: "external-correction", visits: {} };
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const tools = new FactoryTools({
 		postComment: async () => {},
 		ticketDelivery: f.service,
@@ -860,6 +863,7 @@ it("corrects mixed external feedback after merge without repeating repository im
 			throw new Error("Must retain the confirmed repository delivery");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async (ctx) => {
 			switch (ctx.step.id) {
@@ -1026,7 +1030,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 			})),
 		})),
 	};
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const visited: string[] = [];
 	const tools = new FactoryTools({
 		postComment: async () => {},
@@ -1035,6 +1039,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 			throw new Error("No publication during contract correction");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async (ctx) => {
 			visited.push(ctx.step.id);
@@ -1098,6 +1103,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 	await vi.waitFor(() => {
 		if (run.status === "failed") throw new Error(run.error);
 		expect(run.architectureGate).toBeDefined();
+		expect(run.status).toBe("waiting");
 	});
 	expect(visited).not.toContain("implement");
 	expect(f.state().fields.description).toBe("corrected");
@@ -1167,7 +1173,7 @@ it("renews mixed acceptance once for the full grouped scope after confirmed merg
 	expect(await f.service.finalCheck(f.run)).toBe(false);
 	f.run.status = "completed";
 	f.run.ticketSync = { receipts: [], error: "External state changed" };
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const tools = new FactoryTools({
 		postComment: async () => {},
 		ticketDelivery: f.service,
@@ -1175,6 +1181,7 @@ it("renews mixed acceptance once for the full grouped scope after confirmed merg
 			throw new Error("Confirmed grouped merges must be retained");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async () => {
 			throw new Error("No implementation replay");

@@ -226,7 +226,7 @@ it("keeps approved historical review receipts and guides readable without backfi
 		{ step: "aggregate-review", output: historical, at: "2025-01-01" },
 		{ step: "guide", output: guide, at: "2025-01-01" },
 	];
-	runtime.save(run);
+	await runtime.save(run);
 	await runtime.shutdown();
 	const file = join(runtime.directory, "runs", `${run.id}.json`);
 	const persisted = readFileSync(file, "utf8");
@@ -622,7 +622,7 @@ it.each([
 		});
 		branch.reviewKey = expectedKey;
 	}
-	fixture.runtime.save(fixture.run);
+	await fixture.runtime.save(fixture.run);
 	const historyLength = fixture.run.history.length;
 	const resumed = new WorkflowRuntime(fixture.state, {
 		agent: async () => {

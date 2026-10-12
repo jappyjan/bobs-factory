@@ -587,6 +587,7 @@ it("loads large artifacts lazily and persists view state without changing a run"
 	};
 	run.outputs.custom = { summary: "Big evidence", notes: "x".repeat(250000) };
 	run.outputs.other = { summary: "Big evidence", notes: "y".repeat(250000) };
+	await runtime.save(run);
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],

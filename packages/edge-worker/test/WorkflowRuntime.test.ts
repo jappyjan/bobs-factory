@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { JsonSnapshotStore } from "bobs-factory-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	defaultWorkflows,
@@ -24,7 +25,9 @@ import {
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
 
 const homes: string[] = [];
-afterEach(() => {
+const runtimes: WorkflowRuntime[] = [];
+afterEach(async () => {
+	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
 });
@@ -37,7 +40,16 @@ function create(hooks: Partial<RuntimeHooks> = {}) {
 		tool: async () => ({}),
 		...hooks,
 	});
+	runtimes.push(runtime);
 	return { runtime, home };
+}
+function readJson(path: string): any {
+	const stored = JSON.parse(readFileSync(path, "utf8"));
+	return stored.format === "bobs-factory-json-snapshot-1"
+		? new JsonSnapshotStore(join(dirname(dirname(path)), "run-chunks")).load(
+				path,
+			).value
+		: stored;
 }
 function workflow(steps: unknown[], dependencies: unknown[] = []): Workflow {
 	return validateWorkflows([
@@ -136,7 +148,7 @@ describe("workflow trigger permissions", () => {
 		);
 		expect(runtime.getDefaultWorkflow()).toBe("simple");
 	});
-	it("rejects selected disallowed explicit, first label and default without falling back", () => {
+	it("rejects selected disallowed explicit, first label and default without falling back", async () => {
 		const { runtime, home } = create();
 		const first = {
 			...workflow([agent("work")]),
@@ -175,7 +187,7 @@ describe("workflow trigger permissions", () => {
 				.find((w) => w.id === "custom")!.allowedTriggers,
 		).toEqual([]);
 	});
-	it("permits deliberate top-level access to an internal recipe and an ineligible saved default", () => {
+	it("permits deliberate top-level access to an internal recipe and an ineligible saved default", async () => {
 		const { runtime } = create();
 		const saved = runtime.listWorkflows();
 		const shared = saved.find((w) => w.internal)!;
@@ -206,7 +218,7 @@ describe("workflow trigger permissions", () => {
 			disk,
 		);
 	});
-	it("rejects disabling a called child, including fanout, while preserving config", () => {
+	it("rejects disabling a called child, including fanout, while preserving config", async () => {
 		const { runtime } = create();
 		const child = {
 			...workflow([agent("work")]),
@@ -288,6 +300,7 @@ describe("workflow trigger permissions", () => {
 		expect(run.events.filter((e) => e.call).map((e) => e.call)).toEqual([call]);
 		runtime.updateWorkflows(defaultWorkflows);
 		await runtime.shutdown();
+		await runtime.flush();
 		const restarted = reload(home, {
 			agent: async (ctx) => ({
 				questions: ctx.run.answers.length ? [] : ["Choose?"],
@@ -336,6 +349,7 @@ describe("workflow runtime", () => {
 		try {
 			const { runtime, home } = create();
 			const run = start(runtime, workflow([agent("review")]));
+			await runtime.flush();
 			const changed = vi.fn();
 			runtime.subscribe(changed);
 			const path = join(home, "factory", "runs", `${run.id}.json`);
@@ -343,18 +357,20 @@ describe("workflow runtime", () => {
 				runtime.log(run, "review", `Tool result ${index}`, "agent");
 			expect(run.events).toHaveLength(500);
 			expect(changed).not.toHaveBeenCalled();
-			expect(JSON.parse(readFileSync(path, "utf8")).events).toEqual([]);
+			expect(readJson(path).events).toEqual([]);
 			await vi.advanceTimersByTimeAsync(250);
+			await runtime.flush();
 			expect(changed).toHaveBeenCalledTimes(1);
-			expect(JSON.parse(readFileSync(path, "utf8")).events).toEqual(run.events);
+			expect(readJson(path).events).toEqual(run.events);
 
 			runtime.log(run, "review", "Last tool result", "agent");
 			run.checkpoint = { current: "end", visits: { review: 1 } };
-			runtime.save(run);
-			const saved = JSON.parse(readFileSync(path, "utf8"));
+			await runtime.save(run);
+			const saved = readJson(path);
 			expect(saved.checkpoint).toEqual(run.checkpoint);
 			expect(saved.events).toEqual(run.events);
 			await vi.advanceTimersByTimeAsync(250);
+			await runtime.flush();
 			expect(changed).toHaveBeenCalledTimes(2);
 		} finally {
 			vi.useRealTimers();
@@ -368,9 +384,7 @@ describe("workflow runtime", () => {
 			runtime.log(run, "review", "Final activity", "agent");
 			await runtime.shutdown();
 			expect(
-				JSON.parse(
-					readFileSync(join(home, "factory", "runs", `${run.id}.json`), "utf8"),
-				).events,
+				readJson(join(home, "factory", "runs", `${run.id}.json`)).events,
 			).toEqual(run.events);
 			expect(vi.getTimerCount()).toBe(0);
 		} finally {
@@ -378,7 +392,7 @@ describe("workflow runtime", () => {
 		}
 	});
 
-	it("upgrades the legacy visual reviewer with a real newline while retaining its model", () => {
+	it("upgrades the legacy visual reviewer with a real newline while retaining its model", async () => {
 		const saved = legacyReviewWorkflows();
 		const shared = saved.find(
 			(definition) => definition.id === "factory-pipeline",
@@ -402,7 +416,7 @@ describe("workflow runtime", () => {
 				.steps.find((step) => step.id === "visual-review")!.prompt,
 		).toBe(reviewer.prompt);
 	});
-	it("persists agent provenance before trimming an oversized event tail", () => {
+	it("persists agent provenance before trimming an oversized event tail", async () => {
 		const { runtime, home } = create();
 		const run = start(runtime, workflow([agent("review")]));
 		const message = JSON.stringify({
@@ -411,6 +425,7 @@ describe("workflow runtime", () => {
 		});
 		runtime.log(run, "review", message, "agent");
 		runtime.log(run, "review", "Build output ".repeat(3000));
+		await runtime.flush();
 		const recovered = new WorkflowRuntime(home, {
 			agent: async () => ({}),
 			tool: async () => ({}),
@@ -465,7 +480,7 @@ describe("workflow runtime", () => {
 		run.status = "stopped";
 		expect(() => runtime.retry(run.id)).toThrow("Only failed");
 	});
-	it("uses the persisted default behind explicit choices and matching labels, including legacy config", () => {
+	it("uses the persisted default behind explicit choices and matching labels, including legacy config", async () => {
 		const { runtime, home } = create();
 		expect(runtime.getDefaultWorkflow()).toBe("simple");
 		expect(runtime.selectWorkflow([], "manual").id).toBe("simple");
@@ -478,6 +493,7 @@ describe("workflow runtime", () => {
 			script: async () => ({}),
 			tool: async () => ({}),
 		};
+		await runtime.flush();
 		const legacy = new WorkflowRuntime(home, hooks);
 		expect(legacy.selectWorkflow([], "manual").id).toBe("simple");
 		const custom = workflow([agent("work")]);
@@ -493,6 +509,7 @@ describe("workflow runtime", () => {
 		expect(() => legacy.selectWorkflow([], "manual", "missing")).toThrow(
 			"Unknown workflow",
 		);
+		await runtime.flush();
 		const restarted = new WorkflowRuntime(home, hooks);
 		expect(restarted.getDefaultWorkflow()).toBe("custom");
 		expect(restarted.selectWorkflow([], "manual").id).toBe("custom");
@@ -500,7 +517,7 @@ describe("workflow runtime", () => {
 		restarted.updateWorkflows(restarted.listWorkflows());
 		expect(restarted.getDefaultWorkflow()).toBe("custom");
 	});
-	it("rejects missing or deleted defaults without changing the saved configuration or existing runs", () => {
+	it("rejects missing or deleted defaults without changing the saved configuration or existing runs", async () => {
 		const { runtime, home } = create();
 		const custom = workflow([agent("work")]);
 		runtime.updateWorkflows([...defaultWorkflows, custom], "custom");
@@ -534,10 +551,9 @@ describe("workflow runtime", () => {
 		const promise = runtime.launch(run);
 		await vi.waitFor(() => expect(run.status).toBe("waiting"));
 		expect(execute).toHaveBeenCalledTimes(1);
+		await runtime.flush();
 		expect(
-			JSON.parse(
-				readFileSync(join(home, "factory", "runs", `${run.id}.json`), "utf8"),
-			).questions,
+			readJson(join(home, "factory", "runs", `${run.id}.json`)).questions,
 		).toEqual(["Which provider?"]);
 		runtime.answer(run.id, "Use Codex");
 		await promise;
@@ -638,6 +654,7 @@ describe("workflow runtime", () => {
 		const batch = run.questionBatchId;
 		await runtime.shutdown();
 		await first;
+		await runtime.flush();
 		const restarted = new WorkflowRuntime(home, {
 			agent: execute,
 			script: async () => ({}),
@@ -696,6 +713,7 @@ describe("workflow runtime", () => {
 		await promise;
 		expect(run.status).toBe("stopped");
 		expect(execute).toHaveBeenCalledTimes(1);
+		await runtime.flush();
 		expect(() => runtime.answer(run.id, "late answer")).toThrow("not waiting");
 	});
 	it("passes only the plan to implementer while retaining review/fixer history", async () => {
@@ -811,10 +829,11 @@ describe("workflow runtime", () => {
 		expect(run.status).toBe("failed");
 		expect(siblingStopped).toBe(true);
 	});
-	it("retains active status and history until startup recovery is launched", () => {
+	it("retains active status and history until startup recovery is launched", async () => {
 		const { runtime, home } = create();
 		const run = start(runtime, workflow([agent("work")]));
 		runtime.log(run, "work", "working");
+		await runtime.flush();
 		const restarted = new WorkflowRuntime(home, {
 			agent: async () => ({}),
 			script: async () => ({}),
@@ -823,7 +842,7 @@ describe("workflow runtime", () => {
 		expect(restarted.get(run.id).status).toBe("running");
 		expect(restarted.get(run.id).events[0]?.message).toBe("working");
 	});
-	it("freezes the workflow per run and applies saved changes only to new runs", () => {
+	it("freezes the workflow per run and applies saved changes only to new runs", async () => {
 		const { runtime } = create();
 		const run = start(
 			runtime,
@@ -837,7 +856,7 @@ describe("workflow runtime", () => {
 			"New name",
 		);
 	});
-	it("rejects dangling edges, duplicate IDs and malformed results", () => {
+	it("rejects dangling edges, duplicate IDs and malformed results", async () => {
 		expect(() => workflow([agent("x", { next: "missing" })])).toThrow(
 			"Unknown step",
 		);
@@ -848,7 +867,7 @@ describe("workflow runtime", () => {
 		).toThrow();
 		expect(() => parseAgentOutput("done")).toThrow("JSON");
 	});
-	it("discards nitpicks and keeps meaningful findings and accepted rejections", () => {
+	it("discards nitpicks and keeps meaningful findings and accepted rejections", async () => {
 		const result = filterReview({
 			summary: "Review",
 			findings: [1, 2, 3].map((rating) => ({
@@ -860,7 +879,7 @@ describe("workflow runtime", () => {
 		});
 		expect(result.findings.map((finding) => finding.rating)).toEqual([2, 3]);
 	});
-	it("resolves MCP inputs without losing object types and rejects missing references", () => {
+	it("resolves MCP inputs without losing object types and rejects missing references", async () => {
 		const { runtime } = create();
 		const run = start(runtime, workflow([agent("work")]));
 		run.outputs.plan = { plan: "Plan", assets: [] };
@@ -949,13 +968,13 @@ it("calls frozen reusable workflows with shared plan/history and human checkpoin
 	]);
 	expect(run.outputs.call).toEqual({ workflow: "shared", completed: true });
 	expect(
-		JSON.parse(
-			readFileSync(join(home, "factory", "runs", `${run.id}.json`), "utf8"),
+		readJson(
+			join(home, "factory", "runs", `${run.id}.json`),
 		).workflowDefinitions.find((item: Workflow) => item.id === "shared")
 			.steps[0].id,
 	).toBe("clarify");
 });
-it("rejects missing/recursive workflow calls and hidden human checkpoints in fanout", () => {
+it("rejects missing/recursive workflow calls and hidden human checkpoints in fanout", async () => {
 	const call = (target: string) => ({
 		id: "call",
 		name: "Call",
@@ -984,7 +1003,7 @@ it("rejects missing/recursive workflow calls and hidden human checkpoints in fan
 		]),
 	).toThrow("Human checkpoints");
 });
-it("upgrades a saved flat Factory without losing role settings or its selected default", () => {
+it("upgrades a saved flat Factory without losing role settings or its selected default", async () => {
 	const { runtime, home } = create();
 	const shared = structuredClone(
 		defaultWorkflows.find((item) => item.id === "factory-pipeline")!,
@@ -998,6 +1017,7 @@ it("upgrades a saved flat Factory without losing role settings or its selected d
 			defaultWorkflow: "factory",
 		}),
 	);
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
@@ -1085,7 +1105,7 @@ it.each([
 	expect(run.history.map((item) => item.step)).toEqual(["pipeline/review"]);
 	if (legacy) {
 		delete run.checkpoint;
-		runtime.save(run);
+		await runtime.save(run);
 	}
 	const resumed = vi.fn(async (context: ExecutionContext) => {
 		if (context.step.id === "fix") {
@@ -1101,6 +1121,7 @@ it.each([
 		expect(context.resumeAgent).toBeUndefined();
 		return { approved: true };
 	});
+	await runtime.flush();
 	const restarted = reload(home, { agent: resumed });
 	restarted.resumeAll();
 	restarted.resumeAll(); // Repeated startup recovery cannot launch a duplicate executor.
@@ -1155,6 +1176,7 @@ it("recovers partial fanout with isolated outputs, skipping the finished branch"
 		expect(context.outputs).not.toHaveProperty("fast");
 		return { value: "resumed" };
 	});
+	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook });
 	restarted.resumeAll();
 	await vi.waitFor(() =>
@@ -1197,12 +1219,13 @@ it.each([
 	if (legacy) {
 		delete run.checkpoint;
 		delete run.questionBatchId;
-		runtime.save(run);
+		await runtime.save(run);
 	}
 	const agentHook = vi.fn(async (context: ExecutionContext) => {
 		expect(context.run.answers[0]?.answer).toBe("Codex");
 		return { questions: [] };
 	});
+	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook, question });
 	restarted.resumeAll();
 	await vi.waitFor(() =>
@@ -1243,6 +1266,7 @@ it("keeps an accepted answer across a crash before the clarifier continues", asy
 	void runtime.launch(run);
 	await vi.waitFor(() => expect(run.status).toBe("waiting"));
 	runtime.answer(run.id, "Yes");
+	await runtime.flush();
 	const snapshot = readFileSync(
 		join(home, "factory", "runs", `${run.id}.json`),
 		"utf8",
@@ -1253,6 +1277,7 @@ it("keeps an accepted answer across a crash before the clarifier continues", asy
 		expect(context.run.answers).toHaveLength(1);
 		return { questions: [] };
 	});
+	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook });
 	restarted.resumeAll();
 	await vi.waitFor(() =>
@@ -1273,8 +1298,9 @@ it("does not resume completed, failed or explicitly stopped runs", async () => {
 	runtime.stop(stopped.id);
 	const completed = start(runtime, workflow([agent("work")]));
 	completed.status = "completed";
-	runtime.save(completed);
+	await runtime.save(completed);
 	const agentHook = vi.fn(async () => ({}));
+	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook });
 	restarted.resumeAll();
 	expect(agentHook).not.toHaveBeenCalled();
@@ -1344,6 +1370,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	).toThrow("Explain");
 	await runtime.shutdown();
 	await launched;
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, {
 		script: async () => ({}),
 		...hooks,
@@ -1386,7 +1413,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	).toEqual(restored.humanDecisions);
 	expect(restarted.viewState(run.id).settledAt).toBeTruthy();
 });
-it("rejects human review gates hidden in shared fanout workflows", () => {
+it("rejects human review gates hidden in shared fanout workflows", async () => {
 	expect(() =>
 		validateWorkflows([
 			...defaultWorkflows,
@@ -1525,6 +1552,7 @@ it("grants a bounded persisted retry budget only to the exhausted nested step", 
 	expect(run.checkpoint?.active?.children?.[0]?.additionalVisits).toEqual({
 		review: 4,
 	});
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, hooks);
 	const restored = restarted.get(run.id);
 	expect(restored.history.slice(0, prior.length)).toEqual(prior);
@@ -1629,13 +1657,16 @@ it.each([
 			],
 		},
 	};
-	runtime.save(run);
+	await runtime.save(run);
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, hooks);
 	const restored = restarted.get(run.id);
 	restarted.retry(run.id);
 	await vi.waitFor(() => expect(restored.status).toBe("failed"));
 	expect(calls).toHaveLength(1);
 	// Automatic restart cannot replenish an exhausted budget.
+	await runtime.flush();
+	await restarted.flush();
 	const again = new WorkflowRuntime(home, {
 		...hooks,
 		agent: async (ctx) => {
@@ -1716,7 +1747,8 @@ it.each([
 		history: run.history,
 		answers: run.answers,
 	});
-	runtime.save(run);
+	await runtime.save(run);
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, hooks);
 	const restored = restarted.retry(run.id);
 	await vi.waitFor(() => expect(restored.status).toBe("completed"));
@@ -1731,6 +1763,7 @@ it.each([
 			event.message.includes("Removed invalid Codex startup checkpoint"),
 		),
 	).toBe(true);
+	await restarted.flush();
 	expect(new WorkflowRuntime(home, hooks).get(run.id).status).toBe("completed");
 });
 
@@ -1828,7 +1861,7 @@ it.each([
 	).toBe(false);
 });
 
-it("upgrades only stock CI routing, retaining customized models and routes", () => {
+it("upgrades only stock CI routing, retaining customized models and routes", async () => {
 	const definitions = legacyReviewWorkflows();
 	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
 	shared.steps = shared.steps.filter((x) => x.id !== "after-ci-fix");
@@ -1855,7 +1888,7 @@ it("upgrades only stock CI routing, retaining customized models and routes", () 
 	).toBe("code-review");
 });
 
-it("upgrades handoff into the existing CI fix route without replacing custom routes", () => {
+it("upgrades handoff into the existing CI fix route without replacing custom routes", async () => {
 	const definitions = legacyReviewWorkflows();
 	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
 	const handoff = shared.steps.find((x) => x.id === "handoff")!;
@@ -1935,7 +1968,7 @@ it("recovers a saved nested handoff through its existing fixer without replaying
 			],
 		},
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	runtime.retry(run.id);
 	await vi.waitFor(() => expect(run.status).toBe("failed"));
 	expect(called).toEqual(["handoff", "ci-fix", "after-ci-fix"]);
@@ -2065,7 +2098,7 @@ it.each([
 	}
 });
 
-it("upgrades stock coordination limits without changing agent/custom limits", () => {
+it("upgrades stock coordination limits without changing agent/custom limits", async () => {
 	const definitions = legacyReviewWorkflows();
 	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
 	const gate = shared.steps.find((x) => x.id === "review-gate")!;
@@ -2261,7 +2294,7 @@ it("continues a finished simple run once with the same conversation and persists
 		userPrompt: "Original",
 		agent: { runner: "codex", sessionId: "native-thread" },
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	runtime.continueSimple(run.id, "Follow up");
 	expect(run.status).toBe("running");
 	expect(() => runtime.continueSimple(run.id, "Duplicate")).toThrow();
@@ -2304,8 +2337,9 @@ it("keeps legacy run definitions stable on load and audits contract migration at
 			},
 		},
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	const definitions = structuredClone(run.workflowDefinitions);
+	await runtime.flush();
 	const restarted = reload(home, {
 		agent: async (context) => {
 			expect(context.resumeAgent?.rejected).toMatchObject({
@@ -2332,7 +2366,7 @@ it("keeps legacy run definitions stable on load and audits contract migration at
 	expect(restarted.get(run.id).workflowDefinitions).toEqual(definitions);
 });
 
-it("upgrades stock implementation blockers without replacing custom instructions or role settings", () => {
+it("upgrades stock implementation blockers without replacing custom instructions or role settings", async () => {
 	const saved = structuredClone(defaultWorkflows);
 	const shared = saved.find((item) => item.id === "factory-pipeline")!;
 	const implementation = shared.steps.find((item) => item.id === "implement")!;
@@ -2441,7 +2475,7 @@ it.each([
 		.steps.find((s) => s.tool === "handoff")!.computeIntensive = true;
 	const run = start(runtime, custom);
 	run.workflowDefinitions = structuredClone(saved);
-	runtime.save(run);
+	await runtime.save(run);
 	const frozen = structuredClone(run);
 	const path = join(home, "factory", "workflows.json");
 	writeFileSync(
@@ -2618,7 +2652,7 @@ it("upgrades a coherent screenshot recipe to QA atomically, keeps custom behavio
 	};
 	const run = start(runtime, legacyDefinition);
 	const frozen = structuredClone(run.workflow);
-	runtime.save(run);
+	await runtime.save(run);
 	const restored = new WorkflowRuntime(
 		runtime.directory.replace(/\/factory$/, ""),
 		{
@@ -2687,6 +2721,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	const recommendations = structuredClone(run.questionRecommendations);
 	await runtime.shutdown();
 	await execution;
+	await runtime.flush();
 	const restored = new WorkflowRuntime(home, {
 		tool,
 		agent: agentHook,
@@ -2771,6 +2806,7 @@ it.each([
 	else if (changed === "removed") output.questionRecommendations = [];
 	else output.questionRecommendations[0]![changed] = "Updated guidance";
 	const agentHook = vi.fn(async () => ({}));
+	await runtime.flush();
 	const restarted = reload(home, { tool, question, agent: agentHook });
 	const restored = restarted.get(run.id);
 	restarted.resumeAll();
@@ -2848,6 +2884,7 @@ it.each([
 	else if (changed === "removed") output.questionRecommendations = [];
 	else if (changed === "answer" || changed === "reason")
 		output.questionRecommendations[0]![changed] = "Updated guidance";
+	await runtime.flush();
 	const restarted = reload(home, { tool, agent: execute, question });
 	const restored = restarted.get(run.id);
 	if (changed === "legacy") {
@@ -2897,7 +2934,7 @@ it.each([
 	await restarted.shutdown();
 });
 
-it("upgrades the original stock end-at-handoff recipe with QA and its human checkpoint together", () => {
+it("upgrades the original stock end-at-handoff recipe with QA and its human checkpoint together", async () => {
 	const saved = structuredClone(defaultWorkflows);
 	const pipeline = saved.find((w) => w.id === "factory-pipeline")!;
 	for (const legacy of legacyScreenshotSteps)
@@ -2917,7 +2954,7 @@ it("upgrades the original stock end-at-handoff recipe with QA and its human chec
 	expect(upgradeWorkflows(upgraded)).toEqual(upgraded);
 });
 
-it("preserves a screenshot recipe with customized result handling or nonvisual routing", () => {
+it("preserves a screenshot recipe with customized result handling or nonvisual routing", async () => {
 	for (const customize of [
 		(step: Workflow["steps"][number]) => {
 			step.json = false;
@@ -3032,8 +3069,9 @@ it("recovers saved QA waits into the fixer while retaining completed roles and h
 		questions: run.questions,
 	};
 	const originalHistory = structuredClone(run.history);
-	runtime.save(run);
+	await runtime.save(run);
 	await runtime.shutdown();
+	await runtime.flush();
 	const restored = new WorkflowRuntime(home, {
 		agent: async (ctx) => {
 			called.push(ctx.step.id);
@@ -3180,6 +3218,7 @@ it.each([
 	void runtime.launch(run);
 	await vi.waitFor(() => expect(run.status).toBe("waiting"));
 	await runtime.shutdown();
+	await runtime.flush();
 	const restarted = reload(home, hooks);
 	restarted.resumeAll();
 	const recovered = restarted.get(run.id);
@@ -3193,7 +3232,7 @@ it.each([
 			"Should I retry with the restored test account?",
 		]),
 	);
-	expect(recovered.status).toBe("waiting");
+	await vi.waitFor(() => expect(recovered.status).toBe("waiting"));
 	expect(recovered.outputs.receipt).toBeUndefined();
 	expect(resumes).toEqual([undefined, undefined]);
 	expect(recovered.answers).toEqual([]);
@@ -3300,6 +3339,7 @@ it.each([
 	await runtime.shutdown();
 	await execution;
 	if (changed) output.questions = ["Which deployment account is available?"];
+	await runtime.flush();
 	const restarted = reload(home, { tool, question, agent: agentHook });
 	const restored = restarted.get(run.id);
 	restarted.resumeAll();
