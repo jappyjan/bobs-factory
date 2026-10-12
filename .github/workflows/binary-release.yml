@@ -37,13 +37,18 @@ jobs:
         with:
           node-version: '24.18.0'
           package-manager-cache: false
-      - name: Retrieve retained prepared bytes or successful evidence
+      - id: retrieve
+        name: Retrieve retained prepared bytes or successful evidence
         env:
           GH_TOKEN: ${{ github.token }}
           EVIDENCE_ARTIFACT_ID: ${{ inputs.evidence_artifact_id }}
           PREPARED_ARTIFACT_ID: ${{ inputs.prepared_artifact_id }}
           EVIDENCE_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
+          if [ -n "$EVIDENCE_RUN_ID" ]; then
+            count=$(node --input-type=module -e 'import {githubClient} from "./scripts/lib/github-release.mjs"; const a=await githubClient().pages("actions/runs/"+process.env.EVIDENCE_RUN_ID+"/artifacts","artifacts"); console.log(a.filter(x=>x.name.startsWith("bobs-factory-release-evidence-")).length)')
+            if [ "$count" = 0 ]; then echo 'No nightly evidence to publish.'; exit 0; fi
+          fi
           if [ -n "$PREPARED_ARTIFACT_ID" ]; then
             node scripts/download-release-artifact.mjs --kind prepared --artifact-id "$PREPARED_ARTIFACT_ID" --output "$RUNNER_TEMP/input"
           elif [ -n "$EVIDENCE_RUN_ID" ]; then
@@ -51,7 +56,9 @@ jobs:
           else
             node scripts/download-release-artifact.mjs --kind evidence --artifact-id "$EVIDENCE_ARTIFACT_ID" --output "$RUNNER_TEMP/input"
           fi
+          echo 'available=true' >> "$GITHUB_OUTPUT"
       - name: Validate frozen execution and publication mode
+        if: steps.retrieve.outputs.available == 'true'
         id: identity
         env:
           REQUEST_PUBLISH: ${{ inputs.publish }}
@@ -73,10 +80,12 @@ jobs:
           appendFileSync(process.env.GITHUB_OUTPUT,`digest=${r.digest}\nchannel=${r.candidate.channel}\npublish=${publish}\n`);
           JS
       - uses: actions/upload-artifact@v6
+        if: steps.retrieve.outputs.available == 'true'
         with:
           name: release-input-${{ github.run_id }}
           path: ${{ runner.temp }}/input/
   prepare:
+    if: needs.resolve.outputs.digest != ''
     needs: resolve
     runs-on: ubuntu-24.04
     steps:

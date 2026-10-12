@@ -61,7 +61,7 @@ jobs:
         run: |
           if [ -f "$RUNNER_TEMP/candidate/candidate.json" ]; then
             node --input-type=module -e 'import {readFileSync,appendFileSync} from "node:fs"; const c=JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/candidate/candidate.json")); appendFileSync(process.env.GITHUB_OUTPUT,"candidate_json="+JSON.stringify(c)+"\n")'
-            echo 'Publication remains blocked until candidate review, full-payload F1, migration and source/license evidence are supplied through release-evidence.yml.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Nightly CI derives evidence from the pinned accepted baseline and fresh checks; stable still requires reviewed evidence and exact prepared-asset approval.' >> "$GITHUB_STEP_SUMMARY"
           fi
   binary:
     needs: prepare
@@ -69,3 +69,67 @@ jobs:
     uses: ./.github/workflows/binary-build.yml
     with:
       candidate_json: ${{ needs.prepare.outputs.candidate_json }}
+
+  desktop:
+    needs: [prepare, binary]
+    if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel == 'nightly'
+    uses: ./.github/workflows/desktop-build.yml
+    with:
+      candidate_json: ${{ needs.prepare.outputs.candidate_json }}
+      reuse_native: true
+  checks:
+    needs: prepare
+    if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel == 'nightly'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      F1_AGENT_MODE: mock
+      F1_TESTED_COMMIT: ${{ fromJSON(needs.prepare.outputs.candidate_json).candidate.commit }}
+      CANDIDATE_JSON: ${{ needs.prepare.outputs.candidate_json }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ fromJSON(needs.prepare.outputs.candidate_json).candidate.commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.18.0'
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
+      - uses: ./.github/actions/install-dependencies
+      - name: Prepare controlled test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ffmpeg jq
+          mkdir -p "$RUNNER_TEMP/nightly-checks"
+          echo "F1_EVIDENCE_DIR=$RUNNER_TEMP/nightly-checks" >> "$GITHUB_ENV"
+      - run: pnpm build
+      - name: Run actual tests and owned mocked delivery workflows
+        run: |
+          pnpm -r test:run > "$RUNNER_TEMP/nightly-checks/tests.log" 2>&1
+          node --test --test-concurrency=1 scripts/tests/*.test.mjs > "$RUNNER_TEMP/nightly-checks/release-tests.log" 2>&1
+          pnpm --filter bobs-factory-edge-worker exec vitest run test/UpdateManager.test.ts test/UpdateMaintenance.test.ts test/FactoryServer.update-startup.test.ts > "$RUNNER_TEMP/nightly-checks/update-lifecycle.log" 2>&1
+          node apps/f1/test-drives/assets/update-maintenance.mjs > "$RUNNER_TEMP/nightly-checks/update-maintenance.log" 2>&1
+          bun run apps/f1/test-drives/assets/desktop-service-lifecycle.mjs > "$RUNNER_TEMP/nightly-checks/desktop-service-lifecycle.log" 2>&1
+          node apps/f1/test-drives/assets/desktop-shell-update.mjs > "$RUNNER_TEMP/nightly-checks/desktop-shell-update.log" 2>&1
+          bun run apps/f1/test-drives/assets/localhost-noauth.ts > "$RUNNER_TEMP/nightly-checks/localhost-noauth.log" 2>&1
+          pnpm --filter bobs-factory-core exec tsx "$PWD/apps/f1/test-drives/assets/linear-publication-101.ts" > "$RUNNER_TEMP/nightly-checks/linear-delivery.log" 2>&1
+          BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY=$(mktemp -d) bun run apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/f1-drive.ts > "$RUNNER_TEMP/nightly-checks/architecture.log" 2>&1
+      - name: Record only completed current checks
+        run: |
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          import {fileRecord,jsonBytes} from './scripts/lib/binary-release.mjs';
+          import {validateCandidate} from './scripts/lib/release-candidate.mjs';
+          const c=validateCandidate(JSON.parse(process.env.CANDIDATE_JSON)),dir=process.env.RUNNER_TEMP+'/nightly-checks';
+          const logs=['tests.log','release-tests.log','update-lifecycle.log','update-maintenance.log','desktop-service-lifecycle.log','desktop-shell-update.log','localhost-noauth.log','linear-delivery.log','architecture.log'].map(f=>fileRecord(dir+'/'+f,f));
+          writeFileSync(dir+'/nightly-checks.json',jsonBytes({schemaVersion:1,status:'passed',mode:'mock/scripted',candidateDigest:c.digest,commit:c.candidate.commit,workflowSha:c.candidate.workflowSha,runId:Number(process.env.GITHUB_RUN_ID),logs}));
+          JS
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: bobs-factory-nightly-checks-${{ fromJSON(needs.prepare.outputs.candidate_json).digest }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nightly-checks/
+          if-no-files-found: error
