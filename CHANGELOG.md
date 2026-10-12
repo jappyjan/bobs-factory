@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Wait for the detached desktop recovery fixture to finish and release its process owner before starting another helper, preventing intermittent macOS nightly check failures while preserving live-owner refusal ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131)).
+
 - Synchronize the operator MCP answer-batch fixture with question readiness so asynchronous persistence cannot race nightly checks; retain strict answer and stale-batch assertions ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#105](https://github.com/jappyjan/bobs-factory/pull/105)).
 
 - Keep resumed agent checkpoints responsive after reading large workflow history: preserve completed receipts as immutable snapshots, reuse their pages and extend the cached dashboard history index. ([#104](https://github.com/jappyjan/bobs-factory/pull/104), [F1 validation](apps/f1/test-drives/2026-10-12-resumed-history.md))
