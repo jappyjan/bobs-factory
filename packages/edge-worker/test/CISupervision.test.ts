@@ -10,6 +10,7 @@ import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { providerReceipt } from "./fixtures/merge-readiness.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const url = "https://github.com/test/repo/pull/1";
 const homes: string[] = [];
@@ -252,12 +253,12 @@ it("waits for a provider-confirmed running retry and refreshes failed-check evid
 	run.outputs["draft-pr"] = { url };
 	try {
 		const execution = runtime.launch(run);
-		await vi.waitFor(() => expect(retries).toBe(1));
+		await waitFor(() => expect(retries).toBe(1));
 		await vi.advanceTimersByTimeAsync(30000);
 		expect(run.status).toBe("running");
 		expect(agent).not.toHaveBeenCalled();
 		expect(retries).toBe(1);
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(run.outputs["merge-readiness"]).toMatchObject({
 				checks: [
 					{ bucket: "fail", retry: { attempt: 2, status: "in_progress" } },
@@ -435,7 +436,7 @@ it.each([
 	const retained = structuredClone(fixture.run.ciSupervision?.retries ?? []);
 	const execution = fixture.runtime.launch(fixture.run);
 	try {
-		await vi.waitFor(() => expect(fixture.agent).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(fixture.agent).toHaveBeenCalledTimes(1));
 		await execution;
 		expect(fixture.run.outputs.ci).toMatchObject({
 			fix: true,
@@ -602,7 +603,7 @@ it("retries a provider-proven runner failure in runtime without launching an age
 	};
 	run.outputs["draft-pr"] = { url };
 	const finished = runtime.launch(run);
-	await vi.waitFor(() => expect(retries).toBe(1));
+	await waitFor(() => expect(retries).toBe(1));
 	expect(agent).not.toHaveBeenCalled();
 	expect(run.capacityLeaves?.ci?.phase).toBe("waiting-ci");
 	await vi.advanceTimersByTimeAsync(10000);
@@ -616,13 +617,13 @@ it("asks for visible assistance when two provider-proven infrastructure retries 
 	vi.useFakeTimers();
 	const scenario = failingCI({ infrastructure: true });
 	const finished = scenario.runtime.launch(scenario.run);
-	await vi.waitFor(() => expect(scenario.retries()).toBe(1));
+	await waitFor(() => expect(scenario.retries()).toBe(1));
 	await vi.advanceTimersByTimeAsync(20000);
-	await vi.waitFor(() => expect(scenario.retries()).toBe(2));
+	await waitFor(() => expect(scenario.retries()).toBe(2));
 	await scenario.runtime.flush();
 	await vi.advanceTimersByTimeAsync(10000);
 	expect(scenario.agent).not.toHaveBeenCalled();
-	await vi.waitFor(() => expect(scenario.run.status).toBe("waiting"));
+	await waitFor(() => expect(scenario.run.status).toBe("waiting"));
 	expect(scenario.run.questions.join(" ")).toContain(
 		"Two runtime retries are exhausted",
 	);
@@ -634,20 +635,20 @@ it("asks for visible assistance when two provider-proven infrastructure retries 
 it("keeps an ambiguous retry durable across restart instead of sending it twice", async () => {
 	const scenario = failingCI({ infrastructure: true, ambiguousRetry: true });
 	void scenario.runtime.launch(scenario.run);
-	await vi.waitFor(() => expect(scenario.run.status).toBe("waiting"));
+	await waitFor(() => expect(scenario.run.status).toBe("waiting"));
 	expect(scenario.retries()).toBe(1);
 	expect(scenario.run.questions.join(" ")).toContain("outcome is uncertain");
 	await scenario.runtime.shutdown();
 	const restored = new WorkflowRuntime(scenario.directory, scenario.hooks);
 	restored.resumeAll();
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(restored.get(scenario.run.id).status).toBe("waiting"),
 	);
 	restored.answer(
 		scenario.run.id,
 		"I inspected the provider; continue checking the existing request",
 	);
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(restored.get(scenario.run.id).questions.join(" ")).toContain(
 			"has not confirmed a new attempt",
 		),
@@ -786,7 +787,7 @@ it("rechecks corrected PR metadata at the same SHA when its workflow reads the l
 	};
 	run.outputs["draft-pr"] = { url };
 	const finished = runtime.launch(run);
-	await vi.waitFor(() => expect(retries).toBe(1));
+	await waitFor(() => expect(retries).toBe(1));
 	await vi.advanceTimersByTimeAsync(10000);
 	await finished;
 	expect(agent).toHaveBeenCalledOnce();
@@ -871,7 +872,7 @@ it("retains GitLab runner-system receipts and retries only the bound failed job 
 it("keeps a proven infrastructure failure visible when the provider cannot produce a safe retry identity", async () => {
 	const scenario = failingCI({ infrastructure: true, unsupportedRetry: true });
 	const finished = scenario.runtime.launch(scenario.run);
-	await vi.waitFor(() => expect(scenario.run.status).toBe("waiting"));
+	await waitFor(() => expect(scenario.run.status).toBe("waiting"));
 	expect(scenario.agent).not.toHaveBeenCalled();
 	expect(scenario.retries()).toBe(0);
 	expect(scenario.run.questions.join(" ")).toContain("cannot safely retry");

@@ -39,11 +39,7 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { proposal } from "./fixtures/architecture.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
-
-// These workflows await real disk commits; a one-second polling limit can
-// expire under parallel test load before their unchanged assertions settle.
-const waitFor: typeof vi.waitFor = (callback, options) =>
-	vi.waitFor(callback, options ?? { timeout: 5000 });
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 afterEach(() => {

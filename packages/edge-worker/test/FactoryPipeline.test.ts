@@ -26,6 +26,7 @@ import {
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
 import { qaExecution, qaScope } from "./fixtures/qa.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const directories: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
@@ -205,7 +206,7 @@ it("returns visual and CI fixes through code review, keeping dispute history", a
 			if (step === "ci") return { approved: ++ci > 1, fix: ci === 1 };
 			if (step === "human-review") {
 				setTimeout(async () => {
-					await vi.waitFor(() =>
+					await waitFor(() =>
 						expect(context.run.reviewGate?.status).toBe("pending"),
 					);
 					runtime.decide(context.run.id, {
@@ -902,7 +903,7 @@ it("waits on blocked implementation across restart and supplies the answer witho
 		input: "Private ticket and metadata",
 	});
 	const first = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(run.step).toBe("pipeline/implement");
 	expect(run.questions).toEqual([question]);
 	expect(tool).toHaveBeenCalledTimes(1); // Decision recording only; no delivery.
@@ -938,7 +939,7 @@ it("waits on blocked implementation across restart and supplies the answer witho
 	});
 	const restored = restarted.get(run.id);
 	const second = restarted.launch(restored);
-	await vi.waitFor(() => expect(restored.status).toBe("waiting"));
+	await waitFor(() => expect(restored.status).toBe("waiting"));
 	expect(resumedAgent).not.toHaveBeenCalled();
 	expect(restored.questionBatchId).toBe(run.questionBatchId);
 	expect(restored.questionRecommendations).toEqual([
@@ -1052,7 +1053,7 @@ it.each([
 		})),
 	};
 	const first = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"), {
+	await waitFor(() => expect(run.status).toBe("waiting"), {
 		timeout: 10000,
 	});
 	expect(run.step).toBe("pipeline/visual-gate");
@@ -1077,7 +1078,7 @@ it.each([
 	if (legacy) restarted.retry(run.id);
 	else restarted.resumeAll();
 	const restored = restarted.get(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("waiting"), {
+	await waitFor(() => expect(restored.status).toBe("waiting"), {
 		timeout: 10000,
 	});
 	expect(agents).toHaveBeenCalledTimes(2);
@@ -1085,7 +1086,7 @@ it.each([
 	expect(restored.error).toBeUndefined();
 	const retained = structuredClone(restored.history);
 	restarted.answer(run.id, "The test card now works; capture Reader desktop.");
-	await vi.waitFor(() => expect(restored.status).toBe("completed"), {
+	await waitFor(() => expect(restored.status).toBe("completed"), {
 		timeout: 10000,
 	});
 	expect(restored.history.slice(0, retained.length)).toEqual(retained);
@@ -1185,9 +1186,9 @@ it("waits again when capture remains blocked after an answer, and stops without 
 		input: "Fixture",
 	});
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	runtime.answer(run.id, "Approve it anyway.");
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(run.status).toBe("waiting");
 		expect(
 			run.history.filter((h) => h.step === "pipeline/capture"),

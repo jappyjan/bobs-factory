@@ -20,6 +20,7 @@ import {
 	type FactoryRun,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
@@ -169,7 +170,7 @@ it.each([
 			c.body.startsWith("Factory needs assistance:"),
 		);
 	const wait = (count: number) =>
-		vi.waitFor(() => {
+		waitFor(() => {
 			expect(runtime.get(run.id).status).toBe("waiting");
 			expect(trackedWaits).toBe(count);
 			expect(

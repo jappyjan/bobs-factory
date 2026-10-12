@@ -19,6 +19,7 @@ import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { factoryHttp } from "./fixtures/factory-http.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 import { authenticator } from "./fixtures/webauthn.js";
 
 it("serves question images only from the requested run, rejecting traversal, external symlinks and non-images", async () => {
@@ -299,7 +300,7 @@ it("starts, displays, answers and terminates runs through the local API", async 
 		expect(started.json().reasoningEffort).toBe("high");
 		expect(started.json().serviceTier).toBe("fast");
 		const id = started.json().id;
-		await vi.waitFor(() => expect(runtime.get(id).status).toBe("waiting"));
+		await waitFor(() => expect(runtime.get(id).status).toBe("waiting"));
 		const detail = await server.app.inject({ url: `/api/runs/${id}`, headers });
 		expect(detail.json().questions).toEqual(["Which provider?"]);
 		const staleAnswer = await server.app.inject({
@@ -346,7 +347,7 @@ it("starts, displays, answers and terminates runs through the local API", async 
 				})
 			).statusCode,
 		).toBe(200);
-		await vi.waitFor(() => expect(runtime.get(id).answers).toHaveLength(1));
+		await waitFor(() => expect(runtime.get(id).answers).toHaveLength(1));
 		expect(
 			(
 				await server.app.inject({
@@ -1541,7 +1542,7 @@ it("protects and validates machine settings, exposing durable cross-worker polic
 		const controller = new AbortController();
 		const queued = other.acquireLease(controller.signal);
 		const cancelled = expect(queued).rejects.toThrow();
-		await vi.waitFor(async () => {
+		await waitFor(async () => {
 			const response = await server.app.inject({ url: "/api/config", headers });
 			expect(response.json().capacity).toMatchObject({
 				limit: 2,

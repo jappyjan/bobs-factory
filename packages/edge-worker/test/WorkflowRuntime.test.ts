@@ -23,10 +23,7 @@ import {
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
-
-// Graph transitions await real disk commits, including when other tests run.
-const waitFor: typeof vi.waitFor = (callback, options) =>
-	vi.waitFor(callback, options ?? { timeout: 5000 });
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];

@@ -9,11 +9,7 @@ import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { providerReceipt } from "./fixtures/merge-readiness.js";
-
-// These workflows await real disk commits; a one-second polling limit can
-// expire under parallel test load before their unchanged assertions settle.
-const waitFor: typeof vi.waitFor = (callback, options) =>
-	vi.waitFor(callback, options ?? { timeout: 5000 });
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 afterEach(() => {
