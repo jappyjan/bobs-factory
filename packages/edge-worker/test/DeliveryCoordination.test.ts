@@ -10,6 +10,11 @@ import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { providerReceipt } from "./fixtures/merge-readiness.js";
 
+// These workflows await real disk commits; a one-second polling limit can
+// expire under parallel test load before their unchanged assertions settle.
+const waitFor: typeof vi.waitFor = (callback, options) =>
+	vi.waitFor(callback, options ?? { timeout: 5000 });
+
 const homes: string[] = [];
 afterEach(() => {
 	vi.useRealTimers();
@@ -96,10 +101,10 @@ it("allows an overlapping delivery to review and finish while another prepares i
 	const first = createRun(runtime, "first"),
 		second = createRun(runtime, "second", "main", "alias-repo-id");
 	const a = runtime.launch(first);
-	await vi.waitFor(() => expect(roles).toContain("first:guide"));
+	await waitFor(() => expect(roles).toContain("first:guide"));
 	const b = runtime.launch(second);
-	await vi.waitFor(() => expect(roles).toContain("second:implement"));
-	await vi.waitFor(() => expect(second.status).toBe("completed"));
+	await waitFor(() => expect(roles).toContain("second:implement"));
+	await waitFor(() => expect(second.status).toBe("completed"));
 	expect(roles).toContain("second:capture");
 	expect(observedBases.second).toEqual(["base-1"]);
 	release();
@@ -197,9 +202,9 @@ it.each([
 	const a = runtime.launch(first);
 	let b: Promise<void> | undefined;
 	try {
-		await vi.waitFor(() => expect(providers).toEqual(["first:draft-pr"]));
+		await waitFor(() => expect(providers).toEqual(["first:draft-pr"]));
 		b = runtime.launch(second);
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(roles).toEqual([
 				"first:code",
 				"first:test",
@@ -209,7 +214,7 @@ it.each([
 		);
 		await new Promise((resolve) => setTimeout(resolve, 20));
 		expect(providers).toEqual(["first:draft-pr"]);
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(second.deliveryCoordination?.phase).toBe("queued"),
 		);
 	} finally {
@@ -257,11 +262,11 @@ it("releases an overlapping target while a human is absent and retains its pendi
 	const first = createRun(runtime, "absent-human");
 	first.workflow = reviewedDelivery;
 	const a = runtime.launch(first);
-	await vi.waitFor(() => expect(first.status).toBe("waiting"));
+	await waitFor(() => expect(first.status).toBe("waiting"));
 	expect(first.deliveryCoordination?.phase).toBe("released");
 	const second = createRun(runtime, "eligible");
 	const b = runtime.launch(second);
-	await vi.waitFor(() => expect(second.status).toBe("completed"));
+	await waitFor(() => expect(second.status).toBe("completed"));
 	expect(first.reviewGate?.status).toBe("pending");
 	expect(first.humanDecisions).toBeUndefined();
 	runtime.stop(first.id);
@@ -292,12 +297,10 @@ it("restores the finalizing owner ahead of queued deliveries after shutdown, and
 		cancelled = createRun(firstRuntime, "cancelled"),
 		next = createRun(firstRuntime, "next");
 	void firstRuntime.launch(owner);
-	await vi.waitFor(() => expect(ownerStarted).toBe(true));
+	await waitFor(() => expect(ownerStarted).toBe(true));
 	void firstRuntime.launch(cancelled);
 	void firstRuntime.launch(next);
-	await vi.waitFor(() =>
-		expect(next.deliveryCoordination?.phase).toBe("queued"),
-	);
+	await waitFor(() => expect(next.deliveryCoordination?.phase).toBe("queued"));
 	firstRuntime.stop(cancelled.id);
 	await firstRuntime.shutdown();
 	const visits: string[] = [];
@@ -313,7 +316,7 @@ it("restores the finalizing owner ahead of queued deliveries after shutdown, and
 		},
 	});
 	runtime.resumeAll();
-	await vi.waitFor(() => expect(runtime.get(next.id).status).toBe("completed"));
+	await waitFor(() => expect(runtime.get(next.id).status).toBe("completed"));
 	expect(runtime.get(cancelled.id).status).toBe("stopped");
 	expect(visits.filter((visit) => visit.endsWith(":draft-pr"))).toEqual([
 		"owner:draft-pr",
@@ -361,7 +364,7 @@ it("uses a stable run identity to order equally old queued deliveries", async ()
 	});
 	const owner = createRun(runtime, "owner");
 	void runtime.launch(owner);
-	await vi.waitFor(() => expect(admitted).toContain("owner"));
+	await waitFor(() => expect(admitted).toContain("owner"));
 	const queued = (id: string) => {
 		const run = runtime.create({
 			id,
@@ -377,10 +380,10 @@ it("uses a stable run identity to order equally old queued deliveries", async ()
 	};
 	const last = queued("zz"),
 		first = queued("aa");
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(first.deliveryCoordination?.blockers?.length).toBeGreaterThan(0),
 	);
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(last.deliveryCoordination?.blockers?.length).toBeGreaterThan(0),
 	);
 	// Asynchronous commit barriers can advance the fake clock during admission.
@@ -390,7 +393,7 @@ it("uses a stable run identity to order equally old queued deliveries", async ()
 			claim.queuedAt = "2026-10-08T10:00:00Z";
 	runtime.stop(owner.id);
 	await vi.advanceTimersByTimeAsync(1000);
-	await vi.waitFor(() => expect(last.status).toBe("completed"));
+	await waitFor(() => expect(last.status).toBe("completed"));
 	expect(admitted).toEqual(["owner", "aa", "zz"]);
 	await runtime.shutdown();
 });
@@ -455,17 +458,17 @@ it("allows renamed correction alongside independent review after rejection", asy
 	const first = createRun(runtime, "custom");
 	first.workflow = custom;
 	const a = runtime.launch(first);
-	await vi.waitFor(() => expect(first.status).toBe("waiting"));
+	await waitFor(() => expect(first.status).toBe("waiting"));
 	const other = createRun(runtime, "other");
 	const b = runtime.launch(other);
-	await vi.waitFor(() => expect(roles).toContain("other:guide"));
+	await waitFor(() => expect(roles).toContain("other:guide"));
 	runtime.decide(first.id, {
 		reviewId: first.reviewGate!.id,
 		headSha: "head",
 		decision: "reject",
 		feedback: "Correct the feature",
 	});
-	await vi.waitFor(() => expect(roles).toContain("custom:repair-feature"));
+	await waitFor(() => expect(roles).toContain("custom:repair-feature"));
 	runtime.stop(other.id);
 	await Promise.all([a, b]);
 	expect(roles.slice(-2)).toEqual([
@@ -493,7 +496,7 @@ it("restores passive guide work without reacquiring legacy broad ownership", asy
 	});
 	const old = createRun(runtime, "old");
 	void runtime.launch(old);
-	await vi.waitFor(() => expect(old.step).toBe("guide"));
+	await waitFor(() => expect(old.step).toBe("guide"));
 	await runtime.shutdown();
 	// Replay an interrupted checkpoint written by a previous runtime, retaining its old lock receipt.
 	old.status = "interrupted";
@@ -515,7 +518,7 @@ it("restores passive guide work without reacquiring legacy broad ownership", asy
 	});
 	const current = createRun(recovered, "new");
 	const b = recovered.launch(current);
-	await vi.waitFor(() => expect(visits).toContain("new:guide"));
+	await waitFor(() => expect(visits).toContain("new:guide"));
 	const restored = recovered.get(old.id);
 	restored.status = "running";
 	const a = recovered.launch(restored);
@@ -626,15 +629,15 @@ it("does not freeze an eligible overlapping delivery behind a long provider queu
 	const first = createRun(runtime, "outage");
 	first.workflow = queuedWorkflow;
 	const a = runtime.launch(first);
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(first.capacityLeaves?.ci?.phase).toBe("waiting-ci"),
 	);
 	const second = createRun(runtime, "eligible");
 	second.workflow = queuedWorkflow;
 	const b = runtime.launch(second);
-	await vi.waitFor(() => expect(roles).toContain("eligible:implement"));
+	await waitFor(() => expect(roles).toContain("eligible:implement"));
 	await vi.advanceTimersByTimeAsync(130000);
-	await vi.waitFor(() => expect(second.status).toBe("completed"));
+	await waitFor(() => expect(second.status).toBe("completed"));
 	expect(roles).not.toContain("outage:capture");
 	expect(first.status).toBe("running");
 	runtime.stop(first.id);
@@ -695,11 +698,11 @@ it("recognizes two native worktrees of the same repository without configured fo
 	first.outputs.repository = { baseBranch: "main" };
 	second.outputs.repository = { baseBranch: "main" };
 	const a = runtime.launch(first);
-	await vi.waitFor(() => expect(first.step).toBe("draft-pr"));
+	await waitFor(() => expect(first.step).toBe("draft-pr"));
 	const b = runtime.launch(second);
-	await vi.waitFor(() => expect(roles).toContain("second:implement"));
+	await waitFor(() => expect(roles).toContain("second:implement"));
 	await new Promise((resolve) => setTimeout(resolve, 20));
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(second.deliveryCoordination?.phase).toBe("queued"),
 	);
 	expect(roles).not.toContain("second:guide");
@@ -754,11 +757,9 @@ it("keeps a queued overlapping delivery out of execution capacity", async () => 
 	const second = createRun(runtime, "second");
 	second.workflow = definition;
 	const a = runtime.launch(first);
-	await vi.waitFor(() =>
-		expect(first.deliveryCoordination?.phase).toBe("active"),
-	);
+	await waitFor(() => expect(first.deliveryCoordination?.phase).toBe("active"));
 	const b = runtime.launch(second);
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(second.deliveryCoordination?.phase).toBe("queued"),
 	);
 	expect(capacity.active).toBe(0);
@@ -766,7 +767,7 @@ it("keeps a queued overlapping delivery out of execution capacity", async () => 
 	const spare = await capacity.acquireLease();
 	await spare.release();
 	finishIntegration();
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(first.capacityLeaves?.ci?.phase).toBe("waiting-ci"),
 	);
 	await b;
@@ -871,7 +872,7 @@ it("reserves three affected repositories out of seven and atomically adds newly 
 	writeFileSync(join(group.repositories[3]!.workspace, "new"), "new target");
 	expect(deliveryScopes(group)).toHaveLength(4);
 	const expansion = acquireDelivery(group, all, signal.signal, save, log);
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(group.deliveryCoordination?.blockers?.length).toBeGreaterThan(0),
 	);
 	expect(group.deliveryCoordination?.blockers).toEqual([
@@ -920,10 +921,10 @@ it.each([
 						},
 					};
 	const a = runtime.launch(first);
-	await vi.waitFor(() => expect(visits).toContain("first:capture"));
+	await waitFor(() => expect(visits).toContain("first:capture"));
 	const b = runtime.launch(second);
 	try {
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(second.step).toBe(isolation === "worktree" ? "merge" : "capture"),
 		);
 		if (isolation === "worktree") expect(visits).toContain("second:capture");
@@ -1013,19 +1014,17 @@ it("expands nested publication admission atomically and retains it until the out
 		a: { source: { url: "https://github.com/test/a/pull/1" } },
 	};
 	const a = runtime.launch(owner);
-	await vi.waitFor(() =>
-		expect(owner.deliveryCoordination?.phase).toBe("active"),
-	);
+	await waitFor(() => expect(owner.deliveryCoordination?.phase).toBe("active"));
 	const b = runtime.launch(group);
 	try {
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(group.deliveryCoordination?.blockers?.length).toBeGreaterThan(0),
 		);
 		expect(published).toBe(false);
 		expect(group.deliveryCoordination?.scopes).toHaveLength(2);
 		expect(group.deliveryCoordination?.blockers?.[0]?.runId).toBe(owner.id);
 		releaseOwner();
-		await vi.waitFor(() => expect(published).toBe(true));
+		await waitFor(() => expect(published).toBe(true));
 		expect(group.deliveryCoordination?.phase).toBe("active");
 		expect(group.deliveryCoordination?.scopes).toHaveLength(2);
 	} finally {
@@ -1159,9 +1158,7 @@ it.each([
 	const owner = createRun(runtime, "owner");
 	owner.workflow = { ...delivery, steps: [delivery.steps[1]!] };
 	const a = runtime.launch(owner);
-	await vi.waitFor(() =>
-		expect(owner.deliveryCoordination?.phase).toBe("active"),
-	);
+	await waitFor(() => expect(owner.deliveryCoordination?.phase).toBe("active"));
 	const fixer = createRun(runtime, "fixer");
 	fixer.workflow = workflow;
 	fixer.outputs["draft-pr"] = {
@@ -1174,7 +1171,7 @@ it.each([
 	fixer.outputs["review-gate"] = { approved: true };
 	const b = runtime.launch(fixer);
 	try {
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(fixer.deliveryCoordination?.phase).toBe("queued"),
 		);
 		green = true;
@@ -1299,19 +1296,15 @@ it("keeps passive CI polling and green QA runnable behind an overlapping fixer a
 	};
 	watcher.outputs["visual-scope"] = { environment: { isolation: "worktree" } };
 	void runtime.launch(fixer);
-	await vi.waitFor(() =>
-		expect(fixer.deliveryCoordination?.phase).toBe("active"),
-	);
+	await waitFor(() => expect(fixer.deliveryCoordination?.phase).toBe("active"));
 	void runtime.launch(watcher);
-	await vi.waitFor(() => expect(polls).toBe(1));
+	await waitFor(() => expect(polls).toBe(1));
 	expect(watcher.deliveryCoordination).toBeUndefined();
 	await runtime.shutdown();
 	green = true;
 	runtime = new WorkflowRuntime(directory, hooks);
 	runtime.resumeAll();
-	await vi.waitFor(() =>
-		expect(runtime.get(watcher.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(runtime.get(watcher.id).status).toBe("completed"));
 	expect(polls).toBe(2);
 	expect(visits.filter((visit) => visit === "watcher:capture")).toHaveLength(1);
 	expect(runtime.get(fixer.id).deliveryCoordination?.phase).toBe("active");
@@ -1359,8 +1352,8 @@ it("releases merge ownership between provider polls and revalidates approval bef
 		{ decision: "approve", headSha: "head", reviewId: "review", at: "" },
 	];
 	const a = runtime.launch(merging);
-	await vi.waitFor(() => expect(submitted).toBe(1));
-	await vi.waitFor(() =>
+	await waitFor(() => expect(submitted).toBe(1));
+	await waitFor(() =>
 		expect(merging.deliveryCoordination?.phase).toBe("released"),
 	);
 	const independent = createRun(runtime, "independent");
