@@ -924,6 +924,10 @@ it.each([
 				expect(second.deliveryCoordination?.reason).toBe(
 					"Shared QA/environment resource",
 				);
+			if (isolation !== "worktree")
+				expect(second.deliveryCoordination?.blockers?.[0]?.runId).toBe(
+					first.id,
+				);
 		});
 		if (isolation === "worktree") expect(visits).toContain("second:capture");
 		else {

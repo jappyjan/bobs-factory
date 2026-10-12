@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Wait for shared and legacy QA blocker records to be visible before asserting isolation, avoiding a race with asynchronous persistence ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#108](https://github.com/jappyjan/bobs-factory/pull/108)).
+
 - Wait for the detached desktop recovery fixture to finish and release its process owner before starting another helper, preventing intermittent macOS nightly check failures while preserving live-owner refusal ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#106](https://github.com/jappyjan/bobs-factory/pull/106)).
 
 - Prepare exact beta releases through CI with the full native/desktop validation path and reviewed asset approval, and show direct DMG, AppImage and DEB links on the downloads page from verified published inventories ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#107](https://github.com/jappyjan/bobs-factory/pull/107)).
