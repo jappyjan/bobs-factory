@@ -1,0 +1,18 @@
+[
+  {
+    "input": "electron-auto-installer.json",
+    "path": "/Users/jappy/.t3/worktrees/bobs-factory/fix-desktop-raw-asar-121/node_modules/.pnpm/electron@44.7.0/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+    "sha256": "6c7bfa625e72ad31e564b262c916aa6a9d5b88f570dea195dec52255e9c6305d",
+    "exit": 0,
+    "stdout": "{\"node\":\"24.21.0\",\"acorn\":\"8.18.0\",\"ada\":\"4.0.0\",\"amaro\":\"1.1.11\",\"ares\":\"1.34.8\",\"brotli\":\"1.2.0\",\"cldr\":\"48.0\",\"icu\":\"78.2\",\"llhttp\":\"9.4.3\",\"merve\":\"1.2.2\",\"modules\":\"149\",\"napi\":\"10\",\"nbytes\":\"0.1.4\",\"ncrypto\":\"0.0.1\",\"nghttp2\":\"1.70.0\",\"nghttp3\":\"\",\"ngtcp2\":\"\",\"openssl\":\"0.0.0\",\"simdjson\":\"4.6.7\",\"simdutf\":\"7.7.0\",\"sqlite\":\"3.53.4\",\"tz\":\"2026d\",\"undici\":\"7.29.1\",\"unicode\":\"17.0\",\"uv\":\"1.52.1\",\"uvwasi\":\"0.0.23\",\"v8\":\"15.2.124.28-electron.0\",\"zlib\":\"1.3.2.1-motley\",\"zstd\":\"1.6.0\",\"electron\":\"44.7.0\",\"chrome\":\"152.0.7977.130\"}\n",
+    "stderr": ""
+  },
+  {
+    "input": "electron-input.json",
+    "path": "/Users/jappy/code/jappy/bobs-factory-delivery-materials-116/fresh-pr96-unsigned-20261011/recovery-apps/darwin-arm64/Bob's Factory.app/Contents/MacOS/Bob's Factory",
+    "sha256": "b1efb41331bfc7631bd89250df9b276fd339aaccfada01bc4094d1e8909f8e31",
+    "exit": 0,
+    "stdout": "{\"node\":\"24.21.0\",\"acorn\":\"8.18.0\",\"ada\":\"4.0.0\",\"amaro\":\"1.1.11\",\"ares\":\"1.34.8\",\"brotli\":\"1.2.0\",\"cldr\":\"48.0\",\"icu\":\"78.2\",\"llhttp\":\"9.4.3\",\"merve\":\"1.2.2\",\"modules\":\"149\",\"napi\":\"10\",\"nbytes\":\"0.1.4\",\"ncrypto\":\"0.0.1\",\"nghttp2\":\"1.70.0\",\"nghttp3\":\"\",\"ngtcp2\":\"\",\"openssl\":\"0.0.0\",\"simdjson\":\"4.6.7\",\"simdutf\":\"7.7.0\",\"sqlite\":\"3.53.4\",\"tz\":\"2026d\",\"undici\":\"7.29.1\",\"unicode\":\"17.0\",\"uv\":\"1.52.1\",\"uvwasi\":\"0.0.23\",\"v8\":\"15.2.124.28-electron.0\",\"zlib\":\"1.3.2.1-motley\",\"zstd\":\"1.6.0\",\"electron\":\"44.7.0\",\"chrome\":\"152.0.7977.130\"}\n",
+    "stderr": ""
+  }
+]

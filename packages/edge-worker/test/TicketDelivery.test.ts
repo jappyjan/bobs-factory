@@ -37,6 +37,7 @@ import {
 	type FactoryRun,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
+import { proposal } from "./fixtures/architecture.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
 
 const homes: string[] = [];
@@ -1055,6 +1056,10 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 						deliveryContractDigest: digest(revised),
 						feedback: [],
 					};
+				case "architecture":
+					return proposal();
+				case "architecture-review":
+					return { approved: true, feedback: [] };
 				case "implement":
 					return {
 						status: "blocked",
@@ -1092,6 +1097,19 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 	});
 	await vi.waitFor(() => {
 		if (run.status === "failed") throw new Error(run.error);
+		expect(run.architectureGate).toBeDefined();
+	});
+	expect(visited).not.toContain("implement");
+	expect(f.state().fields.description).toBe("corrected");
+	const candidate = run.architectureProposals!.at(-1)!;
+	runtime.decideArchitecture(run.id, {
+		proposalId: candidate.id,
+		version: candidate.version,
+		digest: candidate.digest,
+		decision: "accept",
+	});
+	await vi.waitFor(() => {
+		if (run.status === "failed") throw new Error(run.error);
 		expect(run.questions).toEqual([
 			"Fixture pauses at the repository implementation boundary",
 		]);
@@ -1100,6 +1118,8 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 		"external-correction",
 		"plan",
 		"plan-review",
+		"architecture",
+		"architecture-review",
 		"implement",
 	]);
 	expect(run.delivery!.contract.version).toBe(3);

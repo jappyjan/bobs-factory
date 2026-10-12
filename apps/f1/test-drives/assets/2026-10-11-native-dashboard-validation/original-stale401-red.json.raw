@@ -1,0 +1,5 @@
+{
+  "code": 1,
+  "stdout": "Original native assertion: expected401, actual200\n",
+  "stderr": ""
+}

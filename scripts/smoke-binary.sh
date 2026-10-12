@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/lib/smoke-dashboard-access.sh"
 binary="$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"
 # Installations expose a bin symlink; metadata stays beside the immutable executable.
 link_count=0
@@ -53,20 +54,13 @@ if PATH="$smoke_root/path:/usr/bin:/bin" BOBS_FACTORY_CURSOR_SDK_PATH="" "$binar
   echo 'Unprepared Cursor unexpectedly succeeded'; exit 1
 fi
 grep -q BOBS_FACTORY_CURSOR_SDK_PATH "$smoke_root/cursor-missing.log"
-# Seed a private, expiring session fixture before startup. This smoke exercises
-# the real access boundary, without requiring a physical passkey or a JS runtime.
-# Passkey ceremonies have separate browser/auth tests; no auth bypass is enabled.
+# Direct loopback uses local operator authority. A separately configured public
+# Host must still require a passkey session, even on the same loopback socket.
 umask 077
-mkdir -p "$smoke_root/home/state/factory/auth"
-session_token="$(openssl rand -hex 32)"
-session_hash="$(printf '%s' "$session_token" | openssl dgst -sha256)"
-session_hash="${session_hash##* }"
-now_ms="$(date +%s)000"
-expires_ms="$((now_ms + 3600000))"
-printf '{"version":1,"origins":["http://127.0.0.1:%s","http://localhost:%s"],"user":"smoke","credentials":[{"id":"smoke","origin":"http://127.0.0.1:%s","publicKey":"smoke-fixture","counter":0,"deviceType":"singleDevice","backedUp":false,"label":"Smoke fixture","createdAt":%s,"lastUsedAt":%s}],"sessions":[{"hash":"%s","credential":"smoke","origin":"http://127.0.0.1:%s","expires":%s,"verifiedAt":%s}]}' "$port" "$port" "$port" "$now_ms" "$now_ms" "$session_hash" "$port" "$expires_ms" "$now_ms" > "$smoke_root/home/state/factory/auth/state.json"
+public_host="factory-smoke.example.invalid"
 for attempt in 1 2; do
   ready=false
-  PATH="$smoke_root/path:/usr/bin:/bin" "$binary" --home "$smoke_root/home/state" --port "$port" --no-open > "$smoke_root/worker.log" 2>&1 &
+  PATH="$smoke_root/path:/usr/bin:/bin" "$binary" --home "$smoke_root/home/state" --port "$port" --origin "https://$public_host" --no-open > "$smoke_root/worker.log" 2>&1 &
   worker_pid=$!
   for retry in $(seq 1 90); do
     if curl -fsS "http://127.0.0.1:$port/" 2>/dev/null > "$smoke_root/index.html"; then ready=true; break; fi
@@ -74,14 +68,10 @@ for attempt in 1 2; do
     sleep 1
   done
   if [[ "$ready" != true ]]; then cat "$smoke_root/worker.log"; exit 1; fi
-  denied_status="$(curl -sS -o "$smoke_root/unauthenticated.json" -w '%{http_code}' "http://127.0.0.1:$port/api/config")"
-  [[ "$denied_status" == 401 ]] || { echo "Expected unauthenticated API denial; got $denied_status"; exit 1; }
-  curl -fsS -H "Cookie: factory-local-session=$session_token" "http://127.0.0.1:$port/api/config" > "$smoke_root/state.json"
-  grep -q '"onboarding"' "$smoke_root/state.json"
-  grep -q '"required":true' "$smoke_root/state.json"
-  echo "Startup $attempt: guided setup without an agent; unauthenticated API 401; authenticated API 200"
+  check_dashboard_access "http://127.0.0.1:$port" "$public_host" "$smoke_root"
+  echo "Startup $attempt: guided setup without an agent; direct local API 200 without cookies; public Host API 401; foreign Origin/cross-site/forwarded local API 403"
   curl -fsS "http://127.0.0.1:$((port + 1))/version" > "$smoke_root/version.json"
-  curl -fsS -H "Cookie: factory-local-session=$session_token" "http://127.0.0.1:$port/api/version" > "$smoke_root/api-version.json"
+  curl -fsS "http://127.0.0.1:$port/api/version" > "$smoke_root/api-version.json"
   check_runtime_identity "$smoke_root/version.json" "$smoke_root/version-identity.json"
   check_runtime_identity "$smoke_root/api-version.json" "$smoke_root/api-version-identity.json"
   echo "Startup $attempt: runtime identity matches build.json on /version and /api/version"

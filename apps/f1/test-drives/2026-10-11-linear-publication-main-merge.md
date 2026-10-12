@@ -31,3 +31,27 @@ Agents and Linear transport in this drive were simulated. No real agents or
 provider credits were used. Previously accepted actual Linear screenshots remain
 historical evidence at their original revision; they were not recaptured here.
 Fresh CI and review remain required for this merge revision. PR #73 remains draft.
+
+## October 12 architecture integration
+
+Tested PR #73 parent `286178fce7a7e70598c5109fac4c97542565b355`
+with main `84433882ceed569cb93420d3ddc0961e252e0ce8` (see Git merge parent
+for the authoritative full base revision). Capability descriptions and the
+complete prompt expectation preserve architecture approval and Linear publication.
+Both branches' changelog entries remain intact.
+
+- 233 worker tests passed across architecture, pipeline, workflow, publication,
+  decision documentation, tracking and complete routing prompts; 8 presenter
+  tests also passed.
+- The simulated Linear publication command above passed unchanged: one explicit
+  decision comment, ten lifecycle comments, no routine progress comments, all
+  four modeled provider states, auth/select signals and no restart duplicates.
+- The architecture F1 command from `2026-10-11-architecture-main-integration.md`
+  passed all five scenarios, including exact-version acceptance, routine bypass
+  and rejection of a revision without changes. Agents and providers were simulated.
+- Logs: `/tmp/b0997420-ci6-f1.log` and
+  `/tmp/b0997420-ci6-architecture-f1.log`.
+
+Historical screenshots remain evidence at their original revisions. Fresh CI,
+review and exact-revision human approval remain required. GitHub reports the
+existing PR as non-draft; this step does not change that status or merge it.

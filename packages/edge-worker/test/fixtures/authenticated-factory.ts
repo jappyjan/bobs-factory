@@ -7,9 +7,10 @@ export class FactoryServer extends ProtectedFactoryServer {
 	constructor(
 		runtime: WorkflowRuntime,
 		hooks: ConstructorParameters<typeof ProtectedFactoryServer>[1],
+		origin = "http://localhost",
 	) {
 		super(runtime, hooks, {
-			origins: ["http://localhost", "http://127.0.0.1:3457"],
+			origins: [origin, "http://127.0.0.1:3457"],
 		});
 		this.auth.store.update((state) => {
 			// A restart fixture may create another server against the same auth store.
@@ -21,7 +22,7 @@ export class FactoryServer extends ProtectedFactoryServer {
 			);
 			state.credentials.push({
 				id: "route-fixture",
-				origin: "http://localhost",
+				origin,
 				publicKey: "fixture",
 				counter: 0,
 				label: "Fixture",
@@ -35,7 +36,7 @@ export class FactoryServer extends ProtectedFactoryServer {
 					.update("route-fixture-session")
 					.digest("hex"),
 				credential: "route-fixture",
-				origin: "http://localhost",
+				origin,
 				expires: Date.now() + 3600000,
 				verifiedAt: Date.now(),
 			});
@@ -45,9 +46,9 @@ export class FactoryServer extends ProtectedFactoryServer {
 			inject({
 				...options,
 				headers: {
-					host: "localhost",
-					cookie: "factory-local-session=route-fixture-session",
-					origin: "http://localhost",
+					host: new URL(origin).host,
+					cookie: `${origin.startsWith("https:") ? "__Host-factory-session" : "factory-local-session"}=route-fixture-session`,
+					origin,
 					...options.headers,
 				},
 			})) as typeof this.app.inject;
