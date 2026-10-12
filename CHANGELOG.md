@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Write native Electron validation receipts separately from Chromium diagnostics so Linux release evidence remains valid JSON; retain complete smoke logs and refuse receipt overwrites ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131)).
+- Write native Electron validation receipts separately from Chromium diagnostics so Linux release evidence remains valid JSON; retain complete smoke logs and refuse receipt overwrites ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#110](https://github.com/jappyjan/bobs-factory/pull/110)).
 
 - Resolve Bun's upstream ARM64 archive and ZIP member names when assembling release evidence, preserving native target identities and accepted runtime hash checks ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#109](https://github.com/jappyjan/bobs-factory/pull/109)).
 
