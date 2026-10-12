@@ -8,9 +8,22 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { requireValue, sha256File } from "./binary-release.mjs";
+import {
+	requireValue,
+	sha256File,
+	validateReleaseManifest,
+} from "./binary-release.mjs";
 import { ARCHIVE_LIMITS, inspectArchive } from "./bounded-archive.mjs";
-import { canonical, validateCandidate } from "./release-candidate.mjs";
+import {
+	candidateIdentity,
+	canonical,
+	validateCandidate,
+} from "./release-candidate.mjs";
+
+import {
+	reconstructSourceArchive,
+	sourceTransportRecords,
+} from "./source-transport.mjs";
 
 export const sourceFileSha256 = sha256File;
 
@@ -19,16 +32,80 @@ export function extractEvidenceArchive(archive, output, options = {}) {
 	const policy = {
 		prefix: "release-evidence/",
 		regularOnly: true,
-		collect: ["release-evidence/release-evidence.json"],
+		collect: [
+			"release-evidence.json",
+			"candidate.json",
+			"assets/release.json",
+			"assets/candidate.json",
+			"assets/release-evidence.json",
+		].map((f) => `release-evidence/${f}`),
 		limits: options.limits,
 	};
 	const scanned = inspectArchive(archive, policy);
 	const files = scanned.entries.filter((e) => e.type === "0");
+	const hasSource = files.some(
+		(e) => e.name === `${policy.prefix}source-rebuild.tar.gz`,
+	);
 	requireValue(
-		files.some((e) => e.name === "release-evidence/release-evidence.json") &&
-			files.some((e) => e.name === "release-evidence/source-rebuild.tar.gz"),
+		files.some((e) => e.name === `${policy.prefix}release-evidence.json`),
 		"Evidence archive is missing release manifest/source material",
 	);
+	let reconstruction;
+	if (!hasSource) {
+		// Only the caller's frozen candidate/provenance can authorize this transport.
+		const expected = validateCandidate(options.expectedCandidate);
+		const identity = candidateIdentity(
+			expected,
+			options.expectedIdentity?.runId,
+		);
+		requireValue(
+			canonical(identity) === canonical(options.expectedIdentity),
+			"Expected evidence identity must bind the operator candidate/build run",
+		);
+		const control = (f) => JSON.parse(scanned.texts[policy.prefix + f]);
+		const rootCandidate = validateCandidate(control("candidate.json"));
+		const nestedCandidate = validateCandidate(control("assets/candidate.json"));
+		const manifest = validateReleaseManifest(control("assets/release.json"));
+		const evidence = control("release-evidence.json");
+		requireValue(
+			rootCandidate.digest === expected.digest &&
+				nestedCandidate.digest === expected.digest &&
+				manifest.schemaVersion === 2 &&
+				manifest.status === "available" &&
+				manifest.sourceTransport?.type === "chunks" &&
+				canonical(evidence) ===
+					canonical(control("assets/release-evidence.json")),
+			"Prepared envelope candidate/evidence mismatch",
+		);
+		for (const record of [manifest, evidence])
+			requireValue(
+				record.candidateDigest === expected.digest &&
+					record.commit === identity.commit &&
+					record.workflowSha === identity.workflowSha &&
+					record.version === identity.version &&
+					record.buildRunId === identity.runId,
+				"Prepared envelope differs from operator candidate/build run",
+			);
+		requireValue(
+			canonical(manifest.source) === canonical(evidence.source),
+			"Prepared envelope source identity mismatch",
+		);
+		const chunks = sourceTransportRecords(
+			manifest.source,
+			manifest.sourceTransport,
+		);
+		for (const chunk of chunks) {
+			requireValue(
+				files.some(
+					(e) =>
+						e.name === `${policy.prefix}assets/${chunk.file}` &&
+						e.size === chunk.size,
+				) && manifest.assets.some((a) => canonical(a) === canonical(chunk)),
+				"Missing/mismatched prepared source chunk inventory",
+			);
+		}
+		reconstruction = manifest;
+	}
 	const temporary = mkdtempSync(join(tmpdir(), "factory-evidence-intake-"));
 	const copied = [];
 	try {
@@ -38,6 +115,15 @@ export function extractEvidenceArchive(archive, output, options = {}) {
 			output: temporary,
 		});
 
+		if (reconstruction) {
+			reconstructSourceArchive(
+				join(temporary, "assets"),
+				reconstruction.source,
+				reconstruction.sourceTransport,
+				temporary,
+			);
+			files.push({ name: policy.prefix + reconstruction.source.file });
+		}
 		mkdirSync(output, { recursive: true });
 		for (const entry of files) {
 			const name = entry.name.slice(policy.prefix.length);
