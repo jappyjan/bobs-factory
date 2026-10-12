@@ -28,7 +28,8 @@ jobs:
   automatic-nightly:
     if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    # Verified full-source transfer took 56 minutes; allow intake and source assembly too.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
         with:
