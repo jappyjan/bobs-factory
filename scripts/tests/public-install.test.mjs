@@ -420,11 +420,21 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
 			"lib/bounded-archive.mjs",
 			"lib/release-candidate.mjs",
 			"lib/github-release.mjs",
+			"lib/website-downloads.mjs",
 		])
 			copyFileSync(
 				join(root, "scripts", file),
 				join(workspace, "scripts", file),
 			);
+		mkdirSync(join(workspace, "website/public/downloads"), { recursive: true });
+		const downloadsPage = join(
+			workspace,
+			"website/public/downloads/index.html",
+		);
+		copyFileSync(
+			join(root, "website/public/downloads/index.html"),
+			downloadsPage,
+		);
 		mkdirSync(join(workspace, "docs/distribution"), { recursive: true });
 		const metadata = f.current.metadata;
 		const bytes = jsonBytes(metadata);
@@ -501,6 +511,7 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
 		assert.equal(result.status, 0, result.stderr);
 		const pointer = join(workspace, "website/public/releases/latest.json");
 		const previous = readFileSync(pointer, "utf8");
+		const previousDownloads = readFileSync(downloadsPage, "utf8");
 		assert.equal(JSON.parse(previous).channel, "beta");
 		assert.equal(JSON.parse(previous).version, "1.0.0-beta");
 		writeFileSync(
@@ -515,6 +526,7 @@ test("Pages synchronizes a verified beta manifest and preserves prior metadata o
 		assert.notEqual(result.status, 0);
 		assert.match(result.stderr, /checksum mismatch/);
 		assert.equal(readFileSync(pointer, "utf8"), previous);
+		assert.equal(readFileSync(downloadsPage, "utf8"), previousDownloads);
 	} finally {
 		f.cleanup();
 	}
