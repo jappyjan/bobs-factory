@@ -1101,6 +1101,15 @@ it.each([
 	const run = start(runtime, runtime.selectWorkflow([], "manual", "parent"));
 	void runtime.launch(run);
 	await waitFor(() => expect(first).toHaveBeenCalledTimes(2));
+	await waitFor(() =>
+		expect(
+			run.events.some(
+				(event) =>
+					event.message ===
+					JSON.stringify({ type: "assistant", session_id: "fix-conversation" }),
+			),
+		).toBe(true),
+	);
 	await runtime.shutdown();
 	expect(run.status).toBe("running");
 	expect(run.history.map((item) => item.step)).toEqual(["pipeline/review"]);
