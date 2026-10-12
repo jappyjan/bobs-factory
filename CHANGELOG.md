@@ -6,9 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Integrate Linear publication guards and native session lifecycle with bundled workflows: keep internal role/tool records local, publish readable decision records, and preserve individual recovery ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
 - Integrate architecture approval and native localhost validation with bundled workflow ownership; recognize architecture-enabled legacy standards without creating forks, and preserve saved approval gates ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
 - Protect atomic simulated desktop receipt publication with a delayed-write regression check for the maintained F1 update drive ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Preserve readable Linear publication while integrating external ticket delivery and background tracking; retain status deduplication, refresh the simulated workflow's tracking wait, and keep the localhost access, architecture approval and Linear publication capability descriptions together. ([#73](https://github.com/jappyjan/bobs-factory/pull/73), [F1 validation](apps/f1/test-drives/2026-10-11-linear-publication-main-merge.md))
+
 - Prevent acceptance while an older architecture proposal is displayed, and refuse stale accept callbacks while preserving approval of the current version ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#101](https://github.com/jappyjan/bobs-factory/pull/101)).
 
 - Validate direct localhost onboarding and native desktop APIs without passkey sessions while separately checking remote authentication and origin denials; retain packaged runtime identity, restart, helper and Stop/maintenance checks ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#100](https://github.com/jappyjan/bobs-factory/pull/100)).
@@ -27,7 +32,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Bundle standard workflows independently of model preferences. Add private Factory/Takeover forks, recoverable legacy migration, and disabling that interrupts work while preserving progress for individual Resume. Simple cannot be forked. Preserve existing delivery, operator recovery and older-run priority; recover interrupted backups and remove deleted-fork metadata. Save the selected chat model before execution and preserve it through the production runner factory on Resume. Retain current-main migration safety, source-publication safeguards, and direct localhost/IPv6 access during integration. ([#83](https://github.com/jappyjan/bobs-factory/pull/83); [Taskbot #129](https://taskbot.apps.janjaap.de/p/bobs-factory/t/129); [validation](apps/f1/test-drives/2026-10-10-workflow-catalog.md))
+- Bundle standard workflows independently of model preferences. Add private Factory/Takeover forks, recoverable legacy migration, and disabling that interrupts work while preserving progress for individual Resume. Simple cannot be forked. Preserve existing delivery, operator recovery and older-run priority; recover interrupted backups and remove deleted-fork metadata. Save the selected chat model before execution and preserve it through the production runner factory on Resume. Retain current-main migration safety, source-publication safeguards, and direct localhost/IPv6 access during integration. Linear publication suppresses internal role/tool records, preserves native lifecycle events and keeps decision comments readable. ([#83](https://github.com/jappyjan/bobs-factory/pull/83); [Taskbot #129](https://taskbot.apps.janjaap.de/p/bobs-factory/t/129); [validation](apps/f1/test-drives/2026-10-10-workflow-catalog.md))
 - Align generated Homebrew and AUR requirements with the selected first-release support floor of macOS 15 and Ubuntu 24.04/glibc 2.39, and clarify that the frozen app's inherited macOS 13 launch minimum is not tested-support evidence ([Taskbot #123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#97](https://github.com/jappyjan/bobs-factory/pull/97)).
 
 - Support direct unsigned GitHub releases and updates with candidate-bound SHA256/size inventories; remove paid Apple and publisher-signature prerequisites, preserve corruption/source/recovery/rollback safeguards, and document per-app macOS allow-running ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
@@ -62,6 +67,9 @@ All notable changes to this project will be documented in this file.
 - Resume interrupted ticket Simple work in its saved conversation with pending attachments. Standalone chat Resume retains its accepted model and queued input after preferences change. First chat turns interrupted while waiting for capacity or saving the startup checkpoint can Resume after restart without an ID; established chats still reject missing native conversation IDs. Missing repositories and startup failures retain the recovery block and report an error ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
 - Resume blocked Simple runs through the workflow engine from operator MCP. Show the blocked reason and an eligible Resume action in the terminal, refreshing availability when workflows are re-enabled ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Align the incremental-result fixture and complete routing prompt expectation with validated Linear publication. ([#73](https://github.com/jappyjan/bobs-factory/pull/73))
+
 - Preserve nonzero manager output and cancel isolated service acceptance through a bounded cooperative timeout, registered nested process groups and exact owned units; retain independent case errors and add actual START-boundary outer-timeout validation without changing the frozen runtime. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122), [#124](https://taskbot.apps.janjaap.de/p/bobs-factory/t/124), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 - Store immutable source-research JSON/module copies under raw extensions with byte-preserving retention mappings, and correct the durable Bun/TinyCC/WebKit archive paths; normal maintained-code linting and all prior evidence remain intact. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 
@@ -105,6 +113,8 @@ All notable changes to this project will be documented in this file.
 - Draft PR delivery no longer fails on every retry when a repository's commit hooks run long or failing full-suite checks; Factory's own commit skips commit hooks while implementation checks, review and CI keep owning verification. Push hooks such as Git LFS still run. ([#59](https://github.com/jappyjan/bobs-factory/pull/59), [F1 delivery validation](apps/f1/test-drives/2026-10-09-delivery-commit-hooks.md))
 
 ### Changed
+
+- Keep Factory role results and tool dumps out of Linear publication. Render decisions with rationale, route routine progress and role outcomes as transcript thoughts, preserve native session states and approval prompts with their required automatic threaded comments, extract diagnostics from failed build logs, suppress repeated check updates, and retain raw evidence and delivery recovery locally. ([Taskbot #101](https://taskbot.apps.janjaap.de/p/bobs-factory/t/101), [#73](https://github.com/jappyjan/bobs-factory/pull/73))
 
 - Standard Factory can deliver authorized Linear and Taskbot ticket changes through independent verification, human acceptance and a final state check. Retries preserve intervening edits and shared relationships; mixed feedback renews contracts and retains confirmed repository merges. Background tracking preserves completion proof during rereads and blocks closure on drift or lost access. Failed external publication supports audited recovery ([Taskbot #95](https://taskbot.apps.janjaap.de/p/bobs-factory/t/95), [#80](https://github.com/JappyJan/bobs-factory/pull/80)).
 

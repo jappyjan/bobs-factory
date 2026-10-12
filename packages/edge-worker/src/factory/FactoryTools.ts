@@ -9,7 +9,10 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve } from "node:path";
-import { spawnExecution as spawn } from "bobs-factory-core";
+import {
+	presentLinearPublication,
+	spawnExecution as spawn,
+} from "bobs-factory-core";
 import { z } from "zod";
 import {
 	DeliveryContractSchema,
@@ -358,7 +361,11 @@ export function verifiedScreenshot(path: string, directory: string): string {
 
 export interface FactoryToolHooks {
 	ticketDelivery?: TicketDelivery;
-	postComment(runId: string, body: string): Promise<void>;
+	postComment(
+		runId: string,
+		body: string,
+		purpose?: "documentation" | "operational",
+	): Promise<void>;
 	command?(
 		context: ExecutionContext,
 		executable: string,
@@ -790,10 +797,19 @@ export class FactoryTools {
 			}
 			case "record-decisions": {
 				const decisions = run.outputs.clarify;
-				await this.hooks.postComment(
-					run.id,
-					`## Factory decision records\n\n${JSON.stringify(decisions, null, 2)}\n\n### Questions and answers\n${run.answers.map((answer) => `${answer.questions.map((question) => `- ${question}`).join("\n")}\n\n${answer.answer}`).join("\n\n")}`,
-				);
+				const records =
+					(decisions as { decisions?: unknown[] } | undefined)?.decisions ?? [];
+				for (const decision of records) {
+					const presented = presentLinearPublication({
+						purpose: "decision",
+						eventId: JSON.stringify(decision),
+						owner: "record-decisions",
+						source: { runId: run.id },
+						content: decision,
+					});
+					if (presented.destination === "comment")
+						await this.hooks.postComment(run.id, presented.markdown);
+				}
 				return decisions;
 			}
 			case "draft-pr": {
@@ -1517,7 +1533,8 @@ export class FactoryTools {
 				if (!run.ticketReference)
 					await this.hooks.postComment(
 						run.id,
-						`## Factory ready for human review\n\nDraft PR: ${url}\n\n${guide}`,
+						`Ready for human review: ${url}. Review the guide and approve this revision or request changes in Factory.`,
+						"operational",
 					);
 				return { url, headSha, ready: true };
 			}
