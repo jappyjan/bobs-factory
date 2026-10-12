@@ -3003,7 +3003,11 @@ it("assigns new identities to repeated question batches and labels ticket sugges
 	await waitFor(() => expect(run.status).toBe("waiting"));
 	const batch = run.questionBatchId;
 	expect(run.answers).toEqual([]);
-	expect(track.mock.calls.at(-1)?.[1].body).toContain("Suggested answer: Wait");
+	await waitFor(() =>
+		expect(track.mock.calls.at(-1)?.[1].body).toContain(
+			"Suggested answer: Wait",
+		),
+	);
 	expect(track.mock.calls.at(-1)?.[1].body).toContain(
 		"explicit reply or Send answers",
 	);

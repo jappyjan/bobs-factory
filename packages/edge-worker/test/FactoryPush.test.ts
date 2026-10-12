@@ -26,6 +26,7 @@ import {
 	type FactoryRun,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 const home = () => {
@@ -297,9 +298,8 @@ it.each([
 		},
 	});
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
-	await tick();
-	expect(sender).toHaveBeenCalledTimes(1);
+	await waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(sender).toHaveBeenCalledTimes(1));
 	const original = runPushEvent(run);
 	await runtime.shutdown();
 	await push.stop();
@@ -308,8 +308,9 @@ it.each([
 	push.attach(runtime, source);
 	run = runtime.get(run.id);
 	runtime.resumeAll();
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(runPushEvent(run)).toEqual(original);
+	await runtime.flush(run.id);
 	await tick();
 	expect(sender).toHaveBeenCalledTimes(1);
 	if (category === "question") runtime.answer(run.id, "Ask again");
@@ -320,9 +321,8 @@ it.each([
 			decision: "reject",
 			feedback: "Revise",
 		});
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
-	await tick();
-	expect(sender).toHaveBeenCalledTimes(2);
+	await waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(sender).toHaveBeenCalledTimes(2));
 	expect(JSON.parse(sender.mock.calls[1]![1]).category).toBe(category);
 	await runtime.shutdown();
 	await push.stop();
