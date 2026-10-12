@@ -1057,7 +1057,7 @@ it.each([
 ])("recovers nested review loops without rerunning completed work or resetting limits (legacy=%s)", async (legacy) => {
 	const first = vi.fn(async (context: ExecutionContext) => {
 		if (context.step.id === "review") return { approved: false };
-		context.checkpointAgent?.({
+		await context.checkpointAgent?.({
 			runner: "codex",
 			sessionId: "fix-conversation",
 		});
@@ -1143,7 +1143,7 @@ it("recovers partial fanout with isolated outputs, skipping the finished branch"
 	const { runtime, home } = create({
 		agent: async (context) => {
 			if (context.step.id === "fast") return { value: "retained" };
-			context.checkpointAgent?.({
+			await context.checkpointAgent?.({
 				runner: "claude",
 				sessionId: "slow-conversation",
 			});
@@ -1575,7 +1575,7 @@ it.each([
 				issues: [{ path: "/chapters", message: "Missing chapters" }],
 			});
 			if (!recovered) {
-				ctx.checkpointAgent?.({
+				await ctx.checkpointAgent?.({
 					...ctx.resumeAgent!,
 					rejected: {
 						...ctx.resumeAgent!.rejected!,
@@ -1687,7 +1687,10 @@ it.each([
 			calls.push(ctx);
 			expect(ctx.resumeAgent).toBeUndefined();
 			expect(ctx.run.checkpoint?.active?.children?.[0]?.visits.capture).toBe(4);
-			ctx.checkpointAgent?.({ runner: "codex", sessionId: "confirmed-thread" });
+			await ctx.checkpointAgent?.({
+				runner: "codex",
+				sessionId: "confirmed-thread",
+			});
 			return { summary: "Fresh role completed" };
 		},
 		script: async () => ({}),
@@ -3183,7 +3186,7 @@ it.each([
 			const output = {
 				questions: ctx.run.answers.length === 0 ? ["Restore test access?"] : [],
 			};
-			ctx.checkpointAgent?.({
+			await ctx.checkpointAgent?.({
 				...conversation,
 				idleRetries: 1,
 				result: {
