@@ -248,6 +248,7 @@ try {
 		limits: { maxMembers: 256 },
 		output: materialDirectory,
 	});
+	rmSync(baselineSource); // Only our downloaded copy; accepted remote bytes stay immutable.
 	const receipts = {};
 	for (const gate of [
 		"reviewedCandidate",
@@ -564,6 +565,9 @@ try {
 					validation: fileRecord(join(output, validation), validation),
 				});
 		}
+		rmSync(nativeDirectory, { recursive: true, force: true });
+		rmSync(native, { recursive: true, force: true });
+		rmSync(desktopDirectory, { recursive: true, force: true });
 	}
 	rebindSourceMaterials(
 		priorMaterials,
@@ -588,6 +592,10 @@ try {
 		],
 		{ stdio: "inherit", timeout: 15 * 60 * 1000 },
 	);
+	rmSync(join(sourceOutput, "source-rebuild"), {
+		recursive: true,
+		force: true,
+	});
 	copyFileSync(
 		join(sourceOutput, "source-rebuild.tar.gz"),
 		join(output, "source-rebuild.tar.gz"),
