@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Synchronize the operator MCP answer-batch fixture with question readiness so asynchronous persistence cannot race nightly checks; retain strict answer and stale-batch assertions ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#105](https://github.com/jappyjan/bobs-factory/pull/105)).
+
 - Keep resumed agent checkpoints responsive after reading large workflow history: preserve completed receipts as immutable snapshots, reuse their pages and extend the cached dashboard history index. ([#104](https://github.com/jappyjan/bobs-factory/pull/104), [F1 validation](apps/f1/test-drives/2026-10-12-resumed-history.md))
 
 - Finish automatic nightly CI with an accepted pinned source baseline and fresh native/desktop/mock workflow evidence; preserve actual native notices, desktop ZIP paths, shipped license inputs and four desktop update targets while inventorying DEBs separately; safely reconstruct prepared source chunks without duplicate transport bytes and keep artifact ZIPs out of retained inventories ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#103](https://github.com/jappyjan/bobs-factory/pull/103)).
