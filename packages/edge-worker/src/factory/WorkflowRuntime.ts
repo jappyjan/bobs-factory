@@ -503,6 +503,9 @@ export class WorkflowRuntime {
 			if (run.workflow.id === "simple" && run.workflow.chat === undefined)
 				run.workflow.chat = true;
 			immutableTranscript(run.events);
+			// Completed receipts never change when live outputs or graph frames do.
+			// Keep loaded history pages reusable, with a bounded payload cache.
+			immutableTranscript(run.history);
 			this.runs.set(run.id, run);
 		}
 		cleanupVideoEvidence(
@@ -1692,12 +1695,14 @@ export class WorkflowRuntime {
 					outputs[step.id] = output;
 					if (step.reviewContract && step.reviewContract !== "inventory-v1")
 						run.outputs[key] = output;
-					run.history.push({
-						step: key,
-						output,
-						at: new Date().toISOString(),
-						...(state.call ? { call: state.call } : {}),
-					});
+					run.history.push(
+						immutableJson({
+							step: key,
+							output,
+							at: new Date().toISOString(),
+							...(state.call ? { call: state.call } : {}),
+						}),
+					);
 					state.phase = "result";
 					finishStepAttempt(
 						context,
@@ -2324,7 +2329,9 @@ export class WorkflowRuntime {
 								(output as HumanDecision).reviewId,
 					)
 				)
-					run.history.push({ step: key, output, at: new Date().toISOString() });
+					run.history.push(
+						immutableJson({ step: key, output, at: new Date().toISOString() }),
+					);
 			}
 			checkpoint.current = this.nextStep(steps, step, output);
 			checkpoint.active = undefined;
@@ -3343,6 +3350,10 @@ export class WorkflowRuntime {
 		const cached = this.summaries.get(run.id);
 		const coldHistory = !!Object.getOwnPropertyDescriptor(run, "history")?.get;
 		const coldOutputs = !!Object.getOwnPropertyDescriptor(run, "outputs")?.get;
+		const historyIndex =
+			cached && cached.history?.length <= run.history.length
+				? cached.history
+				: [];
 		const videoAssets =
 			cached && cached.videoAssets === undefined && (coldHistory || coldOutputs)
 				? undefined
@@ -3382,9 +3393,14 @@ export class WorkflowRuntime {
 			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
 				? this.summaries.get(run.id)?.hasGuide
 				: Boolean(run.outputs.guide),
-			history: Object.getOwnPropertyDescriptor(run, "history")?.get
-				? (this.summaries.get(run.id)?.history ?? [])
-				: run.history.map(({ step, at, call }) => ({ step, at, call })),
+			history: coldHistory
+				? (cached?.history ?? [])
+				: [
+						...historyIndex,
+						...run.history
+							.slice(historyIndex.length)
+							.map(({ step, at, call }) => ({ step, at, call })),
+					],
 		};
 	}
 	async prepareDashboard(run: FactoryRun): Promise<void> {

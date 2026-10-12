@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Keep resumed agent checkpoints responsive after reading large workflow history: preserve completed receipts as immutable snapshots, reuse their pages and extend the cached dashboard history index. ([#104](https://github.com/jappyjan/bobs-factory/pull/104), [F1 validation](apps/f1/test-drives/2026-10-12-resumed-history.md))
+
 - Finish automatic nightly CI with an accepted pinned source baseline and fresh native/desktop/mock workflow evidence; preserve actual native notices, desktop ZIP paths, shipped license inputs and four desktop update targets while inventorying DEBs separately; safely reconstruct prepared source chunks without duplicate transport bytes and keep artifact ZIPs out of retained inventories ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#103](https://github.com/jappyjan/bobs-factory/pull/103)).
 - Keep the web UI responsive while saving large conversations and run artifacts, reuse immutable history chunks, load dashboard summaries and activity pages lazily, and preserve checkpoint/approval ordering across restart. Version 5 retains legacy documents and requires complete-home backups for downgrade. ([#102](https://github.com/jappyjan/bobs-factory/pull/102), [F1 validation](apps/f1/test-drives/2026-10-12-persistence-responsiveness.md))
 

@@ -265,6 +265,12 @@ try {
 	run.outputs.large = {
 		summary: "Synthetic retained artifact",
 		text: content.repeat(8),
+		files: Object.fromEntries(
+			Array.from({ length: 4000 }, (_, index) => [
+				`path-${index}`,
+				`fingerprint-${index}`,
+			]),
+		),
 	};
 	for (let index = 0; index < 48; index++)
 		run.history.push({
@@ -285,6 +291,22 @@ try {
 		"Pending gate did not survive restart",
 	);
 	assert.equal(restored.get(started.id).answers.length, 0);
+	// Native role context reads the history before it checkpoints conversation
+	// IDs and activity. Read every page, then save those checkpoints repeatedly.
+	// Loaded historical payloads must remain immutable and reusable.
+	const historical = restored.get(started.id);
+	for (const entry of historical.history) {
+		assert(Object.isFrozen(entry));
+		assert(Object.isFrozen(entry.output));
+	}
+	await responsiveDuring(
+		(async () => {
+			for (let index = 0; index < 6; index++) {
+				restored.log(historical, "resume", `Native checkpoint ${index}`);
+				await restored.save(historical);
+			}
+		})(),
+	);
 	assert.equal(
 		internals(worker).agentSessionManager.getSessionEntries(id).at(-1)?.content,
 		"tail after 1 GiB",
@@ -344,6 +366,7 @@ try {
 			"incremental transcript append",
 			"large retained run artifact",
 			"restart retains native session and pending human gate",
+			"loaded structured history remains immutable through resumed checkpoints",
 			"lazy dashboard and activity pages",
 			"legacy completed-run dashboard migration preserves original bytes",
 			"one explicit answer resumes workflow",
