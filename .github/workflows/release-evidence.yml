@@ -40,7 +40,7 @@ jobs:
           node-version: '24.18.0'
           package-manager-cache: false
       - id: assemble
-        name: Assemble actual nightly source and CI evidence from the accepted baseline
+        name: Assemble actual nightly/beta source and CI evidence from the accepted baseline
         env:
           GH_TOKEN: ${{ github.token }}
           BINARY_RUN_ID: ${{ github.event.workflow_run.id }}

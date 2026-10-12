@@ -27,8 +27,8 @@ const { values } = parseArgs({
 	},
 });
 requireValue(
-	["stable", "nightly"].includes(values.channel) && values.output,
-	"Provide --channel stable|nightly --output FILE",
+	["stable", "nightly", "beta"].includes(values.channel) && values.output,
+	"Provide --channel stable|nightly|beta --output FILE",
 );
 requireValue(
 	values.channel === "stable"
@@ -41,9 +41,10 @@ if (existsSync(values.output)) {
 	requireValue(
 		retained.candidate.channel === values.channel &&
 			retained.candidate.workflowSha === values["workflow-sha"] &&
+			(values.channel === "nightly" ||
+				retained.candidate.version === values.version) &&
 			(values.channel !== "stable" ||
-				(retained.candidate.version === values.version &&
-					retained.candidate.promotion.tag === values["nightly-tag"])),
+				retained.candidate.promotion.tag === values["nightly-tag"]),
 		"Retry inputs differ from retained candidate",
 	);
 	console.log("Retained frozen candidate; no identity regenerated");
@@ -66,7 +67,7 @@ if (values.channel === "stable") {
 		releaseId: n.release.id,
 		publishedAt: n.release.published_at,
 	};
-} else {
+} else if (values.channel === "nightly") {
 	const last = requireVerifiedNightlyHistory(state);
 	const relation =
 		last && commit !== last.manifest.commit
