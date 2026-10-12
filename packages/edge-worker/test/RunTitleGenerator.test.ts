@@ -30,6 +30,7 @@ import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { MachineCapacity } from "../src/MachineCapacity.js";
 import { SessionSemaphore } from "../src/RunnerConcurrency.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 afterEach(() => {
@@ -130,7 +131,7 @@ it.each([
 it("confines auxiliary cleanup to its job directory for external session IDs", async () => {
 	const test = setup();
 	test.generator.start("..", job());
-	await vi.waitFor(() => expect(test.start).toHaveBeenCalledOnce());
+	await waitFor(() => expect(test.start).toHaveBeenCalledOnce());
 	mkdirSync(join(test.directory, "factory"), { recursive: true });
 	const sentinel = join(test.directory, "factory", "keep");
 	writeFileSync(sentinel, "persisted runs");
@@ -140,7 +141,7 @@ it("confines auxiliary cleanup to its job directory for external session IDs", a
 		result: '{"title":"Name external session safely"}',
 	});
 	test.completion.resolve();
-	await vi.waitFor(() => expect(test.update).toHaveBeenCalledOnce());
+	await waitFor(() => expect(test.update).toHaveBeenCalledOnce());
 	expect(existsSync(sentinel)).toBe(true);
 	expect(
 		existsSync(join(test.directory, "factory", "title-jobs", "%2E%2E")),
@@ -157,7 +158,7 @@ it("deduplicates pending work and updates only after a valid result, cleaning up
 		snapshot = job();
 	test.generator.start("run", snapshot);
 	test.generator.start("run", snapshot);
-	await vi.waitFor(() => expect(test.start).toHaveBeenCalledOnce());
+	await waitFor(() => expect(test.start).toHaveBeenCalledOnce());
 	expect(test.update).not.toHaveBeenCalled();
 	await test.emit({
 		type: "result",
@@ -165,7 +166,7 @@ it("deduplicates pending work and updates only after a valid result, cleaning up
 		result: '{"title":"Add automatic run titles"}',
 	});
 	test.completion.resolve();
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(test.update).toHaveBeenCalledWith(
 			"run",
 			{ ...snapshot, state: "completed" },
@@ -185,7 +186,7 @@ it("falls back to final assistant text, and ignores failed/completed jobs", asyn
 	test.generator.start("past", { ...job(), state: "completed" });
 	test.generator.start("failed", { ...job(), state: "failed" });
 	test.generator.start("new", job());
-	await vi.waitFor(() => expect(test.start).toHaveBeenCalledOnce());
+	await waitFor(() => expect(test.start).toHaveBeenCalledOnce());
 	await test.emit({
 		type: "assistant",
 		message: {
@@ -193,7 +194,7 @@ it("falls back to final assistant text, and ignores failed/completed jobs", asyn
 		},
 	});
 	test.completion.resolve();
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(test.update).toHaveBeenCalledWith(
 			"new",
 			expect.objectContaining({ state: "completed" }),
@@ -208,14 +209,14 @@ it.each([
 ])("retains fallback state and stops auxiliary work on %s", async (mode) => {
 	const test = setup();
 	test.generator.start("run", job());
-	await vi.waitFor(() => expect(test.start).toHaveBeenCalledOnce());
+	await waitFor(() => expect(test.start).toHaveBeenCalledOnce());
 	if (mode === "provider-error")
 		test.config().onError?.(new Error("No authentication"));
 	if (mode === "invalid") {
 		await test.emit({ type: "result", result: '{"title":""}' });
 		test.completion.resolve();
 	}
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(test.update).toHaveBeenCalledWith(
 			"run",
 			expect.objectContaining({ state: "failed", error: expect.any(String) }),
@@ -284,7 +285,7 @@ it("cancels queued work immediately while primary execution holds the only slot"
 	test.generator.start("run", job());
 	expect(slots.waiting).toBe(1);
 	test.generator.cancel("run");
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(test.update).toHaveBeenCalledWith(
 			"run",
 			expect.objectContaining({ state: "cancelled" }),
@@ -315,7 +316,7 @@ it("admits queued primary work before background titles", async () => {
 it("shutdown keeps pending snapshots recoverable and ignores a late completion", async () => {
 	const test = setup();
 	test.generator.start("run", job());
-	await vi.waitFor(() => expect(test.start).toHaveBeenCalledOnce());
+	await waitFor(() => expect(test.start).toHaveBeenCalledOnce());
 	await test.generator.shutdown();
 	await test.emit({ type: "result", result: '{"title":"Late title"}' });
 	test.completion.resolve();
@@ -335,7 +336,7 @@ it("does not create a runner when slow configuration resolves after timeout", as
 		10,
 	);
 	generator.start("run", { ...job(), retries: 1 });
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(update).toHaveBeenCalledWith(
 			"run",
 			expect.objectContaining({ state: "failed" }),
@@ -388,6 +389,7 @@ it("persists global settings independently of recipes and frozen run snapshots",
 	runtime.updateTitleSettings({ runner: "gemini" });
 	runtime.updateWorkflows(runtime.listWorkflows());
 	expect(run.titleGeneration?.settings.model).toBe("cheap");
+	await runtime.flush();
 	const restored = new WorkflowRuntime(directory, hooks);
 	expect(restored.resolveTitleSettings()).toEqual({
 		runner: "gemini",
@@ -400,6 +402,7 @@ it("persists global settings independently of recipes and frozen run snapshots",
 		{ ...run.titleGeneration!, state: "completed" },
 		"Useful task name",
 	);
+	await runtime.flush();
 	expect(new WorkflowRuntime(directory, hooks).get(run.id).title).toBe(
 		"Useful task name",
 	);
@@ -409,7 +412,7 @@ it("persists global settings independently of recipes and frozen run snapshots",
 	await runtime.shutdown();
 	await restored.shutdown();
 });
-it("migrates mutable title fields, retains frozen definitions, and ignores legacy request titles", () => {
+it("migrates mutable title fields, retains frozen definitions, and ignores legacy request titles", async () => {
 	const directory = home();
 	const runtime = new WorkflowRuntime(directory, {
 		agent: async () => ({}),
@@ -437,6 +440,7 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 		join(directory, "factory", "workflows.json"),
 		JSON.stringify(old),
 	);
+	await runtime.flush();
 	const restored = new WorkflowRuntime(directory, {
 		agent: async () => ({}),
 		script: async () => ({}),
@@ -532,7 +536,7 @@ it("retains timed-out remote execution capacity and does not start an unsafe ret
 		...job(),
 		settings: { runner: "cursor", model: "remote" },
 	});
-	await vi.waitFor(
+	await waitFor(
 		() =>
 			expect(update).toHaveBeenCalledWith(
 				"remote",

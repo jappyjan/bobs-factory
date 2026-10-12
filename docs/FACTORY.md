@@ -545,6 +545,38 @@ for exact assertions and limits, including the Workbox follow-up drive.
 
 ## Run and configure
 
+### Large histories and persistence
+
+Factory persists session state in version 5 manifests and immutable JSON chunks
+under `<factoryHome>/state/chunks`. Run manifests reference chunks under
+`<factoryHome>/factory/run-chunks`. The first replacement retains each original
+document as a `.legacy` sibling. Versions 2–4 and legacy run documents remain
+readable; native session IDs, conversation contents and accepted workflow data
+are preserved. Native credential/conversation stores and dashboard passkeys are
+not migrated by this storage change.
+
+Transcript entries are immutable after recording. Later saves reuse unchanged
+pages and append new activity; capped run events retain stable individual chunks
+when their window moves. Large strings serialize in bounded batches that yield
+to HTTP work. Each document has an ordered queue, independent documents can
+commit concurrently, and activity saves coalesce. Checkpoints, human answers,
+approvals and external operation receipts await their commit before advancing.
+Chunks close and rename before the referencing manifest is atomically replaced;
+incomplete temporary files cannot replace the last complete snapshot. This is
+process-interruption protection, not a power-loss durability guarantee.
+
+Restart loads manifests and summaries first. Transcript cursor selection uses
+timestamp indexes and loads only selected pages, with a bounded cache for
+immutable entries. Dashboard previews use committed artifact hashes instead of
+serializing whole artifacts on every poll. Full details remain available on
+demand, and video cleanup uses retained summary references. Completed legacy runs
+receive committed preview metadata on their first dashboard read, retaining their
+original bytes before replacement. Copy manifests **and**
+their chunk directories together when backing up or moving a home. Older binaries
+cannot read version 5; downgrade through a compatible whole-home backup rather
+than replacing the executable alone. Unreferenced chunks are retained; automatic
+garbage collection is not part of this migration.
+
 The React dashboard uses TanStack Query for cached requests and mutations, Radix for
 accessible dialogs/menus, and Tailwind with the RainbowBob theme. **Today** puts
 launching, questions, stuck runs and human reviews first; running work stays in

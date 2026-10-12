@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { JsonSnapshotStore } from "bobs-factory-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	defaultWorkflows,
@@ -22,9 +23,12 @@ import {
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
-afterEach(() => {
+const runtimes: WorkflowRuntime[] = [];
+afterEach(async () => {
+	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
 });
@@ -37,7 +41,16 @@ function create(hooks: Partial<RuntimeHooks> = {}) {
 		tool: async () => ({}),
 		...hooks,
 	});
+	runtimes.push(runtime);
 	return { runtime, home };
+}
+function readJson(path: string): any {
+	const stored = JSON.parse(readFileSync(path, "utf8"));
+	return stored.format === "bobs-factory-json-snapshot-1"
+		? new JsonSnapshotStore(join(dirname(dirname(path)), "run-chunks")).load(
+				path,
+			).value
+		: stored;
 }
 function workflow(steps: unknown[], dependencies: unknown[] = []): Workflow {
 	return validateWorkflows([
@@ -136,7 +149,7 @@ describe("workflow trigger permissions", () => {
 		);
 		expect(runtime.getDefaultWorkflow()).toBe("simple");
 	});
-	it("rejects selected disallowed explicit, first label and default without falling back", () => {
+	it("rejects selected disallowed explicit, first label and default without falling back", async () => {
 		const { runtime, home } = create();
 		const first = {
 			...workflow([agent("work")]),
@@ -175,7 +188,7 @@ describe("workflow trigger permissions", () => {
 				.find((w) => w.id === "custom")!.allowedTriggers,
 		).toEqual([]);
 	});
-	it("permits deliberate top-level access to an internal recipe and an ineligible saved default", () => {
+	it("permits deliberate top-level access to an internal recipe and an ineligible saved default", async () => {
 		const { runtime } = create();
 		const saved = runtime.listWorkflows();
 		const shared = saved.find((w) => w.internal)!;
@@ -206,7 +219,7 @@ describe("workflow trigger permissions", () => {
 			disk,
 		);
 	});
-	it("rejects disabling a called child, including fanout, while preserving config", () => {
+	it("rejects disabling a called child, including fanout, while preserving config", async () => {
 		const { runtime } = create();
 		const child = {
 			...workflow([agent("work")]),
@@ -277,7 +290,7 @@ describe("workflow trigger permissions", () => {
 		runtime.updateWorkflows([...defaultWorkflows, parent, child]);
 		const run = start(runtime, runtime.selectWorkflow([], "manual", "custom"));
 		void runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		const call = {
 			type: "workflow",
 			callerWorkflowId: "custom",
@@ -288,6 +301,7 @@ describe("workflow trigger permissions", () => {
 		expect(run.events.filter((e) => e.call).map((e) => e.call)).toEqual([call]);
 		runtime.updateWorkflows(defaultWorkflows);
 		await runtime.shutdown();
+		await runtime.flush();
 		const restarted = reload(home, {
 			agent: async (ctx) => ({
 				questions: ctx.run.answers.length ? [] : ["Choose?"],
@@ -296,9 +310,9 @@ describe("workflow trigger permissions", () => {
 		const restored = restarted.get(run.id);
 		expect(restored.triggerOrigin).toEqual(run.triggerOrigin);
 		void restarted.launch(restored);
-		await vi.waitFor(() => expect(restored.status).toBe("waiting"));
+		await waitFor(() => expect(restored.status).toBe("waiting"));
 		restarted.answer(restored.id, "Yes");
-		await vi.waitFor(() => expect(restored.status).toBe("completed"));
+		await waitFor(() => expect(restored.status).toBe("completed"));
 		expect(restored.events.filter((e) => e.call).map((e) => e.call)).toEqual([
 			call,
 		]);
@@ -336,6 +350,7 @@ describe("workflow runtime", () => {
 		try {
 			const { runtime, home } = create();
 			const run = start(runtime, workflow([agent("review")]));
+			await runtime.flush();
 			const changed = vi.fn();
 			runtime.subscribe(changed);
 			const path = join(home, "factory", "runs", `${run.id}.json`);
@@ -343,18 +358,20 @@ describe("workflow runtime", () => {
 				runtime.log(run, "review", `Tool result ${index}`, "agent");
 			expect(run.events).toHaveLength(500);
 			expect(changed).not.toHaveBeenCalled();
-			expect(JSON.parse(readFileSync(path, "utf8")).events).toEqual([]);
+			expect(readJson(path).events).toEqual([]);
 			await vi.advanceTimersByTimeAsync(250);
+			await runtime.flush();
 			expect(changed).toHaveBeenCalledTimes(1);
-			expect(JSON.parse(readFileSync(path, "utf8")).events).toEqual(run.events);
+			expect(readJson(path).events).toEqual(run.events);
 
 			runtime.log(run, "review", "Last tool result", "agent");
 			run.checkpoint = { current: "end", visits: { review: 1 } };
-			runtime.save(run);
-			const saved = JSON.parse(readFileSync(path, "utf8"));
+			await runtime.save(run);
+			const saved = readJson(path);
 			expect(saved.checkpoint).toEqual(run.checkpoint);
 			expect(saved.events).toEqual(run.events);
 			await vi.advanceTimersByTimeAsync(250);
+			await runtime.flush();
 			expect(changed).toHaveBeenCalledTimes(2);
 		} finally {
 			vi.useRealTimers();
@@ -368,9 +385,7 @@ describe("workflow runtime", () => {
 			runtime.log(run, "review", "Final activity", "agent");
 			await runtime.shutdown();
 			expect(
-				JSON.parse(
-					readFileSync(join(home, "factory", "runs", `${run.id}.json`), "utf8"),
-				).events,
+				readJson(join(home, "factory", "runs", `${run.id}.json`)).events,
 			).toEqual(run.events);
 			expect(vi.getTimerCount()).toBe(0);
 		} finally {
@@ -378,7 +393,7 @@ describe("workflow runtime", () => {
 		}
 	});
 
-	it("upgrades the legacy visual reviewer with a real newline while retaining its model", () => {
+	it("upgrades the legacy visual reviewer with a real newline while retaining its model", async () => {
 		const saved = legacyReviewWorkflows();
 		const shared = saved.find(
 			(definition) => definition.id === "factory-pipeline",
@@ -402,7 +417,7 @@ describe("workflow runtime", () => {
 				.steps.find((step) => step.id === "visual-review")!.prompt,
 		).toBe(reviewer.prompt);
 	});
-	it("persists agent provenance before trimming an oversized event tail", () => {
+	it("persists agent provenance before trimming an oversized event tail", async () => {
 		const { runtime, home } = create();
 		const run = start(runtime, workflow([agent("review")]));
 		const message = JSON.stringify({
@@ -411,6 +426,7 @@ describe("workflow runtime", () => {
 		});
 		runtime.log(run, "review", message, "agent");
 		runtime.log(run, "review", "Build output ".repeat(3000));
+		await runtime.flush();
 		const recovered = new WorkflowRuntime(home, {
 			agent: async () => ({}),
 			tool: async () => ({}),
@@ -449,7 +465,7 @@ describe("workflow runtime", () => {
 		fail = false;
 		runtime.retry(run.id);
 		expect(() => runtime.retry(run.id)).toThrow("Only failed");
-		await vi.waitFor(() => expect(run.status).toBe("completed"));
+		await waitFor(() => expect(run.status).toBe("completed"));
 		expect(run.error).toBeUndefined();
 		expect(run.history.slice(0, history.length)).toEqual(history);
 		expect(run.history.map((item) => item.step)).toEqual([
@@ -465,7 +481,7 @@ describe("workflow runtime", () => {
 		run.status = "stopped";
 		expect(() => runtime.retry(run.id)).toThrow("Only failed");
 	});
-	it("uses the persisted default behind explicit choices and matching labels, including legacy config", () => {
+	it("uses the persisted default behind explicit choices and matching labels, including legacy config", async () => {
 		const { runtime, home } = create();
 		expect(runtime.getDefaultWorkflow()).toBe("simple");
 		expect(runtime.selectWorkflow([], "manual").id).toBe("simple");
@@ -478,6 +494,7 @@ describe("workflow runtime", () => {
 			script: async () => ({}),
 			tool: async () => ({}),
 		};
+		await runtime.flush();
 		const legacy = new WorkflowRuntime(home, hooks);
 		expect(legacy.selectWorkflow([], "manual").id).toBe("simple");
 		const custom = workflow([agent("work")]);
@@ -493,6 +510,7 @@ describe("workflow runtime", () => {
 		expect(() => legacy.selectWorkflow([], "manual", "missing")).toThrow(
 			"Unknown workflow",
 		);
+		await runtime.flush();
 		const restarted = new WorkflowRuntime(home, hooks);
 		expect(restarted.getDefaultWorkflow()).toBe("custom");
 		expect(restarted.selectWorkflow([], "manual").id).toBe("custom");
@@ -500,7 +518,7 @@ describe("workflow runtime", () => {
 		restarted.updateWorkflows(restarted.listWorkflows());
 		expect(restarted.getDefaultWorkflow()).toBe("custom");
 	});
-	it("rejects missing or deleted defaults without changing the saved configuration or existing runs", () => {
+	it("rejects missing or deleted defaults without changing the saved configuration or existing runs", async () => {
 		const { runtime, home } = create();
 		const custom = workflow([agent("work")]);
 		runtime.updateWorkflows([...defaultWorkflows, custom], "custom");
@@ -532,12 +550,11 @@ describe("workflow runtime", () => {
 			workflow([agent("clarify", { askQuestions: true })]),
 		);
 		const promise = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		expect(execute).toHaveBeenCalledTimes(1);
+		await runtime.flush();
 		expect(
-			JSON.parse(
-				readFileSync(join(home, "factory", "runs", `${run.id}.json`), "utf8"),
-			).questions,
+			readJson(join(home, "factory", "runs", `${run.id}.json`)).questions,
 		).toEqual(["Which provider?"]);
 		runtime.answer(run.id, "Use Codex");
 		await promise;
@@ -590,12 +607,12 @@ describe("workflow runtime", () => {
 			]),
 		);
 		const done = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		runtime.answer(
 			run.id,
 			"Please explain this more simply. I have not chosen an option or authorized paid tests.",
 		);
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(run.questions).toEqual([
 				"Use simulated tests or authorize paid tests?",
 			]),
@@ -630,14 +647,15 @@ describe("workflow runtime", () => {
 			workflow([agent("clarify", { askQuestions: true })]),
 		);
 		const first = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		runtime.answer(run.id, "Rephrase this please", "explanation");
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(run.questions).toEqual(["Clearer pending decision?"]),
 		);
 		const batch = run.questionBatchId;
 		await runtime.shutdown();
 		await first;
+		await runtime.flush();
 		const restarted = new WorkflowRuntime(home, {
 			agent: execute,
 			script: async () => ({}),
@@ -646,7 +664,7 @@ describe("workflow runtime", () => {
 		});
 		const restored = restarted.get(run.id);
 		const second = restarted.launch(restored);
-		await vi.waitFor(() => expect(restored.status).toBe("waiting"));
+		await waitFor(() => expect(restored.status).toBe("waiting"));
 		expect(restored.questions).toEqual(["Clearer pending decision?"]);
 		expect(restored.questionBatchId).toBe(batch);
 		expect(restored.answers).toEqual([]);
@@ -675,7 +693,7 @@ describe("workflow runtime", () => {
 			]),
 		);
 		const done = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		runtime.answer(run.id, "Please explain");
 		await done;
 		expect(run.status).toBe("failed");
@@ -691,11 +709,12 @@ describe("workflow runtime", () => {
 			workflow([agent("clarify", { askQuestions: true }), agent("implement")]),
 		);
 		const promise = runtime.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitFor(() => expect(run.status).toBe("waiting"));
 		runtime.stop(run.id);
 		await promise;
 		expect(run.status).toBe("stopped");
 		expect(execute).toHaveBeenCalledTimes(1);
+		await runtime.flush();
 		expect(() => runtime.answer(run.id, "late answer")).toThrow("not waiting");
 	});
 	it("passes only the plan to implementer while retaining review/fixer history", async () => {
@@ -811,10 +830,11 @@ describe("workflow runtime", () => {
 		expect(run.status).toBe("failed");
 		expect(siblingStopped).toBe(true);
 	});
-	it("retains active status and history until startup recovery is launched", () => {
+	it("retains active status and history until startup recovery is launched", async () => {
 		const { runtime, home } = create();
 		const run = start(runtime, workflow([agent("work")]));
 		runtime.log(run, "work", "working");
+		await runtime.flush();
 		const restarted = new WorkflowRuntime(home, {
 			agent: async () => ({}),
 			script: async () => ({}),
@@ -823,7 +843,7 @@ describe("workflow runtime", () => {
 		expect(restarted.get(run.id).status).toBe("running");
 		expect(restarted.get(run.id).events[0]?.message).toBe("working");
 	});
-	it("freezes the workflow per run and applies saved changes only to new runs", () => {
+	it("freezes the workflow per run and applies saved changes only to new runs", async () => {
 		const { runtime } = create();
 		const run = start(
 			runtime,
@@ -837,7 +857,7 @@ describe("workflow runtime", () => {
 			"New name",
 		);
 	});
-	it("rejects dangling edges, duplicate IDs and malformed results", () => {
+	it("rejects dangling edges, duplicate IDs and malformed results", async () => {
 		expect(() => workflow([agent("x", { next: "missing" })])).toThrow(
 			"Unknown step",
 		);
@@ -848,7 +868,7 @@ describe("workflow runtime", () => {
 		).toThrow();
 		expect(() => parseAgentOutput("done")).toThrow("JSON");
 	});
-	it("discards nitpicks and keeps meaningful findings and accepted rejections", () => {
+	it("discards nitpicks and keeps meaningful findings and accepted rejections", async () => {
 		const result = filterReview({
 			summary: "Review",
 			findings: [1, 2, 3].map((rating) => ({
@@ -860,7 +880,7 @@ describe("workflow runtime", () => {
 		});
 		expect(result.findings.map((finding) => finding.rating)).toEqual([2, 3]);
 	});
-	it("resolves MCP inputs without losing object types and rejects missing references", () => {
+	it("resolves MCP inputs without losing object types and rejects missing references", async () => {
 		const { runtime } = create();
 		const run = start(runtime, workflow([agent("work")]));
 		run.outputs.plan = { plan: "Plan", assets: [] };
@@ -931,7 +951,7 @@ it("calls frozen reusable workflows with shared plan/history and human checkpoin
 	runtime.updateWorkflows(definitions);
 	const run = start(runtime, runtime.selectWorkflow([], "manual", "parent"));
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const changed = runtime.listWorkflows();
 	changed.find((item) => item.id === "shared")!.steps = [];
 	// Saved configuration cannot alter the definition captured by an active run.
@@ -949,13 +969,13 @@ it("calls frozen reusable workflows with shared plan/history and human checkpoin
 	]);
 	expect(run.outputs.call).toEqual({ workflow: "shared", completed: true });
 	expect(
-		JSON.parse(
-			readFileSync(join(home, "factory", "runs", `${run.id}.json`), "utf8"),
+		readJson(
+			join(home, "factory", "runs", `${run.id}.json`),
 		).workflowDefinitions.find((item: Workflow) => item.id === "shared")
 			.steps[0].id,
 	).toBe("clarify");
 });
-it("rejects missing/recursive workflow calls and hidden human checkpoints in fanout", () => {
+it("rejects missing/recursive workflow calls and hidden human checkpoints in fanout", async () => {
 	const call = (target: string) => ({
 		id: "call",
 		name: "Call",
@@ -984,7 +1004,7 @@ it("rejects missing/recursive workflow calls and hidden human checkpoints in fan
 		]),
 	).toThrow("Human checkpoints");
 });
-it("upgrades a saved flat Factory without losing role settings or its selected default", () => {
+it("upgrades a saved flat Factory without losing role settings or its selected default", async () => {
 	const { runtime, home } = create();
 	const shared = structuredClone(
 		defaultWorkflows.find((item) => item.id === "factory-pipeline")!,
@@ -998,6 +1018,7 @@ it("upgrades a saved flat Factory without losing role settings or its selected d
 			defaultWorkflow: "factory",
 		}),
 	);
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
@@ -1036,7 +1057,7 @@ it.each([
 ])("recovers nested review loops without rerunning completed work or resetting limits (legacy=%s)", async (legacy) => {
 	const first = vi.fn(async (context: ExecutionContext) => {
 		if (context.step.id === "review") return { approved: false };
-		context.checkpointAgent?.({
+		await context.checkpointAgent?.({
 			runner: "codex",
 			sessionId: "fix-conversation",
 		});
@@ -1079,13 +1100,22 @@ it.each([
 	);
 	const run = start(runtime, runtime.selectWorkflow([], "manual", "parent"));
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(first).toHaveBeenCalledTimes(2));
+	await waitFor(() => expect(first).toHaveBeenCalledTimes(2));
+	await waitFor(() =>
+		expect(
+			run.events.some(
+				(event) =>
+					event.message ===
+					JSON.stringify({ type: "assistant", session_id: "fix-conversation" }),
+			),
+		).toBe(true),
+	);
 	await runtime.shutdown();
 	expect(run.status).toBe("running");
 	expect(run.history.map((item) => item.step)).toEqual(["pipeline/review"]);
 	if (legacy) {
 		delete run.checkpoint;
-		runtime.save(run);
+		await runtime.save(run);
 	}
 	const resumed = vi.fn(async (context: ExecutionContext) => {
 		if (context.step.id === "fix") {
@@ -1101,12 +1131,11 @@ it.each([
 		expect(context.resumeAgent).toBeUndefined();
 		return { approved: true };
 	});
+	await runtime.flush();
 	const restarted = reload(home, { agent: resumed });
 	restarted.resumeAll();
 	restarted.resumeAll(); // Repeated startup recovery cannot launch a duplicate executor.
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(resumed.mock.calls.map(([context]) => context.step.id)).toEqual([
 		"fix",
 		"review",
@@ -1123,7 +1152,7 @@ it("recovers partial fanout with isolated outputs, skipping the finished branch"
 	const { runtime, home } = create({
 		agent: async (context) => {
 			if (context.step.id === "fast") return { value: "retained" };
-			context.checkpointAgent?.({
+			await context.checkpointAgent?.({
 				runner: "claude",
 				sessionId: "slow-conversation",
 			});
@@ -1142,7 +1171,7 @@ it("recovers partial fanout with isolated outputs, skipping the finished branch"
 		]),
 	);
 	void runtime.launch(run);
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(run.history.map((item) => item.step)).toEqual(["parallel/0/fast"]),
 	);
 	await runtime.shutdown();
@@ -1155,11 +1184,10 @@ it("recovers partial fanout with isolated outputs, skipping the finished branch"
 		expect(context.outputs).not.toHaveProperty("fast");
 		return { value: "resumed" };
 	});
+	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook });
 	restarted.resumeAll();
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(agentHook).toHaveBeenCalledTimes(1);
 	expect(restarted.get(run.id).outputs.parallel).toEqual([
 		{ fast: { value: "retained" } },
@@ -1188,7 +1216,7 @@ it.each([
 		]),
 	);
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(question).toHaveBeenCalledTimes(1));
+	await waitFor(() => expect(question).toHaveBeenCalledTimes(1));
 	await runtime.shutdown();
 	expect(run.status).toBe("waiting");
 	const batch = run.questionBatchId;
@@ -1197,15 +1225,16 @@ it.each([
 	if (legacy) {
 		delete run.checkpoint;
 		delete run.questionBatchId;
-		runtime.save(run);
+		await runtime.save(run);
 	}
 	const agentHook = vi.fn(async (context: ExecutionContext) => {
 		expect(context.run.answers[0]?.answer).toBe("Codex");
 		return { questions: [] };
 	});
+	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook, question });
 	restarted.resumeAll();
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(restarted.get(run.id).events.at(-1)?.message).toBe(
 			"Which provider?",
 		),
@@ -1221,9 +1250,7 @@ it.each([
 	expect(question).toHaveBeenCalledTimes(1);
 	expect(agentHook).not.toHaveBeenCalled();
 	restarted.answer(run.id, "Codex");
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(agentHook.mock.calls.map(([context]) => context.step.id)).toEqual([
 		"clarify",
 		"implement",
@@ -1241,8 +1268,9 @@ it("keeps an accepted answer across a crash before the clarifier continues", asy
 		workflow([agent("clarify", { askQuestions: true, maxVisits: 2 })]),
 	);
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	runtime.answer(run.id, "Yes");
+	await runtime.flush();
 	const snapshot = readFileSync(
 		join(home, "factory", "runs", `${run.id}.json`),
 		"utf8",
@@ -1253,11 +1281,10 @@ it("keeps an accepted answer across a crash before the clarifier continues", asy
 		expect(context.run.answers).toHaveLength(1);
 		return { questions: [] };
 	});
+	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook });
 	restarted.resumeAll();
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(agentHook).toHaveBeenCalledTimes(1);
 	expect(restarted.get(run.id).answers).toHaveLength(1);
 });
@@ -1273,8 +1300,9 @@ it("does not resume completed, failed or explicitly stopped runs", async () => {
 	runtime.stop(stopped.id);
 	const completed = start(runtime, workflow([agent("work")]));
 	completed.status = "completed";
-	runtime.save(completed);
+	await runtime.save(completed);
 	const agentHook = vi.fn(async () => ({}));
+	await runtime.flush();
 	const restarted = reload(home, { agent: agentHook });
 	restarted.resumeAll();
 	expect(agentHook).not.toHaveBeenCalled();
@@ -1326,7 +1354,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	]);
 	const run = start(runtime, definition);
 	const launched = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const gate = structuredClone(run.reviewGate!);
 	expect(() =>
 		runtime.decide(run.id, {
@@ -1344,13 +1372,14 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	).toThrow("Explain");
 	await runtime.shutdown();
 	await launched;
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, {
 		script: async () => ({}),
 		...hooks,
 	});
 	restarted.resumeAll();
 	const restored = restarted.get(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("waiting"));
+	await waitFor(() => expect(restored.status).toBe("waiting"));
 	expect(restored.reviewGate).toEqual(gate);
 	expect(order).toEqual(["human-review"]);
 	restarted.decide(run.id, {
@@ -1359,7 +1388,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 		decision: "reject",
 		feedback: "Fix label",
 	});
-	await vi.waitFor(() => expect(restored.reviewGate?.headSha).toBe("second"));
+	await waitFor(() => expect(restored.reviewGate?.headSha).toBe("second"));
 	expect(restored.status).toBe("waiting");
 	expect(() =>
 		restarted.decide(run.id, {
@@ -1373,7 +1402,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 		headSha: "second",
 		decision: "approve",
 	});
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(restored.humanDecisions?.map((x) => x.decision)).toEqual([
 		"reject",
 		"approve",
@@ -1386,7 +1415,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	).toEqual(restored.humanDecisions);
 	expect(restarted.viewState(run.id).settledAt).toBeTruthy();
 });
-it("rejects human review gates hidden in shared fanout workflows", () => {
+it("rejects human review gates hidden in shared fanout workflows", async () => {
 	expect(() =>
 		validateWorkflows([
 			...defaultWorkflows,
@@ -1514,7 +1543,7 @@ it("grants a bounded persisted retry budget only to the exhausted nested step", 
 	});
 	const prior = structuredClone(run.history);
 	runtime.retry(run.id);
-	await vi.waitFor(() => expect(run.status).toBe("failed"));
+	await waitFor(() => expect(run.status).toBe("failed"));
 	expect(run.history).toHaveLength(5);
 	expect(run.iterationLimit).toEqual({
 		step: "pipeline/review",
@@ -1525,12 +1554,13 @@ it("grants a bounded persisted retry budget only to the exhausted nested step", 
 	expect(run.checkpoint?.active?.children?.[0]?.additionalVisits).toEqual({
 		review: 4,
 	});
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, hooks);
 	const restored = restarted.get(run.id);
 	expect(restored.history.slice(0, prior.length)).toEqual(prior);
 	approve = true;
 	restarted.retry(restored.id);
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(
 		restored.history.filter((x) => x.step === "pipeline/review"),
 	).toHaveLength(6);
@@ -1554,7 +1584,7 @@ it.each([
 				issues: [{ path: "/chapters", message: "Missing chapters" }],
 			});
 			if (!recovered) {
-				ctx.checkpointAgent?.({
+				await ctx.checkpointAgent?.({
 					...ctx.resumeAgent!,
 					rejected: {
 						...ctx.resumeAgent!.rejected!,
@@ -1629,13 +1659,16 @@ it.each([
 			],
 		},
 	};
-	runtime.save(run);
+	await runtime.save(run);
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, hooks);
 	const restored = restarted.get(run.id);
 	restarted.retry(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("failed"));
+	await waitFor(() => expect(restored.status).toBe("failed"));
 	expect(calls).toHaveLength(1);
 	// Automatic restart cannot replenish an exhausted budget.
+	await runtime.flush();
+	await restarted.flush();
 	const again = new WorkflowRuntime(home, {
 		...hooks,
 		agent: async (ctx) => {
@@ -1647,7 +1680,7 @@ it.each([
 	expect(again.get(run.id).status).toBe("failed");
 	recovered = true;
 	restarted.retry(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(calls).toHaveLength(2);
 	expect(restored.history.slice(0, retained.length)).toEqual(retained);
 	expect(restored.outputs.implementation).toEqual(run.outputs.implementation);
@@ -1663,7 +1696,10 @@ it.each([
 			calls.push(ctx);
 			expect(ctx.resumeAgent).toBeUndefined();
 			expect(ctx.run.checkpoint?.active?.children?.[0]?.visits.capture).toBe(4);
-			ctx.checkpointAgent?.({ runner: "codex", sessionId: "confirmed-thread" });
+			await ctx.checkpointAgent?.({
+				runner: "codex",
+				sessionId: "confirmed-thread",
+			});
 			return { summary: "Fresh role completed" };
 		},
 		script: async () => ({}),
@@ -1716,10 +1752,11 @@ it.each([
 		history: run.history,
 		answers: run.answers,
 	});
-	runtime.save(run);
+	await runtime.save(run);
+	await runtime.flush();
 	const restarted = new WorkflowRuntime(home, hooks);
 	const restored = restarted.retry(run.id);
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(calls.map((ctx) => ctx.stepKey)).toEqual([key]);
 	expect(restored.history.slice(0, retained.history.length)).toEqual(
 		retained.history,
@@ -1731,6 +1768,7 @@ it.each([
 			event.message.includes("Removed invalid Codex startup checkpoint"),
 		),
 	).toBe(true);
+	await restarted.flush();
 	expect(new WorkflowRuntime(home, hooks).get(run.id).status).toBe("completed");
 });
 
@@ -1819,7 +1857,7 @@ it.each([
 		saved.rejected = { output: { summary: "Keep" }, issues: [], attempts: 1 };
 	const prior = structuredClone(saved);
 	runtime.retry(run.id);
-	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	await waitFor(() => expect(run.status).toBe("completed"));
 	expect(resumed).toEqual(prior);
 	expect(
 		run.events.some((event) =>
@@ -1828,7 +1866,7 @@ it.each([
 	).toBe(false);
 });
 
-it("upgrades only stock CI routing, retaining customized models and routes", () => {
+it("upgrades only stock CI routing, retaining customized models and routes", async () => {
 	const definitions = legacyReviewWorkflows();
 	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
 	shared.steps = shared.steps.filter((x) => x.id !== "after-ci-fix");
@@ -1855,7 +1893,7 @@ it("upgrades only stock CI routing, retaining customized models and routes", () 
 	).toBe("code-review");
 });
 
-it("upgrades handoff into the existing CI fix route without replacing custom routes", () => {
+it("upgrades handoff into the existing CI fix route without replacing custom routes", async () => {
 	const definitions = legacyReviewWorkflows();
 	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
 	const handoff = shared.steps.find((x) => x.id === "handoff")!;
@@ -1935,9 +1973,9 @@ it("recovers a saved nested handoff through its existing fixer without replaying
 			],
 		},
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	runtime.retry(run.id);
-	await vi.waitFor(() => expect(run.status).toBe("failed"));
+	await waitFor(() => expect(run.status).toBe("failed"));
 	expect(called).toEqual(["handoff", "ci-fix", "after-ci-fix"]);
 	expect(run.history[0]).toEqual(history[0]);
 	expect(run.history.slice(1).map((x) => x.step)).toEqual([
@@ -1978,7 +2016,7 @@ it("keeps an unresolved guide assistance wait in progress instead of announcing 
 		url: "https://example.test/ticket",
 	};
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const milestone = track.mock.calls.find(([, receipt]) =>
 		receipt.key.startsWith("handoff:"),
 	)?.[1];
@@ -2065,7 +2103,7 @@ it.each([
 	}
 });
 
-it("upgrades stock coordination limits without changing agent/custom limits", () => {
+it("upgrades stock coordination limits without changing agent/custom limits", async () => {
 	const definitions = legacyReviewWorkflows();
 	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
 	const gate = shared.steps.find((x) => x.id === "review-gate")!;
@@ -2145,11 +2183,11 @@ it("regenerates only the pending guide in a nested pipeline without approval or 
 	runtime.updateWorkflows([...defaultWorkflows, child, parent]);
 	const run = start(runtime, parent);
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const original = run.reviewGate!;
 	const history = run.history.map((h) => h.step);
 	await runtime.refreshGuide(run.id, original.id);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(order).toEqual([
 		"capture",
 		"guide",
@@ -2261,7 +2299,7 @@ it("continues a finished simple run once with the same conversation and persists
 		userPrompt: "Original",
 		agent: { runner: "codex", sessionId: "native-thread" },
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	runtime.continueSimple(run.id, "Follow up");
 	expect(run.status).toBe("running");
 	expect(() => runtime.continueSimple(run.id, "Duplicate")).toThrow();
@@ -2273,9 +2311,9 @@ it("continues a finished simple run once with the same conversation and persists
 			tool: async () => ({}),
 		}).chatMessages(run.id),
 	).toEqual([message]);
-	await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+	await waitFor(() => expect(finish).toBeTypeOf("function"));
 	finish();
-	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	await waitFor(() => expect(run.status).toBe("completed"));
 	expect(run.workspace).toBe(home);
 	expect(run.input).toBe("Original");
 });
@@ -2304,8 +2342,9 @@ it("keeps legacy run definitions stable on load and audits contract migration at
 			},
 		},
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	const definitions = structuredClone(run.workflowDefinitions);
+	await runtime.flush();
 	const restarted = reload(home, {
 		agent: async (context) => {
 			expect(context.resumeAgent?.rejected).toMatchObject({
@@ -2318,9 +2357,7 @@ it("keeps legacy run definitions stable on load and audits contract migration at
 	});
 	expect(restarted.get(run.id).workflowDefinitions).toEqual(definitions);
 	restarted.retry(run.id);
-	await vi.waitFor(() =>
-		expect(restarted.get(run.id).status).toBe("completed"),
-	);
+	await waitFor(() => expect(restarted.get(run.id).status).toBe("completed"));
 	expect(restarted.get(run.id).contractVersion).toBe(2);
 	expect(
 		restarted
@@ -2332,7 +2369,7 @@ it("keeps legacy run definitions stable on load and audits contract migration at
 	expect(restarted.get(run.id).workflowDefinitions).toEqual(definitions);
 });
 
-it("upgrades stock implementation blockers without replacing custom instructions or role settings", () => {
+it("upgrades stock implementation blockers without replacing custom instructions or role settings", async () => {
 	const saved = structuredClone(defaultWorkflows);
 	const shared = saved.find((item) => item.id === "factory-pipeline")!;
 	const implementation = shared.steps.find((item) => item.id === "implement")!;
@@ -2379,9 +2416,7 @@ it("runs nested intensive fanout at limit one and cancels queued leaves without 
 	]);
 	const run = start(runtime, definition);
 	const done = runtime.launch(run);
-	await vi.waitFor(() =>
-		expect(capacityRunStatus(run)).toBe("capacity-waiting"),
-	);
+	await waitFor(() => expect(capacityRunStatus(run)).toBe("capacity-waiting"));
 	expect(Object.keys(run.capacityLeaves!)).toEqual([
 		"parallel/0/a",
 		"parallel/1/b",
@@ -2441,7 +2476,7 @@ it.each([
 		.steps.find((s) => s.tool === "handoff")!.computeIntensive = true;
 	const run = start(runtime, custom);
 	run.workflowDefinitions = structuredClone(saved);
-	runtime.save(run);
+	await runtime.save(run);
 	const frozen = structuredClone(run);
 	const path = join(home, "factory", "workflows.json");
 	writeFileSync(
@@ -2553,13 +2588,13 @@ it.each([
 	if (passiveTool === "handoff")
 		run.workflow.steps[0]!.groups![1]![0]!.computeIntensive = true;
 	const done = runtime.launch(run);
-	await vi.waitFor(() => expect(script).toHaveBeenCalledOnce());
-	await vi.waitFor(() =>
+	await waitFor(() => expect(script).toHaveBeenCalledOnce());
+	await waitFor(() =>
 		expect(run.capacityLeaves).toMatchObject({
 			"parallel/1/ci": { phase: "waiting-ci" },
 		}),
 	);
-	await vi.waitFor(
+	await waitFor(
 		async () => expect((await capacity.snapshot()).active).toBe(0),
 		{ timeout: 10000 },
 	);
@@ -2618,7 +2653,7 @@ it("upgrades a coherent screenshot recipe to QA atomically, keeps custom behavio
 	};
 	const run = start(runtime, legacyDefinition);
 	const frozen = structuredClone(run.workflow);
-	runtime.save(run);
+	await runtime.save(run);
 	const restored = new WorkflowRuntime(
 		runtime.directory.replace(/\/factory$/, ""),
 		{
@@ -2680,13 +2715,14 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	const run = start(runtime, definition);
 	run.outputs["visual-scope"] = { changed: false, areas: [] };
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const prefix = structuredClone(run.history);
 	const frozen = structuredClone(run.workflow);
 	const batch = run.questionBatchId;
 	const recommendations = structuredClone(run.questionRecommendations);
 	await runtime.shutdown();
 	await execution;
+	await runtime.flush();
 	const restored = new WorkflowRuntime(home, {
 		tool,
 		agent: agentHook,
@@ -2695,7 +2731,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	});
 	const same = restored.get(run.id);
 	restored.resumeAll();
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(tool).toHaveBeenCalledTimes(2);
 		expect(same.events.at(-1)?.message).toBe(same.questions.join("\n"));
 		expect(same.status).toBe("waiting");
@@ -2708,7 +2744,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	expect(question).toHaveBeenCalledTimes(1);
 	expect(agentHook).toHaveBeenCalledTimes(2);
 	restored.answer(same.id, "Access still unavailable; please approve anyway");
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(
 			same.status === "waiting" && same.history.length > prefix.length,
 		).toBe(true),
@@ -2722,7 +2758,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 		same.id,
 		"Account restored; execute CLI save with fixture 42",
 	);
-	await vi.waitFor(() => expect(same.status).toBe("completed"));
+	await waitFor(() => expect(same.status).toBe("completed"));
 	expect(same.answers).toHaveLength(2);
 	expect(
 		agentHook.mock.calls.filter(([c]) => c.step.id === "capture"),
@@ -2763,7 +2799,7 @@ it.each([
 		]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const batch = run.questionBatchId;
 	await runtime.shutdown();
 	await execution;
@@ -2771,10 +2807,11 @@ it.each([
 	else if (changed === "removed") output.questionRecommendations = [];
 	else output.questionRecommendations[0]![changed] = "Updated guidance";
 	const agentHook = vi.fn(async () => ({}));
+	await runtime.flush();
 	const restarted = reload(home, { tool, question, agent: agentHook });
 	const restored = restarted.get(run.id);
 	restarted.resumeAll();
-	await vi.waitFor(() => expect(question).toHaveBeenCalledTimes(2));
+	await waitFor(() => expect(question).toHaveBeenCalledTimes(2));
 	expect(restored.status).toBe("waiting");
 	expect(restored.questionBatchId).not.toBe(batch);
 	expect(restored.questions).toEqual(output.questions);
@@ -2834,9 +2871,9 @@ it.each([
 		]),
 	);
 	const first = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	runtime.answer(run.id, "Please explain", "explanation");
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(run.status).toBe("waiting");
 		expect(run.questions).toEqual(["Can you restore deployment access?"]);
 	});
@@ -2848,6 +2885,7 @@ it.each([
 	else if (changed === "removed") output.questionRecommendations = [];
 	else if (changed === "answer" || changed === "reason")
 		output.questionRecommendations[0]![changed] = "Updated guidance";
+	await runtime.flush();
 	const restarted = reload(home, { tool, agent: execute, question });
 	const restored = restarted.get(run.id);
 	if (changed === "legacy") {
@@ -2864,7 +2902,7 @@ it.each([
 		output.questions = ["Which deployment account is available?"];
 	}
 	const second = restarted.launch(restored);
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(tool).toHaveBeenCalledTimes(2);
 		expect(restored.status).toBe("waiting");
 	});
@@ -2897,7 +2935,7 @@ it.each([
 	await restarted.shutdown();
 });
 
-it("upgrades the original stock end-at-handoff recipe with QA and its human checkpoint together", () => {
+it("upgrades the original stock end-at-handoff recipe with QA and its human checkpoint together", async () => {
 	const saved = structuredClone(defaultWorkflows);
 	const pipeline = saved.find((w) => w.id === "factory-pipeline")!;
 	for (const legacy of legacyScreenshotSteps)
@@ -2917,7 +2955,7 @@ it("upgrades the original stock end-at-handoff recipe with QA and its human chec
 	expect(upgradeWorkflows(upgraded)).toEqual(upgraded);
 });
 
-it("preserves a screenshot recipe with customized result handling or nonvisual routing", () => {
+it("preserves a screenshot recipe with customized result handling or nonvisual routing", async () => {
 	for (const customize of [
 		(step: Workflow["steps"][number]) => {
 			step.json = false;
@@ -2974,15 +3012,19 @@ it("assigns new identities to repeated question batches and labels ticket sugges
 		server: "taskbot",
 	};
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	const batch = run.questionBatchId;
 	expect(run.answers).toEqual([]);
-	expect(track.mock.calls.at(-1)?.[1].body).toContain("Suggested answer: Wait");
+	await waitFor(() =>
+		expect(track.mock.calls.at(-1)?.[1].body).toContain(
+			"Suggested answer: Wait",
+		),
+	);
 	expect(track.mock.calls.at(-1)?.[1].body).toContain(
 		"explicit reply or Send answers",
 	);
 	runtime.answer(run.id, "Wait");
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(run.questionBatchId).not.toBe(batch);
 	expect(run.answers).toHaveLength(1);
 	runtime.stop(run.id);
@@ -3032,8 +3074,9 @@ it("recovers saved QA waits into the fixer while retaining completed roles and h
 		questions: run.questions,
 	};
 	const originalHistory = structuredClone(run.history);
-	runtime.save(run);
+	await runtime.save(run);
 	await runtime.shutdown();
+	await runtime.flush();
 	const restored = new WorkflowRuntime(home, {
 		agent: async (ctx) => {
 			called.push(ctx.step.id);
@@ -3046,7 +3089,7 @@ it("recovers saved QA waits into the fixer while retaining completed roles and h
 		script: async () => ({}),
 	});
 	restored.resumeAll();
-	await vi.waitFor(() => expect(restored.get(run.id).status).toBe("completed"));
+	await waitFor(() => expect(restored.get(run.id).status).toBe("completed"));
 	expect(called).toEqual(["visual-fix"]);
 	expect(restored.get(run.id).questions).toEqual([]);
 	expect(restored.get(run.id).history.slice(0, originalHistory.length)).toEqual(
@@ -3118,7 +3161,7 @@ it.each([
 		workflow([agent(fixer, { askQuestions: false, next: "end" })]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(calls).toEqual([fixer]);
 	runtime.answer(run.id, "External access restored");
 	await execution;
@@ -3152,7 +3195,7 @@ it.each([
 			const output = {
 				questions: ctx.run.answers.length === 0 ? ["Restore test access?"] : [],
 			};
-			ctx.checkpointAgent?.({
+			await ctx.checkpointAgent?.({
 				...conversation,
 				idleRetries: 1,
 				result: {
@@ -3178,22 +3221,21 @@ it.each([
 		]),
 	);
 	void runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	await runtime.shutdown();
+	await runtime.flush();
 	const restarted = reload(home, hooks);
 	restarted.resumeAll();
 	const recovered = restarted.get(run.id);
-	await vi.waitFor(() =>
-		expect(restarted.pendingAnswers.has(run.id)).toBe(true),
-	);
+	await waitFor(() => expect(restarted.pendingAnswers.has(run.id)).toBe(true));
 	expect(calls).toEqual(["completed", fixer]);
 	restarted.answer(run.id, "Please explain. I have not decided.");
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(recovered.questions).toEqual([
 			"Should I retry with the restored test account?",
 		]),
 	);
-	expect(recovered.status).toBe("waiting");
+	await waitFor(() => expect(recovered.status).toBe("waiting"));
 	expect(recovered.outputs.receipt).toBeUndefined();
 	expect(resumes).toEqual([undefined, undefined]);
 	expect(recovered.answers).toEqual([]);
@@ -3201,7 +3243,7 @@ it.each([
 		conversation.sessionId,
 	);
 	restarted.answer(run.id, "Use the restored test account.");
-	await vi.waitFor(() => expect(recovered.status).toBe("completed"));
+	await waitFor(() => expect(recovered.status).toBe("completed"));
 	expect(calls).toEqual([
 		"completed",
 		fixer,
@@ -3250,7 +3292,7 @@ it.each([
 		]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(calls).toEqual(["review"]);
 	expect(run.outputs.gate).toMatchObject({ approved: false });
 	runtime.answer(run.id, "Deployment restored");
@@ -3293,17 +3335,18 @@ it.each([
 		]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(question).toHaveBeenCalledTimes(1));
+	await waitFor(() => expect(question).toHaveBeenCalledTimes(1));
 	const batch = run.questionBatchId;
 	const history = structuredClone(run.history);
 	const frozen = structuredClone(run.workflow);
 	await runtime.shutdown();
 	await execution;
 	if (changed) output.questions = ["Which deployment account is available?"];
+	await runtime.flush();
 	const restarted = reload(home, { tool, question, agent: agentHook });
 	const restored = restarted.get(run.id);
 	restarted.resumeAll();
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		expect(tool).toHaveBeenCalledTimes(2);
 		expect(restored.status).toBe("waiting");
 		expect(restored.events.at(-1)?.message).toBe(output.questions.join("\n"));
@@ -3317,7 +3360,7 @@ it.each([
 	expect(restored.answers).toEqual([]);
 	expect(agentHook).toHaveBeenCalledTimes(1);
 	restarted.answer(restored.id, "Deployment access restored");
-	await vi.waitFor(() => expect(restored.status).toBe("completed"));
+	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(agentHook.mock.calls.map(([ctx]) => ctx.step.id)).toEqual([
 		"visual-review",
 		"visual-fix",
@@ -3386,7 +3429,7 @@ it("waits for CI assistance and retries the existing fixer after an answer witho
 		]),
 	);
 	const execution = runtime.launch(run);
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 	expect(calls).toEqual(["ci-fix"]);
 	runtime.answer(run.id, "Build infrastructure restored");
 	await execution;

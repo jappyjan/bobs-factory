@@ -65,19 +65,29 @@ describe("PersistenceManager atomic writes", () => {
 		expect(loaded).toEqual(sampleState);
 	});
 
+	it("captures a checkpoint before asynchronous directory and backup work", async () => {
+		const state = structuredClone(sampleState);
+		const saved = manager.saveEdgeWorkerState(state);
+		state.issueRepositoryCache!["issue-1"] = ["later-change"];
+		await saved;
+		expect((await manager.loadEdgeWorkerState())?.issueRepositoryCache).toEqual(
+			sampleState.issueRepositoryCache,
+		);
+	});
+
 	it("leaves no temp file behind after a save", async () => {
 		await manager.saveEdgeWorkerState(sampleState);
 		await manager.saveEdgeWorkerState(sampleState);
 		const files = await readdir(dir);
-		expect(files).toEqual(["edge-worker-state.json"]);
+		expect(files.sort()).toEqual(["chunks", "edge-worker-state.json"]);
 	});
 
 	it("persists complete, parseable JSON", async () => {
 		await manager.saveEdgeWorkerState(sampleState);
 		const raw = await readFile(join(dir, "edge-worker-state.json"), "utf8");
 		const parsed = JSON.parse(raw);
-		expect(parsed.version).toBe(PERSISTENCE_VERSION);
-		expect(parsed.state).toEqual(sampleState);
+		expect(parsed.summary.version).toBe(PERSISTENCE_VERSION);
+		expect(await manager.loadEdgeWorkerState()).toEqual(sampleState);
 	});
 
 	it("preserves native JSON encoding for transcript entries and mappings", async () => {
@@ -124,7 +134,7 @@ describe("PersistenceManager atomic writes", () => {
 			agentSessionEntries: { session: entries as never },
 		});
 		expect(entriesAtYield).toBeGreaterThan(0);
-		expect(entriesAtYield).toBeLessThan(entries.length);
+		expect(entriesAtYield).toBe(entries.length);
 		const loaded = await manager.loadEdgeWorkerState();
 		expect(loaded?.agentSessionEntries?.session).toHaveLength(entries.length);
 		expect(loaded?.agentSessionEntries?.session.at(-1)).toEqual({ content });
@@ -183,6 +193,6 @@ describe("PersistenceManager atomic writes", () => {
 		expect(loaded).toEqual(sampleState);
 		// The next save must overwrite the stale temp file, not trip over it.
 		await manager.saveEdgeWorkerState(sampleState);
-		expect(existsSync(join(dir, "edge-worker-state.json.tmp"))).toBe(false);
+		expect(await manager.loadEdgeWorkerState()).toEqual(sampleState);
 	});
 });
