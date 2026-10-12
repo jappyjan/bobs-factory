@@ -27,7 +27,9 @@ import { SessionSemaphore } from "../src/RunnerConcurrency.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 
 const roots: string[] = [];
-afterEach(() => {
+const runtimes: WorkflowRuntime[] = [];
+afterEach(async () => {
+	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
 	for (const root of roots.splice(0))
 		rmSync(root, { recursive: true, force: true });
 });
@@ -40,6 +42,7 @@ function fixture(hooks: Partial<RuntimeHooks> = {}) {
 		script: async () => ({}),
 		...hooks,
 	});
+	runtimes.push(runtime);
 	return { runtime, home, path: join(home, "factory", "workflows.json") };
 }
 const legacy = () =>
@@ -313,6 +316,10 @@ it("blocks exact accepted dependencies, keeps private forks eligible, and preser
 	runtime.setWorkflowEnabled("wait", false);
 	await execution;
 	expect(run.status).toBe("blocked");
+	expect(runtime.listRuns().find((item) => item.id === run.id)).toMatchObject({
+		status: "blocked",
+		workflowBlock: run.workflowBlock,
+	});
 	expect(run.questions).toEqual(["Which choice?"]);
 	expect(() => runtime.answer(run.id, "A")).toThrow("disabled");
 	runtime.setWorkflowEnabled("wait", true);
@@ -320,6 +327,12 @@ it("blocks exact accepted dependencies, keeps private forks eligible, and preser
 	const restarted = new WorkflowRuntime(home, (runtime as any).hooks);
 	restarted.resumeAll();
 	expect(restarted.get(run.id).status).toBe("blocked");
+	expect(restarted.listRuns().find((item) => item.id === run.id)).toMatchObject(
+		{
+			status: "blocked",
+			workflowBlock: restarted.get(run.id).workflowBlock,
+		},
+	);
 	expect(restarted.get(run.id).workflow).toEqual(accepted);
 	restarted.resume(run.id);
 	await vi.waitFor(() => expect(restarted.get(run.id).status).toBe("waiting"));
@@ -495,7 +508,7 @@ it("saves dashboard-resolved agent preferences without admitting launch-field ed
 	}
 });
 
-it("retains accepted admission preferences through setup and later upgrades", () => {
+it("retains accepted admission preferences through setup and later upgrades", async () => {
 	const { home, runtime } = fixture();
 	runtime.updatePreferences("simple", {
 		native: { runner: "codex", model: "accepted-model" },
@@ -522,7 +535,7 @@ it("retains accepted admission preferences through setup and later upgrades", ()
 	expect(run.runner).toBe("codex");
 	expect(run.model).toBe("accepted-model");
 	delete run.workflow.chat;
-	runtime.save(run);
+	await runtime.save(run);
 	const restored = new WorkflowRuntime(home, (runtime as any).hooks);
 	expect(restored.get(run.id).workflow.chat).toBeUndefined();
 	expect(restored.get(run.id).model).toBe("accepted-model");

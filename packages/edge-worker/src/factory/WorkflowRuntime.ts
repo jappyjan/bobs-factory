@@ -14,6 +14,11 @@ import type {
 	WorkflowTrigger,
 	WorkflowTriggerOrigin,
 } from "bobs-factory-core";
+import {
+	immutableJson,
+	immutableTranscript,
+	JsonSnapshotStore,
+} from "bobs-factory-core";
 import type {
 	CapacityOptions,
 	CapacityRequest,
@@ -212,7 +217,7 @@ export interface RunViewState {
 	seenAt?: string;
 }
 
-import { cleanupVideoEvidence } from "./Video.js";
+import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
 	workflowBlock?: WorkflowBlock;
@@ -356,9 +361,9 @@ export interface ExecutionContext {
 	log: (message: string, source?: RunEvent["source"]) => void;
 	evidenceDir: string;
 	resumeAgent?: AgentCheckpoint;
-	checkpointAgent?: (agent: AgentCheckpoint) => void;
+	checkpointAgent?: (agent: AgentCheckpoint) => void | Promise<void>;
 	/** Persist per-repository side effects before the whole step completes. */
-	save?: () => void;
+	save?: () => void | Promise<void>;
 	allowUnchangedRepository?: boolean;
 }
 export interface RuntimeHooks {
@@ -421,6 +426,15 @@ export class WorkflowRuntime {
 	private viewStates: Record<string, RunViewState> = {};
 	private chats = new Map<string, ChatMessage[]>();
 	readonly directory: string;
+	private snapshots: JsonSnapshotStore;
+	private pendingSaves = new Map<string, Promise<void>>();
+	private activitySaves = new Map<string, Promise<void>>();
+	private dirtyActivity = new Set<string>();
+	private legacyRuns = new Set<string>();
+	private summaries = new Map<
+		string,
+		Record<string, any> & { id: string; createdAt: string }
+	>();
 	get executionProfiles(): ExecutionProfileStore {
 		return new ExecutionProfileStore(this.directory);
 	}
@@ -435,6 +449,7 @@ export class WorkflowRuntime {
 		private hooks: RuntimeHooks,
 	) {
 		this.directory = join(home, "factory");
+		this.snapshots = new JsonSnapshotStore(join(this.directory, "run-chunks"));
 		mkdirSync(join(this.directory, "runs"), { recursive: true });
 		const settings = join(this.directory, "settings.json");
 		if (existsSync(settings))
@@ -449,26 +464,48 @@ export class WorkflowRuntime {
 		this.defaultWorkflow = this.catalog.defaultWorkflow();
 		for (const filename of readdirSync(join(this.directory, "runs"))) {
 			if (!filename.endsWith(".json")) continue;
-			const run: FactoryRun = JSON.parse(
-				readFileSync(join(this.directory, "runs", filename), "utf8"),
-			);
+			const path = join(this.directory, "runs", filename);
+			const stored = JSON.parse(readFileSync(path, "utf8"));
+			const loaded =
+				stored.format === "bobs-factory-json-snapshot-1"
+					? this.snapshots.load<FactoryRun>(path)
+					: undefined;
+			const run: FactoryRun = loaded?.value ?? stored;
+			if (!loaded) this.legacyRuns.add(run.id);
+			if (loaded)
+				this.summaries.set(
+					run.id,
+					loaded.summary as Record<string, any> & {
+						id: string;
+						createdAt: string;
+					},
+				);
 			run.workflow = WorkflowSchema.parse(run.workflow);
 			if (run.recoveryWorkflow)
 				run.recoveryWorkflow = WorkflowSchema.parse(run.recoveryWorkflow);
 			// Process-owned operations must reacquire after restart. Legacy broad
 			// ownership cannot block restored passive parent/CI frames.
-			restoreDelivery(run);
+			if (["running", "waiting", "interrupted"].includes(run.status))
+				restoreDelivery(run);
 
 			// Persisted definitions are immutable. Legacy contract migration occurs
 			// explicitly at retry/start, preserving graph positions and native IDs.
 
+			immutableTranscript(run.events);
+			// Completed receipts remain independent of mutable live outputs.
+			immutableTranscript(run.history);
 			this.runs.set(run.id, run);
 			if (this.catalog.getBlock(run.id)) {
 				run.workflowBlock = this.catalog.getBlock(run.id);
 				run.status = "blocked";
 			}
 		}
-		cleanupVideoEvidence(join(this.directory, "evidence"), this.runs.values());
+		cleanupVideoEvidence(
+			join(this.directory, "evidence"),
+			this.runs.values(),
+			Date.now(),
+			(run) => this.summaries.get(run.id)?.videoAssets,
+		);
 	}
 
 	chatMessages(id: string): ChatMessage[] {
@@ -932,21 +969,26 @@ export class WorkflowRuntime {
 			run.activitySteps.at(-1)?.step !== step
 		)
 			run.activitySteps.push({ at, step });
-		run.events.push({
-			call,
-			source,
-			sequence: (run.events.at(-1)?.sequence ?? run.events.length - 1) + 1,
-			at,
-			step,
-			message: message.slice(-20000),
-		});
+		run.events.push(
+			immutableJson({
+				call,
+				source,
+				sequence: (run.events.at(-1)?.sequence ?? run.events.length - 1) + 1,
+				at,
+				step,
+				message: message.slice(-20000),
+			}),
+		);
 		if (run.events.length > 1500)
 			run.events.splice(0, run.events.length - 1500);
 		if (source === "agent") {
 			// A native turn can emit thousands of tool events in one burst. Persist
 			// activity together so repeated full-run writes cannot starve HTTP I/O.
 			if (!this.pendingActivitySaves.has(run.id)) {
-				const timer = setTimeout(() => this.save(run), 250);
+				const timer = setTimeout(() => {
+					this.pendingActivitySaves.delete(run.id);
+					void this.saveActivity(run).catch(() => {});
+				}, 250);
 				timer.unref();
 				this.pendingActivitySaves.set(run.id, timer);
 			}
@@ -965,7 +1007,10 @@ export class WorkflowRuntime {
 		this.controllers.set(run.id, controller);
 		const execution = this.execute(run, controller, task);
 		this.executions.set(run.id, execution);
-		void execution.finally(() => this.executions.delete(run.id));
+		void execution.then(
+			() => this.executions.delete(run.id),
+			() => this.executions.delete(run.id),
+		);
 		return execution;
 	}
 	private async execute(
@@ -974,6 +1019,8 @@ export class WorkflowRuntime {
 		task?: (signal: AbortSignal) => Promise<void>,
 	): Promise<void> {
 		try {
+			await this.flush(run.id);
+			controller.signal.throwIfAborted();
 			this.requireRunAvailable(run);
 			if (run.contractVersion !== 2) {
 				if (run.contractVersion !== undefined && run.contractVersion !== 1)
@@ -1003,7 +1050,7 @@ export class WorkflowRuntime {
 				await this.hooks.simple(run, controller.signal);
 			} else {
 				run.checkpoint ??= this.recoverCheckpoint(run);
-				this.save(run);
+				await this.save(run);
 				await this.graph(
 					run,
 					(run.recoveryWorkflow ?? run.workflow).steps,
@@ -1067,7 +1114,7 @@ export class WorkflowRuntime {
 					"Private auth-cache cleanup failed; retained state needs operator cleanup.",
 				);
 			}
-			this.save(run);
+			await this.save(run);
 			if (
 				!this.shuttingDown &&
 				["completed", "failed", "stopped"].includes(run.status)
@@ -1127,7 +1174,7 @@ export class WorkflowRuntime {
 		try {
 			if (!run.ticketReference || !this.hooks.track) return;
 			recordTicketMilestone(run, milestone);
-			this.save(run);
+			await this.save(run);
 			// The outbox owns retries and deduplication. External tracking never
 			// holds a graph step, execution capacity, or repository reservation.
 			void Promise.resolve(this.hooks.track(run, milestone)).catch((error) =>
@@ -1194,7 +1241,7 @@ export class WorkflowRuntime {
 			}
 		} finally {
 			releaseDelivery(context.run, "Operation settled", key);
-			this.save(context.run);
+			await this.save(context.run);
 		}
 	}
 	async retryTracking(id: string): Promise<void> {
@@ -1220,7 +1267,8 @@ export class WorkflowRuntime {
 			if (!checkpoint.active) {
 				checkpoint.visits[step.id] = (checkpoint.visits[step.id] ?? 0) + 1;
 				checkpoint.active = { phase: "executing" };
-				this.save(run);
+				await this.save(run);
+				signal.throwIfAborted();
 			}
 			const state = checkpoint.active;
 			const count = checkpoint.visits[step.id]!;
@@ -1354,7 +1402,7 @@ export class WorkflowRuntime {
 					this.log(run, key, execution?.redact(message) ?? message, source),
 				evidenceDir: join(this.directory, "evidence", run.id),
 				resumeAgent: state.agent,
-				checkpointAgent: (agent) => {
+				checkpointAgent: async (agent) => {
 					state.agent = agent;
 					if (agent.sessionId && agent.sessionId !== "pending") {
 						checkpoint.agentSessions ??= {};
@@ -1363,7 +1411,8 @@ export class WorkflowRuntime {
 							sessionId: agent.sessionId,
 						};
 					}
-					this.save(run);
+					await this.save(run);
+					signal.throwIfAborted();
 				},
 				save: () => this.save(run),
 			};
@@ -1389,7 +1438,8 @@ export class WorkflowRuntime {
 			let output: unknown = outputs[step.id];
 			if (state.phase === "executing") {
 				state.attemptId = beginStepAttempt(context);
-				this.save(run);
+				await this.save(run);
+				signal.throwIfAborted();
 				try {
 					if (step.tool === "review-gate" && step.review) {
 						const fanoutKey = `${prefix}${step.review.fanout}`;
@@ -1507,7 +1557,8 @@ export class WorkflowRuntime {
 						// Also fill older resumed branches, preserving reviews established within them.
 						for (const child of state.children)
 							child.reviewKey ??= checkpoint.reviewKey;
-						this.save(run);
+						await this.save(run);
+						signal.throwIfAborted();
 						const branchController = new AbortController();
 						const cancelBranches = () => branchController.abort(signal.reason);
 						signal.addEventListener("abort", cancelBranches, { once: true });
@@ -1597,7 +1648,8 @@ export class WorkflowRuntime {
 						}
 						state.children ??= [this.newCheckpoint(definition.steps)];
 						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
-						this.save(run);
+						await this.save(run);
+						signal.throwIfAborted();
 						await this.graph(
 							run,
 							definition.steps,
@@ -1625,7 +1677,8 @@ export class WorkflowRuntime {
 										? "waiting-human"
 										: "executing",
 						};
-						this.save(run);
+						await this.save(run);
+						signal.throwIfAborted();
 						try {
 							const execute = async () => {
 								this.requireRunAvailable(run);
@@ -1741,7 +1794,8 @@ export class WorkflowRuntime {
 						} finally {
 							if (!this.shuttingDown || run.status === "stopped")
 								delete run.capacityLeaves[key];
-							this.save(run);
+							await this.save(run);
+							signal.throwIfAborted();
 						}
 					}
 					signal.throwIfAborted();
@@ -1805,12 +1859,14 @@ export class WorkflowRuntime {
 					outputs[step.id] = output;
 					if (step.reviewContract && step.reviewContract !== "inventory-v1")
 						run.outputs[key] = output;
-					run.history.push({
-						step: key,
-						output,
-						at: new Date().toISOString(),
-						...(state.call ? { call: state.call } : {}),
-					});
+					run.history.push(
+						immutableJson({
+							step: key,
+							output,
+							at: new Date().toISOString(),
+							...(state.call ? { call: state.call } : {}),
+						}),
+					);
 					state.phase = "result";
 					finishStepAttempt(
 						context,
@@ -1822,7 +1878,8 @@ export class WorkflowRuntime {
 								? "blocked"
 								: "completed",
 					);
-					this.save(run);
+					await this.save(run);
+					signal.throwIfAborted();
 				} catch (error) {
 					finishStepAttempt(
 						context,
@@ -1844,7 +1901,8 @@ export class WorkflowRuntime {
 				output = outputs[step.id] = await this.hooks.tool(context);
 				// Keep the restored wait until its questions and suggestions are compared
 				// below. Gate revalidation alone does not create a new question batch.
-				this.save(run);
+				await this.save(run);
+				signal.throwIfAborted();
 			}
 			if (
 				step.tool === "visual-gate" &&
@@ -1867,7 +1925,8 @@ export class WorkflowRuntime {
 					externalPending: true,
 				};
 				outputs[step.id] = output;
-				this.save(run);
+				await this.save(run);
+				signal.throwIfAborted();
 			}
 			if (
 				step.tool === "draft-pr" ||
@@ -1999,7 +2058,8 @@ export class WorkflowRuntime {
 						context,
 					);
 				checkpoint.active = undefined;
-				this.save(run);
+				await this.save(run);
+				signal.throwIfAborted();
 				continue;
 			}
 			if (
@@ -2075,7 +2135,8 @@ export class WorkflowRuntime {
 				if (checkpoint.active)
 					checkpoint.visits[reviewer.id] =
 						(checkpoint.visits[reviewer.id] ?? 0) + 1;
-				this.save(run);
+				await this.save(run);
+				signal.throwIfAborted();
 				continue;
 			}
 			if (
@@ -2226,7 +2287,8 @@ export class WorkflowRuntime {
 					key,
 					"Requirements changed the architecture; reviewing a new proposal before further implementation.",
 				);
-				this.save(run);
+				await this.save(run);
+				signal.throwIfAborted();
 				continue;
 			}
 			if (step.tool === "architecture-decision") {
@@ -2272,7 +2334,8 @@ export class WorkflowRuntime {
 							digest: proposal.digest,
 							reason: proposal.bypassReason,
 						};
-						this.save(run);
+						await this.save(run);
+						signal.throwIfAborted();
 					} else {
 						proposal.status = "pending";
 						run.architectureGate = {
@@ -2281,7 +2344,8 @@ export class WorkflowRuntime {
 							stepKey: key,
 							planOutput,
 						};
-						this.save(run);
+						await this.save(run);
+						signal.throwIfAborted();
 					}
 				}
 				if (proposal.status === "pending") {
@@ -2338,7 +2402,8 @@ export class WorkflowRuntime {
 							);
 						checkpoint.current = target;
 						checkpoint.active = undefined;
-						this.save(run);
+						await this.save(run);
+						signal.throwIfAborted();
 						continue;
 					}
 				} else if (proposal.status === "routine") output = outputs[step.id];
@@ -2384,7 +2449,8 @@ export class WorkflowRuntime {
 							}
 						: undefined;
 					if (state.agent) checkpoint.visits[step.id] = count + 1;
-					this.save(run);
+					await this.save(run);
+					signal.throwIfAborted();
 					continue;
 				}
 			}
@@ -2396,7 +2462,8 @@ export class WorkflowRuntime {
 					);
 				checkpoint.current = next;
 				checkpoint.active = undefined;
-				this.save(run);
+				await this.save(run);
+				signal.throwIfAborted();
 				continue;
 			}
 			if (step.tool === "human-review") {
@@ -2426,7 +2493,9 @@ export class WorkflowRuntime {
 								(output as HumanDecision).reviewId,
 					)
 				)
-					run.history.push({ step: key, output, at: new Date().toISOString() });
+					run.history.push(
+						immutableJson({ step: key, output, at: new Date().toISOString() }),
+					);
 			}
 			checkpoint.current = this.nextStep(steps, step, output);
 			checkpoint.active = undefined;
@@ -2483,7 +2552,7 @@ export class WorkflowRuntime {
 				// another execution of the blocked fixer/capture/implementation role.
 				const request = state.questionExplanation;
 				run.status = "running";
-				this.save(run);
+				await this.save(run);
 				const explained = normalizeQuestionResult(
 					await this.hooks.agent({
 						...context,
@@ -2512,9 +2581,9 @@ export class WorkflowRuntime {
 							answers: structuredClone(run.answers),
 						},
 						resumeAgent: request.agent,
-						checkpointAgent: (agent) => {
+						checkpointAgent: async (agent) => {
 							request.agent = agent;
-							this.save(run);
+							await this.save(run);
 						},
 					}),
 				);
@@ -2547,7 +2616,7 @@ export class WorkflowRuntime {
 				// ticket receipt; a revised proposal gets a new batch on the next wait.
 				if (context.step.tool !== "architecture-decision")
 					run.questionBatchId = randomUUID();
-				this.save(run);
+				await this.save(run);
 			}
 			run.status = "waiting";
 			const waiting = new Promise<void>((resolve, reject) =>
@@ -2725,7 +2794,10 @@ export class WorkflowRuntime {
 		);
 		// Persist the authorization and exact handoff before waking the graph.
 		this.save(run);
-		pending.resolve();
+		void this.flush(id).then(
+			() => pending.resolve(),
+			(error) => pending.reject(error),
+		);
 	}
 	decide(id: string, decision: Omit<HumanDecision, "at">): void {
 		const run = this.get(id);
@@ -2768,7 +2840,10 @@ export class WorkflowRuntime {
 			run.step ?? "human-review",
 			`Human ${decision.decision}: ${decision.feedback ?? decision.headSha}`,
 		);
-		pending.resolve();
+		void this.flush(id).then(
+			() => pending.resolve(),
+			(error) => pending.reject(error),
+		);
 	}
 	answer(id: string, answer: string, kind?: "answer" | "explanation"): void {
 		const run = this.get(id);
@@ -2843,7 +2918,10 @@ export class WorkflowRuntime {
 				run.step ?? "clarify",
 				`Human explanation request: ${answer}`,
 			);
-			pending.resolve();
+			void this.flush(id).then(
+				() => pending.resolve(),
+				(error) => pending.reject(error),
+			);
 			return;
 		}
 		run.answers.push({
@@ -2861,7 +2939,10 @@ export class WorkflowRuntime {
 		run.questionBatchId = undefined;
 		run.status = "running";
 		this.log(run, run.step ?? "clarify", `Human answer: ${answer}`);
-		pending.resolve();
+		void this.flush(id).then(
+			() => pending.resolve(),
+			(error) => pending.reject(error),
+		);
 	}
 	stop(id: string): void {
 		const run = this.get(id);
@@ -2933,7 +3014,7 @@ export class WorkflowRuntime {
 			"guide",
 			"Regenerating the full PR review guide; implementation, reviews and captures are retained.",
 		);
-		this.save(run);
+		await this.save(run);
 		void this.launch(run);
 		return run;
 	}
@@ -3241,7 +3322,9 @@ export class WorkflowRuntime {
 		this.shuttingDown = true;
 		for (const controller of this.controllers.values()) controller.abort();
 		await Promise.allSettled(this.executions.values());
-		for (const id of this.pendingActivitySaves.keys()) this.save(this.get(id));
+		for (const id of this.pendingActivitySaves.keys())
+			await this.save(this.get(id));
+		await this.flush();
 	}
 	resumeAll(): void {
 		for (const run of this.runs.values()) {
@@ -3386,16 +3469,148 @@ export class WorkflowRuntime {
 		};
 		return recover(run.workflow.steps, run.outputs, "");
 	}
-	save(run: FactoryRun): void {
+	private saveActivity(run: FactoryRun): Promise<void> {
+		this.dirtyActivity.add(run.id);
+		const active = this.activitySaves.get(run.id);
+		if (active) return active;
+		const save = (async () => {
+			while (this.dirtyActivity.has(run.id)) {
+				await this.pendingSaves.get(run.id);
+				this.dirtyActivity.delete(run.id);
+				await this.save(run);
+			}
+		})();
+		this.activitySaves.set(run.id, save);
+		void save.then(
+			() => this.activitySaves.delete(run.id),
+			() => this.activitySaves.delete(run.id),
+		);
+		return save;
+	}
+	save(run: FactoryRun): Promise<void> {
 		const pending = this.pendingActivitySaves.get(run.id);
 		if (pending) {
 			clearTimeout(pending);
 			this.pendingActivitySaves.delete(run.id);
 		}
 		run.updatedAt = new Date().toISOString();
-		this.atomicWrite(join(this.directory, "runs", `${run.id}.json`), run);
-		this.changed({ id: run.id });
+		const summary = this.runSummary(run);
+		const save = this.snapshots.write(
+			join(this.directory, "runs", `${run.id}.json`),
+			run as unknown as Record<string, unknown>,
+			summary,
+			["outputs", "repositoryOutputs"],
+			[],
+			{ events: 1, history: 1, reviewRounds: 1 },
+		);
+		this.pendingSaves.set(run.id, save);
+		// Background activity saves have an observer; durability barriers still
+		// receive and propagate the original rejection.
+		void save.then(
+			() => {
+				this.legacyRuns.delete(run.id);
+				this.summaries.set(run.id, summary);
+				this.changed({ id: run.id });
+			},
+			() => {},
+		);
+		return save;
 	}
+	async flush(id?: string): Promise<void> {
+		if (id) await this.pendingSaves.get(id);
+		else {
+			await Promise.all(this.activitySaves.values());
+			await Promise.all(this.pendingSaves.values());
+			await this.snapshots.flush();
+		}
+	}
+	private runSummary(
+		run: FactoryRun,
+	): Record<string, any> & { id: string; createdAt: string } {
+		const cached = this.summaries.get(run.id);
+		const coldHistory = !!Object.getOwnPropertyDescriptor(run, "history")?.get;
+		const coldOutputs = !!Object.getOwnPropertyDescriptor(run, "outputs")?.get;
+		const historyIndex =
+			cached && cached.history?.length <= run.history.length
+				? cached.history
+				: [];
+		const videoAssets =
+			cached && cached.videoAssets === undefined && (coldHistory || coldOutputs)
+				? undefined
+				: [
+						...new Set([
+							...(cached?.videoAssets ?? []),
+							...(coldOutputs ? [] : videoAssetPaths(run.outputs.capture)),
+							...(coldHistory
+								? []
+								: run.history
+										.slice(cached?.history.length ?? 0)
+										.flatMap((entry) => videoAssetPaths(entry.output))),
+						]),
+					];
+		return {
+			id: run.id,
+			videoAssets,
+			title: run.title,
+			status: capacityRunStatus(run),
+			capacityLeaves: run.capacityLeaves,
+			deliveryCoordination: run.deliveryCoordination,
+			createdAt: run.createdAt,
+			updatedAt: run.updatedAt,
+			repositoryId: run.repositoryId,
+			step: run.step,
+			workflow: run.workflow.id,
+			workflowBlock: run.workflowBlock,
+			triggerOrigin: run.triggerOrigin,
+			error: run.error,
+			ticketSync: run.ticketSync && {
+				error: run.ticketSync.error,
+				receipts: run.ticketSync.receipts.map(({ delivered, superseded }) => ({
+					delivered,
+					superseded,
+				})),
+			},
+			reviewGate: run.reviewGate,
+			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
+				? this.summaries.get(run.id)?.hasGuide
+				: Boolean(run.outputs.guide),
+			history: coldHistory
+				? (cached?.history ?? [])
+				: [
+						...historyIndex,
+						...run.history
+							.slice(historyIndex.length)
+							.map(({ step, at, call }) => ({ step, at, call })),
+					],
+		};
+	}
+	async prepareDashboard(run: FactoryRun): Promise<void> {
+		// Completed legacy runs may never execute another step. Give their first
+		// dashboard read committed preview metadata, keeping the original bytes
+		// in the store's legacy backup rather than returning whole artifacts.
+		if (this.legacyRuns.has(run.id)) {
+			const pending = this.pendingSaves.get(run.id);
+			if (pending) await pending.catch(() => {});
+			if (this.legacyRuns.has(run.id)) await this.save(run);
+		}
+		await this.flush(run.id);
+	}
+	outputPreviews(run: FactoryRun): Record<string, unknown> {
+		return Object.fromEntries(
+			Object.keys(run.outputs).map((key) => [
+				key,
+				this.snapshots.preview(run.outputs, key),
+			]),
+		);
+	}
+	listRuns(): (Record<string, any> & { id: string; createdAt: string })[] {
+		return [...this.runs.values()].map((run) => ({
+			...(this.summaries.get(run.id) ?? this.runSummary(run)),
+			status: capacityRunStatus(run),
+			workflowBlock: run.workflowBlock,
+		}));
+	}
+
 	private atomicWrite(path: string, data: unknown): void {
 		const temporary = `${path}.tmp`;
 		writeFileSync(temporary, JSON.stringify(data, null, 2));

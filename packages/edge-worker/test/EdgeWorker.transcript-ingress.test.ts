@@ -82,7 +82,7 @@ it.each([
 		receipts: [],
 		transcript: { externalLink: link, createAttempted: true },
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	vi.stubEnv("LINEAR_DIRECT_WEBHOOKS", "true");
 	vi.stubEnv("LINEAR_WEBHOOK_SECRET", "fixture-secret");
 	vi.stubEnv("WEBHOOK_IP_VALIDATION", "false");
@@ -100,6 +100,7 @@ it.each([
 		handlers: f1AgentHandlers("mock"),
 	});
 	try {
+		await runtime.flush();
 		await worker.start();
 		const payload = {
 			type: "AgentSessionEvent",

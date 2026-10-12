@@ -66,6 +66,7 @@ import {
 	executionEnvironment,
 	factoryRuntimeIdentity,
 	GitHubTokenStore,
+	immutableJson,
 	isAgentSessionCreatedWebhook,
 	isAgentSessionPromptedWebhook,
 	isContentUpdateMessage,
@@ -8633,7 +8634,7 @@ ${taskSection}`;
 			pendingProposalRun.architectureGate
 		) {
 			this.getFactoryRuntime().answer(id, text);
-			return;
+			return this.getFactoryRuntime().flush(id);
 		}
 		const state = this.factoryChatState(id);
 		if (!state.available) throw new Error(state.reason ?? "Chat unavailable");
@@ -8659,7 +8660,7 @@ ${taskSection}`;
 		}
 		if (run) {
 			runtime.continueSimple(id, text);
-			return;
+			return runtime.flush(id);
 		}
 		const repositoryId =
 			this.sessionRepositories.get(id) ?? session.repositories[0]?.repositoryId;
@@ -8705,9 +8706,9 @@ ${taskSection}`;
 				`Output correction exhausted at ${context.step.id}; inspect persisted rejected output/issues, restore missing infrastructure if needed, then use Retry to authorize another bounded correction attempt.`,
 			);
 		const checkpoint = context.checkpointAgent;
-		context.checkpointAgent = (agent) => {
+		context.checkpointAgent = async (agent) => {
 			context.resumeAgent = agent;
-			checkpoint?.(agent);
+			await checkpoint?.(agent);
 		};
 		try {
 			while (true) {
@@ -8726,7 +8727,7 @@ ${taskSection}`;
 							const { finalizing: _finalizing, ...result } = agent.result;
 							agent.result = result;
 						}
-						context.checkpointAgent(agent);
+						await context.checkpointAgent(agent);
 					}
 					return output;
 				} catch (error) {
@@ -8739,7 +8740,10 @@ ${taskSection}`;
 						context.resumeAgent?.runner === "codex" &&
 						(context.resumeAgent.idleRetries ?? 0) < 1
 					) {
-						context.checkpointAgent({ ...context.resumeAgent, idleRetries: 1 });
+						await context.checkpointAgent({
+							...context.resumeAgent,
+							idleRetries: 1,
+						});
 						context.log(
 							"Codex turn went silent; resuming the saved conversation once. Completed role work and checkpoints are retained.",
 						);
@@ -8769,7 +8773,7 @@ ${taskSection}`;
 						...(capture ? { screenshots: error.screenshots } : {}),
 					};
 					if (!context.resumeAgent) throw error;
-					context.checkpointAgent({
+					await context.checkpointAgent({
 						...context.resumeAgent,
 						...(context.resumeAgent.result
 							? { result: { ...context.resumeAgent.result, finalizing: false } }
@@ -8780,7 +8784,7 @@ ${taskSection}`;
 						`Output validation rejected ${context.step.id}: ${error.message}`,
 					);
 					if (attempts >= 2) {
-						context.checkpointAgent({
+						await context.checkpointAgent({
 							...context.resumeAgent,
 							rejected: { ...rejection, exhausted: true },
 						});
@@ -8789,7 +8793,7 @@ ${taskSection}`;
 						);
 					}
 					// Increment before launching so process restarts cannot reset the budget.
-					context.checkpointAgent({
+					await context.checkpointAgent({
 						...context.resumeAgent,
 						rejected: { ...rejection, attempts: attempts + 1, reserved: true },
 					});
@@ -8891,6 +8895,7 @@ ${taskSection}`;
 		const originalMessage = built.config.onMessage;
 		let agentCheckpoint = context.resumeAgent;
 		let startupConfirmed = false;
+		let pendingMessageCheckpoint = Promise.resolve();
 		built.config.onMessage = (message) => {
 			if (message.type === "assistant" || message.type === "user")
 				startupConfirmed = true;
@@ -8918,7 +8923,20 @@ ${taskSection}`;
 						? { rejected: { ...context.resumeAgent.rejected, reserved: false } }
 						: {}),
 				};
-				context.checkpointAgent?.(agentCheckpoint);
+				pendingMessageCheckpoint = Promise.resolve(
+					context.checkpointAgent?.(agentCheckpoint),
+				);
+				// Native runners emit through EventEmitter and do not await listeners.
+				// Observe failures here; finalization below still awaits this barrier.
+				void pendingMessageCheckpoint.catch(() => {
+					try {
+						void Promise.resolve(
+							this.agentSessionManager.getAgentRunner(run.id)?.stop(),
+						).catch(() => {});
+					} catch {
+						/* Preserve the checkpoint error. */
+					}
+				});
 			}
 			this.saveFactorySession(run);
 			this.agentSessionManager.markFactoryMessage(
@@ -8927,6 +8945,7 @@ ${taskSection}`;
 			);
 			void originalMessage?.(message);
 			context.log(JSON.stringify(message), "agent");
+			return pendingMessageCheckpoint;
 		};
 		context.progress = await roleProgress(context);
 		this.refreshFactoryFeedbackContext(context);
@@ -8999,6 +9018,7 @@ ${taskSection}`;
 						? { reason: "output-correction" }
 						: {}),
 			});
+			await context.save?.();
 			turnStarted = true;
 			built.config.mcpConfig = {
 				...built.config.mcpConfig,
@@ -9045,9 +9065,12 @@ ${taskSection}`;
 						userPrompt: nativePrompt,
 					}),
 				);
+				await context.save?.();
 				try {
 					await start(nativePrompt);
+					await pendingMessageCheckpoint;
 				} catch (error) {
+					await pendingMessageCheckpoint;
 					context.signal.throwIfAborted();
 					throw nativeInfrastructureFailure(error) ?? error;
 				}
@@ -9121,7 +9144,7 @@ ${taskSection}`;
 				}
 				const completed = (await roleProgress(context)).currentRevision;
 				if (agentCheckpoint && completed)
-					context.checkpointAgent?.({
+					await context.checkpointAgent?.({
 						runner: agentCheckpoint.runner,
 						sessionId: agentCheckpoint.sessionId,
 						idleRetries: context.resumeAgent?.idleRetries,
@@ -9156,7 +9179,7 @@ ${taskSection}`;
 					: caught;
 			if (error instanceof FactoryContextInfrastructureError) {
 				infrastructureFailure = error;
-				context.checkpointAgent?.({
+				await context.checkpointAgent?.({
 					...(context.resumeAgent ?? { runner: runnerType }),
 					infrastructureFailure: {
 						reason: error.message,
@@ -9187,7 +9210,7 @@ ${taskSection}`;
 			) {
 				// No ready thread or model work: return the launch reservation,
 				// preserving the rejected candidate for an infrastructure retry.
-				context.checkpointAgent?.({
+				await context.checkpointAgent?.({
 					...context.resumeAgent!,
 					rejected: {
 						...rejected,
@@ -9544,7 +9567,7 @@ ${taskSection}`;
 			repositoryIds: selectedIds,
 		});
 		run.setupComplete = false;
-		runtime.save(run);
+		await runtime.save(run);
 		void runtime.launch(run);
 		return run;
 	}
@@ -9816,7 +9839,7 @@ ${taskSection}`;
 			signal.throwIfAborted();
 			run.setupComplete = true;
 			this.saveFactorySession(run);
-			runtime.save(run);
+			await runtime.save(run);
 		}
 	}
 
@@ -9893,11 +9916,13 @@ ${taskSection}`;
 						throw new Error("Grouped merge cannot complete the saved workflow");
 					run.outputs[pending.step.id] = output;
 					if (pending.checkpoint.active!.phase === "executing")
-						run.history.push({
-							step: pending.key,
-							output,
-							at: new Date().toISOString(),
-						});
+						run.history.push(
+							immutableJson({
+								step: pending.key,
+								output,
+								at: new Date().toISOString(),
+							}),
+						);
 					pending.checkpoint.active!.phase = "result";
 					this.getFactoryRuntime().log(
 						run,
@@ -9934,11 +9959,13 @@ ${taskSection}`;
 				if (output && pendingMergeConfirmation(run, output)) {
 					run.outputs[pending.step.id] = output;
 					if (pending.checkpoint.active!.phase === "executing")
-						run.history.push({
-							step: pending.key,
-							output,
-							at: new Date().toISOString(),
-						});
+						run.history.push(
+							immutableJson({
+								step: pending.key,
+								output,
+								at: new Date().toISOString(),
+							}),
+						);
 					pending.checkpoint.active!.phase = "result";
 					this.getFactoryRuntime().log(
 						run,
@@ -10229,7 +10256,14 @@ ${taskSection}`;
 		const runtime = this.getFactoryRuntime();
 		this.interruptDisabledSessions();
 		for (const run of runtime.runs.values()) {
-			void this.recoverFactoryTicketTracking(run);
+			if (
+				["running", "waiting"].includes(run.status) ||
+				run.ticketSync?.receipts.some(
+					(receipt) =>
+						!receipt.delivered && !receipt.superseded && !receipt.conflict,
+				)
+			)
+				void this.recoverFactoryTicketTracking(run);
 		}
 		const admission = this.getLaunchAdmission();
 		const resumingSessions = new Set<string>();

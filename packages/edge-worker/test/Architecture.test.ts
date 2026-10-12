@@ -9,7 +9,7 @@ import {
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
 	type Architecture,
 	ArchitectureSchema,
@@ -32,6 +32,7 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { proposal } from "./fixtures/architecture.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 afterEach(() => {
@@ -153,7 +154,7 @@ function setup(
 	return { runtime, run, home, hooks, implemented, running };
 }
 async function waiting(run: FactoryRun) {
-	await vi.waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"));
 }
 function decide(
 	runtime: WorkflowRuntime,
@@ -171,7 +172,7 @@ function decide(
 	});
 }
 async function finished(runtime: WorkflowRuntime, run: FactoryRun) {
-	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	await waitFor(() => expect(run.status).toBe("completed"));
 	await runtime.shutdown();
 }
 
@@ -255,17 +256,17 @@ describe("architecture authorization boundary", () => {
 		await waiting(run);
 		const first = run.architectureProposals![0]!;
 		const batch = run.questionBatchId;
-		expect(notifications).toHaveLength(1);
+		await waitFor(() => expect(notifications).toHaveLength(1));
 		for (let count = 1; count <= 2; count++) {
 			decide(runtime, run, "explain", "Why separate approval?");
-			await vi.waitFor(() =>
+			await waitFor(() =>
 				expect(
 					first.feedback.filter((item) => item.kind === "explanation"),
 				).toHaveLength(count),
 			);
 			await waiting(run);
 			expect(run.questionBatchId).toBe(batch);
-			expect(notifications).toHaveLength(1);
+			await waitFor(() => expect(notifications).toHaveLength(1));
 		}
 		await runtime.shutdown();
 		const restored = new WorkflowRuntime(home, hooks);
@@ -274,15 +275,15 @@ describe("architecture authorization boundary", () => {
 			restored.resumeAll();
 			await waiting(resumed);
 			expect(resumed.questionBatchId).toBe(batch);
-			expect(notifications).toHaveLength(1);
+			await waitFor(() => expect(notifications).toHaveLength(1));
 			expect(implemented).toEqual([]);
 			decide(restored, resumed, "revise", "Retain the existing interface");
-			await vi.waitFor(() =>
+			await waitFor(() =>
 				expect(resumed.architectureProposals).toHaveLength(2),
 			);
 			await waiting(resumed);
 			expect(resumed.questionBatchId).not.toBe(batch);
-			expect(notifications).toHaveLength(2);
+			await waitFor(() => expect(notifications).toHaveLength(2));
 			expect(implemented).toEqual([]);
 			decide(restored, resumed);
 			await finished(restored, resumed);
@@ -353,7 +354,7 @@ describe("architecture authorization boundary", () => {
 		await waiting(run);
 		const first = run.architectureProposals![0]!;
 		decide(runtime, run, "explain", "Why separate approval?");
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(run.questions[0]).toMatch(/keeps design approval/),
 		);
 		await waiting(run);
@@ -362,7 +363,7 @@ describe("architecture authorization boundary", () => {
 		expect(implemented).toEqual([]);
 		decide(runtime, run, "revise", "Use the existing checkpoint");
 		await waiting(run);
-		await vi.waitFor(() => expect(run.architectureProposals).toHaveLength(2));
+		await waitFor(() => expect(run.architectureProposals).toHaveLength(2));
 		await waiting(run);
 		expect(first.status).toBe("rejected");
 		expect(() =>
@@ -378,7 +379,7 @@ describe("architecture authorization boundary", () => {
 			"Explain the alternatives in a revised proposal",
 			"answer",
 		);
-		await vi.waitFor(() => expect(run.architectureProposals).toHaveLength(3));
+		await waitFor(() => expect(run.architectureProposals).toHaveLength(3));
 		await waiting(run);
 		decide(runtime, run);
 		await finished(runtime, run);
@@ -449,7 +450,7 @@ describe("architecture authorization boundary", () => {
 		await waiting(second.run);
 		expect(() => decide(second.runtime, second.run)).toThrow("open questions");
 		decide(second.runtime, second.run, "revise", "Use the run checkpoint.");
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(second.run.architectureProposals).toHaveLength(2),
 		);
 		await waiting(second.run);
@@ -483,7 +484,7 @@ describe("architecture authorization boundary", () => {
 		const identity = run.architectureProposals![0]!.id;
 		runtime.stop(run.id);
 		expect(() => decide(runtime, run)).toThrow("not waiting");
-		await vi.waitFor(() => expect(run.status).toBe("stopped"));
+		await waitFor(() => expect(run.status).toBe("stopped"));
 		await running;
 		runtime.retry(run.id);
 		await waiting(run);
@@ -646,7 +647,7 @@ it("protects remote architecture decisions, rejects stale tabs, and routes chat 
 			payload: { text: "Keep inherited Takeover work in the revised plan" },
 		});
 		expect(chat.statusCode).toBe(202);
-		await vi.waitFor(() => expect(run.architectureProposals).toHaveLength(2));
+		await waitFor(() => expect(run.architectureProposals).toHaveLength(2));
 		await waiting(run);
 		const next = run.architectureProposals!.at(-1)!;
 		const accepted = await server.app.inject({
@@ -684,7 +685,7 @@ it("never advances an exhausted failed candidate-review loop", async () => {
 				? proposal()
 				: { approved: false, feedback: ["Resolve the boundary"] },
 	});
-	await vi.waitFor(() => expect(run.status).toBe("failed"), { timeout: 15000 });
+	await waitFor(() => expect(run.status).toBe("failed"), { timeout: 15000 });
 	expect(run.error).toMatch(/Iteration limit/);
 	expect(implemented).toEqual([]);
 	expect(run.architectureDecisions ?? []).toEqual([]);
@@ -719,7 +720,7 @@ it("requires fresh acceptance when later requirements change the accepted archit
 	await waiting(run);
 	const first = run.architectureProposals![0]!;
 	decide(runtime, run);
-	await vi.waitFor(() => expect(run.architectureProposals).toHaveLength(2));
+	await waitFor(() => expect(run.architectureProposals).toHaveLength(2));
 	await waiting(run);
 	expect(implementations).toBe(1);
 	expect(first.status).toBe("superseded");

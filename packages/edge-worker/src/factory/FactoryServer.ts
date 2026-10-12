@@ -889,51 +889,7 @@ export class FactoryServer {
 			},
 		);
 		this.app.get("/api/runs", () => {
-			const workflowRuns = [...runtime.runs.values()].map(
-				({
-					id,
-					title,
-					status,
-					capacityLeaves,
-					deliveryCoordination,
-					createdAt,
-					updatedAt,
-					repositoryId,
-					step,
-					workflow,
-					workflowBlock,
-					triggerOrigin,
-					error,
-					ticketSync,
-					reviewGate,
-					outputs,
-					history,
-				}) => ({
-					id,
-					title,
-					status: capacityRunStatus({ status, capacityLeaves } as FactoryRun),
-					capacityLeaves,
-					deliveryCoordination,
-					createdAt,
-					updatedAt,
-					repositoryId,
-					step,
-					workflow: workflow.id,
-					workflowBlock,
-					triggerOrigin,
-					error,
-					ticketSync: ticketSync && {
-						error: ticketSync.error,
-						receipts: ticketSync.receipts.map(({ delivered, superseded }) => ({
-							delivered,
-							superseded,
-						})),
-					},
-					reviewGate,
-					hasGuide: Boolean(outputs.guide),
-					history: history.map(({ step, at, call }) => ({ step, at, call })),
-				}),
-			);
+			const workflowRuns = runtime.listRuns();
 			const tracked = new Set(workflowRuns.map((run) => run.id));
 			return [
 				...workflowRuns.map((run) => ({
@@ -958,9 +914,9 @@ export class FactoryServer {
 			checkConfigRevision(request);
 			const input = LaunchRequestSchema.parse(request.body);
 			const workflow = runtime.selectWorkflow([], "manual", input.workflow);
-			return reply
-				.code(202)
-				.send(await hooks.start(resolveLaunchRequest(workflow, input)));
+			const run = await hooks.start(resolveLaunchRequest(workflow, input));
+			await runtime.flush(run.id);
+			return reply.code(202).send(run);
 		});
 		this.app.get<{ Params: { id: string } }>(
 			"/api/runs/:id/provenance",
@@ -972,15 +928,39 @@ export class FactoryServer {
 		);
 		this.app.get<{ Params: { id: string }; Querystring: { view?: string } }>(
 			"/api/runs/:id",
-			(request, reply) => {
+			async (request, reply) => {
 				const run = runtime.runs.get(request.params.id);
 				const session = hooks
 					.sessions()
 					.find((item) => item.id === request.params.id);
 				if (!run && !session)
 					return reply.code(404).send({ error: "Run not found" });
+				const dashboard = request.query.view === "dashboard";
+				if (run && dashboard) await runtime.prepareDashboard(run);
+				else await runtime.flush(request.params.id);
+				const hidden = new Set([
+					"checkpoint",
+					"sessionSnapshot",
+					"reviewRounds",
+					"externalReverifications",
+					"deliveryRecovery",
+					"history",
+					"outputs",
+					"events",
+				]);
+				const projected =
+					run && dashboard
+						? Object.fromEntries(
+								Object.keys(run)
+									.filter((key) => !hidden.has(key))
+									.map((key) => [
+										key,
+										(run as unknown as Record<string, unknown>)[key],
+									]),
+							)
+						: run;
 				const detail = {
-					...(run ?? {
+					...(projected ?? {
 						...session,
 						workflow: runtime
 							.listWorkflows()
@@ -1037,47 +1017,25 @@ export class FactoryServer {
 				};
 				return {
 					...slim,
-					outputs: Object.fromEntries(
-						Object.entries(detail.outputs).map(([name, value]) => {
-							const encoded = JSON.stringify(value) ?? "null";
-							if (encoded.length < 30000) return [name, value];
-							if (value && typeof value === "object" && !Array.isArray(value)) {
-								const kept = Object.fromEntries(
-									Object.entries(value).filter(
-										([, part]) =>
-											(JSON.stringify(part) ?? "null").length < 12000,
-									),
-								);
-								return [
-									name,
-									{
-										...kept,
-										__artifactPreview: true,
-										__artifactHash: createHash("sha256")
-											.update(encoded)
-											.digest("hex"),
-										size: Buffer.byteLength(encoded),
-										keys: Object.keys(value),
-									},
-								];
-							}
-							return [
-								name,
-								{
-									__artifactPreview: true,
-									__artifactHash: createHash("sha256")
-										.update(encoded)
-										.digest("hex"),
-									size: Buffer.byteLength(encoded),
-								},
-							];
+					outputs: run ? runtime.outputPreviews(run) : {},
+					history: (
+						runtime.listRuns().find((item) => item.id === request.params.id)
+							?.history ?? []
+					).map(
+						({
+							step,
+							at,
+							call,
+						}: {
+							step: string;
+							at: string;
+							call?: unknown;
+						}) => ({
+							step,
+							at,
+							call,
 						}),
 					),
-					history: (run?.history ?? []).map(({ step, at, call }) => ({
-						step,
-						at,
-						call,
-					})),
 					events: (run?.events ?? []).slice(-15).map((event) => ({
 						...event,
 						message: event.message.slice(0, 1000),
@@ -1239,15 +1197,16 @@ export class FactoryServer {
 
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/external-reverify",
-			(request, reply) => {
+			async (request, reply) => {
 				const session = sessionFor(request)!;
 				runtime.reverifyExternal(request.params.id, session.credential);
+				await runtime.flush(request.params.id);
 				return reply.code(202).send({ accepted: true });
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/external-recovery",
-			(request, reply) => {
+			async (request, reply) => {
 				const body = z
 					.object({
 						requestId: z.string().min(1).max(100),
@@ -1263,17 +1222,19 @@ export class FactoryServer {
 					body.reviewedDigest,
 					session.credential,
 				);
+				await runtime.flush(request.params.id);
 				return reply.code(202).send({ accepted: true });
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/architecture-decision",
-			(request, reply) => {
+			async (request, reply) => {
 				try {
 					runtime.decideArchitecture(
 						request.params.id,
 						ArchitectureDecisionSchema.parse(request.body),
 					);
+					await runtime.flush(request.params.id);
 					return reply.code(202).send({ accepted: true });
 				} catch (error) {
 					return reply.code(409).send({
@@ -1284,7 +1245,7 @@ export class FactoryServer {
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/review",
-			(request, reply) => {
+			async (request, reply) => {
 				const decision = z
 					.object({
 						reviewId: z.string().min(1),
@@ -1298,6 +1259,7 @@ export class FactoryServer {
 					})
 					.parse(request.body);
 				runtime.decide(request.params.id, decision);
+				await runtime.flush(request.params.id);
 				return reply.code(202).send({ accepted: true });
 			},
 		);
@@ -1370,7 +1332,7 @@ export class FactoryServer {
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/answer",
-			(request) => {
+			async (request) => {
 				const { answer, context, kind } = z
 					.object({
 						answer: z.string().trim().min(1).max(100000),
@@ -1384,7 +1346,7 @@ export class FactoryServer {
 							.optional(),
 					})
 					.parse(request.body);
-				operator.answer(request.params.id, answer, kind, context);
+				await operator.answer(request.params.id, answer, kind, context);
 				return { accepted: true };
 			},
 		);

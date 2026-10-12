@@ -143,7 +143,10 @@ requireValue(
 	sourceFileSha256(archive) === values.sha256,
 	"Supplied evidence archive SHA-256 mismatch",
 );
-extractEvidenceArchive(archive, output);
+extractEvidenceArchive(archive, output, {
+	expectedCandidate: candidate,
+	expectedIdentity: identity,
+});
 validateEvidence(
 	JSON.parse(readFileSync(join(output, "release-evidence.json"), "utf8")),
 	output,

@@ -6,11 +6,18 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Preserve workflow disable blocks and frozen definitions while integrating chunked history storage and resumed-checkpoint responsiveness; keep dashboard summaries accurate across restart ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
 - Integrate Linear publication guards and native session lifecycle with bundled workflows: keep internal role/tool records local, publish readable decision records, and preserve individual recovery ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
 - Integrate architecture approval and native localhost validation with bundled workflow ownership; recognize architecture-enabled legacy standards without creating forks, and preserve saved approval gates ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
 - Protect atomic simulated desktop receipt publication with a delayed-write regression check for the maintained F1 update drive ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Keep resumed agent checkpoints responsive after reading large workflow history: preserve completed receipts as immutable snapshots, reuse their pages and extend the cached dashboard history index. ([#104](https://github.com/jappyjan/bobs-factory/pull/104), [F1 validation](apps/f1/test-drives/2026-10-12-resumed-history.md))
+
+- Finish automatic nightly CI with an accepted pinned source baseline and fresh native/desktop/mock workflow evidence; preserve actual native notices, desktop ZIP paths, shipped license inputs and four desktop update targets while inventorying DEBs separately; safely reconstruct prepared source chunks without duplicate transport bytes and keep artifact ZIPs out of retained inventories ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#103](https://github.com/jappyjan/bobs-factory/pull/103)).
+- Keep the web UI responsive while saving large conversations and run artifacts, reuse immutable history chunks, load dashboard summaries and activity pages lazily, and preserve checkpoint/approval ordering across restart. Version 5 retains legacy documents and requires complete-home backups for downgrade. ([#102](https://github.com/jappyjan/bobs-factory/pull/102), [F1 validation](apps/f1/test-drives/2026-10-12-persistence-responsiveness.md))
 
 - Preserve readable Linear publication while integrating external ticket delivery and background tracking; retain status deduplication, refresh the simulated workflow's tracking wait, and keep the localhost access, architecture approval and Linear publication capability descriptions together. ([#73](https://github.com/jappyjan/bobs-factory/pull/73), [F1 validation](apps/f1/test-drives/2026-10-11-linear-publication-main-merge.md))
 

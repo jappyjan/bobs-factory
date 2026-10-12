@@ -7,6 +7,7 @@ import { f1AgentHandlers } from "../../../apps/f1/src/MockAgentRunner.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const provider = vi.hoisted(() => ({
 	comments: [] as any[],
@@ -125,7 +126,7 @@ it("publishes the actual record-decisions hook as one durable Linear comment whi
 		questions: [],
 		requirements: [],
 	};
-	runtime.save(run);
+	await runtime.save(run);
 	vi.stubEnv("BOBS_FACTORY_FACTORY_PORT", "0");
 	vi.stubEnv("CLOUDFLARE_TOKEN", "");
 	vi.stubEnv("WEBHOOK_IP_VALIDATION", "false");
@@ -150,7 +151,7 @@ it("publishes the actual record-decisions hook as one durable Linear comment whi
 	});
 	try {
 		await worker.start();
-		await vi.waitFor(() =>
+		await waitFor(() =>
 			expect(new WorkflowRuntime(home, {}).get(run.id).status).toBe(
 				"completed",
 			),
@@ -166,10 +167,12 @@ it("publishes the actual record-decisions hook as one durable Linear comment whi
 			provider.comments[0].body.replace(/\n\n<!-- factory:[^\n]+ -->$/, ""),
 		).toBe(expected);
 		expect(receipt.delivered).toBe(true);
-		expect(provider.activities.map((entry) => entry.content.type)).toEqual([
-			"thought",
-			"response",
-		]);
+		await waitFor(() =>
+			expect(provider.activities.map((entry) => entry.content.type)).toEqual([
+				"thought",
+				"response",
+			]),
+		);
 	} finally {
 		await worker.stop();
 		vi.unstubAllEnvs();

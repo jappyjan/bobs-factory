@@ -1,0 +1,47 @@
+{
+	"passed": true,
+	"mode": "mock/scripted",
+	"logicalTranscriptBytes": 1073741824,
+	"versionRequests": 482,
+	"p99VersionMs": 1.3297079999999823,
+	"maxVersionMs": 4.104583000000048,
+	"maxEventLoopDelayMs": 503.578623,
+	"appendBytesWritten": 131,
+	"maxCaptureMs": 0.7536669999999503,
+	"checks": [
+		"CLI issue/session and visible response",
+		"1 GiB persistence with responsive HTTP",
+		"incremental transcript append",
+		"large retained run artifact",
+		"restart retains native session and pending human gate",
+		"lazy dashboard and activity pages",
+		"legacy completed-run dashboard migration preserves original bytes",
+		"one explicit answer resumes workflow",
+		"shutdown flush and restored tail"
+	],
+	"limitations": "Synthetic strings repeat and deduplicate; this checks logical-history scaling, not 1 GiB of unique disk writes. No live provider or production service was used.",
+	"testedSource": "881b57a55201a56572e6b54c3176a2b78e0d0dac",
+	"nativeSmoke": {
+		"passed": true,
+		"build": {
+			"schemaVersion": 1,
+			"product": "bobs-factory",
+			"version": "1.0.0-beta",
+			"commit": "881b57a55201a56572e6b54c3176a2b78e0d0dac",
+			"dirty": false,
+			"target": "darwin-arm64",
+			"tooling": {
+				"bun": "1.4.2"
+			},
+			"executable": {
+				"file": "bobs-factory",
+				"size": 102119922,
+				"sha256": "6e8a30b841c9d7e5c4df07bfb7360d2716ccce2eed131095965877cd9e0bad76"
+			},
+			"resourceDigest": "776f5428161eaaa4bf5b2d56cc5c21b0eccecd841c33c2c0e13ca648e58559b1",
+			"validation": "pending runtime smoke",
+			"requirements": "macOS; native target smoke required"
+		},
+		"scope": "Isolated darwin-arm64 startup/assets/local and remote auth/runtime identity/MCP/shutdown/restart; no release or production upgrade"
+	}
+}

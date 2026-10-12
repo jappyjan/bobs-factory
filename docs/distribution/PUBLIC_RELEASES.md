@@ -234,10 +234,12 @@ production host as part of implementation validation.
    true` and `approved_assets_digest`. Approval binds both the frozen candidate and
    full unsigned inventory. No sign-only phase or protected signing environment
    is required. Stable sets GitHub latest only after all gates pass.
-5. Automatic nightlies require separate rollout activation and explicit
+5. The [automatic nightly CI route](NIGHTLY_CI.md) assembles actual checks and source
+   material from a one-time accepted, pinned baseline; it does not require a new
+   manually assembled evidence envelope per nightly. Automatic nightlies require separate rollout activation and explicit
    `BOBS_FACTORY_AUTOMATIC_NIGHTLIES=enabled`. Successful evidence intake then
-   publishes eligible nightlies, still subject to all review/migration/F1/license
-   gates and changed-main/six-hour history checks. Manual publication has the
+   publishes eligible nightlies, still subject to explicit CI-derived nightly
+   review/migration/F1/license gates and accepted baseline reuse scopes and changed-main/six-hour history checks. Manual publication has the
    same eligibility and activation requirements. Nightlies are prereleases and
    never move stable latest. Automatic entrypoint SHA must equal frozen tooling;
    if it has advanced, dispatch manually from that frozen ref and retain the

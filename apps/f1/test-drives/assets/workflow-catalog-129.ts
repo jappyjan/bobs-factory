@@ -373,7 +373,19 @@ try {
 		started = true;
 		assert.equal(runtime.get(queued.id).status, "blocked");
 		assert.deepEqual(runtime.get(queued.id).workflow, frozen);
-		assert.deepEqual(runtime.get(queued.id).history, history);
+		// Chunk-backed receipts use immutable objects without an Object prototype.
+		// Compare every serialized field across restart.
+		assert.deepEqual(
+			JSON.parse(JSON.stringify(runtime.get(queued.id).history)),
+			history,
+		);
+		const summaries = await api("/api/runs");
+		const blockedSummary = summaries.find((run: any) => run.id === queued.id);
+		assert.equal(blockedSummary.status, "blocked");
+		assert.deepEqual(
+			blockedSummary.workflowBlock,
+			runtime.get(queued.id).workflowBlock,
+		);
 		await api(`/api/runs/${queued.id}/resume`, "POST", {}, 202);
 		await until(
 			() => runtime.get(queued.id).status === "waiting",

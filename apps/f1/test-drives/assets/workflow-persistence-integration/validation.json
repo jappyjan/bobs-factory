@@ -1,0 +1,53 @@
+{
+	"headBeforeMerge": "d5a61b1e7c451e718b99966104f647c296d56d4e",
+	"mergedBase": "8baccedc31f5816a51eae6399225678b81223dc0",
+	"testedStagedTreeBeforeReport": "8a8fbb3a316266ed3595c4b042232f1103768c88",
+	"mode": "mock",
+	"sourceSha256": {
+		"packages/core/src/JsonSnapshotStore.ts": "f640d5b33adc084e311f5e77fc4739e0b56c39471bc17a3579b03eef7457a1d5",
+		"packages/core/src/PersistenceManager.ts": "eba4ccc9e96c2808ea3ee33c660088f4c793c565f8b2abb2b4b387eebd61102c",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "06f0d76895bd23847a1ef549b4f45b937dad181cc8b0cdf9ea17e9d909f09a41",
+		"packages/edge-worker/src/factory/FactoryServer.ts": "def91bccfe5c3ccf843beb4e76b23ae9f018a1f5516289f0f40bbd50bb24be2e",
+		"packages/edge-worker/src/EdgeWorker.ts": "eb78da987eb478ab0c4c063ee9cda260042bab8a9ebca17858adbc59074f81a7",
+		"apps/f1/test-drives/assets/persistence-responsiveness.ts": "5636d8965c34191b506a963519bf7c2918e5094936f40617b5a411d6e6ef91cb",
+		"apps/f1/test-drives/assets/workflow-catalog-129.ts": "42e64c1e7163625ddb6210d72753145d3c18cf798e98783677dc3c5cb47ecbef",
+		"packages/edge-worker/test/WorkflowCatalog.test.ts": "67176d746991f17749fd4dc5a0e594e59ec9c9fb59a42ebcef3b5dcf9f066009"
+	},
+	"checks": {
+		"workerTests": 372,
+		"coreTests": 32,
+		"catalogAssertions": 18,
+		"releaseScripts": "passed, exit 0",
+		"build": "passed",
+		"types": "passed",
+		"catalogF1": "passed",
+		"persistenceF1": {
+			"passed": true,
+			"mode": "mock/scripted",
+			"logicalTranscriptBytes": 1073741824,
+			"versionRequests": 565,
+			"p99VersionMs": 2.789292000000387,
+			"maxVersionMs": 4.659333999999944,
+			"maxEventLoopDelayMs": 1702.887423,
+			"appendBytesWritten": 2581,
+			"maxCaptureMs": 0.8206669999999576,
+			"checks": [
+				"CLI issue/session and visible response",
+				"1 GiB persistence with responsive HTTP",
+				"incremental transcript append",
+				"large retained run artifact",
+				"restart retains native session and pending human gate",
+				"loaded structured history remains immutable through resumed checkpoints",
+				"lazy dashboard and activity pages",
+				"legacy completed-run dashboard migration preserves original bytes",
+				"one explicit answer resumes workflow",
+				"shutdown flush and restored tail"
+			],
+			"limitations": "Synthetic strings repeat and deduplicate; this checks logical-history scaling, not 1 GiB of unique disk writes. No live provider or production service was used."
+		}
+	},
+	"limitations": [
+		"First large-history drive timed out under parallel validation; retained raw log and failed home. The unchanged isolated rerun passed.",
+		"Real providers, unique 1 GiB disk writes and production tracker writes were not exercised."
+	]
+}

@@ -418,7 +418,10 @@ export function validateBuildProvenance(run, jobs, artifacts, identity) {
 	);
 	const selected = {};
 	for (const target of TARGETS) {
-		const native = jobs.filter((job) => job.name.includes(target));
+		const native = jobs.filter(
+			(job) =>
+				job.name.includes(target) && /(?:^| \/ )binary \(/.test(job.name),
+		);
 		requireValue(
 			native.length === 1 &&
 				native[0].status === "completed" &&

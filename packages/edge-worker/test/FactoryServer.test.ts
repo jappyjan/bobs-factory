@@ -19,6 +19,7 @@ import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { factoryHttp } from "./fixtures/factory-http.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 import { authenticator } from "./fixtures/webauthn.js";
 
 it("serves question images only from the requested run, rejecting traversal, external symlinks and non-images", async () => {
@@ -300,7 +301,7 @@ it("starts, displays, answers and terminates runs through the local API", async 
 		expect(started.json().reasoningEffort).toBe("high");
 		expect(started.json().serviceTier).toBe("fast");
 		const id = started.json().id;
-		await vi.waitFor(() => expect(runtime.get(id).status).toBe("waiting"));
+		await waitFor(() => expect(runtime.get(id).status).toBe("waiting"));
 		const detail = await server.app.inject({ url: `/api/runs/${id}`, headers });
 		expect(detail.json().questions).toEqual(["Which provider?"]);
 		const staleAnswer = await server.app.inject({
@@ -347,7 +348,7 @@ it("starts, displays, answers and terminates runs through the local API", async 
 				})
 			).statusCode,
 		).toBe(200);
-		await vi.waitFor(() => expect(runtime.get(id).answers).toHaveLength(1));
+		await waitFor(() => expect(runtime.get(id).answers).toHaveLength(1));
 		expect(
 			(
 				await server.app.inject({
@@ -558,14 +559,17 @@ it("validates the selected workflow's fields, accepts source-only Takeover, and 
 	}
 });
 
-it("loads large artifacts lazily and persists view state without changing a run", async () => {
+it.each([
+	"current",
+	"legacy",
+])("loads large %s artifacts lazily and persists view state without changing a run", async (storage) => {
 	const home = mkdtempSync(join(tmpdir(), "factory-lazy-"));
-	const runtime = new WorkflowRuntime(home, {
+	let runtime = new WorkflowRuntime(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
 	});
-	const run = runtime.create({
+	let run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
 			workflowId: "factory",
@@ -588,6 +592,18 @@ it("loads large artifacts lazily and persists view state without changing a run"
 	};
 	run.outputs.custom = { summary: "Big evidence", notes: "x".repeat(250000) };
 	run.outputs.other = { summary: "Big evidence", notes: "y".repeat(250000) };
+	let legacyBytes: string | undefined;
+	await runtime.save(run);
+	if (storage === "legacy") {
+		await runtime.shutdown();
+		legacyBytes = JSON.stringify(run);
+		writeFileSync(
+			join(runtime.directory, "runs", `${run.id}.json`),
+			legacyBytes,
+		);
+		runtime = new WorkflowRuntime(home, {});
+		run = runtime.get(run.id);
+	}
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],
@@ -615,6 +631,13 @@ it("loads large artifacts lazily and persists view state without changing a run"
 			summary: "Big evidence",
 		});
 		expect(detail.outputs.custom.notes).toBeUndefined();
+		if (legacyBytes)
+			expect(
+				readFileSync(
+					join(runtime.directory, "runs", `${run.id}.json.legacy`),
+					"utf8",
+				),
+			).toBe(legacyBytes);
 		if (run.outputs.other)
 			expect(detail.outputs.custom.__artifactHash).not.toBe(
 				detail.outputs.other.__artifactHash,
@@ -648,6 +671,7 @@ it("loads large artifacts lazily and persists view state without changing a run"
 		expect(run.status).toBe("completed");
 	} finally {
 		await server.stop();
+		await runtime.shutdown();
 		rmSync(home, { recursive: true, force: true });
 	}
 });
@@ -1519,7 +1543,7 @@ it("protects and validates machine settings, exposing durable cross-worker polic
 		const controller = new AbortController();
 		const queued = other.acquireLease(controller.signal);
 		const cancelled = expect(queued).rejects.toThrow();
-		await vi.waitFor(async () => {
+		await waitFor(async () => {
 			const response = await server.app.inject({ url: "/api/config", headers });
 			expect(response.json().capacity).toMatchObject({
 				limit: 2,

@@ -189,7 +189,7 @@ export async function groupedTool(
 					);
 				} finally {
 					repository.providerSnapshot = projected.gitProvider;
-					context.save?.();
+					await context.save?.();
 				}
 				if (output.unchanged === true) continue;
 				deliveries.push({
@@ -202,7 +202,7 @@ export async function groupedTool(
 				run.repositoryOutputs[repository.id] ??= {};
 				run.repositoryOutputs[repository.id]!["draft-pr"] = output;
 				run.outputs["draft-pr"] = aggregateDeliveries(deliveries);
-				context.save?.();
+				await context.save?.();
 			}
 		};
 		if (candidates.length) {
@@ -297,7 +297,7 @@ export async function groupedTool(
 				})),
 			);
 			run.outputs.ci = output;
-			context.save?.();
+			await context.save?.();
 			return output;
 		}
 		return undefined;
@@ -416,7 +416,7 @@ export async function groupedTool(
 				)
 					retained[key] = value;
 			}
-			context.save?.();
+			await context.save?.();
 		}
 	}
 	if (context.step.tool === "ci") {
@@ -431,7 +431,7 @@ export async function groupedTool(
 							| undefined) ?? delivery.output,
 				})),
 			);
-		context.save?.();
+		await context.save?.();
 	}
 	return aggregateDeliveries(deliveries);
 }
