@@ -163,12 +163,13 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: |
           export BOBS_FACTORY_DESKTOP_BINARY="$RUNNER_TEMP/runtime/bobs-factory-$VERSION-$TARGET/bobs-factory"
+          export BOBS_FACTORY_NATIVE_ELECTRON_RECEIPT="$RUNNER_TEMP/desktop/native-electron-receipt.json"
           export HOME="$RUNNER_TEMP/desktop-os-home"
           mkdir -p "$HOME"
           if [ "${{ runner.os }}" = "Linux" ]; then
-            xvfb-run -a source/apps/desktop/node_modules/.bin/electron --no-sandbox source/apps/desktop/test/native-smoke.mjs > "$RUNNER_TEMP/desktop/native-electron-receipt.json"
+            xvfb-run -a source/apps/desktop/node_modules/.bin/electron --no-sandbox source/apps/desktop/test/native-smoke.mjs > "$RUNNER_TEMP/desktop/native-electron-smoke.log" 2>&1
           else
-            source/apps/desktop/node_modules/.bin/electron source/apps/desktop/test/native-smoke.mjs > "$RUNNER_TEMP/desktop/native-electron-receipt.json"
+            source/apps/desktop/node_modules/.bin/electron source/apps/desktop/test/native-smoke.mjs > "$RUNNER_TEMP/desktop/native-electron-smoke.log" 2>&1
           fi
       - name: Validate actual Linux complete shell upgrade and rollback
         if: runner.os == 'Linux'
@@ -192,6 +193,7 @@ jobs:
             ${{ runner.temp }}/desktop/desktop-build.json
             ${{ runner.temp }}/desktop/native-service-receipt.json
             ${{ runner.temp }}/desktop/native-electron-receipt.json
+            ${{ runner.temp }}/desktop/native-electron-smoke.log
             ${{ runner.temp }}/desktop/native-shell-update-receipt.json
             ${{ runner.temp }}/desktop/native-shell-update-pending.json
             ${{ runner.temp }}/runtime/*.tar.gz
