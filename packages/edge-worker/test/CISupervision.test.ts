@@ -10,6 +10,22 @@ import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { providerReceipt } from "./fixtures/merge-readiness.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
+
+// Wait for the next actual CI poll to be scheduled after its commit, then
+// advance that poll. Advancing time while disk I/O is pending can miss it.
+function pollClock() {
+	vi.useFakeTimers();
+	const timers = vi.spyOn(globalThis, "setTimeout");
+	let consumed = 0;
+	return async () => {
+		const count = () =>
+			timers.mock.calls.filter(([, ms]) => ms === 10000).length;
+		await waitFor(() => expect(count()).toBeGreaterThan(consumed));
+		consumed = count();
+		await vi.advanceTimersByTimeAsync(10000);
+	};
+}
 
 const url = "https://github.com/test/repo/pull/1";
 const homes: string[] = [];
@@ -94,6 +110,7 @@ it.each([
 	}
 });
 afterEach(() => {
+	vi.restoreAllMocks();
 	vi.useRealTimers();
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
@@ -150,7 +167,7 @@ it.each([
 });
 
 it("waits for a provider-confirmed running retry and refreshes failed-check evidence when the attempt completes", async () => {
-	vi.useFakeTimers();
+	const poll = pollClock();
 	let attempt = 1,
 		status = "completed",
 		retries = 0,
@@ -252,23 +269,25 @@ it("waits for a provider-confirmed running retry and refreshes failed-check evid
 	run.outputs["draft-pr"] = { url };
 	try {
 		const execution = runtime.launch(run);
-		await vi.waitFor(() => expect(retries).toBe(1));
-		await vi.advanceTimersByTimeAsync(30000);
+		await waitFor(() => expect(retries).toBe(1));
+		await poll();
 		expect(run.status).toBe("running");
 		expect(agent).not.toHaveBeenCalled();
 		expect(retries).toBe(1);
-		expect(run.outputs["merge-readiness"]).toMatchObject({
-			checks: [
-				{ bucket: "fail", retry: { attempt: 2, status: "in_progress" } },
-			],
-			fix: false,
-			approved: false,
-			reviewReady: false,
-		});
+		await waitFor(() =>
+			expect(run.outputs["merge-readiness"]).toMatchObject({
+				checks: [
+					{ bucket: "fail", retry: { attempt: 2, status: "in_progress" } },
+				],
+				fix: false,
+				approved: false,
+				reviewReady: false,
+			}),
+		);
 		expect(detailReads).toBe(2);
 		status = "completed";
 		evidence = "Assertion failed: checkout must reject unauthorized users";
-		await vi.advanceTimersByTimeAsync(10000);
+		await poll();
 		await execution;
 		expect(agent).toHaveBeenCalledTimes(1);
 		expect(retries).toBe(1);
@@ -433,7 +452,7 @@ it.each([
 	const retained = structuredClone(fixture.run.ciSupervision?.retries ?? []);
 	const execution = fixture.runtime.launch(fixture.run);
 	try {
-		await vi.waitFor(() => expect(fixture.agent).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(fixture.agent).toHaveBeenCalledTimes(1));
 		await execution;
 		expect(fixture.run.outputs.ci).toMatchObject({
 			fix: true,
@@ -504,7 +523,7 @@ it("retains concrete GitHub runner allocation failure and current attempt receip
 });
 
 it("retries a provider-proven runner failure in runtime without launching an agent just to poll CI", async () => {
-	vi.useFakeTimers();
+	const poll = pollClock();
 	let retries = 0;
 	const command = vi.fn(async (_context, exe: string, args: string[]) => {
 		if (exe === "git") return args[0] === "rev-parse" ? "head" : "";
@@ -600,10 +619,10 @@ it("retries a provider-proven runner failure in runtime without launching an age
 	};
 	run.outputs["draft-pr"] = { url };
 	const finished = runtime.launch(run);
-	await vi.waitFor(() => expect(retries).toBe(1));
+	await waitFor(() => expect(retries).toBe(1));
 	expect(agent).not.toHaveBeenCalled();
 	expect(run.capacityLeaves?.ci?.phase).toBe("waiting-ci");
-	await vi.advanceTimersByTimeAsync(10000);
+	await poll();
 	await finished;
 	expect(agent).not.toHaveBeenCalled();
 	expect(run.status).toBe("completed");
@@ -611,14 +630,16 @@ it("retries a provider-proven runner failure in runtime without launching an age
 });
 
 it("asks for visible assistance when two provider-proven infrastructure retries fail", async () => {
-	vi.useFakeTimers();
+	const poll = pollClock();
 	const scenario = failingCI({ infrastructure: true });
 	const finished = scenario.runtime.launch(scenario.run);
-	await vi.waitFor(() => expect(scenario.retries()).toBe(1));
-	await vi.advanceTimersByTimeAsync(20000);
-	expect(scenario.retries()).toBe(2);
+	await waitFor(() => expect(scenario.retries()).toBe(1));
+	await poll();
+	await waitFor(() => expect(scenario.retries()).toBe(2));
+	await scenario.runtime.flush();
+	await poll();
 	expect(scenario.agent).not.toHaveBeenCalled();
-	expect(scenario.run.status).toBe("waiting");
+	await waitFor(() => expect(scenario.run.status).toBe("waiting"));
 	expect(scenario.run.questions.join(" ")).toContain(
 		"Two runtime retries are exhausted",
 	);
@@ -630,20 +651,20 @@ it("asks for visible assistance when two provider-proven infrastructure retries 
 it("keeps an ambiguous retry durable across restart instead of sending it twice", async () => {
 	const scenario = failingCI({ infrastructure: true, ambiguousRetry: true });
 	void scenario.runtime.launch(scenario.run);
-	await vi.waitFor(() => expect(scenario.run.status).toBe("waiting"));
+	await waitFor(() => expect(scenario.run.status).toBe("waiting"));
 	expect(scenario.retries()).toBe(1);
 	expect(scenario.run.questions.join(" ")).toContain("outcome is uncertain");
 	await scenario.runtime.shutdown();
 	const restored = new WorkflowRuntime(scenario.directory, scenario.hooks);
 	restored.resumeAll();
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(restored.get(scenario.run.id).status).toBe("waiting"),
 	);
 	restored.answer(
 		scenario.run.id,
 		"I inspected the provider; continue checking the existing request",
 	);
-	await vi.waitFor(() =>
+	await waitFor(() =>
 		expect(restored.get(scenario.run.id).questions.join(" ")).toContain(
 			"has not confirmed a new attempt",
 		),
@@ -673,7 +694,7 @@ it("starts diagnosis for a consequential failed test and does not classify it as
 });
 
 it("rechecks corrected PR metadata at the same SHA when its workflow reads the live PR title", async () => {
-	vi.useFakeTimers();
+	const poll = pollClock();
 	let title = "Incorrect title",
 		retries = 0;
 	const command = vi.fn(async (_context, exe: string, args: string[]) => {
@@ -782,8 +803,8 @@ it("rechecks corrected PR metadata at the same SHA when its workflow reads the l
 	};
 	run.outputs["draft-pr"] = { url };
 	const finished = runtime.launch(run);
-	await vi.waitFor(() => expect(retries).toBe(1));
-	await vi.advanceTimersByTimeAsync(10000);
+	await waitFor(() => expect(retries).toBe(1));
+	await poll();
 	await finished;
 	expect(agent).toHaveBeenCalledOnce();
 	expect(run.status).toBe("completed");
@@ -867,7 +888,7 @@ it("retains GitLab runner-system receipts and retries only the bound failed job 
 it("keeps a proven infrastructure failure visible when the provider cannot produce a safe retry identity", async () => {
 	const scenario = failingCI({ infrastructure: true, unsupportedRetry: true });
 	const finished = scenario.runtime.launch(scenario.run);
-	await vi.waitFor(() => expect(scenario.run.status).toBe("waiting"));
+	await waitFor(() => expect(scenario.run.status).toBe("waiting"));
 	expect(scenario.agent).not.toHaveBeenCalled();
 	expect(scenario.retries()).toBe(0);
 	expect(scenario.run.questions.join(" ")).toContain("cannot safely retry");

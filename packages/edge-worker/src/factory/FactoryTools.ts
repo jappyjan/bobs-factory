@@ -590,7 +590,7 @@ export class FactoryTools {
 			);
 			if (context.step.tool === "ci-fix-readiness") {
 				context.run.outputs.ci = output;
-				context.save?.();
+				await context.save?.();
 			}
 			return output;
 		}
@@ -716,7 +716,7 @@ export class FactoryTools {
 				if (readPath(contract, "authorization.status") === "deferred")
 					return { deferred: true };
 				const delivery = freezeDelivery(run, contract);
-				context.save?.();
+				await context.save?.();
 				return { mode: delivery.contract.mode };
 			}
 			case "external-apply": {
@@ -786,7 +786,7 @@ export class FactoryTools {
 								...externalEvidence,
 							}
 						: guide;
-				context.save?.();
+				await context.save?.();
 				return run.outputs.guide;
 			}
 			case "external-final": {
@@ -1221,7 +1221,7 @@ export class FactoryTools {
 				};
 				run.outputs.ci = refreshed;
 				reportReadiness(context, snapshot);
-				context.save?.();
+				await context.save?.();
 				return { ...refreshed, skipFix };
 			}
 			case "human-review": {

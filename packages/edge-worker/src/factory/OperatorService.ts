@@ -443,7 +443,7 @@ export class OperatorService {
 						"stale_state",
 						"The question batch changed. Inspect again before answering.",
 					);
-				this.answer(run.id, args.answer, args.kind, {
+				await this.answer(run.id, args.answer, args.kind, {
 					step: run.step,
 					questionBatchId: run.questionBatchId,
 					questions: run.questions,
@@ -471,7 +471,7 @@ export class OperatorService {
 	retryTracking(id: string) {
 		return this.runtime.retryTracking(id);
 	}
-	answer(
+	async answer(
 		id: string,
 		answer: string,
 		kind?: "answer" | "explanation",
@@ -490,6 +490,7 @@ export class OperatorService {
 				"The question or step changed. Refresh before answering.",
 			);
 		this.runtime.answer(id, answer, kind);
+		await this.runtime.flush(id);
 	}
 	async steer(id: string, text: string) {
 		const state = this.hooks.chat?.(id);

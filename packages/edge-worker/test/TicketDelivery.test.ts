@@ -39,6 +39,7 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { proposal } from "./fixtures/architecture.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
 afterEach(() => {
@@ -145,7 +146,7 @@ function setup() {
 		(r) => runtime.save(r),
 	);
 	freezeDelivery(run, contract);
-	runtime.save(run);
+	void runtime.save(run);
 	return {
 		home,
 		runtime,
@@ -321,6 +322,7 @@ it("routes the standard Factory through independent external verification and a 
 			throw new Error("External delivery must not invoke Git/forge commands");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async (ctx) => {
 			if (ctx.step.id === "clarify")
@@ -355,7 +357,7 @@ it("routes the standard Factory through independent external verification and a 
 	const run = runtime.get(f.run.id);
 	delete run.delivery;
 	const executing = runtime.launch(run);
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		if (run.status === "failed") throw new Error(run.error);
 		expect(run.reviewGate?.status).toBe("pending");
 	});
@@ -541,7 +543,7 @@ it("recovers already-applied external work without replaying mutations and prese
 		id: 1,
 		url: f.contract.targets[0]!.resource.url,
 	};
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const original = structuredClone(f.run.workflow),
 		history = structuredClone(f.run.history),
 		checkpoint = structuredClone(f.run.checkpoint);
@@ -552,6 +554,7 @@ it("recovers already-applied external work without replaying mutations and prese
 			throw new Error("No Git during external recovery");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async () => {
 			throw new Error("Recovery must not replay implementation");
@@ -566,7 +569,7 @@ it("recovers already-applied external work without replaying mutations and prese
 		digest(f.contract),
 		"operator-passkey",
 	);
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		if (recovered.status === "failed") throw new Error(recovered.error);
 		expect(recovered.reviewGate?.status).toBe("pending");
 	});
@@ -592,7 +595,7 @@ it("recovers already-applied external work without replaying mutations and prese
 	});
 	const restored = restoredRuntime.get(f.run.id);
 	const executing = restoredRuntime.launch(restored);
-	await vi.waitFor(() => expect(restored.status).toBe("waiting"));
+	await waitFor(() => expect(restored.status).toBe("waiting"));
 	restoredRuntime.decide(restored.id, {
 		reviewId: restored.reviewGate!.id,
 		headSha: "",
@@ -754,7 +757,7 @@ it("renews verification after delayed completion drift without replaying ticket 
 		],
 		error: "External state changed",
 	};
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const tools = new FactoryTools({
 		postComment: async () => {},
 		ticketDelivery: f.service,
@@ -762,6 +765,7 @@ it("renews verification after delayed completion drift without replaying ticket 
 			throw new Error("Reverification must not invoke Git");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async () => {
 			throw new Error("No mutation agent allowed");
@@ -775,7 +779,7 @@ it("renews verification after delayed completion drift without replaying ticket 
 	runtime.updateViewState(run.id, { settledAt: new Date().toISOString() });
 	runtime.reverifyExternal(run.id, "authenticated-operator");
 	expect(runtime.viewState(run.id)).toEqual({ keptOpen: true });
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		if (run.status === "failed") throw new Error(run.error);
 		expect(run.reviewGate?.status).toBe("pending");
 	});
@@ -794,7 +798,7 @@ it("renews verification after delayed completion drift without replaying ticket 
 		externalDigest: run.reviewGate!.externalDigest,
 		decision: "approve",
 	});
-	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	await waitFor(() => expect(run.status).toBe("completed"));
 	expect(externalCompletionProven(run)).toBe(true);
 	await runtime.shutdown();
 });
@@ -852,7 +856,7 @@ it("corrects mixed external feedback after merge without repeating repository im
 		defaultWorkflows.find((w) => w.id === "factory-pipeline")!,
 	);
 	f.run.checkpoint = { current: "external-correction", visits: {} };
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const tools = new FactoryTools({
 		postComment: async () => {},
 		ticketDelivery: f.service,
@@ -860,6 +864,7 @@ it("corrects mixed external feedback after merge without repeating repository im
 			throw new Error("Must retain the confirmed repository delivery");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async (ctx) => {
 			switch (ctx.step.id) {
@@ -888,7 +893,7 @@ it("corrects mixed external feedback after merge without repeating repository im
 	});
 	const run = runtime.get(f.run.id);
 	const executing = runtime.launch(run);
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		if (run.status === "failed") throw new Error(run.error);
 		expect(run.reviewGate?.status).toBe("pending");
 	});
@@ -1026,7 +1031,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 			})),
 		})),
 	};
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const visited: string[] = [];
 	const tools = new FactoryTools({
 		postComment: async () => {},
@@ -1035,6 +1040,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 			throw new Error("No publication during contract correction");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async (ctx) => {
 			visited.push(ctx.step.id);
@@ -1087,7 +1093,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 	});
 	const run = runtime.get(f.run.id);
 	const executing = runtime.launch(run);
-	await vi.waitFor(() => expect(run.reviewGate?.status).toBe("pending"));
+	await waitFor(() => expect(run.reviewGate?.status).toBe("pending"));
 	runtime.decide(run.id, {
 		reviewId: run.reviewGate!.id,
 		headSha: "current-head",
@@ -1095,9 +1101,10 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 		decision: "reject",
 		feedback: "Correct ticket description and preserve repository work",
 	});
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		if (run.status === "failed") throw new Error(run.error);
 		expect(run.architectureGate).toBeDefined();
+		expect(run.status).toBe("waiting");
 	});
 	expect(visited).not.toContain("implement");
 	expect(f.state().fields.description).toBe("corrected");
@@ -1108,7 +1115,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 		digest: candidate.digest,
 		decision: "accept",
 	});
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		if (run.status === "failed") throw new Error(run.error);
 		expect(run.questions).toEqual([
 			"Fixture pauses at the repository implementation boundary",
@@ -1167,7 +1174,7 @@ it("renews mixed acceptance once for the full grouped scope after confirmed merg
 	expect(await f.service.finalCheck(f.run)).toBe(false);
 	f.run.status = "completed";
 	f.run.ticketSync = { receipts: [], error: "External state changed" };
-	f.runtime.save(f.run);
+	await f.runtime.save(f.run);
 	const tools = new FactoryTools({
 		postComment: async () => {},
 		ticketDelivery: f.service,
@@ -1175,6 +1182,7 @@ it("renews mixed acceptance once for the full grouped scope after confirmed merg
 			throw new Error("Confirmed grouped merges must be retained");
 		},
 	});
+	await f.runtime.flush();
 	const runtime = new WorkflowRuntime(f.home, {
 		agent: async () => {
 			throw new Error("No implementation replay");
@@ -1183,7 +1191,7 @@ it("renews mixed acceptance once for the full grouped scope after confirmed merg
 		tool: (ctx) => tools.tool(ctx),
 	});
 	const run = runtime.reverifyExternal(f.run.id, "authenticated-operator");
-	await vi.waitFor(() => {
+	await waitFor(() => {
 		if (run.status === "failed") throw new Error(run.error);
 		expect(run.reviewGate?.status).toBe("pending");
 	});
@@ -1202,7 +1210,7 @@ it("renews mixed acceptance once for the full grouped scope after confirmed merg
 		externalDigest: run.reviewGate!.externalDigest,
 		decision: "approve",
 	});
-	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	await waitFor(() => expect(run.status).toBe("completed"));
 	expect(externalCompletionProven(run)).toBe(true);
 	expect(f.content).toHaveBeenCalledTimes(1);
 	expect(f.relationship).toHaveBeenCalledTimes(1);

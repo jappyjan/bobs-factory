@@ -329,7 +329,7 @@ export class TicketDelivery {
 			run: FactoryRun,
 			target: TicketTarget,
 		) => Promise<TicketDeliveryAdapter>,
-		private save: (run: FactoryRun) => void,
+		private save: (run: FactoryRun) => void | Promise<void>,
 	) {}
 	private accepted(run: FactoryRun): DeliveryState {
 		if (
@@ -356,7 +356,7 @@ export class TicketDelivery {
 		await this.preflight(run);
 		delete delivery.verification;
 		delete delivery.finalCheck;
-		this.save(run);
+		await this.save(run);
 		for (const target of delivery.contract.targets) {
 			const adapter = await this.adapter(run, target.resource);
 			for (const op of target.operations) {
@@ -378,7 +378,7 @@ export class TicketDelivery {
 					receipt.after = actual;
 					receipt.status = "applied";
 					delete receipt.error;
-					this.save(run);
+					await this.save(run);
 					continue;
 				}
 				if (receipt?.status === "applied")
@@ -446,12 +446,12 @@ export class TicketDelivery {
 				if (!safe) {
 					receipt.status = "conflicted";
 					receipt.error = "Relevant state changed since accepted baseline";
-					this.save(run);
+					await this.save(run);
 					throw new Error(`${op.id}: ${receipt.error}`);
 				}
 				receipt.status = "pending";
 				receipt.attempts++;
-				this.save(run);
+				await this.save(run);
 				try {
 					if (op.kind === "content") await adapter.content(op.fields);
 					else await adapter.relationship(op.kind, op.relationship);
@@ -469,7 +469,7 @@ export class TicketDelivery {
 					receipt.error = String(error);
 					throw error;
 				} finally {
-					this.save(run);
+					await this.save(run);
 				}
 			}
 		}
@@ -558,7 +558,7 @@ export class TicketDelivery {
 			}
 		delivery.verification = snapshot;
 		delete delivery.finalCheck;
-		this.save(run);
+		await this.save(run);
 		return snapshot;
 	}
 	async finalCheck(
@@ -581,19 +581,19 @@ export class TicketDelivery {
 		// reading, but invalidate it if the reread fails or finds material drift.
 		if (!preserveProofWhileChecking) {
 			delete delivery.finalCheck;
-			this.save(run);
+			await this.save(run);
 		}
 		let snapshot: ExternalSnapshot;
 		try {
 			snapshot = await this.collect(run);
 		} catch (error) {
 			delete delivery.finalCheck;
-			this.save(run);
+			await this.save(run);
 			throw error;
 		}
 		if (snapshot.digest !== accepted.externalDigest) {
 			delete delivery.finalCheck;
-			this.save(run);
+			await this.save(run);
 			return false;
 		}
 		delivery.finalCheck = {
@@ -601,7 +601,7 @@ export class TicketDelivery {
 			reviewId: accepted.reviewId,
 			at: new Date().toISOString(),
 		};
-		this.save(run);
+		await this.save(run);
 		return true;
 	}
 }

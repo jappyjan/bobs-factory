@@ -254,7 +254,7 @@ export async function acquireDelivery(
 	run: FactoryRun,
 	runs: () => Iterable<FactoryRun>,
 	signal: AbortSignal,
-	save: () => void,
+	save: () => void | Promise<void>,
 	log: (message: string) => void,
 	options: {
 		key?: string;
@@ -278,7 +278,7 @@ export async function acquireDelivery(
 	// Reconcile the entire target set synchronously before admitting any mutation.
 	run.deliveryReservations[key] = claim;
 	updateSummary(run, claim);
-	save();
+	await save();
 	let reported = "";
 	try {
 		for (;;) {
@@ -312,14 +312,14 @@ export async function acquireDelivery(
 				if (JSON.stringify(current) !== JSON.stringify(claim.scopes)) {
 					claim.scopes = current;
 					updateSummary(run, claim);
-					save();
+					await save();
 					continue;
 				}
 				claim.phase = "active";
 				claim.admittedAt = new Date().toISOString();
 				delete claim.blockers;
 				updateSummary(run, claim);
-				save();
+				await save();
 				if (claim.scopes.length)
 					log(
 						`${claim.reason} admitted for ${claim.scopes.map(deliveryTargetLabel).join(", ")}.`,
@@ -330,7 +330,7 @@ export async function acquireDelivery(
 			if (reported !== fingerprint) {
 				claim.blockers = blockers;
 				updateSummary(run, claim);
-				save();
+				await save();
 				log(
 					`Waiting for ${claim.reason}: ${blockers.map((blocker) => `run ${blocker.runId}, operation ${blocker.operation.replace(/:(mutation|resources)$/, "")}, target ${blocker.targets.map(deliveryTargetLabel).join(", ")}`).join("; ")}.`,
 				);
@@ -340,7 +340,7 @@ export async function acquireDelivery(
 		}
 	} catch (error) {
 		releaseDelivery(run, "Admission cancelled", key);
-		save();
+		await save();
 		throw error;
 	}
 }

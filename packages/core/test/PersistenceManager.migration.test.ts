@@ -12,10 +12,12 @@ import {
 
 // Mock fs modules
 vi.mock("node:fs", () => ({
+	readFileSync: vi.fn(),
 	existsSync: vi.fn(),
 }));
 
 vi.mock("node:fs/promises", () => ({
+	copyFile: vi.fn(),
 	mkdir: vi.fn(),
 	readFile: vi.fn(),
 	rename: vi.fn(),
@@ -140,10 +142,10 @@ describe("PersistenceManager", () => {
 			expect(writeFile).toHaveBeenCalled();
 			const savedData = JSON.parse(
 				Array.from(
-					vi.mocked(writeFile).mock.calls[0][1] as Iterable<string>,
+					vi.mocked(writeFile).mock.calls.at(-1)![1] as Iterable<string>,
 				).join(""),
 			);
-			expect(savedData.version).toBe(PERSISTENCE_VERSION);
+			expect(savedData.summary.version).toBe(PERSISTENCE_VERSION);
 		});
 
 		it("should flatten entries and preserve mappings during v2→v4 migration", async () => {
@@ -348,10 +350,10 @@ describe("PersistenceManager", () => {
 			expect(writeFile).toHaveBeenCalled();
 			const savedData = JSON.parse(
 				Array.from(
-					vi.mocked(writeFile).mock.calls[0][1] as Iterable<string>,
+					vi.mocked(writeFile).mock.calls.at(-1)![1] as Iterable<string>,
 				).join(""),
 			);
-			expect(savedData.version).toBe("4.0");
+			expect(savedData.summary.version).toBe(PERSISTENCE_VERSION);
 		});
 	});
 
@@ -387,8 +389,8 @@ describe("PersistenceManager", () => {
 	});
 
 	describe("PERSISTENCE_VERSION constant", () => {
-		it("should be 4.0", () => {
-			expect(PERSISTENCE_VERSION).toBe("4.0");
+		it("should be 5.0", () => {
+			expect(PERSISTENCE_VERSION).toBe("5.0");
 		});
 	});
 });

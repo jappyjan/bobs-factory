@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Keep the web UI responsive while saving large conversations and run artifacts, reuse immutable history chunks, load dashboard summaries and activity pages lazily, and preserve checkpoint/approval ordering across restart. Version 5 retains legacy documents and requires complete-home backups for downgrade. ([#102](https://github.com/jappyjan/bobs-factory/pull/102), [F1 validation](apps/f1/test-drives/2026-10-12-persistence-responsiveness.md))
+
 - Preserve readable Linear publication while integrating external ticket delivery and background tracking; retain status deduplication, refresh the simulated workflow's tracking wait, and keep the localhost access, architecture approval and Linear publication capability descriptions together. ([#73](https://github.com/jappyjan/bobs-factory/pull/73), [F1 validation](apps/f1/test-drives/2026-10-11-linear-publication-main-merge.md))
 
 - Prevent acceptance while an older architecture proposal is displayed, and refuse stale accept callbacks while preserving approval of the current version ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#101](https://github.com/jappyjan/bobs-factory/pull/101)).

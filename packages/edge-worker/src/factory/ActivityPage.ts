@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { snapshotArrayTimestamps } from "bobs-factory-core";
 
 type Event = {
 	at: string;
@@ -62,11 +63,18 @@ export function activityPage(
 		}
 		return markers[Math.max(0, low - 1)]?.step ?? "Bob’s Factory";
 	};
+	const timestamps = snapshotArrayTimestamps(entries);
 	const rows = [
-		...entries.map((value, index) => {
-			const entry = value as Record<string, any>;
+		...Array.from({ length: entries.length }, (_, index) => {
+			const entry = timestamps
+				? undefined
+				: (entries[index] as Record<string, any>);
 			const at = new Date(
-				entry.metadata?.timestamp ?? entry.timestamp ?? entry.createdAt ?? 0,
+				timestamps?.[index] ??
+					entry?.metadata?.timestamp ??
+					entry?.timestamp ??
+					entry?.createdAt ??
+					0,
 			).toISOString();
 			return {
 				kind: "entry",
@@ -74,7 +82,7 @@ export function activityPage(
 				index,
 				at,
 				step: stepAt(at),
-				value,
+				value: () => entries[index],
 			};
 		}),
 		...events
@@ -130,7 +138,9 @@ export function activityPage(
 		entries: page
 			.filter((row) => row.kind === "entry")
 			.map((row) => ({
-				...activityPreview(row.value),
+				...activityPreview(
+					typeof row.value === "function" ? row.value() : row.value,
+				),
 				activityCursor: cursor(row),
 				activityIndex: row.index,
 				activityStep: row.step,
@@ -138,7 +148,9 @@ export function activityPage(
 		events: page
 			.filter((row) => row.kind === "event")
 			.map((row) => ({
-				...activityPreview(row.value),
+				...activityPreview(
+					typeof row.value === "function" ? row.value() : row.value,
+				),
 				activityCursor: cursor(row),
 				activityIndex: row.index,
 			})),

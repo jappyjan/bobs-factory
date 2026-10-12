@@ -20,6 +20,8 @@ import {
 	type IAgentRunner,
 	type ILogger,
 	type IssueMinimal,
+	immutableJson,
+	immutableTranscript,
 	isInternalPublication,
 	publicFailure,
 	type RepositoryContext,
@@ -1001,7 +1003,7 @@ export class AgentSessionManager extends EventEmitter {
 
 			// Store entry locally first
 			const entries = this.entries.get(sessionId) || [];
-			entries.push(entry);
+			entries.push(immutableJson(entry));
 			this.entries.set(sessionId, entries);
 			this.emit("sessionChanged", sessionId);
 
@@ -1804,9 +1806,7 @@ export class AgentSessionManager extends EventEmitter {
 
 		// Serialize entries
 		for (const [sessionId, sessionEntries] of this.entries.entries()) {
-			entries[sessionId] = sessionEntries.map((entry) => ({
-				...entry,
-			}));
+			entries[sessionId] = sessionEntries;
 		}
 
 		return { sessions, entries };
@@ -1834,11 +1834,8 @@ export class AgentSessionManager extends EventEmitter {
 
 		// Restore entries
 		for (const [sessionId, entriesData] of Object.entries(serializedEntries)) {
-			const sessionEntries: CyrusAgentSessionEntry[] = entriesData.map(
-				(entryData) => ({
-					...entryData,
-				}),
-			);
+			const sessionEntries = entriesData;
+			immutableTranscript(sessionEntries);
 			this.entries.set(sessionId, sessionEntries);
 		}
 

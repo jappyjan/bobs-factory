@@ -46,6 +46,7 @@ import {
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { githubApiReceipt } from "./fixtures/github-api.js";
 import { qaExecution, qaScope } from "./fixtures/qa.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const dirs: string[] = [];
 afterEach(() =>
@@ -226,7 +227,7 @@ it("keeps approved historical review receipts and guides readable without backfi
 		{ step: "aggregate-review", output: historical, at: "2025-01-01" },
 		{ step: "guide", output: guide, at: "2025-01-01" },
 	];
-	runtime.save(run);
+	await runtime.save(run);
 	await runtime.shutdown();
 	const file = join(runtime.directory, "runs", `${run.id}.json`);
 	const persisted = readFileSync(file, "utf8");
@@ -622,7 +623,7 @@ it.each([
 		});
 		branch.reviewKey = expectedKey;
 	}
-	fixture.runtime.save(fixture.run);
+	await fixture.runtime.save(fixture.run);
 	const historyLength = fixture.run.history.length;
 	const resumed = new WorkflowRuntime(fixture.state, {
 		agent: async () => {
@@ -636,7 +637,7 @@ it.each([
 		},
 	});
 	resumed.retry(fixture.run.id);
-	await vi.waitFor(
+	await waitFor(
 		() => expect(resumed.get(fixture.run.id).status).toBe("completed"),
 		{ timeout: 3000 },
 	);
@@ -1028,7 +1029,7 @@ it("pauses unchanged specialist rejections and resumes the fixer after assistanc
 	]).at(-1)!;
 	const launched = fixture.runtime.launch(fixture.run);
 	try {
-		await vi.waitFor(
+		await waitFor(
 			() => expect(fixture.run.status, fixture.run.error).toBe("waiting"),
 			{ timeout: 10000 },
 		);
@@ -1106,7 +1107,7 @@ it("waits for mixed-runner cleanup before checking the review worktree", async (
 				try {
 					dirtyDuringReview = fixture.git("status", "--porcelain");
 					installed();
-					await vi.waitFor(() => {
+					await waitFor(() => {
 						expect(
 							ctx.run.history.some((h) =>
 								h.step.endsWith("/requirements-review"),
@@ -1169,7 +1170,7 @@ it("cancels incomplete reviewers without approving; retry restores the same base
 			calls.push(ctx.step.id);
 			if (ctx.step.reviewContract === "inventory-v1") return inventory();
 			if (ctx.step.id === "requirements-review" && fail) {
-				await vi.waitFor(
+				await waitFor(
 					() =>
 						expect(
 							ctx.run.history.some((h) => h.step.endsWith("/security-review")),
@@ -1197,7 +1198,7 @@ it("cancels incomplete reviewers without approving; retry restores the same base
 		tool: async () => ({}),
 	});
 	restored.retry(fixture.run.id);
-	await vi.waitFor(
+	await waitFor(
 		() => expect(restored.get(fixture.run.id).status).toBe("completed"),
 		{ timeout: 10000 },
 	);
