@@ -918,9 +918,13 @@ it.each([
 	await waitFor(() => expect(visits).toContain("first:capture"));
 	const b = runtime.launch(second);
 	try {
-		await waitFor(() =>
-			expect(second.step).toBe(isolation === "worktree" ? "merge" : "capture"),
-		);
+		await waitFor(() => {
+			expect(second.step).toBe(isolation === "worktree" ? "merge" : "capture");
+			if (isolation !== "worktree")
+				expect(second.deliveryCoordination?.reason).toBe(
+					"Shared QA/environment resource",
+				);
+		});
 		if (isolation === "worktree") expect(visits).toContain("second:capture");
 		else {
 			expect(visits).not.toContain("second:capture");
