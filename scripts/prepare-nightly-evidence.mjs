@@ -35,6 +35,10 @@ import {
 import { ARCHIVE_LIMITS, inspectArchive } from "./lib/bounded-archive.mjs";
 import { githubClient } from "./lib/github-release.mjs";
 import {
+	archiveNativeNotices,
+	stageNightlyDesktop,
+} from "./lib/nightly-artifacts.mjs";
+import {
 	rebindSourceMaterials,
 	verifyDependencyBaseline,
 } from "./lib/nightly-source.mjs";
@@ -301,7 +305,8 @@ try {
 		copyFileSync(join(checksDirectory, record.file), join(output, record.file));
 	const bindings = [],
 		targets = {},
-		desktop = [];
+		desktop = [],
+		additionalAssets = [];
 	for (const target of TARGETS) {
 		const nativeDirectory = await restore(selected[target].name),
 			stem = `bobs-factory-${identity.version}-${target}`;
@@ -393,20 +398,7 @@ try {
 			),
 		);
 		const name = `native-notices-${target}.tar.gz`;
-		execFileSync(
-			"tar",
-			[
-				"-czf",
-				join(materialDirectory, name),
-				"-C",
-				native,
-				"LICENSE",
-				"NOTICE",
-				"THIRD_PARTY_NOTICES.txt",
-				"licenses",
-			],
-			{ env: { ...process.env, COPYFILE_DISABLE: "1" } },
-		);
+		archiveNativeNotices(native, join(materialDirectory, name));
 		priorMaterials.records.push({
 			kind: "candidate-notices",
 			...fileRecord(join(materialDirectory, name), name),
@@ -426,145 +418,15 @@ try {
 		const desktopDirectory = await restore(
 			`desktop-${target}-${candidate.digest}`,
 		);
-		const info = JSON.parse(
-				readFileSync(join(desktopDirectory, "desktop-build.json")),
-			),
-			electron = JSON.parse(
-				readFileSync(join(desktopDirectory, "native-electron-receipt.json")),
-			);
-		requireValue(
-			info.candidateDigest === candidate.digest &&
-				info.commit === identity.commit &&
-				info.version === identity.version &&
-				info.target === target &&
-				info.licenseValidation?.status === "passed" &&
-				electron.passed === true &&
-				`${electron.platform}-${electron.arch}` === target,
-			"Invalid current native desktop/license receipts",
+		const stagedDesktop = stageNightlyDesktop(
+			desktopDirectory,
+			nativeDirectory,
+			output,
+			identity,
+			target,
 		);
-		requireValue(
-			sha256File(join(desktopDirectory, `${stem}.tar.gz`)) ===
-				sha256File(join(nativeDirectory, `${stem}.tar.gz`)),
-			"Desktop must use exact canonical native runtime",
-		);
-		const service = JSON.parse(
-			readFileSync(join(desktopDirectory, "native-service-receipt.json")),
-		);
-		requireValue(service.passed === true, "Native service check failed");
-		const validation = `desktop-validation-${target}.json`;
-		const rawFiles = [
-			"desktop-build.json",
-			"native-service-receipt.json",
-			"native-electron-receipt.json",
-			...(target.startsWith("linux")
-				? ["native-shell-update-receipt.json"]
-				: []),
-		];
-		const raw = [];
-		for (const file of rawFiles) {
-			const dest = `${target}-${file}`;
-			copyFileSync(join(desktopDirectory, file), join(output, dest));
-			raw.push(fileRecord(join(output, dest), dest));
-		}
-		if (target.startsWith("linux"))
-			requireValue(
-				JSON.parse(
-					readFileSync(
-						join(desktopDirectory, "native-shell-update-receipt.json"),
-					),
-				).status === "passed",
-				"Linux shell upgrade/rollback check failed",
-			);
-		writeFileSync(
-			join(output, validation),
-			jsonBytes({
-				product: "bobs-factory",
-				status: "passed",
-				...identity,
-				target,
-				candidateDigest: candidate.digest,
-				scope:
-					"Fresh CI native service/Electron and installer notices; Linux packaged upgrade/rollback. Mac physical OS trust/DMG drag-drop are not automated claims. Accepted scoped historical observations retained in baseline.",
-				rawReceipts: raw,
-			}),
-		);
-		const put = (record) => {
-			requireValue(
-				record && /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(record.file),
-				"Unsafe desktop record",
-			);
-			const actual = fileRecord(
-				join(desktopDirectory, record.file),
-				record.file,
-			);
-			requireValue(
-				canonical(actual) === canonical(record),
-				"Desktop artifact integrity mismatch",
-			);
-			if (!existsSync(join(output, record.file)))
-				copyFileSync(
-					join(desktopDirectory, record.file),
-					join(output, record.file),
-				);
-			return actual;
-		};
-		const update = put(info.update.archive),
-			metadata = put(info.update.metadata);
-		for (const asset of info.assets) {
-			if (asset.file.endsWith(".deb")) {
-				const genericTarget = `${target}-deb`,
-					genericValidation = `desktop-validation-${genericTarget}.json`,
-					genericMetadata = `desktop-installer-${genericTarget}.json`;
-				writeFileSync(
-					join(output, genericValidation),
-					jsonBytes({
-						product: "bobs-factory",
-						status: "passed",
-						...identity,
-						target: genericTarget,
-						scope:
-							"Fresh DEB build and installer license validation; generic installer only, not an AppImage updater payload.",
-						rawReceipts: raw,
-					}),
-				);
-				writeFileSync(
-					join(output, genericMetadata),
-					jsonBytes({
-						product: "bobs-factory",
-						...identity,
-						target: genericTarget,
-						format: "deb",
-						installer: asset,
-						automaticUpdate: false,
-					}),
-				);
-				desktop.push({
-					...identity,
-					target: genericTarget,
-					platformRequirements: "Ubuntu 24.04 / glibc 2.39 or newer",
-					archive: put(asset),
-					updateMetadata: fileRecord(
-						join(output, genericMetadata),
-						genericMetadata,
-					),
-					validation: fileRecord(
-						join(output, genericValidation),
-						genericValidation,
-					),
-				});
-			} else
-				desktop.push({
-					...identity,
-					target,
-					platformRequirements: target.startsWith("darwin")
-						? "macOS 15 or newer"
-						: "Ubuntu 24.04 / glibc 2.39 or newer",
-					archive: put(asset),
-					...(asset.file !== update.file ? { updateArchive: update } : {}),
-					updateMetadata: metadata,
-					validation: fileRecord(join(output, validation), validation),
-				});
-		}
+		desktop.push(...stagedDesktop.artifacts);
+		additionalAssets.push(...stagedDesktop.additionalAssets);
 		rmSync(nativeDirectory, { recursive: true, force: true });
 		rmSync(native, { recursive: true, force: true });
 		rmSync(desktopDirectory, { recursive: true, force: true });
@@ -664,7 +526,7 @@ try {
 			join(output, "source-rebuild.tar.gz"),
 			"source-rebuild.tar.gz",
 		),
-		desktop: { schemaVersion: 1, artifacts: desktop },
+		desktop: { schemaVersion: 1, artifacts: desktop, additionalAssets },
 	};
 	validateEvidence(evidence, output, identity);
 	writeFileSync(join(output, "release-evidence.json"), jsonBytes(evidence));

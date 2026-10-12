@@ -30,7 +30,13 @@ export function verifyDependencyBaseline(
 		f.endsWith("/package.json") ||
 		f === "package.json" ||
 		f.startsWith("docs/distribution/licenses/") ||
-		["LICENSE", "NOTICE"].includes(f);
+		[
+			"LICENSE",
+			"NOTICE",
+			"apps/desktop/LICENSE",
+			"apps/desktop/NOTICE",
+			"distribution/npm/bobs-factory-trial/LICENSE",
+		].includes(f);
 	const before = files(baselineCommit).filter(protectedFile),
 		after = files(candidateCommit).filter(protectedFile);
 	requireValue(
@@ -46,6 +52,7 @@ export function verifyDependencyBaseline(
 			return canonical(
 				Object.fromEntries(
 					[
+						"license",
 						"dependencies",
 						"devDependencies",
 						"optionalDependencies",

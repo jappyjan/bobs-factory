@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Finish automatic nightly CI with an accepted pinned source baseline and fresh native/desktop/mock workflow evidence; safely reconstruct prepared source chunks without duplicate transport bytes and keep artifact ZIPs out of retained inventories ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#103](https://github.com/jappyjan/bobs-factory/pull/103)).
+- Finish automatic nightly CI with an accepted pinned source baseline and fresh native/desktop/mock workflow evidence; preserve actual native notices, desktop ZIP paths, shipped license inputs and four desktop update targets while inventorying DEBs separately; safely reconstruct prepared source chunks without duplicate transport bytes and keep artifact ZIPs out of retained inventories ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#103](https://github.com/jappyjan/bobs-factory/pull/103)).
 
 - Preserve readable Linear publication while integrating external ticket delivery and background tracking; retain status deduplication, refresh the simulated workflow's tracking wait, and keep the localhost access, architecture approval and Linear publication capability descriptions together. ([#73](https://github.com/jappyjan/bobs-factory/pull/73), [F1 validation](apps/f1/test-drives/2026-10-11-linear-publication-main-merge.md))
 

@@ -59,8 +59,9 @@ an arbitrary nested manifest or a newly written `passed` label.
 Every input is downloaded over HTTPS without forwarding repository credentials,
 and checked against its pinned size/hash. The source archive passes the existing
 bounded semantic intake. The baseline commit must be an ancestor of current main.
-All package dependency declarations, lockfile, workspace policy and maintained
-license/notice inputs must remain unchanged. App changes and package version
+All package dependency and license declarations, lockfile, workspace policy,
+maintained runtime notices, desktop LICENSE/NOTICE and the shipped npm launcher
+LICENSE must remain unchanged. App changes and package version
 changes are allowed; new/changed dependencies, Bun, Electron or license material
 fail with a request to update this one accepted baseline.
 
@@ -85,6 +86,15 @@ Stable remains explicit version/promotion, manually supplied reviewed evidence,
 and approval of the exact prepared asset digest. This CI policy does not authorize
 stable publication or activate automatic nightlies. The coordinator owns the
 bootstrap variable, rollout activation, fresh candidate and publication.
+
+The desktop upload retains its `desktop/` and `runtime/` member directories.
+Intake reads metadata, receipts and installers from `desktop/` and verifies the
+`runtime/` archive against the canonical native bytes. It archives only the three
+notice files actually shipped by the five-member native bundle. DMG/AppImage rows
+remain the four supported desktop targets; Linux DEBs travel in
+`desktop.additionalAssets` and the complete generic `manifest.assets` inventory.
+Their source sizes/hashes and safe names are checked by preparation, without
+making DEBs update payloads or additional targets.
 
 ## Transport recovery
 

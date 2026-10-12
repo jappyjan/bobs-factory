@@ -1,0 +1,189 @@
+{
+	"scope": "Retained real 844 native/desktop upload ZIP layouts; regression payload bytes are compact controlled substitutes, not native receipts or release evidence. No installer/binary blobs are included.",
+	"sourceSha": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+	"nativeRunId": 38179973111,
+	"desktopRunId": 38180327063,
+	"retainedInventoryDirectory": "final-combined-preparation-8443388-20261012-2221/artifacts",
+	"shapes": {
+		"binary-darwin-arm64": {
+			"inventorySha256": "6f2b4f92a9be27e8a942a7e09879e795d25ce7b300bb7c842e4c3b7d09ac4bad",
+			"members": [
+				"bobs-factory-{version}-darwin-arm64/NOTICE",
+				"bobs-factory-{version}-darwin-arm64/THIRD_PARTY_NOTICES.txt",
+				"bobs-factory-{version}-darwin-arm64/LICENSE",
+				"bobs-factory-{version}-darwin-arm64/bobs-factory",
+				"bobs-factory-{version}-darwin-arm64/build.json",
+				"bobs-factory-{version}-darwin-arm64.manifest.json",
+				"bobs-factory-{version}-darwin-arm64.tar.gz",
+				"native-helpers.json",
+				"prepared-agent-boundaries.json",
+				"public-installer.json",
+				"runtime-smoke.txt"
+			]
+		},
+		"binary-darwin-x64": {
+			"inventorySha256": "c9342c28780bf66162eaef662ee27dfcbdcdb77da3db725e58622ae1a0b28705",
+			"members": [
+				"bobs-factory-{version}-darwin-x64/LICENSE",
+				"bobs-factory-{version}-darwin-x64/NOTICE",
+				"bobs-factory-{version}-darwin-x64/THIRD_PARTY_NOTICES.txt",
+				"bobs-factory-{version}-darwin-x64/bobs-factory",
+				"bobs-factory-{version}-darwin-x64/build.json",
+				"bobs-factory-{version}-darwin-x64.manifest.json",
+				"bobs-factory-{version}-darwin-x64.tar.gz",
+				"native-helpers.json",
+				"prepared-agent-boundaries.json",
+				"public-installer.json",
+				"runtime-smoke.txt"
+			]
+		},
+		"binary-linux-x64": {
+			"inventorySha256": "0a6e2121e7ea147bd3d49fa18c72f74b5b2ce94671b4464adb9d6a761a9187de",
+			"members": [
+				"bobs-factory-{version}-linux-x64/LICENSE",
+				"bobs-factory-{version}-linux-x64/THIRD_PARTY_NOTICES.txt",
+				"bobs-factory-{version}-linux-x64/NOTICE",
+				"bobs-factory-{version}-linux-x64/bobs-factory",
+				"bobs-factory-{version}-linux-x64/build.json",
+				"bobs-factory-{version}-linux-x64.tar.gz",
+				"bobs-factory-{version}-linux-x64.manifest.json",
+				"native-helpers.json",
+				"prepared-agent-boundaries.json",
+				"runtime-smoke.txt",
+				"public-installer.json"
+			]
+		},
+		"binary-linux-arm64": {
+			"inventorySha256": "1cbf118fbed40629704d591bfb698a7f06a9023cd76c7ba5723feebcb5e6daf9",
+			"members": [
+				"bobs-factory-{version}-linux-arm64/LICENSE",
+				"bobs-factory-{version}-linux-arm64/THIRD_PARTY_NOTICES.txt",
+				"bobs-factory-{version}-linux-arm64/NOTICE",
+				"bobs-factory-{version}-linux-arm64/bobs-factory",
+				"bobs-factory-{version}-linux-arm64/build.json",
+				"bobs-factory-{version}-linux-arm64.manifest.json",
+				"bobs-factory-{version}-linux-arm64.tar.gz",
+				"native-helpers.json",
+				"prepared-agent-boundaries.json",
+				"public-installer.json",
+				"runtime-smoke.txt"
+			]
+		},
+		"desktop-binary-darwin-arm64": {
+			"inventorySha256": "ed60c3a5ffdcff281c82578bcf1aae988a0371d09b805ca88c5c1e9ef2415f0c",
+			"members": [
+				"bobs-factory-{version}-darwin-arm64/LICENSE",
+				"bobs-factory-{version}-darwin-arm64/NOTICE",
+				"bobs-factory-{version}-darwin-arm64/THIRD_PARTY_NOTICES.txt",
+				"bobs-factory-{version}-darwin-arm64/bobs-factory",
+				"bobs-factory-{version}-darwin-arm64.manifest.json",
+				"bobs-factory-{version}-darwin-arm64.tar.gz",
+				"native-helpers.json",
+				"bobs-factory-{version}-darwin-arm64/build.json",
+				"prepared-agent-boundaries.json",
+				"public-installer.json",
+				"runtime-smoke.txt"
+			]
+		},
+		"desktop-binary-darwin-x64": {
+			"inventorySha256": "66daa6a0ad0c2cda5eb89ee3b67879b28b058dae2c4c1fd56149143da0b34a43",
+			"members": [
+				"bobs-factory-{version}-darwin-x64/LICENSE",
+				"bobs-factory-{version}-darwin-x64/NOTICE",
+				"bobs-factory-{version}-darwin-x64/THIRD_PARTY_NOTICES.txt",
+				"bobs-factory-{version}-darwin-x64/bobs-factory",
+				"bobs-factory-{version}-darwin-x64/build.json",
+				"bobs-factory-{version}-darwin-x64.manifest.json",
+				"bobs-factory-{version}-darwin-x64.tar.gz",
+				"native-helpers.json",
+				"prepared-agent-boundaries.json",
+				"public-installer.json",
+				"runtime-smoke.txt"
+			]
+		},
+		"desktop-binary-linux-x64": {
+			"inventorySha256": "9ac8d78581ed8874c658968ca63af372a0dc2b300de0a2e0178b9abbaf9b38a5",
+			"members": [
+				"bobs-factory-{version}-linux-x64/LICENSE",
+				"bobs-factory-{version}-linux-x64/NOTICE",
+				"bobs-factory-{version}-linux-x64/THIRD_PARTY_NOTICES.txt",
+				"bobs-factory-{version}-linux-x64/bobs-factory",
+				"bobs-factory-{version}-linux-x64/build.json",
+				"bobs-factory-{version}-linux-x64.manifest.json",
+				"bobs-factory-{version}-linux-x64.tar.gz",
+				"native-helpers.json",
+				"prepared-agent-boundaries.json",
+				"public-installer.json",
+				"runtime-smoke.txt"
+			]
+		},
+		"desktop-binary-linux-arm64": {
+			"inventorySha256": "c92a8fefd0506e7f2d6f92f9cb39ee3ba0d84c9b57144ef0f1a6e5e7834e4ca2",
+			"members": [
+				"bobs-factory-{version}-linux-arm64/LICENSE",
+				"bobs-factory-{version}-linux-arm64/THIRD_PARTY_NOTICES.txt",
+				"bobs-factory-{version}-linux-arm64/NOTICE",
+				"bobs-factory-{version}-linux-arm64/bobs-factory",
+				"bobs-factory-{version}-linux-arm64/build.json",
+				"bobs-factory-{version}-linux-arm64.tar.gz",
+				"bobs-factory-{version}-linux-arm64.manifest.json",
+				"native-helpers.json",
+				"prepared-agent-boundaries.json",
+				"public-installer.json",
+				"runtime-smoke.txt"
+			]
+		},
+		"desktop-darwin-arm64": {
+			"inventorySha256": "ab32d29ee1cdb915f5d1d753b95d03d672ce9713613999ed6bce252e3d8f9168",
+			"members": [
+				"desktop/bobs-factory-desktop-{version}-mac-arm64.bobsapp.gz",
+				"desktop/bobs-factory-desktop-{version}-mac-arm64.dmg",
+				"desktop/desktop-build.json",
+				"desktop/desktop-update-darwin-arm64.json",
+				"desktop/native-electron-receipt.json",
+				"desktop/native-service-receipt.json",
+				"runtime/bobs-factory-{version}-darwin-arm64.tar.gz"
+			]
+		},
+		"desktop-darwin-x64": {
+			"inventorySha256": "e10a327825e89f361e1adfec876b621e606abbfd0b6c621e5bc122fc392b1c39",
+			"members": [
+				"desktop/bobs-factory-desktop-{version}-mac-x64.bobsapp.gz",
+				"desktop/desktop-build.json",
+				"desktop/bobs-factory-desktop-{version}-mac-x64.dmg",
+				"desktop/desktop-update-darwin-x64.json",
+				"desktop/native-electron-receipt.json",
+				"desktop/native-service-receipt.json",
+				"runtime/bobs-factory-{version}-darwin-x64.tar.gz"
+			]
+		},
+		"desktop-linux-x64": {
+			"inventorySha256": "8aa135993671942b71222690349bafdf4691dcdbfc1fe69adbb026e74f9e72d4",
+			"members": [
+				"desktop/bobs-factory-desktop-{version}-linux-x64.AppImage",
+				"desktop/bobs-factory-desktop-{version}-linux-x64.deb",
+				"desktop/desktop-build.json",
+				"desktop/desktop-update-linux-x64.json",
+				"desktop/native-electron-receipt.json",
+				"desktop/native-service-receipt.json",
+				"desktop/native-shell-update-pending.json",
+				"desktop/native-shell-update-receipt.json",
+				"runtime/bobs-factory-{version}-linux-x64.tar.gz"
+			]
+		},
+		"desktop-linux-arm64": {
+			"inventorySha256": "f3dc9426c1b318e7674ff0d8014ed0c914f2c9b9e0a1e8f4461ec0368cd14ed8",
+			"members": [
+				"desktop/bobs-factory-desktop-{version}-linux-arm64.AppImage",
+				"desktop/bobs-factory-desktop-{version}-linux-arm64.deb",
+				"desktop/desktop-build.json",
+				"desktop/desktop-update-linux-arm64.json",
+				"desktop/native-electron-receipt.json",
+				"desktop/native-service-receipt.json",
+				"desktop/native-shell-update-pending.json",
+				"desktop/native-shell-update-receipt.json",
+				"runtime/bobs-factory-{version}-linux-arm64.tar.gz"
+			]
+		}
+	}
+}

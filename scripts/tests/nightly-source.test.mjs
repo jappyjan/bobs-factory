@@ -90,6 +90,65 @@ test("nightly source policy allows app/version changes but refuses changed depen
 	}
 });
 
+test("shipped desktop/native/npm notice inputs and package license declarations refuse baseline reuse while package versions remain allowed", () => {
+	const work = mkdtempSync(join(tmpdir(), "factory-nightly-shipped-license-"));
+	try {
+		const git = (...args) =>
+			execFileSync("git", args, { cwd: work, encoding: "utf8" }).trim();
+		git("init", "-q");
+		git("config", "user.name", "Fixture");
+		git("config", "user.email", "fixture@example.invalid");
+		const shipped = [
+			"LICENSE",
+			"NOTICE",
+			"apps/desktop/LICENSE",
+			"apps/desktop/NOTICE",
+			"distribution/npm/bobs-factory-trial/LICENSE",
+		];
+		for (const name of shipped) {
+			mkdirSync(join(work, name, ".."), { recursive: true });
+			writeFileSync(join(work, name), `Controlled ${name}`);
+		}
+		const path = join(work, "apps/desktop/package.json"),
+			original = {
+				version: "1.0.0",
+				license: "Apache-2.0",
+				devDependencies: { electron: "44.7.0" },
+			};
+		writeFileSync(path, JSON.stringify(original));
+		const commit = () => {
+			git("add", ".");
+			return git(
+				"commit-tree",
+				git("write-tree"),
+				"-m",
+				"Controlled notice tree",
+			);
+		};
+		const baseline = commit();
+		writeFileSync(path, JSON.stringify({ ...original, version: "1.0.1" }));
+		verifyDependencyBaseline(work, baseline, commit());
+		writeFileSync(path, JSON.stringify(original));
+		for (const name of shipped) {
+			const before = readFileSync(join(work, name));
+			writeFileSync(join(work, name), "Changed redistribution terms");
+			assert.throws(
+				() => verifyDependencyBaseline(work, baseline, commit()),
+				/update accepted nightly baseline/,
+				name,
+			);
+			writeFileSync(join(work, name), before);
+		}
+		writeFileSync(path, JSON.stringify({ ...original, license: "MPL-2.0" }));
+		assert.throws(
+			() => verifyDependencyBaseline(work, baseline, commit()),
+			/update accepted nightly baseline/,
+		);
+	} finally {
+		rmSync(work, { recursive: true, force: true });
+	}
+});
+
 test("candidate source assembly preserves real historical input identities and requires complete exact native-base correspondence", () => {
 	const work = mkdtempSync(join(tmpdir(), "factory-nightly-materials-"));
 	try {
