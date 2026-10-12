@@ -1,12 +1,13 @@
 // F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/desktop-service-lifecycle.mjs
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	acquireInstanceLock,
 	workerOwner,
 } from "../../../../apps/cli/src/services/InstanceLock.ts";
+import { JsonSnapshotStore } from "../../../../packages/core/dist/JsonSnapshotStore.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { validateWorkflows } from "../../../../packages/edge-worker/dist/factory/Workflow.js";
 import { WorkflowRuntime } from "../../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
@@ -135,7 +136,7 @@ try {
 	runtime.resumeAll();
 	await until(() => runtime.get(run.id).status === "waiting");
 	for (const [key, value] of Object.entries(captured))
-		assert.deepEqual(runtime.get(run.id)[key], value);
+		assert.deepEqual(structuredClone(runtime.get(run.id)[key]), value);
 	assert.equal(calls, 2, "completed preparation/clarification must not rerun");
 	server = new FactoryServer(runtime, {
 		repositories: () => [],
@@ -153,9 +154,10 @@ try {
 	runtime.answer(run.id, "Blue");
 	await until(() => runtime.get(run.id).status === "completed");
 	assert.equal(finishes, 1);
-	const persisted = JSON.parse(
-		readFileSync(join(home, "factory", "runs", `${run.id}.json`), "utf8"),
-	);
+	await runtime.flush(run.id);
+	const persisted = new JsonSnapshotStore(
+		join(home, "factory", "run-chunks"),
+	).load(join(home, "factory", "runs", `${run.id}.json`)).value;
 	assert.equal(persisted.id, run.id);
 	assert.ok(persisted.events.length > 0);
 	console.log(

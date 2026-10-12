@@ -294,36 +294,50 @@ if (!values.resume) {
 	);
 	copyFileSync(resolve(values.candidate), join(assets, "candidate.json"));
 	if (evidence.desktop) {
+		const copyDesktopRecord = (record) => {
+			requireValue(
+				/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(record?.file) &&
+					!existsSync(join(assets, record.file)),
+				"Unsafe or conflicting delivered desktop filename",
+			);
+			const actual = fileRecord(
+				join(evidenceDirectory, record.file),
+				record.file,
+			);
+			requireValue(
+				actual.sha256 === record.sha256 && actual.size === record.size,
+				"Delivered desktop integrity mismatch",
+			);
+			copyFileSync(
+				join(evidenceDirectory, record.file),
+				join(assets, record.file),
+			);
+		};
 		for (const item of evidence.desktop.artifacts ?? []) {
 			for (const record of [
 				item.archive,
 				...(item.updateArchive ? [item.updateArchive] : []),
 				item.updateMetadata,
 				item.validation,
-			]) {
-				requireValue(
-					/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(record?.file) &&
-						!existsSync(join(assets, record.file)),
-					"Unsafe or conflicting delivered desktop filename",
-				);
-				const actual = fileRecord(
-					join(evidenceDirectory, record.file),
-					record.file,
-				);
-				requireValue(
-					actual.sha256 === record.sha256 && actual.size === record.size,
-					"Delivered desktop integrity mismatch",
-				);
-				copyFileSync(
-					join(evidenceDirectory, record.file),
-					join(assets, record.file),
-				);
-			}
+			])
+				copyDesktopRecord(record);
 			validateDesktopReceipt(
 				JSON.parse(readFileSync(join(assets, item.validation.file))),
 				identity,
 				item.target,
 			);
+		}
+		// DEBs belong to the generic inventory, not additional desktop update targets.
+		for (const record of evidence.desktop.additionalAssets ?? []) {
+			requireValue(
+				["arm64", "x64"].some(
+					(arch) =>
+						record.file ===
+						`bobs-factory-desktop-${identity.version}-linux-${arch}.deb`,
+				),
+				"Unsupported generic desktop installer",
+			);
+			copyDesktopRecord(record);
 		}
 	}
 	const release = validateReleaseManifest({
