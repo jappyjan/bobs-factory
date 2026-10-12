@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Preserve readable Linear publication while integrating external ticket delivery and background tracking; retain status deduplication, refresh the simulated workflow's tracking wait, and keep the localhost access, architecture approval and Linear publication capability descriptions together. ([#73](https://github.com/jappyjan/bobs-factory/pull/73), [F1 validation](apps/f1/test-drives/2026-10-11-linear-publication-main-merge.md))
+
 - Prevent acceptance while an older architecture proposal is displayed, and refuse stale accept callbacks while preserving approval of the current version ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#101](https://github.com/jappyjan/bobs-factory/pull/101)).
 
 - Validate direct localhost onboarding and native desktop APIs without passkey sessions while separately checking remote authentication and origin denials; retain packaged runtime identity, restart, helper and Stop/maintenance checks ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#121](https://taskbot.apps.janjaap.de/p/bobs-factory/t/121), [#100](https://github.com/jappyjan/bobs-factory/pull/100)).
@@ -55,6 +57,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Align the incremental-result fixture and complete routing prompt expectation with validated Linear publication. ([#73](https://github.com/jappyjan/bobs-factory/pull/73))
+
+
 - Preserve nonzero manager output and cancel isolated service acceptance through a bounded cooperative timeout, registered nested process groups and exact owned units; retain independent case errors and add actual START-boundary outer-timeout validation without changing the frozen runtime. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122), [#124](https://taskbot.apps.janjaap.de/p/bobs-factory/t/124), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 - Store immutable source-research JSON/module copies under raw extensions with byte-preserving retention mappings, and correct the durable Bun/TinyCC/WebKit archive paths; normal maintained-code linting and all prior evidence remain intact. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 
@@ -98,6 +103,8 @@ All notable changes to this project will be documented in this file.
 - Draft PR delivery no longer fails on every retry when a repository's commit hooks run long or failing full-suite checks; Factory's own commit skips commit hooks while implementation checks, review and CI keep owning verification. Push hooks such as Git LFS still run. ([#59](https://github.com/jappyjan/bobs-factory/pull/59), [F1 delivery validation](apps/f1/test-drives/2026-10-09-delivery-commit-hooks.md))
 
 ### Changed
+
+- Keep Factory role results and tool dumps out of Linear publication. Render decisions with rationale, route routine progress and role outcomes as transcript thoughts, preserve native session states and approval prompts with their required automatic threaded comments, extract diagnostics from failed build logs, suppress repeated check updates, and retain raw evidence and delivery recovery locally. ([Taskbot #101](https://taskbot.apps.janjaap.de/p/bobs-factory/t/101), [#73](https://github.com/jappyjan/bobs-factory/pull/73))
 
 - Standard Factory can deliver authorized Linear and Taskbot ticket changes through independent verification, human acceptance and a final state check. Retries preserve intervening edits and shared relationships; mixed feedback renews contracts and retains confirmed repository merges. Background tracking preserves completion proof during rereads and blocks closure on drift or lost access. Failed external publication supports audited recovery ([Taskbot #95](https://taskbot.apps.janjaap.de/p/bobs-factory/t/95), [#80](https://github.com/JappyJan/bobs-factory/pull/80)).
 

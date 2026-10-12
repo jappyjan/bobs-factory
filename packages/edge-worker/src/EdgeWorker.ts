@@ -83,6 +83,8 @@ import {
 	isUnassignMessage,
 	isUserPromptMessage,
 	PersistenceManager,
+	presentLinearPublication,
+	publicFailure,
 	type RunTitleJob,
 	requireLinearWorkspaceId,
 	resolvePath,
@@ -7496,8 +7498,12 @@ ${taskSection}`;
 			);
 			const tools = new FactoryTools({
 				ticketDelivery: delivery,
-				postComment: (id, body) =>
-					this.postFactoryComment(this.getFactoryRuntime().get(id), body),
+				postComment: (id, body, purpose) =>
+					this.postFactoryComment(
+						this.getFactoryRuntime().get(id),
+						body,
+						purpose,
+					),
 				mcp: (context, server, tool) =>
 					this.executeFactoryMcpTool(context, server, tool),
 			});
@@ -7537,7 +7543,10 @@ ${taskSection}`;
 				},
 				question: async (run) => {
 					const body = `## Factory clarification\n\n${questionNotification(run.questions, run.questionRecommendations)}`;
-					if (!run.ticketReference) await this.postFactoryComment(run, body);
+					if (!run.ticketReference) {
+						await this.postFactoryComment(run, body, "operational");
+						return;
+					}
 					if (
 						run.ticketReference?.provider === "native" &&
 						run.ticketReference.platform === "linear"
@@ -8195,11 +8204,12 @@ ${taskSection}`;
 	private async postFactoryComment(
 		run: FactoryRun,
 		body: string,
+		purpose: "documentation" | "operational" = "documentation",
 	): Promise<void> {
 		if (run.ticketReference) {
 			await this.getTicketTracking().record(run, {
 				key: `comment:${body}`,
-				purpose: "documentation",
+				purpose,
 				body,
 			});
 			return;
@@ -8210,6 +8220,27 @@ ${taskSection}`;
 			throw new Error(
 				"Ticket tracker unavailable; cannot persist decision records",
 			);
+		if (purpose === "operational") {
+			const sessionId = this.agentSessionManager.getSession(
+				run.id,
+			)?.externalSessionId;
+			if (!sessionId)
+				throw new Error(
+					"Linear transcript binding unavailable; clarification retained without an issue comment",
+				);
+			await tracker.createAgentActivity({
+				id: this.factoryPublicationId(run.id, body),
+				agentSessionId: sessionId,
+				content: {
+					type: body.startsWith("## Factory clarification")
+						? "elicitation"
+						: "thought",
+					body,
+				},
+			});
+			return;
+		}
+
 		await tracker.createComment(run.issueId, { body });
 	}
 
@@ -8455,7 +8486,7 @@ ${taskSection}`;
 							rejected: { ...rejection, exhausted: true },
 						});
 						throw new Error(
-							`Output correction exhausted after 2 attempts at ${context.step.id}: ${error.message}. Inspect the persisted rejected output/issues before retrying.`,
+							`Output correction exhausted after 2 attempts at ${context.step.id}. Inspect the persisted rejected output/issues before retrying.`,
 						);
 					}
 					// Increment before launching so process restarts cannot reset the budget.
@@ -8591,13 +8622,12 @@ ${taskSection}`;
 				context.checkpointAgent?.(agentCheckpoint);
 			}
 			this.saveFactorySession(run);
+			this.agentSessionManager.markFactoryMessage(
+				message,
+				context.stepKey ?? step.id,
+			);
 			void originalMessage?.(message);
-			if (
-				message.type === "assistant" ||
-				message.type === "user" ||
-				message.type === "result"
-			)
-				context.log(JSON.stringify(message), "agent");
+			context.log(JSON.stringify(message), "agent");
 		};
 		context.progress = await roleProgress(context);
 		this.refreshFactoryFeedbackContext(context);
@@ -8729,7 +8759,7 @@ ${taskSection}`;
 					.at(-1);
 				if (result?.type === "result" && result.is_error) {
 					const error = new Error(
-						`Agent step failed: ${JSON.stringify(result)}`,
+						`Agent step failed: ${publicFailure(JSON.stringify(result))}`,
 					);
 					throw nativeInfrastructureFailure(error, result) ?? error;
 				}
@@ -8954,6 +8984,11 @@ ${taskSection}`;
 		}
 	}
 
+	private factoryPublicationId(runId: string, key: string): string {
+		const hash = createHash("sha256").update(`${runId}:${key}`).digest("hex");
+		return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+	}
+
 	private async finalizeFactoryAgentOutput(
 		context: ExecutionContext,
 		value: unknown,
@@ -9001,6 +9036,40 @@ ${taskSection}`;
 			completed.historyLength = run.history.length + 1;
 			run.roleRevisions[context.stepKey ?? run.step ?? step.id] = completed;
 		}
+		const presented = presentLinearPublication({
+			purpose: "outcome",
+			eventId: context.stepKey ?? step.id,
+			owner: "validated-role",
+			source: { runId: run.id, stepKey: context.stepKey },
+			content: output,
+		});
+		if (
+			presented.destination === "transcript" &&
+			!["plan", "implement"].includes(step.id)
+		) {
+			const key = `role-outcome:${context.stepKey ?? step.id}:${createHash("sha256").update(presented.markdown).digest("hex")}`;
+			if (run.ticketReference)
+				await this.getTicketTracking().record(run, {
+					key,
+					purpose: "operational",
+					body: presented.markdown,
+				});
+			else {
+				const sessionId = this.agentSessionManager.getSession(
+					run.id,
+				)?.externalSessionId;
+				const tracker = run.workspaceId
+					? this.issueTrackers.get(run.workspaceId)
+					: undefined;
+				if (sessionId && tracker)
+					await tracker.createAgentActivity({
+						id: this.factoryPublicationId(run.id, key),
+						agentSessionId: sessionId,
+						content: { type: "thought", body: presented.markdown },
+					});
+			}
+		}
+
 		return output;
 	}
 
