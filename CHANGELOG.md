@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Wait for the detached desktop recovery fixture to finish and release its process owner before starting another helper, preventing intermittent macOS nightly check failures while preserving live-owner refusal ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131)).
+- Wait for the detached desktop recovery fixture to finish and release its process owner before starting another helper, preventing intermittent macOS nightly check failures while preserving live-owner refusal ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#106](https://github.com/jappyjan/bobs-factory/pull/106)).
 
 - Synchronize the operator MCP answer-batch fixture with question readiness so asynchronous persistence cannot race nightly checks; retain strict answer and stale-batch assertions ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#105](https://github.com/jappyjan/bobs-factory/pull/105)).
 
