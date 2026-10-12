@@ -1,4 +1,4 @@
-// Actual Electron shell + native local runtime; CDP virtual authenticator, no provider.
+// Actual Electron shell + native local runtime; local authority and remote denial, no provider.
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -13,11 +13,17 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { app, BrowserWindow, dialog, Menu } from "electron";
+import {
+	assertLocalDashboard,
+	assertRemoteDenied,
+} from "./dashboard-access.mjs";
 
 if (process.platform === "linux") app.disableHardwareAcceleration();
 const root = mkdtempSync(join(tmpdir(), "factory-electron-smoke-"));
 process.env.BOBS_FACTORY_DESKTOP_HOME = join(root, "home");
 process.env.BOBS_FACTORY_DESKTOP_PORT = "3973";
+const publicOrigin = "https://factory-smoke.example.invalid";
+process.env.BOBS_FACTORY_FACTORY_ORIGIN = publicOrigin;
 if (!process.env.BOBS_FACTORY_DESKTOP_BINARY)
 	throw new Error("Provide a matching native runtime binary");
 app.setPath("userData", join(root, "profile"));
@@ -68,40 +74,25 @@ void (async () => {
 			),
 			"undefined",
 		);
-		dashboard.webContents.debugger.attach("1.3");
-		await dashboard.webContents.debugger.sendCommand("WebAuthn.enable");
-		await dashboard.webContents.debugger.sendCommand(
-			"WebAuthn.addVirtualAuthenticator",
-			{
-				options: {
-					protocol: "ctap2",
-					transport: "usb",
-					hasResidentKey: true,
-					hasUserVerification: true,
-					isUserVerified: true,
-					automaticPresenceSimulation: true,
-				},
-			},
-		);
-		await until(() =>
-			dashboard.webContents.executeJavaScript(
-				"Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Create passkey'&&!b.disabled)",
+		const identity = JSON.parse(
+			readFileSync(
+				join(process.env.BOBS_FACTORY_DESKTOP_BINARY, "..", "build.json"),
+				"utf8",
 			),
 		);
-		await dashboard.webContents.executeJavaScript(
-			"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Create passkey').click()",
-			true,
-		);
-		await until(async () => {
-			const status = await dashboard.webContents.executeJavaScript(
-				"fetch('/api/auth/status').then(r=>r.json())",
-			);
-			return status.authenticated;
+		await assertLocalDashboard(dashboard, until, {
+			...identity,
+			packaged: true,
 		});
-		const config = await dashboard.webContents.executeJavaScript(
-			"fetch('/api/config').then(r=>r.json())",
+		await assertRemoteDenied(
+			Number(process.env.BOBS_FACTORY_DESKTOP_PORT),
+			publicOrigin,
 		);
-		assert.equal(config.onboarding.required, true);
+		await dashboard.webContents.executeJavaScript(
+			"window.factoryDesktop.openAppUpdates()",
+		);
+		assert.equal(launcher.isVisible(), true);
+		launcher.hide();
 		try {
 			const screenshot = await dashboard.webContents.capturePage();
 			writeFileSync(join(root, "onboarding.png"), screenshot.toPNG());
@@ -109,7 +100,7 @@ void (async () => {
 			if (process.platform !== "linux" || error.message !== "UnknownVizError")
 				throw error;
 			screenshotUnavailable =
-				"Xvfb compositor UnknownVizError; authenticated DOM and native menu checks continue";
+				"Xvfb compositor UnknownVizError; local-authority DOM and native menu checks continue";
 		}
 		dashboard.close();
 		assert.equal(dashboard.isDestroyed(), false);
@@ -119,24 +110,20 @@ void (async () => {
 		menu.items[0].submenu.items.find((i) => i.label === "Open Factory").click();
 		assert.equal(dashboard.isVisible(), true);
 		assert.equal(getOwner().pid, workerPid);
-		await dashboard.webContents.executeJavaScript(
-			"fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-Factory-Request':'1'},body:'{}'}).then(r=>r.json())",
+		const logout = await dashboard.webContents.executeJavaScript(
+			"fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-Factory-Request':'1'},body:'{}'}).then(async r=>({status:r.status,body:await r.json()}))",
 		);
+		assert.equal(logout.status, 200);
+		assert.equal(logout.body.authenticated, true);
 		await dashboard.webContents.executeJavaScript("location.reload()");
 		await until(() => !dashboard.webContents.isLoading());
-		await until(() =>
-			dashboard.webContents.executeJavaScript(
-				"Array.from(document.querySelectorAll('button')).some(b=>b.textContent==='Sign in with passkey'&&!b.disabled)",
-			),
-		);
-		await dashboard.webContents.executeJavaScript(
-			"Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Sign in with passkey').click()",
-			true,
-		);
-		await until(() =>
-			dashboard.webContents.executeJavaScript(
-				"fetch('/api/auth/status').then(r=>r.json()).then(s=>s.authenticated)",
-			),
+		await assertLocalDashboard(dashboard, until, {
+			...identity,
+			packaged: true,
+		});
+		await assertRemoteDenied(
+			Number(process.env.BOBS_FACTORY_DESKTOP_PORT),
+			publicOrigin,
 		);
 		// Hold the real menu confirmation while the external owner admits maintenance.
 		const { OwnedUpdateLifecycle } = await import(
@@ -144,12 +131,6 @@ void (async () => {
 		);
 		const { UpdateManager } = await import(
 			"../../../packages/edge-worker/dist/updates/UpdateManager.js"
-		);
-		const identity = JSON.parse(
-			readFileSync(
-				join(process.env.BOBS_FACTORY_DESKTOP_BINARY, "..", "build.json"),
-				"utf8",
-			),
 		);
 		class ConfirmationLifecycle extends OwnedUpdateLifecycle {
 			async isIdle() {
@@ -297,7 +278,10 @@ void (async () => {
 					arch: process.arch,
 					electron: process.versions.electron,
 					fixture: root,
-					auth: "CDP virtual authenticator enrollment/login/logout",
+					access:
+						"direct localhost without cookies/passkeys; public Host401 and foreign Origin/cross-site/forwarded local403",
+					localLogoutRetainsAuthority: true,
+					dashboardBridgeIsolated: true,
 					closedWindowKeepsWorker: true,
 					reopenSamePid: true,
 					explicitStop: true,

@@ -1641,3 +1641,85 @@ Disabling also blocks queued work, retries, replies, chat continuation and autom
 uses the same availability policy: inspect the run for the blocked reason,
 re-enable its dependencies in Recipes, then call `resume_run` for that run.
 `retry_run` cannot bypass the individual Resume requirement.
+### Architecture discussion before implementation
+
+New stock Factory and Takeover repository work shares this path after delivery-contract validation. Mixed work reaches it after applying and independently verifying the accepted ticket changes; external-only work goes directly to its external review and acceptance. Plan review confirms the delivery contract separately from architecture candidate review.
+
+```text
+Draft plan -> architecture proposal -> candidate review -> proposal decision -> implement
+                    ^                       |                    |
+                    +---- changes needed ---+--- feedback -------+
+```
+
+The architecture role inspects the selected repositories and writes a proposal for a
+busy reader: a plain title and summary, the choices it made, a small map of what
+changes, why the design fits the repository, what to watch out for and short plan
+steps. Each choice lists 2-4 options with one upside and one catch. Bob decides a
+choice when the repository or requirements settle it. It marks a choice open only when
+the answer depends on the human (team habits, scope, cost). Options can preview how the
+map would look instead. Every new version lists what changed and whether the human
+asked for it. The full, self-contained implementation plan stays with the proposal for
+the implementer. The candidate review checks the complete proposal against requirements
+and inherited Takeover work, including whether a real choice is hidden or left open
+needlessly. Routine, unsplit work using established patterns records a concrete bypass
+reason and continues without another human wait. Simple keeps its existing path.
+
+The run page and the Today queue show a short proposal card. **Open proposal** leads to
+the proposal page (`#/runs/<id>/architecture`): the proposal on the left, a chat with
+Bob and the approval button on the right. Phones show Proposal and Chat tabs with the
+approval button pinned to the bottom. Choices Bob already made take one line each;
+other options, map details, file paths and the full plan appear on request.
+
+- Picking an answer to an open choice, or **Choose this instead** on another option,
+  adds it to the chat message. **Ask for changes** sends answers and text; Bob writes a
+  new version, which goes through candidate review again.
+- **Ask a question** keeps the same version pending. Bob's answer appears in the chat.
+  It grants no authorization.
+- **Approve version N** authorizes implementation of exactly that version, candidate
+  plan and snapshotted assets. It is unavailable while a choice is open, while an
+  unsent answer or message is in the composer, or while Bob is answering or revising.
+
+Open choices always wait for the human, even when a proposal is classified as routine
+or the policy is `never`. Chat or question answers elsewhere in the run during this
+wait also request revision; typing “accept” never substitutes for the approval button.
+Earlier versions stay readable from the version switcher. Stale or duplicate decision
+submissions fail; refresh the run before deciding again.
+
+Local assets must be inside the selected repository workspaces or source directories,
+the run's evidence directory, or its attachments directory. Resolved symlink targets
+must stay inside the same authorized directory. The runtime rewrites asset references
+in the accepted plan to frozen snapshot paths and includes a source-to-snapshot map;
+implementation must use the snapshots rather than rereading local originals or URLs.
+
+Proposal decisions are independent of final PR approval. The final review still binds
+approval to the delivered revision and requires provider-confirmed merge. Takeover's
+candidate retains completed work, the existing PR URL and branch. The implementer keeps
+its scoped plan/assets input; accepted architecture and proposal identity are included
+in that self-contained plan for downstream requirements, QA and guides.
+
+Restart restores the same pending proposal and feedback. Acceptance and the exact plan
+handoff are saved before the graph continues, so recovery does not ask for acceptance
+again. Stopping prevents acceptance and advancement. A stopped proposal discussion can
+be resumed explicitly from the proposal page. Pending human waits consume no
+machine-capacity slot. Existing question notifications retain their transition identity
+on restoration; architecture waits also use proposal identity for Web Push.
+
+Recipes exposes the bundled architecture role's prompt read-only and permits execution
+preference edits. Fork Factory or Takeover to customize prompts or approval policy. Its frozen
+`architectureContract: "architecture-v1"` selects output validation even after cloning
+or renaming. Candidate review uses `architecture-review-v1` and `architectureSource` to
+identify its proposal role. The `architecture-decision` tool arguments configure
+`proposal`, `review`, `planOutput`, `revise` and `approval`. `approval: "meaningful"` is
+the stock policy; `always` also requires acceptance for routine work; `never` is an
+intentional operator customization that records a bypass and removes the human design
+gate. Edit these arguments only in a local fork’s Workflow JSON. Open choices cannot advance
+implementation. Visit limits fail closed instead of advancing an exhausted loop. If subsequent answers or
+steering materially change an accepted architecture, the implementer preserves completed
+work and returns `architectureRevision: true` with blocked status. The graph returns to
+a new proposal and candidate review; the earlier acceptance cannot authorize its implementation.
+
+Historical stock planning is recognized by full-definition fingerprints, including
+architecture-enabled releases and execution-only preferences. Customized legacy planning
+paths remain deliberate operator choices. Accepted active runs always retain their frozen
+workflow definitions during restart and retry. Independent child execution and delivery
+are separate planned work (#97–#99); this shared proposal surface does not schedule children.

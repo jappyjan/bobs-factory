@@ -4839,6 +4839,749 @@ kbd {
 	flex-wrap: wrap;
 }
 
+/* Architecture proposal: plain decision brief with chat and approval. */
+.page:has(.arch-page) {
+	max-width: 1150px;
+	width: calc(100% - 32px);
+}
+.arch-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 340px;
+	gap: 28px;
+	align-items: start;
+}
+.arch-main {
+	min-width: 0;
+	max-width: 700px;
+	width: 100%;
+	justify-self: center;
+}
+.arch-rail {
+	position: sticky;
+	top: 16px;
+	/* Fits beside the page header before scrolling; sticks while reading. */
+	height: max(480px, calc(100vh - 160px));
+	display: flex;
+	flex-direction: column;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	box-shadow: var(--shadow);
+	overflow: hidden;
+}
+.arch-side {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+.arch-side > h2 {
+	font-size: 16px;
+	margin: 0;
+	padding: 16px 18px 12px;
+	border-bottom: 1px solid var(--line);
+}
+.arch-tabs {
+	display: none;
+}
+.arch-chunk {
+	margin-bottom: 32px;
+}
+.arch-chunk > h2 {
+	font-size: 19px;
+	margin: 0 0 12px;
+}
+.arch-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--muted);
+}
+.arch-versions {
+	display: inline-flex;
+	gap: 4px;
+}
+.arch-versions button {
+	border: 1px solid var(--line);
+	background: transparent;
+	border-radius: 8px;
+	padding: 1px 8px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--secondary);
+}
+.arch-versions button[aria-pressed="true"] {
+	background: var(--primary);
+	color: var(--primary-text);
+	border-color: transparent;
+}
+.arch-title {
+	font-size: 27px;
+	line-height: 1.2;
+	margin: 12px 0 10px;
+}
+.arch-summary {
+	font-size: 16.5px;
+	color: var(--secondary);
+	margin: 0;
+}
+.arch-ask,
+.arch-banner {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	border-radius: 14px;
+	padding: 12px 16px;
+	margin: 18px 0 0;
+}
+.arch-ask {
+	background: var(--orange);
+	color: var(--question-text);
+}
+.arch-ask button {
+	margin-left: auto;
+	border: 0;
+	border-radius: 10px;
+	padding: 6px 12px;
+	font-weight: 700;
+	background: var(--surface);
+	color: var(--text);
+	white-space: nowrap;
+}
+.arch-banner {
+	margin: 0 0 22px;
+}
+.arch-banner.working {
+	background: var(--blue);
+	color: var(--working-text);
+}
+.arch-banner.done {
+	background: var(--green);
+	color: var(--review-text);
+}
+.arch-banner.quiet {
+	background: var(--quiet);
+	color: var(--secondary);
+	display: block;
+}
+.arch-faded {
+	opacity: 0.5;
+	pointer-events: none;
+}
+.arch-card {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	box-shadow: var(--shadow);
+	padding: 18px 20px;
+}
+.arch-lead {
+	color: var(--muted);
+	margin: -6px 0 12px;
+}
+.arch-muted {
+	color: var(--muted);
+	font-size: 13px;
+}
+.arch-sub {
+	color: var(--secondary);
+	font-size: 14px;
+	margin: 2px 0 0;
+}
+.arch-link-button {
+	border: 0;
+	background: none;
+	padding: 0;
+	color: #7b61ff;
+	font-weight: 700;
+	font-size: 13.5px;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	cursor: pointer;
+	white-space: nowrap;
+}
+.arch-new {
+	display: inline-block;
+	margin-left: 6px;
+	padding: 0 6px;
+	border-radius: 6px;
+	background: #7b61ff;
+	color: #fff;
+	font-size: 11.5px;
+	font-weight: 750;
+	vertical-align: 2px;
+}
+.arch-changes,
+.arch-list {
+	list-style: none;
+	margin: 0;
+	display: grid;
+	gap: 12px;
+}
+.arch-changes {
+	border: 1.5px solid #d9cdff;
+	background: linear-gradient(180deg, var(--indigo), var(--surface));
+}
+.arch-changes li,
+.arch-list li {
+	display: grid;
+	grid-template-columns: 26px 1fr;
+	gap: 10px;
+}
+.arch-changes small,
+.arch-list small {
+	display: block;
+	font-size: 12.5px;
+	color: var(--muted);
+}
+.arch-list small {
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.arch-icon,
+.arch-dot,
+.arch-check {
+	width: 26px;
+	height: 26px;
+	border-radius: 9px;
+	display: grid;
+	place-items: center;
+	font-size: 13px;
+	font-weight: 800;
+	flex: none;
+}
+.arch-icon.you,
+.arch-check.you {
+	background: var(--primary);
+	color: var(--primary-text);
+}
+.arch-icon.bob {
+	background: var(--violet);
+	color: #8a4fc0;
+}
+.arch-list.fits .arch-dot,
+.arch-check {
+	background: var(--green);
+	color: var(--review-text);
+}
+.arch-list.risks .arch-dot {
+	background: var(--yellow);
+	color: var(--question-text);
+}
+/* map */
+.arch-map-scroll {
+	overflow-x: auto;
+}
+.arch-map {
+	display: block;
+	width: 100%;
+	height: auto;
+	font-family: inherit;
+}
+.arch-area {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	fill: var(--muted);
+}
+.arch-node {
+	cursor: pointer;
+	outline: none;
+}
+.arch-node rect {
+	fill: var(--surface);
+	stroke: var(--line);
+	stroke-width: 1.7;
+}
+.arch-node.new rect {
+	fill: var(--green);
+	stroke: #36b37e;
+}
+.arch-node.changed rect {
+	fill: var(--orange);
+	stroke: #e3a35a;
+}
+.arch-node.outside rect {
+	fill: var(--quiet);
+	stroke: var(--muted);
+	stroke-dasharray: 5 4;
+}
+.arch-node.preview rect {
+	fill: var(--violet);
+	stroke: #a26bd6;
+	stroke-dasharray: 5 4;
+}
+.arch-node.selected rect,
+.arch-node:focus-visible rect {
+	stroke: #7b61ff;
+	stroke-width: 3;
+}
+.arch-node-label {
+	font-size: 15px;
+	font-weight: 700;
+	fill: var(--text);
+}
+.arch-node-note {
+	font-size: 12.5px;
+	fill: var(--muted);
+}
+.arch-link {
+	fill: none;
+	stroke: var(--muted);
+	stroke-width: 1.8;
+}
+.arch-link.preview {
+	stroke: #a26bd6;
+	stroke-dasharray: 5 4;
+}
+.arch-arrow {
+	fill: var(--muted);
+}
+.arch-link-label rect {
+	fill: var(--surface);
+	stroke: var(--line);
+}
+.arch-link-label text {
+	font-size: 11.5px;
+	fill: var(--muted);
+}
+.arch-part-detail {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 6px 10px;
+	margin: 12px 0 0;
+	background: var(--quiet);
+	border-radius: 14px;
+	padding: 12px 14px;
+}
+.arch-part-detail code {
+	margin-left: auto;
+	font-size: 12px;
+	color: var(--muted);
+}
+.arch-preview-note {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	background: var(--violet);
+	border-radius: 12px;
+	padding: 8px 12px;
+	margin: 0 0 10px;
+}
+.arch-preview-note .arch-link-button {
+	margin-left: auto;
+}
+.arch-map-tools {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 14px;
+	align-items: center;
+	margin-top: 12px;
+	font-size: 13px;
+	color: var(--muted);
+}
+.arch-map-tools .arch-link-button:last-child {
+	margin-left: auto;
+}
+.arch-swatch::before {
+	content: "";
+	display: inline-block;
+	width: 11px;
+	height: 11px;
+	border-radius: 4px;
+	margin-right: 5px;
+	vertical-align: -1px;
+	border: 1.5px solid;
+}
+.arch-swatch.new::before {
+	background: var(--green);
+	border-color: #36b37e;
+}
+.arch-swatch.changed::before {
+	background: var(--orange);
+	border-color: #e3a35a;
+}
+/* choices */
+.arch-choices {
+	display: grid;
+	gap: 12px;
+}
+.arch-settled {
+	padding: 14px 18px;
+}
+.arch-settled-row {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+}
+.arch-settled-row > div {
+	flex: 1;
+	min-width: 0;
+}
+.arch-settled-row .arch-link-button {
+	margin-top: 22px;
+}
+.arch-answer {
+	font-size: 16px;
+	font-weight: 700;
+}
+.arch-others {
+	list-style: none;
+	margin: 12px 0 0 38px;
+	padding: 0;
+	display: grid;
+	gap: 8px;
+}
+.arch-others li {
+	display: grid;
+	gap: 2px;
+	border-top: 1px solid var(--line);
+	padding-top: 8px;
+	font-size: 14px;
+	color: var(--secondary);
+}
+.arch-others b {
+	color: var(--text);
+}
+.arch-open {
+	border: 2px solid #f2b56b;
+}
+.arch-tag {
+	font-size: 12.5px;
+	font-weight: 750;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--question-text);
+}
+.arch-open h3 {
+	font-size: 19px;
+	margin: 4px 0 2px;
+}
+.arch-options {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 10px;
+	margin-top: 14px;
+}
+.arch-option {
+	border: 1.5px solid var(--line);
+	border-radius: 14px;
+	display: flex;
+	flex-direction: column;
+}
+.arch-option.on {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 1.5px var(--primary) inset;
+}
+.arch-option-pick {
+	border: 0;
+	background: none;
+	text-align: left;
+	padding: 14px 14px 6px;
+	display: grid;
+	gap: 6px;
+	font-size: 14px;
+	color: var(--secondary);
+	flex: 1;
+	align-content: start;
+}
+.arch-option-pick:disabled {
+	opacity: 1;
+}
+.arch-option-name {
+	font-size: 16px;
+	font-weight: 750;
+	color: var(--text);
+}
+.arch-option-foot {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 12px;
+	align-items: center;
+	padding: 0 14px 12px;
+	font-size: 13px;
+	color: var(--muted);
+}
+.arch-others .arch-option-foot {
+	padding: 4px 0 0;
+}
+/* plan */
+.arch-steps {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	counter-reset: arch-step;
+}
+.arch-steps li {
+	counter-increment: arch-step;
+	display: grid;
+	grid-template-columns: 30px 1fr;
+	gap: 10px;
+	padding: 9px 0;
+	border-top: 1px solid var(--line);
+}
+.arch-steps li:first-child {
+	border-top: 0;
+}
+.arch-steps li::before {
+	content: counter(arch-step);
+	width: 26px;
+	height: 26px;
+	border-radius: 9px;
+	background: var(--quiet);
+	display: grid;
+	place-items: center;
+	font-size: 13px;
+	font-weight: 700;
+}
+.arch-steps small {
+	display: block;
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 12px;
+	color: var(--muted);
+}
+.arch-full-plan {
+	margin-top: 12px;
+}
+.arch-full-plan summary {
+	cursor: pointer;
+	font-size: 13.5px;
+	color: var(--muted);
+}
+/* chat */
+.arch-thread {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+.arch-msg {
+	font-size: 14.5px;
+	max-width: 100%;
+}
+.arch-msg.you {
+	align-self: flex-end;
+	max-width: 88%;
+}
+.arch-msg.system {
+	align-self: center;
+	font-size: 12.5px;
+	color: var(--muted);
+	margin: 0;
+}
+.arch-who {
+	font-size: 12px;
+	color: var(--muted);
+	margin-bottom: 3px;
+}
+.arch-msg.you .arch-who {
+	text-align: right;
+}
+.arch-bubble {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 10px 13px;
+	white-space: pre-wrap;
+}
+.arch-msg.you .arch-bubble {
+	background: var(--primary);
+	color: var(--primary-text);
+	border-color: transparent;
+}
+.arch-working {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+.arch-chip {
+	display: inline-block;
+	border: 0;
+	border-radius: 7px;
+	padding: 1px 8px;
+	margin: 0 6px 4px 0;
+	font-size: 12.5px;
+	font-weight: 650;
+	background: var(--violet);
+	color: #8a4fc0;
+}
+.arch-msg.you .arch-chip {
+	display: table;
+	background: #ffffff2a;
+	color: inherit;
+}
+.arch-composer {
+	border-top: 1px solid var(--line);
+	padding: 12px 16px;
+	margin: 0;
+}
+.arch-composer textarea {
+	width: 100%;
+	resize: vertical;
+}
+.arch-composer-buttons {
+	display: flex;
+	gap: 8px;
+	margin-top: 8px;
+}
+.arch-composer-buttons .button {
+	flex: 1;
+	padding-inline: 10px;
+}
+.arch-hint {
+	font-size: 12.5px;
+	color: var(--muted);
+	margin: 7px 2px 0;
+}
+.arch-approve {
+	border-top: 1px solid var(--line);
+	padding: 14px 16px 16px;
+	background: var(--quiet);
+}
+.arch-approve .arch-hint {
+	margin: 0 0 10px;
+	font-size: 13.5px;
+}
+.arch-approve-button {
+	width: 100%;
+}
+.arch-blocker {
+	margin: 0 0 10px;
+	font-weight: 700;
+	color: var(--question-text);
+}
+.arch-blocker button {
+	border: 0;
+	background: none;
+	padding: 0;
+	font: inherit;
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+.arch-done {
+	margin: 0;
+	background: var(--green);
+	color: var(--review-text);
+	border-radius: 14px;
+	padding: 12px 14px;
+}
+.arch-done b {
+	display: block;
+	font-size: 16px;
+}
+/* entry card on the run page and in Today */
+.arch-entry {
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	box-shadow: var(--shadow);
+	padding: 18px 20px;
+	margin: 0 0 18px;
+}
+.focus-card .arch-entry {
+	box-shadow: none;
+	border: 0;
+	padding: 0;
+	background: none;
+}
+.arch-entry h2 {
+	font-size: 19px;
+	margin: 10px 0 4px;
+}
+.arch-entry p {
+	color: var(--secondary);
+	margin: 0 0 12px;
+}
+.arch-entry .arch-entry-ask {
+	color: var(--question-text);
+	font-weight: 700;
+}
+.arch-entry.quiet {
+	padding: 10px 16px;
+	box-shadow: none;
+	color: var(--secondary);
+}
+@media (max-width: 900px) {
+	.arch-layout {
+		display: block;
+	}
+	.arch-tabs {
+		display: flex;
+		gap: 4px;
+		margin: 4px 0 16px;
+	}
+	.arch-tabs button {
+		border: 0;
+		border-radius: 10px;
+		padding: 7px 14px;
+		font-weight: 700;
+		background: transparent;
+		color: var(--muted);
+	}
+	.arch-tabs button[aria-selected="true"] {
+		background: var(--primary);
+		color: var(--primary-text);
+	}
+	.arch-page.tab-chat .arch-main,
+	.arch-page.tab-proposal .arch-side {
+		display: none;
+	}
+	.arch-rail {
+		position: static;
+		height: auto;
+		border: 0;
+		box-shadow: none;
+		background: none;
+		overflow: visible;
+	}
+	.arch-page.tab-chat .arch-thread {
+		min-height: 50vh;
+		padding: 0 0 16px;
+	}
+	.arch-side > h2 {
+		display: none;
+	}
+	.arch-page.tab-chat .arch-approve {
+		display: none;
+	}
+	.arch-approve {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 30;
+		background: var(--surface);
+		box-shadow: 0 -8px 24px #2b234614;
+		padding-bottom: calc(14px + env(safe-area-inset-bottom));
+	}
+	.arch-page.tab-proposal .arch-main {
+		padding-bottom: 140px;
+	}
+	.arch-composer {
+		padding-inline: 0;
+	}
+	.arch-settled-row {
+		flex-wrap: wrap;
+	}
+	.arch-settled-row .arch-link-button {
+		margin: 0 0 0 38px;
+	}
+	.arch-others {
+		margin-left: 0;
+	}
+	.arch-title {
+		font-size: 22px;
+	}
+}
+
 /* Review brief: requirement-first review with a sticky decision panel. */
 .brief {
 	display: grid;

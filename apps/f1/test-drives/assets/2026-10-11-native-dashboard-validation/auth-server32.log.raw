@@ -1,0 +1,15 @@
+
+ RUN  v4.1.11 /Users/jappy/code/jappy/bobs-factory-delivery-materials-116/native-localhost-validation-20261011/checkout/packages/edge-worker
+
+(node:11588) ExperimentalWarning: The supports Web Crypto API method is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11588) ExperimentalWarning: The ML-DSA-44 Web Crypto API algorithm is an experimental feature and might change at any time
+(node:11587) ExperimentalWarning: The supports Web Crypto API method is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11587) ExperimentalWarning: The ML-DSA-44 Web Crypto API algorithm is an experimental feature and might change at any time
+
+ Test Files  2 passed (2)
+      Tests  32 passed (32)
+   Start at  23:29:43
+   Duration  2.58s (transform 756ms, setup 49ms, import 1.27s, tests 1.39s, environment 0ms)
+

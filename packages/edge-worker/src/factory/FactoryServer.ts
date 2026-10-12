@@ -14,6 +14,7 @@ import {
 } from "../updates/UpdateManager.js";
 import { activityMarkers, activityPage } from "./ActivityPage.js";
 import { reasoningLevels, serviceTierRunners } from "./AgentSettings.js";
+import { ArchitectureDecisionSchema } from "./Architecture.js";
 import { ExecutionSelectionSchema } from "./ExecutionProfiles.js";
 import {
 	type FactoryAccess,
@@ -1009,10 +1010,18 @@ export class FactoryServer {
 						: run
 							? capacityRunStatus(run)
 							: session!.status,
-					chat: hooks.chat?.(request.params.id) ?? {
-						enabled: false,
-						available: false,
-					},
+					chat:
+						run?.status === "waiting" && run.architectureGate
+							? {
+									enabled: true,
+									available: true,
+									mode: "continue",
+									step: run.step,
+								}
+							: (hooks.chat?.(request.params.id) ?? {
+									enabled: false,
+									available: false,
+								}),
 					chatMessages: runtime.chatMessages(request.params.id),
 					entries: hooks.entries(request.params.id),
 					viewState: runtime.viewState(request.params.id),
@@ -1205,6 +1214,16 @@ export class FactoryServer {
 				const { text } = z
 					.object({ text: z.string().trim().min(1).max(100000) })
 					.parse(request.body);
+				const proposalRun = runtime.runs.get(id);
+				if (proposalRun?.status === "waiting" && proposalRun.architectureGate) {
+					runtime.answer(id, text);
+					const message = runtime.recordChatMessage(
+						id,
+						text,
+						proposalRun.step ?? "architecture-decision",
+					);
+					return reply.code(202).send({ message, mode: "continue" });
+				}
 				return reply.code(202).send(await operator.steer(id, text));
 			},
 		);
@@ -1245,6 +1264,22 @@ export class FactoryServer {
 					session.credential,
 				);
 				return reply.code(202).send({ accepted: true });
+			},
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/architecture-decision",
+			(request, reply) => {
+				try {
+					runtime.decideArchitecture(
+						request.params.id,
+						ArchitectureDecisionSchema.parse(request.body),
+					);
+					return reply.code(202).send({ accepted: true });
+				} catch (error) {
+					return reply.code(409).send({
+						error: error instanceof Error ? error.message : String(error),
+					});
+				}
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(

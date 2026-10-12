@@ -1,0 +1,8 @@
+file:///Users/jappy/code/jappy/bobs-factory-delivery-materials-116/native-localhost-validation-20261011/checkout/apps/f1/test-drives/assets/native-dashboard-validation.mjs:215
+		await server.close();
+		             ^
+
+TypeError: server.close is not a function
+    at file:///Users/jappy/code/jappy/bobs-factory-delivery-materials-116/native-localhost-validation-20261011/checkout/apps/f1/test-drives/assets/native-dashboard-validation.mjs:215:16
+
+Node.js v24.20.0

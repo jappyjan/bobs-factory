@@ -180,6 +180,12 @@ import {
 	resolveAgentSettings,
 	resolveNativePreferences,
 } from "./factory/AgentSettings.js";
+import {
+	type Architecture,
+	ArchitectureReviewSchema,
+	ArchitectureSchema,
+	assertRevisionChanges,
+} from "./factory/Architecture.js";
 import { TicketDelivery, type TicketTarget } from "./factory/Delivery.js";
 import {
 	executionCapabilities,
@@ -8511,6 +8517,13 @@ ${taskSection}`;
 		if (chatHandler) return chatHandler.chatState(id);
 		const runtime = this.getFactoryRuntime();
 		const run = runtime.runs.get(id);
+		if (run?.status === "waiting" && run.architectureGate)
+			return {
+				enabled: true,
+				available: true,
+				mode: "continue",
+				step: run.step,
+			};
 		const session = this.agentSessionManager.getSession(id);
 		if (!session)
 			return {
@@ -8583,6 +8596,14 @@ ${taskSection}`;
 		text: string,
 		messageId?: string,
 	): void | Promise<void> {
+		const pendingProposalRun = this.getFactoryRuntime().runs.get(id);
+		if (
+			pendingProposalRun?.status === "waiting" &&
+			pendingProposalRun.architectureGate
+		) {
+			this.getFactoryRuntime().answer(id, text);
+			return;
+		}
 		const state = this.factoryChatState(id);
 		if (!state.available) throw new Error(state.reason ?? "Chat unavailable");
 		const chatHandler = this.chatHandlerForSession(id);
@@ -9162,7 +9183,17 @@ ${taskSection}`;
 					step.askQuestions ? normalizeQuestionResult(value) : value,
 				),
 			);
+			if (step.architectureContract === "architecture-v1") {
+				output = ArchitectureSchema.parse(output);
+				assertRevisionChanges(
+					output as Architecture,
+					run.architectureProposals?.length ?? 0,
+				);
+			}
+			if (step.architectureContract === "architecture-review-v1")
+				output = ArchitectureReviewSchema.parse(output);
 			if (
+				step.architectureContract ||
 				step.qaContract ||
 				["factory", "takeover"].includes(run.workflow.id) ||
 				run.workflowDefinitions
@@ -9174,6 +9205,7 @@ ${taskSection}`;
 					output,
 					step.qaContract,
 					step.videoContract,
+					step.architectureContract,
 				);
 			if (step.id === "visual-scope" && step.qaContract) {
 				const issues = qaRequirementIssues(
