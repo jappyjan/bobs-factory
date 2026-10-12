@@ -3392,7 +3392,8 @@ export class WorkflowRuntime {
 		// dashboard read committed preview metadata, keeping the original bytes
 		// in the store's legacy backup rather than returning whole artifacts.
 		if (this.legacyRuns.has(run.id)) {
-			await this.pendingSaves.get(run.id)?.catch(() => {});
+			const pending = this.pendingSaves.get(run.id);
+			if (pending) await pending.catch(() => {});
 			if (this.legacyRuns.has(run.id)) await this.save(run);
 		}
 		await this.flush(run.id);
