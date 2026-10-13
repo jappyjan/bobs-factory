@@ -1789,3 +1789,5 @@ Choice contract changes clear drafts and reject older contextual submissions.
 In the terminal, Tab changes questions, arrows navigate options, Space selects,
 and Ctrl-S submits. Choose Custom answer to edit text; Ctrl-Space returns to
 predefined answers. Long lists scroll to keep the focused option visible.
+Choice forms show the full question when it fits; Page Up/Page Down scrolls
+longer questions, with a visible line range, without changing the answer draft.

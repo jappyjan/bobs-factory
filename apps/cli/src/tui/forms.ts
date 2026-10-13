@@ -355,6 +355,9 @@ export class AnswerForm extends FieldForm {
 	readonly questions: string[];
 	draft: AnswerDraft = {};
 	optionFocus: Record<number, number> = {};
+	private questionScroll: Record<number, number> = {};
+	private questionPage = 1;
+	private questionScrollMax = 0;
 	constructor(readonly run: RunDetail) {
 		super();
 		this.questions = run.questions ?? [];
@@ -392,6 +395,17 @@ export class AnswerForm extends FieldForm {
 		if (key.name === "ctrl-s") return "submit";
 		if (key.name === "tab" || key.name === "shift-tab")
 			return void this.move(key.name === "tab" ? 1 : -1);
+		if (key.name === "pageup" || key.name === "pagedown") {
+			this.questionScroll[this.focus] = Math.max(
+				0,
+				Math.min(
+					this.questionScrollMax,
+					(this.questionScroll[this.focus] ?? 0) +
+						(key.name === "pageup" ? -1 : 1) * this.questionPage,
+				),
+			);
+			return;
+		}
 		const choice = answerChoice(this.draft[this.focus], undefined, options);
 		const row = this.optionFocus[this.focus] ?? 0;
 		if (key.name === "up" || key.name === "down") {
@@ -494,16 +508,41 @@ export class AnswerForm extends FieldForm {
 			text: `Answer ${this.focus + 1}/${this.questions.length}`,
 			style: theme.accentBold,
 		});
-		screen.put(
-			x + 3,
-			y + 1,
-			wrap(this.questions[this.focus]!, inner)[0] ?? "",
-			theme.bold,
-			inner,
+		const question = wrap(this.questions[this.focus]!, inner);
+		// Reserve space for choices, the custom editor and submission controls.
+		const questionCapacity = Math.max(
+			1,
+			h - (choice.mode === "custom" ? 12 : 9),
 		);
+		const scrolling = question.length > questionCapacity;
+		const questionRows = Math.min(
+			question.length,
+			Math.max(1, questionCapacity - (scrolling ? 1 : 0)),
+		);
+		this.questionPage = questionRows;
+		this.questionScrollMax = Math.max(0, question.length - questionRows);
+		const questionFirst = Math.min(
+			this.questionScroll[this.focus] ?? 0,
+			this.questionScrollMax,
+		);
+		this.questionScroll[this.focus] = questionFirst;
+		let rowY = y + 1;
+		for (const line of question.slice(
+			questionFirst,
+			questionFirst + questionRows,
+		))
+			screen.put(x + 3, rowY++, line, theme.bold, inner);
+		if (scrolling)
+			screen.put(
+				x + 3,
+				rowY++,
+				`Question ${questionFirst + 1}–${questionFirst + questionRows}/${question.length} · PgUp/PgDn scroll`,
+				theme.muted,
+				inner,
+			);
 		screen.put(
 			x + 3,
-			y + 2,
+			rowY++,
 			choice.mode === "custom"
 				? "Custom text will be sent"
 				: options.selection === "single"
@@ -530,12 +569,15 @@ export class AnswerForm extends FieldForm {
 			text: `${cursor === options.options.length ? "›" : " "} ${choice.mode === "custom" ? "(●)" : "( )"} Custom answer`,
 			focused: cursor === options.options.length,
 		});
-		const available = Math.max(1, h - (choice.mode === "custom" ? 9 : 6));
+		const available = Math.max(
+			1,
+			y + h - (choice.mode === "custom" ? 6 : 3) - rowY,
+		);
 		const first = Math.max(0, Math.min(cursorStart, rows.length - available));
 		rows.slice(first, first + available).forEach((row, index) => {
 			screen.put(
 				x + 3,
-				y + 3 + index,
+				rowY + index,
 				row.text,
 				row.focused ? theme.focus : theme.text,
 				inner,
