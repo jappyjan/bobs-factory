@@ -4,7 +4,7 @@ import { useAction, useConfig } from "./client";
 import { ExecutionEditor } from "./execution";
 import { useFormState } from "./form-state";
 import { AgentSettings } from "./forms";
-import { NotificationSettings } from "./notification-settings";
+import { NotificationsSettings } from "./notifications-ui";
 import { Onboarding } from "./onboarding";
 import { revisionOf } from "./restoration";
 import { Button, useToast } from "./ui";
@@ -14,7 +14,7 @@ const pages = [
 	{
 		id: "notifications",
 		name: "Notifications",
-		description: "Push service contact",
+		description: "Push service contact, browser devices and delivery",
 	},
 	{
 		id: "updates",
@@ -94,7 +94,7 @@ export function Settings() {
 						/>
 					)}
 					<ExecutionEditor key={page} config={config} page={page} />
-					{page === "notifications" && <NotificationSettings />}
+					{page === "notifications" && <NotificationsSettings />}
 					{page === "access" && <AccessSettings />}
 					{page === "updates" && <UpdateSettings />}
 					{page === "capacity" && <MachineCapacitySettings config={config} />}

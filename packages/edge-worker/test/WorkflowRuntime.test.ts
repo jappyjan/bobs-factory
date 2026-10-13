@@ -1078,12 +1078,14 @@ it("upgrades a saved flat Factory without losing role settings or its selected d
 });
 
 function reload(home: string, hooks: Partial<RuntimeHooks> = {}) {
-	return new WorkflowRuntime(home, {
+	const restarted = new WorkflowRuntime(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
 		...hooks,
 	});
+	runtimes.push(restarted);
+	return restarted;
 }
 function untilAborted(context: ExecutionContext): Promise<unknown> {
 	return new Promise((resolve) =>
