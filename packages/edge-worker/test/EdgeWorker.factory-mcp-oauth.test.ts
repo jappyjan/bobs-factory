@@ -17,6 +17,7 @@ import {
 import {
 	capacityRunStatus,
 	type FactoryRun,
+	type WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import type { MachineCapacity } from "../src/MachineCapacity.js";
 
@@ -70,10 +71,7 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 		],
 	});
 	const edge = worker as unknown as {
-		getFactoryRuntime(): {
-			create(input: Partial<FactoryRun>): FactoryRun;
-			shutdown(): Promise<void>;
-		};
+		getFactoryRuntime(): WorkflowRuntime;
 		runnerSlots: MachineCapacity;
 		agentSessionManager: { createChatSession(...args: unknown[]): unknown };
 		buildAgentRunnerConfig(): Promise<{
