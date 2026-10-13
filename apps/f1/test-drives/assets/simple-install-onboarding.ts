@@ -190,6 +190,7 @@ globalThis.fetch = (async (input, init) => {
 			: undefined;
 		const path = `${url.pathname}${url.search}`;
 		requests.push({ method, path, body });
+		if (url.pathname === "/meta") return response({ hooks: ["127.0.0.1/32"] });
 		if (url.pathname === "/user") {
 			assert.equal(auth, "Bearer saved-f1-secret");
 			return response({ login: "f1-operator" });
@@ -493,7 +494,7 @@ try {
 	git("remote", "set-url", "origin", remote);
 	git("fetch", "-q", "origin");
 	console.log(
-		"PASS real passkey registration; signed-out and forged-origin setup denied; project/agent saved privately; GitHub token not returned",
+		"PASS localhost access; signed-out and forged-origin setup denied; project/agent saved privately; GitHub token not returned",
 	);
 	const authBefore = readFileSync(join(home, "factory/auth/state.json"));
 	await worker.stop();
@@ -511,7 +512,7 @@ try {
 	assert.equal(restarted.github.account, "f1-operator");
 	assert.equal((await api("/api/auth/status")).authenticated, true);
 	console.log(
-		"PASS restart preserved selected project/agent, credentials, passkey and authenticated session",
+		"PASS restart preserved selected project/agent, credentials and localhost access",
 	);
 	const runtime = runtimeOf(worker);
 	const workflow = WorkflowSchema.parse({
@@ -585,7 +586,12 @@ try {
 				typeof activity.content === "string",
 		),
 	);
-	assert(JSON.stringify(timeline).includes("F1 onboarding issue processed"));
+	// Validated Factory role results belong to the run activity/output.
+	// The CLI tracker timeline retains routing/progress, not raw agent replies.
+	assert.deepEqual(run.outputs.observe, {
+		text: "F1 onboarding issue processed without native agent execution.",
+	});
+	assert(JSON.stringify(timeline).includes("**Routing**"));
 	const page = await rpc("viewSession", {
 		sessionId: run.id,
 		limit: 1,
@@ -597,6 +603,7 @@ try {
 	assert(!JSON.stringify(timeline).includes("saved-f1-secret"));
 	assert(!JSON.stringify(run).includes("saved-f1-secret"));
 	const activity = await api(`/api/runs/${run.id}/activity`);
+	assert(JSON.stringify(activity).includes("F1 onboarding issue processed"));
 	assert(
 		JSON.stringify(activity).includes("Create draft through native GitHub API"),
 	);

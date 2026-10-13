@@ -4457,6 +4457,12 @@ kbd {
 	display: grid;
 	gap: 0.25rem;
 }
+.api-key-list li > .settings-actions {
+	flex-shrink: 0;
+}
+.api-key-list li strong {
+	overflow-wrap: anywhere;
+}
 .api-key-list li span {
 	color: var(--muted);
 	font-size: 0.85rem;

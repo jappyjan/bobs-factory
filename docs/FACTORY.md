@@ -154,11 +154,11 @@ require validated local authority or a remote session. Private responses use `Ca
 | Video media, posters and captions (`/api/runs/:id/videos/:id/*`) | Same session boundary; `FactoryAccess.test.ts`, `Video.test.ts`. |
 | Live events (`/api/events`) | Session at connection and reconnect; idle streams close on logout, expiry or recovery; `FactoryAccess.test.ts`. |
 | Run actions (messages, answers, review, follow-up, stop, retry, ticket sync) | Session plus Origin/action header before mutation; `FactoryAccess.test.ts`, `FactoryServer.test.ts`. |
-| Public shell, `/api/version`, `/api/auth/status`, login/register ceremonies | No sensitive data. Enrollment requires operator code or recent session; exact Origin, browser-bound challenge, user verification and replay checks; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
-| Credential management and logout (`/api/auth/credentials`, `/api/auth/logout`) | Listing/removal need verification within five minutes. Logout revokes session/streams; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
+| Public shell, `/api/version`, `/api/auth/status`, `/api/auth/login` | No sensitive data. Key sign-in requires exact Origin and action header, is rate limited, and establishes a browser session; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
+| API key management and logout (`/api/auth/keys`, `/api/auth/keys/:id`, `/api/auth/keys/:id/rotate`, `/api/auth/logout`) | Validated localhost access or a remote session can add, list, remove and rotate keys. Secrets are shown once; removing or rotating a key revokes its sessions/streams. Last-key recovery uses localhost Settings. Logout revokes the current session/streams; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
 | Provider listener (`/linear-webhook`, OAuth callback routes) | Independent provider signature/OAuth checks, no dashboard cookie; `packages/linear-event-transport/test/LinearEventTransport.test.ts`, `apps/cli/src/commands/SelfAuthCommand.test.ts`. |
 
-Browser evidence must complement these server checks: actual registration/login
+Browser evidence must complement these server checks: actual key creation/sign-in
 through a Host/Origin-preserving HTTPS proxy, secure cookies, authenticated
 read/action, logout, offline/reconnect, expiry/revocation, restart/reopen and
 mobile-width setup/data/error screens. Record the tested revision and limitations

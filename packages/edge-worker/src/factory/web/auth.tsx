@@ -14,11 +14,12 @@ import {
 	rotateSession,
 	useAccess,
 } from "./auth-state";
-import { uiBuild, usePwa, versionMismatch } from "./pwa";
+import { assertWritable, uiBuild, usePwa, versionMismatch } from "./pwa";
 import { ConnectionNotice } from "./pwa-ui";
 import { Bob, Button } from "./ui";
 
 async function authRequest(path: string, body: unknown = {}, method = "POST") {
+	if (path.startsWith("keys") && method !== "GET") assertWritable();
 	const epoch = accessGeneration();
 	const response = await fetch(`/api/auth/${path}`, {
 		signal: accessSignal(),
@@ -46,10 +47,14 @@ const reveals = new Set<(key: string, signedOut: boolean) => void>();
 async function keyAction(
 	action: () => Promise<{ key?: string; sessionRevoked?: boolean }>,
 ) {
+	assertWritable();
 	await rotateSession(async () => {
 		const result = await action();
-		if (result.sessionRevoked)
+		if (result.sessionRevoked) {
 			accessRequired("Your API key changed. Sign in again.", true);
+			// Removal can empty the store. Refresh recovery guidance immediately.
+			if (!result.key) await checkAccess();
+		}
 		if (result.key)
 			for (const reveal of reveals)
 				reveal(result.key, Boolean(result.sessionRevoked));
@@ -273,6 +278,8 @@ type ApiKey = {
 };
 export function AccessSettings() {
 	const access = useAccess();
+	const pwa = usePwa();
+	const mutationsPaused = pwa.status !== "ready" || pwa.updating;
 	const [keys, setKeys] = useState<ApiKey[]>(),
 		[error, setError] = useState<string>(),
 		[busy, setBusy] = useState(false),
@@ -315,7 +322,7 @@ export function AccessSettings() {
 					</div>
 					<Button
 						variant="secondary"
-						disabled={busy}
+						disabled={busy || mutationsPaused}
 						onClick={() => {
 							setAdding(!adding);
 							setLabel("");
@@ -361,7 +368,10 @@ export function AccessSettings() {
 							/>
 						</label>
 						<div className="settings-actions">
-							<Button type="submit" disabled={busy || !label.trim()}>
+							<Button
+								type="submit"
+								disabled={busy || mutationsPaused || !label.trim()}
+							>
 								Create key
 							</Button>
 							<Button
@@ -402,7 +412,7 @@ export function AccessSettings() {
 							<div className="settings-actions">
 								<Button
 									variant="secondary"
-									disabled={busy}
+									disabled={busy || mutationsPaused}
 									aria-label={`Rotate ${key.label}`}
 									onClick={() => {
 										if (
@@ -424,7 +434,7 @@ export function AccessSettings() {
 								</Button>
 								<Button
 									variant="secondary"
-									disabled={busy}
+									disabled={busy || mutationsPaused}
 									aria-label={`Remove ${key.label}`}
 									onClick={() => {
 										if (
@@ -468,7 +478,7 @@ export function AccessSettings() {
 					</p>
 					<Button
 						variant="secondary"
-						disabled={busy}
+						disabled={busy || mutationsPaused}
 						onClick={() => {
 							if (
 								!window.confirm(
