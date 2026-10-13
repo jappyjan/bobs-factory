@@ -4,12 +4,18 @@ import { useAction, useConfig } from "./client";
 import { ExecutionEditor } from "./execution";
 import { useFormState } from "./form-state";
 import { AgentSettings } from "./forms";
+import { NotificationsSettings } from "./notifications-ui";
 import { Onboarding } from "./onboarding";
 import { revisionOf } from "./restoration";
 import { Button, useToast } from "./ui";
 import { UpdateSettings } from "./updates";
 
 const pages = [
+	{
+		id: "notifications",
+		name: "Notifications",
+		description: "Browser devices and notification delivery",
+	},
 	{
 		id: "updates",
 		name: "Updates",
@@ -88,6 +94,7 @@ export function Settings() {
 						/>
 					)}
 					<ExecutionEditor key={page} config={config} page={page} />
+					{page === "notifications" && <NotificationsSettings />}
 					{page === "access" && <AccessSettings />}
 					{page === "updates" && <UpdateSettings />}
 					{page === "capacity" && <MachineCapacitySettings config={config} />}
