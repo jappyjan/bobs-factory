@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Drain loopback test responses before server shutdown to avoid hanging access checks during CI ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Keep reviewed chapter progress during rapid navigation and reload by canceling protected requests on page exit and ignoring their late failures; genuine connection and access loss still clear private state ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Preserve reader progress when browser navigation interrupts the live stream, and supply the retained previous guide for safe migration of older saved progress ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
@@ -22,6 +24,7 @@ All notable changes to this project will be documented in this file.
 
 - Save behavioral QA provenance before review and assess feedback across every repository delivery, preserving original evidence and detecting edited comments, threads and reviews ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
+- Keep brought-back stopped runs visible in Today and offer explicit checkpoint resumption without replaying finished steps or automatically restarting stopped work ([#130](https://github.com/jappyjan/bobs-factory/pull/130)).
 - Keep nightly source assembly from overwriting retained native notices by giving fresh notices candidate-specific filenames and recording historical material before fresh additions ([#129](https://github.com/jappyjan/bobs-factory/pull/129)).
 - Keep automatic runtime updates working with retained test-tool links in task evidence: omit them from isolated preflight, preserve their exact link records in snapshots and restore them verbatim on rollback ([#128](https://github.com/jappyjan/bobs-factory/pull/128)).
 - Fix standard binary installation and desktop update enrollment for published release manifests: scope nested identities correctly and compare archive fields independently of JSON key order ([#127](https://github.com/jappyjan/bobs-factory/pull/127)).

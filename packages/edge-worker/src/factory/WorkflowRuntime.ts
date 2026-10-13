@@ -3273,6 +3273,28 @@ export class WorkflowRuntime {
 		void this.launch(run);
 		return run;
 	}
+	canResume(id: string): boolean {
+		const run = this.get(id);
+		return (
+			!this.shuttingDown &&
+			run.status === "stopped" &&
+			!this.controllers.has(id) &&
+			!!(run.checkpoint || run.simpleExecution)
+		);
+	}
+	resume(id: string): FactoryRun {
+		const run = this.get(id);
+		if (this.shuttingDown) throw new Error("Factory is shutting down");
+		if (!this.canResume(id))
+			throw new Error("Only stopped runs with saved progress can be resumed");
+		releaseDelivery(run, "Explicit resume must re-enter delivery coordination");
+		run.status = "running";
+		delete run.error;
+		this.updateViewState(id, { keptOpen: true });
+		this.log(run, "run", "Resume requested; continuing from saved progress.");
+		void this.launch(run);
+		return run;
+	}
 	retry(id: string): FactoryRun {
 		const run = this.get(id);
 		if (this.shuttingDown) throw new Error("Factory is shutting down");

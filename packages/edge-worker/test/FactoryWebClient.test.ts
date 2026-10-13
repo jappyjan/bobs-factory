@@ -425,6 +425,27 @@ it("keeps capacity queues active without rendering human attention", async () =>
 	expect(attention({ status: "capacity-waiting" })).toBeUndefined();
 });
 
+it.each([
+	"stopped",
+	"cancelled",
+])("keeps a brought-back %s run visible for operator recovery without restarting it", async (status) => {
+	const { active, attention, settleReason } = await import(
+		"../src/factory/web/client.js"
+	);
+	const run = {
+		id: "brought-back",
+		status,
+		createdAt: "2026-10-01T00:00:00.000Z",
+		viewState: { keptOpen: true },
+	};
+	expect(settleReason(run, [run])).toBeUndefined();
+	expect(attention(run)).toBe("stuck");
+	expect(active(run.status)).toBe(false);
+	const settled = { ...run, viewState: {} };
+	expect(settleReason(settled, [settled])).toBe("■ Stopped");
+	expect(attention(settled)).toBeUndefined();
+});
+
 it("classifies QA before screenshot artifacts, including previews, and renders zero-image receipts and observations", () => {
 	const qa = qaExecution("blocked");
 	qa.observations = [
