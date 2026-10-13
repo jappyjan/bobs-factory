@@ -506,6 +506,7 @@ export class WorkflowRuntime {
 			// Completed receipts never change when live outputs or graph frames do.
 			// Keep loaded history pages reusable, with a bounded payload cache.
 			immutableTranscript(run.history);
+			if (run.reviewRounds) immutableTranscript(run.reviewRounds);
 			this.runs.set(run.id, run);
 		}
 		cleanupVideoEvidence(
@@ -1367,7 +1368,7 @@ export class WorkflowRuntime {
 								`refs/remotes/origin/${source?.baseRefName ?? repo?.baseBranch ?? "main"}`,
 							);
 							run.reviewRounds ??= [];
-							state.reviewBaseline = {
+							state.reviewBaseline = immutableJson({
 								schemaVersion: 1,
 								round: run.reviewRounds.length + 1,
 								key,
@@ -1384,7 +1385,7 @@ export class WorkflowRuntime {
 									})),
 								),
 								context: frozenReviewContext(input),
-							};
+							});
 							run.reviewRounds.push(state.reviewBaseline);
 						}
 						if (state.reviewBaseline)

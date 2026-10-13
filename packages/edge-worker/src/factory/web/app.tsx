@@ -48,7 +48,7 @@ import {
 	WorkingRow,
 } from "./focus";
 import { Composer, Recipes } from "./forms";
-import { NotificationsControl } from "./notifications-ui";
+import { NotificationsProvider } from "./notifications-ui";
 import { SetupBoundary } from "./onboarding";
 import { pwaState, startPwa, usePwa } from "./pwa";
 import {
@@ -223,7 +223,6 @@ function Header({
 				</nav>
 				<div className="header-actions">
 					<InstallControl />
-					<NotificationsControl />
 					<Dropdown.Root>
 						<Dropdown.Trigger asChild>
 							<Button variant="icon" aria-label={`Theme: ${theme.choice}`}>
@@ -1300,7 +1299,9 @@ createRoot(document.getElementById("root")!).render(
 			<ToastProvider>
 				<AccessBoundary>
 					<SetupBoundary>
-						<App />
+						<NotificationsProvider>
+							<App />
+						</NotificationsProvider>
 					</SetupBoundary>
 				</AccessBoundary>
 			</ToastProvider>

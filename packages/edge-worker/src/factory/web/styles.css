@@ -4288,6 +4288,15 @@ kbd {
 .settings-content > .recipe {
 	margin: 0;
 }
+.notifications-settings li {
+	margin-bottom: 16px;
+	overflow-wrap: anywhere;
+}
+.notifications-settings .button {
+	max-width: 100%;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
 .settings-save {
 	margin-top: 24px;
 	padding-top: 16px;

@@ -459,7 +459,7 @@ itself without discarding the file or interrupting Factory. To rotate keys,
 stop Factory, securely archive the file, remove it and restart with a valid
 subject. Every device must explicitly enable again; old subscriptions are unusable.
 
-Open **Notifications** beside Install app/App help. **Enable this device** requests
+Open **Settings → Notifications**. **Enable this device** requests
 browser permission only from your click and registers the existing app worker.
 Give each browser profile or installed app a recognizable label. Enabled means
 both browser subscription and server registration succeeded. **Send test** uses
@@ -472,7 +472,7 @@ those devices from their own browser. Remote disable requires explicit re-enable
 and is never undone by a foreground visit. Local disable unsubscribes immediately;
 failed server cleanup is retained locally and retried on foreground/reconnect.
 Denied or revoked permission leaves Today and the connected app usable.
-Closing Notifications discards unsent label edits; registered device labels and
+Leaving the Notifications page discards unsent label edits; registered device labels and
 notification consent remain saved.
 
 Supported events are new question waves or changed question sets, new pending
@@ -1693,6 +1693,23 @@ QA stories use stable inventory IDs from the configured aggregate, including ren
 Untouched legacy stock review segments upgrade conservatively and idempotently for future launches. Customized general reviewers, guide prompts, gate arguments, and consumers of legacy review output keep their legacy contracts. To opt in, copy the extraction/fanout/gate segment from the stock shared pipeline and retarget substantive correction loops through extraction. Preserve your role settings and QA/human approval gates. Active, waiting, failed and restored accepted runs are not rewritten.
 
 ### Architecture discussion before implementation
+
+Every Factory role receives runtime-owned `/workflowExecution` context describing
+the run's accepted graph, including nested workflows, fanout, configured gate
+policies and recorded architecture/human decisions. This context also accompanies
+roles with restricted inputs, including implementation. It excludes unrelated
+current recipes and role prompts; missing accepted definitions are reported as
+unknown. Repository code and documentation can describe newer workflows without
+adding those gates to a frozen run.
+
+Legacy runs with `plan -> plan-review -> implement` use automated plan review;
+the reviewer's `approved: true` is not human acceptance. Planners and reviewers
+must ground additional approval prerequisites in the accepted graph or explicit
+task/user requirements and mandatory repository rules. They must not require a
+nonexistent architecture acceptance record merely because a newer recipe has that
+gate. Actual architecture gates, execution restrictions, required checks and final
+delivery approval remain binding. Recovery answers can correct an unsupported
+prerequisite without manufacturing acceptance or rewriting the accepted graph.
 
 New stock Factory and Takeover repository work shares this path after delivery-contract validation. Mixed work reaches it after applying and independently verifying the accepted ticket changes; external-only work goes directly to its external review and acceptance. Plan review confirms the delivery contract separately from architecture candidate review.
 

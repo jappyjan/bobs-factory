@@ -50,3 +50,19 @@ The final browser error collection was empty. Fixture setup was corrected to per
 Clipboard denial/unavailability and most success paths are simulated at the browser API boundary. One native headless Chromium write resolved; this does not establish physical-device clipboard behavior or clipboard contents on the host. HTTPS uses a local self-signed fixture and seeded session, not a deployed remote origin or real passkey enrollment. No tracker synchronization, provider delivery or merge is claimed.
 
 The named headless browser and both fixture listeners were closed. Evidence and temporary fixture homes remain for reproduction. No PR was created or published by implementation; the delivery step owns publication and the eventual changelog PR link.
+
+## Merge validation for PR #122
+
+The CI fixer fetched and merged `origin/main` at `ef01f788`. The tested working
+tree combines PR head `c4f0d9f7` with that base. The capability-reference conflict
+was resolved by preserving the Share description and all current base guidance.
+The auto-merged dashboard retains the Notifications move to Settings.
+
+Fresh browser build `771ec01592a95456cd83d4cd` passed the same 30 browser
+assertions with simulated agents, using the fixture and browser commands above
+with evidence in the `ci-merge` subdirectory and headless session
+`share-ci-5442324b`. Source fingerprints and both parent revisions are recorded
+in `ci-merge/merge-revision.json`. Desktop fallback and mobile light screenshots
+were inspected. All 55 browser-client/PWA tests, edge-worker build/typecheck,
+scoped Biome checks and `git diff --check` passed. Physical-device clipboard
+behavior remains unverified. The browser session and fixture listeners were closed.
