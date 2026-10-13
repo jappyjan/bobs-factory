@@ -539,3 +539,126 @@ it("classifies explicit attention and completion, excluding ordinary activity an
 		sessionPushEvent({ id: "simple", status: "error", recovering: true }),
 	).toBeUndefined();
 });
+
+it("saves contacts without rotating identity or changing consent and uses them on delivery", async () => {
+	vi.useFakeTimers();
+	const path = home();
+	const subjects: string[] = [];
+	const push = new FactoryPush(
+		path,
+		async (_subscription, _payload, vapid) => {
+			subjects.push(vapid.subject);
+		},
+		Date.now,
+		"",
+	);
+	expect(push.status().configuration).toBe("unconfigured");
+	expect(push.configure({ subject: `  ${subject}  ` }).subject).toBe(subject);
+	const id = push.register({
+		label: "one",
+		subscription: subscription("one"),
+	}).id;
+	observe(push, event("old"), true);
+	const file = join(path, "factory/push.json");
+	const before = JSON.parse(readFileSync(file, "utf8"));
+	const next = "https://example.org/contact";
+	push.configure({ subject: next });
+	expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
+		...before,
+		vapid: { ...before.vapid, subject: next },
+	});
+	const bytes = readFileSync(file, "utf8");
+	push.configure({ subject: next });
+	expect(readFileSync(file, "utf8")).toBe(bytes);
+	for (const input of [
+		{ subject: "" },
+		{ subject: "http://example.org" },
+		{ subject: "https://user:password@example.org" },
+		{ subject: "mailto:bad" },
+		{ subject, extra: true },
+		{ subject: "x".repeat(2049) },
+	]) {
+		expect(() => push.configure(input)).toThrow();
+		expect(readFileSync(file, "utf8")).toBe(bytes);
+	}
+	observe(push, event("fresh"));
+	await tick();
+	expect(subjects).toEqual([next]);
+	expect(push.status().devices[0]?.id).toBe(id);
+	await push.stop();
+	expect(() => push.configure({ subject })).toThrow(/stopped/);
+	const restarted = new FactoryPush(path, undefined, Date.now, subject);
+	expect(restarted.status().subject).toBe(next);
+	expect(restarted.status().publicKey).toBe(before.vapid.publicKey);
+	expect(statSync(file).mode & 0o777).toBe(0o600);
+	await restarted.stop();
+});
+it("protects corrupt and unwritable stores from configuration", async () => {
+	const path = home();
+	const push = new FactoryPush(path, undefined, Date.now, subject);
+	await push.stop();
+	const file = join(path, "factory/push.json");
+	writeFileSync(file, "corrupt");
+	const broken = new FactoryPush(path, undefined, Date.now, "");
+	expect(() => broken.configure({ subject })).toThrow(/Repair/);
+	expect(readFileSync(file, "utf8")).toBe("corrupt");
+	await broken.stop();
+	const unwritable = home();
+	writeFileSync(join(unwritable, "factory"), "not a directory");
+	const failed = new FactoryPush(unwritable, undefined, Date.now, "");
+	expect(() => failed.configure({ subject })).toThrow(/unavailable/);
+	expect(failed.status().configuration).toBe("unavailable");
+	expect(failed.status().available).toBe(false);
+	await failed.stop();
+});
+it("baselines attached native attention on late configuration", async () => {
+	vi.useFakeTimers();
+	const path = home();
+	const runtime = new WorkflowRuntime(path, {
+		agent: async () => ({}),
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	let sessions: PushSession[] = [{ id: "native", status: "awaitingInput" }];
+	let changed = () => {};
+	const sender = vi.fn(async () => {});
+	const push = new FactoryPush(path, sender, Date.now, "");
+	push.attach(runtime, {
+		sessions: () => sessions,
+		subscribe: (listener) => {
+			changed = () => listener("native");
+			return () => {};
+		},
+	});
+	push.configure({ subject });
+	push.register({ label: "one", subscription: subscription("late") });
+	changed();
+	await tick();
+	expect(sender).not.toHaveBeenCalled();
+	sessions = [{ id: "native", status: "running" }];
+	changed();
+	sessions = [{ id: "native", status: "awaitingInput" }];
+	changed();
+	await tick();
+	expect(sender).toHaveBeenCalledTimes(1);
+	await push.stop();
+	await runtime.shutdown();
+});
+
+it("retains delivery completion bookkeeping when a contact changes during a send", async () => {
+	let finish!: () => void;
+	const sending = new Promise<void>((resolve) => {
+		finish = resolve;
+	});
+	const push = new FactoryPush(home(), async () => sending, Date.now, subject);
+	const { id } = push.register({
+		label: "one",
+		subscription: subscription("active"),
+	});
+	const result = push.test(id);
+	push.configure({ subject: "https://example.org/contact" });
+	finish();
+	expect((await result).accepted).toBe(true);
+	expect(push.status().devices[0]?.health).toBe("accepted");
+	await push.stop();
+});
