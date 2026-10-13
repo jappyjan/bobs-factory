@@ -238,14 +238,19 @@ export function readReviewProgress(run: any, guide: Guide, pages: number) {
 	// Upgrade existing revision-scoped progress only when the original guide
 	// is still available. Never guess a chapter's old content from its ID.
 	if (!previous && guide.previousHeadSha) {
-		const old = run.history
-			?.slice()
-			.reverse()
-			.find(
-				(entry: any) =>
-					entry.output?.reviewFiles?.headSha === guide.previousHeadSha &&
-					entry.output?.chapters,
-			)?.output as Guide | undefined;
+		const old =
+			(run.previousReviewGuide?.reviewFiles?.headSha ===
+				guide.previousHeadSha && run.previousReviewGuide?.chapters
+				? run.previousReviewGuide
+				: undefined) ??
+			(run.history
+				?.slice()
+				.reverse()
+				.find(
+					(entry: any) =>
+						entry.output?.reviewFiles?.headSha === guide.previousHeadSha &&
+						entry.output?.chapters,
+				)?.output as Guide | undefined);
 		if (old) {
 			const oldRun = {
 				id: run.id,

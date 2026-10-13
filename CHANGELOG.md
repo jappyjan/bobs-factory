@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Preserve reader progress when browser navigation interrupts the live stream, and supply the retained previous guide for safe migration of older saved progress ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Align the complete routing prompt expectation with the documented repository-scoped reading progress behavior, restoring the CI assertion ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Retain reviewed chapters across renewed guides when their content, linked requirements and system map are unchanged and independent impact evidence confirms reuse; reset affected reading progress, bind saved and mounted progress to every repository revision, preserve it during normal page reloads, and keep feedback and approval revision-bound ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).

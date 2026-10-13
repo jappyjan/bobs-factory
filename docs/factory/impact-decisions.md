@@ -124,6 +124,9 @@ current guide and every repository revision. Saved chapter progress is validated
 before restoration, and changes to secondary repositories reset uncertain
 progress even when the primary revision and guide are unchanged. Reading
 progress never grants approval.
-Normal navigation aborts the browser's live connection before teardown so it
+The protected dashboard supplies the single adjacent retained guide needed to
+migrate legacy revision-scoped reading progress. Migration still requires current
+independent reuse evidence; an absent original guide clears uncertain progress.
+Normal navigation aborts the browser's live connection when page exit begins and again on page hide, so it
 does not trigger the private-state cleanup used for actual connection or access
 loss. Returning through the browser's page cache reconnects the live stream.

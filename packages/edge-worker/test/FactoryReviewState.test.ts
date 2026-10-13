@@ -318,6 +318,24 @@ it("upgrades old revision-scoped progress only with the original guide and indep
 	);
 	const run = { ...current, history: [{ step: "guide", output: old }] };
 	const updated = { ...guide, previousHeadSha: "original" };
+	expect(
+		readReviewProgress(
+			{ ...current, history: [], previousReviewGuide: old },
+			updated,
+			5,
+		).reviewed,
+	).toEqual({ authorization: true });
+	expect(
+		readReviewProgress(
+			{
+				...current,
+				history: [],
+				previousReviewGuide: { ...old, reviewFiles: { headSha: "unrelated" } },
+			},
+			updated,
+			5,
+		).reviewed,
+	).toEqual({});
 	expect(readReviewProgress(run, updated, 5).reviewed).toEqual({
 		authorization: true,
 	});
