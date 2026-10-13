@@ -17,6 +17,7 @@ import {
 	assertLocalDashboard,
 	assertRemoteDenied,
 } from "./dashboard-access.mjs";
+import { writeNativeReceipt } from "./native-receipt-output.mjs";
 
 if (process.platform === "linux") app.disableHardwareAcceleration();
 const root = mkdtempSync(join(tmpdir(), "factory-electron-smoke-"));
@@ -270,29 +271,26 @@ void (async () => {
 			{ encoding: "utf8", timeout: 15000 },
 		);
 		assert.equal(workerOwner(lifecycle.home), undefined);
-		console.log(
-			JSON.stringify(
-				{
-					passed: true,
-					platform: process.platform,
-					arch: process.arch,
-					electron: process.versions.electron,
-					fixture: root,
-					access:
-						"direct localhost without cookies/passkeys; public Host401 and foreign Origin/cross-site/forwarded local403",
-					localLogoutRetainsAuthority: true,
-					dashboardBridgeIsolated: true,
-					closedWindowKeepsWorker: true,
-					reopenSamePid: true,
-					explicitStop: true,
-					confirmationMaintenanceRaceRejected: true,
-					stopSuppressesAutomaticRestart: true,
-					nativeCredentials: "not tested",
-					screenshotUnavailable,
-				},
-				null,
-				2,
-			),
+		writeNativeReceipt(
+			{
+				passed: true,
+				platform: process.platform,
+				arch: process.arch,
+				electron: process.versions.electron,
+				fixture: root,
+				access:
+					"direct localhost without cookies/passkeys; public Host401 and foreign Origin/cross-site/forwarded local403",
+				localLogoutRetainsAuthority: true,
+				dashboardBridgeIsolated: true,
+				closedWindowKeepsWorker: true,
+				reopenSamePid: true,
+				explicitStop: true,
+				confirmationMaintenanceRaceRejected: true,
+				stopSuppressesAutomaticRestart: true,
+				nativeCredentials: "not tested",
+				screenshotUnavailable,
+			},
+			process.env.BOBS_FACTORY_NATIVE_ELECTRON_RECEIPT,
 		);
 		app.exit(0);
 	} catch (error) {

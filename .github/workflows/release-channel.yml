@@ -5,12 +5,12 @@ on:
   workflow_dispatch:
     inputs:
       channel:
-        description: Nightly preparation or stable promotion from a selected validated nightly
+        description: Nightly or beta from main; stable promotion from a selected validated nightly
         type: choice
-        options: [nightly, stable]
+        options: [nightly, stable, beta]
         default: nightly
       version:
-        description: Stable version (nightly version is allocated once)
+        description: Stable or beta version, e.g. 1.0.1-beta (nightly version is allocated once)
         type: string
       nightly_tag:
         description: Exact published nightly tag to promote (required for stable)
@@ -61,7 +61,7 @@ jobs:
         run: |
           if [ -f "$RUNNER_TEMP/candidate/candidate.json" ]; then
             node --input-type=module -e 'import {readFileSync,appendFileSync} from "node:fs"; const c=JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/candidate/candidate.json")); appendFileSync(process.env.GITHUB_OUTPUT,"candidate_json="+JSON.stringify(c)+"\n")'
-            echo 'Nightly CI derives evidence from the pinned accepted baseline and fresh checks; stable still requires reviewed evidence and exact prepared-asset approval.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Nightly and beta CI derive evidence from the pinned accepted baseline and fresh checks; beta and stable publication require exact prepared-asset approval.' >> "$GITHUB_STEP_SUMMARY"
           fi
   binary:
     needs: prepare
@@ -72,14 +72,14 @@ jobs:
 
   desktop:
     needs: [prepare, binary]
-    if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel == 'nightly'
+    if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel != 'stable'
     uses: ./.github/workflows/desktop-build.yml
     with:
       candidate_json: ${{ needs.prepare.outputs.candidate_json }}
       reuse_native: true
   checks:
     needs: prepare
-    if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel == 'nightly'
+    if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel != 'stable'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:

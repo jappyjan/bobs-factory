@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Integrate beta candidate preparation, exact-asset publication approval, verified desktop downloads and native release fixture fixes while preserving bundled workflows and recovery ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
 - Shut down restored workflow test runtimes before removing their temporary storage, preventing final-save cleanup races ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
 - Preserve workflow disable blocks and frozen definitions while integrating chunked history storage and resumed-checkpoint responsiveness; keep dashboard summaries accurate across restart ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
@@ -15,6 +17,19 @@ All notable changes to this project will be documented in this file.
 - Integrate architecture approval and native localhost validation with bundled workflow ownership; recognize architecture-enabled legacy standards without creating forks, and preserve saved approval gates ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
 - Protect atomic simulated desktop receipt publication with a delayed-write regression check for the maintained F1 update drive ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+- Validate beta desktop releases from their actual installed AppImage through controlled stable upgrade and rollback candidates, preserving nightly validation and truthful input receipts ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#111](https://github.com/jappyjan/bobs-factory/pull/111)).
+
+- Write native Electron validation receipts separately from Chromium diagnostics so Linux release evidence remains valid JSON; retain complete smoke logs and refuse receipt overwrites ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#110](https://github.com/jappyjan/bobs-factory/pull/110)).
+
+- Resolve Bun's upstream ARM64 archive and ZIP member names when assembling release evidence, preserving native target identities and accepted runtime hash checks ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#109](https://github.com/jappyjan/bobs-factory/pull/109)).
+
+- Wait for shared and legacy QA blocker records to be visible before asserting isolation, avoiding a race with asynchronous persistence ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#108](https://github.com/jappyjan/bobs-factory/pull/108)).
+
+- Wait for the detached desktop recovery fixture to finish and release its process owner before starting another helper, preventing intermittent macOS nightly check failures while preserving live-owner refusal ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#106](https://github.com/jappyjan/bobs-factory/pull/106)).
+
+- Prepare exact beta releases through CI with the full native/desktop validation path and reviewed asset approval, and show direct DMG, AppImage and DEB links on the downloads page from verified published inventories ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#107](https://github.com/jappyjan/bobs-factory/pull/107)).
+
+- Synchronize the operator MCP answer-batch fixture with question readiness so asynchronous persistence cannot race nightly checks; retain strict answer and stale-batch assertions ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#105](https://github.com/jappyjan/bobs-factory/pull/105)).
 
 - Keep resumed agent checkpoints responsive after reading large workflow history: preserve completed receipts as immutable snapshots, reuse their pages and extend the cached dashboard history index. ([#104](https://github.com/jappyjan/bobs-factory/pull/104), [F1 validation](apps/f1/test-drives/2026-10-12-resumed-history.md))
 

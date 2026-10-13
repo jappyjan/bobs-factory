@@ -12,6 +12,7 @@ import {
 	validateBuildProvenance,
 } from "../lib/binary-release.mjs";
 import {
+	candidateDigest,
 	candidateIdentity,
 	freezeCandidate,
 	nightlyEligibility,
@@ -213,6 +214,59 @@ test("stable preparation retries retain the selected nightly and reject changed 
 		const changed = run("--nightly-tag", "v1.0.0-nightly.20261009.10");
 		assert.notEqual(changed.status, 0);
 		assert.match(changed.stderr, /Retry inputs differ/);
+		assert.equal(readFileSync(output, "utf8"), bytes);
+	} finally {
+		rmSync(work, { recursive: true, force: true });
+	}
+});
+
+test("beta freezes explicit version and retry rejects changed version without nightly allocation", () => {
+	const candidate = freezeCandidate({
+		...args,
+		channel: "beta",
+		version: "1.0.1-beta",
+	});
+	assert.equal(candidate.candidate.version, "1.0.1-beta");
+	assert.equal(candidate.candidate.channel, "beta");
+	assert.equal(candidate.candidate.sequence, undefined);
+	assert.equal(candidate.candidate.promotion, undefined);
+	const sequenced = { ...candidate.candidate, sequence: 10 };
+	assert.throws(
+		() =>
+			validateCandidate({
+				candidate: sequenced,
+				digest: candidateDigest(sequenced),
+			}),
+		/Beta is an explicit frozen source/,
+	);
+	assert.throws(
+		() => freezeCandidate({ ...args, channel: "beta", version: "1.0.1" }),
+		/mismatch/,
+	);
+	const work = mkdtempSync(join(tmpdir(), "factory-beta-retry-"));
+	try {
+		const output = join(work, "candidate.json"),
+			bytes = JSON.stringify(candidate);
+		writeFileSync(output, bytes);
+		const run = (version) =>
+			spawnSync(
+				process.execPath,
+				[
+					"scripts/prepare-release-candidate.mjs",
+					"--channel",
+					"beta",
+					"--version",
+					version,
+					"--workflow-sha",
+					workflowSha,
+					"--output",
+					output,
+				],
+				{ encoding: "utf8" },
+			);
+		const retained = run("1.0.1-beta");
+		assert.equal(retained.status, 0, retained.stderr);
+		assert.match(run("1.0.2-beta").stderr, /Retry inputs differ/);
 		assert.equal(readFileSync(output, "utf8"), bytes);
 	} finally {
 		rmSync(work, { recursive: true, force: true });

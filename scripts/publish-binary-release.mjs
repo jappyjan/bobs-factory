@@ -417,10 +417,10 @@ try {
 			process.env.BOBS_FACTORY_RELEASE_PUBLICATION_LOCK === "repository",
 			"Publication requires repository-wide concurrency lock",
 		);
-		if (identity.channel === "stable") {
+		if (["stable", "beta"].includes(identity.channel)) {
 			requireValue(
 				values.approval,
-				"Stable publication requires candidate-bound approval file",
+				"Stable/beta publication requires candidate-bound approval file",
 			);
 			const approval = JSON.parse(
 				readFileSync(resolve(values.approval), "utf8"),
@@ -430,7 +430,7 @@ try {
 					approval.assetsDigest === assetsDigest &&
 					typeof approval.approvedBy === "string" &&
 					approval.approvedBy.trim(),
-				"Stable approval does not bind exact candidate and prepared assets",
+				"Stable/beta approval does not bind exact candidate and prepared assets",
 			);
 		} else
 			requireValue(
@@ -439,7 +439,7 @@ try {
 			);
 		const recheck = async () => {
 			const state = await discoverReleases(client);
-			if (identity.channel === "stable") {
+			if (["stable", "beta"].includes(identity.channel)) {
 				for (const release of state.published.filter((r) => !r.prerelease))
 					validateLatestVersion(identity.version, release);
 			} else {

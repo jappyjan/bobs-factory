@@ -19,8 +19,8 @@ import { defaultWorkflows } from "../../../packages/edge-worker/dist/factory/def
 import { validateWorkflows } from "../../../packages/edge-worker/dist/factory/Workflow.js";
 import { WorkflowRuntime } from "../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
 import { MachineCapacity } from "../../../packages/edge-worker/dist/MachineCapacity.js";
+import { sha256File } from "../../../scripts/lib/binary-release.mjs";
 import { prepareElectronLicenses } from "../../../scripts/lib/desktop-licenses.mjs";
-import { freezeCandidate } from "../../../scripts/lib/release-candidate.mjs";
 import { localRepository } from "../../cli/dist/src/onboarding.js";
 import { retainAppHelper } from "../src/app-helper-files.mjs";
 import {
@@ -31,6 +31,10 @@ import {
 } from "../src/app-lifecycle.mjs";
 import { DesktopAppSource } from "../src/app-source.mjs";
 import * as services from "../src/update-services.mjs";
+import {
+	nativeShellInputReceipt,
+	nativeShellPlan,
+} from "./native-shell-fixture.mjs";
 import { appRelease, fixtureClient } from "./shell-fixture.mjs";
 
 assert.equal(
@@ -45,6 +49,7 @@ if (!imageArgument || !runtimeArgument || !candidateArgument)
 const image = resolve(imageArgument),
 	native = resolve(runtimeArgument),
 	frozen = read(candidateArgument),
+	plan = nativeShellPlan(frozen),
 	target = `linux-${process.arch}`,
 	root = mkdtempSync(join(tmpdir(), "native-shell-")),
 	home = join(root, "home"),
@@ -58,24 +63,9 @@ cpSync(image, install);
 const app = resolve("apps/desktop"),
 	priorOutput = join(root, "prior"),
 	electronLicenses = prepareElectronLicenses(app);
-// Build a distinct previous shell candidate from the same frozen source with an
-// older test version, retaining the same matching native runtime. Not a release.
-const prior = freezeCandidate({
-	channel: "stable",
-	version: "0.9.0",
-	commit: frozen.candidate.commit,
-	workflowSha: frozen.candidate.workflowSha,
-	committedVersion: frozen.candidate.committedVersion,
-	promotion: {
-		channel: "nightly",
-		version: frozen.candidate.version,
-		tag: `v${frozen.candidate.version}`,
-		commit: frozen.candidate.commit,
-		manifestSha256: "a".repeat(64),
-		releaseId: 1,
-	},
-	date: "2026-10-10T00:00:00Z",
-});
+// Beta is the real installed baseline and updates to synthetic stable variants.
+// Nightly retains the older synthetic baseline and real input upgrade payload.
+const prior = plan.baseline;
 function buildVariant(record, output, file) {
 	prepareElectronLicenses(app);
 	cpSync(native, join(app, "runtime"), { recursive: true });
@@ -114,31 +104,34 @@ function buildVariant(record, output, file) {
 		rmSync(join(app, "desktop-identity.json"), { force: true });
 	}
 }
-buildVariant(prior, priorOutput, "previous.AppImage");
-const failedCandidate = freezeCandidate({
-	channel: "nightly",
-	commit: frozen.candidate.commit,
-	workflowSha: frozen.candidate.workflowSha,
-	committedVersion: frozen.candidate.committedVersion,
-	sequence: Number(frozen.candidate.version.split(".").at(-1)) + 1,
-	date: `${frozen.candidate.version
-		.match(/nightly\.(\d{4})(\d{2})(\d{2})\./)
-		.slice(1)
-		.join("-")}T00:00:00Z`,
-});
+if (plan.inputRole !== "installed-baseline") {
+	buildVariant(prior, priorOutput, "previous.AppImage");
+	cpSync(join(priorOutput, "previous.AppImage"), install);
+}
+let successfulImage = image;
+if (plan.successful.digest !== frozen.digest) {
+	const successfulOutput = join(root, "successful");
+	buildVariant(plan.successful, successfulOutput, "successful.AppImage");
+	successfulImage = join(successfulOutput, "successful.AppImage");
+}
+const failedCandidate = plan.failed;
 const failedOutput = join(root, "failed");
 buildVariant(failedCandidate, failedOutput, "failed.AppImage");
-cpSync(join(priorOutput, "previous.AppImage"), install);
-const old = appRelease("stable", readFileSync(install), target, {
+const old = appRelease(prior.candidate.channel, readFileSync(install), target, {
 		frozenCandidate: prior,
 		electronLicenses,
 	}),
-	good = appRelease("nightly", readFileSync(image), target, {
-		frozenCandidate: frozen,
-		electronLicenses,
-	}),
+	good = appRelease(
+		plan.successful.candidate.channel,
+		readFileSync(successfulImage),
+		target,
+		{
+			frozenCandidate: plan.successful,
+			electronLicenses,
+		},
+	),
 	bad = appRelease(
-		"nightly",
+		failedCandidate.candidate.channel,
 		readFileSync(join(failedOutput, "failed.AppImage")),
 		target,
 		{ frozenCandidate: failedCandidate, electronLicenses },
@@ -333,7 +326,7 @@ const capacity = new MachineCapacity(2, join(home, "machine-capacity"));
 await capacity.ready();
 let candidatePid;
 try {
-	manager.configure({ channel: "nightly" }, manager.status().revision);
+	manager.configure(plan.settings, manager.status().revision);
 	await manager.check();
 	await manager.stage();
 	const lease = await capacity.acquireLease(undefined, {
@@ -419,7 +412,13 @@ try {
 				commit: frozen.candidate.commit,
 				target,
 				candidateDigest: frozen.digest,
-				imageSha256: good.manifest.desktop.artifacts[0].updateArchive.sha256,
+				...nativeShellInputReceipt(
+					frozen,
+					plan,
+					sha256File(image),
+					good.manifest.desktop.artifacts[0].updateArchive.sha256,
+					bad.manifest.desktop.artifacts[0].updateArchive.sha256,
+				),
 				workerPidUnchanged: true,
 				checks: [
 					"active-lease deferral",
