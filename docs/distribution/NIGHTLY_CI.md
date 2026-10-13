@@ -15,55 +15,42 @@ the workflow chain, missing checks, ambiguous provider artifacts or mismatched
 source bytes blocks publication. Ineligible polls and explicit stable preparation
 produce no automatic nightly evidence.
 
-## One accepted source bootstrap
+## Durable accepted source bootstrap
 
-The coordinator must configure **one** repository variable,
-`BOBS_FACTORY_NIGHTLY_BASELINE_JSON`, after independently accepting and hosting the
-retained source/rebuild material and scoped gate receipts. No per-nightly evidence
-envelope or physical Mac review is required. Its value has this shape (placeholder
-hashes/URLs are not deployable input):
+The reviewed bootstrap is committed in `distribution/nightly-baseline.json`.
+Normal automatic preparation needs no custom repository variable, local server,
+or per-nightly evidence upload. `release-evidence.yml` reads this file from the
+exact candidate tooling commit.
 
-```json
-{
-  "schemaVersion": 1,
-  "acceptedBy": "operator who accepted these exact inputs and reuse scopes",
-  "candidate": { "candidate": "complete original frozen candidate object", "digest": "original digest" },
-  "source": {
-    "file": "source-rebuild.tar.gz",
-    "url": "https://officially-retained-storage/source-rebuild.tar.gz",
-    "size": 4151718787,
-    "sha256": "exact accepted source archive hash"
-  },
-  "receiptArchive": {
-    "file": "validation-receipts.tar.gz",
-    "url": "https://officially-retained-storage/validation-receipts.tar.gz",
-    "size": 1,
-    "sha256": "actual hash of complete original receipt closure"
-  },
-  "receipts": {
-    "reviewedCandidate": { "file": "review.json", "url": "https://officially-retained-storage/review.json", "size": 1, "sha256": "actual hash" },
-    "fullPayloadF1": { "file": "f1.json", "url": "https://officially-retained-storage/f1.json", "size": 1, "sha256": "actual hash" },
-    "migrationPreservation": { "file": "migration.json", "url": "https://officially-retained-storage/migration.json", "size": 1, "sha256": "actual hash" },
-    "licensingAndSource": { "file": "source-license.json", "url": "https://officially-retained-storage/source-license.json", "size": 1, "sha256": "actual hash" }
-  }
-}
-```
+The bootstrap pins a published nightly tag and the SHA-256 of its complete
+`release.json`. Intake verifies the public release's candidate, tag, provider
+asset inventory and hashes, downloads its source archive (including ordered
+chunks) and receipt closure directly from GitHub Releases, and runs bounded
+semantic source validation. Repository credentials never accompany public asset
+downloads.
 
-Use the full original candidate JSON, measured receipt and complete original receipt-archive sizes and SHA-256s, and
-actual operator-accepted receipts covering native **and desktop** dependency/source
-redistribution and the recorded F1/migration/Mac reuse scopes. Original failed or
-unknown observations remain part of those receipts. Acceptance of this variable
-explicitly authorizes the following nightly reuse policy; it is not inferred from
-an arbitrary nested manifest or a newly written `passed` label.
+The published source retains `nightly-source-reuse.json`, its independently
+accepted original candidate and material inventory. Intake recovers every
+original source/object/license/instruction/build/log member and verifies its
+**original** size and hash. Derived instructions and logs are unwrapped; original
+build metadata is restored only if its serialized bytes match the retained hash.
+Original gate receipts and the complete original receipt archive must also match
+their pinned hashes and candidate. Missing or changed inputs fail closed. This
+recovers accepted member bytes from a durable published container; it does not
+recreate or relabel the expired original tar/gzip container or accept new review
+claims. The acceptance text and historical limitations remain unchanged.
 
-Every input is downloaded over HTTPS without forwarding repository credentials,
-and checked against its pinned size/hash. The source archive passes the existing
-bounded semantic intake. The baseline commit must be an ancestor of current main.
-All package dependency and license declarations, lockfile, workspace policy,
-maintained runtime notices, desktop LICENSE/NOTICE and the shipped npm launcher
-LICENSE must remain unchanged. App changes and package version
-changes are allowed; new/changed dependencies, Bun, Electron or license material
-fail with a request to update this one accepted baseline.
+The accepted baseline commit must be an ancestor of current main. All package
+dependency and license declarations, lockfile, workspace policy, maintained
+runtime notices, desktop LICENSE/NOTICE and the shipped npm launcher LICENSE
+must remain unchanged. App and package version changes are allowed; changed
+Bun, Electron, dependency or license inputs still require independently reviewed
+source material and a reviewed update to this committed bootstrap. The pinned
+release must remain retained; deleting or changing it blocks publication.
+
+Consumers only download the ordinary release binary or desktop installer. These
+source and validation assets are publisher inputs, not custom installation
+requirements.
 
 For each fresh canonical native artifact, CI retrieves the pinned official Bun
 base, checks its hash against the accepted source/object material, and verifies
@@ -85,7 +72,7 @@ rollback use the existing native fixture. No live provider/inference is a gate.
 Stable remains explicit version/promotion, manually supplied reviewed evidence,
 and approval of the exact prepared asset digest. This CI policy does not authorize
 stable publication or activate automatic nightlies. The coordinator owns the
-bootstrap variable, rollout activation, fresh candidate and publication.
+committed bootstrap, rollout activation, fresh candidate and publication.
 
 The desktop upload retains its `desktop/` and `runtime/` member directories.
 Intake reads metadata, receipts and installers from `desktop/` and verifies the
