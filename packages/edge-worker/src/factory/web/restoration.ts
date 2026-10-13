@@ -96,7 +96,7 @@ export function decodeSnapshot(
 			!/^[a-f0-9]{24}$/.test(data.target) ||
 			typeof data.route !== "string" ||
 			data.route.length > 2048 ||
-			!/^#\/(?:$|recipes$|settings(?:\/(?:access|execution|identities|tools|capacity|titles))?$|runs\/[^/?#]+(?:\/review(?:\?[^#\s]*)?)?$)/.test(
+			!/^#\/(?:$|recipes$|settings(?:\/(?:access|execution|identities|tools|capacity|titles|notifications))?$|runs\/[^/?#]+(?:\/review(?:\?[^#\s]*)?)?$)/.test(
 				data.route,
 			) ||
 			!data.views ||
