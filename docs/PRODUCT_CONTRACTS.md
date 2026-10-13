@@ -76,6 +76,13 @@ Singular `output` payloads in completed and rejected agent checkpoints (includin
 nested graph frames and Simple execution) remain opaque result data. Migration
 does not rewrite their fields or interpret them as native conversation records.
 
+Retained screenshot receipts may contain absolute paths from the source home.
+QA gates and screenshot serving resolve their same-run `factory/evidence/<run-id>/`
+suffix under the current home only when the copied image matches the recorded
+SHA-256. Source files are never read, receipts and acceptance digests stay unchanged,
+and missing copies, changed bytes, other-run paths and escaping symlinks still reject.
+New capture authoring retains the strict current evidence directory boundary.
+
 The issued egress certificate keeps its existing `cyrus-egress-ca.pem` filename
 inside the new home. Migration preserves certificate/key bytes and system trust;
 this retained artifact name does not enable an old command or home fallback.
