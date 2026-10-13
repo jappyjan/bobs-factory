@@ -6,10 +6,20 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Reconcile current target changes with bounded review convergence, retaining frozen-workflow context and immutable review baselines ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Accept repository-scoped comment IDs copied from grouped feedback context, while rejecting mismatched repository identities ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Save behavioral QA provenance before review and assess feedback across every repository delivery, preserving original evidence and detecting edited comments, threads and reviews ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
+- Keep automatic nightly publication working after temporary evidence servers disappear by recovering exact accepted source and validation inputs from pinned GitHub release assets ([#125](https://github.com/jappyjan/bobs-factory/pull/125)).
+
+- Keep resumed specialist reviews responsive by searching recent history without copying its full payload and reusing immutable review-baseline chunks during checkpoints ([#121](https://github.com/jappyjan/bobs-factory/pull/121)).
+- Recover prepared coding-agent CLI paths for macOS desktop workers and update supervisors, so Homebrew and user-local installations remain available when the app opens outside a terminal ([#120](https://github.com/jappyjan/bobs-factory/pull/120)).
+- Ground Factory planning and implementation prerequisites in each run's accepted workflow, preventing false architecture-approval blockers in frozen legacy runs while preserving real approval gates ([#119](https://github.com/jappyjan/bobs-factory/pull/119)).
+
+- Wait for OAuth test fixture persistence before deleting temporary files, preventing intermittent CI cleanup failures ([#115](https://github.com/jappyjan/bobs-factory/pull/115), [#113](https://github.com/jappyjan/bobs-factory/pull/113)).
+- Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance ([#113](https://github.com/jappyjan/bobs-factory/pull/113), [standalone browser help evidence](docs/qa/desktop-install-help/README.md)).
 - Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
 
 - Keep review refreshes and screenshot previews working after moving the Factory home by verifying retained screenshots against the same run's copied evidence without changing accepted QA receipts ([#114](https://github.com/jappyjan/bobs-factory/pull/114)).
@@ -56,6 +66,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Select affected review and verification work through independent impact assessments, retain original evidence with explicit reuse records, and stop unchanged correction cycles for assistance. Safe minor corrections may carry prior explicit approval forward after required checks; frozen runs keep their accepted workflows ([Taskbot #132](https://taskbot.apps.janjaap.de/p/bobs-factory/t/132)).
+- Move browser notification controls into Settings → Notifications alongside the push contact editor, while retaining device reconciliation across dashboard pages; validate the combined desktop and phone layouts with inspected screenshots ([#115](https://github.com/jappyjan/bobs-factory/pull/115)).
 
 - Align generated Homebrew and AUR requirements with the selected first-release support floor of macOS 15 and Ubuntu 24.04/glibc 2.39, and clarify that the frozen app's inherited macOS 13 launch minimum is not tested-support evidence ([Taskbot #123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#97](https://github.com/jappyjan/bobs-factory/pull/97)).
 

@@ -13,6 +13,7 @@ import test from "node:test";
 import { fileRecord, TARGETS } from "../lib/binary-release.mjs";
 import {
 	rebindSourceMaterials,
+	recoverAcceptedMaterials,
 	verifyDependencyBaseline,
 } from "../lib/nightly-source.mjs";
 import {
@@ -237,6 +238,77 @@ test("candidate source assembly preserves real historical input identities and r
 				"utf8",
 			),
 			/retained historical relink evidence, not a new relink/,
+		);
+	} finally {
+		rmSync(work, { recursive: true, force: true });
+	}
+});
+
+test("published source recovers exact accepted members without the expired archive host and refuses changed bytes or acceptance", () => {
+	const work = mkdtempSync(join(tmpdir(), "factory-retained-materials-"));
+	try {
+		const frozen = (sha, sequence) =>
+			freezeCandidate({
+				channel: "nightly",
+				commit: sha.repeat(40),
+				workflowSha: sha.repeat(40),
+				committedVersion: "1.0.0",
+				sequence,
+				date: "2026-10-12T00:00:00Z",
+			});
+		const accepted = frozen("a", 1),
+			current = frozen("b", 2);
+		const material = sourceMaterialFixture(work, candidateIdentity(accepted));
+		const original = structuredClone(material);
+		const baseline = {
+			candidate: accepted,
+			acceptedBy: "controlled fixture, never release acceptance",
+			source: {
+				file: "source-rebuild.tar.gz",
+				size: 1,
+				sha256: "a".repeat(64),
+			},
+			receiptArchive: {
+				file: "validation-receipts.tar.gz",
+				size: 1,
+				sha256: "b".repeat(64),
+			},
+			receipts: {},
+		};
+		rebindSourceMaterials(
+			material,
+			work,
+			candidateIdentity(current),
+			TARGETS.map((target) => ({
+				target,
+				baseSha256: "1".repeat(64),
+				factorySha256: "3".repeat(64),
+				entireReconstructedExecutableMatches: true,
+			})),
+			{ mode: "CI-derived-nightly", baseline },
+		);
+		assert.throws(
+			() =>
+				recoverAcceptedMaterials(work, {
+					...baseline,
+					acceptedBy: "different acceptance",
+				}),
+			/does not retain/,
+		);
+		assert.deepEqual(
+			recoverAcceptedMaterials(work, baseline),
+			JSON.parse(JSON.stringify(original)),
+		);
+		for (const record of original.records)
+			assert.equal(
+				fileRecord(join(work, record.file), record.file).sha256,
+				record.sha256,
+			);
+		const object = original.records.find((r) => r.kind === "objects");
+		writeFileSync(join(work, object.file), "tampered original objects");
+		assert.throws(
+			() => recoverAcceptedMaterials(work, baseline),
+			/unavailable or changed/,
 		);
 	} finally {
 		rmSync(work, { recursive: true, force: true });

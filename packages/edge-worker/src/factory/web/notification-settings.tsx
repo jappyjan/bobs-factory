@@ -4,7 +4,7 @@ import { useCurrentForm, useFormState } from "./form-state";
 import { type PushStatus, pushApi } from "./notifications";
 import { Button } from "./ui";
 
-export function NotificationSettings() {
+export function NotificationSettings({ onSaved }: { onSaved?: () => void }) {
 	const access = useAccess();
 	const epoch = accessGeneration();
 	const [status, setStatus] = useState<PushStatus>();
@@ -68,7 +68,7 @@ export function NotificationSettings() {
 		status.configuration === "stopped";
 	return (
 		<section className="recipe" aria-labelledby="notification-settings">
-			<h2 id="notification-settings">Notifications</h2>
+			<h2 id="notification-settings">Push service contact</h2>
 			<p>
 				The contact identifies the operator to push services. Use{" "}
 				<code>mailto:operator@example.org</code> or an HTTPS contact page such
@@ -76,7 +76,7 @@ export function NotificationSettings() {
 			</p>
 			<p>
 				Saving configures the server. Each device must still explicitly enable
-				notifications through the Notifications control.
+				notifications using the device controls below.
 			</p>
 			{status?.diagnostic && <p role="status">{status.diagnostic}</p>}
 			{!status && !error && <p role="status">Loading notification settings…</p>}
@@ -101,6 +101,7 @@ export function NotificationSettings() {
 						setBusy(false);
 						setMessage("Push contact saved.");
 						setStatus(saved);
+						onSaved?.();
 					} catch (e) {
 						if (current() && epoch === accessGeneration()) {
 							busyRef.current = false;

@@ -4,7 +4,6 @@
 import { execFileSync } from "node:child_process";
 import {
 	copyFileSync,
-	createWriteStream,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -14,8 +13,6 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { Readable, Transform } from "node:stream";
-import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { restoreArtifact } from "./lib/artifact-transport.mjs";
@@ -32,12 +29,13 @@ import {
 	validatePreparedAgentBoundaries,
 	validatePublicInstaller,
 } from "./lib/binary-release.mjs";
-import { ARCHIVE_LIMITS, inspectArchive } from "./lib/bounded-archive.mjs";
+import { inspectArchive } from "./lib/bounded-archive.mjs";
 import { githubClient } from "./lib/github-release.mjs";
 import {
 	archiveNativeNotices,
 	stageNightlyDesktop,
 } from "./lib/nightly-artifacts.mjs";
+import { restoreNightlyBaseline } from "./lib/nightly-baseline.mjs";
 import {
 	rebindSourceMaterials,
 	verifyDependencyBaseline,
@@ -47,7 +45,6 @@ import {
 	canonical,
 	validateCandidate,
 } from "./lib/release-candidate.mjs";
-import { validateSourceArchive } from "./lib/release-material.mjs";
 
 const { values } = parseArgs({
 	options: {
@@ -57,8 +54,8 @@ const { values } = parseArgs({
 	},
 });
 requireValue(
-	values.baseline && values.output && process.env.GH_TOKEN,
-	"Configure BOBS_FACTORY_NIGHTLY_BASELINE_JSON with accepted source/receipt URLs and hashes before automatic preparation",
+	values.output && process.env.GH_TOKEN,
+	"Provide --output and GitHub read credentials for automatic preparation",
 );
 const root = resolve(dirname(fileURLToPath(import.meta.url)), ".."),
 	output = resolve(values.output),
@@ -179,60 +176,16 @@ try {
 			"Nightly check log changed",
 		);
 	}
-	const baseline = JSON.parse(readFileSync(resolve(values.baseline)));
-	const accepted = validateCandidate(baseline.candidate);
-	requireValue(
-		baseline.schemaVersion === 1 &&
-			typeof baseline.acceptedBy === "string" &&
-			baseline.acceptedBy.trim() &&
-			baseline.source?.file === "source-rebuild.tar.gz",
-		"Accepted nightly baseline required",
+	const baseline = JSON.parse(
+		readFileSync(
+			resolve(
+				values.baseline ?? join(root, "distribution/nightly-baseline.json"),
+			),
+		),
 	);
-	// Input URLs carry no repository token. All bytes are operator-pinned, bounded.
-	const download = async (record, path) => {
-		const u = new URL(record.url);
-		requireValue(
-			u.protocol === "https:" &&
-				!u.username &&
-				!u.password &&
-				/^[a-f0-9]{64}$/.test(record.sha256) &&
-				Number.isSafeInteger(record.size) &&
-				record.size > 0 &&
-				record.size <= ARCHIVE_LIMITS.maxCompressedBytes,
-			"Invalid pinned baseline input",
-		);
-		const response = await fetch(u);
-		requireValue(
-			response.ok &&
-				response.body &&
-				new URL(response.url).protocol === "https:",
-			"Baseline HTTPS download failed",
-		);
-		let count = 0;
-		await pipeline(
-			Readable.fromWeb(response.body),
-			new Transform({
-				transform(chunk, _encoding, cb) {
-					count += chunk.length;
-					cb(
-						count > record.size
-							? new Error("Baseline size limit exceeded")
-							: null,
-						chunk,
-					);
-				},
-			}),
-			createWriteStream(path, { flags: "wx" }),
-		);
-		requireValue(
-			count === record.size && sha256File(path) === record.sha256,
-			"Baseline input integrity mismatch",
-		);
-	};
-	const baselineSource = join(temporary, "accepted-source.tar.gz");
-	await download(baseline.source, baselineSource);
-	const priorIdentity = candidateIdentity(accepted);
-	const priorMaterials = validateSourceArchive(baselineSource, priorIdentity);
+	const accepted = validateCandidate(baseline.candidate);
+	const { materialDirectory, priorMaterials, acceptedReceipts, receipts } =
+		await restoreNightlyBaseline(client, baseline, temporary);
 	const dependencies = verifyDependencyBaseline(
 		root,
 		accepted.candidate.commit,
@@ -246,41 +199,6 @@ try {
 		).trim() === accepted.candidate.commit,
 		"Accepted baseline must be an ancestor of current main",
 	);
-	const materialDirectory = join(temporary, "materials");
-	mkdirSync(materialDirectory);
-	inspectArchive(baselineSource, {
-		prefix: "source-rebuild/",
-		regularOnly: true,
-		flat: true,
-		limits: { maxMembers: 256 },
-		output: materialDirectory,
-	});
-	rmSync(baselineSource); // Only our downloaded copy; accepted remote bytes stay immutable.
-	const receipts = {};
-	for (const gate of [
-		"reviewedCandidate",
-		"fullPayloadF1",
-		"migrationPreservation",
-		"licensingAndSource",
-	]) {
-		const record = baseline.receipts?.[gate];
-		requireValue(
-			record && /^[A-Za-z0-9_.-]+$/.test(record.file),
-			`Missing accepted baseline receipt: ${gate}`,
-		);
-		const path = join(temporary, `baseline-${gate}.receipt`);
-		await download(record, path);
-		receipts[gate] = { record, path };
-	}
-	const acceptedReceipts = join(
-		temporary,
-		"accepted-validation-receipts.tar.gz",
-	);
-	requireValue(
-		baseline.receiptArchive?.file === "validation-receipts.tar.gz",
-		"Accepted baseline receipt closure required",
-	);
-	await download(baseline.receiptArchive, acceptedReceipts);
 	mkdirSync(output);
 	created = true;
 	copyFileSync(
