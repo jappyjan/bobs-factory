@@ -4,6 +4,7 @@
 import { execFileSync } from "node:child_process";
 import {
 	copyFileSync,
+	createWriteStream,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -13,6 +14,8 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { Readable, Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { restoreArtifact } from "./lib/artifact-transport.mjs";

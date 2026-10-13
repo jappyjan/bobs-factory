@@ -21,6 +21,19 @@
 	},
 	"overrides": [
 		{
+			"includes": [
+				"scripts/prepare-nightly-evidence.mjs",
+				"scripts/lib/nightly-*.mjs"
+			],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noUndeclaredVariables": "error"
+					}
+				}
+			}
+		},
+		{
 			"includes": ["**/*.test.ts", "**/test/**/*.ts"],
 			"linter": {
 				"rules": {
