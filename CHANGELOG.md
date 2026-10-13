@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance ([#113](https://github.com/jappyjan/bobs-factory/pull/113)).
+- Close the Notifications dialog when opening push contact settings so the Settings form is immediately usable ([#112](https://github.com/jappyjan/bobs-factory/pull/112)).
 
 - Validate beta desktop releases from their actual installed AppImage through controlled stable upgrade and rollback candidates, preserving nightly validation and truthful input receipts ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#111](https://github.com/jappyjan/bobs-factory/pull/111)).
 
@@ -61,6 +62,8 @@ All notable changes to this project will be documented in this file.
 - Add receipt-checked native runtime removal and explicit update-policy handoff, isolate reusable `npx` trials with browser/headless launch and cleanup, and prepare Homebrew/AUR/private npm entry points only from verified immutable signed releases. Downloads retain publication availability gates. ([Taskbot bobs-factory #118](https://taskbot.apps.janjaap.de/p/bobs-factory/t/118), [#123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#84](https://github.com/jappyjan/bobs-factory/pull/84))
 
 ### Added
+
+- Configure and update the push service contact in Settings → Notifications while preserving keys and device consent.
 
 - Factory and Takeover architecture proposals you approve before Bob builds anything. Each proposal has its own page: a plain summary, the choices Bob made (and the ones it needs you to answer), a simple map of what changes, why it fits, what to watch out for and the plan steps, with a chat beside it for questions or changes and one approve button. New versions list what changed and who asked for it. Routine work records an approval bypass. Repository and mixed delivery retain architecture acceptance alongside independent ticket-contract validation; external-only delivery keeps its own acceptance path. Assets stay within authorized directories and accepted plans reference frozen snapshots. Empty remote specifications stop approval; explanations reuse the pending proposal’s ticket notification. A portable run backup retains source, design artifacts and review evidence for refinement on another machine. ([Taskbot #90](https://taskbot.apps.janjaap.de/p/bobs-factory/t/90), [#74](https://github.com/jappyjan/bobs-factory/pull/74))
 - Retain the frozen `.21` candidate's four-target source/relink assembly and a separately identified correction kit with explicit LLVM tool paths, pinned reconstruction helpers, complete ICU/Rust notice material and exact MPL web-push source directions; preserve old provenance and report the frozen payload notice defect requiring candidate reissue before publication ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#93](https://github.com/jappyjan/bobs-factory/pull/93)).

@@ -43,10 +43,14 @@ const DeviceSchema = z.object({
 	lastTestAt: z.number().optional(),
 	lastAttemptAt: z.number().optional(),
 });
+const SubjectSchema = z.string().trim().min(1).max(2048).refine(validSubject, {
+	message:
+		"Enter a valid mailto: email address or HTTPS contact URL without credentials.",
+});
 const StoreSchema = z.object({
 	version: z.literal(1),
 	vapid: z.object({
-		subject: z.string().refine(validSubject),
+		subject: SubjectSchema,
 		publicKey: z.string(),
 		privateKey: z.string(),
 	}),
@@ -101,11 +105,13 @@ export interface PushSource {
 export class FactoryPush {
 	private store?: z.infer<typeof StoreSchema>;
 	private diagnostic =
-		"Push is not configured. Set BOBS_FACTORY_FACTORY_PUSH_SUBJECT to a contact mailto: or HTTPS URL.";
+		"Push is not configured. Save a contact in Settings → Notifications.";
 	private readonly path: string;
 	private readonly pending = new Map<string, Pending>();
 	private timer?: ReturnType<typeof setTimeout>;
 	private stopped = false;
+	private storageFailed = false;
+	private snapshot?: () => Map<string, PushEvent | undefined>;
 	private active = new Set<Promise<void>>();
 	private detach: (() => void)[] = [];
 	constructor(
@@ -147,6 +153,7 @@ export class FactoryPush {
 	}
 	private disableStore() {
 		this.store = undefined;
+		this.storageFailed = true;
 		this.diagnostic =
 			"Push storage is invalid or unavailable. Repair factory/push.json and restart; Factory remains usable.";
 		this.pending.clear();
@@ -164,11 +171,77 @@ export class FactoryPush {
 			throw new Error(this.diagnostic);
 		}
 	}
+	configure(input: unknown) {
+		const { subject } = z
+			.object({ subject: SubjectSchema })
+			.strict()
+			.parse(input);
+		if (this.stopped)
+			throw new Error(
+				"Push sender is stopped. Restart Factory before configuring notifications.",
+			);
+		if (this.storageFailed) throw new Error(this.diagnostic);
+		// Never overwrite state created outside this sender since startup.
+		if (!this.store && existsSync(this.path)) {
+			this.disableStore();
+			throw new Error(this.diagnostic);
+		}
+		if (this.store?.vapid.subject === subject) return this.status();
+		const vapid = this.store?.vapid ?? {
+			subject,
+			...webPush.generateVAPIDKeys(),
+		};
+		try {
+			webPush.getVapidHeaders(
+				"https://fcm.googleapis.com",
+				subject,
+				vapid.publicKey,
+				vapid.privateKey,
+				"aes128gcm",
+			);
+		} catch {
+			throw new z.ZodError([
+				{
+					code: "custom",
+					path: ["subject"],
+					message:
+						"Contact is not compatible with VAPID. Use a mailto: email address or HTTPS URL.",
+				},
+			]);
+		}
+		if (this.store) {
+			// Preserve identities held by in-flight delivery completion handlers.
+			this.store.vapid.subject = subject;
+		} else {
+			const runs: z.infer<typeof StoreSchema>["runs"] = {};
+			for (const [id, event] of this.snapshot?.() ?? []) {
+				runs[id] = {
+					identity: event ? `${event.category}:${event.identity}` : "",
+					sequence: 1,
+				};
+			}
+			this.store = { version: 1, vapid, devices: [], runs, receipts: [] };
+		}
+		this.persist();
+		return this.status();
+	}
 	status() {
 		return {
 			available: !!this.store && !this.stopped,
+			subject: this.store?.vapid.subject,
+			configuration: this.stopped
+				? "stopped"
+				: this.storageFailed
+					? "unavailable"
+					: this.store
+						? "configured"
+						: "unconfigured",
 			publicKey: this.store?.vapid.publicKey,
-			diagnostic: this.store ? undefined : this.diagnostic,
+			diagnostic: this.stopped
+				? "Push sender is stopped. Restart Factory before configuring notifications."
+				: this.store
+					? undefined
+					: this.diagnostic,
 			devices: (this.store?.devices ?? []).map(
 				({
 					id,
@@ -271,6 +344,7 @@ export class FactoryPush {
 					events.set(session.id, sessionPushEvent(session));
 			return events;
 		};
+		this.snapshot = snapshot;
 		// Even changed attention during downtime becomes a baseline, never a recovery backlog.
 		this.observe(snapshot(), true);
 		const observe = () => {
