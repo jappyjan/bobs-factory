@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Wait for OAuth test workers to finish pending writes before deleting their temporary homes, preventing CI cleanup races ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
-
+- Drain pending workflow snapshots before removing OAuth transport test fixtures, preventing intermittent CI cleanup failures ([#113](https://github.com/jappyjan/bobs-factory/pull/113)).
+- Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance ([#113](https://github.com/jappyjan/bobs-factory/pull/113), [standalone browser help evidence](docs/qa/desktop-install-help/README.md)).
 - Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
 
 - Keep review refreshes and screenshot previews working after moving the Factory home by verifying retained screenshots against the same run's copied evidence without changing accepted QA receipts ([#114](https://github.com/jappyjan/bobs-factory/pull/114)).
@@ -52,8 +52,6 @@ All notable changes to this project will be documented in this file.
 - Keep desktop and operator recovery validation reliable when Node CI runs tests concurrently, without rebuilding shared prerequisites during testing ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
 
 ### Changed
-
-- Replace remote dashboard passkeys with API keys managed in Settings → Access. Keys are shown once; rotation/removal revokes their browser sessions. Localhost remains accessible without a key. Existing passkey state migrates to an empty key store, requiring local setup for remote access.
 
 - Align generated Homebrew and AUR requirements with the selected first-release support floor of macOS 15 and Ubuntu 24.04/glibc 2.39, and clarify that the frozen app's inherited macOS 13 launch minimum is not tested-support evidence ([Taskbot #123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#97](https://github.com/jappyjan/bobs-factory/pull/97)).
 

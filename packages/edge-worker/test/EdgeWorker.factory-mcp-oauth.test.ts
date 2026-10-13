@@ -17,6 +17,7 @@ import {
 import {
 	capacityRunStatus,
 	type FactoryRun,
+	type WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import type { MachineCapacity } from "../src/MachineCapacity.js";
 
@@ -37,19 +38,19 @@ vi.mock("bobs-factory-mcp-tools", async (original) => ({
 	listConfiguredTools: directList,
 }));
 
-const homes: string[] = [];
-const workers: EdgeWorker[] = [];
+const fixtures: { home: string; runtime: WorkflowRuntime }[] = [];
 afterEach(async () => {
-	for (const worker of workers.splice(0)) await worker.stop();
-	for (const home of homes.splice(0))
+	for (const { home, runtime } of fixtures.splice(0)) {
+		// Drain queued snapshot writes before removing their destination.
+		await runtime.shutdown();
 		rmSync(home, { recursive: true, force: true });
+	}
 	vi.restoreAllMocks();
 	vi.clearAllMocks();
 });
 
 function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 	const home = mkdtempSync(join(tmpdir(), "factory-oauth-"));
-	homes.push(home);
 	const worker = new EdgeWorker({
 		platform: "cli",
 		factoryHome: home,
@@ -65,9 +66,8 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 			},
 		],
 	});
-	workers.push(worker);
 	const edge = worker as unknown as {
-		getFactoryRuntime(): { create(input: Partial<FactoryRun>): FactoryRun };
+		getFactoryRuntime(): WorkflowRuntime;
 		runnerSlots: MachineCapacity;
 		agentSessionManager: { createChatSession(...args: unknown[]): unknown };
 		buildAgentRunnerConfig(): Promise<{
@@ -80,7 +80,9 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 			signal?: AbortSignal,
 		): Promise<{ read(): Promise<unknown> }>;
 	};
-	const run = edge.getFactoryRuntime().create({
+	const runtime = edge.getFactoryRuntime();
+	fixtures.push({ home, runtime });
+	const run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
 			workflowId: "factory",
