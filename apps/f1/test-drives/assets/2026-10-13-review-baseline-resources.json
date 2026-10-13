@@ -1,0 +1,26 @@
+{
+	"passed": true,
+	"mode": "mock/scripted",
+	"logicalTranscriptBytes": 1073741824,
+	"versionRequests": 366,
+	"p99VersionMs": 1.9555409999993572,
+	"maxVersionMs": 5.75316599999951,
+	"maxEventLoopDelayMs": 933.69,
+	"appendBytesWritten": 131,
+	"maxCaptureMs": 0.45887500000003456,
+	"resumedBaselineBytesWritten": 702,
+	"checks": [
+		"CLI issue/session and visible response",
+		"1 GiB persistence with responsive HTTP",
+		"incremental transcript append",
+		"large retained run artifact",
+		"restart retains native session and pending human gate",
+		"loaded structured history remains immutable through resumed checkpoints",
+		"12 loaded review baselines remain immutable and reuse payloads across six resumed checkpoints",
+		"lazy dashboard and activity pages",
+		"legacy completed-run dashboard migration preserves original bytes",
+		"one explicit answer resumes workflow",
+		"shutdown flush and restored tail"
+	],
+	"limitations": "Synthetic strings repeat and deduplicate; this checks logical-history scaling, not 1 GiB of unique disk writes. No live provider or production service was used."
+}
