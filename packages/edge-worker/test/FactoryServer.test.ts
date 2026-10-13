@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
 	mkdirSync,
 	mkdtempSync,
@@ -80,6 +81,39 @@ it("serves question images only from the requested run, rejecting traversal, ext
 		expect((await get(run.id, "external.png")).statusCode).toBe(409);
 		expect((await get(run.id, "text.png")).statusCode).toBe(409);
 		expect((await get(run.id, "..%2F..%2Foutside.png")).statusCode).toBe(400);
+		// Completed receipts retain their original paths after a home move.
+		const imageSha256 = createHash("sha256").update(png).digest("hex");
+		run.outputs.capture = {
+			screenshots: [
+				{
+					path: join(
+						home,
+						"retired",
+						"factory",
+						"evidence",
+						run.id,
+						"context.png",
+					),
+					imageSha256,
+					area: "Question",
+					caption: "Accepted image",
+				},
+			],
+			unavailable: [],
+		};
+		const screenshot = () =>
+			server.app.inject({
+				url: `/api/runs/${run.id}/screenshots/0?v=${imageSha256}`,
+				headers: { host: "localhost" },
+			});
+		const retained = await screenshot();
+		expect(retained.statusCode).toBe(200);
+		expect(retained.rawPayload).toEqual(png);
+		writeFileSync(
+			join(directory, "context.png"),
+			Buffer.concat([png, Buffer.from("changed")]),
+		);
+		expect((await screenshot()).statusCode).toBe(409);
 	} finally {
 		await runtime.shutdown();
 		await server.stop();
@@ -1694,6 +1728,46 @@ it.each([
 			...headers,
 			cookie: String(verified.headers["set-cookie"]).split(";")[0],
 		};
+		for (const [override, code] of [
+			[{ origin: "https://evil.test" }, 403],
+			[{ "x-factory-request": undefined }, 403],
+			[{ "x-factory-build": "old" }, 409],
+			[{ cookie: undefined }, 401],
+		] as const) {
+			expect(
+				(
+					await server.app.inject({
+						method: "PUT",
+						url: "/api/push/config",
+						headers: Object.fromEntries(
+							Object.entries({ ...authenticatedHeaders, ...override }).filter(
+								([, value]) => value !== undefined,
+							),
+						),
+						payload: { subject: "https://example.org/contact" },
+					})
+				).statusCode,
+			).toBe(code);
+		}
+		expect(
+			(
+				await server.app.inject({
+					method: "PUT",
+					url: "/api/push/config",
+					headers: authenticatedHeaders,
+					payload: { subject: "invalid" },
+				})
+			).statusCode,
+		).toBe(400);
+		const savedContact = await server.app.inject({
+			method: "PUT",
+			url: "/api/push/config",
+			headers: authenticatedHeaders,
+			payload: { subject: "https://example.org/contact" },
+		});
+		expect(savedContact.statusCode).toBe(200);
+		expect(savedContact.json().subject).toBe("https://example.org/contact");
+		expect(savedContact.body).not.toMatch(/privateKey|p256dh|subscription/);
 		const registration = await server.app.inject({
 			method: "POST",
 			url: "/api/push/devices",
@@ -1794,5 +1868,41 @@ it.each([
 		await server.stop();
 		rmSync(home, { recursive: true, force: true });
 		vi.unstubAllEnvs();
+	}
+});
+
+it("returns an unavailable error when push configuration has no sender hook", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-no-push-"));
+	const runtime = new WorkflowRuntime(home, {
+		agent: async () => ({}),
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+		start: async () => {
+			throw new Error("unused");
+		},
+		stop: () => {},
+	});
+	try {
+		const response = await server.app.inject({
+			method: "PUT",
+			url: "/api/push/config",
+			headers: {
+				host: "localhost",
+				origin: "http://localhost",
+				"x-factory-request": "1",
+			},
+			payload: { subject: "mailto:operator@example.org" },
+		});
+		expect(response.statusCode).toBe(409);
+		expect(response.json().error).toBe("Push unavailable");
+	} finally {
+		await runtime.shutdown();
+		await server.stop();
+		rmSync(home, { recursive: true, force: true });
 	}
 });

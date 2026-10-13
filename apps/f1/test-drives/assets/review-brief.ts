@@ -8,9 +8,11 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import {
+	captureEvidence,
 	executeCommand,
 	FactoryTools,
 } from "../../../../packages/edge-worker/dist/factory/FactoryTools.js";
+import { qaDigest } from "../../../../packages/edge-worker/dist/factory/Qa.js";
 import {
 	EdgeWorker,
 	requestFactoryTerminalSession,
@@ -24,6 +26,10 @@ import {
 	githubApiReceipt,
 	githubRequest,
 } from "../../../../packages/edge-worker/test/fixtures/github-api.ts";
+import {
+	qaExecution,
+	qaScope,
+} from "../../../../packages/edge-worker/test/fixtures/qa.ts";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
 const execFile = promisify(execFileCallback);
@@ -53,6 +59,12 @@ delete process.env.BOBS_FACTORY_FACTORY_ORIGIN;
 delete process.env.BOBS_FACTORY_FACTORY_PUBLIC_ORIGIN;
 
 const modes = ["brief", "gap", "legacy"] as const;
+// Opt-in recovery scenario; the original three scenarios remain unchanged.
+const relocateScreenshots = process.env.F1_SCREENSHOT_RELOCATION === "1";
+const fixturePng = Buffer.from(
+	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aNNsAAAAASUVORK5CYII=",
+	"base64",
+);
 type Mode = (typeof modes)[number];
 const counts: Record<string, number> = {};
 const fixed = new Set<Mode>();
@@ -99,6 +111,9 @@ const workflow = (mode: Mode): Workflow => ({
 			name: "Verify revision and hand off",
 			type: "tool",
 			tool: "handoff",
+			...(relocateScreenshots && mode === "legacy"
+				? { qaContract: "qa-v1" as const }
+				: {}),
 			branches: [{ when: { path: "fix", equals: true }, next: "ci-fix" }],
 			next: "human-review",
 			maxVisits: 100,
@@ -319,6 +334,8 @@ function makeWorker() {
 	};
 	hooks.hooks.tool = async (ctx) => {
 		if (ctx.step.tool === "fixture-seed") {
+			counts[`${ctx.run.workflow.id}:seed`] =
+				(counts[`${ctx.run.workflow.id}:seed`] ?? 0) + 1;
 			const base = git(ctx.run.workspace, "rev-parse", "HEAD");
 			writeFileSync(join(ctx.run.workspace, "feature.txt"), "Hello from F1\n");
 			git(ctx.run.workspace, "add", "feature.txt");
@@ -330,6 +347,95 @@ function makeWorker() {
 				baseSha: base,
 			};
 			ctx.run.outputs.ci = { headSha: head, baseSha: base, reviewReady: true };
+			if (relocateScreenshots && ctx.run.workflow.id === "brief-legacy") {
+				const scope = qaScope("ui");
+				scope.areas[0]!.dependencies = ["feature.txt"];
+				ctx.run.outputs.clarify = {
+					requirements: ["Persist a record"],
+					decisions: [],
+				};
+				ctx.run.outputs["visual-scope"] = scope;
+				mkdirSync(join(ctx.evidenceDir, "qa"), { recursive: true });
+				const image = join(ctx.evidenceDir, "qa", "screen.png");
+				writeFileSync(image, fixturePng);
+				const execution = qaExecution();
+				execution.results[0]!.criteria[0]!.evidence[0]!.screenshotTasks = [
+					{ area: "Editor", state: "saved" },
+				];
+				execution.screenshots.push({
+					path: image,
+					area: "Editor",
+					state: "saved",
+					caption: "Scripted accepted capture",
+				});
+				const capture = captureEvidence(
+					{
+						...ctx,
+						step: { ...ctx.step, id: "capture", qaContract: "qa-v1" },
+						progress: {
+							visit: 1,
+							changedFiles: [],
+							unchangedCode: false,
+							uncertain: true,
+							newHistory: [],
+							currentRevision: {
+								headSha: head,
+								dirty: false,
+								at: "now",
+								historyLength: 0,
+							},
+						},
+					},
+					execution,
+				) as typeof execution;
+				// Model a retained receipt from a retired home whose source no longer exists.
+				capture.screenshots[0]!.path = join(
+					root,
+					"retired",
+					"factory",
+					"evidence",
+					ctx.run.id,
+					"qa",
+					"screen.png",
+				);
+				ctx.run.outputs.capture = capture;
+				ctx.run.roleRevisions = Object.fromEntries(
+					["visual-scope", "capture", "visual-review"].map((id) => [
+						id,
+						{ headSha: head, dirty: false, at: "now", historyLength: 0 },
+					]),
+				);
+				ctx.run.outputs["visual-review"] = {
+					status: "completed",
+					qaContract: "qa-v1",
+					findings: [],
+					summary: "Inspected scripted image",
+					acceptedScreenshots: capture.screenshots.map((s) => ({
+						area: s.area,
+						state: s.state,
+						imageSha256: s.imageSha256,
+					})),
+					qaReviewStamp: {
+						headSha: head,
+						dirty: false,
+						scopeHash: qaDigest(scope),
+						captureHash: qaDigest(capture),
+					},
+				};
+				ctx.run.outputs["visual-gate"] = await tools.tool({
+					...ctx,
+					step: {
+						...ctx.step,
+						id: "visual-gate",
+						tool: "visual-gate",
+						qaContract: "qa-v1",
+					},
+				});
+				assert.equal(
+					(ctx.run.outputs["visual-gate"] as { approved: boolean }).approved,
+					true,
+				);
+			}
 			return { seeded: true };
 		}
 		return tools.tool(ctx);
@@ -445,6 +551,50 @@ try {
 			assert.equal(guide.verdict.readiness, "ready");
 		}
 		if (mode === "legacy") assert.equal(counts["legacy:guide"], 1);
+		if (mode === "legacy" && relocateScreenshots) {
+			const captureHash = qaDigest(run.outputs.capture);
+			const gate = run.reviewGate!;
+			await api(`/api/runs/${id}/guide/refresh`, { reviewId: gate.id });
+			await until(
+				id,
+				(r) =>
+					r.status === "waiting" &&
+					Boolean(r.reviewGate) &&
+					r.reviewGate!.id !== gate.id,
+			);
+			assert.equal(counts["legacy:guide"], 2);
+			assert.equal(counts["brief-legacy:seed"], 1);
+			assert.equal(qaDigest(run.outputs.capture), captureHash);
+			assert.equal(run.reviewGate!.headSha, gate.headSha);
+			assert.equal(run.humanDecisions?.length ?? 0, 0);
+			const response = await fetch(
+				`http://localhost:3541/api/runs/${id}/screenshots/0`,
+				{ headers: { authorization: `Bearer ${token}` } },
+			);
+			assert.equal(response.status, 200);
+			assert.deepEqual(Buffer.from(await response.arrayBuffer()), fixturePng);
+			const image = join(home, "factory", "evidence", id, "qa", "screen.png");
+			writeFileSync(
+				image,
+				Buffer.concat([fixturePng, Buffer.from("tampered")]),
+			);
+			assert.equal(
+				(
+					await fetch(`http://localhost:3541/api/runs/${id}/screenshots/0`, {
+						headers: { authorization: `Bearer ${token}` },
+					})
+				).status,
+				409,
+			);
+			writeFileSync(image, fixturePng);
+			receipts.relocatedScreenshot = {
+				captureHash,
+				refreshed: true,
+				served: true,
+				tamperRejected: true,
+				explicitApprovalStillRequired: true,
+			};
+		}
 		const activities = await cli("view-session", "--session-id", id);
 		assert(activities.length > 100);
 		const final = inside(worker).getFactoryRuntime().runs.get(id)!;
@@ -458,7 +608,11 @@ try {
 			decisions: final.humanDecisions?.map((d) => d.decision) ?? [],
 		};
 	}
-	assert.equal(descriptions.length, 3, "one publication per accepted guide");
+	assert.equal(
+		descriptions.length,
+		relocateScreenshots ? 4 : 3,
+		"one publication per accepted guide",
+	);
 	assert.equal(unhandled.length, 0);
 	receipts.descriptions = descriptions.length;
 	console.log("F1_REVIEW_BRIEF_PASS", JSON.stringify(receipts));

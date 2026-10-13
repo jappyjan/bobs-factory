@@ -509,10 +509,15 @@ export class FactoryServer {
 			() =>
 				hooks.push?.status() ?? {
 					available: false,
+					configuration: "unavailable",
 					diagnostic: "Push unavailable",
 					devices: [],
 				},
 		);
+		this.app.put("/api/push/config", { bodyLimit: 4096 }, (request) => {
+			if (!hooks.push) throw new Error("Push unavailable");
+			return hooks.push.configure(request.body);
+		});
 		this.app.post("/api/push/devices", { bodyLimit: 8192 }, (request) => {
 			if (!hooks.push) throw new Error("Push unavailable");
 			return hooks.push.register(request.body);
@@ -1254,6 +1259,7 @@ export class FactoryServer {
 			const path = verifiedScreenshot(
 				shot.path,
 				join(runtime.directory, "evidence", run.id),
+				shot.imageSha256,
 			);
 			const bytes = readFileSync(path);
 			const value = run.outputs[request.query.artifact ?? "capture"];
