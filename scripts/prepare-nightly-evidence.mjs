@@ -40,6 +40,7 @@ import {
 } from "./lib/nightly-artifacts.mjs";
 import { restoreNightlyBaseline } from "./lib/nightly-baseline.mjs";
 import {
+	nativeNoticeMaterialName,
 	rebindSourceMaterials,
 	verifyDependencyBaseline,
 } from "./lib/nightly-source.mjs";
@@ -228,6 +229,7 @@ try {
 	for (const record of checks.logs)
 		copyFileSync(join(checksDirectory, record.file), join(output, record.file));
 	const bindings = [],
+		currentNoticeRecords = [],
 		targets = {},
 		desktop = [],
 		additionalAssets = [];
@@ -330,9 +332,9 @@ try {
 				),
 			),
 		);
-		const name = `native-notices-${target}.tar.gz`;
+		const name = nativeNoticeMaterialName(priorMaterials, identity, target);
 		archiveNativeNotices(native, join(materialDirectory, name));
-		priorMaterials.records.push({
+		currentNoticeRecords.push({
 			kind: "candidate-notices",
 			...fileRecord(join(materialDirectory, name), name),
 			revision: identity.commit,
@@ -370,6 +372,7 @@ try {
 		identity,
 		bindings,
 		provenance,
+		currentNoticeRecords,
 	);
 	const sourceOutput = join(temporary, "assembled-source");
 	execFileSync(
