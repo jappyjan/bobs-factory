@@ -362,7 +362,7 @@ itself without discarding the file or interrupting Factory. To rotate keys,
 stop Factory, securely archive the file, remove it and restart with a valid
 subject. Every device must explicitly enable again; old subscriptions are unusable.
 
-Open **Notifications** beside Install app/App help. **Enable this device** requests
+Open **Settings → Notifications**. **Enable this device** requests
 browser permission only from your click and registers the existing app worker.
 Give each browser profile or installed app a recognizable label. Enabled means
 both browser subscription and server registration succeeded. **Send test** uses
@@ -375,7 +375,7 @@ those devices from their own browser. Remote disable requires explicit re-enable
 and is never undone by a foreground visit. Local disable unsubscribes immediately;
 failed server cleanup is retained locally and retried on foreground/reconnect.
 Denied or revoked permission leaves Today and the connected app usable.
-Closing Notifications discards unsent label edits; registered device labels and
+Leaving the Notifications page discards unsent label edits; registered device labels and
 notification consent remain saved.
 
 Supported events are new question waves or changed question sets, new pending

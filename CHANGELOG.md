@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Drain pending workflow snapshots before removing OAuth transport test fixtures, preventing intermittent CI cleanup failures ([#113](https://github.com/jappyjan/bobs-factory/pull/113)).
+- Wait for OAuth test fixture persistence before deleting temporary files, preventing intermittent CI cleanup failures ([#115](https://github.com/jappyjan/bobs-factory/pull/115), [#113](https://github.com/jappyjan/bobs-factory/pull/113)).
 - Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance ([#113](https://github.com/jappyjan/bobs-factory/pull/113), [standalone browser help evidence](docs/qa/desktop-install-help/README.md)).
 - Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
 
@@ -54,6 +54,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Replace remote dashboard passkey sign-in with API keys managed in Settings (add, remove and rotate). Upgrading revokes existing passkeys and browser sessions; an operator must create the first key in localhost Settings before remote access is available again. Localhost continues to work without a key ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
+- Move browser notification controls into Settings → Notifications alongside the push contact editor, while retaining device reconciliation across dashboard pages; validate the combined desktop and phone layouts with inspected screenshots ([#115](https://github.com/jappyjan/bobs-factory/pull/115)).
 
 - Align generated Homebrew and AUR requirements with the selected first-release support floor of macOS 15 and Ubuntu 24.04/glibc 2.39, and clarify that the frozen app's inherited macOS 13 launch minimum is not tested-support evidence ([Taskbot #123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#97](https://github.com/jappyjan/bobs-factory/pull/97)).
 
