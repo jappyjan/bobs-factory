@@ -6,9 +6,35 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Launch tasks with a project selector in the heading, a roomy prompt composer and visible workflow fields. New stock workflows accept private file attachments with clear limits, removal, and retained read access across restart, retry and follow-up. Machine selection remains separate work. ([Taskbot #85](https://taskbot.apps.janjaap.de/p/bobs-factory/t/85))
+- Launch tasks with a project selector in the heading, a roomy prompt composer and visible workflow fields. New stock workflows accept private file attachments with clear limits, removal, and retained read access across restart, retry and follow-up. Machine selection remains separate work. ([Taskbot #85](https://taskbot.apps.janjaap.de/p/bobs-factory/t/85), [#123](https://github.com/jappyjan/bobs-factory/pull/123))
 
 ### Fixed
+
+- Keep resumed specialist reviews responsive by searching recent history without copying its full payload and reusing immutable review-baseline chunks during checkpoints ([#121](https://github.com/jappyjan/bobs-factory/pull/121)).
+- Recover prepared coding-agent CLI paths for macOS desktop workers and update supervisors, so Homebrew and user-local installations remain available when the app opens outside a terminal ([#120](https://github.com/jappyjan/bobs-factory/pull/120)).
+- Ground Factory planning and implementation prerequisites in each run's accepted workflow, preventing false architecture-approval blockers in frozen legacy runs while preserving real approval gates ([#119](https://github.com/jappyjan/bobs-factory/pull/119)).
+
+- Wait for OAuth test fixture persistence before deleting temporary files, preventing intermittent CI cleanup failures ([#115](https://github.com/jappyjan/bobs-factory/pull/115), [#113](https://github.com/jappyjan/bobs-factory/pull/113)).
+- Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance ([#113](https://github.com/jappyjan/bobs-factory/pull/113), [standalone browser help evidence](docs/qa/desktop-install-help/README.md)).
+- Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
+
+- Keep review refreshes and screenshot previews working after moving the Factory home by verifying retained screenshots against the same run's copied evidence without changing accepted QA receipts ([#114](https://github.com/jappyjan/bobs-factory/pull/114)).
+
+- Close the Notifications dialog when opening push contact settings so the Settings form is immediately usable ([#112](https://github.com/jappyjan/bobs-factory/pull/112)).
+
+- Validate beta desktop releases from their actual installed AppImage through controlled stable upgrade and rollback candidates, preserving nightly validation and truthful input receipts ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#111](https://github.com/jappyjan/bobs-factory/pull/111)).
+
+- Write native Electron validation receipts separately from Chromium diagnostics so Linux release evidence remains valid JSON; retain complete smoke logs and refuse receipt overwrites ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#110](https://github.com/jappyjan/bobs-factory/pull/110)).
+
+- Resolve Bun's upstream ARM64 archive and ZIP member names when assembling release evidence, preserving native target identities and accepted runtime hash checks ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#109](https://github.com/jappyjan/bobs-factory/pull/109)).
+
+- Wait for shared and legacy QA blocker records to be visible before asserting isolation, avoiding a race with asynchronous persistence ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#108](https://github.com/jappyjan/bobs-factory/pull/108)).
+
+- Wait for the detached desktop recovery fixture to finish and release its process owner before starting another helper, preventing intermittent macOS nightly check failures while preserving live-owner refusal ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#106](https://github.com/jappyjan/bobs-factory/pull/106)).
+
+- Prepare exact beta releases through CI with the full native/desktop validation path and reviewed asset approval, and show direct DMG, AppImage and DEB links on the downloads page from verified published inventories ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#107](https://github.com/jappyjan/bobs-factory/pull/107)).
+
+- Synchronize the operator MCP answer-batch fixture with question readiness so asynchronous persistence cannot race nightly checks; retain strict answer and stale-batch assertions ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#105](https://github.com/jappyjan/bobs-factory/pull/105)).
 
 - Keep resumed agent checkpoints responsive after reading large workflow history: preserve completed receipts as immutable snapshots, reuse their pages and extend the cached dashboard history index. ([#104](https://github.com/jappyjan/bobs-factory/pull/104), [F1 validation](apps/f1/test-drives/2026-10-12-resumed-history.md))
 
@@ -35,6 +61,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Move browser notification controls into Settings → Notifications alongside the push contact editor, while retaining device reconciliation across dashboard pages; validate the combined desktop and phone layouts with inspected screenshots ([#115](https://github.com/jappyjan/bobs-factory/pull/115)).
+
 - Align generated Homebrew and AUR requirements with the selected first-release support floor of macOS 15 and Ubuntu 24.04/glibc 2.39, and clarify that the frozen app's inherited macOS 13 launch minimum is not tested-support evidence ([Taskbot #123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#97](https://github.com/jappyjan/bobs-factory/pull/97)).
 
 - Support direct unsigned GitHub releases and updates with candidate-bound SHA256/size inventories; remove paid Apple and publisher-signature prerequisites, preserve corruption/source/recovery/rollback safeguards, and document per-app macOS allow-running ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
@@ -49,6 +77,8 @@ All notable changes to this project will be documented in this file.
 - Add receipt-checked native runtime removal and explicit update-policy handoff, isolate reusable `npx` trials with browser/headless launch and cleanup, and prepare Homebrew/AUR/private npm entry points only from verified immutable signed releases. Downloads retain publication availability gates. ([Taskbot bobs-factory #118](https://taskbot.apps.janjaap.de/p/bobs-factory/t/118), [#123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#84](https://github.com/jappyjan/bobs-factory/pull/84))
 
 ### Added
+
+- Configure and update the push service contact in Settings → Notifications while preserving keys and device consent.
 
 - Factory and Takeover architecture proposals you approve before Bob builds anything. Each proposal has its own page: a plain summary, the choices Bob made (and the ones it needs you to answer), a simple map of what changes, why it fits, what to watch out for and the plan steps, with a chat beside it for questions or changes and one approve button. New versions list what changed and who asked for it. Routine work records an approval bypass. Repository and mixed delivery retain architecture acceptance alongside independent ticket-contract validation; external-only delivery keeps its own acceptance path. Assets stay within authorized directories and accepted plans reference frozen snapshots. Empty remote specifications stop approval; explanations reuse the pending proposal’s ticket notification. A portable run backup retains source, design artifacts and review evidence for refinement on another machine. ([Taskbot #90](https://taskbot.apps.janjaap.de/p/bobs-factory/t/90), [#74](https://github.com/jappyjan/bobs-factory/pull/74))
 - Retain the frozen `.21` candidate's four-target source/relink assembly and a separately identified correction kit with explicit LLVM tool paths, pinned reconstruction helpers, complete ICU/Rust notice material and exact MPL web-push source directions; preserve old provenance and report the frozen payload notice defect requiring candidate reissue before publication ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#93](https://github.com/jappyjan/bobs-factory/pull/93)).

@@ -97,6 +97,11 @@ export function validateCandidate(record) {
 			"Nightly core differs from committed package",
 		);
 	}
+	if (c.channel === "beta")
+		check(
+			!c.promotion && c.sequence === undefined,
+			"Beta is an explicit frozen source, without nightly allocation or stable promotion",
+		);
 	if (c.channel === "stable")
 		check(
 			c.promotion?.channel === "nightly" &&

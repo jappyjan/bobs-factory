@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import {
 	existsSync,
+	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	readlinkSync,
@@ -17,9 +18,22 @@ import {
 	assertLocalDashboard,
 	assertRemoteDenied,
 } from "./dashboard-access.mjs";
+import { writeNativeReceipt } from "./native-receipt-output.mjs";
 
 if (process.platform === "linux") app.disableHardwareAcceleration();
 const root = mkdtempSync(join(tmpdir(), "factory-electron-smoke-"));
+let preparedBin;
+if (process.platform === "darwin") {
+	preparedBin = join(root, "prepared tools");
+	mkdirSync(preparedBin);
+	writeFileSync(
+		join(root, ".zshrc"),
+		'printf "shell startup banner\\n"\nexport PATH="$ZDOTDIR/prepared tools:$PATH"\n',
+	);
+	process.env.ZDOTDIR = root;
+	process.env.SHELL = "/bin/zsh";
+	process.env.PATH = "/usr/bin:/bin:/usr/sbin:/sbin";
+}
 process.env.BOBS_FACTORY_DESKTOP_HOME = join(root, "home");
 process.env.BOBS_FACTORY_DESKTOP_PORT = "3973";
 const publicOrigin = "https://factory-smoke.example.invalid";
@@ -170,6 +184,17 @@ void (async () => {
 		);
 		assert.equal(supervisorOwner.owner, "desktop");
 		assert(ownerAlive(supervisorOwner));
+		if (preparedBin) {
+			for (const pid of [workerPid, supervisorOwner.pid]) {
+				const command = execFileSync(
+					"/bin/ps",
+					["eww", "-p", String(pid), "-o", "command="],
+					{ encoding: "utf8" },
+				);
+				assert.ok(command.includes(` PATH=${process.env.PATH} `));
+			}
+			assert.equal(process.env.PATH.split(":")[0], preparedBin);
+		}
 		process.kill(supervisorOwner.pid, "SIGTERM");
 		await until(() => !supervisorRecord());
 		const candidate = {
@@ -270,29 +295,27 @@ void (async () => {
 			{ encoding: "utf8", timeout: 15000 },
 		);
 		assert.equal(workerOwner(lifecycle.home), undefined);
-		console.log(
-			JSON.stringify(
-				{
-					passed: true,
-					platform: process.platform,
-					arch: process.arch,
-					electron: process.versions.electron,
-					fixture: root,
-					access:
-						"direct localhost without cookies/passkeys; public Host401 and foreign Origin/cross-site/forwarded local403",
-					localLogoutRetainsAuthority: true,
-					dashboardBridgeIsolated: true,
-					closedWindowKeepsWorker: true,
-					reopenSamePid: true,
-					explicitStop: true,
-					confirmationMaintenanceRaceRejected: true,
-					stopSuppressesAutomaticRestart: true,
-					nativeCredentials: "not tested",
-					screenshotUnavailable,
-				},
-				null,
-				2,
-			),
+		writeNativeReceipt(
+			{
+				passed: true,
+				platform: process.platform,
+				arch: process.arch,
+				electron: process.versions.electron,
+				fixture: root,
+				access:
+					"direct localhost without cookies/passkeys; public Host401 and foreign Origin/cross-site/forwarded local403",
+				localLogoutRetainsAuthority: true,
+				dashboardBridgeIsolated: true,
+				closedWindowKeepsWorker: true,
+				reopenSamePid: true,
+				preparedToolPathInherited: preparedBin ? true : "macOS only",
+				explicitStop: true,
+				confirmationMaintenanceRaceRejected: true,
+				stopSuppressesAutomaticRestart: true,
+				nativeCredentials: "not tested",
+				screenshotUnavailable,
+			},
+			process.env.BOBS_FACTORY_NATIVE_ELECTRON_RECEIPT,
 		);
 		app.exit(0);
 	} catch (error) {

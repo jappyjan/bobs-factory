@@ -13,7 +13,7 @@ on:
         default: false
         type: boolean
       approved_assets_digest:
-        description: Stable only, exact assetsDigest from the prepared publication plan
+        description: Stable or beta, exact assetsDigest from the prepared publication plan
         type: string
   workflow_run:
     workflows: ["Validate and upload Bob's Factory release evidence"]
@@ -142,7 +142,7 @@ jobs:
         with:
           name: bobs-factory-prepared-release-${{ needs.resolve.outputs.digest }}
           path: ${{ runner.temp }}/public-release
-      - name: Publish exact validated assets after rollout activation or candidate-bound stable approval
+      - name: Publish exact validated assets after rollout activation or candidate-bound stable/beta approval
         env:
           GH_TOKEN: ${{ github.token }}
           BOBS_FACTORY_AUTOMATIC_NIGHTLIES: ${{ vars.BOBS_FACTORY_AUTOMATIC_NIGHTLIES }}

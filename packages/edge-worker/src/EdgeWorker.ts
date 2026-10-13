@@ -337,6 +337,10 @@ import {
 	workflowTriggerInstructions,
 } from "./factory/Workflow.js";
 import {
+	workflowExecutionContext,
+	workflowExecutionInstructions,
+} from "./factory/WorkflowExecution.js";
+import {
 	type ExecutionContext,
 	type FactoryRun,
 	WorkflowRuntime,
@@ -7930,9 +7934,16 @@ ${taskSection}`;
 			tool: string | undefined,
 			args: Record<string, unknown>,
 			signal: AbortSignal,
+			timeoutMs?: number,
 		) =>
 			this.runnerSlots.run(
 				async () => {
+					// Queue time is unbounded; only admitted transport work spends this budget.
+					const transportSignal =
+						timeoutMs === undefined
+							? signal
+							: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]);
+					transportSignal.throwIfAborted();
 					if (tool !== undefined)
 						assertFactoryToolAllowed(
 							`mcp__${serverName}__${tool}`,
@@ -7988,12 +7999,12 @@ ${taskSection}`;
 									nativeConfig,
 									serverName,
 									transport,
-									signal,
+									transportSignal,
 								);
 							else
 								await listConfiguredTools(
 									directConfig,
-									signal,
+									transportSignal,
 									run.workspace || repository.repositoryPath,
 									built.config.childEnvironment,
 								);
@@ -8007,13 +8018,13 @@ ${taskSection}`;
 										transport,
 										tool,
 										args,
-										signal,
+										transportSignal,
 									)
 								: await callConfiguredTool(
 										directConfig,
 										tool,
 										args,
-										signal,
+										transportSignal,
 										run.workspace || repository.repositoryPath,
 										built.config.childEnvironment,
 									);
@@ -8027,7 +8038,13 @@ ${taskSection}`;
 					}
 				},
 				signal,
-				{ identity: `${this.factoryHome}:mcp:${run.id}:${randomUUID()}` },
+				{
+					identity: `${this.factoryHome}:mcp:${run.id}:${randomUUID()}`,
+					onChange: this.getFactoryRuntime().capacityOptions(
+						run,
+						`mcp/${serverName}/${randomUUID()}`,
+					).onChange,
+				},
 			);
 		return {
 			built,
@@ -8038,7 +8055,8 @@ ${taskSection}`;
 				tool: string,
 				args: Record<string, unknown>,
 				signal: AbortSignal,
-			) => request(server, tool, args, signal),
+				timeoutMs?: number,
+			) => request(server, tool, args, signal, timeoutMs),
 			listTools: async (server: string, signal: AbortSignal) => {
 				await request(server, undefined, {}, signal);
 			},
@@ -8083,7 +8101,13 @@ ${taskSection}`;
 		return taskbotDeliveryAdapter(
 			target,
 			(tool, args) =>
-				config.callTool(target.server, tool, args, AbortSignal.timeout(60000)),
+				config.callTool(
+					target.server,
+					tool,
+					args,
+					this.recoveryAbort.signal,
+					60000,
+				),
 			[
 				...(allowed.includes("get_ticket") ? ["read" as const] : []),
 				...(allowed.includes("update_ticket") ? ["content" as const] : []),
@@ -8093,7 +8117,10 @@ ${taskSection}`;
 			],
 		);
 	}
-	private async factoryTicketAdapter(run: FactoryRun): Promise<TicketAdapter> {
+	private async factoryTicketAdapter(
+		run: FactoryRun,
+		signal: AbortSignal = this.recoveryAbort.signal,
+	): Promise<TicketAdapter> {
 		const ref = TicketReferenceSchema.parse(run.ticketReference);
 		if (ref.provider === "native") {
 			const tracker = this.issueTrackers.get(ref.workspaceId);
@@ -8128,7 +8155,7 @@ ${taskSection}`;
 		if (server.type === "sdk")
 			throw new Error("Taskbot needs a configured HTTP/SSE transport");
 		return taskbotAdapter(ref, (tool, args) =>
-			callTool(ref.server, tool, args, AbortSignal.timeout(60000)),
+			callTool(ref.server, tool, args, signal, 60000),
 		);
 	}
 	private async resolveFactoryTicket(
@@ -8202,7 +8229,9 @@ ${taskSection}`;
 		}
 		signal.throwIfAborted();
 		if (!run.outputs.ticket)
-			run.outputs.ticket = await (await this.factoryTicketAdapter(run)).read();
+			run.outputs.ticket = await (
+				await this.factoryTicketAdapter(run, signal)
+			).read();
 		this.getFactoryRuntime().save(run);
 	}
 
@@ -8540,7 +8569,7 @@ ${taskSection}`;
 
 		// Review fixers and QA roles can request assistance without askQuestions;
 		// saved recipes must receive the same question guidance as new ones.
-		const instruction = `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${step.prompt}\n${repositoryScopeInstructions(run)}\nGit provider: ${JSON.stringify(run.gitProvider ?? { gitProvider: repository.gitProvider, githubUrl: repository.githubUrl, gitlabUrl: repository.gitlabUrl })}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${run.gitProvider?.type === "custom" ? (run.gitProvider.instructions ?? "") : repository.gitProvider?.type === "custom" ? (repository.gitProvider.instructions ?? "") : ""}\nOriginating ticket: ${run.ticketReference ? JSON.stringify(run.ticketReference) : "none"}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${questionInstructions(run.id)}\n${workflowTriggerInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${["code-review", "visual-review"].includes(step.id) || ["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") ? reviewCompletionInstructions : ""}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
+		const instruction = `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${step.prompt}\n${repositoryScopeInstructions(run)}\nGit provider: ${JSON.stringify(run.gitProvider ?? { gitProvider: repository.gitProvider, githubUrl: repository.githubUrl, gitlabUrl: repository.gitlabUrl })}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${run.gitProvider?.type === "custom" ? (run.gitProvider.instructions ?? "") : repository.gitProvider?.type === "custom" ? (repository.gitProvider.instructions ?? "") : ""}\nOriginating ticket: ${run.ticketReference ? JSON.stringify(run.ticketReference) : "none"}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${questionInstructions(run.id)}\n${workflowTriggerInstructions}\n${workflowExecutionInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${["code-review", "visual-review"].includes(step.id) || ["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") ? reviewCompletionInstructions : ""}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
 		const built = await this.buildAgentRunnerConfig(
 			session,
 			repository,
@@ -8680,6 +8709,7 @@ ${taskSection}`;
 				...(context.input && typeof context.input === "object"
 					? context.input
 					: { input: context.input }),
+				workflowExecution: workflowExecutionContext(context),
 				progress: context.progress,
 				...(step.id === "ci-fix"
 					? { feedback: factoryFeedbackContext(context) }

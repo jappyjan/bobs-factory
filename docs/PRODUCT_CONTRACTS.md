@@ -19,7 +19,7 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 | Stock skills / plugin | deployer, runner configs, instructions | `bobs-factory-skills`, `bobs-factory-skills-plugin` | Preserve custom skills and prompts |
 | Certificates / sandbox | worker home, runner environment | `<home>/certs`, `BOBS_FACTORY_*` | Preserve keys, normalize path fields |
 | Prepared Cursor SDK | binary runner / external Node host | `BOBS_FACTORY_CURSOR_SDK_PATH`, `BOBS_FACTORY_CURSOR_NODE` | Keep SDK/native files external; preserve native IDs |
-| Distribution | build, CI, installer, metadata | frozen stable/nightly candidates with explicitly selected validated nightly promotion sources, four-target archives, unsigned schema-2 manifest + candidate-bound SHA-256/size inventory | Stage replacement separately from mutable state; immutable schema-1 beta requires additive reviewed inventory attestation |
+| Distribution | build, CI, installer, metadata | frozen stable/nightly/beta candidates; stable uses an explicitly selected validated nightly promotion source, beta uses manually selected exact version on main, four-target archives, unsigned schema-2 manifest + candidate-bound SHA-256/size inventory | Stage replacement separately from mutable state; immutable schema-1 beta requires additive reviewed inventory attestation |
 | Source transport | publisher, prepared-release validation and offline recovery | hash-bound ordered 1 GiB chunks reconstructing the exact full source archive when it exceeds GitHub asset limits | Keep local source/evidence monolith and unchanged semantic intake; preserve genuine single-file and schema-1 beta inventories; new tooling requires a new reviewed candidate identity |
 | Release discovery | installer, Pages, Nix, runtime and desktop updaters | stable/default (inventoried beta fallback only without an explicit channel), explicit stable/nightly, exact version; GitHub HTTPS and SHA-256/size inventory | Preserve exact manifest bytes; no independent publisher signature claim |
 | Instance updates | authenticated dashboard, CLI, external owned supervisor | `<factoryHome>/updates/state.json`, per-channel overrides, pause/pin and durable restart receipts | Preserve settings across entry points; snapshot only compatible Factory-owned state; native stores and Factory authentication stay outside rollback |
@@ -73,6 +73,13 @@ outputs remain completed results, including when later steps consume them.
 Singular `output` payloads in completed and rejected agent checkpoints (including
 nested graph frames and Simple execution) remain opaque result data. Migration
 does not rewrite their fields or interpret them as native conversation records.
+
+Retained screenshot receipts may contain absolute paths from the source home.
+QA gates and screenshot serving resolve their same-run `factory/evidence/<run-id>/`
+suffix under the current home only when the copied image matches the recorded
+SHA-256. Source files are never read, receipts and acceptance digests stay unchanged,
+and missing copies, changed bytes, other-run paths and escaping symlinks still reject.
+New capture authoring retains the strict current evidence directory boundary.
 
 The issued egress certificate keeps its existing `cyrus-egress-ca.pem` filename
 inside the new home. Migration preserves certificate/key bytes and system trust;

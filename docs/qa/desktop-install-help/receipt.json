@@ -1,0 +1,54 @@
+{
+	"findingId": "qa-standalone-help-screenshot-missing",
+	"testedRevision": "50f77d74cf6fce7034a39748abc5f588860984bd",
+	"testedRevisionDirty": false,
+	"servedBuild": "5bc39f259df2cb7709153a81",
+	"buildRegeneratedAndMatched": true,
+	"fixtureUrl": "http://localhost:3761",
+	"agentMode": "mock",
+	"browser": "HeadlessChrome/149.0.7827.55",
+	"session": "qa-fix-d187-shell",
+	"headless": true,
+	"viewport": { "width": 1440, "height": 1000 },
+	"screenshot": {
+		"path": "standalone-help.png",
+		"runtimeEvidencePath": "/Users/jappy/.bobs-factory/factory/evidence/manual-ff5756c6-8a2e-47c2-856b-2751d187a2d2/qa-fix-standalone-shell.png",
+		"sha256": "a6ae91a48548de85bee911c27c786d9d45f1486b30895d96ec133f1723662253",
+		"freshCapture": true,
+		"visuallyInspected": true,
+		"area": "Installed browser PWA help",
+		"state": "App help dialog open in simulated standalone browser mode without the desktop bridge"
+	},
+	"beforeOpen": {
+		"standalone": true,
+		"desktopBridge": "undefined",
+		"headerLabel": "App help"
+	},
+	"dialogOpen": {
+		"dialogCount": 1,
+		"heading": "Install Bob’s Factory",
+		"platformGuidance": [
+			"Mac Chrome",
+			"Mac Brave",
+			"Mac Safari",
+			"iPhone Safari",
+			"iPhone Brave",
+			"Android Chrome"
+		],
+		"buttonTexts": ["×"]
+	},
+	"afterEscapeAndSettingsNavigation": {
+		"standalone": true,
+		"desktopBridge": "undefined",
+		"headerLabel": "App help",
+		"dialogCount": 0,
+		"route": "#/settings/execution",
+		"settingsVisible": true,
+		"assertionPassed": true
+	},
+	"limitations": [
+		"Simulated standalone mode; no OS installation",
+		"Native Electron and remote HTTPS remain untested",
+		"Reviewer reassessment required"
+	]
+}

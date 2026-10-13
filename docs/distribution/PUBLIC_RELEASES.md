@@ -75,6 +75,36 @@ assets. They never substitute an older verified nightly to establish source,
 cooldown or sequence eligibility. Refresh trusted release tooling or repair the
 release evidence before retrying.
 
+### Explicit beta preparation through CI
+
+To prepare `v1.0.1-beta`, dispatch `release-channel.yml` on the reviewed `main`
+revision with `channel=beta` and `version=1.0.1-beta`. Beta freezes current main
+once and embeds that exact version; it does not allocate a nightly sequence or
+promote a nightly. Retries restore the retained candidate and reject changed
+versions. Only manual dispatch can prepare beta.
+
+The beta job runs the same four-target CLI/desktop matrix and current mocked
+full-payload checks as nightly. `release-evidence.yml` imports the accepted pinned
+`BOBS_FACTORY_NIGHTLY_BASELINE_JSON`, preserves historical source/receipt
+observations and combines them with the actual beta candidate's native receipts
+and check logs. Missing evidence, changed dependency/license inputs, failed native
+validation or non-green exact main CI block preparation. No paid provider tests
+are added.
+
+Successful evidence triggers `binary-release.yml` in preparation mode. Review its
+retained `bobs-factory-prepared-release-DIGEST` artifact and `publication-plan.json`.
+Publish by dispatching that workflow from the frozen tooling revision with the
+exact `prepared_artifact_id`, `publish=true`, and `approved_assets_digest` from the
+reviewed plan. Approval binds both candidate and asset inventory. Beta is a GitHub
+prerelease, never moves stable latest, and uses the repository publication lock
+and existing immutable tag/asset recovery checks. Automatic-nightly rollout does
+not authorize beta publication.
+
+Website synchronization renders direct DMG, AppImage and DEB links only from the
+complete verified published inventory. Before a stable release exists, the default
+installer and website download selection may use the verified beta; explicit
+`--channel stable` still rejects beta. Nightly remains a separate opt-in selection.
+
 The four targets are `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`.
 Windows and musl are unsupported. Minimum OS/libc/CPU claims require observed
 native execution; cross-compilation is insufficient.

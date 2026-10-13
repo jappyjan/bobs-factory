@@ -32,8 +32,10 @@ function fixture() {
 	const home = mkdtempSync(join(tmpdir(), "operator-test-"));
 	cleanup.push(() => rmSync(home, { recursive: true, force: true }));
 	const agent = vi.fn(async () => ({ status: "completed", questions: [] }));
+	const question = vi.fn(async () => {});
 	const runtime = new WorkflowRuntime(home, {
 		agent,
+		question,
 		script: async () => ({}),
 		tool: async () => ({}),
 		retryTracking: async (run) => {
@@ -87,7 +89,7 @@ function fixture() {
 	);
 	const server = new OperatorServer(grants, service);
 	cleanup.push(() => server.stop());
-	return { home, runtime, run, grants, service, server, agent };
+	return { home, runtime, run, grants, service, server, agent, question };
 }
 async function sdk(
 	f: ReturnType<typeof fixture>,
@@ -475,8 +477,16 @@ it("binds answers to the current batch and keeps explanation requests out of ans
 			questions: ["Explained choice"],
 		} as any)
 		.mockResolvedValue({ status: "completed", questions: [] });
+	cleanup.push(() => f.runtime.shutdown());
+	const nextQuestion = () =>
+		new Promise<void>((resolve) => {
+			f.question.mockImplementationOnce(async () => resolve());
+		});
+	// Notification follows persistence and registration of the pending answer.
+	const waiting = nextQuestion();
 	f.runtime.retry(f.run.id);
-	await vi.waitFor(() => expect(f.run.status).toBe("waiting"));
+	await waiting;
+	expect(f.run.status).toBe("waiting");
 	const first = (await c.call("inspect_run", { runId: f.run.id })).result;
 	expect(
 		(
@@ -488,6 +498,7 @@ it("binds answers to the current batch and keeps explanation requests out of ans
 			})
 		).error.code,
 	).toBe("stale_state");
+	const explained = nextQuestion();
 	expect(
 		(
 			await c.call("answer_run", {
@@ -499,7 +510,9 @@ it("binds answers to the current batch and keeps explanation requests out of ans
 			})
 		).ok,
 	).toBe(true);
-	await vi.waitFor(() => expect(f.run.questions).toEqual(["Explained choice"]));
+	await explained;
+	expect(f.run.status).toBe("waiting");
+	expect(f.run.questions).toEqual(["Explained choice"]);
 	expect(f.run.answers).toHaveLength(0);
 	expect(f.run.questionRequests).toHaveLength(1);
 	const current = (await c.call("inspect_run", { runId: f.run.id })).result;

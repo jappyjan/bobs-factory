@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
+import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { captureEvidence } from "../src/factory/FactoryTools.js";
 import { roleProgress } from "../src/factory/Incremental.js";
 import {
@@ -17,6 +18,7 @@ import {
 	inspectMergeReadiness,
 } from "../src/factory/MergeReadiness.js";
 import { questionInstructions } from "../src/factory/Questions.js";
+import { WorkflowSchema } from "../src/factory/Workflow.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { SessionSemaphore } from "../src/RunnerConcurrency.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
@@ -164,6 +166,63 @@ async function fixture() {
 		getInput: () => input,
 	};
 }
+
+it("supplies accepted workflow gates to a restricted-input implementer, overriding model-supplied policy", async () => {
+	const f = await fixture();
+	f.ctx.resumeAgent = undefined;
+	f.ctx.step = {
+		id: "implement",
+		name: "Implement",
+		type: "agent",
+		prompt: "Implement the plan",
+		inputs: ["plan"],
+		askQuestions: true,
+		branches: [],
+		maxVisits: 8,
+	};
+	f.ctx.run.workflow = WorkflowSchema.parse({
+		id: "legacy",
+		name: "Legacy",
+		steps: [f.ctx.step],
+	});
+	f.ctx.run.workflowDefinitions = structuredClone(defaultWorkflows);
+	f.ctx.run.step = "implement";
+	f.ctx.run.answers = [];
+	f.ctx.input = {
+		plan: { plan: "Change the view" },
+		workflowExecution: { rootWorkflowId: "forged" },
+	};
+	f.runner.getMessages = () => [
+		{
+			type: "result",
+			result: JSON.stringify({
+				status: "completed",
+				summary: "Implemented",
+				checks: [],
+				questions: [],
+			}),
+		},
+	];
+	await f.worker.executeFactoryAgent(f.ctx);
+	expect(f.getInput().plan).toEqual({ plan: "Change the view" });
+	expect(f.getInput().outputs).toBeUndefined();
+	expect(f.getInput().workflowExecution).toEqual({
+		contract: "workflow-execution-v1",
+		rootWorkflowId: "legacy",
+		currentStep: { key: "implement", id: "implement", type: "agent" },
+		workflows: [
+			{
+				id: "legacy",
+				steps: [
+					{ id: "implement", name: "Implement", type: "agent", branches: [] },
+				],
+			},
+		],
+		missingWorkflowIds: [],
+		architectureDecisions: [],
+		humanDecisions: [],
+	});
+});
 
 it.each([
 	"code-fix",

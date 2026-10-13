@@ -1,7 +1,9 @@
 // Scripted UI/AppImage processes only; no native Electron or production install.
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { retainAppHelper } from "../src/app-helper-files.mjs";
+import { processStamp, read } from "../src/app-lifecycle.mjs";
 import { appUpdates } from "../src/app-updates.mjs";
 import * as services from "../src/update-services.mjs";
 import { appRelease, fixtureClient } from "./shell-fixture.mjs";
@@ -29,12 +31,25 @@ const old = appRelease(
 	{ stableVersion: "0.9.0" },
 );
 const good = appRelease("nightly", candidateScript, target);
-const cleanup = () => {
+const helperCompletion = join(root, "helper-completion.json");
+const cleanup = async () => {
+	if (existsSync(helperCompletion)) {
+		const owner = read(helperCompletion);
+		if (owner.stamp && processStamp(owner.pid) === owner.stamp) {
+			process.kill(owner.pid, "SIGTERM");
+			const deadline = Date.now() + 3000;
+			while (processStamp(owner.pid) === owner.stamp) {
+				if (Date.now() > deadline)
+					throw Error("Fixture recovery helper did not stop");
+				await new Promise((resolve) => setTimeout(resolve, 50));
+			}
+		}
+	}
 	old.cleanup();
 	good.cleanup();
 };
-process.on("SIGTERM", () => {
-	cleanup();
+process.on("SIGTERM", async () => {
+	await cleanup();
 	process.exit(0);
 });
 try {
@@ -44,18 +59,47 @@ try {
 		mode: 0o755,
 	});
 	const client = fixtureClient([old, good], services);
+	let sourceDirectory = fileURLToPath(new URL("../src", import.meta.url));
+	if (mode === "imports") {
+		// Keep the real detached handoff, but observe its awaited recovery/unlock
+		// before telling the parent it may launch another helper.
+		const retainedSource = join(root, "helper-source");
+		retainAppHelper(sourceDirectory, retainedSource);
+		const helper = join(retainedSource, "app-helper.mjs");
+		const original = readFileSync(helper, "utf8");
+		writeFileSync(
+			helper,
+			`import {save as fixtureSave, processStamp as fixtureStamp} from "./app-lifecycle.mjs";\nconst fixtureOwner = {pid:process.pid, stamp:fixtureStamp(process.pid)};\nfixtureSave(${JSON.stringify(helperCompletion)}, {...fixtureOwner, completed:false});\n${original}\nif (!process.exitCode) fixtureSave(${JSON.stringify(helperCompletion)}, {...fixtureOwner, completed:true});\n`,
+		);
+		sourceDirectory = retainedSource;
+	}
 	const updates = await appUpdates({
 		home,
 		install,
 		target,
 		identity: { ...old.identity, target },
 		port: 3999,
-		sourceDirectory: fileURLToPath(new URL("../src", import.meta.url)),
+		sourceDirectory,
 		services: { ...services, githubClient: () => client },
 	});
 	await updates.action("verify-installation");
 	if (mode === "imports") {
 		await updates.action("recover");
+		const deadline = Date.now() + 5000;
+		while (true) {
+			if (existsSync(helperCompletion)) {
+				const owner = read(helperCompletion);
+				if (
+					owner.completed &&
+					owner.stamp &&
+					processStamp(owner.pid) !== owner.stamp
+				)
+					break;
+			}
+			if (Date.now() > deadline)
+				throw Error("Fixture recovery helper did not complete successfully");
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
 		process.send({ home, install });
 		await new Promise((resolve) => process.once("message", resolve));
 	} else {
@@ -80,6 +124,6 @@ try {
 		}
 	}
 } finally {
-	cleanup();
+	await cleanup();
 }
 process.disconnect();

@@ -102,3 +102,20 @@ embedded CLI fixture logs a handled missing-comment warning during Simple setup;
 its attachment assertions and completed execution pass. This drive excludes
 publication, merge and real originating-ticket synchronization. Taskbot's
 retained `The operation was aborted` synchronization error remains unresolved.
+
+## Merge correction validation
+
+The CI fixer merged base `ef01f788b9132f2eddbbc7c2171634ff9dbc59e8` into
+PR #123 from `58b15a882ac59f3ecf7fa13bde0ec284ca761905`. Capability instructions
+retain both launcher attachments and the base's frozen workflow, desktop and
+notification guidance. Both independently appended FactoryServer tests remain.
+The complete routing-prompt expectation includes the combined reference.
+
+The same `F1_AGENT_MODE=mock bun` drive above passed on the combined source,
+including exact bytes, grouped scope, claim races, restart/retry and Simple
+read access. Its synthetic Simple tracker logged a missing `issue-1` context
+warning; the asserted attachment and execution outcomes still passed.
+Typecheck, edge-worker/web build and 201 targeted tests passed. Biome and
+`git diff --check` passed. Existing screenshots were preserved; this correction
+did not repeat browser captures or test real agents. Human acceptance and
+fresh pipeline review remain required.

@@ -28,6 +28,7 @@ import {
 	connectionPartition,
 	externalLink,
 } from "./contracts.mjs";
+import { desktopPath } from "./desktop-path.mjs";
 import { desktopExecutable } from "./local-runtime.mjs";
 
 const source = dirname(fileURLToPath(import.meta.url));
@@ -57,6 +58,8 @@ else {
 	app
 		.whenReady()
 		.then(async () => {
+			const path = await desktopPath();
+			if (path !== undefined) process.env.PATH = path;
 			if (
 				process.platform === "darwin" &&
 				process.env.BOBS_FACTORY_WEBAUTHN_ACCESS_GROUP
