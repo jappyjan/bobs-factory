@@ -1,0 +1,76 @@
+import type { WorkflowStep } from "./Workflow.js";
+import type { ExecutionContext } from "./WorkflowRuntime.js";
+
+type ExecutionStep = Pick<
+	WorkflowStep,
+	| "id"
+	| "name"
+	| "type"
+	| "next"
+	| "branches"
+	| "workflow"
+	| "tool"
+	| "args"
+	| "arguments"
+	| "architectureContract"
+	| "architectureSource"
+> & { groups?: ExecutionStep[][] };
+
+/** Describe only the accepted graph. Current recipes and repository code are not run policy. */
+export function workflowExecutionContext(context: ExecutionContext) {
+	const { run, step } = context;
+	const definitions = new Map(
+		(run.workflowDefinitions ?? []).map((workflow) => [workflow.id, workflow]),
+	);
+	definitions.set(run.workflow.id, run.workflow);
+	const visited = new Set<string>();
+	const missing = new Set<string>();
+	const workflows: { id: string; steps: ExecutionStep[] }[] = [];
+	function describe(steps: WorkflowStep[]): ExecutionStep[] {
+		return steps.map((item) => {
+			if (item.type === "workflow" && item.workflow) visit(item.workflow);
+			return {
+				id: item.id,
+				name: item.name,
+				type: item.type,
+				next: item.next,
+				branches: structuredClone(item.branches),
+				workflow: item.workflow,
+				tool: item.tool,
+				args: structuredClone(item.args),
+				arguments: structuredClone(item.arguments),
+				architectureContract: item.architectureContract,
+				architectureSource: item.architectureSource,
+				...(item.groups ? { groups: item.groups.map(describe) } : {}),
+			};
+		});
+	}
+	function visit(id: string) {
+		if (visited.has(id)) return;
+		visited.add(id);
+		const workflow = definitions.get(id);
+		if (!workflow?.steps) {
+			missing.add(id);
+			return;
+		}
+		const entry = { id, steps: [] as ExecutionStep[] };
+		workflows.push(entry);
+		entry.steps = describe(workflow.steps);
+	}
+	visit(run.workflow.id);
+	return {
+		contract: "workflow-execution-v1",
+		rootWorkflowId: run.workflow.id,
+		currentStep: {
+			key: context.stepKey ?? run.step ?? step.id,
+			id: step.id,
+			type: step.type,
+		},
+		workflows,
+		missingWorkflowIds: [...missing],
+		architectureDecisions: structuredClone(run.architectureDecisions ?? []),
+		humanDecisions: structuredClone(run.humanDecisions ?? []),
+	};
+}
+
+export const workflowExecutionInstructions = `Read /workflowExecution through factory-context before deciding which workflow prerequisites apply. It describes this run's accepted frozen graph, current role and recorded architecture/human decisions, including nested workflows and fanout. Current repository source, documentation, default recipes and the capability reference may describe newer or different workflows; they do not add gates to this run. An agent review returning approved=true is automated review, not explicit human acceptance. An architecture acceptance prerequisite applies when the accepted graph requires it or an explicit task, user instruction or mandatory repository rule requires it; do not invent one merely because another workflow has it. Missing workflow definitions mean unknown policy, not permission to bypass a gate. Preserve genuine task restrictions, mandatory repository conventions, required checks and final human/provider delivery safeguards. Planners must ground approval prerequisites in the accepted graph or explicit requirements; plan reviewers must reject unsupported prerequisites rather than approve an impossible handoff. If a supplied plan conflicts with this context, establish the source of the prerequisite and report the specific conflict; do not claim an approval record was lost without evidence. Never manufacture human acceptance, treat an automated review as human approval or waive a required gate.`;

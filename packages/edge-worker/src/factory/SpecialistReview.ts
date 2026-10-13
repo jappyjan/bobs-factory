@@ -448,23 +448,27 @@ export function latestAggregate(
 	run: FactoryRun,
 	key?: string,
 ): AggregateReview | undefined {
-	return [...run.history]
-		.reverse()
-		.map((h) => h.output as AggregateReview)
-		.find(
-			(o) =>
-				o?.baseline?.schemaVersion === 1 &&
-				(!key || o.baseline.key === key) &&
-				Array.isArray(o.reviewers),
-		);
+	for (let index = run.history.length - 1; index >= 0; index--) {
+		const output = run.history[index]!.output as AggregateReview;
+		if (
+			output?.baseline?.schemaVersion === 1 &&
+			(!key || output.baseline.key === key) &&
+			Array.isArray(output.reviewers)
+		)
+			return output;
+	}
+	return undefined;
 }
 export function roundFor(
 	context: ExecutionContext,
 ): ReviewBaseline | undefined {
 	const key = context.stepKey ?? context.step.id;
-	return [...(context.run.reviewRounds ?? [])]
-		.reverse()
-		.find((r) => key.startsWith(`${r.key}/`));
+	const rounds = context.run.reviewRounds ?? [];
+	for (let index = rounds.length - 1; index >= 0; index--) {
+		const round = rounds[index]!;
+		if (key.startsWith(`${round.key}/`)) return round;
+	}
+	return undefined;
 }
 export function validateContractOutput(
 	context: ExecutionContext,
@@ -672,13 +676,21 @@ export function aggregateForContext(
 		context.run.step ??
 		context.step.id
 	).replace(/[^/]+$/, "");
-	const baseline = [...context.run.reviewRounds].reverse().find((r) => {
-		if (context.reviewKey) return r.key === context.reviewKey;
+	let baseline: ReviewBaseline | undefined;
+	for (let index = context.run.reviewRounds.length - 1; index >= 0; index--) {
+		const round = context.run.reviewRounds[index]!;
 		// Older persisted checkpoints have no association. Retain safeguards for
 		// the current graph and its callers/callees, excluding sibling branches.
-		const reviewPrefix = r.key.replace(/[^/]+$/, "");
-		return reviewPrefix.startsWith(prefix) || prefix.startsWith(reviewPrefix);
-	});
+		const reviewPrefix = round.key.replace(/[^/]+$/, "");
+		if (
+			context.reviewKey
+				? round.key === context.reviewKey
+				: reviewPrefix.startsWith(prefix) || prefix.startsWith(reviewPrefix)
+		) {
+			baseline = round;
+			break;
+		}
+	}
 	if (!baseline) return;
 	const aggregate = latestAggregate(context.run, baseline.key);
 	if (!aggregate || aggregate.baseline.round !== baseline.round)
@@ -738,5 +750,5 @@ export function frozenReviewContext(input: unknown): unknown {
 				]),
 		);
 	};
-	return compact(structuredClone(input));
+	return compact(input);
 }

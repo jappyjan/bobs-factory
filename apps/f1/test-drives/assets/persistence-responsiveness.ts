@@ -15,12 +15,20 @@ import {
 	type CyrusAgentSessionEntry,
 	type EdgeWorkerConfig,
 	immutableJson,
+	type JsonSnapshotStore,
 	PersistenceManager,
 } from "bobs-factory-core";
 import type { AgentSessionManager } from "../../../../packages/edge-worker/src/AgentSessionManager.ts";
 import { EdgeWorker } from "../../../../packages/edge-worker/src/EdgeWorker.ts";
+import {
+	type ReviewBaseline,
+	roundFor,
+} from "../../../../packages/edge-worker/src/factory/SpecialistReview.ts";
 import { WorkflowSchema } from "../../../../packages/edge-worker/src/factory/Workflow.ts";
-import type { WorkflowRuntime } from "../../../../packages/edge-worker/src/factory/WorkflowRuntime.ts";
+import type {
+	ExecutionContext,
+	WorkflowRuntime,
+} from "../../../../packages/edge-worker/src/factory/WorkflowRuntime.ts";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -278,6 +286,29 @@ try {
 			at: run.createdAt,
 			output: run.outputs.large,
 		});
+	run.reviewRounds = Array.from({ length: 12 }, (_, index) =>
+		immutableJson({
+			schemaVersion: 1,
+			round: index + 1,
+			key: "historical-review",
+			inventory: {
+				schemaVersion: 1,
+				version: 1,
+				digest: "fixture",
+				requirements: [],
+				decisions: [],
+				conflicts: [],
+				sourceReceipt: { considered: [], unavailable: [] },
+				questions: [],
+			},
+			headSha: git("rev-parse", "HEAD"),
+			baseSha: git("rev-parse", "HEAD"),
+			historyLength: run.history.length,
+			reviewers: [],
+			context: { round: index, evidence: run.outputs.large },
+			at: run.createdAt,
+		} satisfies ReviewBaseline),
+	);
 	await responsiveDuring(runtime.save(run));
 	await worker.stop();
 	worker = undefined;
@@ -299,6 +330,21 @@ try {
 		assert(Object.isFrozen(entry));
 		assert(Object.isFrozen(entry.output));
 	}
+	await responsiveDuring(restored.save(historical));
+	for (const round of historical.reviewRounds!) {
+		assert(Object.isFrozen(round));
+		assert(Object.isFrozen(round.context));
+	}
+	assert.equal(
+		roundFor({
+			run: historical,
+			stepKey: "historical-review/0/reviewer",
+		} as ExecutionContext)?.round,
+		12,
+	);
+	const snapshots = (restored as unknown as { snapshots: JsonSnapshotStore })
+		.snapshots;
+	const beforeBaselines = snapshots.metrics.bytesWritten;
 	await responsiveDuring(
 		(async () => {
 			for (let index = 0; index < 6; index++) {
@@ -306,6 +352,12 @@ try {
 				await restored.save(historical);
 			}
 		})(),
+	);
+	const resumedBaselineBytesWritten =
+		snapshots.metrics.bytesWritten - beforeBaselines;
+	assert(
+		resumedBaselineBytesWritten < 1024 * 1024,
+		"Resumed checkpoints rewrote unchanged review baselines",
 	);
 	assert.equal(
 		internals(worker).agentSessionManager.getSessionEntries(id).at(-1)?.content,
@@ -360,6 +412,7 @@ try {
 		maxEventLoopDelayMs: delay.max / 1e6,
 		appendBytesWritten: afterAppend.bytesWritten - beforeAppend.bytesWritten,
 		maxCaptureMs: afterAppend.maxCaptureMs,
+		resumedBaselineBytesWritten,
 		checks: [
 			"CLI issue/session and visible response",
 			"1 GiB persistence with responsive HTTP",
@@ -367,6 +420,7 @@ try {
 			"large retained run artifact",
 			"restart retains native session and pending human gate",
 			"loaded structured history remains immutable through resumed checkpoints",
+			"12 loaded review baselines remain immutable and reuse payloads across six resumed checkpoints",
 			"lazy dashboard and activity pages",
 			"legacy completed-run dashboard migration preserves original bytes",
 			"one explicit answer resumes workflow",
