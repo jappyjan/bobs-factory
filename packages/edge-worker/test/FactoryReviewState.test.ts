@@ -1,13 +1,20 @@
 import { afterEach, expect, it, vi } from "vitest";
+import type { Guide } from "../src/factory/FactoryResults.js";
 import {
 	guideMatchesGate,
 	readProgress,
+	readReviewProgress,
 	readStored,
 	readTextStored,
 	reviewKey,
 	todayContext,
+	writeReviewProgress,
 	writeStored,
 } from "../src/factory/web/review-state.js";
+
+vi.mock("../src/factory/web/auth-state", () => ({
+	accessState: () => ({ status: "authenticated" }),
+}));
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -133,4 +140,246 @@ it("restores independent check/visited state and ignores malformed boolean entri
 		visited: { overview: true },
 		disclosures: {},
 	});
+});
+
+function followupFixture() {
+	const storage = new Map<string, string>();
+	vi.stubGlobal("localStorage", {
+		getItem: (key: string) => storage.get(key) ?? null,
+		setItem: (key: string, value: string) => storage.set(key, value),
+	});
+	const guide: Guide = {
+		goal: "Preserve ownership",
+		summary: "Complete review",
+		decision: { status: "ready", summary: "Inspect cleanup and authorization" },
+		requirements: [
+			{
+				requirementId: "R1",
+				criterion: "Only owned resources",
+				status: "supported",
+				evidence: ["Checked"],
+			},
+		],
+		behavior: [],
+		checks: [],
+		risks: [],
+		reviewInstructions: ["Inspect both chapters"],
+		chapters: ["cleanup", "authorization"].map((id) => ({
+			id,
+			title: id,
+			summary: "Inspect behavior",
+			before: "Previous",
+			after: "Current",
+			requirementIndexes: [0],
+			files: id === "cleanup" ? ["teardown"] : [],
+			screenshots: [],
+			diagrams: [],
+			reviewChecks: ["Check ownership"],
+			risks: [],
+			evidence: ["Checked"],
+		})),
+	};
+	const original = { id: "followup", reviewGate: { headSha: "original" } };
+	const current = {
+		id: original.id,
+		reviewGate: { headSha: "current" },
+		impactDecisions: [
+			{
+				status: "completed",
+				classification: "affected",
+				uncertainty: [],
+				snapshot: {
+					digest: "current-snapshot",
+					approval: { headSha: "original" },
+					repositories: [{ headSha: "current", reviewHead: "original" }],
+				},
+				reuseRecords: [
+					{
+						snapshotDigest: "current-snapshot",
+						boundary: {
+							areas: ["authorization"],
+							requirementIds: ["R1"],
+							dependencies: ["auth"],
+						},
+					},
+				],
+			},
+		],
+	};
+	return { guide, original, current, storage };
+}
+
+it("retains independently unchanged chapters after renewed review and reload, while resetting affected progress", () => {
+	const { guide, original, current } = followupFixture();
+	writeReviewProgress(original, guide, {
+		page: 2,
+		reviewed: { cleanup: true, authorization: true },
+		disclosures: { code: true },
+		visited: { decide: true },
+	});
+	expect(readReviewProgress(current, guide, 5)).toEqual({
+		page: 0,
+		reviewed: { authorization: true },
+	});
+	writeReviewProgress(current, guide, readReviewProgress(current, guide, 5));
+	expect(readReviewProgress(current, guide, 5)).toEqual({
+		page: 0,
+		reviewed: { authorization: true },
+		disclosures: {},
+	});
+});
+
+it("invalidates changed chapter prose, requirements and source files despite a retained chapter ID", () => {
+	const { guide, original, current } = followupFixture();
+	writeReviewProgress(original, guide, {
+		page: 0,
+		reviewed: { authorization: true },
+	});
+	for (const change of [
+		(g: Guide) => {
+			g.chapters![1]!.after = "Changed authorization";
+		},
+		(g: Guide) => {
+			g.requirements[0]!.criterion = "New ownership requirement";
+		},
+		(g: Guide) => {
+			g.chapters![1]!.files = ["shared/config"];
+		},
+	]) {
+		const changed = structuredClone(guide);
+		change(changed);
+		expect(readReviewProgress(current, changed, 5).reviewed).toEqual({});
+	}
+});
+
+it("does not reuse reading progress with missing, uncertain or stale impact evidence, or from a different run", () => {
+	const { guide, original, current } = followupFixture();
+	writeReviewProgress(original, guide, {
+		page: 0,
+		reviewed: { authorization: true },
+	});
+	for (const run of [
+		{ ...current, impactDecisions: [] },
+		{ ...current, id: "other" },
+		{ ...current, reviewGate: { headSha: "later" } },
+		{
+			...current,
+			impactDecisions: [
+				{ ...current.impactDecisions[0], uncertainty: ["Unknown dependency"] },
+			],
+		},
+		{
+			...current,
+			impactDecisions: [
+				{ ...current.impactDecisions[0], classification: "full" },
+			],
+		},
+	])
+		expect(readReviewProgress(run, guide, 5).reviewed).toEqual({});
+});
+
+it("preserves an explicit unchecked choice and does not resurrect progress after an intervening changed chapter", () => {
+	const { guide, original, current } = followupFixture();
+	writeReviewProgress(original, guide, {
+		page: 0,
+		reviewed: { authorization: true },
+	});
+	const next = readReviewProgress(current, guide, 5);
+	writeReviewProgress(current, guide, {
+		...next,
+		reviewed: { authorization: false },
+	});
+	const anotherGuide = { ...guide, summary: "Another follow-up" };
+	expect(readReviewProgress(current, anotherGuide, 5).reviewed).toEqual({
+		authorization: false,
+	});
+	const changed = structuredClone(anotherGuide);
+	changed.chapters![1]!.summary = "Changed content";
+	writeReviewProgress(
+		current,
+		changed,
+		readReviewProgress(current, changed, 5),
+	);
+	expect(
+		readReviewProgress(current, { ...guide, summary: "Restored content" }, 5)
+			.reviewed,
+	).toEqual({});
+});
+
+it("upgrades old revision-scoped progress only with the original guide and independent reuse evidence", () => {
+	const { guide, original, current, storage } = followupFixture();
+	const old = { ...guide, reviewFiles: { headSha: "original" } };
+	storage.set(
+		reviewKey(original, old),
+		JSON.stringify({
+			page: 2,
+			reviewed: { cleanup: true, authorization: true },
+		}),
+	);
+	const run = { ...current, history: [{ step: "guide", output: old }] };
+	const updated = { ...guide, previousHeadSha: "original" };
+	expect(readReviewProgress(run, updated, 5).reviewed).toEqual({
+		authorization: true,
+	});
+	expect(
+		readReviewProgress({ ...run, history: [] }, updated, 5).reviewed,
+	).toEqual({});
+});
+
+it("invalidates uncertain secondary repository changes even when the primary revision is unchanged", () => {
+	const { guide, original } = followupFixture();
+	const run = {
+		...original,
+		reviewGate: {
+			...original.reviewGate,
+			repositories: [
+				{ repositoryId: "a", headSha: "original" },
+				{ repositoryId: "b", headSha: "before" },
+			],
+		},
+	};
+	writeReviewProgress(run, guide, {
+		page: 0,
+		reviewed: { authorization: true },
+	});
+	const current = {
+		...run,
+		reviewGate: {
+			...run.reviewGate,
+			repositories: [
+				{ repositoryId: "a", headSha: "original" },
+				{ repositoryId: "b", headSha: "after" },
+			],
+		},
+	};
+	expect(
+		readReviewProgress(
+			current,
+			{ ...guide, summary: "Renewed grouped guide" },
+			5,
+		).reviewed,
+	).toEqual({});
+});
+
+it("ignores corrupt chapter carryover without blocking the reader", () => {
+	const { guide, current, storage } = followupFixture();
+	for (const value of [
+		{
+			revision: "original",
+			contexts: {},
+			reviewed: {},
+			repositories: "invalid",
+		},
+		{ revision: "original", contexts: {}, reviewed: {}, repositories: [null] },
+		{ revision: "original", contexts: [], reviewed: [] },
+	]) {
+		storage.set(
+			`factory-review/${current.id}/chapter-progress`,
+			JSON.stringify(value),
+		);
+		expect(readReviewProgress(current, guide, 5)).toEqual({
+			page: 0,
+			reviewed: {},
+		});
+	}
 });

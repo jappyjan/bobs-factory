@@ -116,6 +116,20 @@ export function useLiveUpdates() {
 		};
 		connect();
 		let mounted = true;
+		// Full-page navigation does not unmount React before requests are torn
+		// down. Abort the live stream first so that teardown is not treated as
+		// a connection failure that clears private reading state.
+		const hide = () => controller.abort();
+		const show = (event: PageTransitionEvent) => {
+			if (
+				event.persisted &&
+				mounted &&
+				accessState().status === "authenticated"
+			)
+				connect();
+		};
+		window.addEventListener("pagehide", hide);
+		window.addEventListener("pageshow", show);
 		const unsubscribe = onSessionRotation(() => {
 			controller.abort();
 			void cache.cancelQueries();
@@ -125,6 +139,8 @@ export function useLiveUpdates() {
 		});
 		return () => {
 			mounted = false;
+			window.removeEventListener("pagehide", hide);
+			window.removeEventListener("pageshow", show);
 			unsubscribe();
 			controller.abort();
 		};

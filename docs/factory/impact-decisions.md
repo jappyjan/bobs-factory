@@ -113,3 +113,14 @@ coordination reservations.
 The inspector shows selected work, reuse reasons, original execution details and
 the human approval outcome. Follow-up guides retain the complete original feature
 coverage and describe cumulative corrections and remaining risks.
+
+The chapter reader carries reviewed checkboxes into a renewed guide only when
+the chapter, linked requirements and linked system map are identical. Across
+revisions it also requires a current independent impact decision with a validated
+reuse boundary covering that chapter. Changed chapters and missing, uncertain or
+stale reuse evidence clear their reading progress. An explicit unchecked choice
+survives reloads. Page position, feedback drafts and approval stay scoped to the
+current guide and revision; reading progress never grants approval.
+Normal navigation aborts the browser's live connection before teardown so it
+does not trigger the private-state cleanup used for actual connection or access
+loss. Returning through the browser's page cache reconnects the live stream.
