@@ -587,6 +587,11 @@ launching, questions, stuck runs and human reviews first; running work stays in
 compact rows and finished work moves into **Settled**. Light/Dark/System themes,
 mobile layouts and keyboard shortcuts are available from the sticky header.
 
+Each run has a **Share** button in Today, Settled and its detail header. Share copies
+the run’s absolute URL using the current dashboard address. If clipboard access
+fails, a dialog offers the selectable link and a retry. Links retain the existing
+local access or remote passkey requirements; sharing does not grant access.
+
 Open a run for artifacts and step conversations. Human replies appear on the
 right, tools share expandable summaries, and CI polling becomes one status.
 Real Markdown, decision records, diffs, provider discussion, screenshots and

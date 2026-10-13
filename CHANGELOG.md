@@ -68,6 +68,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Add Share buttons to dashboard runs, with copy confirmation and a manual link fallback that preserves existing access requirements.
+
 - Configure and update the push service contact in Settings → Notifications while preserving keys and device consent.
 
 - Factory and Takeover architecture proposals you approve before Bob builds anything. Each proposal has its own page: a plain summary, the choices Bob made (and the ones it needs you to answer), a simple map of what changes, why it fits, what to watch out for and the plan steps, with a chat beside it for questions or changes and one approve button. New versions list what changed and who asked for it. Routine work records an approval bypass. Repository and mixed delivery retain architecture acceptance alongside independent ticket-contract validation; external-only delivery keeps its own acceptance path. Assets stay within authorized directories and accepted plans reference frozen snapshots. Empty remote specifications stop approval; explanations reuse the pending proposal’s ticket notification. A portable run backup retains source, design artifacts and review evidence for refinement on another machine. ([Taskbot #90](https://taskbot.apps.janjaap.de/p/bobs-factory/t/90), [#74](https://github.com/jappyjan/bobs-factory/pull/74))

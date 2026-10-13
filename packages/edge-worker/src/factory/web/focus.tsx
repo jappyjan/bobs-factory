@@ -46,6 +46,7 @@ import {
 	signature,
 	ticketTrackingPending,
 } from "./review-state";
+import { ShareRun } from "./share-run";
 import { Bob, Button, ConfirmStop, External, Markdown, useToast } from "./ui";
 export const labels: Record<string, string> = {
 	question: "💬 Question",
@@ -789,6 +790,7 @@ export function FocusCard({
 						<span className={`chip ${kind}`}>{labels[kind]}</span>
 						<RunMeta run={run} config={config} />
 						{navigation}
+						<ShareRun runId={run.id} title={run.title} />
 					</>
 				)}
 			</div>
@@ -928,23 +930,26 @@ export function WorkingRow({
 		(data.history ?? []).filter((h: any) => h.step === data.step).length + 1;
 	return (
 		<article className="working-row">
-			<button
-				type="button"
-				className="working-main"
-				aria-expanded={expanded}
-				onClick={onExpand}
-			>
-				<span className="repo-dot" />
-				<strong>{run.title}</strong>
-				<span className={`step-chip ${phase(stepId)}`}>
-					{workingLabel(data)} · {icons[stepId] ?? "⚙️"}{" "}
-					{step?.name ?? run.step ?? "Bob’s Factory session"}
-					{/fix/.test(stepId) && " · fixing"}
-					{visits > 1 && ` · ↺${visits}`}
-				</span>
-				<Progress run={data} config={config} />
-				<small>{elapsed(run.createdAt)}</small>
-			</button>
+			<div className="working-summary">
+				<button
+					type="button"
+					className="working-main"
+					aria-expanded={expanded}
+					onClick={onExpand}
+				>
+					<span className="repo-dot" />
+					<strong>{run.title}</strong>
+					<span className={`step-chip ${phase(stepId)}`}>
+						{workingLabel(data)} · {icons[stepId] ?? "⚙️"}{" "}
+						{step?.name ?? run.step ?? "Bob’s Factory session"}
+						{/fix/.test(stepId) && " · fixing"}
+						{visits > 1 && ` · ↺${visits}`}
+					</span>
+					<Progress run={data} config={config} />
+					<small>{elapsed(run.createdAt)}</small>
+				</button>
+				<ShareRun runId={run.id} title={run.title} />
+			</div>
 			{expanded && (
 				<div className="working-peek">
 					<small>LATEST</small>

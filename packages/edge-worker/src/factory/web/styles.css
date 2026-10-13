@@ -6512,3 +6512,35 @@ kbd {
 		bottom: -16px;
 	}
 }
+
+.working-summary {
+	display: flex;
+	align-items: center;
+	padding-right: 12px;
+}
+.working-summary .working-main {
+	flex: 1;
+	min-width: 0;
+}
+.shared-pebble {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+.share-fallback {
+	padding: 20px;
+	display: grid;
+	gap: 12px;
+}
+.share-fallback input {
+	width: 100%;
+	min-width: 0;
+}
+@media (max-width: 600px) {
+	.settled-list li {
+		flex-wrap: wrap;
+	}
+	.settled-list a {
+		min-width: 50%;
+	}
+}
