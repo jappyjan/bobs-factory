@@ -285,6 +285,12 @@ working/queued rows and a collapsible **Settled** section. Selection expands its
 available actions. Changes and conversation activity refresh through the server's
 event stream, with reconnect and a manual refresh key.
 
+**Bring back** returns a stopped run to operator attention without executing it.
+Choose **Resume run** (or `c` in the terminal) to continue its saved checkpoint,
+keeping completed steps, worktrees and native sessions. Explicitly stopped runs
+remain stopped across worker restart; bringing one back does not grant additional
+iteration passes or bypass human review.
+
 | Key | Action |
 | --- | --- |
 | `j`/`k`, arrows, Enter | Select and open a run |

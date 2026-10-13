@@ -50,9 +50,15 @@ it("groups Today like the dashboard: questions, stuck, reviews first; settled ou
 		run("question", "waiting"),
 		run("settled", "completed", { viewState: { settledAt: at(1) } }),
 		run("stopped", "stopped"),
+		run("brought-back", "stopped", { viewState: { keptOpen: true } }),
 	];
 	const { needsYou, working, settled } = today(runs);
-	expect(needsYou.map((r) => r.id)).toEqual(["question", "stuck", "review"]);
+	expect(needsYou.map((r) => r.id)).toEqual([
+		"question",
+		"stuck",
+		"brought-back",
+		"review",
+	]);
 	expect(working.map((r) => r.id)).toEqual(["working"]);
 	expect(settled.map((r) => r.id).sort()).toEqual(["settled", "stopped"]);
 });
