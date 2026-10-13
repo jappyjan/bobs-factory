@@ -16,6 +16,8 @@ export interface PushDevice {
 }
 export interface PushStatus {
 	available: boolean;
+	subject?: string;
+	configuration?: "configured" | "unconfigured" | "unavailable" | "stopped";
 	publicKey?: string;
 	diagnostic?: string;
 	devices: PushDevice[];

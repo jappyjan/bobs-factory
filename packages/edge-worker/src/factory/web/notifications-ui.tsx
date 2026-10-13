@@ -98,6 +98,14 @@ export function NotificationsControl() {
 						</p>
 					)}
 					{status?.diagnostic && <p role="status">{status.diagnostic}</p>}
+					{status?.configuration === "unconfigured" && (
+						<p>
+							<a href="/#/settings/notifications">
+								Configure the push contact in Settings → Notifications
+							</a>
+							.
+						</p>
+					)}
 					<label>
 						Device label
 						<input
