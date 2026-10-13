@@ -519,6 +519,56 @@ describe("workflow runtime", () => {
 		run.status = "stopped";
 		expect(() => runtime.retry(run.id)).toThrow("Only failed");
 	});
+	it("resumes an explicitly stopped run from its native checkpoint without replaying finished steps", async () => {
+		let paused = true;
+		const execute = vi.fn(async (context: ExecutionContext) => {
+			if (context.step.id === "publish") {
+				if (paused) {
+					await context.checkpointAgent?.({
+						sessionId: "saved-native-session",
+						runner: "codex",
+						cwd: context.run.workspace,
+					});
+					return new Promise((resolve) =>
+						context.signal.addEventListener("abort", () => resolve({}), {
+							once: true,
+						}),
+					);
+				}
+				expect(context.resumeAgent?.sessionId).toBe("saved-native-session");
+			}
+			return { summary: context.step.id };
+		});
+		const { runtime } = create({ agent: execute });
+		const run = start(
+			runtime,
+			workflow([agent("implement"), agent("publish")]),
+		);
+		void runtime.launch(run);
+		await waitFor(() => expect(execute).toHaveBeenCalledTimes(2));
+		runtime.stop(run.id);
+		expect(runtime.canResume(run.id)).toBe(false);
+		expect(() => runtime.resume(run.id)).toThrow("Only stopped");
+		await waitFor(() => expect(runtime.isExecuting(run.id)).toBe(false));
+		const checkpoint = structuredClone(run.checkpoint);
+		const history = structuredClone(run.history);
+		runtime.updateViewState(run.id, { keptOpen: true });
+		runtime.resumeAll();
+		expect(run.status).toBe("stopped");
+		expect(execute).toHaveBeenCalledTimes(2);
+		paused = false;
+		runtime.resume(run.id);
+		expect(() => runtime.resume(run.id)).toThrow("Only stopped");
+		await waitFor(() => expect(run.status).toBe("completed"));
+		expect(run.history.slice(0, history.length)).toEqual(history);
+		expect(execute.mock.calls.map(([context]) => context.step.id)).toEqual([
+			"implement",
+			"publish",
+			"publish",
+		]);
+		expect(checkpoint?.current).toBe("publish");
+		expect(() => runtime.resume(run.id)).toThrow("Only stopped");
+	});
 	it("uses the persisted default behind explicit choices and matching labels, including legacy config", async () => {
 		const { runtime, home } = create();
 		expect(runtime.getDefaultWorkflow()).toBe("simple");

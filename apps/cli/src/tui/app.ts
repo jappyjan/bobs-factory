@@ -548,11 +548,26 @@ export class TodayApp {
 		if (attention(run) !== "stuck")
 			return this.notify("Only stuck runs can be retried", true);
 		const detail = this.details.get(run.id);
+		if (run.status === "cancelled")
+			return this.notify(
+				"This cancelled run has no resumable checkpoint",
+				true,
+			);
+		if (run.status === "stopped" && detail?.resumeAvailable !== true)
+			return this.notify(
+				"This stopped run is not ready to resume from saved progress",
+				true,
+			);
 		void this.perform(
-			detail?.iterationLimit
-				? "Continuing with 4 more passes"
-				: "Retrying from saved progress",
-			() => this.options.client.post(this.path(run, "retry")),
+			run.status === "stopped"
+				? "Resuming from saved progress"
+				: detail?.iterationLimit
+					? "Continuing with 4 more passes"
+					: "Retrying from saved progress",
+			() =>
+				this.options.client.post(
+					this.path(run, run.status === "stopped" ? "resume" : "retry"),
+				),
 		).catch(() => {});
 	}
 
@@ -968,7 +983,7 @@ export class TodayApp {
 			return `a answer${all ? " · y accept recommendations" : ""} · enter open · x stop`;
 		}
 		if (kind === "stuck")
-			return `c ${detail?.iterationLimit ? "continue (+4 passes)" : "retry step"} · enter open · s settle`;
+			return `c ${run.status === "stopped" ? "resume run" : detail?.iterationLimit ? "continue (+4 passes)" : "retry step"} · enter open · s settle`;
 		if (run.reviewGate?.status === "pending")
 			return "a approve · r request changes · o open guide in browser · enter open";
 		return "s settle · m follow-up · o open in browser · enter open";
