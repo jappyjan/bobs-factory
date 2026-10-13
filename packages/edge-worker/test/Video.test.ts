@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 import {
+	conservativeWorkflows,
 	defaultWorkflows,
 	upgradeWorkflows,
 } from "../src/factory/defaultWorkflows.js";
@@ -722,7 +723,8 @@ it("makes progress across cleanup passes without deleted or missing assets consu
 	}
 });
 it("upgrades previous coherent stock prompts idempotently and leaves custom recipes unchanged", () => {
-	const saved = structuredClone(defaultWorkflows),
+	// Saved pre-impact recipes use the conservative stock graph and prompts.
+	const saved = structuredClone(conservativeWorkflows),
 		pipeline = saved.find((w) => w.id === "factory-pipeline")!;
 	for (const s of pipeline.steps) {
 		delete s.videoContract;

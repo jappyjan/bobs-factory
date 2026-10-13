@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Keep the video recipe migration test grounded in pre-impact stock workflows, preserving upgrade, model-setting and custom-recipe safeguards ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Reconcile current target changes with bounded review convergence, retaining frozen-workflow context and immutable review baselines ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Accept repository-scoped comment IDs copied from grouped feedback context, while rejecting mismatched repository identities ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
