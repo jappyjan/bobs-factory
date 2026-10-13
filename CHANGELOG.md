@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance.
+- Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance ([#113](https://github.com/jappyjan/bobs-factory/pull/113)).
 
 - Validate beta desktop releases from their actual installed AppImage through controlled stable upgrade and rollback candidates, preserving nightly validation and truthful input receipts ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#111](https://github.com/jappyjan/bobs-factory/pull/111)).
 
