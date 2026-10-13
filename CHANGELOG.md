@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Recover prepared coding-agent CLI paths for macOS desktop workers and update supervisors, so Homebrew and user-local installations remain available when the app opens outside a terminal ([#120](https://github.com/jappyjan/bobs-factory/pull/120)).
+
 - Wait for OAuth test fixture persistence before deleting temporary files, preventing intermittent CI cleanup failures ([#115](https://github.com/jappyjan/bobs-factory/pull/115), [#113](https://github.com/jappyjan/bobs-factory/pull/113)).
 - Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance ([#113](https://github.com/jappyjan/bobs-factory/pull/113), [standalone browser help evidence](docs/qa/desktop-install-help/README.md)).
 - Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
