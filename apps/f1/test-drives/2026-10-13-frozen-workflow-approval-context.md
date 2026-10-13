@@ -49,3 +49,11 @@ regression pass. Edge-worker build/typecheck, Biome, fixture syntax and diff che
 passed. Unit coverage also retains renamed gate policies and decision records,
 follows fanout calls, bounds graph cycles, reports missing definitions as unknown,
 and rejects model-supplied context as a substitute for runtime-owned policy.
+
+Merge validation against `d4a4435a` (Notifications in Settings) preserved both
+capability-reference changes and both changelog entries. The same mocked drive
+passed on the combined build. All 223 tests passed across the four original
+suites, FactoryPwa and the complete routing-context prompt assertions. The latter
+expectation includes the new capability guidance. Validation also reproduced a
+restored-runtime cleanup race; registering runtimes created by the shared reload
+helper for shutdown drains their pending snapshots before fixture deletion.
