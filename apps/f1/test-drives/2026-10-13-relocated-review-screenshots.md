@@ -28,8 +28,8 @@ The opt-in scenario extends the existing real CLI-platform EdgeWorker drive with
 - The original brief validation/correction, gap recovery and legacy chapter-reader scenarios also passed. Four guides were published, including the explicit refresh.
 - The EdgeWorker stopped cleanly; no unhandled rejections were observed.
 
-Passing fixture: `/tmp/bobs-review-brief-f1-0W2UeJ`; console result `F1_REVIEW_BRIEF_PASS`. The first extended drive completed its behavior assertions but failed the original three-publication assertion; that assertion now accounts for the fourth refreshed publication.
+Final passing fixture: `/tmp/bobs-review-brief-f1-ai5FKv`; console result `F1_REVIEW_BRIEF_PASS`. The first extended drive completed its behavior assertions but failed the original three-publication assertion; that assertion now accounts for the fourth refreshed publication.
 
 ## Additional checks and limits
 
-204 focused tests passed across screenshot evidence, Factory API, pipeline, runtime and guide validation. Edge-worker TypeScript checks and package/web build passed. Boundary regressions reject missing/invalid digests, other-run paths, traversal, changed bytes and symlinks escaping the current evidence directory. New capture authoring remains strict; this change only resolves retained screenshots during gates and serving. Videos and other historical absolute-path artifacts are outside this change.
+205 distinct focused tests passed across screenshot evidence, Factory API, pipeline, runtime and guide validation, including the final current-home alias regression. Repository build and TypeScript checks passed through the required pre-commit hook. Boundary regressions reject missing/invalid digests, missing copies, other-run paths, traversal, changed bytes and symlinks escaping the current evidence directory. New capture authoring remains strict; this change only resolves retained screenshots during gates and serving. Videos and other historical absolute-path artifacts are outside this change.
