@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { passiveTools } from "../CapacityPolicy";
 import { useAction, useConfig } from "./client";
+import { RepoOptions, RepoPickerIcon } from "./prototype-multi-instance";
 import { DraftNotice } from "./pwa-ui";
 import { forgetDraft, revisionOf, useRestorableState } from "./restoration";
 import { Button, Modal, useToast } from "./ui";
@@ -368,17 +369,13 @@ export function Composer({
 					<div className="composer-controls">
 						<label className="repo-picker">
 							<span className="sr-only">Repository</span>
-							<span aria-hidden="true">📁</span>
+							<RepoPickerIcon repositories={config.repositories} value={repo} />
 							<select
 								required
 								value={repo}
 								onChange={(e) => setRepo(e.target.value)}
 							>
-								{config.repositories.map((r: any) => (
-									<option value={r.id} key={r.id}>
-										{r.name}
-									</option>
-								))}
+								<RepoOptions repositories={config.repositories} />
 							</select>
 						</label>
 						<Button

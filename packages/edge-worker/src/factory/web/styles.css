@@ -4185,3 +4185,114 @@ kbd {
 	font-size: 0.8rem;
 	font-weight: 600;
 }
+
+/* PROTOTYPE bobs-factory#84 — multi-instance tokens and controls. */
+:root {
+	--instance-violet: #7b61ff;
+	--instance-mint: #3ddc97;
+	--instance-orange: #ff9f43;
+	--instance-sky: #4cc9f0;
+	--instance-coral: #ff5d73;
+	--instance-lilac: #c77dff;
+	--instance-sun: #ffd23f;
+	--status-connected: #3ddc97;
+	--status-connecting: #ffd23f;
+	--status-offline: #ff5d73;
+	--status-outdated: #ff9f43;
+}
+.instance-chip {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	gap: 8px;
+	height: 36px;
+	padding: 0 12px 0 8px;
+	border: 2px solid var(--line);
+	border-radius: 999px;
+	background: var(--surface);
+	color: var(--secondary);
+	font-size: 13px;
+	font-weight: 800;
+	box-shadow: var(--shadow);
+	transition:
+		border-color 0.15s,
+		transform 0.15s;
+}
+.instance-chip:hover {
+	border-color: var(--lip);
+	transform: translateY(-1px);
+}
+.instance-chip[aria-pressed="true"] {
+	background: var(--primary);
+	border-color: var(--primary);
+	color: var(--primary-text);
+	box-shadow: 0 3px 0 var(--lip);
+}
+.instance-chip.connect {
+	border-style: dashed;
+	background: transparent;
+	box-shadow: none;
+	color: var(--muted);
+	padding: 0 14px;
+}
+.instance-cluster {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 40px;
+	padding: 0 12px 0 6px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	font-size: 13px;
+	font-weight: 800;
+}
+.instance-cluster.trouble {
+	border-color: color-mix(in srgb, var(--status-offline) 45%, var(--line));
+}
+.color-option {
+	width: 32px;
+	height: 32px;
+	border-radius: 30%;
+	transition: transform 0.15s;
+}
+.color-option[aria-pressed="true"] {
+	box-shadow:
+		0 0 0 2px var(--surface),
+		0 0 0 4px var(--primary);
+	transform: scale(1.06);
+}
+.instance-scope button[aria-pressed] {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.working-main .step-chip {
+	min-width: 0;
+}
+.prototype .working-list > *,
+.prototype .working-row,
+.prototype .working-main {
+	min-width: 0;
+}
+.prototype .working-main .step-chip {
+	max-width: 220px;
+}
+.instance-tag.offline {
+	opacity: 0.75;
+}
+@media (max-width: 640px) {
+	/* Instance tag joins the step chip on the row's second line. */
+	.prototype .working-main .instance-tag {
+		grid-column: 2 / 4;
+		grid-row: 2;
+		justify-self: start;
+	}
+	.prototype .working-main .step-chip {
+		grid-row: 3;
+	}
+	.prototype .working-main .progress {
+		grid-row: 4;
+	}
+}

@@ -44,6 +44,19 @@ import {
 	WorkingRow,
 } from "./focus";
 import { Composer, Recipes } from "./forms";
+import {
+	HeaderInstances,
+	InstanceFilterBar,
+	InstancesDialog,
+	InstanceTag,
+	instanceOf,
+	OfflineGate,
+	OfflineNotice,
+	pebbleStyle,
+	prototypeOn,
+	RecipesInstanceBar,
+	useInstanceFilter,
+} from "./prototype-multi-instance";
 import { pwaState, startPwa, usePwa } from "./pwa";
 import { ConnectionNotice, InstallControl, RecoveredDrafts } from "./pwa-ui";
 import { useReadingPosition } from "./reading-position";
@@ -188,6 +201,7 @@ function Header({
 					</Link>
 				</nav>
 				<div className="header-actions">
+					{prototypeOn && <HeaderInstances />}
 					<InstallControl />
 					<Dropdown.Root>
 						<Dropdown.Trigger asChild>
@@ -305,12 +319,14 @@ function Settled({ runs, all }: { runs: any[]; all: any[] }) {
 											className={`pebble pebble-${i % 3}`}
 											to={`/runs/${run.id}`}
 											key={run.id}
+											style={pebbleStyle(run)}
 										>
 											<span aria-hidden="true">
 												{settleReason(run, all)?.split(" ")[0]}
 											</span>
 											<span className="pebble-tooltip">
 												<strong>{run.title}</strong>
+												{prototypeOn && `${instanceOf(run).name} · `}
 												{settleReason(run, all)} ·{" "}
 												{ago(run.updatedAt ?? run.createdAt)}
 											</span>
@@ -330,7 +346,8 @@ function Settled({ runs, all }: { runs: any[]; all: any[] }) {
 							<span>{settleReason(run, all)?.split(" ")[0]}</span>
 							<Link to={`/runs/${run.id}`}>{run.title}</Link>
 							<small>
-								{settleReason(run, all)} · {ago(run.updatedAt ?? run.createdAt)}
+								<InstanceTag item={run} /> {settleReason(run, all)} ·{" "}
+								{ago(run.updatedAt ?? run.createdAt)}
 								<span> · {originLabel(run)}</span>
 							</small>
 							<Button
@@ -546,6 +563,7 @@ function Today({
 					setHighlight(id);
 				}}
 			/>
+			{prototypeOn && <InstanceFilterBar />}
 			<section className="for-you">
 				<div className="section-heading">
 					<h2>
@@ -674,7 +692,7 @@ function Today({
 										onClick={() => choose(run.id)}
 									>
 										<span>●</span>
-										{run.title}
+										<InstanceTag item={run} compact /> {run.title}
 									</button>
 								))}
 						</div>
@@ -850,40 +868,43 @@ function RunPage({
 					</div>
 					<RunTitleStatus run={run} />
 				</div>
-				<div className="actions">
-					{run.status === "capacity-waiting" && (
-						<p role="status">Waiting for instance capacity</p>
-					)}
-					{active(run.status) ? (
-						<ConfirmStop
-							requiresConnection
-							busy={action.isPending}
-							onStop={() =>
-								void action
-									.mutateAsync({ path: `/api/runs/${run.id}/stop` })
-									.then(() => toast({ text: "Run stopped" }))
-									.catch(() => {})
-							}
-						/>
-					) : reason ? (
-						<Button
-							variant="ghost"
-							onClick={() => void settle.change(run, "back")}
-						>
-							↩ Bring back
-						</Button>
-					) : (
-						finished(run.status) && (
+				<OfflineGate item={run}>
+					<div className="actions">
+						{run.status === "capacity-waiting" && (
+							<p role="status">Waiting for instance capacity</p>
+						)}
+						{active(run.status) ? (
+							<ConfirmStop
+								requiresConnection
+								busy={action.isPending}
+								onStop={() =>
+									void action
+										.mutateAsync({ path: `/api/runs/${run.id}/stop` })
+										.then(() => toast({ text: "Run stopped" }))
+										.catch(() => {})
+								}
+							/>
+						) : reason ? (
 							<Button
 								variant="ghost"
-								onClick={() => void settle.change(run, "settle")}
+								onClick={() => void settle.change(run, "back")}
 							>
-								✓ Settle
+								↩ Bring back
 							</Button>
-						)
-					)}
-				</div>
+						) : (
+							finished(run.status) && (
+								<Button
+									variant="ghost"
+									onClick={() => void settle.change(run, "settle")}
+								>
+									✓ Settle
+								</Button>
+							)
+						)}
+					</div>
+				</OfflineGate>
 			</header>
+			<OfflineNotice item={run} />
 			<RunOrigin run={run} />
 			{kind && !reason && (
 				<FocusCard
@@ -1018,7 +1039,8 @@ function App() {
 	const settle = useSettle();
 	const runsQuery = useRuns(),
 		configQuery = useConfig(),
-		runs = runsQuery.data ?? [],
+		allRuns = runsQuery.data ?? [],
+		runs = useInstanceFilter(allRuns),
 		config = configQuery.data,
 		location = useLocation(),
 		navigate = useNavigate(),
@@ -1102,7 +1124,13 @@ function App() {
 				Skip to content
 			</a>
 			<Header
-				count={count}
+				count={
+					prototypeOn
+						? allRuns.filter(
+								(run) => !settleReason(run, allRuns) && attention(run),
+							).length
+						: count
+				}
 				mood={mood}
 				onShortcuts={() => setShortcuts(true)}
 			/>
@@ -1127,7 +1155,15 @@ function App() {
 									<Today runs={runs} config={config} onInspect={inspect} />
 								}
 							/>
-							<Route path="/recipes" element={<Recipes />} />
+							<Route
+								path="/recipes"
+								element={
+									<>
+										<RecipesInstanceBar />
+										<Recipes />
+									</>
+								}
+							/>
 							<Route
 								path="/runs/:id/review"
 								element={
@@ -1194,6 +1230,7 @@ function App() {
 					<Button onClick={() => setShortcuts(false)}>Got it</Button>
 				</div>
 			</Modal>
+			{prototypeOn && <InstancesDialog />}
 			{inspection && inspectionRun.data && (
 				<Inspector
 					key={`${inspection.runId}/${inspection.name}`}

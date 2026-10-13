@@ -15,6 +15,13 @@ import {
 	workingLabel,
 } from "./client";
 import { activitiesOf } from "./conversation";
+import {
+	InstanceDot,
+	InstanceRepoLabel,
+	InstanceTag,
+	OfflineGate,
+	OfflineNotice,
+} from "./prototype-multi-instance";
 import { DraftNotice } from "./pwa-ui";
 import { revisionOf, useRestorableState } from "./restoration";
 import { GuidedReview } from "./review";
@@ -36,7 +43,8 @@ export function RunMeta({ run, config }: { run: any; config: any }) {
 		workflow = workflowOf(run, config);
 	return (
 		<span className="run-meta">
-			<span className="repo-dot" /> {repo?.name ?? "Workspace"} ·{" "}
+			<InstanceDot item={run} />{" "}
+			<InstanceRepoLabel item={run} repo={repo?.name ?? "Workspace"} /> ·{" "}
 			{workflow.icon ?? "🧩"} {workflow.name} ·{" "}
 			{ago(run.updatedAt ?? run.createdAt)}
 			<span> · {originLabel(run)}</span>
@@ -696,72 +704,75 @@ export function FocusCard({
 					<Link to={`/runs/${run.id}`}>{run.title}</Link>
 				</h2>
 			)}
-			{detail.isLoading ? (
-				<p role="status">Bob is loading this run…</p>
-			) : kind === "question" ? (
-				<QuestionForm
-					key={`${run.id}/${JSON.stringify(run.questions)}`}
-					run={run}
-				/>
-			) : kind === "stuck" ? (
-				<>
-					<div className="stuck-panel">
-						<Bob mood="oops" size={48} />
-						<div>
-							<strong>
-								{run.status === "interrupted" ? "Interrupted" : "Stuck"} at{" "}
-								{icons[run.step?.split("/").at(-1)] ?? "⚙️"}{" "}
-								{stepsOf(run, config).find((s) => s.key === run.step)?.name ??
-									run.step ??
-									"Cyrus session"}
-							</strong>
-							<Markdown>
-								{run.error ?? "The run stopped before finishing."}
-							</Markdown>
-							<small>
-								{run.iterationLimit
-									? "Continue grants 4 more passes for this step. Your work and history stay intact."
-									: "Retry keeps the worktree, your answers and every finished step."}
-							</small>
+			{!full && <OfflineNotice item={run} />}
+			<OfflineGate item={run}>
+				{detail.isLoading ? (
+					<p role="status">Bob is loading this run…</p>
+				) : kind === "question" ? (
+					<QuestionForm
+						key={`${run.id}/${JSON.stringify(run.questions)}`}
+						run={run}
+					/>
+				) : kind === "stuck" ? (
+					<>
+						<div className="stuck-panel">
+							<Bob mood="oops" size={48} />
+							<div>
+								<strong>
+									{run.status === "interrupted" ? "Interrupted" : "Stuck"} at{" "}
+									{icons[run.step?.split("/").at(-1)] ?? "⚙️"}{" "}
+									{stepsOf(run, config).find((s) => s.key === run.step)?.name ??
+										run.step ??
+										"Cyrus session"}
+								</strong>
+								<Markdown>
+									{run.error ?? "The run stopped before finishing."}
+								</Markdown>
+								<small>
+									{run.iterationLimit
+										? "Continue grants 4 more passes for this step. Your work and history stay intact."
+										: "Retry keeps the worktree, your answers and every finished step."}
+								</small>
+							</div>
 						</div>
-					</div>
-					<div className="actions">
-						<Button
-							requiresConnection
-							busy={action.isPending}
-							onClick={() =>
-								void action
-									.mutateAsync({ path: `/api/runs/${run.id}/retry` })
-									.then(() => toast({ text: "Retrying from saved progress" }))
-									.catch(() => {})
-							}
-						>
-							↻ {run.iterationLimit ? "Continue (+4 passes)" : "Retry step"}{" "}
-							<kbd>r</kbd>
-						</Button>
-						<Link className="button secondary" to={`/runs/${run.id}`}>
-							What happened?
-						</Link>
-						<Button variant="ghost" busy={settling} onClick={onSettled}>
-							Settle <kbd>e</kbd>
-						</Button>
-					</div>
-					{action.error && (
-						<p className="error" role="alert">
-							{action.error.message}
-						</p>
-					)}
-				</>
-			) : run.outputs?.guide ? (
-				<ReviewEntry run={run} />
-			) : (
-				<DecisionActions
-					key={`${run.id}/${run.reviewGate?.id ?? "finished"}`}
-					run={run}
-					onSettled={onSettled}
-					settling={settling}
-				/>
-			)}
+						<div className="actions">
+							<Button
+								requiresConnection
+								busy={action.isPending}
+								onClick={() =>
+									void action
+										.mutateAsync({ path: `/api/runs/${run.id}/retry` })
+										.then(() => toast({ text: "Retrying from saved progress" }))
+										.catch(() => {})
+								}
+							>
+								↻ {run.iterationLimit ? "Continue (+4 passes)" : "Retry step"}{" "}
+								<kbd>r</kbd>
+							</Button>
+							<Link className="button secondary" to={`/runs/${run.id}`}>
+								What happened?
+							</Link>
+							<Button variant="ghost" busy={settling} onClick={onSettled}>
+								Settle <kbd>e</kbd>
+							</Button>
+						</div>
+						{action.error && (
+							<p className="error" role="alert">
+								{action.error.message}
+							</p>
+						)}
+					</>
+				) : run.outputs?.guide ? (
+					<ReviewEntry run={run} />
+				) : (
+					<DecisionActions
+						key={`${run.id}/${run.reviewGate?.id ?? "finished"}`}
+						run={run}
+						onSettled={onSettled}
+						settling={settling}
+					/>
+				)}
+			</OfflineGate>
 			{onSkip && (
 				<Button variant="ghost" className="skip-action" onClick={onSkip}>
 					{kind === "review" ? "Later" : "Skip for now"} <kbd>s</kbd>
@@ -830,8 +841,9 @@ export function WorkingRow({
 				aria-expanded={expanded}
 				onClick={onExpand}
 			>
-				<span className="repo-dot" />
+				<InstanceDot item={run} />
 				<strong>{run.title}</strong>
+				<InstanceTag item={run} compact />
 				<span className={`step-chip ${phase(stepId)}`}>
 					{workingLabel(data)} · {icons[stepId] ?? "⚙️"}{" "}
 					{step?.name ?? run.step ?? "Cyrus session"}
