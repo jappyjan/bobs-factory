@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Shut down restored workflow test runtimes before removing their temporary storage, preventing final-save cleanup races ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
 - Preserve workflow disable blocks and frozen definitions while integrating chunked history storage and resumed-checkpoint responsiveness; keep dashboard summaries accurate across restart ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
 - Integrate Linear publication guards and native session lifecycle with bundled workflows: keep internal role/tool records local, publish readable decision records, and preserve individual recovery ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).

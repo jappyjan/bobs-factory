@@ -30,14 +30,7 @@ afterEach(async () => {
 function create(hooks: Partial<RuntimeHooks> = {}) {
 	const home = mkdtempSync(join(tmpdir(), "factory-runtime-"));
 	homes.push(home);
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-		...hooks,
-	});
-	runtimes.push(runtime);
-	return { runtime, home };
+	return { runtime: reload(home, hooks), home };
 }
 function readJson(path: string): any {
 	const stored = JSON.parse(readFileSync(path, "utf8"));
@@ -130,12 +123,11 @@ it("keeps completed receipts independent of mutable live outputs and immutable a
 		nested: { text: "accepted result" },
 	});
 	await runtime.shutdown();
-	const restarted = new WorkflowRuntime(home, {
+	const restarted = reload(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
 	});
-	runtimes.push(restarted);
 	const receipt = restarted.get(run.id).history[0]!;
 	expect(Object.isFrozen(receipt)).toBe(true);
 	expect(Object.isFrozen((receipt.output as typeof output).nested)).toBe(true);
@@ -436,7 +428,7 @@ describe("workflow runtime", () => {
 		runtime.log(run, "review", message, "agent");
 		runtime.log(run, "review", "Build output ".repeat(3000));
 		await runtime.flush();
-		const recovered = new WorkflowRuntime(home, {
+		const recovered = reload(home, {
 			agent: async () => ({}),
 			tool: async () => ({}),
 			script: async () => ({}),
@@ -504,7 +496,7 @@ describe("workflow runtime", () => {
 			tool: async () => ({}),
 		};
 		await runtime.flush();
-		const legacy = new WorkflowRuntime(home, hooks);
+		const legacy = reload(home, hooks);
 		expect(legacy.selectWorkflow([], "manual").id).toBe("simple");
 		const custom = workflow([agent("work")]);
 		legacy.updateWorkflows([...defaultWorkflows, custom], "custom");
@@ -520,7 +512,7 @@ describe("workflow runtime", () => {
 			"Unknown workflow",
 		);
 		await runtime.flush();
-		const restarted = new WorkflowRuntime(home, hooks);
+		const restarted = reload(home, hooks);
 		expect(restarted.getDefaultWorkflow()).toBe("custom");
 		expect(restarted.selectWorkflow([], "manual").id).toBe("custom");
 		// Legacy API callers updating definitions retain the selected default.
@@ -665,7 +657,7 @@ describe("workflow runtime", () => {
 		await runtime.shutdown();
 		await first;
 		await runtime.flush();
-		const restarted = new WorkflowRuntime(home, {
+		const restarted = reload(home, {
 			agent: execute,
 			script: async () => ({}),
 			tool: async () => ({}),
@@ -844,7 +836,7 @@ describe("workflow runtime", () => {
 		const run = start(runtime, workflow([agent("work")]));
 		runtime.log(run, "work", "working");
 		await runtime.flush();
-		const restarted = new WorkflowRuntime(home, {
+		const restarted = reload(home, {
 			agent: async () => ({}),
 			script: async () => ({}),
 			tool: async () => ({}),
@@ -1029,7 +1021,7 @@ it("upgrades a saved flat Factory without losing role settings or its selected d
 		}),
 	);
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, {
+	const restarted = reload(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
@@ -1049,12 +1041,15 @@ it("upgrades a saved flat Factory without losing role settings or its selected d
 });
 
 function reload(home: string, hooks: Partial<RuntimeHooks> = {}) {
-	return new WorkflowRuntime(home, {
+	const runtime = new WorkflowRuntime(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
 		...hooks,
 	});
+	// Restored executors must finish their final saves before home cleanup.
+	runtimes.push(runtime);
+	return runtime;
 }
 function untilAborted(context: ExecutionContext): Promise<unknown> {
 	return new Promise((resolve) =>
@@ -1383,7 +1378,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	await runtime.shutdown();
 	await launched;
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, {
+	const restarted = reload(home, {
 		script: async () => ({}),
 		...hooks,
 	});
@@ -1419,9 +1414,8 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	]);
 	expect(order).toEqual(["human-review", "human-fix", "human-review", "merge"]);
 	expect(
-		new WorkflowRuntime(home, { script: async () => ({}), ...hooks }).get(
-			run.id,
-		).humanDecisions,
+		reload(home, { script: async () => ({}), ...hooks }).get(run.id)
+			.humanDecisions,
 	).toEqual(restored.humanDecisions);
 	expect(restarted.viewState(run.id).settledAt).toBeTruthy();
 });
@@ -1569,7 +1563,7 @@ it("grants a bounded persisted retry budget only to the exhausted nested step", 
 		review: 4,
 	});
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, hooks);
+	const restarted = reload(home, hooks);
 	const restored = restarted.get(run.id);
 	expect(restored.history.slice(0, prior.length)).toEqual(prior);
 	approve = true;
@@ -1675,7 +1669,7 @@ it.each([
 	};
 	await runtime.save(run);
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, hooks);
+	const restarted = reload(home, hooks);
 	const restored = restarted.get(run.id);
 	restarted.retry(run.id);
 	await waitFor(() => expect(restored.status).toBe("failed"));
@@ -1683,7 +1677,7 @@ it.each([
 	// Automatic restart cannot replenish an exhausted budget.
 	await runtime.flush();
 	await restarted.flush();
-	const again = new WorkflowRuntime(home, {
+	const again = reload(home, {
 		...hooks,
 		agent: async (ctx) => {
 			expect(ctx.resumeAgent?.rejected?.exhausted).toBe(true);
@@ -1768,7 +1762,7 @@ it.each([
 	});
 	await runtime.save(run);
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, hooks);
+	const restarted = reload(home, hooks);
 	const restored = restarted.retry(run.id);
 	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(calls.map((ctx) => ctx.stepKey)).toEqual([key]);
@@ -1783,7 +1777,7 @@ it.each([
 		),
 	).toBe(true);
 	await restarted.flush();
-	expect(new WorkflowRuntime(home, hooks).get(run.id).status).toBe("completed");
+	expect(reload(home, hooks).get(run.id).status).toBe("completed");
 });
 
 it.each([
@@ -2233,7 +2227,7 @@ it("continues a finished simple run once with the same conversation and persists
 	expect(() => runtime.continueSimple(run.id, "Duplicate")).toThrow();
 	const message = runtime.recordChatMessage(run.id, "Follow up", "simple");
 	expect(
-		new WorkflowRuntime(home, {
+		reload(home, {
 			agent: async () => ({}),
 			script: async () => ({}),
 			tool: async () => ({}),
@@ -2575,7 +2569,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	await runtime.shutdown();
 	await execution;
 	await runtime.flush();
-	const restored = new WorkflowRuntime(home, {
+	const restored = reload(home, {
 		tool,
 		agent: agentHook,
 		script: async () => ({}),
@@ -2879,7 +2873,7 @@ it("recovers saved QA waits into the fixer while retaining completed roles and h
 	await runtime.save(run);
 	await runtime.shutdown();
 	await runtime.flush();
-	const restored = new WorkflowRuntime(home, {
+	const restored = reload(home, {
 		agent: async (ctx) => {
 			called.push(ctx.step.id);
 			return {};
