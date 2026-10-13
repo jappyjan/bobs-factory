@@ -271,6 +271,14 @@ try {
 			step: run.step,
 			questionBatchId: batchBeforeRestart,
 		};
+		// Waiting state is visible before asynchronous ticket delivery completes.
+		// Snapshot the completed receipt so restart compares stable delivery state.
+		await until(() => {
+			const receipts = (run.ticketSync?.receipts ?? []).filter((receipt) =>
+				receipt.key.startsWith("questions:"),
+			);
+			return receipts.length === 1 && receipts[0].delivered === true;
+		});
 		const receiptsBeforeRestart = structuredClone(
 			(run.ticketSync?.receipts ?? []).filter((receipt) =>
 				receipt.key.startsWith("questions:"),

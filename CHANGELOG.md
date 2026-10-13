@@ -6,7 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Wait for simulated question-notification delivery before snapshotting F1 restart receipts, preventing a timing-dependent mismatch while retaining duplicate-notice checks ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 - Wait for OAuth transport test fixtures to finish capacity callbacks and state writes before deleting their temporary homes, preventing intermittent CI cleanup failures ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
+- Keep resumed specialist reviews responsive by searching recent history without copying its full payload and reusing immutable review-baseline chunks during checkpoints ([#121](https://github.com/jappyjan/bobs-factory/pull/121)).
 - Recover prepared coding-agent CLI paths for macOS desktop workers and update supervisors, so Homebrew and user-local installations remain available when the app opens outside a terminal ([#120](https://github.com/jappyjan/bobs-factory/pull/120)).
 - Ground Factory planning and implementation prerequisites in each run's accepted workflow, preventing false architecture-approval blockers in frozen legacy runs while preserving real approval gates ([#119](https://github.com/jappyjan/bobs-factory/pull/119)).
 
