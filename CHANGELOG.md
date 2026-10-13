@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
+
 - Close the Notifications dialog when opening push contact settings so the Settings form is immediately usable ([#112](https://github.com/jappyjan/bobs-factory/pull/112)).
 
 - Validate beta desktop releases from their actual installed AppImage through controlled stable upgrade and rollback candidates, preserving nightly validation and truthful input receipts ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#111](https://github.com/jappyjan/bobs-factory/pull/111)).
