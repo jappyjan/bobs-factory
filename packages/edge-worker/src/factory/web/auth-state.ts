@@ -15,6 +15,13 @@ let deadline: ReturnType<typeof setTimeout> | undefined;
 export const accessState = () => state;
 export const accessGeneration = () => generation;
 export const accessSignal = () => abort.signal;
+// Page exit cancels ordinary protected requests as well as the live stream.
+// Their late failures must not revoke access or erase another document's state.
+export function cancelAccessRequests() {
+	generation++;
+	abort.abort();
+	abort = new AbortController();
+}
 export function onAccessLost(clean: () => void) {
 	cleaners.add(clean);
 	return () => cleaners.delete(clean);

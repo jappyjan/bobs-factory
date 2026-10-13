@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Keep reviewed chapter progress during rapid navigation and reload by canceling protected requests on page exit and ignoring their late failures; genuine connection and access loss still clear private state ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Preserve reader progress when browser navigation interrupts the live stream, and supply the retained previous guide for safe migration of older saved progress ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Align the complete routing prompt expectation with the documented repository-scoped reading progress behavior, restoring the CI assertion ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).

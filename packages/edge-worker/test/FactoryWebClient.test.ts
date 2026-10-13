@@ -12,6 +12,7 @@ import { artifactType, RenderArtifact } from "../src/factory/web/artifacts.js";
 import {
 	accessRequired,
 	accessState,
+	cancelAccessRequests,
 	checkAccess,
 	rotateSession,
 } from "../src/factory/web/auth-state.js";
@@ -660,4 +661,59 @@ it("discards private caches and late reads when the connection is lost", async (
 	await expect(late).rejects.toThrow("Session changed");
 	expect(accessState().status).toBe("required");
 	expect(client.getQueryData(["run", "private"])).toBeUndefined();
+});
+
+it("keeps private state when navigation cancels a protected read that later fails", async () => {
+	authoritativeReady();
+	client.setQueryData(["run", "private"], { transcript: "retained content" });
+	let fail!: (error: Error) => void;
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(
+			() =>
+				new Promise<Response>((_, reject) => {
+					fail = reject;
+				}),
+		),
+	);
+	const pending = api("/api/runs/private");
+	const rejected = expect(pending).rejects.toThrow(
+		"Navigation interrupted fetch",
+	);
+	cancelAccessRequests();
+	fail(new TypeError("Navigation interrupted fetch"));
+	await rejected;
+	expect(accessState().status).toBe("authenticated");
+	expect(pwaState().status).not.toBe("offline");
+	expect(client.getQueryData(["run", "private"])).toEqual({
+		transcript: "retained content",
+	});
+});
+
+it("ignores late version and access failures from the document being left", async () => {
+	authoritativeReady();
+	client.setQueryData(["run", "private"], { transcript: "retained content" });
+	for (const check of [checkVersion, checkAccess]) {
+		let fail!: (error: Error) => void;
+		let signal!: AbortSignal;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn((_, options) => {
+				signal = options.signal;
+				return new Promise<Response>((_, reject) => {
+					fail = reject;
+				});
+			}),
+		);
+		const pending = check();
+		cancelAccessRequests();
+		expect(signal.aborted).toBe(true);
+		fail(new TypeError("Navigation interrupted fetch"));
+		await pending;
+		expect(accessState().status).toBe("authenticated");
+		expect(pwaState().status).not.toBe("offline");
+		expect(client.getQueryData(["run", "private"])).toEqual({
+			transcript: "retained content",
+		});
+	}
 });

@@ -20,6 +20,7 @@ import {
 	accessRequired,
 	accessSignal,
 	accessState,
+	cancelAccessRequests,
 	onAccessLost,
 	onSessionRotation,
 } from "./auth-state";
@@ -139,7 +140,10 @@ export function useLiveUpdates() {
 		// Full-page navigation does not unmount React before requests are torn
 		// down. Abort the live stream first so that teardown is not treated as
 		// a connection failure that clears private reading state.
-		const hide = stop;
+		const hide = () => {
+			stop();
+			cancelAccessRequests();
+		};
 		const show = (event: PageTransitionEvent) => {
 			if (
 				event.persisted &&
@@ -256,7 +260,13 @@ export async function api<T = any>(
 		}
 		return body;
 	} catch (error) {
-		if (error instanceof TypeError) disconnected();
+		if (
+			error instanceof TypeError &&
+			epoch === accessGeneration() &&
+			!authSignal.aborted &&
+			!options.signal?.aborted
+		)
+			disconnected();
 		throw error;
 	} finally {
 		finish?.();

@@ -127,6 +127,8 @@ progress never grants approval.
 The protected dashboard supplies the single adjacent retained guide needed to
 migrate legacy revision-scoped reading progress. Migration still requires current
 independent reuse evidence; an absent original guide clears uncertain progress.
-Normal navigation aborts the browser's live connection when page exit begins and again on page hide, so it
-does not trigger the private-state cleanup used for actual connection or access
-loss. Returning through the browser's page cache reconnects the live stream.
+Normal navigation aborts the live connection and protected requests when page
+exit begins and again on page hide. Late failures from those canceled requests
+cannot trigger private-state cleanup in the next document. Actual connection or
+access loss still clears private state. Returning through the browser's page
+cache reconnects the live stream and checks access again.
