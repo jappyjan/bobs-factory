@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Recover prepared coding-agent CLI paths for macOS desktop workers and update supervisors, so Homebrew and user-local installations remain available when the app opens outside a terminal ([#120](https://github.com/jappyjan/bobs-factory/pull/120)).
 - Ground Factory planning and implementation prerequisites in each run's accepted workflow, preventing false architecture-approval blockers in frozen legacy runs while preserving real approval gates ([#119](https://github.com/jappyjan/bobs-factory/pull/119)).
 
 - Wait for OAuth test fixture persistence before deleting temporary files, preventing intermittent CI cleanup failures ([#115](https://github.com/jappyjan/bobs-factory/pull/115), [#113](https://github.com/jappyjan/bobs-factory/pull/113)).
