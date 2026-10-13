@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Wait for OAuth test workers to finish pending writes before deleting their temporary homes, preventing CI cleanup races ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
 - Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
 
 - Keep review refreshes and screenshot previews working after moving the Factory home by verifying retained screenshots against the same run's copied evidence without changing accepted QA receipts ([#114](https://github.com/jappyjan/bobs-factory/pull/114)).

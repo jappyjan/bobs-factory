@@ -38,7 +38,9 @@ vi.mock("bobs-factory-mcp-tools", async (original) => ({
 }));
 
 const homes: string[] = [];
-afterEach(() => {
+const workers: EdgeWorker[] = [];
+afterEach(async () => {
+	for (const worker of workers.splice(0)) await worker.stop();
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
 	vi.restoreAllMocks();
@@ -63,6 +65,7 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 			},
 		],
 	});
+	workers.push(worker);
 	const edge = worker as unknown as {
 		getFactoryRuntime(): { create(input: Partial<FactoryRun>): FactoryRun };
 		runnerSlots: MachineCapacity;
