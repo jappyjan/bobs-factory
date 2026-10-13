@@ -13,6 +13,7 @@ export function InstallControl() {
 	const pwa = usePwa();
 	const [help, setHelp] = useState(false);
 	const [error, setError] = useState("");
+	if (window.factoryDesktop) return null;
 	return (
 		<>
 			<Button
