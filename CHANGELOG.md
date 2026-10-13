@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Ground Factory planning and implementation prerequisites in each run's accepted workflow, preventing false architecture-approval blockers in frozen legacy runs while preserving real approval gates.
+
 - Drain pending workflow snapshots before removing OAuth transport test fixtures, preventing intermittent CI cleanup failures ([#113](https://github.com/jappyjan/bobs-factory/pull/113)).
 - Hide browser installation and help controls inside the native desktop app, including when it opens a remote Factory instance ([#113](https://github.com/jappyjan/bobs-factory/pull/113), [standalone browser help evidence](docs/qa/desktop-install-help/README.md)).
 - Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
