@@ -14,7 +14,11 @@ import {
 	inspectOperatorTransport,
 	type OperatorTransport,
 } from "../src/factory/OperatorTransport.js";
-import type { FactoryRun } from "../src/factory/WorkflowRuntime.js";
+import {
+	capacityRunStatus,
+	type FactoryRun,
+} from "../src/factory/WorkflowRuntime.js";
+import type { MachineCapacity } from "../src/MachineCapacity.js";
 
 const { nativeCall, directCall, nativeList, directList } = vi.hoisted(() => ({
 	nativeCall: vi.fn(),
@@ -61,6 +65,7 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 	});
 	const edge = worker as unknown as {
 		getFactoryRuntime(): { create(input: Partial<FactoryRun>): FactoryRun };
+		runnerSlots: MachineCapacity;
 		agentSessionManager: { createChatSession(...args: unknown[]): unknown };
 		buildAgentRunnerConfig(): Promise<{
 			runnerType: RunnerType;
@@ -69,6 +74,7 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 		factoryMcpConfig(run: FactoryRun): Promise<OperatorTransport>;
 		factoryTicketAdapter(
 			run: FactoryRun,
+			signal?: AbortSignal,
 		): Promise<{ read(): Promise<unknown> }>;
 	};
 	const run = edge.getFactoryRuntime().create({
@@ -318,4 +324,103 @@ it.each([
 	await expect(
 		checkOperatorTransport(f.run, await f.edge.factoryMcpConfig(f.run)),
 	).rejects.toMatchObject({ code: "ambiguous_transport" });
+});
+
+// Compress only the transport budget; real coordinator admission and callbacks remain active.
+function shortTransportBudget() {
+	const timers: ReturnType<typeof setTimeout>[] = [];
+	vi.spyOn(AbortSignal, "timeout").mockImplementation(() => {
+		const controller = new AbortController();
+		timers.push(
+			setTimeout(() => controller.abort(new Error("transport timed out")), 40),
+		);
+		return controller.signal;
+	});
+	return () => timers.forEach(clearTimeout);
+}
+it.each([
+	"codex",
+	"claude",
+] as const)("does not spend the %s ticket transport budget while queued and exposes the wait", async (runner) => {
+	const { edge, run } = fixture(runner);
+	await edge.runnerSlots.setLimit(1);
+	const blocker = await edge.runnerSlots.acquireLease();
+	const clearBudget = shortTransportBudget();
+	const used = runner === "codex" ? nativeCall : directCall;
+	used.mockImplementation(async (...args) => {
+		const signal = args[runner === "codex" ? 5 : 3] as AbortSignal;
+		signal.throwIfAborted();
+		return { id: 77, status: "backlog", comments: [], attachments: [] };
+	});
+	try {
+		const read = (await edge.factoryTicketAdapter(run)).read();
+		// Attach immediately so the pre-fix timeout rejection is captured.
+		const settled = read.then(
+			(value) => ({ value, error: undefined }),
+			(error) => ({ value: undefined, error }),
+		);
+		await vi.waitFor(async () =>
+			expect((await edge.runnerSlots.snapshot()).queued).toBe(1),
+		);
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(used).not.toHaveBeenCalled();
+		expect((await edge.runnerSlots.snapshot()).queued).toBe(1);
+		expect(capacityRunStatus(run)).toBe("capacity-waiting");
+		await blocker.release();
+		expect((await settled).error).toBeUndefined();
+		expect(used).toHaveBeenCalledOnce();
+		expect(run.capacityLeaves).toEqual({});
+		expect((await edge.runnerSlots.snapshot()).requests).toEqual([]);
+	} finally {
+		clearBudget();
+		await blocker.release();
+		await edge.runnerSlots.shutdown();
+	}
+});
+it("canceling ticket setup removes queued transport without executing it", async () => {
+	const { edge, run } = fixture("codex");
+	await edge.runnerSlots.setLimit(1);
+	const blocker = await edge.runnerSlots.acquireLease();
+	const controller = new AbortController();
+	try {
+		const pending = (
+			await edge.factoryTicketAdapter(run, controller.signal)
+		).read();
+		const rejected = expect(pending).rejects.toThrow();
+		await vi.waitFor(async () =>
+			expect((await edge.runnerSlots.snapshot()).queued).toBe(1),
+		);
+		controller.abort(new Error("run stopped"));
+		await rejected;
+		expect(nativeCall).not.toHaveBeenCalled();
+		expect(run.capacityLeaves).toEqual({});
+		expect((await edge.runnerSlots.snapshot()).queued).toBe(0);
+	} finally {
+		await blocker.release();
+		await edge.runnerSlots.shutdown();
+	}
+});
+it("still bounds admitted ticket transport and releases its capacity on timeout", async () => {
+	const { edge, run } = fixture("codex");
+	const clearBudget = shortTransportBudget();
+	nativeCall.mockImplementation(
+		(_config, _name, _server, _tool, _args, signal: AbortSignal) =>
+			new Promise((_, reject) => {
+				signal.throwIfAborted();
+				signal.addEventListener("abort", () => reject(signal.reason), {
+					once: true,
+				});
+			}),
+	);
+	try {
+		await expect((await edge.factoryTicketAdapter(run)).read()).rejects.toThrow(
+			"transport timed out",
+		);
+		expect(nativeCall).toHaveBeenCalledOnce();
+		expect((await edge.runnerSlots.snapshot()).requests).toEqual([]);
+		expect(run.capacityLeaves).toEqual({});
+	} finally {
+		clearBudget();
+		await edge.runnerSlots.shutdown();
+	}
 });
