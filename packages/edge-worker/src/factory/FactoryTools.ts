@@ -561,7 +561,6 @@ export class FactoryTools {
 		}
 
 		const receipts = review.acceptedScreenshots ?? [];
-		stampQaCriteria(context, capture as import("./Qa.js").QaExecution);
 		for (const shot of capture.screenshots)
 			if (
 				!receipts.some(
@@ -1928,5 +1927,7 @@ export function captureEvidence(
 		shot.fingerprintVersion = 2;
 	}
 	if (rejected.length) throw new CaptureReuseError(rejected);
+	if (context.step.qaContract)
+		stampQaCriteria(context, capture as import("./Qa.js").QaExecution);
 	return capture;
 }

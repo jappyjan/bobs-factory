@@ -451,6 +451,7 @@ function parseFactoryResult(
 						.array(
 							z.object({
 								id: text,
+								repositoryId: text.optional(),
 								bodySha256: z.string().regex(/^[a-f0-9]{64}$/),
 							}),
 						)

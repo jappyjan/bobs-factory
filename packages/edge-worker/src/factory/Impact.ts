@@ -5,7 +5,11 @@ import { factoryRuntimeIdentity } from "bobs-factory-core";
 import { z } from "zod";
 import { dependencyCovers, dependencyHashes } from "./Incremental.js";
 import { qaDigest } from "./Qa.js";
-import { deliveryRevisions, runRepositories } from "./RepositoryScope.js";
+import {
+	deliveryRevisions,
+	groupedOutput,
+	runRepositories,
+} from "./RepositoryScope.js";
 import type { AggregateReview, ReviewerReceipt } from "./SpecialistReview.js";
 import { latestAggregate, scopeContextDigest } from "./SpecialistReview.js";
 import type { WorkflowStep } from "./Workflow.js";
@@ -33,6 +37,7 @@ export const ImpactSchema = z.object({
 		.array(
 			z.object({
 				id: text,
+				repositoryId: text.optional(),
 				bodySha256: text,
 				disposition: z.enum([
 					"informational",
@@ -797,7 +802,7 @@ export function recordConvergence(
 			]
 		: [];
 }
-export const impactInstructions = `Independently assess /impactSnapshot, actual repository diffs (including cumulative changes since prior explicit approval), prior original receipts and unresolved findings. Fixer summaries never authorize reuse. Discover commands and conventions in ALL selected repositories; never infer safety from filenames, line count or unchanged head alone. Inspect whether test changes weaken assertions or coverage. Assess combined merge trees and target-only changes separately from task regressions. Unknown dependencies, conflicts, migrations, security boundaries, changed scope or unavailable evidence require broader inspection and relevant validation. Select only configured reviewer IDs from the snapshot. First review executes all roles. Reuse only completed resolved receipts with runtime dependency provenance; supply their exact receipt digest, boundary and a concrete independence reason. Unaffected areas retain original evidence, never claim a new review executed. Track future QA/guide/human/provider obligations at their own gates. Optional cleanup remains visible and nonblocking. Prior explicit approval can continue for an evidenced safe minor correction, including production code, only after all required evidence passes; uncertain or meaningful changes and human rejection require renewed approval. Assess the cumulative delta. Return impact-v1 with status, summary, correctionRequired:boolean, readinessOnly:boolean, commentAssessments:[{id,bodySha256,disposition:"informational|consequential|accepted-unchanged",reason}], classification:"none|affected|full", rationale, uncertainty:[], extractRequirements:boolean, scopeReuse:{inventoryDigest,originalSourceDigest,reason} only when independently inspecting new feedback proves accepted requirements unchanged, specialists:[configured IDs], requirementIds:[], checks:[{id,repositoryId,command,reason,environment:{isolation:"worktree"} or {isolation:"shared",resources:[stable identities]}}], qaCriteria:[criterion IDs], qaReuse:[{criterionId,originalDigest,reason}], reuse:[{reviewer,receiptDigest,reason,boundary:{requirementIds,areas,dependencies,independence}}], invalidate:[{receiptDigest,reason}], targetCompatible:boolean, testAssertions:{inspected,weakened,evidence}, humanReview:"no-prior-approval|continue-after-checks|renew", approvalRationale and questions:[]. Missing inputs require blocked and a specific question. Do not mutate files or run corrective agents. Every original configured role needs fresh execution or explicit valid reuse. Missing legacy provenance requires fresh review.`;
+export const impactInstructions = `Independently assess /impactSnapshot, actual repository diffs (including cumulative changes since prior explicit approval), prior original receipts and unresolved findings. Fixer summaries never authorize reuse. Discover commands and conventions in ALL selected repositories; never infer safety from filenames, line count or unchanged head alone. Inspect whether test changes weaken assertions or coverage. Assess combined merge trees and target-only changes separately from task regressions. Unknown dependencies, conflicts, migrations, security boundaries, changed scope or unavailable evidence require broader inspection and relevant validation. Select only configured reviewer IDs from the snapshot. First review executes all roles. Reuse only completed resolved receipts with runtime dependency provenance; supply their exact receipt digest, boundary and a concrete independence reason. Unaffected areas retain original evidence, never claim a new review executed. Track future QA/guide/human/provider obligations at their own gates. Optional cleanup remains visible and nonblocking. Prior explicit approval can continue for an evidenced safe minor correction, including production code, only after all required evidence passes; uncertain or meaningful changes and human rejection require renewed approval. Assess the cumulative delta. Return impact-v1 with status, summary, correctionRequired:boolean, readinessOnly:boolean, commentAssessments:[{id,repositoryId (required for grouped deliveries unless id is repositoryId:commentId),bodySha256,disposition:"informational|consequential|accepted-unchanged",reason}], classification:"none|affected|full", rationale, uncertainty:[], extractRequirements:boolean, scopeReuse:{inventoryDigest,originalSourceDigest,reason} only when independently inspecting new feedback proves accepted requirements unchanged, specialists:[configured IDs], requirementIds:[], checks:[{id,repositoryId,command,reason,environment:{isolation:"worktree"} or {isolation:"shared",resources:[stable identities]}}], qaCriteria:[criterion IDs], qaReuse:[{criterionId,originalDigest,reason}], reuse:[{reviewer,receiptDigest,reason,boundary:{requirementIds,areas,dependencies,independence}}], invalidate:[{receiptDigest,reason}], targetCompatible:boolean, testAssertions:{inspected,weakened,evidence}, humanReview:"no-prior-approval|continue-after-checks|renew", approvalRationale and questions:[]. Missing inputs require blocked and a specific question. Do not mutate files or run corrective agents. Every original configured role needs fresh execution or explicit valid reuse. Missing legacy provenance requires fresh review.`;
 
 /** Resolve from accepted definitions, including called workflows and renamed roles. */
 export function impactFanout(
@@ -927,7 +932,17 @@ export async function effectiveApproval(context: ExecutionContext) {
 	};
 }
 
-export function feedbackDigest(run: FactoryRun) {
+export function feedbackDigest(run: FactoryRun): string {
+	const group = groupedOutput(run.outputs["merge-readiness"] ?? run.outputs.ci);
+	if (group)
+		return qaDigest(
+			group.deliveries
+				.map((delivery) => ({
+					repositoryId: delivery.repositoryId,
+					digest: feedbackDigest({ ...run, outputs: { ci: delivery.output } }),
+				}))
+				.sort((a, b) => a.repositoryId.localeCompare(b.repositoryId)),
+		);
 	const receipt = (run.outputs["merge-readiness"] ?? run.outputs.ci) as
 		| { comments?: unknown[]; threads?: unknown[]; reviews?: unknown[] }
 		| undefined;

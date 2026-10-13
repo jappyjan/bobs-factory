@@ -6,6 +6,7 @@ import {
 	feedbackPolicies,
 } from "./FeedbackPolicy.js";
 import { providerForUrl, resolveGitProvider } from "./GitProvider.js";
+import { groupedOutput, scopeRevision } from "./RepositoryScope.js";
 import { scopeContextDigest } from "./SpecialistReview.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
@@ -183,23 +184,66 @@ export function recordFeedbackAssessment(
 	if (!output || typeof output !== "object") return output;
 	const value = output as {
 		addressedCommentIds?: string[];
-		commentAssessments?: { id: string; bodySha256: string }[];
+		commentAssessments?: {
+			id: string;
+			repositoryId?: string;
+			bodySha256: string;
+		}[];
 		feedbackPolicies?: unknown[];
 		questions?: string[];
 	};
 	const ids = new Set((value.addressedCommentIds ?? []).map(String));
 	const policies = authorizeFeedbackPolicies(context, value.feedbackPolicies);
 	const active = feedbackPolicies(context, policies);
-	const receipt = (context.run.outputs["merge-readiness"] ??
-		context.run.outputs.ci) as MergeReadiness | undefined;
+	const raw = context.run.outputs["merge-readiness"] ?? context.run.outputs.ci;
+	const group = groupedOutput(raw);
+	// Match repository-scoped IDs used by repositoryRun when projecting history.
+	const scoped = (repositoryId: string, comments: FeedbackComment[] = []) =>
+		comments.map((comment) => ({
+			...comment,
+			id: `${repositoryId}:${comment.id}`,
+		}));
+	const receipt = group
+		? {
+				headSha: scopeRevision(
+					group.deliveries.map((d) => ({
+						repositoryId: d.repositoryId,
+						headSha: String(d.output.headSha),
+					})),
+				),
+				baseSha: scopeRevision(
+					group.deliveries.map((d) => ({
+						repositoryId: d.repositoryId,
+						headSha: String(d.output.baseSha),
+					})),
+				),
+				comments: group.deliveries.flatMap((d) =>
+					scoped(
+						d.repositoryId,
+						(d.output as unknown as MergeReadiness)
+							.comments as FeedbackComment[],
+					),
+				),
+				unassessedComments: group.deliveries.flatMap((d) =>
+					scoped(
+						d.repositoryId,
+						(d.output as unknown as MergeReadiness).unassessedComments,
+					),
+				),
+			}
+		: (raw as MergeReadiness | undefined);
 	const comments = readComments(receipt) ?? [];
 	for (const assessment of value.commentAssessments ?? []) {
-		const comment = comments.find((item) => String(item.id) === assessment.id);
+		const id =
+			group && assessment.repositoryId
+				? `${assessment.repositoryId}:${assessment.id}`
+				: assessment.id;
+		const comment = comments.find((item) => String(item.id) === id);
 		if (!comment || commentHash(comment.body) !== assessment.bodySha256)
 			throw new Error(
 				`Comment ${assessment.id} assessment must match the supplied content hash; assess the current unassessedComments entry`,
 			);
-		ids.add(assessment.id);
+		ids.add(id);
 	}
 	const missing = (receipt?.unassessedComments ?? []).filter(
 		(comment) =>
@@ -217,7 +261,22 @@ export function recordFeedbackAssessment(
 		feedbackAssessment: receipt && {
 			headSha: receipt.headSha,
 			baseSha: receipt.baseSha,
-			fingerprint: feedbackWorkFingerprint(receipt),
+			fingerprint: group
+				? createHash("sha256")
+						.update(
+							JSON.stringify(
+								group.deliveries
+									.map((d) => ({
+										repositoryId: d.repositoryId,
+										fingerprint: feedbackWorkFingerprint(
+											d.output as unknown as MergeReadiness,
+										),
+									}))
+									.sort((a, b) => a.repositoryId.localeCompare(b.repositoryId)),
+							),
+						)
+						.digest("hex")
+				: feedbackWorkFingerprint(receipt as MergeReadiness),
 			instructionsSha256: feedbackInstructionFingerprint(context),
 		},
 		assessedComments: comments

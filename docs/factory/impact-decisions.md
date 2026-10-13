@@ -53,7 +53,14 @@ unchanged fixture/environment evidence. A declared read-only environment probe i
 executed again and its output hash must match. Unknown environment identity,
 failed/blocked criteria or changed fixtures require execution. Screenshot
 acceptance, source boundaries and media integrity remain separate requirements.
-Copying an image never establishes behavioral success.
+Copying an image never establishes behavioral success. The runtime stamps criterion
+provenance while finalizing capture output, before saving evidence and generating
+review hashes. Gates validate the saved provenance without rewriting it.
+
+Grouped delivery feedback is fingerprinted for every repository, including comments,
+threads and reviews. Comment assessments include `repositoryId` with the provider
+comment ID, or use `repositoryId:commentId`. Saved assessments retain that scoped
+identity so identical IDs in different repositories cannot suppress new feedback.
 
 Selected checks execute in their selected repositories. They use capacity admission
 and retain each completed check result before another check starts. Checks can

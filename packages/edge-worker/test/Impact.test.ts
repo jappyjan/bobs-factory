@@ -13,7 +13,7 @@ import { dirname, join } from "node:path";
 import { afterEach, expect, it } from "vitest";
 import { createFactoryContextServer } from "../../mcp-tools/src/factoryContext.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import { FactoryTools } from "../src/factory/FactoryTools.js";
+import { captureEvidence, FactoryTools } from "../src/factory/FactoryTools.js";
 import {
 	assertImpactFresh,
 	collectImpactSnapshot,
@@ -1124,10 +1124,33 @@ it("preserves original behavioral execution and rejects changed definitions, fix
 		["-e", "if(require('./src/auth.js')('unknown')) process.exit(1)"],
 		{ cwd: fixture.root },
 	);
-	stampQaCriteria(context, execution);
-	const original = execution.results[0]!.criteria[0]!;
+	const captured = captureEvidence(
+		{
+			...context,
+			step: { ...context.step, qaContract: "qa-v1" },
+			progress: {
+				changedFiles: [],
+				currentRevision: {
+					headSha: execution.testedRevision!.headSha,
+					dirty: false,
+				},
+			},
+		} as ExecutionContext,
+		{ ...execution, screenshots: [], unavailable: [] },
+	) as typeof execution;
+	// Runtime saves this finalized object to both outputs and capture history.
+	run.outputs.capture = captured;
+	const original = captured.results[0]!.criteria[0]!;
+	expect(original.origin?.environmentProofDigest).toBe(
+		context.qaEnvironmentProof!.valueDigest,
+	);
+	expect(execution.results[0]!.criteria[0]!.origin).toBeUndefined();
 	run.history.push(
-		{ step: "capture", output: execution, at: "original date" },
+		{
+			step: "capture",
+			output: captured,
+			at: "original date",
+		},
 		{
 			step: "visual-gate",
 			output: { approved: true, headSha: original.origin!.headSha },

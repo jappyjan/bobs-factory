@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Save behavioral QA provenance before review and assess feedback across every repository delivery, preserving original evidence and detecting edited comments, threads and reviews ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).
 
 - Keep review refreshes and screenshot previews working after moving the Factory home by verifying retained screenshots against the same run's copied evidence without changing accepted QA receipts ([#114](https://github.com/jappyjan/bobs-factory/pull/114)).
