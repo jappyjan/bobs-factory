@@ -38,11 +38,17 @@ vi.mock("bobs-factory-mcp-tools", async (original) => ({
 }));
 
 const homes: string[] = [];
-afterEach(() => {
-	for (const home of homes.splice(0))
-		rmSync(home, { recursive: true, force: true });
-	vi.restoreAllMocks();
-	vi.clearAllMocks();
+const cleanups: (() => Promise<void>)[] = [];
+afterEach(async () => {
+	try {
+		// Capacity callbacks and runtime saves must settle before deleting homes.
+		await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+		for (const home of homes.splice(0))
+			rmSync(home, { recursive: true, force: true });
+	} finally {
+		vi.restoreAllMocks();
+		vi.clearAllMocks();
+	}
 });
 
 function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
@@ -64,7 +70,10 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 		],
 	});
 	const edge = worker as unknown as {
-		getFactoryRuntime(): { create(input: Partial<FactoryRun>): FactoryRun };
+		getFactoryRuntime(): {
+			create(input: Partial<FactoryRun>): FactoryRun;
+			shutdown(): Promise<void>;
+		};
 		runnerSlots: MachineCapacity;
 		agentSessionManager: { createChatSession(...args: unknown[]): unknown };
 		buildAgentRunnerConfig(): Promise<{
@@ -77,7 +86,12 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 			signal?: AbortSignal,
 		): Promise<{ read(): Promise<unknown> }>;
 	};
-	const run = edge.getFactoryRuntime().create({
+	const runtime = edge.getFactoryRuntime();
+	cleanups.push(async () => {
+		await edge.runnerSlots.shutdown();
+		await runtime.shutdown();
+	});
+	const run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
 			workflowId: "factory",
