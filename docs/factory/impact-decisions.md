@@ -120,7 +120,10 @@ revisions it also requires a current independent impact decision with a validate
 reuse boundary covering that chapter. Changed chapters and missing, uncertain or
 stale reuse evidence clear their reading progress. An explicit unchecked choice
 survives reloads. Page position, feedback drafts and approval stay scoped to the
-current guide and revision; reading progress never grants approval.
+current guide and every repository revision. Saved chapter progress is validated
+before restoration, and changes to secondary repositories reset uncertain
+progress even when the primary revision and guide are unchanged. Reading
+progress never grants approval.
 Normal navigation aborts the browser's live connection before teardown so it
 does not trigger the private-state cleanup used for actual connection or access
 loss. Returning through the browser's page cache reconnects the live stream.

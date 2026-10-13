@@ -38,7 +38,11 @@ export function reviewRevision(run: any) {
 
 /** Preserve the progress identity used by both the preview and artifact reader. */
 export function reviewKey(run: any, guide: unknown) {
-	return `factory-review/${run.id}/${reviewRevision(run)}/${signature(guide)}`;
+	const repositories = chapterRepositories(run);
+	const scope = repositories.length
+		? `/repositories-${signature(repositories)}`
+		: "";
+	return `factory-review/${run.id}/${reviewRevision(run)}${scope}/${signature(guide)}`;
 }
 
 export function guideMatchesGate(run: any) {
@@ -213,8 +217,20 @@ export function carriedChapterProgress(
 }
 
 export function readReviewProgress(run: any, guide: Guide, pages: number) {
-	const saved = readStored(reviewKey(run, guide), null);
-	if (saved) return readProgress(saved, pages);
+	const saved = readStored<
+		(ReviewProgress & { chapterProgress?: ChapterProgress }) | null
+	>(reviewKey(run, guide), null);
+	if (saved) {
+		const progress = readProgress(saved, pages);
+		// Old single-repository keys already bind the revision and complete guide.
+		// Grouped progress needs an explicit scope receipt; never infer it.
+		const reviewed = saved.chapterProgress
+			? carriedChapterProgress(run, guide, saved.chapterProgress)
+			: chapterRepositories(run).length
+				? {}
+				: progress.reviewed;
+		return { ...progress, reviewed };
+	}
 	let previous = readStored<ChapterProgress | null>(
 		chapterProgressKey(run),
 		null,
@@ -268,8 +284,12 @@ export function writeReviewProgress(
 	guide: Guide,
 	progress: ReviewProgress,
 ) {
-	writeStored(reviewKey(run, guide), progress);
-	writeStored(chapterProgressKey(run), chapterProgress(run, guide, progress));
+	const snapshot = chapterProgress(run, guide, progress);
+	writeStored(reviewKey(run, guide), {
+		...progress,
+		chapterProgress: snapshot,
+	});
+	writeStored(chapterProgressKey(run), snapshot);
 }
 
 export function readTextStored(key: string, fallback: string, session = false) {

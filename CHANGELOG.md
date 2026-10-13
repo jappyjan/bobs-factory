@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Retain reviewed chapters across renewed guides when their content, linked requirements and system map are unchanged and independent impact evidence confirms reuse; reset affected reading progress, preserve it during normal page reloads, and keep feedback and approval revision-bound ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+- Retain reviewed chapters across renewed guides when their content, linked requirements and system map are unchanged and independent impact evidence confirms reuse; reset affected reading progress, bind saved and mounted progress to every repository revision, preserve it during normal page reloads, and keep feedback and approval revision-bound ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Keep the video recipe migration test grounded in pre-impact stock workflows, preserving upgrade, model-setting and custom-recipe safeguards ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 

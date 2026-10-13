@@ -327,7 +327,7 @@ it("upgrades old revision-scoped progress only with the original guide and indep
 });
 
 it("invalidates uncertain secondary repository changes even when the primary revision is unchanged", () => {
-	const { guide, original } = followupFixture();
+	const { guide, original, current: followup } = followupFixture();
 	const run = {
 		...original,
 		reviewGate: {
@@ -352,13 +352,59 @@ it("invalidates uncertain secondary repository changes even when the primary rev
 			],
 		},
 	};
-	expect(
-		readReviewProgress(
-			current,
-			{ ...guide, summary: "Renewed grouped guide" },
-			5,
-		).reviewed,
-	).toEqual({});
+	expect(reviewKey(current, guide)).not.toBe(reviewKey(run, guide));
+	expect(readReviewProgress(run, guide, 5).reviewed).toEqual({
+		authorization: true,
+	});
+	expect(readReviewProgress(current, guide, 5).reviewed).toEqual({});
+	const reordered = {
+		...run,
+		reviewGate: {
+			...run.reviewGate,
+			repositories: [...run.reviewGate.repositories].reverse(),
+		},
+	};
+	expect(reviewKey(reordered, guide)).toBe(reviewKey(run, guide));
+	expect(readReviewProgress(reordered, guide, 5).reviewed).toEqual({
+		authorization: true,
+	});
+	for (const repositories of [
+		run.reviewGate.repositories.slice(0, 1),
+		[...run.reviewGate.repositories, { repositoryId: "c", headSha: "added" }],
+	]) {
+		const changed = { ...run, reviewGate: { ...run.reviewGate, repositories } };
+		expect(reviewKey(changed, guide)).not.toBe(reviewKey(run, guide));
+		expect(readReviewProgress(changed, guide, 5).reviewed).toEqual({});
+	}
+	const decision = followup.impactDecisions[0]!;
+	const assessed = {
+		...current,
+		impactDecisions: [
+			{
+				...decision,
+				snapshot: {
+					...decision.snapshot,
+					repositories: [
+						{ repositoryId: "a", headSha: "original", reviewHead: "original" },
+						{ repositoryId: "b", headSha: "after", reviewHead: "before" },
+					],
+				},
+			},
+		],
+	};
+	expect(readReviewProgress(assessed, guide, 5).reviewed).toEqual({
+		authorization: true,
+	});
+	// Even a saved entry under the current key must prove its repository scope.
+	writeStored(reviewKey(current, guide), {
+		page: 0,
+		reviewed: { authorization: true },
+		chapterProgress: readStored(
+			`factory-review/${run.id}/chapter-progress`,
+			null,
+		),
+	});
+	expect(readReviewProgress(current, guide, 5).reviewed).toEqual({});
 });
 
 it("ignores corrupt chapter carryover without blocking the reader", () => {
