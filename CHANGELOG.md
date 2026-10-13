@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Restore the nightly publisher's Bun download streaming imports and enforce undeclared-variable checks on nightly tooling, preventing release assembly from failing after source recovery.
+- Restore the nightly publisher's Bun download streaming imports and enforce undeclared-variable checks on nightly tooling, preventing release assembly from failing after source recovery ([#126](https://github.com/jappyjan/bobs-factory/pull/126)).
 - Keep automatic nightly publication working after temporary evidence servers disappear by recovering exact accepted source and validation inputs from pinned GitHub release assets ([#125](https://github.com/jappyjan/bobs-factory/pull/125)).
 
 - Keep resumed specialist reviews responsive by searching recent history without copying its full payload and reusing immutable review-baseline chunks during checkpoints ([#121](https://github.com/jappyjan/bobs-factory/pull/121)).
