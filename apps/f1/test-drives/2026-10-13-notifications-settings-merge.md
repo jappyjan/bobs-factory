@@ -65,3 +65,56 @@ inspected for this combined page. Historical screenshots and reports are preserv
 this report does not upgrade them to evidence of the merged page. Narrow layout
 has DOM-based evidence only. OS display and physical-device background delivery
 remain unverified. App-update route restoration is covered by the PWA unit suite.
+
+## Visual validation follow-up (2026-10-13)
+
+Fresh screenshots now complete the combined-page visual check. The earlier
+capture failures above remain historical evidence of the first attempt.
+This follow-up tested clean source revision
+`63420832fa02ead3b10fe6d8c8ae7c66283030bf` with a fresh build of the same web assets
+(`31e2ef87398283eed799e290`). Subsequent changes contain only this evidence and
+the changelog note; application code and served assets are unchanged.
+
+The isolated fixture again used simulated agents, controlled browser push APIs
+and a recording sender. Its protected-access assertions passed. The setup replay
+passed all 12 checks through delayed-action protection, then registered a remote
+device with a 65-character unbroken suffix to exercise label wrapping.
+
+Chrome 148 again timed out capturing a screenshot. Switching the fresh named
+agent-browser session to the installed Chromium 149 **headless shell** succeeded.
+No desktop browser or existing browser session was used. Launch command:
+
+```sh
+agent-browser --session notifications-shell-0e797e70 \
+  --executable-path /Users/jappy/Library/Caches/ms-playwright/chromium_headless_shell-1228/chrome-headless-shell-mac-arm64/chrome-headless-shell \
+  --headed false open http://localhost:3647/#/settings/notifications
+```
+
+Captured full-page images with `set viewport 1440 1000` and
+`set viewport 390 844`, followed by `screenshot <path> --full`. Both images were
+opened and visually inspected. The header and active Settings navigation remain
+usable. Both the push contact editor and Notifications device controls are
+visible and readable. The long device label and its action buttons wrap within
+the card; the phone layout stacks the cards and controls without clipping.
+DOM checks also confirmed no horizontal overflow, all form controls within the
+viewport width, both section headings and no Notifications dialog or header
+button. The browser error log was empty.
+
+![Combined Notifications page at desktop width](assets/notifications-merged-desktop.png)
+
+![Combined Notifications page at phone width](assets/notifications-merged-mobile.png)
+
+The [revision receipt](assets/notifications-merged-visual-revision.json) records
+the tested source, web build, browser version, image dimensions and SHA-256 hashes.
+The additional evidence directory is
+`/Users/jappy/.bobs-factory/factory/evidence/manual-9d3697a3-1223-4b28-ad0d-d91f0e797e70/visual-validation`.
+It retains `visual-shell-setup.mjs`, `shell-setup.log`, `fixture.log`,
+`layout-check.mjs`, `layout-results.json`, `final.snapshot.txt`,
+`browser-errors.txt`, the images and `revision.json`. The setup script copies
+the tracked browser driver through remote-device registration, changes only the
+session/executable and adds bounded command timeouts. The created browser session
+and isolated fixture were stopped after capture.
+
+This resolves the missing desktop/phone visual evidence. It does not establish
+OS notification display or physical-device background delivery; those limits
+remain unchanged.

@@ -47,7 +47,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Move browser notification controls into Settings → Notifications alongside the push contact editor, while retaining device reconciliation across dashboard pages ([#115](https://github.com/jappyjan/bobs-factory/pull/115)).
+- Move browser notification controls into Settings → Notifications alongside the push contact editor, while retaining device reconciliation across dashboard pages; validate the combined desktop and phone layouts with inspected screenshots ([#115](https://github.com/jappyjan/bobs-factory/pull/115)).
 
 - Align generated Homebrew and AUR requirements with the selected first-release support floor of macOS 15 and Ubuntu 24.04/glibc 2.39, and clarify that the frozen app's inherited macOS 13 launch minimum is not tested-support evidence ([Taskbot #123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#97](https://github.com/jappyjan/bobs-factory/pull/97)).
 
