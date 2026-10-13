@@ -1,38 +1,38 @@
 {
-  "headSha": "8baccedc31f5816a51eae6399225678b81223dc0",
-  "dirty": true,
-  "sourceDigest": "e30f22a62f9b9dde7f872041caf16e802939928fcd319b3c7796eac421ddc064",
-  "sourceFiles": 12,
-  "webBuild": "350bac66c2a9b00a30be0156",
-  "screenshots": [
-    {
-      "file": "desktop-light.png",
-      "sha256": "d04c8d76c8980cd3239b94756ca0dee6cd4b51a74607802d9a4a3342ba542b81"
-    },
-    {
-      "file": "desktop-dark.png",
-      "sha256": "1251c23810a9a05a84689658e0cd6a40fbd22c2347e6bba9c9f254da6ccfbf19"
-    },
-    {
-      "file": "mobile-light.png",
-      "sha256": "22e7f072eb164f3f0cda213a57b739d10ea4b852ec0bed2e23024f1bbc122b43"
-    },
-    {
-      "file": "mobile-dark.png",
-      "sha256": "d9ad14f17bbb2a776aabc57270502e1ceb2ccbf54df1fa0cd4ce3c3e7471596a"
-    },
-    {
-      "file": "upload-failure.png",
-      "sha256": "a8f01a60ca4bf21e8ae9f8495e2613121b975a2d4e27eaccf998d69490a00fcf"
-    },
-    {
-      "file": "long-file.png",
-      "sha256": "2ac622af3a48280277f2167b4aff52ab53360a1dfd26066708dd9b06e4c6f057"
-    }
-  ],
-  "agentMode": "mock",
-  "browserMode": "headless",
-  "inspected": true,
-  "validatedSourceDigest": "c0be89d4c9434036b1f194cdf9520616624cf2ef8f82cf61a76d893644869c01",
-  "validationNote": "Screenshots precede the final backend-only explicit-input collision fix. The web build is unchanged; current backend checks and simulated F1 passed."
+	"headSha": "8baccedc31f5816a51eae6399225678b81223dc0",
+	"dirty": true,
+	"sourceDigest": "e30f22a62f9b9dde7f872041caf16e802939928fcd319b3c7796eac421ddc064",
+	"sourceFiles": 12,
+	"webBuild": "350bac66c2a9b00a30be0156",
+	"screenshots": [
+		{
+			"file": "desktop-light.png",
+			"sha256": "d04c8d76c8980cd3239b94756ca0dee6cd4b51a74607802d9a4a3342ba542b81"
+		},
+		{
+			"file": "desktop-dark.png",
+			"sha256": "1251c23810a9a05a84689658e0cd6a40fbd22c2347e6bba9c9f254da6ccfbf19"
+		},
+		{
+			"file": "mobile-light.png",
+			"sha256": "22e7f072eb164f3f0cda213a57b739d10ea4b852ec0bed2e23024f1bbc122b43"
+		},
+		{
+			"file": "mobile-dark.png",
+			"sha256": "d9ad14f17bbb2a776aabc57270502e1ceb2ccbf54df1fa0cd4ce3c3e7471596a"
+		},
+		{
+			"file": "upload-failure.png",
+			"sha256": "a8f01a60ca4bf21e8ae9f8495e2613121b975a2d4e27eaccf998d69490a00fcf"
+		},
+		{
+			"file": "long-file.png",
+			"sha256": "2ac622af3a48280277f2167b4aff52ab53360a1dfd26066708dd9b06e4c6f057"
+		}
+	],
+	"agentMode": "mock",
+	"browserMode": "headless",
+	"inspected": true,
+	"validatedSourceDigest": "c0be89d4c9434036b1f194cdf9520616624cf2ef8f82cf61a76d893644869c01",
+	"validationNote": "Screenshots precede the final backend-only explicit-input collision fix. The web build is unchanged; current backend checks and simulated F1 passed."
 }
