@@ -38,20 +38,19 @@ vi.mock("bobs-factory-mcp-tools", async (original) => ({
 	listConfiguredTools: directList,
 }));
 
-const homes: string[] = [];
-const runtimes: WorkflowRuntime[] = [];
+const fixtures: { home: string; runtime: WorkflowRuntime }[] = [];
 afterEach(async () => {
-	// Run creation persists asynchronously; drain writes before deleting fixtures.
-	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
-	for (const home of homes.splice(0))
+	for (const { home, runtime } of fixtures.splice(0)) {
+		// Drain queued snapshot writes before removing their destination.
+		await runtime.shutdown();
 		rmSync(home, { recursive: true, force: true });
+	}
 	vi.restoreAllMocks();
 	vi.clearAllMocks();
 });
 
 function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 	const home = mkdtempSync(join(tmpdir(), "factory-oauth-"));
-	homes.push(home);
 	const worker = new EdgeWorker({
 		platform: "cli",
 		factoryHome: home,
@@ -82,7 +81,7 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 		): Promise<{ read(): Promise<unknown> }>;
 	};
 	const runtime = edge.getFactoryRuntime();
-	runtimes.push(runtime);
+	fixtures.push({ home, runtime });
 	const run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
