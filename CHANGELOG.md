@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Accept repository-scoped comment IDs copied from grouped feedback context, while rejecting mismatched repository identities ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Save behavioral QA provenance before review and assess feedback across every repository delivery, preserving original evidence and detecting edited comments, threads and reviews ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Start Taskbot transport timeouts after capacity admission, show queued ticket setup, and cancel queued setup when a run is stopped ([#116](https://github.com/jappyjan/bobs-factory/pull/116)).

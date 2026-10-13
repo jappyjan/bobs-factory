@@ -201,6 +201,7 @@ export function recordFeedbackAssessment(
 	const scoped = (repositoryId: string, comments: FeedbackComment[] = []) =>
 		comments.map((comment) => ({
 			...comment,
+			repositoryId,
 			id: `${repositoryId}:${comment.id}`,
 		}));
 	const receipt = group
@@ -234,16 +235,26 @@ export function recordFeedbackAssessment(
 		: (raw as MergeReadiness | undefined);
 	const comments = readComments(receipt) ?? [];
 	for (const assessment of value.commentAssessments ?? []) {
-		const id =
-			group && assessment.repositoryId
-				? `${assessment.repositoryId}:${assessment.id}`
-				: assessment.id;
-		const comment = comments.find((item) => String(item.id) === id);
+		// Context aggregation already scopes IDs. Accept those verbatim, as well
+		// as provider IDs paired with a repository, without crossing repositories.
+		const matches = comments.filter((item) => {
+			if (!group || !assessment.repositoryId)
+				return String(item.id) === assessment.id;
+			return (
+				(item as FeedbackComment & { repositoryId: string }).repositoryId ===
+					assessment.repositoryId &&
+				[
+					String(item.id),
+					String(item.id).slice(assessment.repositoryId.length + 1),
+				].includes(assessment.id)
+			);
+		});
+		const comment = matches.length === 1 ? matches[0] : undefined;
 		if (!comment || commentHash(comment.body) !== assessment.bodySha256)
 			throw new Error(
 				`Comment ${assessment.id} assessment must match the supplied content hash; assess the current unassessedComments entry`,
 			);
-		ids.add(id);
+		ids.add(String(comment.id));
 	}
 	const missing = (receipt?.unassessedComments ?? []).filter(
 		(comment) =>

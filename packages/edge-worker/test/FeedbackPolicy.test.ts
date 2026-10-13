@@ -6,6 +6,7 @@ import {
 	recordFeedbackAssessment,
 } from "../src/factory/MergeReadiness.js";
 import {
+	aggregateDeliveries,
 	type RunRepository,
 	repositoryRun,
 } from "../src/factory/RepositoryScope.js";
@@ -260,14 +261,13 @@ it("binds grouped feedback to repositories, retains it after restart and detects
 	ctx.run.repositories = repositories;
 	const receipts = await Promise.all([snapshot(), snapshot()]);
 	for (const receipt of receipts) assessFeedback(ctx, receipt);
-	ctx.run.outputs.ci = {
-		scopeVersion: 1,
-		deliveries: receipts.map((output, i) => ({
+	ctx.run.outputs.ci = aggregateDeliveries(
+		receipts.map((output, i) => ({
 			repositoryId: repositories[i]!.id,
 			name: repositories[i]!.name,
 			output,
 		})),
-	};
+	);
 	const original = feedbackDigest(ctx.run);
 	const assessment = (repositoryId: string) => ({
 		repositoryId,
@@ -282,9 +282,40 @@ it("binds grouped feedback to repositories, retains it after restart and detects
 	expect(() =>
 		recordFeedbackAssessment(ctx, { commentAssessments: [assessment("a")] }),
 	).toThrow("b:42");
+	const supplied = (
+		ctx.run.outputs.ci as {
+			unassessedComments: {
+				id: string;
+				repositoryId: string;
+				bodySha256: string;
+			}[];
+		}
+	).unassessedComments;
+	expect(() =>
+		recordFeedbackAssessment(ctx, {
+			commentAssessments: supplied.map((c) => ({ ...c, repositoryId: "b" })),
+		}),
+	).toThrow("content hash");
 	const output = recordFeedbackAssessment(ctx, {
-		commentAssessments: [assessment("a"), assessment("b")],
+		commentAssessments: supplied.map(({ id, repositoryId, bodySha256 }) => ({
+			id,
+			repositoryId,
+			bodySha256,
+		})),
 	});
+	expect(
+		recordFeedbackAssessment(ctx, {
+			commentAssessments: [assessment("a"), assessment("b")],
+		}),
+	).toMatchObject({ assessedComments: [{ id: "a:42" }, { id: "b:42" }] });
+	expect(
+		recordFeedbackAssessment(ctx, {
+			commentAssessments: supplied.map(({ id, bodySha256 }) => ({
+				id,
+				bodySha256,
+			})),
+		}),
+	).toMatchObject({ assessedComments: [{ id: "a:42" }, { id: "b:42" }] });
 	expect(output).toMatchObject({
 		assessedComments: [{ id: "a:42" }, { id: "b:42" }],
 	});
