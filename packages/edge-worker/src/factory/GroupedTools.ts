@@ -1,4 +1,5 @@
 import { resolveGitProvider } from "./GitProvider.js";
+import { assertCurrentImpact, effectiveApproval } from "./Impact.js";
 import { confirmedMerge } from "./MergeRecovery.js";
 import {
 	aggregateDeliveries,
@@ -26,7 +27,7 @@ export async function confirmedGroupedMerge(
 ) {
 	const { run } = context;
 	const published = deliveryRevisions(run.outputs["draft-pr"]);
-	const decision = run.humanDecisions?.at(-1);
+	const decision = await effectiveApproval(context);
 	if (
 		decision?.decision !== "approve" ||
 		!published.length ||
@@ -221,7 +222,8 @@ export async function groupedTool(
 		throw new Error("No published repositories to review or merge");
 	// Check the complete approved delivery set before the first merge mutation.
 	const validateMergeScope = async () => {
-		const decision = run.humanDecisions?.at(-1);
+		await assertCurrentImpact(context);
+		const decision = await effectiveApproval(context);
 		if (
 			decision?.decision !== "approve" ||
 			!decision.repositories?.length ||
@@ -313,6 +315,16 @@ export async function groupedTool(
 			...context,
 			run: projected,
 			outputs: projected.outputs,
+			executionApproval: context.executionApproval
+				? {
+						...context.executionApproval,
+						headSha:
+							context.executionApproval.repositories?.find(
+								(r) => r.repositoryId === repository.id,
+							)?.headSha ?? context.executionApproval.headSha,
+					}
+				: undefined,
+			groupedImpactValidated: Boolean(context.step.impactSource),
 			allowUnchangedRepository: true,
 			validateDelivery:
 				context.step.tool === "merge"
@@ -433,5 +445,13 @@ export async function groupedTool(
 			);
 		await context.save?.();
 	}
-	return aggregateDeliveries(deliveries);
+	const result = aggregateDeliveries(deliveries);
+	if (
+		context.step.impactSource &&
+		!result.impactRequired &&
+		!result.rework &&
+		["handoff", "human-review"].includes(context.step.tool ?? "")
+	)
+		await assertCurrentImpact(context);
+	return result;
 }

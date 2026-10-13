@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { CursorRunner } from "bobs-factory-cursor-runner";
 import { afterEach, expect, it, vi } from "vitest";
 import {
-	defaultWorkflows,
+	conservativeWorkflows as defaultWorkflows,
 	legacyReviewSteps,
 	upgradeWorkflows,
 } from "../src/factory/defaultWorkflows.js";

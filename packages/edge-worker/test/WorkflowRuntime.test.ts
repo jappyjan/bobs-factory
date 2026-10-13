@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { JsonSnapshotStore } from "bobs-factory-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-	defaultWorkflows,
+	conservativeWorkflows as defaultWorkflows,
 	upgradeWorkflows,
 } from "../src/factory/defaultWorkflows.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";

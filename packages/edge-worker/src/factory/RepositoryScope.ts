@@ -193,15 +193,25 @@ export function repositoryRun(
 			...(baseline
 				? {
 						baseline,
+						...((record.baseline as { impact?: unknown }).impact &&
+						Array.isArray(record.reviewers)
+							? {
+									projection: { repositoryId: repository.id, original: record },
+								}
+							: {}),
 						...(Array.isArray(record.reviewers)
 							? {
 									reviewers: record.reviewers.map((reviewer) => ({
 										...reviewer,
-										stamp: {
-											...reviewer.stamp,
-											headSha: baseline.headSha,
-											baseSha: baseline.baseSha,
-										},
+										stamp:
+											record.baseline &&
+											(record.baseline as { impact?: unknown }).impact
+												? reviewer.stamp
+												: {
+														...reviewer.stamp,
+														headSha: baseline.headSha,
+														baseSha: baseline.baseSha,
+													},
 									})),
 								}
 							: {}),
@@ -282,13 +292,21 @@ export function aggregateDeliveries(
 		scopeVersion: 1,
 		deliveries,
 	};
-	for (const field of ["approved", "reviewReady", "ready", "merged", "skipFix"])
+	for (const field of [
+		"approved",
+		"reviewReady",
+		"ready",
+		"merged",
+		"skipFix",
+		"retainQa",
+	])
 		if (deliveries.some((item) => field in item.output))
 			result[field] = deliveries.every((item) => item.output[field] === true);
 	for (const field of [
 		"fix",
 		"rework",
 		"reviewRequired",
+		"impactRequired",
 		"qaBlocked",
 		"qaRetry",
 		"captureBlocked",

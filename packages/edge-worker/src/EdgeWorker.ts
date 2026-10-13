@@ -226,6 +226,7 @@ import {
 	stampGuideContract,
 	validateGuide,
 } from "./factory/Guide.js";
+import { type ImpactSnapshot, validateImpact } from "./factory/Impact.js";
 import {
 	completedAgentResult,
 	incrementalInstructions,
@@ -268,6 +269,7 @@ import {
 	runProvenance,
 } from "./factory/Provenance.js";
 import { type QaScope, qaDigest, qaRequirementIssues } from "./factory/Qa.js";
+import { qaReuseContext, verifyQaEnvironment } from "./factory/QaReuse.js";
 import {
 	normalizeQuestionResult,
 	questionInstructions,
@@ -8695,12 +8697,14 @@ ${taskSection}`;
 		];
 		if (artifactBinding)
 			await mkdir(artifactBinding.directory, { recursive: true });
+		if (step.id === "capture") await verifyQaEnvironment(context);
 		const factoryContext = prepareFactoryContext(
 			{
 				...(context.input && typeof context.input === "object"
 					? context.input
 					: { input: context.input }),
 				progress: context.progress,
+				...(step.id === "capture" ? { qaReuse: qaReuseContext(context) } : {}),
 				...(step.id === "ci-fix"
 					? { feedback: factoryFeedbackContext(context) }
 					: {}),
@@ -8972,6 +8976,7 @@ ${taskSection}`;
 			if (step.architectureContract === "architecture-review-v1")
 				output = ArchitectureReviewSchema.parse(output);
 			if (
+				step.impactContract ||
 				step.architectureContract ||
 				step.qaContract ||
 				["factory", "takeover"].includes(run.workflow.id) ||
@@ -8985,6 +8990,13 @@ ${taskSection}`;
 					step.qaContract,
 					step.videoContract,
 					step.architectureContract,
+					step.impactContract,
+				);
+			if (step.impactContract)
+				output = validateImpact(
+					output,
+					(context.input as { impactSnapshot: ImpactSnapshot }).impactSnapshot,
+					run,
 				);
 			if (step.id === "visual-scope" && step.qaContract) {
 				const issues = qaRequirementIssues(

@@ -6,6 +6,7 @@ import {
 	briefPrompt,
 	briefVideoInstructions,
 } from "./GuideAuthoring.js";
+import { impactInstructions } from "./Impact.js";
 import { takeoverLaunchFields } from "./LaunchFields.js";
 import { legacyGuidePrompt } from "./legacyGuidePrompt.js";
 import { legacyScreenshotSteps } from "./legacyScreenshotSteps.js";
@@ -441,7 +442,105 @@ Object.assign(planReview, { next: "delivery-route" });
 		{ next: "external-guide" },
 	),
 );
-export const defaultWorkflows = validateWorkflows([
+// Only newly created stock definitions opt in. Accepted run snapshots are never rewritten.
+function installImpact(steps: Record<string, any>[]) {
+	const fanout = steps.find((s) => s.type === "fanout" && s.review);
+	if (!fanout) return;
+	const inventory = steps.find((s) => s.id === fanout.review.inventory)!;
+	const assessId = "assess-impact";
+	const checksId = "impact-checks";
+	const index = steps.findIndex((s) => s.id === inventory.id);
+	steps.splice(
+		index,
+		0,
+		agent(
+			assessId,
+			"Assess changed work and retained evidence",
+			impactInstructions,
+			{
+				impactContract: "impact-v1",
+				impact: {
+					inventory: inventory.id,
+					fanout: fanout.id,
+					maxUnchangedCycles: 3,
+				},
+				askQuestions: true,
+				maxVisits: 100,
+				branches: [
+					{
+						when: { path: "correctionRequired", equals: true },
+						next: "ci-fix",
+					},
+					{ when: { path: "readinessOnly", equals: true }, next: "ci" },
+					{
+						when: { path: "extractRequirements", equals: true },
+						next: inventory.id,
+					},
+				],
+				next: checksId,
+			},
+		),
+	);
+	steps.splice(
+		steps.findIndex((s) => s.id === fanout.id),
+		0,
+		tool(checksId, "Run independently selected checks", "impact-checks", {
+			impactSource: assessId,
+			next: fanout.id,
+		}),
+	);
+	inventory.next = checksId;
+	inventory.prompt +=
+		"\nFor impact-v1 runs declare requirement stage:code|qa|guide|acceptance|delivery from the accepted requirement source. Code is the default; later-stage obligations remain mandatory at their named gates. Do not reclassify implementation defects as future obligations.";
+	fanout.impactSource = assessId;
+	// Every corrective route shares one assessment; initial and scope-changed work extracts fully.
+	for (const step of steps) {
+		if (
+			![assessId, inventory.id].includes(step.id) &&
+			step.next === inventory.id
+		)
+			step.next = assessId;
+		if (step.id !== assessId)
+			for (const branch of step.branches ?? [])
+				if (branch.next === inventory.id) branch.next = assessId;
+		if (
+			[
+				"ci",
+				"handoff",
+				"human-review",
+				"merge",
+				"review-after-fix",
+				"review-gate",
+				"visual-gate",
+			].includes(step.tool)
+		)
+			step.impactSource = assessId;
+		if (step.tool === "review-after-fix") {
+			step.branches = [];
+			step.next = assessId;
+		}
+		if (step.tool === "handoff")
+			step.branches.unshift({
+				when: { path: "impactRequired", equals: true },
+				next: assessId,
+			});
+		if (step.tool === "ci")
+			step.branches.unshift(
+				{ when: { path: "impactRequired", equals: true }, next: assessId },
+				{ when: { path: "retainQa", equals: true }, next: "guide" },
+			);
+		if (step.id === "visual-scope")
+			step.prompt +=
+				"\nFor impact-v1 runs, retain all story definitions and declare complete per-story dependencies plus environmentFingerprint and environmentEvidence:{repositoryId,command,expectedDigest} for fixture, dependency and environment identity. The runtime executes that read-only probe and hashes its trimmed output; use a probe that observes actual fixtures and tool versions, not a constant label. Unknown or unavailable probes require fresh execution. If external environment identity is unknown, omit its fingerprint to force execution. Behavioral reuse requires the shared independent impact assessment and exact original passed criterion provenance.";
+		if (step.id === "capture")
+			step.prompt +=
+				"\nFor impact-v1 runs read /qaReuse. Copy only runtime-validated reusable criteria exactly with their original evidence and reuse link. Execute every other criterion. Never invent a reuse link, reset an original execution date or mark failed/blocked criteria passed.";
+		if (step.id === "guide")
+			step.prompt +=
+				"\nFor impact-v1 follow-ups, preserve the complete original guide and unaffected coverage. Describe cumulative changes since prior explicit approval, independent impact rationale, fresh and reused evidence, checks and risks in a delta note. Safe minor production corrections may retain prior explicit approval after required checks; other changes require renewed acceptance. Filename and line-count restrictions do not apply to this contract. Declared future acceptance/delivery obligations remain pending at their own gates, never call them defects in the code gate.";
+	}
+}
+export const conservativeWorkflows = validateWorkflows([
 	definitions[0],
 	{
 		...pipeline,
@@ -492,6 +591,11 @@ export const defaultWorkflows = validateWorkflows([
 	},
 ]);
 
+// New launches opt in; saved/custom graphs upgrade through conservative definitions.
+const impactDefaults = structuredClone(conservativeWorkflows);
+installImpact(impactDefaults.find((w) => w.id === "factory-pipeline")!.steps);
+export const defaultWorkflows = validateWorkflows(impactDefaults);
+
 /** Upgrade the original flat Factory definition without losing customized roles. */
 const legacyVisualPrompts: Record<string, string[]> = {
 	guide: [
@@ -527,7 +631,7 @@ export function upgradeWorkflows(value: unknown): unknown {
 	const factory = definitions.find((item) => item.id === "factory");
 	if (!definitions.some((item) => item.id === "factory-pipeline")) {
 		const shared = structuredClone(
-			defaultWorkflows.find((item) => item.id === "factory-pipeline")!,
+			conservativeWorkflows.find((item) => item.id === "factory-pipeline")!,
 		);
 		if (
 			factory &&
@@ -536,14 +640,16 @@ export function upgradeWorkflows(value: unknown): unknown {
 		) {
 			shared.steps = factory.steps;
 			factory.steps = structuredClone(
-				defaultWorkflows.find((item) => item.id === "factory")!.steps,
+				conservativeWorkflows.find((item) => item.id === "factory")!.steps,
 			);
 		}
 		definitions.push({ ...shared });
 	}
 	if (!definitions.some((item) => item.id === "takeover"))
 		definitions.push(
-			structuredClone(defaultWorkflows.find((item) => item.id === "takeover")!),
+			structuredClone(
+				conservativeWorkflows.find((item) => item.id === "takeover")!,
+			),
 		);
 	for (const definition of definitions) {
 		if (definition.id === "simple" && definition.chat === undefined)
@@ -633,7 +739,7 @@ export function upgradeWorkflows(value: unknown): unknown {
 					...structuredClone(architectureSteps),
 				);
 		}
-		const stockQa = defaultWorkflows.find(
+		const stockQa = conservativeWorkflows.find(
 			(w) => w.id === "factory-pipeline",
 		)!.steps;
 		const affected = legacyScreenshotSteps.map((s) => s.id);
@@ -720,7 +826,7 @@ export function upgradeWorkflows(value: unknown): unknown {
 		for (const step of steps) {
 			if (step.id === "plan" && step.prompt === previousPlanPrompt)
 				step.prompt = previousPlanPrompt + ticketPlanInstructions;
-			const stock = defaultWorkflows
+			const stock = conservativeWorkflows
 				.find((item) => item.id === "factory-pipeline")!
 				.steps.find((item) => item.id === step.id);
 			if (
@@ -760,11 +866,11 @@ export function upgradeWorkflows(value: unknown): unknown {
 					`Diagnose and fix the CI failures in the supplied receipts and full past review history. Run relevant checks, commit and push to the same draft PR. Return {"summary":"...","checks":["..."]}. Do not merge or mark ready.`,
 		);
 		if (stockFix)
-			stockFix.prompt = defaultWorkflows
+			stockFix.prompt = conservativeWorkflows
 				.find((item) => item.id === "factory-pipeline")!
 				.steps.find((step) => step.id === "ci-fix")!.prompt;
 		const ciFix = steps.find((step) => step.id === "ci-fix");
-		const currentFixPrompt = defaultWorkflows
+		const currentFixPrompt = conservativeWorkflows
 			.find((item) => item.id === "factory-pipeline")!
 			.steps.find((step) => step.id === "ci-fix")!.prompt!;
 		if (
@@ -775,14 +881,14 @@ export function upgradeWorkflows(value: unknown): unknown {
 			ciFix?.next === "code-review" &&
 			!steps.some((step) => step.id === "after-ci-fix") &&
 			ciFix.prompt ===
-				defaultWorkflows
+				conservativeWorkflows
 					.find((item) => item.id === "factory-pipeline")!
 					.steps.find((step) => step.id === "ci-fix")!.prompt
 		) {
 			ciFix.next = "after-ci-fix";
 			steps.push({
 				...structuredClone(
-					defaultWorkflows
+					conservativeWorkflows
 						.find((item) => item.id === "factory-pipeline")!
 						.steps.find((step) => step.id === "after-ci-fix")!,
 				),
@@ -807,7 +913,7 @@ export function upgradeWorkflows(value: unknown): unknown {
 		)
 			continue;
 		handoff.next = "human-review";
-		const shared = defaultWorkflows.find(
+		const shared = conservativeWorkflows.find(
 			(item) => item.id === "factory-pipeline",
 		)!;
 		steps.push(
@@ -871,7 +977,7 @@ export function upgradeWorkflows(value: unknown): unknown {
 			["visual-scope", "guide"].every((id) => {
 				const step = steps.find((s) => s.id === id);
 				const previous = legacyReviewSteps.find((s) => s.id === id);
-				const current = defaultWorkflows
+				const current = conservativeWorkflows
 					.find((w) => w.id === "factory-pipeline")!
 					.steps.find((s) => s.id === id);
 				return (

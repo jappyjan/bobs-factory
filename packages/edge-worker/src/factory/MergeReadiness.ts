@@ -242,7 +242,12 @@ export function assessFeedback(
 	const addressedComments = new Map<string, { hash?: string; at: string }>(),
 		addressedReviews = new Set<string>();
 	for (const item of context.run.history ?? []) {
-		if (item.step.split("/").at(-1) !== "ci-fix") continue;
+		if (
+			item.step.split("/").at(-1) !== "ci-fix" &&
+			(item.output as { impactContract?: string })?.impactContract !==
+				"impact-v1"
+		)
+			continue;
 		const output = item.output as
 			| {
 					addressedCommentIds?: string[];

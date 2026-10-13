@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import {
-	defaultWorkflows,
+	conservativeWorkflows as defaultWorkflows,
 	upgradeWorkflows,
 } from "../src/factory/defaultWorkflows.js";
 import { GuideSchema } from "../src/factory/FactoryResults.js";
