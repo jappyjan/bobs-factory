@@ -1259,6 +1259,7 @@ export class FactoryServer {
 			const path = verifiedScreenshot(
 				shot.path,
 				join(runtime.directory, "evidence", run.id),
+				shot.imageSha256,
 			);
 			const bytes = readFileSync(path);
 			const value = run.outputs[request.query.artifact ?? "capture"];
