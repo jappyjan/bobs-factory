@@ -443,8 +443,12 @@ isolated fixture may use an authenticated `zrok2` HTTPS tunnel. The
 that tunnel with mocked subscriptions and delivery. Production Tailscale proxy
 configuration and native foreground/background receipt remain unverified.
 
-Set `BOBS_FACTORY_FACTORY_PUSH_SUBJECT` to an operator contact, such as
-`mailto:operator@example.org` or an HTTPS contact page, then restart Factory.
+Open **Settings → Notifications** and save an operator contact, such as
+`mailto:operator@example.org` or an HTTPS contact page. Setup and contact updates
+apply immediately without changing keys, subscriptions or device consent. Saving
+does not request browser permission or enable a device. Unsaved edits clear on
+navigation or reload. `BOBS_FACTORY_FACTORY_PUSH_SUBJECT` remains an optional
+first-start bootstrap when no saved push state exists.
 A configured server creates `<factoryHome>/factory/push.json` with mode `0600`.
 It contains the stable VAPID key pair, browser subscriptions and consumed-event
 bookkeeping. Back it up securely with Factory state. The subject and keys in

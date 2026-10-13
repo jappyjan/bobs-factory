@@ -60,7 +60,7 @@ const push = new FactoryPush(
 		sends.push(args);
 	},
 	Date.now,
-	"mailto:f1@example.invalid",
+	"",
 );
 const worker = new EdgeWorker({
 	platform: "cli",

@@ -7,7 +7,7 @@ const evidence = process.env.F1_EVIDENCE_DIR;
 const { keys, origin } = JSON.parse(
 	readFileSync(join(evidence, "notification-fixture.json")),
 );
-const session = "notifications-manual-0e797e70";
+const session = "notifications-merge-0e797e70";
 const cli = (...args) =>
 	execFileSync("agent-browser", ["--session", session, ...args], {
 		encoding: "utf8",
@@ -18,18 +18,24 @@ const poll = (source) =>
 	evaluate(
 		`(async () => { for (let n=0;n<100;n++) { if (${source}) return true; await new Promise(r=>setTimeout(r,100)); } throw new Error('Timed out: '+${JSON.stringify(source)}); })()`,
 	);
-const click = (name) =>
+const click = (name) => {
+	evaluate(
+		`[...document.querySelectorAll('button')].find(b=>b.textContent===${JSON.stringify(name)}).scrollIntoView({block:'center'})`,
+	);
 	cli("find", "role", "button", "click", "--name", name, "--exact");
+};
 const label = (value) => cli("find", "label", "Device label", "fill", value);
 const route = (path) => evaluate(`location.hash=${JSON.stringify(path)}`);
 const check = (name, condition = true) => {
 	assert(condition, name);
 	checks.push(name);
-	console.log("PASS " + name);
+	console.log(`PASS ${name}`);
 };
 const checks = [];
-cli("--headed", "false", "open", origin + "/#/settings/notifications");
-poll(`document.querySelector('h2')?.textContent === 'Notifications'`);
+cli("--headed", "false", "open", `${origin}/#/settings/notifications`);
+poll(
+	`document.querySelector('#notifications-settings')?.textContent === 'Notifications'`,
+);
 check(
 	"Direct route renders inline with active Settings navigation and no header entry",
 	evaluate(
@@ -37,8 +43,46 @@ check(
 	),
 );
 cli("reload");
-poll(`document.querySelector('h2')?.textContent === 'Notifications'`);
+poll(
+	`document.querySelector('#notifications-settings')?.textContent === 'Notifications'`,
+);
 check("Reload preserves Notifications route");
+// Configure the merged contact editor, without device consent or navigation.
+poll(
+	`document.querySelector('[aria-labelledby=notification-settings] input') && !document.body.innerText.includes('Loading notification settings')`,
+);
+cli(
+	"find",
+	"label",
+	"Push service contact",
+	"fill",
+	"mailto:merged@example.invalid",
+);
+click("Save push contact");
+poll(`document.body.innerText.includes('Push contact saved.')`);
+poll(
+	`![...document.querySelectorAll('button')].find(b=>b.textContent==='Enable this device').disabled`,
+);
+check(
+	"Saving push contact refreshes device availability without navigation or consent",
+	evaluate(
+		`(async()=>{const status=await(await fetch('/api/push')).json();return status.subject==='mailto:merged@example.invalid' && status.devices.length===0 && !localStorage.getItem('factory-push-device-v1')})()`,
+	),
+);
+cli(
+	"find",
+	"label",
+	"Push service contact",
+	"fill",
+	"mailto:discarded@example.invalid",
+);
+route("/settings/capacity");
+poll(`document.querySelector('h2')?.textContent==='Instance capacity'`);
+route("/settings/notifications");
+poll(
+	`document.querySelector('[aria-labelledby=notification-settings] input')?.value==='mailto:merged@example.invalid'`,
+);
+check("Leaving Notifications discards unsaved push contact edits");
 // Controlled browser push API; protected Factory APIs and recording sender remain real.
 evaluate(`(() => {
  window.fixture = { permission:'denied', requests:0, subscribe:0, unsubscribe:0, subscription:null, realFetch:window.fetch.bind(window) };
@@ -55,6 +99,9 @@ poll(`document.body.innerText.includes('Permission: denied')`);
 check(
 	"Denied permission visible without requesting consent",
 	evaluate("fixture.requests === 0"),
+);
+poll(
+	`![...document.querySelectorAll('button')].find(b=>b.textContent==='Enable this device').disabled`,
 );
 click("Enable this device");
 poll(`document.body.innerText.includes('Notifications are not allowed')`);
@@ -76,6 +123,24 @@ check(
 		`JSON.parse(localStorage.getItem('factory-push-device-v1')).optOut===false && document.body.innerText.includes('Saved device')`,
 	),
 );
+const beforeUpdate = evaluate(
+	`(async()=>await(await fetch('/api/push')).json())()`,
+);
+cli(
+	"find",
+	"label",
+	"Push service contact",
+	"fill",
+	"mailto:updated@example.invalid",
+);
+click("Save push contact");
+poll(`document.body.innerText.includes('Push contact saved.')`);
+check(
+	"Contact update preserves server key, registered device and browser consent",
+	evaluate(
+		`(async()=>{const status=await(await fetch('/api/push')).json();return status.subject==='mailto:updated@example.invalid' && status.publicKey===${JSON.stringify(beforeUpdate.publicKey)} && status.devices[0].id===${JSON.stringify(beforeUpdate.devices[0].id)} && !JSON.parse(localStorage.getItem('factory-push-device-v1')).optOut && fixture.subscribe===1})()`,
+	),
+);
 click("Send test");
 poll(
 	`document.querySelector('[role=status]')?.textContent.includes('accepted') || document.body.innerText.includes('accepted by')`,
@@ -85,7 +150,9 @@ label("Unsent edit");
 route("/settings/capacity");
 poll(`document.querySelector('h2')?.textContent==='Instance capacity'`);
 route("/settings/notifications");
-poll(`document.querySelector('input')?.value==='This browser'`);
+poll(
+	`document.querySelector('.notifications-settings input')?.value==='This browser'`,
+);
 check(
 	"Switching Settings sections discards label draft and retains saved consent",
 	evaluate(
@@ -97,7 +164,9 @@ evaluate(`window.dispatchEvent(new Event('storage'));`);
 poll(`document.body.innerText.includes('This device: Enabled')`);
 check(
 	"Ordinary refresh preserves draft",
-	evaluate(`document.querySelector('input').value==='Preserved edit'`),
+	evaluate(
+		`document.querySelector('.notifications-settings input').value==='Preserved edit'`,
+	),
 );
 evaluate(
 	`(async()=>{fixture.build=(await(await fetch('/api/version')).json()).build})()`,
@@ -111,18 +180,20 @@ poll("!!fixture.finish");
 route("/");
 poll(`!document.querySelector('[aria-labelledby=notifications-settings]')`);
 route("/settings/notifications");
-poll(`document.querySelector('input')?.value==='This browser'`);
+poll(
+	`document.querySelector('.notifications-settings input')?.value==='This browser'`,
+);
 label("New form draft");
 evaluate(`fixture.finish(); window.fetch=fixture.realFetch;`);
 evaluate(`(async()=>{await new Promise(r=>setTimeout(r,400));return true})()`);
 check(
 	"Delayed old action cannot overwrite replacement draft or error",
 	evaluate(
-		`document.querySelector('input').value==='New form draft' && !document.body.innerText.includes('Old form error')`,
+		`document.querySelector('.notifications-settings input').value==='New form draft' && !document.body.innerText.includes('Old form error')`,
 	),
 );
 // Create another browser device through the real API, then exercise its controls.
-const longLabel = "Remote device " + "X".repeat(65);
+const longLabel = `Remote device ${"X".repeat(65)}`;
 evaluate(
 	`(async()=>{const version=await(await fetch('/api/version')).json(); fixture.build=version.build; const sub={endpoint:'https://fcm.googleapis.com/fcm/send/fixture-remote',keys:${JSON.stringify(keys)}}; fixture.remote=await(await fetch('/api/push/devices',{method:'POST',headers:{'Content-Type':'application/json','X-Factory-Request':'1','X-Factory-Build':version.build},body:JSON.stringify({label:${JSON.stringify(longLabel)},subscription:sub})})).json(); window.dispatchEvent(new Event('online'));})()`,
 );
@@ -201,13 +272,17 @@ poll("!!fixture.finishEnable");
 route("/");
 poll(`!document.querySelector('[aria-labelledby=notifications-settings]')`);
 route("/settings/notifications");
-poll(`document.querySelector('input')?.value==='This browser'`);
+poll(
+	`document.querySelector('.notifications-settings input')?.value==='This browser'`,
+);
 label("Replacement draft");
 evaluate(`fixture.finishEnable(); window.fetch=fixture.realFetch;`);
 poll(`document.body.innerText.includes('This device: Enabled')`);
 check(
 	"Enable finishing after navigation refreshes status without replacing new draft",
-	evaluate(`document.querySelector('input').value==='Replacement draft'`),
+	evaluate(
+		`document.querySelector('.notifications-settings input').value==='Replacement draft'`,
+	),
 );
 poll(`document.body.innerText.includes('This device: Enabled')`);
 route("/");
@@ -250,7 +325,9 @@ poll(
 );
 check("Remote removal reconciles on Today without automatic re-enable");
 route("/settings/notifications");
-poll(`document.querySelector('input')?.value==='This browser'`);
+poll(
+	`document.querySelector('.notifications-settings input')?.value==='This browser'`,
+);
 label("Private draft");
 // Trigger the same access-loss boundary as a protected API 401, with controlled auth responses.
 evaluate(
@@ -262,7 +339,9 @@ check(
 	evaluate(`JSON.parse(localStorage.getItem('factory-push-device-v1')).optOut`),
 );
 cli("reload");
-poll(`document.querySelector('input')?.value==='This browser'`);
+poll(
+	`document.querySelector('.notifications-settings input')?.value==='This browser'`,
+);
 check("Restored access does not restore private label draft");
 // Unsupported browser variant.
 evaluate(

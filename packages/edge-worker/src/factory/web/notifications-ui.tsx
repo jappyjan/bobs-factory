@@ -9,6 +9,7 @@ import {
 	useState,
 } from "react";
 import { useCurrentForm, useFormState } from "./form-state";
+import { NotificationSettings } from "./notification-settings";
 import {
 	disablePush,
 	enablePush,
@@ -169,144 +170,150 @@ export function NotificationsSettings() {
 	};
 	const ownId = pushPreference().id;
 	return (
-		<section
-			className="recipe notifications-settings"
-			aria-labelledby="notifications-settings"
-		>
-			<h2 id="notifications-settings">Notifications</h2>
-			<p>
-				Receive new questions, reviews, runs needing help, and successful
-				completions. Notifications contain only Factory’s name and event type.
-			</p>
-			<p>
-				Browser support: {supported ? "available" : "unavailable"}. Permission:{" "}
-				{permission}. This device: {enabled ? "Enabled" : "Disabled"}.
-			</p>
-			{!supported && (
+		<>
+			<NotificationSettings
+				onSaved={() => void refresh(true).catch(() => {})}
+			/>
+			<section
+				className="recipe notifications-settings"
+				aria-labelledby="notifications-settings"
+			>
+				<h2 id="notifications-settings">Notifications</h2>
 				<p>
-					Use a supported browser over HTTPS. On iPhone or iPad (16.4+), install
-					this address to the Home Screen and open the app there. If Brave does
-					not offer installation, use Safari.
+					Receive new questions, reviews, runs needing help, and successful
+					completions. Notifications contain only Factory’s name and event type.
 				</p>
-			)}
-			{status?.diagnostic && <p role="status">{status.diagnostic}</p>}
-			<label>
-				Device label
-				<input
-					value={label}
-					maxLength={80}
-					onChange={(e) => setLabel(e.target.value)}
-				/>
-			</label>
-			<div className="actions">
-				<Button
-					disabled={
-						busy ||
-						enabled ||
-						!supported ||
-						!registration ||
-						!status?.available ||
-						!label.trim() ||
-						connection.status !== "ready"
-					}
-					onClick={() => {
-						// Permission must start in this direct click, before any network/lock/worker await.
-						const permissionRequest = Notification.requestPermission();
-						void perform(() =>
-							enablePush(
-								permissionRequest,
-								registration!,
-								status!.publicKey!,
-								label.trim(),
-							),
-						);
-					}}
-				>
-					Enable this device
-				</Button>
-				<Button
-					variant="ghost"
-					disabled={busy || (!enabled && !ownId)}
-					onClick={() => void perform(() => disablePush(registration))}
-				>
-					Disable this device
-				</Button>
-				<Button
-					variant="ghost"
-					disabled={busy || !enabled}
-					onClick={() =>
-						void perform(async () => {
-							const result = await pushApi<{ message: string }>(
-								`/devices/${ownId}/test`,
-								{ method: "POST", body: "{}" },
+				<p>
+					Browser support: {supported ? "available" : "unavailable"}.
+					Permission: {permission}. This device:{" "}
+					{enabled ? "Enabled" : "Disabled"}.
+				</p>
+				{!supported && (
+					<p>
+						Use a supported browser over HTTPS. On iPhone or iPad (16.4+),
+						install this address to the Home Screen and open the app there. If
+						Brave does not offer installation, use Safari.
+					</p>
+				)}
+				{status?.diagnostic && <p role="status">{status.diagnostic}</p>}
+				<label>
+					Device label
+					<input
+						value={label}
+						maxLength={80}
+						onChange={(e) => setLabel(e.target.value)}
+					/>
+				</label>
+				<div className="actions">
+					<Button
+						disabled={
+							busy ||
+							enabled ||
+							!supported ||
+							!registration ||
+							!status?.available ||
+							!label.trim() ||
+							connection.status !== "ready"
+						}
+						onClick={() => {
+							// Permission must start in this direct click, before any network/lock/worker await.
+							const permissionRequest = Notification.requestPermission();
+							void perform(() =>
+								enablePush(
+									permissionRequest,
+									registration!,
+									status!.publicKey!,
+									label.trim(),
+								),
 							);
-							return result.message;
-						})
-					}
-				>
-					Send test
-				</Button>
-			</div>
-			<p>
-				Tests use the real push service. Acceptance does not prove display.
-				Check browser and OS notification settings; Brave desktop also needs its
-				Google-services push setting.
-			</p>
-			{message && <p role="status">{message}</p>}
-			{(error || state.error) && <p role="alert">{error || state.error}</p>}
-			<ul>
-				{status?.devices.map((device) => (
-					<li key={device.id}>
-						<strong>{device.label}</strong>
-						{device.id === ownId ? " (this device)" : ""}:{" "}
-						{device.enabled ? "Enabled" : "Disabled"}; delivery{" "}
-						{device.health === "accepted"
-							? "accepted by provider, receipt unconfirmed"
-							: device.health}
-						.
-						<div className="actions">
-							{device.enabled && (
+						}}
+					>
+						Enable this device
+					</Button>
+					<Button
+						variant="ghost"
+						disabled={busy || (!enabled && !ownId)}
+						onClick={() => void perform(() => disablePush(registration))}
+					>
+						Disable this device
+					</Button>
+					<Button
+						variant="ghost"
+						disabled={busy || !enabled}
+						onClick={() =>
+							void perform(async () => {
+								const result = await pushApi<{ message: string }>(
+									`/devices/${ownId}/test`,
+									{ method: "POST", body: "{}" },
+								);
+								return result.message;
+							})
+						}
+					>
+						Send test
+					</Button>
+				</div>
+				<p>
+					Tests use the real push service. Acceptance does not prove display.
+					Check browser and OS notification settings; Brave desktop also needs
+					its Google-services push setting.
+				</p>
+				{message && <p role="status">{message}</p>}
+				{(error || state.error) && <p role="alert">{error || state.error}</p>}
+				<ul>
+					{status?.devices.map((device) => (
+						<li key={device.id}>
+							<strong>{device.label}</strong>
+							{device.id === ownId ? " (this device)" : ""}:{" "}
+							{device.enabled ? "Enabled" : "Disabled"}; delivery{" "}
+							{device.health === "accepted"
+								? "accepted by provider, receipt unconfirmed"
+								: device.health}
+							.
+							<div className="actions">
+								{device.enabled && (
+									<Button
+										variant="ghost"
+										disabled={busy}
+										onClick={() =>
+											void perform(() =>
+												device.id === ownId
+													? disablePush(registration)
+													: pushApi(`/devices/${device.id}`, {
+															method: "PATCH",
+															body: JSON.stringify({ enabled: false }),
+														}),
+											)
+										}
+									>
+										Disable {device.label}
+									</Button>
+								)}
 								<Button
 									variant="ghost"
 									disabled={busy}
 									onClick={() =>
-										void perform(() =>
-											device.id === ownId
-												? disablePush(registration)
-												: pushApi(`/devices/${device.id}`, {
-														method: "PATCH",
-														body: JSON.stringify({ enabled: false }),
-													}),
-										)
+										void perform(async () => {
+											if (device.id === ownId) await disablePush(registration);
+											await pushApi(`/devices/${device.id}`, {
+												method: "DELETE",
+											});
+										})
 									}
 								>
-									Disable {device.label}
+									Remove {device.label}
 								</Button>
-							)}
-							<Button
-								variant="ghost"
-								disabled={busy}
-								onClick={() =>
-									void perform(async () => {
-										if (device.id === ownId) await disablePush(registration);
-										await pushApi(`/devices/${device.id}`, {
-											method: "DELETE",
-										});
-									})
-								}
-							>
-								Remove {device.label}
-							</Button>
-						</div>
-					</li>
-				))}
-			</ul>
-			<p>
-				Each browser profile or installed app is a separate device. Enable other
-				devices from that device. Events already pending, skipped during an
-				outage, or created before enablement are never replayed. Unreachable
-				devices may miss notifications.
-			</p>
-		</section>
+							</div>
+						</li>
+					))}
+				</ul>
+				<p>
+					Each browser profile or installed app is a separate device. Enable
+					other devices from that device. Events already pending, skipped during
+					an outage, or created before enablement are never replayed.
+					Unreachable devices may miss notifications.
+				</p>
+			</section>
+		</>
 	);
 }

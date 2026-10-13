@@ -14,7 +14,7 @@ const pages = [
 	{
 		id: "notifications",
 		name: "Notifications",
-		description: "Browser devices and notification delivery",
+		description: "Push service contact, browser devices and delivery",
 	},
 	{
 		id: "updates",
