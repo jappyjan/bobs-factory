@@ -245,7 +245,10 @@ it("starts, displays, answers and terminates runs through the local API", async 
 				.json()
 				.workflows.find((workflow: { id: string }) => workflow.id === "simple")
 				.launchFields,
-		).toMatchObject([{ name: "prompt", required: true }]);
+		).toMatchObject([
+			{ name: "prompt", required: true },
+			{ name: "attachments", type: "files", required: false },
+		]);
 		expect(runtime.selectWorkflow([], "manual").id).toBe("factory");
 		expect(
 			(await server.app.inject({ url: "/api/config", headers })).json()
@@ -479,6 +482,7 @@ it("validates the selected workflow's fields, accepts source-only Takeover, and 
 		).toEqual([
 			["source", true],
 			["prompt", false],
+			["attachments", false],
 		]);
 		for (const fields of [
 			{ source: "DEF-1" },
@@ -1794,5 +1798,98 @@ it.each([
 		await server.stop();
 		rmSync(home, { recursive: true, force: true });
 		vi.unstubAllEnvs();
+	}
+});
+
+it("bounds binary uploads, checks declared fields and configuration, and retains files after failed admission", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-launch-uploads-"));
+	const runtime = new WorkflowRuntime(home, {
+		agent: async () => ({}),
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	const start = vi.fn(async () => {
+		throw new Error("Admission failed");
+	});
+	const server = new FactoryServer(runtime, {
+		repositories: () => [{ id: "repo", name: "Project" }],
+		sessions: () => [],
+		entries: () => [],
+		start,
+		stop: (id) => runtime.stop(id),
+	});
+	try {
+		const config = (await server.app.inject({ url: "/api/config" })).json();
+		const build = (await server.app.inject({ url: "/api/version" })).json()
+			.build;
+		const headers = {
+			"x-factory-request": "1",
+			"x-factory-build": build,
+			"x-factory-config": config.configRevision,
+		};
+		const metadata = {
+			draft: crypto.randomUUID(),
+			workflow: "simple",
+			repositoryId: "repo",
+			repositoryIds: ["repo"],
+			field: "attachments",
+			name: "../input.unknown",
+			mime: "",
+		};
+		const upload = (bytes: Buffer, overrides = {}) =>
+			server.app.inject({
+				method: "POST",
+				url: `/api/launch-assets?metadata=${encodeURIComponent(JSON.stringify({ ...metadata, ...overrides }))}`,
+				headers: { ...headers, "content-type": "application/octet-stream" },
+				payload: bytes,
+			});
+		const large = await upload(Buffer.alloc(25 * 1024 * 1024 + 1));
+		expect(large.statusCode).toBe(413);
+		expect(large.json()).toEqual({
+			error: "Each file must be 25 MiB or smaller",
+		});
+		expect(large.headers.connection).toBe("close");
+		expect(
+			(await upload(Buffer.from("bytes"), { field: "undeclared" })).statusCode,
+		).toBe(409);
+		const file = await upload(Buffer.from([0, 255, 1]));
+		expect(file.statusCode).toBe(201);
+		const failed = await server.app.inject({
+			method: "POST",
+			url: "/api/runs",
+			headers,
+			payload: {
+				repositoryId: "repo",
+				workflow: "simple",
+				inputs: { prompt: "Use files" },
+				attachmentDraft: metadata.draft,
+				attachments: { attachments: [file.json().id] },
+			},
+		});
+		expect(failed.statusCode).toBe(409);
+		expect(start).toHaveBeenCalledOnce();
+		const stale = await server.app.inject({
+			method: "POST",
+			url: `/api/launch-assets?metadata=${encodeURIComponent(JSON.stringify(metadata))}`,
+			headers: {
+				...headers,
+				"x-factory-config": "stale",
+				"content-type": "application/octet-stream",
+			},
+			payload: Buffer.from("bytes"),
+		});
+		expect(stale.statusCode).toBe(409);
+		expect(stale.json().error).toMatch(/settings changed/);
+		const remove = await server.app.inject({
+			method: "DELETE",
+			url: `/api/launch-assets/${metadata.draft}/${file.json().id}`,
+			headers,
+			payload: {},
+		});
+		expect(remove.statusCode).toBe(200);
+	} finally {
+		await runtime.shutdown();
+		await server.stop();
+		rmSync(home, { recursive: true, force: true });
 	}
 });

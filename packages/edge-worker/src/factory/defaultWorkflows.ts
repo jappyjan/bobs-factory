@@ -6,7 +6,11 @@ import {
 	briefPrompt,
 	briefVideoInstructions,
 } from "./GuideAuthoring.js";
-import { takeoverLaunchFields } from "./LaunchFields.js";
+import {
+	attachmentLaunchField,
+	standardLaunchFields,
+	takeoverLaunchFields,
+} from "./LaunchFields.js";
 import { legacyGuidePrompt } from "./legacyGuidePrompt.js";
 import { legacyScreenshotSteps } from "./legacyScreenshotSteps.js";
 import { QA_CONTRACT } from "./Qa.js";
@@ -52,6 +56,14 @@ const ciAssessmentInstructions = ` Set reviewRequired=false ONLY when every newl
 const definitions = [
 	{
 		id: "simple",
+		launchFields: [
+			...standardLaunchFields.map((field) => ({
+				...field,
+				label: "What should Bob do?",
+				placeholder: "What should Bob do?",
+			})),
+			attachmentLaunchField,
+		],
 		allowedTriggers: ["manual", "ticket-assignment"],
 		icon: "⚡",
 		name: "Simple / Bob’s Factory",
@@ -63,6 +75,7 @@ const definitions = [
 	},
 	{
 		id: "factory",
+		launchFields: [...standardLaunchFields, attachmentLaunchField],
 		allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 		icon: "🏭",
 		name: "Software factory",
@@ -458,7 +471,7 @@ export const defaultWorkflows = validateWorkflows([
 		id: "takeover",
 		allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 		icon: "🤝",
-		launchFields: takeoverLaunchFields,
+		launchFields: [...takeoverLaunchFields, attachmentLaunchField],
 		name: "Take over existing work",
 		description:
 			"Inspect an existing PR or ticket, clarify remaining work, then continue through the shared factory pipeline. Existing PRs stay draft for human review.",

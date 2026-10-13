@@ -163,13 +163,14 @@ export async function api<T = any>(
 	const finish = write ? beginWrite() : undefined;
 	// Bind the write to the configuration shown when it began, before async checks.
 	const configRevision =
-		write &&
-		[
-			"/api/workflows",
-			"/api/title-settings",
-			"/api/execution-profiles",
-			"/api/runs",
-		].includes(path)
+		(write &&
+			[
+				"/api/workflows",
+				"/api/title-settings",
+				"/api/execution-profiles",
+				"/api/runs",
+			].includes(path)) ||
+		(write && path.startsWith("/api/launch-assets"))
 			? client.getQueryData<any>(["config"])?.configRevision
 			: undefined;
 	try {

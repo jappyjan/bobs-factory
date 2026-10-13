@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { agentSettings } from "./AgentSettings.js";
 import { ExecutionSelectionSchema } from "./ExecutionProfiles.js";
+import { AttachmentSelectionSchema, UploadIdSchema } from "./LaunchAssets.js";
 import { TakeoverSourceSchema } from "./Takeover.js";
 import type { Workflow } from "./Workflow.js";
 
@@ -11,7 +12,7 @@ export const LaunchFieldSchema = z
 			.regex(/^[a-zA-Z][a-zA-Z0-9_-]*$/)
 			.max(80),
 		label: z.string().trim().min(1).max(120),
-		type: z.enum(["text", "textarea", "select"]).default("text"),
+		type: z.enum(["text", "textarea", "select", "files"]).default("text"),
 		required: z.boolean().default(false),
 		placeholder: z.string().max(1000).optional(),
 		description: z.string().max(1000).optional(),
@@ -29,8 +30,20 @@ export const LaunchFieldSchema = z
 	.refine(
 		(field) => field.type !== "select" || field.options.length > 0,
 		"Choice fields need options",
+	)
+	.refine(
+		(field) =>
+			field.type !== "files" ||
+			(field.defaultValue === undefined && field.options.length === 0),
+		"File fields cannot have text defaults or choices",
 	);
 export type LaunchField = z.infer<typeof LaunchFieldSchema>;
+export const attachmentLaunchField = {
+	name: "attachments",
+	label: "Attachments",
+	type: "files",
+	description: "Attach reference material for this workflow.",
+};
 export const standardLaunchFields = [
 	{
 		name: "prompt",
@@ -84,6 +97,8 @@ export const LaunchRequestSchema = z.object({
 	prompt: z.string().trim().max(100000).optional(),
 	source: z.string().trim().max(1000).optional(),
 	inputs: z.record(z.string(), z.string().max(100000)).default({}),
+	attachments: AttachmentSelectionSchema.optional(),
+	attachmentDraft: UploadIdSchema.optional(),
 	repositoryId: z.string().min(1),
 	repositoryIds: z
 		.array(z.string().min(1))
@@ -105,7 +120,16 @@ export function resolveLaunchRequest(
 	const values = { ...request.inputs };
 	delete values.title;
 	const schema: Record<string, z.ZodType<string>> = {};
+	const fileSchema: Record<string, z.ZodType<string[]>> = {};
 	for (const field of getLaunchFields(workflow)) {
+		if (field.type === "files") {
+			fileSchema[field.name] = z
+				.array(UploadIdSchema)
+				.max(10)
+				.min(field.required ? 1 : 0, `${field.label} is required`)
+				.prefault([]);
+			continue;
+		}
 		const legacy = ["prompt", "source"].includes(field.name)
 			? request[field.name as "prompt" | "source"]
 			: undefined;
@@ -131,12 +155,22 @@ export function resolveLaunchRequest(
 		string,
 		string
 	>;
+	const attachments = z
+		.object(fileSchema)
+		.strict()
+		.parse(request.attachments ?? {}) as Record<string, string[]>;
+	const ids = Object.values(attachments).flat();
+	if (new Set(ids).size !== ids.length || ids.length > 10)
+		throw new Error("Select up to 10 distinct files");
+	if (ids.length && !request.attachmentDraft)
+		throw new Error("Attachment draft is required");
 	const source = inputs.source || request.source || undefined;
 	if (workflow.id === "takeover") TakeoverSourceSchema.parse(source);
 	const { title: _legacyTitle, ...rest } = request;
 	return {
 		...rest,
 		inputs,
+		attachments,
 		source,
 		prompt: inputs.prompt ?? request.prompt ?? "",
 	};

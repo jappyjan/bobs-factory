@@ -5,6 +5,7 @@ import type { ExecutionSelection } from "../ExecutionProfiles";
 import { useAction, useConfig } from "./client";
 import { ExecutionSelectors } from "./execution";
 import { useCurrentForm, useFormState } from "./form-state";
+import { UploadField, useLaunchUploads } from "./launch-uploads";
 import { revisionOf } from "./restoration";
 import { Button, Modal, useToast } from "./ui";
 
@@ -160,7 +161,7 @@ function Field({
 				<textarea
 					ref={ref}
 					id={main ? "composer-input" : fieldId}
-					rows={main ? 1 : 3}
+					rows={main ? 5 : 3}
 					value={value}
 					required={field.required}
 					placeholder={
@@ -179,6 +180,7 @@ function Field({
 					onChange={(e) => onChange(e.target.value)}
 				/>
 			)}
+			{field.description && <small>{field.description}</small>}
 		</label>
 	);
 }
@@ -226,32 +228,59 @@ export function Composer({
 		),
 		workflow = workflows.find((w: any) => w.id === workflowId),
 		fields = workflow?.launchFields ?? [];
+	const uploads = useLaunchUploads(inputContext, config, repo, workflowId);
+	const main =
+		fields.find(
+			(field: any) => field.name === "prompt" && field.type === "textarea",
+		) ?? fields.find((field: any) => field.type === "textarea");
+	const otherFields = fields.filter(
+		(field: any) => field !== main && field.type !== "files",
+	);
+	const fileFields = fields.filter((field: any) => field.type === "files");
+	const selectedProject = config.repositories.find(
+		(item: any) => item.id === repo,
+	);
+	const missing = fields.some(
+		(field: any) =>
+			field.required &&
+			(field.type === "files"
+				? !uploads.selection[field.name]?.length
+				: !(values[field.name] ?? field.defaultValue ?? "").trim()),
+	);
+	const blocked =
+		action.isPending ||
+		action.isBlocked ||
+		!workflow ||
+		!selectedProject ||
+		missing ||
+		uploads.blocked;
 	const submit = async () => {
-		if (action.isPending || !workflow) return;
+		if (blocked) return;
 		try {
 			const inputs = Object.fromEntries(
-				fields.map((f: any) => [
-					f.name,
-					values[f.name] ?? f.defaultValue ?? "",
-				]),
+				fields
+					.filter((field: any) => field.type !== "files")
+					.map((field: any) => [
+						field.name,
+						values[field.name] ?? field.defaultValue ?? "",
+					]),
 			);
 			const run = await action.mutateAsync({
 				path: "/api/runs",
 				body: {
 					repositoryId: repo,
-					repositoryIds: config.repositories.find(
-						(item: any) => item.id === repo,
-					)?.repositoryIds,
+					repositoryIds: selectedProject.repositoryIds,
 					workflow: workflow.id,
 					inputs,
+					attachments: uploads.selection,
+					attachmentDraft: uploads.draft,
 					...settings,
 					execution,
 				},
 			});
 			if (!isCurrent()) return;
-			setValues((current) =>
-				JSON.stringify(current) === JSON.stringify(values) ? {} : current,
-			);
+			setValues({});
+			uploads.reset();
 			onStarted(run.id);
 			toast({
 				text: "Bob's on it 🌈",
@@ -259,174 +288,159 @@ export function Composer({
 				onAction: () => navigate(`/runs/${run.id}`),
 			});
 		} catch {
-			/* mutation error is rendered inline */
+			/* The current draft stays available for correction. */
 		}
 	};
 	return (
-		<section aria-label="Start a run">
+		<section aria-label="Start a run" className="launch-composer">
+			<h1 className="composer-heading">
+				What should we build in{" "}
+				<label className="project-heading-picker">
+					<span className="sr-only">Project</span>
+					<select
+						aria-label="Project"
+						value={repo}
+						disabled={action.isPending || !config.repositories.length}
+						onChange={(event) => setRepo(event.target.value)}
+					>
+						{!config.repositories.length && (
+							<option value="">Select a project</option>
+						)}
+						{config.repositories.map((project: any) => (
+							<option key={project.id} value={project.id}>
+								{project.name}
+							</option>
+						))}
+					</select>
+					<span aria-hidden="true">?</span>
+				</label>
+			</h1>
+			{!config.repositories.length && (
+				<p role="status">
+					Add a project in <Link to="/settings/setup">Project setup</Link> to
+					start a run.
+				</p>
+			)}
 			<form
 				className="composer"
-				onSubmit={(e) => {
-					e.preventDefault();
+				onSubmit={(event) => {
+					event.preventDefault();
 					void submit();
 				}}
-				onKeyDown={(e) => {
+				onKeyDown={(event) => {
 					if (
-						e.key === "Enter" &&
-						!e.shiftKey &&
-						e.target === document.getElementById("composer-input")
+						event.key === "Enter" &&
+						!event.shiftKey &&
+						!event.nativeEvent.isComposing &&
+						event.nativeEvent.keyCode !== 229 &&
+						event.target === document.getElementById("composer-input")
 					) {
-						e.preventDefault();
-						e.currentTarget.requestSubmit();
+						event.preventDefault();
+						event.currentTarget.requestSubmit();
 					}
 				}}
 			>
-				{!workflow && (
-					<p role="status" className="composer-hint">
-						{workflows.length
-							? "The selected recipe or saved default does not allow manual starts. Choose an eligible recipe below."
-							: "No recipes allow manual starts."}{" "}
-						<Link to="/recipes">Enable Start manually in Recipes</Link>.
-					</p>
-				)}
-				{fields[0] && (
-					<Field
-						main
-						field={fields[0]}
-						value={values[fields[0].name] ?? fields[0].defaultValue ?? ""}
-						onChange={(v) => setValues({ ...values, [fields[0].name]: v })}
-					/>
-				)}
-				{fields.length > 1 && (
-					<details className="composer-details" data-restore="composer-details">
-						<summary>
-							Add details{" "}
-							<small>
-								{fields
-									.slice(1)
-									.map((f: any) => f.label.toLowerCase())
-									.join(", ")}
-							</small>
-						</summary>
-						<div>
-							{fields.slice(1).map((f: any) => (
+				<fieldset className="composer-fields" disabled={action.isPending}>
+					{!workflow && (
+						<p role="status" className="composer-hint">
+							{workflows.length
+								? "Choose a recipe that allows manual starts."
+								: "No recipes allow manual starts."}{" "}
+							<Link to="/recipes">Enable Start manually in Recipes</Link>.
+						</p>
+					)}
+					{main && (
+						<Field
+							main
+							field={main}
+							value={values[main.name] ?? main.defaultValue ?? ""}
+							onChange={(value) => setValues({ ...values, [main.name]: value })}
+						/>
+					)}
+					{otherFields.length > 0 && (
+						<div className="composer-inputs">
+							{otherFields.map((field: any) => (
 								<Field
-									key={f.name}
-									field={f}
-									value={values[f.name] ?? f.defaultValue ?? ""}
-									onChange={(v) => setValues({ ...values, [f.name]: v })}
+									key={field.name}
+									field={field}
+									value={values[field.name] ?? field.defaultValue ?? ""}
+									onChange={(value) =>
+										setValues({ ...values, [field.name]: value })
+									}
 								/>
 							))}
 						</div>
-					</details>
-				)}
-				<ExecutionSelectors
-					key={inputContext}
-					config={config}
-					repositoryId={repo}
-					workflow={workflow?.id}
-					model={(settings as any).model}
-					value={execution}
-					onChange={setExecution}
-					runner={(settings as any).runner}
-				/>
-				{agentOpen && (
-					<AgentSettings
-						config={config}
-						value={settings}
-						onChange={setSettings}
-						label="Default"
-					/>
-				)}
-				<div className="composer-bar">
-					<div
-						className="workflow-chips"
-						role="radiogroup"
-						aria-label="Workflow"
-						onKeyDown={(e) => {
-							if (!["ArrowRight", "ArrowLeft"].includes(e.key)) return;
-							e.preventDefault();
-							if (!workflows.length) return;
-							const index = Math.max(
-									0,
-									Array.from(e.currentTarget.children).indexOf(
-										e.target as Element,
-									),
-								),
-								next =
-									(index +
-										(e.key === "ArrowRight" ? 1 : -1) +
-										workflows.length) %
-									workflows.length;
-							setWorkflow(workflows[next].id);
-							(e.currentTarget.children[next] as HTMLElement).focus();
-						}}
-					>
-						{workflows.map((w: any) => (
-							// biome-ignore lint/a11y/useSemanticElements: button radio group implements arrow navigation and chip styling
-							<button
-								type="button"
-								role="radio"
-								aria-checked={w.id === workflow?.id}
-								tabIndex={
-									w.id === workflow?.id ||
-									(!workflow && w.id === workflows[0]?.id)
-										? 0
-										: -1
-								}
-								key={w.id}
-								onClick={() => setWorkflow(w.id)}
-							>
-								<span>{w.icon ?? "🧩"}</span>
-								{w.name}
-							</button>
-						))}
-					</div>
-					<div className="composer-controls">
-						<label className="repo-picker">
-							<span className="sr-only">Repository</span>
-							<span aria-hidden="true">📁</span>
+					)}
+					{fileFields.map((field: any) => (
+						<UploadField
+							key={field.name}
+							field={field}
+							uploads={uploads}
+							disabled={action.isPending || action.isBlocked}
+						/>
+					))}
+					{agentOpen && (
+						<div className="composer-settings">
+							<ExecutionSelectors
+								key={inputContext}
+								config={config}
+								repositoryId={repo}
+								workflow={workflow?.id}
+								model={(settings as any).model}
+								value={execution}
+								onChange={setExecution}
+								runner={(settings as any).runner}
+							/>
+							<AgentSettings
+								config={config}
+								value={settings}
+								onChange={setSettings}
+								label="Default"
+							/>
+						</div>
+					)}
+					<div className="composer-bar">
+						<label className="composer-workflow">
+							<span className="sr-only">Workflow</span>
 							<select
-								required
-								value={repo}
-								onChange={(e) => setRepo(e.target.value)}
+								aria-label="Workflow"
+								value={workflow?.id ?? ""}
+								onChange={(event) => setWorkflow(event.target.value)}
 							>
-								{config.repositories.map((r: any) => (
-									<option value={r.id} key={r.id}>
-										{r.name}
+								{!workflow && <option value="">Choose recipe…</option>}
+								{workflows.map((item: any) => (
+									<option key={item.id} value={item.id}>
+										{item.icon ?? "🧩"} {item.name}
 									</option>
 								))}
 							</select>
 						</label>
 						<Button
-							variant="icon"
-							aria-label="Agent settings"
+							variant="agent-pill"
+							aria-label="Agent and execution settings"
 							aria-expanded={agentOpen}
 							onClick={() => setAgentOpen(!agentOpen)}
 						>
-							⚙︎
+							⚙︎{" "}
+							{(settings as any).model ||
+								(settings as any).runner ||
+								config.defaultRunner}{" "}
+							<span className="settings-chevron">⌄</span>
 						</Button>
-						<Button
-							type="submit"
-							variant="start"
-							aria-label="Start run"
-							requiresConnection
-							busy={action.isPending}
-							disabled={
-								!workflow ||
-								!repo ||
-								(fields[0]?.required &&
-									(
-										values[fields[0].name] ??
-										fields[0].defaultValue ??
-										""
-									).trim() === "")
-							}
-						>
-							↑
-						</Button>
+						<div className="composer-controls">
+							<Button
+								type="submit"
+								variant="start"
+								aria-label="Start run"
+								requiresConnection
+								busy={action.isPending}
+								disabled={blocked}
+							>
+								↑
+							</Button>
+						</div>
 					</div>
-				</div>
+				</fieldset>
 				{action.error && (
 					<p className="error" role="alert">
 						{action.error.message}
@@ -440,6 +454,7 @@ export function Composer({
 		</section>
 	);
 }
+
 function ownRoles(
 	steps: any[],
 	path: (string | number)[] = [],

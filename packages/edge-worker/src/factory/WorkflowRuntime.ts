@@ -70,6 +70,11 @@ import {
 } from "./ExecutionProfiles.js";
 import type { GitProviderSnapshot } from "./GitProvider.js";
 import type { RoleProgress, RoleRevision } from "./Incremental.js";
+import {
+	attachmentDirectories,
+	LaunchAssetStore,
+	type LaunchAttachments,
+} from "./LaunchAssets.js";
 import { beginStepAttempt, finishStepAttempt } from "./Provenance.js";
 import {
 	isExplanationRequest,
@@ -273,6 +278,7 @@ export interface FactoryRun {
 	workspace: string;
 	input: string;
 	launchInputs?: Record<string, string>;
+	launchAttachments?: LaunchAttachments;
 	runner?: string;
 	model?: string;
 	reasoningEffort?: AgentSettings["reasoningEffort"];
@@ -422,6 +428,7 @@ export class WorkflowRuntime {
 	private viewStates: Record<string, RunViewState> = {};
 	private chats = new Map<string, ChatMessage[]>();
 	readonly directory: string;
+	readonly launchAssets: LaunchAssetStore;
 	private snapshots: JsonSnapshotStore;
 	private pendingSaves = new Map<string, Promise<void>>();
 	private activitySaves = new Map<string, Promise<void>>();
@@ -445,6 +452,7 @@ export class WorkflowRuntime {
 		private hooks: RuntimeHooks,
 	) {
 		this.directory = join(home, "factory");
+		this.launchAssets = new LaunchAssetStore(this.directory);
 		this.snapshots = new JsonSnapshotStore(join(this.directory, "run-chunks"));
 		mkdirSync(join(this.directory, "runs"), { recursive: true });
 		const settings = join(this.directory, "settings.json");
@@ -508,6 +516,7 @@ export class WorkflowRuntime {
 			immutableTranscript(run.history);
 			this.runs.set(run.id, run);
 		}
+		this.launchAssets.cleanupRuns(new Set(this.runs.keys()));
 		cleanupVideoEvidence(
 			join(this.directory, "evidence"),
 			this.runs.values(),
@@ -723,6 +732,7 @@ export class WorkflowRuntime {
 		workspace: string;
 		input: string;
 		launchInputs?: Record<string, string>;
+		launchAttachments?: LaunchAttachments;
 		source?: string;
 		issueId?: string;
 		workspaceId?: string;
@@ -880,6 +890,7 @@ export class WorkflowRuntime {
 					"Migrated legacy output contract to v2 at execution boundary; workflow definitions, checkpoint positions and accepted history preserved.",
 				);
 			}
+			this.launchAssets.verify(run.id, run.launchAttachments);
 			await this.hooks.prepare?.(run, controller.signal);
 			controller.signal.throwIfAborted();
 			if (run.ticketReference && this.hooks.track)
@@ -1153,7 +1164,10 @@ export class WorkflowRuntime {
 									}
 								: {}),
 							...Object.fromEntries(
-								step.inputs.map((name) => [name, outputs[name]]),
+								step.inputs.map((name) => [
+									name,
+									Object.hasOwn(outputs, name) ? outputs[name] : undefined,
+								]),
 							),
 							...(step.askQuestions ||
 							(step.id === "capture" &&
@@ -1198,6 +1212,21 @@ export class WorkflowRuntime {
 								run.architectureDecisions ?? [],
 							),
 						};
+			this.launchAssets.verify(run.id, run.launchAttachments);
+			if (run.launchAttachments && Object.keys(run.launchAttachments).length) {
+				Object.assign(input, {
+					launchAttachments: structuredClone(run.launchAttachments),
+				});
+				for (const name of step.inputs ?? [])
+					if (
+						name !== "launchAttachments" &&
+						Object.hasOwn(run.launchAttachments, name) &&
+						!Object.hasOwn(outputs, name)
+					)
+						Object.assign(input, {
+							[name]: structuredClone(run.launchAttachments[name]),
+						});
+			}
 			const execution = this.hooks.execution
 				? await this.hooks.execution(run, step.runner ?? run.runner)
 				: undefined;
@@ -1212,6 +1241,7 @@ export class WorkflowRuntime {
 				reviewBaseline,
 				currentScope: () => ({
 					originalInput: run.input,
+					launchAttachments: run.launchAttachments,
 					...(deliveryAware
 						? {
 								delivery: structuredClone(run.delivery),
@@ -1648,6 +1678,7 @@ export class WorkflowRuntime {
 							signal,
 							[
 								context.evidenceDir,
+								...attachmentDirectories(run.launchAttachments),
 								...runRepositories(run).flatMap((repo) => [
 									repo.workspace,
 									repo.repositoryPath,

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Launch tasks with a project selector in the heading, a roomy prompt composer and visible workflow fields. New stock workflows accept private file attachments with clear limits, removal, and retained read access across restart, retry and follow-up. Machine selection remains separate work. ([Taskbot #85](https://taskbot.apps.janjaap.de/p/bobs-factory/t/85))
+
 ### Fixed
 
 - Keep resumed agent checkpoints responsive after reading large workflow history: preserve completed receipts as immutable snapshots, reuse their pages and extend the cached dashboard history index. ([#104](https://github.com/jappyjan/bobs-factory/pull/104), [F1 validation](apps/f1/test-drives/2026-10-12-resumed-history.md))

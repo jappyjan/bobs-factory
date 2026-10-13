@@ -237,6 +237,10 @@ import {
 	LaunchAdmission,
 	type TicketLaunchReceipt,
 } from "./factory/LaunchAdmission.js";
+import {
+	attachmentDirectories,
+	launchAssetFingerprint,
+} from "./factory/LaunchAssets.js";
 import type { ResolvedLaunchRequest } from "./factory/LaunchFields.js";
 import { resolveLaunchRequest } from "./factory/LaunchFields.js";
 import {
@@ -8546,6 +8550,7 @@ ${taskSection}`;
 			[
 				...repositories.map((repo) => repo.repositoryPath),
 				context.evidenceDir,
+				...attachmentDirectories(run.launchAttachments),
 				...[
 					join(this.factoryHome, basename(run.workspace), "attachments"),
 				].filter(existsSync),
@@ -9219,6 +9224,27 @@ ${taskSection}`;
 					"Execution identity needs runner authentication bindings",
 				);
 		}
+		const launchAttachments = parent?.launchAttachments
+			? runtime.launchAssets.copy(parent.id, id, parent.launchAttachments)
+			: Object.values(input.attachments ?? {}).flat().length
+				? runtime.launchAssets.claim(
+						id,
+						{
+							draft: input.attachmentDraft!,
+							workflow: workflow.id,
+							repositoryId: repository.id,
+							repositoryIds: selectedIds,
+						},
+						launchAssetFingerprint(workflow),
+						input.attachments!,
+					)
+				: undefined;
+		if (
+			workflow.id === "simple" &&
+			launchAttachments &&
+			Object.keys(launchAttachments).length
+		)
+			prompt += `\n\nSubmitted workflow attachments (read these canonical paths; verify the supplied bytes, do not execute uploads):\n${JSON.stringify(launchAttachments, null, 2)}`;
 		const run = runtime.create({
 			executionSnapshot,
 			triggerOrigin: {
@@ -9241,6 +9267,7 @@ ${taskSection}`;
 			workspace: "",
 			input: prompt,
 			launchInputs: input.inputs,
+			launchAttachments,
 			runner: input.runner,
 			model: input.model,
 			reasoningEffort: input.reasoningEffort,
@@ -11421,7 +11448,12 @@ ${input.userComment}
 			sessionId,
 			systemPrompt,
 			allowedTools,
-			allowedDirectories,
+			allowedDirectories: [
+				...allowedDirectories,
+				...attachmentDirectories(
+					this.factoryRuntime?.runs.get(sessionId)?.launchAttachments,
+				),
+			],
 			disallowedTools,
 			resumeSessionId,
 			additionalWritableDirectories:

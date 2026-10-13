@@ -6512,3 +6512,168 @@ kbd {
 		bottom: -16px;
 	}
 }
+
+/* Manual launcher: project heading, generous prompt, compact controls. */
+.composer-heading {
+	font-size: clamp(24px, 3vw, 38px);
+	font-weight: 600;
+	line-height: 1.4;
+	text-align: center;
+	margin: 28px 0;
+	overflow-wrap: anywhere;
+}
+.composer-heading .project-heading-picker {
+	font: inherit;
+	display: inline-flex;
+	max-width: 100%;
+	vertical-align: bottom;
+	margin: 0;
+}
+.project-heading-picker select {
+	min-width: 0;
+	flex: 0 1 auto;
+	font: inherit;
+	font-weight: 650;
+	color: inherit;
+	background: transparent;
+	border: 0;
+	border-bottom: 2px dotted var(--muted);
+	border-radius: 0;
+	padding: 0 22px 0 0;
+	margin: 0;
+	max-width: min(100%, 500px);
+	text-overflow: ellipsis;
+	cursor: pointer;
+}
+.project-heading-picker select:focus-visible {
+	outline: 3px solid #8060ff;
+	outline-offset: 4px;
+}
+.launch-composer .composer {
+	padding: 20px;
+	border: 1px solid var(--line);
+	border-radius: 28px;
+	background: var(--surface);
+}
+.composer-fields {
+	border: 0;
+	padding: 0;
+	margin: 0;
+	min-width: 0;
+}
+.launch-composer .composer-fields .composer-main textarea {
+	border: 0;
+	outline: none;
+	box-shadow: none;
+	min-height: 170px;
+	font-weight: 500;
+	font-size: 18px;
+}
+.composer-inputs {
+	display: grid;
+	gap: 12px;
+	padding: 12px 8px;
+}
+.composer-settings {
+	padding: 12px 0;
+}
+.launch-composer .composer-bar {
+	border-top: 0;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.composer-workflow {
+	margin: 0;
+	max-width: 100%;
+}
+.composer-workflow select {
+	width: auto;
+	max-width: 220px;
+	margin: 0;
+	border: 0;
+	background: var(--quiet);
+	border-radius: 999px;
+	font-weight: 600;
+}
+.launch-composer .composer-controls {
+	margin-left: auto;
+}
+.launch-uploads {
+	border: 0;
+	border-top: 1px solid var(--line);
+	padding: 12px 8px;
+	margin: 10px 0;
+	min-width: 0;
+}
+.launch-uploads legend {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+}
+.launch-uploads small {
+	display: block;
+	color: var(--muted);
+	font-size: 12px;
+	margin-top: 4px;
+}
+.upload-picker {
+	display: inline-flex;
+	gap: 10px;
+	align-items: center;
+	flex-wrap: wrap;
+	font-size: 13px;
+	margin: 0 0 6px;
+}
+.upload-picker input {
+	width: auto;
+	max-width: 100%;
+	font-size: 12px;
+	margin: 0;
+}
+.launch-uploads ul {
+	list-style: none;
+	padding: 0;
+	margin: 8px 0 0;
+}
+.launch-uploads li {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	border: 1px solid var(--line);
+	background: var(--quiet);
+	border-radius: 12px;
+	padding: 8px 12px;
+	margin: 6px 0;
+}
+.launch-uploads li > div {
+	flex: 1;
+	min-width: 0;
+}
+.upload-name {
+	overflow-wrap: anywhere;
+	font-size: 13px;
+}
+.launch-uploads li button {
+	min-width: 36px;
+	min-height: 36px;
+}
+@media (max-width: 600px) {
+	.composer-heading {
+		margin: 16px 0;
+	}
+	.project-heading-picker select {
+		max-width: 80vw;
+	}
+	.launch-composer .composer {
+		padding: 14px;
+	}
+	.launch-composer .composer-fields .composer-main textarea {
+		min-height: 150px;
+	}
+	.composer-workflow select {
+		max-width: 155px;
+	}
+	.launch-composer .composer-controls {
+		width: auto;
+	}
+}

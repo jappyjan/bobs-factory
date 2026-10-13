@@ -25,6 +25,12 @@ import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
 import { factoryWebAssets } from "./FactoryWebAssets.js";
 import {
+	launchAssetFingerprint,
+	launchAssetLimits,
+	UploadContextSchema,
+	UploadMetadataSchema,
+} from "./LaunchAssets.js";
+import {
 	getLaunchFields,
 	LaunchRequestSchema,
 	type ResolvedLaunchRequest,
@@ -148,16 +154,24 @@ export class FactoryServer {
 				await updates.observeInstalled(factoryRuntimeIdentity);
 			});
 		registerVideoRoutes(this.app, runtime);
-		this.app.setErrorHandler((error, _request, reply) =>
-			reply.code(error instanceof z.ZodError ? 400 : 409).send({
+		this.app.setErrorHandler((error, request, reply) => {
+			if (
+				request.url.startsWith("/api/launch-assets") &&
+				(error as { code?: string }).code === "FST_ERR_CTP_BODY_TOO_LARGE"
+			)
+				return reply
+					.header("Connection", "close")
+					.code(413)
+					.send({ error: "Each file must be 25 MiB or smaller" });
+			return reply.code(error instanceof z.ZodError ? 400 : 409).send({
 				error:
 					error instanceof z.ZodError
 						? error.issues.map((issue) => issue.message).join("\n")
 						: error instanceof Error
 							? error.message
 							: "Request failed",
-			}),
-		);
+			});
+		});
 		const unsubscribeAuth = this.auth.subscribe(() => {
 			for (const [stream, session] of this.streamSessions)
 				if (!session.local && !this.auth.session(session.token, session.origin))
@@ -750,11 +764,93 @@ export class FactoryServer {
 					})),
 			].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 		});
+		const uploadWorkflow = (
+			context: import("./LaunchAssets.js").UploadContext,
+		) => {
+			const projects = hooks.repositories();
+			const known = new Set(
+				projects.flatMap((project) => project.repositoryIds ?? [project.id]),
+			);
+			if (
+				!context.repositoryIds.includes(context.repositoryId) ||
+				new Set(context.repositoryIds).size !== context.repositoryIds.length ||
+				context.repositoryIds.some((id) => !known.has(id))
+			)
+				throw new Error("Select an active project and repository scope");
+			return runtime.selectWorkflow([], "manual", context.workflow);
+		};
+		// The binary parser enforces the bound as bytes arrive. Access guards run
+		// in onRequest, before parsing; failed/interrupted uploads never hit disk.
+		this.app.addContentTypeParser(
+			"application/octet-stream",
+			{ parseAs: "buffer", bodyLimit: launchAssetLimits.fileBytes },
+			(_request, body, done) => done(null, body),
+		);
+		this.app.post<{ Querystring: { metadata: string } }>(
+			"/api/launch-assets",
+			{
+				bodyLimit: launchAssetLimits.fileBytes,
+				onRequest: async (request) => checkConfigRevision(request),
+			},
+			async (request, reply) => {
+				checkConfigRevision(request);
+				const metadata = UploadMetadataSchema.parse(
+					JSON.parse(request.query.metadata),
+				);
+				const workflow = uploadWorkflow(metadata);
+				if (
+					!getLaunchFields(workflow).some(
+						(field) => field.name === metadata.field && field.type === "files",
+					)
+				)
+					throw new Error(
+						"This workflow does not declare the attachment field",
+					);
+				if (!Buffer.isBuffer(request.body))
+					throw new Error("Upload files as application/octet-stream");
+				return reply
+					.code(201)
+					.send(
+						runtime.launchAssets.stage(
+							metadata,
+							launchAssetFingerprint(workflow),
+							request.body,
+						),
+					);
+			},
+		);
+		this.app.delete<{ Params: { draft: string; id: string } }>(
+			"/api/launch-assets/:draft/:id",
+			async (request) => {
+				checkConfigRevision(request);
+				runtime.launchAssets.remove(request.params.draft, request.params.id);
+				return { removed: true };
+			},
+		);
 		this.app.post("/api/runs", async (request, reply) => {
 			checkConfigRevision(request);
 			const input = LaunchRequestSchema.parse(request.body);
 			const workflow = runtime.selectWorkflow([], "manual", input.workflow);
-			const run = await hooks.start(resolveLaunchRequest(workflow, input));
+			const resolved = resolveLaunchRequest(workflow, input);
+			if (Object.values(resolved.attachments).flat().length) {
+				const context = UploadContextSchema.parse({
+					draft: resolved.attachmentDraft,
+					workflow: workflow.id,
+					repositoryId: resolved.repositoryId,
+					repositoryIds: resolved.repositoryIds ??
+						hooks
+							.repositories()
+							.find((repo) => repo.id === resolved.repositoryId)
+							?.repositoryIds ?? [resolved.repositoryId],
+				});
+				uploadWorkflow(context);
+				runtime.launchAssets.validate(
+					context,
+					launchAssetFingerprint(workflow),
+					resolved.attachments,
+				);
+			}
+			const run = await hooks.start(resolved);
 			await runtime.flush(run.id);
 			return reply.code(202).send(run);
 		});

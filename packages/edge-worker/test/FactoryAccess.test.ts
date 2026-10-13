@@ -198,6 +198,19 @@ it("rejects rebinding, remote peers, forwarding and external web pages before pr
 				})
 			).statusCode,
 		).toBe(403);
+	for (const headers of [
+		f.writeHeaders,
+		{ ...f.writeHeaders, origin: "https://evil.test" },
+	]) {
+		const response = await f.server.app.inject({
+			method: "POST",
+			url: "/api/launch-assets?metadata=invalid",
+			headers: { ...headers, "content-type": "application/octet-stream" },
+			payload: Buffer.from("private file"),
+		});
+		expect(response.statusCode).toBe(headers.origin === origin ? 401 : 403);
+	}
+
 	expect(f.start).not.toHaveBeenCalled();
 	expect(f.entries).not.toHaveBeenCalled();
 	expect(f.repositories).not.toHaveBeenCalled();
@@ -216,7 +229,9 @@ it("serves real IPv4 and IPv6 loopback APIs and streams without auth while prese
 	await f.server.start(port);
 	for (const hostname of ["127.0.0.1", "localhost", "[::1]"]) {
 		const local = `http://${hostname}:${port}`;
-		const status = await fetch(`${local}/api/auth/status`);
+		const status = await fetch(`${local}/api/auth/status`, {
+			headers: { Connection: "close" },
+		});
 		expect(await status.json()).toEqual({
 			authenticated: true,
 			access: "local",
@@ -224,19 +239,34 @@ it("serves real IPv4 and IPv6 loopback APIs and streams without auth while prese
 			origin: local,
 		});
 		expect(status.headers.get("set-cookie")).toBeNull();
-		expect((await fetch(`${local}/api/config`)).status).toBe(200);
-		const events = await fetch(`${local}/api/events`);
+		const config = await fetch(`${local}/api/config`, {
+			headers: { Connection: "close" },
+		});
+		expect(config.status).toBe(200);
+		await config.arrayBuffer();
+		const streamController = new AbortController();
+		const events = await fetch(`${local}/api/events`, {
+			signal: streamController.signal,
+			headers: { Connection: "close" },
+		});
 		expect(events.status).toBe(200);
 		const reader = events.body!.getReader();
 		expect(new TextDecoder().decode((await reader.read()).value)).toContain(
 			"event: ready",
 		);
-		await reader.cancel();
+		streamController.abort();
+		await reader.cancel().catch((error: Error) => {
+			if (error.name !== "AbortError") throw error;
+		});
 		expect(
 			(
 				await fetch(`${local}/api/runs/missing/stop`, {
 					method: "POST",
-					headers: { Origin: local, "X-Factory-Request": "1" },
+					headers: {
+						Origin: local,
+						"X-Factory-Request": "1",
+						Connection: "close",
+					},
 				})
 			).status,
 		).toBe(404);
@@ -276,6 +306,7 @@ it("denies remote protected GET/HEAD/write before hooks, including unknown paths
 	const f = fixture();
 	for (const url of [
 		"/api/runs",
+		"/api/launch-assets",
 		"/api/config",
 		"/api/events",
 		"/api/runs/id",
