@@ -7,9 +7,80 @@ import {
 	fileRecord,
 	jsonBytes,
 	requireValue,
+	sha256,
 	TARGETS,
 } from "./binary-release.mjs";
-import { canonical } from "./release-candidate.mjs";
+import { candidateIdentity, canonical } from "./release-candidate.mjs";
+import { validateSourceMaterials } from "./release-material.mjs";
+
+// A published derived bundle retains the original material inventory and bytes.
+// Recover those exact inputs, not the gzip/tar container whose temporary host
+// may have disappeared. Every recovered member must match its original hash.
+export function recoverAcceptedMaterials(directory, baseline) {
+	const reuse = JSON.parse(
+		readFileSync(join(directory, "nightly-source-reuse.json")),
+	);
+	const recordIdentity = ({ file, size, sha256 }) => ({ file, size, sha256 });
+	requireValue(
+		reuse.mode === "CI-derived-nightly" &&
+			canonical(reuse.baseline?.candidate) === canonical(baseline.candidate) &&
+			reuse.baseline.acceptedBy === baseline.acceptedBy &&
+			canonical(recordIdentity(reuse.baseline.source)) ===
+				canonical(recordIdentity(baseline.source)) &&
+			canonical(recordIdentity(reuse.baseline.receiptArchive)) ===
+				canonical(recordIdentity(baseline.receiptArchive)) &&
+			Object.entries(baseline.receipts).every(
+				([gate, record]) =>
+					canonical(recordIdentity(reuse.baseline.receipts?.[gate] ?? {})) ===
+					canonical(recordIdentity(record)),
+			),
+		"Published source does not retain the accepted nightly baseline",
+	);
+	const materials = reuse.previousMaterials;
+	for (const record of materials.records) {
+		requireValue(
+			/^[A-Za-z0-9_.-]+$/.test(record.file),
+			"Unsafe retained material filename",
+		);
+		const path = join(directory, record.file);
+		const matches = (bytes) =>
+			bytes.length === record.size && sha256(bytes) === record.sha256;
+		const bytes = readFileSync(path);
+		if (matches(bytes)) continue;
+		let restored;
+		if (record.kind === "build-config") {
+			const build = materials.builds.find((b) => b.target === record.target);
+			// Serialization is transport, not acceptance: accept only the exact
+			// already inventoried bytes, regardless of original JSON whitespace.
+			restored = [
+				jsonBytes(build),
+				Buffer.from(JSON.stringify(build)),
+				Buffer.from(JSON.stringify(build, null, 2)),
+			].find(matches);
+		} else if (
+			record.kind === "relink-log" &&
+			bytes.toString().startsWith("Current CI source assembly ")
+		) {
+			restored = bytes.subarray(bytes.indexOf(10) + 1);
+		} else if (record.kind === "instructions") {
+			const marker = Buffer.from("## Retained historical instructions\n\n");
+			const start = bytes.indexOf(marker);
+			if (start >= 0) restored = bytes.subarray(start + marker.length);
+		}
+		requireValue(
+			restored && matches(restored),
+			`Original accepted source member unavailable or changed: ${record.file}`,
+		);
+		writeFileSync(path, restored);
+	}
+	validateSourceMaterials(
+		materials,
+		directory,
+		candidateIdentity(baseline.candidate),
+	);
+	writeFileSync(join(directory, "source-materials.json"), jsonBytes(materials));
+	return materials;
+}
 
 export function verifyDependencyBaseline(
 	root,
