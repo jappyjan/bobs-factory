@@ -53,6 +53,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Replace remote dashboard passkey sign-in with API keys managed in Settings (add, remove and rotate). Upgrading revokes existing passkeys and browser sessions; an operator must create the first key in localhost Settings before remote access is available again. Localhost continues to work without a key ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
 - Align generated Homebrew and AUR requirements with the selected first-release support floor of macOS 15 and Ubuntu 24.04/glibc 2.39, and clarify that the frozen app's inherited macOS 13 launch minimum is not tested-support evidence ([Taskbot #123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#97](https://github.com/jappyjan/bobs-factory/pull/97)).
 
 - Support direct unsigned GitHub releases and updates with candidate-bound SHA256/size inventories; remove paid Apple and publisher-signature prerequisites, preserve corruption/source/recovery/rollback safeguards, and document per-app macOS allow-running ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#96](https://github.com/jappyjan/bobs-factory/pull/96)).
