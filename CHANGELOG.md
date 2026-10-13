@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Keep review refreshes and screenshot previews working after moving the Factory home by verifying retained screenshots against the same run's copied evidence without changing accepted QA receipts ([#114](https://github.com/jappyjan/bobs-factory/pull/114)).
+
 - Close the Notifications dialog when opening push contact settings so the Settings form is immediately usable ([#112](https://github.com/jappyjan/bobs-factory/pull/112)).
 
 - Validate beta desktop releases from their actual installed AppImage through controlled stable upgrade and rollback candidates, preserving nightly validation and truthful input receipts ([Taskbot #131](https://taskbot.apps.janjaap.de/p/bobs-factory/t/131), [#111](https://github.com/jappyjan/bobs-factory/pull/111)).

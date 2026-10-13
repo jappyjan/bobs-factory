@@ -8,7 +8,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 import {
 	presentLinearPublication,
 	spawnExecution as spawn,
@@ -345,12 +345,42 @@ function captureGaps(capture: z.infer<typeof CaptureSchema>, areas: unknown) {
 	}
 	return gaps;
 }
-export function verifiedScreenshot(path: string, directory: string): string {
-	const resolved = realpathSync(resolve(directory, path));
+export function verifiedScreenshot(
+	path: string,
+	directory: string,
+	retainedHash?: string,
+): string {
+	let candidate = resolve(directory, path);
+	const within = (path: string) =>
+		Boolean(path) &&
+		path !== ".." &&
+		!path.startsWith(`..${sep}`) &&
+		!isAbsolute(path);
+	let relocated = false;
+	if (!within(relative(resolve(directory), candidate))) {
+		// Completed capture receipts remain immutable when the Factory home moves.
+		// Resolve only their same-run suffix in the current home, never the old file.
+		const marker = `${sep}${join("factory", "evidence", basename(directory))}${sep}`;
+		const index = candidate.lastIndexOf(marker);
+		if (
+			isAbsolute(path) &&
+			index >= 0 &&
+			/^[a-f0-9]{64}$/.test(retainedHash ?? "")
+		) {
+			candidate = resolve(directory, candidate.slice(index + marker.length));
+			relocated = true;
+		}
+	}
+	const resolved = realpathSync(candidate);
 	const inside = relative(realpathSync(directory), resolved);
-	if (!inside || inside.startsWith("..") || isAbsolute(inside))
+	if (!within(inside))
 		throw new Error("Screenshot must be inside this run's evidence directory");
 	const bytes = readFileSync(resolved);
+	if (
+		relocated &&
+		createHash("sha256").update(bytes).digest("hex") !== retainedHash
+	)
+		throw new Error("Screenshot content changed after verification");
 	const png = bytes
 		.subarray(0, 8)
 		.equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
@@ -474,7 +504,7 @@ export class FactoryTools {
 					`Unknown screenshot task ${shot.area}/${shot.state}`,
 				);
 			const bytes = readFileSync(
-				verifiedScreenshot(shot.path, context.evidenceDir),
+				verifiedScreenshot(shot.path, context.evidenceDir, shot.imageSha256),
 			);
 			if (createHash("sha256").update(bytes).digest("hex") !== shot.imageSha256)
 				coverage.errors.push(
@@ -993,7 +1023,11 @@ export class FactoryTools {
 							],
 						};
 					for (const shot of capture.screenshots)
-						verifiedScreenshot(shot.path, context.evidenceDir);
+						verifiedScreenshot(
+							shot.path,
+							context.evidenceDir,
+							shot.imageSha256,
+						);
 				}
 				return recovery({ approved: open.length === 0, findings: open });
 			}
