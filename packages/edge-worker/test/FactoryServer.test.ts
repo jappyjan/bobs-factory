@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
 	mkdirSync,
 	mkdtempSync,
@@ -80,6 +81,39 @@ it("serves question images only from the requested run, rejecting traversal, ext
 		expect((await get(run.id, "external.png")).statusCode).toBe(409);
 		expect((await get(run.id, "text.png")).statusCode).toBe(409);
 		expect((await get(run.id, "..%2F..%2Foutside.png")).statusCode).toBe(400);
+		// Completed receipts retain their original paths after a home move.
+		const imageSha256 = createHash("sha256").update(png).digest("hex");
+		run.outputs.capture = {
+			screenshots: [
+				{
+					path: join(
+						home,
+						"retired",
+						"factory",
+						"evidence",
+						run.id,
+						"context.png",
+					),
+					imageSha256,
+					area: "Question",
+					caption: "Accepted image",
+				},
+			],
+			unavailable: [],
+		};
+		const screenshot = () =>
+			server.app.inject({
+				url: `/api/runs/${run.id}/screenshots/0?v=${imageSha256}`,
+				headers: { host: "localhost" },
+			});
+		const retained = await screenshot();
+		expect(retained.statusCode).toBe(200);
+		expect(retained.rawPayload).toEqual(png);
+		writeFileSync(
+			join(directory, "context.png"),
+			Buffer.concat([png, Buffer.from("changed")]),
+		);
+		expect((await screenshot()).statusCode).toBe(409);
 	} finally {
 		await runtime.shutdown();
 		await server.stop();
