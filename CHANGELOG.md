@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Fix standard binary installation and desktop update enrollment for published release manifests: scope nested identities correctly and compare archive fields independently of JSON key order ([#127](https://github.com/jappyjan/bobs-factory/pull/127)).
 - Restore the nightly publisher's Bun download streaming imports and enforce undeclared-variable checks on nightly tooling, preventing release assembly from failing after source recovery ([#126](https://github.com/jappyjan/bobs-factory/pull/126)).
 - Keep automatic nightly publication working after temporary evidence servers disappear by recovering exact accepted source and validation inputs from pinned GitHub release assets ([#125](https://github.com/jappyjan/bobs-factory/pull/125)).
 
