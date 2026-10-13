@@ -45,10 +45,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BINARY_RUN_ID: ${{ github.event.workflow_run.id }}
-          BASELINE_JSON: ${{ vars.BOBS_FACTORY_NIGHTLY_BASELINE_JSON }}
         run: |
-          node --input-type=module -e 'import {writeFileSync} from "node:fs"; writeFileSync(process.env.RUNNER_TEMP+"/baseline.json",process.env.BASELINE_JSON)'
-          node scripts/prepare-nightly-evidence.mjs --run-id "$BINARY_RUN_ID" --baseline "$RUNNER_TEMP/baseline.json" --output "$RUNNER_TEMP/release-evidence"
+          node scripts/prepare-nightly-evidence.mjs --run-id "$BINARY_RUN_ID" --output "$RUNNER_TEMP/release-evidence"
           if [ -f "$RUNNER_TEMP/release-evidence/candidate.json" ]; then
             node --input-type=module -e 'import {readFileSync,appendFileSync} from "node:fs"; const c=JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/release-evidence/candidate.json")); appendFileSync(process.env.GITHUB_OUTPUT,"digest="+c.digest+"\n")'
           fi

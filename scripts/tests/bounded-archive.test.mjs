@@ -51,6 +51,54 @@ function tarMember(
 }
 const packed = (members) =>
 	gzipSync(Buffer.concat([...members, Buffer.alloc(1024)]));
+
+test("flat root receipts extract bounded regular files and refuse paths, aliases and links", () => {
+	const work = mkdtempSync(join(tmpdir(), "factory-root-receipts-"));
+	try {
+		const archive = join(work, "receipts.tar.gz"),
+			output = join(work, "out");
+		writeFileSync(
+			archive,
+			packed([tarMember("receipt.json", Buffer.from("exact receipt"))]),
+		);
+		inspectArchive(archive, {
+			prefix: "",
+			regularOnly: true,
+			flat: true,
+			output,
+		});
+		assert.equal(
+			readFileSync(join(output, "receipt.json"), "utf8"),
+			"exact receipt",
+		);
+		assert.throws(
+			() => inspectArchive(archive, { prefix: "" }),
+			/Invalid archive prefix/,
+		);
+		for (const members of [
+			[tarMember("../escape", Buffer.from("bad"))],
+			[tarMember("nested/receipt", Buffer.from("bad"))],
+			[tarMember("receipt", Buffer.alloc(0), { type: "2", link: "/outside" })],
+			[
+				tarMember("receipt", Buffer.from("one")),
+				tarMember("./receipt", Buffer.from("two")),
+			],
+		]) {
+			writeFileSync(archive, packed(members));
+			assert.throws(
+				() =>
+					inspectArchive(archive, {
+						prefix: "",
+						regularOnly: true,
+						flat: true,
+					}),
+				/Unsafe|duplicate|links\/special/,
+			);
+		}
+	} finally {
+		rmSync(work, { recursive: true, force: true });
+	}
+});
 function fixture(fn) {
 	const work = mkdtempSync(join(tmpdir(), "factory-bounded-archive-test-"));
 	try {
