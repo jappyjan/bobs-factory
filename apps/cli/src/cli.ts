@@ -6,7 +6,6 @@ import {
 	setGlobalErrorReporter,
 } from "bobs-factory-core";
 import {
-	authorizeFactoryEnrollment,
 	OperatorGrants,
 	requestFactoryAuthRecovery,
 } from "bobs-factory-edge-worker";
@@ -90,7 +89,7 @@ program
 program
 	.command("factory-auth")
 	.description(
-		"Authorize one Factory passkey enrollment or deliberately recover Factory authentication",
+		"Manage Factory API keys in localhost Settings or deliberately recover authentication",
 	)
 	.option("--recover", "Revoke all Factory credentials and sessions")
 	.option("--confirm <text>", "Deliberate recovery confirmation")
@@ -99,18 +98,18 @@ program
 		if (options.recover) {
 			requestFactoryAuthRecovery(home, options.confirm);
 			console.log(
-				"Factory authentication recovery requested. Use the new setup code from factory/auth/enroll.json.",
+				"Factory authentication recovery requested. The server will revoke all keys and sessions. Open localhost Settings → Access after recovery to create a new key.",
 			);
 		} else
 			console.log(
-				`Single-use Factory setup code (expires in ten minutes): ${authorizeFactoryEnrollment(home)}`,
+				"Open the localhost dashboard, then Settings → Access to add, remove or rotate API keys.",
 			);
 	});
 
 const operator = program
 	.command("operator")
 	.description(
-		"Manage local Factory operator MCP grants (separate from passkeys)",
+		"Manage local Factory operator MCP grants (separate from dashboard API keys)",
 	);
 operator
 	.command("grant")

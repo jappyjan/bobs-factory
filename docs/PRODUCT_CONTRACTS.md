@@ -26,8 +26,8 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 | Desktop shell updates | local installed Electron launcher, external app helper | `<factoryHome>/desktop/updates/state.json`, shared policy/consent rules, hash-bound complete-app ownership receipt and health journal | Replace only the verified user-owned app; retain old UI; fence the local worker without restarting it; selected remote instances keep their own update settings |
 | Publication | release workflows, publisher | repository-wide lock; retained asset/approval digests and recovery receipts; ordering against complete published provider history | Publication disabled until explicit rollout activation; stable approval binds exact unsigned bytes; rejected releases cannot hide provider history |
 | External wire protocol | upstream HTTP adapters / MCP contexts | `X-Cyrus-Team-Id`, `X-Cyrus-Config-Capabilities`, `x-cyrus-mcp-context-id` | Retain ASCII protocol names; no hosted enrollment |
-| Operator MCP | CLI, worker, operator grant store | `bobs-factory-operator`, `operator`, `operator-mcp`, `<home>/factory/operator` | Local owner grants; dashboard passkeys and accepted run profiles remain separate |
-| Dashboard access | CLI, FactoryServer, private authentication store; client clears private views on connection loss and rechecks sessions on reconnect | automatic direct HTTP loopback access; remote `factory-auth`, `--origin`, `--session-hours`, `BOBS_FACTORY_FACTORY_*`, `<home>/factory/auth` | Preserve remote authentication files/origin bindings; local access creates no reusable session; IPv6 is a request authority alias, not a credential migration |
+| Operator MCP | CLI, worker, operator grant store | `bobs-factory-operator`, `operator`, `operator-mcp`, `<home>/factory/operator` | Local owner grants; dashboard API keys and accepted run profiles remain separate |
+| Dashboard access | CLI, FactoryServer, private authentication store; client clears private views on connection loss and rechecks sessions on reconnect | automatic direct HTTP loopback access; remote key sign-in, Settings → Access, local `factory-auth` recovery, `--origin`, `--session-hours`, `BOBS_FACTORY_FACTORY_*`, `<home>/factory/auth` | Version-2 digest-only keys and origin-bound sessions; version-1 passkeys/sessions migrate to an empty store; local access creates no reusable session; IPv6 is a request authority alias |
 | Terminal dashboard | CLI, FactoryServer, private authentication store | `tui`, `--theme`, `--home`, `--port`, localhost-bound terminal sessions | Local operator filesystem authority; memory-only session hashes, no browser credential or native store migration |
 | Dashboard | FactoryWebAssets, build script, server | immutable shell inventory, existing PWA protocol | Rebuild shell; keep API/SSE and workflow IDs |
 
@@ -40,15 +40,18 @@ configured HTTP loopback authority and same-origin browser context. IPv4 `127.0.
 IPv6 `::1` and `localhost` work without enrollment, login or a session cookie.
 Mutation Origin/action/version guards, navigation/Fetch Metadata checks and media
 path boundaries still apply. Forwarding headers never establish local authority;
-forwarded loopback authorities are rejected. Public/TLS origins retain per-origin
-passkeys and sessions. Proxies must preserve the configured public Host and Origin.
+forwarded loopback authorities are rejected. Public/TLS origins require origin-bound browser sessions established by API key sign-in.
+Keys are instance credentials managed in local or signed-in remote Settings. Secrets
+are shown once; rotation/removal revokes issuing sessions. Keys do not authorize
+Bearer API requests. Valid legacy passkey state migrates to an empty key store,
+revoking old sessions without modifying runs, integrations or native credentials. Proxies must preserve the configured public Host and Origin.
 A raw port-forward or proxy that strips every forwarding signal and rewrites Host
 to localhost exposes local operator authority; the worker cannot distinguish that
 socket from a local process. Do not publish the local authority through such a proxy.
 Local operator actions are audited as `local-operator`; authentication recovery
 revokes remote sessions but does not revoke direct local filesystem/network authority.
 
-Dashboard passkey verification rotates the session cookie. The client suspends
+Dashboard API key sign-in rotates the session cookie. The client suspends
 the old live stream and cancels requests bound to the old cookie without clearing
 the credential-management form. It reconnects after session verification;
 connection loss, expiry and current-session rejection still clear private views.

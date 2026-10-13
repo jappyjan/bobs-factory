@@ -12,7 +12,7 @@ GitHub CLI authentication is an optional existing credential source.
 
 ## Part A: Connect GitHub
 
-1. Start `bobs-factory`, enroll or sign in with the operator's passkey, then open
+1. Start `bobs-factory`, open localhost or sign in remotely with an API key, then open
    the guided setup's GitHub connection.
 2. Reuse an existing working connection. Otherwise use the browser's classic
    token link, select `repo` scope and an expiration, and submit the token only

@@ -20,7 +20,6 @@ import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { factoryHttp } from "./fixtures/factory-http.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
-import { authenticator } from "./fixtures/webauthn.js";
 
 it("serves question images only from the requested run, rejecting traversal, external symlinks and non-images", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-question-images-"));
@@ -1665,29 +1664,17 @@ it.each([
 			).statusCode,
 		).toBe(401);
 		expect(push.status().devices).toEqual([]);
-		const keyFixture = authenticator();
-		const grant = JSON.parse(readFileSync(server.auth.grantPath, "utf8")).token;
-		const options = await server.app.inject({
-			method: "POST",
-			url: "/api/auth/register/options",
-			headers,
-			payload: { grant },
-		});
-		expect(options.statusCode).toBe(200);
+		const created = server.auth.create(
+			undefined,
+			headers.origin,
+			"Push test",
+			true,
+		);
 		const verified = await server.app.inject({
 			method: "POST",
-			url: "/api/auth/register/verify",
-			headers: {
-				...headers,
-				cookie: String(options.headers["set-cookie"]).split(";")[0],
-			},
-			payload: {
-				transaction: options.json().transaction,
-				response: keyFixture.register(
-					options.json().options.challenge,
-					headers.origin,
-				),
-			},
+			url: "/api/auth/login",
+			headers,
+			payload: { key: created.key },
 		});
 		expect(verified.statusCode).toBe(200);
 		const authenticatedHeaders = {

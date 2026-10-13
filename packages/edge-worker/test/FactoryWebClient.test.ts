@@ -515,7 +515,7 @@ it("handles 401 before version errors, clears sensitive caches and prevents late
 	expect(accessState().status).toBe("required");
 });
 
-it("ignores old-cookie denials after passkey verification while retaining private state", async () => {
+it("ignores old-cookie denials after API key sign-in while retaining private state", async () => {
 	client.setQueryData(["run", "private"], { transcript: "private content" });
 	let respond!: (response: Response) => void;
 	vi.stubGlobal(
@@ -553,7 +553,7 @@ it("ignores old-cookie denials after passkey verification while retaining privat
 	expect(client.getQueryData(["run", "private"])).toBeUndefined();
 });
 
-it("accepts server-validated local access without a passkey deadline and still clears private state on connection loss", async () => {
+it("accepts server-validated local access without a session deadline and still clears private state on connection loss", async () => {
 	vi.stubGlobal(
 		"fetch",
 		vi.fn(async () =>

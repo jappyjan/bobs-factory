@@ -28,7 +28,6 @@ export { DefaultSkillsDeployer } from "./DefaultSkillsDeployer.js";
 export { EdgeWorker } from "./EdgeWorker.js";
 export { EgressProxy } from "./EgressProxy.js";
 export {
-	authorizeFactoryEnrollment,
 	requestFactoryAuthRecovery,
 	requestFactoryTerminalSession,
 } from "./factory/FactoryAuthOperator.js";

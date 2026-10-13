@@ -274,7 +274,7 @@ async function backend(home, port, origin) {
 			stop: (id) => runtime.stop(id),
 			onboarding,
 		},
-		{ origins: [origin], sessionHours: 1 },
+		{ origins: [origin, `http://localhost:${port}`], sessionHours: 1 },
 	);
 	await server.start(Number(port));
 	writeFileSync(

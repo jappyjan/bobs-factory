@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,7 +7,6 @@ import { factoryAccess } from "../src/factory/FactoryAuth.js";
 import { FactoryServer } from "../src/factory/FactoryServer.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { factoryHttp } from "./fixtures/factory-http.js";
-import { authenticator } from "./fixtures/webauthn.js";
 
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
@@ -44,32 +43,18 @@ function fixture(port?: number) {
 		await runtime.shutdown();
 		rmSync(home, { recursive: true, force: true });
 	});
-	const enroll = async (origin = "http://localhost") => {
-		const key = authenticator(),
-			headers = {
-				host: new URL(origin).host,
-				origin,
-				"x-factory-request": "1",
-			};
-		const grant = JSON.parse(readFileSync(server.auth.grantPath, "utf8")).token;
-		const options = await server.app.inject({
-			method: "POST",
-			url: "/api/auth/register/options",
-			headers,
-			payload: { grant },
-		});
-		expect(options.statusCode).toBe(200);
+	const enroll = async (origin = "https://remote.example.test") => {
+		const headers = {
+			host: new URL(origin).host,
+			origin,
+			"x-factory-request": "1",
+		};
+		const created = server.auth.create(undefined, origin, "Onboarding", true);
 		const verify = await server.app.inject({
 			method: "POST",
-			url: "/api/auth/register/verify",
-			headers: {
-				...headers,
-				cookie: String(options.headers["set-cookie"]).split(";")[0],
-			},
-			payload: {
-				transaction: options.json().transaction,
-				response: key.register(options.json().options.challenge, origin),
-			},
+			url: "/api/auth/login",
+			headers,
+			payload: { key: created.key },
 		});
 		expect(verify.statusCode).toBe(200);
 		return {
@@ -133,7 +118,7 @@ it("opens onboarding and project/GitHub setup over actual IPv4, IPv6 and localho
 			github: 200,
 		});
 	}
-	expect(f.server.auth.store.state.credentials).toEqual([]);
+	expect(f.server.auth.store.state.keys).toEqual([]);
 	expect(f.server.auth.store.state.sessions).toEqual([]);
 	const calls = f.onboarding.status.mock.calls.length;
 	const denied = await factoryHttp(`http://[::1]:${port}/api/onboarding`, {
@@ -198,7 +183,7 @@ it("opens local setup without enrollment while denying unauthenticated remote se
 	expect(connect.statusCode).toBe(200);
 	expect(connect.body).not.toContain("fixture-secret");
 });
-it("does not expose machine setup remotely even to an authenticated remote passkey", async () => {
+it("does not expose machine setup remotely even to an authenticated remote key session", async () => {
 	const f = fixture(),
 		headers = await f.enroll("https://remote.example.test");
 	const config = await f.server.app.inject({ url: "/api/config", headers });

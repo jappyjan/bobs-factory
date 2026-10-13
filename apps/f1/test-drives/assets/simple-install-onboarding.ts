@@ -30,7 +30,6 @@ import type {
 	WorkflowRuntime,
 } from "../../../../packages/edge-worker/src/factory/WorkflowRuntime.js";
 import { providerReceipt } from "../../../../packages/edge-worker/test/fixtures/merge-readiness.js";
-import { authenticator } from "../../../../packages/edge-worker/test/fixtures/webauthn.js";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.js";
 
 assert.equal(
@@ -376,7 +375,7 @@ function createWorker() {
 type Internal = { getFactoryRuntime(): WorkflowRuntime };
 const runtimeOf = (instance: EdgeWorker) =>
 	(instance as unknown as Internal).getFactoryRuntime();
-let sessionCookie = "";
+const sessionCookie = "";
 type ApiPayload = {
 	transaction: string;
 	options: { challenge: string };
@@ -444,37 +443,7 @@ let success = false;
 try {
 	worker = createWorker();
 	await worker.start();
-	for (const [path, method] of [
-		["/api/onboarding", "GET"],
-		["/api/onboarding/project", "POST"],
-		["/api/onboarding/github", "POST"],
-	]) {
-		const denied = await request(
-			path!,
-			method,
-			method === "GET" ? undefined : {},
-			false,
-		);
-		assert.equal(denied.result.status, 401);
-	}
-	const key = authenticator();
-	const grant = JSON.parse(
-		readFileSync(join(home, "factory/auth/enroll.json"), "utf8"),
-	) as { token: string };
-	const options = await request(
-		"/api/auth/register/options",
-		"POST",
-		{ grant: grant.token },
-		false,
-	);
-	assert.equal(options.result.status, 200);
-	sessionCookie = options.result.headers.get("set-cookie")!.split(";")[0]!;
-	const enrolled = await request("/api/auth/register/verify", "POST", {
-		transaction: options.value.transaction,
-		response: key.register(options.value.options.challenge, origin),
-	});
-	assert.equal(enrolled.result.status, 200);
-	sessionCookie = enrolled.result.headers.get("set-cookie")!.split(";")[0]!;
+	// Local onboarding uses validated loopback authority, without credentials.
 	assert.equal((await api("/api/onboarding")).required, true);
 	const invalid = await request("/api/onboarding/project", "POST", {
 		repositoryPath: join(directory, "missing"),
