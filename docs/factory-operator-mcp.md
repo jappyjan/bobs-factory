@@ -82,7 +82,7 @@ the correct operation. Run results identify the instance and run.
 | `inspect_run` | Failure, pending questions, execution/connection diagnosis, progress and action eligibility |
 | `read_run_activity` | Page sanitized workflow events; agent payloads are excluded |
 | `retry_run` | Retry a failed run through its existing checkpoint |
-| `resume_run` | Resume an interrupted run with saved progress |
+| `resume_run` | Resume an interrupted or explicitly stopped run with saved progress |
 | `retry_ticket_sync` | Retry tracker synchronization only |
 | `stop_run` | Stop an active/waiting/interrupted run and retain work |
 | `answer_run` | Answer current questions or request an explanation with `kind: "explanation"` |

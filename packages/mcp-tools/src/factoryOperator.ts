@@ -82,7 +82,7 @@ export const operatorTools = [
 		name: "resume_run",
 		scope: "operate",
 		description:
-			"Resume an interrupted run with saved progress. Requires a fresh inspection revision.",
+			"Resume an interrupted or explicitly stopped run with saved progress. Requires a fresh inspection revision.",
 		schema: z.object(mutation).strict(),
 	},
 	{

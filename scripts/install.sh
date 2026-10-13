@@ -59,18 +59,20 @@ download() {
     --proto '=https' --proto-redir '=https' "$1" --output "$2" || fail 'Download failed. Check your connection and try again.'
 }
 field() {
-  value=$(sed -n "s/^[[:space:]]*\"$2\":[[:space:]]*\"\([^\"]*\)\",\{0,1\}[[:space:]]*$/\1/p" "$1")
+  # Publisher JSON uses two spaces for root fields. Extracted sections use
+  # the same indentation; nested desktop/recipe fields belong to other objects.
+  value=$(sed -n "s/^  \"$2\":[[:space:]]*\"\([^\"]*\)\",\{0,1\}[[:space:]]*$/\1/p" "$1")
   [ -n "$value" ] && [ "$(printf '%s\n' "$value" | wc -l | tr -d ' ')" = 1 ] || fail "Invalid release field: $2"
   printf '%s' "$value"
 }
 number() {
-  value=$(sed -n "s/^[[:space:]]*\"$2\":[[:space:]]*\([0-9][0-9]*\),\{0,1\}[[:space:]]*$/\1/p" "$1")
+  value=$(sed -n "s/^  \"$2\":[[:space:]]*\([0-9][0-9]*\),\{0,1\}[[:space:]]*$/\1/p" "$1")
   [ -n "$value" ] && [ "$(printf '%s\n' "$value" | wc -l | tr -d ' ')" = 1 ] || fail "Invalid release number: $2"
   printf '%s' "$value"
 }
 section() {
   # The publisher emits canonical two-space JSON. Ambiguous/duplicate sections fail.
-  awk -v key="$2" '$0 == "    \"" key "\": {" || $0 == "  \"" key "\": {" { count++; active=1; next } active && /^  +}[,]?$/ { active=0; next } active { print } END { if (count != 1) exit 1 }' "$1" > "$3" || fail "Invalid release section: $2"
+  awk -v key="$2" '$0 == "    \"" key "\": {" || $0 == "  \"" key "\": {" { count++; active=1; next } active && /^  +}[,]?$/ { active=0; next } active { sub(/^[[:space:]]+/, "  "); print } END { if (count != 1) exit 1 }' "$1" > "$3" || fail "Invalid release section: $2"
 }
 sha256() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d ' ' -f 1

@@ -1,0 +1,63 @@
+{
+	"schemaVersion": 1,
+	"acceptedBy": "jappyjan, root coordinator: exact retained844/0fbd source and complete scoped receipts accepted; authorizes documented CI-derived-nightly reuse for unchanged native AND desktop dependencies/source/objects/license inputs only. No new per-nightly human review, physical Mac/Intel/DMG QA or stable publication authority.",
+	"candidate": {
+		"candidate": {
+			"schemaVersion": 1,
+			"product": "bobs-factory",
+			"repository": "jappyjan/bobs-factory",
+			"channel": "nightly",
+			"version": "1.0.0-nightly.20261011.38179973111",
+			"tag": "v1.0.0-nightly.20261011.38179973111",
+			"commit": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+			"committedVersion": "1.0.0-beta",
+			"workflowSha": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+			"recipe": {
+				"schemaVersion": 1,
+				"toolingSha": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+				"bun": "1.4.2",
+				"node": "24.18.0",
+				"versionOverride": "1.0.0-nightly.20261011.38179973111"
+			},
+			"targets": ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64"],
+			"sequence": 38179973111
+		},
+		"digest": "0fbd30bd0323acdd0ec7af14092140c4ebd3c73ac08277b06686355a13034990"
+	},
+	"source": {
+		"file": "source-rebuild.tar.gz",
+		"size": 4151718787,
+		"sha256": "7e4c5e55dd5b3dd1a5a06bfec1c166a1b10e810e65d3333ebb132fda16703995"
+	},
+	"receiptArchive": {
+		"file": "validation-receipts.tar.gz",
+		"size": 1039560,
+		"sha256": "969da6c24ff7e98b9e062f0b0c32c3cb8c55abc5f53275e04d9ec765bdbe6b7e"
+	},
+	"receipts": {
+		"reviewedCandidate": {
+			"file": "reviewedCandidate.json",
+			"size": 1883,
+			"sha256": "311016a38ac126749a07ba078cc820ee3a3e051d2a1be5ffa7533765ecab2a8d"
+		},
+		"fullPayloadF1": {
+			"file": "fullPayloadF1.json",
+			"size": 3417,
+			"sha256": "f8609886ecd2cf3b1f0a24820b3b545948ed3eb6c0e2bde1c0749d94196b68c2"
+		},
+		"migrationPreservation": {
+			"file": "migrationPreservation.json",
+			"size": 1879,
+			"sha256": "904c1d4de4ea941e3ff42f8e2b222364bb36f294d9d9ae6f5701e19d4dbc576c"
+		},
+		"licensingAndSource": {
+			"file": "licensingAndSource.json",
+			"size": 3261,
+			"sha256": "05353343bbb0232972e751856d37757f111d8bc227b11214bd040e761ec6d8a6"
+		}
+	},
+	"publishedSource": {
+		"tag": "v1.0.0-nightly.20261013.38342264204",
+		"manifestSha256": "d44bef0c2beeb4879057d3e9d5ab2ad3159a339f5731aa3b64d17f900da44959"
+	}
+}

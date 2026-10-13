@@ -106,6 +106,8 @@ export function attention(run: RunSummary): Attention | undefined {
 		return "review";
 	if (run.status === "waiting") return "question";
 	if (["failed", "error", "interrupted"].includes(run.status)) return "stuck";
+	if (["stopped", "cancelled"].includes(run.status) && run.viewState?.keptOpen)
+		return "stuck";
 	if (["complete", "completed"].includes(run.status)) return "review";
 	return undefined;
 }

@@ -224,10 +224,10 @@ export class OperatorService {
 					"Only failed runs outside human review can retry",
 				),
 				resume_run: action(
-					run.status === "interrupted" &&
+					(run.status === "interrupted" || this.runtime.canResume(run.id)) &&
 						!!(run.checkpoint || run.simpleExecution) &&
 						!pendingReview,
-					"Only interrupted runs with saved progress outside human review can resume",
+					"Only interrupted or stopped runs with saved progress outside human review can resume",
 				),
 				stop_run: action(
 					["running", "waiting", "interrupted"].includes(run.status),
@@ -429,7 +429,9 @@ export class OperatorService {
 						"stale_state",
 						"Run changed during connectivity check. Inspect again.",
 					);
-				this.retry(run.id);
+				if (name === "resume_run" && run.status === "stopped")
+					this.resume(run.id);
+				else this.retry(run.id);
 			} else if (name === "retry_ticket_sync") await this.retryTracking(run.id);
 			else if (name === "stop_run") this.stop(run.id);
 			else if (name === "answer_run") {
@@ -464,6 +466,9 @@ export class OperatorService {
 	}
 	retry(id: string) {
 		return this.runtime.retry(id);
+	}
+	resume(id: string) {
+		return this.runtime.resume(id);
 	}
 	stop(id: string) {
 		return this.hooks.stop(id);

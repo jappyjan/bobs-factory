@@ -830,6 +830,7 @@ export class FactoryServer {
 					chatMessages: runtime.chatMessages(request.params.id),
 					entries: hooks.entries(request.params.id),
 					viewState: runtime.viewState(request.params.id),
+					resumeAvailable: run ? runtime.canResume(run.id) : false,
 				};
 				if (request.query.view !== "dashboard") return detail;
 				const {
@@ -1154,6 +1155,11 @@ export class FactoryServer {
 			"/api/runs/:id/retry",
 			(request, reply) =>
 				reply.code(202).send(operator.retry(request.params.id)),
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/resume",
+			(request, reply) =>
+				reply.code(202).send(operator.resume(request.params.id)),
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/answer",
