@@ -89,6 +89,17 @@ it.each([
 		step: "clarify",
 		answers: [],
 		questions: ["Which tests?"],
+		questionChoices: [
+			{
+				questionIndex: 0,
+				selection: "single",
+				options: [
+					{ id: "mock", answer: "Simulated tests" },
+					{ id: "live", answer: "Paid tests" },
+				],
+				preselectedOptionIds: ["mock"],
+			},
+		],
 	} as unknown as FactoryRun;
 	const checkpoint = {
 		current: "clarify",
@@ -113,6 +124,14 @@ it.each([
 			: checkpoint,
 	};
 	expect(runPushEvent(rephrased)).toEqual(runPushEvent(original));
+	expect(
+		runPushEvent({
+			...original,
+			questionChoices: [
+				{ ...original.questionChoices![0]!, preselectedOptionIds: ["live"] },
+			],
+		})?.identity,
+	).not.toBe(runPushEvent(original)?.identity);
 	// Persisted explanation provenance also survives a restart.
 	expect(runPushEvent(JSON.parse(JSON.stringify(rephrased)))).toEqual(
 		runPushEvent(original),

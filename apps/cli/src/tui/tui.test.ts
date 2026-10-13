@@ -323,3 +323,76 @@ it("requests a new terminal session once when the server forgets it, and sends w
 	});
 	await expect(client.get("/api/runs")).rejects.toThrow("same home (/home)");
 });
+
+it("selects terminal choices explicitly, preserves mode drafts and submits in option order", () => {
+	const form = new AnswerForm({
+		...run("choices", "waiting"),
+		questions: ["Platforms?", "Strategy?"],
+		questionChoices: [
+			{
+				questionIndex: 0,
+				selection: "multiple",
+				options: [
+					{ id: "a", answer: "Alpha" },
+					{ id: "b", answer: "Beta" },
+				],
+			},
+			{
+				questionIndex: 1,
+				selection: "single",
+				options: [
+					{ id: "one", answer: "Explain via examples" },
+					{ id: "two", answer: "Use text" },
+				],
+				preselectedOptionIds: ["one"],
+			},
+		],
+	});
+	expect(form.request().body).toBeUndefined();
+	form.key({ name: "down" });
+	form.key({ name: "text", text: " " });
+	form.key({ name: "up" });
+	form.key({ name: "text", text: " " });
+	expect(form.answers()).toEqual(["- Alpha\n- Beta", "Explain via examples"]);
+	expect(form.key({ name: "text", text: "unhandled" })).toBeUndefined();
+	form.key({ name: "down" });
+	form.key({ name: "down" });
+	form.key({ name: "text", text: " " });
+	expect(form.request().body).toBeUndefined();
+	form.key({ name: "text", text: "Custom platform" });
+	expect(form.answers()[0]).toBe("Custom platform");
+	const screen = new Screen(60, 16, tokens("light").base);
+	form.render(screen, tokens("light"));
+	expect(screen.cells.join("")).toContain("Custom platform");
+	expect(screen.cursor!.y).toBeLessThan(13);
+	form.key({ name: "ctrl-space" });
+	expect(form.answers()[0]).toBe("- Alpha\n- Beta");
+	form.key({ name: "tab" });
+	form.key({ name: "down" });
+	form.key({ name: "text", text: " " });
+	expect(form.answers()[1]).toBe("Use text");
+	expect(form.request().body?.kind).toBe("answer");
+	expect(form.key({ name: "ctrl-s" })).toBe("submit");
+});
+
+it("scrolls to late options in a short terminal and sanitizes their labels", () => {
+	const options = Array.from({ length: 20 }, (_, i) => ({
+		id: String(i),
+		answer:
+			`Option ${i + 1} with a long readable label` +
+			(i === 19 ? "\x1b[2J" : ""),
+	}));
+	const form = new AnswerForm({
+		...run("long-choices", "waiting"),
+		questions: ["Choose a platform"],
+		questionChoices: [{ questionIndex: 0, selection: "single", options }],
+	});
+	for (let i = 0; i < 19; i++) form.key({ name: "down" });
+	const screen = new Screen(60, 12, tokens("light").base);
+	form.render(screen, tokens("light"));
+	expect(screen.cells.join("")).toContain("Option 20");
+	expect(screen.cells.join("")).toContain("ctrl-s send");
+	expect(screen.cells.join("")).not.toContain("\x1b");
+	form.key({ name: "text", text: " " });
+	expect(form.answers()[0]).toContain("Option 20");
+});

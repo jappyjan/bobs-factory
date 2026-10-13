@@ -6,8 +6,10 @@ import {
 } from "../src/factory/Questions.js";
 import {
 	answerChoice,
+	answerReplyKind,
 	resolveAnswers,
 	serializeAnswers,
+	toggleAnswerOption,
 } from "../src/factory/web/question-answers.js";
 
 const recommendation = {
@@ -135,4 +137,145 @@ it("recognizes explanation text inside complete dashboard question batches", () 
 			questions,
 		),
 	).toBe(false);
+});
+
+const multiple = {
+	questionIndex: 0,
+	selection: "multiple" as const,
+	options: [
+		{ id: "a", answer: "Alpha" },
+		{ id: "b", answer: "Beta", reason: "Second platform" },
+	],
+	preselectedOptionIds: ["b"],
+};
+it("retains choices through built-in parsing and preserves custom role fields", () => {
+	expect(
+		validateFactoryResult("implement", {
+			status: "blocked",
+			summary: "Choose",
+			checks: [],
+			questions: ["Platforms?"],
+			questionChoices: [multiple],
+		}),
+	).toMatchObject({ questionChoices: [multiple] });
+	expect(
+		normalizeQuestionResult({
+			questions: ["Platforms?"],
+			questionChoices: [multiple],
+			extra: true,
+		}),
+	).toMatchObject({ questionChoices: [multiple], extra: true });
+});
+it.each([
+	{ ...multiple, questionIndex: 1 },
+	{ ...multiple, questionIndex: -1 },
+	{ ...multiple, selection: "other" },
+	{ ...multiple, options: [multiple.options[0]] },
+	{ ...multiple, options: [multiple.options[0], multiple.options[0]] },
+	{ ...multiple, preselectedOptionIds: ["missing"] },
+	{ ...multiple, preselectedOptionIds: ["a", "a"] },
+	{ ...multiple, selection: "single", preselectedOptionIds: ["a", "b"] },
+	{ ...multiple, options: [{ id: " ", answer: "Alpha" }, multiple.options[1]] },
+	{ ...multiple, options: [{ id: "a", answer: " " }, multiple.options[1]] },
+	{
+		...multiple,
+		options: [{ id: "a", answer: "Alpha", reason: " " }, multiple.options[1]],
+	},
+])("rejects malformed choices (%j)", (choice) => {
+	expect(() =>
+		normalizeQuestionResult({
+			questions: ["Platforms?"],
+			questionChoices: [choice],
+		}),
+	).toThrow();
+});
+it("rejects duplicate indices and overlapping recommendation metadata", () => {
+	expect(() =>
+		normalizeQuestionResult({
+			questions: ["Platforms?"],
+			questionChoices: [multiple, multiple],
+		}),
+	).toThrow();
+	expect(() =>
+		normalizeQuestionResult({
+			questions: ["Platforms?"],
+			questionChoices: [multiple],
+			questionRecommendations: [recommendation],
+		}),
+	).toThrow();
+});
+it("resolves declared defaults and custom text without fallback, orders multiple answers", () => {
+	expect(resolveAnswers(["Platforms?"], [], {}, [multiple])).toEqual([
+		"- Beta",
+	]);
+	expect(
+		resolveAnswers(["Platforms?"], [], {}, [
+			{ ...multiple, preselectedOptionIds: undefined },
+		]),
+	).toEqual([""]);
+	expect(
+		resolveAnswers(
+			["Platforms?"],
+			[],
+			{ 0: { mode: "custom", custom: " ", selectedOptionIds: ["b"] } },
+			[multiple],
+		),
+	).toEqual([" "]);
+	expect(
+		serializeAnswers(
+			["Platforms?"],
+			resolveAnswers(
+				["Platforms?"],
+				[],
+				{
+					0: {
+						mode: "predefined",
+						custom: "saved",
+						selectedOptionIds: ["b", "a"],
+					},
+				},
+				[multiple],
+			),
+		),
+	).toBe("1. Platforms?\n- Alpha\n- Beta");
+	expect(
+		resolveAnswers(
+			["Platforms?"],
+			[],
+			{ 0: { mode: "predefined", custom: "", selectedOptionIds: ["b", "a"] } },
+			[{ ...multiple, selection: "single" }],
+		),
+	).toEqual([""]);
+});
+
+it("retains separate drafts when toggling and treats predefined Explain text as a decision", () => {
+	const options = { ...multiple, selection: "single" as const };
+	let choice = answerChoice(undefined, undefined, options);
+	choice = toggleAnswerOption(
+		{ ...choice, custom: "Saved draft" },
+		options,
+		"a",
+	);
+	choice = toggleAnswerOption(choice, options, "b");
+	expect(choice).toEqual({
+		mode: "predefined",
+		custom: "Saved draft",
+		selectedOptionIds: ["b"],
+	});
+	expect(
+		answerReplyKind(
+			["Strategy?", "Other?"],
+			[],
+			{ 0: choice, 1: "A custom answer" },
+			[options],
+		),
+	).toBe("answer");
+	expect(
+		answerReplyKind(
+			["Strategy?"],
+			[],
+			{ 0: { ...choice, mode: "custom", custom: "Please explain" } },
+			[options],
+		),
+	).toBe("explanation");
 });

@@ -207,12 +207,36 @@ export class TodayApp {
 		}
 		this.loadingDetails.add(id);
 		try {
-			this.details.set(
-				id,
-				await this.options.client.get<RunDetail>(
-					`/api/runs/${encodeURIComponent(id)}?view=dashboard`,
-				),
+			const detail = await this.options.client.get<RunDetail>(
+				`/api/runs/${encodeURIComponent(id)}?view=dashboard`,
 			);
+			this.details.set(id, detail);
+			if (this.overlay?.kind === "answer" && this.overlay.form.run.id === id) {
+				const before = this.overlay.form.run;
+				if (
+					JSON.stringify([
+						before.questions,
+						before.questionBatchId,
+						before.questionChoices,
+						before.questionRecommendations,
+						before.step,
+						before.status,
+					]) !==
+					JSON.stringify([
+						detail.questions,
+						detail.questionBatchId,
+						detail.questionChoices,
+						detail.questionRecommendations,
+						detail.step,
+						detail.status,
+					])
+				) {
+					this.overlay =
+						detail.status === "waiting" && detail.questions?.length
+							? { kind: "answer", form: new AnswerForm(detail) }
+							: undefined;
+				}
+			}
 		} catch (error) {
 			if ((error as { status?: number }).status === 404)
 				this.details.delete(id);
@@ -442,7 +466,10 @@ export class TodayApp {
 		const detail = this.details.get(run.id);
 		const form = detail?.questions?.length ? new AnswerForm(detail) : undefined;
 		if (!form) return this.notify("Loading the question…");
-		if (form.questions.some((_, i) => !form.recommendation(i)))
+		if (
+			detail?.questionChoices?.length ||
+			form.questions.some((_, i) => !form.recommendation(i))
+		)
 			return this.answer(run);
 		const { body } = form.request();
 		void this.perform("Accepted Bob’s recommendations", () =>
@@ -929,6 +956,17 @@ export class TodayApp {
 				const lead = question.replace(/\s+/g, " ").trim();
 				for (const line of wrap(`${i + 1}. ${lead}`, inner).slice(0, 2))
 					lines.push({ text: line, style: t.text });
+				const choices = detail.questionChoices?.find(
+					(item) => item.questionIndex === i,
+				);
+				if (choices)
+					lines.push({
+						text: clip(
+							`   → ${choices.selection === "single" ? "Choose one" : "Choose one or more"}: ${choices.options.map((option) => option.answer).join(", ")}`,
+							inner,
+						),
+						style: t.review,
+					});
 				const recommendation = detail.questionRecommendations?.find(
 					(item) => item.questionIndex === i,
 				);

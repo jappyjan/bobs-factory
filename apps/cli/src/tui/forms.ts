@@ -1,5 +1,12 @@
 // Modal forms for the TUI: starting a run and answering Bob's questions.
-import { serializeAnswers } from "bobs-factory-edge-worker";
+import {
+	type AnswerDraft,
+	answerChoice,
+	answerReplyKind,
+	resolveAnswers,
+	serializeAnswers,
+	toggleAnswerOption,
+} from "bobs-factory-edge-worker";
 import {
 	type FactoryConfig,
 	type LaunchField,
@@ -346,6 +353,8 @@ export class LaunchForm extends FieldForm {
 
 export class AnswerForm extends FieldForm {
 	readonly questions: string[];
+	draft: AnswerDraft = {};
+	optionFocus: Record<number, number> = {};
 	constructor(readonly run: RunDetail) {
 		super();
 		this.questions = run.questions ?? [];
@@ -371,11 +380,75 @@ export class AnswerForm extends FieldForm {
 		);
 	}
 
-	/** Answers with empty fields falling back to Bob's recommendation. */
+	choices(index: number) {
+		return this.run.questionChoices?.find(
+			(item) => item.questionIndex === index,
+		);
+	}
+	key(key: Key): FormResult {
+		const options = this.choices(this.focus);
+		if (!options) return super.key(key);
+		if (key.name === "escape") return "cancel";
+		if (key.name === "ctrl-s") return "submit";
+		if (key.name === "tab" || key.name === "shift-tab")
+			return void this.move(key.name === "tab" ? 1 : -1);
+		const choice = answerChoice(this.draft[this.focus], undefined, options);
+		const row = this.optionFocus[this.focus] ?? 0;
+		if (key.name === "up" || key.name === "down") {
+			this.optionFocus[this.focus] =
+				(row + (key.name === "up" ? -1 : 1) + options.options.length + 1) %
+				(options.options.length + 1);
+			return;
+		}
+		if (key.name === "ctrl-space") {
+			this.draft[this.focus] = { ...choice, mode: "predefined" };
+			return;
+		}
+		if (choice.mode === "custom" && row === options.options.length) {
+			const field = this.current;
+			if (field?.kind === "input") {
+				field.input.handle(key);
+				this.draft[this.focus] = { ...choice, custom: field.input.value };
+			}
+			return;
+		}
+		if (key.text === " " || key.name === "enter" || key.name === "right") {
+			this.draft[this.focus] =
+				row === options.options.length
+					? { ...choice, mode: "custom" }
+					: toggleAnswerOption(choice, options, options.options[row]!.id);
+		}
+		return;
+	}
+	answerDraft() {
+		const draft: AnswerDraft = { ...this.draft };
+		this.questions.forEach((_, index) => {
+			if (!this.choices(index)) {
+				const custom = this.value(String(index));
+				draft[index] =
+					custom ||
+					answerChoice(
+						undefined,
+						this.recommendation(index)
+							? {
+									...this.recommendation(index)!,
+									reason: this.recommendation(index)!.reason ?? "",
+								}
+							: undefined,
+					);
+			}
+		});
+		return draft;
+	}
 	answers() {
-		return this.questions.map(
-			(_, index) =>
-				this.value(String(index)) || this.recommendation(index)?.answer || "",
+		return resolveAnswers(
+			this.questions,
+			(this.run.questionRecommendations ?? []).map((item) => ({
+				...item,
+				reason: item.reason ?? "",
+			})),
+			this.answerDraft(),
+			this.run.questionChoices,
 		);
 	}
 
@@ -390,6 +463,15 @@ export class AnswerForm extends FieldForm {
 		return {
 			body: {
 				answer: serializeAnswers(this.questions, answers),
+				kind: answerReplyKind(
+					this.questions,
+					(this.run.questionRecommendations ?? []).map((item) => ({
+						...item,
+						reason: item.reason ?? "",
+					})),
+					this.answerDraft(),
+					this.run.questionChoices,
+				),
 				context: {
 					questions: this.questions,
 					step: this.run.step,
@@ -399,7 +481,101 @@ export class AnswerForm extends FieldForm {
 		};
 	}
 
+	private renderChoices(screen: Screen, theme: Theme) {
+		const options = this.choices(this.focus)!;
+		const choice = answerChoice(this.draft[this.focus], undefined, options);
+		const w = Math.max(12, Math.min(100, screen.w - 4));
+		const h = Math.max(6, screen.h - 2);
+		const x = Math.max(0, Math.floor((screen.w - w) / 2));
+		const y = 1;
+		const inner = w - 6;
+		screen.fill(x, y, w, h, theme.raised);
+		screen.box(x, y, w, h, theme.focus, {
+			text: `Answer ${this.focus + 1}/${this.questions.length}`,
+			style: theme.accentBold,
+		});
+		screen.put(
+			x + 3,
+			y + 1,
+			wrap(this.questions[this.focus]!, inner)[0] ?? "",
+			theme.bold,
+			inner,
+		);
+		screen.put(
+			x + 3,
+			y + 2,
+			choice.mode === "custom"
+				? "Custom text will be sent"
+				: options.selection === "single"
+					? "Choose one predefined answer"
+					: "Choose one or more predefined answers",
+			theme.muted,
+			inner,
+		);
+		const cursor = this.optionFocus[this.focus] ?? 0;
+		const rows: { text: string; focused: boolean }[] = [];
+		let cursorStart = 0;
+		options.options.forEach((option, index) => {
+			if (cursor === index) cursorStart = rows.length;
+			const selected = choice.selectedOptionIds?.includes(option.id);
+			wrap(
+				`${cursor === index ? "›" : " "} ${options.selection === "single" ? (selected ? "(●)" : "( )") : selected ? "[✓]" : "[ ]"} ${option.answer}${option.reason ? ` — ${option.reason}` : ""}`,
+				inner,
+			).forEach((text) => {
+				rows.push({ text, focused: cursor === index });
+			});
+		});
+		if (cursor === options.options.length) cursorStart = rows.length;
+		rows.push({
+			text: `${cursor === options.options.length ? "›" : " "} ${choice.mode === "custom" ? "(●)" : "( )"} Custom answer`,
+			focused: cursor === options.options.length,
+		});
+		const available = Math.max(1, h - (choice.mode === "custom" ? 9 : 6));
+		const first = Math.max(0, Math.min(cursorStart, rows.length - available));
+		rows.slice(first, first + available).forEach((row, index) => {
+			screen.put(
+				x + 3,
+				y + 3 + index,
+				row.text,
+				row.focused ? theme.focus : theme.text,
+				inner,
+			);
+		});
+		if (choice.mode === "custom") {
+			const field = this.current;
+			if (field?.kind === "input")
+				field.input.render(
+					screen,
+					x + 3,
+					y + h - 6,
+					inner,
+					3,
+					theme.text,
+					theme.muted,
+					cursor === options.options.length,
+				);
+		}
+		if (this.error)
+			screen.put(x + 3, y + h - 3, this.error, theme.stuck, inner);
+		else
+			screen.put(
+				x + 3,
+				y + h - 3,
+				"↑/↓ option · space choose · ctrl-space choices",
+				theme.muted,
+				inner,
+			);
+		screen.put(
+			x + 3,
+			y + h - 2,
+			"ctrl-s send · tab question · esc close",
+			theme.muted,
+			inner,
+		);
+	}
+
 	render(screen: Screen, theme: Theme) {
+		if (this.choices(this.focus)) return this.renderChoices(screen, theme);
 		const w = Math.min(100, screen.w - 4);
 		const x = Math.floor((screen.w - w) / 2);
 		const inner = w - 6;

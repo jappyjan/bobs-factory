@@ -5,6 +5,7 @@ import {
 	active,
 	attention,
 	finished,
+	type QuestionChoices,
 	type RunSummary,
 	settleReason,
 	workingLabel,
@@ -69,6 +70,7 @@ export interface RunDetail extends Omit<RunItem, "workflow"> {
 	history?: { step: string; at: string }[];
 	questions?: string[];
 	questionRecommendations?: Recommendation[];
+	questionChoices?: QuestionChoices[];
 	questionBatchId?: string;
 	iterationLimit?: { step: string; visits: number; limit: number };
 	chat?: {

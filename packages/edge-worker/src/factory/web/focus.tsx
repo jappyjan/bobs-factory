@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import type { QuestionChoices } from "../Questions.js";
 import { ArchitectureEntry } from "./architecture";
 import {
 	active,
@@ -21,9 +22,11 @@ import { useCurrentForm, useFormState } from "./form-state";
 import {
 	type AnswerDraft,
 	answerChoice,
+	answerReplyKind,
 	type Recommendation,
 	resolveAnswers,
 	serializeAnswers,
+	toggleAnswerOption,
 } from "./question-answers";
 import { revisionOf } from "./restoration";
 import { GuidedReview } from "./review";
@@ -181,11 +184,13 @@ export function QuestionForm({ run }: { run: any }) {
 	const toast = useToast();
 	const questions: string[] = run.questions ?? [];
 	const recommendations: Recommendation[] = run.questionRecommendations ?? [];
+	const choices: QuestionChoices[] = run.questionChoices ?? [];
 	const context = revisionOf([
 		run.id,
 		run.questionBatchId,
 		questions,
 		recommendations,
+		choices,
 		run.step,
 		run.status,
 	]);
@@ -199,7 +204,7 @@ export function QuestionForm({ run }: { run: any }) {
 		fields.current[focusCustom.current]?.focus();
 		focusCustom.current = undefined;
 	});
-	const answers = resolveAnswers(questions, recommendations, draft);
+	const answers = resolveAnswers(questions, recommendations, draft, choices);
 	const incomplete =
 		!questions.length || answers.some((answer) => !answer.trim());
 	const submit = async () => {
@@ -221,6 +226,7 @@ export function QuestionForm({ run }: { run: any }) {
 						questionBatchId: run.questionBatchId,
 					},
 					answer: serializeAnswers(questions, answers),
+					kind: answerReplyKind(questions, recommendations, draft, choices),
 				},
 			});
 			setDraft({});
@@ -253,9 +259,11 @@ export function QuestionForm({ run }: { run: any }) {
 					const recommendation = recommendations.find(
 						(item) => item.questionIndex === i,
 					);
-					const choice = answerChoice(draft[i], recommendation);
-					const custom = !recommendation || choice.mode === "custom";
-					const select = (mode: "custom" | "recommendation") => {
+					const options = choices.find((item) => item.questionIndex === i);
+					const choice = answerChoice(draft[i], recommendation, options);
+					const custom =
+						(!recommendation && !options) || choice.mode === "custom";
+					const select = (mode: "custom" | "recommendation" | "predefined") => {
 						if (mode === "custom") focusCustom.current = i;
 						setDraft({ ...draft, [i]: { ...choice, mode } });
 					};
@@ -277,7 +285,7 @@ export function QuestionForm({ run }: { run: any }) {
 								<legend className="sr-only">
 									Choose an answer for question {i + 1}
 								</legend>
-								{recommendation && (
+								{(recommendation || options) && (
 									<>
 										<div className="answer-modes">
 											<label>
@@ -285,9 +293,11 @@ export function QuestionForm({ run }: { run: any }) {
 													type="radio"
 													name={`answer-mode-${run.id}-${i}`}
 													checked={!custom}
-													onChange={() => select("recommendation")}
+													onChange={() =>
+														select(options ? "predefined" : "recommendation")
+													}
 												/>
-												Use recommendation
+												{options ? "Predefined answers" : "Use recommendation"}
 											</label>
 											<label>
 												<input
@@ -299,12 +309,55 @@ export function QuestionForm({ run }: { run: any }) {
 												Custom answer
 											</label>
 										</div>
-										<div className="answer-recommendation">
-											<Markdown>{recommendation.answer}</Markdown>
-											<div className="recommendation-reason">
-												<Markdown>{recommendation.reason}</Markdown>
+										{options && !custom && (
+											<fieldset
+												className="answer-options"
+												aria-label={
+													options.selection === "single"
+														? "Choose one answer"
+														: "Choose one or more answers"
+												}
+											>
+												{options.options.map((option) => (
+													<label key={option.id} className="answer-option">
+														<input
+															type={
+																options.selection === "single"
+																	? "radio"
+																	: "checkbox"
+															}
+															name={`answer-option-${run.id}-${i}`}
+															checked={
+																choice.selectedOptionIds?.includes(option.id) ??
+																false
+															}
+															onChange={() =>
+																setDraft({
+																	...draft,
+																	[i]: toggleAnswerOption(
+																		choice,
+																		options,
+																		option.id,
+																	),
+																})
+															}
+														/>
+														<span>
+															{option.answer}
+															{option.reason && <small>{option.reason}</small>}
+														</span>
+													</label>
+												))}
+											</fieldset>
+										)}
+										{recommendation && (
+											<div className="answer-recommendation">
+												<Markdown>{recommendation.answer}</Markdown>
+												<div className="recommendation-reason">
+													<Markdown>{recommendation.reason}</Markdown>
+												</div>
 											</div>
-										</div>
+										)}
 									</>
 								)}
 								{custom && (
@@ -321,7 +374,11 @@ export function QuestionForm({ run }: { run: any }) {
 										onChange={(e) =>
 											setDraft({
 												...draft,
-												[i]: { mode: "custom", custom: e.target.value },
+												[i]: {
+													...choice,
+													mode: "custom",
+													custom: e.target.value,
+												},
 											})
 										}
 									/>
