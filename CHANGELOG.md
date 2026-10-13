@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Update the legacy title migration test for normalized attachment inputs so CI retains its complete launch-request assertion ([#123](https://github.com/jappyjan/bobs-factory/pull/123)).
+
 - Format launcher screenshot evidence consistently so the CI formatting gate passes ([#123](https://github.com/jappyjan/bobs-factory/pull/123)).
 
 - Keep resumed specialist reviews responsive by searching recent history without copying its full payload and reusing immutable review-baseline chunks during checkpoints ([#121](https://github.com/jappyjan/bobs-factory/pull/121)).

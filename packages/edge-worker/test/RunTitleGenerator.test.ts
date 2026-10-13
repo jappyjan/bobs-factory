@@ -464,6 +464,7 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 		repositoryId: "repo",
 		workflow: "simple",
 		inputs: { prompt: "Task" },
+		attachments: {},
 		prompt: "Task",
 		source: undefined,
 	});
