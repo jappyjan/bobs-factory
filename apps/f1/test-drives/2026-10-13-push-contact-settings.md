@@ -44,3 +44,11 @@ All 68 focused tests passed. After adding stopped/unavailable status diagnostics
 ## Limitations
 
 Delivery is simulated. Physical-device foreground/background receipt, native notification display, trusted OS clicks and production HTTPS proxy behavior remain unverified. This drive does not claim real-agent suggestion quality or production push-service acceptance. Publication, independent review and revision-bound human approval belong to later workflow steps.
+
+## Review fix: contact-settings navigation
+
+Validated revision `1dab258a` plus the dialog-close fix in this worktree using the same embedded F1 driver with `F1_AGENT_MODE=mock` and `--browser`. Fresh fixture home: `/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-push-contact-TsM8c9`. No agents or external push services were invoked.
+
+Headless agent-browser session `manual847-fix` opened Notifications on the unconfigured server and clicked its contact-settings link. The route became `#/settings/notifications`, the number of dialog elements became zero, and the contact field accepted `mailto:review@example.org` with keyboard focus. Inspected screenshot: `push-settings-dialog-fixed.png` in the run evidence directory. This directly verifies that the dialog no longer blocks the linked form.
+
+Edge-worker typecheck and build, source Biome checks and `git diff --check` passed. Existing web-client and notification tests passed. The named browser session and isolated fixture were stopped after validation. Earlier delivery limitations remain unchanged.

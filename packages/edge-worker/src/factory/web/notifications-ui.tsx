@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useFormState } from "./form-state";
 import {
 	disablePush,
@@ -100,9 +101,9 @@ export function NotificationsControl() {
 					{status?.diagnostic && <p role="status">{status.diagnostic}</p>}
 					{status?.configuration === "unconfigured" && (
 						<p>
-							<a href="/#/settings/notifications">
+							<Link to="/settings/notifications" onClick={() => setOpen(false)}>
 								Configure the push contact in Settings → Notifications
-							</a>
+							</Link>
 							.
 						</p>
 					)}
