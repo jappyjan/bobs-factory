@@ -149,12 +149,26 @@ export function verifyDependencyBaseline(
 	return observations;
 }
 
+export function nativeNoticeMaterialName(materials, identity, target) {
+	requireValue(
+		TARGETS.includes(target) && /^[a-f0-9]{64}$/.test(identity.candidateDigest),
+		"Native notices require a frozen candidate and target",
+	);
+	const file = `native-notices-${target}-${identity.candidateDigest}.tar.gz`;
+	requireValue(
+		!materials.records.some((record) => record.file === file),
+		"Current native notices would overwrite retained material",
+	);
+	return file;
+}
+
 export function rebindSourceMaterials(
 	materials,
 	directory,
 	identity,
 	bindings,
 	provenance,
+	currentRecords = [],
 ) {
 	requireValue(
 		bindings.length === TARGETS.length &&
@@ -162,6 +176,8 @@ export function rebindSourceMaterials(
 		"All four actual Bun byte bindings required",
 	);
 	const prior = structuredClone(materials);
+	// Fresh candidate notices are not part of the accepted historical inventory.
+	materials.records.push(...currentRecords);
 	for (const build of materials.builds) {
 		const binding = bindings.find((b) => b.target === build.target);
 		requireValue(

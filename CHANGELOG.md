@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file.
 
 - Save behavioral QA provenance before review and assess feedback across every repository delivery, preserving original evidence and detecting edited comments, threads and reviews ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
+- Keep nightly source assembly from overwriting retained native notices by giving fresh notices candidate-specific filenames and recording historical material before fresh additions ([#129](https://github.com/jappyjan/bobs-factory/pull/129)).
+- Keep automatic runtime updates working with retained test-tool links in task evidence: omit them from isolated preflight, preserve their exact link records in snapshots and restore them verbatim on rollback ([#128](https://github.com/jappyjan/bobs-factory/pull/128)).
+- Fix standard binary installation and desktop update enrollment for published release manifests: scope nested identities correctly and compare archive fields independently of JSON key order ([#127](https://github.com/jappyjan/bobs-factory/pull/127)).
+- Restore the nightly publisher's Bun download streaming imports and enforce undeclared-variable checks on nightly tooling, preventing release assembly from failing after source recovery ([#126](https://github.com/jappyjan/bobs-factory/pull/126)).
 - Keep automatic nightly publication working after temporary evidence servers disappear by recovering exact accepted source and validation inputs from pinned GitHub release assets ([#125](https://github.com/jappyjan/bobs-factory/pull/125)).
 
 - Keep resumed specialist reviews responsive by searching recent history without copying its full payload and reusing immutable review-baseline chunks during checkpoints ([#121](https://github.com/jappyjan/bobs-factory/pull/121)).

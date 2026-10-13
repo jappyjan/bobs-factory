@@ -180,7 +180,12 @@ test("unsigned app source binds exact payload, channel, target and full inventor
 			product: "bobs-factory-desktop",
 			target: item.target,
 			format: "AppImage",
-			archive: item.updateArchive,
+			// Packaging emits file/size/hash; publication emits file/hash/size.
+			archive: {
+				file: item.updateArchive.file,
+				size: item.updateArchive.size,
+				sha256: item.updateArchive.sha256,
+			},
 			fingerprint: digest(bytes),
 			electronLicenses: fixtureElectronLicenses,
 		};
@@ -250,6 +255,15 @@ test("unsigned app source binds exact payload, channel, target and full inventor
 			appFingerprint(staged.executable, "linux-arm64"),
 			digest(bytes),
 		);
+		writeFileSync(source.install, bytes);
+		const enrolled = await source.enroll({
+			...f.identity,
+			target: item.target,
+		});
+		assert.equal(
+			verifyAppProof(enrolled.proof, enrolled.candidate, services).fingerprint,
+			digest(bytes),
+		);
 		await assert.rejects(
 			() => source.stage({ ...selected, commit: "f".repeat(40) }),
 			/changed/,
@@ -278,7 +292,11 @@ function inventoryProof(fingerprint, target = candidate.target) {
 			target,
 			fingerprint,
 			electronLicenses: fixtureElectronLicenses,
-			archive: item.archive,
+			archive: {
+				file: item.archive.file,
+				size: item.archive.size,
+				sha256: item.archive.sha256,
+			},
 		};
 		const bytes = jsonBytes(metadata);
 		item.updateMetadata = {
