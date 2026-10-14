@@ -15,6 +15,7 @@ import { ImpactSchema } from "./Impact.js";
 import { QaScopeFieldsSchema, scopeIssues } from "./Qa.js";
 import {
 	normalizeQuestionResult,
+	QuestionChoicesSchema,
 	QuestionRecommendationSchema,
 } from "./Questions.js";
 import { isReviewBrief, ReviewBriefSchema } from "./ReviewBrief.js";
@@ -352,6 +353,7 @@ function parseFactoryResult(
 			return z
 				.object({
 					questions: z.array(text),
+					questionChoices: z.array(QuestionChoicesSchema).optional(),
 					questionRecommendations: z
 						.array(QuestionRecommendationSchema)
 						.optional(),
@@ -386,6 +388,7 @@ function parseFactoryResult(
 					summary: text,
 					checks: z.array(text),
 					questions: z.array(text),
+					questionChoices: z.array(QuestionChoicesSchema).optional(),
 					questionRecommendations: z
 						.array(QuestionRecommendationSchema)
 						.optional(),
@@ -465,6 +468,7 @@ function parseFactoryResult(
 				.object({
 					summary: text,
 					questions: z.array(text).optional(),
+					questionChoices: z.array(QuestionChoicesSchema).optional(),
 					questionRecommendations: z
 						.array(QuestionRecommendationSchema)
 						.optional(),
@@ -496,7 +500,11 @@ export function validateFactoryResult(
 	if (architectureContract === "architecture-review-v1")
 		return ArchitectureReviewSchema.parse(output);
 	const result = parseFactoryResult(step, output, qaContract, videoContract);
-	return result && typeof result === "object" && "questions" in result
+	return result &&
+		typeof result === "object" &&
+		("questions" in result ||
+			"questionChoices" in result ||
+			"questionRecommendations" in result)
 		? normalizeQuestionResult(result)
 		: result;
 }

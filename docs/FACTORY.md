@@ -1828,3 +1828,31 @@ architecture-enabled releases and execution-only preferences. Customized legacy 
 paths remain deliberate operator choices. Accepted active runs always retain their frozen
 workflow definitions during restart and retry. Independent child execution and delivery
 are separate planned work (#97–#99); this shared proposal surface does not schedule children.
+
+Selectable question answers are available in both the dashboard and `bobs-factory tui`:
+
+```json
+{"questions":["Which approach?","Which platforms?"],"questionChoices":[{"questionIndex":0,"selection":"single","options":[{"id":"existing","answer":"Use the existing approach","reason":"Avoids migration"},{"id":"new","answer":"Build a new approach"}],"preselectedOptionIds":["existing"]},{"questionIndex":1,"selection":"multiple","options":[{"id":"web","answer":"Web dashboard"},{"id":"terminal","answer":"Terminal UI"}],"preselectedOptionIds":["web","terminal"]}]}
+```
+
+Defaults are optional. Without `preselectedOptionIds`, no option is selected.
+Single choice requires exactly one selection; multiple choice requires at least
+one. Selected answers submit in the declared option order, with multiple answers
+formatted as a readable bullet list. Option IDs are never used as answer text.
+Every question offers Custom answer instead. Switching modes keeps the local
+selection and text, but blank custom text blocks submission even with defaults.
+Only the active mode is submitted. Send answers (or Ctrl-S in the terminal) is
+always required; rendering, refreshing and restoring choices never resumes work.
+
+Choice indices must be unique and in range. Options require at least two unique,
+nonblank IDs and nonblank answer text; optional reasons must also be nonblank.
+Defaults must be unique supplied IDs, with at most one for single choice. A
+question cannot have both `questionChoices` and `questionRecommendations`.
+Different questions in one batch may use different metadata, and legacy string
+questions and recommendation-only saved workflows remain supported.
+Choice contract changes clear drafts and reject older contextual submissions.
+In the terminal, Tab changes questions, arrows navigate options, Space selects,
+and Ctrl-S submits. Choose Custom answer to edit text; Ctrl-Space returns to
+predefined answers. Long lists scroll to keep the focused option visible.
+Choice forms show the full question when it fits; Page Up/Page Down scrolls
+longer questions, with a visible line range, without changing the answer draft.

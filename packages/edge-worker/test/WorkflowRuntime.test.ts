@@ -16,6 +16,7 @@ import {
 	parseAgentOutput,
 	toolArguments,
 } from "../src/factory/FactoryTools.js";
+import { OperatorService } from "../src/factory/OperatorService.js";
 import { validateWorkflows, type Workflow } from "../src/factory/Workflow.js";
 import {
 	type ExecutionContext,
@@ -3404,4 +3405,128 @@ it("passes original owning-run age to agents and intensive nested leaves", async
 			identity: `${runtime.directory}:run:${run.id}`,
 			createdAt: "2026-10-01T00:00:00Z",
 		});
+});
+
+it.each([
+	false,
+	true,
+])("retains choices across restart and changes batch only for changed options (%s)", async (changed) => {
+	const choices = [
+		{
+			questionIndex: 0,
+			selection: "single",
+			options: [
+				{ id: "a", answer: "Explain using examples" },
+				{ id: "b", answer: "Use text" },
+			],
+			preselectedOptionIds: ["a"],
+		},
+	];
+	const output = { questions: ["Approach?"], questionChoices: choices };
+	const execute = vi.fn(async (ctx: ExecutionContext) =>
+		ctx.step.id === "question-explanation"
+			? { questions: ["Which approach should we use?"] }
+			: ctx.run.answers.length
+				? { questions: [] }
+				: structuredClone(output),
+	);
+	const question = vi.fn();
+	const { runtime, home } = create({ agent: execute, question });
+	const run = start(
+		runtime,
+		workflow([agent("ask", { askQuestions: true, next: "end" })]),
+	);
+	const first = runtime.launch(run);
+	await waitFor(() => expect(run.status).toBe("waiting"));
+	expect(run.questionChoices).toEqual(choices);
+	runtime.answer(run.id, "Please explain", "explanation");
+	await waitFor(() =>
+		expect(run.questions).toEqual(["Which approach should we use?"]),
+	);
+	expect(run.questionChoices).toEqual(choices);
+	expect(run.answers).toEqual([]);
+	const batch = run.questionBatchId;
+	await runtime.shutdown();
+	await first;
+	await runtime.flush();
+	if (changed) {
+		// Simulate a changed persisted role contract while retaining the old display.
+		const original = run.outputs.ask as typeof output;
+		original.questionChoices[0]!.options[0]!.answer = "Updated examples";
+		await runtime.save(run);
+	}
+	const restarted = reload(home, { agent: execute, question });
+	const restored = restarted.get(run.id);
+	restarted.resumeAll();
+	await waitFor(() => expect(restarted.pendingAnswers.has(run.id)).toBe(true));
+	if (changed) {
+		const operator = new OperatorService(
+			restarted,
+			{ stop: () => {} },
+			"choices-fixture",
+		);
+		await expect(
+			operator.answer(run.id, "Use text", "answer", {
+				questions: restored.questions,
+				step: restored.step,
+				questionBatchId: batch,
+			}),
+		).rejects.toMatchObject({ code: "stale_state" });
+		expect(restored.questionBatchId).not.toBe(batch);
+		expect(restored.questions).toEqual(output.questions);
+	} else {
+		expect(restored.questionBatchId).toBe(batch);
+		expect(restored.questionChoices).toEqual(choices);
+	}
+	restarted.answer(run.id, "Explain using examples", "answer");
+	await waitFor(() => expect(restored.status).toBe("completed"));
+	expect(restored.answers).toHaveLength(1);
+	expect(restored.questionChoices).toBeUndefined();
+	await restarted.shutdown();
+});
+
+it("keeps choice metadata in a nested workflow wait across restart", async () => {
+	const choices = [
+		{
+			questionIndex: 0,
+			selection: "multiple",
+			options: [
+				{ id: "web", answer: "Web" },
+				{ id: "terminal", answer: "Terminal" },
+			],
+			preselectedOptionIds: ["web", "terminal"],
+		},
+	];
+	const execute = async (ctx: ExecutionContext) =>
+		ctx.run.answers.length
+			? { questions: [] }
+			: { questions: ["Platforms?"], questionChoices: choices };
+	const { runtime, home } = create({ agent: execute });
+	const child = {
+		...workflow([agent("ask", { askQuestions: true, next: "end" })]),
+		id: "choice-child",
+	};
+	const parent = workflow(
+		[{ id: "nested", name: "Nested", type: "workflow", workflow: child.id }],
+		[child],
+	);
+	runtime.updateWorkflows([...defaultWorkflows, parent, child]);
+	const run = start(runtime, parent);
+	const first = runtime.launch(run);
+	await waitFor(() => expect(run.status).toBe("waiting"));
+	const batch = run.questionBatchId;
+	await runtime.shutdown();
+	await first;
+	await runtime.flush();
+	const restarted = reload(home, { agent: execute });
+	const restored = restarted.get(run.id);
+	restarted.resumeAll();
+	await waitFor(() => expect(restarted.pendingAnswers.has(run.id)).toBe(true));
+	expect(restored.questionBatchId).toBe(batch);
+	expect(restored.questionChoices).toEqual(choices);
+	expect(restored.answers).toEqual([]);
+	restarted.answer(run.id, "Web and Terminal", "answer");
+	await waitFor(() => expect(restored.status).toBe("completed"));
+	expect(restored.answers).toHaveLength(1);
+	await restarted.shutdown();
 });
