@@ -99,7 +99,11 @@ For a desktop-owned backend with a cancelled, acknowledged transaction and
    normal capacity drain, compatibility preflight, snapshot and health checks.
 5. Check `update status`: require the intended installed commit, a `succeeded`
    transaction and acknowledged maintenance release. Verify the dashboard and one
-   worker. Restart the desktop's supervisor using the now-active owned executable
+   worker. In the desktop dashboard, refresh and accept **Update now** if the
+   cached UI reports “Factory updated.” Open Settings → Updates and confirm the
+   installed version and **Last operation: succeeded**; a retained pre-update
+   page can still display the old cancelled operation until its UI refreshes.
+   Restart the desktop's supervisor using the now-active owned executable
    (`service updates-run`, without `--once`), retaining its normal desktop owner
    environment and log redirection. A normal desktop relaunch also starts it.
 
