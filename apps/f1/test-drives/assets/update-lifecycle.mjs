@@ -28,6 +28,11 @@ import {
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 const home = mkdtempSync(join(tmpdir(), "f1-update-lifecycle-"));
+let finishActive;
+let heldStep = new Promise((resolve) => {
+	finishActive = resolve;
+});
+const stepCalls = [];
 const calls = [],
 	nativeResumes = [],
 	receipts = [];
@@ -42,6 +47,7 @@ let busy = false,
 const capacity = new MachineCapacity(2, join(home, "machine-capacity"));
 await capacity.ready();
 const hooks = {
+	capacity,
 	agent: async (ctx) => {
 		const sessionId = ctx.resumeAgent?.sessionId ?? `mock-native-${ctx.run.id}`;
 		ctx.checkpointAgent?.({ runner: "codex", sessionId });
@@ -55,7 +61,12 @@ const hooks = {
 				: ["Choose the retained fixture answer"],
 		};
 	},
-	script: async () => ({}),
+	script: async (ctx) => {
+		stepCalls.push(ctx.step.id);
+		if (ctx.step.id === "active-slot") await heldStep;
+		assert.equal(ctx.signal.aborted, false);
+		return { completed: ctx.step.id };
+	},
 	tool: async () => ({
 		headSha: "d".repeat(40),
 		url: "https://example.test/review/1",
@@ -67,9 +78,7 @@ const createRuntime = () => {
 		home,
 		runtime,
 		capacity,
-		() =>
-			busy ||
-			[...runtime.runs.values()].some((run) => run.status === "running"),
+		() => busy || runtime.hasExecutingWork(),
 		() => runtime.resumeAll(),
 	);
 };
@@ -105,11 +114,51 @@ const definitions = validateWorkflows([
 			},
 		],
 	},
+	{
+		id: "update-drain",
+		name: "Drain queued fanout",
+		allowedTriggers: ["manual"],
+		steps: [
+			{
+				id: "parallel",
+				name: "Parallel",
+				type: "fanout",
+				next: "end",
+				groups: [
+					[
+						{
+							id: "active-slot",
+							name: "Active",
+							type: "script",
+							script: "mock",
+							next: "next-step",
+						},
+						{
+							id: "next-step",
+							name: "Next",
+							type: "script",
+							script: "mock",
+							next: "end",
+						},
+					],
+					[
+						{
+							id: "queued-slot",
+							name: "Queued",
+							type: "script",
+							script: "mock",
+							next: "end",
+						},
+					],
+				],
+			},
+		],
+	},
 ]);
-const create = (id) =>
+const create = (id, runId = id) =>
 	runtime.create({
-		id,
-		title: id,
+		id: runId,
+		title: runId,
 		repositoryId: "fixture",
 		workspace: home,
 		input: "Fixture",
@@ -236,7 +285,7 @@ async function observeStartup(identity) {
 	const lock = join(manager.directory, "state.lock");
 	writeFileSync(lock, String(process.pid), { flag: "wx" });
 	const replacement = new FactoryServer(runtime, hooksForServer(), {
-		origins: ["http://localhost"],
+		origins: ["https://updates.example.test"],
 	});
 	replacement.app.addHook("onReady", async () => {
 		await manager.observeInstalled(identity);
@@ -246,7 +295,7 @@ async function observeStartup(identity) {
 			(
 				await replacement.app.inject({
 					url: "/api/auth/status",
-					headers: { host: "localhost" },
+					headers: { host: "updates.example.test" },
 				})
 			).statusCode,
 			200,
@@ -255,7 +304,7 @@ async function observeStartup(identity) {
 			(
 				await replacement.app.inject({
 					url: "/api/updates",
-					headers: { host: "localhost" },
+					headers: { host: "updates.example.test" },
 				})
 			).statusCode,
 			401,
@@ -272,13 +321,13 @@ async function observeStartup(identity) {
 	}
 }
 server = new FactoryServer(runtime, hooksForServer(), {
-	origins: ["http://localhost"],
+	origins: ["https://updates.example.test"],
 });
 // Controlled authenticated operator fixture; production auth middleware remains enabled.
 server.auth.store.update((state) => {
 	state.credentials.push({
 		id: "f1-update",
-		origin: "http://localhost",
+		origin: "https://updates.example.test",
 		publicKey: "fixture",
 		counter: 0,
 		label: "F1 mocked operator",
@@ -290,15 +339,15 @@ server.auth.store.update((state) => {
 	state.sessions.push({
 		hash: createHash("sha256").update("f1-update-session").digest("hex"),
 		credential: "f1-update",
-		origin: "http://localhost",
+		origin: "https://updates.example.test",
 		expires: Date.now() + 3600000,
 		verifiedAt: Date.now(),
 	});
 });
 const headers = {
-	host: "localhost",
-	origin: "http://localhost",
-	cookie: "factory-local-session=f1-update-session",
+	host: "updates.example.test",
+	origin: "https://updates.example.test",
+	cookie: "__Host-factory-session=f1-update-session",
 	"x-factory-request": "1",
 };
 const request = async (path, body, method = "POST") => {
@@ -326,12 +375,6 @@ try {
 	);
 	await request("/api/updates/check", {});
 	await request("/api/updates/stage", {});
-	busy = true;
-	await manager.reconcile();
-	assert.deepEqual(calls, ["freeze", "release"]);
-	assert.equal(manager.status().pending.candidate.version, candidate.version);
-	busy = false;
-	receipts.push("busy update postponed without Stop");
 	const lease = await capacity.acquireLease(undefined, {
 		identity: "f1-controlled-descendant",
 	});
@@ -347,17 +390,16 @@ try {
 		},
 	);
 	const exit = once(descendant, "exit");
-	await manager.reconcile();
-	assert.equal(descendant.exitCode, null);
-	assert.ok(!calls.includes("stop"));
-	const [code, signal] = await exit;
-	assert.equal(code, 0);
-	assert.equal(signal, null);
-	await lease.release();
-	receipts.push(
-		"active capacity lease/controlled descendant postpones update and exits naturally without a signal",
+	const queuedRun = create("update-drain");
+	const running = runtime.launch(queuedRun);
+	await until(() => stepCalls.includes("active-slot"));
+	// Ensure the sibling has enqueued its durable slot before freezing admission.
+	while ((await capacity.snapshot()).queued !== 1)
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	const queuedRequest = (await capacity.snapshot()).requests.find(
+		(r) => r.phase === "queued",
 	);
-
+	busy = true;
 	const originalPreflight = lifecycle.preflight;
 	lifecycle.preflight = async () => {
 		const blocked = await server.app.inject({
@@ -370,14 +412,69 @@ try {
 		new UpdateManager(home).configure({ policy: "manual" }, 1);
 		return { stateCompatible: true };
 	};
-	await manager.reconcile();
-	assert.ok(!calls.includes("stop"));
-	lifecycle.preflight = originalPreflight;
-	receipts.push(
-		"authenticated intake freeze and concurrent manual-policy cancellation",
+	const draining = manager.reconcile();
+	await until(() => calls.includes("freeze"));
+	await until(() => drain.active());
+	assert.deepEqual(calls, ["freeze"]);
+	assert.equal(manager.status().transaction.phase, "draining");
+	assert.equal(descendant.exitCode, null);
+	busy = false;
+	const [code, signal] = await exit;
+	assert.equal(code, 0);
+	assert.equal(signal, null);
+	await lease.release();
+	assert.deepEqual(stepCalls, ["active-slot"]);
+	finishActive();
+	await running;
+	assert.equal(queuedRun.status, "running");
+	assert.equal(queuedRun.error, undefined);
+	assert.deepEqual(stepCalls, ["active-slot"]);
+	assert.equal((await capacity.snapshot()).active, 0);
+	const parked = (await capacity.snapshot()).requests.find(
+		(r) => r.identity === queuedRequest.identity,
 	);
+	assert.equal(parked.sequence, queuedRequest.sequence);
+	assert.equal(parked.parked, true);
+	await draining;
+	assert.ok(!calls.includes("stop"));
+	assert.equal(manager.status().transaction.phase, "cancelled");
+	lifecycle.preflight = originalPreflight;
+	await until(() => queuedRun.status === "completed");
+	assert.deepEqual([...stepCalls].sort(), [
+		"active-slot",
+		"next-step",
+		"queued-slot",
+	]);
+	receipts.push(
+		"one persistent drain lets active slots/descendants exit naturally, parks queued slots with original order and stops subsequent fanout steps without cancelling siblings",
+	);
+	receipts.push(
+		"authenticated intake freeze and policy cancellation reopen admission and resume saved fanout steps exactly once",
+	);
+	await capacity.setLimit(1);
+	heldStep = new Promise((resolve) => {
+		finishActive = resolve;
+	});
+	const replacementRun = create("update-drain", "update-drain-activate");
+	void runtime.launch(replacementRun);
+	const deadline = Date.now() + 10000;
+	while ((await capacity.snapshot()).queued !== 1) {
+		assert.ok(Date.now() < deadline, "Activation queue timeout");
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	}
 	manager.requestInstall(candidateKey(candidate), 2);
-	await manager.reconcile();
+	const installing = manager.reconcile();
+	await until(() => calls.filter((call) => call === "freeze").length === 2);
+	await until(() => drain.active());
+	finishActive();
+	await installing;
+	await until(() => runtime.get(replacementRun.id).status === "completed");
+	assert.equal(stepCalls.filter((step) => step === "active-slot").length, 2);
+	assert.equal(stepCalls.filter((step) => step === "queued-slot").length, 2);
+	assert.equal(stepCalls.filter((step) => step === "next-step").length, 2);
+	receipts.push(
+		"controlled runtime replacement resumes parked slots and saved next steps exactly once after health and maintenance release",
+	);
 	assert.equal(manager.status().transaction.phase, "succeeded");
 	assert.equal(peakWorkers, 1);
 	await until(
@@ -442,6 +539,7 @@ try {
 		receipts,
 		peakWorkers,
 		calls,
+		stepCalls,
 		nativeResumes,
 		limitations: [
 			"Controlled in-process supervisor and candidate, no native OS service restart",
@@ -457,6 +555,7 @@ try {
 	console.log(JSON.stringify({ passed: receipts, receipt: file, peakWorkers }));
 } finally {
 	await server.stop();
+	finishActive();
 	await runtime.shutdown();
 	await capacity.shutdown();
 }

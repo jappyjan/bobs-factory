@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { JsonSnapshotStore } from "bobs-factory-core";
@@ -32,6 +38,53 @@ function create(hooks: Partial<RuntimeHooks> = {}) {
 	homes.push(home);
 	return { runtime: reload(home, hooks), home };
 }
+it("resumes an update-suspended run if cancellation arrives during its final save", async () => {
+	let paused = false;
+	const tool = vi.fn(async () => ({}));
+	const { home, runtime } = create({
+		tool,
+		cleanupExecution: () => {
+			paused = true;
+		},
+	});
+	const run = runtime.create({
+		id: "cancel-during-save",
+		title: "Cancellation",
+		repositoryId: "fixture",
+		workspace: home,
+		input: "fixture",
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "custom",
+			at: new Date().toISOString(),
+		},
+		workflow: workflow([
+			{ id: "work", name: "Work", type: "tool", tool: "mock", next: "end" },
+		]),
+	});
+	await runtime.flush(run.id);
+	mkdirSync(join(home, "updates"));
+	const marker = join(home, "updates", "maintenance.json");
+	writeFileSync(marker, JSON.stringify({ transactionId: "prepared" }));
+	let finishSave!: () => void;
+	const held = new Promise<void>((resolve) => {
+		finishSave = resolve;
+	});
+	const save = runtime.save.bind(runtime);
+	vi.spyOn(runtime, "save").mockImplementation(async (value) => {
+		if (paused) await held;
+		await save(value);
+	});
+	const running = runtime.launch(run);
+	await vi.waitFor(() => expect(paused).toBe(true));
+	rmSync(marker);
+	runtime.resumeAll();
+	expect(tool).not.toHaveBeenCalled();
+	finishSave();
+	await running;
+	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	expect(tool).toHaveBeenCalledTimes(1);
+});
 function readJson(path: string): any {
 	const stored = JSON.parse(readFileSync(path, "utf8"));
 	return stored.format === "bobs-factory-json-snapshot-1"
@@ -674,12 +727,12 @@ describe("workflow runtime", () => {
 			run.id,
 			"Please explain this more simply. I have not chosen an option or authorized paid tests.",
 		);
-		await waitFor(() =>
+		await waitFor(() => {
 			expect(run.questions).toEqual([
 				"Use simulated tests or authorize paid tests?",
-			]),
-		);
-		expect(run.status).toBe("waiting");
+			]);
+			expect(run.status).toBe("waiting");
+		});
 		expect(run.answers).toEqual([]);
 		expect(run.questionRequests).toHaveLength(1);
 		expect(run.checkpoint?.active?.phase).toBe("waiting");
@@ -1733,7 +1786,10 @@ it.each([
 	const restarted = reload(home, hooks);
 	const restored = restarted.get(run.id);
 	restarted.retry(run.id);
-	await waitFor(() => expect(restored.status).toBe("failed"));
+	await waitFor(() => {
+		expect(restored.status).toBe("failed");
+		expect(restarted.isExecuting(run.id)).toBe(false);
+	});
 	expect(calls).toHaveLength(1);
 	// Automatic restart cannot replenish an exhausted budget.
 	await runtime.flush();

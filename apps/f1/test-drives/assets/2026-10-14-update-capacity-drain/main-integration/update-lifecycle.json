@@ -1,0 +1,57 @@
+{
+	"mode": "mock",
+	"testedCommit": "68d15f48",
+	"home": "/var/folders/_r/fld8l71j7ts635hlb5vtgnb80000gn/T/f1-update-lifecycle-6xcPGa",
+	"receipts": [
+		"one persistent drain lets active slots/descendants exit naturally, parks queued slots with original order and stops subsequent fanout steps without cancelling siblings",
+		"authenticated intake freeze and policy cancellation reopen admission and resume saved fanout steps exactly once",
+		"transaction-owned starting startup remains healthy under live writer contention without changing installed state",
+		"controlled runtime replacement resumes parked slots and saved next steps exactly once after health and maintenance release",
+		"single controlled runtime replacement preserves native checkpoint, answer batch, review gate and frozen definitions",
+		"transaction-owned starting startup remains healthy under live writer contention without changing installed state",
+		"transaction-owned rollback startup remains healthy under live writer contention without changing installed state",
+		"failed trial rolls back retained runtime/run state without duplicate workers or accepting gates",
+		"answer continuation passes the preserved mock native session ID",
+		"independent instance settings and candidates"
+	],
+	"peakWorkers": 1,
+	"calls": [
+		"freeze",
+		"release",
+		"freeze",
+		"stop",
+		"activate",
+		"start",
+		"health",
+		"release",
+		"freeze",
+		"stop",
+		"activate",
+		"start",
+		"health",
+		"rollback",
+		"release"
+	],
+	"stepCalls": [
+		"active-slot",
+		"queued-slot",
+		"next-step",
+		"active-slot",
+		"queued-slot",
+		"next-step"
+	],
+	"nativeResumes": [
+		{
+			"run": "update-question"
+		},
+		{
+			"run": "update-question",
+			"resumed": "mock-native-update-question"
+		}
+	],
+	"limitations": [
+		"Controlled in-process supervisor and candidate, no native OS service restart",
+		"No live agents, signatures generated, release publication or production home access",
+		"Production service adapter and four-target final candidate native validation are separate evidence"
+	]
+}

@@ -49,6 +49,48 @@ function job(): RunTitleJob {
 		settings: { runner: "codex", model: "title-model" },
 	};
 }
+it("keeps a title job pending during update suspension and allows it to resume", async () => {
+	const directory = home();
+	const capacity = new MachineCapacity(1, join(directory, "machine-capacity"));
+	await capacity.ready();
+	await capacity.pauseAdmissionsForUpdate("prepared");
+	const updatePaused = vi.fn();
+	const update = vi.fn();
+	const buildConfig = vi.fn(async () => ({ workingDirectory: directory }));
+	const generator = new RunTitleGenerator(directory, capacity, {
+		updatePaused,
+		update,
+		buildConfig,
+		createRunner: (_job, config) =>
+			({
+				start: async () => {
+					await config.onMessage?.({
+						type: "result",
+						is_error: false,
+						result: '{"title":"Resumed title"}',
+					} as SDKMessage);
+					return { sessionId: "title" };
+				},
+				stop: () => {},
+			}) as IAgentRunner,
+	});
+	const pending = job();
+	generator.start("run", pending);
+	await vi.waitFor(() => expect(updatePaused).toHaveBeenCalledWith("run"));
+	expect(update).not.toHaveBeenCalled();
+	expect(buildConfig).not.toHaveBeenCalled();
+	await capacity.resumeAdmissionsAfterUpdate("prepared");
+	generator.start("run", pending);
+	await vi.waitFor(() =>
+		expect(update).toHaveBeenCalledWith(
+			"run",
+			expect.objectContaining({ state: "completed" }),
+			"Resumed title",
+		),
+	);
+	await generator.shutdown();
+	await capacity.shutdown();
+});
 function deferred<T>() {
 	let resolve!: (value: T) => void;
 	let reject!: (reason: Error) => void;

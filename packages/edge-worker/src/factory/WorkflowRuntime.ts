@@ -24,6 +24,10 @@ import type {
 	CapacityRequest,
 	ExecutionCapacity,
 } from "../MachineCapacity.js";
+import {
+	isUpdatePaused,
+	UpdatePausedError,
+} from "../updates/UpdatePausedError.js";
 import { activityMarkers } from "./ActivityPage.js";
 import {
 	type AgentSettings,
@@ -393,6 +397,16 @@ export interface RuntimeHooks {
 }
 
 export class WorkflowRuntime {
+	/** Waiting gates and update-suspended runs have no executing work. */
+	hasExecutingWork(): boolean {
+		return [...this.executions.keys()].some(
+			(id) => this.runs.get(id)?.status !== "waiting",
+		);
+	}
+	private assertSchedulingOpen(): void {
+		if (existsSync(join(this.directory, "..", "updates", "maintenance.json")))
+			throw new UpdatePausedError();
+	}
 	readonly runs = new Map<string, FactoryRun>();
 	private listeners = new Set<
 		(change: { id?: string; config?: boolean }) => void
@@ -416,6 +430,7 @@ export class WorkflowRuntime {
 	private workflows: Workflow[];
 	readonly catalog: WorkflowCatalog;
 	private executions = new Map<string, Promise<void>>();
+	private updateSuspensions = new Set<string>();
 	private pendingActivitySaves = new Map<
 		string,
 		ReturnType<typeof setTimeout>
@@ -1023,7 +1038,19 @@ export class WorkflowRuntime {
 		const execution = this.execute(run, controller, task);
 		this.executions.set(run.id, execution);
 		void execution.then(
-			() => this.executions.delete(run.id),
+			() => {
+				this.executions.delete(run.id);
+				// Cancellation can release maintenance while a paused execution is
+				// still persisting its final checkpoint. Resume after that save,
+				// even if the release's resumeAll saw the old controller.
+				if (
+					this.updateSuspensions.delete(run.id) &&
+					!this.shuttingDown &&
+					run.status === "running" &&
+					!existsSync(join(this.directory, "..", "updates", "maintenance.json"))
+				)
+					void this.launch(run);
+			},
 			() => this.executions.delete(run.id),
 		);
 		return execution;
@@ -1036,6 +1063,7 @@ export class WorkflowRuntime {
 		try {
 			await this.flush(run.id);
 			controller.signal.throwIfAborted();
+			this.assertSchedulingOpen();
 			this.requireRunAvailable(run);
 			if (run.contractVersion !== 2) {
 				if (run.contractVersion !== undefined && run.contractVersion !== 1)
@@ -1103,6 +1131,11 @@ export class WorkflowRuntime {
 				run.status = "blocked";
 				return;
 			}
+			if (isUpdatePaused(error) && !controller.signal.aborted) {
+				this.updateSuspensions.add(run.id);
+				this.log(run, "run", error.message);
+				return;
+			}
 			if (this.shuttingDown && run.status !== "stopped") {
 				this.log(
 					run,
@@ -1118,7 +1151,6 @@ export class WorkflowRuntime {
 		} finally {
 			if (!this.shuttingDown || run.status === "stopped")
 				releaseDelivery(run, `Run ${run.status}`);
-			this.controllers.delete(run.id);
 			this.pendingAnswers.delete(run.id);
 			try {
 				this.hooks.cleanupExecution?.(run);
@@ -1151,6 +1183,7 @@ export class WorkflowRuntime {
 						`Final tracking hook failed: ${String(error)}. Underlying run outcome retained.`,
 					);
 				}
+			this.controllers.delete(run.id);
 		}
 	}
 	capacityOptions(run: FactoryRun, key: string, visit = 1): CapacityOptions {
@@ -1277,6 +1310,7 @@ export class WorkflowRuntime {
 	): Promise<Record<string, unknown>> {
 		while (checkpoint.current !== "end") {
 			signal.throwIfAborted();
+			this.assertSchedulingOpen();
 			const step = steps.find((item) => item.id === checkpoint.current)!;
 			const key = `${prefix}${step.id}`;
 			if (!checkpoint.active) {
@@ -1593,8 +1627,10 @@ export class WorkflowRuntime {
 									true,
 									state.reviewBaseline ?? reviewBaseline,
 								).catch((error) => {
-									failure ??= error;
-									branchController.abort(error);
+									// Suspension must wait for active siblings without cancelling
+									// them. A real failure still cancels and takes precedence.
+									if (!failure || !isUpdatePaused(error)) failure = error;
+									if (!isUpdatePaused(error)) branchController.abort(error);
 									throw error;
 								}),
 							),
@@ -1800,14 +1836,17 @@ export class WorkflowRuntime {
 								}
 							}
 						} catch (error) {
-							if (!execution) throw error;
+							if (!execution || isUpdatePaused(error)) throw error;
 							throw new Error(
 								execution.redact(
 									error instanceof Error ? error.message : String(error),
 								),
 							);
 						} finally {
-							if (!this.shuttingDown || run.status === "stopped")
+							if (
+								(!this.shuttingDown || run.status === "stopped") &&
+								!run.capacityLeaves[key]?.request?.parked
+							)
 								delete run.capacityLeaves[key];
 							await this.save(run);
 							signal.throwIfAborted();
@@ -1898,7 +1937,7 @@ export class WorkflowRuntime {
 				} catch (error) {
 					finishStepAttempt(
 						context,
-						signal.aborted
+						signal.aborted || isUpdatePaused(error)
 							? "interrupted"
 							: state.agent?.infrastructureFailure
 								? "blocked"
