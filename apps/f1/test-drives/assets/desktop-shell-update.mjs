@@ -192,13 +192,25 @@ try {
 	const lease = await capacity.acquireLease(undefined, {
 		identity: "shell-active-work",
 	});
-	await manager.reconcile();
-	assert.equal(manager.status().transaction.phase, "cancelled");
-	assert.equal(services.workerOwner(home).pid, worker.pid);
-	assert.equal(processStamp(ui.pid), life.uiStamp);
-	checks.push("active lease defers app switch without signaling UI/worker");
-	await lease.release();
-	await manager.reconcile();
+	// Reconciliation keeps admission closed while existing work drains. Release
+	// the held lease independently instead of awaiting the update it blocks.
+	const updating = manager.reconcile();
+	updating.catch(() => {}); // Preserve rejection for the awaited result below.
+	try {
+		const deadline = Date.now() + 5000;
+		while (!drain.active() && Date.now() < deadline)
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		assert.equal(drain.active(), true, "Update must freeze admission");
+		assert.equal((await drain.inspect()).idle, false);
+		assert.equal(manager.status().transaction.phase, "draining");
+		assert.equal(services.workerOwner(home).pid, worker.pid);
+		assert.equal(processStamp(ui.pid), life.uiStamp);
+		assert.equal(existsSync(join(directory, "quit.json")), false);
+		checks.push("active lease defers app switch without signaling UI/worker");
+	} finally {
+		await lease.release();
+		await updating;
+	}
 	assert.equal(manager.status().transaction.phase, "succeeded");
 	assert.equal(services.workerOwner(home).nonce, worker.nonce);
 	assert.deepEqual(
@@ -206,7 +218,7 @@ try {
 		saved,
 	);
 	assert.deepEqual(drain.receipt(), receipt);
-	assert.equal(resumed, 2);
+	assert.equal(resumed, 1);
 	checks.push(
 		"unsigned app activation retains exact worker PID/nonce and waiting checkpoints/definitions/outputs/config",
 	);

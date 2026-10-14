@@ -19,6 +19,7 @@ for (const delayedWrites of [false, true]) {
 			],
 			{
 				encoding: "utf8",
+				timeout: 120000,
 				env: {
 					...process.env,
 					F1_AGENT_MODE: "mock",

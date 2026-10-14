@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Prevent the simulated desktop update CI fixture from deadlocking on its own active work lease; verify admission stays paused until work finishes before checking activation and rollback ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
 - Drain operator integration-test runtimes before removing temporary storage, preventing snapshot-write cleanup failures in CI ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
 
 - Refresh localhost recovery guidance after removing the last remote API key, pause key-management actions during connection or build checks, and keep long key names inside their settings card. Correct the access guide and simulated-agent onboarding assertions ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
