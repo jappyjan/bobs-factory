@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { JsonSnapshotStore } from "bobs-factory-core";
 import { CursorRunner } from "bobs-factory-cursor-runner";
 import { afterEach, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
@@ -28,7 +29,9 @@ import {
 	aggregateForContext,
 	aggregateReview,
 	assertAggregateRevision,
+	latestAggregate,
 	type ReviewBaseline,
+	roundFor,
 	validateContractOutput,
 	validateInventory,
 	validateSpecialist,
@@ -162,6 +165,81 @@ function receipt(b = baseline(), value: unknown = review()) {
 		},
 	};
 }
+
+it("reads only the matching tail of restored review history and baselines", async () => {
+	const directory = mkdtempSync(join(tmpdir(), "review-history-tail-"));
+	dirs.push(directory);
+	const store = new JsonSnapshotStore(join(directory, "chunks"));
+	const path = join(directory, "state.json");
+	const b = baseline();
+	const aggregate = aggregateReview(b, [{ business: receipt(b) }]);
+	await store.write(
+		path,
+		{
+			history: [
+				{ step: "old", at: "", output: { text: "old evidence".repeat(1000) } },
+				{ step: "review-gate", at: "", output: aggregate },
+			],
+			reviewRounds: [
+				{ ...b, key: "old", context: "old scope".repeat(1000) },
+				b,
+			],
+		},
+		{},
+		[],
+		[],
+		{ history: 1, reviewRounds: 1 },
+	);
+	const manifest = JSON.parse(readFileSync(path, "utf8"));
+	for (const key of ["history", "reviewRounds"])
+		for (const hash of manifest.fields[key].pages[0].chunks)
+			rmSync(join(directory, "chunks", `${hash}.json`));
+	const run = store.load<ExecutionContext["run"]>(path).value;
+	expect(latestAggregate(run, b.key)).toEqual(aggregate);
+	expect(
+		roundFor({ run, stepKey: `${b.key}/0/business` } as ExecutionContext),
+	).toEqual(b);
+	expect(
+		aggregateForContext({
+			run,
+			stepKey: `${b.key}/0/business`,
+			reviewKey: b.key,
+		} as ExecutionContext),
+	).toEqual(aggregate);
+});
+
+it("reuses restored review baseline payloads when checkpointing live activity", async () => {
+	const fixture = setup();
+	fixture.run.status = "stopped";
+	fixture.run.reviewRounds = [
+		{ ...baseline(), context: { text: "scope".repeat(20000) } },
+	];
+	await fixture.runtime.save(fixture.run);
+	const restored = new WorkflowRuntime(fixture.state, {
+		agent: async () => ({}),
+		tool: async () => ({}),
+		script: async () => ({}),
+	});
+	const run = restored.get(fixture.run.id);
+	await restored.save(run); // Commit normalized workflow metadata before reading the baseline.
+	expect(
+		roundFor({
+			run,
+			stepKey: "specialist-review/0/business",
+		} as ExecutionContext)?.context,
+	).toEqual(fixture.run.reviewRounds[0]!.context);
+	const store = (restored as unknown as { snapshots: JsonSnapshotStore })
+		.snapshots;
+	const before = store.metrics.bytesWritten;
+	await restored.save(run);
+	expect(store.metrics.bytesWritten - before).toBeLessThan(1000);
+	const cold = new WorkflowRuntime(fixture.state, {
+		agent: async () => ({}),
+		tool: async () => ({}),
+		script: async () => ({}),
+	});
+	expect(cold.get(run.id).reviewRounds).toEqual(fixture.run.reviewRounds);
+});
 
 it("keeps approved historical review receipts and guides readable without backfilling completion", async () => {
 	const directory = mkdtempSync(join(tmpdir(), "factory-historical-review-"));

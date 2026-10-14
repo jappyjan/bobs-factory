@@ -48,7 +48,7 @@ import {
 	WorkingRow,
 } from "./focus";
 import { Composer, Recipes } from "./forms";
-import { NotificationsControl } from "./notifications-ui";
+import { NotificationsProvider } from "./notifications-ui";
 import { SetupBoundary } from "./onboarding";
 import { pwaState, startPwa, usePwa } from "./pwa";
 import {
@@ -123,7 +123,9 @@ function useSettle() {
 					toast({
 						text:
 							mode === "back"
-								? "Brought back — it stays open until you settle it"
+								? run.status === "stopped"
+									? "Brought back — choose Resume run to continue its saved progress"
+									: "Brought back — it stays open until you settle it"
 								: `Settled “${run.title}”`,
 						action: "Undo",
 						onAction: () =>
@@ -222,7 +224,6 @@ function Header({
 				</nav>
 				<div className="header-actions">
 					<InstallControl />
-					<NotificationsControl />
 					<Dropdown.Root>
 						<Dropdown.Trigger asChild>
 							<Button variant="icon" aria-label={`Theme: ${theme.choice}`}>
@@ -384,7 +385,8 @@ function Settled({ runs, all }: { runs: any[]; all: any[] }) {
 					Runs settle when you settle them, when they're stopped, when a newer
 					follow-up run replaces them, when you've seen a finished run that has
 					no review guide, or after 48 quiet hours. “Bring back” keeps a run
-					open until you settle it.
+					open until you settle it. Stopped runs remain paused until you choose
+					“Resume run”.
 				</p>
 			</details>
 		</section>
@@ -874,7 +876,9 @@ function RunPage({
 									: kind === "question"
 										? `${run.questions?.length ?? 0} question(s) for you`
 										: kind === "stuck"
-											? "Stuck — retry?"
+											? run.status === "stopped"
+												? "Stopped — resume?"
+												: "Stuck — retry?"
 											: kind === "review"
 												? run.outputs?.guide
 													? "Ready for your review"
@@ -1296,7 +1300,9 @@ createRoot(document.getElementById("root")!).render(
 			<ToastProvider>
 				<AccessBoundary>
 					<SetupBoundary>
-						<App />
+						<NotificationsProvider>
+							<App />
+						</NotificationsProvider>
 					</SetupBoundary>
 				</AccessBoundary>
 			</ToastProvider>

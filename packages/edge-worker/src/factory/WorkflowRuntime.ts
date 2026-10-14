@@ -494,6 +494,7 @@ export class WorkflowRuntime {
 			immutableTranscript(run.events);
 			// Completed receipts remain independent of mutable live outputs.
 			immutableTranscript(run.history);
+			if (run.reviewRounds) immutableTranscript(run.reviewRounds);
 			this.runs.set(run.id, run);
 			if (this.catalog.getBlock(run.id)) {
 				run.workflowBlock = this.catalog.getBlock(run.id);
@@ -696,17 +697,31 @@ export class WorkflowRuntime {
 	}
 	resume(id: string): FactoryRun {
 		const run = this.get(id);
-		if (!run.workflowBlock || this.isExecuting(id))
+		if (this.shuttingDown) throw new Error("Factory is shutting down");
+		if (run.workflowBlock && this.isExecuting(id))
 			throw new Error(
 				"Resume requires blocked work whose executor has finished stopping",
 			);
 		this.requireAvailable(run.workflow, run.workflowDefinitions ?? []);
-		const prior = run.workflowBlock.priorStatus;
-		this.catalog.clearBlock(id);
-		delete run.workflowBlock;
-		delete run.error;
-		run.status = prior === "waiting" ? "waiting" : "running";
-		this.save(run);
+		if (run.workflowBlock) {
+			const prior = run.workflowBlock.priorStatus;
+			this.catalog.clearBlock(id);
+			delete run.workflowBlock;
+			delete run.error;
+			run.status = prior === "waiting" ? "waiting" : "running";
+			this.save(run);
+		} else {
+			if (!this.canResume(id))
+				throw new Error("Only stopped runs with saved progress can be resumed");
+			releaseDelivery(
+				run,
+				"Explicit resume must re-enter delivery coordination",
+			);
+			run.status = "running";
+			delete run.error;
+			this.updateViewState(id, { keptOpen: true });
+			this.log(run, "run", "Resume requested; continuing from saved progress.");
+		}
 		void this.launch(run);
 		return run;
 	}
@@ -1528,7 +1543,7 @@ export class WorkflowRuntime {
 								`refs/remotes/origin/${source?.baseRefName ?? repo?.baseBranch ?? "main"}`,
 							);
 							run.reviewRounds ??= [];
-							state.reviewBaseline = {
+							state.reviewBaseline = immutableJson({
 								schemaVersion: 1,
 								round: run.reviewRounds.length + 1,
 								key,
@@ -1545,7 +1560,7 @@ export class WorkflowRuntime {
 									})),
 								),
 								context: frozenReviewContext(input),
-							};
+							});
 							run.reviewRounds.push(state.reviewBaseline);
 						}
 						if (state.reviewBaseline)
@@ -3157,6 +3172,17 @@ export class WorkflowRuntime {
 		this.save(run);
 		void this.launch(run);
 		return run;
+	}
+	canResume(id: string): boolean {
+		const run = this.get(id);
+		return (
+			!this.shuttingDown &&
+			run.status === "stopped" &&
+			!this.catalog.unavailable(run.workflow, run.workflowDefinitions ?? [])
+				.length &&
+			!this.controllers.has(id) &&
+			!!(run.checkpoint || run.simpleExecution)
+		);
 	}
 	retry(id: string): FactoryRun {
 		const run = this.get(id);

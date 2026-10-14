@@ -1010,6 +1010,7 @@ export class FactoryServer {
 					chatMessages: runtime.chatMessages(request.params.id),
 					entries: hooks.entries(request.params.id),
 					viewState: runtime.viewState(request.params.id),
+					resumeAvailable: run ? runtime.canResume(run.id) : false,
 				};
 				if (request.query.view !== "dashboard") return detail;
 				const {

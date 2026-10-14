@@ -243,7 +243,7 @@ export class OperatorService {
 						(run.workflowBlock
 							? !this.runtime.isExecuting(id) &&
 								(this.hooks.resumeEligible?.(id) ?? true)
-							: run.status === "interrupted" &&
+							: (run.status === "interrupted" || this.runtime.canResume(id)) &&
 								!!(run.checkpoint || run.simpleExecution) &&
 								!pendingReview),
 					availabilityError ??
@@ -455,8 +455,11 @@ export class OperatorService {
 						"stale_state",
 						"Run changed during connectivity check. Inspect again.",
 					);
-				if (name === "resume_run" && run.workflowBlock)
-					this.runtime.resume(run.id);
+				if (
+					name === "resume_run" &&
+					(run.workflowBlock || run.status === "stopped")
+				)
+					this.resume(run.id);
 				else this.retry(run.id);
 			} else if (name === "retry_ticket_sync") await this.retryTracking(run.id);
 			else if (name === "stop_run") this.stop(run.id);
@@ -492,6 +495,9 @@ export class OperatorService {
 	}
 	retry(id: string) {
 		return this.runtime.retry(id);
+	}
+	resume(id: string) {
+		return this.runtime.resume(id);
 	}
 	stop(id: string) {
 		return this.hooks.stop(id);

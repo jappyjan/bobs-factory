@@ -446,6 +446,7 @@ it.each([
 	"/tools",
 	"/capacity",
 	"/titles",
+	"/notifications",
 ])("restores Settings%s without unsaved inputs through updates", (section) => {
 	browserState();
 	const route = `#/settings${section}`;
@@ -469,6 +470,8 @@ it.each([
 });
 it.each([
 	"#/settings/unknown",
+	"#/settings/notifications/extra",
+	"#/settings/notifications?redirect=evil",
 	"#/settings/tools/extra",
 	"#/settings/tools?redirect=evil",
 	"https://example.test/settings/tools",

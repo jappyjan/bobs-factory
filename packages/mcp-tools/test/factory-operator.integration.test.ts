@@ -530,10 +530,13 @@ it("binds answers to the current batch and keeps explanation requests out of ans
 	await vi.waitFor(() => expect(f.run.status).toBe("completed"));
 	expect(f.run.answers).toHaveLength(1);
 });
-it("resumes interrupted saved progress and retries tracking without rerunning agents", async () => {
+it.each([
+	"interrupted",
+	"stopped",
+] as const)("resumes %s saved progress and retries tracking without rerunning agents", async (status) => {
 	const f = fixture(),
 		c = await sdk(f);
-	f.run.status = "interrupted";
+	f.run.status = status;
 	f.run.checkpoint = { current: "end", visits: {}, outputs: {} };
 	expect(
 		(

@@ -231,7 +231,9 @@ async function readArchive(options) {
 		limits,
 	} = options;
 	check(
-		typeof prefix === "string" && /^[A-Za-z0-9_.-]+\/$/.test(prefix),
+		typeof prefix === "string" &&
+			(/^[A-Za-z0-9_.-]+\/$/.test(prefix) ||
+				(prefix === "" && regularOnly && flat)),
 		"Invalid archive prefix",
 	);
 	check(
@@ -443,7 +445,9 @@ async function readArchive(options) {
 				Object.keys(expected).every((name) => names.has(name)),
 				"Missing/uninventoried source bundle bytes",
 			);
-		validateLinks(entries, prefix);
+		// Root receipt archives are allowed only under the regular/flat policy
+		// above. They contain no links or directory paths to resolve.
+		if (prefix !== "") validateLinks(entries, prefix);
 		return { entries, texts, expandedBytes: expanded };
 	} catch (error) {
 		throw new Error(
