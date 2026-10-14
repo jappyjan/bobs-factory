@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 
 - Drain operator integration-test runtimes before removing temporary storage, preventing snapshot-write cleanup failures in CI ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
 
-- Refresh localhost recovery guidance after removing the last remote API key, pause key-management actions during connection or build checks, and keep long key names inside their settings card. Correct the access guide and simulated-agent onboarding assertions ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+- Refresh localhost recovery guidance after removing the last remote API key, pause key-management actions during connection or build checks, and keep long key names inside their settings card. Correct the access guide and simulated-agent onboarding assertions; explicitly inject fixture trackers to restore CLI routing and avoid live Linear metadata requests ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
 
 - Preserve question choices when integrating unified startup and ticket-manager settings; inject the simulated tracker through the supported F1 startup API ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 

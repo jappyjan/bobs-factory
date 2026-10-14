@@ -15,6 +15,7 @@ import {
 } from "node:https";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { LocalOnboarding } from "../../../../apps/cli/src/onboarding.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/src/EdgeWorker.js";
 import { factoryAccess } from "../../../../packages/edge-worker/src/factory/FactoryAuth.js";
@@ -113,7 +114,8 @@ const onboarding = new LocalOnboarding(home, (repo, runner) =>
 worker = new EdgeWorker(
 	{
 		repositories: [],
-		platform: "cli",
+		// Inject the tracker explicitly; legacy platform no longer selects dependencies.
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
 		serverPort: port + 2,
 		serverHost: "127.0.0.1",

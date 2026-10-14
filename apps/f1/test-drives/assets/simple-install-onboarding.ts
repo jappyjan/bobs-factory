@@ -14,6 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import {
 	LocalOnboarding,
 	loadLocalConfig,
@@ -177,6 +178,11 @@ globalThis.fetch = (async (input, init) => {
 	const url = new URL(String(input));
 	if (url.hostname === "localhost" || url.hostname === "127.0.0.1")
 		return nativeFetch(input, init);
+	if (
+		url.href ===
+		"https://linear.app/.well-known/appspecific/app.linear.ips.json"
+	)
+		return response({ ips: ["203.0.113.1/32"] });
 	try {
 		assert.equal(
 			url.origin,
@@ -356,7 +362,8 @@ function createWorker() {
 		{
 			...config,
 			repositories: config.repositories,
-			platform: "cli",
+			// The in-memory tracker also supplies the fixture-only /cli/rpc route.
+			issueTrackerFactory: createCLIIssueTracker,
 			factoryHome: home,
 			serverPort: port + 1,
 			serverHost: "127.0.0.1",
