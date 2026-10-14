@@ -1,30 +1,13 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import {
-	type AuthenticationResponseJSON,
-	generateAuthenticationOptions,
-	generateRegistrationOptions,
-	type RegistrationResponseJSON,
-	verifyAuthenticationResponse,
-	verifyRegistrationResponse,
-} from "@simplewebauthn/server";
 import { z } from "zod";
-import {
-	atomicPrivateFile,
-	FactoryAuthStore,
-	privateFile,
-} from "./FactoryAuthStore.js";
-import { loopbackHost } from "./LocalFactoryAccess.js";
+import { FactoryAuthStore, privateFile } from "./FactoryAuthStore.js";
+import { factoryRequestOrigins, loopbackHost } from "./LocalFactoryAccess.js";
 
 const secret = () => randomBytes(32).toString("base64url");
 const hash = (value: string) =>
 	createHash("sha256").update(value).digest("hex");
-const grantSchema = z.object({
-	token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
-	expires: z.number(),
-});
-const maxPending = 100;
 const terminalRequest = /^terminal-[a-f0-9]{32}\.json$/;
 const terminalRequestSchema = z.object({
 	hash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -56,20 +39,8 @@ export function factoryAccess(
 	}
 	return { origins, sessionHours };
 }
-type Ceremony = {
-	challenge: string;
-	purpose: "login" | "register";
-	origin: string;
-	expires: number;
-	binding: string;
-	session?: string;
-	label?: string;
-	epoch: number;
-};
 export class FactoryAuth {
 	readonly store: FactoryAuthStore;
-	private ceremonies = new Map<string, Ceremony>();
-	private epoch = 0;
 	private listeners = new Set<() => void>();
 	private attempts = 0;
 	private window = Date.now();
@@ -107,43 +78,30 @@ export class FactoryAuth {
 			throw new Error("Invalid Factory authentication origins");
 		this.sessionMs = hours * 3600000;
 		this.store = new FactoryAuthStore(directory, access.origins);
-		// An enrollment authorization never survives a server restart.
-		if (existsSync(this.grantPath)) unlinkSync(this.grantPath);
-		if (!this.store.state.credentials.length) this.createGrant();
+		// Retire all legacy enrollment grants; keys can only be created in Settings.
+		const grant = join(this.store.directory, "enroll.json");
+		if (existsSync(grant)) unlinkSync(grant);
 		this.recoveryTimer = setInterval(() => {
 			this.checkRecovery();
 			this.checkTerminalRequests();
 		}, 1000);
 		this.recoveryTimer.unref();
 	}
-	get grantPath() {
-		return join(this.store.directory, "enroll.json");
-	}
-	private createGrant() {
-		atomicPrivateFile(
-			this.grantPath,
-			JSON.stringify({ token: secret(), expires: Date.now() + 600000 }),
-		);
-	}
 	checkRecovery() {
 		const path = join(this.store.directory, "recover");
 		if (!existsSync(path)) return;
 		if (privateFile(path).trim() !== "RESET FACTORY AUTHENTICATION") return;
 		this.store.update((state) => {
-			state.credentials = [];
+			state.keys = [];
 			state.sessions = [];
-			state.user = secret();
 		});
 		unlinkSync(path);
-		this.epoch++;
-		this.ceremonies.clear();
 		this.terminal.clear();
-		this.createGrant();
 		this.changed();
 	}
 	/**
 	 * Accept terminal-session requests written by the local operator (see
-	 * requestFactoryTerminalSession). Like enrollment grants and recovery, authority
+	 * requestFactoryTerminalSession). Like recovery, authority
 	 * comes from the private auth directory. Sessions bind to the localhost origin only.
 	 */
 	checkTerminalRequests() {
@@ -198,7 +156,6 @@ export class FactoryAuth {
 	}
 	close() {
 		clearInterval(this.recoveryTimer);
-		this.ceremonies.clear();
 		this.terminal.clear();
 		this.listeners.clear();
 	}
@@ -208,7 +165,8 @@ export class FactoryAuth {
 			(s) =>
 				s.hash === hash(token) && s.origin === origin && s.expires > Date.now(),
 		);
-		if (stored) return stored;
+		if (stored && this.store.state.keys.some((k) => k.id === stored.credential))
+			return stored;
 		const terminal = this.terminal.get(hash(token));
 		if (
 			!terminal ||
@@ -216,7 +174,7 @@ export class FactoryAuth {
 			terminal.expires <= Date.now()
 		)
 			return undefined;
-		// verifiedAt 0: terminal sessions never satisfy recent passkey verification.
+		// Terminal sessions are confined to the local terminal, not key management.
 		return {
 			hash: hash(token),
 			credential: "terminal",
@@ -225,197 +183,46 @@ export class FactoryAuth {
 			verifiedAt: 0,
 		};
 	}
-	recent(token: string | undefined, origin: string) {
+	private authorize(token: string | undefined, origin: string, local: boolean) {
+		if (!factoryRequestOrigins(this.access.origins).includes(origin))
+			throw new Error("Invalid Factory origin");
 		const session = this.session(token, origin);
-		if (
-			!session ||
-			session.credential === "terminal" ||
-			Date.now() - session.verifiedAt > 300000
-		)
-			throw new Error("Verify your passkey again before managing credentials");
-		return session;
+		if (!local && (!session || session.credential === "terminal"))
+			throw new Error("Sign in to manage API keys");
 	}
 	private limit() {
 		const now = Date.now();
-		for (const [id, c] of this.ceremonies)
-			if (c.expires <= now) this.ceremonies.delete(id);
-		if (now - this.window > 60000) {
+		if (now - this.window >= 60000) {
 			this.window = now;
 			this.attempts = 0;
 		}
-		// Global resource bound, independent of untrusted proxy IP/forwarded headers.
-		if (++this.attempts > 60 || this.ceremonies.size >= maxPending)
-			throw new Error("Too many passkey attempts. Try again in a minute.");
+		if (++this.attempts > 60)
+			throw new Error("Too many sign-in attempts. Try again in a minute.");
 	}
-	async options(
-		purpose: "login" | "register",
-		origin: string,
-		binding: string,
-		token?: string,
-		grant?: string,
-		label = "Passkey",
-	) {
+	login(key: string, origin: string, previous?: string) {
 		this.limit();
-		const epoch = this.epoch;
-		let session: string | undefined;
-		if (purpose === "register") {
-			if (token && this.session(token, origin))
-				session = this.recent(token, origin).hash;
-			else {
-				if (!grant || !existsSync(this.grantPath))
-					throw new Error("A local operator setup code is required");
-				const authorization = grantSchema.parse(
-					JSON.parse(privateFile(this.grantPath)),
-				);
-				if (
-					authorization.expires < Date.now() ||
-					authorization.expires > Date.now() + 600000 ||
-					!timingSafeEqual(
-						Buffer.from(hash(grant)),
-						Buffer.from(hash(authorization.token)),
-					)
-				)
-					throw new Error("Invalid or expired setup code");
-				// Consume before any asynchronous work, including generation/verification.
-				unlinkSync(this.grantPath);
-			}
-		}
-		const rpID = new URL(origin).hostname;
-		const options =
-			purpose === "login"
-				? await generateAuthenticationOptions({
-						rpID,
-						userVerification: "required",
-					})
-				: await generateRegistrationOptions({
-						rpName: "Bob's Factory",
-						rpID,
-						userName: "Factory operator",
-						userID: new Uint8Array(
-							Buffer.from(this.store.state.user, "base64url"),
-						),
-						attestationType: "none",
-						authenticatorSelection: {
-							residentKey: "required",
-							userVerification: "required",
-						},
-						excludeCredentials: this.store.state.credentials
-							.filter((c) => c.origin === origin)
-							.map((c) => ({ id: c.id, transports: c.transports })),
-					});
-		if (epoch !== this.epoch) throw new Error("Authentication was reset");
-		const transaction = secret();
-		this.ceremonies.set(transaction, {
-			challenge: options.challenge,
-			purpose,
-			origin,
-			binding: hash(binding),
-			expires: Date.now() + 300000,
-			session,
-			label: label.trim().slice(0, 80) || "Passkey",
-			epoch,
-		});
-		return { transaction, options };
-	}
-	async verify(
-		purpose: "login" | "register",
-		transaction: string,
-		origin: string,
-		binding: string,
-		response: AuthenticationResponseJSON | RegistrationResponseJSON,
-	) {
-		const c = this.ceremonies.get(transaction);
-		this.ceremonies.delete(transaction);
 		if (
-			!c ||
-			c.purpose !== purpose ||
-			c.origin !== origin ||
-			c.binding !== hash(binding) ||
-			c.expires <= Date.now() ||
-			c.epoch !== this.epoch
+			!this.access.origins.includes(origin) ||
+			!origin.startsWith("https:") ||
+			!/^[A-Za-z0-9_-]{43}$/.test(key)
 		)
-			throw new Error("Invalid, expired or already used passkey challenge");
-		const expected = {
-			expectedChallenge: c.challenge,
-			expectedOrigin: origin,
-			expectedRPID: new URL(origin).hostname,
-			requireUserVerification: true,
-		};
-		let credentialId: string;
-		if (purpose === "register") {
-			const result = await verifyRegistrationResponse({
-				...expected,
-				response: response as RegistrationResponseJSON,
-			});
-			if (!result.verified || !result.registrationInfo)
-				throw new Error("Passkey verification failed");
-			const info = result.registrationInfo;
-			credentialId = info.credential.id;
-			if (c.epoch !== this.epoch) throw new Error("Authentication was reset");
-			this.store.update((state) => {
-				if (
-					c.session &&
-					!state.sessions.some(
-						(s) =>
-							s.hash === c.session &&
-							s.expires > Date.now() &&
-							Date.now() - s.verifiedAt <= 300000,
-					)
-				)
-					throw new Error("Verification expired");
-				if (state.credentials.some((key) => key.id === credentialId))
-					throw new Error("Passkey already registered");
-				state.credentials.push({
-					...info.credential,
-					origin,
-					publicKey: Buffer.from(info.credential.publicKey).toString(
-						"base64url",
-					),
-					deviceType: info.credentialDeviceType,
-					backedUp: info.credentialBackedUp,
-					label: c.label!,
-					createdAt: Date.now(),
-					lastUsedAt: Date.now(),
-				});
-			});
-		} else {
-			const key = this.store.state.credentials.find(
-				(key) => key.id === response.id && key.origin === origin,
-			);
-			if (!key) throw new Error("Unknown passkey");
-			const counter = key.counter;
-			const result = await verifyAuthenticationResponse({
-				...expected,
-				response: response as AuthenticationResponseJSON,
-				credential: {
-					...key,
-					publicKey: new Uint8Array(Buffer.from(key.publicKey, "base64url")),
-				},
-			});
-			if (!result.verified || c.epoch !== this.epoch)
-				throw new Error("Passkey verification failed");
-			credentialId = key.id;
-			this.store.update((state) => {
-				const current = state.credentials.find(
-					(key) => key.id === credentialId,
-				);
-				if (!current || current.counter !== counter)
-					throw new Error("Passkey changed during verification. Try again.");
-				current.counter = result.authenticationInfo.newCounter;
-				current.backedUp = result.authenticationInfo.credentialBackedUp;
-				current.lastUsedAt = Date.now();
-			});
-		}
+			throw new Error("Invalid API key");
+		const digest = Buffer.from(hash(key), "hex");
+		const found = this.store.state.keys.find((k) =>
+			timingSafeEqual(Buffer.from(k.digest, "hex"), digest),
+		);
+		if (!found) throw new Error("Invalid API key");
 		const token = secret(),
 			now = Date.now();
+		const old = this.session(previous, origin);
 		this.store.update((state) => {
-			// Rotate the browser's existing session; cap durable sessions to bound the store.
-			if (c.session)
-				state.sessions = state.sessions.filter((s) => s.hash !== c.session);
-			state.sessions = state.sessions.slice(-199);
+			state.keys.find((k) => k.id === found.id)!.lastUsedAt = now;
+			state.sessions = state.sessions
+				.filter((s) => s.hash !== old?.hash)
+				.slice(-199);
 			state.sessions.push({
 				hash: hash(token),
-				credential: credentialId,
+				credential: found.id,
 				origin,
 				verifiedAt: now,
 				expires: now + this.sessionMs,
@@ -423,6 +230,54 @@ export class FactoryAuth {
 		});
 		this.changed();
 		return { token, expires: now + this.sessionMs };
+	}
+	keys(token: string | undefined, origin: string, local = false) {
+		this.authorize(token, origin, local);
+		const current = this.session(token, origin)?.credential;
+		return this.store.state.keys.map(({ digest: _digest, ...key }) => ({
+			...key,
+			current: !local && key.id === current,
+		}));
+	}
+	create(
+		token: string | undefined,
+		origin: string,
+		label: string,
+		local = false,
+	) {
+		this.authorize(token, origin, local);
+		const name = label.trim();
+		if (!name || name.length > 80)
+			throw new Error("API key name must contain 1–80 characters");
+		if (this.store.state.keys.length >= 100)
+			throw new Error("Remove an API key before adding more (limit 100)");
+		const key = secret(),
+			id = secret();
+		this.store.update((state) =>
+			state.keys.push({
+				id,
+				label: name,
+				digest: hash(key),
+				createdAt: Date.now(),
+			}),
+		);
+		this.changed();
+		return { id, key };
+	}
+	rotate(token: string | undefined, origin: string, id: string, local = false) {
+		this.authorize(token, origin, local);
+		const sessionRevoked =
+			!local && this.session(token, origin)?.credential === id;
+		const key = secret();
+		this.store.update((state) => {
+			const record = state.keys.find((k) => k.id === id);
+			if (!record) throw new Error("Unknown API key");
+			record.digest = hash(key);
+			record.rotatedAt = Date.now();
+			state.sessions = state.sessions.filter((s) => s.credential !== id);
+		});
+		this.changed();
+		return { id, key, sessionRevoked };
 	}
 	logout(token: string | undefined, origin: string) {
 		const session = this.session(token, origin);
@@ -433,32 +288,17 @@ export class FactoryAuth {
 			});
 		this.changed();
 	}
-	credentials(token: string | undefined, origin: string) {
-		this.recent(token, origin);
-		return this.store.state.credentials.map(
-			({ id, label, origin, createdAt, lastUsedAt, deviceType, backedUp }) => ({
-				id,
-				label,
-				origin,
-				createdAt,
-				lastUsedAt,
-				deviceType,
-				backedUp,
-			}),
-		);
-	}
-	remove(token: string | undefined, origin: string, id: string) {
-		this.recent(token, origin);
+	remove(token: string | undefined, origin: string, id: string, local = false) {
+		this.authorize(token, origin, local);
+		const sessionRevoked =
+			!local && this.session(token, origin)?.credential === id;
 		this.store.update((state) => {
-			const key = state.credentials.find((key) => key.id === id);
-			if (!key) throw new Error("Unknown passkey");
-			if (state.credentials.filter((c) => c.origin === key.origin).length <= 1)
-				throw new Error(
-					"Keep at least one passkey for each address. Use local recovery if the last key is lost.",
-				);
-			state.credentials = state.credentials.filter((c) => c.id !== id);
+			if (!state.keys.some((k) => k.id === id))
+				throw new Error("Unknown API key");
+			state.keys = state.keys.filter((k) => k.id !== id);
 			state.sessions = state.sessions.filter((s) => s.credential !== id);
 		});
 		this.changed();
+		return { removed: true, sessionRevoked };
 	}
 }

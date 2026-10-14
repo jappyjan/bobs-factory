@@ -7,6 +7,7 @@ import {
 	readFileSync,
 	rmSync,
 	statSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -14,12 +15,10 @@ import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { FactoryAuth } from "../src/factory/FactoryAuth.js";
 import {
-	authorizeFactoryEnrollment,
 	requestFactoryAuthRecovery,
 	requestFactoryTerminalSession,
 } from "../src/factory/FactoryAuthOperator.js";
 import { FactoryAuthStore } from "../src/factory/FactoryAuthStore.js";
-import { authenticator } from "./fixtures/webauthn.js";
 
 const origin = "https://factory.example.test";
 const homes: string[] = [],
@@ -29,27 +28,11 @@ function fixture() {
 	homes.push(home);
 	const auth = new FactoryAuth(home, { origins: [origin] });
 	services.push(auth);
-	const grant = () =>
-		JSON.parse(readFileSync(auth.grantPath, "utf8")).token as string;
-	const key = authenticator();
-	const enroll = async () => {
-		const options = await auth.options(
-			"register",
-			origin,
-			"browser",
-			undefined,
-			grant(),
-			"My phone",
-		);
-		return auth.verify(
-			"register",
-			options.transaction,
-			origin,
-			"browser",
-			key.register(options.options.challenge, origin),
-		);
+	return {
+		home,
+		auth,
+		create: () => auth.create(undefined, origin, "My laptop", true),
 	};
-	return { home, auth, grant, key, enroll };
 }
 afterEach(() => {
 	vi.useRealTimers();
@@ -57,237 +40,196 @@ afterEach(() => {
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
 });
-it("requires operator authorization even with an empty store and atomically consumes each grant", async () => {
+it("requires a session for remote management even with an empty store", () => {
 	const f = fixture();
-	await expect(f.auth.options("register", origin, "browser")).rejects.toThrow(
-		"setup code",
-	);
-	await expect(
-		f.auth.options("register", origin, "browser", undefined, "wrong"),
-	).rejects.toThrow("Invalid");
-	const grant = f.grant();
-	const attempts = await Promise.allSettled([
-		f.auth.options("register", origin, "a", undefined, grant),
-		f.auth.options("register", origin, "b", undefined, grant),
-	]);
-	expect(attempts.filter((a) => a.status === "fulfilled")).toHaveLength(1);
-	expect(attempts.filter((a) => a.status === "rejected")).toHaveLength(1);
+	expect(() => f.auth.create(undefined, origin, "Remote")).toThrow("Sign in");
+	expect(() => f.auth.keys(undefined, origin)).toThrow("Sign in");
+	expect(() => f.auth.login("wrong", origin)).toThrow("Invalid API key");
+	expect(() =>
+		f.auth.create(undefined, "https://evil.test", "Remote", true),
+	).toThrow("origin");
 });
-it("verifies real registration and signed login, persists counters and hashed sessions with private permissions", async () => {
+it("persists only digests, keeps private permissions and origin-bound sessions across restart", () => {
 	const f = fixture(),
-		session = await f.enroll();
-	expect(f.auth.session(session.token, origin)).toBeDefined();
-	expect(f.auth.session(session.token, "https://evil.test")).toBeUndefined();
-	const options = await f.auth.options("login", origin, "browser");
-	const signed = f.key.login(options.options.challenge, origin);
-	const login = await f.auth.verify(
-		"login",
-		options.transaction,
-		origin,
-		"browser",
-		signed,
-	);
-	expect(f.auth.store.state.credentials[0]!.counter).toBe(1);
-	expect(readFileSync(f.auth.store.path, "utf8")).not.toContain(login.token);
+		key = f.create(),
+		login = f.auth.login(key.key, origin);
+	expect(key.key).toMatch(/^[A-Za-z0-9_-]{43}$/);
+	expect(f.auth.session(login.token, origin)).toBeDefined();
+	expect(f.auth.session(key.key, origin)).toBeUndefined();
+	expect(f.auth.session(login.token, "https://evil.test")).toBeUndefined();
+	const disk = readFileSync(f.auth.store.path, "utf8");
+	expect(disk).not.toContain(key.key);
+	expect(disk).not.toContain(login.token);
+	expect(f.auth.keys(login.token, origin)).toEqual([
+		{
+			id: key.id,
+			label: "My laptop",
+			createdAt: expect.any(Number),
+			lastUsedAt: expect.any(Number),
+			current: true,
+		},
+	]);
 	expect(statSync(f.auth.store.path).mode & 0o777).toBe(0o600);
 	expect(statSync(f.auth.store.directory).mode & 0o777).toBe(0o700);
 	f.auth.close();
 	const restored = new FactoryAuth(f.home, { origins: [origin] });
 	services.push(restored);
 	expect(restored.session(login.token, origin)).toBeDefined();
-	await expect(
-		restored.verify("login", options.transaction, origin, "browser", signed),
-	).rejects.toThrow("already used");
-	restored.logout(login.token, origin);
+	const replacement = restored.login(key.key, origin, login.token);
 	expect(restored.session(login.token, origin)).toBeUndefined();
-	expect(() => restored.remove(session.token, origin, f.key.id)).toThrow(
-		"at least one",
-	);
+	restored.logout(replacement.token, origin);
+	expect(restored.session(replacement.token, origin)).toBeUndefined();
 });
-it.each([
-	"origin",
-	"challenge",
-	"signature",
-	"uv",
-	"binding",
-	"expired",
-	"unknown",
-])("rejects real login with invalid %s and prevents retry/replay", async (failure) => {
-	const f = fixture();
-	await f.enroll();
-	const options = await f.auth.options("login", origin, "browser");
-	const response = f.key.login(
-		failure === "challenge" ? "wrong-challenge" : options.options.challenge,
-		failure === "origin" ? "https://evil.test" : origin,
-		1,
-		failure !== "uv",
-	);
-	if (failure === "signature")
-		response.response.signature =
-			Buffer.from("bad-signature").toString("base64url");
-	if (failure === "unknown") response.id = "unknown";
-	if (failure === "expired") {
-		vi.useFakeTimers();
-		vi.setSystemTime(Date.now() + 300001);
-	}
-	await expect(
-		f.auth.verify(
-			"login",
-			options.transaction,
-			origin,
-			failure === "binding" ? "other" : "browser",
-			response,
-		),
-	).rejects.toThrow();
-	await expect(
-		f.auth.verify(
-			"login",
-			options.transaction,
-			origin,
-			"browser",
-			f.key.login(options.options.challenge, origin),
-		),
-	).rejects.toThrow("already used");
-});
-it("rejects registration without user verification, duplicate credentials and simultaneous challenge use", async () => {
-	const f = fixture();
-	const options = await f.auth.options(
-		"register",
-		origin,
-		"browser",
-		undefined,
-		f.grant(),
-	);
-	await expect(
-		f.auth.verify(
-			"register",
-			options.transaction,
-			origin,
-			"browser",
-			f.key.register(options.options.challenge, origin, false),
-		),
-	).rejects.toThrow();
-	writeFileSync(
-		f.auth.grantPath,
-		JSON.stringify({ token: "a".repeat(43), expires: Date.now() + 60000 }),
-	);
-	const retry = await f.auth.options(
-		"register",
-		origin,
-		"browser",
-		undefined,
-		"a".repeat(43),
-	);
-	const response = f.key.register(retry.options.challenge, origin);
-	const result = await Promise.allSettled([
-		f.auth.verify("register", retry.transaction, origin, "browser", response),
-		f.auth.verify("register", retry.transaction, origin, "browser", response),
-	]);
-	expect(result.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-	expect(f.auth.store.state.credentials).toHaveLength(1);
-});
-it("revokes credential sessions, enforces expiry/recent verification, and resets only authentication", async () => {
+it("rotation and removal revoke every issuing-key session, preserve other keys and allow last-key removal", () => {
 	const f = fixture(),
-		first = await f.enroll();
-	const second = authenticator(),
-		options = await f.auth.options(
-			"register",
-			origin,
-			"second-browser",
-			first.token,
-		);
-	const session = await f.auth.verify(
-		"register",
-		options.transaction,
-		origin,
-		"second-browser",
-		second.register(options.options.challenge, origin),
+		first = f.create(),
+		second = f.create();
+	const a = f.auth.login(first.key, origin),
+		b = f.auth.login(first.key, origin),
+		other = f.auth.login(second.key, origin);
+	const changed = vi.fn();
+	f.auth.subscribe(changed);
+	const rotated = f.auth.rotate(a.token, origin, first.id);
+	expect(rotated.sessionRevoked).toBe(true);
+	expect(changed).toHaveBeenCalledTimes(1);
+	expect(f.auth.session(a.token, origin)).toBeUndefined();
+	expect(f.auth.session(b.token, origin)).toBeUndefined();
+	expect(f.auth.session(other.token, origin)).toBeDefined();
+	expect(() => f.auth.login(first.key, origin)).toThrow("Invalid API key");
+	const next = f.auth.login(rotated.key, origin);
+	expect(f.auth.remove(other.token, origin, first.id).sessionRevoked).toBe(
+		false,
 	);
-	f.auth.remove(session.token, origin, f.key.id);
-	expect(f.auth.session(first.token, origin)).toBeUndefined();
-	expect(f.auth.session(session.token, origin)).toBeDefined();
-	vi.useFakeTimers();
-	vi.setSystemTime(Date.now() + 300001);
-	expect(() => f.auth.credentials(session.token, origin)).toThrow("again");
-	vi.setSystemTime(Date.now() + 12 * 3600000);
-	expect(f.auth.session(session.token, origin)).toBeUndefined();
-	vi.useRealTimers();
-	writeFileSync(
-		join(f.auth.store.directory, "recover"),
-		"RESET FACTORY AUTHENTICATION",
+	expect(f.auth.session(next.token, origin)).toBeUndefined();
+	expect(f.auth.remove(other.token, origin, second.id).sessionRevoked).toBe(
+		true,
 	);
-	f.auth.checkRecovery();
-	expect(f.auth.store.state.credentials).toHaveLength(0);
-	expect(f.auth.store.state.sessions).toHaveLength(0);
-	expect(f.grant()).toHaveLength(43);
+	expect(f.auth.keys(undefined, origin, true)).toEqual([]);
+	expect(() => f.auth.login(second.key, origin)).toThrow("Invalid API key");
+	expect(f.create().key).toHaveLength(43);
 });
-it("fails closed on corruption/identity changes, enforces existing permissions and rolls back failed writes", async () => {
+it("expires sessions, bounds their growth and throttles globally", () => {
+	const f = fixture(),
+		key = f.create();
+	for (let i = 0; i < 60; i++) f.auth.login(key.key, origin);
+	expect(() => f.auth.login(key.key, origin)).toThrow("Too many");
+	vi.useFakeTimers();
+	vi.setSystemTime(Date.now() + 60001);
+	const login = f.auth.login(key.key, origin);
+	for (let w = 0; w < 4; w++) {
+		vi.setSystemTime(Date.now() + 60001);
+		for (let i = 0; i < 60; i++) f.auth.login(key.key, origin);
+	}
+	expect(f.auth.store.state.sessions).toHaveLength(200);
+	vi.setSystemTime(Date.now() + 12 * 3600000);
+	expect(f.auth.session(login.token, origin)).toBeUndefined();
+	expect(() => f.auth.keys(login.token, origin)).toThrow("Sign in");
+});
+it("validates legacy state before atomic migration, revokes passkeys/sessions and retires grants", () => {
 	const f = fixture();
-	await f.enroll();
 	f.auth.close();
+	const legacy = {
+		version: 1,
+		origins: [origin],
+		user: "legacy",
+		credentials: [
+			{
+				id: "old",
+				origin,
+				publicKey: "public",
+				counter: 0,
+				deviceType: "multiDevice",
+				backedUp: true,
+				label: "Old",
+				createdAt: 1,
+				lastUsedAt: 1,
+			},
+		],
+		sessions: [
+			{
+				hash: "old-session",
+				credential: "old",
+				origin,
+				expires: Date.now() + 3600000,
+				verifiedAt: 1,
+			},
+		],
+	};
+	writeFileSync(f.auth.store.path, JSON.stringify(legacy));
+	writeFileSync(join(f.auth.store.directory, "enroll.json"), "old grant");
+	const migrated = new FactoryAuth(f.home, { origins: [origin] });
+	services.push(migrated);
+	expect(migrated.store.state).toEqual({
+		version: 2,
+		origins: [origin],
+		keys: [],
+		sessions: [],
+	});
+	expect(existsSync(join(f.auth.store.directory, "enroll.json"))).toBe(false);
+	expect(new FactoryAuthStore(f.home, [origin]).state).toEqual(
+		migrated.store.state,
+	);
+	writeFileSync(
+		f.auth.store.path,
+		JSON.stringify({
+			...legacy,
+			sessions: [{ ...legacy.sessions[0], credential: "unknown" }],
+		}),
+	);
+	expect(() => new FactoryAuthStore(f.home, [origin])).toThrow("corrupt");
+});
+it("fails closed on corruption, unsupported versions and origin changes; failed writes publish no revocation", () => {
+	const f = fixture(),
+		key = f.create(),
+		login = f.auth.login(key.key, origin);
 	chmodSync(f.auth.store.path, 0o644);
 	new FactoryAuthStore(f.home, [origin]);
 	expect(statSync(f.auth.store.path).mode & 0o777).toBe(0o600);
 	expect(() => new FactoryAuthStore(f.home, ["https://other.test"])).toThrow(
 		"origins changed",
 	);
-	const original = structuredClone(f.auth.store.state);
-	expect(() =>
-		f.auth.store.update((state) => {
-			state.credentials[0]!.counter = -1;
-		}),
-	).toThrow();
+	const original = structuredClone(f.auth.store.state),
+		changed = vi.fn();
+	f.auth.subscribe(changed);
+	const path = f.auth.store.path;
+	// A directory at the target prevents atomic replacement, regardless of root privileges.
+	rmSync(path);
+	mkdirSync(path);
+	expect(() => f.auth.rotate(login.token, origin, key.id)).toThrow();
 	expect(f.auth.store.state).toEqual(original);
-	writeFileSync(f.auth.store.path, "corrupt");
+	expect(changed).not.toHaveBeenCalled();
+	expect(f.auth.session(login.token, origin)).toBeDefined();
+	rmSync(path, { recursive: true });
+	writeFileSync(path, "corrupt");
+	expect(() => new FactoryAuthStore(f.home, [origin])).toThrow("corrupt");
+	writeFileSync(path, JSON.stringify({ ...original, version: 99 }));
 	expect(() => new FactoryAuthStore(f.home, [origin])).toThrow("corrupt");
 });
-
-it("authorizes local enrollment, rejects expired grants and recovers corrupt state without changing run files", async () => {
-	const f = fixture();
-	// FactoryAuth takes a factory directory; the operator commands take its parent home.
-	const { mkdirSync } = await import("node:fs");
-	const home = join(f.home, "operator-home"),
+it("recovers corrupt authentication locally without modifying run/native files", () => {
+	const f = fixture(),
+		home = join(f.home, "operator-home"),
 		factory = join(home, "factory");
-	mkdirSync(factory, { recursive: true });
+	mkdirSync(join(factory, "auth"), { recursive: true });
 	writeFileSync(join(factory, "runs.json"), "preserved runs");
-	const token = authorizeFactoryEnrollment(home);
-	const pending = join(factory, "auth", "enroll.json");
-	expect(JSON.parse(readFileSync(pending, "utf8")).token).toBe(token);
+	writeFileSync(join(home, "native-credentials"), "preserved credentials");
+	writeFileSync(join(factory, "auth", "state.json"), "corrupt");
 	expect(() => requestFactoryAuthRecovery(home, undefined)).toThrow(
 		"Recovery revokes",
 	);
-	writeFileSync(join(factory, "auth", "state.json"), "corrupt state");
 	requestFactoryAuthRecovery(home, "RESET FACTORY AUTHENTICATION");
 	const restarted = new FactoryAuth(factory, { origins: [origin] });
 	services.push(restarted);
 	restarted.checkRecovery();
-	expect(restarted.store.state.credentials).toHaveLength(0);
+	expect(restarted.store.state.keys).toEqual([]);
+	expect(restarted.store.state.sessions).toEqual([]);
 	expect(readFileSync(join(factory, "runs.json"), "utf8")).toBe(
 		"preserved runs",
 	);
-	writeFileSync(
-		restarted.grantPath,
-		JSON.stringify({ token: "b".repeat(43), expires: Date.now() - 1 }),
+	expect(readFileSync(join(home, "native-credentials"), "utf8")).toBe(
+		"preserved credentials",
 	);
-	await expect(
-		restarted.options("register", origin, "browser", undefined, "b".repeat(43)),
-	).rejects.toThrow("expired");
 });
-it("supports valid zero-counter passkeys rather than requiring a positive signature counter", async () => {
-	const f = fixture();
-	await f.enroll();
-	const options = await f.auth.options("login", origin, "browser");
-	const session = await f.auth.verify(
-		"login",
-		options.transaction,
-		origin,
-		"browser",
-		f.key.login(options.options.challenge, origin, 0),
-	);
-	expect(f.auth.session(session.token, origin)).toBeDefined();
-	expect(f.auth.store.state.credentials[0]!.counter).toBe(0);
-});
-it("grants localhost-only terminal sessions from local operator requests that cannot manage passkeys", () => {
+it("grants localhost-only terminal sessions from local operator requests that cannot manage keys", () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-terminal-test-"));
 	homes.push(home);
 	const factory = join(home, "factory"),
@@ -310,8 +252,8 @@ it("grants localhost-only terminal sessions from local operator requests that ca
 	expect(requests()).toHaveLength(0);
 	expect(auth.session(token, local)).toMatchObject({ credential: "terminal" });
 	expect(auth.session(token, origin)).toBeUndefined();
-	expect(() => auth.credentials(token, local)).toThrow("again");
-	// Terminal sessions are memory-only and never persisted with passkey sessions.
+	expect(() => auth.keys(token, local)).toThrow("Sign in");
+	// Terminal sessions are memory-only and never persisted with key sessions.
 	expect(auth.store.state.sessions).toHaveLength(0);
 	auth.logout(token, local);
 	expect(auth.session(token, local)).toBeUndefined();
@@ -356,4 +298,14 @@ it("ignores terminal requests without a localhost origin", () => {
 	const token = requestFactoryTerminalSession(home);
 	auth.checkTerminalRequests();
 	expect(auth.session(token, origin)).toBeUndefined();
+});
+
+it("rejects dangling authentication-file symlinks instead of silently creating an empty store", () => {
+	const f = fixture();
+	f.auth.close();
+	rmSync(f.auth.store.path);
+	const target = join(f.home, "missing-state.json");
+	symlinkSync(target, f.auth.store.path);
+	expect(() => new FactoryAuthStore(f.home, [origin])).toThrow("corrupt");
+	expect(existsSync(target)).toBe(false);
 });

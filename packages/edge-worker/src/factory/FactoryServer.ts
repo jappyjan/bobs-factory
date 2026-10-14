@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { createServer, type Server, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
@@ -153,16 +153,25 @@ export class FactoryServer {
 				await updates.observeInstalled(factoryRuntimeIdentity);
 			});
 		registerVideoRoutes(this.app, runtime);
-		this.app.setErrorHandler((error, _request, reply) =>
-			reply.code(error instanceof z.ZodError ? 400 : 409).send({
+		this.app.setErrorHandler((error, request, reply) => {
+			// Parser errors can include fragments of the submitted body. Never echo a login secret.
+			if (
+				request.url.split("?")[0] === "/api/auth/login" &&
+				(error instanceof z.ZodError ||
+					(error instanceof Error &&
+						"code" in error &&
+						String(error.code).startsWith("FST_ERR_CTP_")))
+			)
+				return reply.code(400).send({ error: "Invalid API key" });
+			return reply.code(error instanceof z.ZodError ? 400 : 409).send({
 				error:
 					error instanceof z.ZodError
 						? error.issues.map((issue) => issue.message).join("\n")
 						: error instanceof Error
 							? error.message
 							: "Request failed",
-			}),
-		);
+			});
+		});
 		const unsubscribeAuth = this.auth.subscribe(() => {
 			for (const [stream, session] of this.streamSessions)
 				if (!session.local && !this.auth.session(session.token, session.origin))
@@ -275,10 +284,7 @@ export class FactoryServer {
 		const publicPaths = new Set([
 			"/api/version",
 			"/api/auth/status",
-			"/api/auth/login/options",
-			"/api/auth/login/verify",
-			"/api/auth/register/options",
-			"/api/auth/register/verify",
+			"/api/auth/login",
 			...shell.assets.map((asset) => asset.path),
 		]);
 		const controlIntake = (request: FastifyRequest) =>
@@ -325,7 +331,7 @@ export class FactoryServer {
 			}
 			if (!publicPaths.has(request.url.split("?")[0]!) && !sessionFor(request))
 				return reply.code(401).send({
-					error: "Sign in with a passkey",
+					error: "Sign in with an API key",
 					code: "FACTORY_AUTH_REQUIRED",
 				});
 			if (controlIntake(request)) hooks.updateDrain?.enter(request);
@@ -333,7 +339,7 @@ export class FactoryServer {
 		this.app.addHook("preHandler", async (request, reply) => {
 			if (!publicPaths.has(request.url.split("?")[0]!) && !sessionFor(request))
 				return reply.code(401).send({
-					error: "Sign in with a passkey",
+					error: "Sign in with an API key",
 					code: "FACTORY_AUTH_REQUIRED",
 				});
 		});
@@ -417,73 +423,60 @@ export class FactoryServer {
 				...(local ? { access: "local" } : {}),
 				authenticated: Boolean(session),
 				expires: session?.expires,
-				setupRequired:
-					!local &&
-					!this.auth.store.state.credentials.some((c) => c.origin === origin),
+				setupRequired: !local && !this.auth.store.state.keys.length,
 				origin,
 			};
 		});
-		for (const purpose of ["login", "register"] as const) {
-			this.app.post(`/api/auth/${purpose}/options`, async (request, reply) => {
-				const body = z
-					.object({
-						grant: z.string().max(100).optional(),
-						label: z.string().max(80).optional(),
-					})
-					.parse(request.body);
-				const binding = randomBytes(32).toString("base64url");
-				const origin = originFor(request)!;
-				const result = await this.auth.options(
-					purpose,
-					origin,
-					binding,
-					tokenFor(request),
-					body.grant,
-					body.label,
-				);
-				reply.header(
-					"Set-Cookie",
-					`factory-transaction=${binding}; Path=/; HttpOnly; SameSite=Strict; ${origin.startsWith("https:") ? "Secure; " : ""}Max-Age=300`,
-				);
-				return result;
-			});
-			this.app.post(`/api/auth/${purpose}/verify`, async (request, reply) => {
-				const body = z
-					.object({ transaction: z.string().max(100), response: z.any() })
-					.parse(request.body);
-				const origin = originFor(request)!;
-				const previous = tokenFor(request);
-				const result = await this.auth.verify(
-					purpose,
-					body.transaction,
-					origin,
-					cookie(request, "factory-transaction") ?? "",
-					body.response,
-				);
-				this.auth.logout(previous, origin);
-				setCookie(reply, origin, result.token, result.expires);
-				return { authenticated: true, expires: result.expires };
-			});
-		}
+		this.app.post("/api/auth/login", { bodyLimit: 1024 }, (request, reply) => {
+			const body = z
+				.object({ key: z.string().max(100) })
+				.strict()
+				.parse(request.body);
+			const origin = originFor(request)!;
+			const result = this.auth.login(body.key, origin, tokenFor(request));
+			setCookie(reply, origin, result.token, result.expires);
+			return { authenticated: true, expires: result.expires };
+		});
 		this.app.post("/api/auth/logout", (request, reply) => {
 			const origin = originFor(request)!;
 			this.auth.logout(tokenFor(request), origin);
 			setCookie(reply, origin, "", 0);
 			return { authenticated: localFor(request) };
 		});
-		this.app.get("/api/auth/credentials", (request) =>
-			this.auth.credentials(tokenFor(request), originFor(request)!),
+		this.app.get("/api/auth/keys", (request) =>
+			this.auth.keys(tokenFor(request), originFor(request)!, localFor(request)),
 		);
+		this.app.post("/api/auth/keys", { bodyLimit: 1024 }, (request) => {
+			const body = z
+				.object({ label: z.string().min(1).max(80) })
+				.strict()
+				.parse(request.body);
+			return this.auth.create(
+				tokenFor(request),
+				originFor(request)!,
+				body.label,
+				localFor(request),
+			);
+		});
 		this.app.delete<{ Params: { id: string } }>(
-			"/api/auth/credentials/:id",
-			(request) => {
+			"/api/auth/keys/:id",
+			(request) =>
 				this.auth.remove(
 					tokenFor(request),
 					originFor(request)!,
 					request.params.id,
-				);
-				return { removed: true };
-			},
+					localFor(request),
+				),
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/auth/keys/:id/rotate",
+			(request) =>
+				this.auth.rotate(
+					tokenFor(request),
+					originFor(request)!,
+					request.params.id,
+					localFor(request),
+				),
 		);
 		for (const asset of shell.assets) {
 			this.app.get(asset.path, (request, reply) => {

@@ -71,7 +71,7 @@ export function useAccess() {
 let request = 0;
 let connectionLost = () => {};
 const rotationListeners = new Set<() => () => void>();
-// A verified passkey replaces the cookie and invalidates streams using the old
+// API key sign-in replaces the cookie and invalidates streams using the old
 // session. Suspend those streams explicitly, without discarding private forms.
 export function onSessionRotation(pause: () => () => void) {
 	rotationListeners.add(pause);

@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Integrate API-key dashboard access with bounded review convergence, preserving impact evidence, protected reader progress and complete routing-prompt checks ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Freeze the Today grouping test clock so equal-age run fixtures cannot reorder across a millisecond boundary in CI ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Shut down operator integration test runtimes before deleting temporary homes, preventing final-save cleanup races; integrate question choices without losing bounded review convergence ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
@@ -29,6 +31,11 @@ All notable changes to this project will be documented in this file.
 - Accept repository-scoped comment IDs copied from grouped feedback context, while rejecting mismatched repository identities ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Save behavioral QA provenance before review and assess feedback across every repository delivery, preserving original evidence and detecting edited comments, threads and reviews ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+- Prevent the simulated desktop update CI fixture from deadlocking on its own active work lease; verify admission stays paused until work finishes before checking activation and rollback ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
+- Drain operator integration-test runtimes before removing temporary storage, preventing snapshot-write cleanup failures in CI ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
+- Refresh localhost recovery guidance after removing the last remote API key, pause key-management actions during connection or build checks, and keep long key names inside their settings card. Correct the access guide and simulated-agent onboarding assertions; explicitly inject fixture trackers to restore CLI routing and avoid live Linear metadata requests ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
 
 - Preserve question choices when integrating unified startup and ticket-manager settings; inject the simulated tracker through the supported F1 startup API ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 
@@ -114,6 +121,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Select affected review and verification work through independent impact assessments, retain original evidence with explicit reuse records, and stop unchanged correction cycles for assistance. Safe minor corrections may carry prior explicit approval forward after required checks; frozen runs keep their accepted workflows ([#124](https://github.com/jappyjan/bobs-factory/pull/124); [Taskbot #132](https://taskbot.apps.janjaap.de/p/bobs-factory/t/132)).
+- Replace remote dashboard passkey sign-in with API keys managed in Settings (add, remove and rotate). Upgrading revokes existing passkeys and browser sessions; an operator must create the first key in localhost Settings before remote access is available again. Localhost continues to work without a key ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
 - Use one runtime for CLI, desktop and services, with live Linear and Taskbot configuration in Settings → Ticket managers. Preserve existing credentials and runs while removing startup modes that could silently disable Linear webhooks ([#133](https://github.com/jappyjan/bobs-factory/pull/133)).
 
 - Bundle standard workflows independently of model preferences. Add private Factory/Takeover forks, recoverable legacy migration, and disabling that interrupts work while preserving progress for individual Resume. Simple cannot be forked. Preserve existing delivery, operator recovery and older-run priority; recover interrupted backups and remove deleted-fork metadata. Save the selected chat model before execution and preserve it through the production runner factory on Resume. Retain current-main migration safety, source-publication safeguards, and direct localhost/IPv6 access during integration. Linear publication suppresses internal role/tool records, preserves native lifecycle events and keeps decision comments readable. ([#83](https://github.com/jappyjan/bobs-factory/pull/83); [Taskbot #129](https://taskbot.apps.janjaap.de/p/bobs-factory/t/129); [validation](apps/f1/test-drives/2026-10-10-workflow-catalog.md))

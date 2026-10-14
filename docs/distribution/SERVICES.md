@@ -55,7 +55,7 @@ Nix store executables stay Nix-owned. Older workers that predate atomic ownershi
 must be independently verified stopped; a missing lock is not evidence of that.
 Never use both managers for one home. No automatic PM2/Nix migration is claimed.
 
-Remote control reuses the existing protected dashboard topology/passkeys and
+Remote control reuses the existing protected dashboard topology and API key browser sessions and
 separate signed webhook ingress. Connect to that host's HTTPS dashboard, authenticate
 there, and keep the tunnel/reverse-proxy under its own owner. This service CLI adds
 no unauthenticated control/update endpoint. Multiple-instance UI work belongs to

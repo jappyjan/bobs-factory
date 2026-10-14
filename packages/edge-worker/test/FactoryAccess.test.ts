@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,7 +8,6 @@ import { requestFactoryTerminalSession } from "../src/factory/FactoryAuthOperato
 import { FactoryServer } from "../src/factory/FactoryServer.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { factoryHttp } from "./fixtures/factory-http.js";
-import { authenticator } from "./fixtures/webauthn.js";
 
 const origin = "https://factory.example.test",
 	host = "factory.example.test";
@@ -42,26 +41,26 @@ function fixture(useEnvironment = false, localPort?: number) {
 	});
 	const writeHeaders = { host, origin, "x-factory-request": "1" };
 	const enroll = async () => {
-		const key = authenticator();
-		const grant = JSON.parse(readFileSync(server.auth.grantPath, "utf8")).token;
-		const options = await server.app.inject({
+		const localOrigin = server.auth.access.origins.find(
+			(o) => new URL(o).hostname === "localhost",
+		)!;
+		const localHeaders = {
+			host: new URL(localOrigin).host,
+			origin: localOrigin,
+			"x-factory-request": "1",
+		};
+		const created = await server.app.inject({
 			method: "POST",
-			url: "/api/auth/register/options",
-			headers: writeHeaders,
-			payload: { grant },
+			url: "/api/auth/keys",
+			headers: localHeaders,
+			payload: { label: "Test" },
 		});
-		expect(options.statusCode).toBe(200);
+		expect(created.statusCode).toBe(200);
 		const result = await server.app.inject({
 			method: "POST",
-			url: "/api/auth/register/verify",
-			headers: {
-				...writeHeaders,
-				cookie: String(options.headers["set-cookie"]).split(";")[0],
-			},
-			payload: {
-				transaction: options.json().transaction,
-				response: key.register(options.json().options.challenge, origin),
-			},
+			url: "/api/auth/login",
+			headers: writeHeaders,
+			payload: { key: created.json().key },
 		});
 		expect(result.statusCode).toBe(200);
 		return String(result.headers["set-cookie"]);
@@ -111,15 +110,15 @@ it("grants local operator access without credentials, cookies, enrollment or tra
 		}
 	expect(f.server.auth.store.state).toEqual(credentials);
 	expect(f.server.auth.store.state.sessions).toEqual([]);
-	// The local capability grants no remote passkey-management authority.
+	// The validated local request can manage instance keys.
 	expect(
 		(
 			await f.server.app.inject({
-				url: "/api/auth/credentials",
+				url: "/api/auth/keys",
 				headers: { host: "localhost" },
 			})
 		).statusCode,
-	).not.toBe(200);
+	).toBe(200);
 	expect(
 		(
 			await f.server.app.inject({
@@ -288,7 +287,7 @@ it("denies remote protected GET/HEAD/write before hooks, including unknown paths
 		"/api/runs/id/videos/demo/captions?v=hash",
 		"/api/runs/id/question-images/a.png",
 		"/api/runs/id/review-files",
-		"/api/auth/credentials",
+		"/api/auth/keys",
 		"/api/new-route",
 		"/private-file",
 	]) {
@@ -344,7 +343,7 @@ it("denies remote protected GET/HEAD/write before hooks, including unknown paths
 		(await f.server.app.inject({ url: "/", headers: { host } })).statusCode,
 	).toBe(200);
 });
-it("requires exact Origin/action headers, performs real enrollment, and uses secure opaque cookies", async () => {
+it("requires exact Origin/action headers, performs key sign-in, and uses secure opaque cookies", async () => {
 	const f = fixture();
 	for (const headers of [
 		{ host, "x-factory-request": "1" },
@@ -355,7 +354,7 @@ it("requires exact Origin/action headers, performs real enrollment, and uses sec
 			(
 				await f.server.app.inject({
 					method: "POST",
-					url: "/api/auth/register/options",
+					url: "/api/auth/login",
 					headers,
 					payload: {},
 				})
@@ -366,12 +365,12 @@ it("requires exact Origin/action headers, performs real enrollment, and uses sec
 		(
 			await f.server.app.inject({
 				method: "POST",
-				url: "/api/auth/register/options",
+				url: "/api/auth/login",
 				headers: f.writeHeaders,
 				payload: {},
 			})
 		).statusCode,
-	).toBe(409);
+	).toBe(400);
 	const cookie = await f.enroll();
 	expect(cookie).toContain("__Host-factory-session=");
 	expect(cookie).toContain("HttpOnly");
@@ -408,6 +407,8 @@ it.each([
 	"logout",
 	"expiry",
 	"recovery",
+	"rotation",
+	"removal",
 ])("closes real idle SSE on %s and denies reconnect", async (reason) => {
 	const f = fixture(),
 		cookie = (await f.enroll()).split(";")[0]!;
@@ -439,6 +440,16 @@ it.each([
 			"RESET FACTORY AUTHENTICATION",
 		);
 		f.server.auth.checkRecovery();
+	}
+	if (reason === "rotation" || reason === "removal") {
+		const id = f.server.auth.store.state.keys[0]!.id;
+		const result = await f.server.app.inject({
+			method: reason === "rotation" ? "POST" : "DELETE",
+			url: `/api/auth/keys/${id}${reason === "rotation" ? "/rotate" : ""}`,
+			headers: { ...f.writeHeaders, cookie },
+		});
+		expect(result.statusCode).toBe(200);
+		expect(result.json().sessionRevoked).toBe(true);
 	}
 	expect((await reader.read()).done).toBe(true);
 	expect(
@@ -623,9 +634,118 @@ it("keeps terminal tokens confined to local access and rejects transplant to a r
 	expect(
 		(
 			await f.server.app.inject({
-				url: "/api/auth/credentials",
+				url: "/api/auth/keys",
 				headers: local,
 			})
 		).statusCode,
-	).not.toBe(200);
+	).toBe(200);
+});
+
+it("allows local IPv6 key creation and remote management, rejects anonymous management and key Bearer access", async () => {
+	const f = fixture();
+	const created = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/keys",
+		headers: {
+			host: "[::1]",
+			origin: "http://[::1]",
+			"x-factory-request": "1",
+		},
+		payload: { label: "IPv6 key" },
+		remoteAddress: "::1",
+	});
+	expect(created.statusCode).toBe(200);
+	const { key, id } = created.json();
+	expect(
+		(
+			await f.server.app.inject({
+				url: "/api/config",
+				headers: { host, authorization: `Bearer ${key}` },
+			})
+		).statusCode,
+	).toBe(401);
+	const malformed = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/login",
+		headers: { ...f.writeHeaders, "content-type": "application/json" },
+		payload: key,
+	});
+	expect(malformed.statusCode).toBe(400);
+	expect(malformed.json()).toEqual({ error: "Invalid API key" });
+	const login = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/login",
+		headers: f.writeHeaders,
+		payload: { key },
+	});
+	expect(login.statusCode).toBe(200);
+	const headers = {
+		...f.writeHeaders,
+		cookie: String(login.headers["set-cookie"]).split(";")[0],
+	};
+	const list = await f.server.app.inject({ url: "/api/auth/keys", headers });
+	expect(list.statusCode).toBe(200);
+	expect(list.body).not.toContain(key);
+	expect(list.body).not.toContain("digest");
+	for (const [method, url, payload] of [
+		["POST", "/api/auth/keys", { label: "Anonymous" }],
+		["DELETE", `/api/auth/keys/${id}`, undefined],
+		["POST", `/api/auth/keys/${id}/rotate`, {}],
+	] as const)
+		expect(
+			(
+				await f.server.app.inject({
+					method,
+					url,
+					payload,
+					headers: f.writeHeaders,
+				})
+			).statusCode,
+		).toBe(401);
+	const other = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/keys",
+		headers,
+		payload: { label: "Remote key" },
+	});
+	expect(other.statusCode).toBe(200);
+	expect(
+		(
+			await f.server.app.inject({
+				method: "POST",
+				url: `/api/auth/keys/${other.json().id}/rotate`,
+				headers,
+				payload: {},
+			})
+		).json().sessionRevoked,
+	).toBe(false);
+	const removed = await f.server.app.inject({
+		method: "DELETE",
+		url: `/api/auth/keys/${id}`,
+		headers,
+	});
+	expect(removed.json()).toEqual({ removed: true, sessionRevoked: true });
+	expect(
+		(await f.server.app.inject({ url: "/api/config", headers })).statusCode,
+	).toBe(401);
+	for (const url of [
+		"/api/auth/login/options",
+		"/api/auth/login/verify",
+		"/api/auth/register/options",
+		"/api/auth/register/verify",
+	])
+		expect(
+			(
+				await f.server.app.inject({
+					method: "POST",
+					url,
+					headers: {
+						host: "localhost",
+						origin: "http://localhost",
+						"x-factory-request": "1",
+					},
+					payload: { grant: "old-enrollment-code" },
+				})
+			).statusCode,
+		).toBe(404);
 });

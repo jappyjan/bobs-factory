@@ -14,7 +14,7 @@ export async function assertLocalDashboard(dashboard, until, identity) {
 			config:await get('/api/config'), access:await get('/api/auth/status'), version:await get('/api/version'),
 			require:typeof require, launcher:typeof window.factoryLauncher,
 			bridge:Object.keys(window.factoryDesktop ?? {}), openUpdates:typeof window.factoryDesktop?.openAppUpdates,
-			passkeyPrompt:Array.from(document.querySelectorAll('button')).some(b=>/Create passkey|Sign in with passkey/.test(b.textContent)),
+			signInPrompt:Array.from(document.querySelectorAll('button')).some(b=>/Create key|Sign in/.test(b.textContent)),
 			hash:location.hash
 		};
 	})()`);
@@ -43,7 +43,7 @@ export async function assertLocalDashboard(dashboard, until, identity) {
 	assert.equal(observed.launcher, "undefined");
 	assert.deepEqual(observed.bridge, ["openAppUpdates"]);
 	assert.equal(observed.openUpdates, "function");
-	assert.equal(observed.passkeyPrompt, false);
+	assert.equal(observed.signInPrompt, false);
 	assert(!observed.hash.startsWith("#setup="));
 	const cookies = await dashboard.webContents.session.cookies.get({
 		url: dashboard.webContents.getURL(),

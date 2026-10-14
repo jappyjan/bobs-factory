@@ -6,7 +6,7 @@ description: Start a prepared Bob’s Factory installation in the foreground or 
 # Launch
 
 Run `bobs-factory` for guided local startup; it opens the browser directly to
-choose a project and available agent without passkey enrollment or login. Use `--no-open`
+choose a project and available agent without key setup or login. Use `--no-open`
 for headless operation. An explicit launch uses `--repo REPOSITORY --agent AGENT`;
 all launches use the same runtime and saved ticket-manager connections. Configure
 Linear and Taskbot in Settings → Ticket managers. Services start that same runtime
@@ -20,5 +20,5 @@ using `bobs-factory-migrate`, preserving service definitions and disabling old
 consumers before cutover. Dashboard ingress remains separate from webhook ingress.
 
 Remote dashboard connections require the exact configured HTTPS origin and its
-passkey session. Proxies preserve public Host/Origin; use the local access boundary
+browser session established with an API key. Proxies preserve public Host/Origin; use the local access boundary
 and proxy guidance in `docs/FACTORY.md#protected-remote-access-design`.

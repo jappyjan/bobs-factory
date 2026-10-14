@@ -27,7 +27,7 @@ bobs-factory --home /path/to/instance --port 3457 update install --candidate EXA
 
 Offline status/settings use the local operator's filesystem authority. Running
 check/stage/Install use the existing memory-only terminal session through the
-loopback dashboard. Remote browser operations retain passkey/session, exact
+loopback dashboard. Remote browser operations retain API key/browser session, exact
 origin, request-header and client-build checks. There is no webhook update API.
 A client controls only its connected instance; desktop and remote hosts keep
 independent identities and policy. UI drafts retain the existing client/PWA

@@ -4439,12 +4439,12 @@ kbd {
 .settings-heading > .button {
 	flex-shrink: 0;
 }
-.passkey-list {
+.api-key-list {
 	list-style: none;
 	padding: 0;
 	margin-block: 1.5rem 0;
 }
-.passkey-list li {
+.api-key-list li {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -4452,35 +4452,41 @@ kbd {
 	padding-block: 1rem;
 	border-top: 1px solid var(--line);
 }
-.passkey-list li > div {
+.api-key-list li > div {
 	min-width: 0;
 	display: grid;
 	gap: 0.25rem;
 }
-.passkey-list li span {
+.api-key-list li > .settings-actions {
+	flex-shrink: 0;
+}
+.api-key-list li strong {
+	overflow-wrap: anywhere;
+}
+.api-key-list li span {
 	color: var(--muted);
 	font-size: 0.85rem;
 	overflow-wrap: anywhere;
 }
-.passkey-list .button {
+.api-key-list .button {
 	flex-shrink: 0;
 }
 .settings-hint {
 	margin-bottom: 0;
 	font-size: 0.9rem;
 }
-.passkey-add {
+.api-key-add {
 	margin-top: 1.5rem;
 	padding: 1rem;
 	border-radius: 0.75rem;
 	background: var(--quiet);
 }
-.passkey-add label {
+.api-key-add label {
 	display: grid;
 	gap: 0.5rem;
 	font-weight: 700;
 }
-.passkey-add input {
+.api-key-add input {
 	min-width: 0;
 	width: 100%;
 }
