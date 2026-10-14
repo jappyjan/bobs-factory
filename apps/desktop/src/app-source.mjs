@@ -50,6 +50,21 @@ export function appExecutable(path, target) {
 		? join(path, "Contents", "MacOS", "Bob's Factory")
 		: path;
 }
+function sameArchive(left, right) {
+	const fields = ["file", "size", "sha256"];
+	return (
+		left &&
+		right &&
+		Object.keys(left).length === fields.length &&
+		Object.keys(right).length === fields.length &&
+		fields.every(
+			(field) =>
+				Object.hasOwn(left, field) &&
+				Object.hasOwn(right, field) &&
+				left[field] === right[field],
+		)
+	);
+}
 export function verifyAppProof(proof, candidate, services) {
 	const bytes = Buffer.from(proof.manifest, "base64");
 	const manifest = services.validateReleaseManifest(JSON.parse(bytes)),
@@ -77,8 +92,7 @@ export function verifyAppProof(proof, candidate, services) {
 		metadata.target !== candidate.target ||
 		metadata.candidateDigest !== manifest.candidateDigest ||
 		metadata.workflowSha !== manifest.workflowSha ||
-		JSON.stringify(metadata.archive) !==
-			JSON.stringify(item.updateArchive ?? item.archive)
+		!sameArchive(metadata.archive, item.updateArchive ?? item.archive)
 	)
 		throw Error("App receipt integrity proof mismatch");
 	if (
@@ -172,8 +186,7 @@ export class DesktopAppSource {
 			receipt.status !== "passed" ||
 			metadata.schemaVersion !== 1 ||
 			metadata.product !== "bobs-factory-desktop" ||
-			JSON.stringify(metadata.archive) !==
-				JSON.stringify(item.updateArchive ?? item.archive)
+			!sameArchive(metadata.archive, item.updateArchive ?? item.archive)
 		)
 			throw Error("Invalid app delivery receipt");
 		validateElectronLicenses(metadata.electronLicenses);

@@ -1,16 +1,26 @@
 // F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/desktop-service-lifecycle.mjs
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync } from "node:fs";
+import {
+	cpSync,
+	lstatSync,
+	mkdirSync,
+	mkdtempSync,
+	readlinkSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	acquireInstanceLock,
 	workerOwner,
 } from "../../../../apps/cli/src/services/InstanceLock.ts";
+import { copyUpdateState } from "../../../../apps/cli/src/services/UpdateStateSnapshot.ts";
 import { JsonSnapshotStore } from "../../../../packages/core/dist/JsonSnapshotStore.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { validateWorkflows } from "../../../../packages/edge-worker/dist/factory/Workflow.js";
 import { WorkflowRuntime } from "../../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
+import { preflightFactoryState } from "../../../../packages/edge-worker/dist/lifecycle/PreflightState.js";
 import { FactoryServer } from "../../../../packages/edge-worker/test/fixtures/authenticated-factory.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -130,6 +140,39 @@ try {
 	assert.equal(runtime.get(run.id).status, "waiting");
 	await server.stop();
 	await runtime.shutdown();
+	const evidence = join(home, "factory/evidence", run.id);
+	mkdirSync(evidence, { recursive: true });
+	writeFileSync(join(evidence, "result.txt"), "retained mocked result");
+	const linkedTool = join(evidence, "expired-tool"),
+		target = join(home, "expired-external-tool");
+	symlinkSync(target, linkedTool);
+	const preflight = mkdtempSync(join(tmpdir(), "f1-update-preflight-"));
+	const snapshot = mkdtempSync(join(tmpdir(), "f1-update-snapshot-"));
+	copyUpdateState(home, preflight, "preflight");
+	copyUpdateState(home, snapshot, "snapshot");
+	assert.deepEqual(preflightFactoryState(preflight).runIds, [run.id]);
+	assert.throws(() =>
+		lstatSync(join(preflight, "factory/evidence", run.id, "expired-tool")),
+	);
+	assert.equal(
+		readlinkSync(join(snapshot, "factory/evidence", run.id, "expired-tool")),
+		target,
+	);
+	const restored = mkdtempSync(join(tmpdir(), "f1-update-restored-"));
+	cpSync(snapshot, restored, { recursive: true, verbatimSymlinks: true });
+	assert.equal(
+		readlinkSync(join(restored, "factory/evidence", run.id, "expired-tool")),
+		target,
+	);
+	const restoredRuntime = new WorkflowRuntime(restored, hooks);
+	for (const [key, value] of Object.entries(captured))
+		assert.deepEqual(structuredClone(restoredRuntime.get(run.id)[key]), value);
+	await restoredRuntime.shutdown();
+	assert.equal(
+		calls,
+		2,
+		"preflight and snapshot inspection must never execute workflow work",
+	);
 	release();
 	release = await acquireInstanceLock(home);
 	runtime = new WorkflowRuntime(home, hooks);
@@ -171,6 +214,7 @@ try {
 					"client disconnect leaves human wait",
 					"graceful stop/reopen same run/native checkpoint",
 					"question/gates/outputs/history preserved",
+					"linked evidence omitted from isolated preflight and retained verbatim for rollback",
 					"accepted answer completes once",
 					"authenticated activity/detail retained",
 				],

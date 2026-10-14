@@ -44,6 +44,7 @@ function fixture() {
 			};
 		},
 	});
+	cleanup.push(() => runtime.shutdown());
 	const workflow = validateWorkflows([
 		...defaultWorkflows,
 		{
@@ -477,7 +478,6 @@ it("binds answers to the current batch and keeps explanation requests out of ans
 			questions: ["Explained choice"],
 		} as any)
 		.mockResolvedValue({ status: "completed", questions: [] });
-	cleanup.push(() => f.runtime.shutdown());
 	const nextQuestion = () =>
 		new Promise<void>((resolve) => {
 			f.question.mockImplementationOnce(async () => resolve());
@@ -530,10 +530,13 @@ it("binds answers to the current batch and keeps explanation requests out of ans
 	await vi.waitFor(() => expect(f.run.status).toBe("completed"));
 	expect(f.run.answers).toHaveLength(1);
 });
-it("resumes interrupted saved progress and retries tracking without rerunning agents", async () => {
+it.each([
+	"interrupted",
+	"stopped",
+] as const)("resumes %s saved progress and retries tracking without rerunning agents", async (status) => {
 	const f = fixture(),
 		c = await sdk(f);
-	f.run.status = "interrupted";
+	f.run.status = status;
 	f.run.checkpoint = { current: "end", visits: {}, outputs: {} };
 	expect(
 		(
@@ -653,4 +656,61 @@ it("updates future tool profiles without replacing a run's frozen selection", as
 			Authorization: { source: "env", name: "TASKBOT_AUTHORIZATION" },
 		},
 	});
+});
+
+it("operator recovery respects disabled workflows and requires explicit individual Resume", async () => {
+	const f = fixture();
+	f.runtime.updateWorkflows([...f.runtime.listWorkflows(), f.run.workflow]);
+	f.runtime.setWorkflowEnabled(f.run.workflow.id, false);
+	expect(f.service.inspect(f.run.id).actions.retry_run.available).toBe(false);
+	expect(f.service.inspect(f.run.id).actions.resume_run.available).toBe(false);
+	await expect(
+		f.service.call(
+			"resume_run",
+			{ runId: f.run.id, expectedRevision: f.service.revision(f.run) },
+			["operate"],
+		),
+	).rejects.toThrow();
+	f.runtime.setWorkflowEnabled(f.run.workflow.id, true);
+	expect(f.agent).not.toHaveBeenCalled();
+	expect(f.service.inspect(f.run.id).actions.resume_run.available).toBe(true);
+	await f.service.call(
+		"resume_run",
+		{ runId: f.run.id, expectedRevision: f.service.revision(f.run) },
+		["operate"],
+	);
+	await vi.waitFor(() => expect(f.agent).toHaveBeenCalledOnce());
+	await f.runtime.shutdown();
+});
+
+it("resumes a chat-enabled saved Simple run through the runtime and reports unavailable recovery", async () => {
+	const f = fixture();
+	const simple = f.runtime.selectWorkflow([], "manual", "simple");
+	f.run.workflow = simple;
+	f.run.status = "running";
+	f.run.setupComplete = true;
+	const recovery = vi.fn(async () => {});
+	(f.runtime as any).hooks.simple = recovery;
+	f.service.hooks.chat = () => ({ enabled: true, available: false });
+	const c = await sdk(f);
+	f.runtime.setWorkflowEnabled("simple", false);
+	let result = await c.call("resume_run", {
+		runId: f.run.id,
+		expectedRevision: f.service.revision(f.run),
+	});
+	expect(result.error.code).toBe("invalid_state");
+	expect(recovery).not.toHaveBeenCalled();
+	f.runtime.setWorkflowEnabled("simple", true);
+	expect(f.run.status).toBe("blocked");
+	result = await c.call("resume_run", {
+		runId: f.run.id,
+		expectedRevision: f.service.revision(f.run),
+	});
+	expect(result.ok).toBe(true);
+	expect(result.result.accepted).toBe(true);
+	expect(f.run.workflowBlock).toBeUndefined();
+	expect(f.runtime.catalog.getBlock(f.run.id)).toBeUndefined();
+	await vi.waitFor(() => expect(recovery).toHaveBeenCalledOnce());
+	await vi.waitFor(() => expect(f.run.status).toBe("completed"));
+	await f.runtime.shutdown();
 });

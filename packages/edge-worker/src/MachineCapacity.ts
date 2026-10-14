@@ -28,6 +28,7 @@ import {
 import { z } from "zod";
 
 import { orderWorkflowPositions } from "./CapacityOrdering.js";
+import { UpdatePausedError } from "./updates/UpdatePausedError.js";
 
 export const DEFAULT_MACHINE_CAPACITY = 4;
 export type CapacityRequest = PersistedCapacityRequest;
@@ -163,6 +164,9 @@ export class MachineCapacity implements ExecutionCapacity {
 	private lastSnapshot?: CapacitySnapshot;
 	private conflict?: string;
 	private closing = false;
+	private get updateAdmissionMarker(): string {
+		return join(dirname(this.directory), "updates", "admission-paused");
+	}
 	private refreshing?: Promise<CapacitySnapshot>;
 	private transactions: Promise<void> = Promise.resolve();
 	constructor(
@@ -309,9 +313,7 @@ export class MachineCapacity implements ExecutionCapacity {
 			const result = await update(state);
 			State.parse(state);
 			while (
-				!existsSync(
-					join(dirname(this.directory), "updates", "admission-paused"),
-				) &&
+				!existsSync(this.updateAdmissionMarker) &&
 				state.requests.filter((r) => r.phase !== "queued").length < state.limit
 			) {
 				const eligible: CapacityRequest[] = [];
@@ -417,22 +419,10 @@ export class MachineCapacity implements ExecutionCapacity {
 		transactionId: string,
 	): Promise<CapacitySnapshot> {
 		await this.initialized;
-		await this.transaction(async (state) => {
-			// Observational barrier: never signal descendants to make an update idle.
-			for (const request of state.requests) {
-				if (
-					request.phase !== "queued" ||
-					(await descendants(request.token)).length
-				)
-					throw new Error(
-						"Active capacity leases/descendants still exist; update remains pending",
-					);
-			}
-			const marker = join(
-				dirname(this.directory),
-				"updates",
-				"admission-paused",
-			);
+		await this.transaction(async () => {
+			// Close admission under the same lock that grants leases. Existing
+			// owners keep their slots and finish naturally; queued work is parked.
+			const marker = this.updateAdmissionMarker;
 			await mkdir(dirname(marker), { recursive: true, mode: 0o700 });
 			if (existsSync(marker)) {
 				if (readFileSync(marker, "utf8") !== transactionId)
@@ -444,16 +434,20 @@ export class MachineCapacity implements ExecutionCapacity {
 					flush: true,
 				});
 		});
+		// Retain the descendant safeguard without signalling work to meet an
+		// update schedule. Released slots normally have no surviving children.
+		if (this.lastSnapshot!.active === 0 && this.lastSnapshot!.stopping === 0)
+			for (const request of this.lastSnapshot!.requests)
+				if ((await descendants(request.token)).length)
+					throw new Error(
+						"Tagged descendants still exist; update remains draining",
+					);
 		return this.lastSnapshot!;
 	}
 	async resumeAdmissionsAfterUpdate(transactionId: string): Promise<void> {
 		await this.initialized;
 		await this.transaction(async () => {
-			const marker = join(
-				dirname(this.directory),
-				"updates",
-				"admission-paused",
-			);
+			const marker = this.updateAdmissionMarker;
 			if (!existsSync(marker)) return;
 			if (readFileSync(marker, "utf8") !== transactionId)
 				throw new Error("Capacity maintenance transaction mismatch");
@@ -537,6 +531,11 @@ export class MachineCapacity implements ExecutionCapacity {
 		});
 		let releasePromise: Promise<void> | undefined;
 		let started = false;
+		let pausedForUpdate = false;
+		const preserve = () =>
+			(this.closing || (pausedForUpdate && !signal?.aborted)) &&
+			options.recoverable &&
+			options.preserveOnShutdown?.() !== false;
 		const stopping = () => {
 			void this.transaction((state) => {
 				const owned = state.requests.find((r) => r.token === request.token);
@@ -550,7 +549,10 @@ export class MachineCapacity implements ExecutionCapacity {
 		const release = () =>
 			(releasePromise ??= (async () => {
 				signal?.removeEventListener("abort", stopping);
-				await drain(request.token);
+				if (pausedForUpdate) {
+					if ((await descendants(request.token)).length)
+						throw new Error("Queued update suspension has live descendants");
+				} else await drain(request.token);
 				if (request.remote && started && signal?.aborted) {
 					await this.transaction((state) => {
 						const owned = state.requests.find((r) => r.token === request.token);
@@ -567,12 +569,7 @@ export class MachineCapacity implements ExecutionCapacity {
 				}
 				await this.transaction((state) => {
 					const owned = state.requests.find((r) => r.token === request.token);
-					if (
-						owned &&
-						this.closing &&
-						options.recoverable &&
-						options.preserveOnShutdown?.() !== false
-					) {
+					if (owned && preserve()) {
 						owned.phase = "queued";
 						owned.parked = true;
 					} else
@@ -581,9 +578,7 @@ export class MachineCapacity implements ExecutionCapacity {
 						);
 				});
 				options.onChange?.(
-					this.closing &&
-						options.recoverable &&
-						options.preserveOnShutdown?.() !== false
+					preserve()
 						? { ...request, phase: "queued", parked: true }
 						: undefined,
 				);
@@ -605,6 +600,10 @@ export class MachineCapacity implements ExecutionCapacity {
 					lastChange = JSON.stringify(current);
 				}
 				if (current.phase === "executing") break;
+				if (existsSync(this.updateAdmissionMarker)) {
+					pausedForUpdate = true;
+					throw new UpdatePausedError();
+				}
 				await delay(100, undefined, { signal });
 			}
 			signal?.throwIfAborted();

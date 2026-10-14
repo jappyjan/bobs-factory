@@ -24,7 +24,7 @@ import {
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
-import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
+import { localReviewWorkflows } from "./fixtures/legacy-review.js";
 import { qaExecution, qaScope } from "./fixtures/qa.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
@@ -223,17 +223,17 @@ it("returns visual and CI fixes through code review, keeping dispute history", a
 			return {};
 		},
 	});
-	runtime.updateWorkflows(legacyReviewWorkflows());
+	runtime.updateWorkflows(localReviewWorkflows());
 	const run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
-			workflowId: "factory",
+			workflowId: "fixture-factory",
 			at: new Date().toISOString(),
 		},
 		title: "Dashboard",
 		repositoryId: "repo",
 		workspace: "/tmp",
-		workflow: defaultWorkflows[1]!,
+		workflow: runtime.selectWorkflow([], "manual", "fixture-factory"),
 		input: "Ticket",
 	});
 	await runtime.launch(run);
@@ -888,18 +888,18 @@ it("waits on blocked implementation across restart and supplies the answer witho
 		tool,
 		script: async () => ({}),
 	});
-	runtime.updateWorkflows(legacyReviewWorkflows()); // Exercise the frozen legacy handoff contract.
+	runtime.updateWorkflows(localReviewWorkflows()); // Exercise the frozen legacy handoff contract.
 	const run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
-			workflowId: "factory",
+			workflowId: "fixture-factory",
 			at: new Date().toISOString(),
 		},
 		title: "Backlog installation",
 		repositoryId: "repo",
 		workspace: directory,
-		workflow: legacyReviewWorkflows()[1]!,
-		workflowDefinitions: legacyReviewWorkflows(),
+		workflow: localReviewWorkflows().find((w) => w.id === "fixture-factory")!,
+		workflowDefinitions: localReviewWorkflows(),
 		input: "Private ticket and metadata",
 	});
 	const first = runtime.launch(run);
@@ -1021,8 +1021,8 @@ it.each([
 		question: questionPosted,
 	};
 	const runtime = createRuntime(directory, hooks);
-	const definitions = runtime.listWorkflows();
-	const pipeline = definitions.find((w) => w.id === "factory-pipeline")!;
+	const definitions = localReviewWorkflows(runtime.listWorkflows());
+	const pipeline = definitions.find((w) => w.id === "fixture-pipeline")!;
 	pipeline.steps = pipeline.steps.filter((s) =>
 		["capture", "visual-review", "visual-gate"].includes(s.id),
 	);
@@ -1034,13 +1034,13 @@ it.each([
 	const run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
-			workflowId: "factory",
+			workflowId: "fixture-factory",
 			at: new Date().toISOString(),
 		},
 		title: "Recover reader captures",
 		repositoryId: "repo",
 		workspace,
-		workflow: definitions.find((w) => w.id === "factory")!,
+		workflow: definitions.find((w) => w.id === "fixture-factory")!,
 		workflowDefinitions: definitions,
 		input: "Capture fixture",
 	});
@@ -1155,8 +1155,8 @@ it("waits again when capture remains blocked after an answer, and stops without 
 		},
 		tool: (ctx) => tools.tool(ctx),
 	});
-	const definitions = runtime.listWorkflows();
-	const pipeline = definitions.find((w) => w.id === "factory-pipeline")!;
+	const definitions = localReviewWorkflows(runtime.listWorkflows());
+	const pipeline = definitions.find((w) => w.id === "fixture-pipeline")!;
 	pipeline.steps = pipeline.steps.filter((s) =>
 		["capture", "visual-review", "visual-gate"].includes(s.id),
 	);
@@ -1175,13 +1175,13 @@ it("waits again when capture remains blocked after an answer, and stops without 
 	const run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
-			workflowId: "factory",
+			workflowId: "fixture-factory",
 			at: new Date().toISOString(),
 		},
 		title: "Repeated blocker",
 		repositoryId: "repo",
 		workspace: directory,
-		workflow: definitions.find((w) => w.id === "factory")!,
+		workflow: definitions.find((w) => w.id === "fixture-factory")!,
 		workflowDefinitions: definitions,
 		input: "Fixture",
 	});

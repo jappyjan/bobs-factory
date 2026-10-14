@@ -545,6 +545,41 @@ it.each([
 		vi.unstubAllEnvs();
 	}
 });
+it("protects explicit resume with the existing session and same-origin write requirements", async () => {
+	const f = fixture();
+	const url = "/api/runs/missing/resume";
+	expect(
+		(
+			await f.server.app.inject({
+				method: "POST",
+				url,
+				headers: f.writeHeaders,
+			})
+		).statusCode,
+	).toBe(401);
+	expect(
+		(
+			await f.server.app.inject({
+				method: "POST",
+				url,
+				headers: { host: "localhost" },
+			})
+		).statusCode,
+	).toBe(403);
+	expect(
+		(
+			await f.server.app.inject({
+				method: "POST",
+				url,
+				headers: {
+					host: "localhost",
+					origin: "http://localhost",
+					"x-factory-request": "1",
+				},
+			})
+		).statusCode,
+	).toBe(409); // Authorized request reaches run validation; the fixture ID is absent.
+});
 it("keeps terminal tokens confined to local access and rejects transplant to a remote authority", async () => {
 	const f = fixture();
 	const token = requestFactoryTerminalSession(f.home);

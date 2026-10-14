@@ -1,0 +1,11 @@
+{
+	"head": "merge-working-tree-f3e3284d-plus-c22aa72b",
+	"base": "c22aa72b5b428e973f2af5aade29d7f504c343a5",
+	"scenario": "migrate untouched frozen-base standard graphs with only Codex execution preferences",
+	"defaultWorkflow": "factory",
+	"locals": [],
+	"mappings": {},
+	"inactive": [],
+	"conflicts": {},
+	"testedCodeRevision": "cac7c130bee1a3183bb804033bdb978ce55a4d15"
+}
