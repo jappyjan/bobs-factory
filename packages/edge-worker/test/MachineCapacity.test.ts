@@ -28,6 +28,48 @@ const root = () => {
 	roots.push(directory);
 	return directory;
 };
+it("freezes all new slots while active leases finish and parks queued work with its original order", async () => {
+	const directory = join(root(), "machine-capacity");
+	const first = new MachineCapacity(1, directory);
+	await first.ready();
+	const second = new MachineCapacity(undefined, directory);
+	await second.ready();
+	const active = await first.acquireLease();
+	const queued = second.acquireLease(undefined, {
+		identity: "saved-step",
+		recoverable: true,
+	});
+	const suspended = expect(queued).rejects.toThrow(
+		/Paused for a prepared update/,
+	);
+	await vi.waitFor(async () => expect((await first.snapshot()).queued).toBe(1));
+	const sequence = (await first.snapshot()).requests.find(
+		(r) => r.identity === "saved-step",
+	)!.sequence;
+	expect((await first.pauseAdmissionsForUpdate("prepared")).active).toBe(1);
+	await suspended;
+	await active.release();
+	await second.setLimit(2);
+	expect(await first.snapshot()).toMatchObject({
+		active: 0,
+		stopping: 0,
+		queued: 1,
+	});
+	await expect(first.acquireLease()).rejects.toThrow(
+		/Paused for a prepared update/,
+	);
+	await expect(second.resumeAdmissionsAfterUpdate("wrong")).rejects.toThrow(
+		/mismatch/,
+	);
+	await second.resumeAdmissionsAfterUpdate("prepared");
+	const resumed = await first.acquireLease(undefined, {
+		identity: "saved-step",
+		recoverable: true,
+	});
+	expect((await first.snapshot()).requests[0]!.sequence).toBe(sequence);
+	await resumed.release();
+	await Promise.all([first.shutdown(), second.shutdown()]);
+});
 it("reuses existing transport ownership without taking a second slot and releases failed work", async () => {
 	const service = new MachineCapacity(1, root());
 	await expect(

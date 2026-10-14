@@ -138,19 +138,83 @@ it("manual nightly override, stable auto override, pause and pin share the same 
 	await stable.manager.reconcile();
 	expect(stable.calls).toContain("activate");
 });
-it("explicit Install while busy remains pending without stopping active work", async () => {
+it("keeps one drain transaction open while busy and installs as soon as work settles", async () => {
 	const { manager, lifecycle, calls } = fixture();
 	manager.configure({ channel: "nightly", policy: "manual" }, 0);
 	await manager.check();
 	await manager.stage();
 	manager.requestInstall(candidateKey(candidate), 1);
 	vi.mocked(lifecycle.isIdle).mockResolvedValue(false);
-	await manager.reconcile();
-	expect(calls).toEqual(["maintenance", "release"]);
+	const installing = manager.reconcile();
+	await vi.waitFor(() => expect(lifecycle.isIdle).toHaveBeenCalled());
+	expect(calls).toEqual(["maintenance"]);
+	expect(manager.status().transaction?.phase).toBe("draining");
 	expect(manager.status().pending?.consentRevision).toBe(1);
 	vi.mocked(lifecycle.isIdle).mockResolvedValue(true);
-	await manager.reconcile();
-	expect(calls).toContain("activate");
+	await installing;
+	expect(calls).toEqual([
+		"maintenance",
+		"stop",
+		"activate",
+		"start",
+		"health",
+		"release",
+	]);
+});
+it("downloads and stages automatic updates before closing admission", async () => {
+	const { manager, source, lifecycle, calls } = fixture();
+	manager.configure({ channel: "nightly" }, 0);
+	let prepared!: () => void;
+	const staging = new Promise<void>((resolve) => {
+		prepared = resolve;
+	});
+	vi.mocked(source.stage).mockImplementation(async (value) => {
+		await staging;
+		return {
+			candidate: value,
+			executable: "/isolated/new",
+			previousExecutable: "/isolated/old",
+		};
+	});
+	const updating = manager.tick();
+	await vi.waitFor(() => expect(source.stage).toHaveBeenCalled());
+	expect(lifecycle.acquireMaintenance).not.toHaveBeenCalled();
+	expect(manager.status().transaction).toBeUndefined();
+	prepared();
+	await updating;
+	expect(calls).toEqual([
+		"maintenance",
+		"stop",
+		"activate",
+		"start",
+		"health",
+		"release",
+	]);
+});
+it.each([
+	"policy",
+	"pause",
+	"shutdown",
+])("releases a busy drain when %s cancels authorization", async (reason) => {
+	const { home, manager, lifecycle, calls } = fixture();
+	manager.configure({ channel: "nightly" }, 0);
+	await manager.check();
+	await manager.stage();
+	const abort = new AbortController();
+	lifecycle.signal = abort.signal;
+	vi.mocked(lifecycle.isIdle).mockResolvedValue(false);
+	const installing = manager.reconcile();
+	await vi.waitFor(() => expect(lifecycle.isIdle).toHaveBeenCalled());
+	if (reason === "shutdown") abort.abort();
+	else
+		new UpdateManager(home).configure(
+			reason === "pause" ? { paused: true } : { policy: "manual" },
+			1,
+		);
+	await installing;
+	expect(calls).toEqual(["maintenance", "release"]);
+	expect(manager.status().transaction?.phase).toBe("cancelled");
+	expect(manager.status().badCandidates).toEqual([]);
 });
 it("a second process policy save during preflight cancels queued automatic activation", async () => {
 	const { home, manager, lifecycle, calls } = fixture();
@@ -590,7 +654,10 @@ it.each(
 			new Error("candidate health failed"),
 		);
 	if (outcome === "cancelled")
-		vi.mocked(lifecycle.isIdle).mockResolvedValueOnce(false);
+		vi.mocked(lifecycle.isIdle).mockImplementationOnce(async () => {
+			manager.configure({ paused: true }, 1);
+			return false;
+		});
 	vi.mocked(lifecycle.releaseMaintenance).mockRejectedValueOnce(
 		new Error("release acknowledgment lost"),
 	);

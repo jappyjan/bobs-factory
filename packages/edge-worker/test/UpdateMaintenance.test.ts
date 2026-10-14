@@ -6,9 +6,12 @@ import { EdgeWorker } from "../src/EdgeWorker.js";
 import { OperatorGrants } from "../src/factory/OperatorGrants.js";
 import { OperatorServer } from "../src/factory/OperatorServer.js";
 import { OperatorService } from "../src/factory/OperatorService.js";
+import { WorkflowSchema } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { MachineCapacity } from "../src/MachineCapacity.js";
 import { UpdateDrain } from "../src/updates/UpdateDrain.js";
 import { UpdateManager } from "../src/updates/UpdateManager.js";
+import { UpdatePausedError } from "../src/updates/UpdatePausedError.js";
 
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
@@ -144,6 +147,112 @@ function operator(
 		});
 	return { call, service };
 }
+function integrationWorker(home: string) {
+	const worker = new EdgeWorker({
+		platform: "cli",
+		factoryHome: home,
+		repositories: [],
+		handlers: {
+			createAgentRunner: () => {
+				throw new Error("No native agent permitted");
+			},
+		},
+	});
+	const edge = worker as any;
+	cleanups.unshift(async () => {
+		await edge.runnerSlots.ready();
+		await edge.stateSaveQueue;
+		await edge.runnerSlots.shutdown();
+	});
+	return edge;
+}
+it("preserves token-free integration input across restart and dispatches it once after release", async () => {
+	const f = setup();
+	const edge = integrationWorker(f.home);
+	const event = {
+		deliveryId: "paused-before-session",
+		payload: { task: "Retained input" },
+		installationToken: "not-persisted",
+	};
+	await edge.retainIntegrationEvent("github", event);
+	const state = await edge.persistenceManager.loadEdgeWorkerState();
+	expect(Object.values(state.pendingIntegrationEvents)).toEqual([
+		{
+			platform: "github",
+			event: { deliveryId: event.deliveryId, payload: event.payload },
+		},
+	]);
+	const restored = integrationWorker(f.home);
+	restored.restoreMappings(state);
+	restored.updateDrain = f.drain;
+	let finish!: () => void;
+	const hold = new Promise<void>((resolve) => {
+		finish = resolve;
+	});
+	const dispatch = vi
+		.spyOn(restored, "handleGitHubWebhook")
+		.mockImplementation(async () => {
+			await hold;
+		});
+	await f.drain.begin("exact-transaction");
+	restored.recoverIntegrationEvents();
+	expect(dispatch).not.toHaveBeenCalled();
+	f.resume.mockImplementation(() => restored.recoverIntegrationEvents());
+	f.finish();
+	await f.drain.end("exact-transaction");
+	restored.recoverIntegrationEvents();
+	expect(dispatch).toHaveBeenCalledTimes(1);
+	expect(dispatch).toHaveBeenCalledWith({
+		deliveryId: event.deliveryId,
+		payload: event.payload,
+	});
+	finish();
+	await vi.waitFor(() =>
+		expect(restored.pendingIntegrationEvents.size).toBe(0),
+	);
+	await restored.stateSaveQueue;
+	expect(
+		(await restored.persistenceManager.loadEdgeWorkerState())
+			.pendingIntegrationEvents,
+	).toBeUndefined();
+});
+it("does not replay deferred input already checkpointed by a native session", async () => {
+	const f = setup();
+	const edge = integrationWorker(f.home);
+	const event = {
+		deliveryId: "checkpointed",
+		payload: { task: "Already accepted" },
+	};
+	await edge.retainIntegrationEvent("github", event);
+	const session = edge.agentSessionManager.createChatSession(
+		"saved-native",
+		{ path: f.home, isGitWorktree: false },
+		"github",
+		[],
+	);
+	session.metadata = {
+		pendingExecution: {
+			runner: "codex",
+			prompt: "Saved input",
+			systemPrompt: "Saved instructions",
+			replyEvent: event,
+		},
+	};
+	const dispatch = vi.spyOn(edge, "handleGitHubWebhook");
+	edge.recoverIntegrationEvents();
+	await vi.waitFor(() => expect(edge.pendingIntegrationEvents.size).toBe(0));
+	expect(dispatch).not.toHaveBeenCalled();
+});
+it.each([
+	"createGitHubWorkspace",
+	"createGitLabWorkspace",
+])("%s preserves update suspension instead of turning it into workspace failure", async (method) => {
+	const f = setup();
+	const edge = integrationWorker(f.home);
+	const paused = new UpdatePausedError();
+	vi.spyOn(edge.gitService, "createGitWorktree").mockRejectedValue(paused);
+	await expect(edge[method]({ id: "fixture" }, "main", 1)).rejects.toBe(paused);
+});
 it("rejects all new operator mutations during maintenance while authenticated inspection remains available", async () => {
 	const f = setup(),
 		{ call, service } = operator(f);
@@ -201,7 +310,9 @@ it.each([
 	await vi.waitFor(() => expect(preparation).toHaveBeenCalledTimes(1));
 	await f.drain.begin("exact-transaction");
 	expect((await f.drain.inspect()).idle).toBe(false);
-	expect(f.capacity.pauseAdmissionsForUpdate).not.toHaveBeenCalled();
+	expect(f.capacity.pauseAdmissionsForUpdate).toHaveBeenCalledWith(
+		"exact-transaction",
+	);
 	const stored = (await call("inspect_run", { runId: f.run.id })).json();
 	expect(stored).toMatchObject({
 		ok: true,
@@ -242,7 +353,9 @@ it("drains an authenticated configuration operation admitted before freeze throu
 	await vi.waitFor(() => expect(update).toHaveBeenCalled());
 	await f.drain.begin("exact-transaction");
 	expect((await f.drain.inspect()).idle).toBe(false);
-	expect(f.capacity.pauseAdmissionsForUpdate).not.toHaveBeenCalled();
+	expect(f.capacity.pauseAdmissionsForUpdate).toHaveBeenCalledWith(
+		"exact-transaction",
+	);
 	const before = f.drain.receipt();
 	done();
 	expect((await accepted).json().ok).toBe(true);
@@ -355,4 +468,150 @@ it("includes accepted ticket preflight and its final persistence in the drain ba
 	await accepted;
 	expect(edge.routeAcceptedTicketLaunch).toHaveBeenCalledTimes(1);
 	expect((await f.drain.inspect()).idle).toBe(true);
+});
+
+it("drains active fanout work without cancelling siblings, parks queued slots, and resumes saved steps", async () => {
+	const home = mkdtempSync(join(tmpdir(), "update-capacity-drain-"));
+	const capacity = new MachineCapacity(1, join(home, "machine-capacity"));
+	await capacity.ready();
+	let finishActive!: () => void;
+	const held = new Promise<void>((resolve) => {
+		finishActive = resolve;
+	});
+	const executed: string[] = [];
+	const runtime = new WorkflowRuntime(home, {
+		capacity,
+		agent: async () => ({}),
+		script: async (context) => {
+			executed.push(context.step.id);
+			if (context.step.id === "active") await held;
+			expect(context.signal.aborted).toBe(false);
+			return { completed: context.step.id };
+		},
+		tool: async (context) => {
+			executed.push(context.step.id);
+			return {};
+		},
+	});
+	const manager = new UpdateManager(home);
+	manager.configure({}, 0);
+	const state = JSON.parse(readFileSync(manager.file, "utf8"));
+	const candidate = {
+		version: "1.1.0",
+		channel: "stable",
+		commit: "b".repeat(40),
+		manifestSha256: "c".repeat(64),
+		target: "darwin-arm64",
+		publishedAt: new Date().toISOString(),
+	};
+	state.transaction = {
+		id: "fanout-update",
+		candidate,
+		staged: {
+			candidate,
+			executable: "/fixture/new",
+			previousExecutable: "/fixture/old",
+		},
+		previous: {
+			version: "1.0.0",
+			commit: "a".repeat(40),
+			target: "darwin-arm64",
+		},
+		revision: 0,
+		phase: "draining",
+		switchStarted: false,
+		startedAt: new Date().toISOString(),
+	};
+	writeFileSync(manager.file, JSON.stringify(state));
+	const drain = new UpdateDrain(
+		home,
+		runtime,
+		capacity,
+		() => runtime.hasExecutingWork(),
+		() => runtime.resumeAll(),
+	);
+	const run = runtime.create({
+		id: "fanout",
+		title: "Drain fanout",
+		repositoryId: "fixture",
+		workspace: home,
+		input: "fixture",
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "drain",
+			at: new Date().toISOString(),
+		},
+		workflow: WorkflowSchema.parse({
+			id: "drain",
+			name: "Drain",
+			allowedTriggers: ["manual"],
+			steps: [
+				{
+					id: "parallel",
+					name: "Parallel",
+					type: "fanout",
+					next: "end",
+					groups: [
+						[
+							{
+								id: "active",
+								name: "Active",
+								type: "script",
+								script: "mock",
+								next: "after",
+							},
+							{
+								id: "after",
+								name: "After",
+								type: "tool",
+								tool: "mock",
+								next: "end",
+							},
+						],
+						[
+							{
+								id: "queued",
+								name: "Queued",
+								type: "script",
+								script: "mock",
+								next: "end",
+							},
+						],
+					],
+				},
+			],
+		}),
+	});
+	cleanups.push(async () => {
+		finishActive();
+		await runtime.shutdown();
+		await capacity.shutdown();
+		rmSync(home, { recursive: true, force: true });
+	});
+	const running = runtime.launch(run);
+	await vi.waitFor(async () =>
+		expect(await capacity.snapshot()).toMatchObject({ active: 1, queued: 1 }),
+	);
+	const original = (await capacity.snapshot()).requests.find(
+		(r) => r.phase === "queued",
+	)!;
+	await drain.begin("fanout-update");
+	expect((await drain.inspect()).idle).toBe(false);
+	finishActive();
+	await running;
+	expect(executed).toEqual(["active"]);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("running");
+	expect(run.checkpoint!.active!.children![0]!.current).toBe("after");
+	expect(run.checkpoint!.active!.children![1]!.current).toBe("queued");
+	expect((await drain.inspect()).idle).toBe(true);
+	expect((await capacity.snapshot()).requests).toMatchObject([
+		{ sequence: original.sequence, parked: true, phase: "queued" },
+	]);
+	state.transaction.phase = "succeeded";
+	writeFileSync(manager.file, JSON.stringify(state));
+	await drain.end("fanout-update");
+	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	expect(executed.sort()).toEqual(["active", "after", "queued"]);
+	expect((await capacity.snapshot()).requests).toEqual([]);
 });

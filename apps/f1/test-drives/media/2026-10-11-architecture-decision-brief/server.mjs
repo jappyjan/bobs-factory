@@ -11,7 +11,6 @@ const dist = new URL(
 ).pathname;
 const { WorkflowRuntime } = await import(`${dist}/WorkflowRuntime.js`);
 const { FactoryServer } = await import(`${dist}/FactoryServer.js`);
-const { defaultWorkflows } = await import(`${dist}/defaultWorkflows.js`);
 
 const part = (id, label, note, detail, area, status, file) => ({
 	id,
@@ -353,26 +352,28 @@ const runtime = new WorkflowRuntime(home, {
 	script: async () => ({}),
 	tool: async () => ({}),
 });
-const definitions = structuredClone(defaultWorkflows);
-const pipeline = definitions.find((w) => w.id === "factory-pipeline");
+const fork = runtime.forkWorkflow("factory", "Browser architecture fixture");
+const definitions = runtime.listWorkflows();
+const pipeline = definitions.find((w) => w.id === fork.steps[0].workflow);
 pipeline.steps = pipeline.steps.filter((s) =>
 	[
 		"architecture",
-		"plan-review",
+		"architecture-review",
 		"architecture-decision",
 		"implement",
 	].includes(s.id),
 );
+pipeline.steps.find((s) => s.id === "implement").next = "end";
 runtime.updateWorkflows(definitions);
 const run = runtime.create({
 	title: "Sync runs to Jira",
-	workflow: definitions.find((w) => w.id === "factory"),
+	workflow: definitions.find((w) => w.id === fork.id),
 	repositoryId: "fixture",
 	workspace: home,
 	input: "Sync Factory runs to Jira issues",
 	triggerOrigin: {
 		type: "manual",
-		workflowId: "factory",
+		workflowId: fork.id,
 		at: new Date().toISOString(),
 	},
 });

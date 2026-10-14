@@ -12,6 +12,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileRecord, TARGETS } from "../lib/binary-release.mjs";
 import {
+	nativeNoticeMaterialName,
 	rebindSourceMaterials,
 	recoverAcceptedMaterials,
 	verifyDependencyBaseline,
@@ -238,6 +239,78 @@ test("candidate source assembly preserves real historical input identities and r
 				"utf8",
 			),
 			/retained historical relink evidence, not a new relink/,
+		);
+	} finally {
+		rmSync(work, { recursive: true, force: true });
+	}
+});
+
+test("fresh native notices coexist with retained legacy notice names without changing historical bytes or provenance", () => {
+	const work = mkdtempSync(join(tmpdir(), "factory-nightly-notice-collision-"));
+	try {
+		const frozen = (commit, sequence) =>
+			freezeCandidate({
+				channel: "nightly",
+				commit,
+				workflowSha: commit,
+				committedVersion: "1.0.0",
+				sequence,
+				date: "2026-10-12T00:00:00Z",
+			});
+		const old = candidateIdentity(frozen("a".repeat(40), 1));
+		const current = candidateIdentity(frozen("b".repeat(40), 2));
+		const materials = sourceMaterialFixture(work, old);
+		const record = (file, identity, target) => ({
+			kind: "candidate-notices",
+			...fileRecord(join(work, file), file),
+			source: `https://github.com/jappyjan/bobs-factory/commit/${identity.commit}`,
+			revision: identity.commit,
+			target,
+		});
+		const historical = TARGETS.map((target) => {
+			const file = `native-notices-${target}.tar.gz`;
+			writeFileSync(join(work, file), `Historical notice bytes ${target}`);
+			return record(file, old, target);
+		});
+		materials.records.push(...historical);
+		const original = JSON.parse(JSON.stringify(materials));
+		const fresh = TARGETS.map((target) => {
+			const file = nativeNoticeMaterialName(materials, current, target);
+			writeFileSync(join(work, file), `Current notice bytes ${target}`);
+			return record(file, current, target);
+		});
+		rebindSourceMaterials(
+			materials,
+			work,
+			current,
+			TARGETS.map((target) => ({
+				target,
+				baseSha256: "1".repeat(64),
+				factorySha256: "3".repeat(64),
+				entireReconstructedExecutableMatches: true,
+			})),
+			{ mode: "controlled fixture, never release evidence" },
+			fresh,
+		);
+		validateSourceMaterials(materials, work, current);
+		assert.deepEqual(
+			JSON.parse(readFileSync(join(work, "nightly-source-reuse.json")))
+				.previousMaterials,
+			original,
+		);
+		for (const before of historical) {
+			assert.deepEqual(
+				materials.records.find((r) => r.file === before.file),
+				before,
+			);
+			assert.equal(
+				fileRecord(join(work, before.file), before.file).sha256,
+				before.sha256,
+			);
+		}
+		assert.throws(
+			() => nativeNoticeMaterialName(materials, current, TARGETS[0]),
+			/overwrite retained/,
 		);
 	} finally {
 		rmSync(work, { recursive: true, force: true });

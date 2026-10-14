@@ -1,0 +1,15 @@
+{
+	"mode": "mock",
+	"result": "passed",
+	"checks": [
+		"migration",
+		"forks",
+		"dependency gating",
+		"blocked restart",
+		"native queue interruption",
+		"native Resume",
+		"operator manual Simple Resume",
+		"HTTP import/export"
+	],
+	"testedRevision": "bbd90d0748e06678cabad6823967a6493ddf217a"
+}

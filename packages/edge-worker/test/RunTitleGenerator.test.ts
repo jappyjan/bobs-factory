@@ -49,6 +49,48 @@ function job(): RunTitleJob {
 		settings: { runner: "codex", model: "title-model" },
 	};
 }
+it("keeps a title job pending during update suspension and allows it to resume", async () => {
+	const directory = home();
+	const capacity = new MachineCapacity(1, join(directory, "machine-capacity"));
+	await capacity.ready();
+	await capacity.pauseAdmissionsForUpdate("prepared");
+	const updatePaused = vi.fn();
+	const update = vi.fn();
+	const buildConfig = vi.fn(async () => ({ workingDirectory: directory }));
+	const generator = new RunTitleGenerator(directory, capacity, {
+		updatePaused,
+		update,
+		buildConfig,
+		createRunner: (_job, config) =>
+			({
+				start: async () => {
+					await config.onMessage?.({
+						type: "result",
+						is_error: false,
+						result: '{"title":"Resumed title"}',
+					} as SDKMessage);
+					return { sessionId: "title" };
+				},
+				stop: () => {},
+			}) as IAgentRunner,
+	});
+	const pending = job();
+	generator.start("run", pending);
+	await vi.waitFor(() => expect(updatePaused).toHaveBeenCalledWith("run"));
+	expect(update).not.toHaveBeenCalled();
+	expect(buildConfig).not.toHaveBeenCalled();
+	await capacity.resumeAdmissionsAfterUpdate("prepared");
+	generator.start("run", pending);
+	await vi.waitFor(() =>
+		expect(update).toHaveBeenCalledWith(
+			"run",
+			expect.objectContaining({ state: "completed" }),
+			"Resumed title",
+		),
+	);
+	await generator.shutdown();
+	await capacity.shutdown();
+});
 function deferred<T>() {
 	let resolve!: (value: T) => void;
 	let reject!: (reason: Error) => void;
@@ -446,9 +488,16 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 		script: async () => ({}),
 		tool: async () => ({}),
 	});
+	if (restored.catalog.read().migration?.conflicts.simple) {
+		expect(() => restored.selectWorkflow([], "manual", "simple")).toThrow(
+			"unavailable",
+		);
+		restored.catalog.resolveSimpleConflict();
+	}
 	const workflow = restored.selectWorkflow([], "manual", "simple");
 	expect(getLaunchFields(workflow).map((field) => field.name)).toEqual([
 		"prompt",
+		"attachments",
 	]);
 	expect(() => validateWorkflows(old)).toThrow("Reserved launch field");
 	const request = resolveLaunchRequest(
@@ -464,16 +513,15 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 		repositoryId: "repo",
 		workflow: "simple",
 		inputs: { prompt: "Task" },
-		attachments: {},
+		attachments: { attachments: [] },
 		prompt: "Task",
 		source: undefined,
 	});
 	expect(
 		JSON.parse(
 			readFileSync(join(directory, "factory", "workflows.json"), "utf8"),
-		).workflows.find((item: { id: string }) => item.id === "simple")
-			.launchFields,
-	).toHaveLength(1);
+		).format,
+	).toBe("workflow-catalog-v1");
 	void runtime.shutdown();
 	void restored.shutdown();
 });

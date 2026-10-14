@@ -50,7 +50,7 @@ function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
 	const run = (
 		publish = true,
 		extra = [],
-		{ preload, env = {}, timeout } = {},
+		{ preload, env = {}, timeout, approvalSupplied = true } = {},
 	) =>
 		spawnSync(
 			process.execPath,
@@ -66,8 +66,7 @@ function setup(channel = "nightly", state = {}, fixtureOptions = {}) {
 				"--output",
 				f.output,
 				"--resume",
-				"--approval",
-				approval,
+				...(approvalSupplied ? ["--approval", approval] : []),
 				...(publish ? ["--publish"] : []),
 				...extra,
 			],
@@ -844,6 +843,10 @@ test("beta requires exact asset approval and stays prerelease without moving sta
 		},
 	);
 	try {
+		const unapproved = f.run(true, [], { approvalSupplied: false });
+		assert.notEqual(unapproved.status, 0);
+		assert.match(unapproved.stderr, /requires candidate-bound approval file/);
+		assert.equal(f.state().operations.length, 0);
 		writeFileSync(
 			f.approval,
 			JSON.stringify({

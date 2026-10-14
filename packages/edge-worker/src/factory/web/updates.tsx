@@ -77,7 +77,7 @@ export function UpdateSettings() {
 			<p role="status">
 				Channel: {settings.channel} ·{" "}
 				{status.effectivePolicy === "idle-auto"
-					? "Automatic when idle"
+					? "Automatic after draining active work"
 					: "Notify / manual Install"}
 				{settings.paused ? " · Paused" : ""}
 				{settings.pin ? ` · Pinned to ${settings.pin}` : ""}
@@ -138,12 +138,14 @@ export function UpdateSettings() {
 						<option value="default">
 							Channel default (
 							{channel === "nightly"
-								? "Automatic when idle"
+								? "Automatic after draining active work"
 								: "Notify / manual Install"}
 							)
 						</option>
 						<option value="manual">Notify / manual Install</option>
-						<option value="idle-auto">Automatic when idle</option>
+						<option value="idle-auto">
+							Automatic after draining active work
+						</option>
 					</select>
 				</label>
 				<label>
@@ -203,7 +205,7 @@ export function UpdateSettings() {
 						{status.pending.staged ? "Verified and staged" : "Download pending"}{" "}
 						·{" "}
 						{status.pending.consentRevision === status.revision
-							? "Install requested; waiting for safe idle activation"
+							? "Install requested; active work will drain before activation"
 							: "Awaiting effective policy / Install"}
 					</p>
 					<Button
@@ -223,7 +225,7 @@ export function UpdateSettings() {
 							})
 						}
 					>
-						Install when idle
+						Install after draining active work
 					</Button>
 					{status.badCandidates.includes(keyOf(status)) && (
 						<Button

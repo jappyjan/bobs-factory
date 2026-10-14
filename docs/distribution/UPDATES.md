@@ -3,9 +3,11 @@
 Each selected backend keeps settings and update receipts in
 `<factoryHome>/updates/state.json`, separate from immutable runtimes and native
 credential/conversation stores. Stable defaults to **Notify / manual Install**;
-nightly defaults to **Automatic when idle**. Each channel remembers its explicit
-override. Reinstalling, closing a window and switching channels do not grant
-manual Install consent or reset saved choices.
+nightly defaults to **Automatic after draining active work**. Each channel
+remembers its explicit override. Reinstalling, closing a window and switching channels do not grant
+manual Install consent or reset saved choices. The persisted policy token
+`idle-auto` remains supported; it now drains active work instead of waiting for
+an empty queue.
 
 Use Settings → Updates on the selected authenticated backend, or:
 
@@ -33,7 +35,7 @@ protocol protections. A failed settings save retains the draft.
 
 Pause cancels activation authorization, including queued automatic work. A pin
 selects an exact version and prevents automatic activation; an intentional
-manual Install still uses the same idle/compatibility checks. Clearing a pin or
+manual Install still uses the same drain/compatibility checks. Clearing a pin or
 resuming is explicit. Every settings revision invalidates previous manual
 consent. New candidates replace older pending candidates without carrying their
 consent forward. Intentional return from nightly to stable, or another downgrade,
@@ -59,14 +61,21 @@ installations must upgrade through their owner. The shared updater alone does
 not implement those activation mechanisms. A manual Install queues consent;
 it does not forcibly stop a busy worker.
 
-1. Persist the exact candidate, previous identity and transaction before
-   acquiring owner maintenance. Maintenance suppresses service auto-restart and
-   freezes new dashboard/webhook intake. Already accepted work may finish and
-   acquire its next role. Ticket retry timers pause; in-flight delivery finishes.
-2. Check executing workflows, webhooks, agents/chats and capacity ownership.
-   Under the capacity lock, verify zero executing/stopping leases and tagged
-   descendants, then close admission. Waiting human review/answer gates are
-   allowed. Never signal active work to meet an update schedule.
+1. Download, verify and prepare the candidate while work continues normally.
+   Once staging finishes, persist the exact candidate, previous identity and
+   transaction, then acquire owner maintenance. Maintenance suppresses service
+   auto-restart, freezes new dashboard/webhook intake and immediately closes
+   capacity admission under its lock. Ticket retry timers pause.
+2. Let existing capacity slots and in-flight delivery finish naturally. New
+   workflow steps pause at their saved checkpoints; queued slots are parked
+   with their original ordering for recovery. Keep the same drain transaction
+   open until executing/stopping leases, descendants and accepted operations
+   settle, even with queued runs remaining. Waiting human review/answer gates
+   are allowed. Never signal active work to meet an update schedule. Pausing
+   updates or changing policy before the switch cancels activation, releases
+   maintenance and resumes the retained work. Accepted PR setup input without
+   a native session is retained without event credentials and replayed after
+   release; existing sessions retain their saved input and conversation IDs.
 3. Preflight state compatibility in isolation and snapshot bounded compatible
    Factory-owned state. Native credential/conversation/signing stores and
    Factory authentication remain outside rollback. Observe config/profile,
@@ -98,8 +107,8 @@ lock stealing is implemented.
 ## Evidence and outstanding integration
 
 The updater regression suite and mocked F1 drive cover policies, settings races,
-busy/lease deferral, one controlled worker, preserved native checkpoint IDs and
-human gates, failed trial/rollback and independent homes. They use controlled
+active-slot draining and queued-step recovery, one controlled worker, preserved
+native checkpoint IDs and human gates, failed trial/rollback and independent homes. They use controlled
 candidates/supervisors and do **not** establish native OS service behavior or
 release publication. The lifecycle lane supplies and separately validates the
 owned service/desktop adapter. Final integrated macOS/Linux target receipts,

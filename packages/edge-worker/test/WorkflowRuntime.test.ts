@@ -1,19 +1,21 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { JsonSnapshotStore } from "bobs-factory-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-	defaultWorkflows,
-	upgradeWorkflows,
-} from "../src/factory/defaultWorkflows.js";
+import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
 import {
 	filterReview,
 	parseAgentOutput,
 	toolArguments,
 } from "../src/factory/FactoryTools.js";
-import { legacyScreenshotSteps } from "../src/factory/legacyScreenshotSteps.js";
 import { validateWorkflows, type Workflow } from "../src/factory/Workflow.js";
 import {
 	type ExecutionContext,
@@ -22,7 +24,6 @@ import {
 	type RuntimeHooks,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
-import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
@@ -35,15 +36,55 @@ afterEach(async () => {
 function create(hooks: Partial<RuntimeHooks> = {}) {
 	const home = mkdtempSync(join(tmpdir(), "factory-runtime-"));
 	homes.push(home);
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({}),
-		tool: async () => ({}),
-		...hooks,
-	});
-	runtimes.push(runtime);
-	return { runtime, home };
+	return { runtime: reload(home, hooks), home };
 }
+it("resumes an update-suspended run if cancellation arrives during its final save", async () => {
+	let paused = false;
+	const tool = vi.fn(async () => ({}));
+	const { home, runtime } = create({
+		tool,
+		cleanupExecution: () => {
+			paused = true;
+		},
+	});
+	const run = runtime.create({
+		id: "cancel-during-save",
+		title: "Cancellation",
+		repositoryId: "fixture",
+		workspace: home,
+		input: "fixture",
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "custom",
+			at: new Date().toISOString(),
+		},
+		workflow: workflow([
+			{ id: "work", name: "Work", type: "tool", tool: "mock", next: "end" },
+		]),
+	});
+	await runtime.flush(run.id);
+	mkdirSync(join(home, "updates"));
+	const marker = join(home, "updates", "maintenance.json");
+	writeFileSync(marker, JSON.stringify({ transactionId: "prepared" }));
+	let finishSave!: () => void;
+	const held = new Promise<void>((resolve) => {
+		finishSave = resolve;
+	});
+	const save = runtime.save.bind(runtime);
+	vi.spyOn(runtime, "save").mockImplementation(async (value) => {
+		if (paused) await held;
+		await save(value);
+	});
+	const running = runtime.launch(run);
+	await vi.waitFor(() => expect(paused).toBe(true));
+	rmSync(marker);
+	runtime.resumeAll();
+	expect(tool).not.toHaveBeenCalled();
+	finishSave();
+	await running;
+	await vi.waitFor(() => expect(run.status).toBe("completed"));
+	expect(tool).toHaveBeenCalledTimes(1);
+});
 function readJson(path: string): any {
 	const stored = JSON.parse(readFileSync(path, "utf8"));
 	return stored.format === "bobs-factory-json-snapshot-1"
@@ -135,12 +176,11 @@ it("keeps completed receipts independent of mutable live outputs and immutable a
 		nested: { text: "accepted result" },
 	});
 	await runtime.shutdown();
-	const restarted = new WorkflowRuntime(home, {
+	const restarted = reload(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
 	});
-	runtimes.push(restarted);
 	const receipt = restarted.get(run.id).history[0]!;
 	expect(Object.isFrozen(receipt)).toBe(true);
 	expect(Object.isFrozen((receipt.output as typeof output).nested)).toBe(true);
@@ -431,30 +471,6 @@ describe("workflow runtime", () => {
 		}
 	});
 
-	it("upgrades the legacy visual reviewer with a real newline while retaining its model", async () => {
-		const saved = legacyReviewWorkflows();
-		const shared = saved.find(
-			(definition) => definition.id === "factory-pipeline",
-		)!;
-		const reviewer = shared.steps.find((step) => step.id === "visual-review")!;
-		reviewer.prompt = `${legacyScreenshotSteps.find((step) => step.id === "visual-review")!.prompt!.split("\n")[0]}\nThis is a VISUAL review: open and inspect the actual screenshots, checking each requested area/state against the plan. Include areas with missing/unavailable capture evidence as rating 3 findings. Never approve missing screenshots.`;
-		reviewer.model = "custom-review-model";
-		const upgraded = validateWorkflows(upgradeWorkflows(saved))
-			.find((definition) => definition.id === "factory-pipeline")!
-			.steps.find((step) => step.id === "visual-review")!;
-		expect(upgraded.prompt).toBe(
-			defaultWorkflows
-				.find((definition) => definition.id === "factory-pipeline")!
-				.steps.find((step) => step.id === "visual-review")!.prompt,
-		);
-		expect(upgraded.model).toBe("custom-review-model");
-		reviewer.prompt = "My custom visual review instructions";
-		expect(
-			validateWorkflows(upgradeWorkflows(saved))
-				.find((definition) => definition.id === "factory-pipeline")!
-				.steps.find((step) => step.id === "visual-review")!.prompt,
-		).toBe(reviewer.prompt);
-	});
 	it("persists agent provenance before trimming an oversized event tail", async () => {
 		const { runtime, home } = create();
 		const run = start(runtime, workflow([agent("review")]));
@@ -465,7 +481,7 @@ describe("workflow runtime", () => {
 		runtime.log(run, "review", message, "agent");
 		runtime.log(run, "review", "Build output ".repeat(3000));
 		await runtime.flush();
-		const recovered = new WorkflowRuntime(home, {
+		const recovered = reload(home, {
 			agent: async () => ({}),
 			tool: async () => ({}),
 			script: async () => ({}),
@@ -519,6 +535,67 @@ describe("workflow runtime", () => {
 		run.status = "stopped";
 		expect(() => runtime.retry(run.id)).toThrow("Only failed");
 	});
+	it("resumes an explicitly stopped run from its native checkpoint without replaying finished steps", async () => {
+		let paused = true;
+		const execute = vi.fn(async (context: ExecutionContext) => {
+			if (context.step.id === "publish") {
+				if (paused) {
+					await context.checkpointAgent?.({
+						sessionId: "saved-native-session",
+						runner: "codex",
+						cwd: context.run.workspace,
+					});
+					return new Promise((resolve) =>
+						context.signal.addEventListener("abort", () => resolve({}), {
+							once: true,
+						}),
+					);
+				}
+				expect(context.resumeAgent?.sessionId).toBe("saved-native-session");
+			}
+			return { summary: context.step.id };
+		});
+		const { runtime } = create({ agent: execute });
+		const run = start(
+			runtime,
+			workflow([agent("implement"), agent("publish")]),
+		);
+		void runtime.launch(run);
+		await waitFor(() => expect(execute).toHaveBeenCalledTimes(2));
+		runtime.stop(run.id);
+		expect(runtime.canResume(run.id)).toBe(false);
+		expect(() => runtime.resume(run.id)).toThrow("Only stopped");
+		await waitFor(() => expect(runtime.isExecuting(run.id)).toBe(false));
+		const checkpoint = structuredClone(run.checkpoint);
+		const history = structuredClone(run.history);
+		runtime.updateViewState(run.id, { keptOpen: true });
+		runtime.resumeAll();
+		expect(run.status).toBe("stopped");
+		expect(execute).toHaveBeenCalledTimes(2);
+		// Main's stopped-run recovery must still respect catalog availability.
+		runtime.updateWorkflows([...defaultWorkflows, run.workflow]);
+		runtime.setWorkflowEnabled(run.workflow.id, false);
+		expect(runtime.canResume(run.id)).toBe(false);
+		expect(() => runtime.resume(run.id)).toThrow("unavailable");
+		expect(run.checkpoint).toEqual(checkpoint);
+		expect(run.history).toEqual(history);
+		runtime.setWorkflowEnabled(run.workflow.id, true);
+		expect(runtime.canResume(run.id)).toBe(true);
+		expect(run.status).toBe("stopped");
+		expect(execute).toHaveBeenCalledTimes(2);
+		paused = false;
+		runtime.resume(run.id);
+		expect(() => runtime.resume(run.id)).toThrow("Only stopped");
+		await waitFor(() => expect(run.status).toBe("completed"));
+		expect(run.history.slice(0, history.length)).toEqual(history);
+		expect(execute.mock.calls.map(([context]) => context.step.id)).toEqual([
+			"implement",
+			"publish",
+			"publish",
+		]);
+		expect(checkpoint?.current).toBe("publish");
+		expect(() => runtime.resume(run.id)).toThrow("Only stopped");
+	});
 	it("uses the persisted default behind explicit choices and matching labels, including legacy config", async () => {
 		const { runtime, home } = create();
 		expect(runtime.getDefaultWorkflow()).toBe("simple");
@@ -533,7 +610,7 @@ describe("workflow runtime", () => {
 			tool: async () => ({}),
 		};
 		await runtime.flush();
-		const legacy = new WorkflowRuntime(home, hooks);
+		const legacy = reload(home, hooks);
 		expect(legacy.selectWorkflow([], "manual").id).toBe("simple");
 		const custom = workflow([agent("work")]);
 		legacy.updateWorkflows([...defaultWorkflows, custom], "custom");
@@ -549,7 +626,7 @@ describe("workflow runtime", () => {
 			"Unknown workflow",
 		);
 		await runtime.flush();
-		const restarted = new WorkflowRuntime(home, hooks);
+		const restarted = reload(home, hooks);
 		expect(restarted.getDefaultWorkflow()).toBe("custom");
 		expect(restarted.selectWorkflow([], "manual").id).toBe("custom");
 		// Legacy API callers updating definitions retain the selected default.
@@ -650,12 +727,12 @@ describe("workflow runtime", () => {
 			run.id,
 			"Please explain this more simply. I have not chosen an option or authorized paid tests.",
 		);
-		await waitFor(() =>
+		await waitFor(() => {
 			expect(run.questions).toEqual([
 				"Use simulated tests or authorize paid tests?",
-			]),
-		);
-		expect(run.status).toBe("waiting");
+			]);
+			expect(run.status).toBe("waiting");
+		});
 		expect(run.answers).toEqual([]);
 		expect(run.questionRequests).toHaveLength(1);
 		expect(run.checkpoint?.active?.phase).toBe("waiting");
@@ -694,7 +771,7 @@ describe("workflow runtime", () => {
 		await runtime.shutdown();
 		await first;
 		await runtime.flush();
-		const restarted = new WorkflowRuntime(home, {
+		const restarted = reload(home, {
 			agent: execute,
 			script: async () => ({}),
 			tool: async () => ({}),
@@ -873,7 +950,7 @@ describe("workflow runtime", () => {
 		const run = start(runtime, workflow([agent("work")]));
 		runtime.log(run, "work", "working");
 		await runtime.flush();
-		const restarted = new WorkflowRuntime(home, {
+		const restarted = reload(home, {
 			agent: async () => ({}),
 			script: async () => ({}),
 			tool: async () => ({}),
@@ -881,19 +958,20 @@ describe("workflow runtime", () => {
 		expect(restarted.get(run.id).status).toBe("running");
 		expect(restarted.get(run.id).events[0]?.message).toBe("working");
 	});
-	it("freezes the workflow per run and applies saved changes only to new runs", async () => {
+	it("freezes local workflows per run and protects bundled names", async () => {
 		const { runtime } = create();
-		const run = start(
-			runtime,
-			runtime.selectWorkflow(["workflow:factory"], "manual"),
-		);
+		const local = workflow([agent("work")]);
+		runtime.updateWorkflows([...defaultWorkflows, local]);
+		const run = start(runtime, local);
 		const definitions = runtime.listWorkflows();
-		definitions.find((item) => item.id === "factory")!.name = "New name";
+		definitions.find((w) => w.id === "custom")!.name = "New name";
 		runtime.updateWorkflows(definitions);
-		expect(run.workflow.name).toBe("Software factory");
-		expect(runtime.selectWorkflow([], "manual", "factory").name).toBe(
+		expect(run.workflow.name).toBe("Custom");
+		expect(runtime.selectWorkflow([], "manual", "custom").name).toBe(
 			"New name",
 		);
+		definitions.find((w) => w.id === "factory")!.name = "Changed standard";
+		expect(() => runtime.updateWorkflows(definitions)).toThrow("read-only");
 	});
 	it("rejects dangling edges, duplicate IDs and malformed results", async () => {
 		expect(() => workflow([agent("x", { next: "missing" })])).toThrow(
@@ -1057,7 +1135,7 @@ it("upgrades a saved flat Factory without losing role settings or its selected d
 		}),
 	);
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, {
+	const restarted = reload(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
@@ -1077,14 +1155,15 @@ it("upgrades a saved flat Factory without losing role settings or its selected d
 });
 
 function reload(home: string, hooks: Partial<RuntimeHooks> = {}) {
-	const restarted = new WorkflowRuntime(home, {
+	const runtime = new WorkflowRuntime(home, {
 		agent: async () => ({}),
 		script: async () => ({}),
 		tool: async () => ({}),
 		...hooks,
 	});
-	runtimes.push(restarted);
-	return restarted;
+	// Restored executors must finish their final saves before home cleanup.
+	runtimes.push(runtime);
+	return runtime;
 }
 function untilAborted(context: ExecutionContext): Promise<unknown> {
 	return new Promise((resolve) =>
@@ -1413,7 +1492,7 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	await runtime.shutdown();
 	await launched;
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, {
+	const restarted = reload(home, {
 		script: async () => ({}),
 		...hooks,
 	});
@@ -1449,9 +1528,8 @@ it("restores an explicit human gate without approving, repeats rejected work, an
 	]);
 	expect(order).toEqual(["human-review", "human-fix", "human-review", "merge"]);
 	expect(
-		new WorkflowRuntime(home, { script: async () => ({}), ...hooks }).get(
-			run.id,
-		).humanDecisions,
+		reload(home, { script: async () => ({}), ...hooks }).get(run.id)
+			.humanDecisions,
 	).toEqual(restored.humanDecisions);
 	expect(restarted.viewState(run.id).settledAt).toBeTruthy();
 });
@@ -1510,6 +1588,10 @@ it("fails a capture-assistance checkpoint inside a frozen nested fanout without 
 			{ id: "gate", name: "Gate", type: "tool", tool: "visual-gate" },
 		],
 	};
+	runtime.updateWorkflows([
+		...defaultWorkflows,
+		validateWorkflows([...defaultWorkflows, captureFlow]).at(-1)!,
+	]);
 	const run = start(
 		runtime,
 		workflow(
@@ -1595,7 +1677,7 @@ it("grants a bounded persisted retry budget only to the exhausted nested step", 
 		review: 4,
 	});
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, hooks);
+	const restarted = reload(home, hooks);
 	const restored = restarted.get(run.id);
 	expect(restored.history.slice(0, prior.length)).toEqual(prior);
 	approve = true;
@@ -1701,15 +1783,18 @@ it.each([
 	};
 	await runtime.save(run);
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, hooks);
+	const restarted = reload(home, hooks);
 	const restored = restarted.get(run.id);
 	restarted.retry(run.id);
-	await waitFor(() => expect(restored.status).toBe("failed"));
+	await waitFor(() => {
+		expect(restored.status).toBe("failed");
+		expect(restarted.isExecuting(run.id)).toBe(false);
+	});
 	expect(calls).toHaveLength(1);
 	// Automatic restart cannot replenish an exhausted budget.
 	await runtime.flush();
 	await restarted.flush();
-	const again = new WorkflowRuntime(home, {
+	const again = reload(home, {
 		...hooks,
 		agent: async (ctx) => {
 			expect(ctx.resumeAgent?.rejected?.exhausted).toBe(true);
@@ -1794,7 +1879,7 @@ it.each([
 	});
 	await runtime.save(run);
 	await runtime.flush();
-	const restarted = new WorkflowRuntime(home, hooks);
+	const restarted = reload(home, hooks);
 	const restored = restarted.retry(run.id);
 	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(calls.map((ctx) => ctx.stepKey)).toEqual([key]);
@@ -1809,7 +1894,7 @@ it.each([
 		),
 	).toBe(true);
 	await restarted.flush();
-	expect(new WorkflowRuntime(home, hooks).get(run.id).status).toBe("completed");
+	expect(reload(home, hooks).get(run.id).status).toBe("completed");
 });
 
 it.each([
@@ -1904,62 +1989,6 @@ it.each([
 			event.message.includes("Removed invalid Codex startup checkpoint"),
 		),
 	).toBe(false);
-});
-
-it("upgrades only stock CI routing, retaining customized models and routes", async () => {
-	const definitions = legacyReviewWorkflows();
-	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
-	shared.steps = shared.steps.filter((x) => x.id !== "after-ci-fix");
-	const fix = shared.steps.find((x) => x.id === "ci-fix")!;
-	fix.next = "code-review";
-	fix.model = "custom-fixer";
-	const upgraded = validateWorkflows(upgradeWorkflows(definitions)).find(
-		(x) => x.id === "factory-pipeline",
-	)!;
-	expect(upgraded.steps.find((x) => x.id === "ci-fix")).toMatchObject({
-		next: "after-ci-fix",
-		model: "custom-fixer",
-	});
-	expect(
-		validateWorkflows(upgradeWorkflows(upgradeWorkflows(definitions)))
-			.find((x) => x.id === "factory-pipeline")!
-			.steps.filter((x) => x.id === "after-ci-fix"),
-	).toHaveLength(1);
-	fix.prompt = "Custom CI correction policy";
-	expect(
-		validateWorkflows(upgradeWorkflows(definitions))
-			.find((x) => x.id === "factory-pipeline")!
-			.steps.find((x) => x.id === "ci-fix")!.next,
-	).toBe("code-review");
-});
-
-it("upgrades handoff into the existing CI fix route without replacing custom routes", async () => {
-	const definitions = legacyReviewWorkflows();
-	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
-	const handoff = shared.steps.find((x) => x.id === "handoff")!;
-	handoff.branches = [];
-	const upgraded = validateWorkflows(upgradeWorkflows(definitions));
-	expect(
-		upgraded
-			.find((x) => x.id === "factory-pipeline")!
-			.steps.find((x) => x.id === "handoff")!.branches,
-	).toEqual([{ when: { path: "fix", equals: true }, next: "ci-fix" }]);
-	expect(upgradeWorkflows(upgraded)).toEqual(upgraded);
-	handoff.branches = [
-		{ when: { path: "fix", equals: true }, next: "code-review" },
-	];
-	expect(
-		validateWorkflows(upgradeWorkflows(definitions))
-			.find((x) => x.id === "factory-pipeline")!
-			.steps.find((x) => x.id === "handoff")!.branches,
-	).toEqual(handoff.branches);
-	handoff.branches = [];
-	shared.steps.find((x) => x.id === "ci")!.branches = [];
-	expect(
-		validateWorkflows(upgradeWorkflows(definitions))
-			.find((x) => x.id === "factory-pipeline")!
-			.steps.find((x) => x.id === "handoff")!.branches,
-	).toEqual([]);
 });
 
 it("recovers a saved nested handoff through its existing fixer without replaying completed work", async () => {
@@ -2143,36 +2172,6 @@ it.each([
 	}
 });
 
-it("upgrades stock coordination limits without changing agent/custom limits", async () => {
-	const definitions = legacyReviewWorkflows();
-	const shared = definitions.find((x) => x.id === "factory-pipeline")!;
-	const gate = shared.steps.find((x) => x.id === "review-gate")!;
-	gate.maxVisits = 8;
-	const ci = shared.steps.find((x) => x.id === "ci")!;
-	ci.maxVisits = 3;
-	const upgraded = validateWorkflows(upgradeWorkflows(definitions)).find(
-		(x) => x.id === "factory-pipeline",
-	)!;
-	expect(upgraded.steps.find((x) => x.id === "review-gate")!.maxVisits).toBe(
-		100,
-	);
-	expect(upgraded.steps.find((x) => x.id === "ci")!.maxVisits).toBe(3);
-	expect(upgraded.steps.find((x) => x.id === "code-review")!.maxVisits).toBe(8);
-	ci.maxVisits = 8;
-	ci.name = "Watch pull request CI";
-	expect(
-		validateWorkflows(upgradeWorkflows(definitions))
-			.find((x) => x.id === "factory-pipeline")!
-			.steps.find((x) => x.id === "ci")!.maxVisits,
-	).toBe(100);
-	gate.name = "My custom review gate";
-	expect(
-		validateWorkflows(upgradeWorkflows(definitions))
-			.find((x) => x.id === "factory-pipeline")!
-			.steps.find((x) => x.id === "review-gate")!.maxVisits,
-	).toBe(8);
-});
-
 it("regenerates only the pending guide in a nested pipeline without approval or repeating captures", async () => {
 	const order: string[] = [];
 	const { runtime } = create({
@@ -2345,7 +2344,7 @@ it("continues a finished simple run once with the same conversation and persists
 	expect(() => runtime.continueSimple(run.id, "Duplicate")).toThrow();
 	const message = runtime.recordChatMessage(run.id, "Follow up", "simple");
 	expect(
-		new WorkflowRuntime(home, {
+		reload(home, {
 			agent: async () => ({}),
 			script: async () => ({}),
 			tool: async () => ({}),
@@ -2407,29 +2406,6 @@ it("keeps legacy run definitions stable on load and audits contract migration at
 			),
 	).toBe(true);
 	expect(restarted.get(run.id).workflowDefinitions).toEqual(definitions);
-});
-
-it("upgrades stock implementation blockers without replacing custom instructions or role settings", async () => {
-	const saved = structuredClone(defaultWorkflows);
-	const shared = saved.find((item) => item.id === "factory-pipeline")!;
-	const implementation = shared.steps.find((item) => item.id === "implement")!;
-	implementation.prompt =
-		'Implement the provided plan and use its assets. Follow repository conventions and appropriate verification. Return {"summary":"...","checks":["commands and outcomes"]}. Do not create or publish a PR; the next step handles delivery.';
-	implementation.askQuestions = false;
-	implementation.model = "custom-implementation-model";
-	const upgraded = validateWorkflows(upgradeWorkflows(saved));
-	const role = upgraded
-		.find((item) => item.id === "factory-pipeline")!
-		.steps.find((item) => item.id === "implement")!;
-	expect(role.askQuestions).toBe(true);
-	expect(role.model).toBe("custom-implementation-model");
-	expect(upgradeWorkflows(upgraded)).toEqual(upgraded);
-	implementation.prompt = "Custom implementation instructions";
-	const custom = validateWorkflows(upgradeWorkflows(saved))
-		.find((item) => item.id === "factory-pipeline")!
-		.steps.find((item) => item.id === "implement")!;
-	expect(custom.prompt).toBe(implementation.prompt);
-	expect(custom.askQuestions).toBe(false);
 });
 
 it("runs nested intensive fanout at limit one and cancels queued leaves without deadlock", async () => {
@@ -2528,7 +2504,9 @@ it.each([
 	const restored = reload(home);
 	expect(restored.getDefaultWorkflow()).toBe(object ? "custom" : "simple");
 	expect(restored.get(run.id)).toEqual(frozen);
-	expect(restored.listWorkflows().at(-1)!.steps[0]!.groups).toEqual([
+	expect(
+		restored.listWorkflows().find((w) => w.id === "custom")!.steps[0]!.groups,
+	).toEqual([
 		[{ ...custom.steps[0]!.groups![0]![0]!, computeIntensive: false }],
 		custom.steps[0]!.groups![1],
 	]);
@@ -2537,9 +2515,13 @@ it.each([
 			.listWorkflows()
 			.find((w) => w.id === "factory-pipeline")!
 			.steps.find((s) => s.tool === "handoff")!.computeIntensive,
-	).toBe(false);
+	).toBe(
+		defaultWorkflows
+			.find((w) => w.id === "factory-pipeline")!
+			.steps.find((s) => s.tool === "handoff")!.computeIntensive,
+	);
 	const normalized = readFileSync(path, "utf8");
-	expect(JSON.parse(normalized).workflows).toEqual(restored.listWorkflows());
+	expect(JSON.parse(normalized).format).toBe("workflow-catalog-v1");
 	const second = reload(home);
 	expect(readFileSync(path, "utf8")).toBe(normalized);
 	expect(second.get(run.id)).toEqual(frozen);
@@ -2648,65 +2630,6 @@ it.each([
 	);
 });
 
-it("upgrades a coherent screenshot recipe to QA atomically, keeps custom behavior and frozen run definitions", async () => {
-	const saved = legacyReviewWorkflows();
-	const pipeline = saved.find((w) => w.id === "factory-pipeline")!;
-	for (const legacy of legacyScreenshotSteps)
-		pipeline.steps[pipeline.steps.findIndex((s) => s.id === legacy.id)] =
-			structuredClone(legacy);
-	pipeline.steps.find((s) => s.id === "capture")!.model =
-		"custom-capture-model";
-	const upgraded = validateWorkflows(upgradeWorkflows(saved));
-	const qa = upgraded.find((w) => w.id === "factory-pipeline")!;
-	expect(qa.steps.find((s) => s.id === "visual-scope")).toMatchObject({
-		qaContract: "qa-v1",
-		branches: [],
-	});
-	expect(qa.steps.find((s) => s.id === "capture")).toMatchObject({
-		qaContract: "qa-v1",
-		model: "custom-capture-model",
-	});
-	expect(upgradeWorkflows(upgraded)).toEqual(upgraded);
-	pipeline.steps.find((s) => s.id === "visual-review")!.prompt =
-		"Custom screenshot requirements";
-	const custom = validateWorkflows(upgradeWorkflows(saved)).find(
-		(w) => w.id === "factory-pipeline",
-	)!;
-	// Handoff recovery is independent of the QA role migration: the existing
-	// CI fixer still handles late conflicts while custom screenshot roles stay intact.
-	expect(custom.steps.find((s) => s.id === "handoff")!.branches).toEqual([
-		{ when: { path: "fix", equals: true }, next: "ci-fix" },
-	]);
-	expect(
-		custom.steps.filter((s) =>
-			legacyScreenshotSteps.some((l) => l.id === s.id && l.id !== "handoff"),
-		),
-	).toEqual(
-		pipeline.steps.filter((s) =>
-			legacyScreenshotSteps.some((l) => l.id === s.id && l.id !== "handoff"),
-		),
-	);
-	const { runtime } = create();
-	const legacyDefinition = {
-		...defaultWorkflows.find((w) => w.id === "factory")!,
-		steps: structuredClone(legacyScreenshotSteps),
-	};
-	const run = start(runtime, legacyDefinition);
-	const frozen = structuredClone(run.workflow);
-	await runtime.save(run);
-	const restored = new WorkflowRuntime(
-		runtime.directory.replace(/\/factory$/, ""),
-		{
-			agent: async () => ({}),
-			script: async () => ({}),
-			tool: async () => ({}),
-		},
-	);
-	expect(restored.get(run.id).workflow).toEqual(frozen);
-	await restored.shutdown();
-	await runtime.shutdown();
-});
-
 it("retries blocked nonvisual QA after restart and waits again without waiving criteria", async () => {
 	const question = vi.fn();
 	const tool = vi.fn(async (ctx: ExecutionContext) =>
@@ -2763,7 +2686,7 @@ it("retries blocked nonvisual QA after restart and waits again without waiving c
 	await runtime.shutdown();
 	await execution;
 	await runtime.flush();
-	const restored = new WorkflowRuntime(home, {
+	const restored = reload(home, {
 		tool,
 		agent: agentHook,
 		script: async () => ({}),
@@ -2975,56 +2898,6 @@ it.each([
 	await restarted.shutdown();
 });
 
-it("upgrades the original stock end-at-handoff recipe with QA and its human checkpoint together", async () => {
-	const saved = structuredClone(defaultWorkflows);
-	const pipeline = saved.find((w) => w.id === "factory-pipeline")!;
-	for (const legacy of legacyScreenshotSteps)
-		pipeline.steps[pipeline.steps.findIndex((s) => s.id === legacy.id)] =
-			structuredClone(legacy);
-	pipeline.steps = pipeline.steps.filter(
-		(s) => !["human-review", "human-fix", "merge"].includes(s.id),
-	);
-	pipeline.steps.find((s) => s.id === "handoff")!.next = "end";
-	const upgraded = validateWorkflows(upgradeWorkflows(saved));
-	const qa = upgraded.find((w) => w.id === "factory-pipeline")!;
-	expect(qa.steps.find((s) => s.id === "handoff")).toMatchObject({
-		qaContract: "qa-v1",
-		next: "human-review",
-	});
-	expect(qa.steps.some((s) => s.id === "human-review")).toBe(true);
-	expect(upgradeWorkflows(upgraded)).toEqual(upgraded);
-});
-
-it("preserves a screenshot recipe with customized result handling or nonvisual routing", async () => {
-	for (const customize of [
-		(step: Workflow["steps"][number]) => {
-			step.json = false;
-		},
-		(step: Workflow["steps"][number]) => {
-			step.askQuestions = true;
-		},
-		(step: Workflow["steps"][number]) => {
-			step.branches = [];
-		},
-	]) {
-		const saved = legacyReviewWorkflows(),
-			pipeline = saved.find((w) => w.id === "factory-pipeline")!;
-		for (const legacy of legacyScreenshotSteps)
-			pipeline.steps[pipeline.steps.findIndex((s) => s.id === legacy.id)] =
-				structuredClone(legacy);
-		customize(pipeline.steps.find((s) => s.id === "visual-scope")!);
-		const updated = validateWorkflows(upgradeWorkflows(saved)).find(
-			(w) => w.id === "factory-pipeline",
-		)!;
-		expect(updated.steps.find((s) => s.id === "visual-scope")).toEqual(
-			pipeline.steps.find((s) => s.id === "visual-scope"),
-		);
-		expect(
-			updated.steps.find((s) => s.id === "capture")!.qaContract,
-		).toBeUndefined();
-	}
-});
-
 it("assigns new identities to repeated question batches and labels ticket suggestions", async () => {
 	const track = vi.fn<NonNullable<RuntimeHooks["track"]>>(async () => {});
 	const recommendation = {
@@ -3117,7 +2990,7 @@ it("recovers saved QA waits into the fixer while retaining completed roles and h
 	await runtime.save(run);
 	await runtime.shutdown();
 	await runtime.flush();
-	const restored = new WorkflowRuntime(home, {
+	const restored = reload(home, {
 		agent: async (ctx) => {
 			called.push(ctx.step.id);
 			return {};

@@ -1,0 +1,116 @@
+{
+	"testedCodeRevision": "cac7c130bee1a3183bb804033bdb978ce55a4d15",
+	"previousHead": "f3e3284dcb818efc95274f5a5e6f62eae6f9d590",
+	"frozenBase": "c22aa72b5b428e973f2af5aade29d7f504c343a5",
+	"frozenBaseIsAncestor": true,
+	"mode": "mock",
+	"sourceSha256": {
+		"apps/f1/test-drives/assets/linear-publication-101.ts": "2cf5a5fa792ec7f8b9e6e436d5dd4ccd242e7f18dc65a24324fd3f302f9f14d2",
+		"packages/core/src/CyrusAgentSession.ts": "023df0ef2858df604a9b40a03ea8cee894df0fc41fb5f217aa9fa65495b90cf8",
+		"packages/core/src/LinearPublication.ts": "44f92f63ff5727db109c71e2d40b59d9d018ffe4e8ab01f96f3b33df98e06253",
+		"packages/core/src/index.ts": "3fa0057a4710f696823c9e72011c9af0fa94f0922cd20806ecc932d51d25dd72",
+		"packages/core/test/LinearPublication.test.ts": "139875ffae80320b1a25cf535ba0bb17e4dfc4041fe5f519e65ce4a67f2fddda",
+		"packages/edge-worker/src/AgentSessionManager.ts": "63dff72e2e5e7349e45a0893dda966371e50f1b3f841ccdd7eefbdc7087150ab",
+		"packages/edge-worker/src/EdgeWorker.ts": "6786fc81e2bfc4be620e94f25eb2153ff40aad37bf679d70d8e568478d4bebca",
+		"packages/edge-worker/src/factory/FactoryTools.ts": "76bb86242e34bd8c27afe7666fe32b99c862dd72d523e31d5a03f89713cbad78",
+		"packages/edge-worker/src/factory/TicketTracking.ts": "e4aad42ec3bf4bef0538fe3794518b093ec3cc608279315d55dd046299007808",
+		"packages/edge-worker/src/factory/Workflow.ts": "02ed74a60a54935fdaa37d78bdc3333df3fbcb99e939bdc304c3d8872cfee664",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "c41b7cccc5f91c0f91ff1b29af10d5c758d8bee5f06d3c78871fa34617adf728",
+		"packages/edge-worker/src/sinks/LinearActivitySink.ts": "728dfd2d1a1172d4f5d8e5be8345a3f2c9426efe24cf7c23f45e3c640d5568bc",
+		"packages/edge-worker/test/AgentSessionManager.publication.test.ts": "90457f2c553db9718486f8fe3b706c3bf11dbe2159b7ddaa72cf0b7674ff6b45",
+		"packages/edge-worker/test/EdgeWorker.capture-recovery.test.ts": "9b01e63de101063f012e3ab9ac68a2526fff8bf376246dbd745aabab871325dc",
+		"packages/edge-worker/test/EdgeWorker.decision-documentation.test.ts": "8c1fc0b7ea06cbe0292252c147d4f4fa17ff3c0722be6356d7ae2f20ae7c0c1b",
+		"packages/edge-worker/test/Incremental.test.ts": "79e735ae9c632dfb50ea51ca6d0132073de01a367e403b838ec1f5d8979c92fc",
+		"packages/edge-worker/test/LinearActivitySink.test.ts": "a386fb76818a487ebbba8b681ca457a3159b98c138e0d01b89156696873c415c",
+		"packages/edge-worker/test/TicketTracking.test.ts": "7b4dac3e2af51e9c664b2b9c94a6b58fec26ad6bb426b9c8558110bc69a0792e",
+		"packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "e3f0d5114a3d9915c320b04a81ab288439706376695a940466c30a0b96af081e",
+		"packages/linear-event-transport/src/LinearDeliveryOutbox.ts": "f593fb06d7e4310944673c34ecefb38b3a8528a8cae98393b1bf2090bfa513ec",
+		"packages/linear-event-transport/src/LinearIssueTrackerService.ts": "f77133d3acddce4367db66aaaec36b9354bea5bd26470f43ecb366cedbcc8428",
+		"packages/linear-event-transport/test/LinearDelivery.test.ts": "97fac236d6e5ac6cbda92b2ee47ed6dfb7840d8e9fefa0c4ba2cea13f003cde8",
+		"packages/linear-event-transport/test/LinearPublicationDelivery.test.ts": "60fc07be9f20cd07caa021c1777de0ad340f01c1c5a660af9bd9f0f8faf389da"
+	},
+	"logs": {
+		"build": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-build.log",
+			"sha256": "8705bd83cf7558bb5a13ffb76bfa82bd31a3561bc274cb389444eb20909f29d9",
+			"exitCode": 0
+		},
+		"types": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-types.log",
+			"sha256": "c6adf54892c5225dff6e458b9985902c76fc85aa210786f15ff093e51eb1fa6b",
+			"exitCode": 0
+		},
+		"lint": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-lint.log",
+			"sha256": "036800f1700e2eb9cbcbca22579752d6e0e1536c85d5518f2e4f5e5df7ecb1eb",
+			"exitCode": 0
+		},
+		"worker-tests": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-worker-tests.log",
+			"sha256": "855a5c61bc6cd4cc779fda9cbacba3202912356efb81cdeeb76a211213c06282",
+			"exitCode": 0
+		},
+		"core-tests": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-core-tests.log",
+			"sha256": "79e3a6951e697122f29aa1ab0845cc1b4c764866f01c5cfe8e6d758d97ac9ca4",
+			"exitCode": 0
+		},
+		"linear-tests": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-linear-tests.log",
+			"sha256": "0d62a2a0557024f07113bb10e98f45f5afcd75c392b7dda57d580c3e225d05ce",
+			"exitCode": 0
+		},
+		"lifecycle-tests": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-lifecycle-tests.log",
+			"sha256": "6346e168254dec62380ad05936806662eaa117bfcb6cbf9c670cb86fea55c2fa",
+			"exitCode": 0
+		},
+		"linear-f1": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-linear-f1.log",
+			"sha256": "a8c61c177226f9160c0f2e2a9ca3b0363f8e9818f5e3e31abfa1c82bfcb0e7d2",
+			"exitCode": 0
+		},
+		"catalog-f1": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-catalog-f1.log",
+			"sha256": "122fd26c00c447f74437168295653d4c71b7758889f056981355c32a5b6aa55f",
+			"exitCode": 0
+		},
+		"architecture-f1": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-architecture-f1.log",
+			"sha256": "bd83c4236b9c26de04be9e20cf2cd04405d7ac9ac05d514b1db667dfaa0c2311",
+			"exitCode": 0
+		},
+		"migration": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-migration.log",
+			"sha256": "965f2cf73a81045c711f652d3f5cb865d86c985fc8eb5a364eef1d91bd3ff596",
+			"exitCode": 0
+		},
+		"commit": {
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r17-commit.log",
+			"sha256": "fdd2382095eb979c7ab052164e470ddf2e272b9c8f547da737cac8921ee12ba0",
+			"exitCode": 0
+		}
+	},
+	"checks": {
+		"workerTests": 433,
+		"lifecycleTests": 37,
+		"coreTests": 8,
+		"linearTransportTests": 19,
+		"totalTests": 497,
+		"build": "passed",
+		"typecheck": "passed",
+		"lint": {
+			"result": "passed",
+			"existingWarnings": 19
+		},
+		"linearPublicationF1": "passed",
+		"catalogRecoveryF1": "passed",
+		"architectureF1": "passed",
+		"exactBaseMigration": "passed"
+	},
+	"limitations": [
+		"Real agents and provider rendering remain untested.",
+		"Downstream CI/QA, brief regeneration and exact-revision human approval remain due.",
+		"Ticket synchronization and private GitGuardian incident closure remain unconfirmed."
+	]
+}
