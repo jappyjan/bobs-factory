@@ -3,7 +3,7 @@
 The manual launcher asks "What should we build in <project>?"; the project name
 is the project selector. Each launch keeps its primary repository and every
 selected group member, which the tray below the composer lists. Inside the
-composer, attachment chips and any additional declared fields sit above the
+composer, attachment chips and any additional declared fields sit below the
 prompt. The bottom bar selects the recipe, agent and reasoning; the sliders
 button opens per-run settings (model, service tier, execution profiles) and the
 paperclip attaches files. The launcher uses the current instance. Machine
@@ -26,11 +26,11 @@ The picker accepts any file type, including unknown extensions and empty MIME
 values. Limits are **10 files per launch, 25 MiB per file, 100 MiB total**. Each
 chip shows its upload state; errors appear below the chips. Remove failed files
 and attach them again to retry. Launch stays disabled while uploads or removals
-are pending, when an upload failed, or while required inputs are missing. Typed
-text survives project and recipe changes. Attached files are staged again for
-the new project or recipe, because staged uploads are bound to one scope.
-Execution profile choices reset when the scope changes; configuration changes
-or leaving the page clear unsent choices. Uploads do not automatically
+are pending, when an upload failed, or while required inputs are missing. Changing
+the project or recipe clears unsent text, attachments and per-run settings, including
+execution profile choices. Returning to the previous selection does not restore
+the draft or stage its files again. Configuration changes or leaving the page
+also clear unsent choices. Uploads do not automatically
 parse documents, unpack archives, execute files or render active browser content.
 
 ## Guarded HTTP API

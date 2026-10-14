@@ -186,13 +186,14 @@ export function AttachButton({
 	disabled: boolean;
 }) {
 	const input = useRef<HTMLInputElement>(null);
-	const label = `Attach files${field.required ? " (required)" : ""}`;
+	const label = `Attach files: ${field.label}${field.required ? " (required)" : ""}`;
 	return (
 		<>
 			<button
 				type="button"
 				className="launcher-icon-button"
 				aria-label={label}
+				aria-describedby={`launch-file-${field.name}`}
 				title={`${field.label}: ${uploadLimitsHint}`}
 				disabled={disabled}
 				onClick={() => input.current?.click()}
@@ -218,7 +219,7 @@ export function AttachButton({
 	);
 }
 
-/** Compact attachment chips shown above the prompt, like a chat composer. */
+/** Compact attachment chips shown below the main prompt. */
 export function AttachmentChips({
 	uploads,
 	labels,

@@ -445,6 +445,13 @@ export function Composer({
 				}}
 			>
 				<fieldset className="launcher-body" disabled={action.isPending}>
+					{main && (
+						<PromptInput
+							field={main}
+							value={fieldValue(main)}
+							onChange={(value) => setValues({ ...values, [main.name]: value })}
+						/>
+					)}
 					<AttachmentChips
 						uploads={uploads}
 						labels={
@@ -469,12 +476,22 @@ export function Composer({
 							))}
 						</div>
 					)}
-					{main && (
-						<PromptInput
-							field={main}
-							value={fieldValue(main)}
-							onChange={(value) => setValues({ ...values, [main.name]: value })}
-						/>
+					{fileFields.length > 0 && (
+						<div className="launcher-fields">
+							{fileFields.map((field) => (
+								<div
+									key={field.name}
+									className="launcher-field"
+									id={`launch-file-${field.name}`}
+								>
+									<strong>
+										{field.label}
+										{field.required ? " (required)" : " (optional)"}
+									</strong>
+									{field.description && <small>{field.description}</small>}
+								</div>
+							))}
+						</div>
 					)}
 				</fieldset>
 				<div className="launcher-bar">
