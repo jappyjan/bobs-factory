@@ -4,18 +4,25 @@ Use the [one-command installer](../README.md#install-and-start), then launch
 `bobs-factory` for guided project, agent and GitHub setup. Prepare Git and the
 selected coding agent; the GitHub CLI is optional. Explicit local startup uses
 `bobs-factory --repo PATH --agent codex`.
-Configured startup uses `bobs-factory --home ~/.bobs-factory start` and
-`<home>/config.json`. See [configuration](CONFIG_FILE.md).
+Every entry point uses the same runtime and `<home>/config.json`. See
+[configuration](CONFIG_FILE.md).
 
-For Linear, create your own OAuth app and configure `LINEAR_CLIENT_ID`,
-`LINEAR_CLIENT_SECRET`, `LINEAR_WEBHOOK_SECRET`, `BOBS_FACTORY_BASE_URL` and
-`BOBS_FACTORY_HOST_EXTERNAL=true`. Use `bobs-factory self-auth-linear`, then
-`self-add-repo URL WORKSPACE`. Provider credentials remain under your control.
+Configure **Settings → Ticket managers** to enable or disable Linear and Taskbot.
+For Linear, save your OAuth application's client ID, client secret, signing
+secret and public webhook base URL, register the displayed webhook/callback URLs
+in Linear, and choose **Connect Linear workspace**. Authorize the application,
+then select each project's workspace in the same page. OAuth refresh credentials
+stay on the server. Taskbot accepts its MCP URL and optional access token; existing
+project MCP connections remain supported. Connection changes apply immediately.
+Existing `linearWorkspaces` and provider environment credentials remain usable;
+saved ticket-manager settings take precedence. Old startup `platform` selectors
+are removed when loading the configuration; existing service ownership remains.
+
 Use the canonical setup skills for GitHub, GitLab and Slack integrations. No
 upstream hosted enrollment, auth key or paid control service is supported.
 
-The dashboard binds to loopback on 3457. OAuth/webhooks normally use port 3456
-(or local repository launcher port + 1). Use your existing webhook ingress for
+The dashboard binds to loopback on 3457. OAuth/webhooks use the dashboard port + 1 (3458 by default); existing
+`BOBS_FACTORY_SERVER_PORT` values retain their configured listener port. Use your existing webhook ingress for
 the webhook listener. ngrok remains supported; zrok2 (#39) is separate work.
 Direct HTTP localhost access (actual loopback peer and validated Host/origin) opens
 the dashboard, APIs, live updates, media and actions without login. Public HTTPS

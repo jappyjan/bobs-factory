@@ -14,6 +14,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { FactoryServer } from "../../../../packages/edge-worker/dist/factory/FactoryServer.js";
 import { WorkflowRuntime } from "../../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
 import { MachineCapacity } from "../../../../packages/edge-worker/dist/MachineCapacity.js";
@@ -192,13 +193,16 @@ try {
 	const lease = await capacity.acquireLease(undefined, {
 		identity: "shell-active-work",
 	});
-	await manager.reconcile();
-	assert.equal(manager.status().transaction.phase, "cancelled");
+	const activation = manager.reconcile();
+	for (let n = 0; n < 500 && !drain.active(); n++) await delay(20);
+	assert.equal(drain.active(), true);
+	assert.equal((await drain.inspect()).idle, false);
+	assert.equal(manager.status().transaction.phase, "draining");
 	assert.equal(services.workerOwner(home).pid, worker.pid);
 	assert.equal(processStamp(ui.pid), life.uiStamp);
 	checks.push("active lease defers app switch without signaling UI/worker");
 	await lease.release();
-	await manager.reconcile();
+	await activation;
 	assert.equal(manager.status().transaction.phase, "succeeded");
 	assert.equal(services.workerOwner(home).nonce, worker.nonce);
 	assert.deepEqual(
@@ -206,7 +210,7 @@ try {
 		saved,
 	);
 	assert.deepEqual(drain.receipt(), receipt);
-	assert.equal(resumed, 2);
+	assert.equal(resumed, 1);
 	checks.push(
 		"unsigned app activation retains exact worker PID/nonce and waiting checkpoints/definitions/outputs/config",
 	);

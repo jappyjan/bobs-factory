@@ -9,6 +9,7 @@ import type {
 	RepositoryConfig,
 	RunnerType,
 } from "./config-schemas.js";
+import type { IIssueTrackerService } from "./issue-tracker/IIssueTrackerService.js";
 import type { Issue } from "./issue-tracker/types.js";
 
 // Re-export schemas and types from config-schemas
@@ -35,6 +36,8 @@ export {
 	requireLinearWorkspaceId,
 	type SandboxConfig,
 	SandboxConfigSchema,
+	type TicketManagersConfig,
+	TicketManagersConfigSchema,
 	type UserAccessControlConfig,
 	UserAccessControlConfigSchema,
 	type UserIdentifier,
@@ -126,14 +129,8 @@ export interface EdgeWorkerRuntimeConfig {
 	/** Server host address ('localhost' or '0.0.0.0', default: 'localhost') */
 	serverHost?: string;
 
-	// --- Platform Configuration ---
-
-	/**
-	 * Issue tracker platform type (default: "linear")
-	 * - "linear": Uses Linear as the issue tracker (default production mode)
-	 * - "cli": Uses an in-memory issue tracker for CLI-based testing and development
-	 */
-	platform?: "linear" | "cli";
+	/** Explicit dependency injection for embedded harnesses; never persisted or selected by launch entry points. */
+	issueTrackerFactory?: (workspaceId: string) => IIssueTrackerService;
 
 	// --- Agent Configuration (for CLI mode) ---
 

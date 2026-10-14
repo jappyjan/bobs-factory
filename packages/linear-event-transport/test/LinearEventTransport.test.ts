@@ -213,3 +213,80 @@ describe("LinearEventTransport", () => {
 		});
 	});
 });
+
+it("keeps the signed route mounted across live disable, enable and signing-secret rotation", async () => {
+	const server = Fastify();
+	let enabled = false;
+	const transport = new LinearEventTransport({
+		fastifyServer: server,
+		verificationMode: "direct",
+		secret: "first-signing",
+		isEnabled: () => enabled,
+	});
+	const received = vi.fn();
+	transport.on("event", received);
+	transport.register();
+	const payload = {
+		type: "Issue",
+		action: "create",
+		data: { id: "test-issue" },
+	};
+	const post = (secret: string) =>
+		server.inject({
+			method: "POST",
+			url: "/linear-webhook",
+			payload,
+			headers: {
+				"linear-signature": createHmac("sha256", secret)
+					.update(JSON.stringify(payload))
+					.digest("hex"),
+			},
+		});
+	try {
+		expect((await post("first-signing")).statusCode).toBe(503);
+		enabled = true;
+		expect((await post("incorrect")).statusCode).toBe(401);
+		expect(transport.lastAcceptedAt).toBeUndefined();
+		expect((await post("first-signing")).statusCode).toBe(200);
+		expect(transport.lastAcceptedAt).toBeDefined();
+		transport.configure({ verificationMode: "direct", secret: "next-signing" });
+		expect((await post("first-signing")).statusCode).toBe(401);
+		expect((await post("next-signing")).statusCode).toBe(200);
+		enabled = false;
+		expect((await post("next-signing")).statusCode).toBe(503);
+		expect(received).toHaveBeenCalledTimes(2);
+	} finally {
+		await server.close();
+	}
+});
+
+it.each([
+	"direct",
+	"proxy",
+] as const)("rejects enabled but unconfigured %s listeners instead of accepting an empty credential", async (verificationMode) => {
+	const server = Fastify();
+	const transport = new LinearEventTransport({
+		fastifyServer: server,
+		verificationMode,
+		secret: "",
+		isEnabled: () => true,
+	});
+	const received = vi.fn();
+	transport.on("event", received);
+	transport.register();
+	try {
+		const response = await server.inject({
+			method: "POST",
+			url: "/linear-webhook",
+			payload: {},
+			headers: {
+				authorization: "Bearer ",
+				"linear-signature": createHmac("sha256", "").update("{}").digest("hex"),
+			},
+		});
+		expect(response.statusCode).toBe(503);
+		expect(received).not.toHaveBeenCalled();
+	} finally {
+		await server.close();
+	}
+});

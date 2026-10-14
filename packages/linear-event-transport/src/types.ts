@@ -22,6 +22,10 @@ export interface LinearEventTransportConfig {
 	verificationMode: VerificationMode;
 	/** Secret for verification (LINEAR_WEBHOOK_SECRET or BOBS_FACTORY_API_KEY) */
 	secret: string;
+	/** Live connection policy. Disabled connections return 503 so providers retain their retry behavior. */
+	isEnabled?: () => boolean;
+	/** A configured account is required before acknowledging new deliveries. */
+	isReady?: () => boolean;
 	/** Optional IP allowlist for webhook source validation (only used in direct mode) */
 	ipAllowlist?: readonly string[] | (() => readonly string[]);
 }

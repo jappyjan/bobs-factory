@@ -235,6 +235,7 @@ Issue: {{issue_identifier}}`;
 
 		// Inject mock issue tracker
 		const mockIssueTracker = {
+			getPlatformType: vi.fn().mockReturnValue("linear"),
 			fetchComments: vi
 				.fn()
 				.mockResolvedValue({ nodes: [], pageInfo: { hasNextPage: false } }),

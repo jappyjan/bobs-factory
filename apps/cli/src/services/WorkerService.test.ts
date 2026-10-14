@@ -95,6 +95,10 @@ describe("WorkerService", () => {
 		const fullEdgeConfig = EdgeConfigSchema.parse({
 			repositories: [{ ...repository, workspaceBaseDir: "/tmp/workspaces" }],
 			linearWorkspaces: { "ws-1": { linearToken: "lin_token" } },
+			ticketManagers: {
+				linear: { enabled: false },
+				taskbot: { enabled: true, url: "https://tasks.example.test/mcp" },
+			},
 			linearWorkspaceSlug: "legacy-slug",
 			ngrokAuthToken: "ngrok-token",
 			stripeCustomerId: "cus_123",
