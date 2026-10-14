@@ -270,6 +270,7 @@ const result = await acceptanceRun({
 			remoteHome,
 			localPort,
 			remoteOrigin,
+			remotePort,
 			remotePid: backend.pid,
 			runtimeCommit: build.commit,
 			runtime: build,
@@ -391,7 +392,7 @@ const result = await acceptanceRun({
 				readFileSync(join(root, "phase-independent.json"), "utf8"),
 			),
 			limits: [
-				"Virtual CTAP2, no physical passkey",
+				"API key browser sessions; no physical mobile/PWA proof",
 				"One Mac, isolated second backend through local HTTPS proxy; not a second physical machine",
 				"Onboarding production modules / synthetic GitHub / fake prepared coding CLI, no authenticated provider continuation",
 				"No release trust/signing/publication, OS reboot/logout/minimum-platform or whole-shell replacement proof",

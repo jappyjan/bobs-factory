@@ -2,10 +2,7 @@
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import {
-	authorizeFactoryEnrollment,
-	requestFactoryAuthRecovery,
-} from "../packages/edge-worker/dist/factory/FactoryAuthOperator.js";
+import { requestFactoryAuthRecovery } from "../packages/edge-worker/dist/factory/FactoryAuthOperator.js";
 
 const { values } = parseArgs({
 	options: {
@@ -18,10 +15,10 @@ const home = resolve(values.home!.replace(/^~(?=\/)/, homedir()));
 if (values.recover) {
 	requestFactoryAuthRecovery(home, values.confirm);
 	console.log(
-		"Factory authentication recovery requested. All sessions will be revoked. Use the new code from factory/auth/enroll.json.",
+		"Factory authentication recovery requested. All API keys and sessions will be revoked. Create a new key in localhost Settings → Access.",
 	);
 } else {
 	console.log(
-		`Single-use setup code (expires in ten minutes): ${authorizeFactoryEnrollment(home)}\nEnter it on the Factory passkey setup screen at the address where you will use that key.`,
+		"Open the localhost dashboard, then Settings → Access to add, remove or rotate API keys.",
 	);
 }

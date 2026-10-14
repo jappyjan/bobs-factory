@@ -35,7 +35,7 @@ const pages = [
 	{
 		id: "access",
 		name: "Access",
-		description: "Local access and remote passkeys",
+		description: "Local access and remote API keys",
 	},
 	{
 		id: "execution",

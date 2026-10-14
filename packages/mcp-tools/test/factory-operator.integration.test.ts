@@ -44,6 +44,7 @@ function fixture() {
 			};
 		},
 	});
+	cleanup.push(() => runtime.shutdown());
 	const workflow = validateWorkflows([
 		...defaultWorkflows,
 		{
@@ -477,7 +478,6 @@ it("binds answers to the current batch and keeps explanation requests out of ans
 			questions: ["Explained choice"],
 		} as any)
 		.mockResolvedValue({ status: "completed", questions: [] });
-	cleanup.push(() => f.runtime.shutdown());
 	const nextQuestion = () =>
 		new Promise<void>((resolve) => {
 			f.question.mockImplementationOnce(async () => resolve());

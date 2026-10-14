@@ -89,7 +89,7 @@ agents, Git identity/signing configuration, keychains and agent credentials inta
 10. Verify dashboard/API, configured integrations, workflow selection/permissions,
     waiting-run recovery, queue order, native continuation and ticket identity.
     Check direct localhost dashboard/API access without enrollment, remote API
-    denial before authentication and successful remote passkey sign-in.
+    denial before authentication and successful remote API key sign-in.
     Completed steps stay completed. Interrupted scripts/external tools retain
     reconciliation semantics; do not promise exactly-once execution. Finish only
     when preservation checks pass or clearly report the remaining blocker.
@@ -98,30 +98,18 @@ agents, Git identity/signing configuration, keychains and agent credentials inta
 
 Direct HTTP localhost dashboard data, live updates, media and actions open without
 enrollment or login after validating the actual loopback socket peer, loopback
-Host and same-origin browser context. Remote addresses require a passkey session.
+Host and same-origin browser context. Remote addresses require a browser session established with an API key.
 For remote access, configure the exact HTTPS browser
 origin with `--origin https://YOUR_HOST` for local launch or
 `BOBS_FACTORY_FACTORY_ORIGIN=https://YOUR_HOST` for configured services. The proxy
 must preserve that authority and browser Origin; unconfigured origins are denied.
 Webhook ingress retains its separate provider signature checks.
 
-Preserve existing authentication files and origin settings. For first remote setup, start
-the replacement, privately read the ten-minute, single-use `token` value from
-`<home>/factory/auth/enroll.json`, and enter it in the setup screen to create a
-passkey for that public hostname. Localhost needs no passkey. For another
-enrollment, use Settings with a recent passkey verification, or generate a new code
-on the service machine with `bobs-factory --home /absolute/service/home factory-auth`.
-Use the running service's home; codes are invalidated on restart and stay out of
-prompts, tickets and screenshots.
+Create a remote dashboard API key in localhost Settings → Access, save its one-time secret privately, and use it at the exact configured HTTPS origin. Localhost requires no key. Local users and signed-in remote users can add, remove and rotate keys. Rotation/removal revokes the key's sessions. Removing the last key leaves localhost Settings available for recovery. Version-1 passkey state migrates to an empty key store, invalidating old browser sessions without changing runs or native credentials.
 
-If configured origins change, restore the original configuration or deliberately
-recover authentication. For lost keys or corrupt authentication state, run
-`bobs-factory --home /absolute/service/home factory-auth --recover --confirm
-"RESET FACTORY AUTHENTICATION"`. Recovery revokes all passkeys and sessions while
-preserving runs and integrations. If startup was blocked, start the service again;
-then re-enroll with the new code. Follow
-[passkey setup and recovery](../../docs/FACTORY.md#passkey-access-and-first-setup)
-for the complete access contract. Confirm direct local access and configured remote
+If authentication state is corrupt, run `bobs-factory --home /absolute/effective/home factory-auth --recover --confirm "RESET FACTORY AUTHENTICATION"`, then restart if needed and create a key locally. Ordinary `factory-auth` only points to localhost Settings. Follow [API key setup and recovery](../../docs/FACTORY.md#api-key-access-and-first-setup).
+
+Confirm direct local access and configured remote
 sign-in before declaring cutover complete.
 
 ## Recovery

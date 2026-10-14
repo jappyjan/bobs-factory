@@ -15,12 +15,12 @@ import {
 } from "node:https";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { LocalOnboarding } from "../../../../apps/cli/src/onboarding.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/src/EdgeWorker.js";
 import { factoryAccess } from "../../../../packages/edge-worker/src/factory/FactoryAuth.js";
 import { FactoryServer } from "../../../../packages/edge-worker/src/factory/FactoryServer.js";
 import type { WorkflowRuntime } from "../../../../packages/edge-worker/src/factory/WorkflowRuntime.js";
-import { authenticator } from "../../../../packages/edge-worker/test/fixtures/webauthn.js";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.js";
 
 assert.equal(
@@ -92,6 +92,13 @@ for (const name of [
 const nativeFetch = fetch;
 globalThis.fetch = ((input, init) => {
 	const url = new URL(String(input));
+	if (
+		url.href ===
+		"https://linear.app/.well-known/appspecific/app.linear.ips.json"
+	)
+		return Promise.resolve(Response.json({ ips: ["203.0.113.1/32"] }));
+	if (url.href === "https://api.github.com/meta")
+		return Promise.resolve(Response.json({ hooks: ["203.0.113.0/24"] }));
 	assert(
 		[origin, `http://127.0.0.1:${port}`, `http://[::1]:${port}`].includes(
 			url.origin,
@@ -107,7 +114,8 @@ const onboarding = new LocalOnboarding(home, (repo, runner) =>
 worker = new EdgeWorker(
 	{
 		repositories: [],
-		platform: "cli",
+		// Inject the tracker explicitly; legacy platform no longer selects dependencies.
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
 		serverPort: port + 2,
 		serverHost: "127.0.0.1",
@@ -165,6 +173,7 @@ const tlsRequest = (
 	method = "GET",
 	body?: unknown,
 	cookie?: string,
+	raw = false,
 ) =>
 	new Promise<{ status: number; value: any; cookie?: string }>(
 		(resolve, reject) => {
@@ -193,42 +202,48 @@ const tlsRequest = (
 				},
 			);
 			req.on("error", reject);
-			req.end(body === undefined ? undefined : JSON.stringify(body));
+			req.end(
+				body === undefined
+					? undefined
+					: raw
+						? String(body)
+						: JSON.stringify(body),
+			);
 		},
 	);
 let success = false;
 try {
 	await worker.start();
 	const runtime = internal.getFactoryRuntime();
-	server = new FactoryServer(
-		runtime,
-		{
-			onboarding,
-			repositories: () =>
-				JSON.parse(readFileSync(join(home, "config.json"), "utf8"))
-					.repositories,
-			sessions: () => [],
-			entries: () => [],
-			start: (input) =>
-				internal.startManualFactoryRun(input) as ReturnType<
-					ConstructorParameters<typeof FactoryServer>[1]["start"]
-				>,
-			stop: (id) => runtime.stop(id),
-		},
-		factoryAccess(port, remote),
-	);
-	server.app.addHook("onResponse", async (req, reply) => {
-		if (
-			req.headers.origin === `http://localhost:${port + 3}` ||
-			req.headers.referer?.startsWith(`http://localhost:${port + 3}/`)
-		)
-			externalRequests.push({
-				method: req.method,
-				path: req.url,
-				status: reply.statusCode,
-				origin: req.headers.origin,
-			});
-	});
+	const hooks = {
+		onboarding,
+		repositories: () =>
+			JSON.parse(readFileSync(join(home, "config.json"), "utf8")).repositories,
+		sessions: () => [],
+		entries: () => [],
+		start: (input) =>
+			internal.startManualFactoryRun(input) as ReturnType<
+				ConstructorParameters<typeof FactoryServer>[1]["start"]
+			>,
+		stop: (id) => runtime.stop(id),
+	};
+	const createServer = () => {
+		const next = new FactoryServer(runtime, hooks, factoryAccess(port, remote));
+		next.app.addHook("onResponse", async (req, reply) => {
+			if (
+				req.headers.origin === `http://localhost:${port + 3}` ||
+				req.headers.referer?.startsWith(`http://localhost:${port + 3}/`)
+			)
+				externalRequests.push({
+					method: req.method,
+					path: req.url,
+					status: reply.statusCode,
+					origin: req.headers.origin,
+				});
+		});
+		return next;
+	};
+	server = createServer();
 	await server.start(port);
 	for (const base of [
 		origin,
@@ -262,13 +277,13 @@ try {
 	);
 	assert.equal((await request("/api/onboarding")).value.required, true);
 	check(
-		"fresh first-launch project/provider onboarding accessible before passkey setup",
+		"fresh first-launch project/provider onboarding accessible without key setup",
 	);
 	if (process.env.F1_LOCAL_ACCESS_HOLD === "1") {
 		console.log(`ONBOARDING_READY ${directory}`);
 		for (
 			let i = 0;
-			i < 1800 && !existsSync(join(directory, "onboarding-continue"));
+			i < 18000 && !existsSync(join(directory, "onboarding-continue"));
 			i++
 		)
 			await new Promise((done) => setTimeout(done, 100));
@@ -391,21 +406,33 @@ try {
 		(await tlsRequest("/api/auth/status")).value.setupRequired,
 		true,
 	);
-	const grant = JSON.parse(readFileSync(server.auth.grantPath, "utf8")).token;
-	const auth = authenticator();
-	const options = await tlsRequest("/api/auth/register/options", "POST", {
-		grant,
-	});
-	assert.equal(options.status, 200);
-	const enrolled = await tlsRequest(
-		"/api/auth/register/verify",
-		"POST",
-		{
-			transaction: options.value.transaction,
-			response: auth.register(options.value.options.challenge, remote),
-		},
-		options.cookie,
+	assert.equal(
+		(await tlsRequest("/api/auth/keys", "POST", { label: "Unauthorized" }))
+			.status,
+		401,
 	);
+	const created = await request("/api/auth/keys", "POST", {
+		label: "F1 primary",
+	});
+	assert.equal(created.status, 200);
+	assert(
+		!readFileSync(server.auth.store.path, "utf8").includes(created.value.key),
+	);
+	const malformed = await tlsRequest(
+		"/api/auth/login",
+		"POST",
+		created.value.key,
+		undefined,
+		true,
+	);
+	assert.equal(malformed.status, 400);
+	assert.deepEqual(malformed.value, { error: "Invalid API key" });
+	check(
+		"malformed HTTPS login requests return generic errors without reflecting submitted secrets",
+	);
+	const enrolled = await tlsRequest("/api/auth/login", "POST", {
+		key: created.value.key,
+	});
 	assert.equal(enrolled.status, 200);
 	assert(enrolled.cookie?.startsWith("__Host-factory-session="));
 	assert.equal(
@@ -413,28 +440,172 @@ try {
 		200,
 	);
 	assert.equal(
-		(await tlsRequest("/api/auth/logout", "POST", {}, enrolled.cookie)).status,
+		(await tlsRequest(`/api/runs/${run.id}`, "GET", undefined, enrolled.cookie))
+			.value.status,
+		"completed",
+	);
+	const remoteLaunch = await tlsRequest(
+		"/api/runs",
+		"POST",
+		{
+			repositoryId: repo.id,
+			workflow: recipe.id,
+			prompt: "Authenticated workflow",
+			runner: "codex",
+		},
+		enrolled.cookie,
+	);
+	assert.equal(remoteLaunch.status, 202);
+	for (
+		let i = 0;
+		i < 100 && runtime.get(remoteLaunch.value.id).status !== "completed";
+		i++
+	)
+		await new Promise((done) => setTimeout(done, 100));
+	assert.equal(runtime.get(remoteLaunch.value.id).outputs.run.local, true);
+	assert.equal(
+		(await tlsRequest("/api/auth/keys", "GET", undefined, enrolled.cookie))
+			.value.length,
+		1,
+	);
+	const other = await tlsRequest(
+		"/api/auth/keys",
+		"POST",
+		{ label: "F1 other" },
+		enrolled.cookie,
+	);
+	assert.equal(other.status, 200);
+	const otherLogin = await tlsRequest("/api/auth/login", "POST", {
+		key: other.value.key,
+	});
+	const rotated = await tlsRequest(
+		`/api/auth/keys/${created.value.id}/rotate`,
+		"POST",
+		{},
+		enrolled.cookie,
+	);
+	assert.equal(rotated.status, 200);
+	assert.equal(rotated.value.sessionRevoked, true);
+	assert.equal(
+		(await tlsRequest("/api/config", "GET", undefined, enrolled.cookie)).status,
+		401,
+	);
+	assert.equal(
+		(await tlsRequest("/api/auth/login", "POST", { key: created.value.key }))
+			.status,
+		409,
+	);
+	assert.equal(
+		(await tlsRequest("/api/config", "GET", undefined, otherLogin.cookie))
+			.status,
+		200,
+	);
+	const replacement = await tlsRequest("/api/auth/login", "POST", {
+		key: rotated.value.key,
+	});
+	assert.equal(replacement.status, 200);
+	await server.stop();
+	server = createServer();
+	await server.start(port);
+	assert.equal(
+		(await tlsRequest("/api/config", "GET", undefined, replacement.cookie))
+			.status,
 		200,
 	);
 	assert.equal(
 		(await tlsRequest("/api/config", "GET", undefined, enrolled.cookie)).status,
 		401,
 	);
-	const login = await tlsRequest("/api/auth/login/options", "POST", {});
+	assert.equal(
+		(await request(`/api/auth/keys/${created.value.id}`, "DELETE", {})).status,
+		200,
+	);
+	assert.equal(
+		(await tlsRequest("/api/config", "GET", undefined, replacement.cookie))
+			.status,
+		401,
+	);
 	assert.equal(
 		(
 			await tlsRequest(
-				"/api/auth/login/verify",
-				"POST",
+				`/api/auth/keys/${other.value.id}`,
+				"DELETE",
+				{},
+				otherLogin.cookie,
+			)
+		).value.sessionRevoked,
+		true,
+	);
+	assert.equal(
+		(await tlsRequest("/api/auth/status")).value.setupRequired,
+		true,
+	);
+	assert.equal((await request("/api/auth/keys")).value.length, 0);
+	assert.equal((await request("/api/config")).status, 200);
+	assert.equal(
+		(await tlsRequest("/api/auth/keys", "POST", { label: "Anonymous" })).status,
+		401,
+	);
+	check(
+		"TLS remote locked state, key login, local/remote key management, issuing-session revocation, other-key preservation, restart and last-key recovery",
+	);
+	check(
+		"authenticated dashboard workflow creates a real EdgeWorker worktree and returns completed scripted output",
+	);
+	// Migration is exercised by an actual server restart against valid legacy state.
+	await server.stop();
+	const statePath = join(home, "factory/auth/state.json");
+	writeFileSync(
+		statePath,
+		JSON.stringify({
+			version: 1,
+			origins: factoryAccess(port, remote).origins,
+			user: "legacy",
+			credentials: [
 				{
-					transaction: login.value.transaction,
-					response: auth.login(login.value.options.challenge, remote),
+					id: "old",
+					origin: remote,
+					publicKey: "old-public",
+					counter: 0,
+					deviceType: "multiDevice",
+					backedUp: true,
+					label: "Legacy",
+					createdAt: 1,
+					lastUsedAt: 1,
 				},
-				login.cookie,
+			],
+			sessions: [
+				{
+					hash: createHash("sha256").update("old-session").digest("hex"),
+					credential: "old",
+					origin: remote,
+					verifiedAt: 1,
+					expires: Date.now() + 3600000,
+				},
+			],
+		}),
+		{ mode: 0o600 },
+	);
+	server = createServer();
+	await server.start(port);
+	assert.equal(server.auth.store.state.version, 2);
+	assert.equal(server.auth.store.state.keys.length, 0);
+	assert.equal(
+		(
+			await tlsRequest(
+				"/api/config",
+				"GET",
+				undefined,
+				"__Host-factory-session=old-session",
 			)
 		).status,
-		200,
+		401,
 	);
+	assert.equal(runtime.get(run.id).status, "completed");
+	check(
+		"version-1 server migration invalidates legacy sessions and preserves workflow history",
+	);
+	// Keep the instance empty for the first-key browser demonstration.
 	assert.equal(
 		(
 			await request("/api/config", "GET", undefined, {
@@ -443,9 +614,6 @@ try {
 			})
 		).status,
 		403,
-	);
-	check(
-		"actual TLS Host-preserving forwarded proxy retains remote passkey enrollment/login/logout, opaque cookie and no local transplant",
 	);
 	const events = await fetch(`${origin}/api/events`);
 	const reader = events.body!.getReader();
@@ -456,7 +624,7 @@ try {
 	);
 	await reader.cancel();
 	check(
-		"local SSE opens without a session and remote enrollment does not revoke local authority",
+		"local SSE opens without a session and remote key changes do not revoke local authority",
 	);
 	writeFileSync(
 		join(directory, "ready.json"),
@@ -474,7 +642,7 @@ try {
 	});
 	console.log(`BROWSER_READY ${directory}`);
 	if (process.env.F1_LOCAL_ACCESS_HOLD === "1")
-		for (let i = 0; i < 1800 && !existsSync(join(directory, "continue")); i++)
+		for (let i = 0; i < 18000 && !existsSync(join(directory, "continue")); i++)
 			await new Promise((done) => setTimeout(done, 100));
 	if (process.env.F1_LOCAL_ACCESS_HOLD === "1") {
 		assert(
@@ -508,6 +676,8 @@ try {
 		"packages/edge-worker/src/factory/FactoryServer.ts",
 		"packages/edge-worker/src/factory/LocalFactoryAccess.ts",
 		"packages/edge-worker/src/factory/FactoryAuth.ts",
+		"packages/edge-worker/src/factory/FactoryAuthStore.ts",
+		"packages/edge-worker/src/factory/FactoryAuthOperator.ts",
 		"packages/edge-worker/src/factory/FactoryOnboarding.ts",
 		"packages/edge-worker/src/factory/Workflow.ts",
 		"packages/edge-worker/src/factory/web/auth-state.ts",
@@ -536,7 +706,7 @@ try {
 		externalRequests,
 		directory,
 		limitations:
-			"Mock agents, disposable prepared-tool stubs, scripted workflow, software WebAuthn authenticator and self-signed local TLS proxy. No provider calls, OS desktop packaging or physical authenticator proof. Fixture retained; listeners and worker stopped.",
+			"Mock agents, disposable prepared-tool stubs, scripted workflow and self-signed local TLS proxy. No provider calls, OS desktop packaging or physical mobile/PWA proof. Fixture retained; listeners and worker stopped.",
 	};
 	writeFileSync(
 		join(directory, "result.json"),

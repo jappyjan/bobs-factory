@@ -63,7 +63,7 @@ executor claims about NG-850–854 and NG-844 must be checked against current st
    Do not derive authorization from a clean tree or failed publication.
 3. Expand **Recover already-applied external ticket work**, paste the contract and
    explicitly confirm its review and authorization. Submit **Verify existing work
-   for external review**. The operator’s remote passkey identity or direct `local-operator` authority and time
+   for external review**. The operator’s remote API key identity or direct `local-operator` authority and time
    are recorded with the contract, original workflow and checkpoint.
 4. Recovery reconciles and independently verifies current state. It does not invoke
    the original implementation or mutation step. Missing access, incomplete reads,

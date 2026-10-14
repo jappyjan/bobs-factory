@@ -23,15 +23,6 @@ function authDirectory(home: string) {
 	return directory;
 }
 /** Local filesystem authority only. Never expose these functions as dashboard endpoints. */
-export function authorizeFactoryEnrollment(home: string): string {
-	const directory = authDirectory(home),
-		token = randomBytes(32).toString("base64url");
-	atomicPrivateFile(
-		join(directory, "enroll.json"),
-		JSON.stringify({ token, expires: Date.now() + 600000 }),
-	);
-	return token;
-}
 /**
  * Local filesystem authority only: request a terminal session from the running
  * server. Only the token hash is written; the server consumes the request within a
@@ -55,7 +46,7 @@ export function requestFactoryAuthRecovery(
 ): void {
 	if (confirmation !== "RESET FACTORY AUTHENTICATION")
 		throw new Error(
-			'Recovery revokes every Factory passkey and session, preserving runs and integrations. Repeat with --confirm "RESET FACTORY AUTHENTICATION".',
+			'Recovery revokes every Factory API key and session, preserving runs and integrations. Repeat with --confirm "RESET FACTORY AUTHENTICATION".',
 		);
 	const directory = authDirectory(home),
 		state = join(directory, "state.json");

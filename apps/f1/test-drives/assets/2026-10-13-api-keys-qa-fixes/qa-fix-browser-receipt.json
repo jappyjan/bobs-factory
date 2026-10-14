@@ -1,0 +1,51 @@
+{
+	"checks": [
+		{
+			"name": "long-name-action-layout",
+			"width": 1440,
+			"buttonsInsideCard": true,
+			"noHorizontalOverflow": true
+		},
+		{
+			"name": "long-name-action-layout",
+			"width": 390,
+			"buttonsInsideCard": true,
+			"noHorizontalOverflow": true
+		},
+		{
+			"name": "last-removal-automatic-recovery-guidance",
+			"authenticated": false,
+			"setupRequired": true,
+			"reloadNeeded": false,
+			"signInInputAbsent": true
+		},
+		{
+			"name": "last-removal-local-recovery",
+			"localAccess": "local",
+			"remoteRecovered": true
+		},
+		{
+			"name": "self-rotation-reveal-and-sign-in",
+			"passed": true
+		},
+		{
+			"name": "offline-disabled-online-verified",
+			"passed": true
+		},
+		{
+			"name": "build-mismatch-disabled-management",
+			"creationDisabled": true,
+			"additionDisabled": true,
+			"rotationDisabled": true,
+			"removalDisabled": true,
+			"attempted": 1,
+			"programmaticResubmitBlocked": true,
+			"stateUnchanged": true
+		},
+		{
+			"name": "fresh-build-verification-restores-controls",
+			"passed": true
+		}
+	],
+	"completed": true
+}
