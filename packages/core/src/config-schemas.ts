@@ -396,6 +396,31 @@ export const RepositoryConfigSchema = z.object({
 	opencode: OpenCodeConfigSchema.optional(),
 });
 
+/** Ticket connections are independent of how the process was launched. */
+export const TicketManagersConfigSchema = z
+	.object({
+		linear: z
+			.object({
+				enabled: z.boolean(),
+				webhookBaseUrl: z.union([z.url(), z.literal("")]).optional(),
+				webhookSecret: z.string().max(4096).optional(),
+				clientId: z.string().max(2048).optional(),
+				clientSecret: z.string().max(4096).optional(),
+			})
+			.strict()
+			.optional(),
+		taskbot: z
+			.object({
+				enabled: z.boolean(),
+				url: z.union([z.url(), z.literal("")]).optional(),
+				token: z.string().max(4096).optional(),
+			})
+			.strict()
+			.optional(),
+	})
+	.strict();
+export type TicketManagersConfig = z.infer<typeof TicketManagersConfigSchema>;
+
 /**
  * Edge configuration - the serializable configuration stored in ~/.bobs-factory/config.json
  *
@@ -404,6 +429,8 @@ export const RepositoryConfigSchema = z.object({
  * plus the array of repository-specific configurations.
  */
 export const EdgeConfigSchema = z.object({
+	/** Connections configured through Settings → Ticket managers. */
+	ticketManagers: TicketManagersConfigSchema.optional(),
 	/** Array of repository configurations */
 	repositories: z.array(RepositoryConfigSchema),
 
@@ -660,6 +687,10 @@ export const EdgeConfigPayloadSchema = EdgeConfigSchema.extend({
 export function migrateEdgeConfig(
 	input: Record<string, unknown>,
 ): Record<string, unknown> {
+	if (Object.hasOwn(input, "platform")) {
+		const { platform: _legacyPlatform, ...configuration } = input;
+		input = configuration;
+	}
 	// `defaultAllowedTools` → `linearAllowedTools`. Older self-host CLIs and
 	// any config file written before the rename still ship the old key; fold
 	// it forward in-place. We do NOT delete the old key — newer consumers

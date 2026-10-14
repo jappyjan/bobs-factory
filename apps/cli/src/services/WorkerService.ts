@@ -13,23 +13,9 @@ import { EdgeWorker } from "bobs-factory-edge-worker";
 import { SlackEventTransport } from "bobs-factory-slack-event-transport";
 import { DEFAULT_SERVER_PORT, parsePort } from "../config/constants.js";
 import type { Workspace } from "../config/types.js";
+import { runtimeAgentSettings } from "../runtime-settings.js";
 import type { ConfigService } from "./ConfigService.js";
 import type { Logger } from "./Logger.js";
-
-function parseToolEnv(value: string | undefined): string[] | undefined {
-	const tools = value
-		?.split(",")
-		.map((tool) => tool.trim())
-		.filter(Boolean);
-	return tools && tools.length > 0 ? tools : undefined;
-}
-
-function parseBooleanEnv(value: string | undefined): boolean | undefined {
-	if (value === undefined) {
-		return undefined;
-	}
-	return value.toLowerCase().trim() === "true";
-}
 
 /**
  * Service responsible for EdgeWorker and Cloudflare tunnel management
@@ -229,48 +215,7 @@ export class WorkerService {
 			version: this.version,
 			repositories,
 			factoryHome: this.factoryHome,
-			linearAllowedTools:
-				parseToolEnv(process.env.LINEAR_ALLOWED_TOOLS) ??
-				edgeConfig.linearAllowedTools,
-			defaultDisallowedTools:
-				parseToolEnv(process.env.DISALLOWED_TOOLS) ??
-				edgeConfig.defaultDisallowedTools,
-			// Model configuration: environment variables take precedence over config file.
-			// Legacy env vars/keys are still accepted for backwards compatibility.
-			claudeDefaultModel:
-				process.env.BOBS_FACTORY_CLAUDE_DEFAULT_MODEL ||
-				process.env.BOBS_FACTORY_DEFAULT_MODEL ||
-				edgeConfig.claudeDefaultModel ||
-				edgeConfig.defaultModel,
-			claudeDefaultFallbackModel:
-				process.env.BOBS_FACTORY_CLAUDE_DEFAULT_FALLBACK_MODEL ||
-				process.env.BOBS_FACTORY_DEFAULT_FALLBACK_MODEL ||
-				edgeConfig.claudeDefaultFallbackModel ||
-				edgeConfig.defaultFallbackModel,
-			geminiDefaultModel:
-				process.env.BOBS_FACTORY_GEMINI_DEFAULT_MODEL ||
-				edgeConfig.geminiDefaultModel,
-			codexDefaultModel:
-				process.env.BOBS_FACTORY_CODEX_DEFAULT_MODEL ||
-				edgeConfig.codexDefaultModel,
-			opencodeDefaultModel:
-				process.env.BOBS_FACTORY_OPENCODE_DEFAULT_MODEL ||
-				edgeConfig.opencodeDefaultModel,
-			opencodeDefaultFallbackModel:
-				process.env.BOBS_FACTORY_OPENCODE_DEFAULT_FALLBACK_MODEL ||
-				edgeConfig.opencodeDefaultFallbackModel,
-			inferOpenCodeRunnerFromProviderModel:
-				parseBooleanEnv(
-					process.env.BOBS_FACTORY_INFER_OPENCODE_RUNNER_FROM_PROVIDER_MODEL,
-				) ?? edgeConfig.inferOpenCodeRunnerFromProviderModel,
-			defaultRunner:
-				(process.env.BOBS_FACTORY_DEFAULT_RUNNER as
-					| "claude"
-					| "gemini"
-					| "codex"
-					| "cursor"
-					| "opencode"
-					| undefined) || edgeConfig.defaultRunner,
+			...runtimeAgentSettings(edgeConfig),
 			webhookBaseUrl: process.env.BOBS_FACTORY_BASE_URL,
 			serverPort: parsePort(
 				process.env.BOBS_FACTORY_SERVER_PORT,

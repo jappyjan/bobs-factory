@@ -279,3 +279,37 @@ it("explicit --repo preserves the configured ID, integrations and every other re
 		"other-project-id",
 	]);
 });
+
+it("starts a legacy local home with its real ticket connections and no implicit fixture tracker", async () => {
+	const { EdgeWorker } = await import("bobs-factory-edge-worker");
+	const home = mkdtempSync(join(tmpdir(), "factory-unified-start-"));
+	roots.push(home);
+	const connections = {
+		linear: { enabled: false, webhookSecret: "retained-secret" },
+		taskbot: { enabled: true, url: "https://tasks.example.test/mcp" },
+	};
+	savePrivateJson(join(home, "config.json"), {
+		repositories: [],
+		platform: "cli",
+		linearWorkspaces: { native: { linearToken: "retained-native-token" } },
+		ticketManagers: connections,
+	});
+	vi.spyOn(process, "once").mockReturnValue(process);
+	vi.mocked(EdgeWorker).mockImplementation(function () {
+		return {
+			start: async () => {},
+			setConfigPath: () => {},
+		} as unknown as InstanceType<typeof EdgeWorker>;
+	});
+	await launchLocal({ home, port: "3457", open: false });
+	const effective = vi.mocked(EdgeWorker).mock.calls.at(-1)![0];
+	expect(effective.linearWorkspaces).toEqual({
+		native: { linearToken: "retained-native-token" },
+	});
+	expect(effective.ticketManagers).toEqual(connections);
+	expect(effective).not.toHaveProperty("platform");
+	expect(effective.issueTrackerFactory).toBeUndefined();
+	expect(
+		JSON.parse(readFileSync(join(home, "config.json"), "utf8")),
+	).not.toHaveProperty("platform");
+});

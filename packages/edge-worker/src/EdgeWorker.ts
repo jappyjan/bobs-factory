@@ -3,7 +3,7 @@ import { execSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { existsSync, readFileSync } from "node:fs";
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { LinearClient } from "@linear/sdk";
 import type {
@@ -202,6 +202,7 @@ import {
 	ExecutionProfileStore,
 	ExecutionSnapshotSchema,
 } from "./factory/ExecutionProfiles.js";
+import { atomicPrivateFile, privateFile } from "./factory/FactoryAuthStore.js";
 import type { FactoryOnboarding } from "./factory/FactoryOnboarding.js";
 import { FactoryPush } from "./factory/FactoryPush.js";
 import {
@@ -318,6 +319,7 @@ import {
 	linearDeliveryAdapter,
 	taskbotDeliveryAdapter,
 } from "./factory/TicketDeliveryAdapters.js";
+import { linearConnection, TicketManagers } from "./factory/TicketManagers.js";
 import {
 	ensureTicketTranscript,
 	nativeAdapter,
@@ -424,6 +426,7 @@ export class EdgeWorker extends EventEmitter {
 	private lastStopTimeBySession: Map<string, number> = new Map(); // Maps session ID to timestamp of last stop signal (for double-stop detection)
 	private warmInstances: Map<string, WarmQuery> = new Map(); // Pre-warmed Claude sessions keyed by agentSessionId
 	private issueTrackers: Map<string, IIssueTrackerService> = new Map(); // one issue tracker per Linear workspace (keyed by linearWorkspaceId)
+	private ticketManagers: TicketManagers;
 	private linearEventTransport: LinearEventTransport | null = null; // Single event transport for webhook delivery
 	private gitHubEventTransport: GitHubEventTransport | null = null; // GitHub event transport for forwarded GitHub webhooks
 	private gitHubAppTokenProvider: GitHubAppTokenProvider | null = null; // Self-hosted GitHub App token minting
@@ -578,6 +581,14 @@ export class EdgeWorker extends EventEmitter {
 		super();
 		this.config = EdgeWorker.normalizeConfigPaths(config);
 		this.factoryHome = config.factoryHome;
+		this.ticketManagers = new TicketManagers({
+			config: () => this.config,
+			configPath: () => this.configPath,
+			reload: () => this.configManager.reload(),
+			webhookStatus: () => ({
+				lastAcceptedAt: this.linearEventTransport?.lastAcceptedAt,
+			}),
+		});
 		this.githubTokenStore = new GitHubTokenStore(this.factoryHome);
 		this.logger = createLogger({ component: "EdgeWorker" });
 		this.persistenceManager = new PersistenceManager(
@@ -682,7 +693,7 @@ export class EdgeWorker extends EventEmitter {
 		// Initialize shared application server
 		const serverPort = config.serverPort || config.webhookPort || 3456;
 		const serverHost = config.serverHost || "localhost";
-		const skipTunnel = config.platform === "cli"; // Skip Cloudflare tunnel in CLI mode
+		const skipTunnel = !!config.issueTrackerFactory; // Embedded fixtures never open external tunnels.
 		this.sharedApplicationServer = new SharedApplicationServer(
 			serverPort,
 			serverHost,
@@ -742,31 +753,18 @@ export class EdgeWorker extends EventEmitter {
 			}
 		}
 
-		// Initialize issue trackers per workspace (one per workspace, not per repo)
-		if (config.linearWorkspaces) {
-			for (const [linearWorkspaceId, wsConfig] of Object.entries(
-				config.linearWorkspaces,
-			)) {
-				const issueTracker =
-					this.config.platform === "cli"
-						? (() => {
-								const service = new CLIIssueTrackerService();
-								service.seedDefaultData();
-								return service;
-							})()
-						: new LinearIssueTrackerService(
-								new LinearClient({
-									accessToken: wsConfig.linearToken,
-								}),
-								this.buildOAuthConfig(linearWorkspaceId),
-								undefined,
-								{
-									workspaceId: linearWorkspaceId,
-									factoryHome: this.factoryHome,
-								},
-							);
-				this.issueTrackers.set(linearWorkspaceId, issueTracker);
-			}
+		// Tracker dependencies are selected per workspace, independently of launch/UI/service ownership.
+		const workspaceIds = new Set([
+			...Object.keys(config.linearWorkspaces ?? {}),
+			...config.repositories.flatMap((repo) =>
+				repo.linearWorkspaceId ? [repo.linearWorkspaceId] : [],
+			),
+		]);
+		for (const workspaceId of workspaceIds) {
+			const tracker =
+				config.issueTrackerFactory?.(workspaceId) ??
+				this.createLinearTracker(workspaceId);
+			if (tracker) this.issueTrackers.set(workspaceId, tracker);
 		}
 
 		// Create activity sinks per workspace (one per workspace, mirrors issueTrackers)
@@ -817,6 +815,20 @@ export class EdgeWorker extends EventEmitter {
 					  })
 					| undefined,
 			getCyrusToolsMcpUrl: () => this.getCyrusToolsMcpUrl(),
+			getTicketManagerServers: (): Record<string, McpServerConfig> => {
+				const taskbot = this.config.ticketManagers?.taskbot;
+				return taskbot?.enabled && taskbot.url
+					? {
+							taskbot: {
+								type: "http" as const,
+								url: taskbot.url,
+								...(taskbot.token
+									? { headers: { Authorization: `Bearer ${taskbot.token}` } }
+									: {}),
+							},
+						}
+					: {};
+			},
 			createCyrusToolsOptions: (parentSessionId) =>
 				this.createCyrusToolsOptions(parentSessionId),
 		});
@@ -891,13 +903,14 @@ export class EdgeWorker extends EventEmitter {
 			(active) => this.getTicketTracking().setUpdateMaintenance(active),
 		);
 		const intake = (request: { method: string; url: string }) =>
-			!["GET", "HEAD"].includes(request.method) &&
-			(/^\/(?:linear|github|gitlab|slack|zulip)-webhook(?:\?|$)/.test(
-				request.url,
-			) ||
-				/^\/webhook(?:\?|$)/.test(request.url) ||
-				request.url.startsWith("/cli/") ||
-				request.url.startsWith("/api/update/"));
+			(request.method === "GET" && /^\/callback(?:\?|$)/.test(request.url)) ||
+			(!["GET", "HEAD"].includes(request.method) &&
+				(/^\/(?:linear|github|gitlab|slack|zulip)-webhook(?:\?|$)/.test(
+					request.url,
+				) ||
+					/^\/webhook(?:\?|$)/.test(request.url) ||
+					request.url.startsWith("/cli/") ||
+					request.url.startsWith("/api/update/")));
 		const application = this.sharedApplicationServer.getFastifyInstance();
 		application.addHook("onRequest", async (request, reply) => {
 			if (!intake(request)) return;
@@ -1041,7 +1054,11 @@ export class EdgeWorker extends EventEmitter {
 		this.webhookIpValidator.startRefreshing();
 		await this.initializeComponents();
 		for (const tracker of this.issueTrackers.values())
-			if (tracker instanceof LinearIssueTrackerService) tracker.startDelivery();
+			if (
+				tracker instanceof LinearIssueTrackerService &&
+				linearConnection(this.config).enabled
+			)
+				tracker.startDelivery();
 
 		// Refresh GitHub webhook allowlist from /meta API (non-blocking)
 		if (this.webhookIpValidator.isEnabled()) {
@@ -1096,6 +1113,7 @@ export class EdgeWorker extends EventEmitter {
 			this.factoryPush ??= new FactoryPush(this.factoryHome);
 			this.factoryServer = new FactoryServer(this.getFactoryRuntime(), {
 				onboarding: this.localSetup,
+				ticketManagers: this.ticketManagers,
 				updateDrain: this.updateDrain,
 				push: this.factoryPush,
 				capacity: this.runnerSlots,
@@ -1375,118 +1393,81 @@ export class EdgeWorker extends EventEmitter {
 		);
 		this.operatorServer = new OperatorServer(grants, service);
 		await this.operatorServer.start();
-		// 1. Platform-specific initialization
-		if (this.config.platform === "cli") {
-			// CLI mode: ensure a CLIIssueTrackerService exists for each repo workspace.
-			// Repos from config.repositories don't go through linearWorkspaces init,
-			// so we create trackers here if missing.
-			for (const repo of this.repositories.values()) {
-				const wsId = repo.linearWorkspaceId;
-				if (wsId && !this.issueTrackers.has(wsId)) {
-					const service = new CLIIssueTrackerService();
-					service.seedDefaultData();
-					this.issueTrackers.set(wsId, service);
-					const activitySink = new LinearActivitySink(service, wsId);
-					this.activitySinks.set(wsId, activitySink);
+		this.sharedApplicationServer
+			.getFastifyInstance()
+			.get("/callback", async (request, reply) => {
+				reply
+					.header("Cache-Control", "no-store")
+					.header("Referrer-Policy", "no-referrer");
+				try {
+					await this.ticketManagers.completeLinearAuthorization(request.query);
+					return reply
+						.type("text/plain; charset=utf-8")
+						.send("Linear connected. Return to Settings → Ticket managers.");
+				} catch {
+					return reply
+						.code(400)
+						.type("text/plain; charset=utf-8")
+						.send(
+							"Linear connection could not be completed. Return to Settings → Ticket managers and start a new connection.",
+						);
 				}
-			}
+			});
 
-			const firstCliTracker = Array.from(this.issueTrackers.values()).find(
-				(tracker): tracker is CLIIssueTrackerService =>
-					tracker instanceof CLIIssueTrackerService,
-			);
-
-			if (firstCliTracker) {
-				this.cliRPCServer = new CLIRPCServer({
-					fastifyServer: this.sharedApplicationServer.getFastifyInstance(),
-					issueTracker: firstCliTracker,
-					version: "1.0.0",
-				});
-
-				// Register the /cli/rpc endpoint
-				this.cliRPCServer.register();
-
-				this.logger.info("✅ CLI RPC server registered");
-				this.logger.info("   RPC endpoint: /cli/rpc");
-
-				// Create CLI event transport and register listener
-				const cliEventTransport = firstCliTracker.createEventTransport({
-					platform: "cli",
-					fastifyServer: this.sharedApplicationServer.getFastifyInstance(),
-				});
-
-				// Listen for webhook events
-				cliEventTransport.on("event", (event: AgentEvent) => {
-					const repos = Array.from(this.repositories.values());
-					this.handleWebhook(event as unknown as Webhook, repos);
-				});
-
-				// Listen for unified internal messages (used by F1 to emit
-				// IssueStateChangeMessage when an issue is terminated).
-				cliEventTransport.on("message", (message: InternalMessage) => {
-					this.handleMessage(message);
-				});
-
-				// Listen for errors
-				cliEventTransport.on("error", (error: Error) => {
-					this.handleError(error);
-				});
-
-				// Register the CLI event transport endpoints
-				cliEventTransport.register();
-
-				this.logger.info("✅ CLI event transport registered");
-				this.logger.info(
-					"   Event listener: listening for AgentSessionCreated events",
-				);
-			}
-		} else {
-			// Linear mode: Create and register LinearEventTransport
-			const useDirectWebhooks =
-				process.env.LINEAR_DIRECT_WEBHOOKS?.toLowerCase() === "true";
-			const verificationMode = useDirectWebhooks ? "direct" : "proxy";
-
-			// Get appropriate secret based on mode
-			const secret = useDirectWebhooks
-				? process.env.LINEAR_WEBHOOK_SECRET || ""
-				: process.env.BOBS_FACTORY_API_KEY || "";
-
-			this.linearEventTransport = new LinearEventTransport({
+		// Embedded harness adapters are explicit dependencies, never inferred from saved settings.
+		const cliTracker = [...this.issueTrackers.values()].find(
+			(tracker): tracker is CLIIssueTrackerService =>
+				tracker instanceof CLIIssueTrackerService,
+		);
+		if (cliTracker) {
+			this.cliRPCServer = new CLIRPCServer({
 				fastifyServer: this.sharedApplicationServer.getFastifyInstance(),
-				verificationMode,
-				secret,
-				ipAllowlist:
-					verificationMode === "direct" && this.webhookIpValidator.isEnabled()
-						? () => this.webhookIpValidator.getAllowlist("linear")
-						: undefined,
+				issueTracker: cliTracker,
+				version: "1.0.0",
 			});
-
-			// Listen for legacy webhook events (deprecated, kept for backward compatibility)
-			this.linearEventTransport.on("event", (event: AgentEvent) => {
-				const repos = Array.from(this.repositories.values());
-				this.handleWebhook(event as unknown as Webhook, repos);
+			this.cliRPCServer.register();
+			const events = cliTracker.createEventTransport({
+				platform: "cli",
+				fastifyServer: this.sharedApplicationServer.getFastifyInstance(),
 			});
-
-			// Listen for unified internal messages (new message bus)
-			this.linearEventTransport.on("message", (message: InternalMessage) => {
-				this.handleMessage(message);
-			});
-
-			// Listen for errors
-			this.linearEventTransport.on("error", (error: Error) => {
-				this.handleError(error);
-			});
-
-			// Register the /linear-webhook endpoint (with /webhook retained as a deprecated alias)
-			this.linearEventTransport.register();
-
-			this.logger.info(
-				`✅ Linear event transport registered (${verificationMode} mode)`,
+			events.on("event", (event: AgentEvent) =>
+				this.handleWebhook(event as unknown as Webhook, [
+					...this.repositories.values(),
+				]),
 			);
-			this.logger.info(
-				`   Webhook endpoint: ${this.sharedApplicationServer.getWebhookUrl()}`,
+			events.on("message", (message: InternalMessage) =>
+				this.handleMessage(message),
 			);
+			events.on("error", (error: Error) => this.handleError(error));
+			events.register();
 		}
+		// Stable routes stay mounted even before configuration and while disabled.
+		const connection = this.linearWebhookConnection();
+		this.linearEventTransport = new LinearEventTransport({
+			fastifyServer: this.sharedApplicationServer.getFastifyInstance(),
+			...connection,
+			isEnabled: () => linearConnection(this.config).enabled,
+			isReady: () => Object.keys(this.config.linearWorkspaces ?? {}).length > 0,
+			ipAllowlist: () =>
+				this.webhookIpValidator.isEnabled()
+					? this.webhookIpValidator.getAllowlist("linear")
+					: [],
+		});
+		this.linearEventTransport.on("event", (event: AgentEvent) =>
+			this.handleWebhook(event as unknown as Webhook, [
+				...this.repositories.values(),
+			]),
+		);
+		this.linearEventTransport.on("message", (message: InternalMessage) =>
+			this.handleMessage(message),
+		);
+		this.linearEventTransport.on("error", (error: Error) =>
+			this.handleError(error),
+		);
+		this.linearEventTransport.register();
+		this.logger.info(
+			"✅ Ticket manager listeners registered; connections follow saved settings",
+		);
 
 		// 2. Register GitHub and Slack event transports unconditionally
 		// These don't require repositories and must be available during onboarding
@@ -3813,21 +3794,12 @@ ${taskSection}`;
 		repository: RepositoryConfig,
 		runner: RunnerType,
 	): Promise<void> {
-		if (!this.localSetup || this.config.platform !== "cli")
+		if (!this.localSetup)
 			throw new Error("Local project setup is unavailable on this worker");
 		if (this.repositories.has(repository.id))
 			await this.updateModifiedRepositories([repository]);
 		else await this.addNewRepositories([repository]);
-		const workspace = repository.linearWorkspaceId;
-		if (workspace && !this.issueTrackers.has(workspace)) {
-			const service = new CLIIssueTrackerService();
-			service.seedDefaultData();
-			this.issueTrackers.set(workspace, service);
-			this.activitySinks.set(
-				workspace,
-				new LinearActivitySink(service, workspace),
-			);
-		}
+
 		const repositories = this.config.repositories.filter(
 			(repo) => repo.id !== repository.id,
 		);
@@ -3959,51 +3931,78 @@ ${taskSection}`;
 	 * `setAccessToken()` on any affected `LinearIssueTrackerService` instances,
 	 * and pushes the updated workspace configs to `AttachmentService`.
 	 */
+	private trackerPlatform(workspaceId: string): "cli" | "linear" {
+		return this.issueTrackers.get(workspaceId)?.getPlatformType() === "cli"
+			? "cli"
+			: "linear";
+	}
+	private linearWebhookConnection() {
+		const connection = linearConnection(this.config);
+		const verificationMode =
+			connection.webhookSecret ||
+			process.env.LINEAR_DIRECT_WEBHOOKS?.toLowerCase() === "true"
+				? ("direct" as const)
+				: ("proxy" as const);
+		return {
+			verificationMode,
+			secret:
+				verificationMode === "direct"
+					? connection.webhookSecret
+					: (process.env.BOBS_FACTORY_API_KEY ?? ""),
+		};
+	}
+	private createLinearTracker(
+		workspaceId: string,
+	): LinearIssueTrackerService | undefined {
+		const workspace = this.config.linearWorkspaces?.[workspaceId];
+		if (!workspace?.linearToken) return;
+		return new LinearIssueTrackerService(
+			new LinearClient({ accessToken: workspace.linearToken }),
+			this.buildOAuthConfig(workspaceId),
+			undefined,
+			{
+				workspaceId,
+				factoryHome: this.factoryHome,
+				isEnabled: () => linearConnection(this.config).enabled,
+			},
+		);
+	}
 	private updateLinearWorkspaceTokens(newConfig: EdgeWorkerConfig): void {
-		const oldWorkspaces = this.config.linearWorkspaces ?? {};
-		const newWorkspaces = newConfig.linearWorkspaces ?? {};
-
-		let anyTokenChanged = false;
-
-		for (const [workspaceId, newWsConfig] of Object.entries(newWorkspaces)) {
-			const oldToken = oldWorkspaces[workspaceId]?.linearToken;
-			const newToken = newWsConfig.linearToken;
-
-			if (oldToken === newToken) continue;
-
-			anyTokenChanged = true;
-
-			// Update existing issue tracker in-place
-			const issueTracker = this.issueTrackers.get(workspaceId);
-			if (issueTracker) {
-				(issueTracker as LinearIssueTrackerService).setAccessToken(newToken);
-				this.logger.info(
-					`🔑 Updated Linear token for workspace ${workspaceId}`,
-				);
-			} else if (this.config.platform !== "cli") {
-				// Workspace is new — create a tracker and activity sink for it
-				const newIssueTracker = new LinearIssueTrackerService(
-					new LinearClient({ accessToken: newToken }),
-					this.buildOAuthConfig(workspaceId),
-					undefined,
-					{ workspaceId, factoryHome: this.factoryHome },
-				);
-				if (!this.stopping) newIssueTracker.startDelivery();
-				this.issueTrackers.set(workspaceId, newIssueTracker);
-				this.activitySinks.set(
-					workspaceId,
-					new LinearActivitySink(newIssueTracker, workspaceId),
-				);
-				this.logger.info(
-					`🔑 Created issue tracker for new workspace ${workspaceId}`,
-				);
+		const previous = this.config;
+		this.config = EdgeWorker.normalizeConfigPaths(newConfig);
+		for (const [workspaceId, workspace] of Object.entries(
+			newConfig.linearWorkspaces ?? {},
+		)) {
+			let tracker = this.issueTrackers.get(workspaceId);
+			if (!tracker) {
+				tracker =
+					newConfig.issueTrackerFactory?.(workspaceId) ??
+					this.createLinearTracker(workspaceId);
+				if (tracker) {
+					this.issueTrackers.set(workspaceId, tracker);
+					this.activitySinks.set(
+						workspaceId,
+						new LinearActivitySink(tracker, workspaceId),
+					);
+				}
+			}
+			if (tracker instanceof LinearIssueTrackerService) {
+				if (
+					workspace.linearToken !==
+					previous.linearWorkspaces?.[workspaceId]?.linearToken
+				)
+					tracker.setAccessToken(workspace.linearToken);
+				tracker.setOAuthConfig(this.buildOAuthConfig(workspaceId));
+				if (linearConnection(this.config).enabled && !this.stopping)
+					tracker.startDelivery();
+				else tracker.stopDelivery();
 			}
 		}
-
-		if (anyTokenChanged) {
-			// Push refreshed workspace configs to AttachmentService
-			this.attachmentService.setLinearWorkspaces(newWorkspaces);
-		}
+		this.attachmentService.setLinearWorkspaces(
+			newConfig.linearWorkspaces ?? {},
+		);
+		this.linearEventTransport?.configure(this.linearWebhookConnection());
+		this.config = previous;
 	}
 
 	/**
@@ -4448,7 +4447,7 @@ ${taskSection}`;
 
 		const issueId = message.workItemId;
 		const issueKey = LaunchAdmission.issueKey(
-			this.config.platform === "cli" ? "cli" : "linear",
+			this.trackerPlatform(message.organizationId),
 			message.organizationId,
 			issueId,
 		);
@@ -5166,6 +5165,7 @@ ${taskSection}`;
 	 * Get the Linear API token for a workspace from workspace-level config.
 	 */
 	private getLinearTokenForWorkspace(linearWorkspaceId: string): string | null {
+		if (!linearConnection(this.config).enabled) return null;
 		const workspaceConfig = this.config.linearWorkspaces?.[linearWorkspaceId];
 		if (!workspaceConfig) {
 			return null; // CLI platform or unconfigured workspace
@@ -5387,10 +5387,7 @@ ${taskSection}`;
 			workflowId: launch.workflow.id,
 			at: new Date().toISOString(),
 			ticket: {
-				provider:
-					this.config.platform === "cli"
-						? ("cli" as const)
-						: ("linear" as const),
+				provider: this.trackerPlatform(linearWorkspaceId),
 				workspaceId: linearWorkspaceId,
 				issueId: fullIssue.id,
 				agentSessionId: sessionId,
@@ -5852,7 +5849,7 @@ ${taskSection}`;
 			workflowId: "",
 			at: new Date().toISOString(),
 			ticket: {
-				provider: this.config.platform === "cli" ? "cli" : "linear",
+				provider: this.trackerPlatform(webhook.organizationId),
 				// CLI issue sessions omit comments; its comment-session API retains them.
 				// Linear sessions without source evidence keep the subtype unavailable.
 				subtype: created
@@ -5862,7 +5859,7 @@ ${taskSection}`;
 							? !body.includes("This thread is for an agent session")
 								? "mention"
 								: "assignment"
-							: this.config.platform === "cli"
+							: this.trackerPlatform(webhook.organizationId) === "cli"
 								? "assignment"
 								: undefined
 					: undefined,
@@ -7037,7 +7034,11 @@ ${taskSection}`;
 		}
 		const id =
 			webhook.agentActivity?.id ?? webhook.agentActivity?.sourceCommentId;
-		if (!id && !isStop && this.config.platform !== "cli") {
+		if (
+			!id &&
+			!isStop &&
+			this.trackerPlatform(webhook.organizationId) !== "cli"
+		) {
 			await this.ticketLaunchFeedback(
 				webhook,
 				"Reply cannot be delivered safely: no native activity or source comment identity was supplied. Send a new reply in the original Linear session.",
@@ -7248,7 +7249,7 @@ ${taskSection}`;
 						item.sessionId !== agentSessionId &&
 						item.issueKey ===
 							LaunchAdmission.issueKey(
-								this.config.platform === "cli" ? "cli" : "linear",
+								this.trackerPlatform(webhook.organizationId),
 								webhook.organizationId,
 								webhook.agentSession.issue?.id ?? "",
 							) &&
@@ -8478,6 +8479,7 @@ ${taskSection}`;
 		};
 	}
 	private async factoryDeliveryAdapter(run: FactoryRun, target: TicketTarget) {
+		this.assertTicketManagerEnabled(target.provider);
 		const config = await this.factoryMcpConfig(run);
 		if (target.provider === "linear") {
 			if (run.executionSnapshot?.identity || run.executionSnapshot?.tools)
@@ -8532,11 +8534,24 @@ ${taskSection}`;
 			],
 		);
 	}
+	private assertTicketManagerEnabled(provider: string): void {
+		if (
+			(provider === "linear" && !linearConnection(this.config).enabled) ||
+			(provider === "taskbot" &&
+				this.config.ticketManagers?.taskbot?.enabled === false)
+		)
+			throw new Error(
+				`${provider === "linear" ? "Linear" : "Taskbot"} ticket manager is disabled. Enable it in Settings → Ticket managers to resume ticket synchronization.`,
+			);
+	}
 	private async factoryTicketAdapter(
 		run: FactoryRun,
 		signal: AbortSignal = this.recoveryAbort.signal,
 	): Promise<TicketAdapter> {
 		const ref = TicketReferenceSchema.parse(run.ticketReference);
+		this.assertTicketManagerEnabled(
+			ref.provider === "taskbot" ? "taskbot" : ref.platform,
+		);
 		if (ref.provider === "native") {
 			const tracker = this.issueTrackers.get(ref.workspaceId);
 			if (!tracker || tracker.getPlatformType() !== ref.platform)
@@ -8612,6 +8627,7 @@ ${taskSection}`;
 				if (!source) return;
 				const taskbot = taskbotSource(source);
 				if (taskbot) {
+					this.assertTicketManagerEnabled("taskbot");
 					const { servers } = await this.factoryMcpConfig(run);
 					run.ticketReference = {
 						...taskbot,
@@ -12962,8 +12978,7 @@ ${input.userComment}
 	private buildOAuthConfig(
 		linearWorkspaceId: string,
 	): LinearOAuthConfig | undefined {
-		const clientId = process.env.LINEAR_CLIENT_ID;
-		const clientSecret = process.env.LINEAR_CLIENT_SECRET;
+		const { clientId, clientSecret } = linearConnection(this.config);
 
 		if (!clientId || !clientSecret) {
 			this.logger.warn(
@@ -13025,7 +13040,9 @@ ${input.userComment}
 		}
 
 		try {
-			const configContent = await readFile(this.configPath, "utf-8");
+			// Keep the read/modify/atomic-write in one synchronous turn so a refresh
+			// cannot overwrite a newer dashboard connection policy.
+			const configContent = privateFile(this.configPath);
 			const config = JSON.parse(configContent);
 
 			// Ensure linearWorkspaces exists
@@ -13058,7 +13075,10 @@ ${input.userComment}
 						: {}),
 			};
 
-			await writeFile(this.configPath, JSON.stringify(config, null, "\t"));
+			atomicPrivateFile(
+				this.configPath,
+				`${JSON.stringify(config, null, "\t")}\n`,
+			);
 			this.logger.debug(
 				`OAuth tokens saved to config for workspace ${tokens.linearWorkspaceId}`,
 			);
