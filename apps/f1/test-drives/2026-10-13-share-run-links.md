@@ -100,3 +100,27 @@ dashboard builds and scoped Biome passed. The PR diff against main passes
 `git diff --check`; imported historical F1 reports retain their existing
 Markdown hard-break whitespace. Physical-device clipboard behavior remains
 unverified.
+
+## Question choices base integration (2026-10-14)
+
+Validated the merge of Share parent `3e46034c93a009b92617ad982eb7b32bd53ef145`
+and main `9b8404e1` before committing. Both Share and question-choice CSS groups
+and capability guidance are retained; the full routing-prompt expectation matches.
+The auto-merged question form retains the existing Share placements.
+
+- 102 targeted tests passed: FactoryWebClient, FactoryPwa, FactoryAccess,
+  Questions and full routing-context prompt assertions (`F1_AGENT_MODE=mock`,
+  inherited GitLab configuration excluded).
+- Repository build passed.
+- An isolated Factory runtime with simulated agents served the rebuilt browser.
+  At 390 pixels, selecting Second choice then sharing copied the exact waiting-run
+  URL, retained the selection and run records, sent only GET requests and caused
+  no horizontal overflow. Switching to a blank Custom answer disabled submission.
+- The existing stopped/queued layout check passed: Share preserved enabled Resume
+  and its position; queued header controls fit without overlap or overflow.
+
+Evidence: `/Users/jappy/.bobs-factory/factory/evidence/manual-0fee5712-6eed-426d-b41d-1e9b5442324b/ci-choices-merge/`.
+The first choice-check attempt used an unsupported locator and was corrected to
+CSS input locators; the completed check passed. Browser execution was headless;
+clipboard responses and agents were simulated. Physical-device clipboard behavior
+remains unverified. Historical receipts are retained unchanged.

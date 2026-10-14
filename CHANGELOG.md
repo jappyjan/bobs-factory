@@ -6,11 +6,19 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Preserve run Share controls and selectable question answers when integrating current main, including both styles and complete capability-prompt expectations ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
+
 - Correct Share layout QA to preserve Resume below the detail header, with a fresh passing narrow-screen check ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
 
 - Reconcile run sharing with current stopped-run Resume controls and bundled workflow guidance, preserving full prompt assertions after merging main ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
 
 - Synchronize the full routing-prompt test expectation with the run Share capability reference, fixing CI after the main-branch merge ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
+- Preserve question choices when integrating unified startup and ticket-manager settings; inject the simulated tracker through the supported F1 startup API ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
+
+- Preserve question choices and terminal context scrolling while integrating bundled workflow recovery and update capacity draining ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
+
+- Wait for simulated question-notification delivery before snapshotting F1 restart receipts, preventing a timing-dependent mismatch while retaining duplicate-notice checks ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
+- Wait for OAuth transport test fixtures to finish capacity callbacks and state writes before deleting their temporary homes, preventing intermittent CI cleanup failures ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 - Prepare automatic updates while work continues, then pause new steps and slots, drain active work and resume queued tasks from saved progress after installation ([#131](https://github.com/jappyjan/bobs-factory/pull/131)).
 
 - Correct architecture keyboard QA to verify file paths and the separate full-plan disclosure independently, with completed headless evidence ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
@@ -110,6 +118,7 @@ All notable changes to this project will be documented in this file.
 
 - Add Share buttons to dashboard runs, with copy confirmation and a manual link fallback that preserves existing access requirements. ([#122](https://github.com/jappyjan/bobs-factory/pull/122))
 
+- Factory questions support single and multiple predefined answers, optional defaults, and separate custom text in the web dashboard and terminal UI. Terminal choice forms show multiline questions and provide Page Up/Page Down scrolling for longer context ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 - Configure and update the push service contact in Settings → Notifications while preserving keys and device consent.
 
 - Factory and Takeover architecture proposals you approve before Bob builds anything. Each proposal has its own page: a plain summary, the choices Bob made (and the ones it needs you to answer), a simple map of what changes, why it fits, what to watch out for and the plan steps, with a chat beside it for questions or changes and one approve button. New versions list what changed and who asked for it. Routine work records an approval bypass. Repository and mixed delivery retain architecture acceptance alongside independent ticket-contract validation; external-only delivery keeps its own acceptance path. Assets stay within authorized directories and accepted plans reference frozen snapshots. Empty remote specifications stop approval; explanations reuse the pending proposal’s ticket notification. A portable run backup retains source, design artifacts and review evidence for refinement on another machine. ([Taskbot #90](https://taskbot.apps.janjaap.de/p/bobs-factory/t/90), [#74](https://github.com/jappyjan/bobs-factory/pull/74))

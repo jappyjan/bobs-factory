@@ -7954,7 +7954,7 @@ ${taskSection}`;
 					return tools.tool(context);
 				},
 				question: async (run) => {
-					const body = `## Factory clarification\n\n${questionNotification(run.questions, run.questionRecommendations)}`;
+					const body = `## Factory clarification\n\n${questionNotification(run.questions, run.questionRecommendations, run.questionChoices)}`;
 					if (!run.ticketReference) {
 						await this.postFactoryComment(run, body, "operational");
 						return;

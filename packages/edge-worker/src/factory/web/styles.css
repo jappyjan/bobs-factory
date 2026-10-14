@@ -6554,6 +6554,39 @@ kbd {
 	}
 }
 
+.answer-options {
+	display: grid;
+	gap: 0.75rem;
+	margin: 1rem 0;
+}
+.answer-option {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.6rem;
+	overflow-wrap: anywhere;
+}
+.answer-option input {
+	width: auto;
+	min-height: auto;
+	padding: 0;
+	flex-shrink: 0;
+	margin-top: 0.3rem;
+}
+.answer-option small {
+	display: block;
+	margin-top: 0.25rem;
+	opacity: 0.8;
+}
+.answer-option:focus-within {
+	outline: 2px solid currentColor;
+	outline-offset: 4px;
+}
+
+.answer-controls .answer-option span {
+	min-width: 0;
+	flex: 1;
+}
+
 .ticket-manager form {
 	display: grid;
 	gap: 12px;
