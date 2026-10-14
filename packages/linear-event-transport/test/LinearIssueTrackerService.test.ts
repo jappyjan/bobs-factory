@@ -177,3 +177,27 @@ it("removes a symmetric related link stored in the inverse direction and surface
 		}),
 	).rejects.toThrow("removal failed");
 });
+
+it("pauses native SDK requests when a saved connection is disabled and resumes the same client", async () => {
+	let enabled = false;
+	const request = vi.fn(async () => ({ value: "retained-client" }));
+	const client = {
+		client: { request, setHeader: vi.fn() },
+		options: {},
+	} as unknown as LinearClient;
+	const tracker = new LinearIssueTrackerService(client, undefined, undefined, {
+		workspaceId: "toggle-fixture",
+		requestIntervalMs: 0,
+		isEnabled: () => enabled,
+	});
+	await expect(
+		tracker.getClient().client.request("query { viewer { id } }"),
+	).rejects.toThrow("disabled");
+	expect(request).not.toHaveBeenCalled();
+	enabled = true;
+	await expect(
+		tracker.getClient().client.request("query { viewer { id } }"),
+	).resolves.toEqual({ value: "retained-client" });
+	expect(tracker.getClient()).toBe(client);
+	expect(request).toHaveBeenCalledOnce();
+});

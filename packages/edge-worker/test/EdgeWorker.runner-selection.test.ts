@@ -326,6 +326,7 @@ Issue: {{issue_identifier}}`;
 
 		// Inject mock issue tracker
 		const mockIssueTracker = {
+			getPlatformType: vi.fn().mockReturnValue("linear"),
 			fetchComments: vi
 				.fn()
 				.mockResolvedValue({ nodes: [], pageInfo: { hasNextPage: false } }),
@@ -687,6 +688,7 @@ Issue: {{issue_identifier}}`;
 			};
 			const opencodeEdgeWorker = new EdgeWorker(opencodeConfig);
 			const mockIssueTracker = {
+				getPlatformType: vi.fn().mockReturnValue("linear"),
 				fetchComments: vi
 					.fn()
 					.mockResolvedValue({ nodes: [], pageInfo: { hasNextPage: false } }),
@@ -1092,6 +1094,7 @@ Issue: {{issue_identifier}}`;
 			const codexEdgeWorker = new EdgeWorker(codexConfig);
 			// Inject mock issue tracker
 			const mockIssueTracker = {
+				getPlatformType: vi.fn().mockReturnValue("linear"),
 				fetchComments: vi
 					.fn()
 					.mockResolvedValue({ nodes: [], pageInfo: { hasNextPage: false } }),
@@ -1145,6 +1148,7 @@ Issue: {{issue_identifier}}`;
 			const geminiEdgeWorker = new EdgeWorker(geminiConfig);
 			// Inject mock issue tracker
 			const mockIssueTracker = {
+				getPlatformType: vi.fn().mockReturnValue("linear"),
 				fetchComments: vi
 					.fn()
 					.mockResolvedValue({ nodes: [], pageInfo: { hasNextPage: false } }),
@@ -1198,6 +1202,7 @@ Issue: {{issue_identifier}}`;
 			};
 			const codexEdgeWorker = new EdgeWorker(codexConfig);
 			const mockIssueTracker = {
+				getPlatformType: vi.fn().mockReturnValue("linear"),
 				fetchComments: vi
 					.fn()
 					.mockResolvedValue({ nodes: [], pageInfo: { hasNextPage: false } }),

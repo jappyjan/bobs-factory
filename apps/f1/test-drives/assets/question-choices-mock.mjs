@@ -40,13 +40,10 @@ const { EdgeWorker } = await import(
 const { CLIIssueTrackerService } = await import(
 	join(root, "packages/core/dist/index.js")
 );
-const { LinearActivitySink } = await import(
-	join(root, "packages/edge-worker/dist/sinks/LinearActivitySink.js")
-);
 const tracker = new CLIIssueTrackerService();
 tracker.seedDefaultData();
 const workerConfig = {
-	platform: "cli",
+	issueTrackerFactory: () => tracker,
 	factoryHome: home,
 	serverPort: 3623,
 	serverHost: "127.0.0.1",
@@ -64,11 +61,6 @@ const workerConfig = {
 	],
 };
 let worker = new EdgeWorker(workerConfig);
-worker.issueTrackers.set("cli-workspace", tracker);
-worker.activitySinks.set(
-	"cli-workspace",
-	new LinearActivitySink(tracker, "cli-workspace"),
-);
 const calls = [];
 const questions = [
 	"Which strategy?",
@@ -291,11 +283,6 @@ try {
 			await runtime.save(run);
 			await worker.stop();
 			worker = new EdgeWorker(workerConfig);
-			worker.issueTrackers.set("cli-workspace", tracker);
-			worker.activitySinks.set(
-				"cli-workspace",
-				new LinearActivitySink(tracker, "cli-workspace"),
-			);
 			worker.buildRunnerForType = mockedRunner;
 			runtime = worker.getFactoryRuntime();
 			await worker.start();

@@ -7,6 +7,26 @@ The factory builds on Cyrus’s runners, Git worktrees and ticket integrations. 
 dashboard and JSON workflow graph are deliberately small: automatic direct local
 access and per-origin remote passkeys, without accounts, a database or a hosted identity service.
 
+## Ticket managers
+
+All launches use one runtime. **Settings → Ticket managers** controls Linear and
+Taskbot connections without a restart. Standalone tasks remain available when a
+manager is disabled; its ticket intake and synchronization pause while credentials,
+run history and pending publication remain retained. Re-enable the manager to resume
+tracking; missed incoming webhooks still depend on the provider's retry policy.
+
+Linear configuration includes the public webhook URL, signing secret, OAuth client
+and browser authorization, plus project-to-workspace routing. Credentials never
+return in settings responses. OAuth callbacks require expiring, single-use state
+and PKCE. Taskbot accepts an MCP endpoint and optional token; the existing project
+MCP and tool-permission rules continue to apply. A configured connection status
+reports saved prerequisites; the last verified webhook reports actual receipt.
+
+Legacy Linear workspace credentials and environment values continue to work.
+Saved connection settings take precedence. The old process-wide `platform` field
+is discarded during configuration migration; old service mode metadata is ignored.
+Test harnesses supply explicit in-memory tracker dependencies.
+
 ## Start locally
 
 Follow the two-command [installation](../README.md#install-and-start), then run

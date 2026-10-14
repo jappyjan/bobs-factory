@@ -6554,3 +6554,24 @@ kbd {
 	min-width: 0;
 	flex: 1;
 }
+
+.ticket-manager form {
+	display: grid;
+	gap: 12px;
+	margin-top: 12px;
+}
+.ticket-manager .ticket-manager-enable {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 44px;
+}
+.ticket-manager-enable input[type="checkbox"] {
+	width: 20px;
+	height: 20px;
+	min-height: 0;
+	margin: 0;
+}
+.ticket-manager code {
+	overflow-wrap: anywhere;
+}

@@ -3,6 +3,72 @@
 	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"type": "object",
 	"properties": {
+		"ticketManagers": {
+			"type": "object",
+			"properties": {
+				"linear": {
+					"type": "object",
+					"properties": {
+						"enabled": {
+							"type": "boolean"
+						},
+						"webhookBaseUrl": {
+							"anyOf": [
+								{
+									"type": "string",
+									"format": "uri"
+								},
+								{
+									"type": "string",
+									"const": ""
+								}
+							]
+						},
+						"webhookSecret": {
+							"type": "string",
+							"maxLength": 4096
+						},
+						"clientId": {
+							"type": "string",
+							"maxLength": 2048
+						},
+						"clientSecret": {
+							"type": "string",
+							"maxLength": 4096
+						}
+					},
+					"required": ["enabled"],
+					"additionalProperties": false
+				},
+				"taskbot": {
+					"type": "object",
+					"properties": {
+						"enabled": {
+							"type": "boolean"
+						},
+						"url": {
+							"anyOf": [
+								{
+									"type": "string",
+									"format": "uri"
+								},
+								{
+									"type": "string",
+									"const": ""
+								}
+							]
+						},
+						"token": {
+							"type": "string",
+							"maxLength": 4096
+						}
+					},
+					"required": ["enabled"],
+					"additionalProperties": false
+				}
+			},
+			"additionalProperties": false
+		},
 		"repositories": {
 			"type": "array",
 			"items": {

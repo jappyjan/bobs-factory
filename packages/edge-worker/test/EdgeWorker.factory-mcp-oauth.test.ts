@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	type AgentRunnerConfig,
+	createCLIIssueTracker,
 	executionScope,
 	type RunnerType,
 } from "bobs-factory-core";
@@ -56,7 +57,7 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 	const home = mkdtempSync(join(tmpdir(), "factory-oauth-"));
 	homes.push(home);
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
 		repositories: [
 			{

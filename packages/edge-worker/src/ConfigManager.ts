@@ -33,6 +33,7 @@ const RELOAD_MERGED_KEYS = [
 	"stripeCustomerId",
 	"global_setup_script",
 	"linearWorkspaces",
+	"ticketManagers",
 	"claudeDefaultModel",
 	"claudeDefaultFallbackModel",
 	"geminiDefaultModel",
@@ -310,6 +311,7 @@ export class ConfigManager extends EventEmitter {
 				repositories: parsedConfig.repositories || [],
 				ngrokAuthToken:
 					parsedConfig.ngrokAuthToken || this.config.ngrokAuthToken,
+				ticketManagers: parsedConfig.ticketManagers,
 				linearWorkspaces:
 					parsedConfig.linearWorkspaces || this.config.linearWorkspaces,
 				claudeDefaultModel:
