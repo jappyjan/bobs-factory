@@ -1,13 +1,8 @@
 import { resolve } from "node:path";
-import {
-	factoryVersion,
-	isPackagedExecutable,
-	resolvePath,
-} from "bobs-factory-core";
+import { isPackagedExecutable, resolvePath } from "bobs-factory-core";
 import { preflightFactoryState } from "bobs-factory-edge-worker";
 import type { Command } from "commander";
-import { Application } from "../Application.js";
-import { launchLocal } from "../local.js";
+import { launchFactory } from "../runtime.js";
 import {
 	allowDesktopStart,
 	stopDesktop,
@@ -17,7 +12,6 @@ import {
 	ServiceLifecycle,
 } from "../services/ServiceLifecycle.js";
 import { runUpdateSupervisor } from "../services/UpdateSupervisor.js";
-import { StartCommand } from "./StartCommand.js";
 export function addServiceCommands(program: Command) {
 	const service = program
 		.command("service")
@@ -29,14 +23,7 @@ export function addServiceCommands(program: Command) {
 	service
 		.command("install")
 		.option("--executable <path>", "Absolute packaged Factory executable")
-		.option(
-			"--mode <mode>",
-			"start (configured headless) or local (guided setup)",
-			"start",
-		)
-		.action((opts: { executable?: string; mode: string }) => {
-			if (!["start", "local"].includes(opts.mode))
-				throw new Error("Choose start or local mode");
+		.action((opts: { executable?: string }) => {
 			if (!opts.executable && !isPackagedExecutable)
 				throw new Error(
 					"Checkout services require --executable pointing to a packaged binary",
@@ -45,7 +32,7 @@ export function addServiceCommands(program: Command) {
 				JSON.stringify(
 					lifecycle().install(
 						opts.executable ?? process.execPath,
-						opts.mode as "start" | "local",
+						"start",
 						undefined,
 						Number(program.opts().port ?? 3457),
 					),
@@ -107,12 +94,7 @@ export function addServiceCommands(program: Command) {
 		process.env.BOBS_FACTORY_FACTORY_PORT = String(r.dashboardPort ?? 3457);
 		if (process.env.BOBS_FACTORY_SERVICE_ID !== r.id)
 			throw new Error("service run is manager-only");
-		if (r.mode === "local")
-			await launchLocal({ ...program.opts(), open: false });
-		else
-			await new StartCommand(
-				new Application(r.home, undefined, factoryVersion),
-			).execute([]);
+		await launchFactory({ ...program.opts(), open: false });
 	});
 	service
 		.command("resume")

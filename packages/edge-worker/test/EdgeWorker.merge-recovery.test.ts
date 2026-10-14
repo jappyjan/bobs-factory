@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
@@ -18,7 +19,7 @@ async function fixture() {
 	const home = mkdtempSync(join(tmpdir(), "merge-recovery-"));
 	directories.push(home);
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
 		repositories: [
 			{

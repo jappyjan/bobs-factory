@@ -7,10 +7,16 @@ import { AgentSettings } from "./forms";
 import { NotificationsSettings } from "./notifications-ui";
 import { Onboarding } from "./onboarding";
 import { revisionOf } from "./restoration";
+import { TicketManagerSettings } from "./ticket-managers";
 import { Button, useToast } from "./ui";
 import { UpdateSettings } from "./updates";
 
 const pages = [
+	{
+		id: "tickets",
+		name: "Ticket managers",
+		description: "Connections, ticket intake and synchronization",
+	},
 	{
 		id: "notifications",
 		name: "Notifications",
@@ -94,6 +100,7 @@ export function Settings() {
 						/>
 					)}
 					<ExecutionEditor key={page} config={config} page={page} />
+					{page === "tickets" && <TicketManagerSettings />}
 					{page === "notifications" && <NotificationsSettings />}
 					{page === "access" && <AccessSettings />}
 					{page === "updates" && <UpdateSettings />}

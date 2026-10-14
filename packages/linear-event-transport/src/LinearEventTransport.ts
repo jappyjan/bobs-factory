@@ -48,6 +48,7 @@ export class LinearEventTransport
 	extends EventEmitter
 	implements IAgentEventTransport
 {
+	lastAcceptedAt?: string;
 	private config: LinearEventTransportConfig;
 	private linearWebhookClient: LinearWebhookClient | null = null;
 	private logger: ILogger;
@@ -71,6 +72,18 @@ export class LinearEventTransport
 		}
 	}
 
+	/** Apply saved connection credentials without replacing the listener or its event subscriptions. */
+	configure(connection: {
+		verificationMode: LinearEventTransportConfig["verificationMode"];
+		secret: string;
+	}): void {
+		this.config = { ...this.config, ...connection };
+		this.linearWebhookClient =
+			connection.verificationMode === "direct"
+				? new LinearWebhookClient(connection.secret)
+				: null;
+	}
+
 	/**
 	 * Set the translation context for message translation.
 	 * This allows setting Linear API tokens and other context after construction.
@@ -89,6 +102,20 @@ export class LinearEventTransport
 			reply: FastifyReply,
 		): Promise<void> => {
 			try {
+				if (this.config.isEnabled?.() === false) {
+					reply
+						.code(503)
+						.header("Retry-After", "30")
+						.send({ error: "Linear ticket manager is disabled" });
+					return;
+				}
+				if (!this.config.secret || this.config.isReady?.() === false) {
+					reply
+						.code(503)
+						.header("Retry-After", "30")
+						.send({ error: "Linear ticket manager requires configuration" });
+					return;
+				}
 				// Verify based on mode
 				if (this.config.verificationMode === "direct") {
 					await this.handleDirectWebhook(request, reply);
@@ -190,6 +217,7 @@ export class LinearEventTransport
 			this.emitMessage(payload);
 
 			// Send success response
+			this.lastAcceptedAt = new Date().toISOString();
 			reply.code(200).send({ success: true });
 		} catch (error) {
 			const err = new Error("Direct webhook verification failed");
@@ -232,6 +260,7 @@ export class LinearEventTransport
 			this.emitMessage(payload);
 
 			// Send success response
+			this.lastAcceptedAt = new Date().toISOString();
 			reply.code(200).send({ success: true });
 		} catch (error) {
 			const err = new Error("Proxy webhook processing failed");

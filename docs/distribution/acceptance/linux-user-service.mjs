@@ -407,13 +407,7 @@ await withOwnedCleanup({
 			{ flag: "wx", mode: 0o600 },
 		);
 		const nixHash = hash(nixDefinition);
-		await expectRefusal(
-			"install",
-			"--executable",
-			executable,
-			"--mode",
-			"local",
-		);
+		await expectRefusal("install", "--executable", executable);
 		assert.equal(hash(nixDefinition), nixHash);
 		assert(!existsSync(join(home, "runtime", "service.json")));
 		// This file is created by this test, not a mutable Nix-owned deployment.
@@ -429,13 +423,7 @@ await withOwnedCleanup({
 		foreground.done.catch(() => {});
 		pids.add(foreground.child.pid);
 		await until(async () => (await status()).owner, "manual owner lock");
-		await expectRefusal(
-			"install",
-			"--executable",
-			executable,
-			"--mode",
-			"local",
-		);
+		await expectRefusal("install", "--executable", executable);
 		assert(!existsSync(join(home, "runtime", "service.json")));
 		foreground.signal("SIGTERM");
 		await until(
@@ -453,13 +441,7 @@ await withOwnedCleanup({
 		);
 		pids.add(externalOwner.pid);
 		const externalHash = hash(externalDefinition);
-		await expectRefusal(
-			"install",
-			"--executable",
-			executable,
-			"--mode",
-			"local",
-		);
+		await expectRefusal("install", "--executable", executable);
 		await manager("disable", "--now", externalId);
 		await until(
 			async () => !alive(externalOwner.pid) && !(await status()).owner,
@@ -510,7 +492,7 @@ await withOwnedCleanup({
 		}
 		registerFixture();
 		if (interruptPhase === "initial-install") gateOperation = "install";
-		await command("install", "--executable", executable, "--mode", "local");
+		await command("install", "--executable", executable);
 		record = await status();
 		assert.equal(`${record.id}.service`, managedId);
 		verifyDefinition(managedId);
@@ -525,26 +507,20 @@ await withOwnedCleanup({
 		const updaterBytes = readFileSync(updaterDefinition, "utf8");
 		receipt.workerDefinition = workerBytes;
 		unlinkSync(updaterDefinition);
-		await command("install", "--executable", executable, "--mode", "local");
+		await command("install", "--executable", executable);
 		assert.equal(readFileSync(updaterDefinition, "utf8"), updaterBytes);
 		unlinkSync(updaterDefinition);
 		writeOwnedDefinition(
 			record.definition,
 			"External definition; do not adopt\n",
 		);
-		await expectRefusal(
-			"install",
-			"--executable",
-			executable,
-			"--mode",
-			"local",
-		);
+		await expectRefusal("install", "--executable", executable);
 		assert.equal(
 			readFileSync(record.definition, "utf8"),
 			"External definition; do not adopt\n",
 		);
 		writeOwnedDefinition(record.definition, workerBytes);
-		await command("install", "--executable", executable, "--mode", "local");
+		await command("install", "--executable", executable);
 		observed(
 			"Interrupted stopped setup restores only missing owned definition; modified definition is refused",
 		);

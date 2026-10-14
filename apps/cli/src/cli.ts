@@ -17,12 +17,11 @@ import { CheckTokensCommand } from "./commands/CheckTokensCommand.js";
 import { RefreshTokenCommand } from "./commands/RefreshTokenCommand.js";
 import { SelfAddRepoCommand } from "./commands/SelfAddRepoCommand.js";
 import { SelfAuthCommand } from "./commands/SelfAuthCommand.js";
-import { StartCommand } from "./commands/StartCommand.js";
 import { addServiceCommands } from "./commands/service.js";
 import { addUpdateCommands } from "./commands/update.js";
 import { gitCredential, githubApiRequest } from "./github.js";
-import { launchLocal } from "./local.js";
 import { addMigrationCommands } from "./migration/command.js";
+import { launchFactory } from "./runtime.js";
 import { createErrorReporter } from "./services/createErrorReporter.js";
 
 const { home, envFile } = bootstrap();
@@ -58,8 +57,8 @@ program
 		"Environment file (process environment takes precedence)",
 		envFile,
 	)
-	.option("--repo <path>", "Existing repository for local launch")
-	.option("--port <port>", "Loopback dashboard port for local launch", "3457")
+	.option("--repo <path>", "Existing repository to configure")
+	.option("--port <port>", "Loopback dashboard port", "3457")
 	.option("--agent <agent>", "Prepared agent CLI (or choose in guided setup)")
 	.option("--no-open", "Start without opening a browser")
 	.option("--model <model>", "Agent model")
@@ -169,26 +168,16 @@ program
 		process.exit(0);
 	});
 
-program
-	.command("local", { isDefault: true })
-	.description("Open Bob's Factory and resume or complete guided setup")
-	.action(async () => {
-		await launchLocal(program.opts());
-	});
-
-// Start command (default)
-program
-	.command("start")
-	.description("Start the edge worker")
-	.action(async () => {
-		const opts = program.opts();
-		const app = new Application(
-			opts.home,
-			opts.envFile,
-			factoryVersion === "development" ? packageJson.version : factoryVersion,
-			errorReporter,
-		);
-		await new StartCommand(app).execute([]);
+program.action(async () => {
+	await launchFactory(program.opts());
+});
+// Retain old command spellings as hidden aliases; they share the identical startup path.
+for (const name of ["local", "start"])
+	program.command(name, { hidden: true }).action(async () => {
+		await launchFactory({
+			...program.opts(),
+			...(name === "start" ? { open: false } : {}),
+		});
 	});
 
 // Check tokens command

@@ -44,6 +44,7 @@ import {
 	resolveGuideSnapshot,
 } from "./ReviewFiles.js";
 import type { ChatState } from "./SessionChat.js";
+import type { TicketManagers } from "./TicketManagers.js";
 import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
 import type { FactoryRun, WorkflowRuntime } from "./WorkflowRuntime.js";
@@ -56,6 +57,7 @@ interface ServerHooks {
 	updates?: UpdateManager;
 	updateDrain?: UpdateDrain;
 	onboarding?: FactoryOnboarding;
+	ticketManagers?: TicketManagers;
 	deliveryStatus?(): {
 		platform: string;
 		workspaceId: string;
@@ -584,6 +586,47 @@ export class FactoryServer {
 				this.streams.delete(stream);
 			});
 		});
+		this.app.get("/api/ticket-managers", () => {
+			if (!hooks.ticketManagers)
+				throw new Error("Ticket settings are unavailable");
+			return hooks.ticketManagers.status();
+		});
+		this.app.put<{ Params: { id: string } }>(
+			"/api/ticket-managers/:id",
+			{ bodyLimit: 16384 },
+			(request) => {
+				if (!hooks.ticketManagers)
+					throw new Error("Ticket settings are unavailable");
+				return hooks.ticketManagers.configure(request.params.id, request.body);
+			},
+		);
+		this.app.post(
+			"/api/ticket-managers/linear/authorize",
+			{ bodyLimit: 1024 },
+			(request) => {
+				if (!hooks.ticketManagers)
+					throw new Error("Ticket settings are unavailable");
+				return hooks.ticketManagers.authorizeLinear(request.body);
+			},
+		);
+		this.app.post(
+			"/api/ticket-managers/linear/workspaces",
+			{ bodyLimit: 12288 },
+			(request) => {
+				if (!hooks.ticketManagers)
+					throw new Error("Ticket settings are unavailable");
+				return hooks.ticketManagers.connectLinear(request.body);
+			},
+		);
+		this.app.put(
+			"/api/ticket-managers/linear/projects",
+			{ bodyLimit: 4096 },
+			(request) => {
+				if (!hooks.ticketManagers)
+					throw new Error("Ticket settings are unavailable");
+				return hooks.ticketManagers.assignRepository(request.body);
+			},
+		);
 		this.app.get("/api/config", async (request) => ({
 			updates: updates.status(),
 			onboarding:

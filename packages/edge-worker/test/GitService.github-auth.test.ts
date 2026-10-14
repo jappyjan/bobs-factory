@@ -17,6 +17,7 @@ import type {
 	Issue,
 	RepositoryConfig,
 } from "bobs-factory-core";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { executeCommand } from "../src/factory/FactoryTools.js";
@@ -289,7 +290,7 @@ it("wires grouped native coding-agent environments through EdgeWorker without re
 	hostEnvironment(first.managedEnvironment);
 	const repository2 = { ...second.repository, id: "second" };
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: first.root,
 		repositories: [first.repository, repository2],
 	});

@@ -19,6 +19,7 @@ type CyrusToolsMcpContextEntry = {
  * Dependencies injected into McpConfigService from the EdgeWorker.
  */
 export interface McpConfigServiceDeps {
+	getTicketManagerServers?: () => Record<string, McpServerConfig>;
 	/** Retrieve the stored Linear API token for a workspace */
 	getLinearTokenForWorkspace: (workspaceId: string) => string | null;
 	/** Retrieve the issue tracker service for a workspace (must expose getClient()) */
@@ -75,14 +76,14 @@ export class McpConfigService {
 		const linearToken = this.deps.getLinearTokenForWorkspace(linearWorkspaceId);
 		const issueTracker = this.deps.getIssueTracker(linearWorkspaceId);
 		if (!linearToken || !issueTracker?.getClient) {
-			// CLI platform mode — no Linear client available, return config without bobs-factory-tools
+			// Standalone projects do not require a Linear connection.
 			const mcpConfig: Record<string, McpServerConfig> = {
 				"cyrus-docs": {
 					type: "http",
 					url: "https://atcyrus.com/docs/mcp",
 				},
 			};
-			return mcpConfig;
+			return { ...mcpConfig, ...this.deps.getTicketManagerServers?.() };
 		}
 		const linearClient = issueTracker.getClient();
 		const prebuiltServer = createCyrusToolsServer(
@@ -144,7 +145,7 @@ export class McpConfigService {
 			};
 		}
 
-		return mcpConfig;
+		return { ...mcpConfig, ...this.deps.getTicketManagerServers?.() };
 	}
 
 	/**

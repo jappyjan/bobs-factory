@@ -1,7 +1,10 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CLIIssueTrackerService } from "bobs-factory-core";
+import {
+	CLIIssueTrackerService,
+	createCLIIssueTracker,
+} from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
@@ -30,7 +33,7 @@ function setup() {
 		isActive: true,
 	};
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
 		repositories: [repository],
 		handlers: { createWorkspace },
