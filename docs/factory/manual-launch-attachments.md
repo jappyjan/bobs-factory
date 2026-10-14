@@ -1,10 +1,13 @@
 # Manual launch inputs and attachments
 
-The manual launcher selects a grouped project in its heading. Each launch keeps
-its primary repository and every selected group member. A large prompt sits above
-additional workflow fields and attachments; the bottom controls select a workflow
-and open agent/execution settings. The launcher uses the current instance. Machine
-selection belongs to BOBS-84.
+The manual launcher asks "What should we build in <project>?"; the project name
+is the project selector. Each launch keeps its primary repository and every
+selected group member, which the tray below the composer lists. Inside the
+composer, attachment chips and any additional declared fields sit above the
+prompt. The bottom bar selects the recipe, agent and reasoning; the sliders
+button opens per-run settings (model, service tier, execution profiles) and the
+paperclip attaches files. The launcher uses the current instance. Machine
+selection belongs to BOBS-84 and will join the tray.
 
 New stock Factory, Takeover and Simple definitions declare an optional attachment
 field. Saved recipes and accepted runs retain their existing declarations. To
@@ -18,12 +21,16 @@ Set `required` to `true` to require at least one file. File fields cannot declar
 text defaults or choices. Text/textarea/select fields continue to use string-valued
 `inputs`. All declared fields remain visible; Takeover still requires its source.
 
+Files can be attached with the paperclip, dropped onto the composer or pasted.
 The picker accepts any file type, including unknown extensions and empty MIME
-values. Limits are **10 files per launch, 25 MiB per file, 100 MiB total**. Errors
-and upload state appear beside the file list. Remove failed files and select them
-again to retry. Launch stays disabled while uploads or removals are pending,
-when an upload failed, or while required inputs are missing. Changing project,
-workflow, configuration or page clears unsent choices. Uploads do not automatically
+values. Limits are **10 files per launch, 25 MiB per file, 100 MiB total**. Each
+chip shows its upload state; errors appear below the chips. Remove failed files
+and attach them again to retry. Launch stays disabled while uploads or removals
+are pending, when an upload failed, or while required inputs are missing. Typed
+text survives project and recipe changes. Attached files are staged again for
+the new project or recipe, because staged uploads are bound to one scope.
+Execution profile choices reset when the scope changes; configuration changes
+or leaving the page clear unsent choices. Uploads do not automatically
 parse documents, unpack archives, execute files or render active browser content.
 
 ## Guarded HTTP API

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { launchAssetLimits } from "../LaunchAssetLimits";
 import { api } from "./client";
 import { useCurrentForm, useFormState } from "./form-state";
+import { FileIcon, PaperclipIcon } from "./launcher-icons";
 
 interface Upload {
 	localId: string;
@@ -16,11 +17,19 @@ export function fileSize(bytes: number) {
 		? `${(bytes / (1024 * 1024)).toFixed(1)} MiB`
 		: `${Math.ceil(bytes / 1024)} KiB`;
 }
+export const uploadLimitsHint = "Any file type · up to 10 files, 25 MiB each";
+
+/**
+ * Private launch uploads are staged against one project/workflow draft. When
+ * that scope changes, `carryOver` re-stages the same local files into the new
+ * draft so switching project or recipe never silently drops attachments.
+ */
 export function useLaunchUploads(
 	context: string,
 	config: any,
 	repositoryId: string,
 	workflow: string,
+	fileFields: string[],
 ) {
 	const [draft, setDraft] = useFormState(context, () => crypto.randomUUID());
 	const [uploads, setUploads] = useFormState<Upload[]>(
@@ -32,6 +41,7 @@ export function useLaunchUploads(
 	const current = useRef(uploads);
 	current.current = uploads;
 	const controllers = useRef(new Map<string, AbortController>());
+	const carried = useRef<{ field: string; file: File }[]>([]);
 	useEffect(() => {
 		void context;
 		void draft;
@@ -47,9 +57,10 @@ export function useLaunchUploads(
 		setUploads(current.current);
 	};
 	const add = (field: string, files: File[]) => {
+		if (!files.length) return;
 		const existing = current.current;
 		if (files.length + existing.length > launchAssetLimits.count) {
-			setError("Select up to 10 files; remove a file first.");
+			setError("Attach up to 10 files. Remove one first.");
 			return;
 		}
 		if (files.some((file) => file.size > launchAssetLimits.fileBytes)) {
@@ -62,7 +73,7 @@ export function useLaunchUploads(
 				0,
 			) > launchAssetLimits.totalBytes
 		) {
-			setError("Files must total 100 MiB or less; remove a file first.");
+			setError("Attachments must total 100 MiB or less. Remove one first.");
 			return;
 		}
 		setError("");
@@ -112,11 +123,7 @@ export function useLaunchUploads(
 						update((items) =>
 							items.map((row) =>
 								row.localId === item.localId
-									? {
-											...row,
-											status: "error",
-											error: `${cause.message}. Remove this file and select it again to retry.`,
-										}
+									? { ...row, status: "error", error: cause.message }
 									: row,
 							),
 						);
@@ -124,6 +131,22 @@ export function useLaunchUploads(
 				.finally(() => controllers.current.delete(item.localId));
 		}
 	};
+	// Re-stage files carried over from the previous scope once the new draft
+	// exists. `add` is recreated every render; only a scope change re-stages.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: scope-change trigger
+	useEffect(() => {
+		void context;
+		const pending = carried.current;
+		if (!pending.length) return;
+		carried.current = [];
+		const target = fileFields[0];
+		const groups = new Map<string, File[]>();
+		for (const { field, file } of pending) {
+			const name = fileFields.includes(field) ? field : target;
+			if (name) groups.set(name, [...(groups.get(name) ?? []), file]);
+		}
+		for (const [field, files] of groups) add(field, files);
+	}, [context]);
 	const remove = async (item: Upload) => {
 		controllers.current.get(item.localId)?.abort();
 		if (item.id) {
@@ -158,6 +181,12 @@ export function useLaunchUploads(
 		clearError: () => setError(""),
 		add,
 		remove,
+		/** Call before changing project or recipe to keep the attached files. */
+		carryOver: () => {
+			carried.current = current.current
+				.filter((item) => item.status !== "removing")
+				.map(({ field, file }) => ({ field, file }));
+		},
 		reset: () => {
 			setDraft(crypto.randomUUID());
 		},
@@ -172,58 +201,92 @@ export function useLaunchUploads(
 		),
 	};
 }
-export function UploadField({
+export type LaunchUploads = ReturnType<typeof useLaunchUploads>;
+
+/** A paperclip that opens the native picker for one declared files field. */
+export function AttachButton({
 	field,
 	uploads,
 	disabled,
 }: {
 	field: any;
-	uploads: ReturnType<typeof useLaunchUploads>;
+	uploads: LaunchUploads;
 	disabled: boolean;
 }) {
+	const input = useRef<HTMLInputElement>(null);
+	const label = `Attach files${field.required ? " (required)" : ""}`;
 	return (
-		<fieldset className="launch-uploads" disabled={disabled}>
-			<legend>
-				{field.label}
-				{field.required ? " *" : " (optional)"}
-			</legend>
-			<label className="upload-picker">
-				<span>📎 Add files</span>
-				<input
-					aria-label={`Add ${field.label}`}
-					type="file"
-					multiple
-					onChange={(event) => {
-						uploads.add(field.name, Array.from(event.target.files ?? []));
-						event.target.value = "";
-					}}
-				/>
-			</label>
-			<small>Any file type · 10 files · 25 MiB each · 100 MiB total</small>
-			{field.description && <small>{field.description}</small>}
-			<ul>
-				{uploads.uploads
-					.filter((item) => item.field === field.name)
-					.map((item) => (
-						<li key={item.localId}>
-							<div>
-								<span className="upload-name">{item.file.name}</span>
+		<>
+			<button
+				type="button"
+				className="launcher-icon-button"
+				aria-label={label}
+				title={`${field.label}: ${uploadLimitsHint}`}
+				disabled={disabled}
+				onClick={() => input.current?.click()}
+			>
+				<PaperclipIcon />
+				{field.required && !uploads.selection[field.name]?.length && (
+					<span className="launcher-required-dot" aria-hidden="true" />
+				)}
+			</button>
+			<input
+				ref={input}
+				hidden
+				type="file"
+				multiple
+				tabIndex={-1}
+				aria-hidden="true"
+				onChange={(event) => {
+					uploads.add(field.name, Array.from(event.target.files ?? []));
+					event.target.value = "";
+				}}
+			/>
+		</>
+	);
+}
+
+/** Compact attachment chips shown above the prompt, like a chat composer. */
+export function AttachmentChips({
+	uploads,
+	labels,
+}: {
+	uploads: LaunchUploads;
+	labels?: Record<string, string>;
+}) {
+	if (!uploads.uploads.length && !uploads.error) return null;
+	const failed = uploads.uploads.filter((item) => item.status === "error");
+	return (
+		<div className="launcher-attachments">
+			{uploads.uploads.length > 0 && (
+				<ul aria-label="Attachments">
+					{uploads.uploads.map((item) => (
+						<li
+							key={item.localId}
+							className="launcher-chip"
+							data-status={item.status}
+							title={item.error ?? item.file.name}
+						>
+							<span className="launcher-chip-icon" aria-hidden="true">
+								{item.status === "uploading" || item.status === "removing" ? (
+									<span className="spinner" />
+								) : (
+									<FileIcon />
+								)}
+							</span>
+							<span className="launcher-chip-text">
+								<span className="launcher-chip-name">{item.file.name}</span>
 								<small>
-									{fileSize(item.file.size)} ·{" "}
-									{item.status === "ready"
-										? "Uploaded"
+									{item.status === "error"
+										? "Upload failed"
 										: item.status === "uploading"
 											? "Uploading…"
 											: item.status === "removing"
 												? "Removing…"
-												: "Upload failed"}
+												: fileSize(item.file.size)}
+									{labels?.[item.field] ? ` · ${labels[item.field]}` : ""}
 								</small>
-								{item.error && (
-									<p className="error" role="alert">
-										{item.error}
-									</p>
-								)}
-							</div>
+							</span>
 							<button
 								type="button"
 								aria-label={`Remove ${item.file.name}`}
@@ -234,20 +297,22 @@ export function UploadField({
 							</button>
 						</li>
 					))}
-			</ul>
-			{uploads.uploads.some((item) => item.status === "error") && (
-				<button type="button" onClick={uploads.reset}>
-					Clear all attachments and retry
-				</button>
+				</ul>
+			)}
+			{failed.length > 0 && (
+				<p className="error" role="alert">
+					{failed[0]!.error ?? "Upload failed"}. Remove the file and attach it
+					again to retry.
+				</p>
 			)}
 			{uploads.error && (
 				<p className="error" role="alert">
 					{uploads.error}{" "}
-					<button type="button" onClick={uploads.clearError}>
-						Dismiss selection error
+					<button type="button" className="link" onClick={uploads.clearError}>
+						Dismiss
 					</button>
 				</p>
 			)}
-		</fieldset>
+		</div>
 	);
 }

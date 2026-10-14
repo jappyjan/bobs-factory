@@ -2,9 +2,9 @@
 
 Date: 2026-10-13. Taskbot [#85](https://taskbot.apps.janjaap.de/p/bobs-factory/t/85).
 
-The launcher now places project selection in its heading, keeps workflow inputs
-visible beneath a roomy prompt, and accepts files only for declared attachment
-fields. Machine selection remains separate work in BOBS-84.
+The launcher now asks "What should we build in <project>?" with the project
+name as its selector, shows attachments as chips inside a chat-style composer,
+and accepts files only for declared attachment fields. Machine selection remains separate work in BOBS-84.
 
 ## Applicability and evidence
 
@@ -46,37 +46,41 @@ connections. The product also closes oversized upload connections after its
 
 ## Browser verification
 
-A fresh named `agent-browser` session ran explicitly headless. Actual UI actions
-verified four file types, removal, workflow switching, required Takeover source,
-agent settings and identity/tool selectors. Settings and files reset with their
-form context. A deliberately intercepted upload failure displayed an actionable
-error and disabled launch; removal/reselection recovered successfully.
+The launcher was redesigned after the first captures, which showed a native
+file input, stacked file rows and settings expanded inside the composer instead
+of the Taskbot reference layout. The current captures come from a fresh headless
+Chromium session against an isolated fixture: a grouped `bobs-factory` project
+(two repositories), an independent long-named project and simulated agents.
 
-Shift+Enter inserted a newline. An IME Enter event created no run. Two submit
-attempts in one event turn created one run, retained both repositories and the
-selected file, then cleared the submitted draft. Native Enter also launched.
-Long project/file names and 390 px screens showed no horizontal overflow.
+Actual UI actions verified, with no page errors:
 
-All six captures were opened and inspected. They use product source revision
-`8baccedc31f5816a51eae6399225678b81223dc0` with uncommitted changes and web build
-`350bac66c2a9b00a30be0156`. The source digest and screenshot hashes are in
-[the evidence receipt](media/2026-10-13-launcher-uploads/evidence.json). These are
-implementation evidence; later revision-bound QA and human acceptance remain
-pipeline responsibilities. A final backend-only input-name compatibility fix
-was verified after the captures; the web bundle did not change. The receipt
-separately records the latest validated backend source digest.
+- The project name in the heading opens the project menu; grouped projects list
+  their members. Typed text and two attached files survived switching to the
+  long-named project, and both files were staged again for the new scope (four
+  upload requests, both chips `ready`).
+- The recipe menu shows each recipe's description. Takeover renders its required
+  source field above the prompt and keeps Start disabled until it is filled.
+- The sliders button opens Run settings with agent, model, reasoning, service
+  tier and execution profiles.
+- Enter submitted one `POST /api/runs`; the prompt and chips cleared afterwards.
+- An upload rejected with a real 409 response (verified response headers kept,
+  outcome simulated) showed a failed chip and its error, and Start stayed
+  disabled. A 243-character filename stayed on one ellipsized chip at 390 px.
+
+All six captures were opened and inspected. Hashes are in
+[the evidence receipt](media/2026-10-13-launcher-uploads/evidence.json).
 
 ![Desktop, light, four uploaded file types](media/2026-10-13-launcher-uploads/desktop-light.png)
 
-![Desktop, dark, execution and agent controls](media/2026-10-13-launcher-uploads/desktop-dark.png)
+![Desktop, dark](media/2026-10-13-launcher-uploads/desktop-dark.png)
 
 ![Mobile, dark](media/2026-10-13-launcher-uploads/mobile-dark.png)
 
 ![Mobile, light](media/2026-10-13-launcher-uploads/mobile-light.png)
 
-![Simulated upload failure blocks launch](media/2026-10-13-launcher-uploads/upload-failure.png)
+![Rejected upload blocks launch](media/2026-10-13-launcher-uploads/upload-failure.png)
 
-![Long filename remains readable and removable](media/2026-10-13-launcher-uploads/long-file.png)
+![Long filename stays on one removable chip](media/2026-10-13-launcher-uploads/long-file.png)
 
 ## Targeted checks and limitations
 
@@ -119,3 +123,16 @@ Typecheck, edge-worker/web build and 201 targeted tests passed. Biome and
 `git diff --check` passed. Existing screenshots were preserved; this correction
 did not repeat browser captures or test real agents. Human acceptance and
 fresh pipeline review remain required.
+
+## Redesign and main-merge validation
+
+Latest `main` was merged into the branch. Bundled workflows are now read-only,
+so the drive forks the stock Factory launch fields into an `attachment-reader`
+recipe instead of rewriting the bundled `factory` definition. The same
+`F1_AGENT_MODE=mock bun` drive returned `result: passed` with all eleven
+assertions; the known synthetic `issue-1` comment warning remains.
+
+The launcher UI was rewritten (`launcher.tsx`, `launch-uploads.tsx`) and the
+browser checks above were repeated against the new bundle. Edge-worker typecheck
+and the focused factory suites passed. Biome reports only the 17 existing CSS
+warnings.

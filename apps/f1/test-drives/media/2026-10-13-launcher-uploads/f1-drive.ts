@@ -140,11 +140,20 @@ for (const sample of samples)
 await worker.start();
 const runtime: any = worker.getFactoryRuntime();
 
+// Bundled workflows are read-only; fork the stock Factory launch fields into a
+// single-role reader recipe so the drive exercises real attachment inputs.
 const definitions = structuredClone(defaultWorkflows);
-const factory = definitions.find((item) => item.id === "factory")!;
+const stockFactory = definitions.find((item) => item.id === "factory")!;
+const factory = {
+	...structuredClone(stockFactory),
+	id: "attachment-reader",
+	name: "Attachment reader",
+	labels: [],
+};
+definitions.push(factory);
 factory.steps = [
 	{
-		...factory.steps[0],
+		...stockFactory.steps[0],
 		id: "read",
 		name: "Read uploaded files",
 		type: "agent",
@@ -238,7 +247,7 @@ const build = (await (await httpFetch(`${origin}/api/version`)).json()).build;
 const upload = async (
 	draft: string,
 	sample = samples[0]!,
-	workflow = "factory",
+	workflow = "attachment-reader",
 ): Promise<Response> => {
 	const url = `${origin}/api/launch-assets?metadata=${encodeURIComponent(JSON.stringify({ draft, workflow, repositoryId: "app", repositoryIds: ["app", "api"], field: "attachments", name: sample.name, mime: sample.mime }))}`;
 
@@ -280,7 +289,7 @@ const launch = async (body: any) =>
 		body: JSON.stringify({
 			repositoryId: "app",
 			repositoryIds: ["app", "api"],
-			workflow: "factory",
+			workflow: "attachment-reader",
 			inputs: { prompt: "Read these files" },
 			...body,
 		}),

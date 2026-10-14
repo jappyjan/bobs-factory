@@ -308,14 +308,6 @@ select:focus {
 	box-shadow: var(--shadow);
 	font-size: 19px;
 }
-.start {
-	width: 44px;
-	height: 44px;
-	padding: 0;
-	font-size: 25px;
-	color: var(--primary-text);
-	background: var(--primary);
-}
 kbd {
 	font-family: inherit;
 	background: var(--indigo);
@@ -577,36 +569,6 @@ kbd {
 	color: var(--muted);
 	font-weight: 500;
 }
-.composer {
-	border: 2px solid transparent;
-	border-radius: 26px;
-	background:
-		linear-gradient(var(--surface), var(--surface)) padding-box,
-		var(--rainbow) border-box;
-	box-shadow: var(--pop);
-	padding: 12px;
-}
-.composer:focus-within {
-	box-shadow:
-		var(--pop),
-		0 0 0 4px #7b61ff12;
-}
-.composer-main textarea {
-	font-size: 19px;
-	font-weight: 700;
-	line-height: 1.5;
-	resize: none;
-	border: 0;
-	background: transparent;
-	box-shadow: none;
-	margin: 0;
-	padding: 8px 8px 12px;
-	min-height: 48px;
-	max-height: 220px;
-}
-.composer-main textarea::placeholder {
-	color: var(--muted);
-}
 .composer-details {
 	padding: 4px 8px 12px;
 }
@@ -627,52 +589,6 @@ kbd {
 	gap: 14px;
 	margin: 8px 0;
 }
-.composer-bar {
-	border-top: 1px solid var(--line);
-	padding-top: 12px;
-	display: flex;
-	gap: 10px;
-	align-items: center;
-}
-.workflow-chips {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	min-width: 0;
-	flex: 1;
-}
-.workflow-chips button {
-	background: var(--quiet);
-	font-size: 12px;
-	font-weight: 800;
-	white-space: nowrap;
-	border: 2px solid transparent;
-	border-radius: 999px;
-	padding: 8px 12px;
-	display: flex;
-	gap: 8px;
-	align-items: center;
-	min-height: 40px;
-}
-.workflow-chips button[aria-checked="true"] {
-	background: var(--violet);
-	border-color: #c6b4ff;
-	color: #8060ff;
-}
-.composer-controls {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-}
-.repo-picker {
-	display: flex;
-	gap: 6px;
-	align-items: center;
-	background: var(--quiet);
-	border-radius: 999px;
-	padding-left: 12px;
-	max-width: 180px;
-}
 .run-title-status {
 	display: flex;
 	flex-wrap: wrap;
@@ -686,24 +602,6 @@ kbd {
 }
 .run-title-status .error {
 	flex-basis: 100%;
-}
-.repo-picker select {
-	border: 0;
-	border-radius: 999px;
-	font-size: 12px;
-	font-weight: 800;
-	min-height: 40px;
-	background: transparent;
-	padding: 8px;
-	min-width: 80px;
-	width: auto;
-	max-width: 150px;
-	margin: 0;
-}
-.composer-hint {
-	font-size: 12px;
-	color: var(--muted);
-	padding: 10px 8px;
 }
 .agent-settings {
 	display: grid;
@@ -2221,12 +2119,6 @@ kbd {
 		margin-left: 24px;
 		margin-right: 24px;
 	}
-	.composer-bar {
-		flex-wrap: wrap;
-	}
-	.composer-controls {
-		margin-left: auto;
-	}
 	.artifact-grid {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
@@ -2289,48 +2181,6 @@ kbd {
 	.humming,
 	.settled-section {
 		margin-top: 32px;
-	}
-	.composer {
-		padding: 10px;
-		border-radius: 24px;
-	}
-	.composer-main textarea {
-		font-size: 17px;
-	}
-	.composer-bar {
-		flex-wrap: wrap;
-		padding-top: 10px;
-		gap: 10px;
-	}
-	.workflow-chips {
-		flex-basis: 100%;
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		scroll-snap-type: x mandatory;
-		padding-bottom: 2px;
-		mask-image: linear-gradient(to right, #000 94%, transparent);
-	}
-	.workflow-chips button {
-		min-height: 44px;
-		scroll-snap-align: start;
-		font-size: 12px;
-		padding: 8px 10px;
-	}
-	.composer-controls {
-		width: 100%;
-		gap: 8px;
-	}
-	.repo-picker {
-		max-width: none;
-		flex: 1;
-	}
-	.repo-picker select {
-		width: 100%;
-		max-width: none;
-		min-height: 44px;
-	}
-	.composer-hint {
-		font-size: 11px;
 	}
 	.agent-settings {
 		grid-template-columns: 1fr;
@@ -4112,9 +3962,6 @@ kbd {
 	:root textarea,
 	:root select {
 		font-size: 16px;
-	}
-	:root .composer-main textarea {
-		font-size: 17px;
 	}
 }
 .commentable {
@@ -6522,167 +6369,478 @@ kbd {
 	}
 }
 
-/* Manual launcher: project heading, generous prompt, compact controls. */
-.composer-heading {
-	font-size: clamp(24px, 3vw, 38px);
-	font-weight: 600;
-	line-height: 1.4;
+/* Launch composer: project-in-heading, chat-style card, tucked context tray. */
+.launcher {
+	margin: 28px auto 0;
+	max-width: 760px;
+}
+.launcher-heading {
+	font-size: clamp(26px, 4.2vw, 40px);
+	line-height: 1.2;
+	letter-spacing: -0.03em;
 	text-align: center;
-	margin: 28px 0;
-	overflow-wrap: anywhere;
+	text-wrap: balance;
 }
-.composer-heading .project-heading-picker {
-	font: inherit;
-	display: inline-flex;
+.launcher-project {
 	max-width: 100%;
-	vertical-align: bottom;
-	margin: 0;
-}
-.project-heading-picker select {
-	min-width: 0;
-	flex: 0 1 auto;
+	padding: 0;
+	border-radius: 10px;
 	font: inherit;
-	font-weight: 650;
-	color: inherit;
-	background: transparent;
-	border: 0;
-	border-bottom: 2px dotted var(--muted);
-	border-radius: 0;
-	padding: 0 22px 0 0;
-	margin: 0;
-	max-width: min(100%, 500px);
-	text-overflow: ellipsis;
+	letter-spacing: inherit;
+	line-height: inherit;
+	vertical-align: bottom;
 	cursor: pointer;
 }
-.project-heading-picker select:focus-visible {
-	outline: 3px solid #8060ff;
-	outline-offset: 4px;
+.launcher-project:disabled {
+	opacity: 1;
+	cursor: default;
 }
-.launch-composer .composer {
-	padding: 20px;
-	border: 1px solid var(--line);
+.launcher-project:disabled {
+	opacity: 1;
+	cursor: default;
+}
+/* Bottom-aligned with the heading line box so the clipped name keeps its baseline. */
+.launcher-project-name {
+	display: inline-block;
+	vertical-align: bottom;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: min(78vw, 560px);
+	text-decoration: underline dotted
+		color-mix(in srgb, var(--muted) 75%, transparent);
+	text-decoration-thickness: 2px;
+	text-underline-offset: 0.16em;
+}
+.launcher-project:hover:not(:disabled) .launcher-project-name,
+.launcher-project[data-state="open"] .launcher-project-name {
+	text-decoration-color: #7b61ff;
+}
+.launcher-subtitle {
+	max-width: 60ch;
+	margin: 10px auto 26px;
+	text-align: center;
+	color: var(--muted);
+	font-size: 14px;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+}
+.launcher-card {
+	position: relative;
+	z-index: 1;
+	padding: 12px 12px 10px;
+	border: 1.5px solid transparent;
 	border-radius: 28px;
-	background: var(--surface);
+	background:
+		linear-gradient(var(--surface), var(--surface)) padding-box,
+		linear-gradient(var(--line), var(--line)) border-box;
+	box-shadow: var(--pop);
+	transition: box-shadow 0.2s;
 }
-.composer-fields {
-	border: 0;
-	padding: 0;
-	margin: 0;
+.launcher-card:focus-within {
+	background:
+		linear-gradient(var(--surface), var(--surface)) padding-box,
+		var(--rainbow) border-box;
+	box-shadow:
+		var(--pop),
+		0 0 0 4px #7b61ff12;
+}
+.launcher-body {
 	min-width: 0;
 }
-.launch-composer .composer-fields .composer-main textarea {
-	border: 0;
-	outline: none;
-	box-shadow: none;
-	min-height: 170px;
-	font-weight: 500;
-	font-size: 18px;
-}
-.composer-inputs {
-	display: grid;
-	gap: 12px;
-	padding: 12px 8px;
-}
-.composer-settings {
-	padding: 12px 0;
-}
-.launch-composer .composer-bar {
-	border-top: 0;
-	flex-wrap: wrap;
-	gap: 8px;
-}
-.composer-workflow {
-	margin: 0;
-	max-width: 100%;
-}
-.composer-workflow select {
-	width: auto;
-	max-width: 220px;
-	margin: 0;
-	border: 0;
-	background: var(--quiet);
-	border-radius: 999px;
-	font-weight: 600;
-}
-.launch-composer .composer-controls {
-	margin-left: auto;
-}
-.launch-uploads {
-	border: 0;
-	border-top: 1px solid var(--line);
-	padding: 12px 8px;
-	margin: 10px 0;
-	min-width: 0;
-}
-.launch-uploads legend {
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--muted);
-}
-.launch-uploads small {
+.launcher-prompt {
 	display: block;
-	color: var(--muted);
-	font-size: 12px;
-	margin-top: 4px;
-}
-.upload-picker {
-	display: inline-flex;
-	gap: 10px;
-	align-items: center;
-	flex-wrap: wrap;
-	font-size: 13px;
-	margin: 0 0 6px;
-}
-.upload-picker input {
-	width: auto;
-	max-width: 100%;
-	font-size: 12px;
+	min-height: 96px;
+	max-height: 320px;
 	margin: 0;
+	padding: 8px 10px;
+	border: 0;
+	background: transparent;
+	font-size: 17px;
+	font-weight: 600;
+	line-height: 1.55;
+	resize: none;
 }
-.launch-uploads ul {
+.launcher-prompt:focus,
+.launcher-prompt:focus-visible {
+	border: 0;
+	outline: 0;
+	box-shadow: none;
+}
+.launcher-prompt::placeholder {
+	color: var(--muted);
+	font-weight: 500;
+}
+.launcher-fields {
+	display: grid;
+	gap: 10px;
+	padding: 6px 6px 12px;
+	margin-bottom: 4px;
+	border-bottom: 1px dashed var(--line);
+}
+.launcher-field label {
+	font-size: 12px;
+	color: var(--secondary);
+}
+.launcher-optional {
+	font-weight: 500;
+	color: var(--muted);
+}
+.launcher-field input,
+.launcher-field select,
+.launcher-field textarea {
+	margin-top: 4px;
+	min-height: 40px;
+	padding: 8px 12px;
+	border-color: transparent;
+	background: var(--quiet);
+}
+.launcher-field small {
+	display: block;
+	margin-top: 4px;
+	font-size: 12px;
+	color: var(--muted);
+}
+.launcher-attachments {
+	padding: 2px 4px 8px;
+}
+.launcher-attachments ul {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
 	list-style: none;
+	margin: 0;
 	padding: 0;
-	margin: 8px 0 0;
 }
-.launch-uploads li {
+.launcher-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	max-width: min(100%, 260px);
+	margin: 0;
+	padding: 5px 5px 5px 6px;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: var(--quiet);
+}
+.launcher-chip-icon {
+	display: grid;
+	place-items: center;
+	flex: none;
+	width: 32px;
+	height: 32px;
+	border-radius: 10px;
+	background: var(--violet);
+	color: #7b61ff;
+}
+.launcher-chip-icon .launcher-svg {
+	width: 16px;
+	height: 16px;
+}
+.launcher-chip-text {
+	display: grid;
+	min-width: 0;
+	line-height: 1.25;
+}
+.launcher-chip-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13px;
+	font-weight: 700;
+}
+.launcher-chip-text small {
+	font-size: 11px;
+	color: var(--muted);
+}
+.launcher-chip > button {
+	flex: none;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	color: var(--muted);
+	font-size: 16px;
+	line-height: 1;
+}
+.launcher-chip > button:hover:not(:disabled) {
+	background: var(--surface);
+	color: var(--text);
+}
+.launcher-chip[data-status="error"] {
+	background: var(--red);
+	border-color: transparent;
+}
+.launcher-chip[data-status="error"] .launcher-chip-icon,
+.launcher-chip[data-status="error"] small {
+	color: var(--stuck-text);
+	background: transparent;
+}
+.launcher-attachments .error {
+	margin-top: 8px;
+	font-size: 12px;
+}
+.launcher-attachments .link {
+	color: inherit;
+	font-weight: 700;
+	text-decoration: underline;
+}
+.launcher-bar {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	border: 1px solid var(--line);
-	background: var(--quiet);
-	border-radius: 12px;
-	padding: 8px 12px;
-	margin: 6px 0;
+	gap: 8px;
+	padding-top: 6px;
 }
-.launch-uploads li > div {
+.launcher-pills {
+	display: flex;
+	align-items: center;
+	gap: 2px;
 	flex: 1;
 	min-width: 0;
+	/* Room for focus rings, which the horizontal scroller would otherwise clip. */
+	margin: -6px;
+	padding: 6px;
+	overflow-x: auto;
+	scrollbar-width: none;
 }
-.upload-name {
-	overflow-wrap: anywhere;
-	font-size: 13px;
+.launcher-pills::-webkit-scrollbar {
+	display: none;
 }
-.launch-uploads li button {
-	min-width: 36px;
-	min-height: 36px;
+.launcher-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex: none;
+	min-height: 40px;
+	padding: 6px 10px;
+	border-radius: 999px;
+	color: var(--secondary);
+	font-size: 14px;
+	font-weight: 700;
+	white-space: nowrap;
 }
-@media (max-width: 600px) {
-	.composer-heading {
-		margin: 16px 0;
+.launcher-pill-text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 200px;
+}
+.launcher-pill .launcher-svg {
+	width: 16px;
+	height: 16px;
+	flex: none;
+}
+.launcher-pill > .launcher-svg:last-child {
+	width: 14px;
+	height: 14px;
+	color: var(--muted);
+}
+.launcher-pill:hover:not(:disabled),
+.launcher-pill[data-state="open"],
+.launcher-icon-button:hover:not(:disabled) {
+	background: var(--quiet);
+	color: var(--text);
+}
+.launcher-reasoning {
+	display: flex;
+	align-items: center;
+	flex: none;
+}
+.launcher-divider {
+	flex: none;
+	width: 1px;
+	height: 20px;
+	margin: 0 4px;
+	background: var(--line);
+}
+.launcher-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex: none;
+	margin-left: auto;
+}
+.launcher-icon-button {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	color: var(--muted);
+}
+.launcher-icon-button .launcher-svg {
+	width: 20px;
+	height: 20px;
+}
+.launcher-icon-button[data-active] {
+	color: #7b61ff;
+}
+.launcher-required-dot {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: #ff5d73;
+	box-shadow: 0 0 0 2px var(--surface);
+}
+.button.launcher-send {
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	margin-left: 4px;
+	background: var(--primary);
+	color: var(--primary-text);
+	box-shadow: 0 3px 0 var(--lip);
+}
+.button.launcher-send .launcher-svg {
+	width: 20px;
+	height: 20px;
+	stroke-width: 2.5;
+}
+.button.launcher-send:disabled {
+	opacity: 0.3;
+	box-shadow: none;
+}
+.launcher-drop {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	border: 2px dashed #7b61ff;
+	border-radius: inherit;
+	background: color-mix(in srgb, var(--violet) 88%, transparent);
+	color: #7b61ff;
+	font-weight: 800;
+	pointer-events: none;
+}
+.launcher-tray {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin: -16px 22px 0;
+	padding: 24px 16px 9px;
+	border: 1px solid var(--line);
+	border-top: 0;
+	border-radius: 0 0 22px 22px;
+	background: color-mix(in srgb, var(--surface) 60%, transparent);
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+.launcher-scope {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+}
+.launcher-scope-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.launcher-scope .launcher-svg {
+	flex: none;
+	width: 14px;
+	height: 14px;
+}
+.launcher-tray-hint {
+	display: inline-flex;
+	gap: 12px;
+	flex: none;
+}
+.launcher-error {
+	margin: 12px 8px 0;
+}
+.launcher-menu {
+	max-width: min(380px, calc(100vw - 24px));
+	max-height: min(60vh, 420px);
+	overflow-y: auto;
+}
+.launcher-menu .theme-option small {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	margin-top: 2px;
+	font-size: 12px;
+	line-height: 1.35;
+}
+.launcher-project-menu {
+	font-size: 15px;
+}
+.launcher-menu-label {
+	padding: 6px 12px 4px;
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+.launcher-settings {
+	display: grid;
+	gap: 16px;
+}
+.launcher-settings .agent-settings {
+	margin: 0;
+}
+@media (max-width: 640px) {
+	.launcher {
+		margin-top: 8px;
 	}
-	.project-heading-picker select {
-		max-width: 80vw;
+	.launcher-heading {
+		font-size: 25px;
 	}
-	.launch-composer .composer {
-		padding: 14px;
+	.launcher-subtitle {
+		margin-bottom: 18px;
+		font-size: 13px;
 	}
-	.launch-composer .composer-fields .composer-main textarea {
-		min-height: 150px;
+	.launcher-card {
+		padding: 10px 8px 8px;
+		border-radius: 24px;
 	}
-	.composer-workflow select {
-		max-width: 155px;
+	.launcher-prompt {
+		min-height: 84px;
 	}
-	.launch-composer .composer-controls {
-		width: auto;
+	.launcher-pill {
+		padding: 6px 8px;
+		font-size: 13px;
+	}
+	.launcher-pill-text {
+		max-width: 160px;
+	}
+	/* Reasoning stays available in Run settings on narrow screens. */
+	.launcher-reasoning {
+		display: none;
+	}
+	/* Pickers get their own row; tools sit left of the send button below. */
+	.launcher-bar {
+		flex-wrap: wrap;
+		row-gap: 4px;
+	}
+	.launcher-pills {
+		flex-basis: 100%;
+	}
+	.launcher-actions {
+		flex-basis: 100%;
+		margin-left: 0;
+	}
+	.button.launcher-send {
+		margin-left: auto;
+	}
+	.launcher-tray {
+		margin: -16px 12px 0;
+		padding-left: 12px;
+		padding-right: 12px;
+	}
+	.launcher-tray-hint {
+		display: none;
 	}
 }

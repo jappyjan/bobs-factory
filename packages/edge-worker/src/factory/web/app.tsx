@@ -47,7 +47,8 @@ import {
 	RunTitleStatus,
 	WorkingRow,
 } from "./focus";
-import { Composer, Recipes } from "./forms";
+import { Recipes } from "./forms";
+import { Composer } from "./launcher";
 import { NotificationsProvider } from "./notifications-ui";
 import { SetupBoundary } from "./onboarding";
 import { pwaState, startPwa, usePwa } from "./pwa";
