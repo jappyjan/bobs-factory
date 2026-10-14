@@ -332,6 +332,154 @@ it("requests a new terminal session once when the server forgets it, and sends w
 	await expect(client.get("/api/runs")).rejects.toThrow("same home (/home)");
 });
 
+it("selects terminal choices explicitly, preserves mode drafts and submits in option order", () => {
+	const form = new AnswerForm({
+		...run("choices", "waiting"),
+		questions: ["Platforms?", "Strategy?"],
+		questionChoices: [
+			{
+				questionIndex: 0,
+				selection: "multiple",
+				options: [
+					{ id: "a", answer: "Alpha" },
+					{ id: "b", answer: "Beta" },
+				],
+			},
+			{
+				questionIndex: 1,
+				selection: "single",
+				options: [
+					{ id: "one", answer: "Explain via examples" },
+					{ id: "two", answer: "Use text" },
+				],
+				preselectedOptionIds: ["one"],
+			},
+		],
+	});
+	expect(form.request().body).toBeUndefined();
+	form.key({ name: "down" });
+	form.key({ name: "text", text: " " });
+	form.key({ name: "up" });
+	form.key({ name: "text", text: " " });
+	expect(form.answers()).toEqual(["- Alpha\n- Beta", "Explain via examples"]);
+	expect(form.key({ name: "text", text: "unhandled" })).toBeUndefined();
+	form.key({ name: "down" });
+	form.key({ name: "down" });
+	form.key({ name: "text", text: " " });
+	expect(form.request().body).toBeUndefined();
+	form.key({ name: "text", text: "Custom platform" });
+	expect(form.answers()[0]).toBe("Custom platform");
+	const screen = new Screen(60, 16, tokens("light").base);
+	form.render(screen, tokens("light"));
+	expect(screen.cells.join("")).toContain("Custom platform");
+	expect(screen.cursor!.y).toBeLessThan(13);
+	form.key({ name: "ctrl-space" });
+	expect(form.answers()[0]).toBe("- Alpha\n- Beta");
+	form.key({ name: "tab" });
+	form.key({ name: "down" });
+	form.key({ name: "text", text: " " });
+	expect(form.answers()[1]).toBe("Use text");
+	expect(form.request().body?.kind).toBe("answer");
+	expect(form.key({ name: "ctrl-s" })).toBe("submit");
+});
+
+it("scrolls to late options in a short terminal and sanitizes their labels", () => {
+	const options = Array.from({ length: 20 }, (_, i) => ({
+		id: String(i),
+		answer:
+			`Option ${i + 1} with a long readable label` +
+			(i === 19 ? "\x1b[2J" : ""),
+	}));
+	const form = new AnswerForm({
+		...run("long-choices", "waiting"),
+		questions: ["Choose a platform"],
+		questionChoices: [{ questionIndex: 0, selection: "single", options }],
+	});
+	for (let i = 0; i < 19; i++) form.key({ name: "down" });
+	const screen = new Screen(60, 12, tokens("light").base);
+	form.render(screen, tokens("light"));
+	expect(screen.cells.join("")).toContain("Option 20");
+	expect(screen.cells.join("")).toContain("ctrl-s send");
+	expect(screen.cells.join("")).not.toContain("\x1b");
+	form.key({ name: "text", text: " " });
+	expect(form.answers()[0]).toContain("Option 20");
+});
+
+it("shows multiline and wrapped question context above terminal choices", () => {
+	const question =
+		"Should we run real-agent tests?\nThey use provider credits and the cost is unknown. " +
+		"The remaining tests confirm agents resume after your reply and generate suitable suggestions.";
+	const form = new AnswerForm({
+		...run("question-context", "waiting"),
+		questions: [question],
+		questionChoices: [
+			{
+				questionIndex: 0,
+				selection: "single",
+				options: [
+					{ id: "run", answer: "Run real-agent tests" },
+					{ id: "wait", answer: "Wait" },
+				],
+			},
+		],
+	});
+	const screen = new Screen(100, 30, tokens("light").base);
+	form.render(screen, tokens("light"));
+	const text = screen.cells.join("");
+	for (const line of wrap(question, 90)) expect(text).toContain(line);
+	expect(text).toContain("Run real-agent tests");
+	expect(text).toContain("Custom answer");
+	expect(text).toContain("ctrl-s send");
+});
+
+it("lets every long question line be read without changing answer drafts", () => {
+	const lines = Array.from({ length: 35 }, (_, i) => `Context line ${i + 1}.`);
+	const form = new AnswerForm({
+		...run("scroll-question", "waiting"),
+		questions: [lines.join("\n"), "Second question"],
+		questionChoices: [0, 1].map((questionIndex) => ({
+			questionIndex,
+			selection: "single" as const,
+			options: [
+				{ id: "yes", answer: "Proceed" },
+				{ id: "no", answer: "Wait" },
+			],
+			preselectedOptionIds: ["yes"],
+		})),
+	});
+	const seen = new Set<string>();
+	const render = (w = 60, h = 16) => {
+		const screen = new Screen(w, h, tokens("light").base);
+		form.render(screen, tokens("light"));
+		return screen.cells.join("");
+	};
+	for (let page = 0; page < lines.length; page++) {
+		const text = render();
+		for (const line of lines) if (text.includes(line)) seen.add(line);
+		expect(text).toContain("PgUp/PgDn scroll");
+		expect(text).toContain("ctrl-s send");
+		form.key({ name: "pagedown" });
+	}
+	expect([...seen]).toEqual(lines);
+	expect(form.answers()).toEqual(["Proceed", "Proceed"]);
+	// Scroll controls still work while editing custom text and after a resize.
+	form.key({ name: "down" });
+	form.key({ name: "down" });
+	form.key({ name: "text", text: " " });
+	form.key({ name: "text", text: "Custom response" });
+	expect(render(80, 24)).toContain("Context line 35.");
+	for (let page = 0; page < lines.length; page++) {
+		form.key({ name: "pageup" });
+		render();
+	}
+	expect(render()).toContain("Context line 1.");
+	expect(form.answers()).toEqual(["Custom response", "Proceed"]);
+	form.key({ name: "tab" });
+	expect(render()).toContain("Second question");
+	form.key({ name: "shift-tab" });
+	expect(render()).toContain("Context line 1.");
+});
+
 it("offers only enabled manual workflows with available dependencies", () => {
 	expect(
 		launchableWorkflows({

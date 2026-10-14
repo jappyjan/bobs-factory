@@ -8,12 +8,44 @@ export const QuestionRecommendationSchema = z.object({
 export type QuestionRecommendation = z.infer<
 	typeof QuestionRecommendationSchema
 >;
+export const QuestionChoicesSchema = z
+	.object({
+		questionIndex: z.number().int().nonnegative(),
+		selection: z.enum(["single", "multiple"]),
+		options: z
+			.array(
+				z.object({
+					id: z.string().trim().min(1),
+					answer: z.string().trim().min(1),
+					reason: z.string().trim().min(1).optional(),
+				}),
+			)
+			.min(2),
+		preselectedOptionIds: z.array(z.string().trim().min(1)).optional(),
+	})
+	.superRefine((value, ctx) => {
+		const ids = value.options.map((option) => option.id);
+		const defaults = value.preselectedOptionIds ?? [];
+		if (
+			new Set(ids).size !== ids.length ||
+			new Set(defaults).size !== defaults.length ||
+			defaults.some((id) => !ids.includes(id)) ||
+			(value.selection === "single" && defaults.length > 1)
+		)
+			ctx.addIssue({
+				code: "custom",
+				message:
+					"Options and defaults must use unique valid IDs; single choice permits at most one default",
+			});
+	});
+export type QuestionChoices = z.infer<typeof QuestionChoicesSchema>;
 export const QuestionFieldsSchema = z
 	.object({
 		questions: z.array(
 			z.string().refine((value) => !!value.trim(), "Question must be nonblank"),
 		),
 		questionRecommendations: z.array(QuestionRecommendationSchema).optional(),
+		questionChoices: z.array(QuestionChoicesSchema).optional(),
 	})
 	.superRefine((result, ctx) => {
 		const seen = new Set<number>();
@@ -29,6 +61,19 @@ export const QuestionFieldsSchema = z
 				});
 			seen.add(item.questionIndex);
 		});
+		result.questionChoices?.forEach((item, i) => {
+			if (
+				item.questionIndex >= result.questions.length ||
+				seen.has(item.questionIndex)
+			)
+				ctx.addIssue({
+					code: "custom",
+					path: ["questionChoices", i, "questionIndex"],
+					message:
+						"Use a unique in-range question index without a recommendation",
+				});
+			seen.add(item.questionIndex);
+		});
 	});
 /** Validate additive metadata without stripping custom role fields. */
 export function normalizeQuestionResult(
@@ -40,6 +85,7 @@ export function normalizeQuestionResult(
 export function questionNotification(
 	questions: string[],
 	recommendations?: QuestionRecommendation[],
+	choices?: QuestionChoices[],
 ): string {
 	return (
 		questions
@@ -47,10 +93,14 @@ export function questionNotification(
 				const suggestion = recommendations?.find(
 					(item) => item.questionIndex === i,
 				);
-				return `${i + 1}. ${q}${suggestion ? `\n\nSuggested answer: ${suggestion.answer}\n\nWhy: ${suggestion.reason}` : ""}`;
+				const choice = choices?.find((item) => item.questionIndex === i);
+				const options = choice
+					? `\n\n${choice.selection === "single" ? "Choose one" : "Choose one or more"}:\n${choice.options.map((option) => `- ${option.answer}${choice.preselectedOptionIds?.includes(option.id) ? " (preselected)" : ""}${option.reason ? ` — ${option.reason}` : ""}`).join("\n")}\nOr write a custom answer.`
+					: "";
+				return `${i + 1}. ${q}${options}${suggestion ? `\n\nSuggested answer: ${suggestion.answer}\n\nWhy: ${suggestion.reason}` : ""}`;
 			})
 			.join("\n\n") +
-		"\n\nSuggestions require your explicit reply or Send answers submission in Factory before work resumes."
+		`\n\n${choices?.length ? "Choices and suggestions" : "Suggestions"} require your explicit reply or Send answers submission in Factory before work resumes.`
 	);
 }
 
@@ -61,7 +111,7 @@ Each string in questions asks for ONE decision and stands on its own. Lead with 
 Name the feature, warning, rule or earlier decision instead of saying "these checks", "that rule" or "as discussed". For a rule-based blocker, name/link its source and explain the rule in everyday words. State any material risk or untested behavior and distinguish existing problems from problems introduced by this task. If an option uses paid services, say so; give an estimated cost only when known. Do not invent facts, costs or certainty. Include a recommendation when supported by evidence, with a short reason; use questionRecommendations to keep the suggested answer separately selectable.
 For example, when simulated-agent checks passed but real-agent checks remain required, ask: "Should I run the remaining tests with real agents? Tests with simulated agents passed. They do not confirm that real agents generate suitable suggestions and resume after your reply.\n\n- Run real-agent tests: uses provider credits; the cost is not yet known.\n- Continue with mock results: leave real-agent behavior unverified." This is a writing example, not evidence or permission to skip required checks. Explain the actual missing behavior in your own question and offer only options allowed by the applicable rules.
 Use familiar words: "security warning" instead of "advisory", "fix" instead of "remediation", "allow skipping this test" instead of "waive its live-only facets". Keep secondary references in a clearly labeled technical detail or link. The main question must be understandable without them. Ask only for information or decisions you cannot obtain or resolve from the available context and existing authorization. A request to explain or rephrase is not an answer, approval or exception; preserve the blocker until the human actually decides.
-Questions support Markdown. Put essential context directly in the question; links and visuals only supplement it. Optionally include a small text flow diagram in a fenced code block, or a real PNG/JPEG image when it makes the decision easier to understand. Do not use Mermaid (it is not rendered). Save images directly in the supplied evidence directory with unique filenames containing only letters, digits, dots, underscores or hyphens, then embed them as ![short descriptive caption](/api/runs/${runId}/question-images/FILENAME.png). Inspect images before including them, describe what the human should notice, and never claim evidence you have not verified. Keep visuals optional; a text-only question is usually enough. Keep questions as strings and preserve all other requested role fields. Add optional sibling questionRecommendations: [{"questionIndex":0,"answer":"recommended answer","reason":"short evidence-based explanation"}]. Indices are zero-based within this exact questions array, with at most one recommendation per question. Generate recommendations in the same response for decisions supported by the available evidence. Never invent an unknowable fact, credential or access; omit its recommendation and explain the needed input in the question. Recommendations are suggestions only, never accepted decisions or authorization; explicit human submission is required. Omit metadata or use an empty array when no recommendation is justified.`;
+Questions support Markdown. Put essential context directly in the question; links and visuals only supplement it. Optionally include a small text flow diagram in a fenced code block, or a real PNG/JPEG image when it makes the decision easier to understand. Do not use Mermaid (it is not rendered). Save images directly in the supplied evidence directory with unique filenames containing only letters, digits, dots, underscores or hyphens, then embed them as ![short descriptive caption](/api/runs/${runId}/question-images/FILENAME.png). Inspect images before including them, describe what the human should notice, and never claim evidence you have not verified. Keep visuals optional; a text-only question is usually enough. Keep questions as strings and preserve all other requested role fields. Add optional sibling questionRecommendations: [{"questionIndex":0,"answer":"recommended answer","reason":"short evidence-based explanation"}]. Indices are zero-based within this exact questions array, with at most one recommendation per question. Generate recommendations in the same response for decisions supported by the available evidence. Never invent an unknowable fact, credential or access; omit its recommendation and explain the needed input in the question. Recommendations are suggestions only, never accepted decisions or authorization; explicit human submission is required. Omit metadata or use an empty array when no recommendation is justified. For selectable answers, add questionChoices: [{"questionIndex":0,"selection":"single","options":[{"id":"yes","answer":"Yes"},{"id":"no","answer":"No"}],"preselectedOptionIds":["yes"]}]. Use selection "multiple" to allow several answers. Defaults are optional; never implicitly select the first option. IDs must be unique and defaults must reference options. Each option may include an evidence-based reason. Do not combine choices and recommendations for the same question. Both interfaces always offer separate custom text; blank custom text cannot use defaults. Selecting or restoring defaults never submits or authorizes work.`;
 }
 
 /** Obvious explanation requests from existing free-text/ticket reply clients.

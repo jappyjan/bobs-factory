@@ -55,6 +55,7 @@ export function runPushEvent(run: FactoryRun): PushEvent | undefined {
 			identity: digest([
 				run.step,
 				run.answers.length,
+				...(run.questionChoices?.length ? [run.questionChoices] : []),
 				[
 					...(questionSource(run.checkpoint, run.questions) ?? run.questions),
 				].sort(),

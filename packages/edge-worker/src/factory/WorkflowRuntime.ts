@@ -78,6 +78,7 @@ import { beginStepAttempt, finishStepAttempt } from "./Provenance.js";
 import {
 	isExplanationRequest,
 	normalizeQuestionResult,
+	type QuestionChoices,
 	type QuestionRecommendation,
 	questionNotification,
 } from "./Questions.js";
@@ -175,14 +176,17 @@ export interface GraphCheckpoint {
 			source?: {
 				questions: string[];
 				recommendations?: QuestionRecommendation[];
+				choices?: QuestionChoices[];
 			};
 			questions: string[];
 			recommendations?: QuestionRecommendation[];
+			choices?: QuestionChoices[];
 		};
 		questionExplanation?: {
 			source?: {
 				questions: string[];
 				recommendations?: QuestionRecommendation[];
+				choices?: QuestionChoices[];
 			};
 			text: string;
 			questions: string[];
@@ -328,6 +332,7 @@ export interface FactoryRun {
 	questionRequests?: { questions: string[]; text: string; at: string }[];
 	questions: string[];
 	questionRecommendations?: QuestionRecommendation[];
+	questionChoices?: QuestionChoices[];
 	questionBatchId?: string;
 	events: RunEvent[];
 	activitySteps?: { at: string; step: string }[];
@@ -2565,9 +2570,17 @@ export class WorkflowRuntime {
 		recommendations: QuestionRecommendation[] | undefined,
 		context: ExecutionContext,
 	): Promise<void> {
+		const output = context.outputs?.[context.step.id];
+		let choices =
+			output && typeof output === "object" && "questions" in output
+				? (normalizeQuestionResult(output).questionChoices as
+						| QuestionChoices[]
+						| undefined)
+				: undefined;
 		const source = structuredClone({
 			questions,
 			...(recommendations === undefined ? {} : { recommendations }),
+			...(choices === undefined ? {} : { choices }),
 		});
 		// A rephrasing belongs to the decision it explained. Revalidated gates
 		// may change while waiting; legacy displays without provenance cannot
@@ -2588,14 +2601,17 @@ export class WorkflowRuntime {
 		recommendations = state.questionDisplay
 			? state.questionDisplay.recommendations
 			: recommendations;
+		choices = state.questionDisplay ? state.questionDisplay.choices : choices;
 		const restored =
 			state.phase === "waiting" &&
 			isDeepStrictEqual(run.questions, questions) &&
-			isDeepStrictEqual(run.questionRecommendations, recommendations);
+			isDeepStrictEqual(run.questionRecommendations, recommendations) &&
+			isDeepStrictEqual(run.questionChoices, choices);
 		state.phase = "waiting";
 		releaseDelivery(run, "Awaiting assistance");
 		run.questions = questions;
 		run.questionRecommendations = recommendations;
+		run.questionChoices = choices;
 		if (!restored || !run.questionBatchId) run.questionBatchId = randomUUID();
 		run.status = "waiting";
 		let notify = !restored;
@@ -2623,13 +2639,14 @@ export class WorkflowRuntime {
 							modelVariant: context.step.modelVariant,
 							serviceTier: context.step.serviceTier,
 							prompt:
-								"Explain the pending questions using only the supplied context. The user has not answered or authorized any work. Do not implement, run checks, spend credits on tests, publish, change files or clear blockers. Use only factory-context tools. Return a questions array with one clearer question for each original question, preserving the same decisions, constraints and authorization requirements. Optional questionRecommendations must preserve the existing choices. Return no other role results.",
+								"Explain the pending questions using only the supplied context. The user has not answered or authorized any work. Do not implement, run checks, spend credits on tests, publish, change files or clear blockers. Use only factory-context tools. Return a questions array with one clearer question for each original question, preserving the same decisions, constraints and authorization requirements. Optional questionRecommendations must preserve existing recommendations. questionChoices must preserve option IDs, answer text, selection mode and preselected IDs; omit it to retain the original choice contract. Return no other role results.",
 						},
 						chat: false,
 						stepKey: `${context.stepKey}/question-explanation`,
 						input: {
 							questions: request.questions,
 							request: request.text,
+							questionChoices: choices,
 							recommendations,
 							blocker: context.outputs?.[context.step.id],
 							answers: structuredClone(run.answers),
@@ -2657,15 +2674,25 @@ export class WorkflowRuntime {
 						at: new Date().toISOString(),
 					});
 				}
+				if (
+					explained.questionChoices !== undefined &&
+					!isDeepStrictEqual(explained.questionChoices, choices)
+				)
+					throw new Error("An explanation must preserve the choice contract");
 				questions = clarified;
-				recommendations = explained.questionRecommendations as
-					| QuestionRecommendation[]
-					| undefined;
+				recommendations = (explained.questionRecommendations ??
+					recommendations) as QuestionRecommendation[] | undefined;
+				normalizeQuestionResult({
+					questions,
+					questionRecommendations: recommendations,
+					questionChoices: choices,
+				});
 				notify = true;
-				state.questionDisplay = { source, questions, recommendations };
+				state.questionDisplay = { source, questions, recommendations, choices };
 				state.questionExplanation = undefined;
 				run.questions = questions;
 				run.questionRecommendations = recommendations;
+				run.questionChoices = choices;
 				// Explaining architecture keeps the exact proposal pending. Reuse its
 				// ticket receipt; a revised proposal gets a new batch on the next wait.
 				if (context.step.tool !== "architecture-decision")
@@ -2683,7 +2710,7 @@ export class WorkflowRuntime {
 			this.log(run, run.step ?? "clarify", questions.join("\n"));
 			try {
 				if (run.ticketReference && this.hooks.track) {
-					const body = `Factory needs assistance:\n\n${questionNotification(questions, run.questionRecommendations)}`;
+					const body = `Factory needs assistance:\n\n${questionNotification(questions, run.questionRecommendations, run.questionChoices)}`;
 					const legacyKey = `questions:${run.step}:${run.answers.length}${state.questionDisplay ? `:explanation:${run.questionBatchId}` : ""}`;
 					const batchKey = `questions:${run.step}:${run.answers.length}:${run.questionBatchId}`;
 					// Reuse unchanged receipts from before all waits used batch identities.
@@ -2736,6 +2763,7 @@ export class WorkflowRuntime {
 		releaseDelivery(run, "Awaiting human review");
 		run.questions = [];
 		run.questionRecommendations = undefined;
+		run.questionChoices = undefined;
 		run.questionBatchId = undefined;
 		const waiting = new Promise<void>((resolve, reject) =>
 			this.pendingAnswers.set(run.id, { resolve, reject }),
@@ -2837,6 +2865,7 @@ export class WorkflowRuntime {
 		run.status = "running";
 		run.questions = [];
 		run.questionRecommendations = undefined;
+		run.questionChoices = undefined;
 		run.questionBatchId = undefined;
 		delete run.architectureGate;
 		this.log(
@@ -2957,6 +2986,9 @@ export class WorkflowRuntime {
 				source: structuredClone(
 					state.questionDisplay?.source ?? {
 						questions: run.questions,
+						...(run.questionChoices === undefined
+							? {}
+							: { choices: run.questionChoices }),
 						...(run.questionRecommendations === undefined
 							? {}
 							: {
@@ -2990,6 +3022,7 @@ export class WorkflowRuntime {
 		markAnswered(run.checkpoint);
 		run.questions = [];
 		run.questionRecommendations = undefined;
+		run.questionChoices = undefined;
 		run.questionBatchId = undefined;
 		run.status = "running";
 		this.log(run, run.step ?? "clarify", `Human answer: ${answer}`);
