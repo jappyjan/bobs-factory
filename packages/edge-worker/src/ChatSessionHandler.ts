@@ -22,6 +22,7 @@ import {
 } from "./RunnerConcurrency.js";
 import type { RunnerConfigBuilder } from "./RunnerConfigBuilder.js";
 import { persistReplyEvent } from "./SessionRecovery.js";
+import { isUpdatePaused } from "./updates/UpdatePausedError.js";
 
 /**
  * Defines what each chat platform must provide for the generic session lifecycle.
@@ -102,6 +103,7 @@ export interface ChatSessionHandlerDeps {
 	requireWorkflowAvailable?(id?: string): void;
 	onSessionChange?: (id: string) => void;
 	isShuttingDown?: () => boolean;
+	isUpdateMaintenance?: () => boolean;
 	onNewSession?: (
 		session: CyrusAgentSession,
 		instructions: string,
@@ -453,6 +455,7 @@ export class ChatSessionHandler<TEvent> {
 					? runner.startStreaming(userPrompt)
 					: runner.start(userPrompt);
 			this.deps.onNewSession?.(session, userPrompt, this.adapter.platformName);
+			let updatePaused = false;
 			startPromise
 				.then((sessionInfo: AgentSessionInfo) => {
 					this.logger.info(
@@ -460,6 +463,10 @@ export class ChatSessionHandler<TEvent> {
 					);
 				})
 				.catch((error: unknown) => {
+					if (isUpdatePaused(error)) {
+						updatePaused = true;
+						return;
+					}
 					this.logger.error(
 						`${this.adapter.platformName} session error for event ${eventId}`,
 						error instanceof Error ? error : new Error(String(error)),
@@ -470,8 +477,16 @@ export class ChatSessionHandler<TEvent> {
 					this.clearPendingReplies(sessionId);
 				})
 				.finally(() => {
-					this.drainDashboardMessages(sessionId);
-					this.drainPendingFollowups(sessionId);
+					if (
+						updatePaused &&
+						this.deps.isUpdateMaintenance?.() === false &&
+						!this.deps.isShuttingDown?.()
+					)
+						void this.recoverQueuedSessions();
+					if (!updatePaused) {
+						this.drainDashboardMessages(sessionId);
+						this.drainPendingFollowups(sessionId);
+					}
 					this.sessionManager.emit("sessionChanged", sessionId);
 					this.deps.onStateChange().catch((error: unknown) => {
 						this.logger.error(
@@ -659,6 +674,7 @@ export class ChatSessionHandler<TEvent> {
 			false,
 			batch,
 		).catch(async (error: unknown) => {
+			if (isUpdatePaused(error)) return;
 			session.status = AgentSessionStatus.Error;
 			await this.sessionManager.createResponseActivity(
 				id,
@@ -704,6 +720,7 @@ export class ChatSessionHandler<TEvent> {
 	}
 	/** Resume only unfinished turns, through the same capacity-gated start path. */
 	async recoverQueuedSessions(): Promise<void> {
+		if (this.deps.isUpdateMaintenance?.()) return;
 		for (const session of this.getAllChatSessions()) {
 			try {
 				this.deps.requireWorkflowAvailable?.(session.id);
@@ -720,7 +737,11 @@ export class ChatSessionHandler<TEvent> {
 			if (
 				!pending ||
 				!resume ||
-				session.agentRunner ||
+				(session.agentRunner &&
+					!(
+						runnerCapacityState(session.agentRunner)?.parked &&
+						!session.agentRunner.isRunning()
+					)) ||
 				this.continuationStarts.has(session.id)
 			)
 				continue;
@@ -737,7 +758,7 @@ export class ChatSessionHandler<TEvent> {
 					true,
 				);
 			} catch (error) {
-				if (this.deps.isShuttingDown?.()) continue;
+				if (isUpdatePaused(error) || this.deps.isShuttingDown?.()) continue;
 				session.status = AgentSessionStatus.Error;
 				await this.sessionManager.createResponseActivity(
 					session.id,
@@ -1014,6 +1035,7 @@ export class ChatSessionHandler<TEvent> {
 					? runner.startStreaming(resumePrompt)
 					: runner.start(resumePrompt);
 			started = true;
+			let updatePaused = false;
 			startPromise
 				.then((sessionInfo: AgentSessionInfo) => {
 					this.logger.info(
@@ -1021,6 +1043,10 @@ export class ChatSessionHandler<TEvent> {
 					);
 				})
 				.catch((error: unknown) => {
+					if (isUpdatePaused(error)) {
+						updatePaused = true;
+						return;
+					}
 					this.logger.error(
 						`${this.adapter.platformName} resume session error for ${sessionId}`,
 						error instanceof Error ? error : new Error(String(error)),
@@ -1034,6 +1060,13 @@ export class ChatSessionHandler<TEvent> {
 				.finally(() => {
 					releaseStart();
 					if (
+						updatePaused &&
+						this.deps.isUpdateMaintenance?.() === false &&
+						!this.deps.isShuttingDown?.()
+					)
+						void this.recoverQueuedSessions();
+					if (
+						!updatePaused &&
 						!this.deps.isShuttingDown?.() &&
 						existingSession.status !== AgentSessionStatus.Error
 					) {
@@ -1042,7 +1075,7 @@ export class ChatSessionHandler<TEvent> {
 					}
 				});
 		} catch (error) {
-			if (!this.deps.isShuttingDown?.())
+			if (!isUpdatePaused(error) && !this.deps.isShuttingDown?.())
 				existingSession.status = AgentSessionStatus.Error;
 			throw error;
 		} finally {

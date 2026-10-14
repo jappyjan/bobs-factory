@@ -1323,9 +1323,15 @@ it.each([
 	edge.titleGenerator = { start, shutdown: async () => {} };
 	if (status === "running") edge.recoverFactoryRuns();
 	else runtime.retry(run.id);
-	await vi.waitFor(() => expect(run.status).toBe("completed"), {
-		timeout: 10000,
-	});
+	await vi.waitFor(
+		() => {
+			expect(run.status).toBe("completed");
+			expect(runtime.isExecuting(run.id)).toBe(false);
+		},
+		{
+			timeout: 10000,
+		},
+	);
 	expect(start).not.toHaveBeenCalled();
 	expect(run.titleGeneration).toBeUndefined();
 	expect(run.title).toBe("Original historical title");
@@ -1334,9 +1340,15 @@ it.each([
 	// A second retry must also preserve the saved historical identity.
 	run.status = "failed";
 	runtime.retry(run.id);
-	await vi.waitFor(() => expect(run.status).toBe("completed"), {
-		timeout: 10000,
-	});
+	await vi.waitFor(
+		() => {
+			expect(run.status).toBe("completed");
+			expect(runtime.isExecuting(run.id)).toBe(false);
+		},
+		{
+			timeout: 10000,
+		},
+	);
 	expect(start).not.toHaveBeenCalled();
 	expect(run.titleGeneration).toBeUndefined();
 });

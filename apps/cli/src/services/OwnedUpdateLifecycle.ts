@@ -69,6 +69,7 @@ export class OwnedUpdateLifecycle {
 	constructor(
 		readonly home: string,
 		port: number,
+		readonly signal?: AbortSignal,
 	) {
 		this.manager = new ServiceLifecycle(home);
 		this.home = this.manager.home;

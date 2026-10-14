@@ -389,6 +389,7 @@ import { ToolPermissionResolver } from "./ToolPermissionResolver.js";
 import type { AgentSessionData, EdgeWorkerEvents } from "./types.js";
 import { UserAccessControl } from "./UserAccessControl.js";
 import { UpdateDrain } from "./updates/UpdateDrain.js";
+import { isUpdatePaused } from "./updates/UpdatePausedError.js";
 import { ZulipChatAdapter } from "./ZulipChatAdapter.js";
 
 export declare interface EdgeWorker {
@@ -521,6 +522,14 @@ export class EdgeWorker extends EventEmitter {
 	 */
 	private pendingTriggerOrigins = new Map<string, WorkflowTriggerOrigin>();
 	private pendingTriggerMessages = new Map<string, string | null>();
+	private pendingIntegrationEvents = new Map<
+		string,
+		{
+			platform: "github" | "gitlab";
+			event: unknown;
+		}
+	>();
+	private recoveringIntegrationEvents = new Set<string>();
 	private launchAdmission?: LaunchAdmission;
 	private inFlightTicketStarts = new Set<string>();
 
@@ -858,8 +867,11 @@ export class EdgeWorker extends EventEmitter {
 				this.inFlightTicketStarts.size > 0 ||
 				this.preparationStarts.size > 0,
 			() => this.recoverAfterUpdate(),
-			() =>
-				this.getAllKnownSessions()
+			() => ({
+				pendingIntegrationEvents: Object.fromEntries(
+					this.pendingIntegrationEvents,
+				),
+				sessions: this.getAllKnownSessions()
 					.map((session) => ({
 						id: session.id,
 						workspace: session.workspace.path,
@@ -873,6 +885,7 @@ export class EdgeWorker extends EventEmitter {
 						pendingChatMessages: session.metadata?.pendingChatMessages,
 					}))
 					.sort((a, b) => a.id.localeCompare(b.id)),
+			}),
 			(active) => this.getTicketTracking().setUpdateMaintenance(active),
 		);
 		const intake = (request: { method: string; url: string }) =>
@@ -1067,6 +1080,7 @@ export class EdgeWorker extends EventEmitter {
 		});
 		this.recoverFactoryRuns();
 		this.recoverPendingTicketLaunches();
+		this.recoverIntegrationEvents();
 	}
 
 	/**
@@ -1785,6 +1799,7 @@ export class EdgeWorker extends EventEmitter {
 			onStateChange: () => this.savePersistedState(),
 			persistMessage: (update) => this.savePersistedState(true, update),
 			isShuttingDown: () => this.stopping,
+			isUpdateMaintenance: () => this.updateDrain?.active() ?? false,
 			onClaudeError: (error) => this.handleClaudeError(error),
 		};
 	}
@@ -2013,6 +2028,7 @@ export class EdgeWorker extends EventEmitter {
 		let githubPrQueueKey: string | undefined;
 		let hasReservedGitHubPrSlot = reservedGitHubPrSlot;
 		let githubPrSlotReleased = false;
+		let updatePaused = false;
 
 		try {
 			// Only handle comments on pull requests
@@ -2448,6 +2464,10 @@ export class EdgeWorker extends EventEmitter {
 					await this.postGitHubReply(event, runner, repository);
 				}
 			} catch (error) {
+				if (isUpdatePaused(error)) {
+					updatePaused = true;
+					return;
+				}
 				this.logger.error(
 					`GitHub session error for ${repoFullName}#${prNumber}`,
 					error instanceof Error ? error : new Error(String(error)),
@@ -2456,6 +2476,11 @@ export class EdgeWorker extends EventEmitter {
 				await this.savePersistedState();
 			}
 		} catch (error) {
+			if (isUpdatePaused(error)) {
+				updatePaused = true;
+				await this.retainIntegrationEvent("github", event);
+				return;
+			}
 			this.logger.error(
 				"Failed to process GitHub webhook",
 				error instanceof Error ? error : new Error(String(error)),
@@ -2469,6 +2494,8 @@ export class EdgeWorker extends EventEmitter {
 				this.advanceGitHubPrQueue(githubPrQueueKey);
 			}
 			this.activeWebhookCount--;
+			if (updatePaused && !this.updateDrain?.active())
+				this.recoverAfterUpdate();
 		}
 	}
 
@@ -2722,6 +2749,7 @@ Your base branch \`${branchName}\` has received ${commitCount} new commit(s). Co
 				repository,
 			]);
 		} catch (error) {
+			if (isUpdatePaused(error)) throw error;
 			this.logger.error(
 				`Failed to create GitHub workspace for PR #${prNumber}`,
 				error instanceof Error ? error : new Error(String(error)),
@@ -2899,6 +2927,7 @@ ${taskSection}`;
 	 */
 	private async handleGitLabWebhook(event: GitLabWebhookEvent): Promise<void> {
 		this.activeWebhookCount++;
+		let updatePaused = false;
 
 		try {
 			// Only handle notes on merge requests
@@ -3185,6 +3214,10 @@ ${taskSection}`;
 				// When session completes, post the reply back to GitLab
 				await this.postGitLabReply(event, runner, repository);
 			} catch (error) {
+				if (isUpdatePaused(error)) {
+					updatePaused = true;
+					return;
+				}
 				this.logger.error(
 					`GitLab session error for ${projectPath}!${mrIid}`,
 					error instanceof Error ? error : new Error(String(error)),
@@ -3193,12 +3226,19 @@ ${taskSection}`;
 				await this.savePersistedState();
 			}
 		} catch (error) {
+			if (isUpdatePaused(error)) {
+				updatePaused = true;
+				await this.retainIntegrationEvent("gitlab", event);
+				return;
+			}
 			this.logger.error(
 				"Failed to process GitLab webhook",
 				error instanceof Error ? error : new Error(String(error)),
 			);
 		} finally {
 			this.activeWebhookCount--;
+			if (updatePaused && !this.updateDrain?.active())
+				this.recoverAfterUpdate();
 		}
 	}
 
@@ -3269,6 +3309,7 @@ ${taskSection}`;
 				repository,
 			]);
 		} catch (error) {
+			if (isUpdatePaused(error)) throw error;
 			this.logger.error(
 				`Failed to create GitLab workspace for MR !${mrIid}`,
 				error instanceof Error ? error : new Error(String(error)),
@@ -3447,9 +3488,11 @@ ${taskSection}`;
 	 */
 	private computeStatus(): "idle" | "busy" {
 		if (
-			[...(this.factoryRuntime?.runs.values() ?? [])].some(
-				(run) => run.status === "running",
-			)
+			this.updateDrain?.active()
+				? this.factoryRuntime?.hasExecutingWork()
+				: [...(this.factoryRuntime?.runs.values() ?? [])].some(
+						(run) => run.status === "running",
+					)
 		)
 			return "busy";
 		// Busy if any webhooks are currently being processed
@@ -5694,6 +5737,74 @@ ${taskSection}`;
 		if (this.updateDrain?.active()) return;
 		this.recoverFactoryRuns();
 		this.recoverPendingTicketLaunches();
+		this.recoverIntegrationEvents();
+	}
+	private async retainIntegrationEvent(
+		platform: "github" | "gitlab",
+		event: unknown,
+	): Promise<void> {
+		const retained = persistReplyEvent(event);
+		const key = this.integrationEventKey(platform, retained);
+		this.pendingIntegrationEvents.set(key, { platform, event: retained });
+		await this.savePersistedState(true);
+	}
+	private integrationEventKey(
+		platform: "github" | "gitlab",
+		event: unknown,
+	): string {
+		return `${platform}:${createHash("sha256")
+			.update(JSON.stringify(persistReplyEvent(event)))
+			.digest("hex")}`;
+	}
+	private async settleIntegrationEvent(
+		key: string,
+		retained: { platform: "github" | "gitlab"; event: unknown },
+	): Promise<void> {
+		await this.savePersistedState(true, () => {
+			if (this.pendingIntegrationEvents.get(key) !== retained) return () => {};
+			this.pendingIntegrationEvents.delete(key);
+			return () => {
+				this.pendingIntegrationEvents.set(key, retained);
+			};
+		});
+	}
+	private recoverIntegrationEvents(): void {
+		if (this.stopping || this.updateDrain?.active()) return;
+		for (const [key, retained] of this.pendingIntegrationEvents) {
+			if (this.recoveringIntegrationEvents.has(key)) continue;
+			this.recoveringIntegrationEvents.add(key);
+			// A crash after the native input checkpoint but before journal cleanup
+			// must continue that session rather than launch the original event again.
+			const checkpointed = this.getAllKnownSessions().some((session) => {
+				const event = session.metadata?.pendingExecution?.replyEvent;
+				return (
+					event && this.integrationEventKey(retained.platform, event) === key
+				);
+			});
+			const work = checkpointed
+				? Promise.resolve()
+				: retained.platform === "github"
+					? this.handleGitHubWebhook(
+							retained.event as GitHubCommentWebhookEvent,
+						)
+					: this.handleGitLabWebhook(retained.event as GitLabWebhookEvent);
+			void work
+				.then(async () => {
+					// A new suspension replaces this receipt; leave that input pending.
+					await this.settleIntegrationEvent(key, retained);
+				})
+				.catch((error) =>
+					this.logger.error("Deferred integration recovery failed", error),
+				)
+				.finally(() => {
+					this.recoveringIntegrationEvents.delete(key);
+					if (
+						this.pendingIntegrationEvents.get(key) !== retained &&
+						this.pendingIntegrationEvents.has(key)
+					)
+						this.recoverIntegrationEvents();
+				});
+		}
 	}
 
 	private recoverPendingTicketLaunches(): void {
@@ -5924,6 +6035,14 @@ ${taskSection}`;
 					"Ticket startup did not complete; ownership is retained",
 				);
 		} catch (error) {
+			if (isUpdatePaused(error)) {
+				this.getLaunchAdmission().update(receipt, {
+					phase: this.agentSessionManager.getSession(receipt.sessionId)
+						? "recovery"
+						: "pending",
+				});
+				return;
+			}
 			const phase =
 				this.getLaunchAdmission().get(webhook.organizationId, receipt.sessionId)
 					?.phase === "settled"
@@ -7994,6 +8113,10 @@ ${taskSection}`;
 			this.factoryHome,
 			this.runnerSlots,
 			{
+				updatePaused: (runId) => {
+					this.titleStarted.delete(runId);
+					if (!this.updateDrain?.active()) this.startRunTitle(runId);
+				},
 				update: (runId, result, title) => {
 					const current =
 						this.factoryRuntime?.runs.get(runId)?.titleGeneration ??
@@ -9029,6 +9152,7 @@ ${taskSection}`;
 		let turnCompleted = false;
 		let reviewOutcome: "blocked" | "failed" | undefined;
 		let turnStarted = false;
+		let updatePaused = false;
 		let infrastructureFailure: FactoryContextInfrastructureError | undefined;
 		try {
 			// Codex's required server handshake verifies the native attachment before
@@ -9199,6 +9323,7 @@ ${taskSection}`;
 				unregisterChat();
 			}
 		} catch (caught) {
+			updatePaused = isUpdatePaused(caught);
 			const error =
 				!(caught instanceof FactoryContextInfrastructureError) &&
 				caught instanceof Error &&
@@ -9223,7 +9348,7 @@ ${taskSection}`;
 			if (turnStarted)
 				finishStepAttempt(
 					context,
-					context.signal.aborted
+					context.signal.aborted || updatePaused
 						? "interrupted"
 						: infrastructureFailure
 							? "blocked"
@@ -9236,7 +9361,8 @@ ${taskSection}`;
 			if (
 				rejected &&
 				((runnerType === "codex" && !startupConfirmed && rejected.reserved) ||
-					(infrastructureFailure && outputCorrection?.reserved))
+					((infrastructureFailure || updatePaused) &&
+						outputCorrection?.reserved))
 			) {
 				// No ready thread or model work: return the launch reservation,
 				// preserving the rejected candidate for an infrastructure retry.
@@ -10301,6 +10427,17 @@ ${taskSection}`;
 		// Factory/manual Simple runs use their own checkpoint below.
 		for (const session of this.agentSessionManager.getActiveSessions()) {
 			if (
+				this.preparationStarts.has(session.id) ||
+				(session.issueContext?.trackerId === "github" &&
+					session.issue &&
+					this.activeGitHubPrSessions.has(session.issue.id))
+			)
+				continue;
+			if (session.agentRunner?.isRunning()) {
+				resumingSessions.add(session.id);
+				continue;
+			}
+			if (
 				runtime.catalog.getBlock(session.id) ||
 				runtime.runs.has(session.id) ||
 				this.ticketStartupIsIncomplete(session) ||
@@ -10346,6 +10483,11 @@ ${taskSection}`;
 							this.recoveryAbort.signal,
 						)
 			).catch(async (error) => {
+				if (isUpdatePaused(error)) {
+					if (!this.stopping && !this.updateDrain?.active())
+						this.recoverAfterUpdate();
+					return;
+				}
 				if (this.stopping || session.status !== AgentSessionStatus.Active)
 					return;
 				session.status = AgentSessionStatus.Error;
@@ -10373,7 +10515,8 @@ ${taskSection}`;
 		}
 		runtime.resumeAll();
 		for (const run of runtime.runs.values())
-			if (!["running"].includes(run.status)) this.startRunTitle(run.id);
+			if (run.status !== "running" || run.titleGeneration?.state === "pending")
+				this.startRunTitle(run.id);
 		for (const session of this.getAllKnownSessions())
 			if (
 				!runtime.runs.has(session.id) &&
@@ -12244,6 +12387,13 @@ ${input.userComment}
 		);
 
 		return {
+			...(this.pendingIntegrationEvents.size
+				? {
+						pendingIntegrationEvents: Object.fromEntries(
+							this.pendingIntegrationEvents,
+						),
+					}
+				: {}),
 			pendingTriggerMessages: Object.fromEntries(this.pendingTriggerMessages),
 			pendingTriggerOrigins: Object.fromEntries(this.pendingTriggerOrigins),
 			agentSessions: serializedState.sessions,
@@ -12257,6 +12407,9 @@ ${input.userComment}
 	 * Restore EdgeWorker mappings from serialized state (v4.0 flat format)
 	 */
 	public restoreMappings(state: SerializableEdgeWorkerState): void {
+		this.pendingIntegrationEvents = new Map(
+			Object.entries(state.pendingIntegrationEvents ?? {}),
+		);
 		this.pendingTriggerMessages = new Map(
 			Object.entries(state.pendingTriggerMessages ?? {}),
 		);
