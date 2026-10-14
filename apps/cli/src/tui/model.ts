@@ -29,6 +29,8 @@ export interface LaunchField {
 	options?: { value: string; label: string }[];
 }
 export interface Workflow {
+	enabled?: boolean;
+	unavailable?: string[];
 	id: string;
 	name: string;
 	steps?: WorkflowStep[];
@@ -55,6 +57,7 @@ export interface RunItem extends RunSummary {
 	workflow?: string;
 	step?: string;
 	error?: string;
+	workflowBlock?: { reason: string };
 	reviewGate?: { id?: string; headSha?: string; url?: string; status?: string };
 	titleGeneration?: { status?: string };
 }
@@ -74,6 +77,7 @@ export interface RunDetail extends Omit<RunItem, "workflow"> {
 	questionChoices?: QuestionChoices[];
 	questionBatchId?: string;
 	iterationLimit?: { step: string; visits: number; limit: number };
+	resumeEligible?: boolean;
 	chat?: {
 		enabled?: boolean;
 		available?: boolean;
@@ -449,8 +453,11 @@ export function ago(at: string | undefined, now = Date.now()) {
 
 /** Recipes the composer may start, with the saved default first when allowed. */
 export function launchableWorkflows(config: FactoryConfig) {
-	const manual = config.workflows.filter((workflow) =>
-		(workflow.allowedTriggers ?? ["manual"]).includes("manual"),
+	const manual = config.workflows.filter(
+		(workflow) =>
+			workflow.enabled !== false &&
+			!workflow.unavailable?.length &&
+			(workflow.allowedTriggers ?? ["manual"]).includes("manual"),
 	);
 	return [
 		...manual.filter((w) => w.id === config.defaultWorkflow),

@@ -885,43 +885,53 @@ export function FocusCard({
 									"Bob’s Factory session"}
 							</strong>
 							<Markdown>
-								{run.error ?? "The run stopped before finishing."}
+								{run.workflowBlock?.reason ??
+									run.error ??
+									"The run stopped before finishing."}
 							</Markdown>
 							<small>
-								{stopped
-									? "Bring back keeps this run visible. Resume continues its saved progress; it does not restart finished steps."
-									: run.iterationLimit
-										? "Continue grants 4 more passes for this step. Your work and history stay intact."
-										: "Retry keeps the worktree, your answers and every finished step."}
+								{run.workflowBlock
+									? "Enable the workflow and its dependencies in Recipes. Resume continues this saved checkpoint after the previous executor stops."
+									: stopped
+										? "Bring back keeps this run visible. Resume continues its saved progress; it does not restart finished steps."
+										: run.iterationLimit
+											? "Continue grants 4 more passes for this step. Your work and history stay intact."
+											: "Retry keeps the worktree, your answers and every finished step."}
 							</small>
 						</div>
 					</div>
 					<div className="actions">
 						<Button
-							disabled={stopped && !canResume}
+							disabled={
+								(stopped && !canResume) ||
+								(!!run.workflowBlock && !run.resumeEligible)
+							}
 							requiresConnection
 							busy={action.isPending}
 							onClick={() =>
 								void action
 									.mutateAsync({
-										path: `/api/runs/${run.id}/${stopped ? "resume" : "retry"}`,
+										path: `/api/runs/${run.id}/${stopped || run.workflowBlock ? "resume" : "retry"}`,
 									})
 									.then(() =>
 										toast({
-											text: stopped
-												? "Resuming from saved progress"
-												: "Retrying from saved progress",
+											text:
+												stopped || run.workflowBlock
+													? "Resuming from saved progress"
+													: "Retrying from saved progress",
 										}),
 									)
 									.catch(() => {})
 							}
 						>
 							↻{" "}
-							{stopped
-								? "Resume run"
-								: run.iterationLimit
-									? "Continue (+4 passes)"
-									: "Retry step"}{" "}
+							{run.workflowBlock
+								? "Resume"
+								: stopped
+									? "Resume run"
+									: run.iterationLimit
+										? "Continue (+4 passes)"
+										: "Retry step"}{" "}
 							<kbd>r</kbd>
 						</Button>
 						<Link className="button secondary" to={`/runs/${run.id}`}>

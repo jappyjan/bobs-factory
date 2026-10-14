@@ -6,8 +6,29 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Preserve question choices and terminal context scrolling while integrating bundled workflow recovery and update capacity draining ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
+
 - Wait for simulated question-notification delivery before snapshotting F1 restart receipts, preventing a timing-dependent mismatch while retaining duplicate-notice checks ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 - Wait for OAuth transport test fixtures to finish capacity callbacks and state writes before deleting their temporary homes, preventing intermittent CI cleanup failures ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
+- Prepare automatic updates while work continues, then pause new steps and slots, drain active work and resume queued tasks from saved progress after installation ([#131](https://github.com/jappyjan/bobs-factory/pull/131)).
+
+- Correct architecture keyboard QA to verify file paths and the separate full-plan disclosure independently, with completed headless evidence ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Integrate stopped-run Resume, accepted-workflow context and update snapshots while preserving bundled workflow ownership and individual recovery after disabling ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Preserve bundled workflow recovery while integrating Taskbot capacity waiting and cancellation, relocated review screenshots and push contact settings ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Integrate beta candidate preparation, exact-asset publication approval, verified desktop downloads and native release fixture fixes while preserving bundled workflows and recovery ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Shut down restored workflow test runtimes before removing their temporary storage, preventing final-save cleanup races ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Preserve workflow disable blocks and frozen definitions while integrating chunked history storage and resumed-checkpoint responsiveness; keep dashboard summaries accurate across restart ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Integrate Linear publication guards and native session lifecycle with bundled workflows: keep internal role/tool records local, publish readable decision records, and preserve individual recovery ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Integrate architecture approval and native localhost validation with bundled workflow ownership; recognize architecture-enabled legacy standards without creating forks, and preserve saved approval gates ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Protect atomic simulated desktop receipt publication with a delayed-write regression check for the maintained F1 update drive ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 - Keep brought-back stopped runs visible in Today and offer explicit checkpoint resumption without replaying finished steps or automatically restarting stopped work ([#130](https://github.com/jappyjan/bobs-factory/pull/130)).
 - Keep nightly source assembly from overwriting retained native notices by giving fresh notices candidate-specific filenames and recording historical material before fresh additions ([#129](https://github.com/jappyjan/bobs-factory/pull/129)).
 - Keep automatic runtime updates working with retained test-tool links in task evidence: omit them from isolated preflight, preserve their exact link records in snapshots and restore them verbatim on rollback ([#128](https://github.com/jappyjan/bobs-factory/pull/128)).
@@ -66,6 +87,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Bundle standard workflows independently of model preferences. Add private Factory/Takeover forks, recoverable legacy migration, and disabling that interrupts work while preserving progress for individual Resume. Simple cannot be forked. Preserve existing delivery, operator recovery and older-run priority; recover interrupted backups and remove deleted-fork metadata. Save the selected chat model before execution and preserve it through the production runner factory on Resume. Retain current-main migration safety, source-publication safeguards, and direct localhost/IPv6 access during integration. Linear publication suppresses internal role/tool records, preserves native lifecycle events and keeps decision comments readable. ([#83](https://github.com/jappyjan/bobs-factory/pull/83); [Taskbot #129](https://taskbot.apps.janjaap.de/p/bobs-factory/t/129); [validation](apps/f1/test-drives/2026-10-10-workflow-catalog.md))
 - Move browser notification controls into Settings → Notifications alongside the push contact editor, while retaining device reconciliation across dashboard pages; validate the combined desktop and phone layouts with inspected screenshots ([#115](https://github.com/jappyjan/bobs-factory/pull/115)).
 
 - Align generated Homebrew and AUR requirements with the selected first-release support floor of macOS 15 and Ubuntu 24.04/glibc 2.39, and clarify that the frozen app's inherited macOS 13 launch minimum is not tested-support evidence ([Taskbot #123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#97](https://github.com/jappyjan/bobs-factory/pull/97)).
@@ -102,8 +124,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Align the incremental-result fixture and complete routing prompt expectation with validated Linear publication. ([#73](https://github.com/jappyjan/bobs-factory/pull/73))
+- Resume interrupted ticket Simple work in its saved conversation with pending attachments. Standalone chat Resume retains its accepted model and queued input after preferences change. First chat turns interrupted while waiting for capacity or saving the startup checkpoint can Resume after restart without an ID; established chats still reject missing native conversation IDs. Missing repositories and startup failures retain the recovery block and report an error ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
+- Resume blocked Simple runs through the workflow engine from operator MCP. Show the blocked reason and an eligible Resume action in the terminal, refreshing availability when workflows are re-enabled ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
+- Align the incremental-result fixture and complete routing prompt expectation with validated Linear publication. ([#73](https://github.com/jappyjan/bobs-factory/pull/73))
 
 - Preserve nonzero manager output and cancel isolated service acceptance through a bounded cooperative timeout, registered nested process groups and exact owned units; retain independent case errors and add actual START-boundary outer-timeout validation without changing the frozen runtime. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#122](https://taskbot.apps.janjaap.de/p/bobs-factory/t/122), [#124](https://taskbot.apps.janjaap.de/p/bobs-factory/t/124), [#91](https://github.com/jappyjan/bobs-factory/pull/91))
 - Store immutable source-research JSON/module copies under raw extensions with byte-preserving retention mappings, and correct the durable Bun/TinyCC/WebKit archive paths; normal maintained-code linting and all prior evidence remain intact. ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91))

@@ -60,6 +60,14 @@ interface V2CyrusAgentSession {
  * v3.0: Nested format - sessions keyed by [repoId][sessionId]
  */
 export interface SerializableEdgeWorkerState {
+	/** Accepted integration input suspended before a native session existed. */
+	pendingIntegrationEvents?: Record<
+		string,
+		{
+			platform: "github" | "gitlab";
+			event: unknown;
+		}
+	>;
 	pendingTriggerMessages?: Record<string, string | null>;
 	pendingTriggerOrigins?: Record<
 		string,

@@ -1,0 +1,10 @@
+{
+	"base": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+	"scenario": "migrate untouched frozen-base standard graphs with only Codex execution preferences",
+	"defaultWorkflow": "factory",
+	"locals": [],
+	"mappings": {},
+	"inactive": [],
+	"conflicts": {},
+	"testedCodeRevision": "56cda44b617d1784dad054f7c8e23e433d8c65e0"
+}

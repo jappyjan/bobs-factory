@@ -1649,13 +1649,19 @@ describe("ChatSessionHandler thread catch-up", () => {
 });
 
 it.each([
-	"slack",
-	"zulip",
-] as const)("rejoins saved %s queue order and input after shutdown, before any native session exists", async (platform) => {
+	{ platform: "slack", mode: "shutdown" },
+	{ platform: "zulip", mode: "shutdown" },
+	{ platform: "slack", mode: "update" },
+	{ platform: "zulip", mode: "update" },
+] as const)("rejoins saved $platform queue order and input after $mode, before any native session exists", async ({
+	platform,
+	mode,
+}) => {
 	const home = mkdtempSync(join(tmpdir(), "chat-capacity-recovery-"));
 	let slots = new MachineCapacity(1, join(home, "pool"));
 	const blocker = await slots.acquireLease();
 	let shuttingDown = false;
+	let updateMaintenance = false;
 	const builder = createMockRunnerConfigBuilder();
 	const providers: any[] = [];
 	const configs: any[] = [];
@@ -1684,6 +1690,7 @@ it.each([
 		runnerConfigBuilder: builder,
 		createRunner,
 		isShuttingDown: () => shuttingDown,
+		isUpdateMaintenance: () => updateMaintenance,
 		onWebhookStart: vi.fn(),
 		onWebhookEnd: vi.fn(),
 		onStateChange: vi.fn().mockResolvedValue(undefined),
@@ -1704,8 +1711,13 @@ it.each([
 			(r) => r.recoverable,
 		)!;
 		expect(providers[0].start).not.toHaveBeenCalled();
-		shuttingDown = true;
-		await slots.shutdown();
+		if (mode === "shutdown") {
+			shuttingDown = true;
+			await slots.shutdown();
+		} else {
+			updateMaintenance = true;
+			await slots.pauseAdmissionsForUpdate("prepared");
+		}
 		await waitForRunnerCapacity(
 			original.getRunnerForThread("saved-thread")!,
 		).catch(() => {});
@@ -1717,10 +1729,16 @@ it.each([
 		expect(saved.sessions[id].metadata!.pendingExecution!.prompt).toBe(
 			"Inspect repository configuration",
 		);
-		slots = new MachineCapacity(undefined, slots.directory);
-		shuttingDown = false;
-		const restored = new ChatSessionHandler(adapter, deps);
-		restored.restoreState(saved.sessions, saved.entries);
+		let restored = original;
+		if (mode === "shutdown") {
+			slots = new MachineCapacity(undefined, slots.directory);
+			shuttingDown = false;
+			restored = new ChatSessionHandler(adapter, deps);
+			restored.restoreState(saved.sessions, saved.entries);
+		} else {
+			await slots.resumeAdmissionsAfterUpdate("prepared");
+			updateMaintenance = false;
+		}
 		await restored.recoverQueuedSessions();
 		await vi.waitFor(async () => {
 			const current = (await slots.snapshot()).requests.find(

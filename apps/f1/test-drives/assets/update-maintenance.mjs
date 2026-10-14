@@ -324,7 +324,7 @@ else result={};process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result
 		assert.equal((await worker.runnerSlots.snapshot()).active, 1);
 		transportObservations.push({
 			operation: request.identity,
-			token: request.token,
+			leaseIdentityVerified: true,
 			owner: request.owner,
 			descendant: owner.pid,
 			beforeCloseIdle: false,
