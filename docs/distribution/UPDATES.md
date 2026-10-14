@@ -53,6 +53,63 @@ probes the candidate version with a temporary home. No production link changes
 occur during stage. An integrity/staging or trial failure suppresses that exact
 candidate until deliberate `update install --retry` after inspection.
 
+## Recover an older updater blocked by evidence links
+
+An older supervisor can report `Snapshot refuses external/special owned state:
+factory/evidence/.../node_modules` even after downloading a release that fixes
+that error. The running supervisor performs preflight and snapshot copying, so
+the fix in the pending binary cannot take effect until a newer supervisor runs.
+Replacing the desktop app alone retains the existing backend runtime.
+
+The state-copy fix shipped in `1.0.2-beta` and
+`1.0.0-nightly.20261013.38484193828` ([#128](https://github.com/jappyjan/bobs-factory/pull/128)).
+It omits evidence symlinks from isolated preflight, retains their exact link
+strings in rollback snapshots, and never reads their targets. Linked configuration
+or saved state outside evidence still fails closed.
+
+For a desktop-owned backend with a cancelled, acknowledged transaction and
+`switchStarted: false`, an operator can bootstrap the fixed supervisor:
+
+1. Retain a copy of `<factoryHome>/updates/state.json` for diagnosis. Inspect its
+   pending candidate, installed identity and transaction. If replacement started,
+   or maintenance release is not acknowledged, use transaction recovery first.
+2. Use a fresh trusted public installer to install that exact fixed release into
+   a **separate absolute prefix**, with `--no-modify-path`. Match the selected
+   channel (`--channel nightly` for a nightly); this authenticates the download
+   without changing the active backend link or its settings. Keep the prefix
+   until recovery completes.
+3. Read `<factoryHome>/runtime/update-supervisor.lock` with `readlink`: its target
+   is a JSON ownership record. Match the home, owner, PID, process start time and
+   command to the running supervisor, then send **only that supervisor** SIGTERM.
+   Wait for it to exit and release its lock. Leave the desktop and worker running.
+4. With the verified recovery executable, print the exact candidate and revision,
+   then deliberately retry it through the authenticated loopback dashboard:
+
+   ```sh
+   "$recovery" --home "$factory_home" --port "$port" update candidate
+   "$recovery" --home "$factory_home" --port "$port" update install \
+     --retry --candidate "$candidate" --revision "$revision"
+   "$recovery" --home "$factory_home" --port "$port" --no-open \
+     service updates-run --once
+   ```
+
+   Set these variables from the selected instance and the `update candidate`
+   output. `recovery` is the new prefix's `bin/bobs-factory`. The last command is
+   the owner supervisor entry point; it still enforces installation ownership,
+   normal capacity drain, compatibility preflight, snapshot and health checks.
+5. Check `update status`: require the intended installed commit, a `succeeded`
+   transaction and acknowledged maintenance release. Verify the dashboard and one
+   worker. Restart the desktop's supervisor using the now-active owned executable
+   (`service updates-run`, without `--once`), retaining its normal desktop owner
+   environment and log redirection. A normal desktop relaunch also starts it.
+
+If the one-pass supervisor returns while work is still draining, keep using the
+fixed supervisor until activation completes. Inspect a failed trial before another
+explicit retry. Preserve evidence links and update receipts throughout recovery;
+do not delete evidence, remove ownership locks, edit the update journal, or switch
+the live executable link by hand to get past this failure. User-service and
+externally managed installations must use their own supervisor/owner handoff.
+
 ## Restart and recovery boundary
 
 `UpdateLifecycle` is implemented by the external owner supervisor, not the
