@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Correct architecture keyboard QA to verify file paths and the separate full-plan disclosure independently, with completed headless evidence ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
+
 - Integrate stopped-run Resume, accepted-workflow context and update snapshots while preserving bundled workflow ownership and individual recovery after disabling ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
 
 - Preserve bundled workflow recovery while integrating Taskbot capacity waiting and cancellation, relocated review screenshots and push contact settings ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).

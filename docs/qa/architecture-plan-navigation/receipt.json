@@ -1,0 +1,509 @@
+{
+	"finding": "QA-ARCHITECTURE-PLAN-NAVIGATION",
+	"passed": true,
+	"testedHead": "11de73c4335e4f9f3af7614d91e225a447fbcb45",
+	"driverSha256": "fbb1fdc80e61aaf6f141098fb77ae8e6f56396b111638c3ac2b49d4f820bf50c",
+	"fixture": {
+		"origin": "http://localhost:3994",
+		"runId": "38662e4f-cbbe-47e4-b84f-c9ed879162a9"
+	},
+	"boundary": "Isolated real dashboard/runtime with scripted agents; no proposal acceptance or provider calls.",
+	"correction": "Show files reveals candidate step paths. Full plan for Bob is a separate native details disclosure. Assert each independently using keyboard input.",
+	"checks": [
+		{
+			"label": "Step paths start hidden",
+			"passed": true
+		},
+		{
+			"label": "Full plan starts closed",
+			"passed": true
+		},
+		{
+			"label": "Keyboard reaches Show files",
+			"passed": true
+		},
+		{
+			"label": "All candidate paths are rendered and visible",
+			"passed": true
+		},
+		{
+			"label": "Paths have visible layout",
+			"passed": true
+		},
+		{
+			"label": "Showing files leaves full plan closed",
+			"passed": true
+		},
+		{
+			"label": "Tab from file toggle reaches Full plan summary",
+			"passed": true
+		},
+		{
+			"label": "Enter opens Full plan",
+			"passed": true
+		},
+		{
+			"label": "Full plan content is visible and readable",
+			"passed": true
+		},
+		{
+			"label": "Opening plan preserves visible paths",
+			"passed": true
+		},
+		{
+			"label": "Space closes Full plan",
+			"passed": true
+		},
+		{
+			"label": "Shift+Tab returns to Hide files",
+			"passed": true
+		},
+		{
+			"label": "Space hides paths",
+			"passed": true
+		},
+		{
+			"label": "Space reopens Full plan independently",
+			"passed": true
+		},
+		{
+			"label": "Navigation does not alter proposal or approval",
+			"passed": true
+		}
+	],
+	"commands": [
+		{
+			"action": [
+				"--headed",
+				"false",
+				"open",
+				"http://localhost:3994/#/runs/38662e4f-cbbe-47e4-b84f-c9ed879162a9/architecture"
+			],
+			"exitCode": 0,
+			"output": "\u2713 Bob's Factory\n  http://localhost:3994/#/runs/38662e4f-cbbe-47e4-b84f-c9ed879162a9/architecture\n"
+		},
+		{
+			"action": ["set", "viewport", "1440", "1000"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": ["wait", ".arch-full-plan"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": ["snapshot", "-i"],
+			"exitCode": 0,
+			"output": "- generic \"Skip to contentBob's FactoryToday 1RecipesSettingsInstall app\ud83d\udda5\ufe0f\u2328\u2190 Back to the runProposalChatWaitin\" [ref=e1] clickable [onclick]\n  - link \"Skip to content\" [ref=e2]\n  - link \"Bob, alert Bob's Factory\" [ref=e9]\n  - navigation \"Main navigation\" [ref=e3]\n    - link \"Today 1\" [ref=e10]\n    - link \"Recipes\" [ref=e11]\n    - link \"Settings\" [ref=e12]\n  - button \"Install app and help\" [ref=e4]\n  - button \"Theme: system\" [expanded=false, ref=e5]\n  - button \"Keyboard shortcuts\" [ref=e6]\n  - navigation \"Proposal navigation\" [ref=e7]\n    - link \"\u2190 Back to the run\" [ref=e13]\n  - main \"Architecture proposal\" [ref=e8]\n    - heading \"Add Jira support next to Taskbot\" [level=1, ref=e15]\n    - button \"Go to question\" [ref=e16]\n    - heading \"The change at a glance\" [level=2, ref=e17]\n    - button \"Start-a-run form: accepts Jira links\" [ref=e35]\n    - button \"Settings: new Jira section\" [ref=e36]\n    - button \"Ticket tracking: learns about Jira\" [ref=e37]\n    - button \"Config file: stores the token\" [ref=e38]\n    - button \"Jira connection: new\" [ref=e39]\n    - button \"Jira: status, PR, comment\" [ref=e40]\n    - button \"Show parts that stay the same\" [ref=e18]\n    - heading \"Choices\" [level=2, ref=e19]\n    - button \"Other options (2)\" [expanded=false, ref=e20]\n    - button \"Other options (1)\" [expanded=false, ref=e21]\n    - heading \"Should Jira comments reach Bob while it works?\" [level=3, ref=e22]\n    - button \"Not yet, add it later \ud83d\udc4d A smaller change now. \u26a0\ufe0f Comments in Jira won\u2019t reach Bob yet.\" [ref=e23]\n    - button \"Yes, in this change \ud83d\udc4d Jira works both ways, like Linear. \u26a0\ufe0f Makes this change about 40% bigger.\" [ref=e24]\n    - button \"Show on the map\" [ref=e25]\n    - heading \"Why this fits\" [level=2, ref=e26]\n    - heading \"Watch out for\" [level=2, ref=e27]\n    - heading \"What Bob will build\" [level=2, ref=e28]\n    - button \"Show files\" [ref=e29]\n  - heading \"Chat with Bob\" [level=2, ref=e30]\n  - textbox \"Message to Bob\" [ref=e31]\n  - button \"Ask a question\" [disabled, ref=e32]\n  - button \"Ask for changes\" [disabled, ref=e33]\n  - button \"Answer Bob\u2019s question first.\" [ref=e34]\n  - button \"Approve version 1\" [disabled, ref=e14]\n"
+		},
+		{
+			"action": [
+				"eval",
+				"(async()=>{const run=await(await fetch('/api/runs/38662e4f-cbbe-47e4-b84f-c9ed879162a9')).json();return run.architectureProposals.at(-1)})()"
+			],
+			"exitCode": 0,
+			"output": "{\n  \"assetDigests\": [],\n  \"at\": \"2026-10-14T10:50:37.116Z\",\n  \"content\": {\n    \"architectureContract\": \"architecture-v1\",\n    \"candidate\": {\n      \"assets\": [],\n      \"plan\": \"Full implementation plan for the Jira adapter.\\n\\n1. Extend TicketReferenceSchema...\\n\\n## Architecture proposal f33289bb-d541-49e8-97f9-4fdb494a843a (version 1)\\n\\nAdd Jira support next to Taskbot\\n\\nWhen a run starts from a Jira issue, Bob keeps that issue up to date. It moves the status, links the PR and leaves a final comment.\\n\\nClassification: meaningful\\n\\nRationale: Adds a new outside service and a new place to keep secrets.\\n\\nDecisions:\\n- Where should the Jira code live? Chosen by Bob: Next to the Taskbot code. Same pattern Bob already uses. Trade-off: Bob keeps a small Jira client. Not chosen: Use Atlassian\u2019s MCP server (Less code.; but Everyone must log in through a browser, so background runs break.); A new separate package (Ready for two-way sync later.; but Much more to build than we need now.).\\n- How does Bob pick the right Jira status? Chosen by Bob: You map them once per project. Works even if your team renamed its statuses. Trade-off: A minute of setup. Not chosen: Bob guesses from the names (No setup.; but Quietly breaks when statuses have custom names.).\\n- Should Jira comments reach Bob while it works? OPEN Not chosen: Not yet, add it later (A smaller change now.; but Comments in Jira won\u2019t reach Bob yet.); Yes, in this change (Jira works both ways, like Linear.; but Makes this change about 40% bigger.).\\n\\nRepository evidence:\\n- bobs-factory: packages/edge-worker/src/factory/TicketTracking.ts. Taskbot and Linear already connect this way. Jira simply becomes the third one.\\n- bobs-factory: packages/edge-worker/src/factory/TicketTracking.ts. Old runs keep working. The change only adds things.\\n\\nRisks:\\n- The Jira token belongs to one person. If they leave, syncing stops. Bob will show a warning on the run.\\n- Someone may rename a Jira status later. Bob checks the mapping at the start of every run.\\n\\nWhat changes:\\n- Start-a-run form (changed, LaunchFields.ts): You can paste a Jira link to start a run.\\n- Settings (new, web/settings.tsx): Where you add your Jira site, token and status mapping.\\n- Ticket tracking (changed, TicketTracking.ts): Picks the right connection for each ticket. Gets one small addition.\\n- Config file (changed, ConfigManager.ts): Holds the Jira token as plain text.\\n- Jira connection (new, JiraAdapter.ts): Moves the issue\u2019s status, links the PR and posts a final comment.\\n- Taskbot link (unchanged, TicketTracking.ts): Existing. Jira will work the same way.\\n- Jira (outside): Atlassian\u2019s Jira Cloud.\\n\\nConnections: form -> tracking (Jira link); settings -> tracking (mapping); settings -> token (token); tracking -> jiraC; tracking -> taskbotC; token -> jiraC (token); jiraC -> jira\",\n      \"steps\": [\n        {\n          \"files\": [\n            \"TicketTracking.ts\",\n            \"LaunchFields.ts\"\n          ],\n          \"title\": \"Let runs start from a Jira link\"\n        },\n        {\n          \"files\": [\n            \"JiraAdapter.ts\"\n          ],\n          \"title\": \"Build the Jira connection\"\n        },\n        {\n          \"files\": [\n            \"TicketTracking.ts\"\n          ],\n          \"title\": \"Plug it into ticket tracking\"\n        },\n        {\n          \"files\": [\n            \"web/settings.tsx\"\n          ],\n          \"title\": \"Add a Jira section to Settings\"\n        },\n        {\n          \"files\": [\n            \"ConfigManager.ts\"\n          ],\n          \"title\": \"Save the Jira token in the config file\"\n        },\n        {\n          \"files\": [\n            \"JiraAdapter.ts\"\n          ],\n          \"title\": \"If a Jira status is missing, post a comment instead\"\n        },\n        {\n          \"files\": [\n            \"JiraAdapter.test.ts\",\n            \"apps/f1\"\n          ],\n          \"title\": \"Test it, including a full practice run\"\n        }\n      ]\n    },\n    \"changes\": [],\n    \"classification\": \"meaningful\",\n    \"decisions\": [\n      {\n        \"decidedBy\": \"bob\",\n        \"id\": \"where\",\n        \"options\": [\n          {\n            \"catch\": \"Bob keeps a small Jira client.\",\n            \"id\": \"adapter\",\n            \"name\": \"Next to the Taskbot code\",\n            \"upside\": \"Same pattern Bob already uses.\"\n          },\n          {\n            \"catch\": \"Everyone must log in through a browser, so background runs break.\",\n            \"id\": \"mcp\",\n            \"name\": \"Use Atlassian\u2019s MCP server\",\n            \"preview\": {\n              \"hide\": [\n                \"jiraC\"\n              ],\n              \"links\": [\n                {\n                  \"from\": \"tracking\",\n                  \"to\": \"mcp\"\n                },\n                {\n                  \"from\": \"mcp\",\n                  \"label\": \"login\",\n                  \"to\": \"jira\"\n                }\n              ],\n              \"parts\": [\n                {\n                  \"area\": \"adapters\",\n                  \"detail\": \"Atlassian\u2019s server; each person logs in through a browser.\",\n                  \"id\": \"mcp\",\n                  \"label\": \"Atlassian MCP\",\n                  \"note\": \"browser login per person\",\n                  \"status\": \"outside\"\n                }\n              ]\n            },\n            \"upside\": \"Less code.\"\n          },\n          {\n            \"catch\": \"Much more to build than we need now.\",\n            \"id\": \"package\",\n            \"name\": \"A new separate package\",\n            \"upside\": \"Ready for two-way sync later.\"\n          }\n        ],\n        \"pick\": \"adapter\",\n        \"question\": \"Where should the Jira code live?\",\n        \"status\": \"decided\"\n      },\n      {\n        \"decidedBy\": \"bob\",\n        \"id\": \"status\",\n        \"options\": [\n          {\n            \"catch\": \"A minute of setup.\",\n            \"id\": \"map\",\n            \"name\": \"You map them once per project\",\n            \"upside\": \"Works even if your team renamed its statuses.\"\n          },\n          {\n            \"catch\": \"Quietly breaks when statuses have custom names.\",\n            \"id\": \"guess\",\n            \"name\": \"Bob guesses from the names\",\n            \"preview\": {\n              \"hide\": [\n                \"settings\"\n              ],\n              \"links\": [],\n              \"parts\": []\n            },\n            \"upside\": \"No setup.\"\n          }\n        ],\n        \"pick\": \"map\",\n        \"question\": \"How does Bob pick the right Jira status?\",\n        \"status\": \"decided\"\n      },\n      {\n        \"id\": \"comments\",\n        \"options\": [\n          {\n            \"catch\": \"Comments in Jira won\u2019t reach Bob yet.\",\n            \"id\": \"later\",\n            \"name\": \"Not yet, add it later\",\n            \"upside\": \"A smaller change now.\"\n          },\n          {\n            \"catch\": \"Makes this change about 40% bigger.\",\n            \"id\": \"now\",\n            \"name\": \"Yes, in this change\",\n            \"preview\": {\n              \"hide\": [],\n              \"links\": [\n                {\n                  \"from\": \"jira\",\n                  \"label\": \"comments\",\n                  \"to\": \"hook\"\n                },\n                {\n                  \"from\": \"hook\",\n                  \"to\": \"tracking\"\n                }\n              ],\n              \"parts\": [\n                {\n                  \"area\": \"adapters\",\n                  \"detail\": \"Receives Jira comments and passes them to the run.\",\n                  \"id\": \"hook\",\n                  \"label\": \"Jira webhook\",\n                  \"note\": \"receives comments\",\n                  \"status\": \"new\"\n                }\n              ]\n            },\n            \"upside\": \"Jira works both ways, like Linear.\"\n          }\n        ],\n        \"question\": \"Should Jira comments reach Bob while it works?\",\n        \"status\": \"open\",\n        \"why\": \"Bob can\u2019t tell from the code. It depends on where your team talks.\"\n      }\n    ],\n    \"evidence\": [\n      {\n        \"observation\": \"Taskbot and Linear already connect this way. Jira simply becomes the third one.\",\n        \"paths\": [\n          \"packages/edge-worker/src/factory/TicketTracking.ts\"\n        ],\n        \"repository\": \"bobs-factory\"\n      },\n      {\n        \"observation\": \"Old runs keep working. The change only adds things.\",\n        \"paths\": [\n          \"packages/edge-worker/src/factory/TicketTracking.ts\"\n        ],\n        \"repository\": \"bobs-factory\"\n      }\n    ],\n    \"map\": {\n      \"areas\": [\n        {\n          \"id\": \"dashboard\",\n          \"name\": \"Dashboard\"\n        },\n        {\n          \"id\": \"core\",\n          \"name\": \"Bob\u2019s core\"\n        },\n        {\n          \"id\": \"adapters\",\n          \"name\": \"Connections\"\n        },\n        {\n          \"id\": \"outside\",\n          \"name\": \"Outside Bob\"\n        }\n      ],\n      \"links\": [\n        {\n          \"from\": \"form\",\n          \"label\": \"Jira link\",\n          \"to\": \"tracking\"\n        },\n        {\n          \"from\": \"settings\",\n          \"label\": \"mapping\",\n          \"to\": \"tracking\"\n        },\n        {\n          \"from\": \"settings\",\n          \"label\": \"token\",\n          \"to\": \"token\"\n        },\n        {\n          \"from\": \"tracking\",\n          \"to\": \"jiraC\"\n        },\n        {\n          \"from\": \"tracking\",\n          \"to\": \"taskbotC\"\n        },\n        {\n          \"from\": \"token\",\n          \"label\": \"token\",\n          \"to\": \"jiraC\"\n        },\n        {\n          \"from\": \"jiraC\",\n          \"to\": \"jira\"\n        }\n      ],\n      \"parts\": [\n        {\n          \"area\": \"dashboard\",\n          \"detail\": \"You can paste a Jira link to start a run.\",\n          \"file\": \"LaunchFields.ts\",\n          \"id\": \"form\",\n          \"label\": \"Start-a-run form\",\n          \"note\": \"accepts Jira links\",\n          \"status\": \"changed\"\n        },\n        {\n          \"area\": \"dashboard\",\n          \"detail\": \"Where you add your Jira site, token and status mapping.\",\n          \"file\": \"web/settings.tsx\",\n          \"id\": \"settings\",\n          \"label\": \"Settings\",\n          \"note\": \"new Jira section\",\n          \"status\": \"new\"\n        },\n        {\n          \"area\": \"core\",\n          \"detail\": \"Picks the right connection for each ticket. Gets one small addition.\",\n          \"file\": \"TicketTracking.ts\",\n          \"id\": \"tracking\",\n          \"label\": \"Ticket tracking\",\n          \"note\": \"learns about Jira\",\n          \"status\": \"changed\"\n        },\n        {\n          \"area\": \"core\",\n          \"detail\": \"Holds the Jira token as plain text.\",\n          \"file\": \"ConfigManager.ts\",\n          \"id\": \"token\",\n          \"label\": \"Config file\",\n          \"note\": \"stores the token\",\n          \"status\": \"changed\"\n        },\n        {\n          \"area\": \"adapters\",\n          \"detail\": \"Moves the issue\u2019s status, links the PR and posts a final comment.\",\n          \"file\": \"JiraAdapter.ts\",\n          \"id\": \"jiraC\",\n          \"label\": \"Jira connection\",\n          \"note\": \"new\",\n          \"status\": \"new\"\n        },\n        {\n          \"area\": \"adapters\",\n          \"detail\": \"Existing. Jira will work the same way.\",\n          \"file\": \"TicketTracking.ts\",\n          \"id\": \"taskbotC\",\n          \"label\": \"Taskbot link\",\n          \"note\": \"stays the same\",\n          \"status\": \"unchanged\"\n        },\n        {\n          \"area\": \"outside\",\n          \"detail\": \"Atlassian\u2019s Jira Cloud.\",\n          \"id\": \"jira\",\n          \"label\": \"Jira\",\n          \"note\": \"status, PR, comment\",\n          \"status\": \"outside\"\n        }\n      ]\n    },\n    \"rationale\": \"Adds a new outside service and a new place to keep secrets.\",\n    \"risks\": [\n      \"The Jira token belongs to one person. If they leave, syncing stops. Bob will show a warning on the run.\",\n      \"Someone may rename a Jira status later. Bob checks the mapping at the start of every run.\"\n    ],\n    \"summary\": \"When a run starts from a Jira issue, Bob keeps that issue up to date. It moves the status, links the PR and leaves a final comment.\",\n    \"title\": \"Add Jira support next to Taskbot\"\n  },\n  \"digest\": \"1f25bd37f16958bc10db78e3b5071fa8204dbc1204dfc3b4c7d3b5fb9a07e278\",\n  \"feedback\": [],\n  \"id\": \"f33289bb-d541-49e8-97f9-4fdb494a843a\",\n  \"source\": \"pipeline/architecture\",\n  \"status\": \"pending\",\n  \"version\": 1\n}\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.querySelectorAll('.arch-steps small').length===0"
+			],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["eval", "!document.querySelector('.arch-full-plan').open"],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "false\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches(\".arch-card:has(.arch-steps) .arch-map-tools .arch-link-button\")"
+			],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["eval", "document.activeElement.textContent==='Show files'"],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["press", "Enter"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"[...document.querySelectorAll('.arch-steps small')].map(e=>e.innerText)"
+			],
+			"exitCode": 0,
+			"output": "[\n  \"TicketTracking.ts \u00b7 LaunchFields.ts\",\n  \"JiraAdapter.ts\",\n  \"TicketTracking.ts\",\n  \"web/settings.tsx\",\n  \"ConfigManager.ts\",\n  \"JiraAdapter.ts\",\n  \"JiraAdapter.test.ts \u00b7 apps/f1\"\n]\n"
+		},
+		{
+			"action": [
+				"eval",
+				"[...document.querySelectorAll('.arch-steps small')].every(e=>e.getBoundingClientRect().height>0)"
+			],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["eval", "!document.querySelector('.arch-full-plan').open"],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": [
+				"screenshot",
+				"/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-plan-navigation/file-paths.png"
+			],
+			"exitCode": 0,
+			"output": "\u2713 Screenshot saved to /Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-plan-navigation/file-paths.png\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches('.arch-full-plan > summary')"
+			],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["press", "Enter"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": ["eval", "document.querySelector('.arch-full-plan').open"],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.querySelector('.arch-full-plan .markdown').innerText"
+			],
+			"exitCode": 0,
+			"output": "\"Full implementation plan for the Jira adapter.\\n\\nExtend TicketReferenceSchema...\\nArchitecture proposal f33289bb-d541-49e8-97f9-4fdb494a843a (version 1)\\n\\nAdd Jira support next to Taskbot\\n\\nWhen a run starts from a Jira issue, Bob keeps that issue up to date. It moves the status, links the PR and leaves a final comment.\\n\\nClassification: meaningful\\n\\nRationale: Adds a new outside service and a new place to keep secrets.\\n\\nDecisions:\\n\\nWhere should the Jira code live? Chosen by Bob: Next to the Taskbot code. Same pattern Bob already uses. Trade-off: Bob keeps a small Jira client. Not chosen: Use Atlassian\u2019s MCP server (Less code.; but Everyone must log in through a browser, so background runs break.); A new separate package (Ready for two-way sync later.; but Much more to build than we need now.).\\nHow does Bob pick the right Jira status? Chosen by Bob: You map them once per project. Works even if your team renamed its statuses. Trade-off: A minute of setup. Not chosen: Bob guesses from the names (No setup.; but Quietly breaks when statuses have custom names.).\\nShould Jira comments reach Bob while it works? OPEN Not chosen: Not yet, add it later (A smaller change now.; but Comments in Jira won\u2019t reach Bob yet.); Yes, in this change (Jira works both ways, like Linear.; but Makes this change about 40% bigger.).\\n\\nRepository evidence:\\n\\nbobs-factory: packages/edge-worker/src/factory/TicketTracking.ts. Taskbot and Linear already connect this way. Jira simply becomes the third one.\\nbobs-factory: packages/edge-worker/src/factory/TicketTracking.ts. Old runs keep working. The change only adds things.\\n\\nRisks:\\n\\nThe Jira token belongs to one person. If they leave, syncing stops. Bob will show a warning on the run.\\nSomeone may rename a Jira status later. Bob checks the mapping at the start of every run.\\n\\nWhat changes:\\n\\nStart-a-run form (changed, LaunchFields.ts): You can paste a Jira link to start a run.\\nSettings (new, web/settings.tsx): Where you add your Jira site, token and status mapping.\\nTicket tracking (changed, TicketTracking.ts): Picks the right connection for each ticket. Gets one small addition.\\nConfig file (changed, ConfigManager.ts): Holds the Jira token as plain text.\\nJira connection (new, JiraAdapter.ts): Moves the issue\u2019s status, links the PR and posts a final comment.\\nTaskbot link (unchanged, TicketTracking.ts): Existing. Jira will work the same way.\\nJira (outside): Atlassian\u2019s Jira Cloud.\\n\\nConnections: form -> tracking (Jira link); settings -> tracking (mapping); settings -> token (token); tracking -> jiraC; tracking -> taskbotC; token -> jiraC (token); jiraC -> jira\"\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.querySelector('.arch-full-plan .markdown').getBoundingClientRect().height>0"
+			],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["press", "PageDown"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"screenshot",
+				"/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-plan-navigation/full-plan.png"
+			],
+			"exitCode": 0,
+			"output": "\u2713 Screenshot saved to /Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-plan-navigation/full-plan.png\n"
+		},
+		{
+			"action": [
+				"eval",
+				"[...document.querySelectorAll('.arch-steps small')].map(e=>e.innerText)"
+			],
+			"exitCode": 0,
+			"output": "[\n  \"TicketTracking.ts \u00b7 LaunchFields.ts\",\n  \"JiraAdapter.ts\",\n  \"TicketTracking.ts\",\n  \"web/settings.tsx\",\n  \"ConfigManager.ts\",\n  \"JiraAdapter.ts\",\n  \"JiraAdapter.test.ts \u00b7 apps/f1\"\n]\n"
+		},
+		{
+			"action": ["press", "Space"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": ["eval", "!document.querySelector('.arch-full-plan').open"],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["press", "Shift+Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.activeElement.matches('.arch-card:has(.arch-steps) .arch-map-tools .arch-link-button') && document.activeElement.textContent==='Hide files'"
+			],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["press", "Space"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.querySelectorAll('.arch-steps small').length===0"
+			],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": ["press", "Tab"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": ["press", "Space"],
+			"exitCode": 0,
+			"output": "\u2713 Done\n"
+		},
+		{
+			"action": [
+				"eval",
+				"document.querySelector('.arch-full-plan').open && document.querySelectorAll('.arch-steps small').length===0"
+			],
+			"exitCode": 0,
+			"output": "true\n"
+		},
+		{
+			"action": [
+				"eval",
+				"(async()=>{const run=await(await fetch('/api/runs/38662e4f-cbbe-47e4-b84f-c9ed879162a9')).json();return run.architectureProposals.at(-1)})()"
+			],
+			"exitCode": 0,
+			"output": "{\n  \"assetDigests\": [],\n  \"at\": \"2026-10-14T10:50:37.116Z\",\n  \"content\": {\n    \"architectureContract\": \"architecture-v1\",\n    \"candidate\": {\n      \"assets\": [],\n      \"plan\": \"Full implementation plan for the Jira adapter.\\n\\n1. Extend TicketReferenceSchema...\\n\\n## Architecture proposal f33289bb-d541-49e8-97f9-4fdb494a843a (version 1)\\n\\nAdd Jira support next to Taskbot\\n\\nWhen a run starts from a Jira issue, Bob keeps that issue up to date. It moves the status, links the PR and leaves a final comment.\\n\\nClassification: meaningful\\n\\nRationale: Adds a new outside service and a new place to keep secrets.\\n\\nDecisions:\\n- Where should the Jira code live? Chosen by Bob: Next to the Taskbot code. Same pattern Bob already uses. Trade-off: Bob keeps a small Jira client. Not chosen: Use Atlassian\u2019s MCP server (Less code.; but Everyone must log in through a browser, so background runs break.); A new separate package (Ready for two-way sync later.; but Much more to build than we need now.).\\n- How does Bob pick the right Jira status? Chosen by Bob: You map them once per project. Works even if your team renamed its statuses. Trade-off: A minute of setup. Not chosen: Bob guesses from the names (No setup.; but Quietly breaks when statuses have custom names.).\\n- Should Jira comments reach Bob while it works? OPEN Not chosen: Not yet, add it later (A smaller change now.; but Comments in Jira won\u2019t reach Bob yet.); Yes, in this change (Jira works both ways, like Linear.; but Makes this change about 40% bigger.).\\n\\nRepository evidence:\\n- bobs-factory: packages/edge-worker/src/factory/TicketTracking.ts. Taskbot and Linear already connect this way. Jira simply becomes the third one.\\n- bobs-factory: packages/edge-worker/src/factory/TicketTracking.ts. Old runs keep working. The change only adds things.\\n\\nRisks:\\n- The Jira token belongs to one person. If they leave, syncing stops. Bob will show a warning on the run.\\n- Someone may rename a Jira status later. Bob checks the mapping at the start of every run.\\n\\nWhat changes:\\n- Start-a-run form (changed, LaunchFields.ts): You can paste a Jira link to start a run.\\n- Settings (new, web/settings.tsx): Where you add your Jira site, token and status mapping.\\n- Ticket tracking (changed, TicketTracking.ts): Picks the right connection for each ticket. Gets one small addition.\\n- Config file (changed, ConfigManager.ts): Holds the Jira token as plain text.\\n- Jira connection (new, JiraAdapter.ts): Moves the issue\u2019s status, links the PR and posts a final comment.\\n- Taskbot link (unchanged, TicketTracking.ts): Existing. Jira will work the same way.\\n- Jira (outside): Atlassian\u2019s Jira Cloud.\\n\\nConnections: form -> tracking (Jira link); settings -> tracking (mapping); settings -> token (token); tracking -> jiraC; tracking -> taskbotC; token -> jiraC (token); jiraC -> jira\",\n      \"steps\": [\n        {\n          \"files\": [\n            \"TicketTracking.ts\",\n            \"LaunchFields.ts\"\n          ],\n          \"title\": \"Let runs start from a Jira link\"\n        },\n        {\n          \"files\": [\n            \"JiraAdapter.ts\"\n          ],\n          \"title\": \"Build the Jira connection\"\n        },\n        {\n          \"files\": [\n            \"TicketTracking.ts\"\n          ],\n          \"title\": \"Plug it into ticket tracking\"\n        },\n        {\n          \"files\": [\n            \"web/settings.tsx\"\n          ],\n          \"title\": \"Add a Jira section to Settings\"\n        },\n        {\n          \"files\": [\n            \"ConfigManager.ts\"\n          ],\n          \"title\": \"Save the Jira token in the config file\"\n        },\n        {\n          \"files\": [\n            \"JiraAdapter.ts\"\n          ],\n          \"title\": \"If a Jira status is missing, post a comment instead\"\n        },\n        {\n          \"files\": [\n            \"JiraAdapter.test.ts\",\n            \"apps/f1\"\n          ],\n          \"title\": \"Test it, including a full practice run\"\n        }\n      ]\n    },\n    \"changes\": [],\n    \"classification\": \"meaningful\",\n    \"decisions\": [\n      {\n        \"decidedBy\": \"bob\",\n        \"id\": \"where\",\n        \"options\": [\n          {\n            \"catch\": \"Bob keeps a small Jira client.\",\n            \"id\": \"adapter\",\n            \"name\": \"Next to the Taskbot code\",\n            \"upside\": \"Same pattern Bob already uses.\"\n          },\n          {\n            \"catch\": \"Everyone must log in through a browser, so background runs break.\",\n            \"id\": \"mcp\",\n            \"name\": \"Use Atlassian\u2019s MCP server\",\n            \"preview\": {\n              \"hide\": [\n                \"jiraC\"\n              ],\n              \"links\": [\n                {\n                  \"from\": \"tracking\",\n                  \"to\": \"mcp\"\n                },\n                {\n                  \"from\": \"mcp\",\n                  \"label\": \"login\",\n                  \"to\": \"jira\"\n                }\n              ],\n              \"parts\": [\n                {\n                  \"area\": \"adapters\",\n                  \"detail\": \"Atlassian\u2019s server; each person logs in through a browser.\",\n                  \"id\": \"mcp\",\n                  \"label\": \"Atlassian MCP\",\n                  \"note\": \"browser login per person\",\n                  \"status\": \"outside\"\n                }\n              ]\n            },\n            \"upside\": \"Less code.\"\n          },\n          {\n            \"catch\": \"Much more to build than we need now.\",\n            \"id\": \"package\",\n            \"name\": \"A new separate package\",\n            \"upside\": \"Ready for two-way sync later.\"\n          }\n        ],\n        \"pick\": \"adapter\",\n        \"question\": \"Where should the Jira code live?\",\n        \"status\": \"decided\"\n      },\n      {\n        \"decidedBy\": \"bob\",\n        \"id\": \"status\",\n        \"options\": [\n          {\n            \"catch\": \"A minute of setup.\",\n            \"id\": \"map\",\n            \"name\": \"You map them once per project\",\n            \"upside\": \"Works even if your team renamed its statuses.\"\n          },\n          {\n            \"catch\": \"Quietly breaks when statuses have custom names.\",\n            \"id\": \"guess\",\n            \"name\": \"Bob guesses from the names\",\n            \"preview\": {\n              \"hide\": [\n                \"settings\"\n              ],\n              \"links\": [],\n              \"parts\": []\n            },\n            \"upside\": \"No setup.\"\n          }\n        ],\n        \"pick\": \"map\",\n        \"question\": \"How does Bob pick the right Jira status?\",\n        \"status\": \"decided\"\n      },\n      {\n        \"id\": \"comments\",\n        \"options\": [\n          {\n            \"catch\": \"Comments in Jira won\u2019t reach Bob yet.\",\n            \"id\": \"later\",\n            \"name\": \"Not yet, add it later\",\n            \"upside\": \"A smaller change now.\"\n          },\n          {\n            \"catch\": \"Makes this change about 40% bigger.\",\n            \"id\": \"now\",\n            \"name\": \"Yes, in this change\",\n            \"preview\": {\n              \"hide\": [],\n              \"links\": [\n                {\n                  \"from\": \"jira\",\n                  \"label\": \"comments\",\n                  \"to\": \"hook\"\n                },\n                {\n                  \"from\": \"hook\",\n                  \"to\": \"tracking\"\n                }\n              ],\n              \"parts\": [\n                {\n                  \"area\": \"adapters\",\n                  \"detail\": \"Receives Jira comments and passes them to the run.\",\n                  \"id\": \"hook\",\n                  \"label\": \"Jira webhook\",\n                  \"note\": \"receives comments\",\n                  \"status\": \"new\"\n                }\n              ]\n            },\n            \"upside\": \"Jira works both ways, like Linear.\"\n          }\n        ],\n        \"question\": \"Should Jira comments reach Bob while it works?\",\n        \"status\": \"open\",\n        \"why\": \"Bob can\u2019t tell from the code. It depends on where your team talks.\"\n      }\n    ],\n    \"evidence\": [\n      {\n        \"observation\": \"Taskbot and Linear already connect this way. Jira simply becomes the third one.\",\n        \"paths\": [\n          \"packages/edge-worker/src/factory/TicketTracking.ts\"\n        ],\n        \"repository\": \"bobs-factory\"\n      },\n      {\n        \"observation\": \"Old runs keep working. The change only adds things.\",\n        \"paths\": [\n          \"packages/edge-worker/src/factory/TicketTracking.ts\"\n        ],\n        \"repository\": \"bobs-factory\"\n      }\n    ],\n    \"map\": {\n      \"areas\": [\n        {\n          \"id\": \"dashboard\",\n          \"name\": \"Dashboard\"\n        },\n        {\n          \"id\": \"core\",\n          \"name\": \"Bob\u2019s core\"\n        },\n        {\n          \"id\": \"adapters\",\n          \"name\": \"Connections\"\n        },\n        {\n          \"id\": \"outside\",\n          \"name\": \"Outside Bob\"\n        }\n      ],\n      \"links\": [\n        {\n          \"from\": \"form\",\n          \"label\": \"Jira link\",\n          \"to\": \"tracking\"\n        },\n        {\n          \"from\": \"settings\",\n          \"label\": \"mapping\",\n          \"to\": \"tracking\"\n        },\n        {\n          \"from\": \"settings\",\n          \"label\": \"token\",\n          \"to\": \"token\"\n        },\n        {\n          \"from\": \"tracking\",\n          \"to\": \"jiraC\"\n        },\n        {\n          \"from\": \"tracking\",\n          \"to\": \"taskbotC\"\n        },\n        {\n          \"from\": \"token\",\n          \"label\": \"token\",\n          \"to\": \"jiraC\"\n        },\n        {\n          \"from\": \"jiraC\",\n          \"to\": \"jira\"\n        }\n      ],\n      \"parts\": [\n        {\n          \"area\": \"dashboard\",\n          \"detail\": \"You can paste a Jira link to start a run.\",\n          \"file\": \"LaunchFields.ts\",\n          \"id\": \"form\",\n          \"label\": \"Start-a-run form\",\n          \"note\": \"accepts Jira links\",\n          \"status\": \"changed\"\n        },\n        {\n          \"area\": \"dashboard\",\n          \"detail\": \"Where you add your Jira site, token and status mapping.\",\n          \"file\": \"web/settings.tsx\",\n          \"id\": \"settings\",\n          \"label\": \"Settings\",\n          \"note\": \"new Jira section\",\n          \"status\": \"new\"\n        },\n        {\n          \"area\": \"core\",\n          \"detail\": \"Picks the right connection for each ticket. Gets one small addition.\",\n          \"file\": \"TicketTracking.ts\",\n          \"id\": \"tracking\",\n          \"label\": \"Ticket tracking\",\n          \"note\": \"learns about Jira\",\n          \"status\": \"changed\"\n        },\n        {\n          \"area\": \"core\",\n          \"detail\": \"Holds the Jira token as plain text.\",\n          \"file\": \"ConfigManager.ts\",\n          \"id\": \"token\",\n          \"label\": \"Config file\",\n          \"note\": \"stores the token\",\n          \"status\": \"changed\"\n        },\n        {\n          \"area\": \"adapters\",\n          \"detail\": \"Moves the issue\u2019s status, links the PR and posts a final comment.\",\n          \"file\": \"JiraAdapter.ts\",\n          \"id\": \"jiraC\",\n          \"label\": \"Jira connection\",\n          \"note\": \"new\",\n          \"status\": \"new\"\n        },\n        {\n          \"area\": \"adapters\",\n          \"detail\": \"Existing. Jira will work the same way.\",\n          \"file\": \"TicketTracking.ts\",\n          \"id\": \"taskbotC\",\n          \"label\": \"Taskbot link\",\n          \"note\": \"stays the same\",\n          \"status\": \"unchanged\"\n        },\n        {\n          \"area\": \"outside\",\n          \"detail\": \"Atlassian\u2019s Jira Cloud.\",\n          \"id\": \"jira\",\n          \"label\": \"Jira\",\n          \"note\": \"status, PR, comment\",\n          \"status\": \"outside\"\n        }\n      ]\n    },\n    \"rationale\": \"Adds a new outside service and a new place to keep secrets.\",\n    \"risks\": [\n      \"The Jira token belongs to one person. If they leave, syncing stops. Bob will show a warning on the run.\",\n      \"Someone may rename a Jira status later. Bob checks the mapping at the start of every run.\"\n    ],\n    \"summary\": \"When a run starts from a Jira issue, Bob keeps that issue up to date. It moves the status, links the PR and leaves a final comment.\",\n    \"title\": \"Add Jira support next to Taskbot\"\n  },\n  \"digest\": \"1f25bd37f16958bc10db78e3b5071fa8204dbc1204dfc3b4c7d3b5fb9a07e278\",\n  \"feedback\": [],\n  \"id\": \"f33289bb-d541-49e8-97f9-4fdb494a843a\",\n  \"source\": \"pipeline/architecture\",\n  \"status\": \"pending\",\n  \"version\": 1\n}\n"
+		},
+		{
+			"action": ["close"],
+			"exitCode": 0,
+			"output": "\u2713 Browser closed\n"
+		}
+	],
+	"proposalBefore": {
+		"id": "f33289bb-d541-49e8-97f9-4fdb494a843a",
+		"version": 1,
+		"status": "pending",
+		"digest": "1f25bd37f16958bc10db78e3b5071fa8204dbc1204dfc3b4c7d3b5fb9a07e278"
+	},
+	"expectedPaths": [
+		"TicketTracking.ts \u00b7 LaunchFields.ts",
+		"JiraAdapter.ts",
+		"TicketTracking.ts",
+		"web/settings.tsx",
+		"ConfigManager.ts",
+		"JiraAdapter.ts",
+		"JiraAdapter.test.ts \u00b7 apps/f1"
+	],
+	"visiblePaths": [
+		"TicketTracking.ts \u00b7 LaunchFields.ts",
+		"JiraAdapter.ts",
+		"TicketTracking.ts",
+		"web/settings.tsx",
+		"ConfigManager.ts",
+		"JiraAdapter.ts",
+		"JiraAdapter.test.ts \u00b7 apps/f1"
+	],
+	"visiblePlan": "Full implementation plan for the Jira adapter.\n\nExtend TicketReferenceSchema...\nArchitecture proposal f33289bb-d541-49e8-97f9-4fdb494a843a (version 1)\n\nAdd Jira support next to Taskbot\n\nWhen a run starts from a Jira issue, Bob keeps that issue up to date. It moves the status, links the PR and leaves a final comment.\n\nClassification: meaningful\n\nRationale: Adds a new outside service and a new place to keep secrets.\n\nDecisions:\n\nWhere should the Jira code live? Chosen by Bob: Next to the Taskbot code. Same pattern Bob already uses. Trade-off: Bob keeps a small Jira client. Not chosen: Use Atlassian\u2019s MCP server (Less code.; but Everyone must log in through a browser, so background runs break.); A new separate package (Ready for two-way sync later.; but Much more to build than we need now.).\nHow does Bob pick the right Jira status? Chosen by Bob: You map them once per project. Works even if your team renamed its statuses. Trade-off: A minute of setup. Not chosen: Bob guesses from the names (No setup.; but Quietly breaks when statuses have custom names.).\nShould Jira comments reach Bob while it works? OPEN Not chosen: Not yet, add it later (A smaller change now.; but Comments in Jira won\u2019t reach Bob yet.); Yes, in this change (Jira works both ways, like Linear.; but Makes this change about 40% bigger.).\n\nRepository evidence:\n\nbobs-factory: packages/edge-worker/src/factory/TicketTracking.ts. Taskbot and Linear already connect this way. Jira simply becomes the third one.\nbobs-factory: packages/edge-worker/src/factory/TicketTracking.ts. Old runs keep working. The change only adds things.\n\nRisks:\n\nThe Jira token belongs to one person. If they leave, syncing stops. Bob will show a warning on the run.\nSomeone may rename a Jira status later. Bob checks the mapping at the start of every run.\n\nWhat changes:\n\nStart-a-run form (changed, LaunchFields.ts): You can paste a Jira link to start a run.\nSettings (new, web/settings.tsx): Where you add your Jira site, token and status mapping.\nTicket tracking (changed, TicketTracking.ts): Picks the right connection for each ticket. Gets one small addition.\nConfig file (changed, ConfigManager.ts): Holds the Jira token as plain text.\nJira connection (new, JiraAdapter.ts): Moves the issue\u2019s status, links the PR and posts a final comment.\nTaskbot link (unchanged, TicketTracking.ts): Existing. Jira will work the same way.\nJira (outside): Atlassian\u2019s Jira Cloud.\n\nConnections: form -> tracking (Jira link); settings -> tracking (mapping); settings -> token (token); tracking -> jiraC; tracking -> taskbotC; token -> jiraC (token); jiraC -> jira",
+	"proposalAfter": {
+		"id": "f33289bb-d541-49e8-97f9-4fdb494a843a",
+		"version": 1,
+		"status": "pending",
+		"digest": "1f25bd37f16958bc10db78e3b5071fa8204dbc1204dfc3b4c7d3b5fb9a07e278"
+	}
+}
