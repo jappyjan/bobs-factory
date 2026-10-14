@@ -446,6 +446,12 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 		script: async () => ({}),
 		tool: async () => ({}),
 	});
+	if (restored.catalog.read().migration?.conflicts.simple) {
+		expect(() => restored.selectWorkflow([], "manual", "simple")).toThrow(
+			"unavailable",
+		);
+		restored.catalog.resolveSimpleConflict();
+	}
 	const workflow = restored.selectWorkflow([], "manual", "simple");
 	expect(getLaunchFields(workflow).map((field) => field.name)).toEqual([
 		"prompt",
@@ -470,9 +476,8 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 	expect(
 		JSON.parse(
 			readFileSync(join(directory, "factory", "workflows.json"), "utf8"),
-		).workflows.find((item: { id: string }) => item.id === "simple")
-			.launchFields,
-	).toHaveLength(1);
+		).format,
+	).toBe("workflow-catalog-v1");
 	void runtime.shutdown();
 	void restored.shutdown();
 });

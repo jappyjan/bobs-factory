@@ -1,0 +1,18 @@
+{
+	"testedHead": "11de73c4335e4f9f3af7614d91e225a447fbcb45",
+	"webBuild": "21e72909cc7609346db22eda",
+	"sourceSha256": {
+		"packages/edge-worker/src/factory/web/architecture.tsx": "6319ac091e596c6d240e79afd114e3788e6a7c12499a6e5cdedfc07aad029eaf",
+		"apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/server.mjs": "84c50f516f76bee83d454e1393b000e07779abf1bce34a75a43b72430150e8cf",
+		"docs/qa/architecture-plan-navigation/check.py": "fbb1fdc80e61aaf6f141098fb77ae8e6f56396b111638c3ac2b49d4f820bf50c",
+		"packages/edge-worker/src/factory/web/styles.css": "438582966ce57854f1ef6a5ba478830b3410909ac6e99a6191fe15f071299c50"
+	},
+	"evidenceSha256": {
+		"receipt.json": "938cbdae08e0916cae46dacdbe78d0fc16341d2b5d6d9fa4a742208088e1ade9",
+		"file-paths.png": "2442e3f454da6c163ef73a1081df0e2a1c152aac8f8e0d0850f9f82e2d6a7ac6",
+		"full-plan.png": "227b7372e5cfda6b9134279535fd50bda6548ed8270e9cc2edd8d0c89ff7f28e"
+	},
+	"screenshotsInspected": true,
+	"productCodeChanged": false,
+	"originalReceiptSha256": "a7f417b1d79dc89e8a27fd834fa6dfa0c7dc12b9d52e2072c7b55ce45e5e28fe"
+}

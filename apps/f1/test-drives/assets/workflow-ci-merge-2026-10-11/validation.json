@@ -1,0 +1,39 @@
+{
+	"testedRevision": "bbd90d0748e06678cabad6823967a6493ddf217a",
+	"mergeParents": [
+		"696d5fb4839380f84bffa00e86f107303c2c2d70",
+		"73345404451f35a1cd2c13117898792dc71c5ca9"
+	],
+	"mode": "mock",
+	"sourceSha256": {
+		"packages/edge-worker/src/EdgeWorker.ts": "2227ad9e51cd4178f4da9294066433b45330e5ad5beee2bab9bec309cf1a66de",
+		"packages/edge-worker/src/MachineCapacity.ts": "45c5b297a7905ababe08a724e32901dd22f682c5338d611e3c78013841b70b78",
+		"packages/edge-worker/src/factory/FactoryServer.ts": "3b7c762afa49fa1bbbb203ff5272df1939fe5203a0b5df8f732df03ee3a1ed61",
+		"packages/edge-worker/src/factory/OperatorService.ts": "1fbbfe29a01ff57ea7451ba0842c82af281e273963fd470ecbcb89bc65f82b7a",
+		"packages/edge-worker/src/ChatSessionHandler.ts": "2ab5ddbf0ede9848cb981df3da46debfdacde93952dff101d4c532d0124a3d02",
+		"packages/edge-worker/src/RunnerConcurrency.ts": "2887547b6832dcf676e2933b02bdda9216e31c8a0871cf675928e609eb602ffb"
+	},
+	"fixtureSha256": {
+		"/Users/jappy/.cyrus/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/chat-checkpoint-fix/checkpoint-cancel-chat-f1.ts": "62708803726dacec999d5c89ff8d7fc39c59e83f20808ebf0fb66c81ff0d37cc",
+		"/Users/jappy/.cyrus/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/chat-checkpoint-fix/established-chat-f1.ts": "b9700eac72712c2308001e8e86c8ec10d9a5a151f8bd1325e7fdea273614482a"
+	},
+	"checks": [
+		"142 focused tests passed",
+		"workspace build passed",
+		"workspace typecheck passed",
+		"Biome CI passed with 19 existing warnings",
+		"pnpm audit: no known vulnerabilities",
+		"two simulated F1 drives passed"
+	],
+	"evidenceDirectory": "/Users/jappy/.cyrus/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/ci-secret-assessment",
+	"receiptSha256": {
+		"catalog-receipt.json": "942f40600141471bafe752342527694c62b29c65488a8f1d28aadf782597d18d",
+		"checkpoint-receipt.json": "64dee2f8d085b6494ea26735942a799ba632e50367dde5d4f6cc8f08ddbead8c"
+	},
+	"limitations": [
+		"Real providers and live Slack/Zulip untested",
+		"New revision CI will be rechecked by runtime",
+		"Human review-guide approval remains required",
+		"Ticket synchronization remains unconfirmed"
+	]
+}

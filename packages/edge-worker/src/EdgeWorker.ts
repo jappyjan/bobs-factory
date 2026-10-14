@@ -178,7 +178,11 @@ import { ConfigManager, type RepositoryChanges } from "./ConfigManager.js";
 import { DefaultSkillsDeployer } from "./DefaultSkillsDeployer.js";
 import { EgressProxy } from "./EgressProxy.js";
 import { nativeInfrastructureFailure } from "./factory/AgentInfrastructure.js";
-import { resolveAgentSettings } from "./factory/AgentSettings.js";
+import {
+	AgentSettingsSchema,
+	resolveAgentSettings,
+	resolveNativePreferences,
+} from "./factory/AgentSettings.js";
 import {
 	type Architecture,
 	ArchitectureReviewSchema,
@@ -363,6 +367,7 @@ import {
 } from "./RepositoryRouter.js";
 import {
 	capRunnerStarts,
+	type RunnerStartCheckpoint,
 	runnerCapacityState,
 	waitForRunnerCapacity,
 } from "./RunnerConcurrency.js";
@@ -1101,8 +1106,12 @@ export class EdgeWorker extends EventEmitter {
 						id: session.id,
 						title: session.displayTitle ?? session.issue?.title ?? session.id,
 						titleGeneration: session.titleGeneration,
-						status:
-							runnerCapacityState(session.agentRunner)?.phase === "queued"
+						workflowBlock: this.getFactoryRuntime().catalog.getBlock(
+							session.id,
+						),
+						status: this.getFactoryRuntime().catalog.getBlock(session.id)
+							? "blocked"
+							: runnerCapacityState(session.agentRunner)?.phase === "queued"
 								? "capacity-waiting"
 								: session.agentRunner?.isRunning()
 									? "running"
@@ -1189,6 +1198,12 @@ export class EdgeWorker extends EventEmitter {
 				start: (input) => this.startManualFactoryRun(input),
 				followup: (id, feedback) => this.startFactoryFollowup(id, feedback),
 				retryTitle: (id) => this.retryRunTitle(id),
+				resume: (id) => this.resumeNativeWorkflow(id),
+				availabilityImpact: (id) => this.nativeWorkflowImpact(id),
+				resumeEligible: (id) =>
+					!this.titleSession(id)?.agentRunner?.isRunning() &&
+					!this.preparationStarts.has(id) &&
+					!this.chatHandlerForSession(id)?.isWorkflowStopping(id),
 				stop: (id) => this.stopFactoryOperatorRun(id),
 			});
 			await this.factoryServer.start(
@@ -1226,6 +1241,10 @@ export class EdgeWorker extends EventEmitter {
 				chat: (id) => this.factoryChatState(id),
 				message: (id, text, messageId) =>
 					this.sendFactoryChat(id, text, messageId),
+				resumeEligible: (id) =>
+					!this.titleSession(id)?.agentRunner?.isRunning() &&
+					!this.preparationStarts.has(id) &&
+					!this.chatHandlerForSession(id)?.isWorkflowStopping(id),
 				stop: (id) => this.stopFactoryOperatorRun(id),
 				mcp: (run) =>
 					this.runnerSlots.run(
@@ -1701,21 +1720,30 @@ export class EdgeWorker extends EventEmitter {
 	): ChatSessionHandlerDeps {
 		return {
 			factoryHome: this.factoryHome,
+			requireWorkflowAvailable: (id) =>
+				this.requireSessionWorkflowAvailable(id ?? `new-chat-${randomUUID()}`),
 			chatRepositoryProvider,
 			onSessionChange: (id) => this.emit("chatSessionChanged", id),
 			runnerConfigBuilder: this.runnerConfigBuilder,
-			createRunner: (config, chatRunnerType, signal, sessionId) => {
+			createRunner: (
+				config,
+				chatRunnerType,
+				signal,
+				sessionId,
+				beforeStart,
+			) => {
 				const runnerType =
 					chatRunnerType ?? this.runnerSelectionService.getDefaultRunner();
 				return this.createRunnerForType(
 					runnerType,
 					{
 						...config,
-						model: this.getDefaultModelForRunner(runnerType),
+						model: config.model ?? this.getDefaultModelForRunner(runnerType),
 						fallbackModel: this.getDefaultFallbackModelForRunner(runnerType),
 					},
 					signal,
 					sessionId,
+					beforeStart,
 				);
 			},
 			getPlatformMcpConfigOverrides,
@@ -5162,25 +5190,35 @@ ${taskSection}`;
 			join(this.factoryHome, "factory"),
 		).select(primaryRepo.id);
 		let execution: ResolvedExecutionEnvironment | undefined;
+		const labels = await this.fetchIssueLabels(fullIssue);
+		const selected = this.runnerSelectionService.determineRunnerSelection(
+			labels,
+			fullIssue.description ?? undefined,
+		);
+		const preferences = launch.nativePreferences ?? {};
+		const selection = {
+			runnerType: preferences.runner ?? selected.runnerType,
+			modelOverride:
+				preferences.model ??
+				(!preferences.runner || preferences.runner === selected.runnerType
+					? selected.modelOverride
+					: undefined),
+		};
+		resolveAgentSettings(selection.runnerType, preferences);
+		await this.preflightExecution(
+			{
+				id: sessionId,
+				repositoryId: primaryRepo.id,
+				repositories: snapshotRepositories(repositories, ""),
+				workspace: "",
+				runner: selection.runnerType,
+				model: selection.modelOverride,
+				executionSnapshot,
+			} as FactoryRun,
+			launch.workflow,
+			launch.workflowDefinitions,
+		);
 		if (executionSnapshot) {
-			const labels = await this.fetchIssueLabels(fullIssue);
-			const selection = this.runnerSelectionService.determineRunnerSelection(
-				labels,
-				fullIssue.description ?? undefined,
-			);
-			await this.preflightExecution(
-				{
-					id: sessionId,
-					repositoryId: primaryRepo.id,
-					repositories: snapshotRepositories(repositories, ""),
-					workspace: "",
-					runner: selection.runnerType,
-					model: selection.modelOverride,
-					executionSnapshot,
-				} as FactoryRun,
-				launch.workflow,
-				launch.workflowDefinitions,
-			);
 			executionCapabilities(selection.runnerType);
 			execution = await this.getExecutionResolver().resolve(
 				executionSnapshot,
@@ -5329,6 +5367,10 @@ ${taskSection}`;
 				identifier: fullIssue.identifier,
 				url: fullIssue.url,
 			},
+		};
+		createdSession.metadata = {
+			...createdSession.metadata,
+			workflowPreferences: launch.nativePreferences ?? {},
 		};
 		this.pendingTriggerOrigins.delete(sessionId);
 		this.pendingTriggerMessages.delete(sessionId);
@@ -5485,6 +5527,7 @@ ${taskSection}`;
 		return !(work && (work.sessionCrons.length || work.backgroundTasks.length));
 	}
 	private ticketSessionIsActive(session: CyrusAgentSession): boolean {
+		if (this.getFactoryRuntime().catalog.getBlock(session.id)) return true;
 		if (this.ticketRunIsSettled(session.id)) return false;
 		if (session.agentRunner?.isRunning()) return true;
 		const graphRun = this.getFactoryRuntime().runs.get(session.id);
@@ -5502,6 +5545,18 @@ ${taskSection}`;
 		const receipt = this.launchAdmission
 			?.values()
 			.find((item) => item.sessionId === session.id);
+		// A recovery receipt also records interrupted continuation. Once native
+		// Simple has a conversation, resume it rather than rebuilding its startup.
+		if (
+			(receipt?.launch?.workflow.id ?? session.triggerOrigin?.workflowId) ===
+				"simple" &&
+			(session.claudeSessionId ||
+				session.codexSessionId ||
+				session.geminiSessionId ||
+				session.cursorSessionId ||
+				session.opencodeSessionId)
+		)
+			return false;
 		return (
 			receipt?.phase === "recovery" ||
 			Boolean(
@@ -5568,7 +5623,14 @@ ${taskSection}`;
 	): Promise<ReturnType<WorkflowRuntime["selectLaunch"]>> {
 		const admission = this.getLaunchAdmission();
 		const receipt = admission.get(workspace, sessionId);
-		if (receipt?.launch) return structuredClone(receipt.launch);
+		if (receipt?.launch) {
+			this.getFactoryRuntime().requireAvailable(
+				receipt.launch.workflow,
+				receipt.launch.workflowDefinitions,
+				sessionId,
+			);
+			return structuredClone(receipt.launch);
+		}
 		const origin = receipt?.origin ?? this.pendingTriggerOrigins.get(sessionId);
 		let comment = receipt
 			? receipt.commentBody
@@ -5623,6 +5685,7 @@ ${taskSection}`;
 		}
 	}
 	private ensureTicketLaunchOpen(workspace: string, session: string): void {
+		this.requireSessionWorkflowAvailable(session);
 		if (this.getLaunchAdmission().get(workspace, session)?.phase === "settled")
 			throw new Error("This ticket launch was stopped");
 	}
@@ -5636,6 +5699,8 @@ ${taskSection}`;
 	private recoverPendingTicketLaunches(): void {
 		if (this.updateDrain?.active()) return;
 		for (const receipt of this.getLaunchAdmission().values()) {
+			if (this.getFactoryRuntime().catalog.getBlock(receipt.sessionId))
+				continue;
 			if (receipt.phase === "pending") {
 				void this.startAcceptedTicketLaunch(receipt, [
 					...this.repositories.values(),
@@ -5646,9 +5711,8 @@ ${taskSection}`;
 			if (
 				receipt.phase !== "settled" &&
 				!this.getFactoryRuntime().runs.has(receipt.sessionId) &&
-				(receipt.phase === "recovery" ||
-					(["starting", "started"].includes(receipt.phase) &&
-						(!session || this.ticketStartupIsIncomplete(session))))
+				["starting", "started", "recovery"].includes(receipt.phase) &&
+				(!session || this.ticketStartupIsIncomplete(session))
 			) {
 				this.getLaunchAdmission().update(receipt, { phase: "recovery" });
 				if (session) session.status = AgentSessionStatus.Error;
@@ -5829,13 +5893,17 @@ ${taskSection}`;
 	private async startAcceptedTicketLaunch(
 		receipt: TicketLaunchReceipt,
 		repos: RepositoryConfig[],
+		propagateFailure = false,
 	): Promise<void> {
 		if (
 			this.updateDrain?.active() ||
 			this.inFlightTicketStarts.has(receipt.key) ||
 			receipt.phase === "settled"
-		)
+		) {
+			if (propagateFailure)
+				throw new Error("Ticket startup is already running or was stopped");
 			return;
+		}
 		this.inFlightTicketStarts.add(receipt.key);
 		const operation = {};
 		this.updateDrain?.enter(operation);
@@ -5846,15 +5914,22 @@ ${taskSection}`;
 			if (
 				this.getLaunchAdmission().get(webhook.organizationId, receipt.sessionId)
 					?.phase === "settled"
-			)
+			) {
+				if (propagateFailure) throw new Error("Ticket launch was stopped");
 				return; // Stop during preflight.
-			await this.routeAcceptedTicketLaunch(webhook, repos);
+			}
+			await this.routeAcceptedTicketLaunch(webhook, repos, propagateFailure);
+			if (propagateFailure && receipt.phase !== "started")
+				throw new Error(
+					"Ticket startup did not complete; ownership is retained",
+				);
 		} catch (error) {
 			const phase =
 				this.getLaunchAdmission().get(webhook.organizationId, receipt.sessionId)
 					?.phase === "settled"
 					? "settled"
-					: receipt.phase === "starting" ||
+					: propagateFailure ||
+							receipt.phase === "starting" ||
 							this.agentSessionManager.getSession(receipt.sessionId)
 						? "recovery"
 						: "settled";
@@ -5863,6 +5938,7 @@ ${taskSection}`;
 				webhook,
 				`${error instanceof Error ? error.message : String(error)}${phase === "recovery" ? " Startup was interrupted; ownership is retained to prevent duplicate work. Inspect the existing session, or send stop before launching a new session." : " Check the workflow ID, labels, default and ticket-assignment permission in Recipes; no fallback was launched."}`,
 			);
+			if (propagateFailure) throw error;
 		} finally {
 			try {
 				await this.savePersistedState();
@@ -5892,6 +5968,7 @@ ${taskSection}`;
 	private async routeAcceptedTicketLaunch(
 		webhook: AgentSessionCreatedWebhook,
 		repos: RepositoryConfig[],
+		requireStartup = false,
 	): Promise<void> {
 		const issueId = webhook.agentSession?.issue?.id;
 
@@ -5919,6 +5996,8 @@ ${taskSection}`;
 				);
 
 			if (routingResult.type === "none") {
+				if (requireStartup)
+					throw new Error("Session repository is unavailable");
 				this.settleTicketLaunch(webhook.agentSession.id);
 				if (process.env.BOBS_FACTORY_WEBHOOK_DEBUG === "true") {
 					this.logger.info(
@@ -6251,32 +6330,37 @@ ${taskSection}`;
 					linearWorkspaceId,
 				);
 				this.ensureTicketLaunchOpen(linearWorkspaceId, sessionId);
-				const run = this.getFactoryRuntime().create({
-					id: sessionId,
-					executionSnapshot: session.metadata?.executionSnapshot
-						? ExecutionSnapshotSchema.parse(session.metadata.executionSnapshot)
-						: undefined,
-					title: fullIssue.title,
-					repositoryId: primaryRepo.id,
-					workflow,
-					workflowDefinitions,
-					triggerOrigin: session.triggerOrigin!,
-					workspace: session.workspace.path,
-					repositories: snapshotRepositories(
-						repositories,
-						session.workspace.path,
-						session.workspace.repoPaths,
-						Object.fromEntries(
-							session.repositories.map((repo) => [
-								repo.repositoryId,
-								repo.baseBranchName,
-							]),
+				const run = this.getFactoryRuntime().create(
+					{
+						id: sessionId,
+						executionSnapshot: session.metadata?.executionSnapshot
+							? ExecutionSnapshotSchema.parse(
+									session.metadata.executionSnapshot,
+								)
+							: undefined,
+						title: fullIssue.title,
+						repositoryId: primaryRepo.id,
+						workflow,
+						workflowDefinitions,
+						triggerOrigin: session.triggerOrigin!,
+						workspace: session.workspace.path,
+						repositories: snapshotRepositories(
+							repositories,
+							session.workspace.path,
+							session.workspace.repoPaths,
+							Object.fromEntries(
+								session.repositories.map((repo) => [
+									repo.repositoryId,
+									repo.baseBranchName,
+								]),
+							),
 						),
-					),
-					input: assembly.userPrompt,
-					issueId: fullIssue.id,
-					workspaceId: linearWorkspaceId,
-				});
+						input: assembly.userPrompt,
+						issueId: fullIssue.id,
+						workspaceId: linearWorkspaceId,
+					},
+					{ workflow, workflowDefinitions },
+				);
 				run.outputs.repository = {
 					baseBranch:
 						workflow.id === "takeover"
@@ -7006,6 +7090,7 @@ ${taskSection}`;
 					: "No accepted session is associated with this reply. Start a new assignment or mention on an inactive issue",
 			);
 		}
+		this.requireSessionWorkflowAvailable(agentSessionId);
 		const acceptedSession =
 			this.agentSessionManager.getSession(agentSessionId)!;
 		const acceptedWorkspace =
@@ -7345,6 +7430,7 @@ ${taskSection}`;
 		config: AgentRunnerConfig,
 		signal?: AbortSignal,
 		sessionId = config.workspaceName ?? config.workingDirectory ?? randomUUID(),
+		beforeStart?: RunnerStartCheckpoint,
 	): IAgentRunner {
 		return capRunnerStarts(
 			this.buildRunnerForType(runnerType, config),
@@ -7358,9 +7444,199 @@ ${taskSection}`;
 				remote: runnerType === "cursor",
 				onChange: () => this.emit("chatSessionChanged", sessionId),
 			},
+			() => this.requireSessionWorkflowAvailable(sessionId),
+			beforeStart,
 		);
 	}
 
+	private sessionLaunch(id: string): {
+		workflow: Workflow;
+		workflowDefinitions: Workflow[];
+	} {
+		const runtime = this.getFactoryRuntime();
+		const run = runtime.runs.get(id);
+		if (run)
+			return {
+				workflow: run.workflow,
+				workflowDefinitions: run.workflowDefinitions ?? [],
+			};
+		const receipt = this.getLaunchAdmission()
+			.values()
+			.find((r) => r.sessionId === id);
+		return (
+			receipt?.launch ?? {
+				workflow: runtime.listWorkflows().find((w) => w.id === "simple")!,
+				workflowDefinitions: runtime.listWorkflows(),
+			}
+		);
+	}
+	private requireSessionWorkflowAvailable(id: string): void {
+		const launch = this.sessionLaunch(id);
+		this.getFactoryRuntime().requireAvailable(
+			launch.workflow,
+			launch.workflowDefinitions,
+			id,
+		);
+	}
+	private nativeWorkflowImpact(target: string): string[] {
+		const runtime = this.getFactoryRuntime();
+		const pending = this.getLaunchAdmission()
+			.values()
+			.filter((r) => r.phase !== "settled")
+			.map((r) => r.sessionId);
+		return [
+			...new Set([
+				...this.getAllKnownSessions()
+					.filter(
+						(s) => this.ticketSessionIsActive(s) || s.agentRunner?.isRunning(),
+					)
+					.map((s) => s.id),
+				...pending,
+			]),
+		].filter((id) => {
+			if (runtime.runs.has(id)) return false;
+			const launch = this.sessionLaunch(id);
+			const policy = runtime.catalog.policyGraph(
+				launch.workflow,
+				launch.workflowDefinitions,
+			);
+			const visited = new Set<string>();
+			const scan = (workflow: Workflow): void => {
+				if (visited.has(workflow.id)) return;
+				visited.add(workflow.id);
+				const steps = (ss: WorkflowStep[]) => {
+					for (const step of ss) {
+						if (step.workflow) {
+							const nested = policy.definitions.find(
+								(w) => w.id === step.workflow,
+							);
+							if (nested) scan(nested);
+						}
+						for (const group of step.groups ?? []) steps(group);
+					}
+				};
+				steps(workflow.steps);
+			};
+			scan(policy.root);
+			return visited.has(target);
+		});
+	}
+	private interruptDisabledSessions(): void {
+		const runtime = this.getFactoryRuntime();
+		const ids = new Set([
+			...this.getAllKnownSessions().map((s) => s.id),
+			...this.getLaunchAdmission()
+				.values()
+				.filter((r) => r.phase !== "settled")
+				.map((r) => r.sessionId),
+		]);
+		for (const id of ids) {
+			if (runtime.runs.has(id)) continue;
+			const session = this.titleSession(id);
+			if (
+				session &&
+				!this.ticketSessionIsActive(session) &&
+				!session.agentRunner?.isRunning()
+			)
+				continue;
+			const launch = this.sessionLaunch(id);
+			const ids = runtime.catalog.unavailable(
+				launch.workflow,
+				launch.workflowDefinitions,
+			);
+			if (!ids.length) continue;
+			runtime.catalog.block(id, {
+				workflowIds: ids,
+				at: new Date().toISOString(),
+				priorStatus: session?.status,
+				reason: `Workflow disabled: ${ids.join(", ")}. Progress retained. Enable it, then Resume this session individually.`,
+			});
+			this.cancelRunTitle(id);
+			this.preparationStarts.get(id)?.abort();
+			this.chatHandlerForSession(id)?.interruptWorkflowSession(id);
+			session?.agentRunner?.stop();
+			this.emit("chatSessionChanged", id);
+		}
+		void this.savePersistedState();
+	}
+	private async resumeNativeWorkflow(id: string): Promise<void> {
+		const runtime = this.getFactoryRuntime();
+		if (!runtime.catalog.getBlock(id))
+			throw new Error("Session is not blocked by a disabled workflow");
+		const savedBlock = runtime.catalog.getBlock(id)!;
+		const session = this.titleSession(id);
+		if (
+			session?.agentRunner?.isRunning() ||
+			this.preparationStarts.has(id) ||
+			this.chatHandlerForSession(id)?.isWorkflowStopping(id)
+		)
+			throw new Error("The session is still stopping");
+		if (session?.agentRunner) {
+			try {
+				await waitForRunnerCapacity(session.agentRunner);
+			} catch (error) {
+				// Cancellation rejects the old turn after its lease is released. A retained
+				// capacity request still means termination has not been confirmed.
+				if (runnerCapacityState(session.agentRunner)) throw error;
+			}
+		}
+		const launch = this.sessionLaunch(id);
+		runtime.requireAvailable(launch.workflow, launch.workflowDefinitions);
+		const receipt = this.getLaunchAdmission()
+			.values()
+			.find((r) => r.sessionId === id);
+		try {
+			if (receipt && (!session || this.ticketStartupIsIncomplete(session))) {
+				if (
+					session?.repositories.some(
+						(repo) => !this.repositories.has(repo.repositoryId),
+					)
+				)
+					throw new Error("Session repository is unavailable");
+				runtime.catalog.clearBlock(id);
+				await this.startAcceptedTicketLaunch(
+					receipt,
+					[...this.repositories.values()],
+					true,
+				);
+				return;
+			}
+			if (!session) throw new Error("Saved native session not found");
+			const chat = this.chatHandlerForSession(id);
+			if (chat) {
+				runtime.catalog.clearBlock(id);
+				await chat.resumeBlockedSession(id);
+				return;
+			}
+			const repository = this.repositories.get(
+				this.sessionRepositories.get(id) ??
+					session.repositories[0]?.repositoryId ??
+					"",
+			);
+			if (!repository) throw new Error("Session repository is unavailable");
+			runtime.catalog.clearBlock(id);
+			await this.resumeAgentSession(
+				session,
+				repository,
+				id,
+				this.agentSessionManager,
+				session.metadata?.workflowPendingPrompt?.body ??
+					"Resume the interrupted work from this conversation. Inspect prior tool results and current files before repeating actions.",
+				session.metadata?.workflowPendingPrompt?.attachmentManifest ?? "",
+				false,
+				[],
+				repository.linearWorkspaceId,
+				undefined,
+				session.metadata?.workflowPendingPrompt?.commentAuthor,
+				session.metadata?.workflowPendingPrompt?.commentTimestamp,
+			);
+		} catch (error) {
+			runtime.catalog.block(id, savedBlock);
+			this.emit("chatSessionChanged", id);
+			void this.savePersistedState();
+			throw error;
+		}
+	}
 	private getExecutionResolver(): ExecutionEnvironmentResolver {
 		this.executionResolver ??= new ExecutionEnvironmentResolver(
 			join(this.factoryHome, "factory"),
@@ -7373,16 +7649,22 @@ ${taskSection}`;
 		workflow: Workflow,
 		definitions: Workflow[],
 	): Promise<void> {
-		if (!run.executionSnapshot) return;
 		const fallback = (run.runner ??
 			this.runnerSelectionService.getDefaultRunner()) as RunnerType;
+		resolveAgentSettings(fallback, run);
 		const requests: [RunnerType, string | undefined][] = [
 			[fallback, run.model ?? this.getDefaultModelForRunner(fallback)],
 		];
 		const visited = new Set<string>();
 		const scan = (steps: WorkflowStep[]) => {
 			for (const step of steps) {
-				if (step.type === "agent")
+				if (step.type === "agent") {
+					resolveAgentSettings(step.runner ?? fallback, step, {
+						runner: fallback,
+						reasoningEffort: run.reasoningEffort,
+						modelVariant: run.modelVariant,
+						serviceTier: run.serviceTier,
+					});
 					requests.push([
 						step.runner ?? fallback,
 						step.model ??
@@ -7390,6 +7672,7 @@ ${taskSection}`;
 								? this.getDefaultModelForRunner(step.runner)
 								: (run.model ?? this.getDefaultModelForRunner(fallback))),
 					]);
+				}
 				if (step.groups) for (const group of step.groups) scan(group);
 				if (step.workflow && !visited.has(step.workflow)) {
 					visited.add(step.workflow);
@@ -7399,6 +7682,7 @@ ${taskSection}`;
 			}
 		};
 		scan(workflow.steps);
+		if (!run.executionSnapshot) return;
 		const title = this.getFactoryRuntime().resolveTitleSettings();
 		requests.push([title.runner, title.model]);
 		const checked = new Set<RunnerType>();
@@ -7513,6 +7797,9 @@ ${taskSection}`;
 					this.executeFactoryMcpTool(context, server, tool),
 			});
 			this.factoryRuntime = new WorkflowRuntime(this.factoryHome, {
+				availabilityChanged: (_id, enabled) => {
+					if (!enabled) this.interruptDisabledSessions();
+				},
 				execution: (run, runner) => this.resolveRunExecution(run, runner),
 				cleanupExecution: (run) => {
 					if (run.executionSnapshot)
@@ -7662,6 +7949,7 @@ ${taskSection}`;
 		void this.savePersistedState();
 	}
 	private retryRunTitle(id: string): void {
+		this.requireSessionWorkflowAvailable(id);
 		const runtime = this.getFactoryRuntime();
 		const previous =
 			runtime.runs.get(id)?.titleGeneration ??
@@ -7691,6 +7979,11 @@ ${taskSection}`;
 	}
 	private startRunTitle(id: string): void {
 		if (this.stopping) return;
+		try {
+			this.requireSessionWorkflowAvailable(id);
+		} catch {
+			return;
+		}
 		const run = this.factoryRuntime?.runs.get(id);
 		if (run && !run.titleGeneration) return;
 		const job = run?.titleGeneration ?? this.titleSession(id)?.titleGeneration;
@@ -7709,6 +8002,7 @@ ${taskSection}`;
 						this.updateRunTitle(runId, result, title);
 				},
 				buildConfig: async (snapshot, directory, jobId) => {
+					this.requireSessionWorkflowAvailable(jobId);
 					const configuredRepository = this.repositories.get(
 						snapshot.repositoryId ?? "",
 					);
@@ -8275,6 +8569,11 @@ ${taskSection}`;
 	}
 
 	private factoryChatState(id: string): ChatState {
+		try {
+			this.requireSessionWorkflowAvailable(id);
+		} catch (error) {
+			return { enabled: true, available: false, reason: String(error) };
+		}
 		const chatHandler = this.chatHandlerForSession(id);
 		if (chatHandler) return chatHandler.chatState(id);
 		const runtime = this.getFactoryRuntime();
@@ -8316,7 +8615,7 @@ ${taskSection}`;
 				run?.workflow ??
 				runtime.listWorkflows().find((item) => item.id === "simple")
 			)?.chat ??
-			false;
+			run?.workflow.id === "simple";
 		if (!enabled) return { enabled: false, available: false };
 		if (
 			(run && !["running", "completed"].includes(run.status)) ||
@@ -9188,8 +9487,20 @@ ${taskSection}`;
 		const repository = this.repositories.get(input.repositoryId);
 		if (!repository?.isActive) throw new Error("Select an active repository");
 		const runtime = this.getFactoryRuntime();
-		const { workflow, workflowDefinitions, selectionMethod } =
-			runtime.selectLaunch([], "manual", input.workflow);
+		const {
+			workflow,
+			workflowDefinitions,
+			selectionMethod,
+			nativePreferences,
+		} = runtime.selectLaunch([], "manual", input.workflow);
+		if (workflow.id === "simple")
+			input = {
+				...input,
+				...resolveNativePreferences(
+					nativePreferences ?? {},
+					AgentSettingsSchema.parse(input),
+				),
+			};
 		if (workflow.id === "takeover" && !input.source)
 			throw new Error(
 				"Takeover needs an existing PR URL or ticket identifier/URL",
@@ -9232,51 +9543,53 @@ ${taskSection}`;
 						(inherited ? ExecutionSnapshotSchema.parse(inherited) : undefined),
 				)
 			: runtime.executionProfiles.select(repository.id, input.execution);
+		// Admission has no session yet. Resolve against the source repository before fetch/hooks.
+		const temporary = {
+			id,
+			repositoryId: repository.id,
+			repositories: snapshotRepositories(repositories, ""),
+			workspace: "",
+			...AgentSettingsSchema.parse(input),
+			executionSnapshot,
+		} as FactoryRun;
+		await this.preflightExecution(temporary, workflow, workflowDefinitions);
 		if (executionSnapshot) {
-			// Admission has no session yet. Resolve against the source repository before fetch/hooks.
-			const temporary = {
-				id,
-				repositoryId: repository.id,
-				repositories: snapshotRepositories(repositories, ""),
-				workspace: "",
-				runner: input.runner,
-				model: input.model,
-				executionSnapshot,
-			} as FactoryRun;
-			await this.preflightExecution(temporary, workflow, workflowDefinitions);
 			if (Object.keys(executionSnapshot.identity?.runners ?? {}).length === 0)
 				throw new Error(
 					"Execution identity needs runner authentication bindings",
 				);
 		}
-		const run = runtime.create({
-			executionSnapshot,
-			triggerOrigin: {
-				type: "manual",
-				workflowId: workflow.id,
-				selectionMethod,
-				selection: { source: "manual" },
-				at: new Date().toISOString(),
-				manual: {
-					method: sourceRunId ? "follow-up" : "composer-api",
-					sourceRunId,
+		const run = runtime.create(
+			{
+				executionSnapshot,
+				triggerOrigin: {
+					type: "manual",
+					workflowId: workflow.id,
+					selectionMethod,
+					selection: { source: "manual" },
+					at: new Date().toISOString(),
+					manual: {
+						method: sourceRunId ? "follow-up" : "composer-api",
+						sourceRunId,
+					},
 				},
+				workflowDefinitions,
+				id,
+				repositoryId: repository.id,
+				repositories: snapshotRepositories(repositories, ""),
+				workflow,
+				source: input.source,
+				workspace: "",
+				input: prompt,
+				launchInputs: input.inputs,
+				runner: input.runner,
+				model: input.model,
+				reasoningEffort: input.reasoningEffort,
+				modelVariant: input.modelVariant,
+				serviceTier: input.serviceTier,
 			},
-			workflowDefinitions,
-			id,
-			repositoryId: repository.id,
-			repositories: snapshotRepositories(repositories, ""),
-			workflow,
-			source: input.source,
-			workspace: "",
-			input: prompt,
-			launchInputs: input.inputs,
-			runner: input.runner,
-			model: input.model,
-			reasoningEffort: input.reasoningEffort,
-			modelVariant: input.modelVariant,
-			serviceTier: input.serviceTier,
-		});
+			{ workflow, workflowDefinitions, nativePreferences },
+		);
 		if (parent?.ticketReference)
 			run.ticketReference = structuredClone(parent.ticketReference);
 		run.launchRequest = structuredClone({
@@ -9971,6 +10284,7 @@ ${taskSection}`;
 	private recoverFactoryRuns(): void {
 		if (this.updateDrain?.active()) return;
 		const runtime = this.getFactoryRuntime();
+		this.interruptDisabledSessions();
 		for (const run of runtime.runs.values()) {
 			if (
 				["running", "waiting"].includes(run.status) ||
@@ -9987,6 +10301,7 @@ ${taskSection}`;
 		// Factory/manual Simple runs use their own checkpoint below.
 		for (const session of this.agentSessionManager.getActiveSessions()) {
 			if (
+				runtime.catalog.getBlock(session.id) ||
 				runtime.runs.has(session.id) ||
 				this.ticketStartupIsIncomplete(session) ||
 				admission
@@ -10159,7 +10474,7 @@ ${taskSection}`;
 		try {
 			signal.throwIfAborted();
 			const start =
-				run.workflow.chat &&
+				(run.workflow.chat ?? true) &&
 				runner.supportsStreamingInput &&
 				runner.startStreaming
 					? runner.startStreaming.bind(runner)
@@ -11417,6 +11732,21 @@ ${input.userComment}
 			issueIdentifier: session.issueContext?.issueIdentifier,
 		});
 
+		this.requireSessionWorkflowAvailable(sessionId);
+		if (!this.factoryRuntime?.runs.has(sessionId)) {
+			session.metadata ??= {};
+			if (!session.metadata.workflowPreferences)
+				session.metadata.workflowPreferences =
+					this.getFactoryRuntime().catalog.simplePreferences();
+			const preferences = AgentSettingsSchema.parse(
+				session.metadata.workflowPreferences,
+			);
+			if (preferences.runner)
+				runnerSelection = {
+					runnerType: preferences.runner,
+					modelOverride: preferences.model,
+				};
+		}
 		// Resolve plugins once so we can also derive the per-session scoped
 		// skill allow-list from the same filesystem snapshot.
 		const plugins = await this.skillsPluginResolver.resolve();
@@ -11502,6 +11832,17 @@ ${input.userComment}
 			requireLinearWorkspaceId,
 		});
 
+		if (!this.factoryRuntime?.runs.has(sessionId)) {
+			const preferences = AgentSettingsSchema.parse(
+				session.metadata?.workflowPreferences ?? {},
+			);
+			if (preferences.model) result.config.model = preferences.model;
+			Object.assign(
+				result.config,
+				resolveAgentSettings(result.runnerType, preferences),
+			);
+		}
+		this.requireSessionWorkflowAvailable(sessionId);
 		// Attach pre-warmed session if available (only for Claude runner).
 		// Skipped entirely when warm sessions are not enabled.
 		if (result.runnerType === "claude" && this.isWarmSessionsEnabled()) {
@@ -12177,6 +12518,7 @@ ${input.userComment}
 		commentTimestamp?: string,
 		recoverySignal?: AbortSignal,
 	): Promise<void> {
+		this.requireSessionWorkflowAvailable(sessionId);
 		const log = this.logger.withContext({ sessionId });
 		// Check for existing runner
 		const existingRunner = session.agentRunner;
@@ -12205,6 +12547,14 @@ ${input.userComment}
 			}
 		}
 
+		session.metadata ??= {};
+		const pendingPrompt = {
+			body: promptBody,
+			attachmentManifest,
+			commentAuthor,
+			commentTimestamp,
+		};
+		session.metadata.workflowPendingPrompt = pendingPrompt;
 		// Stop existing runner if it's not running
 		if (existingRunner) {
 			existingRunner.stop();
@@ -12320,24 +12670,12 @@ ${input.userComment}
 
 		recoverySignal?.throwIfAborted();
 		// Create the appropriate runner based on session state
-		const runner = recoverySignal
-			? capRunnerStarts(
-					this.buildRunnerForType(runnerType, runnerConfig),
-					this.runnerSlots,
-					recoverySignal,
-					{
-						identity: `${this.factoryHome}:session:${sessionId}`,
-						recoverable: true,
-						remote: runnerType === "cursor",
-						onChange: () => this.emit("chatSessionChanged", sessionId),
-					},
-				)
-			: this.createRunnerForType(
-					runnerType,
-					runnerConfig,
-					undefined,
-					sessionId,
-				);
+		const runner = this.createRunnerForType(
+			runnerType,
+			runnerConfig,
+			recoverySignal,
+			sessionId,
+		);
 
 		// Store runner
 		agentSessionManager.addAgentRunner(sessionId, runner);
@@ -12366,6 +12704,13 @@ ${input.userComment}
 				await runner.startStreaming(fullPrompt);
 			} else {
 				await runner.start(fullPrompt);
+			}
+			if (
+				session.metadata?.workflowPendingPrompt === pendingPrompt &&
+				!this.getFactoryRuntime().catalog.getBlock(sessionId)
+			) {
+				delete session.metadata.workflowPendingPrompt;
+				await this.savePersistedState();
 			}
 		} catch (error) {
 			log.error(`Failed to start streaming session for ${sessionId}:`, error);

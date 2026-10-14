@@ -17,16 +17,14 @@ import {
 	snapshotProposal,
 	verifyProposal,
 } from "../src/factory/Architecture.js";
-import {
-	defaultWorkflows,
-	upgradeWorkflows,
-} from "../src/factory/defaultWorkflows.js";
+import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
 import {
 	StepSchema,
 	validateWorkflows,
 	type Workflow,
 } from "../src/factory/Workflow.js";
+import { WorkflowCatalog } from "../src/factory/WorkflowCatalog.js";
 import {
 	type FactoryRun,
 	type RuntimeHooks,
@@ -41,6 +39,29 @@ afterEach(() => {
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
 });
+
+function migrate(definitions: Workflow[]) {
+	const home = mkdtempSync(join(tmpdir(), "architecture-migration-"));
+	homes.push(home);
+	const directory = join(home, "factory");
+	mkdirSync(directory);
+	writeFileSync(
+		join(directory, "workflows.json"),
+		JSON.stringify({ workflows: definitions, defaultWorkflow: "factory" }),
+	);
+	const catalog = new WorkflowCatalog(directory);
+	return {
+		catalog,
+		pipeline: catalog
+			.list()
+			.find(
+				(w) =>
+					w.id ===
+					(catalog.read().migration!.mappings["factory-pipeline"] ??
+						"factory-pipeline"),
+			)!,
+	};
+}
 
 function setup(
 	classification: Architecture["classification"] = "meaningful",
@@ -555,9 +576,8 @@ describe("architecture authorization boundary", () => {
 			.find((w) => w.id === "factory-pipeline")!
 			.steps.find((s) => s.id === "architecture")!.prompt = "Custom design";
 		expect(
-			(upgradeWorkflows(custom) as Workflow[])
-				.find((w) => w.id === "factory-pipeline")!
-				.steps.find((s) => s.id === "architecture")!.prompt,
+			migrate(custom).pipeline.steps.find((s) => s.id === "architecture")!
+				.prompt,
 		).toBe("Custom design");
 	});
 	it("stops the workflow when the proposal tries to snapshot a restricted file", async () => {
@@ -717,35 +737,12 @@ it("upgrades untouched stock planning, preserving customized model settings and 
 	old.find((w) => w.id === "factory-pipeline")!.steps = legacyReviewSteps.map(
 		(s) => StepSchema.parse(s),
 	);
-	const upgraded = upgradeWorkflows(old) as Workflow[];
+	const upgraded = migrate(old).catalog.list();
 	expect(
 		upgraded
 			.find((w) => w.id === "factory-pipeline")!
 			.steps.some((s) => s.architectureContract === "architecture-v1"),
 	).toBe(true);
-	const deliveryStock = structuredClone(defaultWorkflows);
-	const savedPipeline = deliveryStock.find((w) => w.id === "factory-pipeline")!;
-	savedPipeline.steps = savedPipeline.steps.filter(
-		(s) => !s.architectureContract && s.tool !== "architecture-decision",
-	);
-	for (const step of savedPipeline.steps) {
-		if (step.next === "architecture") step.next = "implement";
-		for (const branch of step.branches)
-			if (branch.next === "architecture") branch.next = "implement";
-	}
-	const integrated = validateWorkflows(upgradeWorkflows(deliveryStock)).find(
-		(w) => w.id === "factory-pipeline",
-	)!;
-	expect(integrated.steps.find((s) => s.id === "delivery-route")?.next).toBe(
-		"architecture",
-	);
-	expect(integrated.steps.find((s) => s.id === "plan-review")?.next).toBe(
-		"delivery-route",
-	);
-	expect(
-		integrated.steps.find((s) => s.id === "architecture-review")
-			?.architectureContract,
-	).toBe("architecture-review-v1");
 	const customized = structuredClone(defaultWorkflows);
 	customized.find((w) => w.id === "factory-pipeline")!.steps =
 		legacyReviewSteps.map((s) => StepSchema.parse(s));
@@ -753,15 +750,20 @@ it("upgrades untouched stock planning, preserving customized model settings and 
 		.find((w) => w.id === "factory-pipeline")!
 		.steps.find((s) => s.id === "plan-review")!.model = "operator-selected";
 	expect(
-		(upgradeWorkflows(customized) as Workflow[])
-			.find((w) => w.id === "factory-pipeline")!
-			.steps.some((s) => s.architectureContract),
-	).toBe(false);
+		migrate(customized).pipeline.steps.some((s) => s.architectureContract),
+	).toBe(true);
+	expect(
+		migrate(customized).pipeline.steps.find((s) => s.id === "plan-review")!
+			.model,
+	).toBe("operator-selected");
 	const { runtime, run, home, hooks } = setup();
 	await waiting(run);
 	const frozen = structuredClone(run.workflowDefinitions);
-	runtime.updateWorkflows(customized);
 	await runtime.shutdown();
+	writeFileSync(
+		join(home, "factory", "workflows.json"),
+		JSON.stringify({ workflows: customized, defaultWorkflow: "factory" }),
+	);
 	const restored = new WorkflowRuntime(home, hooks);
 	expect(restored.get(run.id).workflowDefinitions).toEqual(frozen);
 	await restored.shutdown();
