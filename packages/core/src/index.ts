@@ -92,6 +92,7 @@ export type {
 	RepositoryConfigPayload,
 	RunnerType,
 	SandboxConfig,
+	TicketManagersConfig,
 	UserAccessControlConfig,
 	UserIdentifier,
 } from "./config-types.js";
@@ -109,6 +110,7 @@ export {
 	requireLinearWorkspaceId,
 	resolvePath,
 	SandboxConfigSchema,
+	TicketManagersConfigSchema,
 	TRUSTED_DOMAINS,
 	UserAccessControlConfigSchema,
 	UserIdentifierSchema,
@@ -186,6 +188,7 @@ export {
 	CLIEventTransport,
 	CLIIssueTrackerService,
 	CLIRPCServer,
+	createCLIIssueTracker,
 	isAgentSessionCreatedEvent,
 	isAgentSessionCreatedWebhook,
 	isAgentSessionPromptedEvent,

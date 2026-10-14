@@ -1,14 +1,15 @@
 #!/usr/bin/env bun
+import { createCLIIssueTracker } from "bobs-factory-core";
 
 /**
  * F1 Server - Testing Framework Server for Bob’s Factory
  *
- * This server starts the EdgeWorker in CLI platform mode, providing
+ * This server starts the EdgeWorker with an injected in-memory tracker, providing
  * a complete testing environment for Bob’s Factory without
  * external dependencies.
  *
  * Features:
- * - EdgeWorker configured with platform: "cli"
+ * - EdgeWorker configured with an explicit in-memory tracker
  * - Creates temporary directories for worktrees
  * - Beautiful colored connection info display
  * - Graceful shutdown on SIGINT/SIGTERM
@@ -169,7 +170,7 @@ function createEdgeWorkerConfig(): EdgeWorkerConfig {
 	}
 
 	const config: EdgeWorkerConfig = {
-		platform: "cli" as const,
+		issueTrackerFactory: createCLIIssueTracker,
 		handlers: f1AgentHandlers(F1_AGENT_MODE, process.env.F1_MOCK_RESPONSE),
 		repositories,
 		factoryHome: BOBS_FACTORY_HOME,
