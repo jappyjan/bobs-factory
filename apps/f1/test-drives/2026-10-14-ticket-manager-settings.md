@@ -1,7 +1,7 @@
 # Unified startup and ticket-manager settings
 
 **Date:** 2026-10-14
-**Validated source:** `e2ce792cfa54ce56ffd1949ab29fb04afe74947f` (the same implementation tree validated before committing; subsequent changes are this report and changelog)
+**Validated runtime source:** `e2ce792cfa54ce56ffd1949ab29fb04afe74947f` (subsequent changes maintain test fixtures, this report and the changelog)
 **PR:** [#133](https://github.com/jappyjan/bobs-factory/pull/133)
 **Behavior:** one production startup, live ticket-manager policy/configuration, retained native credentials and explicit F1 fixture injection.
 **Agents:** deterministic mocked runners; script workflow. No native agents, inference, real provider network calls or production configuration changes.
@@ -63,6 +63,16 @@ bun run apps/cli/src/app.ts service install --help
 - Focused EdgeWorker checks passed for ticket settings, native adapter selection, OAuth state/PKCE, stale revisions, protected APIs, config reload, persistence, workflow triggers, capacity, recovery, update maintenance and prompt assembly. The full-prompt routing expectation was updated to include the new integration capability reference.
 - Desktop: 41 passed, one skipped (pinned Electron binary unavailable).
 - Native service protocol: 8 passed; maintained native service smoke/acceptance scripts passed syntax checks. Actual OS service replacement was not attempted on the developer machine.
+
+## CI fixture correction
+
+The first CI run failed because five older EdgeWorker suites injected partial Linear tracker mocks without the existing `getPlatformType()` method. Workspace-specific identity now calls that method. The single-case runner-selection reproduction failed with the same `TypeError`; adding the Linear identity to those mocks made all 54 tests in the five affected suites pass. Production code and test assertions were unchanged. Node 22 was cancelled after the Node 24 matrix job failed.
+
+The full `pnpm -r test:run` command then passed, including all 158 EdgeWorker test files (2,035 passed, one skipped), all CLI tests (221 passed) and the F1 harness unit tests (nine passed).
+
+The publication checks also exposed an unchanged desktop-shell drive that held a capacity lease while awaiting activation, although the updater now keeps admission closed until that lease drains. The drive now starts activation concurrently, verifies maintenance is draining while the UI and worker remain alive, releases the lease and awaits the same activation. It expects one maintenance release for that single transaction. Both normal and delayed-receipt versions pass via `node --test scripts/tests/desktop-shell-drive.test.mjs`; the fixture uses scripted UI processes and no provider calls.
+
+The complete `node --test scripts/tests/*.test.mjs` publication and installation guard command passes: 163 tests, zero failures or skips.
 
 ## Limits and retained behavior
 
