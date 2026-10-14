@@ -8220,9 +8220,16 @@ ${taskSection}`;
 			tool: string | undefined,
 			args: Record<string, unknown>,
 			signal: AbortSignal,
+			timeoutMs?: number,
 		) =>
 			this.runnerSlots.run(
 				async () => {
+					// Queue time is unbounded; only admitted transport work spends this budget.
+					const transportSignal =
+						timeoutMs === undefined
+							? signal
+							: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]);
+					transportSignal.throwIfAborted();
 					if (tool !== undefined)
 						assertFactoryToolAllowed(
 							`mcp__${serverName}__${tool}`,
@@ -8278,12 +8285,12 @@ ${taskSection}`;
 									nativeConfig,
 									serverName,
 									transport,
-									signal,
+									transportSignal,
 								);
 							else
 								await listConfiguredTools(
 									directConfig,
-									signal,
+									transportSignal,
 									run.workspace || repository.repositoryPath,
 									built.config.childEnvironment,
 								);
@@ -8297,13 +8304,13 @@ ${taskSection}`;
 										transport,
 										tool,
 										args,
-										signal,
+										transportSignal,
 									)
 								: await callConfiguredTool(
 										directConfig,
 										tool,
 										args,
-										signal,
+										transportSignal,
 										run.workspace || repository.repositoryPath,
 										built.config.childEnvironment,
 									);
@@ -8317,7 +8324,13 @@ ${taskSection}`;
 					}
 				},
 				signal,
-				{ identity: `${this.factoryHome}:mcp:${run.id}:${randomUUID()}` },
+				{
+					identity: `${this.factoryHome}:mcp:${run.id}:${randomUUID()}`,
+					onChange: this.getFactoryRuntime().capacityOptions(
+						run,
+						`mcp/${serverName}/${randomUUID()}`,
+					).onChange,
+				},
 			);
 		return {
 			built,
@@ -8328,7 +8341,8 @@ ${taskSection}`;
 				tool: string,
 				args: Record<string, unknown>,
 				signal: AbortSignal,
-			) => request(server, tool, args, signal),
+				timeoutMs?: number,
+			) => request(server, tool, args, signal, timeoutMs),
 			listTools: async (server: string, signal: AbortSignal) => {
 				await request(server, undefined, {}, signal);
 			},
@@ -8373,7 +8387,13 @@ ${taskSection}`;
 		return taskbotDeliveryAdapter(
 			target,
 			(tool, args) =>
-				config.callTool(target.server, tool, args, AbortSignal.timeout(60000)),
+				config.callTool(
+					target.server,
+					tool,
+					args,
+					this.recoveryAbort.signal,
+					60000,
+				),
 			[
 				...(allowed.includes("get_ticket") ? ["read" as const] : []),
 				...(allowed.includes("update_ticket") ? ["content" as const] : []),
@@ -8383,7 +8403,10 @@ ${taskSection}`;
 			],
 		);
 	}
-	private async factoryTicketAdapter(run: FactoryRun): Promise<TicketAdapter> {
+	private async factoryTicketAdapter(
+		run: FactoryRun,
+		signal: AbortSignal = this.recoveryAbort.signal,
+	): Promise<TicketAdapter> {
 		const ref = TicketReferenceSchema.parse(run.ticketReference);
 		if (ref.provider === "native") {
 			const tracker = this.issueTrackers.get(ref.workspaceId);
@@ -8418,7 +8441,7 @@ ${taskSection}`;
 		if (server.type === "sdk")
 			throw new Error("Taskbot needs a configured HTTP/SSE transport");
 		return taskbotAdapter(ref, (tool, args) =>
-			callTool(ref.server, tool, args, AbortSignal.timeout(60000)),
+			callTool(ref.server, tool, args, signal, 60000),
 		);
 	}
 	private async resolveFactoryTicket(
@@ -8492,7 +8515,9 @@ ${taskSection}`;
 		}
 		signal.throwIfAborted();
 		if (!run.outputs.ticket)
-			run.outputs.ticket = await (await this.factoryTicketAdapter(run)).read();
+			run.outputs.ticket = await (
+				await this.factoryTicketAdapter(run, signal)
+			).read();
 		this.getFactoryRuntime().save(run);
 	}
 
