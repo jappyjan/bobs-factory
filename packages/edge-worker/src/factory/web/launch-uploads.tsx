@@ -19,17 +19,12 @@ export function fileSize(bytes: number) {
 }
 export const uploadLimitsHint = "Any file type · up to 10 files, 25 MiB each";
 
-/**
- * Private launch uploads are staged against one project/workflow draft. When
- * that scope changes, `carryOver` re-stages the same local files into the new
- * draft so switching project or recipe never silently drops attachments.
- */
+/** Private uploads belong to one project/workflow draft and clear on scope changes. */
 export function useLaunchUploads(
 	context: string,
 	config: any,
 	repositoryId: string,
 	workflow: string,
-	fileFields: string[],
 ) {
 	const [draft, setDraft] = useFormState(context, () => crypto.randomUUID());
 	const [uploads, setUploads] = useFormState<Upload[]>(
@@ -41,7 +36,6 @@ export function useLaunchUploads(
 	const current = useRef(uploads);
 	current.current = uploads;
 	const controllers = useRef(new Map<string, AbortController>());
-	const carried = useRef<{ field: string; file: File }[]>([]);
 	useEffect(() => {
 		void context;
 		void draft;
@@ -131,22 +125,6 @@ export function useLaunchUploads(
 				.finally(() => controllers.current.delete(item.localId));
 		}
 	};
-	// Re-stage files carried over from the previous scope once the new draft
-	// exists. `add` is recreated every render; only a scope change re-stages.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: scope-change trigger
-	useEffect(() => {
-		void context;
-		const pending = carried.current;
-		if (!pending.length) return;
-		carried.current = [];
-		const target = fileFields[0];
-		const groups = new Map<string, File[]>();
-		for (const { field, file } of pending) {
-			const name = fileFields.includes(field) ? field : target;
-			if (name) groups.set(name, [...(groups.get(name) ?? []), file]);
-		}
-		for (const [field, files] of groups) add(field, files);
-	}, [context]);
 	const remove = async (item: Upload) => {
 		controllers.current.get(item.localId)?.abort();
 		if (item.id) {
@@ -181,12 +159,6 @@ export function useLaunchUploads(
 		clearError: () => setError(""),
 		add,
 		remove,
-		/** Call before changing project or recipe to keep the attached files. */
-		carryOver: () => {
-			carried.current = current.current
-				.filter((item) => item.status !== "removing")
-				.map(({ field, file }) => ({ field, file }));
-		},
 		reset: () => {
 			setDraft(crypto.randomUUID());
 		},

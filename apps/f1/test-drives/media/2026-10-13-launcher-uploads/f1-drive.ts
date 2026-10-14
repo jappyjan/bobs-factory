@@ -7,6 +7,7 @@ import { request as httpRequest } from "node:http";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { EdgeWorker } from "../../../../../packages/edge-worker/src/EdgeWorker.ts";
 import { defaultWorkflows } from "../../../../../packages/edge-worker/src/factory/defaultWorkflows.ts";
 import { WorkflowRuntime } from "../../../../../packages/edge-worker/src/factory/WorkflowRuntime.ts";
@@ -30,7 +31,11 @@ const port = (listener.address() as { port: number }).port;
 await new Promise<void>((resolve) => listener.close(() => resolve()));
 process.env.BOBS_FACTORY_FACTORY_PORT = String(port);
 const origin = `http://127.0.0.1:${port}`;
-const repositories = ["app", "api"].map((id) => {
+const repositories = [
+	"app",
+	"api",
+	...(process.argv.includes("--serve") ? ["other"] : []),
+].map((id) => {
 	const path = join(home, id);
 	mkdirSync(path);
 	const git = (...args: string[]) =>
@@ -54,7 +59,7 @@ const repositories = ["app", "api"].map((id) => {
 		githubUrl: `https://github.com/f1-test/${id}`,
 		linearWorkspaceId: "cli-workspace",
 		isActive: true,
-		routingLabels: ["grouped"],
+		routingLabels: id === "other" ? ["other"] : ["grouped"],
 	};
 });
 let currentContext: any;
@@ -62,6 +67,7 @@ const runnerConfigs: any[] = [];
 const simplePrompts: string[] = [];
 const worker: any = new EdgeWorker({
 	platform: "cli",
+	issueTrackerFactory: createCLIIssueTracker,
 	factoryHome: home,
 	serverPort: 0,
 	serverHost: "localhost",

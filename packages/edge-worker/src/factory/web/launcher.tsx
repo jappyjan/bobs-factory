@@ -288,17 +288,17 @@ export function Composer({
 	const inputContext = `${launchConfig}/${repo}/${workflowId}`;
 	const action = useAction("launch", inputContext);
 	const isCurrent = useCurrentForm(inputContext);
-	// Typed text survives project and recipe switches; fields are matched by name.
+	// Unsent inputs and overrides belong to the selected project and workflow.
 	const [values, setValues] = useFormState<Record<string, string>>(
-			launchConfig,
+			inputContext,
 			{},
 		),
-		[settings, setSettings] = useFormState<any>(launchConfig, {}),
+		[settings, setSettings] = useFormState<any>(inputContext, {}),
 		[execution, setExecution] = useFormState<ExecutionSelection>(
 			inputContext,
 			{},
 		),
-		[settingsOpen, setSettingsOpen] = useFormState(launchConfig, false),
+		[settingsOpen, setSettingsOpen] = useFormState(inputContext, false),
 		[dragging, setDragging] = useFormState(inputContext, false);
 	const workflows = config.workflows.filter(
 			(w: any) =>
@@ -316,13 +316,7 @@ export function Composer({
 		(field) => field !== main && field.type !== "files",
 	);
 	const fileFields = fields.filter((field) => field.type === "files");
-	const uploads = useLaunchUploads(
-		inputContext,
-		config,
-		repo,
-		workflowId,
-		fileFields.map((field) => field.name),
-	);
+	const uploads = useLaunchUploads(inputContext, config, repo, workflowId);
 	const project = config.repositories.find((item: any) => item.id === repo);
 	const runner = settings.runner || config.defaultRunner;
 	const levels: string[] | undefined = config.reasoningLevels?.[runner];
@@ -345,10 +339,6 @@ export function Composer({
 	const customized =
 		["model", "modelVariant", "serviceTier"].some((key) => settings[key]) ||
 		Boolean(execution.identityProfile || execution.toolProfile);
-	const changeScope = (apply: () => void) => {
-		uploads.carryOver();
-		apply();
-	};
 	const submit = async () => {
 		if (blocked) return;
 		try {
@@ -393,7 +383,7 @@ export function Composer({
 				projects={config.repositories}
 				value={repo}
 				disabled={action.isPending}
-				onChange={(id) => changeScope(() => setRepo(id))}
+				onChange={setRepo}
 			/>
 			<p className="launcher-subtitle">
 				{!config.repositories.length ? (
@@ -493,7 +483,7 @@ export function Composer({
 							label="Recipe"
 							value={workflow?.id ?? ""}
 							disabled={action.isPending || !workflows.length}
-							onChange={(id) => changeScope(() => setWorkflow(id))}
+							onChange={setWorkflow}
 							options={workflows.map((item: any) => ({
 								value: item.id,
 								label: `${item.icon ?? "🧩"} ${item.name}`,
