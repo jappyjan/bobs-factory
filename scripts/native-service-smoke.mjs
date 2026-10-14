@@ -34,7 +34,7 @@ const until = async (predicate) => {
 };
 let installed = false;
 try {
-	command("install", "--executable", executable, "--mode", "local");
+	command("install", "--executable", executable);
 	installed = true;
 	assert.equal(status().desired, "stopped");
 	assert.equal(status().startup, false);

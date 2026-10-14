@@ -5,6 +5,7 @@ import type {
 	PersistenceManager,
 	SerializableEdgeWorkerState,
 } from "bobs-factory-core";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import type { MachineCapacity } from "../src/MachineCapacity.js";
@@ -32,7 +33,7 @@ it.each([
 	const home = await mkdtemp(join(tmpdir(), "edge-persistence-transaction-"));
 	homes.push(home);
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
 		repositories: [],
 	});
@@ -101,7 +102,7 @@ it.each([
 	const home = await mkdtemp(join(tmpdir(), "edge-persistence-"));
 	homes.push(home);
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
 		repositories: [],
 	});

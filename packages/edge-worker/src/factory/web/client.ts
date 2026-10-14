@@ -84,8 +84,10 @@ export function useLiveUpdates() {
 					if (event.event !== "change") return;
 					const change = JSON.parse(event.data);
 					void cache.invalidateQueries({ queryKey: ["runs"] });
-					if (change.config)
+					if (change.config) {
 						void cache.invalidateQueries({ queryKey: ["config"] });
+						void cache.invalidateQueries({ queryKey: ["ticket-managers"] });
+					}
 					for (const id of change.ids ?? []) {
 						void cache.invalidateQueries({ queryKey: ["run", id] });
 						void cache.invalidateQueries({ queryKey: ["transcript", id] });
@@ -336,6 +338,8 @@ export function useAction(scope?: string, context?: string) {
 			void cache.invalidateQueries({ queryKey: ["runs"] });
 			void cache.invalidateQueries({ queryKey: ["run"] });
 			void cache.invalidateQueries({ queryKey: ["updates"] });
+			if (path.startsWith("/api/ticket-managers") && data.managers)
+				cache.setQueryData(["ticket-managers"], data);
 			// Keep edits pending while refreshing any other configuration changes.
 			await cache.invalidateQueries({ queryKey: ["config"] });
 		},

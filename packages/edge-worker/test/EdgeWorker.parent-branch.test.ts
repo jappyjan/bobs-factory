@@ -226,6 +226,7 @@ Base Branch: {{base_branch}}`;
 		// The EdgeWorker constructor creates real LinearIssueTrackerService instances,
 		// but we need to replace them with mocks for testing
 		const mockIssueTracker = {
+			getPlatformType: vi.fn().mockReturnValue("linear"),
 			fetchComments: vi
 				.fn()
 				.mockResolvedValue({ nodes: [], pageInfo: { hasNextPage: false } }),

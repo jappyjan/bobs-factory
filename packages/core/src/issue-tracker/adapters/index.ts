@@ -8,7 +8,10 @@
 
 export { CLIEventTransport } from "./CLIEventTransport.js";
 export type { CLIIssueTrackerState } from "./CLIIssueTrackerService.js";
-export { CLIIssueTrackerService } from "./CLIIssueTrackerService.js";
+export {
+	CLIIssueTrackerService,
+	createCLIIssueTracker,
+} from "./CLIIssueTrackerService.js";
 export type {
 	AgentActivityData,
 	AgentSessionData,

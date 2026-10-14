@@ -17,6 +17,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import {
 	type EdgeConfig,
 	EdgeConfigSchema,
+	migrateEdgeConfig,
 	type RepositoryConfig,
 	type RunnerType,
 	resolvePath,
@@ -134,7 +135,9 @@ export function loadLocalConfig(home: string): EdgeConfig {
 	const path = join(home, "config.json");
 	if (!existsSync(path)) return { repositories: [] };
 	try {
-		return EdgeConfigSchema.parse(JSON.parse(privateText(path)));
+		return EdgeConfigSchema.parse(
+			migrateEdgeConfig(JSON.parse(privateText(path))),
+		);
 	} catch {
 		throw new Error(
 			`Cannot read Factory configuration at ${path}. Restore or repair it before starting; existing setup was preserved.`,

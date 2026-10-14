@@ -7,6 +7,26 @@ The factory builds on Cyrus’s runners, Git worktrees and ticket integrations. 
 dashboard and JSON workflow graph are deliberately small: automatic direct local
 access and per-origin remote passkeys, without accounts, a database or a hosted identity service.
 
+## Ticket managers
+
+All launches use one runtime. **Settings → Ticket managers** controls Linear and
+Taskbot connections without a restart. Standalone tasks remain available when a
+manager is disabled; its ticket intake and synchronization pause while credentials,
+run history and pending publication remain retained. Re-enable the manager to resume
+tracking; missed incoming webhooks still depend on the provider's retry policy.
+
+Linear configuration includes the public webhook URL, signing secret, OAuth client
+and browser authorization, plus project-to-workspace routing. Credentials never
+return in settings responses. OAuth callbacks require expiring, single-use state
+and PKCE. Taskbot accepts an MCP endpoint and optional token; the existing project
+MCP and tool-permission rules continue to apply. A configured connection status
+reports saved prerequisites; the last verified webhook reports actual receipt.
+
+Legacy Linear workspace credentials and environment values continue to work.
+Saved connection settings take precedence. The old process-wide `platform` field
+is discarded during configuration migration; old service mode metadata is ignored.
+Test harnesses supply explicit in-memory tracker dependencies.
+
 ## Start locally
 
 Follow the two-command [installation](../README.md#install-and-start), then run
@@ -1808,3 +1828,31 @@ architecture-enabled releases and execution-only preferences. Customized legacy 
 paths remain deliberate operator choices. Accepted active runs always retain their frozen
 workflow definitions during restart and retry. Independent child execution and delivery
 are separate planned work (#97–#99); this shared proposal surface does not schedule children.
+
+Selectable question answers are available in both the dashboard and `bobs-factory tui`:
+
+```json
+{"questions":["Which approach?","Which platforms?"],"questionChoices":[{"questionIndex":0,"selection":"single","options":[{"id":"existing","answer":"Use the existing approach","reason":"Avoids migration"},{"id":"new","answer":"Build a new approach"}],"preselectedOptionIds":["existing"]},{"questionIndex":1,"selection":"multiple","options":[{"id":"web","answer":"Web dashboard"},{"id":"terminal","answer":"Terminal UI"}],"preselectedOptionIds":["web","terminal"]}]}
+```
+
+Defaults are optional. Without `preselectedOptionIds`, no option is selected.
+Single choice requires exactly one selection; multiple choice requires at least
+one. Selected answers submit in the declared option order, with multiple answers
+formatted as a readable bullet list. Option IDs are never used as answer text.
+Every question offers Custom answer instead. Switching modes keeps the local
+selection and text, but blank custom text blocks submission even with defaults.
+Only the active mode is submitted. Send answers (or Ctrl-S in the terminal) is
+always required; rendering, refreshing and restoring choices never resumes work.
+
+Choice indices must be unique and in range. Options require at least two unique,
+nonblank IDs and nonblank answer text; optional reasons must also be nonblank.
+Defaults must be unique supplied IDs, with at most one for single choice. A
+question cannot have both `questionChoices` and `questionRecommendations`.
+Different questions in one batch may use different metadata, and legacy string
+questions and recommendation-only saved workflows remain supported.
+Choice contract changes clear drafts and reject older contextual submissions.
+In the terminal, Tab changes questions, arrows navigate options, Space selects,
+and Ctrl-S submits. Choose Custom answer to edit text; Ctrl-Space returns to
+predefined answers. Long lists scroll to keep the focused option visible.
+Choice forms show the full question when it fits; Page Up/Page Down scrolls
+longer questions, with a visible line range, without changing the answer draft.

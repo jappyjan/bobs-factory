@@ -15,11 +15,13 @@ bobs-factory --home ~/.bobs-factory service status
 bobs-factory --home ~/.bobs-factory service logs
 ```
 
-`service install --mode local` instead starts shared guided onboarding; it never
-opens a browser from the service. `start` preserves the existing webhook/server
-configuration. The service captures the prepared account's PATH and reloads its
-own home `.env`, preserving native agent stores. Checkout executables require an
-explicit `--executable /absolute/path/to/packaged/bobs-factory`.
+Every launch uses the same runtime and guided project setup. Configure and enable
+Linear or Taskbot in **Settings → Ticket managers**; service installation has no
+tracker mode. The service never opens a browser and captures the prepared
+account's PATH while loading its own home `.env`. Existing records with `mode`
+metadata remain owned and usable; that metadata no longer selects a backend.
+Checkout executables require an explicit
+`--executable /absolute/path/to/packaged/bobs-factory`.
 
 `enable` enrolls startup; `disable` stops and removes startup enrollment. On Linux,
 this uses systemd **user** services. Boot and logout operation requires deliberate
