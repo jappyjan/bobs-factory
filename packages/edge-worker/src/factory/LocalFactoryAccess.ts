@@ -9,7 +9,7 @@ export function localFactoryOrigin(origin: string) {
 	return url.protocol === "http:" && loopbackHost(url.hostname);
 }
 
-/** IPv6 is a local authority alias, not a new persisted passkey origin binding. */
+/** IPv6 is a local authority alias, not a new persisted browser session origin. */
 export function factoryRequestOrigins(origins: string[]) {
 	const result = new Set(origins);
 	for (const origin of origins) {

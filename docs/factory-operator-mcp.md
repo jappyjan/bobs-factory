@@ -5,9 +5,9 @@ External coding agents can inspect and recover workflow runs using the independe
 Linear. The running worker starts a separate authenticated loopback listener; the
 stdio client connects to that worker and never starts another instance.
 
-Operator grants are separate from dashboard passkeys. They cannot approve reviews,
-merge deliveries, reset passkeys, modify arbitrary run state, or directly mark a
-coding ticket Done. Remote dashboard APIs require a passkey session; direct HTTP loopback dashboard access uses validated local operator authority.
+Operator grants are separate from dashboard API keys. They cannot approve reviews,
+merge deliveries, reset API keys, modify arbitrary run state, or directly mark a
+coding ticket Done. Remote dashboard APIs require a browser session established with an API key; direct HTTP loopback dashboard access uses validated local operator authority.
 
 ## Local owner setup
 

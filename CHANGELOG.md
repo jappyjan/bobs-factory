@@ -10,6 +10,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Prevent the simulated desktop update CI fixture from deadlocking on its own active work lease; verify admission stays paused until work finishes before checking activation and rollback ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
+- Drain operator integration-test runtimes before removing temporary storage, preventing snapshot-write cleanup failures in CI ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
+- Refresh localhost recovery guidance after removing the last remote API key, pause key-management actions during connection or build checks, and keep long key names inside their settings card. Correct the access guide and simulated-agent onboarding assertions; explicitly inject fixture trackers to restore CLI routing and avoid live Linear metadata requests ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
 - Preserve question choices when integrating unified startup and ticket-manager settings; inject the simulated tracker through the supported F1 startup API ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 
 - Preserve question choices and terminal context scrolling while integrating bundled workflow recovery and update capacity draining ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
@@ -92,6 +98,8 @@ All notable changes to this project will be documented in this file.
 - Keep desktop and operator recovery validation reliable when Node CI runs tests concurrently, without rebuilding shared prerequisites during testing ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
 
 ### Changed
+
+- Replace remote dashboard passkey sign-in with API keys managed in Settings (add, remove and rotate). Upgrading revokes existing passkeys and browser sessions; an operator must create the first key in localhost Settings before remote access is available again. Localhost continues to work without a key ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
 
 - Use one runtime for CLI, desktop and services, with live Linear and Taskbot configuration in Settings → Ticket managers. Preserve existing credentials and runs while removing startup modes that could silently disable Linear webhooks ([#133](https://github.com/jappyjan/bobs-factory/pull/133)).
 

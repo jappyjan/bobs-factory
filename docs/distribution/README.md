@@ -171,7 +171,7 @@ The installed executable supports `operator grant|list|revoke` and the protocol-
 [operator setup](../factory-operator-mcp.md) using a fresh private home. Verify scoped
 MCP discovery and an inspection against the running isolated worker; revoke the
 grant and verify the same client can no longer discover/call tools. The bridge
-must not start another worker or bypass dashboard passkeys.
+must not start another worker or bypass dashboard API keys.
 ## Nix from the same release manifest
 
 Pin a reviewed release's `release.json` as a file in your Nix configuration.

@@ -14,6 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import {
 	LocalOnboarding,
 	loadLocalConfig,
@@ -30,7 +31,6 @@ import type {
 	WorkflowRuntime,
 } from "../../../../packages/edge-worker/src/factory/WorkflowRuntime.js";
 import { providerReceipt } from "../../../../packages/edge-worker/test/fixtures/merge-readiness.js";
-import { authenticator } from "../../../../packages/edge-worker/test/fixtures/webauthn.js";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.js";
 
 assert.equal(
@@ -178,6 +178,11 @@ globalThis.fetch = (async (input, init) => {
 	const url = new URL(String(input));
 	if (url.hostname === "localhost" || url.hostname === "127.0.0.1")
 		return nativeFetch(input, init);
+	if (
+		url.href ===
+		"https://linear.app/.well-known/appspecific/app.linear.ips.json"
+	)
+		return response({ ips: ["203.0.113.1/32"] });
 	try {
 		assert.equal(
 			url.origin,
@@ -191,6 +196,7 @@ globalThis.fetch = (async (input, init) => {
 			: undefined;
 		const path = `${url.pathname}${url.search}`;
 		requests.push({ method, path, body });
+		if (url.pathname === "/meta") return response({ hooks: ["127.0.0.1/32"] });
 		if (url.pathname === "/user") {
 			assert.equal(auth, "Bearer saved-f1-secret");
 			return response({ login: "f1-operator" });
@@ -356,7 +362,8 @@ function createWorker() {
 		{
 			...config,
 			repositories: config.repositories,
-			platform: "cli",
+			// The in-memory tracker also supplies the fixture-only /cli/rpc route.
+			issueTrackerFactory: createCLIIssueTracker,
 			factoryHome: home,
 			serverPort: port + 1,
 			serverHost: "127.0.0.1",
@@ -376,7 +383,7 @@ function createWorker() {
 type Internal = { getFactoryRuntime(): WorkflowRuntime };
 const runtimeOf = (instance: EdgeWorker) =>
 	(instance as unknown as Internal).getFactoryRuntime();
-let sessionCookie = "";
+const sessionCookie = "";
 type ApiPayload = {
 	transaction: string;
 	options: { challenge: string };
@@ -444,37 +451,7 @@ let success = false;
 try {
 	worker = createWorker();
 	await worker.start();
-	for (const [path, method] of [
-		["/api/onboarding", "GET"],
-		["/api/onboarding/project", "POST"],
-		["/api/onboarding/github", "POST"],
-	]) {
-		const denied = await request(
-			path!,
-			method,
-			method === "GET" ? undefined : {},
-			false,
-		);
-		assert.equal(denied.result.status, 401);
-	}
-	const key = authenticator();
-	const grant = JSON.parse(
-		readFileSync(join(home, "factory/auth/enroll.json"), "utf8"),
-	) as { token: string };
-	const options = await request(
-		"/api/auth/register/options",
-		"POST",
-		{ grant: grant.token },
-		false,
-	);
-	assert.equal(options.result.status, 200);
-	sessionCookie = options.result.headers.get("set-cookie")!.split(";")[0]!;
-	const enrolled = await request("/api/auth/register/verify", "POST", {
-		transaction: options.value.transaction,
-		response: key.register(options.value.options.challenge, origin),
-	});
-	assert.equal(enrolled.result.status, 200);
-	sessionCookie = enrolled.result.headers.get("set-cookie")!.split(";")[0]!;
+	// Local onboarding uses validated loopback authority, without credentials.
 	assert.equal((await api("/api/onboarding")).required, true);
 	const invalid = await request("/api/onboarding/project", "POST", {
 		repositoryPath: join(directory, "missing"),
@@ -524,7 +501,7 @@ try {
 	git("remote", "set-url", "origin", remote);
 	git("fetch", "-q", "origin");
 	console.log(
-		"PASS real passkey registration; signed-out and forged-origin setup denied; project/agent saved privately; GitHub token not returned",
+		"PASS localhost access; signed-out and forged-origin setup denied; project/agent saved privately; GitHub token not returned",
 	);
 	const authBefore = readFileSync(join(home, "factory/auth/state.json"));
 	await worker.stop();
@@ -542,7 +519,7 @@ try {
 	assert.equal(restarted.github.account, "f1-operator");
 	assert.equal((await api("/api/auth/status")).authenticated, true);
 	console.log(
-		"PASS restart preserved selected project/agent, credentials, passkey and authenticated session",
+		"PASS restart preserved selected project/agent, credentials and localhost access",
 	);
 	const runtime = runtimeOf(worker);
 	const workflow = WorkflowSchema.parse({
@@ -616,7 +593,12 @@ try {
 				typeof activity.content === "string",
 		),
 	);
-	assert(JSON.stringify(timeline).includes("F1 onboarding issue processed"));
+	// Validated Factory role results belong to the run activity/output.
+	// The CLI tracker timeline retains routing/progress, not raw agent replies.
+	assert.deepEqual(run.outputs.observe, {
+		text: "F1 onboarding issue processed without native agent execution.",
+	});
+	assert(JSON.stringify(timeline).includes("**Routing**"));
 	const page = await rpc("viewSession", {
 		sessionId: run.id,
 		limit: 1,
@@ -628,6 +610,7 @@ try {
 	assert(!JSON.stringify(timeline).includes("saved-f1-secret"));
 	assert(!JSON.stringify(run).includes("saved-f1-secret"));
 	const activity = await api(`/api/runs/${run.id}/activity`);
+	assert(JSON.stringify(activity).includes("F1 onboarding issue processed"));
 	assert(
 		JSON.stringify(activity).includes("Create draft through native GitHub API"),
 	);

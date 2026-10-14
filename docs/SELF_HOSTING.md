@@ -26,26 +26,16 @@ The dashboard binds to loopback on 3457. OAuth/webhooks use the dashboard port +
 the webhook listener. ngrok remains supported; zrok2 (#39) is separate work.
 Direct HTTP localhost access (actual loopback peer and validated Host/origin) opens
 the dashboard, APIs, live updates, media and actions without login. Public HTTPS
-addresses require a passkey session. Local requests with forwarding headers or
+addresses require a browser session established with an API key. Local requests with forwarding headers or
 cross-origin browser context are rejected. To expose the dashboard through HTTPS, configure
 the exact browser origin with `--origin https://YOUR_HOST` for local startup, or
 `BOBS_FACTORY_FACTORY_ORIGIN=https://YOUR_HOST` for configured services. Your proxy
 must preserve that authority and browser Origin; unconfigured origins are denied.
 Keep webhook ingress separate, with its provider signature checks.
 
-Foreground local launch opens project/provider onboarding directly. To enroll a
-remote HTTPS address, run `bobs-factory --home /absolute/service/home factory-auth`
-on the service machine and enter its private ten-minute code in the remote setup
-screen. Local access has no passkey setup gate. For additional enrollment, either sign out
-and use a fresh machine-authorized code from
-`bobs-factory --home /absolute/service/home factory-auth`, or add a key in Settings
-with recent passkey verification and no code. Listing/removing keys requires a
-session verified within five minutes; a setup code does not authorize removal.
-Keep at least one key per enrolled address. Use the running service's home.
-If all passkeys are lost, run the same command with `--recover --confirm
-"RESET FACTORY AUTHENTICATION"`; this revokes passkeys and sessions while preserving
-runs and integrations. Re-enroll using the new setup code. Changing configured
-origins also requires deliberate local recovery. See [passkey setup and recovery](FACTORY.md#passkey-access-and-first-setup)
+Foreground local launch opens project/provider onboarding directly. Create remote dashboard keys in localhost **Settings → Access**. Each generated secret is shown once. Local users and signed-in remote users can add, remove and rotate keys. Rotation/removal revokes the affected browser sessions; rotating your current key shows the replacement before returning to sign-in. Last-key removal disables remote sign-in until a new key is created locally. Keys sign into browser sessions and are not Bearer credentials for API scripts.
+
+Valid legacy passkey state migrates to an empty key store and revokes old sessions. Corrupt state or changed configured origins require deliberate local recovery with `bobs-factory --home /absolute/service/home factory-auth --recover --confirm "RESET FACTORY AUTHENTICATION"`. Recovery preserves runs, integrations and native credentials. Ordinary `factory-auth` points to localhost Settings. See [API key setup and recovery](FACTORY.md#api-key-access-and-first-setup)
 for session limits, restart behavior and mobile troubleshooting. See the
 [remote access design and trust boundary](FACTORY.md#protected-remote-access-design)
 for the listener comparison and proxy requirements. Preserve PWA secure-origin/version
