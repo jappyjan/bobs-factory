@@ -83,7 +83,7 @@ export function addUpdateCommands(program: Command) {
 	update
 		.command("install")
 		.description(
-			"Queue explicit Install for the current candidate; owned supervisor waits for idle",
+			"Queue explicit Install for the current candidate; owned supervisor drains active work",
 		)
 		.requiredOption(
 			"--candidate <identity>",

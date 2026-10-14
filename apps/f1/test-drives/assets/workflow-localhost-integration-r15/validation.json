@@ -1,0 +1,76 @@
+{
+	"codeRevision": "677e5143bfd72e5b6d0cd64c6c4deff70486c925",
+	"frozenBase": "599a67d12cb204de7e6c5387b83e6d05e28b659e",
+	"baseIsAncestor": true,
+	"preservedWorkflowFiles": [
+		"packages/edge-worker/src/factory/WorkflowCatalog.ts",
+		"packages/edge-worker/src/factory/defaultWorkflows.ts",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts",
+		"packages/edge-worker/src/ChatSessionHandler.ts",
+		"packages/edge-worker/src/RunnerConcurrency.ts",
+		"packages/edge-worker/src/EdgeWorker.ts",
+		"packages/edge-worker/src/factory/web/recipes.tsx",
+		"packages/edge-worker/src/factory/web/forms.tsx"
+	],
+	"workflowFilesUnchangedFrom": "a3f1242a15be0384c822483a4b60b9a7c543e36f",
+	"importedAccessFilesMatchBase": [
+		"packages/edge-worker/src/factory/LocalFactoryAccess.ts",
+		"packages/edge-worker/src/factory/FactoryAuth.ts",
+		"packages/edge-worker/src/factory/FactoryOnboarding.ts",
+		"packages/edge-worker/src/factory/web/auth-state.ts",
+		"packages/edge-worker/src/factory/web/auth.tsx",
+		"packages/edge-worker/src/factory/web/settings.tsx",
+		"apps/cli/src/local.ts",
+		"apps/desktop/src/main.mjs",
+		"apps/desktop/src/launcher.html"
+	],
+	"checks": {
+		"edgeTestsPassed": 275,
+		"cliTestsPassed": 7,
+		"desktopTestsPassed": 34,
+		"desktopTestsSkipped": 1,
+		"build": "passed",
+		"typecheck": "passed",
+		"lint": "passed",
+		"localF1": [
+			"actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment",
+			"fresh first-launch project/provider onboarding accessible before passkey setup",
+			"IPv6 project onboarding mutation completes without authentication (prepared-tool stubs only)",
+			"noauth dashboard recipe save/start creates actual EdgeWorker worktree, executes script and returns completed run",
+			"actual socket external Origin/Fetch Metadata and forwarded localhost reads/mutations rejected",
+			"actual TLS Host-preserving forwarded proxy retains remote passkey enrollment/login/logout, opaque cookie and no local transplant",
+			"local SSE opens without a session and remote enrollment does not revoke local authority",
+			"actual external-origin browser navigation/read/POST all denied with no run mutation"
+		],
+		"catalogF1": [
+			"migration",
+			"forks",
+			"dependency gating",
+			"blocked restart",
+			"native queue interruption",
+			"native Resume",
+			"retained native attachment and live session identity",
+			"missing repository preserves block and pending input",
+			"operator manual Simple Resume",
+			"HTTP import/export"
+		],
+		"lintWarnings": 19
+	},
+	"logSha256": {
+		"fix-r15-build.log": "efb7d4edfe735431ee569582e76f24d5a02e6fb59a8b6d270133e364ffdafcf9",
+		"fix-r15-focused.log": "9f0a8b60a64634923e5856f75434816c82fe3b3edcad2ea11dd6dcae72fe28a5",
+		"fix-r15-cli.log": "c2c2bc094dd1cbf17371337a2a1e34d6e35c5143f33979dace8118c683512104",
+		"fix-r15-desktop.log": "9957d6d37c594d5421413941b45bacfe5d4cfd94986f8d07a2b7fab74969f2c5",
+		"fix-r15-local-f1.log": "b9892dff978c56c88e3471f466f769e66a6ef584988302cad49cb5c0f36ef0e4",
+		"fix-r15-catalog-f1.log": "11d54f192f7ed4adc9b167513b81709f88ce2222e3487d06d27959d3e7595d00",
+		"fix-r15-typecheck.log": "ecb383e1674803fb58201250f1347cca3828614760277400c23c19e9129f409b",
+		"fix-r15-lint.log": "3cb916e17e2b52aa702a125b6c0fda0a4d05dc4d68192ad198b6bc1acf1e080c",
+		"fix-r15-lint-evidence.log": "e65f30c756beda07dbb6a1877795c7e2372d1d8b176efdfa7d2db31576a96fb7"
+	},
+	"limitations": [
+		"Agents and external transports simulated; no real provider acceptance claimed.",
+		"Electron ASAR check skipped because this checkout lacks the materialized Electron binary.",
+		"Current CI, downstream QA, regenerated whole-PR brief and explicit human approval remain due.",
+		"Ticket synchronization and private GitGuardian incident closure remain unconfirmed."
+	]
+}

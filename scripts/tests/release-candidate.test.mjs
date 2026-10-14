@@ -12,6 +12,7 @@ import {
 	validateBuildProvenance,
 } from "../lib/binary-release.mjs";
 import {
+	candidateDigest,
 	candidateIdentity,
 	freezeCandidate,
 	nightlyEligibility,
@@ -229,6 +230,15 @@ test("beta freezes explicit version and retry rejects changed version without ni
 	assert.equal(candidate.candidate.channel, "beta");
 	assert.equal(candidate.candidate.sequence, undefined);
 	assert.equal(candidate.candidate.promotion, undefined);
+	const sequenced = { ...candidate.candidate, sequence: 10 };
+	assert.throws(
+		() =>
+			validateCandidate({
+				candidate: sequenced,
+				digest: candidateDigest(sequenced),
+			}),
+		/Beta is an explicit frozen source/,
+	);
 	assert.throws(
 		() => freezeCandidate({ ...args, channel: "beta", version: "1.0.1" }),
 		/mismatch/,

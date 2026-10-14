@@ -1,0 +1,84 @@
+{
+	"testedCodeRevision": "56cda44b617d1784dad054f7c8e23e433d8c65e0",
+	"frozenBase": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+	"baseIsAncestor": true,
+	"agentMode": "mock",
+	"focusedTests": 301,
+	"architecturePageTests": 1,
+	"desktopTests": {
+		"passed": 34,
+		"skipped": 1,
+		"reason": "Electron binary is not materialized in this checkout"
+	},
+	"f1": {
+		"architecture": "five scenarios passed",
+		"catalog": "seven grouped scenarios passed"
+	},
+	"exactBaseStockSourceSha256": "7f53325f5b43a9ece13930be8f9cb3f1f7ac847dc1fd838b34f1ef98bfea7423",
+	"sourceSha256": {
+		"packages/edge-worker/src/EdgeWorker.ts": "d6ae9fbd0a591178a3dd9fbd9ade07ef92a946bf4bb02a5f4e08597ae750f992",
+		"packages/edge-worker/src/factory/Workflow.ts": "a69523f3b82c9b372b7f9ca026b3dd5271176911640bc50e3bf02b2c2b763244",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "9c5e7e1ec30c7711a0dfde7fcdd740bb5ebdbcf4376abe5ffff74e14594f92a8",
+		"packages/edge-worker/src/factory/WorkflowCatalog.ts": "eef5b353842ecb6e91a7a2bb74299e5b7ab17f8bd53fe667486a7018a8584398",
+		"packages/edge-worker/src/factory/FactoryServer.ts": "d8b8d7af412bb47604edf3d479197cc3156bda71f6af900cac4fdf748eabc241",
+		"packages/edge-worker/src/factory/FactoryTools.ts": "761fef8fcfba2bc9f4c375e85a4a4d324e7f459de04c3caa032e6d25dc6993a5",
+		"packages/edge-worker/src/factory/defaultWorkflows.ts": "3c4a4cfb7915fa6deec26d47f2d0907d98c83fe1bdc54364d92b794a40e4cdd6",
+		"packages/edge-worker/src/factory/historicalWorkflowDigests.json": "a167dcab1fbe2581375d77e40dfef11ad98b1660988c04954adbcd66d28e7710",
+		"packages/edge-worker/src/factory/web/forms.tsx": "b8681272e7408fbf22b74323ab0c66163ff616759b20e60691b86f3d134bedbb",
+		"packages/edge-worker/src/factory/web/architecture.tsx": "6319ac091e596c6d240e79afd114e3788e6a7c12499a6e5cdedfc07aad029eaf",
+		"apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/f1-drive.ts": "6f112c6e7beccb6599553185e7add2e03575b7b882ddd8a2fdf7c38e6a0004fb",
+		"apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/server.mjs": "84c50f516f76bee83d454e1393b000e07779abf1bce34a75a43b72430150e8cf"
+	},
+	"logs": [
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-focused.log",
+			"sha256": "ee1fedc8c410fd3e830e4d6fdc54e3340645969af0fbd0e23d115aec89842375"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-focused-final.log",
+			"sha256": "c5e477029f61919f0e67e1f81ad5572710338e4c5192c97851647ee5764c0d1d"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-prompt-final.log",
+			"sha256": "6933701ccbcacd80360ee01c59d3c92b6a9cb7367bb6abf8c4c30ed734bd9815"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-build.log",
+			"sha256": "48295dc567aeaa1710ee703da217fd1b9f273606fdeabd5a9a7bdfe662821c3d"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-typecheck.log",
+			"sha256": "c085beba86391faa647c45039d2155c9d81fd3ca9465d09e30693133f41c2d63"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-lint.log",
+			"sha256": "51cdd01df54d8fa3bba371ccce331ca8a37cba5755ccec314d5b39d76f8a6438"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-delta-lint.log",
+			"sha256": "0e4ec070875cf42e7a446726059bde45929751e58993da87cf72bc25db972fb7"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-architecture-f1.log",
+			"sha256": "0735a101290426f637e1df11712f97d06679f12a94a0b2990b09e2f7268100aa"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-catalog-f1.log",
+			"sha256": "a1dabafd6850168456ae68bb9327eca6b565a33d94cd0d467202b2b696823992"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-desktop.log",
+			"sha256": "8ab8ba4b232aed41e29ddb8b8470122f49461834820da05fba1b63a5dda29b3f"
+		},
+		{
+			"path": "/Users/jappy/.bobs-factory/factory/evidence/manual-3db22f15-582b-4d93-82fb-9ab119d3f716/fix-r16-commit.log",
+			"sha256": "8d1879c036254a27662fc789a4547d1a6be81011e6aef2f7d53a5a248340cf1f"
+		}
+	],
+	"limits": [
+		"Simulated agents and providers; no live agents",
+		"No packaged native desktop validation was repeated",
+		"Downstream CI/QA, whole-PR guide and human approval remain due",
+		"Ticket synchronization and private GitGuardian incident closure remain unconfirmed"
+	]
+}

@@ -116,6 +116,8 @@ const server = new FactoryServer(
 	{ origins: [`http://localhost:${port}`] },
 );
 await server.start(port);
+// The parent polls these receipts while scripted UI processes start and replace
+// one another. Publish complete JSON through rename, as the real lifecycle does.
 function script(version, fail = false) {
 	return Buffer.from(
 		`#!/usr/bin/env node\nconst fs=require('node:fs'),path=require('node:path'),home=process.env.BOBS_FACTORY_DESKTOP_HOME;const save=(file,value)=>{const temporary=file+'.tmp-'+process.pid;fs.writeFileSync(temporary,JSON.stringify(value));fs.renameSync(temporary,file);};save(path.join(home,'fixture-ui.json'),{pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim()});if(${fail})process.exit(7);if(process.env.BOBS_FACTORY_DESKTOP_HEALTH){const token=process.env.BOBS_FACTORY_DESKTOP_HEALTH;save(path.join(home,'desktop','updates','health-'+token+'.json'),{token,pid:process.pid,stamp:require('node:child_process').execFileSync('/bin/ps',['-p',String(process.pid),'-o','lstart='],{encoding:'utf8'}).trim(),install:${JSON.stringify(install)},version:${JSON.stringify(version)},commit:'${"a".repeat(40)}',target:'${target}'});}setInterval(()=>{},1000);\n`,

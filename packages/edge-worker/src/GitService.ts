@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { spawnExecution as spawn } from "bobs-factory-core";
 import type { CapacityOptions, ExecutionCapacity } from "./MachineCapacity.js";
+import { isUpdatePaused } from "./updates/UpdatePausedError.js";
 export const setupExecutionScope = new AsyncLocalStorage<{
 	signal: AbortSignal;
 	service?: ExecutionCapacity;
@@ -719,7 +720,7 @@ export class GitService {
 					);
 				}
 			} catch (error) {
-				if (this.childEnvironment) throw error;
+				if (this.childEnvironment || isUpdatePaused(error)) throw error;
 				this.logger.error(
 					`Failed to create worktree for repo '${repository.name}': ${(error as Error).message}`,
 				);
@@ -929,6 +930,7 @@ export class GitService {
 					});
 				}
 			} catch (e) {
+				if (isUpdatePaused(e)) throw e;
 				setupExecutionScope.getStore()?.signal.throwIfAborted();
 				if (this.childEnvironment || managedGithub)
 					throw new Error(
@@ -1052,6 +1054,7 @@ export class GitService {
 				resolvedBaseBranches: { [repository.id]: resolution },
 			};
 		} catch (error) {
+			if (isUpdatePaused(error)) throw error;
 			if (this.childEnvironment || managedGithub)
 				throw new Error(
 					`Failed to prepare the selected execution worktree. No fallback workspace was created. ${redactHookOutput(error instanceof Error ? error.message : "Git preparation failed", { cwd: repository.repositoryPath, env: this.childEnvironment ?? {} })}`,

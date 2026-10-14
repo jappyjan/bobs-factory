@@ -12,6 +12,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { factoryRuntimeIdentity } from "bobs-factory-core";
 import { z } from "zod";
 import { compareReleaseVersions } from "../../../../scripts/lib/binary-release.mjs";
@@ -148,6 +149,8 @@ export interface UpdateSource {
  * snapshots/restore are restricted to compatible Factory-owned state, never native stores.
  */
 export interface UpdateLifecycle {
+	/** Allows an owner supervisor to stop waiting without switching runtimes. */
+	signal?: AbortSignal;
 	acquireMaintenance(transactionId: string): Promise<void>;
 	isIdle(): Promise<boolean>;
 	preflight(
@@ -643,18 +646,23 @@ export class UpdateManager {
 			try {
 				await lifecycle.acquireMaintenance(transaction.id);
 				maintenance = true;
-				if (!(await lifecycle.isIdle())) {
-					this.phase("cancelled", {
-						error:
-							"Waiting for active work/descendant leases to drain; update remains pending.",
-					});
-				} else {
+				{
 					const eligible = () => {
-						if (!this.authorized(this.read(), transaction.candidate))
+						if (
+							lifecycle.signal?.aborted ||
+							!this.authorized(this.read(), transaction.candidate)
+						)
 							throw new Error(
 								"Update activation cancelled by current policy/candidate.",
 							);
 					};
+					// Keep admission closed across busy observations. Releasing it
+					// between checks lets an unending queue refill every freed slot.
+					while (true) {
+						eligible();
+						if (await lifecycle.isIdle()) break;
+						await delay(1000);
+					}
 					eligible();
 					this.phase("preflight");
 					const preflight = await lifecycle.preflight(
