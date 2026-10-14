@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Correct Share layout QA to preserve Resume below the detail header, with a fresh passing narrow-screen check ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
+
 - Reconcile run sharing with current stopped-run Resume controls and bundled workflow guidance, preserving full prompt assertions after merging main ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
 
 - Synchronize the full routing-prompt test expectation with the run Share capability reference, fixing CI after the main-branch merge ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).

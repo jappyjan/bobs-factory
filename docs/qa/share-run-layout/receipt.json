@@ -1,0 +1,117 @@
+{
+	"storyId": "share-detail-and-url",
+	"criterionId": "share-detail-layout",
+	"outcome": "passed",
+	"exitCode": 0,
+	"expected": "The narrow queued header shows Share and the capacity message without overlap, clipping or horizontal overflow. On the stopped detail page, header Share and the existing Resume action in full Focus content remain usable. Sharing does not activate, disable or relocate Resume.",
+	"sourceRevision": "efc6a0a50564ff401e95582d7a1fa1e458816af0",
+	"servedVersion": {
+		"build": "a21b9b09107c7989812a2d28",
+		"protocol": 1,
+		"runtime": {
+			"version": "0.2.73",
+			"commit": null,
+			"dirty": null,
+			"target": null,
+			"resourceDigest": null,
+			"packaged": false
+		},
+		"capabilities": ["desktop-app-maintenance-v1"]
+	},
+	"viewport": {
+		"width": 390,
+		"height": 844
+	},
+	"agentMode": "mock",
+	"clipboard": "simulated",
+	"observations": [
+		{
+			"id": "resumable",
+			"header": [
+				{
+					"bottom": 375,
+					"disabled": false,
+					"height": 44,
+					"right": 88.484375,
+					"text": "Share",
+					"width": 74.484375,
+					"x": 14,
+					"y": 331
+				},
+				{
+					"bottom": 376,
+					"disabled": false,
+					"height": 44,
+					"right": 187.25,
+					"text": "✓ Settle",
+					"width": 90.765625,
+					"x": 96.484375,
+					"y": 332
+				}
+			],
+			"resume": [
+				{
+					"bottom": 772,
+					"disabled": false,
+					"height": 44,
+					"right": 358,
+					"text": "↻ Resume run r",
+					"width": 326,
+					"x": 32,
+					"y": 728
+				},
+				{
+					"bottom": 824,
+					"disabled": false,
+					"height": 44,
+					"right": 288.8125,
+					"text": "Settle e",
+					"width": 99.859375,
+					"x": 188.953125,
+					"y": 780
+				}
+			],
+			"copied": ["http://localhost:3597/#/runs/resumable"],
+			"runtimeUnchanged": true,
+			"mutationRequests": []
+		},
+		{
+			"id": "queued",
+			"header": [
+				{
+					"bottom": 375,
+					"disabled": false,
+					"height": 44,
+					"right": 88.484375,
+					"text": "Share",
+					"width": 74.484375,
+					"x": 14,
+					"y": 331
+				},
+				{
+					"bottom": 364.5,
+					"height": 21,
+					"right": 283.109375,
+					"text": "Waiting for instance capacity",
+					"width": 186.625,
+					"x": 96.484375,
+					"y": 343.5
+				},
+				{
+					"bottom": 376,
+					"disabled": false,
+					"height": 44,
+					"right": 373.375,
+					"text": "■ Stop",
+					"width": 82.265625,
+					"x": 291.109375,
+					"y": 332
+				}
+			],
+			"resume": [],
+			"copied": ["http://localhost:3597/#/runs/queued"],
+			"runtimeUnchanged": true,
+			"mutationRequests": []
+		}
+	]
+}
