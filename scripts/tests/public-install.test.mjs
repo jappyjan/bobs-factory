@@ -255,6 +255,60 @@ function fixture(version = "0.2.74") {
 	};
 }
 
+test("native install scopes release fields despite desktop and recipe identities", () => {
+	const f = fixture("1.0.0-nightly.20261009.2");
+	try {
+		const metadata = {
+			...f.current.metadata,
+			recipe: { schemaVersion: 1, workflowSha: commit },
+			desktop: {
+				schemaVersion: 1,
+				artifacts: [
+					{
+						schemaVersion: 1,
+						product: "bobs-factory",
+						version: f.current.metadata.version,
+						commit,
+						channel: "nightly",
+						workflowSha: commit,
+						candidateDigest: f.current.metadata.candidateDigest,
+					},
+				],
+			},
+		};
+		const file = join(f.downloads, "release.json");
+		writeFileSync(file, jsonBytes(metadata));
+		const args = ["--channel", "nightly", "--version", metadata.version];
+		const result = f.install(...args);
+		assert.equal(result.status, 0, result.stderr);
+		const link = readlinkSync(join(f.prefix, "bin/bobs-factory"));
+		delete metadata.version;
+		writeFileSync(file, jsonBytes(metadata));
+		assert.notEqual(
+			f.install(...args).status,
+			0,
+			"nested identity cannot supply a missing root version",
+		);
+		assert.equal(readlinkSync(join(f.prefix, "bin/bobs-factory")), link);
+		writeFileSync(
+			file,
+			jsonBytes(f.current.metadata)
+				.toString()
+				.replace(
+					'  "schemaVersion": 2,',
+					'  "schemaVersion": 2,\n  "schemaVersion": 2,',
+				),
+		);
+		assert.notEqual(
+			f.install(...args).status,
+			0,
+			"duplicate root fields must remain refused",
+		);
+		assert.equal(readlinkSync(join(f.prefix, "bin/bobs-factory")), link);
+	} finally {
+		f.cleanup();
+	}
+});
 test("anonymous install configures PATH once, retains old version, and safely repeats", () => {
 	const f = fixture("0.2.73");
 	try {

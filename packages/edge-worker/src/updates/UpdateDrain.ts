@@ -11,10 +11,8 @@ import type { WorkflowRuntime } from "../factory/WorkflowRuntime.js";
 import type { CapacitySnapshot, MachineCapacity } from "../MachineCapacity.js";
 import { UpdateManager } from "./UpdateManager.js";
 
-/** Durable intake freeze is distinct from the final capacity admission barrier:
- * already accepted work may acquire its next role while draining. Only after
- * all work/leases are idle do we close capacity admission under its own lock.
- */
+/** Freeze intake and slot admission once staging completes. Active steps finish
+ * naturally; later steps and queued slots retain their saved progress. */
 export class UpdateDrain {
 	readonly file: string;
 	private intake = new Set<object>();
@@ -71,15 +69,16 @@ export class UpdateDrain {
 		if (this.active()) {
 			if (this.transaction() !== transactionId)
 				throw new Error("Another transaction owns maintenance");
-			return;
+		} else {
+			mkdirSync(join(this.home, "updates"), { recursive: true, mode: 0o700 });
+			this.freezeBackground(true);
+			writeFileSync(this.file, JSON.stringify({ transactionId }), {
+				flag: "wx",
+				mode: 0o600,
+				flush: true,
+			});
 		}
-		mkdirSync(join(this.home, "updates"), { recursive: true, mode: 0o700 });
-		this.freezeBackground(true);
-		writeFileSync(this.file, JSON.stringify({ transactionId }), {
-			flag: "wx",
-			mode: 0o600,
-			flush: true,
-		});
+		await this.capacity.pauseAdmissionsForUpdate(transactionId);
 	}
 	receipt() {
 		const records = [...this.runtime.runs.values()]

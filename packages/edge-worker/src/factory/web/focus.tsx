@@ -777,17 +777,21 @@ export function FocusCard({
 	const detail = useRun(summary.id),
 		run = detail.data ?? summary,
 		kind = attention(run) ?? "review",
+		stopped = ["stopped", "cancelled"].includes(run.status),
+		canResume = run.status === "stopped" && run.resumeAvailable === true,
 		toast = useToast(),
 		action = useAction();
 	return (
 		<section
 			className={`focus-card kind-${kind}`}
-			aria-label={`${labels[kind]}: ${run.title}`}
+			aria-label={`${stopped ? "Stopped" : labels[kind]}: ${run.title}`}
 		>
 			<div className="focus-top">
 				{!full && (
 					<>
-						<span className={`chip ${kind}`}>{labels[kind]}</span>
+						<span className={`chip ${kind}`}>
+							{stopped ? "■ Stopped" : labels[kind]}
+						</span>
 						<RunMeta run={run} config={config} />
 						{navigation}
 						<ShareRun runId={run.id} title={run.title} />
@@ -815,34 +819,64 @@ export function FocusCard({
 						<Bob mood="oops" size={48} />
 						<div>
 							<strong>
-								{run.status === "interrupted" ? "Interrupted" : "Stuck"} at{" "}
-								{icons[run.step?.split("/").at(-1)] ?? "⚙️"}{" "}
+								{stopped
+									? "Stopped"
+									: run.status === "interrupted"
+										? "Interrupted"
+										: "Stuck"}{" "}
+								at {icons[run.step?.split("/").at(-1)] ?? "⚙️"}{" "}
 								{stepsOf(run, config).find((s) => s.key === run.step)?.name ??
 									run.step ??
 									"Bob’s Factory session"}
 							</strong>
 							<Markdown>
-								{run.error ?? "The run stopped before finishing."}
+								{run.workflowBlock?.reason ??
+									run.error ??
+									"The run stopped before finishing."}
 							</Markdown>
 							<small>
-								{run.iterationLimit
-									? "Continue grants 4 more passes for this step. Your work and history stay intact."
-									: "Retry keeps the worktree, your answers and every finished step."}
+								{run.workflowBlock
+									? "Enable the workflow and its dependencies in Recipes. Resume continues this saved checkpoint after the previous executor stops."
+									: stopped
+										? "Bring back keeps this run visible. Resume continues its saved progress; it does not restart finished steps."
+										: run.iterationLimit
+											? "Continue grants 4 more passes for this step. Your work and history stay intact."
+											: "Retry keeps the worktree, your answers and every finished step."}
 							</small>
 						</div>
 					</div>
 					<div className="actions">
 						<Button
+							disabled={
+								(stopped && !canResume) ||
+								(!!run.workflowBlock && !run.resumeEligible)
+							}
 							requiresConnection
 							busy={action.isPending}
 							onClick={() =>
 								void action
-									.mutateAsync({ path: `/api/runs/${run.id}/retry` })
-									.then(() => toast({ text: "Retrying from saved progress" }))
+									.mutateAsync({
+										path: `/api/runs/${run.id}/${stopped || run.workflowBlock ? "resume" : "retry"}`,
+									})
+									.then(() =>
+										toast({
+											text:
+												stopped || run.workflowBlock
+													? "Resuming from saved progress"
+													: "Retrying from saved progress",
+										}),
+									)
 									.catch(() => {})
 							}
 						>
-							↻ {run.iterationLimit ? "Continue (+4 passes)" : "Retry step"}{" "}
+							↻{" "}
+							{run.workflowBlock
+								? "Resume"
+								: stopped
+									? "Resume run"
+									: run.iterationLimit
+										? "Continue (+4 passes)"
+										: "Retry step"}{" "}
 							<kbd>r</kbd>
 						</Button>
 						<Link className="button secondary" to={`/runs/${run.id}`}>

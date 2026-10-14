@@ -66,3 +66,37 @@ in `ci-merge/merge-revision.json`. Desktop fallback and mobile light screenshots
 were inspected. All 55 browser-client/PWA tests, edge-worker build/typecheck,
 scoped Biome checks and `git diff --check` passed. Physical-device clipboard
 behavior remains unverified. The browser session and fixture listeners were closed.
+
+## Main integration — 2026-10-14
+
+Merged `origin/main` at `bfe71f41` into PR #122, whose prior head was
+`3b504dca`. Reconciled the changelog and both capability-reference lines by
+preserving current main guidance and the Share paragraph. The cumulative
+browser diff against main retains only the planned Share controls and layout.
+
+The focused simulated-agent fixture served browser build
+`ef4b568f76b3e0006751269b`. Thirteen executable headless assertions passed:
+Working Share retains collapsed rows and the route; a brought-back stopped
+Focus card offers Share beside Resume; copying preserves runtime records and
+produces no mutation requests; both Settled presentations copy correctly; all
+six detail statuses retain exactly one Share control; and unavailable
+clipboard support offers the exact recovery URL. Clipboard writes in this
+smoke check are simulated. No new screenshot evidence is claimed.
+
+Evidence and executable scripts are in the evidence directory's
+`merge-20261014/` folder (`fixture.mjs`, `browser.mjs`, `fixture.json`,
+`browser-results.json`). The fixture runs with `F1_AGENT_MODE=mock` using the
+real WorkflowRuntime, FactoryServer and compiled dashboard. Initial harness
+attempts used an incorrect Bring back field and assumed Focus ordering.
+After correcting the field to `keptOpen`, Next item and direct card selection
+did not switch Focus in this seeded browser session. This behavior was not
+diagnosed or fixed; the completed smoke therefore checks the selected stopped
+Focus card and all statuses through detail routes, not Focus-deck navigation.
+Earlier full Share QA remains historical evidence.
+
+FactoryAccess, FactoryWebClient, FactoryPwa and the complete routing-prompt
+suite passed 75 tests with host GitLab settings excluded. Dependency and
+dashboard builds and scoped Biome passed. The PR diff against main passes
+`git diff --check`; imported historical F1 reports retain their existing
+Markdown hard-break whitespace. Physical-device clipboard behavior remains
+unverified.

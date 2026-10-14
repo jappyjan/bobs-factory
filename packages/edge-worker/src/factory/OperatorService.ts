@@ -101,6 +101,7 @@ export interface OperatorHooks {
 	chat?(id: string): ChatState;
 	message?(id: string, text: string, messageId?: string): void | Promise<void>;
 	stop(id: string): void;
+	resumeEligible?(id: string): boolean;
 	mcp?(run: FactoryRun): Promise<unknown>;
 	check?(run: FactoryRun, server?: string): Promise<unknown>;
 	update?(run: FactoryRun, input: any): Promise<unknown>;
@@ -152,6 +153,18 @@ export class OperatorService {
 			reason: available ? undefined : reason,
 		});
 		const chat = this.hooks.chat?.(id);
+		let availabilityError: string | undefined;
+		try {
+			this.runtime.requireAvailable(
+				run.workflow,
+				run.workflowDefinitions ?? [],
+			);
+		} catch (error) {
+			availabilityError =
+				error instanceof Error ? error.message : String(error);
+		}
+		const executionAllowed = !availabilityError && !run.workflowBlock;
+
 		return {
 			instance: this.instance,
 			revision: this.revision(run),
@@ -220,25 +233,38 @@ export class OperatorService {
 			},
 			actions: {
 				retry_run: action(
-					run.status === "failed" && !pendingReview,
-					"Only failed runs outside human review can retry",
+					executionAllowed && run.status === "failed" && !pendingReview,
+					availabilityError ??
+						run.workflowBlock?.reason ??
+						"Only failed runs outside human review can retry",
 				),
 				resume_run: action(
-					run.status === "interrupted" &&
-						!!(run.checkpoint || run.simpleExecution) &&
-						!pendingReview,
-					"Only interrupted runs with saved progress outside human review can resume",
+					!availabilityError &&
+						(run.workflowBlock
+							? !this.runtime.isExecuting(id) &&
+								(this.hooks.resumeEligible?.(id) ?? true)
+							: (run.status === "interrupted" || this.runtime.canResume(id)) &&
+								!!(run.checkpoint || run.simpleExecution) &&
+								!pendingReview),
+					availabilityError ??
+						"Resume requires available workflow dependencies and stopped execution",
 				),
 				stop_run: action(
 					["running", "waiting", "interrupted"].includes(run.status),
 					"Run is already finished",
 				),
 				answer_run: action(
-					run.status === "waiting" && !!run.questions.length && !pendingReview,
+					executionAllowed &&
+						run.status === "waiting" &&
+						!!run.questions.length &&
+						!pendingReview,
 					"Run must be waiting for workflow questions, outside human review",
 				),
 				steer_run: action(
-					!!chat?.enabled && !!chat.available && !pendingReview,
+					executionAllowed &&
+						!!chat?.enabled &&
+						!!chat.available &&
+						!pendingReview,
 					chat?.reason ?? "Workflow chat is unavailable",
 				),
 				retry_ticket_sync: action(
@@ -429,7 +455,12 @@ export class OperatorService {
 						"stale_state",
 						"Run changed during connectivity check. Inspect again.",
 					);
-				this.retry(run.id);
+				if (
+					name === "resume_run" &&
+					(run.workflowBlock || run.status === "stopped")
+				)
+					this.resume(run.id);
+				else this.retry(run.id);
 			} else if (name === "retry_ticket_sync") await this.retryTracking(run.id);
 			else if (name === "stop_run") this.stop(run.id);
 			else if (name === "answer_run") {
@@ -464,6 +495,9 @@ export class OperatorService {
 	}
 	retry(id: string) {
 		return this.runtime.retry(id);
+	}
+	resume(id: string) {
+		return this.runtime.resume(id);
 	}
 	stop(id: string) {
 		return this.hooks.stop(id);

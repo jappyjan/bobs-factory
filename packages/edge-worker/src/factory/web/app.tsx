@@ -124,7 +124,9 @@ function useSettle() {
 					toast({
 						text:
 							mode === "back"
-								? "Brought back — it stays open until you settle it"
+								? run.status === "stopped"
+									? "Brought back — choose Resume run to continue its saved progress"
+									: "Brought back — it stays open until you settle it"
 								: `Settled “${run.title}”`,
 						action: "Undo",
 						onAction: () =>
@@ -388,7 +390,8 @@ function Settled({ runs, all }: { runs: any[]; all: any[] }) {
 					Runs settle when you settle them, when they're stopped, when a newer
 					follow-up run replaces them, when you've seen a finished run that has
 					no review guide, or after 48 quiet hours. “Bring back” keeps a run
-					open until you settle it.
+					open until you settle it. Stopped runs remain paused until you choose
+					“Resume run”.
 				</p>
 			</details>
 		</section>
@@ -873,15 +876,19 @@ function RunPage({
 					<div className="run-page-meta">
 						<span className={`chip ${reason ? "quiet" : (kind ?? "working")}`}>
 							{reason ??
-								(kind === "question"
-									? `${run.questions?.length ?? 0} question(s) for you`
-									: kind === "stuck"
-										? "Stuck — retry?"
-										: kind === "review"
-											? run.outputs?.guide
-												? "Ready for your review"
-												: "Done — take a look"
-											: workingLabel(run))}
+								(run.workflowBlock
+									? "Workflow disabled · Resume required"
+									: kind === "question"
+										? `${run.questions?.length ?? 0} question(s) for you`
+										: kind === "stuck"
+											? run.status === "stopped"
+												? "Stopped — resume?"
+												: "Stuck — retry?"
+											: kind === "review"
+												? run.outputs?.guide
+													? "Ready for your review"
+													: "Done — take a look"
+												: workingLabel(run))}
 						</span>
 						<RunMeta run={run} config={config} />
 						<span>started {ago(run.createdAt)}</span>

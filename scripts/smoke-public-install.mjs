@@ -68,6 +68,21 @@ try {
 		version,
 		tag: `v${version}`,
 		commit: sidecar.commit,
+		recipe: { schemaVersion: 1, workflowSha: sidecar.workflowSha },
+		desktop: {
+			schemaVersion: 1,
+			artifacts: [
+				{
+					schemaVersion: 1,
+					product: "bobs-factory",
+					version,
+					commit: sidecar.commit,
+					channel: releaseChannel(version),
+					workflowSha: sidecar.workflowSha,
+					candidateDigest: sidecar.candidateDigest,
+				},
+			],
+		},
 		verifier,
 		targets: {
 			[target]: {

@@ -6,7 +6,6 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { EdgeWorker } from "../../../../../packages/edge-worker/src/EdgeWorker.ts";
-import { defaultWorkflows } from "../../../../../packages/edge-worker/src/factory/defaultWorkflows.ts";
 import { WorkflowRuntime } from "../../../../../packages/edge-worker/src/factory/WorkflowRuntime.ts";
 import { proposal } from "../../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import { MockAgentRunner } from "../../../src/MockAgentRunner.ts";
@@ -116,9 +115,17 @@ delete process.env.BOBS_FACTORY_INTERNAL_EXECUTABLE;
 process.env.BOBS_FACTORY_FACTORY_PORT = "0";
 await worker.start();
 let runtime: any = worker.getFactoryRuntime();
-const defs = structuredClone(defaultWorkflows);
-const pipe = defs.find((w) => w.id === "factory-pipeline")!;
-pipe.steps.find((s) => s.id === "implement")!.next = "end";
+// Customize private dependency copies; bundled behavior stays immutable.
+const fixtureWorkflows: Record<string, string> = {};
+for (const id of ["factory", "takeover"]) {
+	fixtureWorkflows[id] = runtime.forkWorkflow(id, `F1 ${id}`).id;
+}
+const defs = runtime.listWorkflows();
+for (const definition of defs) {
+	if (runtime.catalog.metadata(definition.id).ownership !== "local") continue;
+	const implement = definition.steps.find((s: any) => s.id === "implement");
+	if (implement) implement.next = "end";
+}
 runtime.updateWorkflows(defs);
 const originalAgent = runtime.hooks.agent;
 const implementations: any[] = [];
@@ -179,7 +186,7 @@ try {
 		version = 0;
 		current = await worker.startManualFactoryRun({
 			repositoryId: "f1",
-			workflow,
+			workflow: fixtureWorkflows[workflow],
 			prompt: "Validate architecture discussion",
 			source: workflow === "takeover" ? existingIssue.identifier : undefined,
 			inputs: {},
@@ -296,7 +303,7 @@ try {
 		version = 0;
 		current = await worker.startManualFactoryRun({
 			repositoryId: "f1",
-			workflow,
+			workflow: fixtureWorkflows[workflow],
 			prompt: "Routine existing pattern",
 			source: workflow === "takeover" ? existingIssue.identifier : undefined,
 			inputs: {},
@@ -317,7 +324,7 @@ try {
 	omitChanges = true;
 	current = await worker.startManualFactoryRun({
 		repositoryId: "f1",
-		workflow: "factory",
+		workflow: fixtureWorkflows.factory,
 		prompt: "Missing change list",
 		inputs: {},
 	});

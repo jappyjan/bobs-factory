@@ -1,0 +1,138 @@
+{
+	"executed": true,
+	"mode": "mock",
+	"head": "bbd90d0748e06678cabad6823967a6493ddf217a",
+	"result": "passed-startup-checkpoint-resume",
+	"results": [
+		{
+			"platform": "slack",
+			"sessionId": "slack-first-slack",
+			"checkpointSaved": true,
+			"queuedSnapshot": {
+				"limit": 1,
+				"active": 1,
+				"stopping": 0,
+				"queued": 1,
+				"requests": [
+					{
+						"sequence": 1,
+						"admissionPosition": 1,
+						"queuedAt": "2026-10-11T13:44:50.728Z",
+						"phase": "executing",
+						"background": false,
+						"parked": false,
+						"recoverable": true,
+						"remote": false
+					},
+					{
+						"sequence": 2,
+						"admissionPosition": 2,
+						"queuedAt": "2026-10-11T13:44:50.729Z",
+						"phase": "queued",
+						"background": true,
+						"parked": false,
+						"recoverable": false,
+						"remote": false
+					}
+				],
+				"defaultLimit": 4
+			},
+			"providerStartsBeforeDisable": 0,
+			"nativeIdBefore": null,
+			"nativeIdAfter": "simulated-native-slack",
+			"pendingBefore": {
+				"prompt": "Retained initial slack task",
+				"systemPrompt": "QA queued initial system",
+				"runner": "codex",
+				"model": "accepted-initial-chat-model",
+				"replyEvent": {
+					"id": "first-slack",
+					"text": "Retained initial slack task"
+				}
+			},
+			"promptDelivered": ["Retained initial slack task"],
+			"modelDelivered": "accepted-initial-chat-model",
+			"markerAfterRestart": false,
+			"markerAfterExecution": true,
+			"blockBefore": {
+				"workflowIds": ["simple"],
+				"at": "2026-10-11T13:44:50.802Z",
+				"priorStatus": "active",
+				"reason": "Workflow disabled: simple. Progress retained. Enable it, then Resume this session individually."
+			},
+			"blockAfter": null,
+			"resumedHTTP": 202,
+			"completion": "complete",
+			"replyEvent": {
+				"id": "first-slack",
+				"text": "Retained initial slack task"
+			},
+			"providerStartsAfterResume": 1
+		},
+		{
+			"platform": "zulip",
+			"sessionId": "zulip-first-zulip",
+			"checkpointSaved": true,
+			"queuedSnapshot": {
+				"limit": 1,
+				"active": 1,
+				"stopping": 0,
+				"queued": 1,
+				"requests": [
+					{
+						"sequence": 4,
+						"admissionPosition": 4,
+						"queuedAt": "2026-10-11T13:44:50.914Z",
+						"phase": "executing",
+						"background": false,
+						"parked": false,
+						"recoverable": true,
+						"remote": false
+					},
+					{
+						"sequence": 5,
+						"admissionPosition": 5,
+						"queuedAt": "2026-10-11T13:44:50.915Z",
+						"phase": "queued",
+						"background": true,
+						"parked": false,
+						"recoverable": false,
+						"remote": false
+					}
+				],
+				"defaultLimit": 4
+			},
+			"providerStartsBeforeDisable": 0,
+			"nativeIdBefore": null,
+			"nativeIdAfter": "simulated-native-zulip",
+			"pendingBefore": {
+				"prompt": "Retained initial zulip task",
+				"systemPrompt": "QA queued initial system",
+				"runner": "codex",
+				"model": "accepted-initial-chat-model",
+				"replyEvent": {
+					"id": "first-zulip",
+					"text": "Retained initial zulip task"
+				}
+			},
+			"promptDelivered": ["Retained initial zulip task"],
+			"modelDelivered": "accepted-initial-chat-model",
+			"markerAfterRestart": false,
+			"markerAfterExecution": true,
+			"blockBefore": {
+				"workflowIds": ["simple"],
+				"at": "2026-10-11T13:44:50.970Z",
+				"priorStatus": "active",
+				"reason": "Workflow disabled: simple. Progress retained. Enable it, then Resume this session individually."
+			},
+			"blockAfter": null,
+			"resumedHTTP": 202,
+			"completion": "complete",
+			"replyEvent": {
+				"id": "first-zulip",
+				"text": "Retained initial zulip task"
+			},
+			"providerStartsAfterResume": 1
+		}
+	]
+}

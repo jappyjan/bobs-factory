@@ -6,7 +6,6 @@ import {
 	lstatSync,
 	mkdirSync,
 	mkdtempSync,
-	readdirSync,
 	readFileSync,
 	realpathSync,
 	renameSync,
@@ -31,6 +30,7 @@ import {
 	workerOwner,
 } from "./InstanceLock.js";
 import { ServiceLifecycle } from "./ServiceLifecycle.js";
+import { copyUpdateState } from "./UpdateStateSnapshot.js";
 
 const runFile = promisify(execFile);
 export interface LifecycleCandidate {
@@ -69,6 +69,7 @@ export class OwnedUpdateLifecycle {
 	constructor(
 		readonly home: string,
 		port: number,
+		readonly signal?: AbortSignal,
 	) {
 		this.manager = new ServiceLifecycle(home);
 		this.home = this.manager.home;
@@ -207,26 +208,8 @@ export class OwnedUpdateLifecycle {
 		}
 		return receipt.idle;
 	}
-	private copyOwned(destination: string) {
-		mkdirSync(destination, { recursive: true, mode: 0o700 });
-		const copy = (source: string, target: string, relative: string) => {
-			if (relative === "factory/auth" || relative.startsWith("factory/auth/"))
-				return;
-			const stat = lstatSync(source);
-			if (stat.isSymbolicLink() || (!stat.isFile() && !stat.isDirectory()))
-				throw new Error(
-					`Snapshot refuses external/special owned state: ${relative}`,
-				);
-			if (stat.isDirectory()) {
-				mkdirSync(target, { recursive: true, mode: 0o700 });
-				for (const name of readdirSync(source))
-					copy(join(source, name), join(target, name), `${relative}/${name}`);
-			} else cpSync(source, target);
-		};
-		for (const name of ["config.json", "state", "factory"]) {
-			const source = join(this.home, name);
-			if (existsSync(source)) copy(source, join(destination, name), name);
-		}
+	private copyOwned(destination: string, purpose: "preflight" | "snapshot") {
+		copyUpdateState(this.home, destination, purpose);
 	}
 	async preflight(staged: LifecycleStaged, installed: { version: string }) {
 		if (
@@ -256,7 +239,7 @@ export class OwnedUpdateLifecycle {
 			throw new Error("Staged runtime identity/integrity mismatch");
 		const isolated = mkdtempSync(join(tmpdir(), "factory-update-preflight-"));
 		try {
-			this.copyOwned(isolated);
+			this.copyOwned(isolated, "preflight");
 			const { stdout } = await runFile(
 				executable,
 				["--home", isolated, "--no-open", "service", "validate-state"],
@@ -284,7 +267,7 @@ export class OwnedUpdateLifecycle {
 			throw new Error(
 				"Snapshot already exists: recover the persisted transaction",
 			);
-		this.copyOwned(path);
+		this.copyOwned(path, "snapshot");
 		writeFileSync(
 			join(path, "lifecycle-receipt.json"),
 			JSON.stringify(this.preservation),
@@ -573,7 +556,8 @@ export class OwnedUpdateLifecycle {
 					"Interrupted rollback requires reconciliation of retained state",
 				);
 			if (existsSync(current)) renameSync(current, join(retained, name));
-			if (existsSync(backup)) cpSync(backup, current, { recursive: true });
+			if (existsSync(backup))
+				cpSync(backup, current, { recursive: true, verbatimSymlinks: true });
 			if (name === "factory" && existsSync(join(retained, name, "auth"))) {
 				mkdirSync(current, { recursive: true, mode: 0o700 });
 				renameSync(join(retained, name, "auth"), join(current, "auth"));

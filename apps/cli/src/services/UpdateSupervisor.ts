@@ -15,17 +15,20 @@ export async function runUpdateSupervisor(
 ) {
 	const release = await acquireRuntimeOperation(home, "update-supervisor.lock");
 	let stopping = false;
+	const drainAbort = new AbortController();
 	process.once("SIGTERM", () => {
 		stopping = true;
+		drainAbort.abort();
 	});
 	process.once("SIGINT", () => {
 		stopping = true;
+		drainAbort.abort();
 	});
 	let lastStatus: ReturnType<UpdateManager["status"]> | undefined;
 	let crashRestarts = 0;
 	try {
 		do {
-			const lifecycle = new OwnedUpdateLifecycle(home, port);
+			const lifecycle = new OwnedUpdateLifecycle(home, port, drainAbort.signal);
 			const executable = lifecycle.runtimeLink;
 			const identity = JSON.parse(
 				readFileSync(

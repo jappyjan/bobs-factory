@@ -1,0 +1,14 @@
+{
+	"base": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+	"mode": "mock",
+	"scenario": "restore frozen-base graph at architecture-decision using current WorkflowRuntime and FactoryTools",
+	"agentStarts": 0,
+	"status": "failed",
+	"error": "Architecture requires review of the exact current candidate before a decision",
+	"baseArchitectureContract": "architecture-v1",
+	"restoredArchitectureContract": "architecture-v1",
+	"baseArchitectureTool": "architecture-decision",
+	"currentStandardHasArchitecture": true,
+	"persisted": "failed",
+	"testedCodeRevision": "56cda44b617d1784dad054f7c8e23e433d8c65e0"
+}

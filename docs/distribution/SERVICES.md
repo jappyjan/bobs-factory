@@ -95,3 +95,12 @@ These worker/frontend updates do not replace the Electron shell or its package.
 The separate [complete-app updater](DESKTOP.md#complete-app-updates) implements
 shell replacement while retaining the worker. Signed macOS app activation and
 final-candidate native acceptance remain outstanding evidence gates.
+
+Runtime snapshots preserve links beneath `factory/evidence/` as exact filesystem
+link records, without following or copying their external targets. Retained test
+tooling can therefore point outside the home or at an expired temporary directory.
+The candidate's separate state-preflight copy omits these links so validation
+cannot read external tooling or credentials. Rollback restores their original
+link strings, including relative and dangling links. Linked configuration, saved
+state, the evidence root itself and special files remain refused; native auth
+stores are excluded from both copies.
