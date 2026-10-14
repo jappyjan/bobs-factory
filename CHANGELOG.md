@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Freeze the Today grouping test clock so equal-age run fixtures cannot reorder across a millisecond boundary in CI ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
 - Shut down operator integration test runtimes before deleting temporary homes, preventing final-save cleanup races; integrate question choices without losing bounded review convergence ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Reconcile bundled workflow ownership and update draining with bounded review convergence, preserving saved workflows and current launch contracts ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
