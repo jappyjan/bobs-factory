@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Document recovery for older desktop updaters that reject retained evidence links before they can activate the fixed runtime; preserve evidence, rollback snapshots and normal update safety checks ([#132](https://github.com/jappyjan/bobs-factory/pull/132)).
+
 - Prepare automatic updates while work continues, then pause new steps and slots, drain active work and resume queued tasks from saved progress after installation ([#131](https://github.com/jappyjan/bobs-factory/pull/131)).
 
 - Correct architecture keyboard QA to verify file paths and the separate full-plan disclosure independently, with completed headless evidence ([#83](https://github.com/jappyjan/bobs-factory/pull/83)).
