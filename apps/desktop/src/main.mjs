@@ -256,7 +256,7 @@ async function local() {
 		);
 		const child = spawn(
 			runtimeBinary,
-			["--home", home, "--port", String(port), "--no-open", "local"],
+			["--home", home, "--port", String(port), "--no-open"],
 			{
 				detached: true,
 				stdio: ["ignore", log, log],

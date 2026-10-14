@@ -1596,3 +1596,10 @@ export class CLIIssueTrackerService
 		return this.state;
 	}
 }
+
+/** Explicit fixture dependency for F1 and embedded tests. Production startup never calls this factory. */
+export function createCLIIssueTracker(): CLIIssueTrackerService {
+	const service = new CLIIssueTrackerService();
+	service.seedDefaultData();
+	return service;
+}

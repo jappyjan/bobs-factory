@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import type { MachineCapacity } from "../src/MachineCapacity.js";
@@ -22,7 +23,7 @@ function home() {
 
 function capacity(factoryHome: string, maxConcurrentSessions?: number) {
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome,
 		repositories: [],
 		maxConcurrentSessions,

@@ -8,7 +8,9 @@ description: Start a prepared Bob’s Factory installation in the foreground or 
 Run `bobs-factory` for guided local startup; it opens the browser directly to
 choose a project and available agent without passkey enrollment or login. Use `--no-open`
 for headless operation. An explicit launch uses `--repo REPOSITORY --agent AGENT`;
-configured integrations use `bobs-factory --home STATE_HOME start`. Confirm
+all launches use the same runtime and saved ticket-manager connections. Configure
+Linear and Taskbot in Settings → Ticket managers. Services start that same runtime
+without opening a browser; legacy mode metadata is ignored. Confirm
 the selected executable, service account, home and env-file before starting.
 Verify a single worker/coordinator, dashboard health and the intended repository.
 

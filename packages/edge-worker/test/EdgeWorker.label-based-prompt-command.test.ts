@@ -245,6 +245,7 @@ Issue: {{issue_identifier}}`;
 
 		// Inject mock issue tracker for the test repository
 		const mockIssueTracker = {
+			getPlatformType: vi.fn().mockReturnValue("linear"),
 			fetchComments: vi
 				.fn()
 				.mockResolvedValue({ nodes: [], pageInfo: { hasNextPage: false } }),

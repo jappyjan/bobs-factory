@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { OperatorGrants } from "../src/factory/OperatorGrants.js";
@@ -149,7 +150,7 @@ function operator(
 }
 function integrationWorker(home: string) {
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
 		repositories: [],
 		handlers: {
@@ -367,7 +368,7 @@ it("drains an authenticated configuration operation admitted before freeze throu
 it("fences reboot dispatch and preflight, then resumes pending receipts only after exact successful release", async () => {
 	const f = setup();
 	const worker = new EdgeWorker({
-		platform: "cli",
+		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: f.home,
 		repositories: [],
 		handlers: {

@@ -22,6 +22,7 @@ export interface LinearDeliveryOptions {
 	workspaceId?: string;
 	factoryHome?: string;
 	requestIntervalMs?: number;
+	isEnabled?: () => boolean;
 }
 
 type LinearRequestBinding = {
@@ -169,6 +170,12 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 				const binding = this.requestBinding;
 				const request = linearClient.client.request.bind(linearClient.client);
 				linearClient.client.request = (document, variables, headers) => {
+					if (deliveryOptions.isEnabled?.() === false)
+						return Promise.reject(
+							new Error(
+								"Linear ticket manager is disabled; ticket updates are retained",
+							),
+						);
 					const input = (
 						variables as
 							| { input?: { body?: string; content?: { type?: string } } }
@@ -187,10 +194,13 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 						...headersRecord(linearClient.options?.headers),
 						...headersRecord(headers),
 					};
-					return binding.budget.run(
-						() => request(document, variables, capturedHeaders),
-						priority,
-					);
+					return binding.budget.run(() => {
+						if (deliveryOptions.isEnabled?.() === false)
+							throw new Error(
+								"Linear ticket manager is disabled; ticket updates are retained",
+							);
+						return request(document, variables, capturedHeaders);
+					}, priority);
 				};
 			}
 		}
@@ -339,9 +349,9 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 			);
 		}
 
-		// Only patch if oauthConfig is provided AND linearClient.client exists
-		// (the .client property may not exist in test mocks)
-		if (oauthConfig && linearClient.client) {
+		// Install once so OAuth credentials can be supplied by live settings later.
+		// The .client property may not exist in test mocks.
+		if (linearClient.client) {
 			const client = linearClient.client;
 			const originalRequest = client.request.bind(client);
 
@@ -363,7 +373,8 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 				} catch (error) {
 					// Don't retry if this is already a retry attempt (prevents infinite loops)
 					// or if it's not a token expiration error
-					if (isRetry || !this.isTokenExpiredError(error)) throw error;
+					if (isRetry || !this.oauthConfig || !this.isTokenExpiredError(error))
+						throw error;
 
 					// Coalesce concurrent refresh attempts - everyone shares the same promise.
 					if (!this.refreshPromise) {
@@ -505,6 +516,16 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	private isTokenExpiredError(error: unknown): boolean {
 		const err = error as { status?: number; response?: { status?: number } };
 		return err?.status === 401 || err?.response?.status === 401;
+	}
+
+	/** Refresh connection configuration in place; retained delivery and native client identities survive edits. */
+	setOAuthConfig(config: LinearOAuthConfig | undefined): void {
+		this.oauthConfig = config;
+		if (config?.refreshToken)
+			LinearIssueTrackerService.workspaceRefreshTokens.set(
+				config.workspaceId,
+				config.refreshToken,
+			);
 	}
 
 	/**

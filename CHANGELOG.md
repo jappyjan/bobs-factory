@@ -83,6 +83,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Use one runtime for CLI, desktop and services, with live Linear and Taskbot configuration in Settings → Ticket managers. Preserve existing credentials and runs while removing startup modes that could silently disable Linear webhooks ([#133](https://github.com/jappyjan/bobs-factory/pull/133)).
+
 - Bundle standard workflows independently of model preferences. Add private Factory/Takeover forks, recoverable legacy migration, and disabling that interrupts work while preserving progress for individual Resume. Simple cannot be forked. Preserve existing delivery, operator recovery and older-run priority; recover interrupted backups and remove deleted-fork metadata. Save the selected chat model before execution and preserve it through the production runner factory on Resume. Retain current-main migration safety, source-publication safeguards, and direct localhost/IPv6 access during integration. Linear publication suppresses internal role/tool records, preserves native lifecycle events and keeps decision comments readable. ([#83](https://github.com/jappyjan/bobs-factory/pull/83); [Taskbot #129](https://taskbot.apps.janjaap.de/p/bobs-factory/t/129); [validation](apps/f1/test-drives/2026-10-10-workflow-catalog.md))
 - Move browser notification controls into Settings → Notifications alongside the push contact editor, while retaining device reconciliation across dashboard pages; validate the combined desktop and phone layouts with inspected screenshots ([#115](https://github.com/jappyjan/bobs-factory/pull/115)).
 

@@ -45,7 +45,8 @@ export interface ServiceRecord {
 	definition: string;
 	startup: boolean;
 	desired: "running" | "stopped" | "maintenance" | "resume";
-	mode: "start" | "local";
+	/** Retained for existing ownership receipts; startup no longer branches on this field. */
+	mode?: "start" | "local";
 	path: string;
 	dashboardPort?: number;
 	updateOwner?: InstallationProof;
@@ -164,7 +165,7 @@ export class ServiceLifecycle {
 			r.platform !== this.platform ||
 			r.definition !== this.definitionPath(id) ||
 			!isAbsolute(r.executable) ||
-			!["start", "local"].includes(r.mode) ||
+			(r.mode !== undefined && !["start", "local"].includes(r.mode)) ||
 			!["running", "stopped", "maintenance"].includes(r.desired) ||
 			typeof r.startup !== "boolean" ||
 			typeof r.path !== "string"
@@ -213,7 +214,7 @@ export class ServiceLifecycle {
 	}
 	install(
 		executable: string,
-		mode: "start" | "local" = "start",
+		_legacyMode: "start" | "local" = "start",
 		path = process.env.PATH ?? "/usr/bin:/bin",
 		dashboardPort = 3457,
 	) {
@@ -230,7 +231,6 @@ export class ServiceLifecycle {
 			if (
 				previous.desired !== "stopped" ||
 				previous.executable !== executable ||
-				previous.mode !== mode ||
 				previous.path !== path ||
 				(previous.dashboardPort ?? 3457) !== dashboardPort ||
 				workerOwner(this.home)
@@ -265,7 +265,6 @@ export class ServiceLifecycle {
 			definition: this.definitionPath(this.id()),
 			startup: false,
 			desired: "stopped",
-			mode,
 			path: safe(path),
 			dashboardPort,
 			updateOwner: installationProof(this.home, executable),

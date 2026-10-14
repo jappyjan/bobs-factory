@@ -371,3 +371,20 @@ describe("Zod schema + migration round-trip", () => {
 		});
 	});
 });
+
+// A guided/local launch used to persist this selector and suppress native Linear forever.
+it("discards a legacy startup platform while preserving native credentials and explicit manager policy", () => {
+	const native = {
+		repositories: [],
+		platform: "cli",
+		linearWorkspaces: { workspace: { linearToken: "native-token" } },
+		ticketManagers: { linear: { enabled: false } },
+	};
+	const migrated = migrateEdgeConfig(native);
+	expect(migrated).toEqual({
+		repositories: [],
+		linearWorkspaces: native.linearWorkspaces,
+		ticketManagers: native.ticketManagers,
+	});
+	expect(migrateEdgeConfig(migrated)).toBe(migrated);
+});
