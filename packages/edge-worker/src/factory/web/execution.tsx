@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAction } from "./client";
 import { useFormState } from "./form-state";
+import { HostGitIdentity, SshAgentField } from "./git-identity";
 import { revisionOf } from "./restoration";
 import { Button } from "./ui";
 
@@ -183,9 +184,11 @@ const newTools = () => ({
 function IdentityFields({
 	value,
 	change,
+	detected,
 }: {
 	value: any;
 	change: (v: any) => void;
+	detected: string[];
 }) {
 	const set = (key: string, v: any) => change({ ...value, [key]: v });
 	return (
@@ -257,7 +260,7 @@ function IdentityFields({
 				{["ssh", "openpgp"].includes(value.signing.format) && (
 					<>
 						{(value.signing.format === "ssh"
-							? ["key", "agent", "allowedSigners"]
+							? ["key", "allowedSigners"]
 							: ["home", "fingerprint"]
 						).map((key) => (
 							<Text
@@ -269,6 +272,20 @@ function IdentityFields({
 								}
 							/>
 						))}
+						{value.signing.format === "ssh" && (
+							<SshAgentField
+								socket={value.signing.agent}
+								detected={detected}
+								purpose="Signing"
+								scope={`signing/${value.id}/${value.revision}`}
+								onChange={(agent) =>
+									set("signing", {
+										...value.signing,
+										agent: agent || undefined,
+									})
+								}
+							/>
+						)}
 						{["commits", "tags"].map((key) => (
 							<label key={key}>
 								<input
@@ -348,30 +365,38 @@ function IdentityFields({
 								Use an explicit SSH key or agent for Git
 							</label>
 							{repo.ssh &&
-								[
-									"alias",
-									"hostname",
-									"user",
-									"key",
-									"knownHosts",
-									"agent",
-									"port",
-								].map((key) => (
-									<Text
-										key={key}
-										label={key}
-										value={String(repo.ssh[key] ?? "")}
-										change={(v) =>
-											update({
-												...repo,
-												ssh: {
-													...repo.ssh,
-													[key]: key === "port" ? Number(v) : v || undefined,
-												},
-											})
-										}
-									/>
-								))}
+								["alias", "hostname", "user", "key", "knownHosts", "port"].map(
+									(key) => (
+										<Text
+											key={key}
+											label={key}
+											value={String(repo.ssh[key] ?? "")}
+											change={(v) =>
+												update({
+													...repo,
+													ssh: {
+														...repo.ssh,
+														[key]: key === "port" ? Number(v) : v || undefined,
+													},
+												})
+											}
+										/>
+									),
+								)}
+							{repo.ssh && (
+								<SshAgentField
+									socket={repo.ssh.agent}
+									detected={detected}
+									purpose={`Git account ${index + 1}`}
+									scope={`repository/${value.id}/${value.revision}/${index}`}
+									onChange={(agent) =>
+										update({
+											...repo,
+											ssh: { ...repo.ssh, agent: agent || undefined },
+										})
+									}
+								/>
+							)}
 							<Button
 								onClick={() =>
 									set(
@@ -947,6 +972,7 @@ export function ExecutionEditor({
 				named stores. This controls normal configuration discovery; existing
 				sandbox controls still apply.
 			</p>
+			{page === "identities" && <HostGitIdentity config={config} />}
 			{config.executionConsumers?.length > 0 && (
 				<p>
 					Active or resumable consumers:{" "}
@@ -1040,7 +1066,9 @@ export function ExecutionEditor({
 					/>
 					{editing.kind === "identities" ? (
 						<IdentityFields
+							key={editing.index}
 							value={selected}
+							detected={config.gitSettings?.detected ?? []}
 							change={(v) =>
 								update({
 									...profiles,

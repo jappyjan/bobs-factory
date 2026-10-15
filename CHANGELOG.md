@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Configure the host Git identity’s SSH agent in Settings → Identity profiles, test password-manager key availability and retry failed signing without restarting Factory; preserve explicit execution bindings and native signing policy. ([#136](https://github.com/jappyjan/bobs-factory/pull/136))
+
 - Integrate API-key dashboard access with bounded review convergence, preserving impact evidence, protected reader progress and complete routing-prompt checks ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
 
 - Freeze the Today grouping test clock so equal-age run fixtures cannot reorder across a millisecond boundary in CI ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).

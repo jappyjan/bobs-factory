@@ -11,6 +11,11 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GitService } from "../src/GitService.js";
 
+// These command-shape tests model host execution without saved instance settings.
+vi.mock("../src/factory/GitSettings.js", () => ({
+	gitAgentEnvironment: () => ({}),
+}));
+
 vi.mock("node:child_process", () => ({
 	execSync: vi.fn(),
 	spawn: vi.fn(),

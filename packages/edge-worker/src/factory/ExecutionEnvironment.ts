@@ -31,6 +31,7 @@ import type {
 import { executionSettings } from "./ExecutionSettings.js";
 import { allowGithubHelperExecutable } from "./GithubApi.js";
 import { githubAppBinding } from "./GithubAppBinding.js";
+import { gitAgentEnvironment } from "./GitSettings.js";
 
 export interface ResolvedExecutionEnvironment {
 	/** Private provider bindings. Never serialize into runs, API responses or receipts. */
@@ -707,8 +708,10 @@ export class ExecutionEnvironmentResolver {
 			const policy = identity.signing;
 			if (policy.format === "share") {
 				env.GNUPGHOME = this.host.GNUPGHOME ?? join(this.hostHome, ".gnupg");
-				if (this.host.SSH_AUTH_SOCK)
-					env.SSH_AUTH_SOCK = this.host.SSH_AUTH_SOCK;
+				const socket =
+					gitAgentEnvironment(dirname(this.directory)).SSH_AUTH_SOCK ??
+					this.host.SSH_AUTH_SOCK;
+				if (socket) env.SSH_AUTH_SOCK = socket;
 				for (const key of [
 					"commit.gpgsign",
 					"tag.gpgsign",
