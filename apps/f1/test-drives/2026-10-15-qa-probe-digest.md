@@ -43,3 +43,18 @@ omitted required capture fields and was corrected before the passing drive.
 
 This validates mocked orchestration and probe identity, without claiming browser
 QA, native provider execution, deployment or recovery of the live run.
+
+## Nightly payload assessment
+
+PR [#139](https://github.com/jappyjan/bobs-factory/pull/139) was rebased onto
+`44832ee7`, the exact source of the previous published nightly
+`v1.0.0-nightly.20261015.38774231819`. The complete payload since that release is
+this QA digest correction, its scope instructions, regression and documentation;
+there are no dependency, native runtime, license or migration changes.
+
+The same three-scenario drive passed again on rebased fix commit `11d328e` using
+`F1_AGENT_MODE=mock bun run /tmp/bobs-factory-qa-probe-f1.ts`; receipts are in
+`/tmp/bobs-factory-qa-probe-f1-rebased.log`. Repository build and typecheck hooks
+also passed after rebasing. This covers the changed capture workflow; the nightly
+pipeline still requires fresh candidate-bound native/desktop validation and its
+current full-payload mocked checks before publication.
