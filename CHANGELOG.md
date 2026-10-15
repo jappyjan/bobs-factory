@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
 
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
+- Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
 - Configure the host Git identity’s SSH agent in Settings → Identity profiles, test password-manager key availability and retry failed signing without restarting Factory; preserve explicit execution bindings and native signing policy. ([#136](https://github.com/jappyjan/bobs-factory/pull/136))
 
 - Integrate API-key dashboard access with bounded review convergence, preserving impact evidence, protected reader progress and complete routing-prompt checks ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
