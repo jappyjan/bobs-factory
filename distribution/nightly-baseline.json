@@ -59,5 +59,26 @@
 	"publishedSource": {
 		"tag": "v1.0.0-nightly.20261013.38342264204",
 		"manifestSha256": "d44bef0c2beeb4879057d3e9d5ab2ad3159a339f5731aa3b64d17f900da44959"
-	}
+	},
+	"dependencyReviews": [
+		{
+			"schemaVersion": 1,
+			"baselineCommit": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+			"commit": "d318160c58f6489f32856019c17ab3c97fa9ae7b",
+			"reviewedBy": "Codex release repair, 2026-10-15: independent review of the merged API-key migration dependency delta",
+			"scope": "Removal-only dependency declarations and lock records; all remaining dependency versions/integrities, workspace policy, native runtime/object/source inputs and maintained licenses/notices are unchanged. The accepted source material remains a complete superset; no new dependency source, license or relink review is claimed.",
+			"files": [
+				{
+					"file": "packages/edge-worker/package.json",
+					"beforeSha256": "f7dcd5628b713f32a8f0fc0abe3810b448bf862790dd51d42c702449275e46d2",
+					"afterSha256": "d0034e6c632f09b077486434cbbc9cfb0a4020cae4e30d2a8c4d612cd0462e04"
+				},
+				{
+					"file": "pnpm-lock.yaml",
+					"beforeSha256": "db1e25c863dc8bfa2bc865b19854280292fbcb819b568080b52b8b935a1f3c84",
+					"afterSha256": "fa0f8336de4e69485bfbcdb37fc51b6793e62f6e8291686b4d77e91434b5fd1a"
+				}
+			]
+		}
+	]
 }

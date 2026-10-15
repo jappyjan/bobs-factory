@@ -40,13 +40,25 @@ recovers accepted member bytes from a durable published container; it does not
 recreate or relabel the expired original tar/gzip container or accept new review
 claims. The acceptance text and historical limitations remain unchanged.
 
-The accepted baseline commit must be an ancestor of current main. All package
+The accepted baseline commit must be an ancestor of current main. Except for exact reviewed removal coverage below, all package
 dependency and license declarations, lockfile, workspace policy, maintained
 runtime notices, desktop LICENSE/NOTICE and the shipped npm launcher LICENSE
 must remain unchanged. App and package version changes are allowed; changed
 Bun, Electron, dependency or license inputs still require independently reviewed
-source material and a reviewed update to this committed bootstrap. The pinned
-release must remain retained; deleting or changing it blocks publication.
+source material and a reviewed update to this committed bootstrap. Exact
+removal-only dependency changes may instead have a committed `dependencyReviews`
+entry: it binds the accepted baseline and reviewed ancestor commit, reviewer,
+source-coverage scope, and before/after SHA-256 of each complete changed input.
+Only package declarations and the lockfile are eligible. Reuse requires only
+deletions, unchanged remaining dependency declarations, and exact reviewed bytes;
+new dependencies, changed versions/integrities, licenses, workspace policy and
+unreviewed changes still fail. The original source/receipt baseline stays sealed,
+and each applied removal review is retained in nightly provenance. This covers
+the API-key migration's removed WebAuthn packages without a new source, object,
+relink or legal-review claim. Dependency coverage is checked before downloading
+the retained source archive.
+
+The pinned release must remain retained; deleting or changing it blocks publication.
 
 Consumers only download the ordinary release binary or desktop installer. These
 source and validation assets are publisher inputs, not custom installation

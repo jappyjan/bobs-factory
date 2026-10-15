@@ -185,23 +185,45 @@ const tlsRequest = (
 					headers: {
 						origin: remote,
 						"x-factory-request": "1",
-						"content-type": "application/json",
+						...(body === undefined
+							? {}
+							: {
+									"content-type": "application/json",
+									"content-length": Buffer.byteLength(
+										raw ? String(body) : JSON.stringify(body),
+									),
+								}),
 						...(cookie ? { cookie } : {}),
 					},
 				},
 				(res) => {
 					const chunks: Buffer[] = [];
+					res.on("error", reject);
 					res.on("data", (chunk) => chunks.push(chunk));
-					res.on("end", () =>
-						resolve({
-							status: res.statusCode!,
-							value: JSON.parse(Buffer.concat(chunks).toString()),
-							cookie: res.headers["set-cookie"]?.[0]?.split(";")[0],
-						}),
-					);
+					res.on("end", () => {
+						try {
+							resolve({
+								status: res.statusCode!,
+								value: JSON.parse(Buffer.concat(chunks).toString()),
+								cookie: res.headers["set-cookie"]?.[0]?.split(";")[0],
+							});
+						} catch (error) {
+							reject(
+								new Error(
+									`Invalid JSON from ${method} ${path}: HTTP ${res.statusCode}`,
+									{ cause: error },
+								),
+							);
+						}
+					});
 				},
 			);
 			req.on("error", reject);
+			req.setTimeout(5000, () =>
+				req.destroy(
+					new Error(`HTTPS fixture request timed out: ${method} ${path}`),
+				),
+			);
 			req.end(
 				body === undefined
 					? undefined

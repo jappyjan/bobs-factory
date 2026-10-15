@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createCLIIssueTracker } from "bobs-factory-core";
 import { EdgeWorker } from "../../../../../packages/edge-worker/src/EdgeWorker.ts";
 import { WorkflowRuntime } from "../../../../../packages/edge-worker/src/factory/WorkflowRuntime.ts";
 import { proposal } from "../../../../../packages/edge-worker/test/fixtures/architecture.ts";
@@ -45,7 +46,7 @@ const versioned = () => {
 	return p;
 };
 const worker: any = new EdgeWorker({
-	platform: "cli",
+	issueTrackerFactory: createCLIIssueTracker,
 	factoryHome: home,
 	serverPort: 3991,
 	serverHost: "localhost",

@@ -114,7 +114,12 @@ jobs:
           node apps/f1/test-drives/assets/update-maintenance.mjs > "$RUNNER_TEMP/nightly-checks/update-maintenance.log" 2>&1
           bun run apps/f1/test-drives/assets/desktop-service-lifecycle.mjs > "$RUNNER_TEMP/nightly-checks/desktop-service-lifecycle.log" 2>&1
           node apps/f1/test-drives/assets/desktop-shell-update.mjs > "$RUNNER_TEMP/nightly-checks/desktop-shell-update.log" 2>&1
-          bun run apps/f1/test-drives/assets/localhost-noauth.ts > "$RUNNER_TEMP/nightly-checks/localhost-noauth.log" 2>&1
+      - name: Validate localhost access and remote API-key lifecycle
+        timeout-minutes: 2
+        run: bun run apps/f1/test-drives/assets/localhost-noauth.ts > "$RUNNER_TEMP/nightly-checks/localhost-noauth.log" 2>&1
+      - name: Validate mocked Linear delivery and architecture
+        timeout-minutes: 5
+        run: |
           pnpm --filter bobs-factory-core exec tsx "$PWD/apps/f1/test-drives/assets/linear-publication-101.ts" > "$RUNNER_TEMP/nightly-checks/linear-delivery.log" 2>&1
           BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY=$(mktemp -d) bun run apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/f1-drive.ts > "$RUNNER_TEMP/nightly-checks/architecture.log" 2>&1
       - name: Record only completed current checks

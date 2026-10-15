@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
 	mkdirSync,
 	mkdtempSync,
@@ -385,5 +386,114 @@ test("published source recovers exact accepted members without the expired archi
 		);
 	} finally {
 		rmSync(work, { recursive: true, force: true });
+	}
+});
+
+test("only reviewed exact removal-only dependency inputs may reuse the accepted source superset", () => {
+	const root = mkdtempSync(join(tmpdir(), "factory-reviewed-removal-"));
+	try {
+		const git = (...args) =>
+			execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
+		git("init", "-q");
+		git("config", "user.name", "Controlled review fixture");
+		git("config", "user.email", "fixture@example.invalid");
+		const manifest = {
+			license: "Apache-2.0",
+			dependencies: { removed: "2.0.0", retained: "1.0.0" },
+		};
+		const writeManifest = (value) =>
+			writeFileSync(
+				join(root, "package.json"),
+				`${JSON.stringify(value, null, 2)}\n`,
+			);
+		const lock =
+			"lockfileVersion: '9.0'\npackages:\n  retained@1.0.0: {}\n  removed@2.0.0: {}\n";
+		writeManifest(manifest);
+		writeFileSync(join(root, "pnpm-lock.yaml"), lock);
+		const commit = () => {
+			git("add", ".");
+			git("commit", "-qm", "Controlled input revision");
+			return git("rev-parse", "HEAD");
+		};
+		const baseline = commit();
+		writeManifest({ ...manifest, dependencies: { retained: "1.0.0" } });
+		writeFileSync(
+			join(root, "pnpm-lock.yaml"),
+			lock.replace("  removed@2.0.0: {}\n", ""),
+		);
+		const reduced = commit();
+		const review = (revision) => ({
+			schemaVersion: 1,
+			baselineCommit: baseline,
+			commit: revision,
+			reviewedBy: "Controlled independent source-coverage review",
+			scope:
+				"Removed dependency source remains in the accepted superset; no new sources or notices",
+			files: ["package.json", "pnpm-lock.yaml"].map((file) => ({
+				file,
+				beforeSha256: createHash("sha256")
+					.update(
+						execFileSync("git", ["show", `${baseline}:${file}`], { cwd: root }),
+					)
+					.digest("hex"),
+				afterSha256: createHash("sha256")
+					.update(
+						execFileSync("git", ["show", `${revision}:${file}`], { cwd: root }),
+					)
+					.digest("hex"),
+			})),
+		});
+		const accepted = review(reduced);
+		assert.throws(
+			() => verifyDependencyBaseline(root, baseline, reduced),
+			/Uncovered dependency/,
+		);
+		assert.equal(
+			verifyDependencyBaseline(root, baseline, reduced, [accepted]).length,
+			2,
+		);
+		assert.throws(
+			() =>
+				verifyDependencyBaseline(root, baseline, reduced, [
+					{ ...accepted, reviewedBy: "" },
+				]),
+			/Uncovered dependency/,
+		);
+		assert.throws(
+			() =>
+				verifyDependencyBaseline(root, baseline, reduced, [
+					{ ...accepted, baselineCommit: reduced },
+				]),
+			/Uncovered dependency/,
+		);
+		writeManifest({ ...manifest, dependencies: { retained: "1.1.0" } });
+		const changed = commit();
+		assert.throws(
+			() => verifyDependencyBaseline(root, baseline, changed, [accepted]),
+			/Uncovered dependency/,
+		);
+		assert.throws(
+			() =>
+				verifyDependencyBaseline(root, baseline, changed, [review(changed)]),
+			/Uncovered dependency/,
+		);
+		writeManifest({ dependencies: { retained: "1.0.0" } });
+		const licenseRemoved = commit();
+		assert.throws(
+			() =>
+				verifyDependencyBaseline(root, baseline, licenseRemoved, [
+					review(licenseRemoved),
+				]),
+			/Uncovered dependency/,
+		);
+		writeManifest({ ...manifest, dependencies: { retained: "1.0.0" } });
+		writeFileSync(join(root, "pnpm-lock.yaml"), `${lock}  new@1.0.0: {}\n`);
+		const extra = commit();
+		assert.throws(
+			() => verifyDependencyBaseline(root, baseline, extra, [review(extra)]),
+			/Uncovered dependency/,
+		);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
 	}
 });
