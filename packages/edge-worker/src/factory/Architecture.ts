@@ -8,17 +8,46 @@ import {
 } from "node:fs";
 import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { z } from "zod";
+import {
+	type ArchitectureFootprint,
+	type ArchitectureRepository,
+	architectureFootprint,
+} from "./ArchitectureFootprint.js";
 
 const text = z.string().trim().min(1);
 const short = (max: number) => text.max(max);
+const EvidenceSchema = z
+	.object({
+		repository: text,
+		paths: z.array(text).min(1),
+		observation: short(320),
+	})
+	.strict();
+export const PlannedFileSchema = z
+	.object({
+		path: short(400),
+		change: z.enum(["new", "edit", "delete"]),
+		/** Required when a relative path could belong to more than one repository. */
+		repository: short(120).optional(),
+	})
+	.strict();
+const TraceSchema = z.union([
+	z.object({ criterion: short(60) }).strict(),
+	z.object({ added: short(320) }).strict(),
+]);
 export const CandidatePlanSchema = z.object({
 	plan: text,
-	/** Short, plain step titles shown to the human; the full plan stays in `plan`. */
+	/** Legacy steps stay readable; review-v1 proposals require the richer fields. */
 	steps: z
 		.array(
 			z.object({
+				id: short(60).optional(),
 				title: short(120),
-				files: z.array(short(200)).max(8),
+				what: short(480).optional(),
+				kind: z.enum(["code", "test", "docs", "config"]).optional(),
+				size: z.enum(["S", "M", "L"]).optional(),
+				traces: z.array(TraceSchema).min(1).max(30).optional(),
+				files: z.array(z.union([short(400), PlannedFileSchema])).max(40),
 			}),
 		)
 		.min(1)
@@ -86,6 +115,31 @@ export const ArchitectureSchema = z
 		rationale: text,
 		title: short(80),
 		summary: short(320),
+		/** Absent on saved proposals generated before the review brief. */
+		briefVersion: z.literal(1).optional(),
+		problem: z.array(EvidenceSchema).min(1).max(3).optional(),
+		criteria: z
+			.array(
+				z
+					.object({
+						id: short(60),
+						text: short(1200),
+						source: short(240),
+						url: z
+							.string()
+							.url()
+							.regex(/^https?:\/\//)
+							.optional(),
+						status: z.enum(["covered", "partial", "deferred"]),
+						reason: short(480),
+					})
+					.strict(),
+			)
+			.min(1)
+			.max(40)
+			.optional(),
+		nonGoals: z.array(short(320)).max(12).optional(),
+		acceptance: z.array(short(480)).min(1).max(12).optional(),
 		/** What changed since the previous version and who asked for it. */
 		changes: z
 			.array(
@@ -95,18 +149,7 @@ export const ArchitectureSchema = z
 			.default([]),
 		decisions: z.array(DecisionSchema).max(6),
 		map: ArchitectureMapSchema.optional(),
-		evidence: z
-			.array(
-				z
-					.object({
-						repository: text,
-						paths: z.array(text).min(1),
-						observation: short(240),
-					})
-					.strict(),
-			)
-			.min(1)
-			.max(6),
+		evidence: z.array(EvidenceSchema).min(1).max(6),
 		risks: z.array(short(240)).max(6),
 		candidate: CandidatePlanSchema,
 	})
@@ -114,6 +157,63 @@ export const ArchitectureSchema = z
 	.superRefine((proposal, ctx) => {
 		const issue = (path: (string | number)[], message: string) =>
 			ctx.addIssue({ code: "custom", path, message });
+		if (proposal.briefVersion === 1) {
+			for (const key of [
+				"problem",
+				"criteria",
+				"nonGoals",
+				"acceptance",
+			] as const)
+				if (!proposal[key]) issue([key], `The review brief requires ${key}`);
+			const criteria = proposal.criteria ?? [];
+			const ids = new Set(criteria.map((c) => c.id));
+			if (ids.size !== criteria.length)
+				issue(["criteria"], "Criterion IDs must be unique");
+			const stepIds = new Set<string>();
+			for (const [i, step] of proposal.candidate.steps.entries()) {
+				for (const key of ["id", "what", "kind", "size", "traces"] as const)
+					if (!step[key])
+						issue(
+							["candidate", "steps", i, key],
+							`A deliverable requires ${key}`,
+						);
+				if (step.id && stepIds.has(step.id))
+					issue(
+						["candidate", "steps", i, "id"],
+						"Deliverable IDs must be unique",
+					);
+				if (step.id) stepIds.add(step.id);
+				for (const [j, file] of step.files.entries())
+					if (typeof file === "string")
+						issue(
+							["candidate", "steps", i, "files", j],
+							"Declare the path and new, edit or delete operation",
+						);
+				for (const [j, trace] of (step.traces ?? []).entries())
+					if ("criterion" in trace && !ids.has(trace.criterion))
+						issue(
+							["candidate", "steps", i, "traces", j],
+							"Trace must reference a listed criterion",
+						);
+			}
+			for (const [i, criterion] of criteria.entries()) {
+				const linked = proposal.candidate.steps.some((s) =>
+					s.traces?.some(
+						(t) => "criterion" in t && t.criterion === criterion.id,
+					),
+				);
+				if (criterion.status !== "deferred" && !linked)
+					issue(
+						["criteria", i],
+						"Covered or partial criteria require a linked deliverable",
+					);
+				if (criterion.status === "deferred" && linked)
+					issue(
+						["criteria", i],
+						"Deferred criteria cannot claim implementation deliverables; use partial for preparation work",
+					);
+			}
+		}
 		if (proposal.classification === "meaningful") {
 			if (!proposal.map)
 				issue(["map"], "Meaningful choices require a map of what changes");
@@ -188,6 +288,13 @@ export const ArchitectureSchema = z
 					);
 			}
 	});
+/** Only newly opted-in steps require the richer brief. */
+export function assertReviewBrief(content: Architecture): void {
+	if (content.briefVersion !== 1)
+		throw new Error(
+			"This architecture step requires briefVersion=1 and a complete review brief",
+		);
+}
 /** A new version must tell the human what changed since the previous one. */
 export function assertRevisionChanges(
 	content: Architecture,
@@ -223,6 +330,8 @@ export interface ArchitectureProposal {
 		| "superseded"
 		| "routine";
 	content: Architecture;
+	/** Runtime-derived review evidence; absent on historical proposals. */
+	footprint?: ArchitectureFootprint;
 	assetDigests: { path: string; digest: string }[];
 	feedback: {
 		kind: "revise" | "discuss" | "explain" | "explanation";
@@ -254,6 +363,7 @@ export function proposalDigest(proposal: ArchitectureProposal): string {
 	return architectureDigest({
 		content: proposal.content,
 		assets: proposal.assetDigests,
+		...(proposal.footprint ? { footprint: proposal.footprint } : {}),
 	});
 }
 export function verifyProposal(proposal: ArchitectureProposal): void {
@@ -273,8 +383,10 @@ export async function snapshotProposal(
 	directory: string,
 	signal: AbortSignal,
 	allowedDirectories: readonly string[] = [directory],
+	repositories: readonly ArchitectureRepository[] = [],
 ): Promise<ArchitectureProposal> {
 	const content = ArchitectureSchema.parse(value);
+	const footprint = architectureFootprint(content, repositories);
 	const id = randomUUID();
 	const assetDigests: ArchitectureProposal["assetDigests"] = [];
 	const snapshots = new Map<string, string>();
@@ -344,6 +456,8 @@ export async function snapshotProposal(
 		return `- ${d.question} ${picked ? `Chosen by ${d.decidedBy === "you" ? "the human" : "Bob"}: ${picked.name}. ${picked.upside} Trade-off: ${picked.catch}` : "OPEN"}${others ? ` Not chosen: ${others}.` : ""}`;
 	};
 	content.candidate.plan += `\n\n## Architecture proposal ${id} (version ${version})\n\n${content.title}\n\n${content.summary}\n\nClassification: ${content.classification}\n\nRationale: ${content.rationale}\n\nDecisions:\n${content.decisions.map(choice).join("\n") || "None"}\n\nRepository evidence:\n${content.evidence.map((x) => `- ${x.repository}: ${x.paths.join(", ")}. ${x.observation}`).join("\n")}\n\nRisks:\n${content.risks.map((x) => `- ${x}`).join("\n") || "None"}\n\n${content.map ? `What changes:\n${content.map.parts.map((x) => `- ${x.label} (${x.status}${x.file ? `, ${x.file}` : ""}): ${x.detail}`).join("\n")}\n\nConnections: ${content.map.links.map((x) => `${x.from} -> ${x.to}${x.label ? ` (${x.label})` : ""}`).join("; ")}` : ""}`;
+	if (content.briefVersion)
+		content.candidate.plan += `\n\n## Accepted review brief\n${JSON.stringify({ problem: content.problem, criteria: content.criteria, deliverables: content.candidate.steps, nonGoals: content.nonGoals, acceptance: content.acceptance })}\n\nPlanned footprint (declared paths, not an implemented diff):\n${JSON.stringify(footprint)}`;
 	if (snapshots.size) {
 		const references = [...snapshots.keys()].sort(
 			(a, b) => b.length - a.length,
@@ -367,6 +481,7 @@ export async function snapshotProposal(
 		source,
 		status: "proposed",
 		content,
+		footprint,
 		assetDigests,
 		feedback: [],
 		at: new Date().toISOString(),
@@ -376,8 +491,11 @@ export async function snapshotProposal(
 }
 export const architectureInstructions = `Inspect the selected repositories, actual module boundaries and conventions, all requirements, comments, answers and decisions, the draft plan and prior candidate-review feedback. Preserve Takeover's completed work, PR URL and branch. Propose the smallest adequate design; do not implement or invent human acceptance. Routine unsplit changes using established patterns may bypass architecture approval with a concrete rationale; meaningful responsibilities, boundaries, interfaces or trade-offs require human acceptance.
 
-Write for a busy human reader. Use short sentences and everyday words. Keep code identifiers, file paths and jargon out of title, summary, questions, option text, map labels and risks; put paths only in "file", "paths" and "files". One idea per item.
+The human must understand the problem, each concrete change, its scope and coverage without opening code or the folded full plan. Write short sentences in everyday words. Keep paths in file/path/paths/files fields. Use concrete quantities, limits and observable behavior where they matter; do not replace substance with benefit statements. The summary states the current gap, the proposed change and its scope boundary. Risks are product/technical consequences; ticket synchronization and workflow status belong to run status, not risks. Character limits: findings and nonGoals 320 each; criterion text 1200; criterion reason, deliverable what and acceptance check 480 each; added-work reason 320; deliverable title and decision question 120; IDs and option name 60; option upside/catch 160; decision why, map detail and risks 240; map label 40 and note 50; file paths 400. Put further detail in the full plan while keeping every substantive deliverable visible in the brief.
 
-Return ONLY architecture-v1: {"architectureContract":"architecture-v1","classification":"meaningful or routine","rationale":"concrete reason for the classification","title":"plain title, max 80 chars","summary":"1-2 plain sentences: what changes for users","changes":[{"text":"what changed since the previous version","from":"you if the human asked for it, bob if you added it"}],"decisions":[{"id":"storage","question":"plain question","why":"required when open: why the human must answer","status":"decided or open","pick":"option id, only when decided","decidedBy":"bob, or you when the human chose it","options":[{"id":"a","name":"short option name","upside":"one plain sentence","catch":"one plain sentence","preview":{"parts":[map parts this option adds],"links":[links],"hide":["map part ids this option removes"]}}]}],"map":{"areas":[{"id":"area","name":"Area name"}],"parts":[{"id":"part","label":"short name","note":"few words, e.g. learns about Jira","detail":"one plain sentence about what it does","file":"optional path","area":"area","status":"new or changed or unchanged or outside"}],"links":[{"from":"part","to":"part","label":"optional 1-2 words"}]},"evidence":[{"repository":"selected repo","paths":["actual inspected path"],"observation":"one plain sentence on why the design fits"}],"risks":["one plain sentence each"],"candidate":{"plan":"COMPLETE self-contained implementation plan incorporating this architecture, every accepted requirement/decision, repository/base/delivery targets, original Takeover PR/work and validation expectations","steps":[{"title":"short plain step","files":["paths"]}],"assets":[{"path":"absolute path or HTTP URL","purpose":"..."}]}}.
+Return ONLY architecture-v1 with briefVersion=1:
+{"architectureContract":"architecture-v1","briefVersion":1,"classification":"meaningful or routine","rationale":"concrete classification reason","title":"plain title, max 80 chars","summary":"Current gap. This adds specific behavior within a clear scope (max 320 chars).","problem":[{"repository":"selected repo","paths":["inspected existing file"],"observation":"concrete current behavior or missing capability; 1-3 findings, no invented defects"}],"criteria":[{"id":"AC1","text":"complete original criterion text","source":"ticket identifier and criterion number, or user requirement","url":"optional actual source HTTP URL","status":"covered or partial or deferred","reason":"which work addresses it, or precisely what remains and why"}],"nonGoals":["specific excluded work or explicit follow-up boundary"],"acceptance":["observable check, conditions and passing result"],"changes":[{"text":"what changed since the previous version","from":"you if requested by human, bob if added"}],"decisions":[{"id":"storage","question":"plain question","why":"required when open: why the human must answer","status":"decided or open","pick":"option id, only when decided","decidedBy":"bob, or you when the human chose it","options":[{"id":"a","name":"concrete option","upside":"specific behavior and quantities where relevant","catch":"concrete cost or limitation","preview":{"parts":[map parts this option adds],"links":[links],"hide":["map part ids this option removes"]}}]}],"map":{"areas":[{"id":"area","name":"Area name"}],"parts":[{"id":"part","label":"short name","note":"few words","detail":"plain sentence about what it does","file":"optional repo-relative path","area":"area","status":"new or changed or unchanged or outside"}],"links":[{"from":"part","to":"part","label":"optional 1-2 words"}]},"evidence":[{"repository":"selected repo","paths":["actual inspected path"],"observation":"why this design fits the existing architecture"}],"risks":["one concrete product/technical consequence each"],"candidate":{"plan":"COMPLETE self-contained implementation plan incorporating every accepted requirement/decision, repository/base/delivery targets, inherited Takeover PR/work and validation expectations","steps":[{"id":"D1","title":"concrete deliverable","what":"what gets built and observable before/after behavior; include substantive test duration, identities, failure cases or document deliverables","kind":"code or test or docs or config","size":"S or M or L, a relative estimate","traces":[{"criterion":"AC1"}],"files":[{"path":"complete repo-relative file path","change":"new or edit or delete","repository":"selected repo id; required for grouped repositories"}]}],"assets":[{"path":"absolute path or HTTP URL","purpose":"..."}]}}.
 
-Meaningful proposals need a map and at least one decision. Show every real choice as a decision with 2-4 options; decide it yourself when the repository or requirements settle it, and mark it open only when the answer depends on the human (team habits, product scope, cost). Open decisions block approval until the human answers. Keep the map to the parts a reader needs (up to 4 areas, mark parts that stay the same as unchanged). Add an option preview when the alternative would change the map. On a new version, list every change in "changes" and set decidedBy "you" for decisions the human settled. Routine outputs may omit map and decisions. Never return approval fields. Include every detail the implementer needs in candidate; it will receive only the accepted plan/assets. Read architectureProposals and architectureDecisions for feedback; explanation requests are not authorization. Independent child delivery is separate future work, not executable scheduling here.`;
+List EVERY original acceptance criterion, including independent/external/hardware checks that this PR cannot complete; preserve its meaning and source. If no explicit criteria exist, derive clearly sourced requirements from the request. Coverage describes what this plan will deliver, not completed test evidence. Partial means useful preparation with an explicitly remaining part; deferred has no implementation deliverable. Link covered/partial criteria through step.traces. Every step needs a trace: use {"criterion":"AC1"} for requested work or {"added":"concrete necessity and why this was not explicitly requested"} for Bob-added work. Never hide extras behind unrelated criteria. List complete planned file changes (including tests, docs, configuration and cross-plugin work), not representative files or directories. Conditional edits also need declared files and an explicit trigger; otherwise require a revised proposal before expanding scope. Reuse a file across steps when necessary. Do not invent files or add UI/screenshots for a backend-only task without an explicit reason. State the number and subject of runbooks or documents, not just 'update docs'. For limits chosen through measurement, show the selection rule and known starting constraints in the brief; do not leave them only in the full plan or invent measured values. Include 3-6 meaningful acceptance checks where appropriate, with measurable passing outcomes; never claim future physical tests or independent review have passed. Keep exclusions in nonGoals. Do not defer mandatory baseline security if the request makes it a prerequisite.
+
+Meaningful proposals need a map and at least one decision. Show every real choice with 2-4 concrete options; decide it yourself when repository evidence or requirements settle it, and mark it open only for human-dependent habits, scope or cost. Open decisions block approval. Keep the map to relevant parts (up to 4 areas); unchanged parts cannot also be listed for file changes. Add an option preview when it changes the map. On a new version, list every change and set decidedBy=you for human-settled decisions. Routine outputs may omit map and decisions but still require the review brief. Never return footprint/counts or approval fields; the runtime computes footprint from listed files and actual repository boundaries. Include all implementation details in candidate; the implementer receives only the accepted plan/assets. Read architectureProposals and architectureDecisions for feedback; explanation requests are not authorization. Independent child delivery is separate future work, not executable scheduling here.`;

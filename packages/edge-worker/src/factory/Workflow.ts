@@ -42,6 +42,8 @@ export const AgentStepSchema = z.object({
 	architectureContract: z
 		.enum(["architecture-v1", "architecture-review-v1"])
 		.optional(),
+	/** New stock proposals require the reviewer-facing brief; frozen graphs retain their contract. */
+	architectureBrief: z.literal("review-v1").optional(),
 	reviewContract: z
 		.enum(["inventory-v1", "specialist-v1", "coverage-v1"])
 		.optional(),
@@ -73,6 +75,7 @@ export interface WorkflowStep {
 	impact?: { inventory: string; fanout: string; maxUnchangedCycles: number };
 	architectureSource?: string;
 	architectureContract?: "architecture-v1" | "architecture-review-v1";
+	architectureBrief?: "review-v1";
 	reviewContract?: "inventory-v1" | "specialist-v1" | "coverage-v1";
 	guideContract?: "brief-v1";
 	prompt?: string;
@@ -254,6 +257,13 @@ export function validateWorkflows(value: unknown): Workflow[] {
 					if (target && target !== "end" && !names.has(target))
 						throw new Error(`Unknown step: ${target}`);
 				}
+				if (
+					step.architectureBrief &&
+					step.architectureContract !== "architecture-v1"
+				)
+					throw new Error(
+						"Architecture briefs require an architecture proposal role",
+					);
 				if (
 					step.architectureContract &&
 					(step.type !== "agent" || step.json === false)

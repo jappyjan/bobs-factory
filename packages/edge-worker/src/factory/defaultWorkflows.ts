@@ -279,13 +279,14 @@ implementationStep.prompt +=
 const architectureSteps = [
 	agent("architecture", "Discuss architecture", architectureInstructions, {
 		architectureContract: "architecture-v1",
+		architectureBrief: "review-v1",
 	}),
 	{
 		...oldPlanReview,
 		id: "architecture-review",
 		name: "Review architecture candidate",
 		prompt:
-			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Assess repository evidence, decisions and their options, the map, plain-language readability, the short plan steps and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
+			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Require briefVersion=1, concrete current-state findings, observable deliverables with complete files/operations/size estimates and criterion traces, every original acceptance criterion with honest covered/partial/deferred status and reason, justified Bob-added work, explicit non-goals and measurable acceptance checks. Compare the brief to the full plan: reject hidden work (including undeclared conditional edits), omitted criteria, vague options, limits whose values or measurement selection rules appear only in the full plan, unsupported coverage claims, unnecessary packages or frontend work, and process status masquerading as technical risk. Inspect runtime footprint warnings, including invalid paths, operation mismatches and unchanged map parts listed for work; require correction or a concrete explanation of intentional cross-area/config changes. Assess repository evidence, decisions and options, map, readability and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
 		architectureContract: "architecture-review-v1",
 		architectureSource: "architecture",
 		branches: back("approved", "architecture"),

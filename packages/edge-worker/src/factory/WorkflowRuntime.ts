@@ -41,6 +41,7 @@ import {
 	type ArchitectureProposal,
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
+	assertReviewBrief,
 	openDecisions,
 	snapshotProposal,
 	verifyProposal,
@@ -2134,10 +2135,12 @@ export class WorkflowRuntime {
 						await this.save(run);
 					}
 					if (step.architectureContract === "architecture-v1") {
+						const architecture = ArchitectureSchema.parse(output);
+						if (step.architectureBrief) assertReviewBrief(architecture);
 						run.architectureProposals ??= [];
 						const proposals = run.architectureProposals;
 						const proposal = await snapshotProposal(
-							ArchitectureSchema.parse(output),
+							architecture,
 							key,
 							proposals.length + 1,
 							context.evidenceDir,
@@ -2155,6 +2158,7 @@ export class WorkflowRuntime {
 									"attachments",
 								),
 							],
+							runRepositories(run),
 						);
 						for (const previous of proposals)
 							if (
@@ -2170,6 +2174,7 @@ export class WorkflowRuntime {
 							proposalId: proposal.id,
 							version: proposal.version,
 							digest: proposal.digest,
+							footprint: proposal.footprint,
 						};
 					}
 					if (step.architectureContract === "architecture-review-v1") {

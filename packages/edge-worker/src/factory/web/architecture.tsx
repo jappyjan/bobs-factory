@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Architecture, ArchitectureProposal } from "../Architecture";
+import type { ArchitectureFootprint } from "../ArchitectureFootprint";
 import { active } from "../RunAttention";
 import { useAction, useRun } from "./client";
 import { useFormState } from "./form-state";
@@ -234,6 +235,7 @@ function ArchitectureMap({
 
 interface BriefProps {
 	content: Architecture;
+	footprint?: ArchitectureFootprint;
 	previous?: Architecture;
 	/** Answers the human has picked but not sent yet. */
 	picks?: Pick[];
@@ -369,8 +371,82 @@ function isNew(text: string, before?: string[]) {
 const NewMark = ({ show }: { show: boolean }) =>
 	show ? <span className="arch-new">new</span> : null;
 
+function Findings({ items }: { items: Architecture["evidence"] }) {
+	return (
+		<ul className="arch-card arch-list fits">
+			{items.map((item, i) => (
+				<li key={i}>
+					<span className="arch-dot">•</span>
+					<span>
+						{item.observation}
+						<small>
+							{item.repository} · {item.paths.join(", ")}
+						</small>
+					</span>
+				</li>
+			))}
+		</ul>
+	);
+}
+
+function Footprint({ content }: { content?: ArchitectureFootprint }) {
+	return (
+		<section className="arch-chunk">
+			<h2>Planned footprint</h2>
+			{content ? (
+				<div className="arch-card arch-footprint">
+					<p>
+						<b>{plural(content.files.length, "listed path")}</b> ·{" "}
+						{Object.entries(content.changes)
+							.filter(([, count]) => count)
+							.map(([change, count]) => `${count} ${change}`)
+							.join(" · ")}
+					</p>
+					<p>
+						{Object.entries(content.kinds)
+							.filter(([, count]) => count)
+							.map(([kind, count]) => `${count} ${kind}`)
+							.join(" · ")}
+					</p>
+					<small>
+						Computed from declared paths and checked against the planning
+						worktrees when this version was saved.
+					</small>
+					<ul className="arch-areas">
+						{content.areas.map((area) => (
+							<li key={area.name}>
+								<code>{area.name}</code>
+								<b>{area.files}</b>
+							</li>
+						))}
+					</ul>
+					{content.warnings.length > 0 ? (
+						<ul className="arch-footprint-warnings">
+							{content.warnings.map((warning, i) => (
+								<li key={i}>
+									<b>{warning.message}</b>
+									<small>{warning.paths.join(" · ")}</small>
+								</li>
+							))}
+						</ul>
+					) : (
+						<p className="muted">
+							No path, configuration or map consistency flags.
+						</p>
+					)}
+				</div>
+			) : (
+				<p className="arch-card muted">
+					This saved proposal has no runtime footprint checks.
+				</p>
+			)}
+		</section>
+	);
+}
+
 export function ArchitectureBrief({
 	content,
+	footprint,
 	previous,
 	picks = [],
 	onPick,
@@ -379,7 +455,6 @@ export function ArchitectureBrief({
 	const [selected, setSelected] = useState<string>();
 	const [showAll, setShowAll] = useState(false);
 	const [preview, setPreview] = useState<Option>();
-	const [files, setFiles] = useState(false);
 	const map = content.map;
 	const part =
 		map?.parts.find((p) => p.id === selected) ??
@@ -388,6 +463,11 @@ export function ArchitectureBrief({
 	const previousSteps = previous?.candidate.steps?.map((s) => s.title);
 	return (
 		<div className="arch-brief">
+			<section className="arch-chunk">
+				<h2>{content.problem ? "Today" : "Repository findings"}</h2>
+				<Findings items={content.problem ?? content.evidence} />
+			</section>
+			<Footprint content={footprint} />
 			{content.changes.length > 0 && (
 				<section className="arch-chunk">
 					<h2>What’s new in this version</h2>
@@ -495,28 +575,78 @@ export function ArchitectureBrief({
 					</div>
 				</section>
 			)}
-			<section className="arch-chunk">
-				<h2>Why this fits</h2>
-				<ul className="arch-card arch-list fits">
-					{content.evidence.map((item, i) => (
-						<li key={i}>
-							<span className="arch-dot">✓</span>
-							<span>
-								{item.observation}
-								<NewMark
-									show={isNew(
-										item.observation,
-										previous?.evidence.map((e) => e.observation),
-									)}
-								/>
-								<small>
-									{item.repository} · {item.paths.join(", ")}
-								</small>
-							</span>
-						</li>
-					))}
-				</ul>
-			</section>
+			{content.problem && (
+				<section className="arch-chunk">
+					<h2>Why this fits</h2>
+					<Findings items={content.evidence} />
+				</section>
+			)}
+			{content.criteria && (
+				<section className="arch-chunk">
+					<h2>Ticket coverage</h2>
+					<div className="arch-card arch-coverage">
+						<table>
+							<thead>
+								<tr>
+									<th>Requested outcome</th>
+									<th>Planned coverage</th>
+									<th>Deliverables</th>
+								</tr>
+							</thead>
+							<tbody>
+								{content.criteria.map((criterion) => (
+									<tr key={criterion.id}>
+										<td>
+											<b>{criterion.id}</b> {criterion.text}
+											<small>
+												{criterion.url ? (
+													<a
+														href={criterion.url}
+														target="_blank"
+														rel="noreferrer"
+													>
+														{criterion.source}
+													</a>
+												) : (
+													criterion.source
+												)}
+											</small>
+										</td>
+										<td>
+											<span
+												className={`arch-coverage-status ${criterion.status}`}
+											>
+												{criterion.status}
+											</span>
+											<p>{criterion.reason}</p>
+										</td>
+										<td>
+											{content.candidate.steps
+												.filter((step) =>
+													step.traces?.some(
+														(trace) =>
+															"criterion" in trace &&
+															trace.criterion === criterion.id,
+													),
+												)
+												.map((step) => (
+													<a
+														className="arch-deliverable-link"
+														key={step.id}
+														href={`#arch-${step.id}`}
+													>
+														{step.id}: {step.title}
+													</a>
+												))}
+											{criterion.status === "deferred" && "Deferred"}
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				</section>
+			)}
 			{content.risks.length > 0 && (
 				<section className="arch-chunk">
 					<h2>Watch out for</h2>
@@ -536,32 +666,59 @@ export function ArchitectureBrief({
 			<section className="arch-chunk">
 				<h2>What Bob will build</h2>
 				<p className="arch-lead">
-					{plural(content.candidate.steps.length, "step")}. Bob gets exactly
-					this plan.
+					{plural(content.candidate.steps.length, "deliverable")}. Sizes are
+					relative estimates.
 				</p>
 				<div className="arch-card">
 					<ol className="arch-steps">
 						{content.candidate.steps.map((step, i) => (
-							<li key={i}>
+							<li key={i} id={`arch-${step.id ?? i}`}>
 								<span>
-									{step.title}
+									<b>
+										{step.id && `${step.id} · `}
+										{step.title}
+									</b>
 									<NewMark show={isNew(step.title, previousSteps)} />
-									{files && step.files.length > 0 && (
-										<small>{step.files.join(" · ")}</small>
+									{step.what && <p>{step.what}</p>}
+									{step.kind && (
+										<small>
+											{step.kind} · size {step.size}
+										</small>
 									)}
+									{step.traces && (
+										<small>
+											{step.traces
+												.map((trace) =>
+													"criterion" in trace
+														? trace.criterion
+														: `Bob added: ${trace.added}`,
+												)
+												.join(" · ")}
+										</small>
+									)}
+									<ul className="arch-files">
+										{step.files.map((file, index) => (
+											<li key={index}>
+												{typeof file === "string" ? (
+													<code>{file}</code>
+												) : (
+													<>
+														<span className="arch-file-operation">
+															{file.change}
+														</span>
+														<code>
+															{file.repository && `${file.repository}: `}
+															{file.path}
+														</code>
+													</>
+												)}
+											</li>
+										))}
+									</ul>
 								</span>
 							</li>
 						))}
 					</ol>
-					<div className="arch-map-tools">
-						<button
-							type="button"
-							className="arch-link-button"
-							onClick={() => setFiles(!files)}
-						>
-							{files ? "Hide" : "Show"} files
-						</button>
-					</div>
 					<details className="arch-full-plan">
 						<summary>Full plan for Bob</summary>
 						<Markdown>{content.candidate.plan}</Markdown>
@@ -577,19 +734,68 @@ export function ArchitectureBrief({
 					</details>
 				</div>
 			</section>
+			{content.criteria && (
+				<section className="arch-chunk">
+					<h2>Work Bob added</h2>
+					{content.candidate.steps.some((s) =>
+						s.traces?.some((t) => "added" in t),
+					) ? (
+						<ul className="arch-card arch-list">
+							{content.candidate.steps.flatMap(
+								(step) =>
+									step.traces?.flatMap((trace, i) =>
+										"added" in trace ? (
+											<li key={`${step.id}-${i}`}>
+												<span>
+													<a href={`#arch-${step.id}`}>{step.title}</a>
+													<small>{trace.added}</small>
+												</span>
+											</li>
+										) : (
+											[]
+										),
+									) ?? [],
+							)}
+						</ul>
+					) : (
+						<p className="arch-card">No additional work is declared.</p>
+					)}
+				</section>
+			)}
+			{content.nonGoals && (
+				<section className="arch-chunk">
+					<h2>Not doing</h2>
+					<ul className="arch-card arch-checks">
+						{content.nonGoals.map((item, i) => (
+							<li key={i}>{item}</li>
+						))}
+					</ul>
+				</section>
+			)}
+			{content.acceptance && (
+				<section className="arch-chunk">
+					<h2>How we’ll know it works</h2>
+					<ol className="arch-card arch-checks">
+						{content.acceptance.map((item, i) => (
+							<li key={i}>{item}</li>
+						))}
+					</ol>
+				</section>
+			)}
 		</div>
 	);
 }
 
 /** Read-only brief for the artifact inspector. */
 export function ArchitectureContent({ content }: { content: any }) {
+	const footprint: ArchitectureFootprint | undefined = content?.footprint;
 	if (!readable(content))
 		return <p className="muted">This proposal uses an older format.</p>;
 	return (
 		<>
 			<h2>{content.title}</h2>
 			<p>{content.summary}</p>
-			<ArchitectureBrief content={content} />
+			<ArchitectureBrief content={content} footprint={footprint} />
 		</>
 	);
 }
@@ -939,6 +1145,7 @@ export function ArchitecturePage() {
 						<ArchitectureBrief
 							key={shown.id}
 							content={content}
+							footprint={shown.footprint}
 							previous={
 								shownIndex > 0 && readable(proposals[shownIndex - 1]!.content)
 									? proposals[shownIndex - 1]!.content
