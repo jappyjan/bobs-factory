@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Accept standard SHA-256 QA environment probes without falsely blocking capture; preserve saved JSON-string digests and existing behavioral evidence provenance.
+
 - Configure the host Git identity’s SSH agent in Settings → Identity profiles, test password-manager key availability and retry failed signing without restarting Factory; preserve explicit execution bindings and native signing policy. ([#136](https://github.com/jappyjan/bobs-factory/pull/136))
 
 - Integrate API-key dashboard access with bounded review convergence, preserving impact evidence, protected reader progress and complete routing-prompt checks ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
