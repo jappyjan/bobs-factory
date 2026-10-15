@@ -4,6 +4,7 @@ export function proposal(
 ): Architecture {
 	return {
 		architectureContract: "architecture-v1",
+		briefVersion: 1,
 		classification,
 		rationale:
 			"Keep the runtime checkpoint as the owner of the approval boundary.",
@@ -11,6 +12,28 @@ export function proposal(
 		summary:
 			"Bob pauses after planning so you can approve the design. Merging still needs a separate PR review.",
 		changes: [],
+		problem: [
+			{
+				repository: "bobs-factory",
+				paths: ["src/factory/WorkflowRuntime.ts"],
+				observation:
+					"Designs currently proceed to implementation without an exact-version approval checkpoint.",
+			},
+		],
+		criteria: [
+			{
+				id: "AC1",
+				text: "Require exact-version architecture acceptance before implementation.",
+				source: "User request",
+				status: "covered",
+				reason:
+					"The saved checkpoint blocks implementation until this exact proposal is accepted.",
+			},
+		],
+		nonGoals: ["Replace the separate PR merge review."],
+		acceptance: [
+			"A pending design survives restart and implementation starts exactly once after acceptance of its current version.",
+		],
 		decisions: [
 			{
 				id: "boundary",
@@ -87,8 +110,13 @@ export function proposal(
 			plan: "Preserve existing PR https://github.com/JappyJan/bobs-factory/pull/90 and branch existing. Implement the approved runtime boundary. Validate restart and rejection.",
 			steps: [
 				{
+					id: "D1",
 					title: "Save the approval with the run",
-					files: ["src/factory/WorkflowRuntime.ts"],
+					what: "Pause before implementation and retain the exact proposal and approval across restarts.",
+					kind: "code",
+					size: "M",
+					traces: [{ criterion: "AC1" }],
+					files: [{ path: "src/factory/WorkflowRuntime.ts", change: "edit" }],
 				},
 			],
 			assets: [],

@@ -1,5 +1,9 @@
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { ArchitecturePage } from "../src/factory/web/architecture.js";
+import {
+	ArchitectureBrief,
+	ArchitecturePage,
+} from "../src/factory/web/architecture.js";
 import { proposal } from "./fixtures/architecture.js";
 
 const fixture = vi.hoisted(() => ({
@@ -177,4 +181,29 @@ it("requires the displayed proposal version before accepting it", async () => {
 			},
 		},
 	]);
+});
+
+it("exposes review substance and file operations without expanding the implementation plan", () => {
+	const content = proposal();
+	content.candidate.steps[0]!.traces!.push({
+		added: "Retain a restart check to protect accepted work.",
+	});
+	const html = renderToStaticMarkup(<ArchitectureBrief content={content} />);
+	expect(html).toContain("Today");
+	expect(html).toContain(content.problem![0]!.observation);
+	expect(html).toContain(content.criteria![0]!.text);
+	expect(html).toContain(content.candidate.steps[0]!.what);
+	expect(html).toContain('class="arch-file-operation">edit');
+	expect(html).toContain("Retain a restart check to protect accepted work.");
+	expect(html).toContain(content.nonGoals![0]);
+	expect(html).toContain(content.acceptance![0]);
+	// All reviewer-facing content is outside the optional implementer details.
+	expect(html.split('<details class="arch-full-plan">')[0]).toContain(
+		"src/factory/WorkflowRuntime.ts",
+	);
+	const fullPlan = html.indexOf('<details class="arch-full-plan">');
+	const endDetails = html.indexOf("</details>", fullPlan);
+	expect(html.slice(fullPlan, endDetails)).not.toContain(
+		content.criteria![0]!.text,
+	);
 });

@@ -13,6 +13,7 @@ type ExecutionStep = Pick<
 	| "args"
 	| "arguments"
 	| "architectureContract"
+	| "architectureBrief"
 	| "architectureSource"
 > & { groups?: ExecutionStep[][] };
 
@@ -40,6 +41,7 @@ export function workflowExecutionContext(context: ExecutionContext) {
 				args: structuredClone(item.args),
 				arguments: structuredClone(item.arguments),
 				architectureContract: item.architectureContract,
+				architectureBrief: item.architectureBrief,
 				architectureSource: item.architectureSource,
 				...(item.groups ? { groups: item.groups.map(describe) } : {}),
 			};

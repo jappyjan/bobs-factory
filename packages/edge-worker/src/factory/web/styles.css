@@ -5178,7 +5178,7 @@ kbd {
 	padding: 0;
 	counter-reset: arch-step;
 }
-.arch-steps li {
+.arch-steps > li {
 	counter-increment: arch-step;
 	display: grid;
 	grid-template-columns: 30px 1fr;
@@ -5186,10 +5186,10 @@ kbd {
 	padding: 9px 0;
 	border-top: 1px solid var(--line);
 }
-.arch-steps li:first-child {
+.arch-steps > li:first-child {
 	border-top: 0;
 }
-.arch-steps li::before {
+.arch-steps > li::before {
 	content: counter(arch-step);
 	width: 26px;
 	height: 26px;
@@ -5205,6 +5205,110 @@ kbd {
 	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 	font-size: 12px;
 	color: var(--muted);
+}
+.arch-steps > li > span {
+	min-width: 0;
+}
+.arch-steps > li {
+	scroll-margin-top: 110px;
+}
+.arch-steps p {
+	margin: 6px 0;
+}
+.arch-files {
+	list-style: none;
+	padding: 0;
+	margin: 8px 0 0;
+}
+.arch-files li {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	margin: 4px 0;
+	font-size: 12px;
+}
+.arch-file-operation {
+	color: var(--muted);
+	min-width: 40px;
+}
+.arch-brief code,
+.arch-list small,
+.arch-footprint small {
+	overflow-wrap: anywhere;
+}
+.arch-footprint p {
+	margin: 0 0 8px;
+}
+.arch-footprint small {
+	display: block;
+	color: var(--muted);
+}
+.arch-areas {
+	list-style: none;
+	padding: 0;
+	margin: 16px 0;
+}
+.arch-areas li {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 13px;
+	padding: 4px 0;
+}
+.arch-footprint-warnings {
+	background: var(--orange);
+	border-radius: 12px;
+	padding: 12px 16px 12px 32px;
+	font-size: 13px;
+}
+.arch-footprint-warnings li + li {
+	margin-top: 10px;
+}
+.arch-coverage {
+	overflow-x: auto;
+}
+.arch-coverage table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+.arch-coverage th,
+.arch-coverage td {
+	text-align: left;
+	vertical-align: top;
+	padding: 10px 8px;
+	border-bottom: 1px solid var(--line);
+	min-width: 135px;
+}
+.arch-coverage td:first-child {
+	min-width: 210px;
+}
+.arch-coverage small,
+.arch-deliverable-link {
+	display: block;
+	margin-top: 6px;
+}
+.arch-deliverable-link {
+	text-align: left;
+}
+.arch-coverage p {
+	margin-bottom: 0;
+}
+.arch-coverage-status {
+	font-weight: 700;
+	text-transform: capitalize;
+}
+.arch-coverage-status.partial,
+.arch-coverage-status.deferred {
+	background: var(--orange);
+	border-radius: 6px;
+	padding: 2px 6px;
+}
+.arch-checks {
+	padding-left: 36px;
+}
+.arch-checks li + li {
+	margin-top: 10px;
 }
 .arch-full-plan {
 	margin-top: 12px;

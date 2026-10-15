@@ -187,6 +187,7 @@ import {
 	type Architecture,
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
+	assertReviewBrief,
 	assertRevisionChanges,
 } from "./factory/Architecture.js";
 import { TicketDelivery, type TicketTarget } from "./factory/Delivery.js";
@@ -9419,6 +9420,7 @@ ${taskSection}`;
 			);
 			if (step.architectureContract === "architecture-v1") {
 				output = ArchitectureSchema.parse(output);
+				if (step.architectureBrief) assertReviewBrief(output as Architecture);
 				assertRevisionChanges(
 					output as Architecture,
 					run.architectureProposals?.length ?? 0,
