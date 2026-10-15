@@ -238,37 +238,23 @@ it("serves real IPv4 and IPv6 loopback APIs and streams without auth while prese
 			origin: local,
 		});
 		expect(status.headers.get("set-cookie")).toBeNull();
-		const config = await fetch(`${local}/api/config`, {
-			headers: { Connection: "close" },
-		});
+		const config = await fetch(`${local}/api/config`);
 		expect(config.status).toBe(200);
+		// Drain the response so an unread body cannot hold shutdown open.
 		await config.arrayBuffer();
-		const streamController = new AbortController();
-		const events = await fetch(`${local}/api/events`, {
-			signal: streamController.signal,
-			headers: { Connection: "close" },
-		});
+		const events = await fetch(`${local}/api/events`);
 		expect(events.status).toBe(200);
 		const reader = events.body!.getReader();
 		expect(new TextDecoder().decode((await reader.read()).value)).toContain(
 			"event: ready",
 		);
-		streamController.abort();
-		await reader.cancel().catch((error: Error) => {
-			if (error.name !== "AbortError") throw error;
+		await reader.cancel();
+		const missing = await fetch(`${local}/api/runs/missing/stop`, {
+			method: "POST",
+			headers: { Origin: local, "X-Factory-Request": "1" },
 		});
-		expect(
-			(
-				await fetch(`${local}/api/runs/missing/stop`, {
-					method: "POST",
-					headers: {
-						Origin: local,
-						"X-Factory-Request": "1",
-						Connection: "close",
-					},
-				})
-			).status,
-		).toBe(404);
+		expect(missing.status).toBe(404);
+		await missing.arrayBuffer();
 	}
 	const url = `http://127.0.0.1:${port}/api/runs`;
 	expect(

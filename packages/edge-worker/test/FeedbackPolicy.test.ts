@@ -1,9 +1,15 @@
 import { expect, it } from "vitest";
+import { feedbackDigest } from "../src/factory/Impact.js";
 import {
 	assessFeedback,
 	inspectMergeReadiness,
 	recordFeedbackAssessment,
 } from "../src/factory/MergeReadiness.js";
+import {
+	aggregateDeliveries,
+	type RunRepository,
+	repositoryRun,
+} from "../src/factory/RepositoryScope.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 
@@ -240,4 +246,114 @@ it.each([
 	const next = await snapshot();
 	assessFeedback(ctx, next);
 	expect(next.fix).toBe(false);
+});
+
+it("binds grouped feedback to repositories, retains it after restart and detects edits", async () => {
+	const ctx = context();
+	const repositories = ["a", "b"].map((id) => ({
+		id,
+		name: id,
+		workspace: `/tmp/${id}`,
+		repositoryPath: `/tmp/${id}`,
+		baseBranch: "trunk",
+	})) satisfies RunRepository[];
+	ctx.run.repositoryId = "a";
+	ctx.run.repositories = repositories;
+	const receipts = await Promise.all([snapshot(), snapshot()]);
+	for (const receipt of receipts) assessFeedback(ctx, receipt);
+	ctx.run.outputs.ci = aggregateDeliveries(
+		receipts.map((output, i) => ({
+			repositoryId: repositories[i]!.id,
+			name: repositories[i]!.name,
+			output,
+		})),
+	);
+	const original = feedbackDigest(ctx.run);
+	const assessment = (repositoryId: string) => ({
+		repositoryId,
+		id: "42",
+		bodySha256: receipts[0]!.unassessedComments![0]!.bodySha256,
+	});
+	expect(() =>
+		recordFeedbackAssessment(ctx, {
+			commentAssessments: [{ ...assessment("a"), repositoryId: undefined }],
+		}),
+	).toThrow("content hash");
+	expect(() =>
+		recordFeedbackAssessment(ctx, { commentAssessments: [assessment("a")] }),
+	).toThrow("b:42");
+	const supplied = (
+		ctx.run.outputs.ci as {
+			unassessedComments: {
+				id: string;
+				repositoryId: string;
+				bodySha256: string;
+			}[];
+		}
+	).unassessedComments;
+	expect(() =>
+		recordFeedbackAssessment(ctx, {
+			commentAssessments: supplied.map((c) => ({ ...c, repositoryId: "b" })),
+		}),
+	).toThrow("content hash");
+	const output = recordFeedbackAssessment(ctx, {
+		commentAssessments: supplied.map(({ id, repositoryId, bodySha256 }) => ({
+			id,
+			repositoryId,
+			bodySha256,
+		})),
+	});
+	expect(
+		recordFeedbackAssessment(ctx, {
+			commentAssessments: [assessment("a"), assessment("b")],
+		}),
+	).toMatchObject({ assessedComments: [{ id: "a:42" }, { id: "b:42" }] });
+	expect(
+		recordFeedbackAssessment(ctx, {
+			commentAssessments: supplied.map(({ id, bodySha256 }) => ({
+				id,
+				bodySha256,
+			})),
+		}),
+	).toMatchObject({ assessedComments: [{ id: "a:42" }, { id: "b:42" }] });
+	expect(output).toMatchObject({
+		assessedComments: [{ id: "a:42" }, { id: "b:42" }],
+	});
+	retain(ctx, { ...(output as object), impactContract: "impact-v1" });
+	const restarted = JSON.parse(JSON.stringify(ctx.run));
+	for (const repository of repositories) {
+		const receipt = await snapshot();
+		assessFeedback(
+			{ ...ctx, run: repositoryRun(restarted, repository) },
+			receipt,
+		);
+		expect(receipt.unassessedComments).toEqual([]);
+	}
+	const edited = await snapshot([
+		{ ...comment, body: "Change ownership behavior" },
+	]);
+	assessFeedback(
+		{ ...ctx, run: repositoryRun(restarted, repositories[1]!) },
+		edited,
+	);
+	expect(edited.unassessedComments).toHaveLength(1);
+	(ctx.run.outputs.ci as any).deliveries[1].output = edited;
+	expect(feedbackDigest(ctx.run)).not.toBe(original);
+	const bodyDigest = feedbackDigest(ctx.run);
+	(ctx.run.outputs.ci as any).deliveries[1].output.threads = [
+		{
+			id: "t1",
+			isResolved: false,
+			comments: { nodes: [{ body: "Please fix" }] },
+		},
+	];
+	expect(feedbackDigest(ctx.run)).not.toBe(bodyDigest);
+	const threadDigest = feedbackDigest(ctx.run);
+	(ctx.run.outputs.ci as any).deliveries[1].output.reviews = [
+		{ id: "r1", state: "CHANGES_REQUESTED" },
+	];
+	expect(feedbackDigest(ctx.run)).not.toBe(threadDigest);
+	const reviewDigest = feedbackDigest(ctx.run);
+	(ctx.run.outputs.ci as any).deliveries.reverse();
+	expect(feedbackDigest(ctx.run)).toBe(reviewDigest);
 });

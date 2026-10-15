@@ -44,6 +44,7 @@ function fixture() {
 			};
 		},
 	});
+	// Terminal status is visible before the execution's final state save finishes.
 	cleanup.push(() => runtime.shutdown());
 	const workflow = validateWorkflows([
 		...defaultWorkflows,

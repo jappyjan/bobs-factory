@@ -73,13 +73,28 @@ import {
 	type ExecutionSnapshot,
 } from "./ExecutionProfiles.js";
 import type { GitProviderSnapshot } from "./GitProvider.js";
+import {
+	assertImpactFresh,
+	type ConvergenceState,
+	collectImpactSnapshot,
+	continuationEligible,
+	decisionFor,
+	type ImpactDecision,
+	type ImpactSnapshot,
+	impactDecisionDigest,
+	impactFanout,
+	recordConvergence,
+	validateImpact,
+} from "./Impact.js";
 import type { RoleProgress, RoleRevision } from "./Incremental.js";
 import {
 	attachmentDirectories,
 	LaunchAssetStore,
 	type LaunchAttachments,
 } from "./LaunchAssets.js";
+import { recordFeedbackAssessment } from "./MergeReadiness.js";
 import { beginStepAttempt, finishStepAttempt } from "./Provenance.js";
+import { qaDigest as importDigest } from "./Qa.js";
 import {
 	isExplanationRequest,
 	normalizeQuestionResult,
@@ -93,6 +108,7 @@ import { reviewRecoveryQuestions } from "./ReviewRecovery.js";
 import { buildTitleContext } from "./RunTitleGenerator.js";
 import {
 	aggregateReview,
+	calibratedReviewInstructions,
 	frozenReviewContext,
 	type Inventory,
 	latestAggregate,
@@ -201,11 +217,13 @@ export interface GraphCheckpoint {
 		children?: GraphCheckpoint[];
 		call?: WorkflowCall;
 		reviewBaseline?: ReviewBaseline;
+		impactSnapshot?: ImpactSnapshot;
 	};
 	// Only fanout branches own separate outputs; nested workflows share their parent's.
 	outputs?: Record<string, unknown>;
 }
 export interface HumanDecision {
+	url?: string;
 	mode?: "repository" | "external" | "mixed";
 	externalDigest?: string;
 	repositories?: import("./RepositoryScope.js").ApprovedRepository[];
@@ -251,6 +269,15 @@ export interface FactoryRun {
 		previousCheckpoint?: GraphCheckpoint;
 		contractDigest: string;
 	};
+	impactDecisions?: ImpactDecision[];
+	impactConvergence?: Record<string, ConvergenceState>;
+	approvalContinuations?: {
+		originalReviewId: string;
+		decisionDigest: string;
+		headSha: string;
+		repositories?: import("./RepositoryScope.js").ApprovedRepository[];
+		at: string;
+	}[];
 	ciSupervision?: import("./CISupervision.js").CISupervision;
 	stepAttempts?: import("./Provenance.js").StepAttempt[];
 	deliveryCoordination?: DeliveryCoordination;
@@ -353,6 +380,10 @@ export interface ChatMessage {
 }
 export interface ExecutionContext {
 	/** Revalidate the complete grouped approval under the operation reservation. */
+	qaEnvironmentProof?: { declarationDigest: string; valueDigest: string };
+	executionApproval?: HumanDecision;
+	groupedImpactValidated?: boolean;
+	impactKey?: string;
 	validateDelivery?: () => Promise<Record<string, unknown> | undefined>;
 	/** Nested publication discovered by passive grouped readiness must also claim targets. */
 	coordinateDelivery?: <T>(operation: () => Promise<T>) => Promise<T>;
@@ -1384,6 +1415,7 @@ export class WorkflowRuntime {
 								]),
 							),
 							...(step.askQuestions ||
+							step.tool === "impact-checks" ||
 							(step.id === "capture" &&
 								(step.qaContract === "qa-v1" ||
 									readPath(outputs, "visual-gate.captureBlocked") === true ||
@@ -1500,6 +1532,10 @@ export class WorkflowRuntime {
 				},
 				save: () => this.save(run),
 			};
+			const impactSource = steps.find((s) => s.id === step.impactSource);
+			context.impactKey = impactSource?.impact
+				? `${prefix}${impactSource.impact.fanout}`
+				: checkpoint.reviewKey;
 			context.coordinateDelivery = (operation) =>
 				this.coordinate(context, operation);
 			if (
@@ -1518,7 +1554,56 @@ export class WorkflowRuntime {
 					...step,
 					prompt: `${step.prompt ?? ""}\n\n${ciFixRuntimeInstructions}`,
 				};
+			if (step.reviewContract && reviewBaseline?.impact)
+				context.step = {
+					...context.step,
+					prompt: `${context.step.prompt}\n${calibratedReviewInstructions}`,
+				};
 			mkdirSync(context.evidenceDir, { recursive: true });
+			if (step.tool === "impact-checks" && state.phase === "executing") {
+				const source = steps.find((s) => s.id === step.impactSource)!;
+				const fanout = steps.find((s) => s.id === source.impact!.fanout)!;
+				const decision = decisionFor(run, `${prefix}${fanout.id}`);
+				if (!decision)
+					throw new Error(
+						"Selected checks require a completed impact decision",
+					);
+				if (decision.extractRequirements) {
+					const snapshot = await collectImpactSnapshot(
+						context,
+						fanout,
+						decision.snapshot.key,
+						decision.snapshot,
+					);
+					decision.snapshot = snapshot;
+				}
+				await assertImpactFresh(context, decision, fanout);
+				await this.save(run);
+			}
+			if (step.impactContract && state.phase === "executing") {
+				const fanout = steps.find((s) => s.id === step.impact!.fanout)!;
+				const snapshot = await collectImpactSnapshot(
+					context,
+					fanout,
+					`${prefix}${fanout.id}`,
+				);
+				if (
+					state.impactSnapshot &&
+					state.impactSnapshot.digest !== snapshot.digest
+				)
+					state.agent = undefined;
+				state.impactSnapshot = snapshot;
+				context.input = {
+					...(context.input as Record<string, unknown>),
+					impactSnapshot: snapshot,
+					impactEvidence:
+						latestAggregate(run, snapshot.key)?.reviewers.map((r) => ({
+							digest: importDigest(r),
+							receipt: r,
+						})) ?? [],
+				};
+				await this.save(run);
+			}
 			let output: unknown = outputs[step.id];
 			if (state.phase === "executing") {
 				state.attemptId = beginStepAttempt(context);
@@ -1547,11 +1632,35 @@ export class WorkflowRuntime {
 						const revision = await reviewedRunRevision(run, baseline);
 						if (revision.headSha !== baseline.headSha)
 							throw new Error("Revision changed during specialist review");
+						if (baseline.impact) {
+							const decision = decisionFor(run, fanoutKey);
+							if (!decision)
+								throw new Error("Review impact decision unavailable");
+							await assertImpactFresh(
+								context,
+								decision,
+								steps.find((s) => s.id === step.review!.fanout)!,
+							);
+						}
 						output = aggregateReview(
 							baseline,
 							outputs[step.review.fanout!] as Record<string, unknown>[],
 							latestAggregate(run, fanoutKey),
 						);
+						const incomplete = (
+							output as import("./SpecialistReview.js").AggregateReview
+						).reviewers.filter(
+							(r) => r.status !== "completed" || r.blockers.length,
+						);
+						if (baseline.impact && incomplete.length)
+							output = {
+								...(output as Record<string, unknown>),
+								reviewBlocked: true,
+								reviewIncomplete: true,
+								questions: [
+									`Review could not finish: ${incomplete.map((r) => `${r.stamp.reviewer}: ${r.blockers.join("; ") || r.summary}`).join("; ")}. Provide the missing access or evidence needed to resume the selected review. Completed work is retained; this answer cannot waive review.`,
+								],
+							};
 						const questions = reviewRecoveryQuestions(context, output, {
 							headSha: revision.headSha,
 							dirty: false,
@@ -1601,6 +1710,14 @@ export class WorkflowRuntime {
 								finishStepAttempt(context, "blocked");
 								continue;
 							}
+							const impact = step.impactSource
+								? decisionFor(run, key)
+								: undefined;
+							if (step.impactSource && !impact)
+								throw new Error(
+									"Configured review requires a completed impact assessment",
+								);
+							if (impact) await assertImpactFresh(context, impact, step);
 							const repo = outputs.repository as
 								| { baseBranch?: string }
 								| undefined;
@@ -1609,7 +1726,7 @@ export class WorkflowRuntime {
 								| undefined;
 							const revision = await reviewedRunRevision(
 								run,
-								`refs/remotes/origin/${source?.baseRefName ?? repo?.baseBranch ?? "main"}`,
+								`refs/remotes/origin/${source?.baseRefName ?? repo?.baseBranch ?? runRepositories(run)[0]!.baseBranch}`,
 							);
 							run.reviewRounds ??= [];
 							state.reviewBaseline = immutableJson({
@@ -1629,6 +1746,14 @@ export class WorkflowRuntime {
 									})),
 								),
 								context: frozenReviewContext(input),
+								...(impact
+									? {
+											impact: {
+												snapshot: structuredClone(impact.snapshot),
+												reuse: structuredClone(impact.reuseRecords),
+											},
+										}
+									: {}),
 							});
 							run.reviewRounds.push(state.reviewBaseline);
 						}
@@ -1649,10 +1774,62 @@ export class WorkflowRuntime {
 						if (signal.aborted) cancelBranches();
 						let failure: unknown;
 						const branchResults = await Promise.allSettled(
-							(step.groups ?? []).map((group, index) =>
-								this.graph(
+							(step.groups ?? []).map((group, index) => {
+								const reused = state.reviewBaseline?.impact?.reuse ?? [];
+								const retainedRole = (id: string) =>
+									reused.some((r) => r.original.stamp.reviewer === id);
+								const afterRetained = (
+									target: string | undefined,
+								): string | undefined => {
+									const seen = new Set<string>();
+									while (target && retainedRole(target)) {
+										if (seen.has(target))
+											throw new Error(
+												"Review reuse cannot skip a cyclic role route",
+											);
+										seen.add(target);
+										const index = group.findIndex((s) => s.id === target);
+										const role = group[index]!;
+										if (role.branches.length)
+											throw new Error(
+												"Conditional reviewer routes need full execution",
+											);
+										target = role.next ?? group[index + 1]?.id ?? "end";
+									}
+									return target;
+								};
+								const selected = group
+									.filter((s) => !retainedRole(s.id))
+									.map((s) => ({
+										...s,
+										next: afterRetained(s.next),
+										branches: s.branches.map((b) => ({
+											...b,
+											next: afterRetained(b.next)!,
+										})),
+									}));
+								for (const role of group) {
+									const retained = reused.find(
+										(r) => r.original.stamp.reviewer === role.id,
+									);
+									if (retained)
+										state.children![index]!.outputs![role.id] = structuredClone(
+											retained.original,
+										);
+								}
+								if (!selected.length)
+									return Promise.resolve(state.children![index]!.outputs!);
+								// Review branches have no internal correction routes; retain selected order.
+								if (
+									state.children![index]!.current !== "end" &&
+									!selected.some(
+										(s) => s.id === state.children![index]!.current,
+									)
+								)
+									state.children![index]!.current = selected[0]!.id;
+								return this.graph(
 									run,
-									group,
+									selected,
 									state.children![index]!.outputs!,
 									branchController.signal,
 									`${key}/${index}/`,
@@ -1667,8 +1844,8 @@ export class WorkflowRuntime {
 									if (!failure || !isUpdatePaused(error)) failure = error;
 									if (!isUpdatePaused(error)) branchController.abort(error);
 									throw error;
-								}),
-							),
+								});
+							}),
 						);
 						signal.removeEventListener("abort", cancelBranches);
 						if (failure) throw failure;
@@ -1695,6 +1872,19 @@ export class WorkflowRuntime {
 									: result.value
 								: undefined,
 						);
+						if (step.impactSource) {
+							const decision = decisionFor(run, key)!;
+							decision.pending.specialists = state
+								.reviewBaseline!.reviewers.filter((r) => {
+									const receipt = (output as Record<string, any>[])[r.group]?.[
+										r.id
+									];
+									return (
+										receipt?.status !== "completed" || receipt.blockers?.length
+									);
+								})
+								.map((r) => r.id);
+						}
 						if (state.reviewBaseline)
 							for (const reviewer of state.reviewBaseline.reviewers) {
 								run.outputs[reviewer.key] = (
@@ -1890,6 +2080,59 @@ export class WorkflowRuntime {
 					signal.throwIfAborted();
 					if (execution && output !== undefined)
 						output = JSON.parse(execution.redact(JSON.stringify(output)));
+					if (step.impactContract) {
+						const fanout = steps.find((s) => s.id === step.impact!.fanout)!;
+						const fresh = await collectImpactSnapshot(
+							context,
+							fanout,
+							state.impactSnapshot!.key,
+						);
+						if (fresh.digest !== state.impactSnapshot!.digest)
+							throw new Error(
+								"Source or delivery target changed during impact assessment",
+							);
+						const decision = validateImpact(output, fresh, run);
+						run.impactDecisions ??= [];
+						if (decision.commentAssessments.length)
+							Object.assign(
+								decision,
+								recordFeedbackAssessment(context, {
+									...decision,
+									addressedCommentIds: decision.commentAssessments.map(
+										(c) => c.id,
+									),
+								}),
+							);
+						const assistance = recordConvergence(
+							run,
+							fresh.key,
+							decision,
+							step.impact!.maxUnchangedCycles,
+						);
+						if (assistance.length) {
+							decision.status = "blocked";
+							decision.questions = assistance;
+						}
+						run.impactDecisions.push(decision);
+						if (decision.status === "completed" && decision.scopeReuse) {
+							const inventory = outputs[step.impact!.inventory] as Inventory;
+							outputs[step.impact!.inventory] = {
+								...structuredClone(inventory),
+								sourceContextDigest: scopeContextDigest(context.input),
+								scopeReuse: {
+									...decision.scopeReuse,
+									snapshotDigest: decision.snapshot.digest,
+								},
+							};
+						}
+						output = decision;
+						this.log(
+							run,
+							key,
+							`${decision.summary} Fresh specialists: ${decision.specialists.join(", ") || "none"}. Reused evidence: ${decision.reuseRecords.map((r) => r.original.stamp.reviewer).join(", ") || "none"}. ${decision.approvalRationale}`,
+						);
+						await this.save(run);
+					}
 					if (step.architectureContract === "architecture-v1") {
 						run.architectureProposals ??= [];
 						const proposals = run.architectureProposals;
@@ -2154,6 +2397,7 @@ export class WorkflowRuntime {
 			}
 			if (
 				readPath(output, "reviewIncomplete") === true &&
+				!step.impactSource &&
 				["review-gate", "visual-gate"].includes(step.tool ?? "")
 			) {
 				if (parallel)
@@ -2325,7 +2569,10 @@ export class WorkflowRuntime {
 			) {
 				if (parallel)
 					throw new Error("Human checkpoints belong outside fanout branches");
-				const fixer = this.nextStep(steps, step, output);
+				const fixer =
+					step.impactSource && readPath(output, "reviewIncomplete") === true
+						? step.impactSource
+						: this.nextStep(steps, step, output);
 				if (
 					!steps.some(
 						(item) =>
@@ -2527,6 +2774,12 @@ export class WorkflowRuntime {
 								| undefined,
 							context,
 						);
+					if (step.tool === "impact-checks") {
+						checkpoint.current = step.impactSource!;
+						checkpoint.active = undefined;
+						await this.save(run);
+						continue;
+					}
 					// Answers start a new turn in the same conversation. Discard the
 					// completed result so unchanged-code recovery cannot replay it.
 					checkpoint.active = state.agent
@@ -2557,7 +2810,34 @@ export class WorkflowRuntime {
 				continue;
 			}
 			if (step.tool === "human-review") {
-				if (state.phase !== "answered")
+				const impact = context.reviewKey
+					? decisionFor(run, context.reviewKey)
+					: undefined;
+				const continued =
+					step.impactSource &&
+					continuationEligible(impact, latestAggregate(run, context.reviewKey));
+				if (continued) {
+					await assertImpactFresh(
+						context,
+						impact!,
+						impactFanout(context, impact!),
+					);
+					const result = output as { headSha: string };
+					run.approvalContinuations ??= [];
+					run.approvalContinuations.push({
+						originalReviewId: impact!.snapshot.approval!.reviewId,
+						decisionDigest: impactDecisionDigest(impact!),
+						headSha: result.headSha,
+						repositories: deliveryRevisions(output),
+						at: new Date().toISOString(),
+					});
+					this.log(
+						run,
+						key,
+						"Prior explicit approval continues after independent impact review and required checks. The original human decision is retained.",
+					);
+				}
+				if (state.phase !== "answered" && !continued)
 					await this.waitForHuman(
 						run,
 						output as { headSha: string; url: string },
@@ -2937,6 +3217,7 @@ export class WorkflowRuntime {
 		run.humanDecisions.push({
 			...decision,
 			mode: gate.mode,
+			...(gate.url ? { url: gate.url } : {}),
 			externalDigest: gate.externalDigest,
 			repositories: structuredClone(gate.repositories),
 			at: new Date().toISOString(),

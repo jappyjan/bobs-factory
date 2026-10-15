@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react";
 import {
+	accessGeneration,
 	accessRequired,
+	accessSignal,
 	accessState,
 	checkAccess,
 	onConnectionLost,
@@ -83,15 +85,18 @@ export function versionMismatch(build?: string) {
 let check: Promise<boolean> | undefined;
 export async function checkVersion(): Promise<boolean> {
 	if (check) return check;
+	const epoch = accessGeneration(),
+		signal = accessSignal();
 	check = (async () => {
 		try {
 			const response = await fetch("/api/version", {
 				cache: "no-store",
-				signal: AbortSignal.timeout(8000),
+				signal: AbortSignal.any([signal, AbortSignal.timeout(8000)]),
 			});
 			if (!response.ok)
 				throw new Error(`Factory connection unavailable (${response.status})`);
 			const version = await response.json();
+			if (epoch !== accessGeneration() || signal.aborted) return false;
 			if (
 				typeof version.build !== "string" ||
 				version.protocol !== protocol ||
@@ -107,6 +112,7 @@ export async function checkVersion(): Promise<boolean> {
 			});
 			return true;
 		} catch (error) {
+			if (epoch !== accessGeneration() || signal.aborted) return false;
 			disconnected((error as Error).message);
 			return false;
 		} finally {
@@ -154,6 +160,8 @@ export function reconnect() {
 }
 async function attemptReconnect() {
 	if (state.updating) return;
+	const epoch = accessGeneration(),
+		signal = accessSignal();
 	clearTimeout(retryTimer);
 	retryTimer = undefined;
 	const outage = state.status === "offline";
@@ -165,7 +173,8 @@ async function attemptReconnect() {
 			await refresh?.();
 			authoritativeReady();
 		} catch (error) {
-			disconnected((error as Error).message);
+			if (epoch === accessGeneration() && !signal.aborted)
+				disconnected((error as Error).message);
 		}
 	}
 	if (outage && state.status === "offline")

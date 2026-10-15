@@ -11,7 +11,10 @@ import { join } from "node:path";
 import { JsonSnapshotStore } from "bobs-factory-core";
 import { CursorRunner } from "bobs-factory-cursor-runner";
 import { afterEach, expect, it, vi } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import {
+	conservativeWorkflows,
+	defaultWorkflows,
+} from "../src/factory/defaultWorkflows.js";
 import { GuideSchema } from "../src/factory/FactoryResults.js";
 import { captureEvidence, FactoryTools } from "../src/factory/FactoryTools.js";
 import {
@@ -943,7 +946,7 @@ function setup(hooks: Partial<RuntimeHooks> = {}) {
 		script: async () => ({}),
 		...hooks,
 	});
-	const stock = defaultWorkflows.find((w) => w.id === "factory-pipeline")!;
+	const stock = conservativeWorkflows.find((w) => w.id === "factory-pipeline")!;
 	const steps = stock.steps
 		.filter((s) =>
 			["extract-requirements", "specialist-review", "review-gate"].includes(

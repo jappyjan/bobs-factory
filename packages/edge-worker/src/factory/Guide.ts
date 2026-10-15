@@ -56,6 +56,11 @@ export function validateGuideCoverage(
 				met: "supported",
 				not_met: "gap",
 				deliberately_skipped: "waived",
+				deferred: ["acceptance", "delivery"].includes(
+					assessment.obligation?.stage ?? "",
+				)
+					? "unverified"
+					: "supported",
 			}[assessment.status];
 			if (guide.requirements[i]!.status !== expected)
 				throw new Error(
@@ -297,6 +302,23 @@ export function attachRequirementCoverage(
 				);
 				return {
 					reviewer,
+					...(receipt
+						? {
+								evidence: {
+									kind: aggregate.baseline.impact?.reuse.some(
+										(r) => r.original.stamp.reviewer === reviewer,
+									)
+										? "reused"
+										: "fresh",
+									originalHeadSha: receipt.stamp.headSha,
+									originalRound: receipt.stamp.round,
+									executedAt: receipt.evidenceBoundary?.at,
+									reason: aggregate.baseline.impact?.reuse.find(
+										(r) => r.original.stamp.reviewer === reviewer,
+									)?.reason,
+								},
+							}
+						: {}),
 					summary:
 						receipt?.summary ?? "Retained findings from prior review rounds",
 					findings: aggregate.rawFindings

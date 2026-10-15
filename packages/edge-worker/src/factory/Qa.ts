@@ -23,9 +23,15 @@ export const QaScopeFields = {
 		])
 		.optional(),
 	qaContract: z.literal(QA_CONTRACT),
+	environmentFingerprint: text.optional(),
+	environmentEvidence: z
+		.object({ repositoryId: text, command: text, expectedDigest: text })
+		.optional(),
 	stories: z.array(
 		z.object({
 			id: text,
+			dependencies: z.array(text).min(1).optional(),
+			independence: text.optional(),
 			goal: text,
 			requirementRefs: z.array(text).min(1),
 			interface: z.enum(["ui", "api", "cli", "other"]),
@@ -110,6 +116,25 @@ export const QaExecutionFields = {
 			criteria: z.array(
 				z.object({
 					criterionId: text,
+					origin: z
+						.object({
+							headSha: text,
+							storyDigest: text,
+							dependencyDigest: text,
+							environmentDigest: text,
+							environmentFingerprint: text,
+							environmentProofDigest: text,
+							sourceDigest: text,
+							at: text,
+						})
+						.optional(),
+					reuse: z
+						.object({
+							originalDigest: text,
+							snapshotDigest: text,
+							reason: text,
+						})
+						.optional(),
 					outcome,
 					expected: text,
 					observed: text,

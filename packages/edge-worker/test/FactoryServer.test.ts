@@ -1991,3 +1991,60 @@ it("returns an unavailable error when push configuration has no sender hook", as
 		rmSync(home, { recursive: true, force: true });
 	}
 });
+
+it("supplies only the adjacent retained guide in the protected dashboard for legacy progress migration", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-reader-migration-"));
+	const runtime = new WorkflowRuntime(home, {});
+	const run = runtime.create({
+		id: "reader",
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "factory",
+			at: new Date().toISOString(),
+		},
+		title: "Reader",
+		repositoryId: "repo",
+		workspace: home,
+		input: "",
+		workflow: defaultWorkflows[1]!,
+	});
+	const old = {
+		chapters: [{ id: "authorization" }],
+		reviewFiles: { headSha: "old" },
+	};
+	run.outputs.guide = { previousHeadSha: "old" };
+	run.history.push(
+		{ step: "custom/guide", at: new Date().toISOString(), output: old },
+		{
+			step: "capture",
+			at: new Date().toISOString(),
+			output: { notes: "Large unrelated evidence" },
+		},
+	);
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+	});
+	try {
+		const response = await server.app.inject({
+			method: "GET",
+			url: "/api/runs/reader?view=dashboard",
+		});
+		expect(response.statusCode).toBe(200);
+		expect(response.json().previousReviewGuide).toEqual(old);
+		expect(response.json().history.every((entry: any) => !entry.output)).toBe(
+			true,
+		);
+		run.outputs.guide = { previousHeadSha: "missing" };
+		const missing = await server.app.inject({
+			method: "GET",
+			url: "/api/runs/reader?view=dashboard",
+		});
+		expect(missing.json().previousReviewGuide).toBeUndefined();
+	} finally {
+		await server.stop();
+		await runtime.shutdown();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
