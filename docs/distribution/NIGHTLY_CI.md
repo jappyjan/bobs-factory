@@ -1,7 +1,11 @@
 # Automatic nightly CI
 
 The hourly `release-channel.yml` poll retains the changed-main and six-hour
-eligibility checks. An eligible nightly now runs the existing four native jobs,
+eligibility checks. Manual nightly dispatches can explicitly set `skip_cooldown=true`
+to skip only the six-hour delay. The frozen candidate records the choice, and the
+publisher verifies the original manual workflow run before honoring it; retries
+retain that choice. See [manual override usage](PUBLIC_RELEASES.md#manual-nightly-cooldown-override).
+An eligible nightly now runs the existing four native jobs,
 then the existing desktop matrix using those same native artifacts, plus current
 unit/integration tests and owned mocked delivery workflows. It does not rebuild
 another native matrix for desktop.

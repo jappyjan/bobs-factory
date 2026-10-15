@@ -157,3 +157,22 @@ review or merge; profile MCP repairs apply only to future accepted snapshots.
 Listener errors identify the instance and requested run (when
 supplied), with sanitized context and recovery guidance. Overlapping connection
 edits return `stale_configuration`; overlapping run actions return `stale_state`.
+
+## Host Git identity and SSH agent
+
+Settings → Identity profiles → Host Git identity saves an optional instance socket in `<factoryHome>/factory/git-settings.json`.
+The saved socket overrides inherited `SSH_AUTH_SOCK` for host Git commands, worktree
+preparation/hooks and new host agent sessions. It is read for subsequent commands
+and retained-run retries without restarting the worker. Clearing it restores the
+inherited agent. Running child processes retain their launch environment.
+
+Host and explicit identity bindings share an SSH agent selector that shows detected
+Bitwarden/1Password sockets and tests connectivity/key availability. Host settings
+also show the effective source. Custom paths are absolute or `~/` paths
+on the Factory machine; saving requires an existing socket. Only the socket path is
+stored. Native keys, Git signing policy, repository accounts and credential stores
+stay unchanged. Explicit execution environments keep their declared bindings;
+profiles using shared host signing use the instance agent. Saving never retries a
+run or approves publication automatically. After repairing access, use the failed
+run’s **Retry step** action. An agent connection test does not sign a commit or
+establish that a particular signing key is unlocked.

@@ -22,6 +22,7 @@ import type {
 } from "bobs-factory-core";
 import { resolvePath } from "bobs-factory-core";
 import { applyManagedGithubAgentEnvironment } from "./factory/GithubApi.js";
+import { gitAgentEnvironment } from "./factory/GitSettings.js";
 import { titleMcpConfig } from "./factory/TitleMcpConfig.js";
 import { buildIntentToAddHook } from "./hooks/IntentToAddHook.js";
 import { buildPrMarkerHook } from "./hooks/PrMarkerHook.js";
@@ -618,6 +619,9 @@ export class RunnerConfigBuilder {
 		}
 
 		if (input.nativeGithubCredentials !== false && !input.auxiliary) {
+			const agent = gitAgentEnvironment(input.factoryHome);
+			if (agent.SSH_AUTH_SOCK)
+				config.additionalEnv = { ...config.additionalEnv, ...agent };
 			this.applyNativeGithubEnvironment(
 				config,
 				input.factoryHome,

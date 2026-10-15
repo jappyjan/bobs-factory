@@ -20,7 +20,6 @@ import {
 import { homedir } from "node:os";
 import { basename, join, resolve as pathResolve } from "node:path";
 import { promisify } from "node:util";
-
 import type {
 	BaseBranchResolution,
 	Issue,
@@ -35,6 +34,7 @@ import {
 	type ILogger,
 } from "bobs-factory-core";
 import { managedGithubGitEnvironment } from "./factory/GithubApi.js";
+import { gitAgentEnvironment } from "./factory/GitSettings.js";
 import { WorktreeIncludeService } from "./WorktreeIncludeService.js";
 
 export interface CreateGitWorktreeOptions {
@@ -269,8 +269,18 @@ export class GitService {
 			factoryHome: this.factoryHome,
 			directory,
 			repositoryUrl,
+			environment: this.commandEnvironment,
 		});
-		return managed ? { ...process.env, ...managed } : undefined;
+		return managed
+			? { ...(this.commandEnvironment ?? process.env), ...managed }
+			: this.commandEnvironment;
+	}
+	private get commandEnvironment(): Record<string, string> | undefined {
+		if (this.childEnvironment) return this.childEnvironment;
+		const agent = gitAgentEnvironment(this.factoryHome);
+		return agent.SSH_AUTH_SOCK
+			? ({ ...process.env, ...agent } as Record<string, string>)
+			: undefined;
 	}
 
 	/**
@@ -280,7 +290,7 @@ export class GitService {
 		try {
 			// Check if branch exists locally
 			execSync(`git rev-parse --verify "${branchName}"`, {
-				env: this.childEnvironment,
+				env: this.commandEnvironment,
 				cwd: repoPath,
 				stdio: "pipe",
 			});
@@ -334,7 +344,7 @@ export class GitService {
 		): string | null => {
 			try {
 				const output = execSync(`git rev-parse ${flag}`, {
-					env: this.childEnvironment,
+					env: this.commandEnvironment,
 					cwd: workingDirectory,
 					encoding: "utf8",
 					stdio: "pipe",
@@ -395,7 +405,7 @@ export class GitService {
 	findWorktreeByBranch(branchName: string, repoPath: string): string | null {
 		try {
 			const output = execSync("git worktree list --porcelain", {
-				env: this.childEnvironment,
+				env: this.commandEnvironment,
 				cwd: repoPath,
 				encoding: "utf-8",
 			});
@@ -770,7 +780,7 @@ export class GitService {
 			// Verify this is a git repository
 			try {
 				execSync("git rev-parse --git-dir", {
-					env: this.childEnvironment,
+					env: this.commandEnvironment,
 					cwd: repository.repositoryPath,
 					stdio: "pipe",
 				});
@@ -813,7 +823,7 @@ export class GitService {
 			// Check if worktree already exists
 			try {
 				const worktrees = execSync("git worktree list --porcelain", {
-					env: this.childEnvironment,
+					env: this.commandEnvironment,
 					cwd: repository.repositoryPath,
 					encoding: "utf-8",
 				});
@@ -844,7 +854,7 @@ export class GitService {
 					);
 					try {
 						execSync("git worktree prune", {
-							env: this.childEnvironment,
+							env: this.commandEnvironment,
 							cwd: repository.repositoryPath,
 							stdio: "pipe",
 						});
@@ -860,7 +870,7 @@ export class GitService {
 			let createBranch = true;
 			try {
 				execSync(`git rev-parse --verify "${branchName}"`, {
-					env: this.childEnvironment,
+					env: this.commandEnvironment,
 					cwd: repository.repositoryPath,
 					stdio: "pipe",
 				});
@@ -899,7 +909,9 @@ export class GitService {
 				managedGithub = true;
 				throw error;
 			}
-			managedGithub = !this.childEnvironment && Boolean(networkEnvironment);
+			managedGithub =
+				!this.childEnvironment &&
+				networkEnvironment?.BOBS_FACTORY_GITHUB_MANAGED_CREDENTIALS === "1";
 			let hasRemote = true;
 			try {
 				if (this.executionCapacity()) {
@@ -984,7 +996,7 @@ export class GitService {
 						// Check if base branch exists locally
 						try {
 							execSync(`git rev-parse --verify "${baseBranch}"`, {
-								env: this.childEnvironment,
+								env: this.commandEnvironment,
 								cwd: repository.repositoryPath,
 								stdio: "pipe",
 							});
@@ -1018,7 +1030,7 @@ export class GitService {
 			}
 
 			execSync(worktreeCmd, {
-				env: this.childEnvironment,
+				env: this.commandEnvironment,
 				cwd: repository.repositoryPath,
 				stdio: "pipe",
 			});
@@ -1057,7 +1069,7 @@ export class GitService {
 			if (isUpdatePaused(error)) throw error;
 			if (this.childEnvironment || managedGithub)
 				throw new Error(
-					`Failed to prepare the selected execution worktree. No fallback workspace was created. ${redactHookOutput(error instanceof Error ? error.message : "Git preparation failed", { cwd: repository.repositoryPath, env: this.childEnvironment ?? {} })}`,
+					`Failed to prepare the selected execution worktree. No fallback workspace was created. ${redactHookOutput(error instanceof Error ? error.message : "Git preparation failed", { cwd: repository.repositoryPath, env: this.commandEnvironment ?? {} })}`,
 				);
 			const errorMessage = (error as Error).message;
 			this.logger.error("Failed to create git worktree:", errorMessage);
@@ -1154,7 +1166,7 @@ export class GitService {
 				// Fall back to the worktree path itself (git reads its .git file to find the parent)
 				const cwd = mainRepoPath ?? wtPath;
 				execSync(`git worktree remove --force "${wtPath}"`, {
-					env: this.childEnvironment,
+					env: this.commandEnvironment,
 					cwd,
 					stdio: "pipe",
 					timeout: 30_000,
@@ -1183,7 +1195,7 @@ export class GitService {
 		for (const repoPath of parentRepoPaths) {
 			try {
 				execSync("git worktree prune", {
-					env: this.childEnvironment,
+					env: this.commandEnvironment,
 					cwd: repoPath,
 					stdio: "pipe",
 					timeout: 10_000,
@@ -1589,7 +1601,7 @@ export class GitService {
 					cwd,
 					detached: process.platform !== "win32",
 					env: {
-						...(this.childEnvironment ?? process.env),
+						...(this.commandEnvironment ?? process.env),
 						...env,
 					},
 					shell,
@@ -1649,11 +1661,11 @@ export class GitService {
 					error.signal = timedOut ? "SIGTERM" : (signal ?? undefined);
 					const stdoutTail = stdoutCollector.tail({
 						cwd,
-						env: { ...this.childEnvironment, ...env },
+						env: { ...this.commandEnvironment, ...env },
 					});
 					const stderrTail = stderrCollector.tail({
 						cwd,
-						env: { ...this.childEnvironment, ...env },
+						env: { ...this.commandEnvironment, ...env },
 					});
 					error.stdoutTail = stdoutTail.text;
 					error.stderrTail = stderrTail.text;

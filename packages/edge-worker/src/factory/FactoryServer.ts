@@ -242,6 +242,7 @@ export class FactoryServer {
 						runtime.getTitleSettings(),
 						runtime.catalog.read(),
 						runtime.executionProfiles.read(),
+						runtime.gitSettings.read(),
 					]),
 				)
 				.digest("hex");
@@ -650,6 +651,7 @@ export class FactoryServer {
 			capacity: await hooks.capacity?.snapshot(),
 			configRevision: configRevision(),
 			executionProfiles: runtime.executionProfiles.read(),
+			gitSettings: runtime.gitSettings.status(),
 			executionConsumers: [...runtime.runs.values()]
 				.filter((run) => run.executionSnapshot)
 				.map((run) => ({
@@ -714,6 +716,16 @@ export class FactoryServer {
 				body.expectedRevision,
 			);
 		});
+		this.app.put("/api/git-settings", { bodyLimit: 8192 }, (request) => {
+			checkConfigRevision(request);
+			return {
+				gitSettings: runtime.updateGitSettings(request.body),
+				configRevision: configRevision(),
+			};
+		});
+		this.app.post("/api/git-settings/test", { bodyLimit: 8192 }, (request) =>
+			runtime.gitSettings.test(request.body),
+		);
 		this.app.post("/api/execution-preview", async (request) => {
 			const body = z
 				.object({
