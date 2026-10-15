@@ -1,4 +1,4 @@
-// F1_AGENT_MODE=live ARCHITECTURE_SOURCE_REPO=/repo ARCHITECTURE_CONTEXT=/context.json bun <this file>
+// F1_AGENT_MODE=live BOBS_FACTORY_ARCHITECTURE_SOURCE_REPO=/repo BOBS_FACTORY_ARCHITECTURE_CONTEXT=/context.json bun <this file>
 // Context is { input, outputs: { clarify, plan } }. Live mode uses native Claude for both planning and review.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -22,10 +22,11 @@ import {
 } from "../../../src/MockAgentRunner.ts";
 
 const mode = parseF1AgentMode(process.env.F1_AGENT_MODE);
-const port = Number(process.env.ARCHITECTURE_FACTORY_PORT ?? 3996);
+const port = Number(process.env.BOBS_FACTORY_ARCHITECTURE_PORT ?? 3996);
 const home = mkdtempSync(join(tmpdir(), "architecture-brief-dev-"));
 const repo = join(home, "repo");
-const evidence = process.env.ARCHITECTURE_EVIDENCE ?? join(home, "results");
+const evidence =
+	process.env.BOBS_FACTORY_ARCHITECTURE_EVIDENCE ?? join(home, "results");
 mkdirSync(evidence, { recursive: true });
 const git = (...args: string[]) =>
 	execFileSync("git", args, {
@@ -34,8 +35,8 @@ const git = (...args: string[]) =>
 		stdio: "pipe",
 	}).trim();
 if (mode === "live") {
-	assert.ok(process.env.ARCHITECTURE_SOURCE_REPO);
-	assert.ok(process.env.ARCHITECTURE_CONTEXT);
+	assert.ok(process.env.BOBS_FACTORY_ARCHITECTURE_SOURCE_REPO);
+	assert.ok(process.env.BOBS_FACTORY_ARCHITECTURE_CONTEXT);
 	execFileSync(
 		"git",
 		[
@@ -43,7 +44,7 @@ if (mode === "live") {
 			"--shared",
 			"--branch",
 			"main",
-			process.env.ARCHITECTURE_SOURCE_REPO,
+			process.env.BOBS_FACTORY_ARCHITECTURE_SOURCE_REPO,
 			repo,
 		],
 		{ stdio: "pipe" },
@@ -172,7 +173,9 @@ runtime.hooks.agent = async (context: any) => {
 };
 const context =
 	mode === "live"
-		? JSON.parse(readFileSync(process.env.ARCHITECTURE_CONTEXT!, "utf8"))
+		? JSON.parse(
+				readFileSync(process.env.BOBS_FACTORY_ARCHITECTURE_CONTEXT!, "utf8"),
+			)
 		: { input: "Require exact architecture approval.", outputs: {} };
 const prompt = `${context.input}\n\nRetained clarification and draft plan for review:\n${JSON.stringify(context.outputs)}\n\nThis is a local architecture-only validation. Inspect this run's selected local repository. Do not implement, publish, post messages or change any external service. Repository scope supplied by this dev instance supersedes old working-directory paths in retained context. For large JSON results use Write only within the evidence directory shown by /resultSubmission, then submit_result_artifact; do not write shell helper scripts.`;
 const until = async (check: () => boolean, timeout = 20 * 60_000) => {

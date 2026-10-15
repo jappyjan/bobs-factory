@@ -20,8 +20,8 @@ F1 applies because this changes generated planning contracts, runtime proposal v
 Run from the repository root:
 
 ```sh
-F1_AGENT_MODE=mock ARCHITECTURE_FACTORY_PORT=3998 \
-  ARCHITECTURE_EVIDENCE=/tmp/architecture-brief-mock \
+F1_AGENT_MODE=mock BOBS_FACTORY_ARCHITECTURE_PORT=3998 \
+  BOBS_FACTORY_ARCHITECTURE_EVIDENCE=/tmp/architecture-brief-mock \
   bun apps/f1/test-drives/media/2026-10-15-architecture-review-brief/dev-drive.ts
 ```
 
@@ -35,9 +35,9 @@ The same driver ran with `F1_AGENT_MODE=live`, a private context file containing
 
 ```sh
 F1_AGENT_MODE=live \
-  ARCHITECTURE_SOURCE_REPO=/path/to/source-repository \
-  ARCHITECTURE_CONTEXT=/path/to/retained-context.json \
-  ARCHITECTURE_EVIDENCE=/tmp/architecture-brief-live \
+  BOBS_FACTORY_ARCHITECTURE_SOURCE_REPO=/path/to/source-repository \
+  BOBS_FACTORY_ARCHITECTURE_CONTEXT=/path/to/retained-context.json \
+  BOBS_FACTORY_ARCHITECTURE_EVIDENCE=/tmp/architecture-brief-live \
   bun apps/f1/test-drives/media/2026-10-15-architecture-review-brief/dev-drive.ts
 ```
 
