@@ -1060,6 +1060,32 @@ export class FactoryServer {
 				return {
 					...slim,
 					outputs: run ? runtime.outputPreviews(run) : {},
+					// Supply only the adjacent retained guide for legacy reading-progress
+					// migration. Other historical outputs stay out of dashboard responses.
+					previousReviewGuide:
+						run &&
+						(run?.outputs.guide as { previousHeadSha?: string } | undefined)
+							?.previousHeadSha
+							? run.history
+									.slice()
+									.reverse()
+									.find((entry) => {
+										const guide = entry.output as
+											| {
+													reviewFiles?: { headSha?: string };
+													chapters?: unknown;
+											  }
+											| undefined;
+										return (
+											(entry.step === "guide" ||
+												entry.step.endsWith("/guide")) &&
+											guide?.reviewFiles?.headSha ===
+												(run.outputs.guide as { previousHeadSha?: string })
+													.previousHeadSha &&
+											guide?.chapters
+										);
+									})?.output
+							: undefined,
 					history: (
 						runtime.listRuns().find((item) => item.id === request.params.id)
 							?.history ?? []

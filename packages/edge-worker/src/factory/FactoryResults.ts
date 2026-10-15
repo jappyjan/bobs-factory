@@ -11,6 +11,7 @@ import {
 	QaCaptureSchema,
 } from "./FactoryTools.js";
 import { FeedbackPolicySchema } from "./FeedbackPolicy.js";
+import { ImpactSchema } from "./Impact.js";
 import { QaScopeFieldsSchema, scopeIssues } from "./Qa.js";
 import {
 	normalizeQuestionResult,
@@ -109,7 +110,8 @@ export const RequirementCoverageSchema = z.object({
 		z.object({
 			requirementId: text,
 			criterion: text,
-			status: z.enum(["met", "not_met", "deliberately_skipped"]),
+			status: z.enum(["met", "not_met", "deliberately_skipped", "deferred"]),
+			obligation: z.object({ stage: text, action: text }).optional(),
 			evidence: z.array(text),
 			reason: text,
 			decision: z
@@ -125,6 +127,15 @@ export const RequirementCoverageSchema = z.object({
 	reviewers: z.array(
 		z.object({
 			reviewer: text,
+			evidence: z
+				.object({
+					kind: z.enum(["fresh", "reused"]),
+					originalHeadSha: text,
+					originalRound: z.number().int(),
+					executedAt: text.optional(),
+					reason: text.optional(),
+				})
+				.optional(),
 			summary: text,
 			findings: z.array(
 				z.object({
@@ -443,6 +454,7 @@ function parseFactoryResult(
 						.array(
 							z.object({
 								id: text,
+								repositoryId: text.optional(),
 								bodySha256: z.string().regex(/^[a-f0-9]{64}$/),
 							}),
 						)
@@ -480,7 +492,9 @@ export function validateFactoryResult(
 	qaContract?: "qa-v1",
 	videoContract?: "video-v1",
 	architectureContract?: "architecture-v1" | "architecture-review-v1",
+	impactContract?: "impact-v1",
 ): unknown {
+	if (impactContract) return ImpactSchema.parse(output);
 	if (architectureContract === "architecture-v1")
 		return ArchitectureSchema.parse(output);
 	if (architectureContract === "architecture-review-v1")

@@ -223,7 +223,10 @@ it("serves real IPv4 and IPv6 loopback APIs and streams without auth while prese
 			origin: local,
 		});
 		expect(status.headers.get("set-cookie")).toBeNull();
-		expect((await fetch(`${local}/api/config`)).status).toBe(200);
+		const config = await fetch(`${local}/api/config`);
+		expect(config.status).toBe(200);
+		// Drain the response so an unread body cannot hold shutdown open.
+		await config.arrayBuffer();
 		const events = await fetch(`${local}/api/events`);
 		expect(events.status).toBe(200);
 		const reader = events.body!.getReader();
@@ -231,14 +234,12 @@ it("serves real IPv4 and IPv6 loopback APIs and streams without auth while prese
 			"event: ready",
 		);
 		await reader.cancel();
-		expect(
-			(
-				await fetch(`${local}/api/runs/missing/stop`, {
-					method: "POST",
-					headers: { Origin: local, "X-Factory-Request": "1" },
-				})
-			).status,
-		).toBe(404);
+		const missing = await fetch(`${local}/api/runs/missing/stop`, {
+			method: "POST",
+			headers: { Origin: local, "X-Factory-Request": "1" },
+		});
+		expect(missing.status).toBe(404);
+		await missing.arrayBuffer();
 	}
 	const url = `http://127.0.0.1:${port}/api/runs`;
 	expect(

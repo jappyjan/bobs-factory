@@ -22,6 +22,7 @@ export function artifactType(v: any) {
 		...Object.keys(v),
 		...(Array.isArray(v.keys) ? v.keys : []),
 	]);
+	if (keys.has("impactContract")) return "impact";
 	if (keys.has("architectureContract") && keys.has("candidate"))
 		return "architecture";
 	if (keys.has("qaContract") && keys.has("results")) return "qa";
@@ -48,6 +49,7 @@ export function artifactType(v: any) {
 	return "structure";
 }
 const typeIcons: Record<string, string> = {
+	impact: "🧭",
 	architecture: "🏗️",
 	qa: "🧪",
 	screenshots: "🖼️",
@@ -69,6 +71,8 @@ const typeIcons: Record<string, string> = {
 export function artifactSummary(v: any): string {
 	if (v?.__artifactPreview)
 		return `${Math.ceil(v.size / 1024)} KB · open to inspect`;
+	if (v?.impactContract)
+		return `${v.specialists?.length ?? 0} fresh reviewers · ${v.reuseRecords?.length ?? 0} retained review${v.reuseRecords?.length === 1 ? "" : "s"}`;
 	if (v?.qaBlocked) return "QA assistance needed";
 	if (v?.qaContract && v?.results) {
 		const criteria = v.results.flatMap((r: any) => r.criteria ?? []);
@@ -394,6 +398,49 @@ export function RenderArtifact({
 	onImage: (i: number) => void;
 }) {
 	switch (artifactType(v)) {
+		case "impact":
+			return (
+				<section>
+					<h3>Review work selected</h3>
+					<Markdown>{v.summary}</Markdown>
+					<Markdown>{v.rationale}</Markdown>
+					<h4>Run again</h4>
+					<List
+						items={(v.specialists ?? []).map(
+							(id: string) =>
+								v.snapshot?.reviewers?.find((r: any) => r.id === id)?.name ??
+								id,
+						)}
+					/>
+					<List
+						items={(v.checks ?? []).map(
+							(c: any) => `${c.command}: ${c.reason}`,
+						)}
+					/>
+					<h4>Evidence retained</h4>
+					{(v.reuseRecords ?? []).map((r: any) => (
+						<article className="scope-card" key={r.originalDigest}>
+							<strong>
+								{v.snapshot?.reviewers?.find(
+									(role: any) => role.id === r.original.stamp.reviewer,
+								)?.name ?? r.original.stamp.reviewer}
+							</strong>
+							<Markdown>{r.reason}</Markdown>
+							<p>
+								Originally reviewed {r.original.stamp.headSha.slice(0, 8)}
+								{r.original.evidenceBoundary?.at
+									? ` on ${r.original.evidenceBoundary.at}`
+									: ""}
+								.
+							</p>
+						</article>
+					))}
+					<h4>Human approval</h4>
+					<Markdown>{v.approvalRationale}</Markdown>
+					<List items={v.uncertainty ?? []} />
+					<List items={v.questions ?? []} />
+				</section>
+			);
 		case "architecture":
 			return <ArchitectureContent content={v} />;
 		case "qa":

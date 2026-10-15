@@ -19,6 +19,9 @@ export function isComputeIntensive(step: WorkflowStep): boolean {
 	)
 		return false;
 	return (
-		step.computeIntensive ?? (step.type === "script" || step.tool === "exec")
+		step.computeIntensive ??
+		(step.type === "script" ||
+			step.tool === "exec" ||
+			step.tool === "impact-checks")
 	);
 }

@@ -20,6 +20,7 @@ import {
 	accessRequired,
 	accessSignal,
 	accessState,
+	cancelAccessRequests,
 	onAccessLost,
 	onSessionRotation,
 } from "./auth-state";
@@ -61,7 +62,14 @@ export function useLiveUpdates() {
 	const [error, setError] = useState<string>();
 	useEffect(() => {
 		let controller: AbortController;
+		let failureTimer: ReturnType<typeof setTimeout> | undefined;
+		const cancelFailure = () => clearTimeout(failureTimer);
+		const stop = () => {
+			cancelFailure();
+			controller.abort();
+		};
 		const connect = () => {
+			cancelFailure();
 			const connection = new AbortController();
 			controller = connection;
 			void fetchEventSource("/api/events", {
@@ -73,6 +81,7 @@ export function useLiveUpdates() {
 					}
 					await validateLiveConnection(response);
 					if (connection.signal.aborted) return;
+					cancelFailure();
 					setError(undefined);
 					// A new connection can have missed events while offline or in the background.
 					void cache.invalidateQueries({ queryKey: ["runs"] });
@@ -103,13 +112,25 @@ export function useLiveUpdates() {
 						pwaState().status === "mismatch"
 					)
 						throw cause; // Await an explicit update; do not accumulate rejected SSE streams.
-					disconnected();
-					if (!connection.signal.aborted)
+					// Browsers can reject the request just before pagehide. Give the
+					// navigation event time to cancel cleanup; real failures still clear
+					// private state promptly, before the stream's retry interval.
+					cancelFailure();
+					failureTimer = setTimeout(() => {
+						if (
+							connection.signal.aborted ||
+							controller !== connection ||
+							accessState().status !== "authenticated" ||
+							pwaState().status === "mismatch"
+						)
+							return;
+						disconnected();
 						setError(
 							cause instanceof Error
 								? cause.message
 								: "Live connection unavailable",
 						);
+					}, 250);
 					return 2000;
 				},
 			}).catch(() => {
@@ -118,8 +139,26 @@ export function useLiveUpdates() {
 		};
 		connect();
 		let mounted = true;
+		// Full-page navigation does not unmount React before requests are torn
+		// down. Abort the live stream first so that teardown is not treated as
+		// a connection failure that clears private reading state.
+		const hide = () => {
+			stop();
+			cancelAccessRequests();
+		};
+		const show = (event: PageTransitionEvent) => {
+			if (
+				event.persisted &&
+				mounted &&
+				accessState().status === "authenticated"
+			)
+				connect();
+		};
+		window.addEventListener("beforeunload", hide);
+		window.addEventListener("pagehide", hide);
+		window.addEventListener("pageshow", show);
 		const unsubscribe = onSessionRotation(() => {
-			controller.abort();
+			stop();
 			void cache.cancelQueries();
 			return () => {
 				if (mounted && accessState().status === "authenticated") connect();
@@ -127,8 +166,11 @@ export function useLiveUpdates() {
 		});
 		return () => {
 			mounted = false;
+			window.removeEventListener("beforeunload", hide);
+			window.removeEventListener("pagehide", hide);
+			window.removeEventListener("pageshow", show);
 			unsubscribe();
-			controller.abort();
+			stop();
 		};
 	}, [cache]);
 	return error;
@@ -225,7 +267,13 @@ export async function api<T = any>(
 		}
 		return body;
 	} catch (error) {
-		if (error instanceof TypeError) disconnected();
+		if (
+			error instanceof TypeError &&
+			epoch === accessGeneration() &&
+			!authSignal.aborted &&
+			!options.signal?.aborted
+		)
+			disconnected();
 		throw error;
 	} finally {
 		finish?.();

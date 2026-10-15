@@ -1144,6 +1144,14 @@ export function Recipes() {
 										rows={8}
 									/>
 								</label>
+								{role.value.impactContract && (
+									<p>
+										Independent impact assessment selects affected reviewers and
+										checks. Fork this workflow to configure its inventory,
+										reviewer group and unchanged-cycle limit. Existing accepted
+										runs retain their saved definition.
+									</p>
+								)}
 								{role.value.architectureContract && (
 									<p>
 										Architecture output: {role.value.architectureContract}. The
