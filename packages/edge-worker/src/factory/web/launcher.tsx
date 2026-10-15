@@ -288,17 +288,17 @@ export function Composer({
 	const inputContext = `${launchConfig}/${repo}/${workflowId}`;
 	const action = useAction("launch", inputContext);
 	const isCurrent = useCurrentForm(inputContext);
-	// Unsent inputs and overrides belong to the selected project and workflow.
+	// Typed text survives project and recipe switches; fields are matched by name.
 	const [values, setValues] = useFormState<Record<string, string>>(
-			inputContext,
+			launchConfig,
 			{},
 		),
-		[settings, setSettings] = useFormState<any>(inputContext, {}),
+		[settings, setSettings] = useFormState<any>(launchConfig, {}),
 		[execution, setExecution] = useFormState<ExecutionSelection>(
 			inputContext,
 			{},
 		),
-		[settingsOpen, setSettingsOpen] = useFormState(inputContext, false),
+		[settingsOpen, setSettingsOpen] = useFormState(launchConfig, false),
 		[dragging, setDragging] = useFormState(inputContext, false);
 	const workflows = config.workflows.filter(
 			(w: any) =>
@@ -316,7 +316,13 @@ export function Composer({
 		(field) => field !== main && field.type !== "files",
 	);
 	const fileFields = fields.filter((field) => field.type === "files");
-	const uploads = useLaunchUploads(inputContext, config, repo, workflowId);
+	const uploads = useLaunchUploads(
+		inputContext,
+		config,
+		repo,
+		workflowId,
+		fileFields.map((field) => field.name),
+	);
 	const project = config.repositories.find((item: any) => item.id === repo);
 	const runner = settings.runner || config.defaultRunner;
 	const levels: string[] | undefined = config.reasoningLevels?.[runner];
@@ -339,6 +345,10 @@ export function Composer({
 	const customized =
 		["model", "modelVariant", "serviceTier"].some((key) => settings[key]) ||
 		Boolean(execution.identityProfile || execution.toolProfile);
+	const changeScope = (apply: () => void) => {
+		uploads.carryOver();
+		apply();
+	};
 	const submit = async () => {
 		if (blocked) return;
 		try {
@@ -383,7 +393,7 @@ export function Composer({
 				projects={config.repositories}
 				value={repo}
 				disabled={action.isPending}
-				onChange={setRepo}
+				onChange={(id) => changeScope(() => setRepo(id))}
 			/>
 			<p className="launcher-subtitle">
 				{!config.repositories.length ? (
@@ -445,13 +455,6 @@ export function Composer({
 				}}
 			>
 				<fieldset className="launcher-body" disabled={action.isPending}>
-					{main && (
-						<PromptInput
-							field={main}
-							value={fieldValue(main)}
-							onChange={(value) => setValues({ ...values, [main.name]: value })}
-						/>
-					)}
 					<AttachmentChips
 						uploads={uploads}
 						labels={
@@ -476,22 +479,12 @@ export function Composer({
 							))}
 						</div>
 					)}
-					{fileFields.length > 0 && (
-						<div className="launcher-fields">
-							{fileFields.map((field) => (
-								<div
-									key={field.name}
-									className="launcher-field"
-									id={`launch-file-${field.name}`}
-								>
-									<strong>
-										{field.label}
-										{field.required ? " (required)" : " (optional)"}
-									</strong>
-									{field.description && <small>{field.description}</small>}
-								</div>
-							))}
-						</div>
+					{main && (
+						<PromptInput
+							field={main}
+							value={fieldValue(main)}
+							onChange={(value) => setValues({ ...values, [main.name]: value })}
+						/>
 					)}
 				</fieldset>
 				<div className="launcher-bar">
@@ -500,7 +493,7 @@ export function Composer({
 							label="Recipe"
 							value={workflow?.id ?? ""}
 							disabled={action.isPending || !workflows.length}
-							onChange={setWorkflow}
+							onChange={(id) => changeScope(() => setWorkflow(id))}
 							options={workflows.map((item: any) => ({
 								value: item.id,
 								label: `${item.icon ?? "🧩"} ${item.name}`,

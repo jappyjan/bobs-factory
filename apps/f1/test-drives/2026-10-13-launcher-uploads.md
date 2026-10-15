@@ -137,50 +137,11 @@ browser checks above were repeated against the new bundle. Edge-worker typecheck
 and the focused factory suites passed. Biome reports only the 17 existing CSS
 warnings.
 
-## Review fix: clear drafts when project or recipe changes
+## Reverted pipeline review fix
 
-2026-10-15, finding `BOBS85-SCOPE-RESET`, on parent `c07499e5` plus
-this fix. This section supersedes the earlier browser result that preserved
-text and attachments across project changes. The accepted requirement is to
-clear unsent content and overrides when the selection changes.
-
-Inputs, agent overrides and the settings dialog now use the project/workflow
-context, alongside execution selection and upload drafts. Removed file carryover
-and fallback assignment to another workflow's first attachment field. Existing
-upload cleanup aborts pending requests; callbacks from an old draft cannot
-update its replacement. The changelog now describes the corrected behavior.
-
-The F1 fixture explicitly injects the CLI issue tracker required by current
-startup and adds an independent project in `--serve` mode for browser switching.
-Ran the same documented drive with `F1_AGENT_MODE=mock` and `--serve`: all eleven
-HTTP/runtime assertions passed. No real agents or provider credits were used.
-The existing handled missing `issue-1` warning remains; the drive passed its
-Simple attachment assertions. Shut down the fixture after browser verification.
-
-A fresh headless `agent-browser` session against that isolated instance verified:
-
-- Entered instructions, uploaded `scope-A.txt` through the real endpoint and
-  chose Codex. Switching projects cleared the prompt and chip and restored the
-  default agent. Returning to the previous project kept the draft empty. Only
-  one upload request was made; changing projects did not re-stage the file.
-- Filled Takeover's source and instructions and uploaded `pending.txt`. Held
-  its real HTTP response in a browser fetch wrapper while switching to Attachment
-  reader. The old request's signal was aborted. Releasing its delayed response
-  did not restore the chip or instructions and did not trigger another upload.
-- Returning to Takeover left both source and instructions empty. Setting a model
-  override and high reasoning, then switching recipes, restored empty/default
-  settings.
-- Submitted new instructions through Attachment reader. The captured real
-  `POST /api/runs` body contained only `prompt: "New scope instructions only"`,
-  `attachments: {}` and `execution: {}`. It contained no source, runner, model or
-  reasoning override. No browser page errors were reported.
-
-Raw drive output and the captured browser receipt are retained in this run's
-evidence directory as `scope-reset-f1.log` and `scope-reset-browser.json`.
-
-Validation passed: 48 focused LaunchAssets, FactoryServer and FactoryWebClient
-tests; edge-worker typecheck (including the web application); web bundle build;
-changed TypeScript Biome checks; and `git diff --check`. Stale local core and
-Linear transport declarations initially prevented typechecking; rebuilding
-those dependencies resolved the errors without source changes. Real-agent
-file interpretation remains unverified, as before.
+On 2026-10-15 a pipeline review fix (finding `BOBS85-SCOPE-RESET`) moved the
+attachment chips below the prompt, added a visible file-field description block
+and cleared unsent text, attachments and overrides on project or recipe changes.
+At the product owner's direction those launcher changes were reverted to the
+reviewed design above. Its F1 harness adjustments remain: the explicit CLI issue
+tracker and an independent project in `--serve` mode.
