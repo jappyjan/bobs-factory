@@ -582,6 +582,172 @@ for (const fallback of [false, true])
 		}
 	});
 
+function recentPublishedNightly(fixture) {
+	return {
+		id: 100,
+		tag_name: fixture.manifest.tag,
+		commit: fixture.manifest.commit,
+		draft: false,
+		prerelease: true,
+		published_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+		assets: fixture.records.map((record) => {
+			const bytes = readFileSync(join(fixture.assets, record.file));
+			return {
+				name: record.file,
+				state: "uploaded",
+				size: bytes.length,
+				digest: `sha256:${sha256(bytes)}`,
+				bytes: bytes.toString("base64"),
+				browser_download_url: `https://github.com/jappyjan/bobs-factory/releases/download/${fixture.manifest.tag}/${record.file}`,
+			};
+		}),
+	};
+}
+
+test("fresh manual preparation freezes the override while ordinary preparation respects cooldown", () => {
+	const older = preparedFixture("nightly", { sequence: 9 });
+	const f = setup(
+		"nightly",
+		{
+			history: [recentPublishedNightly(older)],
+			contents: {
+				"apps/cli/package.json": Buffer.from(
+					JSON.stringify({ version: "1.0.0-beta" }),
+				).toString("base64"),
+			},
+		},
+		{ gitTooling: true },
+	);
+	try {
+		// The prepared fixture's publication used another immutable source.
+		const state = f.state();
+		state.mainSha = "d".repeat(40);
+		writeFileSync(f.provider, JSON.stringify(state));
+		const output = join(f.work, "new-candidate.json");
+		const run = (extra) =>
+			spawnSync(
+				process.execPath,
+				[
+					"--import",
+					transport,
+					join(f.work, "scripts/prepare-release-candidate.mjs"),
+					"--channel",
+					"nightly",
+					"--output",
+					output,
+					"--workflow-sha",
+					f.identity.workflowSha,
+					"--sequence",
+					"11",
+					"--date",
+					"2026-10-09T00:00:00Z",
+					...extra,
+				],
+				{
+					cwd: f.work,
+					encoding: "utf8",
+					env: {
+						...process.env,
+						GITHUB_EVENT_NAME: "workflow_dispatch",
+						BOBS_FACTORY_TEST_PROVIDER: f.provider,
+					},
+				},
+			);
+		const ordinary = run([]);
+		assert.equal(ordinary.status, 0, ordinary.stderr);
+		assert.match(ordinary.stdout, /cooldown/);
+		assert.equal(existsSync(output), false);
+		const forced = run(["--skip-cooldown"]);
+		assert.equal(forced.status, 0, forced.stderr);
+		const record = JSON.parse(readFileSync(output));
+		assert.equal(record.candidate.skipCooldown, true);
+		assert.equal(record.candidate.commit, state.mainSha);
+		assert.equal(record.candidate.workflowSha, f.identity.workflowSha);
+		assert.deepEqual(
+			f.state().operations.filter((o) => o.method !== "GET"),
+			[],
+		);
+	} finally {
+		f.cleanup();
+		older.cleanup();
+	}
+});
+
+for (const scenario of ["default", "manual", "scheduled", "advanced-main"]) {
+	test(`recent nightly publication honors only a frozen manual cooldown override: ${scenario}`, () => {
+		const candidateArgs = {
+			channel: "nightly",
+			commit: "a".repeat(40),
+			workflowSha: "b".repeat(40),
+			committedVersion: "1.0.0-beta",
+			sequence: 10,
+			date: "2026-10-09T00:00:00Z",
+		};
+		const older = preparedFixture("nightly", {
+			frozenCandidate: freezeCandidate({
+				...candidateArgs,
+				commit: "c".repeat(40),
+				sequence: 9,
+			}),
+		});
+		const history = [recentPublishedNightly(older)];
+		const f = setup(
+			"nightly",
+			{
+				history,
+				...(scenario === "advanced-main" ? { mainSha: "f".repeat(40) } : {}),
+				cooldownOverrideRun: {
+					id: 10,
+					event: scenario === "scheduled" ? "schedule" : "workflow_dispatch",
+					path: ".github/workflows/release-channel.yml",
+					head_sha: candidateArgs.workflowSha,
+					repository: { full_name: "jappyjan/bobs-factory" },
+					head_repository: { full_name: "jappyjan/bobs-factory" },
+				},
+			},
+			{
+				frozenCandidate: freezeCandidate({
+					...candidateArgs,
+					skipCooldown: scenario !== "default",
+				}),
+			},
+		);
+		try {
+			const result = f.run();
+			if (scenario === "manual") {
+				assert.equal(result.status, 0, result.stderr);
+				assert.equal(f.state().release.draft, false);
+				assert.equal(f.state().release.make_latest, "false");
+				const plan = JSON.parse(
+					readFileSync(join(f.output, "publication-plan.json")),
+				);
+				assert.equal(plan.skipCooldown, true);
+			} else {
+				assert.equal(
+					result.status,
+					scenario === "scheduled" ? 1 : 0,
+					result.stderr,
+				);
+				assert.match(
+					result.stderr + result.stdout,
+					scenario === "default"
+						? /cooldown/
+						: scenario === "scheduled"
+							? /original manual/
+							: /stale/,
+				);
+				assert.deepEqual(
+					f.state().operations.filter((o) => o.method !== "GET"),
+					[],
+				);
+			}
+		} finally {
+			f.cleanup();
+			older.cleanup();
+		}
+	});
+}
+
 test("stale nightly candidate does not create a tag or draft", () => {
 	const f = setup("nightly", { mainSha: "f".repeat(40) });
 	try {

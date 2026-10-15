@@ -97,6 +97,11 @@ export function validateCandidate(record) {
 			"Nightly core differs from committed package",
 		);
 	}
+	if (Object.hasOwn(c, "skipCooldown"))
+		check(
+			c.channel === "nightly" && c.skipCooldown === true,
+			"Cooldown override is supported only for nightly candidates and must be true",
+		);
 	if (c.channel === "beta")
 		check(
 			!c.promotion && c.sequence === undefined,
@@ -128,7 +133,13 @@ export function freezeCandidate({
 	sequence,
 	date,
 	promotion,
+	skipCooldown = false,
 }) {
+	check(
+		typeof skipCooldown === "boolean" &&
+			(!skipCooldown || channel === "nightly"),
+		"Cooldown override is supported only for nightly candidates",
+	);
 	if (channel === "nightly") {
 		check(
 			Number.isSafeInteger(sequence) &&
@@ -157,6 +168,7 @@ export function freezeCandidate({
 		},
 		targets: ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64"],
 		...(channel === "nightly" ? { sequence } : {}),
+		...(skipCooldown ? { skipCooldown: true } : {}),
 		...(promotion ? { promotion } : {}),
 	};
 	return validateCandidate({ candidate, digest: candidateDigest(candidate) });
@@ -167,7 +179,10 @@ export function nightlyEligibility({
 	last,
 	isDescendant,
 	now,
+	skipCooldown = false,
 }) {
+	if (typeof skipCooldown !== "boolean")
+		return { status: "blocked", reason: "Invalid nightly cooldown override" };
 	if (!sha(mainSha) || !sha(candidateSha) || !Number.isFinite(now))
 		return { status: "blocked", reason: "Missing immutable source or clock" };
 	if (mainSha !== candidateSha)
@@ -186,12 +201,28 @@ export function nightlyEligibility({
 	const published = Date.parse(last.publishedAt);
 	if (!Number.isFinite(published) || published > now)
 		return { status: "blocked", reason: "Invalid successful publication time" };
-	if (now - published < 6 * 60 * 60 * 1000)
+	if (!skipCooldown && now - published < 6 * 60 * 60 * 1000)
 		return {
 			status: "cooldown",
 			retryAt: new Date(published + 6 * 60 * 60 * 1000).toISOString(),
 		};
 	return { status: "eligible" };
+}
+
+/** The frozen allocation must originate from an explicit manual release request. */
+export function validateCooldownOverride(record, request) {
+	const { candidate: c } = validateCandidate(record);
+	if (!c.skipCooldown) return false;
+	check(
+		request?.id === c.sequence &&
+			request.event === "workflow_dispatch" &&
+			request.head_sha === c.workflowSha &&
+			request.repository?.full_name === c.repository &&
+			request.head_repository?.full_name === c.repository &&
+			request.path === ".github/workflows/release-channel.yml",
+		"Cooldown override requires its original manual release-channel workflow run",
+	);
+	return true;
 }
 export const candidateIdentity = (record, runId) => {
 	validateCandidate(record);
