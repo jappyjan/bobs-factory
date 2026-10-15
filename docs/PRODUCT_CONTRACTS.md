@@ -158,16 +158,17 @@ Listener errors identify the instance and requested run (when
 supplied), with sanitized context and recovery guidance. Overlapping connection
 edits return `stale_configuration`; overlapping run actions return `stale_state`.
 
-## Instance Git SSH agent
+## Host Git identity and SSH agent
 
-Settings → Git saves an optional instance socket in `<factoryHome>/factory/git-settings.json`.
+Settings → Identity profiles → Host Git identity saves an optional instance socket in `<factoryHome>/factory/git-settings.json`.
 The saved socket overrides inherited `SSH_AUTH_SOCK` for host Git commands, worktree
 preparation/hooks and new host agent sessions. It is read for subsequent commands
 and retained-run retries without restarting the worker. Clearing it restores the
 inherited agent. Running child processes retain their launch environment.
 
-The UI shows the effective source, offers detected Bitwarden/1Password sockets and
-tests agent connectivity/key availability. Custom paths are absolute or `~/` paths
+Host and explicit identity bindings share an SSH agent selector that shows detected
+Bitwarden/1Password sockets and tests connectivity/key availability. Host settings
+also show the effective source. Custom paths are absolute or `~/` paths
 on the Factory machine; saving requires an existing socket. Only the socket path is
 stored. Native keys, Git signing policy, repository accounts and credential stores
 stay unchanged. Explicit execution environments keep their declared bindings;

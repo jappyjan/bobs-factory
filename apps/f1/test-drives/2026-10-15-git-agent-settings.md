@@ -1,4 +1,9 @@
-# Configure the instance SSH agent in Settings
+# Configure SSH agents with Git identities
+
+The final UI is **Settings → Identity profiles → Host Git identity**. Explicit
+signing and repository SSH bindings reuse the same selector and connection test.
+The original standalone-page validation below is retained as historical evidence;
+see the final consolidation validation at the end for the shipped UI.
 
 Validated on 2026-10-15, starting from `e9ec4f914fd8ec7745c475941c0afd164a35cc15`
 with this branch’s implementation changes. F1 applies to the new authenticated
@@ -69,3 +74,36 @@ key is unlocked. Real Bitwarden/1Password consent dialogs, remote Git authentica
 and running child-process environment changes are outside this drive. Production
 profiles retain their explicit credential bindings; focused execution tests verify
 that the instance setting does not override an explicit execution environment.
+
+
+## Identity settings consolidation — final PR UI
+
+Validated on 2026-10-15 against `21c22447` plus the consolidation changes. The
+served dashboard build was `fba532167d9ec15ad52ea13f`. The T3 collaborative preview
+was available for this drive and performed the actual UI interactions.
+
+A fresh embedded mocked F1 worker, repository, generated key and two real local
+SSH agents reproduced the failed signing command. The **Identity profiles** page
+contained **Host Git identity**, with no separate Git navigation entry. The drive
+passed 14 checks: inherited empty-agent diagnosis, invalid-path rejection, testing
+without saving, immediate host-agent save and reload persistence, successful retry
+of the same retained run, cryptographic verification of its resulting commit,
+explicit signing and repository agent selection/testing without host mutation,
+disabled testing for an unspecified explicit agent, disposal of unsent profile
+edits on navigation, 390px layout without horizontal overflow, and restored host
+inheritance after clearing the override.
+
+Focused Git settings, PWA restoration, execution profile and execution environment
+suites passed all 77 cases. Build/type checks and targeted Biome checks passed;
+commit hooks repeat the required workspace checks. Profile agents remain saved
+through the existing execution-profile form; host recovery has its own clearly
+labelled save action and does not rewrite accepted profiles or credentials.
+
+Evidence is retained separately at
+`/tmp/bobs-factory-git-identity-evidence`: `fixture.json`, `browser-checks.json`,
+`allowed-signers` and `signature-verification.txt`. The check receipt links the
+visually inspected mobile screenshot saved by T3. The browser fixture script is
+updated to the consolidated route and controls for reproducible agent-browser
+runs; this validation used T3 directly. The fixture worker and disposable agents
+were stopped after validation. Original evidence under
+`/tmp/bobs-factory-git-agent-evidence` remains intact.

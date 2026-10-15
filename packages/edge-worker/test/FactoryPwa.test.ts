@@ -442,7 +442,6 @@ it.each([
 	"",
 	"/access",
 	"/execution",
-	"/git",
 	"/identities",
 	"/tools",
 	"/capacity",
@@ -471,6 +470,7 @@ it.each([
 });
 it.each([
 	"#/settings/unknown",
+	"#/settings/git",
 	"#/settings/notifications/extra",
 	"#/settings/notifications?redirect=evil",
 	"#/settings/tools/extra",

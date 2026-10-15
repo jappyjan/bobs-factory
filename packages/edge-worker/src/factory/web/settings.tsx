@@ -4,7 +4,6 @@ import { useAction, useConfig } from "./client";
 import { ExecutionEditor } from "./execution";
 import { useFormState } from "./form-state";
 import { AgentSettings } from "./forms";
-import { GitSettings } from "./git-settings";
 import { NotificationsSettings } from "./notifications-ui";
 import { Onboarding } from "./onboarding";
 import { revisionOf } from "./restoration";
@@ -13,11 +12,6 @@ import { Button, useToast } from "./ui";
 import { UpdateSettings } from "./updates";
 
 const pages = [
-	{
-		id: "git",
-		name: "Git",
-		description: "SSH agent for authentication and signing",
-	},
 	{
 		id: "tickets",
 		name: "Ticket managers",
@@ -109,7 +103,6 @@ export function Settings() {
 					{page === "tickets" && <TicketManagerSettings />}
 					{page === "notifications" && <NotificationsSettings />}
 					{page === "access" && <AccessSettings />}
-					{page === "git" && <GitSettings config={config} />}
 					{page === "updates" && <UpdateSettings />}
 					{page === "capacity" && <MachineCapacitySettings config={config} />}
 					{page === "titles" && <RunTitleSettings config={config} />}

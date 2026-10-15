@@ -263,7 +263,7 @@ function executeProcessCommand(
 					/Couldn't (?:find key in agent|get agent socket)/.test(output);
 				reject(
 					new Error(
-						`${command} exited ${code}: ${output.slice(-12000)}${agentFailure ? "\nOpen Settings → Git, select the SSH agent that holds your signing key, test and save it, then retry this step." : ""}`,
+						`${command} exited ${code}: ${output.slice(-12000)}${agentFailure ? "\nOpen Settings → Identity profiles → Host Git identity, select the SSH agent that holds your signing key, test and save it, then retry this step." : ""}`,
 					),
 				);
 			} else resolve(output.trim());

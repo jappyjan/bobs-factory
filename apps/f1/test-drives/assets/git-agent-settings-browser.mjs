@@ -20,7 +20,8 @@ const poll = (source) =>
 	);
 const click = (name) =>
 	cli("find", "role", "button", "click", "--name", name, "--exact");
-const fill = (value) => cli("find", "label", "SSH agent socket", "fill", value);
+const fill = (value) =>
+	cli("find", "label", "Host SSH agent socket", "fill", value);
 const checks = [];
 const check = (name, condition = true) => {
 	assert(condition, name);
@@ -31,23 +32,23 @@ const check = (name, condition = true) => {
 		JSON.stringify(checks, null, 2),
 	);
 };
-cli("--headed", "false", "open", "http://localhost:3649/#/settings/git");
+cli("--headed", "false", "open", "http://localhost:3649/#/settings/identities");
 cli("reload");
-poll(`document.querySelector('#git-settings-heading')`);
+poll(`document.querySelector('#host-git-identity-heading')`);
 check(
-	"Direct Settings Git route renders",
+	"Identity settings contain the host identity without a separate Git page",
 	evaluate(
-		`!!document.querySelector('a[href="#/settings/git"][aria-current=page]')`,
+		`!!document.querySelector('a[href="#/settings/identities"][aria-current=page]') && !document.querySelector('a[href="#/settings/git"]')`,
 	),
 );
-click("Test agent");
+click("Test host SSH agent");
 poll(`document.body.innerText.includes('SSH agent has no accessible keys')`);
 check("Inherited empty agent reports a useful test failure");
 fill(`${fixture.home}/missing.sock`);
 poll(`!document.body.innerText.includes('SSH agent has no accessible keys')`);
-click("Test agent");
+click("Test host SSH agent");
 poll(`document.body.innerText.includes('SSH agent socket is unavailable')`);
-click("Save Git settings");
+click("Save host Git agent");
 poll(
 	`document.querySelector('[role=alert]')?.textContent.includes('SSH agent socket is unavailable')`,
 );
@@ -58,7 +59,7 @@ check(
 	),
 );
 fill(fixture.socket);
-click("Test agent");
+click("Test host SSH agent");
 poll(
 	`document.body.innerText.includes('Connected to SSH agent: 1 key available')`,
 );
@@ -68,7 +69,7 @@ check(
 		`(async()=>!(await(await fetch('/api/config')).json()).gitSettings.socket)()`,
 	),
 );
-click("Save Git settings");
+click("Save host Git agent");
 poll(`document.body.innerText.includes('(saved in Factory)')`);
 check(
 	"Save applies immediately",
@@ -78,14 +79,14 @@ check(
 );
 cli("reload");
 poll(
-	`document.querySelector('#git-settings-heading') && document.querySelector('input')?.value===${JSON.stringify(fixture.socket)}`,
+	`document.querySelector('#host-git-identity-heading') && document.querySelector('input')?.value===${JSON.stringify(fixture.socket)}`,
 );
 check("Saved socket survives reload");
 cli("set", "viewport", "1440", "1000");
 cli("screenshot", join(evidence, "git-settings-desktop.png"));
 cli("set", "viewport", "390", "844");
 check(
-	"Git settings fits a narrow viewport",
+	"Identity settings fit a narrow viewport",
 	evaluate(`document.documentElement.scrollWidth <= innerWidth`),
 );
 cli("screenshot", "--full", join(evidence, "git-settings-mobile.png"));
@@ -93,9 +94,9 @@ cli("set", "viewport", "1440", "1000");
 fill(`${fixture.home}/unsaved.sock`);
 evaluate(`location.hash='/settings/capacity'`);
 poll(`document.querySelector('#machine-capacity')`);
-evaluate(`location.hash='/settings/git'`);
+evaluate(`location.hash='/settings/identities'`);
 poll(
-	`document.querySelector('#git-settings-heading') && document.querySelector('input')?.value===${JSON.stringify(fixture.socket)}`,
+	`document.querySelector('#host-git-identity-heading') && document.querySelector('input')?.value===${JSON.stringify(fixture.socket)}`,
 );
 check("Navigation discards unsaved socket edits");
 evaluate(`location.hash=${JSON.stringify(`/runs/${fixture.runId}`)}`);
@@ -136,14 +137,50 @@ execFileSync(
 	{ stdio: "pipe" },
 );
 check("Recovered commit signature verifies against the fixture key");
-evaluate(`location.hash='/settings/git'`);
-poll(`document.querySelector('#git-settings-heading')`);
+evaluate(`location.hash='/settings/identities'`);
+poll(`document.querySelector('#host-git-identity-heading')`);
 fill(" "); // Trimmed empty selection restores inheritance.
-click("Save Git settings");
+click("Save host Git agent");
 poll(`document.body.innerText.includes('(inherited by Factory)')`);
-click("Test agent");
+click("Test host SSH agent");
 poll(`document.body.innerText.includes('SSH agent has no accessible keys')`);
 check("Clearing saved socket restores inherited agent");
+click("Add identity profile");
+cli("select", 'label:has-text("Signing policy") select', "ssh");
+check(
+	"Explicit profile leaves agent testing disabled until a socket is selected",
+	evaluate(
+		`[...document.querySelectorAll('button')].find(b=>b.textContent==='Test signing SSH agent').disabled`,
+	),
+);
+cli("find", "label", "Signing SSH agent socket", "fill", fixture.socket);
+click("Test signing SSH agent");
+poll(
+	`document.querySelector('[aria-label="Signing SSH agent"]').innerText.includes('Connected to SSH agent: 1 key available')`,
+);
+check(
+	"Explicit signing profile reuses the selector and test without changing host identity",
+	evaluate(
+		`(async()=>!(await(await fetch('/api/config')).json()).gitSettings.socket)()`,
+	),
+);
+click("Add repository account");
+cli("find", "label", "Use an explicit SSH key or agent for Git", "check");
+cli("find", "label", "Git account 1 SSH agent socket", "fill", fixture.socket);
+click("Test git account 1 SSH agent");
+poll(
+	`document.querySelector('[aria-label="Git account 1 SSH agent"]').innerText.includes('Connected to SSH agent: 1 key available')`,
+);
+check("Repository SSH binding shares the same selector and test");
+evaluate(`location.hash='/settings/capacity'`);
+poll(`document.querySelector('#machine-capacity')`);
+evaluate(`location.hash='/settings/identities'`);
+poll(`document.querySelector('#host-git-identity-heading')`);
+check(
+	"Unsent profile edits are discarded without changing the host agent",
+	evaluate(`!document.querySelector('[aria-label="Signing SSH agent"]')`),
+);
+
 console.log(cli("snapshot", "-i"));
 writeFileSync(
 	join(evidence, "browser-checks.json"),
