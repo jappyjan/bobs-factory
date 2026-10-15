@@ -1,0 +1,80 @@
+{
+	"mode": "live-native-claude",
+	"runId": "manual-c7086dec-0896-426c-b180-1b1a74edcbe2",
+	"version": 3,
+	"proposalId": "edfb7138-3b7c-41c1-a8de-9a6c4219060a",
+	"proposalDigest": "3bf4e737d32f1776f6fa87a1cff90d9c9c7c3144e78977ed3521990b405eeb98",
+	"originalTicketCriteria": 5,
+	"allOriginalCriterionTextsPreserved": true,
+	"totalCriteria": 6,
+	"criteriaStatuses": [
+		{
+			"id": "AC1",
+			"source": "ATT-988 acceptance criterion 1",
+			"status": "partial"
+		},
+		{
+			"id": "AC2",
+			"source": "ATT-988 acceptance criterion 2",
+			"status": "partial"
+		},
+		{
+			"id": "AC3",
+			"source": "ATT-988 acceptance criterion 3",
+			"status": "partial"
+		},
+		{
+			"id": "AC4",
+			"source": "ATT-988 acceptance criterion 4",
+			"status": "partial"
+		},
+		{
+			"id": "AC5",
+			"source": "ATT-988 acceptance criterion 5",
+			"status": "covered"
+		},
+		{
+			"id": "AC6",
+			"source": "ATT-988 description, 'What to build'",
+			"status": "covered"
+		}
+	],
+	"findings": 3,
+	"deliverables": 8,
+	"listedPaths": 28,
+	"operations": {
+		"new": 13,
+		"edit": 15,
+		"delete": 0,
+		"unspecified": 0
+	},
+	"kinds": {
+		"code": 8,
+		"test": 9,
+		"docs": 7,
+		"config": 4,
+		"asset": 0
+	},
+	"footprintRecomputedWithFinalCode": true,
+	"invalidPaths": 0,
+	"mapConflicts": 0,
+	"warningCodes": ["other-code-areas", "configuration"],
+	"exclusions": 12,
+	"acceptanceChecks": 6,
+	"independentCandidateReview": {
+		"approved": true,
+		"proposalDigest": "3bf4e737d32f1776f6fa87a1cff90d9c9c7c3144e78977ed3521990b405eeb98"
+	},
+	"implementationStarted": false,
+	"accepted": false,
+	"fullPlanDigest": "d9db3f54615363e9666c6186597340c82b9491e2f1e792ec704a84540691f081",
+	"checks": [
+		"new brief validates",
+		"all original criteria preserved",
+		"partial acceptance remains visible",
+		"runtime footprint matches final code",
+		"current version and review digest match",
+		"waiting for human approval",
+		"no implementation started"
+	]
+}

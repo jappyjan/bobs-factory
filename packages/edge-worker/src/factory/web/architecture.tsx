@@ -371,7 +371,13 @@ function isNew(text: string, before?: string[]) {
 const NewMark = ({ show }: { show: boolean }) =>
 	show ? <span className="arch-new">new</span> : null;
 
-function Findings({ items }: { items: Architecture["evidence"] }) {
+function Findings({
+	items,
+	previous,
+}: {
+	items: Architecture["evidence"];
+	previous?: Architecture["evidence"];
+}) {
 	return (
 		<ul className="arch-card arch-list fits">
 			{items.map((item, i) => (
@@ -379,6 +385,12 @@ function Findings({ items }: { items: Architecture["evidence"] }) {
 					<span className="arch-dot">•</span>
 					<span>
 						{item.observation}
+						<NewMark
+							show={isNew(
+								item.observation,
+								previous?.map((item) => item.observation),
+							)}
+						/>
 						<small>
 							{item.repository} · {item.paths.join(", ")}
 						</small>
@@ -386,6 +398,29 @@ function Findings({ items }: { items: Architecture["evidence"] }) {
 				</li>
 			))}
 		</ul>
+	);
+}
+
+/** In-page links must not replace the application's hash route. */
+function DeliverableLink({
+	step,
+	label,
+}: {
+	step: Architecture["candidate"]["steps"][number];
+	label: string;
+}) {
+	return (
+		<button
+			type="button"
+			className="arch-link-button arch-deliverable-link"
+			onClick={() => {
+				const target = document.getElementById(`arch-${step.id}`);
+				target?.scrollIntoView({ block: "start" });
+				target?.focus({ preventScroll: true });
+			}}
+		>
+			{label}
+		</button>
 	);
 }
 
@@ -410,7 +445,8 @@ function Footprint({ content }: { content?: ArchitectureFootprint }) {
 					</p>
 					<small>
 						Computed from declared paths and checked against the planning
-						worktrees when this version was saved.
+						worktrees when this version was saved. File kinds and owning areas
+						are inferred from paths and existing package manifests.
 					</small>
 					<ul className="arch-areas">
 						{content.areas.map((area) => (
@@ -465,7 +501,10 @@ export function ArchitectureBrief({
 		<div className="arch-brief">
 			<section className="arch-chunk">
 				<h2>{content.problem ? "Today" : "Repository findings"}</h2>
-				<Findings items={content.problem ?? content.evidence} />
+				<Findings
+					items={content.problem ?? content.evidence}
+					previous={previous?.problem ?? previous?.evidence}
+				/>
 			</section>
 			<Footprint content={footprint} />
 			{content.changes.length > 0 && (
@@ -578,7 +617,7 @@ export function ArchitectureBrief({
 			{content.problem && (
 				<section className="arch-chunk">
 					<h2>Why this fits</h2>
-					<Findings items={content.evidence} />
+					<Findings items={content.evidence} previous={previous?.evidence} />
 				</section>
 			)}
 			{content.criteria && (
@@ -630,13 +669,11 @@ export function ArchitectureBrief({
 													),
 												)
 												.map((step) => (
-													<a
-														className="arch-deliverable-link"
+													<DeliverableLink
 														key={step.id}
-														href={`#arch-${step.id}`}
-													>
-														{step.id}: {step.title}
-													</a>
+														step={step}
+														label={`${step.id}: ${step.title}`}
+													/>
 												))}
 											{criterion.status === "deferred" && "Deferred"}
 										</td>
@@ -672,7 +709,7 @@ export function ArchitectureBrief({
 				<div className="arch-card">
 					<ol className="arch-steps">
 						{content.candidate.steps.map((step, i) => (
-							<li key={i} id={`arch-${step.id ?? i}`}>
+							<li key={i} id={`arch-${step.id ?? i}`} tabIndex={-1}>
 								<span>
 									<b>
 										{step.id && `${step.id} · `}
@@ -747,7 +784,7 @@ export function ArchitectureBrief({
 										"added" in trace ? (
 											<li key={`${step.id}-${i}`}>
 												<span>
-													<a href={`#arch-${step.id}`}>{step.title}</a>
+													<DeliverableLink step={step} label={step.title} />
 													<small>{trace.added}</small>
 												</span>
 											</li>

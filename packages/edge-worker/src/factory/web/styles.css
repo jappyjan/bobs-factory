@@ -5209,6 +5209,9 @@ kbd {
 .arch-steps > li > span {
 	min-width: 0;
 }
+.arch-steps > li {
+	scroll-margin-top: 110px;
+}
 .arch-steps p {
 	margin: 6px 0;
 }
@@ -5284,6 +5287,9 @@ kbd {
 .arch-deliverable-link {
 	display: block;
 	margin-top: 6px;
+}
+.arch-deliverable-link {
+	text-align: left;
 }
 .arch-coverage p {
 	margin-bottom: 0;

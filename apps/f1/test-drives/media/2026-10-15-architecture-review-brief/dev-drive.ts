@@ -2,7 +2,13 @@
 // Context is { input, outputs: { clarify, plan } }. Live mode uses native Claude for both planning and review.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	realpathSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ClaudeRunner } from "bobs-factory-claude-runner";
@@ -91,15 +97,10 @@ const worker: any = new EdgeWorker({
 				"Bash(cat:*)",
 				"Bash(sed:*)",
 				"Bash(wc:*)",
+				`Write(/${home}/factory/evidence/**)`,
+				`Write(/${realpathSync(home)}/factory/evidence/**)`,
 			],
-			disallowedTools: [
-				"Write",
-				"Edit",
-				"NotebookEdit",
-				"Agent",
-				"Task",
-				"SendMessage",
-			],
+			disallowedTools: ["Edit", "NotebookEdit", "Agent", "Task", "SendMessage"],
 		},
 	],
 	linearWorkspaces: {
@@ -173,7 +174,7 @@ const context =
 	mode === "live"
 		? JSON.parse(readFileSync(process.env.ARCHITECTURE_CONTEXT!, "utf8"))
 		: { input: "Require exact architecture approval.", outputs: {} };
-const prompt = `${context.input}\n\nRetained clarification and draft plan for review:\n${JSON.stringify(context.outputs)}\n\nThis is a local architecture-only validation. Inspect this run's selected local repository. Do not implement, publish, post messages or change any external service. Repository scope supplied by this dev instance supersedes old working-directory paths in retained context.`;
+const prompt = `${context.input}\n\nRetained clarification and draft plan for review:\n${JSON.stringify(context.outputs)}\n\nThis is a local architecture-only validation. Inspect this run's selected local repository. Do not implement, publish, post messages or change any external service. Repository scope supplied by this dev instance supersedes old working-directory paths in retained context. For large JSON results use Write only within the evidence directory shown by /resultSubmission, then submit_result_artifact; do not write shell helper scripts.`;
 const until = async (check: () => boolean, timeout = 20 * 60_000) => {
 	const start = Date.now();
 	while (!check()) {
