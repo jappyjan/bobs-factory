@@ -86,7 +86,9 @@ export function verifyDependencyBaseline(
 	root,
 	baselineCommit,
 	candidateCommit,
+	reviews = [],
 ) {
+	requireValue(Array.isArray(reviews), "Dependency reviews must be an array");
 	const git = (args) =>
 		execFileSync("git", args, {
 			cwd: root,
@@ -114,6 +116,76 @@ export function verifyDependencyBaseline(
 		canonical(before) === canonical(after),
 		"Dependency/license inventory changed; update accepted nightly baseline",
 	);
+	// Reviews extend coverage for exact removed inputs, never the sealed baseline.
+	// Hashes bind the complete two revisions; additions, changed pins and license
+	// edits still need new source material rather than a removal review.
+	const reviewedRemoval = (file) => {
+		if (file !== "pnpm-lock.yaml" && !file.endsWith("package.json")) return;
+		const before = git(["show", `${baselineCommit}:${file}`]);
+		const after = git(["show", `${candidateCommit}:${file}`]);
+		const matches = reviews.filter((review) => {
+			const record = review.files?.find((record) => record.file === file);
+			return (
+				review.schemaVersion === 1 &&
+				review.baselineCommit === baselineCommit &&
+				/^[a-f0-9]{40}$/.test(review.commit) &&
+				typeof review.reviewedBy === "string" &&
+				review.reviewedBy.trim() &&
+				typeof review.scope === "string" &&
+				review.scope.trim() &&
+				record?.beforeSha256 === sha256(before) &&
+				record.afterSha256 === sha256(after)
+			);
+		});
+		if (matches.length !== 1) return;
+		const review = matches[0];
+		if (
+			git(["merge-base", review.commit, candidateCommit]).trim() !==
+				review.commit ||
+			git(["show", `${review.commit}:${file}`]) !== after
+		)
+			return;
+		const [added, removed] = git([
+			"diff",
+			"--numstat",
+			baselineCommit,
+			review.commit,
+			"--",
+			file,
+		])
+			.trim()
+			.split("\t");
+		if (added !== "0" || !/^\d+$/.test(removed) || Number(removed) === 0)
+			return;
+		if (file.endsWith("package.json")) {
+			const old = JSON.parse(before),
+				current = JSON.parse(after);
+			const dependencies = new Set([
+				"dependencies",
+				"devDependencies",
+				"optionalDependencies",
+				"peerDependencies",
+			]);
+			for (const key of new Set([
+				...Object.keys(old),
+				...Object.keys(current),
+			])) {
+				if (dependencies.has(key)) {
+					if (
+						!Object.entries(current[key] ?? {}).every(
+							([name, value]) =>
+								canonical(old[key]?.[name]) === canonical(value),
+						)
+					)
+						return;
+				} else if (
+					canonical(old[key] ?? null) !== canonical(current[key] ?? null)
+				)
+					return;
+			}
+		}
+		return review;
+	};
 	const observations = [];
 	for (const file of before) {
 		const select = (commit) => {
@@ -136,14 +208,19 @@ export function verifyDependencyBaseline(
 				),
 			);
 		};
+		const review =
+			select(baselineCommit) === select(candidateCommit)
+				? undefined
+				: reviewedRemoval(file);
 		requireValue(
-			select(baselineCommit) === select(candidateCommit),
+			select(baselineCommit) === select(candidateCommit) || review,
 			`Uncovered dependency/license change: ${file}; update accepted nightly baseline`,
 		);
 		observations.push({
 			file,
 			baseline: git(["rev-parse", `${baselineCommit}:${file}`]).trim(),
 			current: git(["rev-parse", `${candidateCommit}:${file}`]).trim(),
+			...(review ? { review } : {}),
 		});
 	}
 	return observations;

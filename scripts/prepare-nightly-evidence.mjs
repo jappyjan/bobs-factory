@@ -188,12 +188,11 @@ try {
 		),
 	);
 	const accepted = validateCandidate(baseline.candidate);
-	const { materialDirectory, priorMaterials, acceptedReceipts, receipts } =
-		await restoreNightlyBaseline(client, baseline, temporary);
 	const dependencies = verifyDependencyBaseline(
 		root,
 		accepted.candidate.commit,
 		identity.commit,
+		baseline.dependencyReviews,
 	);
 	requireValue(
 		execFileSync(
@@ -203,6 +202,8 @@ try {
 		).trim() === accepted.candidate.commit,
 		"Accepted baseline must be an ancestor of current main",
 	);
+	const { materialDirectory, priorMaterials, acceptedReceipts, receipts } =
+		await restoreNightlyBaseline(client, baseline, temporary);
 	mkdirSync(output);
 	created = true;
 	copyFileSync(
@@ -438,7 +439,7 @@ try {
 				),
 				scope:
 					gate === "licensingAndSource"
-						? "Accepted unchanged dependencies/source/objects and notices; exact current full Git source/tooling, native full-byte Bun correspondence and fresh desktop notice checks. No new legal review or relink claimed."
+						? "Accepted source/objects and notices, with exact reviewed dependency removals recorded in provenance; exact current full Git source/tooling, native full-byte Bun correspondence and fresh desktop notice checks. No new legal review or relink claimed."
 						: gate === "reviewedCandidate"
 							? "Accepted main: exact canonical push CI success, current candidate validation and accepted baseline. No new human per-candidate review claimed."
 							: "Accepted baseline plus actual current mocked workflow/update/state-preservation checks and native receipts; no live provider or physical OS trust claims.",
