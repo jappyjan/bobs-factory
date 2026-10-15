@@ -226,6 +226,7 @@ import {
 	resolveGitProvider,
 } from "./factory/GitProvider.js";
 import { isPullRequestSource } from "./factory/GitProviderReference.js";
+import { gitAgentEnvironment } from "./factory/GitSettings.js";
 import { confirmedGroupedMerge } from "./factory/GroupedTools.js";
 import {
 	attachRequirementCoverage,
@@ -7882,6 +7883,9 @@ ${taskSection}`;
 				resolved,
 			);
 		} else {
+			const agent = gitAgentEnvironment(this.factoryHome);
+			if (agent.SSH_AUTH_SOCK)
+				config.additionalEnv = { ...config.additionalEnv, ...agent };
 			applyManagedGithubAgentEnvironment(config, {
 				factoryHome: this.factoryHome,
 				environment: { ...process.env, ...config.additionalEnv },

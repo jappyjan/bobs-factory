@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type {
 	CyrusAgentSession,
 	ILogger,
@@ -77,6 +80,27 @@ function buildIssueConfig(extra: Partial<IssueRunnerConfigInput> = {}) {
 }
 
 describe("RunnerConfigBuilder GitHub token session env (CYHOST-913)", () => {
+	it("passes the saved instance SSH agent to host sessions while leaving private execution alone", () => {
+		const home = mkdtempSync(join(tmpdir(), "runner-git-agent-"));
+		try {
+			mkdirSync(join(home, "factory"));
+			writeFileSync(
+				join(home, "factory/git-settings.json"),
+				JSON.stringify({ revision: 1, socket: "/tmp/selected-ssh-agent.sock" }),
+			);
+			expect(
+				buildIssueConfig({ factoryHome: home }).config.additionalEnv
+					?.SSH_AUTH_SOCK,
+			).toBe("/tmp/selected-ssh-agent.sock");
+			expect(
+				buildIssueConfig({ factoryHome: home, nativeGithubCredentials: false })
+					.config.additionalEnv?.SSH_AUTH_SOCK,
+			).toBeUndefined();
+		} finally {
+			rmSync(home, { recursive: true, force: true });
+		}
+	});
+
 	it("exposes ONLY BOBS_FACTORY_GH_TOKEN when a githubToken is provided", () => {
 		const { config } = buildIssueConfig({ githubToken: "ghs_org_token" });
 

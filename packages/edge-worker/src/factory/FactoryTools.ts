@@ -29,6 +29,7 @@ import {
 	githubGitEnvironment,
 } from "./GithubApi.js";
 import { type GitProvider, resolveGitProvider } from "./GitProvider.js";
+import { gitAgentEnvironment } from "./GitSettings.js";
 import { groupedTool, scopeCommand } from "./GroupedTools.js";
 import { guideGapRecovery } from "./GuideRecovery.js";
 import {
@@ -192,6 +193,9 @@ function executeProcessCommand(
 			detached: process.platform !== "win32",
 			env: {
 				...(context.execution?.environment ?? process.env),
+				...(!context.execution && context.factoryHome
+					? gitAgentEnvironment(context.factoryHome)
+					: {}),
 				...gitEnvironment,
 				// Large contexts cannot fit in the OS process argument/environment limit.
 				FACTORY_INPUT: Buffer.byteLength(input) <= 16000 ? input : undefined,
@@ -252,9 +256,17 @@ function executeProcessCommand(
 			}
 			if (context.signal.aborted) reject(new Error("Run terminated"));
 			else if (timedOut) reject(new Error(`Command timed out: ${command}`));
-			else if (code !== 0)
-				reject(new Error(`${command} exited ${code}: ${output.slice(-12000)}`));
-			else resolve(output.trim());
+			else if (code !== 0) {
+				const agentFailure =
+					command === "git" &&
+					!context.execution &&
+					/Couldn't (?:find key in agent|get agent socket)/.test(output);
+				reject(
+					new Error(
+						`${command} exited ${code}: ${output.slice(-12000)}${agentFailure ? "\nOpen Settings → Git, select the SSH agent that holds your signing key, test and save it, then retry this step." : ""}`,
+					),
+				);
+			} else resolve(output.trim());
 		});
 	});
 }

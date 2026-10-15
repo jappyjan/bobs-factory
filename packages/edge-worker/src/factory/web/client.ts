@@ -371,9 +371,12 @@ export function useAction(scope?: string, context?: string) {
 		}) => api(path, { method, body: JSON.stringify(body) }),
 		onSuccess: async (data, { path, method = "POST" }) => {
 			if (
-				["/api/workflows", "/api/title-settings", "/api/capacity"].includes(
-					path,
-				) &&
+				[
+					"/api/workflows",
+					"/api/title-settings",
+					"/api/capacity",
+					"/api/git-settings",
+				].includes(path) &&
 				method === "PUT"
 			) {
 				// A failed refresh must not let the next edit restore old permissions.

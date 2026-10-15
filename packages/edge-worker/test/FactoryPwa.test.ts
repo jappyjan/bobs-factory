@@ -442,6 +442,7 @@ it.each([
 	"",
 	"/access",
 	"/execution",
+	"/git",
 	"/identities",
 	"/tools",
 	"/capacity",

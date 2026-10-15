@@ -74,6 +74,7 @@ import {
 	type ExecutionSnapshot,
 } from "./ExecutionProfiles.js";
 import type { GitProviderSnapshot } from "./GitProvider.js";
+import { GitSettings } from "./GitSettings.js";
 import {
 	assertImpactFresh,
 	type ConvergenceState,
@@ -496,6 +497,14 @@ export class WorkflowRuntime {
 	>();
 	get executionProfiles(): ExecutionProfileStore {
 		return new ExecutionProfileStore(this.directory);
+	}
+	get gitSettings(): GitSettings {
+		return new GitSettings(dirname(this.directory));
+	}
+	updateGitSettings(value: unknown) {
+		const saved = this.gitSettings.save(value);
+		this.changed({ config: true });
+		return saved;
 	}
 	updateExecutionProfiles(value: unknown, revision: number) {
 		const saved = this.executionProfiles.save(value, revision);
