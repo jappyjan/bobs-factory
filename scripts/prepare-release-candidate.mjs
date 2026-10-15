@@ -24,6 +24,7 @@ const { values } = parseArgs({
 		"workflow-sha": { type: "string" },
 		sequence: { type: "string" },
 		date: { type: "string" },
+		"skip-cooldown": { type: "boolean", default: false },
 	},
 });
 requireValue(
@@ -36,10 +37,17 @@ requireValue(
 		: !values["nightly-tag"],
 	"Provide --nightly-tag for stable promotion only",
 );
+requireValue(
+	!values["skip-cooldown"] ||
+		(values.channel === "nightly" &&
+			process.env.GITHUB_EVENT_NAME === "workflow_dispatch"),
+	"--skip-cooldown requires a manual nightly workflow_dispatch",
+);
 if (existsSync(values.output)) {
 	const retained = validateCandidate(JSON.parse(readFileSync(values.output)));
 	requireValue(
 		retained.candidate.channel === values.channel &&
+			(retained.candidate.skipCooldown === true) === values["skip-cooldown"] &&
 			retained.candidate.workflowSha === values["workflow-sha"] &&
 			(values.channel === "nightly" ||
 				retained.candidate.version === values.version) &&
@@ -80,6 +88,7 @@ if (values.channel === "stable") {
 			: null,
 		isDescendant: relation?.status === "ahead",
 		now: Date.now(),
+		skipCooldown: values["skip-cooldown"],
 	});
 	console.log(JSON.stringify(result));
 	if (result.status !== "eligible")
@@ -101,6 +110,7 @@ const record = freezeCandidate({
 	sequence: Number(values.sequence),
 	date: values.date,
 	promotion,
+	skipCooldown: values["skip-cooldown"],
 });
 requireValue(
 	execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim() ===

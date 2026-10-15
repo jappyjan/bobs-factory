@@ -63,9 +63,9 @@ package core; UTC date comes from the originating workflow run's creation time;
 SEQUENCE is its globally unique, increasing GitHub run ID. The frozen artifact is
 restored on retries. Failed attempts retain their sequence, while later starts
 reserve new run IDs. Ordering uses sequence across core changes. Reusing an
-older sequence blocks preparation/publication; manual dispatch has no bypass.
+older sequence blocks preparation/publication, including manual dispatch.
 Nightly requires changed main, a descendant of the last verified published
-nightly, and at least six hours since successful publication. The first nightly
+nightly, and normally at least six hours since successful publication. The first nightly
 has no cooldown. Failed preparation does not reset the clock. A frozen candidate
 that no longer matches main skips publication. Eligibility is checked inside the
 repository publication lock and again immediately before making a draft public.
@@ -74,6 +74,30 @@ cannot be verified, including with incomplete
 assets. They never substitute an older verified nightly to establish source,
 cooldown or sequence eligibility. Refresh trusted release tooling or repair the
 release evidence before retrying.
+
+### Manual nightly cooldown override
+
+In Actions → **Freeze eligible nightly or stable promotion** → **Run workflow**,
+choose `channel=nightly` and enable **Skip nightly cooldown**. It defaults to off.
+The equivalent CLI dispatch is:
+
+```sh
+gh workflow run release-channel.yml --ref main -f channel=nightly -F skip_cooldown=true
+```
+
+This starts the normal nightly pipeline immediately without the six-hour delay.
+The optional `candidate.skipCooldown: true` is part of the frozen candidate digest
+and publication plan, so retries and the downstream publisher retain that exact
+choice. Retries cannot add or remove the override; start a new manual request to
+change it. The publisher verifies the original sequence allocation came from the
+same repository's manual `release-channel.yml` run at the frozen tooling SHA,
+including when resuming retained prepared bytes.
+
+Scheduled nightlies keep the cooldown. Stable/beta requests reject the option.
+Changed/descendant main, valid publication history/time, increasing sequence,
+current-main checks, rollout activation, all native/desktop/evidence gates,
+publication locking and stable-channel separation still apply. The option skips
+only the elapsed-time check, not build or validation time.
 
 ### Explicit beta preparation through CI
 
@@ -269,7 +293,7 @@ production host as part of implementation validation.
    manually assembled evidence envelope per nightly. Automatic nightlies require separate rollout activation and explicit
    `BOBS_FACTORY_AUTOMATIC_NIGHTLIES=enabled`. Successful evidence intake then
    publishes eligible nightlies, still subject to explicit CI-derived nightly
-   review/migration/F1/license gates and accepted baseline reuse scopes and changed-main/six-hour history checks. Manual publication has the
+   review/migration/F1/license gates and accepted baseline reuse scopes and changed-main/history checks. The six-hour delay applies unless the frozen candidate carries the verified manual override above. Manual publication has the
    same eligibility and activation requirements. Nightlies are prereleases and
    never move stable latest. Automatic entrypoint SHA must equal frozen tooling;
    if it has advanced, dispatch manually from that frozen ref and retain the

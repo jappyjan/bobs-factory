@@ -44,6 +44,8 @@ globalThis.fetch = async (url, options = {}) => {
 		return new Response(Buffer.from(asset.bytes, "base64"));
 	}
 	if (p === "/actions/runs/123") return response(s.buildProvenance.run);
+	if (p === `/actions/runs/${s.cooldownOverrideRun?.id}`)
+		return response(s.cooldownOverrideRun);
 	if (p === "/actions/runs/123/jobs")
 		return response({ jobs: s.buildProvenance.jobs });
 	if (p === "/actions/runs/123/artifacts")
