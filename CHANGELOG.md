@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Launch tasks from a chat-style composer: the project name in "What should we build in …?" picks the project, attached files appear as chips above the prompt, and the bottom bar picks the recipe, agent and reasoning, with per-run settings behind one button. Files can be attached, dropped or pasted, and typed text and attachments survive project or recipe changes. New stock workflows accept private file attachments with clear limits, removal, and retained read access across restart, retry and follow-up. Machine selection remains separate work. ([Taskbot #85](https://taskbot.apps.janjaap.de/p/bobs-factory/t/85), [#123](https://github.com/jappyjan/bobs-factory/pull/123))
+
 ### Fixed
 
 - Integrate API-key dashboard access with bounded review convergence, preserving impact evidence, protected reader progress and complete routing-prompt checks ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).

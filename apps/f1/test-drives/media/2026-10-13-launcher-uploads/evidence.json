@@ -1,0 +1,33 @@
+{
+	"screenshots": [
+		{
+			"file": "desktop-light.png",
+			"sha256": "143288ddd872636e17c6d669724bea68c50873741f98e29c27964d774104f90d"
+		},
+		{
+			"file": "desktop-dark.png",
+			"sha256": "1b1109029f00ce8fadc60a09ffadb4d665d0d3a652e6a01b64af9ee028cb1eae"
+		},
+		{
+			"file": "mobile-light.png",
+			"sha256": "511d20c85eb11592724395bd67f5ddf0f4fb803732ba45fbdaaf69350df69571"
+		},
+		{
+			"file": "mobile-dark.png",
+			"sha256": "622a2d017fa4cf0c43e54799850e4be894a9dbad2f7b9db98ac69cbff7ad67aa"
+		},
+		{
+			"file": "upload-failure.png",
+			"sha256": "ad32ad6b7065a8f2ecfbfc4105cc1b6f64bd5be5d2c7b023842d2ef5f93b5c0d"
+		},
+		{
+			"file": "long-file.png",
+			"sha256": "cbf58350281529d77c9465b301b27bf48502fe7b9e3bfcec5b3b45501a21bb07"
+		}
+	],
+	"agentMode": "mock",
+	"browserMode": "headless",
+	"inspected": true,
+	"validationNote": "Screenshots recaptured for the redesigned composer after merging main; the simulated F1 drive passed on the same source.",
+	"webBuild": "013940f11c87fee3c11fbe96"
+}

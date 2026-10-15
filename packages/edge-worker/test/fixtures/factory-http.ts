@@ -7,7 +7,7 @@ export function factoryHttp(
 	signal?: AbortSignal,
 ): Promise<Response> {
 	return new Promise((resolve, reject) => {
-		const req = request(url, { headers, signal }, (response) => {
+		const req = request(url, { headers, signal, agent: false }, (response) => {
 			const responseHeaders = new Headers();
 			for (const [name, value] of Object.entries(response.headers))
 				if (value !== undefined)
