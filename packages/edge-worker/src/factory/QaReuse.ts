@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { relative } from "node:path";
 import { promisify } from "node:util";
 import {
@@ -246,8 +247,14 @@ export async function verifyQaEnvironment(context: ExecutionContext) {
 			maxBuffer: 1024 * 1024,
 		},
 	);
-	const valueDigest = qaDigest(stdout.trim());
-	if (valueDigest !== probe.expectedDigest)
+	const output = stdout.trim();
+	const outputDigest = createHash("sha256").update(output).digest("hex");
+	// Keep saved JSON-string digests and criterion provenance valid for frozen scopes.
+	const valueDigest = qaDigest(output);
+	if (
+		outputDigest !== probe.expectedDigest &&
+		valueDigest !== probe.expectedDigest
+	)
 		throw new Error(
 			"QA fixtures or environment changed; refresh scope and execute affected criteria",
 		);

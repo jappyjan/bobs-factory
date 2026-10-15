@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
 	mkdirSync,
 	mkdtempSync,
@@ -1038,6 +1039,38 @@ it("keeps optional disagreements nonblocking, consolidates demonstrated duplicat
 		),
 	).toThrow("declared downstream obligation");
 });
+it("accepts shell SHA-256 QA probes and saved JSON digests while rejecting changed fixtures", async () => {
+	const fixture = await drive(true);
+	const probe = {
+		repositoryId: "fixture-repo",
+		command: "printf '  fixture-v1\\n'",
+		expectedDigest: createHash("sha256").update("fixture-v1").digest("hex"),
+	};
+	fixture.run.outputs["visual-scope"] = { environmentEvidence: probe };
+	const context: ExecutionContext = {
+		run: fixture.run,
+		step: fixture.definition.steps.find((s) => s.id === "scope")!,
+		outputs: fixture.run.outputs,
+		input: {},
+		signal: new AbortController().signal,
+		log: () => {},
+		evidenceDir: fixture.root,
+	};
+	await verifyQaEnvironment(context);
+	expect(context.qaEnvironmentProof?.valueDigest).toBe(qaDigest("fixture-v1"));
+
+	// Frozen scopes and criterion provenance keep their original digest format.
+	probe.expectedDigest = qaDigest("fixture-v1");
+	await verifyQaEnvironment(context);
+	expect(context.qaEnvironmentProof?.valueDigest).toBe(qaDigest("fixture-v1"));
+
+	probe.command = "printf fixture-v2";
+	await expect(verifyQaEnvironment(context)).rejects.toThrow(
+		"QA fixtures or environment changed",
+	);
+	expect(context.qaEnvironmentProof).toBeUndefined();
+});
+
 it("preserves original behavioral execution and rejects changed definitions, fixtures and failed QA reuse", async () => {
 	const fixture = await drive(true);
 	const run = fixture.run;

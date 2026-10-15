@@ -50,7 +50,10 @@ also bind custom named planning outputs.
 Behavioral QA reuse requires an original passed criterion, independent QA
 acceptance, identical story/criterion definitions and source dependencies, and
 unchanged fixture/environment evidence. A declared read-only environment probe is
-executed again and its output hash must match. Unknown environment identity,
+executed again and its output hash must match. `environmentEvidence.expectedDigest`
+is the SHA-256 of trimmed UTF-8 stdout, without JSON quoting. Frozen scopes using
+the older JSON-string digest remain supported; saved criterion provenance keeps
+its original digest format. Unknown environment identity,
 failed/blocked criteria or changed fixtures require execution. Screenshot
 acceptance, source boundaries and media integrity remain separate requirements.
 Copying an image never establishes behavioral success. The runtime stamps criterion
