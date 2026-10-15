@@ -293,7 +293,10 @@ export function Composer({
 			launchConfig,
 			{},
 		),
-		[settings, setSettings] = useFormState<any>(launchConfig, {}),
+		[settings, setSettings] = useFormState<any>(
+			`${launchConfig}/${workflowId}`,
+			{},
+		),
 		[execution, setExecution] = useFormState<ExecutionSelection>(
 			inputContext,
 			{},
@@ -324,7 +327,9 @@ export function Composer({
 		fileFields.map((field) => field.name),
 	);
 	const project = config.repositories.find((item: any) => item.id === repo);
-	const runner = settings.runner || config.defaultRunner;
+	const allowsAgentSettings = workflow?.id === "simple";
+	const effectiveSettings = allowsAgentSettings ? settings : {};
+	const runner = effectiveSettings.runner || config.defaultRunner;
 	const levels: string[] | undefined = config.reasoningLevels?.[runner];
 	const fieldValue = (field: any) =>
 		values[field.name] ?? field.defaultValue ?? "";
@@ -343,8 +348,9 @@ export function Composer({
 		missing ||
 		uploads.blocked;
 	const customized =
-		["model", "modelVariant", "serviceTier"].some((key) => settings[key]) ||
-		Boolean(execution.identityProfile || execution.toolProfile);
+		["model", "modelVariant", "serviceTier"].some(
+			(key) => effectiveSettings[key],
+		) || Boolean(execution.identityProfile || execution.toolProfile);
 	const changeScope = (apply: () => void) => {
 		uploads.carryOver();
 		apply();
@@ -366,7 +372,7 @@ export function Composer({
 					inputs,
 					attachments: uploads.selection,
 					attachmentDraft: uploads.draft,
-					...settings,
+					...effectiveSettings,
 					execution,
 				},
 			});
@@ -509,61 +515,65 @@ export function Composer({
 								"Choose recipe"
 							)}
 						</PillMenu>
-						<span className="launcher-divider" aria-hidden="true" />
-						<PillMenu
-							label="Agent"
-							icon={<SparkIcon />}
-							value={settings.runner ?? DEFAULT}
-							disabled={action.isPending}
-							onChange={(next) =>
-								setSettings({
-									...settings,
-									runner: next === DEFAULT ? undefined : next,
-									model: undefined,
-									reasoningEffort: undefined,
-									modelVariant: undefined,
-									serviceTier: undefined,
-								})
-							}
-							options={[
-								{
-									value: DEFAULT,
-									label: `Default (${title(config.defaultRunner)})`,
-									hint: "Uses each step's configured agent",
-								},
-								...runners.map((value) => ({ value, label: title(value) })),
-							]}
-						>
-							{settings.model || title(runner)}
-						</PillMenu>
-						{levels?.length ? (
-							<span className="launcher-reasoning">
+						{allowsAgentSettings && (
+							<>
 								<span className="launcher-divider" aria-hidden="true" />
 								<PillMenu
-									label="Reasoning"
-									icon={<BrainIcon />}
-									value={settings.reasoningEffort ?? DEFAULT}
+									label="Agent"
+									icon={<SparkIcon />}
+									value={settings.runner ?? DEFAULT}
 									disabled={action.isPending}
 									onChange={(next) =>
 										setSettings({
 											...settings,
-											reasoningEffort: next === DEFAULT ? undefined : next,
+											runner: next === DEFAULT ? undefined : next,
+											model: undefined,
+											reasoningEffort: undefined,
+											modelVariant: undefined,
+											serviceTier: undefined,
 										})
 									}
 									options={[
-										{ value: DEFAULT, label: "Model default" },
-										...levels.map((level) => ({
-											value: level,
-											label: title(level),
-										})),
+										{
+											value: DEFAULT,
+											label: `Default (${title(config.defaultRunner)})`,
+											hint: "Uses each step's configured agent",
+										},
+										...runners.map((value) => ({ value, label: title(value) })),
 									]}
 								>
-									{settings.reasoningEffort
-										? title(settings.reasoningEffort)
-										: "Default"}
+									{settings.model || title(runner)}
 								</PillMenu>
-							</span>
-						) : null}
+								{levels?.length ? (
+									<span className="launcher-reasoning">
+										<span className="launcher-divider" aria-hidden="true" />
+										<PillMenu
+											label="Reasoning"
+											icon={<BrainIcon />}
+											value={settings.reasoningEffort ?? DEFAULT}
+											disabled={action.isPending}
+											onChange={(next) =>
+												setSettings({
+													...settings,
+													reasoningEffort: next === DEFAULT ? undefined : next,
+												})
+											}
+											options={[
+												{ value: DEFAULT, label: "Model default" },
+												...levels.map((level) => ({
+													value: level,
+													label: title(level),
+												})),
+											]}
+										>
+											{settings.reasoningEffort
+												? title(settings.reasoningEffort)
+												: "Default"}
+										</PillMenu>
+									</span>
+								) : null}
+							</>
+						)}
 					</div>
 					<div className="launcher-actions">
 						<button
@@ -630,24 +640,30 @@ export function Composer({
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
 				title="Run settings"
-				description="Overrides for this run only. Recipes keep their saved defaults."
+				description={
+					allowsAgentSettings
+						? "Overrides for this run only. Recipes keep their saved defaults."
+						: "Choose execution profiles for this run. Configure agents, models and reasoning for each workflow step in Recipes."
+				}
 			>
 				<div className="modal-body launcher-settings">
-					<AgentSettings
-						config={config}
-						value={settings}
-						onChange={setSettings}
-						label="Default"
-					/>
+					{allowsAgentSettings && (
+						<AgentSettings
+							config={config}
+							value={settings}
+							onChange={setSettings}
+							label="Default"
+						/>
+					)}
 					<ExecutionSelectors
 						key={inputContext}
 						config={config}
 						repositoryId={repo}
 						workflow={workflow?.id}
-						model={settings.model}
+						model={effectiveSettings.model}
 						value={execution}
 						onChange={setExecution}
-						runner={settings.runner}
+						runner={effectiveSettings.runner}
 					/>
 					<Button onClick={() => setSettingsOpen(false)}>Done</Button>
 				</div>
