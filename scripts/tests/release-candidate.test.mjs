@@ -17,6 +17,7 @@ import {
 	freezeCandidate,
 	nightlyEligibility,
 	validateCandidate,
+	validateCooldownOverride,
 } from "../lib/release-candidate.mjs";
 
 const commit = "a".repeat(40),
@@ -75,7 +76,7 @@ test("candidate digest freezes version, recipe and promotion source across retri
 	);
 	assert.throws(() => freezeCandidate({ ...args, sequence: 0 }), /sequence/);
 });
-test("nightly eligibility uses successful publication time and never bypasses manual gates", () => {
+test("nightly eligibility uses successful publication time by default", () => {
 	const now = Date.parse("2026-10-09T06:00:00Z");
 	const last = { commit: "c".repeat(40), publishedAt: "2026-10-09T00:00:00Z" };
 	const base = { mainSha: commit, last, isDescendant: true, now };
@@ -102,6 +103,107 @@ test("nightly eligibility uses successful publication time and never bypasses ma
 			.status,
 		"blocked",
 	);
+});
+test("an explicit cooldown override skips only elapsed time", () => {
+	const last = { commit: "c".repeat(40), publishedAt: "2026-10-09T00:00:00Z" };
+	const base = {
+		mainSha: commit,
+		last,
+		isDescendant: true,
+		now: Date.parse("2026-10-09T01:00:00Z"),
+		skipCooldown: true,
+	};
+	assert.equal(nightlyEligibility(base).status, "eligible");
+	for (const [change, status] of [
+		[{ skipCooldown: false }, "cooldown"],
+		[{ skipCooldown: "true" }, "blocked"],
+		[{ mainSha: last.commit }, "unchanged"],
+		[{ candidateSha: "d".repeat(40) }, "stale"],
+		[{ isDescendant: false }, "stale"],
+		[{ last: { ...last, publishedAt: "invalid" } }, "blocked"],
+		[{ last: { ...last, publishedAt: "2026-10-09T02:00:00Z" } }, "blocked"],
+	])
+		assert.equal(nightlyEligibility({ ...base, ...change }).status, status);
+});
+test("cooldown override is digest-bound and requires the original manual allocation", () => {
+	const ordinary = freezeCandidate(args);
+	const overridden = freezeCandidate({ ...args, skipCooldown: true });
+	assert.equal(ordinary.candidate.skipCooldown, undefined);
+	assert.notEqual(ordinary.digest, overridden.digest);
+	const request = {
+		id: args.sequence,
+		event: "workflow_dispatch",
+		path: ".github/workflows/release-channel.yml",
+		head_sha: workflowSha,
+		repository: { full_name: "jappyjan/bobs-factory" },
+		head_repository: { full_name: "jappyjan/bobs-factory" },
+	};
+	assert.equal(validateCooldownOverride(overridden, request), true);
+	assert.equal(validateCooldownOverride(ordinary, undefined), false);
+	for (const change of [
+		{ event: "schedule" },
+		{ event: "workflow_run" },
+		{ id: 11 },
+		{ head_sha: commit },
+		{ path: ".github/workflows/binary-build.yml" },
+		{ head_repository: { full_name: "foreign/fork" } },
+		{ repository: { full_name: "foreign/fork" } },
+	])
+		assert.throws(
+			() => validateCooldownOverride(overridden, { ...request, ...change }),
+			/original manual/,
+		);
+	for (const skipCooldown of [false, "true", 1]) {
+		const changed = { ...ordinary.candidate, skipCooldown };
+		assert.throws(
+			() =>
+				validateCandidate({
+					candidate: changed,
+					digest: candidateDigest(changed),
+				}),
+			/override/,
+		);
+	}
+	assert.throws(
+		() =>
+			freezeCandidate({
+				...args,
+				channel: "beta",
+				version: "1.0.1-beta",
+				skipCooldown: true,
+			}),
+		/only for nightly/,
+	);
+});
+test("manual override retries preserve the frozen choice and reject scheduled or changed inputs", () => {
+	const work = mkdtempSync(join(tmpdir(), "factory-cooldown-retry-"));
+	try {
+		const candidate = freezeCandidate({ ...args, skipCooldown: true });
+		const output = join(work, "candidate.json");
+		const bytes = JSON.stringify(candidate);
+		writeFileSync(output, bytes);
+		const run = (event, extra = []) =>
+			spawnSync(
+				process.execPath,
+				[
+					"scripts/prepare-release-candidate.mjs",
+					"--channel",
+					"nightly",
+					"--workflow-sha",
+					workflowSha,
+					"--output",
+					output,
+					...extra,
+				],
+				{ encoding: "utf8", env: { ...process.env, GITHUB_EVENT_NAME: event } },
+			);
+		assert.equal(run("workflow_dispatch", ["--skip-cooldown"]).status, 0);
+		assert.match(run("workflow_dispatch").stderr, /Retry inputs differ/);
+		assert.match(run("schedule", ["--skip-cooldown"]).stderr, /manual nightly/);
+		assert.equal(readFileSync(output, "utf8"), bytes);
+	} finally {
+		rmSync(work, { recursive: true, force: true });
+	}
 });
 test("stable defaults exclude nightlies and nightly ordering survives a core-version change", () => {
 	const r = (version) => ({

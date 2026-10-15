@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Start a manual nightly during the six-hour cooldown with an explicit Actions checkbox; retain the choice across retries and preserve all other release gates. ([#137](https://github.com/jappyjan/bobs-factory/pull/137))
+
 - Review architecture proposals with current-state findings, concrete deliverables and file operations, ticket coverage, exclusions and acceptance checks. Runtime-computed planned footprints expose package/config scope, invalid paths and map contradictions before approval. ([#134](https://github.com/jappyjan/bobs-factory/pull/134))
 
 - Launch tasks from a chat-style composer: the project name in "What should we build in …?" picks the project, attached files appear as chips above the prompt, and the bottom bar picks the recipe, agent and reasoning, with per-run settings behind one button. Files can be attached, dropped or pasted, and typed text and attachments survive project or recipe changes. New stock workflows accept private file attachments with clear limits, removal, and retained read access across restart, retry and follow-up. Machine selection remains separate work. ([Taskbot #85](https://taskbot.apps.janjaap.de/p/bobs-factory/t/85), [#123](https://github.com/jappyjan/bobs-factory/pull/123))

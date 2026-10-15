@@ -8,7 +8,11 @@ not supported fork publishing. Build the candidate using
 The `release-channel.yml` workflow freezes eligible nightly source or an explicitly
 selected complete validated published nightly's source for stable promotion.
 `binary-build.yml` accepts that
-frozen candidate JSON, including version override and separate reviewed tooling SHA. All four native-target jobs must pass. It only
+frozen candidate JSON, including version override and separate reviewed tooling SHA.
+Manual nightly dispatch offers `skip_cooldown=true` to skip only the six-hour delay;
+the frozen candidate binds that choice and the publisher verifies the original
+manual allocation. Scheduled runs keep the delay and every other release gate
+remains required. See [the manual override](../../docs/distribution/PUBLIC_RELEASES.md#manual-nightly-cooldown-override). All four native-target jobs must pass. It only
 builds, validates and uploads CI artifacts; it never publishes or moves a tag.
 The implementation role does not create a release, PR or mark a PR ready.
 
