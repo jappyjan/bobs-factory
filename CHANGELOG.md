@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Resume saved workflows while historical ticket activity retries in the background, preserving pending delivery receipts and parked execution requests.
+- Resume saved workflows while historical ticket activity retries in the background, preserving pending delivery receipts and parked execution requests. ([#141](https://github.com/jappyjan/bobs-factory/pull/141))
 
 - Reconnect phones with password-manager autofill, including autofill without typing events, and explain that session expiry leaves API keys valid. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
 
