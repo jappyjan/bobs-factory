@@ -35,3 +35,7 @@ package test command.
 The recovery, existing TicketTracking and EdgeWorker MCP suites pass (53 tests).
 This controlled drive does not establish live tracker delivery or native agent
 behavior; production recovery is verified separately on the local instance.
+
+After merging current main, the expanded recovery/tracking/MCP/auth/access/web
+checks also pass (106 tests), along with EdgeWorker and CLI type checks and the
+rebuilt F1 recovery drive.
