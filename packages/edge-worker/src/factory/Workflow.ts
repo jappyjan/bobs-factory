@@ -31,7 +31,7 @@ const base = {
 	videoContract: z.literal("video-v1").optional(),
 	review: reviewSources.optional(),
 	impactSource: id.optional(),
-	maxVisits: z.number().int().min(1).max(100).default(8),
+	maxVisits: z.number().int().min(1).max(100).default(40),
 };
 export const AgentStepSchema = z.object({
 	...base,

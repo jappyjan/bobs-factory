@@ -1100,7 +1100,10 @@ cannot change an active run.
 Steps execute in array order unless `next` or a matching `branches` edge names
 another step. `next: "end"` finishes. A branch such as
 `{"when":{"path":"approved","equals":false},"next":"plan"}` loops back.
-Each step defaults to at most eight visits (`maxVisits`, configurable up to 100).
+Each step defaults to at most 40 visits (`maxVisits`, configurable up to 100).
+Visits accumulate across review, QA and CI corrections throughout a run. Saved
+run snapshots and explicit custom limits retain their accepted values; the new
+default applies to newly accepted workflows and steps that omit `maxVisits`.
 Agents return JSON unless `json: false`. `inputs: ["plan"]` restricts supplied
 context to those output keys (plus `/answers` when `askQuestions: true`);
 otherwise agents receive the original input,

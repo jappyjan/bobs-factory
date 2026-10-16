@@ -868,13 +868,19 @@ describe("workflow runtime", () => {
 			},
 		});
 	});
-	it("executes conditional loops and stops visibly at the iteration cap", async () => {
+	it.each([
+		{ kind: "configured", maxVisits: 2, limit: 2 },
+		{ kind: "default", maxVisits: undefined, limit: 40 },
+	])("executes conditional loops and stops visibly at the $kind iteration cap", async ({
+		maxVisits,
+		limit,
+	}) => {
 		const { runtime } = create({ agent: async () => ({ approved: false }) });
 		const run = start(
 			runtime,
 			workflow([
 				agent("review", {
-					maxVisits: 2,
+					maxVisits,
 					branches: [
 						{ when: { path: "approved", equals: false }, next: "review" },
 					],
@@ -883,8 +889,13 @@ describe("workflow runtime", () => {
 		);
 		await runtime.launch(run);
 		expect(run.status).toBe("failed");
-		expect(run.history).toHaveLength(2);
+		expect(run.history).toHaveLength(limit);
 		expect(run.error).toMatch(/Iteration limit/);
+		expect(run.iterationLimit).toEqual({
+			step: "review",
+			visits: limit + 1,
+			limit,
+		});
 	});
 	it("fans out concurrently and joins isolated branch outputs", async () => {
 		let arrived = 0;
