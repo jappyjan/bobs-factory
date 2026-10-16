@@ -49,6 +49,7 @@ import {
 	canonical,
 	validateCandidate,
 } from "./lib/release-candidate.mjs";
+import { retainReviewedJavascriptSources } from "./lib/reviewed-javascript-sources.mjs";
 
 const { values } = parseArgs({
 	options: {
@@ -230,7 +231,11 @@ try {
 	for (const record of checks.logs)
 		copyFileSync(join(checksDirectory, record.file), join(output, record.file));
 	const bindings = [],
-		currentNoticeRecords = [],
+		currentNoticeRecords = await retainReviewedJavascriptSources(
+			dependencies,
+			materialDirectory,
+			client.transport,
+		),
 		targets = {},
 		desktop = [],
 		additionalAssets = [];
@@ -439,7 +444,7 @@ try {
 				),
 				scope:
 					gate === "licensingAndSource"
-						? "Accepted source/objects and notices, with exact reviewed dependency removals recorded in provenance; exact current full Git source/tooling, native full-byte Bun correspondence and fresh desktop notice checks. No new legal review or relink claimed."
+						? "Accepted native source/objects and notices plus exact independently reviewed JavaScript dependency sources and upstream notices where recorded in provenance; every added npm archive is hash-checked and retained. Exact current full Git source/tooling, native full-byte Bun correspondence and fresh desktop notice checks. No new legal opinion or native relink claimed."
 						: gate === "reviewedCandidate"
 							? "Accepted main: exact canonical push CI success, current candidate validation and accepted baseline. No new human per-candidate review claimed."
 							: "Accepted baseline plus actual current mocked workflow/update/state-preservation checks and native receipts; no live provider or physical OS trust claims.",
