@@ -4,11 +4,12 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
+	realpathSync,
 	renameSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compile, optimize } from "@tailwindcss/node";
 import { Scanner } from "@tailwindcss/oxide";
@@ -31,7 +32,8 @@ try {
 		target: "es2022",
 		minify: true,
 	});
-	await build({
+	const appBundle = await build({
+		metafile: true,
 		entryPoints: [join(source, "app.tsx")],
 		outfile: join(stage, "app.js"),
 		bundle: true,
@@ -43,7 +45,8 @@ try {
 		minify: true,
 		define: { __FACTORY_BUILD__: JSON.stringify(placeholder) },
 	});
-	await build({
+	const workerBundle = await build({
+		metafile: true,
 		entryPoints: [join(source, "sw.js")],
 		outfile: join(stage, "sw.js"),
 		bundle: true,
@@ -58,10 +61,13 @@ try {
 	});
 	// One-shot compilation does not need the CLI's file watcher dependency.
 	const inputCss = join(source, "styles.css");
+	const cssDependencies = [];
 	const compiler = await compile(readFileSync(inputCss, "utf8"), {
 		base: source,
 		from: inputCss,
-		onDependency() {},
+		onDependency(path) {
+			cssDependencies.push(path);
+		},
 	});
 	const sources = (
 		compiler.root === "none"
@@ -177,6 +183,46 @@ try {
 		type: "application/javascript",
 		immutable: false,
 	});
+	// Record the actual browser/service-worker/CSS package inputs for binary notices.
+	// Keep paths relative to the source root; no build-host paths enter artifacts.
+	const repository = realpathSync(join(root, "../.."));
+	const packages = new Map();
+	for (const input of [
+		...Object.keys(appBundle.metafile.inputs),
+		...Object.keys(workerBundle.metafile.inputs),
+		...cssDependencies,
+	]) {
+		if (!input.includes("node_modules/")) continue;
+		let directory = dirname(realpathSync(resolve(input)));
+		while (dirname(directory) !== directory) {
+			const manifest = join(directory, "package.json");
+			if (existsSync(manifest)) {
+				const bytes = readFileSync(manifest),
+					pkg = JSON.parse(bytes);
+				if (pkg.name) {
+					const path = relative(repository, directory);
+					if (path.startsWith("../"))
+						throw new Error("Web package input escaped the source checkout");
+					packages.set(path, {
+						directory: path,
+						name: pkg.name,
+						version: pkg.version,
+						packageJsonSha256: hash(bytes),
+					});
+					break;
+				}
+			}
+			directory = dirname(directory);
+		}
+	}
+	writeFileSync(
+		join(stage, "frontend-packages.json"),
+		JSON.stringify(
+			[...packages.values()].sort((a, b) =>
+				a.directory.localeCompare(b.directory),
+			),
+		),
+	);
 	// Publish a complete immutable directory first, then atomically replace the pointer.
 	for (const [name, bytes] of output) {
 		mkdirSync(join(stage, name, ".."), { recursive: true });

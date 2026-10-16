@@ -79,6 +79,11 @@
 					"afterSha256": "fa0f8336de4e69485bfbcdb37fc51b6793e62f6e8291686b4d77e91434b5fd1a"
 				}
 			]
+		},
+		{
+			"schemaVersion": 2,
+			"file": "distribution/dependency-reviews/recipe-workbench.json",
+			"sha256": "9aae5be518aa005d70c6d534bd8f7c1251c80cce0f7b0f54ab6247074091e44c"
 		}
 	]
 }

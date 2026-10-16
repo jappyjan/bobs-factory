@@ -44,7 +44,7 @@ recovers accepted member bytes from a durable published container; it does not
 recreate or relabel the expired original tar/gzip container or accept new review
 claims. The acceptance text and historical limitations remain unchanged.
 
-The accepted baseline commit must be an ancestor of current main. Except for exact reviewed removal coverage below, all package
+The accepted baseline commit must be an ancestor of current main. Except for exact reviewed dependency coverage below, all package
 dependency and license declarations, lockfile, workspace policy, maintained
 runtime notices, desktop LICENSE/NOTICE and the shipped npm launcher LICENSE
 must remain unchanged. App and package version changes are allowed; changed
@@ -55,12 +55,34 @@ entry: it binds the accepted baseline and reviewed ancestor commit, reviewer,
 source-coverage scope, and before/after SHA-256 of each complete changed input.
 Only package declarations and the lockfile are eligible. Reuse requires only
 deletions, unchanged remaining dependency declarations, and exact reviewed bytes;
-new dependencies, changed versions/integrities, licenses, workspace policy and
-unreviewed changes still fail. The original source/receipt baseline stays sealed,
+unreviewed additions, changed retained versions/integrities, maintained licenses
+and workspace policy still fail. The original source/receipt baseline stays sealed,
 and each applied removal review is retained in nightly provenance. This covers
 the API-key migration's removed WebAuthn packages without a new source, object,
 relink or legal-review claim. Dependency coverage is checked before downloading
 the retained source archive.
+
+A schema-2 `dependencyReviews` reference can cover an independently reviewed
+frontend JavaScript/type dependency addition. It pins the complete review file,
+reviewed ancestor and before/after manifest and lockfile hashes. Every newly
+added package must be enumerated with its exact lockfile SHA-512, official npm
+archive URL, size/SHA-256, package metadata and full upstream license texts. The
+supported grants are MIT, ISC and BSD-3-Clause. Retained package blocks and direct
+pins cannot change; additions are limited to the edge-worker's development
+dependencies. Native binaries, Wasm and install hooks are rejected. Native runtime,
+Electron, workspace policy and maintained license inputs retain their existing
+closed checks.
+
+CI downloads and inspects every reviewed archive without extracting or executing
+it, then carries those exact source archives into the new source/rebuild inventory.
+A separately pinned upstream notice for an existing package may accompany the
+review when its npm archive omits that notice; its full text and immutable source
+revision are retained too. Actual browser, service-worker and CSS package inputs
+are measured during the web build and included in the binary's full notice
+inventory. Historical native objects/relink receipts stay sealed and keep their
+original scope; no new legal opinion or native relink is claimed. The Recipes
+review and its measured checks are recorded in
+[the dependency review](dependency-reviews/2026-10-16-recipes.md).
 
 The pinned release must remain retained; deleting or changing it blocks publication.
 
