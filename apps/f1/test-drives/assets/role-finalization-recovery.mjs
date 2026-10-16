@@ -8,6 +8,7 @@ import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { FactoryTools } from "../../../../packages/edge-worker/dist/factory/FactoryTools.js";
 import { STALE_IMPACT_MESSAGE } from "../../../../packages/edge-worker/dist/factory/Impact.js";
+import { proposal } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -49,6 +50,17 @@ let agentTurns = 0,
 	worker,
 	runtime;
 const mock = f1AgentHandlers("mock", JSON.stringify(output));
+const largeProposal = proposal();
+largeProposal.candidate.plan =
+	"Plan all 1,024 fixture files and retain explicit architecture acceptance.";
+largeProposal.candidate.steps = Array.from({ length: 26 }, (_, group) => ({
+	...largeProposal.candidate.steps[0],
+	id: `D${group + 1}`,
+	files: Array.from({ length: group === 25 ? 24 : 40 }, (_, file) => ({
+		path: `src/area-${group}/file-${file}.ts`,
+		change: "new",
+	})),
+}));
 const config = {
 	factoryHome: home,
 	serverPort: 3600,
@@ -72,6 +84,20 @@ const config = {
 	handlers: {
 		createAgentRunner: (type, config) => {
 			if (!config.workingDirectory?.includes("/title-jobs/")) agentTurns++;
+			const large = runtime?.runs.get("large-architecture");
+			if (
+				large?.status === "running" &&
+				config.workingDirectory === large.workspace
+			) {
+				const response =
+					large.step === "architecture"
+						? largeProposal
+						: { approved: true, feedback: [] };
+				return f1AgentHandlers(
+					"mock",
+					JSON.stringify(response),
+				).createAgentRunner(type, config);
+			}
 			const stale = runtime?.runs.get("stale-impact");
 			if (
 				stale?.step === "pipeline/assess-impact" &&
@@ -431,8 +457,68 @@ try {
 		JSON.stringify(takeover, null, 2),
 	);
 	runtime.stop(takeover.id);
+	const pipeline = runtime
+		.listWorkflows()
+		.find((w) => w.id === "factory-pipeline");
+	const largeWorkflow = {
+		id: "large-proposal",
+		name: "Large proposal fixture",
+		allowedTriggers: ["manual"],
+		steps: pipeline.steps
+			.filter((s) =>
+				[
+					"architecture",
+					"architecture-review",
+					"architecture-decision",
+				].includes(s.id),
+			)
+			.map((s) => ({
+				...s,
+				...(s.id === "architecture-decision" ? { next: "end" } : {}),
+			})),
+	};
+	runtime.updateWorkflows([...runtime.listWorkflows(), largeWorkflow]);
+	const large = runtime.create({
+		id: "large-architecture",
+		repositoryId: "fixture",
+		workspace: fresh.workspace,
+		workflow: largeWorkflow,
+		input: "Preserve all 1,024 planned files",
+		triggerOrigin: {
+			type: "manual",
+			workflowId: largeWorkflow.id,
+			at: new Date().toISOString(),
+		},
+	});
+	void runtime.launch(large);
+	await until(() => {
+		const current = runtime.get(large.id);
+		assert.notEqual(current.status, "failed", current.error);
+		return current.status === "waiting";
+	}, "Large architecture did not reach explicit acceptance");
+	const pending = runtime.get(large.id);
+	assert.equal(
+		pending.architectureProposals.at(-1).footprint.files.length,
+		1024,
+	);
+	assert.equal(
+		pending.architectureProposals.at(-1).content.candidate.steps.length,
+		26,
+	);
+	assert.equal(pending.architectureProposals.at(-1).status, "pending");
+	assert.equal(
+		pending.architectureGate.proposalId,
+		pending.architectureProposals.at(-1).id,
+	);
+	assert.equal(pending.architectureDecisions?.length ?? 0, 0);
+	await runtime.flush();
+	writeFileSync(
+		join(directory, "large-architecture.json"),
+		JSON.stringify(pending, null, 2),
+	);
+	runtime.stop(large.id);
 	console.log(
-		`PASS: publication-independent fresh/saved roles and decisions; durable delivery recovery; stale-impact Retry renews its assessor and assistance gate; takeover retains the PR base and working branch. Evidence: ${directory}`,
+		`PASS: publication-independent fresh/saved roles and decisions; durable delivery recovery; stale-impact Retry; takeover base; 1,024-file architecture retains all paths and waits for exact-version acceptance. Evidence: ${directory}`,
 	);
 } finally {
 	rejectPublication(new Error("Fixture cleanup"));

@@ -10,7 +10,7 @@ F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/role-finalization-recovery.mjs
 ```
 
 The passing drive retained evidence at
-`/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-role-publication-92OeFK`.
+`/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-role-publication-LyvT6T`.
 It used a fresh repository, injected persistent in-memory issue tracker, actual
 EdgeWorker/RPC/dashboard/runtime and deterministic mocked providers. No agent CLI
 or inference API was invoked; model usage and cost were zero.
@@ -30,6 +30,9 @@ Verified behavior:
 - Production takeover inspection, with a fixture PR receipt matching the actual
   worktree branch, corrected a self-targeting retained base to `main`. The branch
   and existing PR identity remained unchanged.
+- A 1,024-file proposal retained all 26 deliverables and all unique runtime
+  footprint paths through drafting and independent review. It waited at the
+  pending exact-version architecture gate without a fabricated acceptance.
 
 Exploratory attempts found fixture setup mistakes (missing team/input), stale
 local run-object reads and a delivery assertion that raced final lifecycle
@@ -38,9 +41,11 @@ delivery receipts. The passing run shut down cleanly and released its ports.
 
 Other validation:
 
-- 270 targeted tests passed across the affected EdgeWorker and Linear transport
+- 294 targeted tests passed across the affected EdgeWorker and Linear transport
   suites, including flat/nested stale-impact recovery and exact not-found versus
   inconclusive Linear lookup responses.
+- Architecture coverage retains the 64-deliverable and 40-files-per-deliverable
+  bounds while accepting the complete 1,024-file reproduction.
 - The original finalization regression failed for both native and Taskbot
   publication before the fix. Linear's actual HTTP-200 `INPUT_ERROR` not-found
   shape also failed to reconcile before the fix.

@@ -41,6 +41,11 @@ External cyrus-hosted tool catalogs are absent from this repository. They cannot
 be updated here. This independent fork does not enroll with the upstream hosted
 control plane. Migration must flag hosted-only setup for explicit conversion.
 
+Architecture candidate plans accept up to 64 deliverables, each with at most
+40 declared file operations. Large plans retain their complete runtime footprint
+and normal exact-version review and acceptance. This widens schema capacity;
+saved proposal contents, digests and accepted workflow definitions stay intact.
+
 Direct localhost dashboard/API access requires an actual loopback socket peer, an exact
 configured HTTP loopback authority and same-origin browser context. IPv4 `127.0.0.1`,
 IPv6 `::1` and `localhost` work without enrollment, login or a session cookie.

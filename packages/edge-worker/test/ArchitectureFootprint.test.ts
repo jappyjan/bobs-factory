@@ -48,6 +48,31 @@ function fixture() {
 	};
 }
 
+it("retains a 1,024-file architecture plan in bounded deliverables without dropping footprint paths", () => {
+	const { repos } = fixture();
+	const value = proposal();
+	const step = value.candidate.steps[0]!;
+	value.candidate.steps = Array.from({ length: 26 }, (_, group) => ({
+		...step,
+		id: `D${group + 1}`,
+		files: Array.from({ length: group === 25 ? 24 : 40 }, (_, file) => ({
+			path: `src/area-${group}/file-${file}.ts`,
+			change: "new" as const,
+		})),
+	}));
+	const parsed = ArchitectureSchema.parse(value);
+	expect(architectureFootprint(parsed, repos).files).toHaveLength(1024);
+	value.candidate.steps = Array.from({ length: 65 }, (_, i) => ({
+		...step,
+		id: `D${i + 1}`,
+	}));
+	expect(ArchitectureSchema.safeParse(value).success).toBe(false);
+	value.candidate.steps = [
+		{ ...step, files: Array.from({ length: 41 }, () => step.files[0]!) },
+	];
+	expect(ArchitectureSchema.safeParse(value).success).toBe(false);
+});
+
 it("surfaces cross-plugin scope, config, workspace paths and unchanged-map contradictions while counting unique files", () => {
 	const { workspace, repos } = fixture();
 	const value = proposal();
