@@ -630,7 +630,18 @@ export function guideGaps(
 			}));
 	}
 	return ((guide as Partial<Guide> | undefined)?.requirements ?? [])
-		.filter((r) => ["gap", "unverified"].includes(r.status))
+		.filter(
+			(r) =>
+				["gap", "unverified"].includes(r.status) &&
+				!(
+					guide as Partial<Guide> | undefined
+				)?.requirementCoverage?.assessments.some(
+					(a) =>
+						a.requirementId === r.requirementId &&
+						a.status === "deferred" &&
+						["acceptance", "delivery"].includes(a.obligation?.stage ?? ""),
+				),
+		)
 		.map((r) => ({
 			id: r.requirementId ?? r.criterion,
 			status: r.status,

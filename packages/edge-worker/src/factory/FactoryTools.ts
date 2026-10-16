@@ -29,8 +29,15 @@ import {
 	githubGitEnvironment,
 } from "./GithubApi.js";
 import { type GitProvider, resolveGitProvider } from "./GitProvider.js";
+import { gitAgentEnvironment } from "./GitSettings.js";
 import { groupedTool, scopeCommand } from "./GroupedTools.js";
 import { guideGapRecovery } from "./GuideRecovery.js";
+import {
+	assertCurrentImpact,
+	effectiveApproval,
+	impactDecisionDigest,
+	selectedChecks,
+} from "./Impact.js";
 import { dependencyCovers, dependencyHashes } from "./Incremental.js";
 import {
 	assessFeedback,
@@ -49,6 +56,11 @@ import {
 	qaDigest,
 	qaRequirementIssues,
 } from "./Qa.js";
+import {
+	qaReuseContext,
+	stampQaCriteria,
+	verifyQaEnvironment,
+} from "./QaReuse.js";
 import { runRepositories } from "./RepositoryScope.js";
 import { reviewRecoveryQuestions } from "./ReviewRecovery.js";
 import {
@@ -181,6 +193,9 @@ function executeProcessCommand(
 			detached: process.platform !== "win32",
 			env: {
 				...(context.execution?.environment ?? process.env),
+				...(!context.execution && context.factoryHome
+					? gitAgentEnvironment(context.factoryHome)
+					: {}),
 				...gitEnvironment,
 				// Large contexts cannot fit in the OS process argument/environment limit.
 				FACTORY_INPUT: Buffer.byteLength(input) <= 16000 ? input : undefined,
@@ -241,9 +256,17 @@ function executeProcessCommand(
 			}
 			if (context.signal.aborted) reject(new Error("Run terminated"));
 			else if (timedOut) reject(new Error(`Command timed out: ${command}`));
-			else if (code !== 0)
-				reject(new Error(`${command} exited ${code}: ${output.slice(-12000)}`));
-			else resolve(output.trim());
+			else if (code !== 0) {
+				const agentFailure =
+					command === "git" &&
+					!context.execution &&
+					/Couldn't (?:find key in agent|get agent socket)/.test(output);
+				reject(
+					new Error(
+						`${command} exited ${code}: ${output.slice(-12000)}${agentFailure ? "\nOpen Settings → Identity profiles → Host Git identity, select the SSH agent that holds your signing key, test and save it, then retry this step." : ""}`,
+					),
+				);
+			} else resolve(output.trim());
 		});
 	});
 }
@@ -430,12 +453,21 @@ export class FactoryTools {
 		// Import at execution time to share the scope safeguards without a schema initialization cycle.
 		const { QaScopeSchema } = await import("./FactoryResults.js");
 		const scope = QaScopeSchema.parse(run.outputs["visual-scope"]);
+		await verifyQaEnvironment(context);
 		const capture = QaCaptureSchema.parse(run.outputs.capture);
+		// Validate original behavioral provenance again at the consuming gate.
+		if (context.step.impactSource) {
+			const cloned = structuredClone(capture);
+			stampQaCriteria(context, cloned, true);
+			if (qaDigest(cloned.results) !== qaDigest(capture.results))
+				throw new Error("QA criterion provenance changed after execution");
+		}
 		const review = filterReview(run.outputs["visual-review"]);
 		const headSha = (await command("git", ["rev-parse", "HEAD"])).trim();
 		const dirty = Boolean(
 			(await command("git", ["status", "--porcelain"])).trim(),
 		);
+		if (context.step.impactSource) await assertCurrentImpact(context);
 		const scopeHash = qaDigest(scope),
 			captureHash = qaDigest(capture),
 			reviewHash = qaDigest(review);
@@ -450,6 +482,16 @@ export class FactoryTools {
 			return revision && !revision.dirty && revision.headSha === headSha;
 		});
 		const coverage = qaCoverage(scope, capture);
+		for (const requirement of aggregateForContext(context)?.baseline.inventory
+			.requirements ?? [])
+			if (
+				requirement.classification === "active" &&
+				requirement.stage === "qa" &&
+				!scope.stories.some((s) => s.requirementRefs.includes(requirement.id))
+			)
+				coverage.errors.push(
+					`${requirement.id}: a required QA obligation needs executed story coverage, not an exclusion`,
+				);
 		coverage.errors.push(
 			...qaRequirementIssues(
 				scope,
@@ -583,6 +625,12 @@ export class FactoryTools {
 	async tool(context: ExecutionContext): Promise<unknown> {
 		// Projected grouped runs share retry identities and immutable check receipts.
 		context.run.ciSupervision ??= { retries: [] };
+		if (context.step.tool === "impact-checks")
+			return selectedChecks(context, (ctx, script) =>
+				this.command(ctx, "/bin/sh", ["-c", script], 120000),
+			);
+		if (context.step.tool === "merge")
+			context.executionApproval = await effectiveApproval(context);
 		if (
 			runRepositories(context.run).length > 1 &&
 			context.run.delivery?.contract.mode !== "external" &&
@@ -1208,13 +1256,66 @@ export class FactoryTools {
 						blockRevisionMismatch(snapshot, headSha);
 					}
 					reportReadiness(context, snapshot);
+					const aggregate = aggregateForContext(context);
+					if (
+						context.step.impactSource &&
+						snapshot.unassessedComments?.length &&
+						!snapshot.ciAssistance?.length &&
+						!snapshot.queued
+					) {
+						run.outputs.ci = snapshot;
+						return { ...snapshot, impactRequired: true };
+					}
+					if (
+						context.step.impactSource &&
+						aggregate &&
+						aggregate.baseline.baseSha !== snapshot.baseSha &&
+						!snapshot.ciAssistance?.length &&
+						!snapshot.queued
+					) {
+						run.outputs.ci = snapshot;
+						await command("git", ["fetch", "origin", snapshot.baseSha]);
+						await command("git", [
+							"update-ref",
+							`refs/remotes/origin/${runRepositories(run)[0]!.baseBranch}`,
+							snapshot.baseSha,
+						]);
+						return { ...snapshot, impactRequired: true };
+					}
 					if (
 						snapshot.ciAssistance?.length ||
 						snapshot.fix ||
 						snapshot.reviewReady ||
 						snapshot.approved
-					)
+					) {
+						const priorQa = run.outputs["visual-gate"] as
+							| { approved?: boolean; headSha?: string }
+							| undefined;
+						if (
+							context.step.impactSource &&
+							snapshot.reviewReady &&
+							priorQa?.approved &&
+							priorQa.headSha === headSha &&
+							aggregate?.approved &&
+							aggregate.baseline.headSha === headSha &&
+							!this.scopeChanged(context, aggregate.baseline.context)
+						) {
+							const scope = run.outputs["visual-scope"] as
+								| import("./Qa.js").QaScope
+								| undefined;
+							await verifyQaEnvironment(context);
+							const reusable = qaReuseContext(context).criteria;
+							const count = scope?.stories.reduce(
+								(n, s) => n + s.criteria.length,
+								0,
+							);
+							if (count !== undefined && reusable.length === count) {
+								await assertCurrentImpact(context);
+								return { ...snapshot, retainQa: true };
+							}
+						}
 						return snapshot;
+					}
 					await delay(context.signal);
 				}
 			}
@@ -1319,6 +1420,8 @@ export class FactoryTools {
 							"Revision or accepted scope changed after review; configure a correction route through requirement extraction",
 						);
 					}
+					if (!context.groupedImpactValidated)
+						await assertCurrentImpact(context);
 					assertAggregateRevision(aggregate, headSha, snapshot.baseSha);
 				}
 				if (
@@ -1347,7 +1450,19 @@ export class FactoryTools {
 				return { headSha, url };
 			}
 			case "merge": {
-				const approved = run.humanDecisions?.at(-1);
+				const impact = context.groupedImpactValidated
+					? undefined
+					: await assertCurrentImpact(context);
+				const originalApproved =
+					context.executionApproval ?? run.humanDecisions?.at(-1);
+				const continuation = run.approvalContinuations?.at(-1);
+				const approved =
+					continuation &&
+					impact &&
+					continuation.decisionDigest === impactDecisionDigest(impact) &&
+					continuation.originalReviewId === originalApproved?.reviewId
+						? { ...originalApproved, headSha: continuation.headSha }
+						: originalApproved;
 				if (approved?.decision !== "approve")
 					throw new Error("Explicit human approval required before merge");
 				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
@@ -1355,6 +1470,8 @@ export class FactoryTools {
 				for (;;) {
 					let immediate = false;
 					const inspectAndMerge = async () => {
+						if (!context.groupedImpactValidated)
+							await assertCurrentImpact(context);
 						const invalid = await context.validateDelivery?.();
 						if (invalid) return invalid;
 						const snapshot = await inspectReadinessWithRetry(
@@ -1491,6 +1608,13 @@ export class FactoryTools {
 						(await command("git", ["status", "--porcelain"]))
 					)
 						throw new Error("Worktree changed after review; handoff blocked");
+					if (
+						context.step.impactSource &&
+						readiness.unassessedComments?.length
+					) {
+						run.outputs.ci = readiness;
+						return { ...readiness, impactRequired: true };
+					}
 					if (readiness.fix) {
 						if (
 							context.step.branches.some(
@@ -1523,6 +1647,7 @@ export class FactoryTools {
 									...readiness,
 									fix: true,
 									scopeReviewRequired: true,
+									impactRequired: Boolean(context.step.impactSource),
 									reason:
 										"Accepted context changed after review; extract a new requirement baseline",
 								};
@@ -1530,6 +1655,8 @@ export class FactoryTools {
 								"Accepted scope changed after specialist review; configure a correction route through requirement extraction",
 							);
 						}
+						if (!context.groupedImpactValidated)
+							await assertCurrentImpact(context);
 						assertAggregateRevision(aggregate, headSha, readiness.baseSha);
 					}
 					if (readiness.reviewReady) break;
@@ -1812,5 +1939,7 @@ export function captureEvidence(
 		shot.fingerprintVersion = 2;
 	}
 	if (rejected.length) throw new CaptureReuseError(rejected);
+	if (context.step.qaContract)
+		stampQaCriteria(context, capture as import("./Qa.js").QaExecution);
 	return capture;
 }

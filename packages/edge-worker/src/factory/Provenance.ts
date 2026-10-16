@@ -92,6 +92,7 @@ export function beginStepAttempt(
 		version: run.contractVersion ?? null,
 		architecture: step.architectureContract ?? null,
 		review: step.reviewContract ?? null,
+		impact: step.impactContract ?? null,
 		qa: step.qaContract ?? null,
 		video: step.videoContract ?? null,
 	};

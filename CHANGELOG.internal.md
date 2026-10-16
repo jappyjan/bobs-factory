@@ -20,6 +20,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Fixed
 
+- Make nightly localhost/API-key and native desktop maintenance-race fixtures finish and clean up promptly; bound their CI steps separately. Retain the original source baseline while recording the exact reviewed removal-only WebAuthn dependency inputs ([#135](https://github.com/jappyjan/bobs-factory/pull/135)).
+
 - Remove the desktop test commands' redundant core rebuild to prevent concurrent recursive tests from importing partially rewritten compiled logging exports. Keep the complete compiled-stdio MCP recovery test and build prerequisites intact ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
 
 - Finalize native acceptance receipts only after bounded cleanup of all owned fixture groups, direct children and identity-verified locks; preserve failed/cancelled receipts and unrelated process ownership ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#88](https://github.com/jappyjan/bobs-factory/pull/88)).

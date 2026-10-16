@@ -158,6 +158,7 @@ jobs:
           TARGET: ${{ matrix.target }}
         run: node source/scripts/native-service-smoke.mjs "$RUNNER_TEMP/runtime/bobs-factory-$VERSION-$TARGET" > "$RUNNER_TEMP/desktop/native-service-receipt.json"
       - name: Validate native Electron menu Stop and maintenance race
+        timeout-minutes: 5
         env:
           VERSION: ${{ fromJSON(needs.freeze.outputs.candidate_json).candidate.version }}
           TARGET: ${{ matrix.target }}

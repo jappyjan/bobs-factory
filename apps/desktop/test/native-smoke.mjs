@@ -151,7 +151,11 @@ void (async () => {
 				await super.isIdle();
 				confirm({ response: 1 });
 				await until(() => reportedError);
-				return false; // Controlled busy decision: no native replacement in this menu fixture.
+				// Busy observations now retain admission closed until work drains.
+				// Cancel this controlled candidate after proving the menu race;
+				// returning false alone would deliberately wait forever.
+				manager.configure({ paused: true }, manager.status().revision);
+				return false; // No native replacement in this menu fixture.
 			}
 		}
 		const lifecycle = new ConfirmationLifecycle(

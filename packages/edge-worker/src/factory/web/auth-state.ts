@@ -3,7 +3,7 @@ export type AccessState = {
 	status: "checking" | "authenticated" | "required";
 	setupRequired?: boolean;
 	access?: "local";
-	expires?: number;
+	expires?: number | null;
 	error?: string;
 };
 let state: AccessState = { status: "checking" };
@@ -15,6 +15,13 @@ let deadline: ReturnType<typeof setTimeout> | undefined;
 export const accessState = () => state;
 export const accessGeneration = () => generation;
 export const accessSignal = () => abort.signal;
+// Page exit cancels ordinary protected requests as well as the live stream.
+// Their late failures must not revoke access or erase another document's state.
+export function cancelAccessRequests() {
+	generation++;
+	abort.abort();
+	abort = new AbortController();
+}
 export function onAccessLost(clean: () => void) {
 	cleaners.add(clean);
 	return () => cleaners.delete(clean);
@@ -64,7 +71,7 @@ export function useAccess() {
 let request = 0;
 let connectionLost = () => {};
 const rotationListeners = new Set<() => () => void>();
-// A verified passkey replaces the cookie and invalidates streams using the old
+// API key sign-in replaces the cookie and invalidates streams using the old
 // session. Suspend those streams explicitly, without discarding private forms.
 export function onSessionRotation(pause: () => () => void) {
 	rotationListeners.add(pause);
@@ -110,12 +117,16 @@ export async function checkAccess() {
 		if (deadline) clearTimeout(deadline);
 		if (result.authenticated && result.access === "local") {
 			publish({ status: "authenticated", access: "local" });
-		} else if (result.authenticated && result.expires > Date.now()) {
+		} else if (
+			result.authenticated &&
+			(result.expires === null || result.expires > Date.now())
+		) {
 			publish({ status: "authenticated", expires: result.expires });
-			deadline = setTimeout(
-				() => accessRequired("Your session expired. Sign in again.", true),
-				result.expires - Date.now(),
-			);
+			if (result.expires !== null)
+				deadline = setTimeout(
+					() => accessRequired("Your session expired. Sign in again.", true),
+					result.expires - Date.now(),
+				);
 		} else {
 			state = { status: "required", setupRequired: result.setupRequired };
 			accessRequired("Sign in to continue");

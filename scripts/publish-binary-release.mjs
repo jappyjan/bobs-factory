@@ -47,6 +47,7 @@ import {
 	nightlyEligibility,
 	PublicationSkip,
 	validateCandidate,
+	validateCooldownOverride,
 } from "./lib/release-candidate.mjs";
 import { publishPreparedRelease } from "./lib/release-publication.mjs";
 import {
@@ -443,6 +444,12 @@ try {
 				for (const release of state.published.filter((r) => !r.prerelease))
 					validateLatestVersion(identity.version, release);
 			} else {
+				const skipCooldown = identity.skipCooldown
+					? validateCooldownOverride(
+							candidate,
+							await api(`actions/runs/${identity.sequence}`),
+						)
+					: false;
 				const mainSha = (await api("git/ref/heads/main")).object.sha;
 				const last = requireVerifiedNightlyHistory(state);
 				const relation =
@@ -460,6 +467,7 @@ try {
 						: null,
 					isDescendant: relation?.status === "ahead",
 					now: Date.now(),
+					skipCooldown,
 				});
 				if (result.status !== "eligible") {
 					if (result.status === "blocked") throw new Error(result.reason);

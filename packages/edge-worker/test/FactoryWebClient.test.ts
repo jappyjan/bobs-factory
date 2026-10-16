@@ -12,6 +12,7 @@ import { artifactType, RenderArtifact } from "../src/factory/web/artifacts.js";
 import {
 	accessRequired,
 	accessState,
+	cancelAccessRequests,
 	checkAccess,
 	rotateSession,
 } from "../src/factory/web/auth-state.js";
@@ -536,7 +537,7 @@ it("handles 401 before version errors, clears sensitive caches and prevents late
 	expect(accessState().status).toBe("required");
 });
 
-it("ignores old-cookie denials after passkey verification while retaining private state", async () => {
+it("ignores old-cookie denials after API key sign-in while retaining private state", async () => {
 	client.setQueryData(["run", "private"], { transcript: "private content" });
 	let respond!: (response: Response) => void;
 	vi.stubGlobal(
@@ -574,7 +575,7 @@ it("ignores old-cookie denials after passkey verification while retaining privat
 	expect(client.getQueryData(["run", "private"])).toBeUndefined();
 });
 
-it("accepts server-validated local access without a passkey deadline and still clears private state on connection loss", async () => {
+it("accepts server-validated local access without a session deadline and still clears private state on connection loss", async () => {
 	vi.stubGlobal(
 		"fetch",
 		vi.fn(async () =>
@@ -679,6 +680,81 @@ it("discards private caches and late reads when the connection is lost", async (
 	disconnected();
 	complete(factoryResponse([{ transcript: "late private content" }]));
 	await expect(late).rejects.toThrow("Session changed");
+	expect(accessState().status).toBe("required");
+	expect(client.getQueryData(["run", "private"])).toBeUndefined();
+});
+
+it("keeps private state when navigation cancels a protected read that later fails", async () => {
+	authoritativeReady();
+	client.setQueryData(["run", "private"], { transcript: "retained content" });
+	let fail!: (error: Error) => void;
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(
+			() =>
+				new Promise<Response>((_, reject) => {
+					fail = reject;
+				}),
+		),
+	);
+	const pending = api("/api/runs/private");
+	const rejected = expect(pending).rejects.toThrow(
+		"Navigation interrupted fetch",
+	);
+	cancelAccessRequests();
+	fail(new TypeError("Navigation interrupted fetch"));
+	await rejected;
+	expect(accessState().status).toBe("authenticated");
+	expect(pwaState().status).not.toBe("offline");
+	expect(client.getQueryData(["run", "private"])).toEqual({
+		transcript: "retained content",
+	});
+});
+
+it("ignores late version and access failures from the document being left", async () => {
+	authoritativeReady();
+	client.setQueryData(["run", "private"], { transcript: "retained content" });
+	for (const check of [checkVersion, checkAccess]) {
+		let fail!: (error: Error) => void;
+		let signal!: AbortSignal;
+		vi.stubGlobal(
+			"fetch",
+			vi.fn((_, options) => {
+				signal = options.signal;
+				return new Promise<Response>((_, reject) => {
+					fail = reject;
+				});
+			}),
+		);
+		const pending = check();
+		cancelAccessRequests();
+		expect(signal.aborted).toBe(true);
+		fail(new TypeError("Navigation interrupted fetch"));
+		await pending;
+		expect(accessState().status).toBe("authenticated");
+		expect(pwaState().status).not.toBe("offline");
+		expect(client.getQueryData(["run", "private"])).toEqual({
+			transcript: "retained content",
+		});
+	}
+});
+
+it("accepts no-expiry remote sessions without a deadline while current-session denial still clears access", async () => {
+	const timer = vi.spyOn(globalThis, "setTimeout");
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async () => factoryResponse({ authenticated: true, expires: null })),
+	);
+	await checkAccess();
+	expect(accessState()).toEqual({ status: "authenticated", expires: null });
+	expect(timer).not.toHaveBeenCalled();
+	timer.mockRestore();
+	client.setQueryData(["run", "private"], { transcript: "persistent content" });
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async () => factoryResponse({}, { status: 401 })),
+	);
+	await checkAccess();
 	expect(accessState().status).toBe("required");
 	expect(client.getQueryData(["run", "private"])).toBeUndefined();
 });

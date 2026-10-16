@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { repositoryReference } from "./GitProviderReference.js";
+import { decisionFor } from "./Impact.js";
 import { delay } from "./MergeReadiness.js";
 import {
 	groupedOutput,
@@ -159,6 +160,42 @@ export function resourceScopes(context: ExecutionContext): string[] {
 		return context.step.resources
 			.map((resource) => JSON.stringify(["resource", resource]))
 			.sort();
+	if (context.step.tool === "impact-checks") {
+		const decision = context.impactKey
+			? decisionFor(context.run, context.impactKey)
+			: undefined;
+		if (!decision)
+			throw new Error(
+				"Selected checks require persisted impact/resource decisions",
+			);
+		const scopes = new Set<string>();
+		for (const check of decision.checks.filter((c) =>
+			decision.pending.checks.includes(c.id),
+		)) {
+			if (check.environment?.isolation === "worktree") continue;
+			if (check.environment?.isolation === "shared") {
+				for (const resource of check.environment.resources)
+					scopes.add(JSON.stringify(["resource", resource]));
+			} else {
+				const repository = runRepositories(context.run).find(
+					(r) => r.id === check.repositoryId,
+				)!;
+				const url =
+					repository.providerSnapshot?.repositoryUrl ??
+					repository.githubUrl ??
+					repository.gitlabUrl;
+				scopes.add(
+					JSON.stringify([
+						"qa",
+						url
+							? repositoryReference(url).url
+							: localRepository(repository.repositoryPath),
+					]),
+				);
+			}
+		}
+		return [...scopes].sort();
+	}
 	if (context.step.id !== "capture") return [];
 	const environment = (
 		context.outputs?.["visual-scope"] as

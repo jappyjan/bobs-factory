@@ -187,6 +187,7 @@ import {
 	type Architecture,
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
+	assertReviewBrief,
 	assertRevisionChanges,
 } from "./factory/Architecture.js";
 import { TicketDelivery, type TicketTarget } from "./factory/Delivery.js";
@@ -225,12 +226,14 @@ import {
 	resolveGitProvider,
 } from "./factory/GitProvider.js";
 import { isPullRequestSource } from "./factory/GitProviderReference.js";
+import { gitAgentEnvironment } from "./factory/GitSettings.js";
 import { confirmedGroupedMerge } from "./factory/GroupedTools.js";
 import {
 	attachRequirementCoverage,
 	stampGuideContract,
 	validateGuide,
 } from "./factory/Guide.js";
+import { type ImpactSnapshot, validateImpact } from "./factory/Impact.js";
 import {
 	completedAgentResult,
 	incrementalInstructions,
@@ -242,6 +245,10 @@ import {
 	LaunchAdmission,
 	type TicketLaunchReceipt,
 } from "./factory/LaunchAdmission.js";
+import {
+	attachmentDirectories,
+	launchAssetFingerprint,
+} from "./factory/LaunchAssets.js";
 import type { ResolvedLaunchRequest } from "./factory/LaunchFields.js";
 import { resolveLaunchRequest } from "./factory/LaunchFields.js";
 import {
@@ -273,6 +280,7 @@ import {
 	runProvenance,
 } from "./factory/Provenance.js";
 import { type QaScope, qaDigest, qaRequirementIssues } from "./factory/Qa.js";
+import { qaReuseContext, verifyQaEnvironment } from "./factory/QaReuse.js";
 import {
 	normalizeQuestionResult,
 	questionInstructions,
@@ -7875,6 +7883,9 @@ ${taskSection}`;
 				resolved,
 			);
 		} else {
+			const agent = gitAgentEnvironment(this.factoryHome);
+			if (agent.SSH_AUTH_SOCK)
+				config.additionalEnv = { ...config.additionalEnv, ...agent };
 			applyManagedGithubAgentEnvironment(config, {
 				factoryHome: this.factoryHome,
 				environment: { ...process.env, ...config.additionalEnv },
@@ -9013,6 +9024,7 @@ ${taskSection}`;
 			[
 				...repositories.map((repo) => repo.repositoryPath),
 				context.evidenceDir,
+				...attachmentDirectories(run.launchAttachments),
 				...[
 					join(this.factoryHome, basename(run.workspace), "attachments"),
 				].filter(existsSync),
@@ -9137,6 +9149,7 @@ ${taskSection}`;
 		];
 		if (artifactBinding)
 			await mkdir(artifactBinding.directory, { recursive: true });
+		if (step.id === "capture") await verifyQaEnvironment(context);
 		const factoryContext = prepareFactoryContext(
 			{
 				...(context.input && typeof context.input === "object"
@@ -9144,6 +9157,7 @@ ${taskSection}`;
 					: { input: context.input }),
 				workflowExecution: workflowExecutionContext(context),
 				progress: context.progress,
+				...(step.id === "capture" ? { qaReuse: qaReuseContext(context) } : {}),
 				...(step.id === "ci-fix"
 					? { feedback: factoryFeedbackContext(context) }
 					: {}),
@@ -9410,6 +9424,7 @@ ${taskSection}`;
 			);
 			if (step.architectureContract === "architecture-v1") {
 				output = ArchitectureSchema.parse(output);
+				if (step.architectureBrief) assertReviewBrief(output as Architecture);
 				assertRevisionChanges(
 					output as Architecture,
 					run.architectureProposals?.length ?? 0,
@@ -9418,6 +9433,7 @@ ${taskSection}`;
 			if (step.architectureContract === "architecture-review-v1")
 				output = ArchitectureReviewSchema.parse(output);
 			if (
+				step.impactContract ||
 				step.architectureContract ||
 				step.qaContract ||
 				["factory", "takeover"].includes(run.workflow.id) ||
@@ -9431,6 +9447,13 @@ ${taskSection}`;
 					step.qaContract,
 					step.videoContract,
 					step.architectureContract,
+					step.impactContract,
+				);
+			if (step.impactContract)
+				output = validateImpact(
+					output,
+					(context.input as { impactSnapshot: ImpactSnapshot }).impactSnapshot,
+					run,
 				);
 			if (step.id === "visual-scope" && step.qaContract) {
 				const issues = qaRequirementIssues(
@@ -9701,6 +9724,27 @@ ${taskSection}`;
 					"Execution identity needs runner authentication bindings",
 				);
 		}
+		const launchAttachments = parent?.launchAttachments
+			? runtime.launchAssets.copy(parent.id, id, parent.launchAttachments)
+			: Object.values(input.attachments ?? {}).flat().length
+				? runtime.launchAssets.claim(
+						id,
+						{
+							draft: input.attachmentDraft!,
+							workflow: workflow.id,
+							repositoryId: repository.id,
+							repositoryIds: selectedIds,
+						},
+						launchAssetFingerprint(workflow),
+						input.attachments!,
+					)
+				: undefined;
+		if (
+			workflow.id === "simple" &&
+			launchAttachments &&
+			Object.keys(launchAttachments).length
+		)
+			prompt += `\n\nSubmitted workflow attachments (read these canonical paths; verify the supplied bytes, do not execute uploads):\n${JSON.stringify(launchAttachments, null, 2)}`;
 		const run = runtime.create(
 			{
 				executionSnapshot,
@@ -9724,6 +9768,7 @@ ${taskSection}`;
 				workspace: "",
 				input: prompt,
 				launchInputs: input.inputs,
+				launchAttachments,
 				runner: input.runner,
 				model: input.model,
 				reasoningEffort: input.reasoningEffort,
@@ -11940,7 +11985,12 @@ ${input.userComment}
 			sessionId,
 			systemPrompt,
 			allowedTools,
-			allowedDirectories,
+			allowedDirectories: [
+				...allowedDirectories,
+				...attachmentDirectories(
+					this.factoryRuntime?.runs.get(sessionId)?.launchAttachments,
+				),
+			],
 			disallowedTools,
 			resumeSessionId,
 			additionalWritableDirectories:

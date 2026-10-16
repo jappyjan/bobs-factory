@@ -13,6 +13,7 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 | Ticket managers | unified CLI/desktop/service runtime, protected Settings → Ticket managers | per-provider `ticketManagers` connection settings, retained `linearWorkspaces` and native identities; live intake/synchronization policy and persistent delivery | Ignore legacy service mode metadata; remove saved global `platform`; keep native credentials, runs and project MCP sources. F1 injects fixture trackers explicitly |
 | Home configuration | application, worker, config | `factoryHome`, `~/.bobs-factory` | Transform config field and owned paths only |
 | Linear publication | shared presenter, activity sinks, queued delivery | Routine progress and role outcomes use `thought`; native lifecycle/input activities retain their types and automatic threaded comments; explicit documentation uses comments | Present legacy queued records before sending; retain raw evidence locally |
+| Change impact and evidence reuse | Accepted workflow role, Factory/Takeover scheduler, review/QA and delivery gates | [`impact-v1`](factory/impact-decisions.md); original receipts plus explicit reuse links; configurable repeat limit; separate approval continuation | New stock definitions opt in. Saved/custom recipes and accepted run snapshots retain conservative graphs; custom workflows opt in explicitly with configured inventory/fanout associations |
 | Persistence | worker state, factory runs / chats / evidence | `<home>/state`, `<home>/factory`; version 5 session manifests, immutable chunks and lazy run payloads | Preserve IDs, receipts, gates, accepted definitions and legacy document backups; commit referenced chunks before manifests; move/restore complete homes with their chunks |
 | Coordinator | MachineCapacity and execution scope | `<factoryHome>/machine-capacity`, one pool per instance | Stop old consumers and descendants before transfer; capacity-directory overrides block apply until explicitly reconciled |
 | Repo hooks | GitService setup / teardown | `bobs-factory-setup.sh`, `bobs-factory-teardown.sh` | Rename only explicitly approved repository files |
@@ -27,12 +28,13 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 | Desktop shell updates | local installed Electron launcher, external app helper | `<factoryHome>/desktop/updates/state.json`, shared policy/consent rules, hash-bound complete-app ownership receipt and health journal | Replace only the verified user-owned app; retain old UI; fence the local worker without restarting it; selected remote instances keep their own update settings |
 | Publication | release workflows, publisher | repository-wide lock; retained asset/approval digests and recovery receipts; ordering against complete published provider history | Publication disabled until explicit rollout activation; stable approval binds exact unsigned bytes; rejected releases cannot hide provider history |
 | External wire protocol | upstream HTTP adapters / MCP contexts | `X-Cyrus-Team-Id`, `X-Cyrus-Config-Capabilities`, `x-cyrus-mcp-context-id` | Retain ASCII protocol names; no hosted enrollment |
-| Operator MCP | CLI, worker, operator grant store | `bobs-factory-operator`, `operator`, `operator-mcp`, `<home>/factory/operator` | Local owner grants; dashboard passkeys and accepted run profiles remain separate |
-| Dashboard access | CLI, FactoryServer, private authentication store; client clears private views on connection loss and rechecks sessions on reconnect | automatic direct HTTP loopback access; remote `factory-auth`, `--origin`, `--session-hours`, `BOBS_FACTORY_FACTORY_*`, `<home>/factory/auth` | Preserve remote authentication files/origin bindings; local access creates no reusable session; IPv6 is a request authority alias, not a credential migration |
+| Operator MCP | CLI, worker, operator grant store | `bobs-factory-operator`, `operator`, `operator-mcp`, `<home>/factory/operator` | Local owner grants; dashboard API keys and accepted run profiles remain separate |
+| Dashboard access | CLI, FactoryServer, private authentication store; client clears private views on connection loss and rechecks sessions on reconnect | automatic direct HTTP loopback access; remote key sign-in, Settings → Access, local `factory-auth` recovery, `--origin`, `--session-hours`, `BOBS_FACTORY_FACTORY_*`, `<home>/factory/auth` | Version-3 digest-only keys and origin-bound sessions, with opt-in no-expiry sessions; version 2 upgrades preserving keys/deadlines, version-1 passkeys/sessions migrate to an empty store; local access creates no reusable session; IPv6 is a request authority alias |
 | Terminal dashboard | CLI, FactoryServer, private authentication store | `tui`, `--theme`, `--home`, `--port`, localhost-bound terminal sessions | Local operator filesystem authority; memory-only session hashes, no browser credential or native store migration |
 | Workflow catalog | defaultWorkflows, WorkflowCatalog, WorkflowRuntime and native adapters | code-owned bundled behavior; separate preferences, launch settings and availability; private fork graphs | digest-bound backup/receipt of legacy config; preserve custom graphs, frozen runs and native IDs; individual Resume after disabling through dashboard, terminal or operator MCP; stopped runs with saved progress can Resume individually after workflow availability checks, while Bring back changes only visibility; saved Simple runs use runtime recovery; ticket Simple resumes its retained native conversation and pending attachments; standalone chat resolves its selected model before saving the pending turn; Resume preserves that model through the production runner factory and retains queued input across preference changes; queued first chat turns persist proof that provider execution has not started and can Resume without a native conversation ID; the provider-start boundary is persisted after capacity admission and before provider side effects; confirmed cancellation or admission rejection before provider invocation durably restores the never-started state, while failed cleanup saves and uncertain provider effects retain conservative recovery errors; established chats and older records with unknown startup history require a saved native conversation ID, reporting how to restore it instead of starting a replacement conversation; failed recovery retains its block and reports missing prerequisites |
-| Architecture approval | Architecture, WorkflowRuntime, FactoryServer and proposal UI | bundled proposal/review contracts and exact-version acceptance; local forks own prompt and approval-policy edits | recognize historical architecture-enabled stock; retain saved contracts, accepted graphs and pending proposals without replay; historical versions cannot accept the current proposal |
+| Architecture approval | Architecture, WorkflowRuntime, FactoryServer and proposal UI | bundled proposal/review contracts, reviewer-facing findings/deliverables/criterion coverage and runtime-derived planned footprints bound to exact-version acceptance; local forks own prompt and approval-policy edits | new stock proposal steps opt into `architectureBrief: review-v1`; saved graphs and proposals retain their contracts and digests without replay; historical versions cannot accept the current proposal; footprint counts declared paths in planning worktrees, with file kinds and largest code area inferred by the runtime |
 | Dashboard | FactoryWebAssets, build script, server | immutable shell inventory, existing PWA protocol | Rebuild shell; keep API/SSE and workflow IDs |
+| Manual launch attachments | LaunchFields, LaunchAssetStore, FactoryServer, WorkflowRuntime and composer | declared `files` fields, opaque draft/upload IDs, private hash-bound `launchAttachments` manifests; 10 files, 25 MiB each, 100 MiB total | New stock definitions opt in; saved/custom and accepted definitions keep their declarations. Preserve claimed directories with persisted runs; see [manual launch attachments](factory/manual-launch-attachments.md) |
 
 External cyrus-hosted tool catalogs are absent from this repository. They cannot
 be updated here. This independent fork does not enroll with the upstream hosted
@@ -43,15 +45,18 @@ configured HTTP loopback authority and same-origin browser context. IPv4 `127.0.
 IPv6 `::1` and `localhost` work without enrollment, login or a session cookie.
 Mutation Origin/action/version guards, navigation/Fetch Metadata checks and media
 path boundaries still apply. Forwarding headers never establish local authority;
-forwarded loopback authorities are rejected. Public/TLS origins retain per-origin
-passkeys and sessions. Proxies must preserve the configured public Host and Origin.
+forwarded loopback authorities are rejected. Public/TLS origins require origin-bound browser sessions established by API key sign-in.
+Keys are instance credentials managed in local or signed-in remote Settings. Secrets
+are shown once; rotation/removal revokes issuing sessions. Keys do not authorize
+Bearer API requests. Valid legacy passkey state migrates to an empty key store,
+revoking old sessions without modifying runs, integrations or native credentials. Proxies must preserve the configured public Host and Origin.
 A raw port-forward or proxy that strips every forwarding signal and rewrites Host
 to localhost exposes local operator authority; the worker cannot distinguish that
 socket from a local process. Do not publish the local authority through such a proxy.
 Local operator actions are audited as `local-operator`; authentication recovery
 revokes remote sessions but does not revoke direct local filesystem/network authority.
 
-Dashboard passkey verification rotates the session cookie. The client suspends
+Dashboard keys have no expiry. Browser sessions default to 12 hours; explicit Stay signed in creates a revocable no-expiry session (`expires: null`), with a browser-capped persistent cookie refreshed on access checks. Version-2 stores upgrade atomically to version 3, preserving keys and bounded sessions; older binaries cannot read version 3. Dashboard API key sign-in rotates the session cookie. The client suspends
 the old live stream and cancels requests bound to the old cookie without clearing
 the credential-management form. It reconnects after session verification;
 connection loss, expiry and current-session rejection still clear private views.
@@ -152,3 +157,22 @@ review or merge; profile MCP repairs apply only to future accepted snapshots.
 Listener errors identify the instance and requested run (when
 supplied), with sanitized context and recovery guidance. Overlapping connection
 edits return `stale_configuration`; overlapping run actions return `stale_state`.
+
+## Host Git identity and SSH agent
+
+Settings → Identity profiles → Host Git identity saves an optional instance socket in `<factoryHome>/factory/git-settings.json`.
+The saved socket overrides inherited `SSH_AUTH_SOCK` for host Git commands, worktree
+preparation/hooks and new host agent sessions. It is read for subsequent commands
+and retained-run retries without restarting the worker. Clearing it restores the
+inherited agent. Running child processes retain their launch environment.
+
+Host and explicit identity bindings share an SSH agent selector that shows detected
+Bitwarden/1Password sockets and tests connectivity/key availability. Host settings
+also show the effective source. Custom paths are absolute or `~/` paths
+on the Factory machine; saving requires an existing socket. Only the socket path is
+stored. Native keys, Git signing policy, repository accounts and credential stores
+stay unchanged. Explicit execution environments keep their declared bindings;
+profiles using shared host signing use the instance agent. Saving never retries a
+run or approves publication automatically. After repairing access, use the failed
+run’s **Retry step** action. An agent connection test does not sign a commit or
+establish that a particular signing key is unlocked.

@@ -470,6 +470,7 @@ it.each([
 });
 it.each([
 	"#/settings/unknown",
+	"#/settings/git",
 	"#/settings/notifications/extra",
 	"#/settings/notifications?redirect=evil",
 	"#/settings/tools/extra",

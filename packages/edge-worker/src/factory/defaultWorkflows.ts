@@ -5,7 +5,12 @@ import {
 	briefPrompt,
 	briefVideoInstructions,
 } from "./GuideAuthoring.js";
-import { takeoverLaunchFields } from "./LaunchFields.js";
+import { impactInstructions } from "./Impact.js";
+import {
+	attachmentLaunchField,
+	standardLaunchFields,
+	takeoverLaunchFields,
+} from "./LaunchFields.js";
 import { QA_CONTRACT } from "./Qa.js";
 import { reviewFixInstructions } from "./ReviewRecovery.js";
 import {
@@ -45,6 +50,14 @@ const ciAssessmentInstructions = ` Set reviewRequired=false ONLY when every newl
 const definitions = [
 	{
 		id: "simple",
+		launchFields: [
+			...standardLaunchFields.map((field) => ({
+				...field,
+				label: "What should Bob do?",
+				placeholder: "What should Bob do?",
+			})),
+			attachmentLaunchField,
+		],
 		allowedTriggers: ["manual", "ticket-assignment"],
 		icon: "⚡",
 		name: "Simple / Bob’s Factory",
@@ -56,6 +69,7 @@ const definitions = [
 	},
 	{
 		id: "factory",
+		launchFields: [...standardLaunchFields, attachmentLaunchField],
 		allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 		icon: "🏭",
 		name: "Software factory",
@@ -265,13 +279,14 @@ implementationStep.prompt +=
 const architectureSteps = [
 	agent("architecture", "Discuss architecture", architectureInstructions, {
 		architectureContract: "architecture-v1",
+		architectureBrief: "review-v1",
 	}),
 	{
 		...oldPlanReview,
 		id: "architecture-review",
 		name: "Review architecture candidate",
 		prompt:
-			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Assess repository evidence, decisions and their options, the map, plain-language readability, the short plan steps and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
+			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Require briefVersion=1, concrete current-state findings, observable deliverables with complete files/operations/size estimates and criterion traces, every original acceptance criterion with honest covered/partial/deferred status and reason, justified Bob-added work, explicit non-goals and measurable acceptance checks. Compare the brief to the full plan: reject hidden work (including undeclared conditional edits), omitted criteria, vague options, limits whose values or measurement selection rules appear only in the full plan, unsupported coverage claims, unnecessary packages or frontend work, and process status masquerading as technical risk. Inspect runtime footprint warnings, including invalid paths, operation mismatches and unchanged map parts listed for work; require correction or a concrete explanation of intentional cross-area/config changes. Assess repository evidence, decisions and options, map, readability and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
 		architectureContract: "architecture-review-v1",
 		architectureSource: "architecture",
 		branches: back("approved", "architecture"),
@@ -427,7 +442,105 @@ Object.assign(planReview, { next: "delivery-route" });
 		{ next: "external-guide" },
 	),
 );
-export const defaultWorkflows = validateWorkflows([
+// Only newly created stock definitions opt in. Accepted run snapshots are never rewritten.
+function installImpact(steps: Record<string, any>[]) {
+	const fanout = steps.find((s) => s.type === "fanout" && s.review);
+	if (!fanout) return;
+	const inventory = steps.find((s) => s.id === fanout.review.inventory)!;
+	const assessId = "assess-impact";
+	const checksId = "impact-checks";
+	const index = steps.findIndex((s) => s.id === inventory.id);
+	steps.splice(
+		index,
+		0,
+		agent(
+			assessId,
+			"Assess changed work and retained evidence",
+			impactInstructions,
+			{
+				impactContract: "impact-v1",
+				impact: {
+					inventory: inventory.id,
+					fanout: fanout.id,
+					maxUnchangedCycles: 3,
+				},
+				askQuestions: true,
+				maxVisits: 100,
+				branches: [
+					{
+						when: { path: "correctionRequired", equals: true },
+						next: "ci-fix",
+					},
+					{ when: { path: "readinessOnly", equals: true }, next: "ci" },
+					{
+						when: { path: "extractRequirements", equals: true },
+						next: inventory.id,
+					},
+				],
+				next: checksId,
+			},
+		),
+	);
+	steps.splice(
+		steps.findIndex((s) => s.id === fanout.id),
+		0,
+		tool(checksId, "Run independently selected checks", "impact-checks", {
+			impactSource: assessId,
+			next: fanout.id,
+		}),
+	);
+	inventory.next = checksId;
+	inventory.prompt +=
+		"\nFor impact-v1 runs declare requirement stage:code|qa|guide|acceptance|delivery from the accepted requirement source. Code is the default; later-stage obligations remain mandatory at their named gates. Do not reclassify implementation defects as future obligations.";
+	fanout.impactSource = assessId;
+	// Every corrective route shares one assessment; initial and scope-changed work extracts fully.
+	for (const step of steps) {
+		if (
+			![assessId, inventory.id].includes(step.id) &&
+			step.next === inventory.id
+		)
+			step.next = assessId;
+		if (step.id !== assessId)
+			for (const branch of step.branches ?? [])
+				if (branch.next === inventory.id) branch.next = assessId;
+		if (
+			[
+				"ci",
+				"handoff",
+				"human-review",
+				"merge",
+				"review-after-fix",
+				"review-gate",
+				"visual-gate",
+			].includes(step.tool)
+		)
+			step.impactSource = assessId;
+		if (step.tool === "review-after-fix") {
+			step.branches = [];
+			step.next = assessId;
+		}
+		if (step.tool === "handoff")
+			step.branches.unshift({
+				when: { path: "impactRequired", equals: true },
+				next: assessId,
+			});
+		if (step.tool === "ci")
+			step.branches.unshift(
+				{ when: { path: "impactRequired", equals: true }, next: assessId },
+				{ when: { path: "retainQa", equals: true }, next: "guide" },
+			);
+		if (step.id === "visual-scope")
+			step.prompt +=
+				"\nFor impact-v1 runs, retain all story definitions and declare complete per-story dependencies plus environmentFingerprint and environmentEvidence:{repositoryId,command,expectedDigest} for fixture, dependency and environment identity. The runtime executes that read-only probe; expectedDigest is the SHA-256 of its trimmed UTF-8 stdout, without JSON quoting. Use a probe that observes actual fixtures and tool versions, not a constant label. Unknown or unavailable probes require fresh execution. If external environment identity is unknown, omit its fingerprint to force execution. Behavioral reuse requires the shared independent impact assessment and exact original passed criterion provenance.";
+		if (step.id === "capture")
+			step.prompt +=
+				"\nFor impact-v1 runs read /qaReuse. Copy only runtime-validated reusable criteria exactly with their original evidence and reuse link. Execute every other criterion. Never invent a reuse link, reset an original execution date or mark failed/blocked criteria passed.";
+		if (step.id === "guide")
+			step.prompt +=
+				"\nFor impact-v1 follow-ups, preserve the complete original guide and unaffected coverage. Describe cumulative changes since prior explicit approval, independent impact rationale, fresh and reused evidence, checks and risks in a delta note. Safe minor production corrections may retain prior explicit approval after required checks; other changes require renewed acceptance. Filename and line-count restrictions do not apply to this contract. Declared future acceptance/delivery obligations remain pending at their own gates, never call them defects in the code gate.";
+	}
+}
+export const conservativeWorkflows = validateWorkflows([
 	definitions[0],
 	{
 		...pipeline,
@@ -444,7 +557,7 @@ export const defaultWorkflows = validateWorkflows([
 		id: "takeover",
 		allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 		icon: "🤝",
-		launchFields: takeoverLaunchFields,
+		launchFields: [...takeoverLaunchFields, attachmentLaunchField],
 		name: "Take over existing work",
 		description:
 			"Inspect an existing PR or ticket, clarify remaining work, then continue through the shared factory pipeline. Existing PRs stay draft for human review.",
@@ -477,6 +590,11 @@ export const defaultWorkflows = validateWorkflows([
 		labels: [],
 	},
 ]);
+
+// New launches opt in; saved/custom graphs upgrade through conservative definitions.
+const impactDefaults = structuredClone(conservativeWorkflows);
+installImpact(impactDefaults.find((w) => w.id === "factory-pipeline")!.steps);
+export const defaultWorkflows = validateWorkflows(impactDefaults);
 
 /** Extend only the stock handoff route to reuse its already-authorized CI fixer. */
 export function upgradeHandoffReadiness(steps: WorkflowStep[]): boolean {

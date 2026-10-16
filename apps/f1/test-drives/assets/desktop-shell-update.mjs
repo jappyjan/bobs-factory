@@ -14,7 +14,6 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
 import { FactoryServer } from "../../../../packages/edge-worker/dist/factory/FactoryServer.js";
 import { WorkflowRuntime } from "../../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
 import { MachineCapacity } from "../../../../packages/edge-worker/dist/MachineCapacity.js";
@@ -193,16 +192,25 @@ try {
 	const lease = await capacity.acquireLease(undefined, {
 		identity: "shell-active-work",
 	});
-	const activation = manager.reconcile();
-	for (let n = 0; n < 500 && !drain.active(); n++) await delay(20);
-	assert.equal(drain.active(), true);
-	assert.equal((await drain.inspect()).idle, false);
-	assert.equal(manager.status().transaction.phase, "draining");
-	assert.equal(services.workerOwner(home).pid, worker.pid);
-	assert.equal(processStamp(ui.pid), life.uiStamp);
-	checks.push("active lease defers app switch without signaling UI/worker");
-	await lease.release();
-	await activation;
+	// Reconciliation keeps admission closed while existing work drains. Release
+	// the held lease independently instead of awaiting the update it blocks.
+	const updating = manager.reconcile();
+	updating.catch(() => {}); // Preserve rejection for the awaited result below.
+	try {
+		const deadline = Date.now() + 5000;
+		while (!drain.active() && Date.now() < deadline)
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		assert.equal(drain.active(), true, "Update must freeze admission");
+		assert.equal((await drain.inspect()).idle, false);
+		assert.equal(manager.status().transaction.phase, "draining");
+		assert.equal(services.workerOwner(home).pid, worker.pid);
+		assert.equal(processStamp(ui.pid), life.uiStamp);
+		assert.equal(existsSync(join(directory, "quit.json")), false);
+		checks.push("active lease defers app switch without signaling UI/worker");
+	} finally {
+		await lease.release();
+		await updating;
+	}
 	assert.equal(manager.status().transaction.phase, "succeeded");
 	assert.equal(services.workerOwner(home).nonce, worker.nonce);
 	assert.deepEqual(

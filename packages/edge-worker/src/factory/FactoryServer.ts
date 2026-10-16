@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { createServer, type Server, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
@@ -24,6 +24,12 @@ import {
 import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
 import { factoryWebAssets } from "./FactoryWebAssets.js";
+import {
+	launchAssetFingerprint,
+	launchAssetLimits,
+	UploadContextSchema,
+	UploadMetadataSchema,
+} from "./LaunchAssets.js";
 import {
 	getLaunchFields,
 	LaunchRequestSchema,
@@ -153,16 +159,33 @@ export class FactoryServer {
 				await updates.observeInstalled(factoryRuntimeIdentity);
 			});
 		registerVideoRoutes(this.app, runtime);
-		this.app.setErrorHandler((error, _request, reply) =>
-			reply.code(error instanceof z.ZodError ? 400 : 409).send({
+		this.app.setErrorHandler((error, request, reply) => {
+			// Parser errors can include fragments of the submitted body. Never echo a login secret.
+			if (
+				request.url.split("?")[0] === "/api/auth/login" &&
+				(error instanceof z.ZodError ||
+					(error instanceof Error &&
+						"code" in error &&
+						String(error.code).startsWith("FST_ERR_CTP_")))
+			)
+				return reply.code(400).send({ error: "Invalid API key" });
+			if (
+				request.url.startsWith("/api/launch-assets") &&
+				(error as { code?: string }).code === "FST_ERR_CTP_BODY_TOO_LARGE"
+			)
+				return reply
+					.header("Connection", "close")
+					.code(413)
+					.send({ error: "Each file must be 25 MiB or smaller" });
+			return reply.code(error instanceof z.ZodError ? 400 : 409).send({
 				error:
 					error instanceof z.ZodError
 						? error.issues.map((issue) => issue.message).join("\n")
 						: error instanceof Error
 							? error.message
 							: "Request failed",
-			}),
-		);
+			});
+		});
 		const unsubscribeAuth = this.auth.subscribe(() => {
 			for (const [stream, session] of this.streamSessions)
 				if (!session.local && !this.auth.session(session.token, session.origin))
@@ -219,6 +242,7 @@ export class FactoryServer {
 						runtime.getTitleSettings(),
 						runtime.catalog.read(),
 						runtime.executionProfiles.read(),
+						runtime.gitSettings.read(),
 					]),
 				)
 				.digest("hex");
@@ -266,19 +290,16 @@ export class FactoryServer {
 			reply: import("fastify").FastifyReply,
 			origin: string,
 			token: string,
-			expires: number,
+			expires: number | null,
 		) =>
 			reply.header(
 				"Set-Cookie",
-				`${cookieName(origin)}=${token}; Path=/; HttpOnly; SameSite=Strict; ${origin.startsWith("https:") ? "Secure; " : ""}Expires=${new Date(expires).toUTCString()}`,
+				`${cookieName(origin)}=${token}; Path=/; HttpOnly; SameSite=Strict; ${origin.startsWith("https:") ? "Secure; " : ""}${expires === null ? "Max-Age=34560000" : `Expires=${new Date(expires).toUTCString()}`}`,
 			);
 		const publicPaths = new Set([
 			"/api/version",
 			"/api/auth/status",
-			"/api/auth/login/options",
-			"/api/auth/login/verify",
-			"/api/auth/register/options",
-			"/api/auth/register/verify",
+			"/api/auth/login",
 			...shell.assets.map((asset) => asset.path),
 		]);
 		const controlIntake = (request: FastifyRequest) =>
@@ -325,7 +346,7 @@ export class FactoryServer {
 			}
 			if (!publicPaths.has(request.url.split("?")[0]!) && !sessionFor(request))
 				return reply.code(401).send({
-					error: "Sign in with a passkey",
+					error: "Sign in with an API key",
 					code: "FACTORY_AUTH_REQUIRED",
 				});
 			if (controlIntake(request)) hooks.updateDrain?.enter(request);
@@ -333,7 +354,7 @@ export class FactoryServer {
 		this.app.addHook("preHandler", async (request, reply) => {
 			if (!publicPaths.has(request.url.split("?")[0]!) && !sessionFor(request))
 				return reply.code(401).send({
-					error: "Sign in with a passkey",
+					error: "Sign in with an API key",
 					code: "FACTORY_AUTH_REQUIRED",
 				});
 		});
@@ -409,81 +430,80 @@ export class FactoryServer {
 				throw new Error("Runtime drain hooks are unavailable");
 			return hooks.updateDrain.inspect();
 		});
-		this.app.get("/api/auth/status", (request) => {
+		this.app.get("/api/auth/status", (request, reply) => {
 			const origin = originFor(request)!;
 			const session = sessionFor(request);
 			const local = localFor(request);
+			// Browsers cap persistent cookies. Refresh the cookie on foreground
+			// verification while the server session itself has no expiry.
+			if (session?.expires === null)
+				setCookie(reply, origin, tokenFor(request)!, null);
 			return {
 				...(local ? { access: "local" } : {}),
 				authenticated: Boolean(session),
 				expires: session?.expires,
-				setupRequired:
-					!local &&
-					!this.auth.store.state.credentials.some((c) => c.origin === origin),
+				setupRequired: !local && !this.auth.store.state.keys.length,
 				origin,
 			};
 		});
-		for (const purpose of ["login", "register"] as const) {
-			this.app.post(`/api/auth/${purpose}/options`, async (request, reply) => {
-				const body = z
-					.object({
-						grant: z.string().max(100).optional(),
-						label: z.string().max(80).optional(),
-					})
-					.parse(request.body);
-				const binding = randomBytes(32).toString("base64url");
-				const origin = originFor(request)!;
-				const result = await this.auth.options(
-					purpose,
-					origin,
-					binding,
-					tokenFor(request),
-					body.grant,
-					body.label,
-				);
-				reply.header(
-					"Set-Cookie",
-					`factory-transaction=${binding}; Path=/; HttpOnly; SameSite=Strict; ${origin.startsWith("https:") ? "Secure; " : ""}Max-Age=300`,
-				);
-				return result;
-			});
-			this.app.post(`/api/auth/${purpose}/verify`, async (request, reply) => {
-				const body = z
-					.object({ transaction: z.string().max(100), response: z.any() })
-					.parse(request.body);
-				const origin = originFor(request)!;
-				const previous = tokenFor(request);
-				const result = await this.auth.verify(
-					purpose,
-					body.transaction,
-					origin,
-					cookie(request, "factory-transaction") ?? "",
-					body.response,
-				);
-				this.auth.logout(previous, origin);
-				setCookie(reply, origin, result.token, result.expires);
-				return { authenticated: true, expires: result.expires };
-			});
-		}
+		this.app.post("/api/auth/login", { bodyLimit: 1024 }, (request, reply) => {
+			const body = z
+				.object({
+					key: z.string().max(100),
+					staySignedIn: z.boolean().optional(),
+				})
+				.strict()
+				.parse(request.body);
+			const origin = originFor(request)!;
+			const result = this.auth.login(
+				body.key,
+				origin,
+				tokenFor(request),
+				body.staySignedIn,
+			);
+			setCookie(reply, origin, result.token, result.expires);
+			return { authenticated: true, expires: result.expires };
+		});
 		this.app.post("/api/auth/logout", (request, reply) => {
 			const origin = originFor(request)!;
 			this.auth.logout(tokenFor(request), origin);
 			setCookie(reply, origin, "", 0);
 			return { authenticated: localFor(request) };
 		});
-		this.app.get("/api/auth/credentials", (request) =>
-			this.auth.credentials(tokenFor(request), originFor(request)!),
+		this.app.get("/api/auth/keys", (request) =>
+			this.auth.keys(tokenFor(request), originFor(request)!, localFor(request)),
 		);
+		this.app.post("/api/auth/keys", { bodyLimit: 1024 }, (request) => {
+			const body = z
+				.object({ label: z.string().min(1).max(80) })
+				.strict()
+				.parse(request.body);
+			return this.auth.create(
+				tokenFor(request),
+				originFor(request)!,
+				body.label,
+				localFor(request),
+			);
+		});
 		this.app.delete<{ Params: { id: string } }>(
-			"/api/auth/credentials/:id",
-			(request) => {
+			"/api/auth/keys/:id",
+			(request) =>
 				this.auth.remove(
 					tokenFor(request),
 					originFor(request)!,
 					request.params.id,
-				);
-				return { removed: true };
-			},
+					localFor(request),
+				),
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/auth/keys/:id/rotate",
+			(request) =>
+				this.auth.rotate(
+					tokenFor(request),
+					originFor(request)!,
+					request.params.id,
+					localFor(request),
+				),
 		);
 		for (const asset of shell.assets) {
 			this.app.get(asset.path, (request, reply) => {
@@ -575,7 +595,7 @@ export class FactoryServer {
 			const session = sessionFor(request)!;
 			this.streamSessions.set(stream, { token, origin, local });
 			const expiry =
-				session.expires === undefined
+				session.expires == null
 					? undefined
 					: setTimeout(
 							() => stream.end(),
@@ -643,6 +663,7 @@ export class FactoryServer {
 			capacity: await hooks.capacity?.snapshot(),
 			configRevision: configRevision(),
 			executionProfiles: runtime.executionProfiles.read(),
+			gitSettings: runtime.gitSettings.status(),
 			executionConsumers: [...runtime.runs.values()]
 				.filter((run) => run.executionSnapshot)
 				.map((run) => ({
@@ -707,6 +728,16 @@ export class FactoryServer {
 				body.expectedRevision,
 			);
 		});
+		this.app.put("/api/git-settings", { bodyLimit: 8192 }, (request) => {
+			checkConfigRevision(request);
+			return {
+				gitSettings: runtime.updateGitSettings(request.body),
+				configRevision: configRevision(),
+			};
+		});
+		this.app.post("/api/git-settings/test", { bodyLimit: 8192 }, (request) =>
+			runtime.gitSettings.test(request.body),
+		);
 		this.app.post("/api/execution-preview", async (request) => {
 			const body = z
 				.object({
@@ -958,11 +989,93 @@ export class FactoryServer {
 					})),
 			].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 		});
+		const uploadWorkflow = (
+			context: import("./LaunchAssets.js").UploadContext,
+		) => {
+			const projects = hooks.repositories();
+			const known = new Set(
+				projects.flatMap((project) => project.repositoryIds ?? [project.id]),
+			);
+			if (
+				!context.repositoryIds.includes(context.repositoryId) ||
+				new Set(context.repositoryIds).size !== context.repositoryIds.length ||
+				context.repositoryIds.some((id) => !known.has(id))
+			)
+				throw new Error("Select an active project and repository scope");
+			return runtime.selectWorkflow([], "manual", context.workflow);
+		};
+		// The binary parser enforces the bound as bytes arrive. Access guards run
+		// in onRequest, before parsing; failed/interrupted uploads never hit disk.
+		this.app.addContentTypeParser(
+			"application/octet-stream",
+			{ parseAs: "buffer", bodyLimit: launchAssetLimits.fileBytes },
+			(_request, body, done) => done(null, body),
+		);
+		this.app.post<{ Querystring: { metadata: string } }>(
+			"/api/launch-assets",
+			{
+				bodyLimit: launchAssetLimits.fileBytes,
+				onRequest: async (request) => checkConfigRevision(request),
+			},
+			async (request, reply) => {
+				checkConfigRevision(request);
+				const metadata = UploadMetadataSchema.parse(
+					JSON.parse(request.query.metadata),
+				);
+				const workflow = uploadWorkflow(metadata);
+				if (
+					!getLaunchFields(workflow).some(
+						(field) => field.name === metadata.field && field.type === "files",
+					)
+				)
+					throw new Error(
+						"This workflow does not declare the attachment field",
+					);
+				if (!Buffer.isBuffer(request.body))
+					throw new Error("Upload files as application/octet-stream");
+				return reply
+					.code(201)
+					.send(
+						runtime.launchAssets.stage(
+							metadata,
+							launchAssetFingerprint(workflow),
+							request.body,
+						),
+					);
+			},
+		);
+		this.app.delete<{ Params: { draft: string; id: string } }>(
+			"/api/launch-assets/:draft/:id",
+			async (request) => {
+				checkConfigRevision(request);
+				runtime.launchAssets.remove(request.params.draft, request.params.id);
+				return { removed: true };
+			},
+		);
 		this.app.post("/api/runs", async (request, reply) => {
 			checkConfigRevision(request);
 			const input = LaunchRequestSchema.parse(request.body);
 			const workflow = runtime.selectWorkflow([], "manual", input.workflow);
-			const run = await hooks.start(resolveLaunchRequest(workflow, input));
+			const resolved = resolveLaunchRequest(workflow, input);
+			if (Object.values(resolved.attachments).flat().length) {
+				const context = UploadContextSchema.parse({
+					draft: resolved.attachmentDraft,
+					workflow: workflow.id,
+					repositoryId: resolved.repositoryId,
+					repositoryIds: resolved.repositoryIds ??
+						hooks
+							.repositories()
+							.find((repo) => repo.id === resolved.repositoryId)
+							?.repositoryIds ?? [resolved.repositoryId],
+				});
+				uploadWorkflow(context);
+				runtime.launchAssets.validate(
+					context,
+					launchAssetFingerprint(workflow),
+					resolved.attachments,
+				);
+			}
+			const run = await hooks.start(resolved);
 			await runtime.flush(run.id);
 			return reply.code(202).send(run);
 		});
@@ -1067,6 +1180,32 @@ export class FactoryServer {
 				return {
 					...slim,
 					outputs: run ? runtime.outputPreviews(run) : {},
+					// Supply only the adjacent retained guide for legacy reading-progress
+					// migration. Other historical outputs stay out of dashboard responses.
+					previousReviewGuide:
+						run &&
+						(run?.outputs.guide as { previousHeadSha?: string } | undefined)
+							?.previousHeadSha
+							? run.history
+									.slice()
+									.reverse()
+									.find((entry) => {
+										const guide = entry.output as
+											| {
+													reviewFiles?: { headSha?: string };
+													chapters?: unknown;
+											  }
+											| undefined;
+										return (
+											(entry.step === "guide" ||
+												entry.step.endsWith("/guide")) &&
+											guide?.reviewFiles?.headSha ===
+												(run.outputs.guide as { previousHeadSha?: string })
+													.previousHeadSha &&
+											guide?.chapters
+										);
+									})?.output
+							: undefined,
 					history: (
 						runtime.listRuns().find((item) => item.id === request.params.id)
 							?.history ?? []

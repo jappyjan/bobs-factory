@@ -21,7 +21,6 @@ import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { factoryHttp } from "./fixtures/factory-http.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
-import { authenticator } from "./fixtures/webauthn.js";
 
 it("serves question images only from the requested run, rejecting traversal, external symlinks and non-images", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-question-images-"));
@@ -280,7 +279,10 @@ it("starts, displays, answers and terminates runs through the local API", async 
 				.json()
 				.workflows.find((workflow: { id: string }) => workflow.id === "simple")
 				.launchFields,
-		).toMatchObject([{ name: "prompt", required: true }]);
+		).toMatchObject([
+			{ name: "prompt", required: true },
+			{ name: "attachments", type: "files", required: false },
+		]);
 		expect(runtime.selectWorkflow([], "manual").id).toBe("factory");
 		expect(
 			(await server.app.inject({ url: "/api/config", headers })).json()
@@ -514,6 +516,7 @@ it("validates the selected workflow's fields, accepts source-only Takeover, and 
 		).toEqual([
 			["source", true],
 			["prompt", false],
+			["attachments", false],
 		]);
 		for (const fields of [
 			{ source: "DEF-1" },
@@ -1700,29 +1703,17 @@ it.each([
 			).statusCode,
 		).toBe(401);
 		expect(push.status().devices).toEqual([]);
-		const keyFixture = authenticator();
-		const grant = JSON.parse(readFileSync(server.auth.grantPath, "utf8")).token;
-		const options = await server.app.inject({
-			method: "POST",
-			url: "/api/auth/register/options",
-			headers,
-			payload: { grant },
-		});
-		expect(options.statusCode).toBe(200);
+		const created = server.auth.create(
+			undefined,
+			headers.origin,
+			"Push test",
+			true,
+		);
 		const verified = await server.app.inject({
 			method: "POST",
-			url: "/api/auth/register/verify",
-			headers: {
-				...headers,
-				cookie: String(options.headers["set-cookie"]).split(";")[0],
-			},
-			payload: {
-				transaction: options.json().transaction,
-				response: keyFixture.register(
-					options.json().options.challenge,
-					headers.origin,
-				),
-			},
+			url: "/api/auth/login",
+			headers,
+			payload: { key: created.key },
 		});
 		expect(verified.statusCode).toBe(200);
 		const authenticatedHeaders = {
@@ -1872,6 +1863,99 @@ it.each([
 	}
 });
 
+it("bounds binary uploads, checks declared fields and configuration, and retains files after failed admission", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-launch-uploads-"));
+	const runtime = new WorkflowRuntime(home, {
+		agent: async () => ({}),
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	const start = vi.fn(async () => {
+		throw new Error("Admission failed");
+	});
+	const server = new FactoryServer(runtime, {
+		repositories: () => [{ id: "repo", name: "Project" }],
+		sessions: () => [],
+		entries: () => [],
+		start,
+		stop: (id) => runtime.stop(id),
+	});
+	try {
+		const config = (await server.app.inject({ url: "/api/config" })).json();
+		const build = (await server.app.inject({ url: "/api/version" })).json()
+			.build;
+		const headers = {
+			"x-factory-request": "1",
+			"x-factory-build": build,
+			"x-factory-config": config.configRevision,
+		};
+		const metadata = {
+			draft: crypto.randomUUID(),
+			workflow: "simple",
+			repositoryId: "repo",
+			repositoryIds: ["repo"],
+			field: "attachments",
+			name: "../input.unknown",
+			mime: "",
+		};
+		const upload = (bytes: Buffer, overrides = {}) =>
+			server.app.inject({
+				method: "POST",
+				url: `/api/launch-assets?metadata=${encodeURIComponent(JSON.stringify({ ...metadata, ...overrides }))}`,
+				headers: { ...headers, "content-type": "application/octet-stream" },
+				payload: bytes,
+			});
+		const large = await upload(Buffer.alloc(25 * 1024 * 1024 + 1));
+		expect(large.statusCode).toBe(413);
+		expect(large.json()).toEqual({
+			error: "Each file must be 25 MiB or smaller",
+		});
+		expect(large.headers.connection).toBe("close");
+		expect(
+			(await upload(Buffer.from("bytes"), { field: "undeclared" })).statusCode,
+		).toBe(409);
+		const file = await upload(Buffer.from([0, 255, 1]));
+		expect(file.statusCode).toBe(201);
+		const failed = await server.app.inject({
+			method: "POST",
+			url: "/api/runs",
+			headers,
+			payload: {
+				repositoryId: "repo",
+				workflow: "simple",
+				inputs: { prompt: "Use files" },
+				attachmentDraft: metadata.draft,
+				attachments: { attachments: [file.json().id] },
+			},
+		});
+		expect(failed.statusCode).toBe(409);
+		expect(start).toHaveBeenCalledOnce();
+		const stale = await server.app.inject({
+			method: "POST",
+			url: `/api/launch-assets?metadata=${encodeURIComponent(JSON.stringify(metadata))}`,
+			headers: {
+				...headers,
+				"x-factory-config": "stale",
+				"content-type": "application/octet-stream",
+			},
+			payload: Buffer.from("bytes"),
+		});
+		expect(stale.statusCode).toBe(409);
+		expect(stale.json().error).toMatch(/settings changed/);
+		const remove = await server.app.inject({
+			method: "DELETE",
+			url: `/api/launch-assets/${metadata.draft}/${file.json().id}`,
+			headers,
+			payload: {},
+		});
+		expect(remove.statusCode).toBe(200);
+	} finally {
+		await runtime.shutdown();
+		await server.stop();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
 it("returns an unavailable error when push configuration has no sender hook", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-no-push-"));
 	const runtime = new WorkflowRuntime(home, {
@@ -1904,6 +1988,63 @@ it("returns an unavailable error when push configuration has no sender hook", as
 	} finally {
 		await runtime.shutdown();
 		await server.stop();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it("supplies only the adjacent retained guide in the protected dashboard for legacy progress migration", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-reader-migration-"));
+	const runtime = new WorkflowRuntime(home, {});
+	const run = runtime.create({
+		id: "reader",
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "factory",
+			at: new Date().toISOString(),
+		},
+		title: "Reader",
+		repositoryId: "repo",
+		workspace: home,
+		input: "",
+		workflow: defaultWorkflows[1]!,
+	});
+	const old = {
+		chapters: [{ id: "authorization" }],
+		reviewFiles: { headSha: "old" },
+	};
+	run.outputs.guide = { previousHeadSha: "old" };
+	run.history.push(
+		{ step: "custom/guide", at: new Date().toISOString(), output: old },
+		{
+			step: "capture",
+			at: new Date().toISOString(),
+			output: { notes: "Large unrelated evidence" },
+		},
+	);
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+	});
+	try {
+		const response = await server.app.inject({
+			method: "GET",
+			url: "/api/runs/reader?view=dashboard",
+		});
+		expect(response.statusCode).toBe(200);
+		expect(response.json().previousReviewGuide).toEqual(old);
+		expect(response.json().history.every((entry: any) => !entry.output)).toBe(
+			true,
+		);
+		run.outputs.guide = { previousHeadSha: "missing" };
+		const missing = await server.app.inject({
+			method: "GET",
+			url: "/api/runs/reader?view=dashboard",
+		});
+		expect(missing.json().previousReviewGuide).toBeUndefined();
+	} finally {
+		await server.stop();
+		await runtime.shutdown();
 		rmSync(home, { recursive: true, force: true });
 	}
 });

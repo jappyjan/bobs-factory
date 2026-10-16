@@ -26,6 +26,7 @@ import { ansi256, tokens } from "./theme.js";
 
 const servers: Server[] = [];
 afterEach(() => {
+	vi.restoreAllMocks();
 	for (const server of servers.splice(0)) server.close();
 });
 
@@ -45,6 +46,8 @@ const run = (
 });
 
 it("groups Today like the dashboard: questions, stuck, reviews first; settled out", () => {
+	// Equal-age fixtures must have equal timestamps for stable tie ordering.
+	vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-14T12:00:00Z"));
 	const runs = [
 		run("working", "running"),
 		run("review", "waiting", { reviewGate: { status: "pending" } }),

@@ -1,4 +1,7 @@
+import type { Guide, GuideChapter } from "../FactoryResults";
+import type { ImpactDecision } from "../Impact";
 import { accessState } from "./auth-state";
+import { chaptersFor } from "./review-model";
 export function signature(value: unknown) {
 	let hash = 2166136261;
 	for (const c of JSON.stringify(value))
@@ -35,7 +38,11 @@ export function reviewRevision(run: any) {
 
 /** Preserve the progress identity used by both the preview and artifact reader. */
 export function reviewKey(run: any, guide: unknown) {
-	return `factory-review/${run.id}/${reviewRevision(run)}/${signature(guide)}`;
+	const repositories = chapterRepositories(run);
+	const scope = repositories.length
+		? `/repositories-${signature(repositories)}`
+		: "";
+	return `factory-review/${run.id}/${reviewRevision(run)}${scope}/${signature(guide)}`;
 }
 
 export function guideMatchesGate(run: any) {
@@ -79,6 +86,215 @@ export function readProgress(saved: unknown, pages: number): ReviewProgress {
 		...(value.checked ? { checked: booleans(value.checked) } : {}),
 		...(value.visited ? { visited: booleans(value.visited) } : {}),
 	};
+}
+
+type ChapterProgress = {
+	revision: string;
+	repositories: { repositoryId: string; headSha: string }[];
+	contexts: Record<string, string>;
+	reviewed: Record<string, boolean>;
+};
+const chapterProgressKey = (run: any) =>
+	`factory-review/${run.id}/chapter-progress`;
+const chapterRepositories = (run: any): ChapterProgress["repositories"] =>
+	(run.reviewGate?.repositories ?? [])
+		.map(
+			({ repositoryId, headSha }: ChapterProgress["repositories"][number]) => ({
+				repositoryId,
+				headSha,
+			}),
+		)
+		.sort(
+			(
+				a: ChapterProgress["repositories"][number],
+				b: ChapterProgress["repositories"][number],
+			) => a.repositoryId.localeCompare(b.repositoryId),
+		);
+function chapterContext(guide: Guide, chapter: GuideChapter): string {
+	return JSON.stringify({
+		chapter,
+		requirements: chapter.requirementIndexes.map((i) => guide.requirements[i]),
+		parts: chapter.systemPartIds?.map((id) =>
+			guide.system?.parts.find((part) => part.id === id),
+		),
+		connections:
+			guide.system &&
+			["before", "after"].map((mode) =>
+				guide.system![mode as "before" | "after"].filter((edge) =>
+					chapter.systemPartIds?.some(
+						(id) => id === edge.source || id === edge.target,
+					),
+				),
+			),
+	});
+}
+
+/** Reading progress is separate from revision-bound feedback and approval. */
+export function carriedChapterProgress(
+	run: any,
+	guide: Guide,
+	previous: ChapterProgress | null,
+): Record<string, boolean> {
+	if (
+		!previous ||
+		typeof previous.revision !== "string" ||
+		!previous.contexts ||
+		typeof previous.contexts !== "object" ||
+		Array.isArray(previous.contexts) ||
+		!previous.reviewed ||
+		typeof previous.reviewed !== "object" ||
+		Array.isArray(previous.reviewed) ||
+		!Array.isArray(previous.repositories ?? []) ||
+		(previous.repositories ?? []).some(
+			(repo) =>
+				!repo ||
+				typeof repo.repositoryId !== "string" ||
+				typeof repo.headSha !== "string",
+		)
+	)
+		return {};
+	const revision = reviewRevision(run);
+	const decision = (run.impactDecisions as ImpactDecision[] | undefined)?.at(
+		-1,
+	);
+	const transition =
+		decision?.status === "completed" &&
+		decision.classification !== "full" &&
+		!decision.uncertainty.length &&
+		decision.snapshot.repositories.some((repo) => repo.headSha === revision) &&
+		chapterRepositories(run).every((current) =>
+			decision.snapshot.repositories.some(
+				(repo) =>
+					repo.repositoryId === current.repositoryId &&
+					repo.headSha === current.headSha,
+			),
+		) &&
+		(previous.repositories ?? []).every((old) =>
+			decision.snapshot.repositories.some(
+				(repo) =>
+					repo.repositoryId === old.repositoryId &&
+					repo.reviewHead === old.headSha,
+			),
+		) &&
+		(decision.snapshot.approval?.headSha === previous.revision ||
+			decision.snapshot.repositories.some(
+				(repo) => repo.reviewHead === previous.revision,
+			));
+	const reviewed: Record<string, boolean> = {};
+	for (const chapter of chaptersFor(guide)) {
+		if (
+			typeof previous.reviewed[chapter.id] !== "boolean" ||
+			previous.contexts[chapter.id] !== chapterContext(guide, chapter)
+		)
+			continue;
+		// Across revisions, require an independently validated reuse boundary.
+		// Identical guide prose alone cannot prove unchanged source/dependencies.
+		const unaffected =
+			(previous.revision === revision &&
+				JSON.stringify(previous.repositories ?? []) ===
+					JSON.stringify(chapterRepositories(run))) ||
+			(transition &&
+				decision.reuseRecords.some(({ boundary, snapshotDigest }) => {
+					const covers = (file: string, dependency: string) =>
+						file === dependency || file.startsWith(`${dependency}/`);
+					return (
+						snapshotDigest === decision.snapshot.digest &&
+						(boundary.areas.includes(chapter.id) || chapter.files.length > 0) &&
+						chapter.files.every((file) =>
+							boundary.dependencies.some((dependency) =>
+								covers(file, dependency),
+							),
+						) &&
+						chapter.requirementIndexes.every((i) => {
+							const id = guide.requirements[i]?.requirementId;
+							return id && boundary.requirementIds.includes(id);
+						})
+					);
+				}));
+		if (unaffected) reviewed[chapter.id] = previous.reviewed[chapter.id]!;
+	}
+	return reviewed;
+}
+
+export function readReviewProgress(run: any, guide: Guide, pages: number) {
+	const saved = readStored<
+		(ReviewProgress & { chapterProgress?: ChapterProgress }) | null
+	>(reviewKey(run, guide), null);
+	if (saved) {
+		const progress = readProgress(saved, pages);
+		// Old single-repository keys already bind the revision and complete guide.
+		// Grouped progress needs an explicit scope receipt; never infer it.
+		const reviewed = saved.chapterProgress
+			? carriedChapterProgress(run, guide, saved.chapterProgress)
+			: chapterRepositories(run).length
+				? {}
+				: progress.reviewed;
+		return { ...progress, reviewed };
+	}
+	let previous = readStored<ChapterProgress | null>(
+		chapterProgressKey(run),
+		null,
+	);
+	// Upgrade existing revision-scoped progress only when the original guide
+	// is still available. Never guess a chapter's old content from its ID.
+	if (!previous && guide.previousHeadSha) {
+		const old =
+			(run.previousReviewGuide?.reviewFiles?.headSha ===
+				guide.previousHeadSha && run.previousReviewGuide?.chapters
+				? run.previousReviewGuide
+				: undefined) ??
+			(run.history
+				?.slice()
+				.reverse()
+				.find(
+					(entry: any) =>
+						entry.output?.reviewFiles?.headSha === guide.previousHeadSha &&
+						entry.output?.chapters,
+				)?.output as Guide | undefined);
+		if (old) {
+			const oldRun = {
+				id: run.id,
+				reviewGate: { headSha: guide.previousHeadSha },
+			};
+			const progress = readProgress(
+				readStored(reviewKey(oldRun, old), null),
+				chaptersFor(old).length + 3,
+			);
+			previous = chapterProgress(oldRun, old, progress);
+		}
+	}
+	return { page: 0, reviewed: carriedChapterProgress(run, guide, previous) };
+}
+
+function chapterProgress(
+	run: any,
+	guide: Guide,
+	progress: ReviewProgress,
+): ChapterProgress {
+	return {
+		revision: reviewRevision(run),
+		repositories: chapterRepositories(run),
+		contexts: Object.fromEntries(
+			chaptersFor(guide).map((chapter) => [
+				chapter.id,
+				chapterContext(guide, chapter),
+			]),
+		),
+		reviewed: progress.reviewed,
+	};
+}
+
+export function writeReviewProgress(
+	run: any,
+	guide: Guide,
+	progress: ReviewProgress,
+) {
+	const snapshot = chapterProgress(run, guide, progress);
+	writeStored(reviewKey(run, guide), {
+		...progress,
+		chapterProgress: snapshot,
+	});
+	writeStored(chapterProgressKey(run), snapshot);
 }
 
 export function readTextStored(key: string, fallback: string, session = false) {

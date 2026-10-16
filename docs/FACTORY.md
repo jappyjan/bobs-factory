@@ -5,7 +5,7 @@
 
 The factory builds on Cyrus’s runners, Git worktrees and ticket integrations. Its
 dashboard and JSON workflow graph are deliberately small: automatic direct local
-access and per-origin remote passkeys, without accounts, a database or a hosted identity service.
+access and remote API key browser sessions, without accounts, a database or a hosted identity service.
 
 ## Ticket managers
 
@@ -63,31 +63,31 @@ use `pnpm factory` with the same onboarding.
 dashboard on port 3457. Set `BOBS_FACTORY_FACTORY_PORT` to choose another port,
 or `0` to disable it. The dashboard binds to loopback separately from the
 webhook listener and is intended for one operator. Direct HTTP loopback dashboard access requires no enrollment or login. Public HTTPS
-origins require a passkey session. Provider webhooks and OAuth
+origins require a browser session established with an API key. Provider webhooks and OAuth
 callbacks stay independent of dashboard authentication.
 
 ## Protected remote access design
 
-Factory uses application passkeys for one operator and retains separate dashboard
+Factory uses dashboard API keys for one operator and retains separate dashboard
 and provider listeners. Network reachability and browser identity are separate
 checks: remote connections need a verified Factory session; direct local connections use
 the machine operator’s authority.
 
 | Design | Practical consequence |
 | --- | --- |
-| Application passkeys, separate listeners (selected) | Protects dashboard data and actions independently of the proxy. Provider webhooks and OAuth keep their own verification and do not need a human login. |
+| Dashboard API keys, separate listeners (selected) | Protects dashboard data and actions independently of the proxy. Provider webhooks and OAuth keep their own verification and do not need a human login. |
 | Tailnet or proxy identity | Can limit network reachability, but trusting forwarded identity requires securing every direct-port path and the forwarding proxy. It is not Factory's authentication mechanism. |
 | Shared listener with public routes | Possible with strict public-route isolation, but adds routing risk. Existing separate listeners avoid that restructuring. |
 
 Local desktop browsers use `http://localhost:3457`; the IP entrypoint redirects
 there for a consistent dashboard address. Remote desktop and mobile browsers use the exact configured
-HTTPS origin and enroll a key at that address. Local access opens directly; remote access requires login.
+HTTPS origin and sign in with a key created in Settings. Local access opens directly; remote access requires login.
 The HTTPS proxy terminates TLS and forwards to the loopback dashboard while
 preserving the external **Host** authority and browser **Origin** header.
 Its loopback TCP connection alone and `X-Forwarded-*` headers never establish
 local authority for a public Host. Forwarded localhost authorities are rejected.
 Direct loopback HTTP requests with an exact `localhost`, `127.0.0.1` or `[::1]`
-authority at the configured port need no passkey. The worker listens on IPv4 and
+authority at the configured port need no API key. The worker listens on IPv4 and
 IPv6 loopback at the same port (IPv4 remains available on hosts with IPv6 disabled).
 The socket peer must also be loopback; forwarded IP/Host cannot replace it.
 Cross-origin Origin, Referer, navigation and Fetch Metadata requests are rejected,
@@ -105,152 +105,59 @@ Historical tickets contain differing provider hostnames; do not use either as a
 replacement integration URL. Production zrok2/Nix setup and retirement of the
 legacy Tailscale proxy belong to the separate host setup work.
 
-## Passkey access and first setup
+## API key access and first setup
 
-Direct HTTP localhost browser/desktop access opens data, controls and onboarding
-without enrollment, login, a reusable cookie or an expiry deadline. Access settings
-explain remote passkeys without prompting for a local key. Local actions are audited
-as `local-operator`. Connection loss still clears private views; reconnect rechecks
-the local request boundary. Remote HTTPS requires a server-verified passkey session.
-An empty remote store displays first-passkey setup; it does not give a visitor
-permission to enroll. The terminal dashboard retains its compatible local-operator
-request mechanism as described below.
-Development checkouts use Node 22 or newer (SimpleWebAuthn 14). The binary includes its runtime.
+Direct HTTP localhost access opens the dashboard, controls and onboarding without a key, cookie or expiry deadline. Settings → Access manages instance API keys locally and in signed-in remote browsers. Remote HTTPS sign-in requires a key and creates an origin-bound browser session. An empty remote store directs the operator to localhost Settings; it never permits anonymous remote key creation.
 
 For an HTTPS tunnel, configure the exact browser origin before starting Factory:
 
 ```sh
-bobs-factory --repo /absolute/path/to/repo \
-  --origin https://bobs-factory-schlepptop.zrok.apps.janjaap.de
+bobs-factory --repo /absolute/path/to/repo --origin https://YOUR_HOST
 ```
 
-Configured services use `BOBS_FACTORY_FACTORY_ORIGIN` for the same setting.
-`BOBS_FACTORY_FACTORY_PUBLIC_ORIGIN` remains a compatibility alias; the explicit
-`BOBS_FACTORY_FACTORY_ORIGIN` setting takes precedence when both are supplied.
-`BOBS_FACTORY_FACTORY_PORT` remains 3457 by default. The server binds only to loopback,
-accepts only explicitly configured authorities and checks exact browser Origin
-on writes. Public Host requests retain authentication even when their socket peer is a loopback proxy.
-The tunnel must preserve the public authority and origin. No forwarded header
-is used as an authentication or identity claim. There is no extra UI listener.
-Remote access is denied when its origin has not been configured.
+Configured services use `BOBS_FACTORY_FACTORY_ORIGIN`. `BOBS_FACTORY_FACTORY_PUBLIC_ORIGIN` remains a compatibility alias, with the primary setting taking precedence. `BOBS_FACTORY_FACTORY_PORT` defaults to 3457. The tunnel must preserve the public Host and browser Origin. Public requests require authentication even when their socket peer is a loopback proxy. Forwarding headers never establish local authority. Unconfigured origins are denied.
 
-Local foreground startup opens onboarding without a setup code. For remote
-passkey enrollment, a ten-minute single-use grant is written to `<home>/factory/auth/enroll.json`, readable
-only by the operator. Existing passkeys are never automatically reset. For a
-service or an expired/cancelled enrollment, generate another code on the machine:
+Open `http://localhost:3457`, then **Settings → Access → Add API key**. Choose a name and save the generated key privately. Newly created and rotated keys are shown once, with copy and manual selection support. Listings contain only names, dates and IDs; the server persists SHA-256 digests, never raw keys. Keep keys out of shared URLs, screenshots, run prompts and ticket comments. Keys authorize dashboard sign-in only; sending a key as a Bearer token does not authorize direct API requests.
 
-```sh
-bobs-factory --home /absolute/path/to/the/effective/factory-home factory-auth
-```
+Every valid remote browser session can list, add, remove and rotate keys, without another verification step. Rotation preserves the name/ID, replaces the secret and revokes every session and stream issued by that key. Removal also revokes its sessions. Other keys remain valid. Rotating the current remote key signs you out; a temporary panel shows only the replacement key, so you can save it before signing in again. Dismissal, navigation or reload clears that panel. Removing the last key requires confirmation and disables remote sign-in. Localhost Settings remains available to create a replacement.
 
-Checkout users also open local onboarding directly with `pnpm factory`. The
-remote enrollment/recovery helper is `bun run scripts/factory.ts factory-auth`; add
-`--home /absolute/path/to/the/effective/factory-home` when selecting another
-state directory.
+The sign-in form supports password-manager saving and autofill. Factory does not store the raw key in browser storage; save it in your password manager to reconnect. Session expiry does not invalidate the API key: sign in again with the same saved key.
 
-An installed CLI also supports `bobs-factory --home /absolute/home factory-auth`
-and `bobs-factory --home /absolute/home factory-auth --recover --confirm
-"RESET FACTORY AUTHENTICATION"`. Neither command starts services.
+By default, sessions last twelve hours without sliding renewal. Select **Stay signed in (no session expiry)** at sign-in for a session with no Factory expiry; logout, key rotation/removal and local authentication recovery still revoke it. Browsers can clear cookies or cap their lifetime: Factory refreshes the persistent cookie for 400 days on each access-status check, including returning to the app. Browser data removal or a longer absence can still require signing in again with the same key. `--session-hours` or `BOBS_FACTORY_FACTORY_SESSION_HOURS` permits 1–24 hours; the explicit CLI option takes precedence. Invalid lifetimes fail startup. Hashed sessions survive restart while their issuing key exists. HTTPS cookies are host-only `__Host-` cookies with Secure, HttpOnly, SameSite=Strict and Path=/. Local access creates no cookie. Logout, expiry and revocation clear private views and unsent edits across tabs. Connection loss clears private views; reconnect rechecks access. The service worker caches only the static shell, never auth/API/media responses.
 
-Start the server before generating a code: pending grants/challenges are
-invalidated on restart. Both launch modes default to `~/.bobs-factory`; `--home` selects another
-state directory. Always choose the home used by the running service. Setup codes
-authorize one enrollment and expire in ten minutes. Local launch does not read or pass this grant. Keep codes out of shared
-URLs, screenshots, run prompts and ticket comments. Transfer the
-code privately to the phone, then open the exact configured HTTPS origin there.
+### Migration and local recovery
 
-Each passkey belongs to the address where it was created. Each public hostname
-needs a separate key. Localhost needs no key. The `http://127.0.0.1:3457`
-entrypoint redirects to `http://localhost:3457` for a consistent dashboard address.
-All three loopback authorities open after local request validation.
-At a remote address, `Settings` contains passkey management and sign-out.
-The sign-in screen folds new-key setup under `Set up a new passkey` once the
-first key exists. First-time setup opens automatically. A new key can be enrolled
-from that screen with a fresh machine-authorized code while signed out, or from
-Settings using recent passkey verification without a setup code. A stale signed-in
-session must verify again; a code does not bypass that requirement. In Settings,
-add a named phone/security key or remove a saved key; each change explicitly verifies an
-existing passkey first. Viewing keys also requires verification within the last
-five minutes, with a verification button when that window has expired. Keep at least one key per enrolled address;
-removing the last key requires local recovery. Removing a key revokes its sessions
-and live streams. Labels and metadata are shown; public keys and session tokens
-are never returned.
+Version-2 stores upgrade atomically to version 3, preserving keys and existing bounded sessions and retaining a private `state-version-2-*.json` backup beside `state.json`. Version 3 represents no-expiry sessions explicitly with `expires: null`; existing sessions keep their original deadlines. Older binaries cannot read version-3 stores. A deliberate downgrade requires restoring a compatible authentication backup while the service is stopped; this discards newer sessions and key changes. Never use recovery as an automatic downgrade step.
 
-Sessions last twelve hours without sliding renewal. `--session-hours` or
-`BOBS_FACTORY_FACTORY_SESSION_HOURS` permits 1–24 hours; the explicit CLI option takes
-precedence over the environment, and twelve hours applies only when neither is
-set. Invalid values fail startup. Sessions survive a restart;
-credentials, counters and token hashes live in private atomic files. HTTPS uses
-host-only `__Host-` cookies with Secure, HttpOnly, SameSite=Strict and Path=/.
-Existing local passkey cookies remain readable for credential compatibility;
-direct local access does not create or require them. Remote access requires
-a verified, unexpired server record. Ceremonies require user verification, exact
-origin/RP binding and a single-use browser-bound challenge valid for five minutes.
+On first startup with valid version-1 authentication state, Factory atomically migrates to an empty version-3 key store. All old passkeys and browser sessions are invalidated, and enrollment codes are retired. Create a key in localhost Settings to restore remote access. This changes only Factory authentication; runs, recipes, integrations, execution profiles, operator grants and native provider/Git credentials remain intact.
 
-Remote sign out warns that unsent edits and review comments will be discarded across
-tabs. Expiry/revocation also clears sensitive views and
-stops retries, streams and late responses. Reopening, restored navigation and
-reconnection recheck the session. Connection loss clears private views and unsent
-edits, while active runs continue on the server. Offline access shows an inert
-sign-in screen. Reconnecting verifies the existing session before restoring
-private views.
-The service worker caches only the static shell, never auth/API/media responses.
-Theme and settled-view preferences are retained.
-
-### Local recovery
-
-If every passkey is lost or the store is corrupt, deliberately reset only Factory
-authentication on the machine:
+If keys are lost, create a replacement through localhost Settings. If the authentication store is corrupt or deliberate revocation of every key is needed, run:
 
 ```sh
 bobs-factory --home /absolute/path/to/the/effective/factory-home factory-auth \
   --recover --confirm "RESET FACTORY AUTHENTICATION"
 ```
 
-A running server consumes the private recovery request and revokes every key,
-remote session/stream and pending ceremony. Direct local streams remain local authority. No service restart is required. If corrupt
-state prevented startup, rerun the server after recovery. Run history, workflows,
-integrations, credentials for provider services and worktrees are preserved.
-The old auth file is retained privately as a recovery backup and is never read
-automatically. Use the new setup code in `factory/auth/enroll.json`. Corrupt state
-and incompatible configured origins fail closed; restore the old configuration
-or deliberately recover rather than silently rebinding existing keys.
+This command does not start services. The running server consumes the private recovery request and revokes keys, remote sessions/streams and terminal sessions. Direct local streams retain local authority. If corrupt state prevented startup, restart after recovery. The old authentication file remains a private backup and is never loaded automatically. Unsupported versions, corruption, unsafe ownership and changed configured origins fail closed. Restore the original configuration or recover locally; existing keys are never silently rebound. Ordinary `factory-auth` points to localhost Settings and generates no enrollment code. Checkout users can use `bun run scripts/factory.ts factory-auth` with the effective `--home`.
 
 | Surface | Access |
 | --- | --- |
-| Direct HTTP loopback dashboard data/actions/media/SSE | Validated socket peer, loopback Host and same-origin context; no login |
-| Public/TLS browser dashboard data/actions/media/SSE | Per-origin passkey session required |
-| Terminal dashboard on localhost | Same validated direct loopback authority; no login |
-| Static app shell, version, access status and ceremonies | Public; no run or configuration data |
-| First or recovery enrollment | Operator setup code; one key only |
-| Additional enrollment | Recently verified session, or operator code from an unauthenticated setup screen |
-| Credential listing/removal | Recently verified session; setup codes do not authorize removal |
-| Provider webhook/OAuth listener (3456 in production) | Existing provider signature/OAuth checks; independent of dashboard login |
+| Direct HTTP loopback dashboard/API/media/SSE | Validated socket peer, loopback Host and same-origin context; no key |
+| Remote HTTPS dashboard/API/media/SSE | Origin-bound browser session established by key sign-in |
+| Static shell, version, access status and key sign-in | Public; no protected data or key metadata |
+| Key listing/add/remove/rotate | Validated local request or valid remote browser session |
+| Provider webhook/OAuth listener | Separate provider verification, unchanged |
 
 ### Rollout and device checks
 
-Production deployment is separate from this implementation. Before rollout,
-configure the exact HTTPS origin, confirm that zrok2 preserves Host/Origin and
-retire the legacy localhost-rewriting proxy in the host setup thread. The UI
-tunnel can keep target `127.0.0.1:3457`; the public Host retains authentication. Rewriting to localhost is rejected when
-forwarding headers are present; stripping those headers as well exposes local
-authority and is unsupported. Verify signed Linear deliveries, rejection of unsigned deliveries
-and OAuth callback routing on the independent provider listener. Do not perform
-live provider authorization merely to check dashboard access.
+Production deployment remains separate. Verify the production HTTPS proxy preserves Host/Origin and that webhook/OAuth traffic still uses its separate listener. A localhost-rewriting proxy that strips all forwarding signals exposes local operator authority and is unsupported. Disposable headless browser and self-signed proxy checks do not establish production proxy routing or physical mobile/PWA behavior.
 
-Physical iPhone Safari and installed-PWA validation remains a human check: enroll
-at the configured public origin, log out/in, add a second key, revoke it, test
-expiry and reopen the installed app. Headless Chromium with a software
-authenticator does not establish biometric, Safari, synced-key or cross-device
-QR behavior. A local HTTPS proxy test does not establish production zrok2 routing.
-
-| Mobile symptom | Next step |
+| Symptom | Next step |
 | --- | --- |
-| Offline or disconnected | Reconnect, then let Factory verify the session before using controls. Private content is not available offline. |
-| Session expired or key revoked | Sign in again with a remaining key at this address. Recover locally if all keys are lost. |
-| Ceremony cancelled | Retry login. For code-based enrollment, obtain a fresh code if the previous authorization was consumed. |
-| Browser does not support passkeys | Use a current browser with WebAuthn and a supported secure origin; test the intended Safari/installed-app flow on the physical phone. |
-| Wrong origin or no matching key | Check the exact HTTPS hostname and port, proxy Host/Origin preservation and configured origin. Enroll a separate key for this address; do not silently rebind existing keys. |
+| Offline or disconnected | Reconnect and allow Factory to recheck access. Private content is unavailable offline. |
+| Session expired or key revoked | Sign in with a valid key, or create one in localhost Settings. |
+| Invalid key | Paste the complete saved key. Rotated secrets and deleted keys no longer work. |
+| Wrong origin | Check the configured HTTPS hostname/port and proxy Host/Origin preservation. |
 
 ### Access and validation map
 
@@ -258,7 +165,7 @@ The dashboard rejects unauthorized private requests before their handlers run.
 The following session checks apply to remote access; every listed data/action
 surface also accepts validated direct HTTP loopback authority. Its public
 allowlist serves only static assets, version and authentication bootstrap or
-ceremonies; it does not expose runs, settings or credentials. Unknown routes also
+sign-in; it does not expose runs, settings or credentials. Unknown routes also
 require validated local authority or a remote session. Private responses use `Cache-Control: no-store`.
 
 | Surface and representative routes | Boundary and existing verification |
@@ -271,11 +178,11 @@ require validated local authority or a remote session. Private responses use `Ca
 | Video media, posters and captions (`/api/runs/:id/videos/:id/*`) | Same session boundary; `FactoryAccess.test.ts`, `Video.test.ts`. |
 | Live events (`/api/events`) | Session at connection and reconnect; idle streams close on logout, expiry or recovery; `FactoryAccess.test.ts`. |
 | Run actions (messages, answers, review, follow-up, stop, retry, ticket sync) | Session plus Origin/action header before mutation; `FactoryAccess.test.ts`, `FactoryServer.test.ts`. |
-| Public shell, `/api/version`, `/api/auth/status`, login/register ceremonies | No sensitive data. Enrollment requires operator code or recent session; exact Origin, browser-bound challenge, user verification and replay checks; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
-| Credential management and logout (`/api/auth/credentials`, `/api/auth/logout`) | Listing/removal need verification within five minutes. Logout revokes session/streams; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
+| Public shell, `/api/version`, `/api/auth/status`, `/api/auth/login` | No sensitive data. Key sign-in requires exact Origin and action header, is rate limited, and establishes a browser session; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
+| API key management and logout (`/api/auth/keys`, `/api/auth/keys/:id`, `/api/auth/keys/:id/rotate`, `/api/auth/logout`) | Validated localhost access or a remote session can add, list, remove and rotate keys. Secrets are shown once; removing or rotating a key revokes its sessions/streams. Last-key recovery uses localhost Settings. Logout revokes the current session/streams; `FactoryAuth.test.ts`, `FactoryAccess.test.ts`. |
 | Provider listener (`/linear-webhook`, OAuth callback routes) | Independent provider signature/OAuth checks, no dashboard cookie; `packages/linear-event-transport/test/LinearEventTransport.test.ts`, `apps/cli/src/commands/SelfAuthCommand.test.ts`. |
 
-Browser evidence must complement these server checks: actual registration/login
+Browser evidence must complement these server checks: actual key creation/sign-in
 through a Host/Origin-preserving HTTPS proxy, secure cookies, authenticated
 read/action, logout, offline/reconnect, expiry/revocation, restart/reopen and
 mobile-width setup/data/error screens. Record the tested revision and limitations
@@ -341,14 +248,14 @@ and grants an expiring memory-only session for its localhost origin. The raw
 token stays in terminal process memory. The private directory is the authority;
 HTTP headers alone never grant access. Direct local HTTP requests now open without this session, using the same
 validated socket/Host/origin boundary as the browser. Remote origins
-cannot use this terminal session. It cannot manage passkeys, and local browser links
-open without passkey login. Sessions follow the configured 1–24 hour
+cannot use this terminal session. It cannot manage API keys, and local browser links
+open without key login. Sessions follow the configured 1–24 hour
 lifetime; expiry/restart causes a fresh local request. Deliberate auth recovery
 revokes them along with browser sessions. No native credential store is changed.
 
 ## Execution identities and tools
 
-**Settings** has separate pages for **Access** (local access or remote passkeys/sign-out), **Execution defaults**, **Identity profiles**, **Tool profiles**, **Instance capacity** and **Run titles**. Recipes manages bundled execution preferences, private editable forks, launch permissions and enable state. In Identity profiles, create an identity with separate Git author/committer, repository account, signing policy and per-runner API references. Create a tool profile with declared MCP sources/definitions, per-server credential references, removals, denials and supported ordinary settings. Enter credential names or protected-file paths, never token values.
+**Settings** has separate pages for **Access** (local access or remote API keys/sign-out), **Execution defaults**, **Identity profiles**, **Tool profiles**, **Instance capacity** and **Run titles**. Recipes manages bundled execution preferences, private editable forks, launch permissions and enable state. In Identity profiles, create an identity with separate Git author/committer, repository account, signing policy and per-runner API references. Create a tool profile with declared MCP sources/definitions, per-server credential references, removals, denials and supported ordinary settings. Enter credential names or protected-file paths, never token values.
 
 The composer selects identity and tools independently and offers an effective preview. Manual choices override repository defaults, which override factory defaults. No selection/default keeps Legacy behavior. Explicit profiles require both concerns and an authentication binding for every workflow provider and the title agent. Unsupported native sources fail before worktree setup. Saved runs keep their accepted definitions even when defaults change or profiles are deleted.
 
@@ -457,7 +364,7 @@ Keep the existing stable HTTPS address and tailnet-only Tailscale Serve deployme
 Set `BOBS_FACTORY_FACTORY_ORIGIN` to that exact HTTPS origin (no path or trailing slash)
 when the proxy forwards its public Host or Origin. The listener remains loopback-only;
 only configured origins pass the request guards. Push status and device management
-use the same validated local authority or remote passkey session as the dashboard. A
+use the same validated local authority or remote browser session established with an API key as the dashboard. A
 notification opened while signed out keeps its destination and requires sign-in
 before refreshing current run or review state. Non-sensitive device consent and
 deferred subscription cleanup survive sign-out; private drafts and run caches
@@ -582,7 +489,7 @@ under `<factoryHome>/state/chunks`. Run manifests reference chunks under
 `<factoryHome>/factory/run-chunks`. The first replacement retains each original
 document as a `.legacy` sibling. Versions 2–4 and legacy run documents remain
 readable; native session IDs, conversation contents and accepted workflow data
-are preserved. Native credential/conversation stores and dashboard passkeys are
+are preserved. Native credential/conversation stores and dashboard API keys are
 not migrated by this storage change.
 
 Transcript entries are immutable after recording. Later saves reuse unchanged

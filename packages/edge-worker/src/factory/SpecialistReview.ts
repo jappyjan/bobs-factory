@@ -1,6 +1,9 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { z } from "zod";
+import type { ImpactSnapshot, ReuseRecord } from "./Impact.js";
+import { assertReuse, boundaryDigest, environmentDigest } from "./Impact.js";
+import { EvidenceBoundarySchema } from "./ImpactContracts.js";
 import { qaDigest } from "./Qa.js";
 import { QuestionFieldsSchema } from "./Questions.js";
 import { runRepositories, scopeRevision } from "./RepositoryScope.js";
@@ -26,6 +29,9 @@ export const InventorySchema = QuestionFieldsSchema.safeExtend({
 				id,
 				criterion: text,
 				classification: z.enum(["active", "suggestion", "superseded"]),
+				stage: z
+					.enum(["code", "qa", "guide", "acceptance", "delivery"])
+					.optional(),
 				sources: z.array(source).min(1),
 				changeReason: text.optional(),
 				supersedes: z.array(id).default([]),
@@ -46,15 +52,29 @@ export type Inventory = z.infer<typeof InventorySchema> & {
 	version: number;
 	digest: string;
 	sourceContextDigest?: string;
+	scopeReuse?: {
+		inventoryDigest: string;
+		originalSourceDigest: string;
+		reason: string;
+		snapshotDigest: string;
+	};
 };
 export const AssessmentSchema = z.object({
 	requirementId: id,
-	status: z.enum(["met", "not_met", "deliberately_skipped"]),
+	status: z.enum(["met", "not_met", "deliberately_skipped", "deferred"]),
+	obligation: z
+		.object({
+			stage: z.enum(["qa", "guide", "acceptance", "delivery"]),
+			action: text,
+		})
+		.optional(),
 	evidence: z.array(text).min(1),
 	reason: text,
 	decisionId: id.optional(),
 });
 export const SpecialistSchema = z.object({
+	evidenceBoundary: EvidenceBoundarySchema.optional(),
+	optionalDisagreements: z.array(text).optional(),
 	status: z.enum(["completed", "blocked", "failed"]).optional(),
 	blockers: z.array(text).default([]),
 	summary: text,
@@ -70,6 +90,30 @@ export const SpecialistSchema = z.object({
 			requirementIds: z.array(id).default([]),
 			reason: text.optional(),
 			freshEvidence: text.optional(),
+			category: z
+				.enum([
+					"defect",
+					"requirement",
+					"mandatory-rule",
+					"investigation",
+					"optional",
+					"integration",
+					"verification",
+					"wait",
+					"downstream",
+				])
+				.optional(),
+			ruleReference: text.optional(),
+			consequence: text.optional(),
+			remedy: text.optional(),
+			investigation: z
+				.object({
+					state: z.enum(["confirmed", "needs-evidence"]),
+					missingEvidence: text.optional(),
+					nextAction: text.optional(),
+				})
+				.optional(),
+			duplicateOf: text.optional(),
 		}),
 	),
 	disagreements: z.array(text).default([]),
@@ -92,6 +136,7 @@ export const CoverageSchema = SpecialistSchema.extend({
 });
 export type ReviewBaseline = {
 	schemaVersion: 1;
+	impact?: { snapshot: ImpactSnapshot; reuse: ReuseRecord[] };
 	round: number;
 	key: string;
 	inventory: Inventory;
@@ -108,7 +153,16 @@ export type ReviewBaseline = {
 	context: unknown;
 	at: string;
 };
-export type ReviewerReceipt = z.infer<typeof CoverageSchema> & {
+export type ReviewerReceipt = Omit<
+	z.infer<typeof CoverageSchema>,
+	"evidenceBoundary"
+> & {
+	evidenceBoundary?: {
+		boundary: z.infer<typeof EvidenceBoundarySchema>;
+		dependencyDigest: string;
+		environmentDigest: string;
+		at: string;
+	};
 	stamp: {
 		reviewer: string;
 		stepKey: string;
@@ -120,6 +174,7 @@ export type ReviewerReceipt = z.infer<typeof CoverageSchema> & {
 	};
 };
 export type AggregateReview = {
+	projection?: { repositoryId: string; original: AggregateReview };
 	approved: boolean;
 	findings: (z.infer<typeof SpecialistSchema>["findings"][number] & {
 		reviewer: string;
@@ -182,7 +237,8 @@ export function validateInventory(
 			);
 		if (
 			(current.criterion !== old.criterion ||
-				current.classification !== old.classification) &&
+				current.classification !== old.classification ||
+				(current.stage ?? "code") !== (old.stage ?? "code")) &&
 			!current.changeReason
 		)
 			throw new Error(`${old.id}: amendments require a traceable changeReason`);
@@ -219,9 +275,16 @@ export function validateSpecialist(
 	coverage: boolean,
 	previous?: Pick<ReviewerReceipt, "findings" | "disagreements">,
 ): z.infer<typeof CoverageSchema> {
+	const input = value as Record<string, unknown>;
+	const boundary = input?.evidenceBoundary as
+		| { boundary?: unknown }
+		| undefined;
+	const parseable = boundary?.boundary
+		? { ...input, evidenceBoundary: boundary.boundary }
+		: value;
 	const review = coverage
-		? CoverageSchema.parse(value)
-		: { ...SpecialistSchema.parse(value), coverage: [] };
+		? CoverageSchema.parse(parseable)
+		: { ...SpecialistSchema.parse(parseable), coverage: [] };
 	unique(
 		review.findings.map((f) => f.id),
 		"Local finding IDs",
@@ -229,7 +292,37 @@ export function validateSpecialist(
 	const requirements = new Set(
 		activeRequirements(baseline.inventory).map((r) => r.id),
 	);
+	if (
+		review.evidenceBoundary?.requirementIds.some((id) => !requirements.has(id))
+	)
+		throw new Error(
+			"Evidence boundary references an unknown active requirement",
+		);
 	for (const finding of review.findings) {
+		if (baseline.impact && finding.rating > 1 && finding.status === "open") {
+			if (["optional", "wait", "downstream"].includes(finding.category ?? ""))
+				throw new Error(
+					`${finding.id}: optional observations, waits and downstream obligations are nonblocking`,
+				);
+			if (
+				!finding.category ||
+				(!finding.requirementIds.length && !finding.ruleReference) ||
+				!finding.consequence ||
+				!finding.remedy ||
+				!finding.investigation
+			)
+				throw new Error(
+					`${finding.id}: consequential findings need a requirement/rule, consequence, remedy and investigation evidence`,
+				);
+			if (
+				finding.investigation.state === "needs-evidence" &&
+				(!finding.investigation.missingEvidence ||
+					!finding.investigation.nextAction)
+			)
+				throw new Error(
+					`${finding.id}: investigation needs missing evidence and a next action`,
+				);
+		}
 		if (finding.requirementIds.some((id) => !requirements.has(id)))
 			throw new Error(`${finding.id}: unknown active requirement`);
 		if (finding.status !== "open" && !finding.reason)
@@ -274,6 +367,21 @@ export function validateSpecialist(
 				"Coverage must assess every active requirement exactly once, with no unknown IDs",
 			);
 		for (const assessment of review.coverage) {
+			if (assessment.status === "deferred") {
+				const requirement = baseline.inventory.requirements.find(
+					(r) => r.id === assessment.requirementId,
+				);
+				if (
+					!baseline.impact ||
+					!assessment.obligation ||
+					!requirement?.stage ||
+					requirement.stage === "code" ||
+					requirement.stage !== assessment.obligation.stage
+				)
+					throw new Error(
+						`${assessment.requirementId}: only a declared downstream obligation can be deferred to its own gate`,
+					);
+			}
 			if (
 				assessment.status === "deliberately_skipped" &&
 				!baseline.inventory.decisions.some(
@@ -308,6 +416,34 @@ export function validateReviewConfiguration(
 ): void {
 	const byId = new Map(steps.map((s) => [s.id, s]));
 	for (const step of steps) {
+		if (step.impactContract) {
+			const fanout = byId.get(step.impact?.fanout ?? "");
+			if (
+				step.inputs ||
+				step.reviewContract ||
+				step.architectureContract ||
+				step.guideContract
+			)
+				throw new Error(
+					`${step.id}: impact-v1 needs complete context and its own independent output contract`,
+				);
+			if (
+				step.type !== "agent" ||
+				step.json === false ||
+				!step.askQuestions ||
+				!fanout?.review ||
+				fanout.review.inventory !== step.impact?.inventory ||
+				byId.get(step.impact.inventory)?.reviewContract !== "inventory-v1"
+			)
+				throw new Error(
+					`${step.id}: impact-v1 requires a structured independent agent, questions and configured inventory/fanout`,
+				);
+		}
+		if (
+			step.impactSource &&
+			byId.get(step.impactSource)?.impactContract !== "impact-v1"
+		)
+			throw new Error(`${step.id}: unknown impact source`);
 		if (
 			["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") &&
 			!specialistBranch
@@ -341,6 +477,14 @@ export function validateReviewConfiguration(
 			)
 				throw new Error(
 					`${step.id}: review.fanout must name a configured specialist fanout with the same inventory`,
+				);
+			if (
+				fanout.impactSource &&
+				step.type !== "fanout" &&
+				step.impactSource !== fanout.impactSource
+			)
+				throw new Error(
+					`${step.id}: an impact review gate must consume the same declared impact source as its fanout`,
 				);
 			const reviewers = (fanout.groups ?? []).flat();
 			if (
@@ -391,7 +535,7 @@ export async function reviewedRevision(
 		throw new Error(
 			"Specialist review requires a clean worktree; commit changes before review",
 		);
-	const baseSha = await git("rev-parse", base ?? "refs/remotes/origin/main");
+	const baseSha = await git("rev-parse", base ?? "refs/remotes/origin/HEAD");
 	return { headSha, baseSha };
 }
 /** Freeze every Git root; group fingerprints are never passed to Git as commits. */
@@ -518,10 +662,22 @@ export function stampSpecialist(
 	value: unknown,
 ): ReviewerReceipt {
 	const baseline = roundFor(context)!;
+	const validated = validateContractOutput(context, value) as z.infer<
+		typeof CoverageSchema
+	>;
+	const { evidenceBoundary, ...result } = validated;
 	return {
-		...(validateContractOutput(context, value) as z.infer<
-			typeof CoverageSchema
-		>),
+		...result,
+		...(evidenceBoundary
+			? {
+					evidenceBoundary: {
+						boundary: evidenceBoundary,
+						dependencyDigest: boundaryDigest(context.run, evidenceBoundary),
+						environmentDigest: environmentDigest(context.run),
+						at: new Date().toISOString(),
+					},
+				}
+			: {}),
 		stamp: {
 			reviewer: context.step.id,
 			stepKey: context.stepKey ?? context.step.id,
@@ -557,6 +713,23 @@ export function aggregateReview(
 		const receipt = branches[expected.group]?.[expected.id] as
 			| ReviewerReceipt
 			| undefined;
+		const reuse = baseline.impact?.reuse.find(
+			(r) => r.original.stamp.reviewer === expected.id,
+		);
+		if (reuse) {
+			assertReuse(reuse, baseline.impact!.snapshot);
+			if (!receipt || qaDigest(receipt) !== reuse.originalDigest)
+				throw new Error(
+					`${expected.id}: reused receipt differs from its original`,
+				);
+			validateSpecialist(
+				receipt,
+				baseline,
+				expected.contract === "coverage-v1",
+				priorReviewer(previous, expected.id),
+			);
+			return receipt;
+		}
 		const stamp = receipt?.stamp;
 		if (
 			!stamp ||
@@ -596,9 +769,27 @@ export function aggregateReview(
 			.find((d) => d.id === old.id);
 		rawFindings.push(disposition ? { ...old, ...disposition } : old);
 	}
-	const findings = rawFindings.filter(
+	const actionable = rawFindings.filter(
 		(f) => f.rating > 1 && f.status === "open",
 	);
+	const findings = actionable.filter((f) => {
+		if (!f.duplicateOf) return true;
+		const original = actionable.find((o) => o.id === f.duplicateOf);
+		if (
+			!original ||
+			original.duplicateOf ||
+			original.id === f.id ||
+			qaDigest([
+				original.requirementIds,
+				original.evidence,
+				original.remedy,
+			]) !== qaDigest([f.requirementIds, f.evidence, f.remedy])
+		)
+			throw new Error(
+				`${f.id}: duplicate requires the same demonstrated cause, remedy and requirement evidence`,
+			);
+		return false;
+	});
 	const coverage = reviewers.find(
 		(r) =>
 			baseline.reviewers.find((e) => e.id === r.stamp.reviewer)?.contract ===
@@ -649,13 +840,34 @@ export function assertAggregateRevision(
 		throw new Error(
 			"Specialist review is missing, unresolved or bound to a different revision/base; run a new requirement extraction and review round",
 		);
+	if (aggregate.projection) {
+		const { original, repositoryId } = aggregate.projection;
+		const revision = original.baseline.repositories?.find(
+			(r) => r.repositoryId === repositoryId,
+		);
+		if (
+			!revision ||
+			revision.headSha !== headSha ||
+			(baseSha && revision.baseSha !== baseSha) ||
+			qaDigest(aggregate.reviewers) !== qaDigest(original.reviewers)
+		)
+			throw new Error(
+				"Projected grouped evidence differs from the original review",
+			);
+		assertAggregateRevision(
+			original,
+			original.baseline.headSha,
+			original.baseline.baseSha,
+		);
+		return;
+	}
 	const regenerated = aggregateReview(
 		aggregate.baseline,
 		aggregate.baseline.reviewers.reduce<Record<string, unknown>[]>(
 			(branches, reviewer) => {
 				branches[reviewer.group] ??= {};
 				branches[reviewer.group]![reviewer.id] = aggregate.reviewers.find(
-					(r) => r.stamp.stepKey === reviewer.key,
+					(r) => r.stamp.reviewer === reviewer.id,
 				);
 				return branches;
 			},
@@ -752,3 +964,5 @@ export function frozenReviewContext(input: unknown): unknown {
 	};
 	return compact(input);
 }
+
+export const calibratedReviewInstructions = `This impact-v1 round requires calibrated findings. For every open rating 2/3 finding return category:"defect|requirement|mandatory-rule|investigation|integration|verification", requirementIds or ruleReference, concrete evidence, consequence, remedy and investigation:{state:"confirmed|needs-evidence",missingEvidence,nextAction}. Optional cleanup, aesthetics and speculative redesign are rating 1 observations with category:"optional". Optional disagreements belong in optionalDisagreements, never consequential disputes. Uncertain consequential behavior is a blocked investigation with missing evidence and next action, not an invented defect or approval. Duplicate findings may name duplicateOf:"reviewer:local-id" only with the same demonstrated cause, requirement and remedy; retain original identities/evidence. Declare evidenceBoundary:{requirementIds,areas,dependencies,independence} only after inspecting complete relevant dependency/caller/configuration boundaries. Runtime fingerprints these sources for future independent reuse. Do not infer independence from file names. Coverage may use status:"deferred", obligation:{stage:"qa|guide|acceptance|delivery",action} only for a requirement explicitly declared for that later stage in the accepted inventory. Future guide, QA, human or provider work cannot block code review; these obligations remain mandatory at their own gates.`;

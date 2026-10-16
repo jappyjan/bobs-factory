@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { FactoryServer as ProtectedFactoryServer } from "../../src/factory/FactoryServer.js";
 import type { WorkflowRuntime } from "../../src/factory/WorkflowRuntime.js";
 // Existing route tests exercise handlers with a fixture server-side session.
-// Authentication/bypass/real ceremonies are exercised separately, with the real server.
+// Authentication/bypass/real key login are exercised separately, with the real server.
 export class FactoryServer extends ProtectedFactoryServer {
 	constructor(
 		runtime: WorkflowRuntime,
@@ -14,20 +14,14 @@ export class FactoryServer extends ProtectedFactoryServer {
 		});
 		this.auth.store.update((state) => {
 			// A restart fixture may create another server against the same auth store.
-			state.credentials = state.credentials.filter(
-				(c) => c.id !== "route-fixture",
-			);
+			state.keys = state.keys.filter((c) => c.id !== "route-fixture");
 			state.sessions = state.sessions.filter(
 				(s) => s.credential !== "route-fixture",
 			);
-			state.credentials.push({
+			state.keys.push({
 				id: "route-fixture",
-				origin,
-				publicKey: "fixture",
-				counter: 0,
+				digest: createHash("sha256").update("fixture-key").digest("hex"),
 				label: "Fixture",
-				deviceType: "singleDevice",
-				backedUp: false,
 				createdAt: Date.now(),
 				lastUsedAt: Date.now(),
 			});

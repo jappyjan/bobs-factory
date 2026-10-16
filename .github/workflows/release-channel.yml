@@ -15,6 +15,10 @@ on:
       nightly_tag:
         description: Exact published nightly tag to promote (required for stable)
         type: string
+      skip_cooldown:
+        description: Skip nightly cooldown (six-hour delay only; manual nightly requests)
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -44,11 +48,19 @@ jobs:
           CHANNEL: ${{ inputs.channel || 'nightly' }}
           VERSION: ${{ inputs.version }}
           NIGHTLY_TAG: ${{ inputs.nightly_tag }}
+          SKIP_COOLDOWN: ${{ inputs.skip_cooldown || false }}
         run: |
           mkdir -p "$RUNNER_TEMP/candidate"
           created=$(node --input-type=module -e 'import {githubClient} from "./scripts/lib/github-release.mjs"; console.log((await githubClient().api("actions/runs/"+process.env.GITHUB_RUN_ID)).created_at)')
           promotion_args=()
           if [ "$CHANNEL" = stable ]; then promotion_args=(--nightly-tag "$NIGHTLY_TAG"); fi
+          if [ "$SKIP_COOLDOWN" = true ]; then
+            if [ "$GITHUB_EVENT_NAME" != workflow_dispatch ] || [ "$CHANNEL" != nightly ]; then
+              echo 'skip_cooldown is available only for manual nightly dispatches' >&2
+              exit 1
+            fi
+            promotion_args+=(--skip-cooldown)
+          fi
           node scripts/prepare-release-candidate.mjs --channel "$CHANNEL" --version "$VERSION" "${promotion_args[@]}" --sequence "$GITHUB_RUN_ID" --date "$created" --workflow-sha "$GITHUB_SHA" --output "$RUNNER_TEMP/candidate/candidate.json"
       - uses: actions/upload-artifact@v6
         if: github.run_attempt == '1'
@@ -114,7 +126,12 @@ jobs:
           node apps/f1/test-drives/assets/update-maintenance.mjs > "$RUNNER_TEMP/nightly-checks/update-maintenance.log" 2>&1
           bun run apps/f1/test-drives/assets/desktop-service-lifecycle.mjs > "$RUNNER_TEMP/nightly-checks/desktop-service-lifecycle.log" 2>&1
           node apps/f1/test-drives/assets/desktop-shell-update.mjs > "$RUNNER_TEMP/nightly-checks/desktop-shell-update.log" 2>&1
-          bun run apps/f1/test-drives/assets/localhost-noauth.ts > "$RUNNER_TEMP/nightly-checks/localhost-noauth.log" 2>&1
+      - name: Validate localhost access and remote API-key lifecycle
+        timeout-minutes: 2
+        run: bun run apps/f1/test-drives/assets/localhost-noauth.ts > "$RUNNER_TEMP/nightly-checks/localhost-noauth.log" 2>&1
+      - name: Validate mocked Linear delivery and architecture
+        timeout-minutes: 5
+        run: |
           pnpm --filter bobs-factory-core exec tsx "$PWD/apps/f1/test-drives/assets/linear-publication-101.ts" > "$RUNNER_TEMP/nightly-checks/linear-delivery.log" 2>&1
           BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY=$(mktemp -d) bun run apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/f1-drive.ts > "$RUNNER_TEMP/nightly-checks/architecture.log" 2>&1
       - name: Record only completed current checks

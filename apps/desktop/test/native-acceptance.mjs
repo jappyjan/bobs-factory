@@ -22,6 +22,7 @@ const {
 	remoteHome,
 	localPort,
 	remoteOrigin,
+	remotePort,
 	mainPath,
 	phase,
 } = settings;
@@ -95,37 +96,37 @@ async function connect(origin) {
 	await until(() => !dashboard.webContents.isLoading(), "dashboard load");
 	return dashboard;
 }
-async function authenticator(win) {
-	win.webContents.debugger.attach("1.3");
-	await win.webContents.debugger.sendCommand("WebAuthn.enable");
-	await win.webContents.debugger.sendCommand(
-		"WebAuthn.addVirtualAuthenticator",
-		{
-			options: {
-				protocol: "ctap2",
-				transport: "usb",
-				hasResidentKey: true,
-				hasUserVerification: true,
-				isUserVerified: true,
-				automaticPresenceSimulation: true,
-			},
-		},
-	);
-}
-async function auth(win, home, localGrant = false) {
-	await authenticator(win);
-	if (!localGrant)
-		await input(
-			win,
-			"input[type=password]",
-			JSON.parse(
-				readFileSync(join(home, "factory", "auth", "enroll.json"), "utf8"),
-			).token,
+let remoteKey;
+async function auth(win, _home, localAccess = false) {
+	if (localAccess) {
+		assert.equal(
+			(await fetchJson(win, "/api/auth/status")).body.access,
+			"local",
 		);
-	await button(win, "Create passkey");
+		return;
+	}
+	const origin = `http://localhost:${remotePort}`;
+	const created = await fetch(`${origin}/api/auth/keys`, {
+		method: "POST",
+		headers: {
+			Origin: origin,
+			"Content-Type": "application/json",
+			"X-Factory-Request": "1",
+		},
+		body: JSON.stringify({ label: "Native fixture" }),
+	});
+	assert.equal(created.status, 200);
+	remoteKey = (await created.json()).key;
+	await run(win, "location.reload()");
+	await until(
+		() => run(win, "Boolean(document.querySelector('input[type=password]'))"),
+		"key sign-in input",
+	);
+	await input(win, "input[type=password]", remoteKey);
+	await button(win, "Sign in");
 	await until(
 		async () => (await fetchJson(win, "/api/auth/status")).body.authenticated,
-		"virtual enrollment",
+		"key sign-in",
 	);
 }
 async function main() {
@@ -583,7 +584,13 @@ async function main() {
 		body: "{}",
 	});
 	await run(remote, "location.reload()");
-	await button(remote, "Sign in with passkey");
+	await until(
+		() =>
+			run(remote, "Boolean(document.querySelector('input[type=password]'))"),
+		"key sign-in input after logout",
+	);
+	await input(remote, "input[type=password]", remoteKey);
+	await button(remote, "Sign in");
 	await until(
 		async () =>
 			(await fetchJson(remote, "/api/auth/status")).body.authenticated,

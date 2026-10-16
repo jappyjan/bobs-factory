@@ -332,11 +332,34 @@ try {
 	const lease = await capacity.acquireLease(undefined, {
 		identity: "native-shell-active",
 	});
-	await manager.reconcile();
+	let observedBusy = false;
+	const isIdle = life.isIdle.bind(life);
+	life.isIdle = async () => {
+		const idle = await isIdle();
+		if (!idle) observedBusy = true;
+		return idle;
+	};
+	const draining = manager.reconcile();
+	draining.catch(() => {}); // Preserve rejection for the awaited result below.
+	try {
+		await until(() => observedBusy);
+		assert.equal(manager.status().transaction.phase, "draining");
+		assert.equal(services.workerOwner(home).pid, owned.pid);
+		assert.equal(processStamp(uiIdentity.pid), life.uiStamp);
+		assert.equal(existsSync(join(directory, "quit.json")), false);
+	} finally {
+		// Cancel the controlled probe; a busy observation no longer cancels an
+		// automatic update. The retained external helper performs the real switch.
+		manager.configure({ paused: true }, manager.status().revision);
+		try {
+			await draining;
+		} finally {
+			await lease.release();
+			life.isIdle = isIdle;
+		}
+	}
 	assert.equal(manager.status().transaction.phase, "cancelled");
-	assert.equal(services.workerOwner(home).pid, owned.pid);
-	assert.equal(processStamp(uiIdentity.pid), life.uiStamp);
-	await lease.release();
+	manager.configure({ paused: false }, manager.status().revision);
 	// The first real maintenance admission inspected native drain under its
 	// fence and deferred for the capacity lease. Startup recovery has completed;
 	// freeze that waiting checkpoint before either app activation or rollback.

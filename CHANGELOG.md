@@ -4,7 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Choose “Stay signed in” for remote dashboard sessions with no Factory expiry; retain normal key revocation, preserve existing session deadlines, and back up authentication state during upgrade. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
+
+- Start a manual nightly during the six-hour cooldown with an explicit Actions checkbox; retain the choice across retries and preserve all other release gates. ([#137](https://github.com/jappyjan/bobs-factory/pull/137))
+
+- Review architecture proposals with current-state findings, concrete deliverables and file operations, ticket coverage, exclusions and acceptance checks. Runtime-computed planned footprints expose package/config scope, invalid paths and map contradictions before approval. ([#134](https://github.com/jappyjan/bobs-factory/pull/134))
+
+- Launch tasks from a chat-style composer: the project name in "What should we build in …?" picks the project, attached files appear as chips above the prompt, and the bottom bar picks the recipe, agent and reasoning, with per-run settings behind one button. Files can be attached, dropped or pasted, and typed text and attachments survive project or recipe changes. New stock workflows accept private file attachments with clear limits, removal, and retained read access across restart, retry and follow-up. Machine selection remains separate work. ([Taskbot #85](https://taskbot.apps.janjaap.de/p/bobs-factory/t/85), [#123](https://github.com/jappyjan/bobs-factory/pull/123))
+
 ### Fixed
+
+- Integrate run sharing with the current launcher and dashboard access updates, preserving Share controls and complete capability-prompt checks ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
 
 - Preserve run Share controls and selectable question answers when integrating current main, including both styles and complete capability-prompt expectations ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
 
@@ -13,6 +25,43 @@ All notable changes to this project will be documented in this file.
 - Reconcile run sharing with current stopped-run Resume controls and bundled workflow guidance, preserving full prompt assertions after merging main ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
 
 - Synchronize the full routing-prompt test expectation with the run Share capability reference, fixing CI after the main-branch merge ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
+- Reconnect phones with password-manager autofill, including autofill without typing events, and explain that session expiry leaves API keys valid. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
+
+- Accept standard SHA-256 QA environment probes without falsely blocking capture; preserve saved JSON-string digests and existing behavioral evidence provenance. ([#139](https://github.com/jappyjan/bobs-factory/pull/139))
+
+- Configure the host Git identity’s SSH agent in Settings → Identity profiles, test password-manager key availability and retry failed signing without restarting Factory; preserve explicit execution bindings and native signing policy. ([#136](https://github.com/jappyjan/bobs-factory/pull/136))
+
+- Integrate API-key dashboard access with bounded review convergence, preserving impact evidence, protected reader progress and complete routing-prompt checks ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Freeze the Today grouping test clock so equal-age run fixtures cannot reorder across a millisecond boundary in CI ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Shut down operator integration test runtimes before deleting temporary homes, preventing final-save cleanup races; integrate question choices without losing bounded review convergence ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Reconcile bundled workflow ownership and update draining with bounded review convergence, preserving saved workflows and current launch contracts ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Drain loopback test responses before server shutdown to avoid hanging access checks during CI ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Keep reviewed chapter progress during rapid navigation and reload by canceling protected requests on page exit and ignoring their late failures; genuine connection and access loss still clear private state ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Preserve reader progress when browser navigation interrupts the live stream, and supply the retained previous guide for safe migration of older saved progress ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Align the complete routing prompt expectation with the documented repository-scoped reading progress behavior, restoring the CI assertion ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Retain reviewed chapters across renewed guides when their content, linked requirements and system map are unchanged and independent impact evidence confirms reuse; reset affected reading progress, bind saved and mounted progress to every repository revision, preserve it during normal page reloads, and keep feedback and approval revision-bound ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Keep the video recipe migration test grounded in pre-impact stock workflows, preserving upgrade, model-setting and custom-recipe safeguards ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Reconcile current target changes with bounded review convergence, retaining frozen-workflow context and immutable review baselines ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Accept repository-scoped comment IDs copied from grouped feedback context, while rejecting mismatched repository identities ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+
+- Save behavioral QA provenance before review and assess feedback across every repository delivery, preserving original evidence and detecting edited comments, threads and reviews ([#124](https://github.com/jappyjan/bobs-factory/pull/124)).
+- Prevent the simulated desktop update CI fixture from deadlocking on its own active work lease; verify admission stays paused until work finishes before checking activation and rollback ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
+- Drain operator integration-test runtimes before removing temporary storage, preventing snapshot-write cleanup failures in CI ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
+- Refresh localhost recovery guidance after removing the last remote API key, pause key-management actions during connection or build checks, and keep long key names inside their settings card. Correct the access guide and simulated-agent onboarding assertions; explicitly inject fixture trackers to restore CLI routing and avoid live Linear metadata requests ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
+
 - Preserve question choices when integrating unified startup and ticket-manager settings; inject the simulated tracker through the supported F1 startup API ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 
 - Preserve question choices and terminal context scrolling while integrating bundled workflow recovery and update capacity draining ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
@@ -95,6 +144,9 @@ All notable changes to this project will be documented in this file.
 - Keep desktop and operator recovery validation reliable when Node CI runs tests concurrently, without rebuilding shared prerequisites during testing ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
 
 ### Changed
+
+- Select affected review and verification work through independent impact assessments, retain original evidence with explicit reuse records, and stop unchanged correction cycles for assistance. Safe minor corrections may carry prior explicit approval forward after required checks; frozen runs keep their accepted workflows ([#124](https://github.com/jappyjan/bobs-factory/pull/124); [Taskbot #132](https://taskbot.apps.janjaap.de/p/bobs-factory/t/132)).
+- Replace remote dashboard passkey sign-in with API keys managed in Settings (add, remove and rotate). Upgrading revokes existing passkeys and browser sessions; an operator must create the first key in localhost Settings before remote access is available again. Localhost continues to work without a key ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
 
 - Use one runtime for CLI, desktop and services, with live Linear and Taskbot configuration in Settings → Ticket managers. Preserve existing credentials and runs while removing startup modes that could silently disable Linear webhooks ([#133](https://github.com/jappyjan/bobs-factory/pull/133)).
 

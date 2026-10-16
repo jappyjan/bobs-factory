@@ -33,11 +33,11 @@ import {
 	resolvePage,
 } from "./review-model";
 import {
-	readProgress,
-	readStored,
+	type readProgress,
+	readReviewProgress,
 	reviewKey,
 	signature,
-	writeStored,
+	writeReviewProgress,
 } from "./review-state";
 import { ChapterVisual, Screens, SystemMap } from "./review-visuals";
 import { Button, Markdown } from "./ui";
@@ -82,7 +82,7 @@ export function Lines({
 		</ul>
 	);
 }
-/** Mount only the current chapter; keep progress scoped to this exact guide and revision. */
+/** Mount only the current chapter; retain independently unchanged reading progress. */
 export function GuidedReview({
 	value,
 	run,
@@ -234,7 +234,7 @@ function ReviewReader({
 	const [progress, setProgress] = useRestorableState<
 			ReturnType<typeof readProgress>
 		>(`review/progress/${storageKey}`, () => {
-			const saved = readProgress(readStored(storageKey, null), tokens.length),
+			const saved = readReviewProgress(run, guide, tokens.length),
 				stale = params.has("rev") && params.get("rev") !== revision;
 			return {
 				...saved,
@@ -285,8 +285,8 @@ function ReviewReader({
 		!explicit.current,
 	);
 	useEffect(() => {
-		writeStored(storageKey, progress);
-	}, [progress, storageKey]);
+		writeReviewProgress(run, guide, progress);
+	}, [progress, run, guide]);
 	const focusPage = useCallback(
 		() =>
 			requestAnimationFrame(() => {

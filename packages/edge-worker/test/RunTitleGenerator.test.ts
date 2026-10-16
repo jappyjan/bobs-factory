@@ -497,6 +497,7 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 	const workflow = restored.selectWorkflow([], "manual", "simple");
 	expect(getLaunchFields(workflow).map((field) => field.name)).toEqual([
 		"prompt",
+		"attachments",
 	]);
 	expect(() => validateWorkflows(old)).toThrow("Reserved launch field");
 	const request = resolveLaunchRequest(
@@ -512,6 +513,7 @@ it("migrates mutable title fields, retains frozen definitions, and ignores legac
 		repositoryId: "repo",
 		workflow: "simple",
 		inputs: { prompt: "Task" },
+		attachments: { attachments: [] },
 		prompt: "Task",
 		source: undefined,
 	});
