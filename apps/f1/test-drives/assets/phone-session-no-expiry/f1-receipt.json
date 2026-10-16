@@ -1,0 +1,38 @@
+{
+	"success": true,
+	"commit": "44a927fc4f5a226c0f163f68628e6bc5dde707f2",
+	"sourceSha256": {
+		"packages/edge-worker/src/factory/FactoryServer.ts": "6b1f5eaad4f40d302e16af4590edbdaabe1bc535396862c1407a9b10f7765a81",
+		"packages/edge-worker/src/factory/LocalFactoryAccess.ts": "59dbacd9b58a275f8b3a738e554767a81de1ce5cfaba4b1ce81a6c985dc10528",
+		"packages/edge-worker/src/factory/FactoryAuth.ts": "44782748a38fe94e7d7ebbaf59f0baef4dbe25fc3bbee658191c334a235f5577",
+		"packages/edge-worker/src/factory/FactoryAuthStore.ts": "7b603ec8f742ad3389a1e0f6b7f9d62d8b865fedad4e9e3a8eb7cb6f70ddadfe",
+		"packages/edge-worker/src/factory/FactoryAuthOperator.ts": "877f0e7a55822a52f74228af4e2f52430c7c372df5b5dbfa4539a7d9916c4edf",
+		"packages/edge-worker/src/factory/FactoryOnboarding.ts": "74ceb5b4851a202a6a36434f24663cc779d6bd4241950ab6588b17dbf440456f",
+		"packages/edge-worker/src/factory/Workflow.ts": "89b014a080c1112b9e63ecbc13fbcc6a1981244bf4adac46d3c6be786c7001c7",
+		"packages/edge-worker/src/factory/web/auth-state.ts": "1e7661cbb6b7bca207f1891abdbb143fb5e1e37ad3d72fe8a823deb2563b0642",
+		"packages/edge-worker/src/factory/web/auth.tsx": "8f6573bbbbb31ca7ea7e404c0f5146c966b629dab14e23ba3e72224069b1ffcb",
+		"packages/edge-worker/src/factory/web/settings.tsx": "158840b2bc17708c4a979396e34bd6c16a6b94d65bc882c10eccab852640fa4a",
+		"apps/desktop/src/main.mjs": "3bdd29ee51c3c9e516febc185dbc588f34b76241b02df5c87d099c639cbab590",
+		"apps/desktop/src/launcher.html": "56505ca838710f6e5fe4d875dbb3718d8aa73c2fb6b13da9018e68247cd13a73",
+		"apps/cli/src/local.ts": "8a157678885a39e1c31305f201472c82543e07904a4d3a5db049112ee19ee49c",
+		"apps/f1/test-drives/assets/localhost-noauth.ts": "565836f2e548d203996c4f687fc6355df39af5042138cbae4f0a8a8ed3b52659"
+	},
+	"checks": [
+		"actual localhost/IPv4/IPv6 APIs open without credentials, cookies or enrollment",
+		"fresh first-launch project/provider onboarding accessible without key setup",
+		"IPv6 project onboarding mutation completes without authentication (prepared-tool stubs only)",
+		"noauth dashboard recipe save/start creates actual EdgeWorker worktree, executes script and returns completed run",
+		"actual socket external Origin/Fetch Metadata and forwarded localhost reads/mutations rejected",
+		"malformed HTTPS login requests return generic errors without reflecting submitted secrets",
+		"version-2 upgrade retains the active HTTPS session and a private compatible backup",
+		"explicit stay-signed-in login has no expiry and survives the following restart",
+		"TLS remote locked state, key login, local/remote key management, issuing-session revocation, other-key preservation, restart and last-key recovery",
+		"authenticated dashboard workflow creates a real EdgeWorker worktree and returns completed scripted output",
+		"version-1 server migration invalidates legacy sessions and preserves workflow history",
+		"local SSE opens without a session and remote key changes do not revoke local authority"
+	],
+	"externalRequests": [],
+	"directory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-localhost-noauth-ryfH7J",
+	"limitations": "Mock agents, disposable prepared-tool stubs, scripted workflow and self-signed local TLS proxy. No provider calls, OS desktop packaging or physical mobile/PWA proof. Fixture retained; listeners and worker stopped.",
+	"fixtureSha256": "eed5389cd78afa340363cebc5c73e2d639f36064672b0589b57dec65c3a99a72"
+}

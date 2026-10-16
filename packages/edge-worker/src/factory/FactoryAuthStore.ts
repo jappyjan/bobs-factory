@@ -63,7 +63,7 @@ const legacySchema = z
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
 const schema = z
 	.object({
-		version: z.literal(2),
+		version: z.literal(3),
 		origins: z.array(z.string()),
 		keys: z.array(
 			z.object({
@@ -80,7 +80,7 @@ const schema = z
 				hash: digest,
 				credential: z.string().min(1),
 				origin: z.string(),
-				expires: z.number().finite(),
+				expires: z.number().finite().nullable(),
 				verifiedAt: z.number().finite(),
 			}),
 		),
@@ -145,17 +145,35 @@ export class FactoryAuthStore {
 		this.path = join(this.directory, "state.json");
 		if (lstatSync(this.path, { throwIfNoEntry: false })) {
 			try {
-				const stored = JSON.parse(privateFile(this.path));
+				const serialized = privateFile(this.path);
+				const stored = JSON.parse(serialized);
 				const legacy =
 					stored.version === 1 ? legacySchema.parse(stored) : undefined;
+				// Version 2 only allowed bounded sessions. Validate that contract
+				// before preserving its keys and sessions in version 3.
+				if (stored.version === 2)
+					z.object({
+						sessions: z.array(z.object({ expires: z.number().finite() })),
+					}).parse(stored);
 				this.state = legacy
-					? { version: 2, origins: legacy.origins, keys: [], sessions: [] }
-					: schema.parse(stored);
+					? { version: 3, origins: legacy.origins, keys: [], sessions: [] }
+					: schema.parse(
+							stored.version === 2 ? { ...stored, version: 3 } : stored,
+						);
 				if (JSON.stringify(this.state.origins) !== JSON.stringify(origins))
 					throw new Error(
 						"Factory authentication origins changed. Restore the original configuration or deliberately recover authentication locally.",
 					);
-				if (legacy) atomicPrivateFile(this.path, JSON.stringify(this.state));
+				if (stored.version === 2)
+					atomicPrivateFile(
+						join(
+							this.directory,
+							`state-version-2-${Date.now()}-${randomBytes(8).toString("hex")}.json`,
+						),
+						serialized,
+					);
+				if (stored.version !== 3)
+					atomicPrivateFile(this.path, JSON.stringify(this.state));
 			} catch (error) {
 				if (error instanceof Error && error.message.includes("origins changed"))
 					throw error;
@@ -165,7 +183,7 @@ export class FactoryAuthStore {
 			}
 		} else {
 			this.state = {
-				version: 2,
+				version: 3,
 				origins,
 				keys: [],
 				sessions: [],
@@ -177,7 +195,9 @@ export class FactoryAuthStore {
 	update(change: (state: AuthState) => void) {
 		const next = structuredClone(this.state);
 		change(next);
-		next.sessions = next.sessions.filter((s) => s.expires > Date.now());
+		next.sessions = next.sessions.filter(
+			(s) => s.expires === null || s.expires > Date.now(),
+		);
 		schema.parse(next);
 		atomicPrivateFile(this.path, JSON.stringify(next));
 		this.state = next;

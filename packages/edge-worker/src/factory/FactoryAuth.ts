@@ -163,7 +163,9 @@ export class FactoryAuth {
 		if (!token || token.length > 100) return undefined;
 		const stored = this.store.state.sessions.find(
 			(s) =>
-				s.hash === hash(token) && s.origin === origin && s.expires > Date.now(),
+				s.hash === hash(token) &&
+				s.origin === origin &&
+				(s.expires === null || s.expires > Date.now()),
 		);
 		if (stored && this.store.state.keys.some((k) => k.id === stored.credential))
 			return stored;
@@ -199,7 +201,7 @@ export class FactoryAuth {
 		if (++this.attempts > 60)
 			throw new Error("Too many sign-in attempts. Try again in a minute.");
 	}
-	login(key: string, origin: string, previous?: string) {
+	login(key: string, origin: string, previous?: string, staySignedIn = false) {
 		this.limit();
 		if (
 			!this.access.origins.includes(origin) ||
@@ -213,7 +215,8 @@ export class FactoryAuth {
 		);
 		if (!found) throw new Error("Invalid API key");
 		const token = secret(),
-			now = Date.now();
+			now = Date.now(),
+			expires = staySignedIn ? null : now + this.sessionMs;
 		const old = this.session(previous, origin);
 		this.store.update((state) => {
 			state.keys.find((k) => k.id === found.id)!.lastUsedAt = now;
@@ -225,11 +228,11 @@ export class FactoryAuth {
 				credential: found.id,
 				origin,
 				verifiedAt: now,
-				expires: now + this.sessionMs,
+				expires,
 			});
 		});
 		this.changed();
-		return { token, expires: now + this.sessionMs };
+		return { token, expires };
 	}
 	keys(token: string | undefined, origin: string, local = false) {
 		this.authorize(token, origin, local);

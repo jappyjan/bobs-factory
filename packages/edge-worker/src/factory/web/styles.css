@@ -4229,6 +4229,18 @@ kbd {
 	color: var(--text);
 	border-radius: 0.5rem;
 }
+.auth-card .auth-remember {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	min-height: 2.75rem;
+}
+.auth-card .auth-remember input {
+	width: 1.25rem;
+	min-height: 1.25rem;
+	padding: 0;
+	flex-shrink: 0;
+}
 .auth-card button {
 	margin: 0.4rem 0.4rem 0.4rem 0;
 }

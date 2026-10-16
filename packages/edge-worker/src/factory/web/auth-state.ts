@@ -3,7 +3,7 @@ export type AccessState = {
 	status: "checking" | "authenticated" | "required";
 	setupRequired?: boolean;
 	access?: "local";
-	expires?: number;
+	expires?: number | null;
 	error?: string;
 };
 let state: AccessState = { status: "checking" };
@@ -117,12 +117,16 @@ export async function checkAccess() {
 		if (deadline) clearTimeout(deadline);
 		if (result.authenticated && result.access === "local") {
 			publish({ status: "authenticated", access: "local" });
-		} else if (result.authenticated && result.expires > Date.now()) {
+		} else if (
+			result.authenticated &&
+			(result.expires === null || result.expires > Date.now())
+		) {
 			publish({ status: "authenticated", expires: result.expires });
-			deadline = setTimeout(
-				() => accessRequired("Your session expired. Sign in again.", true),
-				result.expires - Date.now(),
-			);
+			if (result.expires !== null)
+				deadline = setTimeout(
+					() => accessRequired("Your session expired. Sign in again.", true),
+					result.expires - Date.now(),
+				);
 		} else {
 			state = { status: "required", setupRequired: result.setupRequired };
 			accessRequired("Sign in to continue");

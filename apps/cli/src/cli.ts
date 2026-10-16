@@ -63,7 +63,10 @@ program
 	.option("--no-open", "Start without opening a browser")
 	.option("--model <model>", "Agent model")
 	.option("--origin <origin>", "Exact public HTTPS dashboard origin")
-	.option("--session-hours <hours>", "Passkey session lifetime (1–24 hours)");
+	.option(
+		"--session-hours <hours>",
+		"Default browser session lifetime (1–24 hours; sign-in can opt out)",
+	);
 
 addUpdateCommands(program);
 
