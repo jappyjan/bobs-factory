@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
 
 - Keep completed roles and decision records moving while ticket delivery retries, reconcile Linear's missing-activity response, renew stale impact through its configured assessor on Retry, and retain the actual PR base when taking over an existing branch. ([#146](https://github.com/jappyjan/bobs-factory/pull/146))
 
-- Preserve large architecture proposals with up to 64 deliverables of 40 files each, retaining complete file footprints and exact-version acceptance instead of blocking repository-wide plans at 600 entries. ([#146](https://github.com/jappyjan/bobs-factory/pull/146))
+- Preserve large architecture proposals with up to 64 deliverables of 40 files each, retaining complete file footprints and exact-version acceptance instead of blocking repository-wide plans at 600 entries. Retry revalidates retained proposals against the current contract on their exact clean revision before requesting corrections. ([#146](https://github.com/jappyjan/bobs-factory/pull/146))
 
 - Publish nightlies after exact reviewed browser dependency additions, retaining their source archives and including embedded web package notices in binary distributions. ([#145](https://github.com/jappyjan/bobs-factory/pull/145))
 

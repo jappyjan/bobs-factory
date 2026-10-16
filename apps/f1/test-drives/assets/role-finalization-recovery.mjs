@@ -89,13 +89,14 @@ const config = {
 				large?.status === "running" &&
 				config.workingDirectory === large.workspace
 			) {
-				const response =
-					large.step === "architecture"
-						? largeProposal
-						: { approved: true, feedback: [] };
+				assert.notEqual(
+					large.step,
+					"architecture",
+					"The saved architecture must be revalidated without another author turn",
+				);
 				return f1AgentHandlers(
 					"mock",
-					JSON.stringify(response),
+					JSON.stringify({ approved: true, feedback: [] }),
 				).createAgentRunner(type, config);
 			}
 			const stale = runtime?.runs.get("stale-impact");
@@ -490,7 +491,53 @@ try {
 			at: new Date().toISOString(),
 		},
 	});
-	void runtime.launch(large);
+	large.status = "failed";
+	large.error = "Old architecture schema cannot represent the retained plan";
+	large.checkpoint = {
+		current: "architecture",
+		visits: { architecture: 1 },
+		active: {
+			phase: "executing",
+			agent: {
+				runner: "codex",
+				sessionId: "retained-architecture-conversation",
+				rejected: {
+					output: largeProposal,
+					issues: [
+						{
+							path: "/candidate/steps",
+							message: "Too big: expected array to have <=15 items",
+						},
+					],
+					revision: {
+						headSha: execFileSync("git", ["rev-parse", "HEAD"], {
+							cwd: large.workspace,
+							encoding: "utf8",
+						}).trim(),
+						dirty: false,
+						historyLength: 0,
+						at: large.createdAt,
+					},
+					attempts: 2,
+					exhausted: true,
+				},
+			},
+		},
+	};
+	await runtime.save(large);
+	const largeRetry = await fetch(
+		"http://localhost:3540/api/runs/large-architecture/retry",
+		{
+			method: "POST",
+			headers: {
+				Origin: "http://localhost:3540",
+				"X-Factory-Request": "1",
+				"Content-Type": "application/json",
+			},
+			body: "{}",
+		},
+	);
+	assert.equal(largeRetry.status, 202);
 	await until(() => {
 		const current = runtime.get(large.id);
 		assert.notEqual(current.status, "failed", current.error);
@@ -511,6 +558,15 @@ try {
 		pending.architectureProposals.at(-1).id,
 	);
 	assert.equal(pending.architectureDecisions?.length ?? 0, 0);
+	assert.equal(
+		pending.checkpoint.agentSessions.architecture.sessionId,
+		"retained-architecture-conversation",
+	);
+	assert.equal(
+		agentTurns,
+		3,
+		"Only the independent reviewer should run after revalidating the saved architecture",
+	);
 	await runtime.flush();
 	writeFileSync(
 		join(directory, "large-architecture.json"),

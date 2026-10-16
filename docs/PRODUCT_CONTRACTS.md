@@ -45,6 +45,10 @@ Architecture candidate plans accept up to 64 deliverables, each with at most
 40 declared file operations. Large plans retain their complete runtime footprint
 and normal exact-version review and acceptance. This widens schema capacity;
 saved proposal contents, digests and accepted workflow definitions stay intact.
+After explicit Retry, rejected architecture output is revalidated against the
+current contract only on its exact clean revision. A now-valid candidate keeps
+its native conversation and continues to independent review and human acceptance;
+stale, dirty or invalid candidates still require normal correction.
 
 Direct localhost dashboard/API access requires an actual loopback socket peer, an exact
 configured HTTP loopback authority and same-origin browser context. IPv4 `127.0.0.1`,
