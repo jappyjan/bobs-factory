@@ -51,7 +51,7 @@ export const CandidatePlanSchema = z.object({
 			}),
 		)
 		.min(1)
-		.max(15),
+		.max(64),
 	assets: z.array(z.object({ path: text, purpose: text })),
 });
 const MapPartSchema = z

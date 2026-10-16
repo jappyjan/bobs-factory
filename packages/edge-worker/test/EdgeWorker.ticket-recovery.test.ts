@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "bobs-factory-core";
@@ -13,8 +13,8 @@ import type {
 	TicketTracking,
 } from "../src/factory/TicketTracking.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
-import type {
-	FactoryRun,
+import {
+	type FactoryRun,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import type { MachineCapacity } from "../src/MachineCapacity.js";
@@ -196,6 +196,177 @@ it.each(
 			);
 			await worker.getFactoryRuntime().flush();
 		}
+		vi.restoreAllMocks();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it.each(
+	references,
+)("finalizes a saved agent result without waiting for $provider publication", async (reference) => {
+	const home = mkdtempSync(join(tmpdir(), "role-publication-recovery-"));
+	const repository = join(home, "repo");
+	mkdirSync(repository);
+	execFileSync("git", ["init", "-q", repository]);
+	execFileSync(
+		"git",
+		[
+			"-c",
+			"user.name=Fixture",
+			"-c",
+			"user.email=fixture@example.test",
+			"-c",
+			"commit.gpgsign=false",
+			"commit",
+			"-q",
+			"--allow-empty",
+			"-m",
+			"Fixture",
+		],
+		{ cwd: repository },
+	);
+	const headSha = execFileSync("git", ["rev-parse", "HEAD"], {
+		cwd: repository,
+		encoding: "utf8",
+	}).trim();
+	const worker = new EdgeWorker({
+		factoryHome: home,
+		issueTrackerFactory: createCLIIssueTracker,
+		repositories: [
+			{
+				id: "repo",
+				name: "Fixture",
+				repositoryPath: repository,
+				workspaceBaseDir: home,
+				baseBranch: "main",
+				isActive: true,
+			},
+		],
+	}) as unknown as WorkerInternals;
+	const runtime = worker.getFactoryRuntime();
+	let rejectPublication!: (error: Error) => void;
+	const publication = new Promise<void>((_, reject) => {
+		rejectPublication = reject;
+	});
+	const publish = vi.fn(() => publication);
+	vi.spyOn(worker, "factoryTicketAdapter").mockResolvedValue({
+		read: async () => ({
+			comments: [],
+			attachments: [],
+			status: "in_progress",
+		}),
+		stage: async () => undefined,
+		comment: async () => {},
+		link: async () => {},
+		publish,
+	});
+	const workflow = WorkflowSchema.parse({
+		id: "saved-role",
+		name: "Saved role",
+		allowedTriggers: ["manual"],
+		steps: [
+			{
+				id: "plan-review",
+				name: "Review",
+				type: "agent",
+				prompt: "Already completed",
+			},
+			{
+				id: "decisions",
+				name: "Save decisions",
+				type: "tool",
+				tool: "record-decisions",
+			},
+			{
+				id: "after",
+				name: "Next step",
+				type: "script",
+				script: "printf advanced",
+			},
+		],
+	});
+	const run = runtime.create({
+		id: "saved-role",
+		repositoryId: "repo",
+		workspace: repository,
+		workflow,
+		triggerOrigin: {
+			type: "manual",
+			workflowId: workflow.id,
+			at: new Date().toISOString(),
+		},
+	});
+	const output = { approved: true, feedback: [] };
+	run.ticketReference = reference;
+	run.outputs.ticket = { id: reference.id };
+	run.outputs.clarify = {
+		decisions: [
+			{
+				question: "Which target?",
+				answer: "Keep the configured target",
+				reason: "Explicit accepted answer",
+			},
+		],
+	};
+	run.checkpoint = {
+		current: "plan-review",
+		visits: { "plan-review": 1 },
+		active: {
+			phase: "executing",
+			agent: {
+				runner: "codex",
+				sessionId: "retained-conversation",
+				result: {
+					output,
+					revision: {
+						headSha,
+						dirty: false,
+						historyLength: 0,
+						at: run.createdAt,
+					},
+					finalizing: true,
+				},
+			},
+		},
+	};
+	try {
+		await runtime.save(run);
+		const executing = runtime.launch(run);
+		await vi.waitFor(() => {
+			expect(publish).toHaveBeenCalled();
+			expect(run.status).toBe("completed");
+		});
+		await executing;
+		expect(run.outputs["plan-review"]).toEqual(output);
+		expect(run.outputs.after).toEqual({ stdout: "advanced" });
+		expect(run.checkpoint.agentSessions?.["plan-review"]?.sessionId).toBe(
+			"retained-conversation",
+		);
+		const receipt = run.ticketSync!.receipts.find((item) =>
+			item.key.startsWith("role-outcome:"),
+		)!;
+		expect(receipt).toBeDefined();
+		expect(receipt.delivered).not.toBe(true);
+		expect(
+			run.ticketSync!.receipts.some((item) => item.key.startsWith("comment:")),
+		).toBe(true);
+		const restored = new WorkflowRuntime(home, {
+			agent: async () => {
+				throw new Error("Do not replay the role");
+			},
+			script: async () => ({}),
+			tool: async () => ({}),
+		});
+		expect(restored.get(run.id).ticketSync!.receipts).toContainEqual(receipt);
+		await restored.shutdown();
+	} finally {
+		rejectPublication(new Error("Controlled publication outage"));
+		worker.getTicketTracking().stop();
+		await vi.waitFor(() =>
+			expect(worker.getTicketTracking().isBusy()).toBe(false),
+		);
+		await runtime.shutdown();
+		await worker.runnerSlots.shutdown();
 		vi.restoreAllMocks();
 		rmSync(home, { recursive: true, force: true });
 	}

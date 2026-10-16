@@ -738,6 +738,15 @@ export class FactoryTools {
 						...(run.outputs.repository as Record<string, unknown>),
 						baseBranch: pr.baseRefName,
 					};
+					const repository = run.repositories?.find(
+						(item) => item.id === run.repositoryId,
+					);
+					if (repository?.baseBranch === pr.headRefName) {
+						repository.baseBranch = pr.baseRefName;
+						context.log(
+							`Confirmed takeover base ${pr.baseRefName} from ${pr.url}; retained the existing working branch.`,
+						);
+					}
 				}
 				return {
 					branch,

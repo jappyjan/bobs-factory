@@ -8681,7 +8681,7 @@ ${taskSection}`;
 		purpose: "documentation" | "operational" = "documentation",
 	): Promise<void> {
 		if (run.ticketReference) {
-			await this.getTicketTracking().record(run, {
+			await this.getFactoryRuntime().track(run, {
 				key: `comment:${body}`,
 				purpose,
 				body,
@@ -8873,9 +8873,56 @@ ${taskSection}`;
 			.finally(() => this.chatContinuations.delete(id));
 	}
 
+	private async revalidateRetriedArchitecture(
+		context: ExecutionContext,
+	): Promise<void> {
+		const saved = context.resumeAgent;
+		const rejected = saved?.rejected;
+		if (
+			context.step.architectureContract !== "architecture-v1" ||
+			!saved ||
+			!rejected?.revision ||
+			!(rejected.retryGeneration && rejected.retryGeneration > 0)
+		)
+			return;
+		const current = (await roleProgress(context)).currentRevision;
+		if (
+			!current ||
+			current.dirty ||
+			rejected.revision.dirty ||
+			current.headSha !== rejected.revision.headSha
+		)
+			return;
+		let output: unknown;
+		try {
+			output = this.validateFactoryAgentOutput(context, rejected.output);
+		} catch (error) {
+			if (error instanceof OutputValidationError) return;
+			throw error;
+		}
+		// An upgrade can make a retained proposal valid while its saved schema
+		// errors still tell the author it is impossible. Retry revalidates that
+		// exact clean candidate; independent review and human acceptance follow.
+		const {
+			rejected: _rejected,
+			infrastructureFailure: _infrastructureFailure,
+			...agent
+		} = saved;
+		const recovered = {
+			...agent,
+			result: { output, revision: rejected.revision, finalizing: true },
+		};
+		await context.checkpointAgent?.(recovered);
+		context.resumeAgent = recovered;
+		context.log(
+			"Retained architecture passes the current contract after Retry; preserving its native conversation and continuing to independent review.",
+		);
+	}
+
 	private async executeFactoryAgent(
 		context: ExecutionContext,
 	): Promise<unknown> {
+		await this.revalidateRetriedArchitecture(context);
 		if (
 			context.resumeAgent?.rejected?.exhausted &&
 			context.resumeAgent.rejected.revision?.headSha ===
@@ -9566,7 +9613,7 @@ ${taskSection}`;
 		) {
 			const key = `role-outcome:${context.stepKey ?? step.id}:${createHash("sha256").update(presented.markdown).digest("hex")}`;
 			if (run.ticketReference)
-				await this.getTicketTracking().record(run, {
+				await this.getFactoryRuntime().track(run, {
 					key,
 					purpose: "operational",
 					body: presented.markdown,

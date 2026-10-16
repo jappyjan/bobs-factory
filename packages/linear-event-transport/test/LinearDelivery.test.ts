@@ -1,8 +1,82 @@
-import { LinearClient } from "@linear/sdk";
+import { LinearClient, parseLinearError } from "@linear/sdk";
 import { afterEach, expect, it, vi } from "vitest";
 import { LinearIssueTrackerService } from "../src/LinearIssueTrackerService.js";
 
 afterEach(() => vi.useRealTimers());
+
+it.each([
+	true,
+	false,
+])("reconciles Linear's HTTP-200 INPUT_ERROR only with exact activity-not-found evidence (%s)", async (missing) => {
+	const { mkdtempSync, rmSync } = await import("node:fs");
+	const { tmpdir } = await import("node:os");
+	const { join } = await import("node:path");
+	const home = mkdtempSync(join(tmpdir(), "linear-missing-activity-"));
+	const client = new LinearClient({
+		accessToken: `missing-activity-${missing}`,
+	});
+	const input = {
+		id: "6530952b-cc73-498d-aeb0-abdfbc78a778",
+		agentSessionId: "session",
+		content: { type: "elicitation", body: "Which target?" },
+	};
+	let mutations = 0;
+	client.client.request = vi.fn(async (_document, variables: any) => {
+		if (variables.input) {
+			mutations++;
+			if (mutations === 1)
+				throw new Error("Connection interrupted before acknowledgement");
+			return {
+				agentActivityCreate: {
+					success: true,
+					agentActivity: { id: input.id },
+					lastSyncId: 1,
+				},
+			};
+		}
+		throw parseLinearError({
+			response: {
+				status: 200,
+				errors: [
+					{
+						message: missing
+							? "Entity not found: AgentActivity"
+							: "Activity lookup unavailable",
+						path: ["agentActivity"],
+						extensions: {
+							type: "invalid input",
+							code: "INPUT_ERROR",
+							userError: true,
+						},
+					},
+				],
+			},
+		});
+	}) as any;
+	const tracker = new LinearIssueTrackerService(client, undefined, undefined, {
+		workspaceId: "missing-activity",
+		factoryHome: home,
+		requestIntervalMs: 0,
+	});
+	try {
+		await expect(tracker.createAgentActivity(input)).rejects.toThrow("pending");
+		vi.useFakeTimers();
+		await vi.advanceTimersByTimeAsync(30_000);
+		await tracker.flushActivityDelivery();
+		expect(mutations).toBe(missing ? 2 : 1);
+		expect(tracker.getActivityDeliveryStatus()).toMatchObject({
+			pending: missing ? 0 : 1,
+			delivered: missing ? 1 : 0,
+		});
+		if (missing) {
+			await tracker.createAgentActivity(input);
+			expect(mutations).toBe(2);
+		}
+	} finally {
+		tracker.stopDelivery();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
 
 it("keeps compact delivered receipts that still deduplicate and reject changed content after restart", async () => {
 	const { mkdtempSync, rmSync, readFileSync, readdirSync } = await import(
