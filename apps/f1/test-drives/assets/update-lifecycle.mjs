@@ -197,6 +197,11 @@ let candidate = {
 	manifestSha256: "c".repeat(64),
 	publishedAt: "2026-10-10T16:00:00.000Z",
 };
+const bundled = defaultWorkflows.find(
+	(workflow) => workflow.id === "factory-pipeline",
+);
+const installedDescription = bundled.description;
+let previousDescription;
 const source = {
 	discover: async () => candidate,
 	stage: async (candidate) => ({
@@ -230,6 +235,8 @@ const lifecycle = {
 	activate: async () => {
 		calls.push("activate");
 		assert.equal(workers, 0);
+		previousDescription = bundled.description;
+		bundled.description = `Bundled behavior from controlled candidate ${candidate.version}`;
 	},
 	start: async () => {
 		calls.push("start");
@@ -241,6 +248,12 @@ const lifecycle = {
 	},
 	health: async () => {
 		calls.push("health");
+		assert.equal(
+			runtime.listWorkflows().find((workflow) => workflow.id === bundled.id)
+				.description,
+			bundled.description,
+		);
+		assert.notEqual(bundled.description, previousDescription);
 		assert.deepEqual(drain.receipt(), snapshotReceipt);
 		if (failHealth) throw new Error("Controlled trial health failure");
 	},
@@ -250,6 +263,7 @@ const lifecycle = {
 			await runtime.shutdown();
 			workers--;
 		}
+		bundled.description = previousDescription;
 		cpSync(join(transaction.snapshot, "runs"), join(home, "factory", "runs"), {
 			recursive: true,
 			force: true,
@@ -325,14 +339,10 @@ server = new FactoryServer(runtime, hooksForServer(), {
 });
 // Controlled authenticated operator fixture; production auth middleware remains enabled.
 server.auth.store.update((state) => {
-	state.credentials.push({
+	state.keys.push({
 		id: "f1-update",
-		origin: "https://updates.example.test",
-		publicKey: "fixture",
-		counter: 0,
+		digest: createHash("sha256").update("fixture-key").digest("hex"),
 		label: "F1 mocked operator",
-		deviceType: "singleDevice",
-		backedUp: false,
 		createdAt: Date.now(),
 		lastUsedAt: Date.now(),
 	});
@@ -476,6 +486,9 @@ try {
 		"controlled runtime replacement resumes parked slots and saved next steps exactly once after health and maintenance release",
 	);
 	assert.equal(manager.status().transaction.phase, "succeeded");
+	receipts.push(
+		"changed bundled workflow code passes preserved-state health while accepted definitions and saved catalog remain unchanged",
+	);
 	assert.equal(peakWorkers, 1);
 	await until(
 		() =>
@@ -554,6 +567,7 @@ try {
 	writeFileSync(file, `${JSON.stringify(output, null, 2)}\n`);
 	console.log(JSON.stringify({ passed: receipts, receipt: file, peakWorkers }));
 } finally {
+	bundled.description = installedDescription;
 	await server.stop();
 	finishActive();
 	await runtime.shutdown();

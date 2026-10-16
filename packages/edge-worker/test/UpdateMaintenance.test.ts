@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
+import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { OperatorGrants } from "../src/factory/OperatorGrants.js";
 import { OperatorServer } from "../src/factory/OperatorServer.js";
 import { OperatorService } from "../src/factory/OperatorService.js";
@@ -36,7 +37,7 @@ function setup() {
 			workflowId: "fixture",
 			at: new Date().toISOString(),
 		},
-		workflow: {
+		workflow: WorkflowSchema.parse({
 			id: "fixture",
 			name: "Fixture",
 			allowedTriggers: ["manual"],
@@ -50,7 +51,7 @@ function setup() {
 					next: "end",
 				},
 			],
-		},
+		}),
 	});
 	run.status = "waiting";
 	run.questions = ["Preserved question"];
@@ -167,6 +168,64 @@ function integrationWorker(home: string) {
 	});
 	return edge;
 }
+it("preserves the update receipt across bundled workflow changes and a runtime reload", async () => {
+	const f = setup();
+	await f.runtime.shutdown();
+	const before = f.drain.receipt();
+	const bundled = defaultWorkflows.find(
+		(workflow) => workflow.id === "factory-pipeline",
+	)!;
+	const original = bundled.description;
+	let restored: WorkflowRuntime | undefined;
+	try {
+		bundled.description = `${original} Updated bundled behavior.`;
+		restored = new WorkflowRuntime(f.home, {
+			agent: async () => {
+				throw new Error("No agent permitted");
+			},
+			script: async () => {
+				throw new Error("No script permitted");
+			},
+			tool: async () => {
+				throw new Error("No tool permitted");
+			},
+		});
+		expect(restored.listWorkflows()).not.toEqual(f.runtime.listWorkflows());
+		const drain = new UpdateDrain(
+			f.home,
+			restored,
+			f.capacity as any,
+			() => false,
+			() => {},
+		);
+		expect(drain.receipt()).toEqual(before);
+	} finally {
+		bundled.description = original;
+		await restored?.shutdown();
+	}
+});
+
+it.each([
+	"preferences",
+	"availability",
+	"local workflow",
+	"frozen run",
+])("rejects changed %s in update preservation receipts", async (change) => {
+	const f = setup();
+	const before = f.drain.receipt();
+	if (change === "preferences")
+		f.runtime.updatePreferences("simple", {
+			native: { runner: "codex", model: "fixture" },
+		});
+	else if (change === "availability")
+		f.runtime.setWorkflowEnabled("simple", false);
+	else if (change === "local workflow")
+		f.runtime.forkWorkflow("factory", "Local recipe");
+	else f.run.workflow.name = "Changed accepted recipe";
+	expect(f.drain.receipt().preservedStateSha256).not.toBe(
+		before.preservedStateSha256,
+	);
+});
 it("preserves token-free integration input across restart and dispatches it once after release", async () => {
 	const f = setup();
 	const edge = integrationWorker(f.home);

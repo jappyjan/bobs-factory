@@ -11,6 +11,8 @@ import type { WorkflowRuntime } from "../factory/WorkflowRuntime.js";
 import type { CapacitySnapshot, MachineCapacity } from "../MachineCapacity.js";
 import { UpdateManager } from "./UpdateManager.js";
 
+export const preservationContract = "factory-preservation-v2";
+
 /** Freeze intake and slot admission once staging completes. Active steps finish
  * naturally; later steps and queued slots retain their saved progress. */
 export class UpdateDrain {
@@ -81,6 +83,12 @@ export class UpdateDrain {
 		await this.capacity.pauseAdmissionsForUpdate(transactionId);
 	}
 	receipt() {
+		const fileDigest = (file: string) => {
+			const path = join(this.home, file);
+			return existsSync(path)
+				? createHash("sha256").update(readFileSync(path)).digest("hex")
+				: null;
+		};
 		const records = [...this.runtime.runs.values()]
 			.map((run) => ({
 				id: run.id,
@@ -101,22 +109,20 @@ export class UpdateDrain {
 			}))
 			.sort((a, b) => a.id.localeCompare(b.id));
 		return {
+			preservationContract,
 			preservedStateSha256: createHash("sha256")
 				.update(
 					JSON.stringify({
 						records,
 						nativeSessions: this.nativeSessions(),
-						workflows: this.runtime.listWorkflows(),
+						// Bundled graphs belong to the candidate's code identity. Protect
+						// saved graphs, preferences and availability instead; hashing the
+						// resolved catalog rejects every legitimate bundled prompt update.
+						workflows: fileDigest("factory/workflows.json"),
 						defaultWorkflow: this.runtime.getDefaultWorkflow(),
 						titles: this.runtime.getTitleSettings(),
 						executionProfiles: this.runtime.executionProfiles.read(),
-						config: ["config.json", ".env"].map((file) =>
-							existsSync(join(this.home, file))
-								? createHash("sha256")
-										.update(readFileSync(join(this.home, file)))
-										.digest("hex")
-								: null,
-						),
+						config: ["config.json", ".env"].map(fileDigest),
 					}),
 				)
 				.digest("hex"),

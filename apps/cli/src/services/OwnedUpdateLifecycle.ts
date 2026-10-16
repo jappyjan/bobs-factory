@@ -50,6 +50,7 @@ export interface LifecycleTransaction {
 }
 interface Drain {
 	idle: boolean;
+	preservationContract?: string;
 	preservedStateSha256: string;
 	runIds: string[];
 }
@@ -249,6 +250,12 @@ export class OwnedUpdateLifecycle {
 			if (result.stateCompatible !== true)
 				throw new Error("Candidate state preflight failed");
 			if (
+				result.preservationContract !== this.preservation?.preservationContract
+			)
+				throw new Error(
+					"Update preservation contract changed; use an owner-managed stopped-worker upgrade for this boundary. The running worker has not been replaced.",
+				);
+			if (
 				JSON.stringify(result.runIds) !==
 				JSON.stringify(this.preservation?.runIds)
 			)
@@ -313,6 +320,7 @@ export class OwnedUpdateLifecycle {
 		const fresh = await this.client.get<Drain>("/api/updates/drain");
 		if (
 			!fresh.idle ||
+			fresh.preservationContract !== this.preservation?.preservationContract ||
 			fresh.preservedStateSha256 !== this.preservation?.preservedStateSha256
 		)
 			throw new Error("Idle/preserved state changed before stop");
@@ -504,17 +512,21 @@ export class OwnedUpdateLifecycle {
 				);
 				const receipt = await this.client.get<Drain>("/api/updates/drain");
 				const owner = workerOwner(this.home);
+				const preservedState =
+					receipt.preservationContract ===
+						this.preservation?.preservationContract &&
+					receipt.preservedStateSha256 ===
+						this.preservation?.preservedStateSha256;
 				if (
 					identity.runtime.version === candidate.version &&
 					identity.runtime.commit === candidate.commit &&
 					identity.runtime.target === candidate.target &&
 					owner &&
 					ownerAlive(owner) &&
-					receipt.preservedStateSha256 ===
-						this.preservation?.preservedStateSha256
+					preservedState
 				)
 					return;
-				failure = `Observed ${identity.runtime.version}/${identity.runtime.commit}/${identity.runtime.target}; liveOwner=${Boolean(owner && ownerAlive(owner))}; preservedState=${receipt.preservedStateSha256 === this.preservation?.preservedStateSha256}`;
+				failure = `Observed ${identity.runtime.version}/${identity.runtime.commit}/${identity.runtime.target}; liveOwner=${Boolean(owner && ownerAlive(owner))}; preservedState=${preservedState}; preservationContract=${receipt.preservationContract ?? "legacy"}/${this.preservation?.preservationContract ?? "legacy"}`;
 			} catch (error) {
 				failure = (error as Error).message;
 			}
