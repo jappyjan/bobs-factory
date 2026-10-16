@@ -790,7 +790,7 @@ function Inspector({
 			)}
 
 			{step.type === "agent" && (
-				<section>
+				<section className="recipe-section">
 					<h3>Who does it</h3>
 					<AgentSettings
 						config={config}
@@ -800,7 +800,7 @@ function Inspector({
 				</section>
 			)}
 			{step.type === "agent" && (
-				<section>
+				<section className="recipe-section">
 					<h3>
 						Instructions{" "}
 						{!local && (
@@ -909,7 +909,7 @@ function Inspector({
 				</section>
 			)}
 			{(step.type === "tool" || step.type === "script") && local && (
-				<section>
+				<section className="recipe-section">
 					<h3>What runs</h3>
 					{step.type === "tool" ? (
 						<label>
@@ -968,7 +968,7 @@ function Inspector({
 				</section>
 			)}
 			{step.type === "fanout" && (
-				<section>
+				<section className="recipe-section">
 					<h3>Runs in parallel</h3>
 					<ul className="recipe-branches">
 						{step.groups?.map((group) => (
@@ -995,7 +995,7 @@ function Inspector({
 				</section>
 			)}
 			{step.type === "workflow" && (
-				<section>
+				<section className="recipe-section">
 					<h3>Recipe to run</h3>
 					{local ? (
 						<select
@@ -1031,7 +1031,7 @@ function Inspector({
 			)}
 
 			{topLevel && (
-				<section>
+				<section className="recipe-section">
 					<h3>Where it goes next</h3>
 					<ul className="recipe-routes">
 						{step.branches.map((branch, index) => (
@@ -1168,7 +1168,7 @@ function Inspector({
 				</section>
 			)}
 			{topLevel && (
-				<section>
+				<section className="recipe-section">
 					<h3>Safety limit</h3>
 					<label className="recipe-inline">
 						Stop after
@@ -1273,7 +1273,7 @@ function SettingsPanel({
 					/>
 				</label>
 			)}
-			<section>
+			<section className="recipe-section">
 				<h3>How it can start</h3>
 				<p className="muted small">
 					Applies to new runs once saved. Existing runs keep their definitions.
@@ -1312,7 +1312,7 @@ function SettingsPanel({
 				})}
 			</section>
 			{!recipe.internal && (
-				<section>
+				<section className="recipe-section">
 					<h3>Routing labels</h3>
 					<p className="muted small">
 						Tickets with any of these labels use this recipe.
@@ -1354,7 +1354,7 @@ function SettingsPanel({
 					</div>
 				</section>
 			)}
-			<section>
+			<section className="recipe-section">
 				<div className="recipe-setting">
 					<span>
 						💬 Chat steering
@@ -1376,7 +1376,7 @@ function SettingsPanel({
 				</div>
 			</section>
 			{saved && (
-				<section>
+				<section className="recipe-section">
 					<h3>Right away</h3>
 					<p className="muted small">These apply immediately, without Save.</p>
 					{!recipe.internal && (
@@ -1441,7 +1441,7 @@ function SettingsPanel({
 					{fork.error && <p className="error">{fork.error.message}</p>}
 				</section>
 			)}
-			<section>
+			<section className="recipe-section">
 				<h3>What Bob asks for when it starts</h3>
 				{recipe.launchFields?.length ? (
 					<ul className="recipe-fields">

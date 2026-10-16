@@ -161,7 +161,7 @@ function LaneNode({
 				["--phase" as string]: data.color,
 			}}
 		>
-			<span>{data.label}</span>
+			<span className="recipe-lane-label">{data.label}</span>
 		</div>
 	);
 }

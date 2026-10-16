@@ -7114,7 +7114,7 @@ kbd {
 	background: var(--track);
 	transition: background 0.15s;
 }
-.toggle-switch span {
+.toggle-switch-thumb {
 	position: absolute;
 	top: 4px;
 	left: 4px;
@@ -7128,7 +7128,7 @@ kbd {
 .toggle-switch[aria-checked="true"] {
 	background: #3ddc97;
 }
-.toggle-switch[aria-checked="true"] span {
+.toggle-switch[aria-checked="true"] .toggle-switch-thumb {
 	transform: translateX(16px);
 }
 
@@ -7259,10 +7259,6 @@ kbd {
 }
 .recipe-workspace .react-flow__node:focus-visible {
 	outline: none;
-}
-.recipe-workspace .react-flow__node:focus-visible .recipe-node {
-	outline: 3px solid #7b61ff;
-	outline-offset: 3px;
 }
 .recipe-workspace .react-flow__handle {
 	width: 9px;
@@ -7409,7 +7405,7 @@ kbd {
 	background: color-mix(in srgb, var(--phase) 9%, transparent);
 	pointer-events: none;
 }
-.recipe-lane span {
+.recipe-lane-label {
 	display: block;
 	padding: 14px 18px;
 	font-size: 13px;
@@ -7460,6 +7456,10 @@ kbd {
 }
 .recipe-native .recipe-node {
 	cursor: pointer;
+}
+.recipe-workspace .react-flow__node:focus-visible .recipe-node {
+	outline: 3px solid #7b61ff;
+	outline-offset: 3px;
 }
 .recipe-native-arrow {
 	font-size: 28px;
@@ -7569,10 +7569,6 @@ kbd {
 	padding: 4px 8px;
 	min-height: 0;
 }
-.recipe-panel-head .recipe-close {
-	margin-left: auto;
-	order: 1;
-}
 .recipe-chips {
 	display: flex;
 	gap: 6px;
@@ -7587,6 +7583,10 @@ kbd {
 	border-radius: 50%;
 	background: var(--quiet);
 	font-size: 18px;
+}
+.recipe-panel-head .recipe-close {
+	margin-left: auto;
+	order: 1;
 }
 .recipe-kind,
 .recipe-phase {
@@ -7613,7 +7613,7 @@ kbd {
 	border-radius: 50%;
 	background: var(--phase);
 }
-.recipe-panel section {
+.recipe-section {
 	display: grid;
 	gap: 10px;
 	border-top: 1px solid var(--line);

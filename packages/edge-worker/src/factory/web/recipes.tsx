@@ -380,7 +380,7 @@ export function Switch({
 			className="toggle-switch"
 			onClick={() => onChange(!checked)}
 		>
-			<span />
+			<span className="toggle-switch-thumb" />
 		</button>
 	);
 }
