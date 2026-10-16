@@ -738,3 +738,23 @@ it("ignores late version and access failures from the document being left", asyn
 		});
 	}
 });
+
+it("accepts no-expiry remote sessions without a deadline while current-session denial still clears access", async () => {
+	const timer = vi.spyOn(globalThis, "setTimeout");
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async () => factoryResponse({ authenticated: true, expires: null })),
+	);
+	await checkAccess();
+	expect(accessState()).toEqual({ status: "authenticated", expires: null });
+	expect(timer).not.toHaveBeenCalled();
+	timer.mockRestore();
+	client.setQueryData(["run", "private"], { transcript: "persistent content" });
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async () => factoryResponse({}, { status: 401 })),
+	);
+	await checkAccess();
+	expect(accessState().status).toBe("required");
+	expect(client.getQueryData(["run", "private"])).toBeUndefined();
+});

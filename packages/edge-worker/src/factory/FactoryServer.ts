@@ -290,11 +290,11 @@ export class FactoryServer {
 			reply: import("fastify").FastifyReply,
 			origin: string,
 			token: string,
-			expires: number,
+			expires: number | null,
 		) =>
 			reply.header(
 				"Set-Cookie",
-				`${cookieName(origin)}=${token}; Path=/; HttpOnly; SameSite=Strict; ${origin.startsWith("https:") ? "Secure; " : ""}Expires=${new Date(expires).toUTCString()}`,
+				`${cookieName(origin)}=${token}; Path=/; HttpOnly; SameSite=Strict; ${origin.startsWith("https:") ? "Secure; " : ""}${expires === null ? "Max-Age=34560000" : `Expires=${new Date(expires).toUTCString()}`}`,
 			);
 		const publicPaths = new Set([
 			"/api/version",
@@ -430,10 +430,14 @@ export class FactoryServer {
 				throw new Error("Runtime drain hooks are unavailable");
 			return hooks.updateDrain.inspect();
 		});
-		this.app.get("/api/auth/status", (request) => {
+		this.app.get("/api/auth/status", (request, reply) => {
 			const origin = originFor(request)!;
 			const session = sessionFor(request);
 			const local = localFor(request);
+			// Browsers cap persistent cookies. Refresh the cookie on foreground
+			// verification while the server session itself has no expiry.
+			if (session?.expires === null)
+				setCookie(reply, origin, tokenFor(request)!, null);
 			return {
 				...(local ? { access: "local" } : {}),
 				authenticated: Boolean(session),
@@ -444,11 +448,19 @@ export class FactoryServer {
 		});
 		this.app.post("/api/auth/login", { bodyLimit: 1024 }, (request, reply) => {
 			const body = z
-				.object({ key: z.string().max(100) })
+				.object({
+					key: z.string().max(100),
+					staySignedIn: z.boolean().optional(),
+				})
 				.strict()
 				.parse(request.body);
 			const origin = originFor(request)!;
-			const result = this.auth.login(body.key, origin, tokenFor(request));
+			const result = this.auth.login(
+				body.key,
+				origin,
+				tokenFor(request),
+				body.staySignedIn,
+			);
 			setCookie(reply, origin, result.token, result.expires);
 			return { authenticated: true, expires: result.expires };
 		});
@@ -583,7 +595,7 @@ export class FactoryServer {
 			const session = sessionFor(request)!;
 			this.streamSessions.set(stream, { token, origin, local });
 			const expiry =
-				session.expires === undefined
+				session.expires == null
 					? undefined
 					: setTimeout(
 							() => stream.end(),

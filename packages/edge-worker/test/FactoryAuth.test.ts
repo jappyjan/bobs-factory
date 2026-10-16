@@ -160,7 +160,7 @@ it("validates legacy state before atomic migration, revokes passkeys/sessions an
 	const migrated = new FactoryAuth(f.home, { origins: [origin] });
 	services.push(migrated);
 	expect(migrated.store.state).toEqual({
-		version: 2,
+		version: 3,
 		origins: [origin],
 		keys: [],
 		sessions: [],
@@ -308,4 +308,57 @@ it("rejects dangling authentication-file symlinks instead of silently creating a
 	symlinkSync(target, f.auth.store.path);
 	expect(() => new FactoryAuthStore(f.home, [origin])).toThrow("corrupt");
 	expect(existsSync(target)).toBe(false);
+});
+
+// No-expiry sessions must survive pruning/restart while remaining revocable.
+it("keeps opt-in sessions indefinitely while default sessions expire, and revokes them on rotation or logout", () => {
+	vi.useFakeTimers();
+	const f = fixture(),
+		key = f.create();
+	const bounded = f.auth.login(key.key, origin);
+	const persistent = f.auth.login(key.key, origin, undefined, true);
+	expect(persistent.expires).toBeNull();
+	vi.setSystemTime(Date.now() + 100 * 365 * 24 * 3600000);
+	f.auth.store.update(() => {});
+	expect(f.auth.session(bounded.token, origin)).toBeUndefined();
+	expect(f.auth.session(persistent.token, origin)).toBeDefined();
+	expect(
+		f.auth.session(persistent.token, "https://other.test"),
+	).toBeUndefined();
+	f.auth.close();
+	const restarted = new FactoryAuth(f.home, { origins: [origin] });
+	services.push(restarted);
+	expect(restarted.session(persistent.token, origin)?.expires).toBeNull();
+	const replacement = restarted.rotate(persistent.token, origin, key.id);
+	expect(restarted.session(persistent.token, origin)).toBeUndefined();
+	const next = restarted.login(replacement.key, origin, undefined, true);
+	restarted.logout(next.token, origin);
+	expect(restarted.session(next.token, origin)).toBeUndefined();
+	const removed = restarted.login(replacement.key, origin, undefined, true);
+	restarted.remove(removed.token, origin, key.id);
+	expect(restarted.session(removed.token, origin)).toBeUndefined();
+});
+it("migrates version-2 keys and bounded sessions without revocation and rejects null expiry in version 2", () => {
+	const f = fixture(),
+		key = f.create(),
+		login = f.auth.login(key.key, origin);
+	f.auth.close();
+	const previous = { ...f.auth.store.state, version: 2 };
+	writeFileSync(f.auth.store.path, JSON.stringify(previous));
+	const restarted = new FactoryAuth(f.home, { origins: [origin] });
+	services.push(restarted);
+	expect(restarted.store.state).toEqual({ ...previous, version: 3 });
+	expect(restarted.session(login.token, origin)).toBeDefined();
+	expect(JSON.parse(readFileSync(restarted.store.path, "utf8")).version).toBe(
+		3,
+	);
+	restarted.close();
+	writeFileSync(
+		f.auth.store.path,
+		JSON.stringify({
+			...previous,
+			sessions: [{ ...previous.sessions[0], expires: null }],
+		}),
+	);
+	expect(() => new FactoryAuthStore(f.home, [origin])).toThrow("corrupt");
 });

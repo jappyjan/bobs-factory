@@ -1,0 +1,30 @@
+[
+	{
+		"browser": "chromium",
+		"viewport": "390x844",
+		"autocomplete": "current-password",
+		"emptyRequired": true,
+		"eventlessAutofillLogin": 200,
+		"reloadRetainsSession": true,
+		"expiredCookieSameKeyLogin": 200,
+		"noExpiryAfter100Years": true,
+		"noExpirySseReady": true,
+		"logoutRevokes": true,
+		"rawKeyInWebStorage": false,
+		"uncaughtErrors": []
+	},
+	{
+		"browser": "webkit",
+		"viewport": "390x844",
+		"autocomplete": "current-password",
+		"emptyRequired": true,
+		"eventlessAutofillLogin": 200,
+		"reloadRetainsSession": true,
+		"expiredCookieSameKeyLogin": 200,
+		"noExpiryAfter100Years": true,
+		"noExpirySseReady": true,
+		"logoutRevokes": true,
+		"rawKeyInWebStorage": false,
+		"uncaughtErrors": []
+	}
+]

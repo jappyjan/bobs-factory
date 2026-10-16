@@ -524,8 +524,10 @@ try {
 	);
 	const replacement = await tlsRequest("/api/auth/login", "POST", {
 		key: rotated.value.key,
+		staySignedIn: true,
 	});
 	assert.equal(replacement.status, 200);
+	assert.equal(replacement.value.expires, null);
 	await server.stop();
 	server = createServer();
 	await server.start(port);
@@ -610,7 +612,7 @@ try {
 	);
 	server = createServer();
 	await server.start(port);
-	assert.equal(server.auth.store.state.version, 2);
+	assert.equal(server.auth.store.state.version, 3);
 	assert.equal(server.auth.store.state.keys.length, 0);
 	assert.equal(
 		(
