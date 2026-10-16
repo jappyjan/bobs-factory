@@ -24,6 +24,33 @@ import {
 
 const W = 220,
 	H = 68;
+/** Matches `.recipe-workspace .react-flow__handle` (9px, centred on the edge). */
+const HANDLE = 9;
+const handle = (
+	type: "source" | "target",
+	position: Position,
+	x: number,
+	y: number,
+	id: string | null = null,
+) => ({ id, type, position, x, y, width: HANDLE, height: HANDLE });
+const stepHandles = (height: number) => [
+	handle("target", Position.Left, -HANDLE / 2, height / 2 - HANDLE / 2),
+	handle("source", Position.Right, W - HANDLE / 2, height / 2 - HANDLE / 2),
+	handle(
+		"target",
+		Position.Bottom,
+		W * 0.35 - HANDLE / 2,
+		height - HANDLE / 2,
+		"loop-in",
+	),
+	handle(
+		"source",
+		Position.Bottom,
+		W * 0.65 - HANDLE / 2,
+		height - HANDLE / 2,
+		"loop-out",
+	),
+];
 const heightOf = (step: Step) =>
 	step.type === "fanout" ? H + 8 + (step.groups?.length ?? 0) * 22 : H;
 
@@ -188,6 +215,9 @@ export function RecipeCanvas({
 			id: `lane-${lanes.length}`,
 			type: "lane",
 			position: { x: Math.min(...xs) - 24, y: top },
+			width: Math.max(...xs) - Math.min(...xs) + W + 48,
+			height: bottom - top,
+			handles: [],
 			draggable: false,
 			selectable: false,
 			focusable: false,
@@ -223,6 +253,12 @@ export function RecipeCanvas({
 			id: step.id,
 			type: "step",
 			position: at(step.id),
+			// Sizes and handles are fixed by the layout and CSS. Declaring them means
+			// xyflow never waits on re-measuring, which it may skip after edits and
+			// leave nodes hidden or unconnectable.
+			width: W,
+			height: heightOf(step),
+			handles: stepHandles(heightOf(step)),
 			ariaLabel: `${step.name}, ${kindOf(step).label}. Press Enter to inspect.`,
 			data: {
 				step,
@@ -239,6 +275,9 @@ export function RecipeCanvas({
 			id: "end",
 			type: "end",
 			position: at("end"),
+			width: 60,
+			height: 60,
+			handles: [handle("target", Position.Left, -HANDLE / 2, 30 - HANDLE / 2)],
 			data: { state: stateOf("end") },
 		},
 	];

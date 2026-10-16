@@ -199,9 +199,11 @@ export function RecipeBuilder({ id }: { id: string }) {
 		const end = last ? ownerOf(last.id) : recipe;
 		return !stepId && isLocal(end) ? end : undefined;
 	};
-	const edit = (owner: Recipe, fn: (r: Recipe) => Recipe) =>
+	const edit = (owner: Recipe, fn: (r: Recipe) => Recipe) => {
+		// A save problem is about the previous draft; editing is how it gets fixed.
+		setError("");
 		draft.edit(owner.id, fn, owner.id === recipe.id ? recipe : undefined);
-	// Fanout children are selected directly; the canvas highlights their parent.
+	};
 	// A parallel branch is selected as "parent/child"; IDs are only unique per list.
 	const [top, child] = selectedId?.includes("/")
 		? (selectedId.split("/") as [string, string])
