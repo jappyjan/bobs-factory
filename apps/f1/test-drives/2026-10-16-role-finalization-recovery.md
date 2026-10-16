@@ -43,13 +43,16 @@ delivery receipts. The passing run shut down cleanly and released its ports.
 
 Other validation:
 
-- 301 targeted tests passed across the affected EdgeWorker and Linear transport
+- 302 targeted tests passed across the affected EdgeWorker and Linear transport
   suites, including flat/nested stale-impact recovery and exact not-found versus
   inconclusive Linear lookup responses.
 - Architecture coverage retains the 64-deliverable and 40-files-per-deliverable
   bounds while accepting the complete 1,024-file reproduction. Recovery checks
   reject automatic reuse without explicit Retry or with stale/dirty revisions,
   invalid output or another role such as capture.
+- The decision-documentation integration check waits for the durable background
+  delivery receipt independently of workflow completion. CI exposed its former
+  synchronous-delivery assumption; the corrected check passes.
 - The original finalization regression failed for both native and Taskbot
   publication before the fix. Linear's actual HTTP-200 `INPUT_ERROR` not-found
   shape also failed to reconcile before the fix.

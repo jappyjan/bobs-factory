@@ -156,17 +156,19 @@ it("publishes the actual record-decisions hook as one durable Linear comment whi
 				"completed",
 			),
 		);
-		expect(provider.comments).toHaveLength(1);
 		const expected =
 			"**Which language default should we use?**\n\nUse one server-wide default language\n\nRationale: Readers share a consistent default";
-		const saved = new WorkflowRuntime(home, {}).get(run.id);
-		const receipt = saved.ticketSync!.receipts.find(
-			(entry) => entry.key === `comment:${expected}`,
-		)!;
+		await waitFor(() => {
+			const saved = new WorkflowRuntime(home, {}).get(run.id);
+			const receipt = saved.ticketSync!.receipts.find(
+				(entry) => entry.key === `comment:${expected}`,
+			);
+			expect(receipt?.delivered).toBe(true);
+		});
+		expect(provider.comments).toHaveLength(1);
 		expect(
 			provider.comments[0].body.replace(/\n\n<!-- factory:[^\n]+ -->$/, ""),
 		).toBe(expected);
-		expect(receipt.delivered).toBe(true);
 		await waitFor(() =>
 			expect(provider.activities.map((entry) => entry.content.type)).toEqual([
 				"thought",
