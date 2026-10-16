@@ -16,6 +16,15 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Integrate run sharing with the current launcher and dashboard access updates, preserving Share controls and complete capability-prompt checks ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
+
+- Preserve run Share controls and selectable question answers when integrating current main, including both styles and complete capability-prompt expectations ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
+
+- Correct Share layout QA to preserve Resume below the detail header, with a fresh passing narrow-screen check ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
+
+- Reconcile run sharing with current stopped-run Resume controls and bundled workflow guidance, preserving full prompt assertions after merging main ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
+
+- Synchronize the full routing-prompt test expectation with the run Share capability reference, fixing CI after the main-branch merge ([#122](https://github.com/jappyjan/bobs-factory/pull/122)).
 - Resume saved workflows independently of project or ticket provider while historical activity retries in the background; retain pending delivery receipts, execution requests and restart-safe retry identities. ([#141](https://github.com/jappyjan/bobs-factory/pull/141))
 
 - Reconnect phones with password-manager autofill, including autofill without typing events, and explain that session expiry leaves API keys valid. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
@@ -160,6 +169,8 @@ All notable changes to this project will be documented in this file.
 - Add receipt-checked native runtime removal and explicit update-policy handoff, isolate reusable `npx` trials with browser/headless launch and cleanup, and prepare Homebrew/AUR/private npm entry points only from verified immutable signed releases. Downloads retain publication availability gates. ([Taskbot bobs-factory #118](https://taskbot.apps.janjaap.de/p/bobs-factory/t/118), [#123](https://taskbot.apps.janjaap.de/p/bobs-factory/t/123), [#84](https://github.com/jappyjan/bobs-factory/pull/84))
 
 ### Added
+
+- Add Share buttons to dashboard runs, with copy confirmation and a manual link fallback that preserves existing access requirements. ([#122](https://github.com/jappyjan/bobs-factory/pull/122))
 
 - Factory questions support single and multiple predefined answers, optional defaults, and separate custom text in the web dashboard and terminal UI. Terminal choice forms show multiline questions and provide Page Up/Page Down scrolling for longer context ([#118](https://github.com/jappyjan/bobs-factory/pull/118)).
 - Configure and update the push service contact in Settings → Notifications while preserving keys and device consent.

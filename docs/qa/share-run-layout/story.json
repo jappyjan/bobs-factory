@@ -1,0 +1,43 @@
+{
+	"id": "share-detail-and-url",
+	"goal": "Copy a precise link and reopen the intended run.",
+	"requirementRefs": ["requirements/0", "requirements/1", "requirements/2"],
+	"interface": "ui",
+	"preconditions": [
+		"HTTP localhost and authenticated HTTPS fixture origins are available."
+	],
+	"fixtures": [
+		"Running, waiting, failed, stopped, completed and capacity-waiting runs.",
+		"Stopped run eligible for Resume.",
+		"Synthetic in-memory ID encoded %é for defensive encoding coverage.",
+		"Dashboard URL containing an unrelated query string."
+	],
+	"actions": [
+		"Share two distinct runs from Today while the page has an unrelated query string, including the synthetic ID.",
+		"Repeat sharing on authenticated https://localhost:3598.",
+		"Open copied routes for every supported fixture status and share from each loaded detail header.",
+		"Share from the stopped detail header; verify the existing Resume action in full Focus content remains enabled and is not activated or relocated.",
+		"Capture the capacity-waiting detail header at 390×844 in light theme."
+	],
+	"criteria": [
+		{
+			"id": "share-url-exact",
+			"expected": "Every clipboard argument equals the current origin followed by /#/runs/ and encodeURIComponent(runId). Scheme and port are preserved; unrelated queries, authentication information and the previous route are absent."
+		},
+		{
+			"id": "share-detail-status",
+			"expected": "Each supported fixture status loads the intended run and exposes Share in its detail header. Full Focus content does not duplicate Share. Sharing the stopped run leaves its stopped state and Resume action unchanged."
+		},
+		{
+			"id": "share-detail-layout",
+			"expected": "The narrow queued header shows Share and the capacity message without overlap, clipping or horizontal overflow. On the stopped detail page, header Share and the existing Resume action in full Focus content remain usable. Sharing does not activate, disable or relocate Resume."
+		}
+	],
+	"evidenceInstructions": "Record expected and observed URLs, loaded run identities, Share counts and stopped-run state before/after copying. Measure crowded header bounds. The synthetic ID tests encoding rather than supported run creation. Existing FactoryWebClient review-deep-link coverage supports route refresh; actual copied-run navigation requires browser assertions. Record HTTPS seeded-session evidence accurately.",
+	"screenshotTasks": [
+		{
+			"area": "Run detail header",
+			"state": "Narrow light capacity-waiting run header with Share and capacity message"
+		}
+	]
+}

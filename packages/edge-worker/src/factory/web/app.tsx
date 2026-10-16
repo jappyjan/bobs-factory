@@ -75,6 +75,7 @@ import {
 	writeTextStored,
 } from "./review-state";
 import { Settings } from "./settings";
+import { ShareRun } from "./share-run";
 import {
 	applyTheme,
 	readThemeChoice,
@@ -337,23 +338,26 @@ function Settled({ runs, all }: { runs: any[]; all: any[] }) {
 								<strong>{name}</strong>
 								<div>
 									{items.map((run, i) => (
-										<Link
-											className={`pebble pebble-${i % 3}`}
-											to={`/runs/${run.id}`}
-											key={run.id}
-										>
-											<span aria-hidden="true">
-												{settleReason(run, all)?.split(" ")[0]}
-											</span>
-											<span className="pebble-tooltip">
-												<strong>{run.title}</strong>
-												{settleReason(run, all)} ·{" "}
-												{ago(run.updatedAt ?? run.createdAt)}
-											</span>
-											<span className="sr-only">
-												{run.title} — {settleReason(run, all)}
-											</span>
-										</Link>
+										<div className="shared-pebble" key={run.id}>
+											<Link
+												className={`pebble pebble-${i % 3}`}
+												to={`/runs/${run.id}`}
+												key={run.id}
+											>
+												<span aria-hidden="true">
+													{settleReason(run, all)?.split(" ")[0]}
+												</span>
+												<span className="pebble-tooltip">
+													<strong>{run.title}</strong>
+													{settleReason(run, all)} ·{" "}
+													{ago(run.updatedAt ?? run.createdAt)}
+												</span>
+												<span className="sr-only">
+													{run.title} — {settleReason(run, all)}
+												</span>
+											</Link>
+											<ShareRun runId={run.id} title={run.title} />
+										</div>
 									))}
 								</div>
 							</div>
@@ -369,6 +373,7 @@ function Settled({ runs, all }: { runs: any[]; all: any[] }) {
 								{settleReason(run, all)} · {ago(run.updatedAt ?? run.createdAt)}
 								<span> · {originLabel(run)}</span>
 							</small>
+							<ShareRun runId={run.id} title={run.title} />
 							<Button
 								variant="ghost"
 								busy={settle.busy}
@@ -893,6 +898,7 @@ function RunPage({
 					<RunTitleStatus run={run} />
 				</div>
 				<div className="actions">
+					<ShareRun runId={run.id} title={run.title} />
 					{run.status === "capacity-waiting" && (
 						<p role="status">Waiting for instance capacity</p>
 					)}
