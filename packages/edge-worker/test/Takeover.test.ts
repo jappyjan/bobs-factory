@@ -115,6 +115,15 @@ function context(tool: string): ExecutionContext {
 it("takes over the same PR, converts it to draft and never creates a replacement PR", async () => {
 	const ctx = context("inspect-existing");
 	ctx.run.outputs.source = pr;
+	ctx.run.repositories = [
+		{
+			id: "repo",
+			name: "Fixture",
+			repositoryPath: "/tmp",
+			workspace: "/tmp",
+			baseBranch: pr.headRefName,
+		},
+	];
 	const commands: string[][] = [];
 	const tools = new FactoryTools({
 		postComment: async () => {},
@@ -142,6 +151,8 @@ it("takes over the same PR, converts it to draft and never creates a replacement
 		},
 	});
 	await tools.tool(ctx);
+	expect(ctx.run.repositories[0]!.baseBranch).toBe(pr.baseRefName);
+	expect(ctx.run.outputs.repository).toEqual({ baseBranch: pr.baseRefName });
 	expect(
 		commands
 			.filter(([exe]) => exe === GITHUB_API_COMMAND)

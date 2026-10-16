@@ -8681,7 +8681,7 @@ ${taskSection}`;
 		purpose: "documentation" | "operational" = "documentation",
 	): Promise<void> {
 		if (run.ticketReference) {
-			await this.getTicketTracking().record(run, {
+			await this.getFactoryRuntime().track(run, {
 				key: `comment:${body}`,
 				purpose,
 				body,
@@ -9566,7 +9566,7 @@ ${taskSection}`;
 		) {
 			const key = `role-outcome:${context.stepKey ?? step.id}:${createHash("sha256").update(presented.markdown).digest("hex")}`;
 			if (run.ticketReference)
-				await this.getTicketTracking().record(run, {
+				await this.getFactoryRuntime().track(run, {
 					key,
 					purpose: "operational",
 					body: presented.markdown,

@@ -240,15 +240,27 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 						const raw = error as {
 							status?: number;
 							raw?: {
-								response?: { errors?: { extensions?: { code?: string } }[] };
+								response?: {
+									errors?: {
+										message?: string;
+										path?: string[];
+										extensions?: { code?: string };
+									}[];
+								};
 							};
 						};
 						if (
 							raw.status === 404 ||
-							raw.raw?.response?.errors?.some((e) =>
-								["ENTITY_NOT_FOUND", "NOT_FOUND"].includes(
-									e.extensions?.code ?? "",
-								),
+							raw.raw?.response?.errors?.some(
+								(e) =>
+									["ENTITY_NOT_FOUND", "NOT_FOUND"].includes(
+										e.extensions?.code ?? "",
+									) ||
+									// Linear also reports a missing activity as HTTP 200 INPUT_ERROR.
+									// Other input/permission/lookup failures remain inconclusive.
+									(e.extensions?.code === "INPUT_ERROR" &&
+										e.message === "Entity not found: AgentActivity" &&
+										e.path?.[0] === "agentActivity"),
 							)
 						)
 							return false;
