@@ -69,3 +69,16 @@ Server time travel does not remove browser cookie lifetime limits or eviction.
 ## Phone layout
 
 ![WebKit sign-in with no-expiry option](assets/phone-session-no-expiry/webkit-sign-in-mobile.png)
+
+## Active nightly fixture follow-up
+
+Before release, updated the maintained `localhost-noauth.ts` fixture used directly
+by `release-channel.yml`: expect auth-store version 3, sign in with
+`staySignedIn: true`, assert `expires: null`, then retain the existing real-server
+restart and revocation checks. Earlier test-drive observations above are unchanged.
+
+`F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/localhost-noauth.ts` passed
+against the PR working tree based on `b7f3ff1c`. The fixture exercised scripted
+EdgeWorker worktrees and actual HTTP/TLS authentication, restart, key rotation/removal
+and legacy migration. All listeners stopped normally.
+[Exact source hashes and results](assets/phone-session-no-expiry/release-fixture-receipt.json).
