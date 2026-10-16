@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Allow runtime updates to change bundled workflows without falsely reporting lost state; protect saved recipe preferences and availability, and reject incompatible preservation contracts before replacing the worker.
+- Allow runtime updates to change bundled workflows without falsely reporting lost state; protect saved recipe preferences and availability, and reject incompatible preservation contracts before replacing the worker. ([#144](https://github.com/jappyjan/bobs-factory/pull/144))
 
 - Resume saved workflows independently of project or ticket provider while historical activity retries in the background; retain pending delivery receipts, execution requests and restart-safe retry identities. ([#141](https://github.com/jappyjan/bobs-factory/pull/141))
 
