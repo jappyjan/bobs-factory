@@ -24,6 +24,14 @@ Assertions passed:
 - The historical delivery receipt remains pending rather than being discarded.
 - A later delivery rejection is recorded and does not fail completed work.
 
-The relevant existing TicketTracking and EdgeWorker MCP tests also pass (51
-tests). This controlled drive does not establish live tracker delivery or native
-agent behavior; production recovery is verified separately on the local instance.
+The standard Vitest suite `EdgeWorker.ticket-recovery.test.ts` additionally uses
+the real TicketTracking service with both native and Taskbot references in
+isolated projects. Both cases fail with the original blocking preparation and
+pass with the fix. They verify shutdown while publication is pending, durable
+failure receipts, and successful retry with the same delivery ID after another
+restart, without replaying completed work. These tests run with the normal
+package test command.
+
+The recovery, existing TicketTracking and EdgeWorker MCP suites pass (53 tests).
+This controlled drive does not establish live tracker delivery or native agent
+behavior; production recovery is verified separately on the local instance.
