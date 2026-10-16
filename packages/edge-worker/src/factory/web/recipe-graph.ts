@@ -1,0 +1,661 @@
+import { layout as dagreLayout, graphlib } from "@dagrejs/dagre";
+import type { WorkflowStep } from "../Workflow.js";
+
+export type Step = WorkflowStep;
+export type Recipe = {
+	id: string;
+	name: string;
+	icon?: string;
+	description: string;
+	labels: string[];
+	steps: Step[];
+	internal?: boolean;
+	chat?: boolean;
+	allowedTriggers: string[];
+	launchFields?: {
+		name: string;
+		label: string;
+		type?: string;
+		required?: boolean;
+	}[];
+	ownership?: "bundled" | "local";
+	enabled?: boolean;
+	provenance?: { kind: string; source: string; version?: string };
+	unavailable?: string[];
+};
+
+/** Fields a recipe owns; catalog metadata (enabled, provenance…) is not edited here. */
+const editableKeys = [
+	"id",
+	"name",
+	"icon",
+	"description",
+	"labels",
+	"steps",
+	"internal",
+	"chat",
+	"allowedTriggers",
+	"launchFields",
+] as const;
+export function editableOf(recipe: Recipe): Partial<Recipe> {
+	return Object.fromEntries(
+		editableKeys
+			.filter((key) => recipe[key] !== undefined)
+			.map((key) => [key, structuredClone(recipe[key])]),
+	);
+}
+
+export const triggers = [
+	{ id: "manual", icon: "✋", label: "Start manually", short: "Manual" },
+	{
+		id: "ticket-assignment",
+		icon: "🎫",
+		label: "Start from a Linear ticket",
+		short: "Ticket",
+	},
+	{
+		id: "workflow",
+		icon: "🧩",
+		label: "Called by another recipe",
+		short: "Callable",
+	},
+];
+
+const conditionText: Record<string, string> = {
+	"approved=false": "Changes requested",
+	"approved=true": "Approved",
+	"fix=true": "Needs a fix",
+	'decision="reject"': "Rejected",
+	'decision="revise"': "Revision requested",
+	"rework=true": "Rework needed",
+	"reviewRequired=false": "No re-review needed",
+	"impactRequired=true": "Impact changed",
+	"retainQa=true": "QA still valid",
+	"correctionRequired=true": "Correction needed",
+	"readinessOnly=true": "Only readiness changed",
+	"extractRequirements=true": "Requirements changed",
+	"externalPending=true": "External work pending",
+	'mode="external"': "External delivery",
+	'mode="mixed"': "Mixed delivery",
+	"deferred=true": "Deferred",
+	"repositoryComplete=true": "Repository done",
+	"drift=true": "External state drifted",
+};
+export function describeCondition(when: { path: string; equals?: unknown }) {
+	if (!when.path) return "New condition";
+	return (
+		conditionText[`${when.path}=${JSON.stringify(when.equals)}`] ??
+		`${when.path} is ${JSON.stringify(when.equals) ?? "unset"}`
+	);
+}
+
+export type Kind = { icon: string; label: string; tone: string; hint: string };
+export const kinds: Record<
+	"agent" | "tool" | "script" | "fanout" | "workflow" | "human",
+	Kind
+> = {
+	agent: {
+		icon: "✦",
+		label: "Agent",
+		tone: "violet",
+		hint: "An AI agent does the work with a prompt",
+	},
+	tool: {
+		icon: "⚙",
+		label: "Built-in",
+		tone: "blue",
+		hint: "Bob runs a built-in action",
+	},
+	script: {
+		icon: "›_",
+		label: "Script",
+		tone: "green",
+		hint: "Runs a shell script in the worktree",
+	},
+	fanout: {
+		icon: "⫘",
+		label: "In parallel",
+		tone: "orange",
+		hint: "Runs several branches at the same time",
+	},
+	workflow: {
+		icon: "🧩",
+		label: "Recipe",
+		tone: "yellow",
+		hint: "Runs another recipe, then continues",
+	},
+	human: {
+		icon: "🙋",
+		label: "You",
+		tone: "red",
+		hint: "Waits for a human decision",
+	},
+};
+export const humanTools = [
+	"human-review",
+	"architecture-decision",
+	"external-human-review",
+];
+export function kindOf(step: Step): Kind {
+	if (step.type === "tool" && humanTools.includes(step.tool ?? ""))
+		return kinds.human;
+	return kinds[step.type];
+}
+
+export const toolText: Record<string, string> = {
+	"record-decisions":
+		"Saves the clarified decisions so later steps can rely on them.",
+	"inspect-existing": "Reads the existing branch, PR and discussion.",
+	"draft-pr": "Pushes the branch and opens a draft pull request.",
+	"review-gate":
+		"Collects reviewer findings, drops nitpicks and decides whether fixes are needed.",
+	ci: "Watches CI, mergeability and PR comments until the PR is ready.",
+	"review-after-fix":
+		"Decides whether a fix changed enough to need another review.",
+	"visual-gate": "Checks QA results and screenshots before hand-off.",
+	"impact-checks": "Runs the checks the impact assessment selected.",
+	handoff: "Verifies the reviewed revision and hands it over.",
+	"human-review": "Waits for you to approve or request changes.",
+	merge: "Merges the approved revision.",
+	"architecture-decision":
+		"Waits for you to accept the architecture when it matters.",
+	"delivery-route":
+		"Checks the accepted delivery contract and picks the route.",
+	"delivery-mode": "Routes based on repository, external or mixed delivery.",
+	"external-apply": "Applies authorized changes to external tickets.",
+	"external-verify":
+		"Independently re-reads ticket state to verify the changes.",
+	"external-guide": "Prepares the review of external work.",
+	"external-human-review": "Waits for you to accept the external work.",
+	"external-final": "Confirms accepted external state before finishing.",
+};
+export function stepSummary(step: Step, recipes: Recipe[]): string {
+	if (step.type === "tool")
+		return toolText[step.tool ?? ""] ?? `Built-in action “${step.tool}”.`;
+	if (step.type === "workflow")
+		return `Runs “${recipes.find((r) => r.id === step.workflow)?.name ?? step.workflow}”, then continues.`;
+	if (step.type === "fanout")
+		return `${step.groups?.length ?? 0} branches run at the same time.`;
+	if (step.type === "script") return step.script ?? "";
+	return (step.prompt ?? "").split(/(?<=\.)\s/)[0] ?? "";
+}
+export function agentSummary(step: Step, defaultRunner: string) {
+	if (step.type !== "agent") return undefined;
+	const runner = step.runner ?? defaultRunner;
+	return [
+		runner[0]!.toUpperCase() + runner.slice(1),
+		step.model,
+		step.reasoningEffort,
+	]
+		.filter(Boolean)
+		.join(" · ");
+}
+
+/* ----------------------------------------------------------------- routing */
+
+export type Route = {
+	from: string;
+	to: string;
+	kind: "flow" | "branch";
+	label?: string;
+	/** Points back to a step that already ran, i.e. a loop. */
+	back: boolean;
+	index?: number;
+};
+/** The runtime's next step: first matching branch, then next, then array order. */
+export function fallbackOf(steps: Step[], step: Step): string {
+	return step.next ?? steps[steps.indexOf(step) + 1]?.id ?? "end";
+}
+/** The path a run takes when no branch condition matches. */
+export function mainPath(steps: Step[]): string[] {
+	const seen: string[] = [];
+	let current = steps[0]?.id;
+	while (current && current !== "end" && !seen.includes(current)) {
+		const step = steps.find((s) => s.id === current);
+		if (!step) break;
+		seen.push(current);
+		current = fallbackOf(steps, step);
+	}
+	return seen;
+}
+/** Main path first, then steps in the order they are reachable from it. */
+export function runOrder(steps: Step[]): string[] {
+	const order = mainPath(steps);
+	for (let i = 0; i < order.length; i++) {
+		const step = steps.find((s) => s.id === order[i]);
+		if (!step) continue;
+		for (const to of [
+			...step.branches.map((b) => b.next),
+			fallbackOf(steps, step),
+		])
+			if (to !== "end" && !order.includes(to) && steps.some((s) => s.id === to))
+				order.push(to);
+	}
+	for (const s of steps) if (!order.includes(s.id)) order.push(s.id);
+	return order;
+}
+export function routesOf(steps: Step[]): Route[] {
+	const position = new Map(runOrder(steps).map((id, i) => [id, i]));
+	const back = (from: string, to: string) =>
+		to !== "end" && (position.get(to) ?? 0) <= (position.get(from) ?? 0);
+	return steps.flatMap((step) => {
+		const fallback = fallbackOf(steps, step);
+		return [
+			...step.branches.map((b, index) => ({
+				from: step.id,
+				to: b.next,
+				kind: "branch" as const,
+				label: describeCondition(b.when),
+				back: back(step.id, b.next),
+				index,
+			})),
+			{
+				from: step.id,
+				to: fallback,
+				kind: "flow" as const,
+				label: step.branches.length ? "Otherwise" : undefined,
+				back: back(step.id, fallback),
+			},
+		];
+	});
+}
+export function stepName(steps: Step[], id: string) {
+	return id === "end" ? "Finish" : (steps.find((s) => s.id === id)?.name ?? id);
+}
+export function findStep(steps: Step[], id: string): Step | undefined {
+	for (const step of steps) {
+		if (step.id === id) return step;
+		for (const group of step.groups ?? []) {
+			const found = findStep(group, id);
+			if (found) return found;
+		}
+	}
+	return undefined;
+}
+export function agentSteps(steps: Step[]): Step[] {
+	return steps.flatMap((s) =>
+		s.type === "agent" ? [s] : (s.groups ?? []).flatMap(agentSteps),
+	);
+}
+
+/* ------------------------------------------------- called recipes, inline */
+
+export type RecipeGraph = {
+	/** Steps as one run sees them, called recipes expanded in place. */
+	steps: Step[];
+	/** Recipe that owns (and saves) each displayed step. */
+	owners: Record<string, string>;
+	/** Recipes shown inline, in call order. */
+	included: string[];
+};
+/**
+ * Expands simple calls (no branches, unique step IDs) into the caller so the
+ * whole run is visible. Routes keep their meaning: a called recipe finishing
+ * continues where the call would have continued.
+ */
+export function recipeGraph(
+	recipe: Recipe,
+	recipes: Recipe[],
+	seen: string[] = [recipe.id],
+): RecipeGraph {
+	const owners: Record<string, string> = {};
+	const included: string[] = [];
+	const redirects = new Map<string, string>();
+	const steps: Step[] = [];
+	const used = new Set(recipe.steps.map((s) => s.id));
+	recipe.steps.forEach((step, i) => {
+		const called =
+			step.type === "workflow" &&
+			!step.branches.length &&
+			!seen.includes(step.workflow ?? "")
+				? recipes.find((r) => r.id === step.workflow)
+				: undefined;
+		const inner = called?.steps.length
+			? recipeGraph(called, recipes, [...seen, called.id])
+			: undefined;
+		if (!called || !inner || inner.steps.some((s) => used.has(s.id))) {
+			steps.push(step);
+			owners[step.id] = recipe.id;
+			return;
+		}
+		const continuation = step.next ?? recipe.steps[i + 1]?.id ?? "end";
+		const explicit = step.next !== undefined;
+		const clones = inner.steps.map((s, j) => {
+			const clone = structuredClone(s);
+			if (clone.next === "end") clone.next = continuation;
+			for (const b of clone.branches)
+				if (b.next === "end") b.next = continuation;
+			if (explicit && j === inner.steps.length - 1 && clone.next === undefined)
+				clone.next = continuation;
+			return clone;
+		});
+		for (const s of clones) used.add(s.id);
+		redirects.set(step.id, clones[0]!.id);
+		steps.push(...clones);
+		Object.assign(owners, inner.owners);
+		included.push(called.id, ...inner.included);
+	});
+	const redirect = (id: string) => {
+		let target = id;
+		for (let i = 0; redirects.has(target) && i < 50; i++)
+			target = redirects.get(target)!;
+		return target;
+	};
+	for (const s of steps) {
+		if (s.next) s.next = redirect(s.next);
+		for (const b of s.branches) b.next = redirect(b.next);
+	}
+	return { steps, owners, included };
+}
+
+/* ------------------------------------------------------------------ phases */
+
+export type Phase = { id: string; label: string; color: string };
+export const phases: Phase[] = [
+	{ id: "understand", label: "Understand", color: "#4cc9f0" },
+	{ id: "plan", label: "Plan", color: "#7b61ff" },
+	{ id: "architecture", label: "Architecture", color: "#c77dff" },
+	{ id: "build", label: "Build", color: "#3ddc97" },
+	{ id: "review", label: "Review", color: "#ff9f43" },
+	{ id: "ready", label: "Merge readiness", color: "#ffd23f" },
+	{ id: "qa", label: "QA", color: "#4cc9f0" },
+	{ id: "handoff", label: "Hand-off", color: "#ff5d73" },
+	{ id: "fix", label: "Fix loops", color: "#a79fc6" },
+	{ id: "external", label: "External delivery", color: "#5ec4b6" },
+	{ id: "steps", label: "Steps", color: "#7b61ff" },
+];
+const knownPhases: Record<string, string> = {
+	clarify: "understand",
+	decisions: "understand",
+	"existing-work": "understand",
+	"assess-existing": "understand",
+	plan: "plan",
+	"plan-review": "plan",
+	"delivery-route": "plan",
+	"delivery-deferred": "plan",
+	architecture: "architecture",
+	"architecture-review": "architecture",
+	"architecture-decision": "architecture",
+	implement: "build",
+	"draft-pr": "build",
+	"assess-impact": "review",
+	"extract-requirements": "review",
+	"impact-checks": "review",
+	"specialist-review": "review",
+	"review-gate": "review",
+	ci: "ready",
+	"visual-scope": "qa",
+	capture: "qa",
+	"visual-review": "qa",
+	"visual-gate": "qa",
+	guide: "handoff",
+	handoff: "handoff",
+	"human-review": "handoff",
+	merge: "handoff",
+	"code-fix": "fix",
+	"ci-fix": "fix",
+	"after-ci-fix": "fix",
+	"visual-fix": "fix",
+	"human-fix": "fix",
+	"delivery-feedback-route": "fix",
+};
+/** Stock steps have known phases; other steps join the phase run before them. */
+export function phasesOf(steps: Step[]): Record<string, Phase> {
+	const result: Record<string, Phase> = {};
+	let previous = "steps";
+	for (const id of runOrder(steps)) {
+		const known =
+			knownPhases[id] ?? (id.startsWith("external-") ? "external" : undefined);
+		previous = known ?? previous;
+		result[id] = phases.find((p) => p.id === previous)!;
+	}
+	return result;
+}
+
+/* ------------------------------------------------------------------ layout */
+
+export function layoutSteps(
+	steps: Step[],
+	options: {
+		size: (step: Step) => { width: number; height: number };
+		end?: { width: number; height: number };
+		nodesep?: number;
+		ranksep?: number;
+	},
+): Record<string, { x: number; y: number }> {
+	const g = new graphlib.Graph();
+	g.setGraph({
+		rankdir: "LR",
+		nodesep: options.nodesep ?? 36,
+		ranksep: options.ranksep ?? 56,
+		edgesep: 20,
+	});
+	g.setDefaultEdgeLabel(() => ({}));
+	const main = new Set(mainPath(steps));
+	for (const s of steps) g.setNode(s.id, options.size(s));
+	g.setNode("end", options.end ?? { width: 60, height: 60 });
+	// Loops are drawn around the layout; ranking only follows forward routes.
+	for (const r of routesOf(steps))
+		if (!r.back)
+			g.setEdge(r.from, r.to, {
+				weight:
+					r.kind === "flow" &&
+					main.has(r.from) &&
+					(main.has(r.to) || r.to === "end")
+						? 8
+						: 1,
+			});
+	dagreLayout(g);
+	const positions: Record<string, { x: number; y: number }> = {};
+	for (const id of g.nodes()) {
+		const n = g.node(id) as {
+			x: number;
+			y: number;
+			width: number;
+			height: number;
+		};
+		positions[id] = { x: n.x - n.width / 2, y: n.y - n.height / 2 };
+	}
+	return positions;
+}
+
+/* ---------------------------------------------------------------- editing */
+
+function mapSteps(steps: Step[], id: string, fn: (step: Step) => Step): Step[] {
+	return steps.map((s) =>
+		s.id === id
+			? fn(s)
+			: s.groups
+				? { ...s, groups: s.groups.map((g) => mapSteps(g, id, fn)) }
+				: s,
+	);
+}
+/** Updates a top-level step, or a step inside `parent`'s parallel branches. */
+export function updateStep(
+	recipe: Recipe,
+	id: string,
+	patch: Partial<Step>,
+	parent?: string,
+): Recipe {
+	return {
+		...recipe,
+		steps: recipe.steps.map((s) =>
+			parent
+				? s.id === parent
+					? {
+							...s,
+							groups: s.groups?.map((g) =>
+								mapSteps(g, id, (c) => ({ ...c, ...patch })),
+							),
+						}
+					: s
+				: s.id === id
+					? { ...s, ...patch }
+					: s,
+		),
+	};
+}
+/** Inserts a step so the run goes `after → step → (after's previous next)`. */
+export function insertStepAfter(
+	recipe: Recipe,
+	after: string | undefined,
+	step: Step,
+): Recipe {
+	const steps = recipe.steps.map((s) => ({ ...s }));
+	const index = after
+		? steps.findIndex((s) => s.id === after)
+		: steps.length - 1;
+	const previous = steps[index];
+	const target = previous
+		? fallbackOf(recipe.steps, recipe.steps[index]!)
+		: "end";
+	const inserted = { ...step };
+	if (target !== (steps[index + 1]?.id ?? "end")) inserted.next = target;
+	if (previous?.next !== undefined) previous.next = inserted.id;
+	steps.splice(index + 1, 0, inserted);
+	return { ...recipe, steps };
+}
+/** Removes a step; routes into it continue where it would have continued. */
+export function removeStep(recipe: Recipe, id: string): Recipe {
+	const removed = recipe.steps.find((s) => s.id === id);
+	if (!removed) return recipe;
+	let continuation = fallbackOf(recipe.steps, removed);
+	if (continuation === id) continuation = "end";
+	const before = new Map(
+		recipe.steps.map((s) => [s.id, fallbackOf(recipe.steps, s)]),
+	);
+	const steps = recipe.steps.filter((s) => s.id !== id);
+	return {
+		...recipe,
+		steps: steps.map((s, i) => {
+			const next = { ...s, branches: s.branches.map((b) => ({ ...b })) };
+			for (const b of next.branches) if (b.next === id) b.next = continuation;
+			let target = before.get(s.id)!;
+			if (target === id) target = continuation;
+			const implicit = steps[i + 1]?.id ?? "end";
+			if (target === implicit) delete next.next;
+			else next.next = target;
+			return next;
+		}),
+	};
+}
+export function connect(recipe: Recipe, from: string, to: string): Recipe {
+	const step = recipe.steps.find((s) => s.id === from);
+	if (!step || from === to) return recipe;
+	return updateStep(recipe, from, {
+		branches: [
+			...step.branches,
+			{ when: { path: "", equals: true }, next: to },
+		],
+	});
+}
+export function uniqueStepId(taken: Iterable<string>, base: string) {
+	const used = new Set(taken);
+	let i = 1;
+	while (used.has(`${base}-${i}`)) i++;
+	return `${base}-${i}`;
+}
+export function newStep(
+	kind: "agent" | "tool" | "script" | "fanout" | "workflow" | "human",
+	id: string,
+	callable?: string,
+): Step {
+	const base = { id, branches: [], maxVisits: 8 };
+	switch (kind) {
+		case "agent":
+			return {
+				...base,
+				name: "New agent step",
+				type: "agent",
+				prompt: "Describe what this agent should do and what it returns.",
+			};
+		case "human":
+			return {
+				...base,
+				name: "Your review",
+				type: "tool",
+				tool: "human-review",
+			};
+		case "tool":
+			return {
+				...base,
+				name: "New built-in step",
+				type: "tool",
+				tool: "draft-pr",
+			};
+		case "script":
+			return {
+				...base,
+				name: "New script",
+				type: "script",
+				script: "pnpm test",
+			};
+		case "fanout":
+			return {
+				...base,
+				name: "Parallel review",
+				type: "fanout",
+				groups: [
+					[
+						{
+							id: `${id}-a`,
+							name: "Reviewer A",
+							type: "agent",
+							branches: [],
+							maxVisits: 8,
+							prompt: "Review the change and return findings.",
+						},
+					],
+				],
+			};
+		case "workflow":
+			return {
+				...base,
+				name: "Run another recipe",
+				type: "workflow",
+				workflow: callable ?? "",
+			};
+	}
+}
+/** Problems the editor can explain before the server rejects a save. */
+export function draftProblems(recipe: Recipe): string[] {
+	const problems: string[] = [];
+	// Step IDs are unique within each list; parallel branches have their own scope.
+	const walk = (steps: Step[]) => {
+		const ids = new Set<string>();
+		for (const s of steps) {
+			if (ids.has(s.id)) problems.push(`Two steps use the ID “${s.id}”.`);
+			ids.add(s.id);
+			if (!s.name.trim()) problems.push(`Step “${s.id}” needs a name.`);
+			for (const b of s.branches)
+				if (!b.when.path.trim())
+					problems.push(`“${s.name}” has a route without a condition.`);
+			for (const g of s.groups ?? []) walk(g);
+		}
+	};
+	walk(recipe.steps);
+	if (!recipe.name.trim()) problems.push("The recipe needs a name.");
+	if (recipe.id !== "simple" && !recipe.steps.length)
+		problems.push("A recipe needs at least one step.");
+	return problems;
+}
+
+/* --------------------------------------------------------------- simulate */
+
+export type Outcome = { label: string; to: string; branch: boolean };
+export function outcomesOf(steps: Step[], id: string): Outcome[] {
+	const step = steps.find((s) => s.id === id);
+	if (!step) return [];
+	return [
+		{
+			label: step.branches.length ? "All good" : "Done",
+			to: fallbackOf(steps, step),
+			branch: false,
+		},
+		...step.branches.map((b) => ({
+			label: describeCondition(b.when),
+			to: b.next,
+			branch: true,
+		})),
+	];
+}

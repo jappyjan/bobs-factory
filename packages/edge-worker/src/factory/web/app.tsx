@@ -47,7 +47,6 @@ import {
 	RunTitleStatus,
 	WorkingRow,
 } from "./focus";
-import { Recipes } from "./forms";
 import { Composer } from "./launcher";
 import { NotificationsProvider } from "./notifications-ui";
 import { SetupBoundary } from "./onboarding";
@@ -59,6 +58,7 @@ import {
 	useConnectionIndicator,
 } from "./pwa-ui";
 import { useReadingPosition } from "./reading-position";
+import { Recipes } from "./recipes";
 import {
 	completeRestoration,
 	forgetView,

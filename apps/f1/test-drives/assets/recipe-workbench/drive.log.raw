@@ -1,0 +1,81 @@
+2026-10-16T08:22:58.251Z [WARN ] [EdgeWorker] Bundled skills not found at /Users/jappy/.t3/worktrees/bobs-factory/t3-c5c48cab/packages/edge-worker/src/bobs-factory-skills-plugin/skills — cannot deploy defaults
+2026-10-16T08:22:58.256Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-recipe-workbench-JJOqFP/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-16T08:22:58.257Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-16T08:22:58.257Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-16T08:22:58.269Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-16T08:22:58.269Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-16T08:22:58.270Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-16T08:22:58.270Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-16T08:22:58.270Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-16T08:22:58.270Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-16T08:22:58.270Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-16T08:22:58.270Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-16T08:22:58.271Z [WARN ] [EdgeWorker] No repositories or workspaces configured — Slack sessions will not have access to MCP tools
+2026-10-16T08:22:58.273Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-16T08:22:58.275Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-16T08:22:58.291Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-16T08:22:58.291Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-16T08:22:58.291Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-16T08:22:58.306Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-16T08:22:58.306Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-16T08:22:58.306Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-16T08:22:58.306Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-16T08:22:58.311Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:3643
+2026-10-16T08:22:58.509Z [INFO ] [EdgeWorker] ➕ Adding repository: repository (local)
+2026-10-16T08:22:58.509Z [INFO ] [EdgeWorker] ✅ Repository added successfully: repository
+PASS gallery shows one card per catalog recipe
+PASS drawing a route needs a condition before the draft can be saved
+PASS UI-authored recipe saved with the inserted steps and drawn conditional route
+2026-10-16T08:23:17.057Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=local, overrideValue=undefined
+2026-10-16T08:23:17.058Z [INFO ] [GitService] createSingleRepoWorktree for repository (id=local): baseBranchOverride=undefined
+2026-10-16T08:23:17.276Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-recipe-workbench-JJOqFP/home/worktrees/MANUAL-bc8a9b56 from origin/main (tracking main)
+2026-10-16T08:23:17.317Z [INFO ] [AgentSessionManager] {session=manual-2, platform=manual} Creating chat session
+PASS EdgeWorker run followed the drawn branch and skipped the default step
+PASS simulator offers the authored outcomes and walks the drawn branch
+PASS bundled pipeline is read-only in the canvas and agent edits save as preferences
+PASS concurrent server change blocks Save and Discard reloads the stored recipe
+2026-10-16T08:23:33.021Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-16T08:23:33.022Z [INFO ] [SharedApplicationServer] Shared application server stopped
+{
+  "success": true,
+  "commit": "ffdf3458931a25501c93682db76bcffe41bca4dc",
+  "sourceSha256": {
+    "packages/edge-worker/src/factory/web/recipes.tsx": "67ccd5f7449a3b813849969606523123c77a69941a574b49c4aed1d3e9cbec20",
+    "packages/edge-worker/src/factory/web/recipe-builder.tsx": "e35c9d4fdc9758d8f699044dc9ed40db1baf7764409acfb5fef1c4c59d03f80b",
+    "packages/edge-worker/src/factory/web/recipe-canvas.tsx": "b4dfb5bcdc78d0ec04609c789706e173deb3dffbdfd930bcf691814a78468e0e",
+    "packages/edge-worker/src/factory/web/recipe-graph.ts": "cdb25ed54f5ecf22d478c69706a0191ce248fa47f14b494d0749863c28beb50e",
+    "packages/edge-worker/src/factory/web/styles.css": "a607be8b2b71f44df46f5abe70bf7dc12d788104b95df590760711e77190589d",
+    "apps/f1/test-drives/assets/recipe-workbench.ts": "f40c82cfc5912a5cc3fdcdb542346436627252d10c21736350a43d384259d6f1"
+  },
+  "checks": [
+    "gallery shows one card per catalog recipe",
+    "drawing a route needs a condition before the draft can be saved",
+    "UI-authored recipe saved with the inserted steps and drawn conditional route",
+    "EdgeWorker run followed the drawn branch and skipped the default step",
+    "simulator offers the authored outcomes and walks the drawn branch",
+    "bundled pipeline is read-only in the canvas and agent edits save as preferences",
+    "concurrent server change blocks Save and Discard reloads the stored recipe"
+  ],
+  "run": {
+    "status": "completed",
+    "steps": [
+      "script-1",
+      "script-3"
+    ],
+    "outputs": {
+      "repository": {
+        "name": "repository",
+        "baseBranch": "main"
+      },
+      "script-1": {
+        "approved": false
+      },
+      "script-3": {
+        "path": "branch"
+      }
+    }
+  },
+  "directory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-recipe-workbench-JJOqFP",
+  "limitations": "Mock agents and local script steps; headless Chromium via agent-browser at 1280×800. No provider calls or physical mobile device."
+}

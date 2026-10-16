@@ -1,0 +1,39 @@
+{
+	"success": true,
+	"commit": "ffdf3458931a25501c93682db76bcffe41bca4dc",
+	"sourceSha256": {
+		"packages/edge-worker/src/factory/web/recipes.tsx": "67ccd5f7449a3b813849969606523123c77a69941a574b49c4aed1d3e9cbec20",
+		"packages/edge-worker/src/factory/web/recipe-builder.tsx": "e35c9d4fdc9758d8f699044dc9ed40db1baf7764409acfb5fef1c4c59d03f80b",
+		"packages/edge-worker/src/factory/web/recipe-canvas.tsx": "b4dfb5bcdc78d0ec04609c789706e173deb3dffbdfd930bcf691814a78468e0e",
+		"packages/edge-worker/src/factory/web/recipe-graph.ts": "cdb25ed54f5ecf22d478c69706a0191ce248fa47f14b494d0749863c28beb50e",
+		"packages/edge-worker/src/factory/web/styles.css": "a607be8b2b71f44df46f5abe70bf7dc12d788104b95df590760711e77190589d",
+		"apps/f1/test-drives/assets/recipe-workbench.ts": "f40c82cfc5912a5cc3fdcdb542346436627252d10c21736350a43d384259d6f1"
+	},
+	"checks": [
+		"gallery shows one card per catalog recipe",
+		"drawing a route needs a condition before the draft can be saved",
+		"UI-authored recipe saved with the inserted steps and drawn conditional route",
+		"EdgeWorker run followed the drawn branch and skipped the default step",
+		"simulator offers the authored outcomes and walks the drawn branch",
+		"bundled pipeline is read-only in the canvas and agent edits save as preferences",
+		"concurrent server change blocks Save and Discard reloads the stored recipe"
+	],
+	"run": {
+		"status": "completed",
+		"steps": ["script-1", "script-3"],
+		"outputs": {
+			"repository": {
+				"name": "repository",
+				"baseBranch": "main"
+			},
+			"script-1": {
+				"approved": false
+			},
+			"script-3": {
+				"path": "branch"
+			}
+		}
+	},
+	"directory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-recipe-workbench-JJOqFP",
+	"limitations": "Mock agents and local script steps; headless Chromium via agent-browser at 1280×800. No provider calls or physical mobile device."
+}
