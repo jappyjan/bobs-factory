@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Resume saved workflows while historical ticket activity retries in the background, preserving pending delivery receipts and parked execution requests.
+
 - Reconnect phones with password-manager autofill, including autofill without typing events, and explain that session expiry leaves API keys valid. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
 
 - Accept standard SHA-256 QA environment probes without falsely blocking capture; preserve saved JSON-string digests and existing behavioral evidence provenance. ([#139](https://github.com/jappyjan/bobs-factory/pull/139))
