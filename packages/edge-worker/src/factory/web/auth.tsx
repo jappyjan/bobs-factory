@@ -199,12 +199,12 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 			/>
 		);
 	if (access.status === "authenticated") return <>{children}</>;
-	const submit = async () => {
+	const submit = async (submittedKey: string, staySignedIn: boolean) => {
 		setBusy(true);
 		setError(undefined);
 		try {
 			await rotateSession(async () => {
-				await authRequest("login", { key });
+				await authRequest("login", { key: submittedKey.trim(), staySignedIn });
 				await checkAccess();
 			});
 		} catch (error) {
@@ -240,22 +240,40 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 							<form
 								onSubmit={(event) => {
 									event.preventDefault();
-									void submit();
+									void submit(
+										String(
+											new FormData(event.currentTarget).get("apiKey") ?? "",
+										),
+										new FormData(event.currentTarget).has("staySignedIn"),
+									);
 								}}
 							>
-								<p>Enter your API key to start a browser session.</p>
+								<p>
+									By default, browser sessions expire. Your API key stays valid:
+									use the same key to sign in again, and save it in your
+									password manager for next time.
+								</p>
 								<label>
 									API key
 									<input
+										id="factory-api-key"
+										name="apiKey"
 										type="password"
-										autoComplete="off"
+										autoComplete="current-password"
+										autoCapitalize="none"
+										autoCorrect="off"
+										spellCheck={false}
 										maxLength={100}
 										value={key}
 										onChange={(e) => setKey(e.target.value.trim())}
 										required
 									/>
 								</label>
-								<Button type="submit" disabled={busy || updateRequired || !key}>
+								<label className="auth-remember">
+									<input type="checkbox" name="staySignedIn" />
+									Stay signed in (no session expiry)
+								</label>
+								<Button type="submit" disabled={busy || updateRequired}>
 									{busy ? "Signing in…" : "Sign in"}
 								</Button>
 							</form>
@@ -472,6 +490,12 @@ export function AccessSettings() {
 			{access.access !== "local" && (
 				<section className="settings-card" aria-labelledby="session-heading">
 					<h2 id="session-heading">This session</h2>
+					{access.expires === null && (
+						<p>
+							This session has no expiry. Sign out or revoke its key to end
+							access.
+						</p>
+					)}
 					<p>
 						Signing out discards unsent edits and review comments in every
 						Factory tab.

@@ -5,10 +5,11 @@ import {
 	mkdirSync,
 	readdirSync,
 	readFileSync,
+	realpathSync,
 	statSync,
 	writeFileSync,
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import { validateCandidate } from "./lib/release-candidate.mjs";
@@ -168,6 +169,30 @@ const licensePlugins: Bun.BunPlugin[] = [
 		},
 	},
 ];
+// Browser bundles are embedded resources rather than Bun module imports. Include
+// their measured package inputs in the same full-notice inventory.
+for (const entry of JSON.parse(
+	readFileSync(join(web, directory, "frontend-packages.json"), "utf8"),
+)) {
+	if (
+		typeof entry.directory !== "string" ||
+		entry.directory.startsWith("/") ||
+		entry.directory.split("/").includes("..")
+	)
+		throw new Error("Unsafe frontend package directory");
+	const packageDirectory = realpathSync(join(root, entry.directory));
+	if (relative(realpathSync(root), packageDirectory).startsWith("../"))
+		throw new Error("Frontend package escaped source checkout");
+	const bytes = readFileSync(join(packageDirectory, "package.json"));
+	const pkg = JSON.parse(bytes.toString());
+	if (
+		hash(bytes) !== entry.packageJsonSha256 ||
+		pkg.name !== entry.name ||
+		pkg.version !== entry.version
+	)
+		throw new Error("Frontend package inventory changed after web build");
+	runtimePackages.add(packageDirectory);
+}
 const executable = join(stage, "bobs-factory");
 const result = await Bun.build({
 	entrypoints: [join(root, "apps/cli/src/app.ts")],
@@ -206,6 +231,29 @@ writeFileSync(
 const supplemental = JSON.parse(
 	readFileSync(join(root, "docs/distribution/licenses/sources.json"), "utf8"),
 ) as Record<string, { source: string; sha256: string; packages: string[] }>;
+const reviewedNotices: {
+	package: string;
+	version: string;
+	source: string;
+	text: string;
+	sha256: string;
+}[] = [];
+const acceptedBaseline = JSON.parse(
+	readFileSync(join(root, "distribution/nightly-baseline.json"), "utf8"),
+);
+for (const reference of acceptedBaseline.dependencyReviews ?? []) {
+	if (reference.schemaVersion !== 2) continue;
+	if (
+		!/^distribution\/dependency-reviews\/[a-z0-9-]+\.json$/.test(reference.file)
+	)
+		throw new Error("Unsafe reviewed notice path");
+	const bytes = readFileSync(join(root, reference.file));
+	if (hash(bytes) !== reference.sha256)
+		throw new Error("Reviewed notice inventory changed");
+	reviewedNotices.push(
+		...(JSON.parse(bytes.toString()).supplementalNotices ?? []),
+	);
+}
 const notices: string[] = [];
 for (const directory of runtimePackages) {
 	const pkg = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
@@ -250,6 +298,12 @@ for (const directory of runtimePackages) {
 		if (hash(bytes) !== record.sha256)
 			throw new Error(`Supplemental notice integrity failure: ${file}`);
 		texts.push(`Source: ${record.source}\n${bytes.toString("utf8")}`);
+	}
+	for (const notice of reviewedNotices) {
+		if (notice.package !== pkg.name || notice.version !== pkg.version) continue;
+		if (hash(notice.text) !== notice.sha256)
+			throw new Error("Reviewed upstream notice integrity failure");
+		texts.push(`Source: ${notice.source}\n${notice.text}`);
 	}
 	if (!texts.length)
 		throw new Error(

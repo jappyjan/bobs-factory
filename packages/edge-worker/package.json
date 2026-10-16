@@ -57,6 +57,7 @@
 		"zod": "4.3.6"
 	},
 	"devDependencies": {
+		"@dagrejs/dagre": "^3.1.1",
 		"@microsoft/fetch-event-source": "^2.0.1",
 		"@radix-ui/react-dialog": "^1.1.23",
 		"@radix-ui/react-dropdown-menu": "^2.1.24",
@@ -70,6 +71,7 @@
 		"@types/web-push": "^3.6.4",
 		"@typescript/native-preview": "7.0.0-dev.20260707.2",
 		"@vitest/coverage-v8": "^4.1.11",
+		"@xyflow/react": "^12.12.0",
 		"axios": "^1.20.0",
 		"esbuild": "^0.28.2",
 		"react": "^19.3.0",

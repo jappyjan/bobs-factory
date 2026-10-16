@@ -12,6 +12,7 @@ import {
 } from "./binary-release.mjs";
 import { candidateIdentity, canonical } from "./release-candidate.mjs";
 import { validateSourceMaterials } from "./release-material.mjs";
+import { reviewedJavascriptDelta } from "./reviewed-javascript-sources.mjs";
 
 // A published derived bundle retains the original material inventory and bytes.
 // Recover those exact inputs, not the gzip/tar container whose temporary host
@@ -186,6 +187,11 @@ export function verifyDependencyBaseline(
 		}
 		return review;
 	};
+	const additions = reviews
+		.filter((r) => r.schemaVersion === 2)
+		.map((r) =>
+			reviewedJavascriptDelta(root, baselineCommit, candidateCommit, r),
+		);
 	const observations = [];
 	for (const file of before) {
 		const select = (commit) => {
@@ -211,7 +217,8 @@ export function verifyDependencyBaseline(
 		const review =
 			select(baselineCommit) === select(candidateCommit)
 				? undefined
-				: reviewedRemoval(file);
+				: (reviewedRemoval(file) ??
+					additions.find((r) => r.files.some((input) => input.file === file)));
 		requireValue(
 			select(baselineCommit) === select(candidateCommit) || review,
 			`Uncovered dependency/license change: ${file}; update accepted nightly baseline`,

@@ -97,6 +97,26 @@ capacity observations and `preservedStateSha256`; these are not unauthenticated
 health shortcuts. A reboot with retained maintenance does not automatically
 resume workflow/native execution before supervisor reconciliation.
 
+Receipts and candidate state preflight declare `preservationContract:
+"factory-preservation-v2"`. This contract hashes the saved workflow catalog bytes,
+including local recipes, execution preferences, launch settings and availability.
+Bundled workflow code may change with the exact verified candidate; accepted run
+definitions, outputs, checkpoints, answers, gates and native sessions still must
+match. Hashing the resolved bundled catalog would incorrectly roll back ordinary
+prompt fixes, while omitting saved availability and Simple preferences.
+
+Different receipt contracts are not interchangeable. The supervisor rejects a
+contract change during isolated preflight, before stopping the current worker.
+The first upgrade from a legacy worker therefore needs a deliberate stopped-worker
+upgrade through its installation owner: drain active work, retain a complete home
+backup, confirm worker/descendant exit, install the verified runtime and restart
+under the same owner/home. Older supervisors do not understand this preflight
+field and will conservatively roll back the incompatible health receipt. Do not
+disable health checks, edit saved runs or remove live locks to force the upgrade.
+After the owner-managed boundary, ordinary bundled workflow updates use matching
+v2 receipts. Retrying a failed workflow requires the fixed runtime to be running;
+staging a candidate or retrying against the older runtime cannot apply its fix.
+
 `recover("operation owner stopped")` requires explicit confirmation and rejects
 an operation lock whose recorded PID is still alive or cannot be inspected. It
 reconciles interrupted pre-switch maintenance or rolls back an interrupted

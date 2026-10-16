@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Recipes are now a visual workbench. A gallery shows each recipe as a map of its run; opening one shows every step on a canvas grouped into phases, with the main path, conditional routes and loops drawn out and called building blocks shown inline. Select a step to tune its agent, edit instructions and routes, add steps from a palette, draw a route by dragging between steps, and simulate a run outcome by outcome to see where reviews loop back. Edits are kept as a draft until you save, changes made elsewhere are detected instead of overwritten, and the JSON stays available for advanced fields ([#143](https://github.com/jappyjan/bobs-factory/pull/143)).
+
+- Choose “Stay signed in” for remote dashboard sessions with no Factory expiry; retain normal key revocation, preserve existing session deadlines, and back up authentication state during upgrade. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
+
 - Start a manual nightly during the six-hour cooldown with an explicit Actions checkbox; retain the choice across retries and preserve all other release gates. ([#137](https://github.com/jappyjan/bobs-factory/pull/137))
 
 - Review architecture proposals with current-state findings, concrete deliverables and file operations, ticket coverage, exclusions and acceptance checks. Runtime-computed planned footprints expose package/config scope, invalid paths and map contradictions before approval. ([#134](https://github.com/jappyjan/bobs-factory/pull/134))
@@ -17,6 +21,16 @@ All notable changes to this project will be documented in this file.
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
+- Publish nightlies after exact reviewed browser dependency additions, retaining their source archives and including embedded web package notices in binary distributions. ([#145](https://github.com/jappyjan/bobs-factory/pull/145))
+
+- Allow runtime updates to change bundled workflows without falsely reporting lost state; protect saved recipe preferences and availability, and reject incompatible preservation contracts before replacing the worker. ([#144](https://github.com/jappyjan/bobs-factory/pull/144))
+
+- Resume saved workflows independently of project or ticket provider while historical activity retries in the background; retain pending delivery receipts, execution requests and restart-safe retry identities. ([#141](https://github.com/jappyjan/bobs-factory/pull/141))
+
+- Reconnect phones with password-manager autofill, including autofill without typing events, and explain that session expiry leaves API keys valid. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
+
+- Accept standard SHA-256 QA environment probes without falsely blocking capture; preserve saved JSON-string digests and existing behavioral evidence provenance. ([#139](https://github.com/jappyjan/bobs-factory/pull/139))
 
 - Configure the host Git identity’s SSH agent in Settings → Identity profiles, test password-manager key availability and retry failed signing without restarting Factory; preserve explicit execution bindings and native signing policy. ([#136](https://github.com/jappyjan/bobs-factory/pull/136))
 

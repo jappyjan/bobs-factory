@@ -765,3 +765,43 @@ it("allows local IPv6 key creation and remote management, rejects anonymous mana
 			).statusCode,
 		).toBe(404);
 });
+
+it("issues opt-in no-expiry cookies, refreshes their browser lifetime and revokes them on logout", async () => {
+	const f = fixture();
+	const key = f.server.auth.create(
+		undefined,
+		"http://localhost",
+		"Phone",
+		true,
+	);
+	const response = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/login",
+		headers: f.writeHeaders,
+		payload: { key: key.key, staySignedIn: true },
+	});
+	expect(response.statusCode).toBe(200);
+	expect(response.json()).toEqual({ authenticated: true, expires: null });
+	const cookie = String(response.headers["set-cookie"]);
+	expect(cookie).toContain("Max-Age=34560000");
+	expect(cookie).toContain("Secure");
+	expect(cookie).toContain("HttpOnly");
+	const headers = { ...f.writeHeaders, cookie: cookie.split(";")[0] };
+	const status = await f.server.app.inject({
+		url: "/api/auth/status",
+		headers,
+	});
+	expect(status.json()).toMatchObject({ authenticated: true, expires: null });
+	expect(status.headers["set-cookie"]).toBe(cookie);
+	expect(
+		(await f.server.app.inject({ url: "/api/runs", headers })).statusCode,
+	).toBe(200);
+	await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/logout",
+		headers,
+	});
+	expect(
+		(await f.server.app.inject({ url: "/api/runs", headers })).statusCode,
+	).toBe(401);
+});
