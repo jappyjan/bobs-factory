@@ -10249,7 +10249,17 @@ ${taskSection}`;
 				: undefined,
 		});
 		await this.resolveFactoryTicket(run, signal);
-		await this.getTicketTracking().flush(run);
+		// Delivery has its own durable outbox. Replaying old ticket activity must
+		// not hold saved workflow recovery or its parked capacity requests.
+		void this.getTicketTracking()
+			.flush(run)
+			.catch((error) => {
+				this.getFactoryRuntime().log(
+					run,
+					"ticket-sync",
+					`Background ticket synchronization pending: ${String(error)}`,
+				);
+			});
 		this.saveFactorySession(run);
 		this.getFactoryRuntime().save(run);
 	}
