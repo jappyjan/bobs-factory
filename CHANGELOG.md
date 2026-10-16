@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Recipes are now a visual workbench. A gallery shows each recipe as a map of its run; opening one shows every step on a canvas grouped into phases, with the main path, conditional routes and loops drawn out and called building blocks shown inline. Select a step to tune its agent, edit instructions and routes, add steps from a palette, draw a route by dragging between steps, and simulate a run outcome by outcome to see where reviews loop back. Edits are kept as a draft until you save, changes made elsewhere are detected instead of overwritten, and the JSON stays available for advanced fields.
+- Recipes are now a visual workbench. A gallery shows each recipe as a map of its run; opening one shows every step on a canvas grouped into phases, with the main path, conditional routes and loops drawn out and called building blocks shown inline. Select a step to tune its agent, edit instructions and routes, add steps from a palette, draw a route by dragging between steps, and simulate a run outcome by outcome to see where reviews loop back. Edits are kept as a draft until you save, changes made elsewhere are detected instead of overwritten, and the JSON stays available for advanced fields ([#143](https://github.com/jappyjan/bobs-factory/pull/143)).
 
 - Choose “Stay signed in” for remote dashboard sessions with no Factory expiry; retain normal key revocation, preserve existing session deadlines, and back up authentication state during upgrade. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
 
