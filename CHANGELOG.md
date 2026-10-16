@@ -138,6 +138,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Raise the default workflow step limit from 8 to 40 cumulative passes so review, QA and CI corrections need fewer manual extensions; preserve explicit limits, frozen runs and previous stock recipe recognition. ([#142](https://github.com/jappyjan/bobs-factory/pull/142))
+
 - Select affected review and verification work through independent impact assessments, retain original evidence with explicit reuse records, and stop unchanged correction cycles for assistance. Safe minor corrections may carry prior explicit approval forward after required checks; frozen runs keep their accepted workflows ([#124](https://github.com/jappyjan/bobs-factory/pull/124); [Taskbot #132](https://taskbot.apps.janjaap.de/p/bobs-factory/t/132)).
 - Replace remote dashboard passkey sign-in with API keys managed in Settings (add, remove and rotate). Upgrading revokes existing passkeys and browser sessions; an operator must create the first key in localhost Settings before remote access is available again. Localhost continues to work without a key ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
 
