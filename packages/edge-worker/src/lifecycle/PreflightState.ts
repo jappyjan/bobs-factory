@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EdgeConfigSchema, factoryRuntimeIdentity } from "bobs-factory-core";
 import { WorkflowRuntime } from "../factory/WorkflowRuntime.js";
+import { preservationContract } from "../updates/UpdateDrain.js";
 /** Called only against an isolated copied home. Never resume or launch agents. */
 export function preflightFactoryState(home: string) {
 	const config = join(home, "config.json");
@@ -17,6 +18,7 @@ export function preflightFactoryState(home: string) {
 	});
 	return {
 		stateCompatible: true as const,
+		preservationContract,
 		runtime: factoryRuntimeIdentity,
 		runIds: [...runtime.runs.keys()].sort(),
 		workflows: runtime.listWorkflows().map((w) => w.id),
