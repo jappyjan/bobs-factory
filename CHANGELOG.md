@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Publish nightlies after exact reviewed browser dependency additions, retaining their source archives and including embedded web package notices in binary distributions.
+- Publish nightlies after exact reviewed browser dependency additions, retaining their source archives and including embedded web package notices in binary distributions. ([#145](https://github.com/jappyjan/bobs-factory/pull/145))
 
 - Allow runtime updates to change bundled workflows without falsely reporting lost state; protect saved recipe preferences and availability, and reject incompatible preservation contracts before replacing the worker. ([#144](https://github.com/jappyjan/bobs-factory/pull/144))
 
