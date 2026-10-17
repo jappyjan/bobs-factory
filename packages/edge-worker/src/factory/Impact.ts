@@ -21,6 +21,8 @@ import type {
 
 const text = z.string().trim().min(1);
 export const IMPACT_CONTRACT = "impact-v1" as const;
+export const STALE_IMPACT_MESSAGE =
+	"Impact decision is stale; assess changed scope, source, findings, environment or target before consuming it";
 export { EvidenceBoundarySchema } from "./ImpactContracts.js";
 
 import {
@@ -699,9 +701,7 @@ export async function assertImpactFresh(
 		qaDigest({ ...current, trigger: undefined, digest: undefined }) !==
 		qaDigest({ ...decision.snapshot, trigger: undefined, digest: undefined })
 	)
-		throw new Error(
-			"Impact decision is stale; assess changed scope, source, findings, environment or target before consuming it",
-		);
+		throw new Error(STALE_IMPACT_MESSAGE);
 	for (const record of decision.reuseRecords)
 		assertReuse(record, decision.snapshot, context.run);
 }

@@ -16,6 +16,7 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 | Change impact and evidence reuse | Accepted workflow role, Factory/Takeover scheduler, review/QA and delivery gates | [`impact-v1`](factory/impact-decisions.md); original receipts plus explicit reuse links; configurable repeat limit; separate approval continuation | New stock definitions opt in. Saved/custom recipes and accepted run snapshots retain conservative graphs; custom workflows opt in explicitly with configured inventory/fanout associations |
 | Persistence | worker state, factory runs / chats / evidence | `<home>/state`, `<home>/factory`; version 5 session manifests, immutable chunks and lazy run payloads | Preserve IDs, receipts, gates, accepted definitions and legacy document backups; commit referenced chunks before manifests; move/restore complete homes with their chunks |
 | Coordinator | MachineCapacity and execution scope | `<factoryHome>/machine-capacity`, one pool per instance | Stop old consumers and descendants before transfer; capacity-directory overrides block apply until explicitly reconciled |
+| Takeover repository base | FactoryTools inspection, retained repositories and planning context | Existing PR base stays distinct from the branch used to seed its worktree | Correct a self-targeting retained base only after the inspected PR head matches the working branch; preserve the PR, worktree and historical prompts. Operator recovery of an older run confirms the current provider base and records the correction |
 | Repo hooks | GitService setup / teardown | `bobs-factory-setup.sh`, `bobs-factory-teardown.sh` | Rename only explicitly approved repository files |
 | Owned MCP references | registrations, allowlists, prompts | `bobs-factory-tools`, `mcp__bobs-factory-tools__*` | Transform server-wide allow/deny entries, saved/frozen workflow tool steps (including fanout/nested definitions), server keys and owned HTTP routes; preserve prompts and transcripts |
 | Stock skills / plugin | deployer, runner configs, instructions | `bobs-factory-skills`, `bobs-factory-skills-plugin` | Preserve custom skills and prompts |
@@ -39,6 +40,15 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 External cyrus-hosted tool catalogs are absent from this repository. They cannot
 be updated here. This independent fork does not enroll with the upstream hosted
 control plane. Migration must flag hosted-only setup for explicit conversion.
+
+Architecture candidate plans accept up to 64 deliverables, each with at most
+40 declared file operations. Large plans retain their complete runtime footprint
+and normal exact-version review and acceptance. This widens schema capacity;
+saved proposal contents, digests and accepted workflow definitions stay intact.
+After explicit Retry, rejected architecture output is revalidated against the
+current contract only on its exact clean revision. A now-valid candidate keeps
+its native conversation and continues to independent review and human acceptance;
+stale, dirty or invalid candidates still require normal correction.
 
 Direct localhost dashboard/API access requires an actual loopback socket peer, an exact
 configured HTTP loopback authority and same-origin browser context. IPv4 `127.0.0.1`,

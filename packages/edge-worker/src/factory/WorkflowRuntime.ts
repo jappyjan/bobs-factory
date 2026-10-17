@@ -86,6 +86,7 @@ import {
 	impactDecisionDigest,
 	impactFanout,
 	recordConvergence,
+	STALE_IMPACT_MESSAGE,
 	validateImpact,
 } from "./Impact.js";
 import type { RoleProgress, RoleRevision } from "./Incremental.js";
@@ -1272,7 +1273,8 @@ export class WorkflowRuntime {
 			},
 		};
 	}
-	private async track(
+	/** Commit publication intent locally; provider delivery must not hold workflow progress. */
+	async track(
 		run: FactoryRun,
 		milestone: import("./TicketTracking.js").TicketMilestone,
 	): Promise<void> {
@@ -3599,8 +3601,25 @@ export class WorkflowRuntime {
 			steps: WorkflowStep[],
 			prefix: string,
 		) => {
-			const step = steps.find((item) => item.id === frame.current);
+			let step = steps.find((item) => item.id === frame.current);
 			if (!step) return;
+			const impactSource = step.impactSource;
+			if (run.error === STALE_IMPACT_MESSAGE && impactSource) {
+				const assessor = steps.find(
+					(item) =>
+						item.id === impactSource && item.impactContract === "impact-v1",
+				);
+				if (assessor) {
+					frame.current = assessor.id;
+					frame.active = undefined;
+					step = assessor;
+					this.log(
+						run,
+						"run",
+						`Retry renews stale impact through ${prefix}${assessor.id}; completed work and evidence remain retained and required gates must pass again.`,
+					);
+				}
+			}
 			const key = `${prefix}${step.id}`;
 			const agent =
 				frame.active?.phase === "executing" ? frame.active.agent : undefined;
