@@ -117,6 +117,7 @@ import {
 	latestAggregate,
 	type ReviewBaseline,
 	reviewedRunRevision,
+	reviewStageInstructions,
 	scopeContextDigest,
 	stampSpecialist,
 	validateContractOutput,
@@ -1566,10 +1567,10 @@ export class WorkflowRuntime {
 					...step,
 					prompt: `${step.prompt ?? ""}\n\n${ciFixRuntimeInstructions}`,
 				};
-			if (step.reviewContract && reviewBaseline?.impact)
+			if (step.reviewContract)
 				context.step = {
 					...context.step,
-					prompt: `${context.step.prompt}\n${calibratedReviewInstructions}`,
+					prompt: `${context.step.prompt}\n${reviewStageInstructions(step.reviewContract)}${reviewBaseline?.impact ? `\n${calibratedReviewInstructions}` : ""}`,
 				};
 			mkdirSync(context.evidenceDir, { recursive: true });
 			if (step.tool === "impact-checks" && state.phase === "executing") {
