@@ -13,6 +13,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
+import { FactoryServer } from "../../../../packages/edge-worker/dist/factory/FactoryServer.js";
+import { FactoryTools } from "../../../../packages/edge-worker/dist/factory/FactoryTools.js";
 import { LaunchAdmission } from "../../../../packages/edge-worker/dist/factory/LaunchAdmission.js";
 import { OperatorGrants } from "../../../../packages/edge-worker/dist/factory/OperatorGrants.js";
 import { WorkflowRuntime } from "../../../../packages/edge-worker/dist/factory/WorkflowRuntime.js";
@@ -535,6 +537,187 @@ else result={};process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result
 	receipts.push(
 		"actual production ticket preflight admitted before freeze drains through routing and state persistence before idle acknowledgment",
 	);
+	// Exercise the production polling tools and worker busy predicate. Only the
+	// provider transport and execution-profile preparation are controlled.
+	const pollingHooks = { ...runtime.hooks };
+	const pollingApi = new FactoryServer(runtime, {
+		updates: manager,
+		updateDrain: drain,
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+		start: async () => {
+			throw new Error("No fixture launch through API");
+		},
+		stop: (id) => runtime.stop(id),
+	});
+	const inspectPollDrain = async () => {
+		const response = await pollingApi.app.inject({
+			url: "/api/updates/drain",
+			headers: { host: "localhost:3457" },
+		});
+		assert.equal(response.statusCode, 200);
+		return response.json();
+	};
+	try {
+		runtime.hooks.execution = async () => undefined;
+		runtime.hooks.prepare = async () => {};
+		for (const tool of ["ci", "merge", "handoff"]) {
+			let entered = false,
+				pending = true,
+				submissions = 0,
+				finishProvider;
+			const providerHold = new Promise((resolve) => {
+				finishProvider = resolve;
+			});
+			const url = "https://github.com/fixture/repository/pull/1";
+			const tools = new FactoryTools({
+				postComment: async () => {
+					throw new Error("No external fixture comments");
+				},
+				command: async (_context, exe, args) => {
+					if (exe === "git") return args[0] === "rev-parse" ? "head" : "";
+					const request = JSON.parse(args[0]);
+					if (request.path.endsWith("/merge")) {
+						submissions++;
+						entered = true;
+						await providerHold;
+						return JSON.stringify({ merged: true });
+					}
+					if (/\/pulls\/1$/.test(request.path))
+						return JSON.stringify({
+							html_url: url,
+							number: 1,
+							title: "Fixture",
+							node_id: "PR_fixture",
+							state: "open",
+							draft: false,
+							head: {
+								ref: "feature",
+								sha: "head",
+								repo: { full_name: "fixture/repository" },
+							},
+							base: {
+								ref: "main",
+								sha: "base",
+								repo: { full_name: "fixture/repository" },
+							},
+						});
+					if (request.path !== "graphql") return "[]";
+					if (tool !== "merge") {
+						entered = true;
+						await providerHold;
+					}
+					return JSON.stringify({
+						data: {
+							repository: {
+								squashMergeAllowed: true,
+								mergeCommitAllowed: true,
+								rebaseMergeAllowed: true,
+								pullRequest: {
+									id: "PR_fixture",
+									url,
+									headRefOid: "head",
+									baseRefOid: "base",
+									state: tool === "merge" && !pending ? "MERGED" : "OPEN",
+									isDraft: false,
+									isCrossRepository: false,
+									isMergeQueueEnabled: false,
+									isInMergeQueue: false,
+									mergeable:
+										tool === "merge"
+											? "MERGEABLE"
+											: pending
+												? "UNKNOWN"
+												: "CONFLICTING",
+									mergeStateStatus: "CLEAN",
+									reviewDecision: "APPROVED",
+									reviewThreads: { nodes: [], pageInfo: {} },
+									comments: { nodes: [], pageInfo: {} },
+									reviews: { nodes: [], pageInfo: {} },
+									statusCheckRollup: {
+										contexts: {
+											nodes: [
+												{
+													name: "fixture",
+													status: "COMPLETED",
+													conclusion: "SUCCESS",
+												},
+											],
+											pageInfo: {},
+										},
+									},
+								},
+							},
+						},
+					});
+				},
+			});
+			runtime.hooks.tool = (context) => tools.tool(context);
+			const run = runtime.create({
+				id: `passive-${tool}`,
+				title: `Passive ${tool}`,
+				repositoryId: "fixture",
+				workspace: home,
+				input: "Controlled passive polling",
+				triggerOrigin: { type: "manual", workflowId: "fixture", at: "" },
+				workflow: {
+					id: "fixture",
+					name: "Fixture",
+					allowedTriggers: ["manual"],
+					steps: [
+						{
+							id: "poll",
+							name: "Poll",
+							type: "tool",
+							tool,
+							next: "end",
+							branches: [{ when: { path: "fix", equals: true }, next: "end" }],
+						},
+					],
+				},
+			});
+			run.outputs = { "draft-pr": { url }, ci: { headSha: "head" } };
+			run.humanDecisions = [
+				{ decision: "approve", headSha: "head", reviewId: "retained", at: "" },
+			];
+			const executing = runtime.launch(run);
+			try {
+				await until(() => entered);
+				transaction(`passive-${tool}`);
+				await drain.begin(`passive-${tool}`);
+				assert.equal((await inspectPollDrain()).idle, false);
+				assert.equal((await worker.runnerSlots.snapshot()).active, 0);
+				finishProvider();
+				await until(() => !runtime.hasExecutingWork());
+				await executing;
+				assert.equal((await inspectPollDrain()).idle, true);
+				assert.equal(run.status, "running");
+				assert.equal(run.error, undefined);
+				assert.equal(run.checkpoint.current, "poll");
+				assert.equal(run.humanDecisions[0].reviewId, "retained");
+				assert.equal(run.history.length, 0);
+				pending = false;
+				finish();
+				await drain.end(`passive-${tool}`);
+				await until(
+					() => run.status === "completed" && !runtime.hasExecutingWork(),
+				);
+				if (tool === "merge") {
+					assert.equal(submissions, 1);
+					assert.equal(run.outputs.poll.merged, true);
+				} else assert.equal(run.outputs.poll.fix, true);
+				receipts.push(
+					`passive ${tool} settles its current request, drains with zero agent slots, retains checkpoint/approval and resumes through fresh provider evidence`,
+				);
+			} finally {
+				finishProvider();
+			}
+		}
+	} finally {
+		await pollingApi.stop();
+		Object.assign(runtime.hooks, pollingHooks);
+	}
 	const output = {
 		mode: "mock",
 		testedCommit: process.env.F1_TESTED_COMMIT ?? "working-tree",

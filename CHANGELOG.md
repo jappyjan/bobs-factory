@@ -21,6 +21,11 @@ All notable changes to this project will be documented in this file.
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+- Serialize nightly candidate freezing without holding the queue through native and desktop builds, preventing a stuck superseded runner from blocking later release candidates. ([#150](https://github.com/jappyjan/bobs-factory/pull/150))
+
+- Let prepared updates drain passive merge/CI waits and queued ticket delivery instead of waiting indefinitely; preserve checkpoints, approvals and in-flight results for recovery. ([#149](https://github.com/jappyjan/bobs-factory/pull/149))
+
+- Let new Factory and Takeover runs make and document necessary dependency, caller and fixture edits without repeatedly requesting approval for omitted file paths; retain explicit scope restrictions and approval for material design changes. ([#148](https://github.com/jappyjan/bobs-factory/pull/148))
 
 - Let saved specialist reviews track explicitly staged QA, guide, human acceptance and merge obligations at their own gates, preventing repeated code-fix loops while retaining mandatory checks and approval. ([#147](https://github.com/jappyjan/bobs-factory/pull/147))
 

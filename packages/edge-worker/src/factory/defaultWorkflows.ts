@@ -1,4 +1,7 @@
-import { architectureInstructions } from "./Architecture.js";
+import {
+	architectureInstructions,
+	implementationScopeInstructions,
+} from "./Architecture.js";
 import { feedbackPolicyInstructions } from "./FeedbackPolicy.js";
 import {
 	BRIEF_CONTRACT,
@@ -87,18 +90,18 @@ const definitions = [
 			agent(
 				"plan",
 				"Write implementation plan",
-				`Write a lean, complete implementation plan from the original input, ALL comments/metadata, clarified requirements/decision records, and any plan-review feedback. When taking over, include the existing-work and assess-existing results and PR review discussion; preserve completed work and plan only the remaining changes. Include the existing PR URL/branch and require continuing it. Return {"plan":"detailed self-contained Markdown implementation plan with acceptance criteria and validation","assets":[{"path":"absolute downloaded asset path or URL","purpose":"..."}]}. Include everything the implementer needs: it will receive ONLY this result, never the ticket. Include repository scope, base branch and delivery expectations. Do not implement.`,
+				`Write a lean, complete implementation plan from the original input, ALL comments/metadata, clarified requirements/decision records, and any plan-review feedback. When taking over, include the existing-work and assess-existing results and PR review discussion; preserve completed work and plan only the remaining changes. Include the existing PR URL/branch and require continuing it. Return {"plan":"detailed self-contained Markdown implementation plan with acceptance criteria and validation","assets":[{"path":"absolute downloaded asset path or URL","purpose":"..."}]}. Include everything the implementer needs: it will receive ONLY this result, never the ticket. Include repository scope, base branch and delivery expectations. ${implementationScopeInstructions} Do not implement.`,
 			),
 			agent(
 				"plan-review",
 				"Review implementation plan",
-				`Review the plan against ALL input/comments/metadata and decisions. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["specific missing requirements or improvements"]}. Approve a practical MVP plan when complete.`,
+				`Review the plan against ALL input/comments/metadata and decisions. ${implementationScopeInstructions} Reject invented approval gates for routine dependency edits within the accepted requirements and architecture. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["specific missing requirements or improvements"]}. Approve a practical MVP plan when complete.`,
 				{ branches: back("approved", "plan") },
 			),
 			agent(
 				"implement",
 				"Implement accepted plan",
-				`Implement the provided plan and use its assets. Read /answers alongside /plan for subsequent human responses, including resolution of implementation blockers. Follow repository conventions and appropriate verification. If implementation is forbidden, deferred, or blocked by missing access or a necessary decision, preserve completed work and return {"status":"blocked","summary":"concrete blocker","checks":["commands and outcomes"],"questions":["specific question or action needed to unblock implementation"]}. The workflow waits for an answer and resumes this role; do not report deferred or unfinished work as completed. Only after completing implementation return {"status":"completed","summary":"...","checks":["commands and outcomes"],"questions":[]}. Do not create or publish a PR; the next step handles delivery.`,
+				`Implement the provided plan and use its assets. Read /answers alongside /plan for subsequent human responses, including resolution of implementation blockers. ${implementationScopeInstructions} Follow repository conventions and appropriate verification. If implementation is forbidden, deferred, or blocked by missing access or a necessary decision, preserve completed work and return {"status":"blocked","summary":"concrete blocker","checks":["commands and outcomes"],"questions":["specific question or action needed to unblock implementation"]}. The workflow waits for an answer and resumes this role; do not report deferred or unfinished work as completed. Only after completing implementation return {"status":"completed","summary":"...","checks":["commands and outcomes"],"questions":[]}. Do not create or publish a PR; the next step handles delivery.`,
 				{ inputs: ["plan"], askQuestions: true },
 			),
 			tool("draft-pr", "Push and create draft PR", "draft-pr"),
@@ -285,8 +288,7 @@ const architectureSteps = [
 		...oldPlanReview,
 		id: "architecture-review",
 		name: "Review architecture candidate",
-		prompt:
-			'Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Require briefVersion=1, concrete current-state findings, observable deliverables with complete files/operations/size estimates and criterion traces, every original acceptance criterion with honest covered/partial/deferred status and reason, justified Bob-added work, explicit non-goals and measurable acceptance checks. Compare the brief to the full plan: reject hidden work (including undeclared conditional edits), omitted criteria, vague options, limits whose values or measurement selection rules appear only in the full plan, unsupported coverage claims, unnecessary packages or frontend work, and process status masquerading as technical risk. Inspect runtime footprint warnings, including invalid paths, operation mismatches and unchanged map parts listed for work; require correction or a concrete explanation of intentional cross-area/config changes. Assess repository evidence, decisions and options, map, readability and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.',
+		prompt: `Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Require briefVersion=1, concrete current-state findings, observable deliverables with anticipated files/operations/size estimates and criterion traces, every original acceptance criterion with honest covered/partial/deferred status and reason, justified Bob-added work, explicit non-goals and measurable acceptance checks. ${implementationScopeInstructions} Reject invented approval gates for routine dependency edits within the accepted requirements and architecture. Compare the brief to the full plan: reject hidden deliverables, omitted known conditional work or criteria, vague options, limits whose values or measurement selection rules appear only in the full plan, unsupported coverage claims, unnecessary packages or frontend work, and process status masquerading as technical risk. Inspect runtime footprint warnings, including invalid paths, operation mismatches and unchanged map parts listed for work; require correction or a concrete explanation of intentional cross-area/config changes. Assess repository evidence, decisions and options, map, readability and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.`,
 		architectureContract: "architecture-review-v1",
 		architectureSource: "architecture",
 		branches: back("approved", "architecture"),

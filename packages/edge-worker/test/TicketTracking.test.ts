@@ -1181,3 +1181,58 @@ it("retains ticket milestones during update maintenance and delivers them after 
 	expect(f.run.ticketSync?.receipts[0]?.delivered).toBe(true);
 	expect(f.ticket.status).toBe("in_progress");
 });
+
+it("settles in-flight delivery but parks pre-freeze queued flushes and later receipts", async () => {
+	const f = fixture();
+	let finishComment!: () => void;
+	const commenting = new Promise<void>((resolve) => {
+		finishComment = resolve;
+	});
+	const comment = vi
+		.spyOn(f.adapter, "comment")
+		.mockImplementationOnce(async () => {
+			await commenting;
+		});
+	const first = f.service.record(f.run, {
+		key: "first",
+		body: "First receipt",
+	});
+	await vi.waitFor(() => expect(comment).toHaveBeenCalledTimes(1));
+	const queued = f.service.record(f.run, {
+		key: "second",
+		body: "Later receipt",
+	});
+	f.service.setUpdateMaintenance(true);
+	expect(f.service.isBusy()).toBe(true);
+	finishComment();
+	await Promise.all([first, queued]);
+	expect(f.service.isBusy()).toBe(false);
+	expect(comment).toHaveBeenCalledTimes(1);
+	expect(f.run.ticketSync?.receipts.map((r) => !!r.delivered)).toEqual([
+		true,
+		false,
+	]);
+	f.service.setUpdateMaintenance(false);
+	await f.service.flush(f.run);
+	expect(comment).toHaveBeenCalledTimes(2);
+	expect(f.run.ticketSync?.receipts.every((r) => r.delivered)).toBe(true);
+});
+
+it("releases the drain barrier when a queued persistence operation rejects", async () => {
+	const service = new TicketTracking(
+		async () => {
+			throw new Error("Provider execution must not start");
+		},
+		async () => {
+			throw new Error("Persistence unavailable");
+		},
+		vi.fn(),
+	);
+	services.push(service);
+	const f = fixture();
+	await expect(
+		service.record(f.run, { key: "retained", body: "Retained intent" }),
+	).rejects.toThrow("Persistence unavailable");
+	expect(service.isBusy()).toBe(false);
+	expect(f.run.ticketSync?.receipts[0]?.delivered).toBeUndefined();
+});
