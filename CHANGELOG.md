@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Serialize nightly candidate freezing without holding the queue through native and desktop builds, preventing a stuck superseded runner from blocking later release candidates. ([#150](https://github.com/jappyjan/bobs-factory/pull/150))
+
 - Let prepared updates drain passive merge/CI waits and queued ticket delivery instead of waiting indefinitely; preserve checkpoints, approvals and in-flight results for recovery. ([#149](https://github.com/jappyjan/bobs-factory/pull/149))
 
 - Let new Factory and Takeover runs make and document necessary dependency, caller and fixture edits without repeatedly requesting approval for omitted file paths; retain explicit scope restrictions and approval for material design changes. ([#148](https://github.com/jappyjan/bobs-factory/pull/148))

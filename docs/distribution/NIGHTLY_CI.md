@@ -10,6 +10,12 @@ then the existing desktop matrix using those same native artifacts, plus current
 unit/integration tests and owned mocked delivery workflows. It does not rebuild
 another native matrix for desktop.
 
+Only candidate freezing is serialized. Native builds, desktop packaging and
+checks for different frozen candidates may overlap, so a stuck older runner
+cannot hold the preparation queue indefinitely. Publication still holds the
+repository-wide lock and rechecks current main, source ancestry, cooldown and
+sequence eligibility before publishing the exact validated candidate.
+
 After that run completes successfully, `release-evidence.yml` automatically
 assembles candidate-bound source and evidence. `binary-release.yml` then runs its
 unchanged preparation/semantic/inventory validators and publishes under the
