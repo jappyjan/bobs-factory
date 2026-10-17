@@ -22,12 +22,12 @@ on:
 permissions:
   contents: read
   actions: read
-concurrency:
-  group: bobs-factory-candidate-preparation
-  cancel-in-progress: false
 jobs:
   prepare:
     runs-on: ubuntu-24.04
+    concurrency:
+      group: bobs-factory-candidate-freeze
+      cancel-in-progress: false
     outputs:
       candidate_json: ${{ steps.candidate.outputs.candidate_json }}
     steps:
