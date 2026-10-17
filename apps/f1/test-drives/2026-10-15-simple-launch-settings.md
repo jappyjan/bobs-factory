@@ -65,3 +65,30 @@ Tested capability producer SHA-256: `9c1770742c309a2d90b7dd08161835eddc11abcdd3a
 Closed only the named headless browser session and stopped the isolated fixture with SIGTERM; worker shutdown completed. Temporary homes and run evidence remain available for inspection. No production configuration, ticket, PR or branch was changed by the fixture.
 
 This proves browser admission and configuration propagation using simulated agents. Real model availability, native effort behavior and explicit credential-backed profile execution were not tested. Profile controls and Legacy previews were exercised. The standalone Simple fixture logs missing synthetic ticket comments and missing source-tree bundled-skills warnings; simulated executions still complete. Real ticket integration is outside this launcher correction.
+
+## Required-check follow-up — 2026-10-17
+
+The combined revision `b170255ff6cad613922896cdbc91be8e886082ce` was checked from a clean worktree. The original eight-suite recovery command completed successfully: 92 tests passed in 119.16 seconds. No assertions or production code were changed. Earlier timed-out runs and the reviewer's combined-suite assertion failure remain historical failures; this run did not reproduce the assertion failure.
+
+The check runner allows 120 seconds per command, leaving almost no margin for this batch. The recovery fixtures use real disk commits; `EdgeWorker.ticket-recovery.test.ts` uses Vitest's one-second default completion wait, while related runtime tests use the existing five-second wait helper. Together with the isolated passing suite, this supports load-sensitive test timing rather than establishing a production recovery defect. Keep every recovery assertion and all eight suites in subsequent verification.
+
+A second complete run with `VITEST_MAX_WORKERS=2` also passed all 92 tests in 123.24 seconds (`fix-r5-recovery-bounded.log`). Limiting workers therefore does not reliably fit the runtime's fixed command budget. The next impact assessment should select the two commands below instead of the monolithic command, retaining the same eight suites. This is an execution-budget correction; neither test assertions nor runtime behavior needs changing.
+
+```sh
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Architecture.test.ts test/ArchitectureFootprint.test.ts test/EdgeWorker.architecture-recovery.test.ts test/EdgeWorker.decision-documentation.test.ts test/EdgeWorker.ticket-recovery.test.ts test/Takeover.test.ts test/TicketTracking.test.ts
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts
+```
+
+Both split commands passed: the seven-suite command ran 74 tests in 10.07 seconds (`fix-r5-recovery-core.log`), and Impact ran 18 tests in 109.93 seconds (`fix-r5-recovery-impact.log`). Their combined 92 tests match the complete batch, with no omitted suite or assertion. Each command fits the existing 120-second budget on this execution; these timings are observations, not a guaranteed upper bound under future host load.
+
+The previously outstanding checks also passed on that same revision:
+
+- Linear delivery: 15 tests.
+- Managed GitHub credentials, with inherited credential variables removed only in the test child: 34 tests.
+- Browser dependency source safeguards: 3 tests.
+- Biome: all 20 selected executable files; cumulative diff whitespace check passed.
+- `F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/role-finalization-recovery.mjs`: passed publication-independent role completion, durable delivery recovery, stale-impact Retry, takeover base, and exact-version acceptance for a 1,024-file architecture proposal. The isolated worker shut down successfully. This used simulated agents.
+
+Receipts are retained in the evidence directory above as `fix-r5-recovery-before.log`, `fix-r5-target-linear-delivery.log`, `fix-r5-managed-credential-coverage.log`, `fix-r5-target-browser-source-coverage.log`, `fix-r5-changed-code-lint.log`, `fix-r5-diff-whitespace.log`, and `fix-r5-target-recovery-f1.log`.
+
+These results cover required runtime checks, not renewed launcher browser QA. Fresh launcher screenshots, simulated-agent launcher QA, and separate recoverable-server-error versus connection-loss QA remain required at their configured later gate. The historical failed preview-abort evidence is retained; it is not relabeled as passing.
