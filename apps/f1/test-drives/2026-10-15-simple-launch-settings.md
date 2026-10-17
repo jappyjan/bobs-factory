@@ -92,3 +92,49 @@ The previously outstanding checks also passed on that same revision:
 Receipts are retained in the evidence directory above as `fix-r5-recovery-before.log`, `fix-r5-target-linear-delivery.log`, `fix-r5-managed-credential-coverage.log`, `fix-r5-target-browser-source-coverage.log`, `fix-r5-changed-code-lint.log`, `fix-r5-diff-whitespace.log`, and `fix-r5-target-recovery-f1.log`.
 
 These results cover required runtime checks, not renewed launcher browser QA. Fresh launcher screenshots, simulated-agent launcher QA, and separate recoverable-server-error versus connection-loss QA remain required at their configured later gate. The historical failed preview-abort evidence is retained; it is not relabeled as passing.
+
+## Impact command-budget correction — 2026-10-17
+
+The earlier two-command recommendation above is superseded. The workflow's separate Impact command still exceeded its 120-second limit at clean revision `148842b8fb05b8b52b40f04c19a1f0b9f2b5a7cc`. A fresh verbose run on that revision took 275.62 seconds: 15 tests passed and three reached their 30-second test timeout. The timeouts affected informational comments, approval continuation and grouped repositories; they did not report failed behavioral assertions. Preserve `fix-r6-impact-profile.log` as failed evidence.
+
+The suite repeatedly creates disk-backed workflows and reads paginated context through simulated agents. Verbose timings grew from roughly five seconds for early cases to 15–32 seconds for later cases. Other host test processes were active during profiling. These observations establish an insufficient command budget and timing sensitivity; they do not establish a production defect or prove which host resource caused the slowdown.
+
+Six smaller batches were then run sequentially with a hard 120-second limit per command. Five passed. The batch containing both restart cases failed their ten-second completion wait at Impact.test.ts:866 (received running). Preserve `fix-r6-target-impact-2.log`; do not relabel this attempt as passing. Separating that batch into its non-restart cases and one fresh process per restart case passed in 10.75, 8.40 and 8.14 seconds respectively, without changing assertions, wait durations, production code or fixtures.
+
+For the next independently selected checks, replace `target-impact-tests` with the following **eight separate commands**, each with its own receipt. Do not concatenate them into one shell command. Retain the existing seven-suite recovery command and every other selected check. The final negative pattern is the complement of all preceding groups, so unmatched cases remain included.
+
+```sh
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'measures actual|rejects stale'
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'bounds unchanged|preserves grouped'
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'retries stale.*nested=false'
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'retries stale.*nested=true'
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'recovers selected|inspects a non-mutating|keeps optional'
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'accepts shell|preserves original|assesses informational'
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'continues explicit|selects and checks|reuses an unchanged'
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern '^(?!.*(?:measures actual|rejects stale|bounds unchanged|preserves grouped|retries stale|recovers selected|inspects a non-mutating|keeps optional|accepts shell|preserves original|assesses informational|continues explicit|selects and checks|reuses an unchanged))'
+```
+
+| Impact batch | Passed tests | Command seconds |
+| --- | ---: | ---: |
+| 1 | 3 | 20.31 |
+| 2a | 2 | 10.75 |
+| 2b | 1 | 8.40 |
+| 2c | 1 | 8.14 |
+| 3 | 3 | 75.29 |
+| 4 | 3 | 40.68 |
+| 5 | 3 | 27.01 |
+| 6 | 2 | 13.07 |
+
+The successful batch logs were compared by complete test name against all 18 names in the unfiltered profiling run. Their multiset is identical: each test passed exactly once, with no missing or duplicate case. Filtered commands report skipped tests belonging to other batches; those cases passed in their own commands. This preserves the original 92-test recovery coverage (74 core plus 18 Impact). The maximum observed successful command was 75.29 seconds; timings remain observations rather than guarantees under arbitrary host load.
+
+All other outstanding checks also completed successfully on the same clean revision: combined-target integration, 74 core recovery tests, 15 Linear delivery tests, the simulated-agent recovery F1 drive, 34 managed-credential tests, three browser-source safeguards, lint of all 20 selected executable files and cumulative whitespace validation. The recovery F1 fixture shut down its isolated worker successfully.
+
+Machine-readable execution records and full logs are in the evidence directory above:
+
+- `fix-r6-check-results.json`: original six-batch attempt and remaining required checks, retaining its failed batch.
+- `fix-r6-restart-check-results.json`: the three successful replacement commands.
+- `fix-r6-passing-checks.json`: successful selection with exact commands, tested revision, elapsed times, exit codes, log paths and the verified 18-test partition.
+- `fix-r6-target-impact-{1,2a,2b,2c,3,4,5,6}.log`: successful Impact receipts.
+- `fix-r6-target-recovery-tests.log`, `fix-r6-target-linear-delivery.log`, `fix-r6-target-recovery-f1.log`, `fix-r6-managed-credential-coverage.log`, `fix-r6-target-browser-source-coverage.log`, `fix-r6-changed-code-lint.log`, `fix-r6-combined-target.log` and `fix-r6-diff-whitespace.log`.
+
+This correction changes report text only. The configured impact gate must independently select and execute the bounded commands; these local receipts do not manufacture a passing gate. Fresh launcher browser QA and the accepted separate server-error and connection-loss checks remain required at their later gate. Historical failed QA remains retained.
