@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Let new Factory and Takeover runs make and document necessary dependency, caller and fixture edits without repeatedly requesting approval for omitted file paths; retain explicit scope restrictions and approval for material design changes. ([#148](https://github.com/jappyjan/bobs-factory/pull/148))
+
 - Let saved specialist reviews track explicitly staged QA, guide, human acceptance and merge obligations at their own gates, preventing repeated code-fix loops while retaining mandatory checks and approval. ([#147](https://github.com/jappyjan/bobs-factory/pull/147))
 
 - Keep completed roles and decision records moving while ticket delivery retries, reconcile Linear's missing-activity response, renew stale impact through its configured assessor on Retry, and retain the actual PR base when taking over an existing branch. ([#146](https://github.com/jappyjan/bobs-factory/pull/146))

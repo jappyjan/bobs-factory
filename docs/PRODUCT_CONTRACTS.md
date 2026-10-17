@@ -50,6 +50,16 @@ current contract only on its exact clean revision. A now-valid candidate keeps
 its native conversation and continues to independent review and human acceptance;
 stale, dirty or invalid candidates still require normal correction.
 
+New stock Factory and Takeover plans treat declared file operations as the expected
+implementation footprint. Necessary dependency, caller, fixture, test, configuration
+and documentation edits within the accepted requirements and architecture proceed
+with their paths and reasons recorded in implementation checks. Omitted paths alone
+do not require another approval. Explicit user/repository restrictions, non-goals,
+material architecture or requirement changes and additional delivery targets retain
+their authorization boundaries. Saved/custom recipes and accepted run snapshots keep
+their original instructions; recovering an older file-scope wait requires explicit
+operator direction through its normal answer flow.
+
 Direct localhost dashboard/API access requires an actual loopback socket peer, an exact
 configured HTTP loopback authority and same-origin browser context. IPv4 `127.0.0.1`,
 IPv6 `::1` and `localhost` work without enrollment, login or a session cookie.
