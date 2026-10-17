@@ -10,6 +10,7 @@ import {
 	reportReadiness,
 } from "../src/factory/MergeReadiness.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
+import { UpdatePausedError } from "../src/updates/UpdatePausedError.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { providerReceipt } from "./fixtures/merge-readiness.js";
 
@@ -329,6 +330,34 @@ it("retries transient readiness errors without a fixer and cancels waiting promp
 				url,
 			),
 		).rejects.toThrow("401");
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+it("suspends a transport backoff before another provider request when maintenance starts", async () => {
+	vi.useFakeTimers();
+	try {
+		let frozen = false;
+		const cmd = vi.fn(async () => {
+			throw new Error("HTTP 503");
+		});
+		const ctx = {
+			run: { outputs: {} },
+			signal: new AbortController().signal,
+			log: vi.fn(),
+			assertSchedulingOpen: () => {
+				if (frozen) throw new UpdatePausedError();
+			},
+		} as unknown as ExecutionContext;
+		const polling = inspectReadinessWithRetry(ctx, cmd, url);
+		const suspended = expect(polling).rejects.toBeInstanceOf(UpdatePausedError);
+		await vi.advanceTimersByTimeAsync(1);
+		frozen = true;
+		await vi.advanceTimersByTimeAsync(10000);
+		await suspended;
+		expect(cmd).toHaveBeenCalledTimes(1);
+		expect(ctx.signal.aborted).toBe(false);
 	} finally {
 		vi.useRealTimers();
 	}

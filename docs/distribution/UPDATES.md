@@ -76,6 +76,11 @@ it does not forcibly stop a busy worker.
    maintenance and resumes the retained work. Accepted PR setup input without
    a native session is retained without event credentials and replayed after
    release; existing sessions retain their saved input and conversation IDs.
+   Passive CI, merge and handoff polling, transport backoff and queued repository
+   reservations also yield at saved checkpoints. A provider request already in
+   flight settles before the drain becomes idle; recovery reads fresh provider
+   state before repeating a mutation. Ticket delivery finishes its current
+   receipt and retains later receipts and queued flushes until maintenance ends.
 3. Preflight state compatibility in isolation and snapshot bounded compatible
    Factory-owned state. Native credential/conversation/signing stores and
    Factory authentication remain outside rollback. Observe config/profile,

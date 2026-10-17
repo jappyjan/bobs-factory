@@ -383,6 +383,8 @@ export interface ChatMessage {
 	step: string;
 }
 export interface ExecutionContext {
+	/** Yield passive waits at saved checkpoints when update admission closes. */
+	assertSchedulingOpen?: () => void;
 	/** Revalidate the complete grouped approval under the operation reservation. */
 	qaEnvironmentProof?: { declarationDigest: string; valueDigest: string };
 	executionApproval?: HumanDecision;
@@ -1319,6 +1321,7 @@ export class WorkflowRuntime {
 				context.log,
 				{
 					key,
+					assertSchedulingOpen: context.assertSchedulingOpen,
 					scopes: targets,
 					reason: mutation
 						? "Repository integration/publication"
@@ -1491,6 +1494,7 @@ export class WorkflowRuntime {
 				? await this.hooks.execution(run, step.runner ?? run.runner)
 				: undefined;
 			const context: ExecutionContext = {
+				assertSchedulingOpen: () => this.assertSchedulingOpen(),
 				factoryHome: dirname(this.directory),
 				attemptId: state.attemptId,
 				execution,

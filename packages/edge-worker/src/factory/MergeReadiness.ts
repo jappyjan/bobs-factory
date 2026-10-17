@@ -96,6 +96,16 @@ export function delay(signal: AbortSignal, ms = 10000): Promise<void> {
 		signal.addEventListener("abort", abort, { once: true });
 	});
 }
+
+/** A passive provider wait must not hold the worker's update drain open. */
+export async function waitForNextPoll(
+	context: ExecutionContext,
+	ms = 10000,
+): Promise<void> {
+	context.assertSchedulingOpen?.();
+	await delay(context.signal, ms);
+	context.assertSchedulingOpen?.();
+}
 export function reportReadiness(
 	context: ExecutionContext,
 	snapshot: MergeReadiness,
@@ -126,6 +136,7 @@ export async function inspectReadinessWithRetry(
 	url: string,
 ): Promise<MergeReadiness> {
 	for (let attempt = 0; ; attempt++) {
+		context.assertSchedulingOpen?.();
 		try {
 			const provider = await resolveGitProvider(context, command, url);
 			const snapshot = await superviseCI(
@@ -149,7 +160,7 @@ export async function inspectReadinessWithRetry(
 			context.log(
 				`Provider readiness temporarily unavailable; retrying transport (${attempt + 1}/5). ${message.slice(0, 300)}`,
 			);
-			await delay(context.signal, Math.min(10000 * 2 ** attempt, 60000));
+			await waitForNextPoll(context, Math.min(10000 * 2 ** attempt, 60000));
 		}
 	}
 }

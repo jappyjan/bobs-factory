@@ -295,6 +295,7 @@ export async function acquireDelivery(
 	log: (message: string) => void,
 	options: {
 		key?: string;
+		assertSchedulingOpen?: () => void;
 		scopes?: string[] | (() => string[]);
 		reason?: string;
 	} = {},
@@ -320,6 +321,7 @@ export async function acquireDelivery(
 	try {
 		for (;;) {
 			signal.throwIfAborted();
+			options.assertSchedulingOpen?.();
 			const blockers = [...runs()]
 				.filter((other) => !terminal(other))
 				.flatMap((other) =>

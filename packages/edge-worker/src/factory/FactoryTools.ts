@@ -41,11 +41,11 @@ import {
 import { dependencyCovers, dependencyHashes } from "./Incremental.js";
 import {
 	assessFeedback,
-	delay,
 	feedbackWorkFingerprint,
 	inspectReadinessWithRetry,
 	type MergeReadiness,
 	reportReadiness,
+	waitForNextPoll,
 } from "./MergeReadiness.js";
 import { confirmedMerge } from "./MergeRecovery.js";
 import { OutputValidationError } from "./OutputValidation.js";
@@ -1325,7 +1325,7 @@ export class FactoryTools {
 						}
 						return snapshot;
 					}
-					await delay(context.signal);
+					await waitForNextPoll(context);
 				}
 			}
 			case "architecture-decision":
@@ -1477,6 +1477,7 @@ export class FactoryTools {
 				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
 				let submitted = false;
 				for (;;) {
+					context.assertSchedulingOpen?.();
 					let immediate = false;
 					const inspectAndMerge = async () => {
 						if (!context.groupedImpactValidated)
@@ -1556,7 +1557,7 @@ export class FactoryTools {
 						? context.coordinateDelivery(inspectAndMerge)
 						: inspectAndMerge());
 					if (result) return result;
-					if (!immediate) await delay(context.signal);
+					if (!immediate) await waitForNextPoll(context);
 				}
 			}
 			case "handoff": {
@@ -1671,7 +1672,7 @@ export class FactoryTools {
 					if (readiness.reviewReady) break;
 					// The provider may recalculate mergeability or start checks while the
 					// guide is being written. Wait as CI does, without replaying roles.
-					await delay(context.signal);
+					await waitForNextPoll(context);
 				}
 				const recovery = guideGapRecovery(context, readiness);
 				if (recovery) {
