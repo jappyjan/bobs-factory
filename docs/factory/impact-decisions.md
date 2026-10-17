@@ -105,6 +105,15 @@ without treating that future receipt as an implementation defect. Deferral never
 waives the requirement; executable QA, guide readiness, human acceptance and
 provider-confirmed delivery enforce their own obligations.
 
+This stage contract also applies to saved conservative specialist reviews, without
+opting their graphs into impact assessment or evidence reuse. Runtime instructions
+require extraction to declare the stage from accepted sources and retained gates.
+Unstaged requirements default to code; mixed criteria need a traceable inventory
+amendment that preserves historical IDs, decisions and superseded records. Coverage
+can defer only to the exact declared later stage, with evidence and a required
+action. Code defects and missing code verification remain blocking. Original
+receipts, accepted graphs and native conversations are preserved.
+
 The unchanged-state limit defaults to three and is configurable from two to twenty.
 Progress uses source trees, actionable states and valid evidence, not new commit
 IDs, receipt timestamps or wording changes. Returning to a recent state also

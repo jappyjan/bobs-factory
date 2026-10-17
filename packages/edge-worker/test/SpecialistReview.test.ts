@@ -169,6 +169,99 @@ function receipt(b = baseline(), value: unknown = review()) {
 	};
 }
 
+it.each([
+	"qa",
+	"guide",
+	"acceptance",
+	"delivery",
+] as const)("keeps an explicitly staged %s obligation pending without blocking a saved code review", (stage) => {
+	const b = baseline();
+	b.inventory = validateInventory(
+		{
+			...b.inventory,
+			requirements: [
+				{
+					...b.inventory.requirements[0],
+					stage,
+					changeReason: "Separate the retained downstream obligation",
+				},
+			],
+		},
+		b.inventory,
+	);
+	const pending = {
+		...review(),
+		coverage: [
+			{
+				requirementId: "R1",
+				status: "deferred",
+				obligation: { stage, action: "Execute the retained downstream gate" },
+				evidence: [
+					"Accepted workflow retains the required gate after code review",
+				],
+				reason:
+					"This receipt is due at the downstream gate, not during code review",
+			},
+		],
+	};
+	const aggregate = aggregateReview(b, [{ business: receipt(b, pending) }]);
+	expect(aggregate.approved).toBe(true);
+	expect(aggregate.coverage).toEqual(pending.coverage);
+	expect(aggregate.baseline.impact).toBeUndefined();
+	expect(() =>
+		assertAggregateRevision(aggregate, b.headSha, b.baseSha),
+	).not.toThrow();
+});
+
+it.each([
+	undefined,
+	"code",
+	"qa",
+] as const)("rejects deferring a requirement declared for %s to the delivery gate", (stage) => {
+	const b = baseline();
+	b.inventory.requirements[0]!.stage = stage;
+	expect(() =>
+		validateSpecialist(
+			{
+				...review(),
+				coverage: [
+					{
+						requirementId: "R1",
+						status: "deferred",
+						obligation: { stage: "delivery", action: "Merge later" },
+						evidence: ["No implementation evidence"],
+						reason: "Attempt to bypass current verification",
+					},
+				],
+			},
+			b,
+			true,
+		),
+	).toThrow("only a declared downstream obligation");
+});
+
+it("rejects a saved review's attempt to send a downstream receipt to code fixing", () => {
+	expect(() =>
+		validateSpecialist(
+			{
+				...review(),
+				findings: [
+					{
+						id: "delivery-pending",
+						rating: 2,
+						category: "downstream",
+						summary: "Human acceptance and merge are still pending",
+						evidence: "The accepted workflow places both gates after QA",
+						requirementIds: ["R1"],
+					},
+				],
+			},
+			baseline(),
+			true,
+		),
+	).toThrow("downstream obligations are nonblocking");
+});
+
 it("reads only the matching tail of restored review history and baselines", async () => {
 	const directory = mkdtempSync(join(tmpdir(), "review-history-tail-"));
 	dirs.push(directory);
@@ -973,6 +1066,120 @@ function setup(hooks: Partial<RuntimeHooks> = {}) {
 	});
 	return { runtime, run, home, state, git, workflow };
 }
+
+it("restores a conservative review, reaches QA and still waits for explicit human acceptance before merge", async () => {
+	const calls: string[] = [];
+	const hooks: RuntimeHooks = {
+		script: async () => ({}),
+		agent: async (context) => {
+			calls.push(context.step.id);
+			if (context.step.reviewContract === "inventory-v1")
+				return {
+					...inventory(),
+					requirements: [
+						{
+							id: "R1",
+							criterion:
+								"Obtain explicit human acceptance of the delivered revision",
+							stage: "acceptance",
+							classification: "active",
+							sources: [source],
+						},
+					],
+				};
+			if (context.step.reviewContract === "coverage-v1")
+				return {
+					...review(),
+					coverage: [
+						{
+							requirementId: "R1",
+							status: "deferred",
+							obligation: {
+								stage: "acceptance",
+								action: "Await explicit human approval",
+							},
+							evidence: ["The frozen human-review gate follows QA"],
+							reason: "Approval is pending and remains mandatory at that gate",
+						},
+					],
+				};
+			throw new Error("No fixer or other agent should run");
+		},
+		tool: async (context) => {
+			calls.push(context.step.id);
+			if (context.step.id === "human-review")
+				return {
+					headSha: context.run.outputs.qa,
+					url: "https://example.test/pull/1",
+				};
+			if (context.step.id === "merge") {
+				expect(context.run.humanDecisions?.at(-1)?.decision).toBe("approve");
+				return { merged: true };
+			}
+			return context.progress?.currentRevision?.headSha ?? "reviewed-head";
+		},
+	};
+	const fixture = setup(hooks);
+	const definition = structuredClone(fixture.workflow);
+	definition.steps[1]!.groups = [definition.steps[1]!.groups!.at(-1)!];
+	definition.steps.push(
+		...[
+			{ id: "qa", name: "Execute QA", type: "tool", tool: "fixture-qa" },
+			{
+				id: "human-review",
+				name: "Accept delivered revision",
+				type: "tool",
+				tool: "human-review",
+			},
+			{
+				id: "merge",
+				name: "Merge accepted revision",
+				type: "tool",
+				tool: "fixture-merge",
+			},
+		].map((step) => StepSchema.parse(step)),
+	);
+	fixture.run.workflow = validateWorkflows([
+		...defaultWorkflows,
+		definition,
+	]).at(-1)!;
+	fixture.run.workflowDefinitions = [...defaultWorkflows, fixture.run.workflow];
+	const frozen = structuredClone(fixture.run.workflow);
+	fixture.run.status = "interrupted";
+	await fixture.runtime.save(fixture.run);
+	await fixture.runtime.shutdown();
+	const restored = new WorkflowRuntime(fixture.state, hooks);
+	const run = restored.get(fixture.run.id);
+	restored.retry(run.id);
+	await waitFor(() => expect(run.status, run.error).toBe("waiting"), {
+		timeout: 3000,
+	});
+	expect(run.step).toBe("human-review");
+	expect(run.outputs["review-gate"]).toMatchObject({
+		approved: true,
+		coverage: [{ status: "deferred" }],
+	});
+	expect(run.humanDecisions ?? []).toEqual([]);
+	expect(calls).toEqual([
+		"extract-requirements",
+		"requirements-review",
+		"qa",
+		"human-review",
+	]);
+	expect(run.workflow).toEqual(frozen);
+	const gate = run.reviewGate!;
+	restored.decide(run.id, {
+		reviewId: gate.id,
+		headSha: gate.headSha,
+		decision: "approve",
+	});
+	await waitFor(() => expect(run.status, run.error).toBe("completed"), {
+		timeout: 3000,
+	});
+	expect(calls.at(-1)).toBe("merge");
+	await restored.shutdown();
+});
+
 it("pauses unchanged specialist rejections and resumes the fixer after assistance", async () => {
 	let fixes = 0;
 	const fixture = setup({

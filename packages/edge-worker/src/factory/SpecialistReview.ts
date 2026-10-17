@@ -269,6 +269,18 @@ export function validateInventory(
 export function activeRequirements(inventory: Inventory) {
 	return inventory.requirements.filter((r) => r.classification === "active");
 }
+
+/** Apply the review contract to saved prompts without rewriting accepted graphs. */
+export function reviewStageInstructions(
+	contract: WorkflowStep["reviewContract"],
+): string {
+	if (contract === "inventory-v1")
+		return `Declare each requirement's stage: "code" (default), "qa", "guide", "acceptance" or "delivery", using its accepted source and the retained workflow. Separate implementation outcomes from future workflow receipts. Split mixed criteria into independently assessable requirements, retaining historical IDs and decisions, superseded originals, sources and changeReason. Human acceptance and provider-confirmed merge remain mandatory downstream obligations; their absence before QA is not a code defect. Never move an implementation defect or missing code verification to a later stage. Do not invent downstream gates or waive requirements.`;
+	if (["specialist-v1", "coverage-v1"].includes(contract ?? ""))
+		return `Assess code readiness at this review gate. Coverage may use status:"deferred" with obligation:{stage:"qa|guide|acceptance|delivery",action:"specific required downstream work"} only when the frozen inventory explicitly declares that same later stage. Cite the accepted source and retained gate. Deferral preserves mandatory work; it never claims QA, human acceptance or merge occurred. Missing implementation or code-verification evidence remains not_met with an actionable finding. A mixed or unstaged criterion cannot be deferred; request a traceable inventory correction through the existing fixer/extraction path. Future workflow receipts are nonblocking observations (rating 1, category:"downstream"), not rating 2/3 code findings. Reassess previous routing complaints with evidence-backed dispositions and explicitly resolve any prior disagreements; omission cannot settle them. These runtime review rules apply to saved workflows as well as impact-v1 rounds.`;
+	return "";
+}
+
 export function validateSpecialist(
 	value: unknown,
 	baseline: ReviewBaseline,
@@ -299,6 +311,12 @@ export function validateSpecialist(
 			"Evidence boundary references an unknown active requirement",
 		);
 	for (const finding of review.findings) {
+		if (
+			finding.category === "downstream" &&
+			finding.rating > 1 &&
+			finding.status === "open"
+		)
+			throw new Error(`${finding.id}: downstream obligations are nonblocking`);
 		if (baseline.impact && finding.rating > 1 && finding.status === "open") {
 			if (["optional", "wait", "downstream"].includes(finding.category ?? ""))
 				throw new Error(
@@ -372,7 +390,6 @@ export function validateSpecialist(
 					(r) => r.id === assessment.requirementId,
 				);
 				if (
-					!baseline.impact ||
 					!assessment.obligation ||
 					!requirement?.stage ||
 					requirement.stage === "code" ||
