@@ -6,7 +6,7 @@ import type {
 	ILogger,
 	RepositoryConfig,
 } from "bobs-factory-core";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type IChatToolResolver,
 	type IMcpConfigProvider,
@@ -80,6 +80,16 @@ function buildIssueConfig(extra: Partial<IssueRunnerConfigInput> = {}) {
 }
 
 describe("RunnerConfigBuilder GitHub token session env (CYHOST-913)", () => {
+	beforeEach(() => {
+		// These fixtures exercise token injection without a managed helper. A
+		// Factory-hosted test run may inherit one from the executing instance.
+		vi.stubEnv("BOBS_FACTORY_GITHUB_CREDENTIAL_COMMAND", undefined);
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
 	it("passes the saved instance SSH agent to host sessions while leaving private execution alone", () => {
 		const home = mkdtempSync(join(tmpdir(), "runner-git-agent-"));
 		try {
