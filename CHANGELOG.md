@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Let prepared updates drain passive merge/CI waits and queued ticket delivery instead of waiting indefinitely; preserve checkpoints, approvals and in-flight results for recovery.
+
 - Let new Factory and Takeover runs make and document necessary dependency, caller and fixture edits without repeatedly requesting approval for omitted file paths; retain explicit scope restrictions and approval for material design changes. ([#148](https://github.com/jappyjan/bobs-factory/pull/148))
 
 - Let saved specialist reviews track explicitly staged QA, guide, human acceptance and merge obligations at their own gates, preventing repeated code-fix loops while retaining mandatory checks and approval. ([#147](https://github.com/jappyjan/bobs-factory/pull/147))

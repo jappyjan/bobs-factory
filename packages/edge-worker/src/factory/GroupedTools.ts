@@ -1,3 +1,4 @@
+import { isUpdatePaused } from "../updates/UpdatePausedError.js";
 import { resolveGitProvider } from "./GitProvider.js";
 import { assertCurrentImpact, effectiveApproval } from "./Impact.js";
 import { confirmedMerge } from "./MergeRecovery.js";
@@ -184,6 +185,7 @@ export async function groupedTool(
 				try {
 					output = (await tool(child)) as Record<string, unknown>;
 				} catch (error) {
+					if (isUpdatePaused(error)) throw error;
 					throw new Error(
 						`${repository.name}: ${error instanceof Error ? error.message : String(error)}`,
 						{ cause: error },
@@ -404,6 +406,7 @@ export async function groupedTool(
 					output: output as Record<string, unknown>,
 				});
 		} catch (error) {
+			if (isUpdatePaused(error)) throw error;
 			throw new Error(
 				`${repository.name}: ${error instanceof Error ? error.message : String(error)}`,
 				{ cause: error },

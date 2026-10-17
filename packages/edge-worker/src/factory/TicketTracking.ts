@@ -620,6 +620,9 @@ export class TicketTracking {
 				await persisted;
 				const sync = run.ticketSync!;
 				for (const receipt of sync.receipts) {
+					// Finish the current receipt naturally, then park even flushes
+					// accepted before the freeze. Their intent is already durable.
+					if (this.updateMaintenance) break;
 					if (
 						receipt.delivered ||
 						receipt.superseded ||
@@ -745,7 +748,11 @@ export class TicketTracking {
 				}
 			});
 		this.queues.set(ticketKey, work);
-		await work;
+		try {
+			await work;
+		} finally {
+			if (this.queues.get(ticketKey) === work) this.queues.delete(ticketKey);
+		}
 		const pending = run.ticketSync.receipts.find(
 			(r) => !r.delivered && !r.superseded && r.error,
 		);
@@ -763,7 +770,6 @@ export class TicketTracking {
 			timer.unref();
 			this.retries.set(run.id, timer);
 		}
-		if (this.queues.get(ticketKey) === work) this.queues.delete(ticketKey);
 	}
 }
 export function canonicalPr(url: string): string {
