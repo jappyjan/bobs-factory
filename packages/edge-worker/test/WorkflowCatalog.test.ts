@@ -127,7 +127,7 @@ it.each([
 	);
 	expect(pipeline.steps.find((s) => s.id === "guide")).toMatchObject({
 		videoContract: "video-v1",
-		guideContract: "brief-v2",
+		guideContract: "brief-v3",
 	});
 	expect(migrated.selectWorkflow(["my-factory"], "manual").id).toBe("factory");
 	const saved = readFileSync(path, "utf8");

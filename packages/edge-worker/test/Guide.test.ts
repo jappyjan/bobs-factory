@@ -10,6 +10,8 @@ import {
 	BRIEF_CONTRACT,
 	briefPrompt,
 	briefVideoInstructions,
+	DIVE_CONTRACT,
+	divePrompt,
 	STORY_CONTRACT,
 	storyPrompt,
 } from "../src/factory/GuideAuthoring.js";
@@ -299,7 +301,7 @@ it("rejects absent nonvisual maps and links with actionable paths, but reads his
 	expect(GuideSchema.safeParse(historic).success).toBe(true);
 });
 
-it("regenerates stock guides as show & tell while keeping custom guides and role settings", () => {
+it("regenerates stock guides with Dig deeper while keeping custom guides and role settings", () => {
 	const settings = {
 		model: "operator-model",
 		reasoningEffort: "high" as const,
@@ -308,21 +310,26 @@ it("regenerates stock guides as show & tell while keeping custom guides and role
 		stockBrief.prompt!.indexOf("\nFor impact-v1 follow-ups"),
 	);
 	const v1 = briefPrompt + briefVideoInstructions;
+	const v2 = storyPrompt + briefVideoInstructions;
 	for (const [old, expected] of [
-		[legacyGuideStep, storyPrompt + briefVideoInstructions],
+		[legacyGuideStep, divePrompt + briefVideoInstructions],
 		[
 			{ ...stockBrief, guideContract: BRIEF_CONTRACT, prompt: v1 },
-			storyPrompt + briefVideoInstructions,
+			divePrompt + briefVideoInstructions,
 		],
 		[
 			{ ...stockBrief, guideContract: BRIEF_CONTRACT, prompt: v1 + impact },
+			stockBrief.prompt,
+		],
+		[
+			{ ...stockBrief, guideContract: STORY_CONTRACT, prompt: v2 + impact },
 			stockBrief.prompt,
 		],
 	] as const) {
 		const upgraded = upgradedGuideStep({ ...old, ...settings });
 		expect(upgraded).toMatchObject({
 			...settings,
-			guideContract: STORY_CONTRACT,
+			guideContract: DIVE_CONTRACT,
 			prompt: expected,
 			videoContract: "video-v1",
 		});

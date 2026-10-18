@@ -77,6 +77,24 @@ export function useReviewFiles(run: any, guide: Guide) {
 		retry: false,
 	});
 }
+/** One file's stored patch from the guide's review snapshot. */
+export function useReviewPatch(
+	runId: string,
+	manifest: ReviewFilesManifest,
+	guideHash: string,
+	file: ReviewFile,
+) {
+	return useQuery<{ patch: string | null; reason: string | null }>({
+		queryKey: ["review-patch", runId, manifest.snapshotId, file.id, guideHash],
+		queryFn: ({ signal }) =>
+			api(
+				`/api/runs/${encodeURIComponent(runId)}/review-files/${manifest.snapshotId}/${file.id}?guide=${guideHash}`,
+				{ signal },
+			),
+		staleTime: Infinity,
+		retry: false,
+	});
+}
 function Counts({ files }: { files: ReviewFile[] }) {
 	const totals = fileTotals(files);
 	return (
@@ -277,16 +295,7 @@ function DiffFile({
 	guideHash: string;
 	runId: string;
 }) {
-	const query = useQuery({
-		queryKey: ["review-patch", runId, manifest.snapshotId, file.id, guideHash],
-		queryFn: ({ signal }) =>
-			api(
-				`/api/runs/${encodeURIComponent(runId)}/review-files/${manifest.snapshotId}/${file.id}?guide=${guideHash}`,
-				{ signal },
-			),
-		staleTime: Infinity,
-		retry: false,
-	});
+	const query = useReviewPatch(runId, manifest, guideHash, file);
 	return (
 		<>
 			<p className="muted diff-metadata">
