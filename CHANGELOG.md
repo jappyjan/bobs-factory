@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Continue an existing architecture approval after independent review confirms cumulative implementation discoveries remain within the accepted design, preventing repeated approval requests for necessary tests and callers while preserving material-change and explicit approval gates.
+- Continue an existing architecture approval after independent review confirms cumulative implementation discoveries remain within the accepted design, preventing repeated approval requests for necessary tests and callers while preserving material-change and explicit approval gates. ([#153](https://github.com/jappyjan/bobs-factory/pull/153))
 
 - Recover new and saved impact assessments that confuse ticket notices with PR feedback, and prevent assessments from invalidating themselves through retained requirement references; preserve conversation IDs, original evidence and strict feedback hashes. ([#152](https://github.com/jappyjan/bobs-factory/pull/152))
 
