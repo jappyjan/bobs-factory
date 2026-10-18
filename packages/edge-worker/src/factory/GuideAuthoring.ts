@@ -57,6 +57,10 @@ Story rules:
 - Speak as Bob to the reviewer, first person, the way you would explain it at their desk: short sentences, everyday words, one idea per slide. title is the point of the slide (<=90); say is what you would add out loud (<=240). No code, file paths, class or function names, IDs or jargon a product owner would not use; when the reviewer must know a technical term, say what it means.
 - 2-6 slides in this order: what was asked and where each part landed, what changed (core behavior first), how we know it works, then anything else worth seeing. A small fix can be one beforeAfter slide and one proof slide.
 - Never repeat yourCall, notVerified or beyondAsk in slides: the reader presents them as their own slides after yours and ends with the decision. Because they appear in the show & tell, write them in the same plain voice: say what changes for people and what is at stake, not internal mechanics.
+- Be concrete: put the actual limits, counts and timings that changed into slide details (e.g. "at most 8 KB", "26 ms"), not "checks vary".
+- Every story screenshot sets focus to the pixels that matter (open the image to choose it), so it stays readable on a phone; prefer a pair that differs only in the condition shown.
+- A chart compares 2-8 different stages, conditions or cases measured the same way, so the bars differ meaningfully. Never chart a total against itself or offered against confirmed; headline totals belong in stats.
+- Translate technical terms into what a person experiences: "names longer than 128 characters or containing / or #" rather than "identifiers over 128 code units or containing MQTT wildcards"; "a generic error that does not say which version failed" rather than "revision 0 and an empty hash".
 - Every number, screenshot and claim comes from the evidence above; the story may simplify wording, never facts. stats holds 0-3 headline numbers a person remembers.`;
 
 /** Appended at runtime to every review-brief step, including frozen and custom ones. */
