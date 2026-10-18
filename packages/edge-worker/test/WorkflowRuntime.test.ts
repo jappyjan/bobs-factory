@@ -16,6 +16,8 @@ import {
 	parseAgentOutput,
 	toolArguments,
 } from "../src/factory/FactoryTools.js";
+import { storyPrompt } from "../src/factory/GuideAuthoring.js";
+import { legacyGuidePrompt } from "../src/factory/legacyGuidePrompt.js";
 import { OperatorService } from "../src/factory/OperatorService.js";
 import { validateWorkflows, type Workflow } from "../src/factory/Workflow.js";
 import {
@@ -2250,6 +2252,49 @@ it("regenerates only the pending guide in a nested pipeline without approval or 
 			decision: "approve",
 		}),
 	).toThrow("revision changed");
+	await runtime.shutdown();
+});
+
+it("regenerates a pending stock guide in the current show & tell format", async () => {
+	const contracts: (string | undefined)[] = [];
+	const { runtime } = create({
+		agent: async (context) => {
+			contracts.push(context.step.guideContract);
+			if (context.step.guideContract) throw new Error("observed");
+			return { summary: "Whole feature" };
+		},
+		tool: async () => ({
+			headSha: "same",
+			url: "https://github.com/test/repo/pull/1",
+		}),
+	});
+	const flow = workflow([
+		agent("guide", { next: "handoff", prompt: legacyGuidePrompt }),
+		{
+			id: "handoff",
+			name: "Handoff",
+			type: "tool",
+			tool: "handoff",
+			next: "human-review",
+		},
+		{
+			id: "human-review",
+			name: "Human review",
+			type: "tool",
+			tool: "human-review",
+			next: "end",
+		},
+	]);
+	runtime.updateWorkflows([...defaultWorkflows, flow]);
+	const run = start(runtime, flow);
+	void runtime.launch(run);
+	await waitFor(() => expect(run.status).toBe("waiting"));
+	await runtime.refreshGuide(run.id, run.reviewGate!.id);
+	await waitFor(() => expect(contracts).toEqual([undefined, "brief-v2"]));
+	expect(run.workflow.steps.find((s) => s.id === "guide")).toMatchObject({
+		guideContract: "brief-v2",
+		prompt: storyPrompt,
+	});
 	await runtime.shutdown();
 });
 

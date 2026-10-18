@@ -24,6 +24,7 @@ import type { FeedbackTarget } from "./review-feedback";
 import { ChangedFiles, FileLink, useReviewFiles } from "./review-files";
 import { fileTotals } from "./review-model";
 import { readStored, signature, writeStored } from "./review-state";
+import { StoryDeck } from "./review-story";
 import { Button, External, Modal } from "./ui";
 
 type Inventory = {
@@ -86,6 +87,23 @@ export function BriefReview({
 		[agreed, storageKey],
 	);
 	const [lightbox, setLightbox] = useState<Shot>();
+	// With a show & tell, the line-by-line evidence waits until it is wanted.
+	const [evidenceShown, setEvidenceShown] = useRestorableState(
+		`review/evidence/${storageKey}`,
+		false,
+	);
+	const evidenceOpen = !brief.story || evidenceShown;
+	const reveal = (
+		selector?: string,
+		block: ScrollLogicalPosition = "center",
+	) => {
+		setEvidenceShown(true);
+		requestAnimationFrame(() =>
+			document
+				.querySelector<HTMLElement>(selector ?? "#brief-evidence")
+				?.scrollIntoView({ behavior: "smooth", block }),
+		);
+	};
 	const [flowFocus, setFlowFocus] = useState<FlowFocus>();
 	const evidence = useQuery({
 		queryKey: [
@@ -196,6 +214,7 @@ export function BriefReview({
 		order: [section, order],
 	});
 	const goToComment = (item: FeedbackTarget) => {
+		setEvidenceShown(true);
 		feedback?.update((d) => ({ ...d, editing: item.path }));
 		requestAnimationFrame(() =>
 			document
@@ -217,6 +236,9 @@ export function BriefReview({
 				onObject={() => {
 					setAgreed((current) => ({ ...current, [path]: false }));
 					feedback.update((d) => ({ ...d, editing: path }));
+					// Objections from the show & tell are written next to their evidence.
+					if (!evidenceOpen)
+						reveal(`[data-comment-path="${CSS.escape(path)}"]`);
 				}}
 			/>
 		);
@@ -227,6 +249,18 @@ export function BriefReview({
 		calls: 3,
 		system: 4,
 		beyond: brief.system ? 5 : 4,
+	};
+	const readiness =
+		brief.verdict.readiness === "ready-with-caveats" && brief.yourCall.length
+			? `Ready, with ${brief.yourCall.length} decision${brief.yourCall.length === 1 ? "" : "s"} for you`
+			: READINESS[brief.verdict.readiness];
+	const decide = () => {
+		feedback?.update((d) => ({ ...d, collectedOpen: true }));
+		requestAnimationFrame(() =>
+			document
+				.getElementById("brief-decide")
+				?.scrollIntoView({ behavior: "smooth", block: "start" }),
+		);
 	};
 	const files = fileQuery.data?.manifest.files;
 	const totals = files ? fileTotals(files) : undefined;
@@ -242,418 +276,463 @@ export function BriefReview({
 	return (
 		<div className="brief">
 			<div className="brief-main">
-				<section
-					className={`brief-verdict ${brief.verdict.readiness}`}
-					aria-labelledby="brief-verdict"
-				>
-					<p className="brief-readiness">
-						{brief.verdict.readiness === "ready-with-caveats" &&
-						brief.yourCall.length
-							? `Ready, with ${brief.yourCall.length} decision${brief.yourCall.length === 1 ? "" : "s"} for you`
-							: READINESS[brief.verdict.readiness]}
-					</p>
-					<h2 id="brief-verdict" tabIndex={-1}>
-						{brief.verdict.headline}
-					</h2>
-					<p className="brief-why">{brief.verdict.why}</p>
-					<div className="brief-tally">
-						{(Object.keys(STATUS) as BriefRequirement["status"][]).map(
-							(status) => {
-								const count = brief.requirements.filter(
-									(r) => r.status === status,
-								).length;
-								return count ? (
-									<span key={status} className={`brief-pill status-${status}`}>
-										{STATUS[status].icon} {count}{" "}
-										{STATUS[status].label.toLowerCase()}
-									</span>
-								) : null;
-							},
-						)}
-						{totals && (
-							<span className="brief-pill quiet">
-								{totals.files} {totals.files === 1 ? "file" : "files"}
-								{totals.additions !== null &&
-									` · +${totals.additions} −${totals.deletions}`}
-							</span>
-						)}
-					</div>
-				</section>
-
-				{brief.sinceLastReview && (
-					<section className="brief-since" aria-labelledby="brief-since">
-						<h3 id="brief-since">Since your last review</h3>
-						<p>{brief.sinceLastReview.summary}</p>
-						<ul>
-							{brief.sinceLastReview.changes.map((change) => (
-								<li key={change.what}>{change.what}</li>
-							))}
-						</ul>
+				{brief.story && (
+					<StoryDeck
+						brief={brief}
+						story={brief.story}
+						storageKey={storageKey}
+						readiness={readiness}
+						proof={proof}
+						judge={(i) => judge(`/yourCall/${i}`, ["Fine", "Change it"])}
+						onEvidence={() => reveal(undefined, "start")}
+						onDecide={decide}
+					/>
+				)}
+				{brief.story && (
+					<section className="brief-evidence-toggle" id="brief-evidence">
+						<div>
+							<h3>The evidence behind it</h3>
+							<p className="muted">
+								{brief.requirements.length} requirement
+								{brief.requirements.length === 1 ? "" : "s"} with proof, how
+								it’s built, and every changed file.
+							</p>
+						</div>
+						<Button
+							variant="secondary"
+							aria-expanded={evidenceOpen}
+							onClick={() => setEvidenceShown(!evidenceOpen)}
+						>
+							{evidenceOpen ? "Hide" : "Show"}
+						</Button>
 					</section>
 				)}
-
-				<section className="brief-section" aria-labelledby="brief-ask">
-					<h3 id="brief-ask">
-						<span className="brief-step">{section.ask}</span> What you asked for
-					</h3>
-					<blockquote className="brief-quote">
-						<p>{brief.ask.quote}</p>
-						<footer>
-							{brief.ask.url ? (
-								<External href={brief.ask.url}>{brief.ask.source} ↗</External>
-							) : (
-								brief.ask.source
-							)}
-						</footer>
-					</blockquote>
-					{brief.interpretation.length > 0 && (
-						<>
-							<h4 className="brief-sub">How Bob read it</h4>
-							<ul className="brief-decisions">
-								{brief.interpretation.map((d, i) => (
-									<li key={d.topic} className={`by-${d.decidedBy}`}>
-										<Commentable
-											target={target(
-												`/interpretation/${i}`,
-												d.topic,
-												"Interpretation",
-												`${d.topic}: ${d.chosen}`,
-												1,
-												i,
-											)}
-										>
-											<div className="brief-decision">
-												<strong>{d.topic}</strong>
-												<span className="brief-decision-chosen">
-													{d.chosen}
-													{d.alternatives?.length ? (
-														<small>
-															Instead of: {d.alternatives.join(" · ")}
-														</small>
-													) : null}
-													{d.note && <small>{d.note}</small>}
-												</span>
-												<span className={`brief-by by-${d.decidedBy}`}>
-													{DECIDED[d.decidedBy]}
-												</span>
-											</div>
-										</Commentable>
-									</li>
-								))}
-							</ul>
-						</>
-					)}
-				</section>
-
-				<section className="brief-section" aria-labelledby="brief-requirements">
-					<h3 id="brief-requirements">
-						<span className="brief-step">{section.requirements}</span> Does it
-						do that?
-					</h3>
-					<p className="muted">
-						Each line carries its strongest proof. ● seen working at this
-						revision · ◐ only tests prove it · ◑ some cases unproven.
-					</p>
-					<ol className="brief-lines">
-						{brief.requirements.map((r, i) => {
-							const path = `/requirements/${i}`;
-							const notes = assessments.filter((a) =>
-								r.covers?.includes(a.requirementId),
-							);
-							return (
-								<li
-									key={r.id}
-									id={`brief-line-${r.id}`}
-									className={`brief-line status-${r.status} ${commented.has(path) ? "objected" : agreed[path] ? "agreed" : ""}`}
-								>
-									<Commentable
-										target={target(
-											path,
-											r.text,
-											"Requirement",
-											`${r.text} (${STATUS[r.status].label})`,
-											2,
-											i,
-										)}
-									>
-										<header className="brief-line-head">
+				{evidenceOpen && (
+					<>
+						<section
+							className={`brief-verdict ${brief.verdict.readiness}`}
+							aria-labelledby="brief-verdict"
+						>
+							<p className="brief-readiness">{readiness}</p>
+							<h2 id="brief-verdict" tabIndex={-1}>
+								{brief.verdict.headline}
+							</h2>
+							<p className="brief-why">{brief.verdict.why}</p>
+							<div className="brief-tally">
+								{(Object.keys(STATUS) as BriefRequirement["status"][]).map(
+									(status) => {
+										const count = brief.requirements.filter(
+											(r) => r.status === status,
+										).length;
+										return count ? (
 											<span
-												className={`brief-status status-${r.status}`}
-												role="img"
-												aria-label={STATUS[r.status].label}
+												key={status}
+												className={`brief-pill status-${status}`}
 											>
-												{STATUS[r.status].icon}
+												{STATUS[status].icon} {count}{" "}
+												{STATUS[status].label.toLowerCase()}
 											</span>
-											<div>
-												<p className="brief-line-text">
-													<span className="muted">{i + 1}.</span> {r.text}
-												</p>
-												<small className="muted">
-													{STATUS[r.status].label} · {ORIGIN[r.origin]}
-												</small>
-											</div>
-											{judge(path, ["Met", "Not met"])}
-										</header>
-									</Commentable>
-									{proof(r.proof)}
-									{r.caveat && <p className="brief-caveat">⚠ {r.caveat}</p>}
-									{r.more?.length || r.files.length || notes.length ? (
-										<details className="brief-more">
-											<summary>
-												{[
-													r.more?.length && `${r.more.length} more proof`,
-													r.files.length &&
-														`${r.files.length} ${r.files.length === 1 ? "file" : "files"}`,
-													notes.length && "review notes",
-												]
-													.filter(Boolean)
-													.join(" · ")}
-											</summary>
-											{r.more?.map((value, j) => (
-												<div key={j}>{proof(value)}</div>
-											))}
-											<FileChips files={r.files} run={run} />
-											{notes.map((a) => (
-												<p key={a.requirementId} className="brief-review-note">
-													<strong>
-														{a.requirementId} · {a.status.replaceAll("_", " ")}
-													</strong>{" "}
-													{a.reason}
-												</p>
-											))}
-										</details>
-									) : null}
-								</li>
-							);
-						})}
-					</ol>
-				</section>
+										) : null;
+									},
+								)}
+								{totals && (
+									<span className="brief-pill quiet">
+										{totals.files} {totals.files === 1 ? "file" : "files"}
+										{totals.additions !== null &&
+											` · +${totals.additions} −${totals.deletions}`}
+									</span>
+								)}
+							</div>
+						</section>
 
-				<section className="brief-section" aria-labelledby="brief-calls">
-					<h3 id="brief-calls">
-						<span className="brief-step">{section.calls}</span> Your call
-					</h3>
-					{brief.yourCall.length === 0 ? (
-						<p className="brief-empty">
-							Nothing here needs taste or a trade-off from you. This change is
-							mechanical.
-						</p>
-					) : (
-						<ol className="brief-lines">
-							{brief.yourCall.map((c, i) => {
-								const path = `/yourCall/${i}`;
-								return (
-									<li
-										key={c.question}
-										className={`brief-line ${commented.has(path) ? "objected" : agreed[path] ? "agreed" : ""}`}
-									>
-										<Commentable
-											target={target(
-												path,
-												c.question,
-												"Decision",
-												`${c.question} Bob chose: ${c.bobChose}`,
-												3,
-												i,
-											)}
-										>
-											<header className="brief-line-head call">
-												<p className="brief-line-text">{c.question}</p>
-												{judge(path, ["Fine", "Change it"])}
-											</header>
-										</Commentable>
-										<p>{c.context}</p>
-										<p className="brief-bob">
-											<strong>Bob chose:</strong> {c.bobChose}
-										</p>
-										{c.proof && proof(c.proof)}
-									</li>
-								);
-							})}
-						</ol>
-					)}
-				</section>
+						{brief.sinceLastReview && (
+							<section className="brief-since" aria-labelledby="brief-since">
+								<h3 id="brief-since">Since your last review</h3>
+								<p>{brief.sinceLastReview.summary}</p>
+								<ul>
+									{brief.sinceLastReview.changes.map((change) => (
+										<li key={change.what}>{change.what}</li>
+									))}
+								</ul>
+							</section>
+						)}
 
-				{brief.system && (
-					<section className="brief-section" aria-labelledby="brief-system">
-						<h3 id="brief-system">
-							<span className="brief-step">{section.system}</span> How it’s
-							built
-						</h3>
-						<BriefSystem
-							system={brief.system}
-							focus={flowFocus}
-							requirementNumber={requirementNumber}
-						/>
-					</section>
-				)}
-
-				<section className="brief-section" aria-labelledby="brief-beyond">
-					<h3 id="brief-beyond">
-						<span className="brief-step">{section.beyond}</span> Changed beyond
-						the ask
-					</h3>
-					{brief.beyondAsk.length === 0 ? (
-						<p className="brief-empty">
-							Every changed file serves a requirement above.
-						</p>
-					) : (
-						<ul className="brief-beyond">
-							{brief.beyondAsk.map((b, i) => (
-								<li
-									key={b.what}
-									id={`brief-line-beyond-${i}`}
-									className={`attention-${b.attention}`}
-								>
-									<Commentable
-										target={target(
-											`/beyondAsk/${i}`,
-											b.what,
-											"Change beyond the ask",
-											`${b.what} ${b.why}`,
-											5,
-											i,
-										)}
-									>
-										<span
-											className="brief-dot"
-											role="img"
-											aria-label={`Attention: ${b.attention}`}
-										/>
-										<div>
-											<p>
-												<strong>{b.what}</strong>
-											</p>
-											<p className="muted">{b.why}</p>
-											<FileChips files={b.files} run={run} />
-										</div>
-									</Commentable>
-								</li>
-							))}
-						</ul>
-					)}
-					{brief.notVerified.length > 0 || brief.noticed?.length ? (
-						<div className="brief-limits">
-							{brief.notVerified.length > 0 && (
-								<div>
-									<h4 className="brief-sub">Not verified</h4>
-									<ul>
-										{brief.notVerified.map((n) => (
-											<li key={n.what}>
-												<strong>{n.what}.</strong>{" "}
-												<span className="muted">{n.why}</span>
+						<section className="brief-section" aria-labelledby="brief-ask">
+							<h3 id="brief-ask">
+								<span className="brief-step">{section.ask}</span> What you asked
+								for
+							</h3>
+							<blockquote className="brief-quote">
+								<p>{brief.ask.quote}</p>
+								<footer>
+									{brief.ask.url ? (
+										<External href={brief.ask.url}>
+											{brief.ask.source} ↗
+										</External>
+									) : (
+										brief.ask.source
+									)}
+								</footer>
+							</blockquote>
+							{brief.interpretation.length > 0 && (
+								<>
+									<h4 className="brief-sub">How Bob read it</h4>
+									<ul className="brief-decisions">
+										{brief.interpretation.map((d, i) => (
+											<li key={d.topic} className={`by-${d.decidedBy}`}>
+												<Commentable
+													target={target(
+														`/interpretation/${i}`,
+														d.topic,
+														"Interpretation",
+														`${d.topic}: ${d.chosen}`,
+														1,
+														i,
+													)}
+												>
+													<div className="brief-decision">
+														<strong>{d.topic}</strong>
+														<span className="brief-decision-chosen">
+															{d.chosen}
+															{d.alternatives?.length ? (
+																<small>
+																	Instead of: {d.alternatives.join(" · ")}
+																</small>
+															) : null}
+															{d.note && <small>{d.note}</small>}
+														</span>
+														<span className={`brief-by by-${d.decidedBy}`}>
+															{DECIDED[d.decidedBy]}
+														</span>
+													</div>
+												</Commentable>
 											</li>
 										))}
 									</ul>
-								</div>
+								</>
 							)}
-							{brief.noticed?.length ? (
-								<div>
-									<h4 className="brief-sub">Noticed along the way</h4>
-									<ul>
-										{brief.noticed.map((n) => (
-											<li key={n} className="muted">
-												{n}
+						</section>
+
+						<section
+							className="brief-section"
+							aria-labelledby="brief-requirements"
+						>
+							<h3 id="brief-requirements">
+								<span className="brief-step">{section.requirements}</span> Does
+								it do that?
+							</h3>
+							<p className="muted">
+								Each line carries its strongest proof. ● seen working at this
+								revision · ◐ only tests prove it · ◑ some cases unproven.
+							</p>
+							<ol className="brief-lines">
+								{brief.requirements.map((r, i) => {
+									const path = `/requirements/${i}`;
+									const notes = assessments.filter((a) =>
+										r.covers?.includes(a.requirementId),
+									);
+									return (
+										<li
+											key={r.id}
+											id={`brief-line-${r.id}`}
+											className={`brief-line status-${r.status} ${commented.has(path) ? "objected" : agreed[path] ? "agreed" : ""}`}
+										>
+											<Commentable
+												target={target(
+													path,
+													r.text,
+													"Requirement",
+													`${r.text} (${STATUS[r.status].label})`,
+													2,
+													i,
+												)}
+											>
+												<header className="brief-line-head">
+													<span
+														className={`brief-status status-${r.status}`}
+														role="img"
+														aria-label={STATUS[r.status].label}
+													>
+														{STATUS[r.status].icon}
+													</span>
+													<div>
+														<p className="brief-line-text">
+															<span className="muted">{i + 1}.</span> {r.text}
+														</p>
+														<small className="muted">
+															{STATUS[r.status].label} · {ORIGIN[r.origin]}
+														</small>
+													</div>
+													{judge(path, ["Met", "Not met"])}
+												</header>
+											</Commentable>
+											{proof(r.proof)}
+											{r.caveat && <p className="brief-caveat">⚠ {r.caveat}</p>}
+											{r.more?.length || r.files.length || notes.length ? (
+												<details className="brief-more">
+													<summary>
+														{[
+															r.more?.length && `${r.more.length} more proof`,
+															r.files.length &&
+																`${r.files.length} ${r.files.length === 1 ? "file" : "files"}`,
+															notes.length && "review notes",
+														]
+															.filter(Boolean)
+															.join(" · ")}
+													</summary>
+													{r.more?.map((value, j) => (
+														<div key={j}>{proof(value)}</div>
+													))}
+													<FileChips files={r.files} run={run} />
+													{notes.map((a) => (
+														<p
+															key={a.requirementId}
+															className="brief-review-note"
+														>
+															<strong>
+																{a.requirementId} ·{" "}
+																{a.status.replaceAll("_", " ")}
+															</strong>{" "}
+															{a.reason}
+														</p>
+													))}
+												</details>
+											) : null}
+										</li>
+									);
+								})}
+							</ol>
+						</section>
+
+						<section className="brief-section" aria-labelledby="brief-calls">
+							<h3 id="brief-calls">
+								<span className="brief-step">{section.calls}</span> Your call
+							</h3>
+							{brief.yourCall.length === 0 ? (
+								<p className="brief-empty">
+									Nothing here needs taste or a trade-off from you. This change
+									is mechanical.
+								</p>
+							) : (
+								<ol className="brief-lines">
+									{brief.yourCall.map((c, i) => {
+										const path = `/yourCall/${i}`;
+										return (
+											<li
+												key={c.question}
+												className={`brief-line ${commented.has(path) ? "objected" : agreed[path] ? "agreed" : ""}`}
+											>
+												<Commentable
+													target={target(
+														path,
+														c.question,
+														"Decision",
+														`${c.question} Bob chose: ${c.bobChose}`,
+														3,
+														i,
+													)}
+												>
+													<header className="brief-line-head call">
+														<p className="brief-line-text">{c.question}</p>
+														{judge(path, ["Fine", "Change it"])}
+													</header>
+												</Commentable>
+												<p>{c.context}</p>
+												<p className="brief-bob">
+													<strong>Bob chose:</strong> {c.bobChose}
+												</p>
+												{c.proof && proof(c.proof)}
 											</li>
-										))}
-									</ul>
+										);
+									})}
+								</ol>
+							)}
+						</section>
+
+						{brief.system && (
+							<section className="brief-section" aria-labelledby="brief-system">
+								<h3 id="brief-system">
+									<span className="brief-step">{section.system}</span> How it’s
+									built
+								</h3>
+								<BriefSystem
+									system={brief.system}
+									focus={flowFocus}
+									requirementNumber={requirementNumber}
+								/>
+							</section>
+						)}
+
+						<section className="brief-section" aria-labelledby="brief-beyond">
+							<h3 id="brief-beyond">
+								<span className="brief-step">{section.beyond}</span> Changed
+								beyond the ask
+							</h3>
+							{brief.beyondAsk.length === 0 ? (
+								<p className="brief-empty">
+									Every changed file serves a requirement above.
+								</p>
+							) : (
+								<ul className="brief-beyond">
+									{brief.beyondAsk.map((b, i) => (
+										<li
+											key={b.what}
+											id={`brief-line-beyond-${i}`}
+											className={`attention-${b.attention}`}
+										>
+											<Commentable
+												target={target(
+													`/beyondAsk/${i}`,
+													b.what,
+													"Change beyond the ask",
+													`${b.what} ${b.why}`,
+													5,
+													i,
+												)}
+											>
+												<span
+													className="brief-dot"
+													role="img"
+													aria-label={`Attention: ${b.attention}`}
+												/>
+												<div>
+													<p>
+														<strong>{b.what}</strong>
+													</p>
+													<p className="muted">{b.why}</p>
+													<FileChips files={b.files} run={run} />
+												</div>
+											</Commentable>
+										</li>
+									))}
+								</ul>
+							)}
+							{brief.notVerified.length > 0 || brief.noticed?.length ? (
+								<div className="brief-limits">
+									{brief.notVerified.length > 0 && (
+										<div>
+											<h4 className="brief-sub">Not verified</h4>
+											<ul>
+												{brief.notVerified.map((n) => (
+													<li key={n.what}>
+														<strong>{n.what}.</strong>{" "}
+														<span className="muted">{n.why}</span>
+													</li>
+												))}
+											</ul>
+										</div>
+									)}
+									{brief.noticed?.length ? (
+										<div>
+											<h4 className="brief-sub">Noticed along the way</h4>
+											<ul>
+												{brief.noticed.map((n) => (
+													<li key={n} className="muted">
+														{n}
+													</li>
+												))}
+											</ul>
+										</div>
+									) : null}
 								</div>
 							) : null}
-						</div>
-					) : null}
-				</section>
+						</section>
 
-				{brief.externalResources && (
-					<section
-						className="brief-section"
-						aria-label="Verified ticket changes"
-					>
-						<h3>Verified ticket changes</h3>
-						<p>
-							Applied ticket changes remain after requesting corrections. Review
-							the before and after content and verified criteria.
-						</p>
-						{brief.externalResources.map((resource) => (
-							<p key={resource.key}>
-								<External href={resource.url}>{resource.key} ↗</External>
-							</p>
-						))}
-						{brief.externalChanges?.map((change, i) => (
-							<Commentable
-								key={change.id}
-								target={target(
-									`/externalChanges/${i}`,
-									change.target,
-									"Ticket change",
-									change.outcome,
-									6,
-									i,
-								)}
+						{brief.externalResources && (
+							<section
+								className="brief-section"
+								aria-label="Verified ticket changes"
 							>
-								<h4>
-									{change.target}: {change.outcome}
-								</h4>
-								<h5>Before</h5>
-								<pre>{change.before}</pre>
-								<h5>After</h5>
-								<pre>{change.after}</pre>
-								<p>{change.limitation}</p>
-							</Commentable>
-						))}
-						{brief.externalCriteria?.map((criterion, i) => (
-							<Commentable
-								key={criterion.id}
-								target={target(
-									`/externalCriteria/${i}`,
-									criterion.criterion,
-									"Verified criterion",
-									criterion.observed,
-									6,
-									i + 100,
-								)}
-							>
-								<details>
-									<summary>✓ {criterion.criterion}</summary>
-									<pre>{criterion.observed}</pre>
-								</details>
-							</Commentable>
-						))}
-					</section>
+								<h3>Verified ticket changes</h3>
+								<p>
+									Applied ticket changes remain after requesting corrections.
+									Review the before and after content and verified criteria.
+								</p>
+								{brief.externalResources.map((resource) => (
+									<p key={resource.key}>
+										<External href={resource.url}>{resource.key} ↗</External>
+									</p>
+								))}
+								{brief.externalChanges?.map((change, i) => (
+									<Commentable
+										key={change.id}
+										target={target(
+											`/externalChanges/${i}`,
+											change.target,
+											"Ticket change",
+											change.outcome,
+											6,
+											i,
+										)}
+									>
+										<h4>
+											{change.target}: {change.outcome}
+										</h4>
+										<h5>Before</h5>
+										<pre>{change.before}</pre>
+										<h5>After</h5>
+										<pre>{change.after}</pre>
+										<p>{change.limitation}</p>
+									</Commentable>
+								))}
+								{brief.externalCriteria?.map((criterion, i) => (
+									<Commentable
+										key={criterion.id}
+										target={target(
+											`/externalCriteria/${i}`,
+											criterion.criterion,
+											"Verified criterion",
+											criterion.observed,
+											6,
+											i + 100,
+										)}
+									>
+										<details>
+											<summary>✓ {criterion.criterion}</summary>
+											<pre>{criterion.observed}</pre>
+										</details>
+									</Commentable>
+								))}
+							</section>
+						)}
+
+						<details
+							className="brief-section brief-files"
+							aria-labelledby="brief-files"
+						>
+							<summary id="brief-files">
+								Every changed file, by requirement
+							</summary>
+							<ChangedFiles
+								query={fileQuery}
+								chapters={groups as unknown as GuideChapter[]}
+								run={run}
+								noun="requirement"
+								onChapter={(i) =>
+									document
+										.getElementById(groups[i - 1]?.anchor ?? "")
+										?.scrollIntoView({ behavior: "smooth", block: "center" })
+								}
+							/>
+						</details>
+
+						<section className="brief-delivery" aria-label="Delivery facts">
+							{checks?.length ? (
+								<span>
+									CI ✓ {passed}/{checks.length}
+									{skipped ? ` (${skipped} skipped)` : ""}
+								</span>
+							) : null}
+							{brief.hygiene.length > 0 && (
+								<ul>
+									{brief.hygiene.map((h) => (
+										<li key={h.text}>{h.text}</li>
+									))}
+								</ul>
+							)}
+						</section>
+					</>
 				)}
-
-				<details
-					className="brief-section brief-files"
-					aria-labelledby="brief-files"
-				>
-					<summary id="brief-files">Every changed file, by requirement</summary>
-					<ChangedFiles
-						query={fileQuery}
-						chapters={groups as unknown as GuideChapter[]}
-						run={run}
-						noun="requirement"
-						onChapter={(i) =>
-							document
-								.getElementById(groups[i - 1]?.anchor ?? "")
-								?.scrollIntoView({ behavior: "smooth", block: "center" })
-						}
-					/>
-				</details>
-
-				<section className="brief-delivery" aria-label="Delivery facts">
-					{checks?.length ? (
-						<span>
-							CI ✓ {passed}/{checks.length}
-							{skipped ? ` (${skipped} skipped)` : ""}
-						</span>
-					) : null}
-					{brief.hygiene.length > 0 && (
-						<ul>
-							{brief.hygiene.map((h) => (
-								<li key={h.text}>{h.text}</li>
-							))}
-						</ul>
-					)}
-				</section>
 
 				{(controls || feedback) && (
 					<section
