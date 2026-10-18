@@ -170,6 +170,7 @@ try {
 					"localhost-noauth.log",
 					"linear-delivery.log",
 					"architecture.log",
+					"architecture-continuation.log",
 					"impact-feedback-recovery.log",
 				].sort(),
 			),
