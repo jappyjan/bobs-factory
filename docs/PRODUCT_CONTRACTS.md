@@ -51,6 +51,14 @@ current contract only on its exact clean revision. A now-valid candidate keeps
 its native conversation and continues to independent review and human acceptance;
 stale, dirty or invalid candidates still require normal correction.
 
+New stock Factory and Takeover architecture decisions opt into `continueAccepted`.
+An independent candidate review can link a complete follow-up proposal to the latest
+exact human acceptance with `continuation: {proposalId, version, digest, reason}`.
+The runtime verifies that receipt, source route and frozen proposal/assets before
+continuing; it retains the original decision and records the link separately.
+Open choices, material or uncertain changes and `approval: always` still wait.
+Saved/custom graphs retain their accepted policy; no upgrade rewrites their gates.
+
 New stock Factory and Takeover plans treat declared file operations as the expected
 implementation footprint. Necessary dependency, caller, fixture, test, configuration
 and documentation edits within the accepted requirements and architecture proceed

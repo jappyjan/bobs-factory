@@ -66,6 +66,7 @@ function migrate(definitions: Workflow[]) {
 function setup(
 	classification: Architecture["classification"] = "meaningful",
 	extra: Partial<RuntimeHooks> = {},
+	decisionArguments: Record<string, unknown> = {},
 ) {
 	const home = mkdtempSync(join(tmpdir(), "architecture-test-"));
 	homes.push(home);
@@ -123,6 +124,7 @@ function setup(
 				planOutput: "plan",
 				revise: "design",
 				approval: "meaningful",
+				...decisionArguments,
 			},
 		},
 		{
@@ -395,6 +397,164 @@ describe("architecture authorization boundary", () => {
 			decision: "routine",
 			reason: proposal().rationale,
 		});
+	});
+	it("continues cumulative independently reviewed revisions from one exact human acceptance", async () => {
+		let implementations = 0;
+		const { runtime, run, running } = setup(
+			"meaningful",
+			{
+				agent: async (context) => {
+					if (context.step.architectureContract === "architecture-v1") {
+						const value = proposal();
+						value.changes = [
+							{ text: "Include the required caller tests.", from: "bob" },
+						];
+						return value;
+					}
+					if (context.step.architectureContract === "architecture-review-v1") {
+						const accepted = context.run.architectureDecisions?.find(
+							(d) => d.decision === "accept",
+						);
+						return {
+							approved: true,
+							feedback: [],
+							...(accepted
+								? {
+										continuation: {
+											proposalId: accepted.proposalId,
+											version: accepted.version,
+											digest: accepted.digest,
+											reason:
+												"Only caller tests were added; requirements, boundaries and exclusions match the accepted architecture.",
+										},
+									}
+								: {}),
+						};
+					}
+					implementations++;
+					return implementations < 3
+						? {
+								status: "blocked",
+								architectureRevision: true,
+								summary: "Discovered a caller test.",
+								checks: [],
+								questions: [],
+							}
+						: {
+								status: "completed",
+								summary: "All caller tests updated.",
+								checks: [],
+								questions: [],
+							};
+				},
+			},
+			{ continueAccepted: true },
+		);
+		try {
+			await waiting(run);
+			expect(implementations).toBe(0);
+			decide(runtime, run);
+			await running;
+			expect(run.error).toBeUndefined();
+			expect(run.status).toBe("completed");
+			expect(implementations).toBe(3);
+			expect(run.architectureDecisions).toHaveLength(1);
+			const accepted = run.architectureDecisions![0]!;
+			for (const p of run.architectureProposals!.slice(1)) {
+				expect(p.status).toBe(
+					p === run.architectureProposals!.at(-1) ? "routine" : "superseded",
+				);
+				expect(p.continuation).toMatchObject({
+					proposalId: accepted.proposalId,
+					digest: accepted.digest,
+				});
+			}
+			expect(run.outputs.plan).toEqual(
+				run.architectureProposals!.at(-1)!.content.candidate,
+			);
+		} finally {
+			await runtime.shutdown();
+		}
+	});
+	it.each([
+		"disabled",
+		"always",
+		"missing",
+		"stale",
+		"open",
+		"revoked",
+	])("retains the architecture gate when continuation is %s", async (mode) => {
+		let implementations = 0;
+		const { runtime, run } = setup(
+			"meaningful",
+			{
+				agent: async (context) => {
+					if (context.step.architectureContract === "architecture-v1") {
+						const value = proposal();
+						value.changes = [{ text: "Revised candidate.", from: "bob" }];
+						if (implementations && mode === "open")
+							Object.assign(value.decisions[0]!, {
+								status: "open",
+								pick: undefined,
+								decidedBy: undefined,
+								why: "Requires a scope decision.",
+							});
+						return value;
+					}
+					if (context.step.architectureContract === "architecture-review-v1") {
+						const accepted = context.run.architectureDecisions?.find(
+							(d) => d.decision === "accept",
+						);
+						return {
+							approved: true,
+							feedback: [],
+							...(accepted && mode !== "missing"
+								? {
+										continuation: {
+											proposalId: accepted.proposalId,
+											version: accepted.version,
+											digest: mode === "stale" ? "stale" : accepted.digest,
+											reason: "Only test wiring changed.",
+										},
+									}
+								: {}),
+						};
+					}
+					implementations++;
+					if (mode === "revoked")
+						context.run.architectureDecisions!.push({
+							...context.run.architectureDecisions![0]!,
+							decision: "revise",
+							feedback: "Change the boundary.",
+							at: new Date().toISOString(),
+						});
+					return {
+						status: "blocked",
+						architectureRevision: true,
+						summary: "Changed design.",
+						checks: [],
+						questions: [],
+					};
+				},
+			},
+			{
+				continueAccepted: mode !== "disabled",
+				...(mode === "always" ? { approval: "always" } : {}),
+			},
+		);
+		try {
+			await waiting(run);
+			decide(runtime, run);
+			await waitFor(() => expect(run.architectureProposals).toHaveLength(2));
+			await waiting(run);
+			expect(implementations).toBe(1);
+			expect(run.architectureProposals!.at(-1)!.status).toBe("pending");
+			expect(run.architectureGate?.proposalId).toBe(
+				run.architectureProposals!.at(-1)!.id,
+			);
+		} finally {
+			await runtime.shutdown();
+		}
 	});
 	it("blocks approval and bypass while a decision is open, then accepts the version that answers it", async () => {
 		let versions = 0;

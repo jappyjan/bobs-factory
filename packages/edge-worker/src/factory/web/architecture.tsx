@@ -1124,7 +1124,9 @@ export function ArchitecturePage() {
 					)}
 					{latest.status === "routine" && (
 						<p className="arch-banner quiet">
-							Bob treated this as routine, so no approval was needed.{" "}
+							{latest.continuation
+								? "Independent review confirmed this revision stays within your approved architecture."
+								: "Bob treated this as routine, so no approval was needed."}{" "}
 							{latest.bypassReason}
 						</p>
 					)}
@@ -1343,7 +1345,9 @@ export function ArchitectureEntry({ run }: { run: any }) {
 	if (latest.status === "routine")
 		return (
 			<p className="arch-entry quiet">
-				Architecture check: routine, no approval needed.{" "}
+				{latest.continuation
+					? `Architecture continues your approval of version ${latest.continuation.version}.`
+					: "Architecture check: routine, no approval needed."}{" "}
 				<Link to={to}>See what Bob checked</Link>
 			</p>
 		);
