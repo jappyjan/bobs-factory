@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Include architecture approval continuation coverage in the nightly evidence validator, so the additional passing F1 log can pass release intake without weakening the complete-inventory guard. ([#154](https://github.com/jappyjan/bobs-factory/pull/154))
+
 - Continue an existing architecture approval after independent review confirms cumulative implementation discoveries remain within the accepted design, preventing repeated approval requests for necessary tests and callers while preserving material-change and explicit approval gates. ([#153](https://github.com/jappyjan/bobs-factory/pull/153))
 
 - Recover new and saved impact assessments that confuse ticket notices with PR feedback, and prevent assessments from invalidating themselves through retained requirement references; preserve conversation IDs, original evidence and strict feedback hashes. ([#152](https://github.com/jappyjan/bobs-factory/pull/152))
