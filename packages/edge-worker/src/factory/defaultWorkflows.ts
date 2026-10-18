@@ -4,9 +4,9 @@ import {
 } from "./Architecture.js";
 import { feedbackPolicyInstructions } from "./FeedbackPolicy.js";
 import {
-	BRIEF_CONTRACT,
-	briefPrompt,
 	briefVideoInstructions,
+	STORY_CONTRACT,
+	storyPrompt,
 } from "./GuideAuthoring.js";
 import { impactInstructions } from "./Impact.js";
 import {
@@ -169,10 +169,10 @@ Open the actual selected screenshots. Return acceptedScreenshots:[{area,state,im
 					" Include independently generated visual-gate findings as well as reviewer findings. Preserve stable dispositions. Rejected complaints require concrete evidence and reviewer reassessment; rejection cannot waive a failed required criterion. After corrections the pipeline returns through code review, CI, QA scope, execution, review and gate. Failed criteria must be retested before the human guide.",
 				{ next: "code-review", qaContract: QA_CONTRACT },
 			),
-			agent("guide", "Prepare human review brief", briefPrompt, {
+			agent("guide", "Prepare human review brief", storyPrompt, {
 				next: "handoff",
 				qaContract: QA_CONTRACT,
-				guideContract: BRIEF_CONTRACT,
+				guideContract: STORY_CONTRACT,
 			}),
 			tool("handoff", "Verify revision and hand off", "handoff", {
 				branches: [{ when: { path: "fix", equals: true }, next: "ci-fix" }],
@@ -229,6 +229,35 @@ if (!("prompt" in planStep)) throw new Error("Stock planner unavailable");
 const ticketPlanInstructions =
 	" Include the verified originating ticket reference, tracker instance/workspace/project and URL, runtime tracking ownership, coding Done-after-confirmed-merge rule, and any synchronization gaps in the self-contained plan. Roles supply summaries and blockers; the tracking service owns lifecycle comments, status and PR links.";
 planStep.prompt += ticketPlanInstructions;
+const impactGuideInstructions =
+	"\nFor impact-v1 follow-ups, preserve the complete original guide and unaffected coverage. Describe cumulative changes since prior explicit approval, independent impact rationale, fresh and reused evidence, checks and risks in a delta note. Safe minor production corrections may retain prior explicit approval after required checks; other changes require renewed acceptance. Filename and line-count restrictions do not apply to this contract. Declared future acceptance/delivery obligations remain pending at their own gates, never call them defects in the code gate.";
+/** Openings of every stock guide prompt release; anything else is a custom guide. */
+const stockGuideOpenings = [
+	"Write the human review brief for the WHOLE PR",
+	"Write a complete, guided human review of the WHOLE PR",
+	"Write a Rocky-inspired review recap",
+];
+/**
+ * Regenerating a pending guide adopts the current stock show & tell brief.
+ * Custom guide prompts and per-role agent settings stay as the run accepted them.
+ */
+export function upgradedGuideStep(
+	step: WorkflowStep,
+): WorkflowStep | undefined {
+	if (step.id !== "guide" || step.type !== "agent" || !step.prompt) return;
+	if (!stockGuideOpenings.some((opening) => step.prompt!.startsWith(opening)))
+		return;
+	// Keep the run's accepted contracts: video and impact follow-up instructions.
+	const prompt =
+		storyPrompt +
+		(step.videoContract ? briefVideoInstructions : "") +
+		(step.prompt.includes(impactGuideInstructions.trim())
+			? impactGuideInstructions
+			: "");
+	if (step.guideContract === STORY_CONTRACT && step.prompt === prompt) return;
+	return { ...step, prompt, guideContract: STORY_CONTRACT };
+}
+
 // Kept for conservative saved-recipe detection and legacy runtime regression fixtures.
 export const legacyReviewSteps = structuredClone(pipeline.steps);
 function installSpecialists(steps: Record<string, any>[]) {
@@ -537,9 +566,7 @@ function installImpact(steps: Record<string, any>[]) {
 		if (step.id === "capture")
 			step.prompt +=
 				"\nFor impact-v1 runs read /qaReuse. Copy only runtime-validated reusable criteria exactly with their original evidence and reuse link. Execute every other criterion. Never invent a reuse link, reset an original execution date or mark failed/blocked criteria passed.";
-		if (step.id === "guide")
-			step.prompt +=
-				"\nFor impact-v1 follow-ups, preserve the complete original guide and unaffected coverage. Describe cumulative changes since prior explicit approval, independent impact rationale, fresh and reused evidence, checks and risks in a delta note. Safe minor production corrections may retain prior explicit approval after required checks; other changes require renewed acceptance. Filename and line-count restrictions do not apply to this contract. Declared future acceptance/delivery obligations remain pending at their own gates, never call them defects in the code gate.";
+		if (step.id === "guide") step.prompt += impactGuideInstructions;
 	}
 }
 export const conservativeWorkflows = validateWorkflows([

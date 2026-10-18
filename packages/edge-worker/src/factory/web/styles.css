@@ -6303,6 +6303,351 @@ kbd {
 	font-size: 12px;
 	color: var(--muted);
 }
+/* Show & tell: one idea per slide, presented before the evidence. */
+.story {
+	display: grid;
+	gap: 12px;
+	min-width: 0;
+	outline: none;
+}
+.story-bars {
+	display: flex;
+	gap: 4px;
+}
+.story-bars button {
+	flex: 1;
+	height: 6px;
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: var(--track);
+	cursor: pointer;
+}
+.story-bars button.on {
+	background: var(--text);
+}
+.story-slide {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-height: min(62vh, 560px);
+	padding: clamp(18px, 4vw, 28px);
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 24px;
+	box-shadow: var(--pop);
+	min-width: 0;
+	animation: story-in 0.18s ease-out;
+}
+@keyframes story-in {
+	from {
+		opacity: 0;
+		transform: translateX(8px);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.story-slide {
+		animation: none;
+	}
+}
+.story-byline {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 14px;
+	color: var(--muted);
+}
+.story-byline span {
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--rainbow);
+	color: #fff;
+	font-weight: 800;
+}
+.story-title {
+	font-size: clamp(22px, 4.6vw, 32px);
+	line-height: 1.2;
+	margin: 0;
+	letter-spacing: -0.01em;
+}
+.story-say {
+	font-size: clamp(16px, 3.6vw, 19px);
+	color: var(--secondary);
+	max-width: 62ch;
+}
+.story-readiness {
+	align-self: flex-start;
+	font-size: 13px;
+	font-weight: 700;
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: var(--green);
+	color: var(--review-text);
+}
+.story-readiness.ready-with-caveats {
+	background: var(--orange);
+	color: var(--question-text);
+}
+.story-readiness.not-ready {
+	background: var(--red);
+	color: var(--stuck-text);
+}
+.story-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+	gap: 10px;
+	margin: 0;
+}
+.story-stats div {
+	display: flex;
+	flex-direction: column-reverse;
+	justify-content: flex-end;
+	gap: 2px;
+	padding: 14px 10px;
+	border-radius: 16px;
+	background: var(--quiet);
+	text-align: center;
+}
+.story-stats dd {
+	margin: 0;
+	font-size: clamp(22px, 5.4vw, 30px);
+	font-weight: 800;
+	line-height: 1.1;
+}
+.story-stats dt {
+	font-size: 12px;
+	color: var(--muted);
+}
+.story-checklist,
+.story-points,
+.story-calls,
+.story-chart {
+	display: grid;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.story-checklist li,
+.story-points li {
+	display: grid;
+	grid-template-columns: 28px 1fr;
+	gap: 10px;
+	align-items: start;
+	padding: 10px 12px;
+	border-radius: 14px;
+	background: var(--quiet);
+}
+.story-checklist li > span {
+	display: grid;
+	place-items: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	font-weight: 800;
+	background: var(--surface);
+	color: var(--muted);
+}
+.story-checklist li.state-done > span {
+	background: var(--green);
+	color: var(--review-text);
+}
+.story-checklist li.state-partly > span {
+	background: var(--orange);
+	color: var(--question-text);
+}
+.story-points li > span {
+	font-size: 20px;
+	line-height: 1.3;
+	text-align: center;
+}
+.story-checklist small,
+.story-points small {
+	display: block;
+	color: var(--muted);
+	font-size: 13.5px;
+}
+.story-tag {
+	font-size: 12px;
+	font-weight: 700;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--orange);
+	color: var(--question-text);
+	white-space: nowrap;
+}
+.story-flow {
+	display: grid;
+	grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+	gap: 12px;
+	align-items: start;
+}
+.story-pipe-label {
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--muted);
+	margin-bottom: 6px;
+}
+.story-pipe ol {
+	display: grid;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.story-pipe li:not(:last-child)::after {
+	content: "↓";
+	display: block;
+	text-align: center;
+	font-size: 12px;
+	line-height: 18px;
+	color: var(--muted);
+}
+.story-node {
+	display: grid;
+	gap: 2px;
+	padding: 8px 10px;
+	border-radius: 12px;
+	background: var(--quiet);
+	text-align: center;
+	font-size: 14px;
+}
+.story-node small {
+	color: var(--muted);
+	font-size: 12px;
+}
+.story-node.new,
+.story-node.changed {
+	background: var(--green);
+	color: var(--review-text);
+	box-shadow: inset 0 0 0 2px currentColor;
+}
+.story-node.new small,
+.story-node.changed small {
+	color: inherit;
+	opacity: 0.8;
+}
+.story-flow .story-pipe:first-child .story-node {
+	opacity: 0.7;
+}
+.story-fallout {
+	font-size: 12px;
+	color: var(--stuck-text);
+	text-align: center;
+	margin-top: 3px;
+}
+.story-note {
+	font-size: 13.5px;
+	color: var(--muted);
+}
+.story-chart li {
+	display: grid;
+	gap: 4px;
+}
+.story-chart p {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 14.5px;
+}
+.story-chart strong {
+	white-space: nowrap;
+}
+.story-chart small {
+	color: var(--muted);
+	font-size: 12.5px;
+}
+.story-track {
+	display: block;
+	height: 12px;
+	border-radius: 12px;
+	background: var(--track);
+	overflow: hidden;
+}
+.story-track i {
+	display: block;
+	height: 100%;
+	border-radius: 12px;
+	background: var(--working-text);
+}
+.story-chart .mark-good .story-track i {
+	background: #3ddc97;
+}
+.story-chart .mark-bad .story-track i {
+	background: #ff5d73;
+}
+.story-calls li {
+	display: grid;
+	gap: 8px;
+	padding: 14px;
+	border-radius: 16px;
+	border: 1px solid var(--line);
+	background: var(--bg);
+}
+.story-calls p {
+	font-size: 15px;
+	color: var(--secondary);
+}
+.story-bob {
+	border-left: 3px solid #7b61ff;
+	padding-left: 10px;
+}
+.story-bob span {
+	font-weight: 700;
+	color: var(--text);
+}
+.story-end {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: auto;
+}
+.story-nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 13px;
+}
+.story:focus-visible .story-slide {
+	outline: 3px solid #7b61ff;
+	outline-offset: 3px;
+}
+.brief-evidence-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 18px;
+	border: 1px dashed var(--line);
+	border-radius: 18px;
+	scroll-margin-top: 90px;
+}
+.brief-evidence-toggle h3 {
+	margin: 0;
+	font-size: 16px;
+}
+.brief-evidence-toggle p {
+	font-size: 13.5px;
+}
+@media (max-width: 520px) {
+	.story-flow {
+		grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+		gap: 8px;
+	}
+	.story-node {
+		padding: 7px 6px;
+		font-size: 13px;
+	}
+	.story-slide {
+		min-height: min(66vh, 600px);
+	}
+}
 .brief-lightbox {
 	width: min(1200px, 96vw);
 }

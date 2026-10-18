@@ -1,7 +1,11 @@
 import { z } from "zod";
 import type { externalGuideEvidence } from "./ExternalGuide.js";
 import type { Guide } from "./FactoryResults.js";
-import { BRIEF_CONTRACT } from "./GuideAuthoring.js";
+import {
+	BRIEF_CONTRACT,
+	BRIEF_CONTRACTS,
+	STORY_CONTRACT,
+} from "./GuideAuthoring.js";
 import { OutputValidationError } from "./OutputValidation.js";
 import {
 	activeRequirements,
@@ -17,7 +21,7 @@ import type { ExecutionContext } from "./WorkflowRuntime.js";
  * it work (one decisive proof per requirement), what needs a human (your
  * call), and what else changed or remains unproven. Older guides stay readable.
  */
-export { BRIEF_CONTRACT };
+export { BRIEF_CONTRACT, STORY_CONTRACT };
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 const slug = z
@@ -137,6 +141,92 @@ const FlowSchema = z.object({
 });
 export type BriefFlow = z.infer<typeof FlowSchema>;
 
+const StatSchema = z.object({ value: text(16), label: text(48) });
+const StoryNodeSchema = z.object({
+	label: text(40),
+	detail: text(60).optional(),
+	change: z.enum(["new", "changed"]).optional(),
+	fallout: text(60).optional(),
+});
+const slide = { title: text(90), say: text(240).optional() };
+const StorySlideSchema = z.discriminatedUnion("kind", [
+	z.object({
+		kind: z.literal("checklist"),
+		...slide,
+		items: z
+			.array(
+				z.object({
+					state: z.enum(["done", "partly", "open"]),
+					label: text(70),
+					detail: text(140).optional(),
+				}),
+			)
+			.min(2)
+			.max(8),
+	}),
+	z.object({
+		kind: z.literal("beforeAfter"),
+		...slide,
+		before: z.array(StoryNodeSchema).min(1).max(6),
+		after: z.array(StoryNodeSchema).min(1).max(7),
+		note: text(200).optional(),
+	}),
+	z.object({
+		kind: z.literal("chart"),
+		...slide,
+		method: text(200),
+		scale: z.enum(["linear", "log"]).optional(),
+		bars: z
+			.array(
+				z.object({
+					label: text(60),
+					value: z.number().positive().finite(),
+					display: text(24),
+					detail: text(60).optional(),
+					mark: z.enum(["good", "bad", "neutral"]).optional(),
+				}),
+			)
+			.min(2)
+			.max(8),
+		stats: z.array(StatSchema).max(3).optional(),
+	}),
+	z.object({
+		kind: z.literal("screens"),
+		...slide,
+		shots: z.array(ShotSchema).min(1).max(2),
+	}),
+	z.object({
+		kind: z.literal("video"),
+		...slide,
+		taskId: text(200),
+		sha256: z.string().regex(/^[a-f0-9]{64}$/),
+		label: text(120),
+	}),
+	z.object({
+		kind: z.literal("points"),
+		...slide,
+		items: z
+			.array(
+				z.object({
+					icon: text(16),
+					title: text(70),
+					detail: text(160).optional(),
+				}),
+			)
+			.min(1)
+			.max(6),
+	}),
+]);
+export type StorySlide = z.infer<typeof StorySlideSchema>;
+/** Show & tell: the walkthrough read before the evidence. */
+const StorySchema = z.object({
+	title: text(110),
+	summary: text(320),
+	stats: z.array(StatSchema).max(3),
+	slides: z.array(StorySlideSchema).min(1).max(6),
+});
+export type BriefStory = z.infer<typeof StorySchema>;
+
 const RequirementSchema = z.object({
 	id: slug,
 	text: text(180),
@@ -152,7 +242,8 @@ const RequirementSchema = z.object({
 export type BriefRequirement = z.infer<typeof RequirementSchema>;
 
 const ReviewBriefFields = {
-	contract: z.literal(BRIEF_CONTRACT),
+	contract: z.enum(BRIEF_CONTRACTS),
+	story: StorySchema.optional(),
 	verdict: z.object({
 		headline: text(160),
 		readiness: z.enum(["ready", "ready-with-caveats", "not-ready"]),
@@ -268,6 +359,8 @@ function refineBrief(
 ) {
 	const fail = (path: (string | number)[], message: string) =>
 		ctx.addIssue({ code: "custom", path, message });
+	if (brief.contract === STORY_CONTRACT && !brief.story)
+		fail(["story"], "brief-v2 needs the show & tell story");
 	const requirementIds = new Set<string>();
 	brief.requirements.forEach((r, i) => {
 		if (requirementIds.has(r.id))
@@ -379,7 +472,9 @@ export function isReviewBrief(value: unknown): value is ReviewBrief {
 	return Boolean(
 		value &&
 			typeof value === "object" &&
-			(value as { contract?: unknown }).contract === BRIEF_CONTRACT,
+			(BRIEF_CONTRACTS as readonly unknown[]).includes(
+				(value as { contract?: unknown }).contract,
+			),
 	);
 }
 
@@ -592,6 +687,12 @@ function briefProofs(brief: ReviewBrief): [BriefProof, string][] {
 		]),
 		...brief.yourCall.flatMap((c, i): [BriefProof, string][] =>
 			c.proof ? [[c.proof, `/yourCall/${i}/proof`]] : [],
+		),
+		// Story media obeys the same accepted-evidence rules as proofs.
+		...(brief.story?.slides ?? []).flatMap((s, i): [BriefProof, string][] =>
+			s.kind === "screens" || s.kind === "video"
+				? [[s as BriefProof, `/story/slides/${i}`]]
+				: [],
 		),
 	];
 }

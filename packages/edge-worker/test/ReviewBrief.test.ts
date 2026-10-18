@@ -19,6 +19,7 @@ import {
 	guideHeadline,
 	guideReady,
 	type ReviewBrief,
+	STORY_CONTRACT,
 } from "../src/factory/ReviewBrief.js";
 import {
 	aggregateReview,
@@ -261,10 +262,55 @@ it("accepts a complete brief bound to inventory, files and accepted evidence", (
 	expect(guideHeadline(value)).toBe("Group pages now say “this group”.");
 });
 
+it("requires a show & tell for brief-v2 and holds its media and prose to the evidence rules", () => {
+	const story = (): ReviewBrief["story"] => ({
+		title: "I made group pages say “this group”.",
+		summary: "German and English group pages now name the group.",
+		stats: [{ value: "2", label: "languages" }],
+		slides: [
+			{
+				kind: "beforeAfter",
+				title: "The heading now names the group",
+				before: [{ label: "Generic heading" }],
+				after: [{ label: "Group heading", change: "changed" }],
+			},
+			{
+				kind: "screens",
+				title: "Here it is in German",
+				shots: [
+					{ area: "Group page", state: "German mobile", label: "Heading" },
+				],
+			},
+		],
+	});
+	const value = { ...brief(), contract: STORY_CONTRACT };
+	expect(GeneratedBriefSchema.safeParse(value).success).toBe(false);
+	const told = { ...value, story: story() };
+	expect(() => validateGuide(context(), told)).not.toThrow();
+
+	const unaccepted = { ...value, story: story() };
+	unaccepted.story!.slides[1] = {
+		kind: "screens",
+		title: "Here it is in French",
+		shots: [{ area: "Group page", state: "French mobile", label: "Heading" }],
+	};
+	unaccepted.story!.summary = "See /Users/jappy/evidence/shot.png for proof.";
+	let messages = "";
+	try {
+		validateGuide(context(), unaccepted);
+	} catch (error) {
+		messages = String((error as Error).message);
+	}
+	expect(messages).toContain(
+		"Screenshot is not in the accepted capture inventory: Group page / French mobile",
+	);
+	expect(messages).toContain("Remove local absolute paths");
+});
+
 it("stamps the contract only for brief guide steps", () => {
 	const { contract: _contract, ...authored } = brief();
 	expect(stampGuideContract(stockBrief, authored)).toMatchObject({
-		contract: BRIEF_CONTRACT,
+		contract: STORY_CONTRACT,
 	});
 	const legacy = { ...stockBrief, guideContract: undefined };
 	expect(stampGuideContract(legacy, authored)).toBe(authored);
