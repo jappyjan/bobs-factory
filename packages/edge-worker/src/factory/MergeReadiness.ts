@@ -261,7 +261,11 @@ export function recordFeedbackAssessment(
 			);
 		});
 		const comment = matches.length === 1 ? matches[0] : undefined;
-		if (!comment || commentHash(comment.body) !== assessment.bodySha256)
+		if (!comment)
+			throw new Error(
+				`Comment ${assessment.id} is not in the supplied PR feedback. Assess only /feedback/readiness/unassessedComments; ticket comments and session notices are not PR feedback. Return commentAssessments:[] when no PR feedback is supplied.`,
+			);
+		if (commentHash(comment.body) !== assessment.bodySha256)
 			throw new Error(
 				`Comment ${assessment.id} assessment must match the supplied content hash; assess the current unassessedComments entry`,
 			);

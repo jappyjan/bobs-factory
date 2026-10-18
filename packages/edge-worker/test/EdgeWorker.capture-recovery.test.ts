@@ -12,6 +12,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { captureEvidence } from "../src/factory/FactoryTools.js";
+import type { ImpactSnapshot } from "../src/factory/Impact.js";
 import { roleProgress } from "../src/factory/Incremental.js";
 import {
 	assessFeedback,
@@ -381,6 +382,110 @@ it.each([
 		);
 		expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
 	}
+});
+
+it.each([
+	false,
+	true,
+])("corrects a ticket comment claimed as PR feedback inside the impact agent (saved: %s)", async (saved) => {
+	const f = await fixture();
+	f.ctx.run.input = "Implement the task";
+	f.ctx.run.createdAt = "2026-10-18T01:00:00Z";
+	f.ctx.run.answers = [];
+	f.ctx.run.step = "pipeline/assess-impact";
+	f.ctx.step = {
+		...f.ctx.step,
+		id: "assess-impact",
+		impactContract: "impact-v1",
+		inputs: ["draft-pr"],
+	};
+	const snapshot: ImpactSnapshot = {
+		schemaVersion: 1,
+		key: "pipeline/specialist-review",
+		trigger: "draft-pr",
+		sourceDigest: "source",
+		environmentDigest: "environment",
+		findingsDigest: "findings",
+		progressFindingsDigest: "findings",
+		feedbackDigest: "feedback",
+		reviewers: [],
+		repositories: [],
+		digest: "snapshot",
+	};
+	f.ctx.input = { impactSnapshot: snapshot };
+	const corrected = {
+		impactContract: "impact-v1",
+		status: "completed",
+		summary: "Review the implementation",
+		classification: "full",
+		rationale: "First independent review",
+		uncertainty: [],
+		extractRequirements: true,
+		specialists: [],
+		requirementIds: [],
+		checks: [],
+		qaCriteria: [],
+		reuse: [],
+		invalidate: [],
+		targetCompatible: true,
+		testAssertions: {
+			inspected: true,
+			weakened: false,
+			evidence: "Inspected the diff",
+		},
+		humanReview: "no-prior-approval",
+		approvalRationale: "Human acceptance remains required",
+		questions: [],
+		commentAssessments: [],
+	};
+	const invalid = {
+		...corrected,
+		commentAssessments: [
+			{
+				id: "ticket-comment",
+				repositoryId: "repo",
+				bodySha256: "ticket-hash",
+				disposition: "informational",
+				reason: "Originating tracker session notice",
+			},
+		],
+	};
+	f.ctx.run.outputs.ticket = {
+		comments: [{ id: "ticket-comment", body: "Agent session notice" }],
+	};
+	f.ctx.resumeAgent = saved
+		? {
+				runner: "codex",
+				sessionId: "existing-conversation",
+				result: {
+					output: invalid,
+					revision: (await roleProgress(f.ctx)).currentRevision!,
+				},
+			}
+		: undefined;
+	let reads = 0;
+	f.runner.getMessages = () => [
+		{
+			type: "result",
+			result: JSON.stringify(!saved && reads++ === 0 ? invalid : corrected),
+		},
+	];
+	const output = await f.worker.executeFactoryAgent(f.ctx);
+	expect(output.commentAssessments).toEqual([]);
+	expect(f.runner.start).toHaveBeenCalledTimes(saved ? 1 : 2);
+	expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
+	expect(f.getInput().feedback).toMatchObject({
+		userInstructions: { input: "Implement the task" },
+	});
+	expect(f.getInput().feedback.readiness).toBeUndefined();
+	expect(f.getInput().outputCorrection.issues).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				message: expect.stringContaining("ticket-comment"),
+			}),
+		]),
+	);
+	expect(f.ctx.resumeAgent!.rejected).toBeUndefined();
 });
 
 it("resumes a rejected completed capture to replace only invalid evidence", async () => {
