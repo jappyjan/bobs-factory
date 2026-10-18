@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Recover new and saved impact assessments that confuse ticket notices with PR feedback, and prevent assessments from invalidating themselves through retained requirement references; preserve conversation IDs, original evidence and strict feedback hashes.
+- Recover new and saved impact assessments that confuse ticket notices with PR feedback, and prevent assessments from invalidating themselves through retained requirement references; preserve conversation IDs, original evidence and strict feedback hashes. ([#152](https://github.com/jappyjan/bobs-factory/pull/152))
 
 - Serialize nightly candidate freezing without holding the queue through native and desktop builds, preventing a stuck superseded runner from blocking later release candidates. ([#150](https://github.com/jappyjan/bobs-factory/pull/150))
 
