@@ -1676,6 +1676,19 @@ and inherited Takeover work, including whether a real choice is hidden or left o
 needlessly. Routine, unsplit work using established patterns records a concrete bypass
 reason and continues without another human wait. Simple keeps its existing path.
 
+For later proposals, independent candidate review compares the complete revision
+with the latest human-approved architecture, including cumulative changes. Necessary
+caller tests and file discoveries within those requirements and boundaries can
+continue that approval. The reviewer supplies `continuation` with the accepted
+`proposalId`, `version`, `digest` and an evidence-based `reason`. Stock decisions opt
+in with `arguments.continueAccepted: true`; the runtime validates the same-source
+human receipt and frozen content/assets and records the link without inventing a
+new human acceptance. Missing, stale or revoked acceptance, open choices and
+`approval: always` retain the gate. Material changes, explicit reapproval requirements
+and uncertainty require fresh acceptance. The dashboard explains when prior approval
+continues. Saved graphs keep their original policies; an older file-scope wait needs
+explicit operator direction through its normal answer/decision flow.
+
 The run page and the Today queue show a short proposal card. **Open proposal** leads to
 the proposal page (`#/runs/<id>/architecture`): the proposal on the left, a chat with
 Bob and the approval button on the right. Phones show Proposal and Chat tabs with the
