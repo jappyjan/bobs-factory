@@ -62,7 +62,7 @@ export function ReviewPage({
 			<header className="run-header">
 				<div>
 					<small className="muted">
-						{guide?.contract === "brief-v2"
+						{guide?.contract === "brief-v2" || guide?.contract === "brief-v3"
 							? "SHOW & TELL"
 							: guide?.contract === "brief-v1"
 								? "REVIEW BRIEF"

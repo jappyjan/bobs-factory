@@ -4,6 +4,7 @@ import type { Guide } from "./FactoryResults.js";
 import {
 	BRIEF_CONTRACT,
 	BRIEF_CONTRACTS,
+	DIVE_CONTRACT,
 	STORY_CONTRACT,
 } from "./GuideAuthoring.js";
 import { OutputValidationError } from "./OutputValidation.js";
@@ -21,7 +22,7 @@ import type { ExecutionContext } from "./WorkflowRuntime.js";
  * it work (one decisive proof per requirement), what needs a human (your
  * call), and what else changed or remains unproven. Older guides stay readable.
  */
-export { BRIEF_CONTRACT, STORY_CONTRACT };
+export { BRIEF_CONTRACT, DIVE_CONTRACT, STORY_CONTRACT };
 
 const text = (max: number) => z.string().trim().min(1).max(max);
 const slug = z
@@ -50,6 +51,8 @@ const ShotSchema = z.object({
 const TableRowSchema = z.object({
 	cells: z.array(text(240)).min(2).max(5),
 	mark: z.enum(["good", "bad", "neutral"]).optional(),
+	/** brief-v3: the same row in plain words; cells keep the recorded values. */
+	plain: z.object({ tried: text(140), saw: text(200) }).optional(),
 });
 export const ProofSchema = z.discriminatedUnion("kind", [
 	z.object({
@@ -118,6 +121,8 @@ const FlowStepSchema = z.object({
 	change: z.enum(["new", "changed"]).optional(),
 	dashed: z.boolean().optional(),
 	outcome: z.enum(["good", "bad"]).optional(),
+	/** brief-v3: the line of the diff this step happens in. */
+	code: z.object({ file: text(400), match: text(300) }).optional(),
 });
 const FlowSchema = z.object({
 	id: slug,
@@ -128,6 +133,7 @@ const FlowSchema = z.object({
 		.array(
 			z.object({
 				id: slug,
+				icon: text(16).optional(),
 				label: text(40),
 				detail: text(80).optional(),
 				external: z.boolean().optional(),
@@ -137,9 +143,40 @@ const FlowSchema = z.object({
 		.max(6),
 	steps: z.array(FlowStepSchema).min(1).max(12),
 	before: z.array(FlowStepSchema).min(1).max(12).optional(),
+	beforeNote: text(240).optional(),
 	note: text(300).optional(),
 });
 export type BriefFlow = z.infer<typeof FlowSchema>;
+
+/** brief-v3: where the change reaches the rest of the system, in plain words. */
+const TouchSchema = z.object({
+	mark: z.enum(["new", "changed", "removed", "risk", "same"]),
+	what: text(80),
+	say: text(200),
+	tech: text(160).optional(),
+});
+export type BriefTouch = z.infer<typeof TouchSchema>;
+
+/** brief-v3 code tour: every changed file once, in the order a colleague shows them. */
+const TourSchema = z.object({
+	file: text(400),
+	say: text(200),
+	key: z.boolean().optional(),
+	flag: text(40).optional(),
+	pins: z
+		.array(
+			z.object({
+				match: text(300),
+				say: text(200),
+				flag: z.boolean().optional(),
+			}),
+		)
+		.max(4)
+		.optional(),
+	related: files.optional(),
+	same: files.optional(),
+});
+export type BriefTourEntry = z.infer<typeof TourSchema>;
 
 const StatSchema = z.object({ value: text(16), label: text(48) });
 const StoryNodeSchema = z.object({
@@ -237,6 +274,8 @@ const RequirementSchema = z.object({
 	proof: ProofSchema,
 	more: z.array(ProofSchema).max(4).optional(),
 	caveat: text(260).optional(),
+	/** brief-v3: how it was checked, in one plain sentence. */
+	how: text(160).optional(),
 	files,
 });
 export type BriefRequirement = z.infer<typeof RequirementSchema>;
@@ -244,6 +283,7 @@ export type BriefRequirement = z.infer<typeof RequirementSchema>;
 const ReviewBriefFields = {
 	contract: z.enum(BRIEF_CONTRACTS),
 	story: StorySchema.optional(),
+	tour: z.array(TourSchema).min(1).max(200).optional(),
 	verdict: z.object({
 		headline: text(160),
 		readiness: z.enum(["ready", "ready-with-caveats", "not-ready"]),
@@ -310,6 +350,7 @@ const ReviewBriefFields = {
 					}),
 				)
 				.max(4),
+			touches: z.array(TouchSchema).max(8).optional(),
 		})
 		.optional(),
 	beyondAsk: z
@@ -351,7 +392,15 @@ const LOCAL_PATH =
 	/(^|[\s"'`(=])(\/Users\/|\/home\/|\/private\/|\/var\/folders\/|\/tmp\/|~\/\.|[A-Za-z]:\\)/;
 const FULL_SHA = /\b[0-9a-f]{40}\b/;
 const RECEIPT_FIELDS = new Set(["excerpt", "output", "command"]);
-const NON_PROSE = new Set(["url", "sha256", "previousHeadSha", "files"]);
+const NON_PROSE = new Set([
+	"url",
+	"sha256",
+	"previousHeadSha",
+	"files",
+	"match",
+	"related",
+	"same",
+]);
 
 function refineBrief(
 	brief: z.infer<z.ZodObject<typeof ReviewBriefFields>>,
@@ -359,8 +408,28 @@ function refineBrief(
 ) {
 	const fail = (path: (string | number)[], message: string) =>
 		ctx.addIssue({ code: "custom", path, message });
-	if (brief.contract === STORY_CONTRACT && !brief.story)
-		fail(["story"], "brief-v2 needs the show & tell story");
+	if (
+		(brief.contract === STORY_CONTRACT || brief.contract === DIVE_CONTRACT) &&
+		!brief.story
+	)
+		fail(["story"], `${brief.contract} needs the show & tell story`);
+	if (brief.contract === DIVE_CONTRACT && !brief.tour)
+		fail(["tour"], "brief-v3 needs the code tour");
+	const toured = new Set<string>();
+	for (const [i, entry] of (brief.tour ?? []).entries())
+		for (const [key, list] of [
+			["file", [entry.file]],
+			["related", entry.related ?? []],
+			["same", entry.same ?? []],
+		] as const)
+			for (const file of list) {
+				if (toured.has(file))
+					fail(
+						["tour", i, key],
+						`"${file}" appears twice in the tour; place every file once`,
+					);
+				toured.add(file);
+			}
 	const requirementIds = new Set<string>();
 	brief.requirements.forEach((r, i) => {
 		if (requirementIds.has(r.id))
@@ -606,6 +675,41 @@ export function validateBriefCoverage(
 			expected: scope.files,
 			actual: [...accounted],
 		});
+
+	if (brief.tour) {
+		const toured = new Set<string>();
+		for (const [i, entry] of brief.tour.entries()) {
+			checkTourFile(entry.file, `/tour/${i}/file`);
+			for (const [j, file] of (entry.related ?? []).entries())
+				checkTourFile(file, `/tour/${i}/related/${j}`);
+			for (const [j, file] of (entry.same ?? []).entries())
+				checkTourFile(file, `/tour/${i}/same/${j}`);
+		}
+		function checkTourFile(file: string, path: string) {
+			if (!prFiles.has(file))
+				issues.push({
+					path,
+					message: `"${file}" is not a changed file in this PR; use exact paths from /progress/reviewScope/files`,
+				});
+			toured.add(file);
+		}
+		const untoured = scope.files.filter((file) => !toured.has(file));
+		if (untoured.length)
+			issues.push({
+				path: "/tour",
+				message: `Place every changed file once in the tour, as file, related or same; missing: ${untoured.join(", ")}`,
+				expected: scope.files,
+				actual: [...toured],
+			});
+	}
+	for (const [i, flow] of (brief.system?.flows ?? []).entries())
+		for (const mode of ["steps", "before"] as const)
+			for (const [j, step] of (flow[mode] ?? []).entries())
+				if (step.code && !prFiles.has(step.code.file))
+					issues.push({
+						path: `/system/flows/${i}/${mode}/${j}/code/file`,
+						message: `"${step.code.file}" is not a changed file in this PR; link a step only to a changed file`,
+					});
 
 	const shots =
 		(

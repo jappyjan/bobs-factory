@@ -16,7 +16,7 @@ import {
 	parseAgentOutput,
 	toolArguments,
 } from "../src/factory/FactoryTools.js";
-import { storyPrompt } from "../src/factory/GuideAuthoring.js";
+import { divePrompt } from "../src/factory/GuideAuthoring.js";
 import { legacyGuidePrompt } from "../src/factory/legacyGuidePrompt.js";
 import { OperatorService } from "../src/factory/OperatorService.js";
 import { validateWorkflows, type Workflow } from "../src/factory/Workflow.js";
@@ -2255,7 +2255,7 @@ it("regenerates only the pending guide in a nested pipeline without approval or 
 	await runtime.shutdown();
 });
 
-it("regenerates a pending stock guide in the current show & tell format", async () => {
+it("regenerates a pending stock guide in the current show & tell format with Dig deeper", async () => {
 	const contracts: (string | undefined)[] = [];
 	const { runtime } = create({
 		agent: async (context) => {
@@ -2290,10 +2290,10 @@ it("regenerates a pending stock guide in the current show & tell format", async 
 	void runtime.launch(run);
 	await waitFor(() => expect(run.status).toBe("waiting"));
 	await runtime.refreshGuide(run.id, run.reviewGate!.id);
-	await waitFor(() => expect(contracts).toEqual([undefined, "brief-v2"]));
+	await waitFor(() => expect(contracts).toEqual([undefined, "brief-v3"]));
 	expect(run.workflow.steps.find((s) => s.id === "guide")).toMatchObject({
-		guideContract: "brief-v2",
-		prompt: storyPrompt,
+		guideContract: "brief-v3",
+		prompt: divePrompt,
 	});
 	await runtime.shutdown();
 });

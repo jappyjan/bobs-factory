@@ -1,4 +1,4 @@
-// F1 driver for show & tell review guides: real CLI-platform EdgeWorker, real Git
+// F1 driver for show & tell guides with Dig deeper: real CLI-platform EdgeWorker, real Git
 // worktrees, deterministic MockAgentRunner roles and scripted GitHub responses.
 //   pnpm --filter bobs-factory-edge-worker build && pnpm --filter f1 build
 //   F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/review-story.ts
@@ -19,7 +19,7 @@ import {
 	executeCommand,
 	FactoryTools,
 } from "../../../../packages/edge-worker/dist/factory/FactoryTools.js";
-import { storyPrompt } from "../../../../packages/edge-worker/dist/factory/GuideAuthoring.js";
+import { divePrompt } from "../../../../packages/edge-worker/dist/factory/GuideAuthoring.js";
 import { legacyGuidePrompt } from "../../../../packages/edge-worker/dist/factory/legacyGuidePrompt.js";
 import {
 	EdgeWorker,
@@ -62,7 +62,7 @@ process.env.BOBS_FACTORY_FACTORY_PORT = "3542";
 delete process.env.BOBS_FACTORY_FACTORY_ORIGIN;
 delete process.env.BOBS_FACTORY_FACTORY_PUBLIC_ORIGIN;
 
-// story: a new brief-v2 guide; upgrade: an old stock chapter guide regenerated.
+// story: a new brief-v3 guide; upgrade: an old stock chapter guide regenerated.
 const modes = ["story", "upgrade"] as const;
 type Mode = (typeof modes)[number];
 const counts: Record<string, number> = {};
@@ -100,7 +100,7 @@ const workflow = (mode: Mode): Workflow => ({
 			runner: "codex",
 			model: "fixture-model",
 			...(mode === "story"
-				? { prompt: storyPrompt, guideContract: "brief-v2" as const }
+				? { prompt: divePrompt, guideContract: "brief-v3" as const }
 				: { prompt: legacyGuidePrompt }),
 			next: "handoff",
 			branches: [],
@@ -186,6 +186,56 @@ function story(unacceptedScreenshot: boolean) {
 function brief(files: string[], attempt: number) {
 	return {
 		story: story(attempt === 1),
+		// The first attempt also forgets the code tour.
+		...(attempt === 1
+			? {}
+			: {
+					tour: [
+						{
+							file: "feature.txt",
+							say: "The new file readers open; it holds the greeting.",
+							key: true,
+							pins: [
+								{ match: "Hello from F1", say: "The greeting you asked for." },
+							],
+							related: ["feature.test.ts"],
+						},
+						{ file: "README.md", say: "Only rewrapped." },
+					],
+				}),
+		system: {
+			summary: "Readers open the new file and see the greeting.",
+			flows: [
+				{
+					id: "read",
+					title: "Reading the greeting",
+					trigger: "A reader opens the feature file",
+					implements: ["greeting"],
+					participants: [
+						{ id: "reader", icon: "🙂", label: "Reader" },
+						{ id: "file", icon: "📄", label: "Feature file" },
+					],
+					steps: [
+						{
+							from: "reader",
+							to: "file",
+							label: "Opens the file and reads the greeting",
+							detail: "feature.txt",
+							change: "new",
+							code: { file: "feature.txt", match: "Hello from F1" },
+						},
+					],
+				},
+			],
+			touches: [
+				{
+					mark: "new",
+					what: "One new text file",
+					say: "Nothing else reads it.",
+				},
+			],
+			interfaces: [],
+		},
 		verdict: {
 			headline: "The feature file ships with its greeting.",
 			readiness: "ready",
@@ -207,13 +257,20 @@ function brief(files: string[], attempt: number) {
 			{
 				id: "greeting",
 				text: "The feature file contains the greeting.",
+				how: "Read the delivered file.",
 				origin: "ask",
 				status: "shown",
 				proof: {
 					kind: "table",
 					method: "Read the delivered file",
 					columns: ["File", "Observed"],
-					rows: [{ cells: ["feature.txt", "Hello from F1"], mark: "good" }],
+					rows: [
+						{
+							cells: ["feature.txt", "Hello from F1"],
+							mark: "good",
+							plain: { tried: "Opened the file", saw: "It says Hello from F1" },
+						},
+					],
 				},
 				files,
 			},
@@ -323,7 +380,11 @@ function makeWorker() {
 					),
 				);
 				const files = context.progress.reviewScope.files as string[];
-				assert.deepEqual(files, ["feature.txt"]);
+				assert.deepEqual(files, [
+					"README.md",
+					"feature.test.ts",
+					"feature.txt",
+				]);
 				let output: unknown;
 				if (mode === "story") {
 					assert(briefStep);
@@ -370,7 +431,16 @@ function makeWorker() {
 				(counts[`${ctx.run.workflow.id}:seed`] ?? 0) + 1;
 			const base = git(ctx.run.workspace, "rev-parse", "HEAD");
 			writeFileSync(join(ctx.run.workspace, "feature.txt"), "Hello from F1\n");
-			git(ctx.run.workspace, "add", "feature.txt");
+			writeFileSync(
+				join(ctx.run.workspace, "feature.test.ts"),
+				'expect(read("feature.txt")).toBe("Hello from F1\\n");\n',
+			);
+			// Rewrapping only: Dig deeper folds it away.
+			writeFileSync(
+				join(ctx.run.workspace, "README.md"),
+				"F1 show &\ntell fixture\n",
+			);
+			git(ctx.run.workspace, "add", ".");
 			git(ctx.run.workspace, "commit", "-qm", "Add feature file");
 			const head = git(ctx.run.workspace, "rev-parse", "HEAD");
 			ctx.run.outputs["draft-pr"] = {
@@ -457,12 +527,14 @@ try {
 				rejection ?? "",
 				/Screenshot is not in the accepted capture inventory: Editor \/ open/,
 			);
-			assert.equal(guide.contract, "brief-v2");
+			assert.match(rejection ?? "", /brief-v3 needs the code tour/);
+			assert.equal(guide.contract, "brief-v3");
+			assert.equal(guide.tour.length, 2);
 			assert.equal(guide.story.slides.length, 3);
 			assert.equal(guide.story.slides[2].kind, "points");
 			assert(guide.reviewFiles, "runtime binds the reviewed file snapshot");
 			const detail = await api(`/api/runs/${id}`);
-			assert.equal(detail.outputs.guide.contract, "brief-v2");
+			assert.equal(detail.outputs.guide.contract, "brief-v3");
 			assert.equal(detail.outputs.guide.story.title, guide.story.title);
 			assert.match(descriptions.at(-1)!, /### Does it do that\?/);
 			assert.doesNotMatch(descriptions.at(-1)!, /\/Users\//);
@@ -474,19 +546,21 @@ try {
 			await api(`/api/runs/${id}/guide/refresh`, { reviewId: gate.id });
 			run = await until(id, (r) => pending(r) && r.reviewGate!.id !== gate.id);
 			guide = run.outputs.guide as Record<string, any>;
-			// Only the guide reran, in the current stock show & tell format.
+			// Only the guide reran, in the current stock format with Dig deeper.
 			assert.equal(counts["upgrade:guide"], 2);
 			assert.equal(counts["story-upgrade:seed"], 1);
-			assert.equal(guideStep(run).guideContract, "brief-v2");
-			assert.equal(guideStep(run).prompt, storyPrompt);
+			assert.equal(guideStep(run).guideContract, "brief-v3");
+			assert.equal(guideStep(run).prompt, divePrompt);
 			assert.equal(guideStep(run).model, "fixture-model");
-			assert.equal(guide.contract, "brief-v2");
+			assert.equal(guide.contract, "brief-v3");
 			assert(guide.story.slides.length >= 2);
 			assert.equal(run.reviewGate!.headSha, gate.headSha);
 			assert.equal(run.humanDecisions?.length ?? 0, 0);
 			assert(
 				run.events.some((e) =>
-					e.message.includes("in the current show & tell format"),
+					e.message.includes(
+						"in the current show & tell format with Dig deeper",
+					),
 				),
 			);
 		}

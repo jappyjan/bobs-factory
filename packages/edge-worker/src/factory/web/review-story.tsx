@@ -1,4 +1,4 @@
-import { type ReactNode, type TouchEvent, useRef } from "react";
+import { type ReactNode, type TouchEvent, useEffect, useRef } from "react";
 import type {
 	BriefProof,
 	BriefStory,
@@ -30,6 +30,8 @@ export function StoryDeck({
 	judge,
 	onEvidence,
 	onDecide,
+	annotate,
+	show,
 }: {
 	brief: ReviewBrief;
 	story: BriefStory;
@@ -39,7 +41,24 @@ export function StoryDeck({
 	judge: (index: number) => ReactNode;
 	onEvidence: () => void;
 	onDecide: () => void;
+	/** Wraps decisions and side effects so they can be commented on in place. */
+	annotate?: (
+		path: string,
+		label: string,
+		kind: string,
+		context: string,
+		node: ReactNode,
+	) => ReactNode;
+	/** Brings a slide into view, e.g. when the reader jumps to a comment. */
+	show?: { slide: "calls" | "beyond"; nonce: number };
 }) {
+	const wrap = (
+		path: string,
+		label: string,
+		kind: string,
+		context: string,
+		node: ReactNode,
+	) => (annotate ? annotate(path, label, kind, context, node) : node);
 	const slides: Slide[] = [
 		{
 			key: "intro",
@@ -95,11 +114,19 @@ export function StoryDeck({
 					<ol className="story-calls">
 						{brief.yourCall.map((c, i) => (
 							<li key={c.question}>
-								<strong>{c.question}</strong>
-								<p>{c.context}</p>
-								<p className="story-bob">
-									<span>I chose:</span> {c.bobChose}
-								</p>
+								{wrap(
+									`/yourCall/${i}`,
+									c.question,
+									"Decision",
+									`${c.question} Bob chose: ${c.bobChose}`,
+									<>
+										<strong>{c.question}</strong>
+										<p>{c.context}</p>
+										<p className="story-bob">
+											<span>I chose:</span> {c.bobChose}
+										</p>
+									</>,
+								)}
 								{judge(i)}
 							</li>
 						))}
@@ -137,18 +164,24 @@ export function StoryDeck({
 				<>
 					<SlideHead title="Also touched along the way" />
 					<ul className="story-points">
-						{brief.beyondAsk.map((b) => (
+						{brief.beyondAsk.map((b, i) => (
 							<li key={b.what}>
 								<span aria-hidden="true">
 									{b.attention === "look" ? "👀" : "·"}
 								</span>
-								<p>
-									<strong>{b.what}</strong>{" "}
-									{b.attention === "look" && (
-										<span className="story-tag">worth a look</span>
-									)}
-									<small>{b.why}</small>
-								</p>
+								{wrap(
+									`/beyondAsk/${i}`,
+									b.what,
+									"Change beyond the ask",
+									`${b.what} ${b.why}`,
+									<p>
+										<strong>{b.what}</strong>{" "}
+										{b.attention === "look" && (
+											<span className="story-tag">worth a look</span>
+										)}
+										<small>{b.why}</small>
+									</p>,
+								)}
 							</li>
 						))}
 						{brief.noticed?.map((n) => (
@@ -169,12 +202,12 @@ export function StoryDeck({
 			<>
 				<SlideHead
 					title="That’s it from me"
-					say={`${readiness}. The evidence for every claim is below, line by line.`}
+					say={`${readiness}. ${annotate ? "Dig deeper below for how it works, the code and every check." : "The evidence for every claim is below, line by line."}`}
 				/>
 				<div className="story-end">
 					<Button onClick={onDecide}>Decide</Button>
 					<Button variant="secondary" onClick={onEvidence}>
-						Check the evidence
+						{annotate ? "Dig deeper" : "Check the evidence"}
 					</Button>
 				</div>
 			</>
@@ -186,6 +219,12 @@ export function StoryDeck({
 		0,
 	);
 	const index = Math.min(stored, slides.length - 1);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: runs once per jump request
+	useEffect(() => {
+		if (!show) return;
+		const at = slides.findIndex((s) => s.key === show.slide);
+		if (at >= 0) setIndex(at);
+	}, [show]);
 	const go = (to: number) =>
 		setIndex(Math.max(0, Math.min(slides.length - 1, to)));
 	const touch = useRef<number | undefined>(undefined);
@@ -224,7 +263,7 @@ export function StoryDeck({
 				onClick={(e) => {
 					if (
 						(e.target as HTMLElement).closest(
-							"button, a, input, textarea, summary, img, video, details, fieldset",
+							"button, a, input, textarea, summary, img, video, details, fieldset, [data-comment-path]",
 						)
 					)
 						return;

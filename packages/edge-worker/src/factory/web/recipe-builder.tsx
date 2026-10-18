@@ -874,6 +874,9 @@ function Inspector({
 											})
 										}
 									>
+										<option value="brief-v3">
+											Show &amp; tell with Dig deeper
+										</option>
 										<option value="brief-v2">
 											Show &amp; tell with review brief
 										</option>

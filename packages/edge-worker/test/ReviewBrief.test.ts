@@ -14,6 +14,7 @@ import { resolveRoleResult } from "../src/factory/ResultArtifacts.js";
 import {
 	BRIEF_CONTRACT,
 	briefMarkdown,
+	DIVE_CONTRACT,
 	GeneratedBriefSchema,
 	guideGaps,
 	guideHeadline,
@@ -307,10 +308,72 @@ it("requires a show & tell for brief-v2 and holds its media and prose to the evi
 	expect(messages).toContain("Remove local absolute paths");
 });
 
+it("requires a code tour for brief-v3 that places every changed file once", () => {
+	const story: ReviewBrief["story"] = {
+		title: "I made group pages say “this group”.",
+		summary: "German and English group pages now name the group.",
+		stats: [],
+		slides: [
+			{
+				kind: "beforeAfter",
+				title: "The heading now names the group",
+				before: [{ label: "Generic heading" }],
+				after: [{ label: "Group heading", change: "changed" }],
+			},
+		],
+	};
+	const tour = (): NonNullable<ReviewBrief["tour"]> => [
+		{
+			file: "src/Header.tsx",
+			say: "The heading picks its words by what the page shows.",
+			key: true,
+			pins: [{ match: "targetType === 'group' && /tmp/", say: "Groups win." }],
+			related: ["src/Header.test.tsx", "src/en.json"],
+		},
+	];
+	const value = { ...brief(), contract: DIVE_CONTRACT, story };
+	expect(GeneratedBriefSchema.safeParse(value).success).toBe(false);
+	// Pins quote real diff lines, so code text is never treated as prose.
+	const toured = { ...value, tour: tour() };
+	toured.system.flows[0]!.steps[0]!.code = {
+		file: "src/Header.tsx",
+		match: "targetType",
+	};
+	expect(() => validateGuide(context(), toured)).not.toThrow();
+
+	const twice = { ...value, tour: tour() };
+	twice.tour.push({ file: "src/en.json", say: "Wording." });
+	expect(
+		GeneratedBriefSchema.safeParse(twice).error?.issues.map((i) => i.message),
+	).toContain('"src/en.json" appears twice in the tour; place every file once');
+
+	const incomplete = { ...value, tour: tour() };
+	incomplete.tour[0]!.related = ["src/Header.test.tsx", "src/Other.tsx"];
+	incomplete.system.flows[0]!.steps[0]!.code = {
+		file: "src/Elsewhere.tsx",
+		match: "x",
+	};
+	let messages = "";
+	try {
+		validateGuide(context(), incomplete);
+	} catch (error) {
+		messages = String((error as Error).message);
+	}
+	expect(messages).toContain(
+		"Place every changed file once in the tour, as file, related or same; missing: src/en.json",
+	);
+	expect(messages).toContain(
+		'"src/Other.tsx" is not a changed file in this PR',
+	);
+	expect(messages).toContain(
+		'"src/Elsewhere.tsx" is not a changed file in this PR; link a step only to a changed file',
+	);
+});
+
 it("stamps the contract only for brief guide steps", () => {
 	const { contract: _contract, ...authored } = brief();
 	expect(stampGuideContract(stockBrief, authored)).toMatchObject({
-		contract: STORY_CONTRACT,
+		contract: DIVE_CONTRACT,
 	});
 	const legacy = { ...stockBrief, guideContract: undefined };
 	expect(stampGuideContract(legacy, authored)).toBe(authored);

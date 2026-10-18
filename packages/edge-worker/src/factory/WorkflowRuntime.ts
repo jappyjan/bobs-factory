@@ -3429,7 +3429,7 @@ export class WorkflowRuntime {
 		delete frame.active;
 		delete run.outputs.handoff;
 		delete run.outputs["human-review"];
-		// Stock guides regenerate in the current show & tell format.
+		// Stock guides regenerate in the current show & tell format with Dig deeper.
 		const index = steps.findIndex((s) => s.id === "guide");
 		const upgraded = upgradedGuideStep(steps[index]!);
 		if (upgraded) steps[index] = upgraded;
@@ -3438,7 +3438,7 @@ export class WorkflowRuntime {
 		this.log(
 			run,
 			"guide",
-			`Regenerating the full PR review guide${upgraded ? " in the current show & tell format" : ""}; implementation, reviews and captures are retained.`,
+			`Regenerating the full PR review guide${upgraded ? " in the current show & tell format with Dig deeper" : ""}; implementation, reviews and captures are retained.`,
 		);
 		await this.save(run);
 		void this.launch(run);
