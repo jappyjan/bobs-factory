@@ -278,7 +278,7 @@ it("binds grouped feedback to repositories, retains it after restart and detects
 		recordFeedbackAssessment(ctx, {
 			commentAssessments: [{ ...assessment("a"), repositoryId: undefined }],
 		}),
-	).toThrow("content hash");
+	).toThrow("supplied PR feedback");
 	expect(() =>
 		recordFeedbackAssessment(ctx, { commentAssessments: [assessment("a")] }),
 	).toThrow("b:42");
@@ -295,7 +295,7 @@ it("binds grouped feedback to repositories, retains it after restart and detects
 		recordFeedbackAssessment(ctx, {
 			commentAssessments: supplied.map((c) => ({ ...c, repositoryId: "b" })),
 		}),
-	).toThrow("content hash");
+	).toThrow("supplied PR feedback");
 	const output = recordFeedbackAssessment(ctx, {
 		commentAssessments: supplied.map(({ id, repositoryId, bodySha256 }) => ({
 			id,

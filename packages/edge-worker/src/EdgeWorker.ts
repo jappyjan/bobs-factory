@@ -9205,7 +9205,7 @@ ${taskSection}`;
 				workflowExecution: workflowExecutionContext(context),
 				progress: context.progress,
 				...(step.id === "capture" ? { qaReuse: qaReuseContext(context) } : {}),
-				...(step.id === "ci-fix"
+				...(step.id === "ci-fix" || step.impactContract
 					? { feedback: factoryFeedbackContext(context) }
 					: {}),
 				...(["code-fix", "visual-fix"].includes(step.id)
@@ -9496,12 +9496,21 @@ ${taskSection}`;
 					step.architectureContract,
 					step.impactContract,
 				);
-			if (step.impactContract)
+			if (step.impactContract) {
 				output = validateImpact(
 					output,
 					(context.input as { impactSnapshot: ImpactSnapshot }).impactSnapshot,
 					run,
 				);
+				// Feedback is part of the agent contract, not a later graph failure.
+				// Validate saved results here too so Retry can correct the same conversation.
+				this.refreshFactoryFeedbackContext(context);
+				if (
+					(output as { commentAssessments: unknown[] }).commentAssessments
+						.length
+				)
+					output = recordFeedbackAssessment(context, output);
+			}
 			if (step.id === "visual-scope" && step.qaContract) {
 				const issues = qaRequirementIssues(
 					output as QaScope,
@@ -9529,7 +9538,11 @@ ${taskSection}`;
 	}
 
 	private refreshFactoryFeedbackContext(context: ExecutionContext): void {
-		if (!["ci-fix", "code-fix", "visual-fix"].includes(context.step.id)) return;
+		if (
+			!["ci-fix", "code-fix", "visual-fix"].includes(context.step.id) &&
+			!context.step.impactContract
+		)
+			return;
 		if (this.factoryRuntime) {
 			context.chatMessages = this.factoryRuntime.chatMessages(context.run.id);
 			context.input = {
@@ -9537,7 +9550,7 @@ ${taskSection}`;
 				chatMessages: context.chatMessages,
 			};
 		}
-		if (context.step.id === "ci-fix") {
+		if (context.step.id === "ci-fix" || context.step.impactContract) {
 			const receipt = (context.run.outputs["merge-readiness"] ??
 				context.run.outputs.ci) as MergeReadiness | undefined;
 			// Runs paused before feedback recovery was installed retain legacy

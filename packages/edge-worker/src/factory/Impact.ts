@@ -383,7 +383,7 @@ export async function collectImpactSnapshot(
 		trigger:
 			[...run.history].reverse().find((h) => !h.step.startsWith(`${key}/`))
 				?.step ?? "initial",
-		sourceDigest: impactSourceDigest(context, fanout),
+		sourceDigest: impactSourceDigest(context, fanout, key),
 		environmentDigest: environmentDigest(run),
 		feedbackDigest: feedbackDigest(run),
 		findingsDigest: qaDigest({
@@ -802,7 +802,7 @@ export function recordConvergence(
 			]
 		: [];
 }
-export const impactInstructions = `Independently assess /impactSnapshot, actual repository diffs (including cumulative changes since prior explicit approval), prior original receipts and unresolved findings. Fixer summaries never authorize reuse. Discover commands and conventions in ALL selected repositories; never infer safety from filenames, line count or unchanged head alone. Inspect whether test changes weaken assertions or coverage. Assess combined merge trees and target-only changes separately from task regressions. Unknown dependencies, conflicts, migrations, security boundaries, changed scope or unavailable evidence require broader inspection and relevant validation. Select only configured reviewer IDs from the snapshot. First review executes all roles. Reuse only completed resolved receipts with runtime dependency provenance; supply their exact receipt digest, boundary and a concrete independence reason. Unaffected areas retain original evidence, never claim a new review executed. Track future QA/guide/human/provider obligations at their own gates. Optional cleanup remains visible and nonblocking. Prior explicit approval can continue for an evidenced safe minor correction, including production code, only after all required evidence passes; uncertain or meaningful changes and human rejection require renewed approval. Assess the cumulative delta. Return impact-v1 with status, summary, correctionRequired:boolean, readinessOnly:boolean, commentAssessments:[{id,repositoryId (required for grouped deliveries unless id is repositoryId:commentId),bodySha256,disposition:"informational|consequential|accepted-unchanged",reason}], classification:"none|affected|full", rationale, uncertainty:[], extractRequirements:boolean, scopeReuse:{inventoryDigest,originalSourceDigest,reason} only when independently inspecting new feedback proves accepted requirements unchanged, specialists:[configured IDs], requirementIds:[], checks:[{id,repositoryId,command,reason,environment:{isolation:"worktree"} or {isolation:"shared",resources:[stable identities]}}], qaCriteria:[criterion IDs], qaReuse:[{criterionId,originalDigest,reason}], reuse:[{reviewer,receiptDigest,reason,boundary:{requirementIds,areas,dependencies,independence}}], invalidate:[{receiptDigest,reason}], targetCompatible:boolean, testAssertions:{inspected,weakened,evidence}, humanReview:"no-prior-approval|continue-after-checks|renew", approvalRationale and questions:[]. Missing inputs require blocked and a specific question. Do not mutate files or run corrective agents. Every original configured role needs fresh execution or explicit valid reuse. Missing legacy provenance requires fresh review.`;
+export const impactInstructions = `Independently assess /impactSnapshot, actual repository diffs (including cumulative changes since prior explicit approval), prior original receipts and unresolved findings. Fixer summaries never authorize reuse. Discover commands and conventions in ALL selected repositories; never infer safety from filenames, line count or unchanged head alone. Inspect whether test changes weaken assertions or coverage. Assess combined merge trees and target-only changes separately from task regressions. Unknown dependencies, conflicts, migrations, security boundaries, changed scope or unavailable evidence require broader inspection and relevant validation. Select only configured reviewer IDs from the snapshot. First review executes all roles. Reuse only completed resolved receipts with runtime dependency provenance; supply their exact receipt digest, boundary and a concrete independence reason. Unaffected areas retain original evidence, never claim a new review executed. Track future QA/guide/human/provider obligations at their own gates. Optional cleanup remains visible and nonblocking. Prior explicit approval can continue for an evidenced safe minor correction, including production code, only after all required evidence passes; uncertain or meaningful changes and human rejection require renewed approval. Assess the cumulative delta. Return impact-v1 with status, summary, correctionRequired:boolean, readinessOnly:boolean, commentAssessments:[{id,repositoryId (required for grouped deliveries unless id is repositoryId:commentId),bodySha256,disposition:"informational|consequential|accepted-unchanged",reason}], classification:"none|affected|full", rationale, uncertainty:[], extractRequirements:boolean, scopeReuse:{inventoryDigest,originalSourceDigest,reason} only when independently inspecting new feedback proves accepted requirements unchanged, specialists:[configured IDs], requirementIds:[], checks:[{id,repositoryId,command,reason,environment:{isolation:"worktree"} or {isolation:"shared",resources:[stable identities]}}], qaCriteria:[criterion IDs], qaReuse:[{criterionId,originalDigest,reason}], reuse:[{reviewer,receiptDigest,reason,boundary:{requirementIds,areas,dependencies,independence}}], invalidate:[{receiptDigest,reason}], targetCompatible:boolean, testAssertions:{inspected,weakened,evidence}, humanReview:"no-prior-approval|continue-after-checks|renew", approvalRationale and questions:[]. Missing inputs require blocked and a specific question. commentAssessments may identify ONLY supplied PR feedback from /feedback/readiness/unassessedComments, using its exact IDs and bodySha256 values. Originating ticket comments, assignment notices and chat messages are task inputs, never PR comment assessments. Return commentAssessments:[] when no PR feedback is supplied. Do not mutate files or run corrective agents. Every original configured role needs fresh execution or explicit valid reuse. Missing legacy provenance requires fresh review.`;
 
 /** Resolve from accepted definitions, including called workflows and renamed roles. */
 export function impactFanout(
@@ -1049,7 +1049,11 @@ export function unchangedScopeProof(
 }
 
 /** Declared requirement sources bind custom named planning outputs without treating fixer summaries as authority. */
-function impactSourceDigest(context: ExecutionContext, fanout: WorkflowStep) {
+function impactSourceDigest(
+	context: ExecutionContext,
+	fanout: WorkflowStep,
+	key: string,
+) {
 	const scope = inputScope(context) as Record<string, unknown>;
 	const legacy = scopeContextDigest(scope);
 	const inventory = (context.outputs ?? context.run.outputs)[
@@ -1078,8 +1082,31 @@ function impactSourceDigest(context: ExecutionContext, fanout: WorkflowStep) {
 		),
 	].sort();
 	if (!pointers.length) return legacy;
+	// An inventory may cite the assessment which caused its extraction. That
+	// evidence is the original history receipt, not the next assessment replacing
+	// the same output slot. Otherwise saving a decision invalidates itself.
+	const prefix = key.slice(0, key.lastIndexOf("/") + 1);
+	const inventoryKey = `${prefix}${fanout.review?.inventory}`;
+	const inventoryReceipt = [...context.run.history]
+		.reverse()
+		.find(
+			(item) =>
+				item.step === inventoryKey &&
+				(item.output as { digest?: string })?.digest === inventory?.digest,
+		);
+	const inventoryIndex = inventoryReceipt
+		? context.run.history.indexOf(inventoryReceipt)
+		: -1;
+	const assessmentKey = `${prefix}${fanout.impactSource}`;
+	const originalAssessment = context.run.history
+		.slice(0, Math.max(0, inventoryIndex))
+		.reverse()
+		.find((item) => item.step === assessmentKey)?.output;
 	const declared = pointers.map((path) => {
-		let value: unknown = scope;
+		const assessmentSource = path.split("/")[2] === fanout.impactSource;
+		let value: unknown = assessmentSource
+			? { ...scope, outputs: { [fanout.impactSource!]: originalAssessment } }
+			: scope;
 		for (const key of path
 			.slice(1)
 			.split("/")
