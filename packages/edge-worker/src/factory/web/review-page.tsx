@@ -62,7 +62,11 @@ export function ReviewPage({
 			<header className="run-header">
 				<div>
 					<small className="muted">
-						{guide?.contract === "brief-v1" ? "REVIEW BRIEF" : "REVIEW GUIDE"}
+						{guide?.contract === "brief-v2"
+							? "SHOW & TELL"
+							: guide?.contract === "brief-v1"
+								? "REVIEW BRIEF"
+								: "REVIEW GUIDE"}
 					</small>
 					<h1 ref={heading} tabIndex={-1}>
 						{run.title}

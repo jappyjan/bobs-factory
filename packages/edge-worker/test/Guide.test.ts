@@ -1,8 +1,18 @@
 import { expect, it } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import {
+	defaultWorkflows,
+	upgradedGuideStep,
+} from "../src/factory/defaultWorkflows.js";
 import { GuideSchema } from "../src/factory/FactoryResults.js";
 import { reviewGuideMarkdown } from "../src/factory/FactoryTools.js";
 import { validateGuideCoverage } from "../src/factory/Guide.js";
+import {
+	BRIEF_CONTRACT,
+	briefPrompt,
+	briefVideoInstructions,
+	STORY_CONTRACT,
+	storyPrompt,
+} from "../src/factory/GuideAuthoring.js";
 import { legacyGuidePrompt } from "../src/factory/legacyGuidePrompt.js";
 import { inventoryGuideInstructions } from "../src/factory/specialistSteps.js";
 import { videoPrompts } from "../src/factory/videoPrompts.js";
@@ -287,4 +297,39 @@ it("rejects absent nonvisual maps and links with actionable paths, but reads his
 		},
 	};
 	expect(GuideSchema.safeParse(historic).success).toBe(true);
+});
+
+it("regenerates stock guides as show & tell while keeping custom guides and role settings", () => {
+	const settings = {
+		model: "operator-model",
+		reasoningEffort: "high" as const,
+	};
+	const impact = stockBrief.prompt!.slice(
+		stockBrief.prompt!.indexOf("\nFor impact-v1 follow-ups"),
+	);
+	const v1 = briefPrompt + briefVideoInstructions;
+	for (const [old, expected] of [
+		[legacyGuideStep, storyPrompt + briefVideoInstructions],
+		[
+			{ ...stockBrief, guideContract: BRIEF_CONTRACT, prompt: v1 },
+			storyPrompt + briefVideoInstructions,
+		],
+		[
+			{ ...stockBrief, guideContract: BRIEF_CONTRACT, prompt: v1 + impact },
+			stockBrief.prompt,
+		],
+	] as const) {
+		const upgraded = upgradedGuideStep({ ...old, ...settings });
+		expect(upgraded).toMatchObject({
+			...settings,
+			guideContract: STORY_CONTRACT,
+			prompt: expected,
+			videoContract: "video-v1",
+		});
+		expect(upgradedGuideStep(upgraded!)).toBeUndefined();
+	}
+	expect(upgradedGuideStep(stockBrief)).toBeUndefined();
+	expect(
+		upgradedGuideStep({ ...stockBrief, prompt: "My custom guide" }),
+	).toBeUndefined();
 });

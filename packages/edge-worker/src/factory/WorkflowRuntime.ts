@@ -65,6 +65,7 @@ import {
 } from "./DeliveryCoordination.js";
 import {
 	defaultWorkflows,
+	upgradedGuideStep,
 	upgradeHandoffReadiness,
 } from "./defaultWorkflows.js";
 import type { ResolvedExecutionEnvironment } from "./ExecutionEnvironment.js";
@@ -3393,7 +3394,7 @@ export class WorkflowRuntime {
 		const find = (
 			frame: GraphCheckpoint | undefined,
 			steps: WorkflowStep[],
-		): GraphCheckpoint | undefined => {
+		): { frame: GraphCheckpoint; steps: WorkflowStep[] } | undefined => {
 			if (!frame) return;
 			const step = steps.find((s) => s.id === frame.current);
 			if (
@@ -3407,7 +3408,7 @@ export class WorkflowRuntime {
 						s.id === "handoff" && s.tool === "handoff" && s.next === step.id,
 				)
 			)
-				return frame;
+				return { frame, steps };
 			if (step?.type === "workflow") {
 				const child = run.workflowDefinitions?.find(
 					(w) => w.id === step.workflow,
@@ -3416,9 +3417,10 @@ export class WorkflowRuntime {
 			}
 			return undefined;
 		};
-		const frame = find(run.checkpoint, run.workflow.steps);
-		if (!frame)
+		const found = find(run.checkpoint, run.workflow.steps);
+		if (!found)
 			throw new Error("This workflow has no regeneratable guide checkpoint");
+		const { frame, steps } = found;
 		// Retire only the waiting gate. Completed agents, evidence and history stay intact.
 		delete run.reviewGate;
 		this.controllers.get(id)?.abort();
@@ -3427,12 +3429,16 @@ export class WorkflowRuntime {
 		delete frame.active;
 		delete run.outputs.handoff;
 		delete run.outputs["human-review"];
+		// Stock guides regenerate in the current show & tell format.
+		const index = steps.findIndex((s) => s.id === "guide");
+		const upgraded = upgradedGuideStep(steps[index]!);
+		if (upgraded) steps[index] = upgraded;
 		run.status = "running";
 		delete run.error;
 		this.log(
 			run,
 			"guide",
-			"Regenerating the full PR review guide; implementation, reviews and captures are retained.",
+			`Regenerating the full PR review guide${upgraded ? " in the current show & tell format" : ""}; implementation, reviews and captures are retained.`,
 		);
 		await this.save(run);
 		void this.launch(run);

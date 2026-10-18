@@ -170,6 +170,7 @@ try {
 					"localhost-noauth.log",
 					"linear-delivery.log",
 					"architecture.log",
+					"impact-feedback-recovery.log",
 				].sort(),
 			),
 		"Incomplete current full-payload CI/mock workflow coverage",

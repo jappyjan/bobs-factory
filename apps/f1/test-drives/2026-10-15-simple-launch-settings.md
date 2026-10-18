@@ -138,3 +138,46 @@ Machine-readable execution records and full logs are in the evidence directory a
 - `fix-r6-target-recovery-tests.log`, `fix-r6-target-linear-delivery.log`, `fix-r6-target-recovery-f1.log`, `fix-r6-managed-credential-coverage.log`, `fix-r6-target-browser-source-coverage.log`, `fix-r6-changed-code-lint.log`, `fix-r6-combined-target.log` and `fix-r6-diff-whitespace.log`.
 
 This correction changes report text only. The configured impact gate must independently select and execute the bounded commands; these local receipts do not manufacture a passing gate. Fresh launcher browser QA and the accepted separate server-error and connection-loss checks remain required at their later gate. Historical failed QA remains retained.
+
+## Main integration validation — 2026-10-18
+
+Integrated target `3843f3bd2804e2f5502698b1502a35d4885f8677` into
+`be48649d34084e69e80710507d6fb985f6a6d7f7`. The tested staged tree was
+`f8ab49fb360e3ab1649cdc81ce945ad98334e751`; this report addition is the only
+subsequent change. Resolved the changelog and capability-reference conflicts
+by retaining both branches' entries, Simple-only launch settings, the target's
+show-and-tell description and guide schema, and the complete prompt expectation.
+
+Build, workspace typecheck, five-file Biome checking and whitespace checks passed.
+The selected launcher/integration command passed all 301 tests. Guide, review
+brief, workflow catalog, feedback policy and capture-recovery suites passed all
+86 tests. That five-suite command took 128.62 seconds, beyond the workflow's
+120-second command limit. Future impact selection should run
+`test/EdgeWorker.capture-recovery.test.ts` separately from the other four suites,
+preserving every test and assertion.
+
+The new original-source regression initially reached its 30-second test timeout.
+An isolated diagnostic run with `--testTimeout=90000` passed in 15.68 seconds;
+the original command then passed with its unchanged default timeout in 7.87
+seconds. Both failed and passing logs remain recorded. This establishes timing
+variation, not a demonstrated production defect.
+
+The 34 managed-credential tests passed after removing inherited credential
+settings only from their test child. In addition to the earlier command's
+`BOBS_FACTORY_HOME` and `BOBS_FACTORY_GITHUB_CREDENTIAL_COMMAND`, unset
+`BOBS_FACTORY_GITHUB_MANAGED_CREDENTIALS`, `BOBS_FACTORY_GITHUB_REPOSITORIES`,
+`BOBS_FACTORY_GITHUB_TOKENS` and `BOBS_FACTORY_GITHUB_EXPLICIT_CREDENTIALS`.
+The initial command's six repository-scope failures remain recorded; production
+scope enforcement and all fixture assertions are unchanged.
+
+All three simulated-agent F1 drivers passed: the launcher driver above,
+`apps/f1/test-drives/assets/impact-feedback-recovery.mjs`, and
+`apps/f1/test-drives/assets/review-story.ts` (with
+`BOBS_FACTORY_INTERNAL_EXECUTABLE` unset). The guide fixture also rendered in a
+fresh headless browser: six slides, collapsed evidence and explicit approval
+still required. Its screenshot was inspected; the browser and fixture stopped.
+
+Logs and the screenshot are in the retained run evidence directory under
+`ci-fix-r10-*`. These checks validate the integration, not the later fresh
+launcher browser QA or human acceptance. No real agents or provider credits
+were used. Historical failed QA remains retained.

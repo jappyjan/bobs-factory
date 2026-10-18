@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Review guides open with a show & tell: Bob walks you through the change one slide at a time, like a colleague at your desk: what you asked for and where each part landed, the main change as a before/after picture, measured results as charts, screenshots, your decisions, and what he could not prove. The detailed evidence stays one tap away. Works on phones with swipe and tap. Regenerating a pending guide on an existing run switches it to the new format. ([#151](https://github.com/jappyjan/bobs-factory/pull/151))
+
 - Recipes are now a visual workbench. A gallery shows each recipe as a map of its run; opening one shows every step on a canvas grouped into phases, with the main path, conditional routes and loops drawn out and called building blocks shown inline. Select a step to tune its agent, edit instructions and routes, add steps from a palette, draw a route by dragging between steps, and simulate a run outcome by outcome to see where reviews loop back. Edits are kept as a draft until you save, changes made elsewhere are detected instead of overwritten, and the JSON stays available for advanced fields ([#143](https://github.com/jappyjan/bobs-factory/pull/143)).
 
 - Choose “Stay signed in” for remote dashboard sessions with no Factory expiry; retain normal key revocation, preserve existing session deadlines, and back up authentication state during upgrade. ([#140](https://github.com/jappyjan/bobs-factory/pull/140))
@@ -21,6 +23,9 @@ All notable changes to this project will be documented in this file.
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
+- Recover new and saved impact assessments that confuse ticket notices with PR feedback, and prevent assessments from invalidating themselves through retained requirement references; preserve conversation IDs, original evidence and strict feedback hashes. ([#152](https://github.com/jappyjan/bobs-factory/pull/152))
+
 - Serialize nightly candidate freezing without holding the queue through native and desktop builds, preventing a stuck superseded runner from blocking later release candidates. ([#150](https://github.com/jappyjan/bobs-factory/pull/150))
 
 - Let prepared updates drain passive merge/CI waits and queued ticket delivery instead of waiting indefinitely; preserve checkpoints, approvals and in-flight results for recovery. ([#149](https://github.com/jappyjan/bobs-factory/pull/149))

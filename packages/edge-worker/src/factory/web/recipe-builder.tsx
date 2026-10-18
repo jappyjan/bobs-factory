@@ -874,6 +874,9 @@ function Inspector({
 											})
 										}
 									>
+										<option value="brief-v2">
+											Show &amp; tell with review brief
+										</option>
 										<option value="brief-v1">
 											Review brief (requirement-first)
 										</option>
@@ -881,7 +884,7 @@ function Inspector({
 									</select>
 									<small>
 										The instructions must ask for the selected format. Saved
-										runs keep the format they started with.
+										runs keep their format until a stock guide is regenerated.
 									</small>
 								</label>
 							)}

@@ -274,6 +274,7 @@ async function drive(
 		feedback?: boolean;
 		comment?: string;
 		operationalAnswer?: boolean;
+		assessmentSources?: boolean;
 		blocked?: boolean;
 	} = {},
 ) {
@@ -403,6 +404,8 @@ async function drive(
 							"Teardown has no path into authorization, inspected callers and dependencies",
 					})),
 				);
+				if (options.assessmentSources)
+					result.rationale = `Independent assessment ${calls.length}`;
 				if (
 					(options.operationalAnswer || options.blocked) &&
 					context.run.answers.length &&
@@ -446,7 +449,17 @@ async function drive(
 							id: "R1",
 							criterion: "Remove only owned resources",
 							classification: "active",
-							sources: [{ source: "originalInput", reference: "/criterion" }],
+							sources: [
+								{ source: "originalInput", reference: "/criterion" },
+								...(options.assessmentSources
+									? [
+											{
+												source: "context",
+												reference: "/outputs/assessor/rationale",
+											},
+										]
+									: []),
+							],
 						},
 					],
 					decisions: [],
@@ -1713,6 +1726,55 @@ it("waits for a blocked specialist and resumes only outstanding review after ass
 	expect(fixture.calls.filter((id) => id === "business")).toHaveLength(3);
 	expect((fixture.run.outputs.gate as AggregateReview).approved).toBe(true);
 });
+it("binds assessment sources to the inventory history through reassessment and restart", async () => {
+	const fixture = await drive(true, "js", {
+		operationalAnswer: true,
+		assessmentSources: true,
+	});
+	expect(fixture.run.status, fixture.run.error).toBe("completed");
+	expect(fixture.calls.filter((id) => id === "scope")).toHaveLength(1);
+	const run = JSON.parse(JSON.stringify(fixture.run)) as FactoryRun;
+	const fanout = fixture.definition.steps.find((s) => s.id === "experts")!;
+	const scope = () => ({
+		originalInput: run.input,
+		outputs: run.outputs,
+		answers: run.answers,
+		chatMessages: [],
+		humanDecisions: run.humanDecisions ?? [],
+	});
+	const context = {
+		run,
+		step: fanout,
+		currentScope: scope,
+		input: scope(),
+		outputs: run.outputs,
+		signal: new AbortController().signal,
+		log: () => {},
+		evidenceDir: fixture.root,
+	} satisfies ExecutionContext;
+	const before = await collectImpactSnapshot(context, fanout, "experts");
+	(run.outputs.assessor as ImpactAssessment).rationale =
+		"A newly saved independent assessment";
+	const after = await collectImpactSnapshot(context, fanout, "experts");
+	expect(after.sourceDigest).toBe(before.sourceDigest);
+	run.history.push(
+		{
+			step: "other/assessor",
+			output: { rationale: "Unrelated assessment" },
+			at: run.createdAt,
+		},
+		{ step: "other/scope", output: run.outputs.scope, at: run.createdAt },
+	);
+	expect(
+		(await collectImpactSnapshot(context, fanout, "experts")).sourceDigest,
+	).toBe(before.sourceDigest);
+	const original = run.history.find((h) => h.step === "assessor")!
+		.output as ImpactAssessment;
+	original.rationale = "Changed original requirement evidence";
+	const changed = await collectImpactSnapshot(context, fanout, "experts");
+	expect(changed.sourceDigest).not.toBe(before.sourceDigest);
+});
+
 it("fingerprints custom requirement sources and ignores discussion timestamps and our own replies", async () => {
 	const fixture = await drive(true);
 	const run = fixture.run;

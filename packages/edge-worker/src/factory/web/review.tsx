@@ -167,7 +167,9 @@ export function GuidedReview({
 }
 /** Briefs come from steps declaring the brief contract; chapter guides stay readable. */
 export const isBrief = (guide: unknown): guide is ReviewBrief =>
-	(guide as { contract?: unknown } | undefined)?.contract === "brief-v1";
+	["brief-v1", "brief-v2"].includes(
+		String((guide as { contract?: unknown } | undefined)?.contract),
+	);
 function BriefSession(props: React.ComponentProps<typeof BriefReview>) {
 	const controller = useFeedbackController(
 		feedbackKey(props.storageKey, props.run.reviewGate?.id),
