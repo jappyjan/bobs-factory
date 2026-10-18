@@ -6,8 +6,8 @@ import {
 import { feedbackPolicyInstructions } from "./FeedbackPolicy.js";
 import {
 	briefVideoInstructions,
-	STORY_CONTRACT,
-	storyPrompt,
+	DIVE_CONTRACT,
+	divePrompt,
 } from "./GuideAuthoring.js";
 import { impactInstructions } from "./Impact.js";
 import {
@@ -170,10 +170,10 @@ Open the actual selected screenshots. Return acceptedScreenshots:[{area,state,im
 					" Include independently generated visual-gate findings as well as reviewer findings. Preserve stable dispositions. Rejected complaints require concrete evidence and reviewer reassessment; rejection cannot waive a failed required criterion. After corrections the pipeline returns through code review, CI, QA scope, execution, review and gate. Failed criteria must be retested before the human guide.",
 				{ next: "code-review", qaContract: QA_CONTRACT },
 			),
-			agent("guide", "Prepare human review brief", storyPrompt, {
+			agent("guide", "Prepare human review brief", divePrompt, {
 				next: "handoff",
 				qaContract: QA_CONTRACT,
-				guideContract: STORY_CONTRACT,
+				guideContract: DIVE_CONTRACT,
 			}),
 			tool("handoff", "Verify revision and hand off", "handoff", {
 				branches: [{ when: { path: "fix", equals: true }, next: "ci-fix" }],
@@ -239,7 +239,7 @@ const stockGuideOpenings = [
 	"Write a Rocky-inspired review recap",
 ];
 /**
- * Regenerating a pending guide adopts the current stock show & tell brief.
+ * Regenerating a pending guide adopts the current stock show & tell brief with Dig deeper.
  * Custom guide prompts and per-role agent settings stay as the run accepted them.
  */
 export function upgradedGuideStep(
@@ -250,13 +250,13 @@ export function upgradedGuideStep(
 		return;
 	// Keep the run's accepted contracts: video and impact follow-up instructions.
 	const prompt =
-		storyPrompt +
+		divePrompt +
 		(step.videoContract ? briefVideoInstructions : "") +
 		(step.prompt.includes(impactGuideInstructions.trim())
 			? impactGuideInstructions
 			: "");
-	if (step.guideContract === STORY_CONTRACT && step.prompt === prompt) return;
-	return { ...step, prompt, guideContract: STORY_CONTRACT };
+	if (step.guideContract === DIVE_CONTRACT && step.prompt === prompt) return;
+	return { ...step, prompt, guideContract: DIVE_CONTRACT };
 }
 
 // Kept for conservative saved-recipe detection and legacy runtime regression fixtures.

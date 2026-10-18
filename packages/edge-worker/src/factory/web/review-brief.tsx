@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { GuideChapter } from "../FactoryResults";
 import type { BriefProof, BriefRequirement, ReviewBrief } from "../ReviewBrief";
+import type { ReviewFile } from "../ReviewFiles";
 import { api } from "./client";
 import { LazyVideo, type VideoInventory } from "./media";
 import { useRestorableState } from "./restoration";
@@ -20,8 +21,14 @@ import {
 	useReviewFeedback,
 } from "./review-comments";
 import { reviewFileTarget } from "./review-context";
+import { DigDeeper, type DiveFocus, type PatchState } from "./review-dive";
 import type { FeedbackTarget } from "./review-feedback";
-import { ChangedFiles, FileLink, useReviewFiles } from "./review-files";
+import {
+	ChangedFiles,
+	FileLink,
+	useReviewFiles,
+	useReviewPatch,
+} from "./review-files";
 import { fileTotals } from "./review-model";
 import { readStored, signature, writeStored } from "./review-state";
 import { StoryDeck } from "./review-story";
@@ -93,6 +100,15 @@ export function BriefReview({
 		false,
 	);
 	const evidenceOpen = !brief.story || evidenceShown;
+	// brief-v3 replaces the evidence below the story with Dig deeper.
+	const dive = Boolean(brief.tour);
+	const [diveFocus, setDiveFocus] = useState<DiveFocus>();
+	const focusDive = (focus: Omit<DiveFocus, "nonce">) =>
+		setDiveFocus({ ...focus, nonce: Date.now() });
+	const [deckSlide, setDeckSlide] = useState<{
+		slide: "calls" | "beyond";
+		nonce: number;
+	}>();
 	const reveal = (
 		selector?: string,
 		block: ScrollLogicalPosition = "center",
@@ -161,6 +177,7 @@ export function BriefReview({
 		return i < 0 ? undefined : i + 1;
 	};
 	const showFlow = (flow: string, steps: number[]) => {
+		if (dive) return focusDive({ tab: "how", flow: { id: flow, steps } });
 		setFlowFocus({ flow, steps });
 		requestAnimationFrame(() =>
 			document
@@ -214,8 +231,28 @@ export function BriefReview({
 		order: [section, order],
 	});
 	const goToComment = (item: FeedbackTarget) => {
-		setEvidenceShown(true);
 		feedback?.update((d) => ({ ...d, editing: item.path }));
+		if (dive) {
+			const slide = item.path.startsWith("/yourCall/")
+				? "calls"
+				: item.path.startsWith("/beyondAsk/")
+					? "beyond"
+					: undefined;
+			if (slide) {
+				setDeckSlide({ slide, nonce: Date.now() });
+				requestAnimationFrame(() =>
+					document
+						.querySelector<HTMLElement>(".story")
+						?.scrollIntoView({ behavior: "smooth", block: "start" }),
+				);
+			} else
+				focusDive({
+					tab: item.path.startsWith("/interpretation/") ? "choices" : "checks",
+					path: item.path,
+				});
+			return;
+		}
+		setEvidenceShown(true);
 		requestAnimationFrame(() =>
 			document
 				.querySelector<HTMLElement>(
@@ -237,7 +274,7 @@ export function BriefReview({
 					setAgreed((current) => ({ ...current, [path]: false }));
 					feedback.update((d) => ({ ...d, editing: path }));
 					// Objections from the show & tell are written next to their evidence.
-					if (!evidenceOpen)
+					if (!evidenceOpen && !dive)
 						reveal(`[data-comment-path="${CSS.escape(path)}"]`);
 				}}
 			/>
@@ -273,10 +310,169 @@ export function BriefReview({
 		: undefined;
 	const passed = checks?.filter((c) => c.bucket === "pass").length ?? 0;
 	const skipped = checks?.filter((c) => c.bucket === "skipping").length ?? 0;
+	const external = brief.externalResources && (
+		<section className="brief-section" aria-label="Verified ticket changes">
+			<h3>Verified ticket changes</h3>
+			<p>
+				Applied ticket changes remain after requesting corrections. Review the
+				before and after content and verified criteria.
+			</p>
+			{brief.externalResources.map((resource) => (
+				<p key={resource.key}>
+					<External href={resource.url}>{resource.key} ↗</External>
+				</p>
+			))}
+			{brief.externalChanges?.map((change, i) => (
+				<Commentable
+					key={change.id}
+					target={target(
+						`/externalChanges/${i}`,
+						change.target,
+						"Ticket change",
+						change.outcome,
+						6,
+						i,
+					)}
+				>
+					<h4>
+						{change.target}: {change.outcome}
+					</h4>
+					<h5>Before</h5>
+					<pre>{change.before}</pre>
+					<h5>After</h5>
+					<pre>{change.after}</pre>
+					<p>{change.limitation}</p>
+				</Commentable>
+			))}
+			{brief.externalCriteria?.map((criterion, i) => (
+				<Commentable
+					key={criterion.id}
+					target={target(
+						`/externalCriteria/${i}`,
+						criterion.criterion,
+						"Verified criterion",
+						criterion.observed,
+						6,
+						i + 100,
+					)}
+				>
+					<details>
+						<summary>✓ {criterion.criterion}</summary>
+						<pre>{criterion.observed}</pre>
+					</details>
+				</Commentable>
+			))}
+		</section>
+	);
+	const delivery = (
+		<section className="brief-delivery" aria-label="Delivery facts">
+			{checks?.length ? (
+				<span>
+					CI ✓ {passed}/{checks.length}
+					{skipped ? ` (${skipped} skipped)` : ""}
+				</span>
+			) : null}
+			{brief.hygiene.length > 0 && (
+				<ul>
+					{brief.hygiene.map((h) => (
+						<li key={h.text}>{h.text}</li>
+					))}
+				</ul>
+			)}
+		</section>
+	);
+	const manifest = fileQuery.data?.manifest;
+	const usePatch = (file: ReviewFile): PatchState => {
+		const query = useReviewPatch(
+			run.id,
+			manifest!,
+			fileQuery.data?.guideHash ?? "",
+			file,
+		);
+		return query.isPending
+			? { status: "pending" }
+			: query.error
+				? {
+						status: "error",
+						message: query.error.message,
+						retry: () => void query.refetch(),
+					}
+				: {
+						status: "ready",
+						patch: query.data.patch,
+						reason: query.data.reason,
+					};
+	};
 	return (
 		<div className="brief">
 			<div className="brief-main">
-				{brief.story && (
+				{dive && brief.story && (
+					<>
+						<StoryDeck
+							brief={brief}
+							story={brief.story}
+							storageKey={storageKey}
+							readiness={readiness}
+							proof={proof}
+							judge={(i) => judge(`/yourCall/${i}`, ["Fine", "Change it"])}
+							onEvidence={() =>
+								document
+									.getElementById("brief-dive")
+									?.scrollIntoView({ behavior: "smooth", block: "start" })
+							}
+							onDecide={decide}
+							annotate={(path, label, kind, context, node) => (
+								<Commentable
+									target={target(
+										path,
+										label,
+										kind,
+										context,
+										path.startsWith("/yourCall/") ? 3 : 5,
+										Number(path.split("/")[2]),
+									)}
+								>
+									{node}
+								</Commentable>
+							)}
+							show={deckSlide}
+						/>
+						<DigDeeper
+							brief={brief}
+							files={manifest?.files}
+							filesError={
+								<div className="dive-diff-status">
+									<p role={fileQuery.error ? "alert" : "status"}>
+										{fileQuery.error
+											? `Changed files are unavailable: ${fileQuery.error.message}`
+											: "Loading the changed files…"}
+									</p>
+									{fileQuery.error && (
+										<Button
+											variant="secondary"
+											onClick={() => void fileQuery.refetch()}
+										>
+											Retry files
+										</Button>
+									)}
+								</div>
+							}
+							usePatch={usePatch}
+							proof={proof}
+							judge={judge}
+							target={target}
+							focus={diveFocus}
+							onFocus={focusDive}
+							checksFooter={
+								<>
+									{external}
+									{delivery}
+								</>
+							}
+						/>
+					</>
+				)}
+				{!dive && brief.story && (
 					<StoryDeck
 						brief={brief}
 						story={brief.story}
@@ -288,7 +484,7 @@ export function BriefReview({
 						onDecide={decide}
 					/>
 				)}
-				{brief.story && (
+				{!dive && brief.story && (
 					<section className="brief-evidence-toggle" id="brief-evidence">
 						<div>
 							<h3>The evidence behind it</h3>
@@ -307,7 +503,7 @@ export function BriefReview({
 						</Button>
 					</section>
 				)}
-				{evidenceOpen && (
+				{!dive && evidenceOpen && (
 					<>
 						<section
 							className={`brief-verdict ${brief.verdict.readiness}`}
@@ -638,63 +834,7 @@ export function BriefReview({
 							) : null}
 						</section>
 
-						{brief.externalResources && (
-							<section
-								className="brief-section"
-								aria-label="Verified ticket changes"
-							>
-								<h3>Verified ticket changes</h3>
-								<p>
-									Applied ticket changes remain after requesting corrections.
-									Review the before and after content and verified criteria.
-								</p>
-								{brief.externalResources.map((resource) => (
-									<p key={resource.key}>
-										<External href={resource.url}>{resource.key} ↗</External>
-									</p>
-								))}
-								{brief.externalChanges?.map((change, i) => (
-									<Commentable
-										key={change.id}
-										target={target(
-											`/externalChanges/${i}`,
-											change.target,
-											"Ticket change",
-											change.outcome,
-											6,
-											i,
-										)}
-									>
-										<h4>
-											{change.target}: {change.outcome}
-										</h4>
-										<h5>Before</h5>
-										<pre>{change.before}</pre>
-										<h5>After</h5>
-										<pre>{change.after}</pre>
-										<p>{change.limitation}</p>
-									</Commentable>
-								))}
-								{brief.externalCriteria?.map((criterion, i) => (
-									<Commentable
-										key={criterion.id}
-										target={target(
-											`/externalCriteria/${i}`,
-											criterion.criterion,
-											"Verified criterion",
-											criterion.observed,
-											6,
-											i + 100,
-										)}
-									>
-										<details>
-											<summary>✓ {criterion.criterion}</summary>
-											<pre>{criterion.observed}</pre>
-										</details>
-									</Commentable>
-								))}
-							</section>
-						)}
+						{external}
 
 						<details
 							className="brief-section brief-files"
@@ -716,21 +856,7 @@ export function BriefReview({
 							/>
 						</details>
 
-						<section className="brief-delivery" aria-label="Delivery facts">
-							{checks?.length ? (
-								<span>
-									CI ✓ {passed}/{checks.length}
-									{skipped ? ` (${skipped} skipped)` : ""}
-								</span>
-							) : null}
-							{brief.hygiene.length > 0 && (
-								<ul>
-									{brief.hygiene.map((h) => (
-										<li key={h.text}>{h.text}</li>
-									))}
-								</ul>
-							)}
-						</section>
+						{delivery}
 					</>
 				)}
 
