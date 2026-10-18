@@ -43,6 +43,7 @@ import {
 	ArchitectureSchema,
 	assertReviewBrief,
 	openDecisions,
+	reviewedArchitectureContinuation,
 	snapshotProposal,
 	verifyProposal,
 } from "./Architecture.js";
@@ -2674,16 +2675,31 @@ export class WorkflowRuntime {
 					const policy = args.approval ?? "meaningful";
 					if (!["meaningful", "always", "never"].includes(String(policy)))
 						throw new Error("Unknown architecture approval policy");
+					const continuation =
+						policy === "meaningful" &&
+						args.continueAccepted === true &&
+						steps.find((s) => s.id === String(args.review ?? "plan-review"))
+							?.architectureContract === "architecture-review-v1"
+							? reviewedArchitectureContinuation(
+									readPath(reviewed, "continuation"),
+									proposal,
+									run.architectureProposals ?? [],
+									run.architectureDecisions ?? [],
+								)
+							: undefined;
 					// Open decisions need a human answer whatever the policy says.
 					if (
 						!openDecisions(proposal.content) &&
-						(policy === "never" ||
+						(continuation ||
+							policy === "never" ||
 							(policy === "meaningful" &&
 								proposal.content.classification === "routine"))
 					) {
 						proposal.status = "routine";
-						proposal.bypassReason =
-							policy === "never"
+						proposal.continuation = continuation;
+						proposal.bypassReason = continuation
+							? `Continues your approval of architecture version ${continuation.version}. ${continuation.reason}`
+							: policy === "never"
 								? "Operator configured approval=never"
 								: proposal.content.rationale;
 						outputs[planOutput] = structuredClone(proposal.content.candidate);
@@ -2692,7 +2708,9 @@ export class WorkflowRuntime {
 							proposalId: proposal.id,
 							digest: proposal.digest,
 							reason: proposal.bypassReason,
+							...(continuation ? { continuation } : {}),
 						};
+						if (continuation) this.log(run, key, proposal.bypassReason);
 						await this.save(run);
 						signal.throwIfAborted();
 					} else {

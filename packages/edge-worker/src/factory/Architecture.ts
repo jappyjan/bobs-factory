@@ -308,12 +308,31 @@ export function assertRevisionChanges(
 export function openDecisions(content: Architecture): number {
 	return content.decisions.filter((d) => d.status === "open").length;
 }
+const ArchitectureContinuationSchema = z
+	.object({
+		proposalId: text,
+		version: z.number().int().positive(),
+		digest: text,
+		reason: short(1200),
+	})
+	.strict();
+export type ArchitectureContinuation = z.infer<
+	typeof ArchitectureContinuationSchema
+>;
 export const ArchitectureReviewSchema = z
-	.object({ approved: z.boolean(), feedback: z.array(text) })
+	.object({
+		approved: z.boolean(),
+		feedback: z.array(text),
+		continuation: ArchitectureContinuationSchema.optional(),
+	})
 	.strict()
 	.refine(
 		(r) => r.approved || r.feedback.length > 0,
 		"Rejected candidate review requires feedback",
+	)
+	.refine(
+		(r) => !r.continuation || r.approved,
+		"Rejected reviews cannot continue approval",
 	);
 export type Architecture = z.infer<typeof ArchitectureSchema>;
 export interface ArchitectureProposal {
@@ -322,6 +341,8 @@ export interface ArchitectureProposal {
 	digest: string;
 	source: string;
 	bypassReason?: string;
+	/** Independent review links this revision to an actual human decision; it is not a new acceptance. */
+	continuation?: ArchitectureContinuation;
 	status:
 		| "proposed"
 		| "pending"
@@ -375,6 +396,39 @@ export function verifyProposal(proposal: ArchitectureProposal): void {
 			asset.digest
 		)
 			throw new Error("Architecture asset changed; regenerate the proposal");
+}
+/** Continuation is cumulative from the latest human decision in this proposal route. */
+export function reviewedArchitectureContinuation(
+	value: unknown,
+	current: ArchitectureProposal,
+	proposals: readonly ArchitectureProposal[],
+	decisions: readonly ArchitectureDecision[],
+): ArchitectureContinuation | undefined {
+	const parsed = ArchitectureContinuationSchema.safeParse(value);
+	if (!parsed.success || openDecisions(current.content)) return;
+	const reference = parsed.data;
+	const sameSource = new Map(
+		proposals.filter((p) => p.source === current.source).map((p) => [p.id, p]),
+	);
+	const latest = [...decisions]
+		.reverse()
+		.find((d) => sameSource.has(d.proposalId));
+	const accepted = latest && sameSource.get(latest.proposalId);
+	if (
+		!latest ||
+		latest.decision !== "accept" ||
+		!accepted ||
+		accepted.version >= current.version ||
+		openDecisions(accepted.content) ||
+		latest.proposalId !== reference.proposalId ||
+		latest.version !== reference.version ||
+		latest.digest !== reference.digest ||
+		accepted.version !== reference.version ||
+		accepted.digest !== reference.digest
+	)
+		return;
+	verifyProposal(accepted);
+	return reference;
 }
 export async function snapshotProposal(
 	value: unknown,
@@ -491,9 +545,13 @@ export async function snapshotProposal(
 }
 export const implementationScopeInstructions = `Treat planned file paths as an estimate of implementation work. During implementation, completing the accepted requirements with the accepted architecture includes necessary edits to newly discovered callers, imports, fixtures, tests, configuration and documentation. The implementer inspects those dependencies, makes the required edits and records added paths with their concrete purpose in implementation checks. Do not request permission solely because a necessary path was omitted, and do not add file-by-file approval requirements to the plan. Preserve explicit user/repository restrictions and accepted non-goals. New requirements, materially changed architecture, additional repository or external delivery targets, and unresolved human-dependent decisions still require their applicable authorization or revision route. Self-contained plans must include this implementation policy.`;
 
+export const architectureContinuationInstructions = `For a follow-up proposal, compare the COMPLETE current candidate cumulatively with the latest explicitly human-accepted architecture in architectureProposals and architectureDecisions, not just the preceding generated version. Retain settled decisions and exclusions. The original design's complexity does not itself require another approval. Necessary caller/test wiring, file discoveries and implementation details within the accepted requirements and boundaries do not create a new human decision. Do not turn Bob-authored file manifests into user restrictions. Material changes to requirements, responsibilities, interfaces, security/operating limits, delivery targets, explicit human/repository restrictions or non-goals, and unresolved human-dependent choices still need their applicable authorization. Explain the actual change and its evidence; uncertainty must remain visible.`;
+
 export const architectureInstructions = `Inspect the selected repositories, actual module boundaries and conventions, all requirements, comments, answers and decisions, the draft plan and prior candidate-review feedback. Preserve Takeover's completed work, PR URL and branch. Propose the smallest adequate design; do not implement or invent human acceptance. Routine unsplit changes using established patterns may bypass architecture approval with a concrete rationale; meaningful responsibilities, boundaries, interfaces or trade-offs require human acceptance.
 
 ${implementationScopeInstructions}
+
+${architectureContinuationInstructions}
 
 The human must understand the problem, each concrete change, its scope and coverage without opening code or the folded full plan. Write short sentences in everyday words. Keep paths in file/path/paths/files fields. Use concrete quantities, limits and observable behavior where they matter; do not replace substance with benefit statements. The summary states the current gap, the proposed change and its scope boundary. Risks are product/technical consequences; ticket synchronization and workflow status belong to run status, not risks. Character limits: findings and nonGoals 320 each; criterion text 1200; criterion reason, deliverable what and acceptance check 480 each; added-work reason 320; version-change text 200; deliverable title and decision question 120; IDs and option name 60; option upside/catch 160; decision why, map detail and risks 240; map label 40 and note 50; file paths 400. Put further detail in the full plan while keeping every substantive deliverable visible in the brief.
 
