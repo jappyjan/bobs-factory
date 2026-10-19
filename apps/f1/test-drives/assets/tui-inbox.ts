@@ -2,13 +2,7 @@
 // Real EdgeWorker, Git worktrees, auth/API/SSE and TodayApp; only agents are mocked.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import {
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	realpathSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TodayApp } from "../../../../apps/cli/src/tui/app.js";
@@ -19,6 +13,7 @@ import {
 	EdgeWorker,
 	requestFactoryTerminalSession,
 } from "../../../../packages/edge-worker/dist/index.js";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.js";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -60,7 +55,7 @@ const worker = new EdgeWorker({
 			const context = config.mcpConfig?.["factory-context"];
 			const input =
 				context && "args" in context
-					? JSON.parse(readFileSync(context.args![1]!, "utf8"))
+					? loadFactoryContextSnapshot<any>(context.args!.at(-1)!)
 					: undefined;
 			const output =
 				input && !input.answers?.length

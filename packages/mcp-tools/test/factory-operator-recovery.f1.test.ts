@@ -20,8 +20,8 @@ const { direct, native, discovery } = vi.hoisted(() => ({
 vi.mock("bobs-factory-mcp-tools", async (original) => ({
 	...(await original<object>()),
 	// Mandatory context preflight spawns Node, so use the compiled stdio entry point.
-	prepareFactoryContext: (await import("../dist/factoryContext.js"))
-		.prepareFactoryContext,
+	prepareFactoryContextAsync: (await import("../dist/factoryContext.js"))
+		.prepareFactoryContextAsync,
 	callConfiguredTool: direct,
 	listConfiguredTools: discovery,
 }));

@@ -2,6 +2,24 @@ type RecordValue = Record<string, unknown>;
 const isRecord = (value: unknown): value is RecordValue =>
 	value !== null && typeof value === "object" && !Array.isArray(value);
 
+/** Snapshot adapters inspect metadata without loading complete historical outputs. */
+export interface ContextMemoryAccess {
+	isRecord(value: unknown): boolean;
+	array(value: unknown): unknown[] | undefined;
+	fields(value: unknown): RecordValue;
+	string(value: unknown): string | undefined;
+	serializedLength(value: unknown): number;
+	signature(value: unknown): string;
+}
+const plainAccess: ContextMemoryAccess = {
+	isRecord,
+	array: (value) => (Array.isArray(value) ? value : undefined),
+	fields: (value) => value as RecordValue,
+	string: (value) => (typeof value === "string" ? value : undefined),
+	serializedLength: (value) => (JSON.stringify(value) ?? "null").length,
+	signature: (value) => JSON.stringify(value),
+};
+
 interface Claim {
 	value: unknown;
 	firstPath: string;
@@ -28,19 +46,26 @@ interface HistoryEntry {
 	outputCharacters?: number;
 }
 
-function historyIndex(history: unknown[], path: string): HistoryEntry[] {
+function historyIndex(
+	history: unknown[],
+	path: string,
+	access: ContextMemoryAccess,
+): HistoryEntry[] {
 	return history.map((item, index) => {
 		const fullPath = `${path}/${index}`;
-		if (!isRecord(item)) return { fullPath };
+		if (!access.isRecord(item)) return { fullPath };
+		const fields = access.fields(item),
+			step = access.string(fields.step),
+			at = access.string(fields.at);
 		return {
 			fullPath,
-			...(typeof item.step === "string" ? { step: item.step } : {}),
-			...(typeof item.at === "string" ? { at: item.at } : {}),
-			...(Object.hasOwn(item, "call") ? { call: item.call } : {}),
-			...(Object.hasOwn(item, "output")
+			...(step !== undefined ? { step } : {}),
+			...(at !== undefined ? { at } : {}),
+			...(Object.hasOwn(fields, "call") ? { call: fields.call } : {}),
+			...(Object.hasOwn(fields, "output")
 				? {
 						outputPath: `${fullPath}/output`,
-						outputCharacters: (JSON.stringify(item.output) ?? "null").length,
+						outputCharacters: access.serializedLength(fields.output),
 					}
 				: {}),
 		};
@@ -48,21 +73,30 @@ function historyIndex(history: unknown[], path: string): HistoryEntry[] {
 }
 
 /** Exact review claims, deduplicated without interpreting acceptance or status. */
-function reviewLedger(history: unknown[]): ReviewRecord[] {
+function reviewLedger(
+	history: unknown[],
+	access: ContextMemoryAccess,
+): ReviewRecord[] {
 	const records = new Map<string, ReviewRecord>();
+	const signatures = new WeakMap<ReviewRecord, Map<string, Claim>>();
 	for (const [round, item] of history.entries()) {
-		if (!isRecord(item) || !isRecord(item.output)) continue;
+		if (!access.isRecord(item)) continue;
+		const fields = access.fields(item);
+		if (!access.isRecord(fields.output)) continue;
+		const output = access.fields(fields.output),
+			step = access.string(fields.step);
 		const scope =
-			typeof item.step === "string"
-				? item.step.slice(0, Math.max(0, item.step.lastIndexOf("/")))
+			step !== undefined
+				? step.slice(0, Math.max(0, step.lastIndexOf("/")))
 				: "";
 		for (const kind of claimKinds) {
-			const values = item.output[kind];
-			if (!Array.isArray(values)) continue;
+			const values = access.array(output[kind]);
+			if (!values) continue;
 			for (const [index, value] of values.entries()) {
 				const path = `/history/${round}/output/${kind}/${index}`;
-				const id =
-					isRecord(value) && typeof value.id === "string" ? value.id : null;
+				const id = access.isRecord(value)
+					? (access.string(access.fields(value).id) ?? null)
+					: null;
 				// Unlabelled legacy claims remain visible; never merge unrelated claims.
 				const key = JSON.stringify([scope, id ?? path]);
 				let record = records.get(key);
@@ -75,24 +109,26 @@ function reviewLedger(history: unknown[]): ReviewRecord[] {
 						observations: [],
 					};
 					records.set(key, record);
+					signatures.set(record, new Map());
 				}
-				const serialized = JSON.stringify(value);
-				const previous = record[kind].find(
-					(claim) => JSON.stringify(claim.value) === serialized,
-				);
+				const signature = `${kind}:${access.signature(value)}`;
+				const previous = signatures.get(record)!.get(signature);
 				if (previous) {
 					previous.latestPath = path;
 					previous.latestRound = round;
 					previous.occurrences++;
-				} else
-					record[kind].push({
+				} else {
+					const claim = {
 						value,
 						firstPath: path,
 						latestPath: path,
 						firstRound: round,
 						latestRound: round,
 						occurrences: 1,
-					});
+					};
+					record[kind].push(claim);
+					signatures.get(record)!.set(signature, claim);
+				}
 			}
 		}
 	}
@@ -100,16 +136,18 @@ function reviewLedger(history: unknown[]): ReviewRecord[] {
 }
 
 /** Preserve review reasoning and gate outcomes without repeating claim bodies. */
-function reviewRounds(history: unknown[]) {
+function reviewRounds(history: unknown[], access: ContextMemoryAccess) {
 	return history.flatMap((item, index) => {
-		if (!isRecord(item) || !isRecord(item.output)) return [];
-		const output = item.output;
-		if (!claimKinds.some((kind) => Array.isArray(output[kind]))) return [];
+		if (!access.isRecord(item)) return [];
+		const fields = access.fields(item);
+		if (!access.isRecord(fields.output)) return [];
+		const output = access.fields(fields.output);
+		if (!claimKinds.some((kind) => access.array(output[kind]))) return [];
 		return [
 			{
 				round: index,
-				step: item.step,
-				at: item.at,
+				step: fields.step,
+				at: fields.at,
 				outputPath: `/history/${index}/output`,
 				...Object.fromEntries(
 					[
@@ -132,27 +170,35 @@ function reviewRounds(history: unknown[]) {
  * requirements, decisions, answers and outputs stay exact. Older role outputs
  * are indexed and remain available through their original paths or view=full.
  */
-export function factoryContextView(input: unknown): unknown {
-	if (
-		!isRecord(input) ||
-		!Array.isArray(input.history) ||
-		Object.hasOwn(input, "contextMemory")
-	)
-		return input;
-	const history = historyIndex(input.history, "/history");
+export function factoryContextView(
+	input: unknown,
+	access: ContextMemoryAccess = plainAccess,
+): unknown {
+	if (!access.isRecord(input)) return input;
+	const fields = access.fields(input),
+		originalHistory = access.array(fields.history);
+	if (!originalHistory || Object.hasOwn(fields, "contextMemory")) return input;
+	const history = historyIndex(originalHistory, "/history", access);
 	const latest = new Map<string, (typeof history)[number]>();
 	for (const item of history) if (item.step) latest.set(item.step, item);
-	const progress = input.progress;
+	const progress = fields.progress;
+	const progressFields = access.isRecord(progress)
+		? access.fields(progress)
+		: undefined;
+	const newHistory = progressFields
+		? access.array(progressFields.newHistory)
+		: undefined;
 	return {
-		...input,
+		...fields,
 		history,
-		...(isRecord(progress) && Array.isArray(progress.newHistory)
+		...(progressFields && newHistory
 			? {
 					progress: {
-						...progress,
+						...progressFields,
 						newHistory: historyIndex(
-							progress.newHistory,
+							newHistory,
 							"/progress/newHistory",
+							access,
 						),
 					},
 				}
@@ -161,8 +207,8 @@ export function factoryContextView(input: unknown): unknown {
 			format: "factory-context-memory-v1",
 			historyCount: history.length,
 			latestSteps: [...latest.values()],
-			reviewLedger: reviewLedger(input.history),
-			reviewRounds: reviewRounds(input.history),
+			reviewLedger: reviewLedger(originalHistory, access),
+			reviewRounds: reviewRounds(originalHistory, access),
 		},
 	};
 }

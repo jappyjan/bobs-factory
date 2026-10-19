@@ -14,6 +14,7 @@ import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { proposal } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -134,11 +135,8 @@ const config = {
 					runnerConfig,
 					JSON.stringify({ title: "Architecture fixture" }),
 				);
-			const context = JSON.parse(
-				readFileSync(
-					runnerConfig.mcpConfig["factory-context"].args.at(-1),
-					"utf8",
-				),
+			const context = loadFactoryContextSnapshot(
+				runnerConfig.mcpConfig["factory-context"].args.at(-1),
 			);
 			const role = run.step.split("/").at(-1);
 			const record = {

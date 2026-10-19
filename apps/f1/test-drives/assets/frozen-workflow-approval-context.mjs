@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 delete process.env.BOBS_FACTORY_INTERNAL_EXECUTABLE;
@@ -164,7 +165,7 @@ function scriptedRunner(_type, config) {
 			if (!role) return delegate.start(prompt);
 			assert.ok(instruction.includes(workflowExecutionInstructions));
 			const scoped = config.mcpConfig["factory-context"];
-			const input = JSON.parse(readFileSync(scoped.args.at(-1), "utf8"));
+			const input = loadFactoryContextSnapshot(scoped.args.at(-1));
 			const client = new Client({ name: "f1-frozen-context", version: "1" });
 			await client.connect(
 				new StdioClientTransport({

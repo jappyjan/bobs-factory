@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -17,6 +18,16 @@ import { f1AgentHandlers } from "../../src/MockAgentRunner.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 const root = mkdtempSync(join(tmpdir(), "f1-api-responsiveness-"));
+const requireMcp = createRequire(
+	new URL("../../../../packages/mcp-tools/package.json", import.meta.url),
+);
+const { Client } = requireMcp("@modelcontextprotocol/sdk/client/index.js");
+const { StdioClientTransport } = requireMcp(
+	"@modelcontextprotocol/sdk/client/stdio.js",
+);
+const evidenceMarker = "Original review snapshot: retained exactly 😀 é";
+let memoryContextReads = 0;
+const memoryProbes: number[] = [];
 const home = join(root, "home");
 const repo = join(root, "repo");
 mkdirSync(repo);
@@ -78,10 +89,60 @@ const config: EdgeWorkerConfig = {
 						questions: run.answers.length ? [] : ["Continue this run?"],
 					})
 				: "F1 API fixture completed without live inference.";
-			return f1AgentHandlers("mock", response)!.createAgentRunner!(
+			const mock = f1AgentHandlers("mock", response)!.createAgentRunner!(
 				runner,
 				options,
 			);
+			if (run?.step === "memory-check") {
+				const start = mock.start.bind(mock);
+				mock.start = async (prompt) => {
+					const scoped = options.mcpConfig?.["factory-context"];
+					assert(scoped && "command" in scoped);
+					const client = new Client({ name: "f1-memory", version: "1" });
+					await client.connect(
+						new StdioClientTransport({
+							command: scoped.command,
+							args: scoped.args ?? [],
+							cwd: options.workingDirectory,
+							stderr: "pipe",
+						}),
+					);
+					try {
+						const read = async (path: string, offset = 0, limit = 16000) => {
+							const result = await client.callTool({
+								name: "read_context",
+								arguments: { path, view: "full", offset, limit },
+							});
+							assert(!result.isError, JSON.stringify(result));
+							return result.structuredContent as {
+								text: string;
+								totalCharacters: number;
+								nextOffset: number | null;
+							};
+						};
+						const marker = await read(
+							"/history/1/output/baseline/context/marker",
+						);
+						assert.equal(marker.text, evidenceMarker);
+						assert.equal(marker.nextOffset, null);
+						const page = await read("/history/1/output/notes", 1000, 31);
+						assert.equal(
+							page.text,
+							"large evidence\n".repeat(150000).slice(1000, 1031),
+						);
+						assert.equal(
+							page.totalCharacters,
+							"large evidence\n".length * 150000,
+						);
+						assert.equal(page.nextOffset, 1031);
+						memoryContextReads++;
+					} finally {
+						await client.close();
+					}
+					return start(prompt);
+				};
+			}
+			return mock;
 		},
 	},
 };
@@ -182,6 +243,12 @@ try {
 				askQuestions: true,
 			},
 			{
+				id: "memory-check",
+				name: "Read retained evidence",
+				type: "agent",
+				prompt: "Inspect the supplied retained evidence without inference.",
+			},
+			{
 				id: "finish",
 				name: "Finish",
 				type: "script",
@@ -211,6 +278,9 @@ try {
 	const payload = {
 		summary: "Retained evidence",
 		notes: "large evidence\n".repeat(150000),
+		baseline: {
+			context: { marker: evidenceMarker },
+		},
 	};
 	run.outputs.large = payload;
 	for (let index = 0; index < 24; index++)
@@ -278,15 +348,43 @@ try {
 		`/api/runs/${started.id}/artifacts/large`,
 	);
 	assert.deepEqual(artifact, payload, "Explicit artifact read lost evidence");
-	const answer = await request<{ accepted: boolean }>(
-		`/api/runs/${started.id}/answer`,
-		{ answer: "Continue", context, kind: "answer" },
+	let probing = true;
+	const probes = (async () => {
+		while (probing) {
+			const startedAt = performance.now();
+			const response = await fetch(`${origin}/api/version`, {
+				signal: AbortSignal.timeout(1000),
+			});
+			assert.equal(response.status, 200);
+			await response.text();
+			memoryProbes.push(performance.now() - startedAt);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+		}
+	})();
+	void probes.catch(() => {});
+	try {
+		const answer = await request<{ accepted: boolean }>(
+			`/api/runs/${started.id}/answer`,
+			{ answer: "Continue", context, kind: "answer" },
+		);
+		assert(answer.accepted);
+		assert(measurements.at(-1)!.bytes < 1024);
+		await wait(
+			() => restored.get(started.id).status === "completed",
+			"Accepted answer did not continue the saved run",
+		);
+	} finally {
+		probing = false;
+		await probes;
+	}
+	assert.equal(
+		memoryContextReads,
+		1,
+		"Resumed role did not inspect full saved evidence",
 	);
-	assert(answer.accepted);
-	assert(measurements.at(-1)!.bytes < 1024);
-	await wait(
-		() => restored.get(started.id).status === "completed",
-		"Accepted answer did not continue the saved run",
+	assert(
+		memoryProbes.length > 0,
+		"No HTTP probes ran during retained-history preparation",
 	);
 	assert.equal(restored.get(started.id).answers.length, 1);
 
@@ -394,11 +492,19 @@ try {
 			"bounded focus and detail",
 			"explicit full artifact",
 			"durable answer continuation",
+			"responsive resumed role preparation with large saved history",
+			"stdio full-history reads preserve original baseline context and Unicode",
 			"retry preserves evidence",
 			"dedicated capacity counts",
 			"guarded partial recipe edit and default choice",
 		],
 		measurements,
+		memory: {
+			logicalHistoryBytes: Buffer.byteLength(JSON.stringify(payload)) * 24,
+			fullContextReads: memoryContextReads,
+			versionRequests: memoryProbes.length,
+			maxVersionMs: Math.max(...memoryProbes),
+		},
 	};
 	const receiptPath = process.env.F1_API_RECEIPT;
 	if (receiptPath)

@@ -209,6 +209,7 @@ export {
 export {
 	immutableJson,
 	immutableTranscript,
+	isImmutableJson,
 	type JsonSnapshot,
 	JsonSnapshotStore,
 	snapshotArrayTimestamps,

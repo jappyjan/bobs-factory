@@ -4,7 +4,7 @@
 //   F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/review-brief.ts
 import assert from "node:assert/strict";
 import { execFile as execFileCallback, execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import {
@@ -30,6 +30,7 @@ import {
 	qaExecution,
 	qaScope,
 } from "../../../../packages/edge-worker/test/fixtures/qa.ts";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
 const execFile = promisify(execFileCallback);
@@ -259,8 +260,8 @@ function makeWorker() {
 			createAgentRunner: (_runner, config) => {
 				const contextConfig = config.mcpConfig?.["factory-context"];
 				assert(contextConfig && "args" in contextConfig);
-				const context = JSON.parse(
-					readFileSync(contextConfig.args![1]!, "utf8"),
+				const context = loadFactoryContextSnapshot<any>(
+					contextConfig.args!.at(-1)!,
 				);
 				const role = config.appendSystemPrompt?.match(
 					/software-factory step: Fixture (guide|ci-fix)\./,
