@@ -428,11 +428,24 @@ it.each([
 ])("closes real idle SSE on %s and denies reconnect", async (reason) => {
 	const f = fixture(),
 		cookie = (await f.enroll()).split(";")[0]!;
+	const now = Date.now();
+	// Keep authentication time fixed until the stream is connected; CI can
+	// spend longer than the short expiry window scheduling the HTTP handshake.
+	const clock =
+		reason === "expiry"
+			? vi.spyOn(Date, "now").mockReturnValue(now)
+			: undefined;
+	if (clock)
+		cleanups.push(async () => {
+			clock.mockRestore();
+		});
 	if (reason === "expiry")
 		f.server.auth.store.update((state) => {
-			state.sessions[0]!.expires = Date.now() + 250;
+			state.sessions[0]!.expires = now + 250;
 		});
 	const address = await f.server.app.listen({ host: "127.0.0.1", port: 0 });
+	if (reason === "expiry")
+		await new Promise((resolve) => setTimeout(resolve, 300));
 	const response = await factoryHttp(
 		`${address}/api/events`,
 		{ host, cookie },
@@ -443,6 +456,7 @@ it.each([
 	expect(new TextDecoder().decode((await reader.read()).value)).toContain(
 		"event: ready",
 	);
+	clock?.mockReturnValue(now + 251);
 	if (reason === "logout")
 		await f.server.app.inject({
 			method: "POST",
