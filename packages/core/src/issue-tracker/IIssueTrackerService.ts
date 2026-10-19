@@ -14,6 +14,7 @@ import type {
 } from "./IAgentEventTransport.js";
 import type {
 	AgentActivityCreateInput,
+	AgentActivityDeliveryOptions,
 	AgentActivityPayload,
 	AgentSessionCreateOnCommentInput,
 	AgentSessionCreateOnIssueInput,
@@ -735,6 +736,7 @@ export interface IIssueTrackerService {
 	 */
 	createAgentActivity(
 		input: AgentActivityCreateInput,
+		delivery?: AgentActivityDeliveryOptions,
 	): Promise<AgentActivityPayload>;
 
 	// ========================================================================

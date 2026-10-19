@@ -234,6 +234,80 @@ it("delivers an acknowledgment through the shared budget while SDK reads keep ar
 	}
 });
 
+it.each([
+	true,
+	false,
+])("acknowledges ahead of queued background reads without bypassing pacing (durable: %s)", async (durable) => {
+	vi.useFakeTimers();
+	vi.setSystemTime(0);
+	const { mkdtempSync, rmSync } = await import("node:fs");
+	const { tmpdir } = await import("node:os");
+	const { join } = await import("node:path");
+	const home = mkdtempSync(join(tmpdir(), "linear-interactive-budget-"));
+	const requests: { kind: string; at: number }[] = [];
+	const client = new LinearClient({
+		accessToken: `interactive-budget-${durable}`,
+	});
+	client.client.request = vi.fn(async (_document, variables: any) => {
+		requests.push({
+			kind: variables.input
+				? variables.input.content.body === "Earlier progress"
+					? "routine"
+					: "acknowledgment"
+				: "read",
+			at: Date.now(),
+		});
+		return variables.input
+			? {
+					agentActivityCreate: {
+						success: true,
+						agentActivity: { id: variables.input.id ?? "ack" },
+						lastSyncId: 1,
+					},
+				}
+			: { issue: { id: "issue", reactions: [] } };
+	}) as any;
+	const tracker = new LinearIssueTrackerService(client, undefined, undefined, {
+		workspaceId: "interactive-budget",
+		...(durable ? { factoryHome: home } : {}),
+		requestIntervalMs: 2000,
+	});
+	await tracker.getClient().issue("warmup");
+	const backlog = Promise.all(
+		Array.from({ length: 8 }, (_, index) =>
+			tracker.getClient().issue(`background-${index}`),
+		),
+	);
+	// A durable drain may already be waiting for an ordinary progress write.
+	const routine = durable
+		? tracker.createAgentActivity({
+				agentSessionId: "other-session",
+				content: { type: "thought", body: "Earlier progress" },
+			})
+		: Promise.resolve();
+	const acknowledgment = tracker.createAgentActivity(
+		{
+			agentSessionId: "session",
+			content: { type: "thought", body: "Starting work on your ticket." },
+		},
+		{ priority: "interactive" },
+	);
+	try {
+		await vi.advanceTimersByTimeAsync(durable ? 4000 : 2000);
+		expect(requests).toEqual([
+			{ kind: "read", at: 0 },
+			...(durable ? [{ kind: "routine", at: 2000 }] : []),
+			{ kind: "acknowledgment", at: durable ? 4000 : 2000 },
+		]);
+		await acknowledgment;
+	} finally {
+		await vi.advanceTimersByTimeAsync(20_000);
+		await Promise.allSettled([acknowledgment, backlog, routine]);
+		tracker.stopDelivery();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
 it("reuses one SDK client budget when a tracker wrapper is rebuilt", async () => {
 	vi.useFakeTimers();
 	vi.setSystemTime(0);

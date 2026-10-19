@@ -4,6 +4,7 @@ import {
 	isOperationalLinearComment,
 	presentLinearActivity,
 } from "bobs-factory-core";
+
 /**
  * Linear-specific implementation of IIssueTrackerService.
  *
@@ -14,9 +15,18 @@ import {
  * @module issue-tracker/adapters/LinearIssueTrackerService
  */
 
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import { LinearDeliveryOutbox } from "./LinearDeliveryOutbox.js";
 import { LinearRequestBudget } from "./LinearRequestBudget.js";
+
+const activityRequestPriority = new AsyncLocalStorage<
+	| {
+			priority: number;
+			group?: object;
+	  }
+	| undefined
+>();
 
 export interface LinearDeliveryOptions {
 	workspaceId?: string;
@@ -51,6 +61,7 @@ export interface LinearOAuthConfig {
 
 import type {
 	AgentActivityCreateInput,
+	AgentActivityDeliveryOptions,
 	AgentActivityPayload,
 	AgentEventTransportConfig,
 	AgentSessionCreateOnCommentInput,
@@ -181,26 +192,32 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 							| { input?: { body?: string; content?: { type?: string } } }
 							| undefined
 					)?.input;
+					const delivery = activityRequestPriority.getStore();
 					const priority =
-						input?.body !== undefined ||
+						delivery?.priority ??
+						(input?.body !== undefined ||
 						["response", "elicitation", "error"].includes(
 							input?.content?.type ?? "",
 						)
 							? 10
-							: 0;
+							: 0);
 					// The SDK reads default headers when the queued operation executes.
 					// Keep its credential paired with the budget selected at enqueue time.
 					const capturedHeaders = {
 						...headersRecord(linearClient.options?.headers),
 						...headersRecord(headers),
 					};
-					return binding.budget.run(() => {
-						if (deliveryOptions.isEnabled?.() === false)
-							throw new Error(
-								"Linear ticket manager is disabled; ticket updates are retained",
-							);
-						return request(document, variables, capturedHeaders);
-					}, priority);
+					return binding.budget.run(
+						() => {
+							if (deliveryOptions.isEnabled?.() === false)
+								throw new Error(
+									"Linear ticket manager is disabled; ticket updates are retained",
+								);
+							return request(document, variables, capturedHeaders);
+						},
+						priority,
+						delivery?.group,
+					);
 				};
 			}
 		}
@@ -210,10 +227,14 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 				deliveryOptions.factoryHome,
 				deliveryOptions.workspaceId ?? oauthConfig?.workspaceId ?? "default",
 				this,
-				async (input: AgentActivityCreateInput) => {
-					const result = await this.linearClient.createAgentActivity(input);
-					return { success: result.success, id: result.agentActivityId };
-				},
+				(input: AgentActivityCreateInput, priority) =>
+					activityRequestPriority.run(
+						{ priority, group: this.activityDelivery },
+						async () => {
+							const result = await this.linearClient.createAgentActivity(input);
+							return { success: result.success, id: result.agentActivityId };
+						},
+					),
 				this.logger,
 				async (input) => {
 					try {
@@ -1279,23 +1300,34 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 
 	/**
 	 * Post an agent activity to an agent session.
-	 * Signature matches Linear SDK's createAgentActivity exactly.
+	 * Delivery options stay local to the shared request budget and durable outbox.
 	 */
 	async createAgentActivity(
 		input: AgentActivityCreateInput,
+		delivery?: AgentActivityDeliveryOptions,
 	): Promise<AgentActivityPayload> {
+		const priority = delivery?.priority === "interactive" ? 20 : undefined;
 		if (!this.activityDelivery) {
 			const content = presentLinearActivity(input.content);
 			if (!content) return { success: true } as AgentActivityPayload;
-			return this.linearClient.createAgentActivity({
-				...input,
-				content,
-				...(!["thought", "action"].includes(input.content.type)
-					? { ephemeral: undefined }
-					: {}),
-			});
+			return activityRequestPriority.run(
+				priority === undefined ? undefined : { priority },
+				() =>
+					this.linearClient.createAgentActivity({
+						...input,
+						content,
+						...(!["thought", "action"].includes(input.content.type)
+							? { ephemeral: undefined }
+							: {}),
+					}),
+			);
 		}
-		const receipt = await this.activityDelivery.post(input);
+		// The outbox can already be awaiting a routine SDK write. Promote that
+		// finite prerequisite too, so it cannot hold this acknowledgment behind
+		// the read backlog. Future routine traffic keeps its normal priority.
+		if (priority !== undefined)
+			this.requestBudget?.promotePending(this.activityDelivery, priority);
+		const receipt = await this.activityDelivery.post(input, priority);
 		return {
 			success: receipt.success,
 			agentActivityId: receipt.id,

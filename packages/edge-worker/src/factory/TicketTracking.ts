@@ -71,7 +71,7 @@ export interface TicketSnapshot {
 	[key: string]: unknown;
 }
 export interface TicketAdapter {
-	read(): Promise<TicketSnapshot>;
+	read(purpose?: "tracking"): Promise<TicketSnapshot>;
 	matchesStage?(stage: TicketStage, snapshot: TicketSnapshot): Promise<boolean>;
 	stage(
 		stage: TicketStage,
@@ -443,13 +443,15 @@ export function nativeAdapter(
 		return selected;
 	};
 	return {
-		async read() {
+		async read(purpose) {
 			const issue = await tracker.fetchIssue(ref.id);
 			const snapshot = (await issueSnapshot(
 				issue,
-				await tracker.getIssueLabels(issue.id),
+				purpose === "tracking" ? [] : await tracker.getIssueLabels(issue.id),
 				tracker,
+				purpose,
 			)) as TicketSnapshot;
+			if (purpose === "tracking") return snapshot;
 			const state = await issue.state;
 			return {
 				...snapshot,
@@ -643,7 +645,7 @@ export class TicketTracking {
 								);
 						}
 						const adapter = await this.adapter(run);
-						let snapshot = await adapter.read();
+						let snapshot = await adapter.read("tracking");
 						const statusOf = (snapshot: TicketSnapshot) =>
 							String(
 								snapshot.status ??
@@ -695,7 +697,7 @@ export class TicketTracking {
 							)
 						) {
 							await adapter.link(receipt.pr);
-							snapshot = await adapter.read();
+							snapshot = await adapter.read("tracking");
 						}
 
 						if (applyStage && !receipt.stageApplied) {
@@ -705,7 +707,7 @@ export class TicketTracking {
 							);
 							receipt.stageApplied = true;
 						}
-						sync.lastStatus = statusOf(await adapter.read());
+						sync.lastStatus = statusOf(await adapter.read("tracking"));
 						await this.save(run);
 						const marker = `<!-- factory:${run.id}:${createHash("sha256").update(receipt.key).digest("hex").slice(0, 20)} -->`;
 						const alreadyDocumented =

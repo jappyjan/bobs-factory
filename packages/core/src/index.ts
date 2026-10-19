@@ -140,6 +140,7 @@ export type {
 	AgentActivity,
 	AgentActivityContent,
 	AgentActivityCreateInput,
+	AgentActivityDeliveryOptions,
 	AgentActivityPayload,
 	AgentActivitySDK,
 	AgentEvent,
