@@ -906,7 +906,7 @@ it("retains stable IDs and historical scope, requires amendments and explicit ac
 	);
 	b.inventory.decisions.push({
 		id: "D1",
-		acceptedBy: "Alice",
+		acceptedBy: "Factory operator (name not recorded)",
 		rationale: "Outside this release",
 		source,
 		kind: "skip",

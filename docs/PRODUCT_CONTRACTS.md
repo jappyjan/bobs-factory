@@ -42,6 +42,16 @@ External cyrus-hosted tool catalogs are absent from this repository. They cannot
 be updated here. This independent fork does not enroll with the upstream hosted
 control plane. Migration must flag hosted-only setup for explicit conversion.
 
+Factory role context exposes original operator answers and architecture/human
+decision receipts under `/workflowExecution`. Scope extraction, coverage and
+guides use an explicitly recorded name when available, otherwise
+`Factory operator (name not recorded)` with the original receipt and rationale.
+Missing name metadata alone does not reopen accepted scope or require a question;
+an explicit task or mandatory repository rule requiring an identified approver
+still applies. Runtime attribution instructions also apply to frozen workflows
+without rewriting their graphs, historical decisions, digests or native sessions.
+Discussion, automated review and rejection never become human acceptance.
+
 Architecture candidate plans accept up to 64 deliverables, each with at most
 40 declared file operations. Large plans retain their complete runtime footprint
 and normal exact-version review and acceptance. This widens schema capacity;
