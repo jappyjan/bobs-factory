@@ -255,8 +255,10 @@ it("grants localhost-only terminal sessions from local operator requests that ca
 	expect(() => auth.keys(token, local)).toThrow("Sign in");
 	// Terminal sessions are memory-only and never persisted with key sessions.
 	expect(auth.store.state.sessions).toHaveLength(0);
+	const persist = vi.spyOn(auth.store, "update");
 	auth.logout(token, local);
 	expect(auth.session(token, local)).toBeUndefined();
+	expect(persist).not.toHaveBeenCalled();
 
 	const expired = join(auth.store.directory, `terminal-${"a".repeat(32)}.json`);
 	writeFileSync(

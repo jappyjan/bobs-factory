@@ -2,6 +2,8 @@ import type { RunnerType } from "bobs-factory-core";
 
 /** Local-launch setup is provided by the machine-owning CLI, behind validated local access or a remote browser session established with an API key. */
 export interface FactoryOnboarding {
+	/** Fast setup gate for the dashboard; status() may inspect installed tools. */
+	summary?(): { available: boolean; required: boolean };
 	status(): unknown | Promise<unknown>;
 	configure(input: {
 		repositoryPath: string;

@@ -14,6 +14,7 @@ export class FactoryRequestError extends Error {
 export interface FactoryChange {
 	ids: string[];
 	config: boolean;
+	capacity?: boolean;
 }
 
 export interface FactoryClientOptions {
@@ -209,6 +210,7 @@ export class FactoryClient {
 									onChange({
 										ids: Array.isArray(change.ids) ? change.ids : [],
 										config: Boolean(change.config),
+										capacity: Boolean(change.capacity),
 									});
 								} catch {
 									/* Ignore malformed frames; the next change refreshes. */

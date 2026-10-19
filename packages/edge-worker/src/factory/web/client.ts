@@ -1,6 +1,7 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import {
 	QueryClient,
+	type QueryKey,
 	useIsMutating,
 	useMutation,
 	useQuery,
@@ -57,6 +58,43 @@ onAccessLost(() => {
 	void client.cancelQueries();
 	client.clear();
 });
+const queryRefreshes = new WeakMap<
+	QueryClient,
+	Map<string, { epoch: number; again: boolean; promise: Promise<void> }>
+>();
+/** Finish the current read and catch up once, instead of restarting it on every event. */
+export function refreshQueries(cache: QueryClient, queryKey: QueryKey) {
+	let pending = queryRefreshes.get(cache);
+	if (!pending) {
+		pending = new Map();
+		queryRefreshes.set(cache, pending);
+	}
+	const key = JSON.stringify(queryKey),
+		epoch = accessGeneration(),
+		previous = pending.get(key);
+	if (previous?.epoch === epoch) {
+		previous.again = true;
+		return previous.promise;
+	}
+	const refresh = { epoch, again: false, promise: Promise.resolve() };
+	let catchUp = cache.isFetching({ queryKey }) > 0;
+	pending.set(key, refresh);
+	refresh.promise = (async () => {
+		try {
+			do {
+				refresh.again = false;
+				await cache.invalidateQueries({ queryKey }, { cancelRefetch: false });
+				if (catchUp) {
+					refresh.again = true;
+					catchUp = false;
+				}
+			} while (refresh.again && epoch === accessGeneration());
+		} finally {
+			if (pending.get(key) === refresh) pending.delete(key);
+		}
+	})();
+	return refresh.promise;
+}
 export function useLiveUpdates() {
 	const cache = useQueryClient();
 	const [error, setError] = useState<string>();
@@ -83,23 +121,21 @@ export function useLiveUpdates() {
 					if (connection.signal.aborted) return;
 					cancelFailure();
 					setError(undefined);
-					// A new connection can have missed events while offline or in the background.
-					void cache.invalidateQueries({ queryKey: ["runs"] });
-					void cache.invalidateQueries({ queryKey: ["config"] });
-					void cache.invalidateQueries({ queryKey: ["run"] });
-					void cache.invalidateQueries({ queryKey: ["transcript"] });
+					// validateLiveConnection already refreshed the current routes and caches.
 				},
 				onmessage(event) {
 					if (event.event !== "change") return;
 					const change = JSON.parse(event.data);
-					void cache.invalidateQueries({ queryKey: ["runs"] });
+					if (change.ids?.length || change.config)
+						void refreshQueries(cache, ["runs"]);
 					if (change.config) {
-						void cache.invalidateQueries({ queryKey: ["config"] });
-						void cache.invalidateQueries({ queryKey: ["ticket-managers"] });
+						void refreshQueries(cache, ["config"]);
+						void refreshQueries(cache, ["ticket-managers"]);
 					}
+					if (change.capacity) void refreshQueries(cache, ["capacity"]);
 					for (const id of change.ids ?? []) {
-						void cache.invalidateQueries({ queryKey: ["run", id] });
-						void cache.invalidateQueries({ queryKey: ["transcript", id] });
+						void refreshQueries(cache, ["run", id]);
+						void refreshQueries(cache, ["transcript", id]);
 					}
 				},
 				onclose() {
@@ -193,6 +229,35 @@ export async function validateLiveConnection(response: Response) {
 		throw error;
 	}
 }
+function requestConfigRevision(
+	cache: QueryClient,
+	path: string,
+): string | undefined {
+	const recipe =
+		path === "/api/workflows" ||
+		path.startsWith("/api/workflows/") ||
+		path.startsWith("/api/workflow-preferences/");
+	const execution = ["/api/execution-profiles", "/api/git-settings"].includes(
+		path,
+	);
+	if (
+		!recipe &&
+		!execution &&
+		path !== "/api/title-settings" &&
+		path !== "/api/runs" &&
+		!path.startsWith("/api/launch-assets")
+	)
+		return undefined;
+	return (
+		cache.getQueryData<any>(
+			recipe
+				? ["config", "recipes"]
+				: execution
+					? ["config", "settings"]
+					: ["config"],
+		) ?? cache.getQueryData<any>(["config"])
+	)?.configRevision;
+}
 export async function api<T = any>(
 	path: string,
 	options: RequestInit = {},
@@ -206,22 +271,9 @@ export async function api<T = any>(
 	);
 	const finish = write ? beginWrite() : undefined;
 	// Bind the write to the configuration shown when it began, before async checks.
-	const configRevision =
-		write &&
-		([
-			"/api/workflows",
-			"/api/title-settings",
-			"/api/execution-profiles",
-			"/api/runs",
-		].some(
-			(p) =>
-				path === p ||
-				path.startsWith("/api/workflows/") ||
-				path.startsWith("/api/workflow-preferences/"),
-		) ||
-			path.startsWith("/api/launch-assets"))
-			? client.getQueryData<any>(["config"])?.configRevision
-			: undefined;
+	const configRevision = write
+		? requestConfigRevision(client, path)
+		: undefined;
 	try {
 		if ((write || pwaState().status !== "ready") && !(await checkVersion()))
 			throw new Error(
@@ -291,50 +343,69 @@ export function refreshFactory() {
 async function refreshFactoryData() {
 	if (!(await checkVersion()))
 		throw new Error("Factory connection or version unavailable");
-	await client.cancelQueries({
-		predicate: (query) =>
-			["config", "runs", "run"].includes(String(query.queryKey[0])),
-	});
+	// Session loss aborts old requests. Reuse reads already started by the mounted
+	// page, so opening the event stream does not cancel and download them again.
+	const refreshedRoute = location.hash;
+	const route = /^#\/runs\/([^/]+)(?:\/(review|architecture))?$/.exec(
+		refreshedRoute,
+	);
+	const id = route ? decodeURIComponent(route[1]!) : undefined;
+	const view = route?.[2] === "architecture" ? "architecture" : "dashboard";
+	const routeKey = id ? runQueryKey(id, view) : undefined;
 	await Promise.all([
 		client.fetchQuery({
 			queryKey: ["config"],
-			queryFn: () => api("/api/config"),
+			queryFn: ({ signal }) => api("/api/config?view=dashboard", { signal }),
 			staleTime: 0,
 		}),
 		client.fetchQuery({
 			queryKey: ["runs"],
-			queryFn: () => api("/api/runs"),
+			queryFn: ({ signal }) => api("/api/runs", { signal }),
 			staleTime: 0,
 		}),
+		// Validate the restored gate in parallel with the shell before enabling writes.
+		id && routeKey
+			? client
+					.fetchQuery({
+						queryKey: routeKey,
+						queryFn: ({ signal }) =>
+							api(`/api/runs/${encodeURIComponent(id)}?view=${view}`, {
+								signal,
+							}),
+						staleTime: 0,
+					})
+					.catch((error) => {
+						if (error.message !== "Run not found") throw error;
+						client.setQueryData(routeKey, null);
+					})
+			: undefined,
 	]);
-	// Restored routes must validate their current run/gate before any actions are enabled.
-	const refreshedRoute = location.hash;
-	const id = /^#\/runs\/([^/]+)(?:\/review)?$/.exec(refreshedRoute)?.[1];
-	if (id)
-		await client
-			.fetchQuery({
-				queryKey: ["run", decodeURIComponent(id)],
-				queryFn: () => api(`/api/runs/${id}?view=dashboard`),
-				staleTime: 0,
-			})
-			.catch((error) => {
-				if (error.message !== "Run not found") throw error;
-				client.setQueryData(["run", decodeURIComponent(id)], null);
-			});
 	await client.invalidateQueries(
 		{
 			predicate: (query) =>
-				["run", "transcript"].includes(String(query.queryKey[0])),
+				(["run", "transcript", "capacity", "ticket-managers"].includes(
+					String(query.queryKey[0]),
+				) &&
+					JSON.stringify(query.queryKey) !== JSON.stringify(routeKey)) ||
+				(query.queryKey[0] === "config" && query.queryKey.length > 1),
 		},
-		{ throwOnError: true },
+		{ throwOnError: true, cancelRefetch: false },
 	);
 	if (location.hash !== refreshedRoute) return refreshFactoryData();
 	authoritativeReady();
 }
-export function useConfig() {
+export function useConfig(
+	view: "dashboard" | "settings" | "recipes" = "dashboard",
+) {
 	return useQuery({
-		queryKey: ["config"],
-		queryFn: ({ signal }) => api("/api/config", { signal }),
+		queryKey: view === "dashboard" ? ["config"] : ["config", view],
+		queryFn: ({ signal }) => api(`/api/config?view=${view}`, { signal }),
+	});
+}
+export function useCapacity() {
+	return useQuery({
+		queryKey: ["capacity"],
+		queryFn: ({ signal }) => api("/api/capacity", { signal }),
 	});
 }
 export function useRuns() {
@@ -343,15 +414,73 @@ export function useRuns() {
 		queryFn: ({ signal }) => api<any[]>("/api/runs", { signal }),
 	});
 }
-export function useRun(id?: string) {
+type RunView = "dashboard" | "focus" | "architecture";
+export function runQueryKey(id: string | undefined, view: RunView) {
+	return view === "dashboard" ? ["run", id] : ["run", id, view];
+}
+export function useRun(id?: string, view: RunView = "dashboard") {
 	return useQuery({
-		queryKey: ["run", id],
+		queryKey: runQueryKey(id, view),
 		enabled: Boolean(id),
 		queryFn: ({ signal }) =>
-			api(`/api/runs/${encodeURIComponent(id!)}?view=dashboard`, { signal }),
+			api(`/api/runs/${encodeURIComponent(id!)}?view=${view}`, { signal }),
 	});
 }
 const pendingActions = new Set<string>();
+const actionRequests = new WeakMap<
+	object,
+	{ revision?: string; epoch: number }
+>();
+function mergeConfig(previous: any, saved: any, revision?: string) {
+	// A response to another view's edit cannot make an older snapshot current.
+	if (!previous || previous.configRevision !== revision) return previous;
+	const next = { ...previous };
+	for (const key of [
+		"configRevision",
+		"workflows",
+		"defaultWorkflow",
+		"titleGeneration",
+		"executionProfiles",
+		"gitSettings",
+		"workflowConfiguration",
+	])
+		if (
+			Object.hasOwn(saved, key) &&
+			(key === "configRevision" || Object.hasOwn(previous, key))
+		)
+			next[key] = saved[key];
+	if (next.workflows && saved.updatedWorkflows) {
+		const updated = new Map<string, any>(
+			saved.updatedWorkflows.map((workflow: any) => [workflow.id, workflow]),
+		);
+		const existing = new Set(
+			next.workflows.map((workflow: any) => workflow.id),
+		);
+		next.workflows = [
+			...next.workflows.map(
+				(workflow: any) => updated.get(workflow.id) ?? workflow,
+			),
+			...saved.updatedWorkflows.filter(
+				(workflow: any) => !existing.has(workflow.id),
+			),
+		];
+	}
+	if (next.workflows && saved.workflowMetadata) {
+		const metadata = new Map<string, any>(
+			saved.workflowMetadata.map((workflow: any) => [workflow.id, workflow]),
+		);
+		next.workflows = next.workflows.map((workflow: any) => ({
+			...workflow,
+			...metadata.get(workflow.id),
+		}));
+	}
+	if (next.workflowConfiguration && saved.workflowConfigurationPatch)
+		next.workflowConfiguration = {
+			...next.workflowConfiguration,
+			...saved.workflowConfigurationPatch,
+		};
+	return next;
+}
 export function useAction(scope?: string, context?: string) {
 	const cache = useQueryClient();
 	const connection = usePwa();
@@ -359,40 +488,109 @@ export function useAction(scope?: string, context?: string) {
 	const pendingCount = useIsMutating({ mutationKey: ["action", scope] });
 	const mutation = useMutation({
 		mutationKey: ["action", scope],
-		mutationFn: ({
-			path,
-			body = {},
-			method = "POST",
-		}: {
+		mutationFn: (request: {
 			path: string;
 			body?: any;
 			method?: string;
 			formContext?: object;
-		}) => api(path, { method, body: JSON.stringify(body) }),
-		onSuccess: async (data, { path, method = "POST" }) => {
-			if (
+		}) => {
+			const { path, body = {}, method = "POST" } = request;
+			const revision = requestConfigRevision(cache, path);
+			actionRequests.set(request, { revision, epoch: accessGeneration() });
+			return api(path, {
+				method,
+				body: JSON.stringify(body),
+				...(revision ? { headers: { "X-Factory-Config": revision } } : {}),
+			});
+		},
+		onSuccess: async (data, request) => {
+			const original = actionRequests.get(request);
+			const current = () =>
+				original?.epoch === accessGeneration() &&
+				accessState().status === "authenticated";
+			if (!current()) return;
+			const { path, method = "POST" } = request;
+			const configWrite =
 				[
 					"/api/workflows",
+					"/api/workflow-preferences",
 					"/api/title-settings",
-					"/api/capacity",
+					"/api/execution-profiles",
 					"/api/git-settings",
-				].includes(path) &&
-				method === "PUT"
-			) {
-				// A failed refresh must not let the next edit restore old permissions.
+					"/api/onboarding",
+					"/api/ticket-managers",
+				].some((prefix) => path === prefix || path.startsWith(`${prefix}/`)) &&
+				!["/api/git-settings/test", "/api/workflows/import/impact"].includes(
+					path,
+				);
+			if (configWrite) {
+				// Cancel older reads before applying accepted permissions. A failed
+				// refresh must not let the next edit restore a revoked permission.
 				await cache.cancelQueries({ queryKey: ["config"] });
-				cache.setQueryData(["config"], (previous: any) => ({
-					...previous,
-					...data,
-				}));
+				if (!current()) return;
+				const saved =
+					path === "/api/execution-profiles"
+						? { executionProfiles: data }
+						: data;
+				cache.setQueriesData({ queryKey: ["config"] }, (previous: any) =>
+					mergeConfig(previous, saved, original?.revision),
+				);
 			}
-			void cache.invalidateQueries({ queryKey: ["runs"] });
-			void cache.invalidateQueries({ queryKey: ["run"] });
-			void cache.invalidateQueries({ queryKey: ["updates"] });
-			if (path.startsWith("/api/ticket-managers") && data.managers)
-				cache.setQueryData(["ticket-managers"], data);
-			// Keep edits pending while refreshing any other configuration changes.
-			await cache.invalidateQueries({ queryKey: ["config"] });
+			const runId = /^\/api\/runs\/([^/]+)/.exec(path)?.[1];
+			if (runId || path === "/api/runs") {
+				if (typeof data.id === "string" && typeof data.status === "string") {
+					await Promise.all([
+						cache.cancelQueries({ queryKey: ["run", data.id] }),
+						cache.cancelQueries({ queryKey: ["runs"] }),
+					]);
+					if (!current()) return;
+					const accepted = {
+						status: data.status,
+						...(typeof data.title === "string" ? { title: data.title } : {}),
+						// A waiting acknowledgment does not include its new questions or gate.
+						pendingContext: data.status === "waiting",
+					};
+					cache.setQueriesData(
+						{ queryKey: ["run", data.id] },
+						(previous: any) =>
+							previous ? { ...previous, ...accepted } : previous,
+					);
+					cache.setQueryData<any[]>(["runs"], (previous) =>
+						previous?.map((run) =>
+							run.id === data.id ? { ...run, ...accepted } : run,
+						),
+					);
+				}
+				void refreshQueries(cache, ["runs"]);
+				if (runId) {
+					const id = decodeURIComponent(runId);
+					void refreshQueries(cache, ["run", id]);
+					void refreshQueries(cache, ["transcript", id]);
+				}
+			}
+			if (path.startsWith("/api/updates/"))
+				void refreshQueries(cache, ["updates"]);
+			if (path === "/api/capacity" && method === "PUT") {
+				await cache.cancelQueries({ queryKey: ["capacity"] });
+				if (!current()) return;
+				cache.setQueryData(["capacity"], data);
+			}
+			if (path.startsWith("/api/ticket-managers")) {
+				if (data.managers) cache.setQueryData(["ticket-managers"], data);
+				else void refreshQueries(cache, ["ticket-managers"]);
+			}
+			// Configuration edits wait for current permissions; accepted run actions
+			// must not wait on unrelated setup, capacity or update reads.
+			if (configWrite) {
+				if (
+					path.startsWith("/api/workflows") &&
+					path !== "/api/workflows/default"
+				) {
+					void refreshQueries(cache, ["runs"]);
+					void refreshQueries(cache, ["run"]);
+				}
+				await refreshQueries(cache, ["config"]);
+			}
 		},
 	});
 	return {

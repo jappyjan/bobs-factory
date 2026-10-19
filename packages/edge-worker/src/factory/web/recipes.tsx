@@ -17,7 +17,7 @@ import { revisionOf } from "./restoration";
 import { Button, Modal, useToast } from "./ui";
 
 export function Recipes() {
-	const config = useConfig().data;
+	const config = useConfig("recipes").data;
 	const [params] = useSearchParams();
 	const selected = params.get("recipe");
 	if (!config) return <p>Loading recipes…</p>;
@@ -27,7 +27,7 @@ export function Recipes() {
 
 /** Enabling is immediate; disabling first shows which unfinished runs stop. */
 export function useAvailability() {
-	const config = useConfig().data;
+	const config = useConfig("recipes").data;
 	const action = useAction("workflow-availability");
 	const toast = useToast();
 	const [disabling, setDisabling] = useFormState<
@@ -108,7 +108,6 @@ export function useAvailability() {
 
 /** The default recipe handles launches that match no label or selection. */
 export function useDefaultRecipe() {
-	const config = useConfig().data;
 	const action = useAction("workflows");
 	const toast = useToast();
 	return {
@@ -117,9 +116,9 @@ export function useDefaultRecipe() {
 		set: (workflow: Recipe) =>
 			void action
 				.mutateAsync({
-					path: "/api/workflows",
+					path: "/api/workflows/default",
 					method: "PUT",
-					body: { workflows: config.workflows, defaultWorkflow: workflow.id },
+					body: { defaultWorkflow: workflow.id },
 				})
 				.then(() => toast({ text: `“${workflow.name}” is now the default` }))
 				.catch(() => {}),

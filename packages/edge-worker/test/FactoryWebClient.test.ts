@@ -1,6 +1,7 @@
 import {
 	MutationObserver,
 	QueryClient,
+	QueryClientProvider,
 	QueryObserver,
 	useMutation,
 	useQueryClient,
@@ -21,9 +22,12 @@ import {
 	artifactsOf,
 	client,
 	refreshFactory,
+	refreshQueries,
+	runQueryKey,
 	useAction,
 	validateLiveConnection,
 } from "../src/factory/web/client.js";
+import { FinalMessage } from "../src/factory/web/focus.js";
 import {
 	authoritativeReady,
 	checkVersion,
@@ -117,6 +121,7 @@ it("preserves consecutive permission revocations after failed refreshes and a la
 		],
 	};
 	cache.setQueryData(["config"], initial);
+	cache.setQueryData(["config", "settings"], initial);
 	const writes: (typeof initial.workflows)[] = [];
 	let staleRead: ((response: Response) => void) | undefined;
 	vi.stubGlobal(
@@ -188,10 +193,409 @@ it("preserves consecutive permission revocations after failed refreshes and a la
 			...initial,
 			workflows: [{ ...initial.workflows[0], allowedTriggers: [] }],
 		});
+		expect(cache.getQueryData(["config", "settings"])).toEqual(
+			cache.getQueryData(["config"]),
+		);
 	} finally {
 		unsubscribe();
 		cache.clear();
 	}
+});
+
+it.each([
+	"retry",
+	"answer",
+	"review",
+	"messages",
+])("finishes an accepted %s without refreshing unrelated configuration or runs", async (command) => {
+	const cache = new QueryClient();
+	const refresh = vi.spyOn(cache, "invalidateQueries");
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (path) =>
+			path === "/api/version"
+				? version()
+				: factoryResponse({ accepted: true, id: "selected" }),
+		),
+	);
+	try {
+		await action(cache).mutate({ path: `/api/runs/selected/${command}` });
+		expect(refresh.mock.calls.map(([filter]) => filter?.queryKey)).toEqual([
+			["runs"],
+			["run", "selected"],
+			["transcript", "selected"],
+		]);
+	} finally {
+		cache.clear();
+	}
+});
+
+it.each([
+	"/api/execution-preview",
+	"/api/git-settings/test",
+	"/api/workflows/import/impact",
+])("does not refetch data after the read-only %s action", async (path) => {
+	const cache = new QueryClient();
+	const refresh = vi.spyOn(cache, "invalidateQueries");
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (path) =>
+			path === "/api/version"
+				? version()
+				: factoryResponse({ validation: "ok" }),
+		),
+	);
+	try {
+		await action(cache).mutate({ path });
+		expect(refresh).not.toHaveBeenCalled();
+	} finally {
+		cache.clear();
+	}
+});
+
+it("lets slow live reads finish and coalesces newer events into one catch-up read", async () => {
+	const cache = new QueryClient();
+	const responses: ((value: string) => void)[] = [];
+	const aborted = vi.fn();
+	const queryFn = vi.fn(({ signal }: { signal: AbortSignal }) => {
+		signal.addEventListener("abort", aborted);
+		return new Promise<string>((resolve) => responses.push(resolve));
+	});
+	cache.setQueryData(["run", "selected"], "initial");
+	const query = new QueryObserver(cache, {
+		queryKey: ["run", "selected"],
+		queryFn,
+		staleTime: Infinity,
+	});
+	const unsubscribe = query.subscribe(() => {});
+	try {
+		const first = refreshQueries(cache, ["run", "selected"]);
+		const updates = Array.from({ length: 8 }, () =>
+			refreshQueries(cache, ["run", "selected"]),
+		);
+		expect(queryFn).toHaveBeenCalledOnce();
+		expect(aborted).not.toHaveBeenCalled();
+		responses[0]!("first completed read");
+		await vi.waitFor(() => expect(queryFn).toHaveBeenCalledTimes(2));
+		expect(cache.getQueryData(["run", "selected"])).toBe(
+			"first completed read",
+		);
+		responses[1]!("current state");
+		await Promise.all([first, ...updates]);
+		expect(queryFn).toHaveBeenCalledTimes(2);
+		expect(aborted).not.toHaveBeenCalled();
+		expect(cache.getQueryData(["run", "selected"])).toBe("current state");
+	} finally {
+		unsubscribe();
+		cache.clear();
+	}
+});
+
+it("catches a single live change that arrives during an earlier mounted read", async () => {
+	const cache = new QueryClient();
+	const responses: ((value: string) => void)[] = [];
+	const queryFn = vi.fn(
+		() => new Promise<string>((resolve) => responses.push(resolve)),
+	);
+	const query = new QueryObserver(cache, {
+		queryKey: ["run", "selected"],
+		queryFn,
+	});
+	const unsubscribe = query.subscribe(() => {});
+	try {
+		expect(queryFn).toHaveBeenCalledOnce();
+		const refresh = refreshQueries(cache, ["run", "selected"]);
+		expect(queryFn).toHaveBeenCalledOnce();
+		responses[0]!("snapshot before the change");
+		await vi.waitFor(() => expect(queryFn).toHaveBeenCalledTimes(2));
+		responses[1]!("state after the change");
+		await refresh;
+		expect(cache.getQueryData(["run", "selected"])).toBe(
+			"state after the change",
+		);
+	} finally {
+		unsubscribe();
+		cache.clear();
+	}
+});
+
+it("keeps focused cards and architecture readers in separate run caches", () => {
+	expect(runQueryKey("run", "dashboard")).toEqual(["run", "run"]);
+	expect(runQueryKey("run", "focus")).toEqual(["run", "run", "focus"]);
+	expect(runQueryKey("run", "architecture")).toEqual([
+		"run",
+		"run",
+		"architecture",
+	]);
+});
+
+it("renders the full final response from its lazy entry cache", () => {
+	const cache = new QueryClient();
+	const run = {
+		id: "run",
+		createdAt: "2026-10-19T09:00:00Z",
+		entries: [
+			{
+				type: "result",
+				content: "A preview only",
+				activityIndex: 42,
+				activityTruncated: true,
+			},
+		],
+	};
+	cache.setQueryData(["raw-entry", "run", 42], {
+		type: "result",
+		content: "The complete answer, including its final details.",
+	});
+	try {
+		const html = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client: cache },
+				createElement(FinalMessage, { run }),
+			),
+		);
+		expect(html).toContain("The complete answer, including its final details.");
+		expect(html).not.toContain("A preview only");
+	} finally {
+		cache.clear();
+	}
+});
+
+it("retains accepted execution profiles in both configuration views", async () => {
+	const cache = new QueryClient();
+	const original = {
+		configRevision: "config",
+		executionProfiles: { revision: 1, identities: [{ id: "old" }] },
+	};
+	const profiles = { revision: 2, identities: [] };
+	cache.setQueryData(["config"], original);
+	cache.setQueryData(["config", "settings"], original);
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (path) =>
+			path === "/api/version" ? version() : factoryResponse(profiles),
+		),
+	);
+	try {
+		await action(cache).mutate({
+			path: "/api/execution-profiles",
+			method: "PUT",
+		});
+		expect(cache.getQueryData(["config"])).toEqual({
+			...original,
+			executionProfiles: profiles,
+		});
+		expect(cache.getQueryData(["config", "settings"])).toEqual({
+			...original,
+			executionProfiles: profiles,
+		});
+	} finally {
+		cache.clear();
+	}
+});
+
+it("retains a partial recipe permission edit without replacing unrelated recipes", async () => {
+	const cache = new QueryClient();
+	const original = {
+		configRevision: "old",
+		workflows: [
+			{ id: "edited", allowedTriggers: ["manual", "ticket-assignment"] },
+			{ id: "unchanged", allowedTriggers: ["manual"] },
+		],
+	};
+	cache.setQueryData(["config"], original);
+	cache.setQueryData(["config", "recipes"], original);
+	let staleResponse!: (value: Response) => void;
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (path, options: RequestInit = {}) => {
+			if (path === "/api/version") return version();
+			if (options.method === "PATCH")
+				return factoryResponse({
+					configRevision: "saved",
+					updatedWorkflows: [{ id: "edited", allowedTriggers: [] }],
+				});
+			return new Promise<Response>((resolve) => {
+				staleResponse = resolve;
+			});
+		}),
+	);
+	const staleRead = cache.fetchQuery({
+		queryKey: ["config", "recipes"],
+		queryFn: ({ signal }) => api("/api/config?view=recipes", { signal }),
+	});
+	try {
+		await action(cache).mutate({
+			path: "/api/workflows",
+			method: "PATCH",
+			body: { workflows: [{ id: "edited", allowedTriggers: [] }] },
+		});
+		staleResponse(factoryResponse(original));
+		await staleRead.catch(() => {});
+		const expected = {
+			configRevision: "saved",
+			workflows: [{ id: "edited", allowedTriggers: [] }, original.workflows[1]],
+		};
+		expect(cache.getQueryData(["config"])).toEqual(expected);
+		expect(cache.getQueryData(["config", "recipes"])).toEqual(expected);
+	} finally {
+		cache.clear();
+	}
+});
+
+it("does not stamp an unrelated stale recipe graph with a current title-settings revision", async () => {
+	const cache = new QueryClient();
+	const current = {
+		configRevision: "current",
+		titleGeneration: {},
+		workflows: [{ id: "simple", allowedTriggers: [] }],
+	};
+	const stale = {
+		configRevision: "stale",
+		workflows: [{ id: "simple", allowedTriggers: ["manual"] }],
+	};
+	cache.setQueryData(["config"], current);
+	cache.setQueryData(["config", "recipes"], stale);
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (path) =>
+			path === "/api/version"
+				? version()
+				: factoryResponse({
+						configRevision: "saved",
+						titleGeneration: { runner: "codex" },
+					}),
+		),
+	);
+	try {
+		await action(cache).mutate({ path: "/api/title-settings", method: "PUT" });
+		expect(cache.getQueryData(["config"])).toEqual({
+			...current,
+			configRevision: "saved",
+			titleGeneration: { runner: "codex" },
+		});
+		expect(cache.getQueryData(["config", "recipes"])).toEqual(stale);
+		expect(cache.getQueryState(["config", "recipes"])?.isInvalidated).toBe(
+			true,
+		);
+	} finally {
+		cache.clear();
+	}
+});
+
+it("applies canonical workflow availability and preferences before refreshing", async () => {
+	const cache = new QueryClient();
+	const initial = {
+		configRevision: "old",
+		workflows: [{ id: "simple", enabled: true }],
+		workflowConfiguration: { enabled: {}, preferences: {}, inactive: [] },
+	};
+	cache.setQueryData(["config"], initial);
+	cache.setQueryData(["config", "recipes"], initial);
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (path) =>
+			path === "/api/version"
+				? version()
+				: factoryResponse({
+						saved: true,
+						configRevision: "saved",
+						workflowMetadata: [{ id: "simple", enabled: false }],
+						workflowConfigurationPatch: {
+							enabled: { simple: false },
+							preferences: { simple: { native: { allowedTools: [] } } },
+						},
+					}),
+		),
+	);
+	try {
+		await action(cache).mutate({
+			path: "/api/workflows/simple/availability",
+			method: "PUT",
+		});
+		expect(cache.getQueryData(["config", "recipes"])).toEqual({
+			configRevision: "saved",
+			workflows: [{ id: "simple", enabled: false }],
+			workflowConfiguration: {
+				enabled: { simple: false },
+				preferences: { simple: { native: { allowedTools: [] } } },
+				inactive: [],
+			},
+		});
+	} finally {
+		cache.clear();
+	}
+});
+
+it.each([
+	"running",
+	"waiting",
+])("shows an acknowledged %s state before slow reads finish", async (status) => {
+	const cache = new QueryClient();
+	const run = { id: "run", status: "waiting", questions: ["Old question"] };
+	cache.setQueryData(["runs"], [run]);
+	cache.setQueryData(["run", "run"], run);
+	cache.setQueryData(["run", "run", "focus"], run);
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (path) =>
+			path === "/api/version"
+				? version()
+				: factoryResponse({
+						accepted: true,
+						id: "run",
+						status,
+						title: "Canonical title",
+					}),
+		),
+	);
+	try {
+		await action(cache).mutate({ path: "/api/runs/run/answer" });
+		for (const key of [
+			["run", "run"],
+			["run", "run", "focus"],
+		])
+			expect(cache.getQueryData(key)).toEqual({
+				...run,
+				status,
+				title: "Canonical title",
+				pendingContext: status === "waiting",
+			});
+		expect(cache.getQueryData(["runs"])).toEqual([
+			{
+				...run,
+				status,
+				title: "Canonical title",
+				pendingContext: status === "waiting",
+			},
+		]);
+	} finally {
+		cache.clear();
+	}
+});
+
+it.each([
+	["/api/workflows/default", "recipes"],
+	["/api/workflows/recipe/preferences", "recipes"],
+	["/api/execution-profiles", "settings"],
+	["/api/git-settings", "settings"],
+	["/api/runs", undefined],
+])("binds %s to the configuration its editor displayed", async (path, view) => {
+	client.setQueryData(["config"], { configRevision: "dashboard" });
+	client.setQueryData(["config", "settings"], { configRevision: "settings" });
+	client.setQueryData(["config", "recipes"], { configRevision: "recipes" });
+	let revision: string | null = null;
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (requestPath, options: RequestInit = {}) => {
+			if (requestPath === "/api/version") return version();
+			revision = new Headers(options.headers).get("X-Factory-Config");
+			return factoryResponse({ saved: true });
+		}),
+	);
+	await api(path!, { method: "PUT", body: "{}" });
+	expect(revision).toBe(view ?? "dashboard");
 });
 
 it("retains saved config when a workflow write is rejected", async () => {
@@ -515,6 +919,65 @@ it("refreshes review deep links and their current gate before enabling writes", 
 	expect(pwaState().status).toBe("ready");
 });
 
+it.each([
+	"review",
+	"architecture",
+])("reuses mounted reads while refreshing a %s deep link", async (page) => {
+	vi.stubGlobal("location", { hash: `#/runs/run/${page}` });
+	const view = page === "architecture" ? "architecture" : "dashboard";
+	const routePath = `/api/runs/run?view=${view}`;
+	const responses = new Map<string, (response: Response) => void>();
+	const aborted = vi.fn();
+	const fetch = vi.fn(async (path: string, options: RequestInit = {}) => {
+		if (path === "/api/version") return version();
+		options.signal?.addEventListener("abort", aborted);
+		return new Promise<Response>((resolve) => responses.set(path, resolve));
+	});
+	vi.stubGlobal("fetch", fetch);
+	const queries = [
+		{
+			queryKey: ["config"],
+			path: "/api/config?view=dashboard",
+			value: { workflows: [] },
+		},
+		{ queryKey: ["runs"], path: "/api/runs", value: [] },
+		{
+			queryKey: runQueryKey("run", view),
+			path: routePath,
+			value: { id: "run", reviewGate: { id: "current" } },
+		},
+	];
+	const unsubscribers = queries.map(({ queryKey, path }) =>
+		new QueryObserver(client, {
+			queryKey,
+			queryFn: ({ signal }) => api(path, { signal }),
+			staleTime: Infinity,
+		}).subscribe(() => {}),
+	);
+	try {
+		const refresh = refreshFactory();
+		await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(4));
+		expect(aborted).not.toHaveBeenCalled();
+		for (const { path, value } of queries)
+			responses.get(path)!(factoryResponse(value));
+		await refresh;
+		expect(fetch.mock.calls.map(([path]) => path).sort()).toEqual(
+			[
+				"/api/config?view=dashboard",
+				"/api/runs",
+				routePath,
+				"/api/version",
+			].sort(),
+		);
+		expect(client.getQueryData(runQueryKey("run", view))).toEqual(
+			queries[2]!.value,
+		);
+		expect(aborted).not.toHaveBeenCalled();
+	} finally {
+		for (const unsubscribe of unsubscribers) unsubscribe();
+	}
+});
+
 it("handles 401 before version errors, clears sensitive caches and prevents late response repopulation", async () => {
 	client.setQueryData(["run", "private"], { transcript: "private content" });
 	let complete!: (response: Response) => void;
@@ -535,6 +998,30 @@ it("handles 401 before version errors, clears sensitive caches and prevents late
 	await expect(late).rejects.toThrow("Session changed");
 	expect(client.getQueryData(["run", "private"])).toBeUndefined();
 	expect(accessState().status).toBe("required");
+});
+
+it("does not restore mutation data after access is lost during cache cancellation", async () => {
+	client.setQueryData(["capacity"], { capacity: { limit: 4 } });
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (path) =>
+			path === "/api/version"
+				? version()
+				: factoryResponse({ capacity: { limit: 5 } }),
+		),
+	);
+	const cancel = vi
+		.spyOn(client, "cancelQueries")
+		.mockImplementationOnce(async () => {
+			accessRequired("Signed out during the request");
+		});
+	try {
+		await action(client).mutate({ path: "/api/capacity", method: "PUT" });
+		expect(accessState().status).toBe("required");
+		expect(client.getQueryData(["capacity"])).toBeUndefined();
+	} finally {
+		cancel.mockRestore();
+	}
 });
 
 it("ignores old-cookie denials after API key sign-in while retaining private state", async () => {

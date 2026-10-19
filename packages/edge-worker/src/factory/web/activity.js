@@ -121,7 +121,14 @@ export function formatActivities(run) {
 			stepIndex++;
 		return steps[stepIndex]?.step ?? run.step ?? "Bob’s Factory";
 	};
-	const add = (entry, at, step, key, cursor = entry.activityCursor) => {
+	const add = (
+		entry,
+		at,
+		step,
+		key,
+		cursor = entry.activityCursor,
+		raw = entry,
+	) => {
 		const runner =
 			["codex", "gemini", "cursor", "opencode"].find(
 				(name) => entry[`${name}SessionId`],
@@ -130,7 +137,6 @@ export function formatActivities(run) {
 			"claude";
 		const formatter = formatters[runner] ?? formatters.claude;
 		const metadata = entry.metadata ?? {};
-		const raw = entry;
 		const blocks = entry.message?.content;
 		if (Array.isArray(blocks)) {
 			blocks.forEach((block, index) => {
@@ -149,6 +155,7 @@ export function formatActivities(run) {
 						step,
 						`${key}/${index}`,
 						cursor,
+						raw,
 					);
 				else if (block.type === "tool_result")
 					add(
@@ -164,6 +171,7 @@ export function formatActivities(run) {
 						step,
 						`${key}/${index}`,
 						cursor,
+						raw,
 					);
 				else if (block.type === "text" || block.type === "thinking")
 					add(
@@ -175,6 +183,7 @@ export function formatActivities(run) {
 						step,
 						`${key}/${index}`,
 						cursor,
+						raw,
 					);
 			});
 			return;

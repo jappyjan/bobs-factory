@@ -3610,7 +3610,20 @@ export class WorkflowRuntime {
 			!this.catalog.unavailable(run.workflow, run.workflowDefinitions ?? [])
 				.length &&
 			!this.controllers.has(id) &&
-			!!(run.checkpoint || run.simpleExecution)
+			(this.snapshots.hasValue(
+				run as unknown as Record<string, unknown>,
+				"checkpoint",
+			) ||
+				this.snapshots.hasValue(
+					run as unknown as Record<string, unknown>,
+					"simpleExecution",
+				))
+		);
+	}
+	hasRunValue(run: FactoryRun, key: keyof FactoryRun): boolean {
+		return this.snapshots.hasValue(
+			run as unknown as Record<string, unknown>,
+			key,
 		);
 	}
 	retry(id: string): FactoryRun {
@@ -3973,7 +3986,13 @@ export class WorkflowRuntime {
 			summary,
 			["outputs", "repositoryOutputs"],
 			[],
-			{ events: 1, history: 1, reviewRounds: 1 },
+			{
+				events: 1,
+				history: 1,
+				reviewRounds: 1,
+				architectureProposals: 1,
+				impactDecisions: 1,
+			},
 		);
 		this.pendingSaves.set(run.id, save);
 		// Background activity saves have an observer; durability barriers still
@@ -4002,10 +4021,6 @@ export class WorkflowRuntime {
 		const cached = this.summaries.get(run.id);
 		const coldHistory = !!Object.getOwnPropertyDescriptor(run, "history")?.get;
 		const coldOutputs = !!Object.getOwnPropertyDescriptor(run, "outputs")?.get;
-		const historyIndex =
-			cached && cached.history?.length <= run.history.length
-				? cached.history
-				: [];
 		const videoAssets =
 			cached && cached.videoAssets === undefined && (coldHistory || coldOutputs)
 				? undefined
@@ -4046,15 +4061,42 @@ export class WorkflowRuntime {
 			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
 				? this.summaries.get(run.id)?.hasGuide
 				: Boolean(run.outputs.guide),
-			history: coldHistory
-				? (cached?.history ?? [])
-				: [
-						...historyIndex,
-						...run.history
-							.slice(historyIndex.length)
-							.map(({ step, at, call }) => ({ step, at, call })),
-					],
+			history: this.historyPreviews(run),
 		};
+	}
+	/** Cached receipt metadata lets views skip the retained, often large, outputs. */
+	historyPreviews(
+		run: FactoryRun,
+	): { step: string; at: string; call?: WorkflowCall }[] {
+		const cached = this.summaries.get(run.id)?.history as
+			| { step: string; at: string; call?: WorkflowCall }[]
+			| undefined;
+		if (Object.getOwnPropertyDescriptor(run, "history")?.get && cached)
+			return cached;
+		const history = run.history;
+		const retained = cached && cached.length <= history.length ? cached : [];
+		if (retained.length === history.length) return retained;
+		return [
+			...retained,
+			...history
+				.slice(retained.length)
+				.map(({ step, at, call }) => ({ step, at, call })),
+		];
+	}
+	previousReviewGuide(run: FactoryRun, guidePreview: unknown): unknown {
+		const head = (guidePreview as { previousHeadSha?: string } | undefined)
+			?.previousHeadSha;
+		if (!head) return undefined;
+		const index = this.historyPreviews(run);
+		for (let position = index.length - 1; position >= 0; position--) {
+			const step = index[position]!.step;
+			if (step !== "guide" && !step.endsWith("/guide")) continue;
+			const guide = run.history[position]?.output as
+				| { reviewFiles?: { headSha?: string }; chapters?: unknown }
+				| undefined;
+			if (guide?.reviewFiles?.headSha === head && guide.chapters) return guide;
+		}
+		return undefined;
 	}
 	async prepareDashboard(run: FactoryRun): Promise<void> {
 		// Completed legacy runs may never execute another step. Give their first
@@ -4067,12 +4109,32 @@ export class WorkflowRuntime {
 		}
 		await this.flush(run.id);
 	}
-	outputPreviews(run: FactoryRun): Record<string, unknown> {
+	outputPreviews(
+		run: FactoryRun,
+		keys = Object.keys(run.outputs),
+		options: { compact?: boolean } = {},
+	): Record<string, unknown> {
 		return Object.fromEntries(
-			Object.keys(run.outputs).map((key) => [
-				key,
-				this.snapshots.preview(run.outputs, key),
-			]),
+			keys
+				.filter((key) => Object.hasOwn(run.outputs, key))
+				.map((key) => [
+					key,
+					this.snapshots.preview(
+						run.outputs,
+						key,
+						[
+							"guide",
+							"draft-pr",
+							"source",
+							"existing-work",
+							"external-final",
+							"merge-readiness",
+							"ci",
+						].includes(key)
+							? {}
+							: options,
+					),
+				]),
 		);
 	}
 	listRuns(): (Record<string, any> & { id: string; createdAt: string })[] {
