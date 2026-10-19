@@ -74,9 +74,47 @@ it("describes a frozen legacy pipeline without importing unrelated current archi
 			},
 		],
 		missingWorkflowIds: [],
+		answers: [],
 		architectureDecisions: [],
 		humanDecisions: [],
+		decisionAttribution: {
+			unnamedOperator: "Factory operator (name not recorded)",
+		},
 	});
+	expect(ctx.run).toEqual(original);
+});
+
+it("exposes original unnamed operator receipts without inferring approval from other role outputs", () => {
+	const root = workflow("saved", [role("extract-requirements")]);
+	const ctx = context(root);
+	ctx.run.answers = [
+		{
+			questions: ["Deliver software now or wait for hardware?"],
+			answer:
+				"Deliver software; defer hardware qualification and block rollout.",
+			at: "2026-10-17T06:34:41.752Z",
+		},
+	];
+	ctx.run.humanDecisions = [
+		{
+			reviewId: "review-1",
+			headSha: "head",
+			decision: "reject",
+			feedback: "Keep production rollout blocked",
+			at: "2026-10-18T06:34:41.752Z",
+		},
+	];
+	ctx.run.outputs = { "plan-review": { approved: true } };
+	const original = structuredClone(ctx.run);
+	const result = workflowExecutionContext(ctx);
+	expect(result.answers).toEqual(original.answers);
+	expect(result.humanDecisions).toEqual(original.humanDecisions);
+	expect(result.architectureDecisions).toEqual([]);
+	expect(result.decisionAttribution).toEqual({
+		unnamedOperator: "Factory operator (name not recorded)",
+	});
+	result.answers[0]!.answer = "changed";
+	result.humanDecisions[0]!.decision = "approve";
 	expect(ctx.run).toEqual(original);
 });
 
