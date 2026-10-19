@@ -1,8 +1,8 @@
 # Recorded operator decisions without repeated identity questions
 
 Date: 2026-10-19. Base: `061d3a56`. Mode: deterministic mocked agents and
-read-only production-record replay. No native inference, live run mutation,
-tracker mutation or real merge was performed by the drive.
+read-only production-record replay. No native inference, production run/tracker
+mutation or real merge was performed by the drive.
 
 ## Applicability and reproduction
 
