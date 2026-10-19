@@ -16,7 +16,8 @@ F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/linear-busy-budget.ts
 The early-ack scenario queues eight background SDK reads and an existing routine
 write, then submits a signed created webhook while ticket preflight is held.
 With 100 ms API pacing, its acknowledgment reached the mocked provider in 190 ms,
-before preflight completed. A repeated signed webhook produced no duplicate
+before preflight completed. A foreground ticket-context read also passed the
+queued background synchronization reads. A repeated signed webhook produced no duplicate
 acknowledgment. After releasing preflight, real dependency checking parked the
 blocked ticket without creating a workspace or runner. Unassignment settled the
 reservation and removed the parked ticket. SDK dispatch pacing remained enforced;
@@ -37,7 +38,8 @@ unhandled rejection remained.
 Focused automated reproduction went red before repair: delayed preflight sent no
 acknowledgment; eight queued reads delayed delivery to 18–20 seconds; an unavailable
 comment profile blocked native lifecycle delivery. After repair, the regressions
-and related suites pass (74 transport tests, 142 worker tests). Deterministic
-2,000 ms pacing tests acknowledge after 2–4 seconds. These checks do not establish
+and related suites pass (75 transport tests, 142 worker tests). Deterministic
+2,000 ms pacing tests acknowledge after 2–4 seconds and dispatch a foreground read
+after two seconds instead of waiting 18 seconds for an eight-read backlog. These checks do not establish
 availability during a provider throttle or a stalled network request, and mocked
 F1 does not establish live model behavior.

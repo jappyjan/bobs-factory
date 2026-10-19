@@ -339,6 +339,41 @@ it("reuses one SDK client budget when a tracker wrapper is rebuilt", async () =>
 	await work;
 });
 
+it("lets foreground ticket reads progress ahead of a background synchronization backlog", async () => {
+	vi.useFakeTimers();
+	vi.setSystemTime(0);
+	const requests: { id: string; at: number }[] = [];
+	const client = new LinearClient({ accessToken: "background-sync-budget" });
+	client.client.request = vi.fn(async (_document, variables: any) => {
+		requests.push({ id: variables.id, at: Date.now() });
+		return { issue: { id: variables.id, reactions: [] } };
+	}) as any;
+	const tracker = new LinearIssueTrackerService(client, undefined, undefined, {
+		workspaceId: "background-sync-budget",
+		requestIntervalMs: 2000,
+	});
+	await client.issue("warmup");
+	const read = () =>
+		Promise.all(
+			Array.from({ length: 8 }, (_, index) =>
+				client.issue(`background-${index}`),
+			),
+		);
+	const background = tracker.withBackgroundRequests(read);
+	const foreground = client.issue("new-ticket");
+	try {
+		await vi.advanceTimersByTimeAsync(2000);
+		expect(requests).toEqual([
+			{ id: "warmup", at: 0 },
+			{ id: "new-ticket", at: 2000 },
+		]);
+		await foreground;
+	} finally {
+		await vi.advanceTimersByTimeAsync(20_000);
+		await Promise.all([background, foreground]);
+	}
+});
+
 it("prioritizes a newly queued question ahead of a routine backlog while delivery is already draining", async () => {
 	const { mkdtempSync, rmSync } = await import("node:fs");
 	const { tmpdir } = await import("node:os");

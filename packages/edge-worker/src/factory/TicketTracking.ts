@@ -444,21 +444,26 @@ export function nativeAdapter(
 	};
 	return {
 		async read(purpose) {
-			const issue = await tracker.fetchIssue(ref.id);
-			const snapshot = (await issueSnapshot(
-				issue,
-				purpose === "tracking" ? [] : await tracker.getIssueLabels(issue.id),
-				tracker,
-				purpose,
-			)) as TicketSnapshot;
-			if (purpose === "tracking") return snapshot;
-			const state = await issue.state;
-			return {
-				...snapshot,
-				state: state
-					? { id: state.id, name: state.name, type: state.type }
-					: undefined,
+			const read = async () => {
+				const issue = await tracker.fetchIssue(ref.id);
+				const snapshot = (await issueSnapshot(
+					issue,
+					purpose === "tracking" ? [] : await tracker.getIssueLabels(issue.id),
+					tracker,
+					purpose,
+				)) as TicketSnapshot;
+				if (purpose === "tracking") return snapshot;
+				const state = await issue.state;
+				return {
+					...snapshot,
+					state: state
+						? { id: state.id, name: state.name, type: state.type }
+						: undefined,
+				};
 			};
+			return purpose === "tracking" && tracker.withBackgroundRequests
+				? tracker.withBackgroundRequests(read)
+				: read();
 		},
 		async matchesStage(stage, snapshot) {
 			const selected = await selectedState(stage, snapshot);

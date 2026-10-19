@@ -27,6 +27,7 @@ const home = mkdtempSync(join(tmpdir(), "f1-linear-early-ack-"));
 const provider = Fastify();
 const ingress = Fastify();
 const requests: number[] = [];
+const requestIds: string[] = [];
 const publications: { session: string; body: string; at: number }[] = [];
 const unhandled: unknown[] = [];
 const onUnhandled = (error: unknown) => unhandled.push(error);
@@ -86,6 +87,7 @@ try {
 	const request = client.client.request.bind(client.client);
 	client.client.request = (...args: unknown[]) => {
 		requests.push(Date.now());
+		requestIds.push((args[1] as { id?: string } | undefined)?.id ?? "activity");
 		return request(...args);
 	};
 	tracker = new LinearIssueTrackerService(client, undefined, undefined, {
@@ -149,9 +151,11 @@ try {
 		};
 	};
 	await tracker.getClient().issue("warmup");
-	backlog = Promise.all(
-		Array.from({ length: 8 }, (_, index) =>
-			tracker!.getClient().issue(`background-${index}`),
+	backlog = tracker.withBackgroundRequests(() =>
+		Promise.all(
+			Array.from({ length: 8 }, (_, index) =>
+				tracker!.getClient().issue(`background-${index}`),
+			),
 		),
 	);
 	routine = tracker.createAgentActivity({
@@ -218,6 +222,13 @@ try {
 	);
 	assert.equal(workspaceStarts, 0);
 	assert.equal(runnerStarts, 0);
+	await tracker.getClient().issue("foreground-context");
+	assert(
+		requestIds.indexOf("background-0") === -1 ||
+			requestIds.indexOf("foreground-context") <
+				requestIds.indexOf("background-0"),
+		"Foreground context proceeds before saved synchronization reads",
+	);
 	assert.equal((await inject()).statusCode, 200);
 	await work;
 	release();
@@ -347,6 +358,7 @@ try {
 			fullContextProfileReads,
 			trackingProfileReads: profileReads,
 			outsideRunStateProtected: true,
+			foregroundContextBeforeBacklog: true,
 		}),
 	);
 } finally {

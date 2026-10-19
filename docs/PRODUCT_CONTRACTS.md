@@ -158,7 +158,7 @@ Accepted Linear sessions acknowledge their durable launch reservation before
 ticket preflight, repository routing and dependency checks. Interactive delivery
 priority is local outbox metadata, survives retries and retains shared API pacing
 and provider throttle windows; historical records keep their normal priority.
-Background lifecycle synchronization reads complete comment pages, attachments,
+Background lifecycle synchronization yields to foreground requests and reads complete comment pages, attachments,
 fresh state and team information without fetching comment profiles or unrelated
 assignee/project/parent context. Initial ticket and agent context reads retain
 their full snapshots.

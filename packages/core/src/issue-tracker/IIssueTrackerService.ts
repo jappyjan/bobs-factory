@@ -739,6 +739,9 @@ export interface IIssueTrackerService {
 		delivery?: AgentActivityDeliveryOptions,
 	): Promise<AgentActivityPayload>;
 
+	/** Keep refresh-only reads behind foreground requests in the same API budget. */
+	withBackgroundRequests?<T>(operation: () => Promise<T>): Promise<T>;
+
 	// ========================================================================
 	// FILE OPERATIONS
 	// ========================================================================

@@ -20,7 +20,7 @@ import { createHash } from "node:crypto";
 import { LinearDeliveryOutbox } from "./LinearDeliveryOutbox.js";
 import { LinearRequestBudget } from "./LinearRequestBudget.js";
 
-const activityRequestPriority = new AsyncLocalStorage<
+const requestScheduling = new AsyncLocalStorage<
 	| {
 			priority: number;
 			group?: object;
@@ -192,7 +192,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 							| { input?: { body?: string; content?: { type?: string } } }
 							| undefined
 					)?.input;
-					const delivery = activityRequestPriority.getStore();
+					const delivery = requestScheduling.getStore();
 					const priority =
 						delivery?.priority ??
 						(input?.body !== undefined ||
@@ -228,7 +228,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 				deliveryOptions.workspaceId ?? oauthConfig?.workspaceId ?? "default",
 				this,
 				(input: AgentActivityCreateInput, priority) =>
-					activityRequestPriority.run(
+					requestScheduling.run(
 						{ priority, group: this.activityDelivery },
 						async () => {
 							const result = await this.linearClient.createAgentActivity(input);
@@ -1298,6 +1298,10 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	// AGENT ACTIVITY OPERATIONS
 	// ========================================================================
 
+	withBackgroundRequests<T>(operation: () => Promise<T>): Promise<T> {
+		return requestScheduling.run({ priority: -10 }, operation);
+	}
+
 	/**
 	 * Post an agent activity to an agent session.
 	 * Delivery options stay local to the shared request budget and durable outbox.
@@ -1310,7 +1314,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 		if (!this.activityDelivery) {
 			const content = presentLinearActivity(input.content);
 			if (!content) return { success: true } as AgentActivityPayload;
-			return activityRequestPriority.run(
+			return requestScheduling.run(
 				priority === undefined ? undefined : { priority },
 				() =>
 					this.linearClient.createAgentActivity({
