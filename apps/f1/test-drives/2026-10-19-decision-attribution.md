@@ -64,10 +64,13 @@ The read-only replay checks data availability and preservation, not whether a
 live agent has adopted code that has not been installed. Private run contents
 remain outside the repository.
 
-Validation: 173 focused tests passed across WorkflowExecution, SpecialistReview,
+Validation: 214 focused tests passed across WorkflowExecution, SpecialistReview,
 WorkflowNativeRecovery, FactoryPipeline, WorkflowCatalog, FactoryExecution,
-FactoryProvenance, Architecture and Guide. Edge-worker build/typecheck, F1 build,
-Biome and `git diff --check` passed.
+FactoryProvenance, Architecture, Guide and EdgeWorker.capture-recovery. The
+restricted-input integration test checks the complete runtime context and proves
+that supplied context cannot substitute an invented approver or rollout approval
+for the original operator answer. Workspace build/typecheck, F1 build, Biome and
+`git diff --check` passed.
 
 Local evidence:
 
