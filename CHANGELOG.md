@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Fix worker memory growth and dashboard stalls caused by copying large workflow histories and saving every streamed message; preserve full evidence, checkpoints and native conversations. ([#159](https://github.com/jappyjan/bobs-factory/pull/159))
+
 - Speed up dashboard loading and actions with focused API responses, lazy recipe/settings data, compact action receipts and coalesced live refreshes; preserve saved decisions and full evidence on explicit reads. ([#157](https://github.com/jappyjan/bobs-factory/pull/157))
 
 - Stop repeated questions asking who submitted already recorded scope decisions; preserve original operator receipts and use honest unnamed attribution in new and saved workflows without weakening explicit approval or scope-waiver requirements. ([#156](https://github.com/jappyjan/bobs-factory/pull/156))
