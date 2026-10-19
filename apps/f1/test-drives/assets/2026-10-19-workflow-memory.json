@@ -1,0 +1,688 @@
+{
+	"schemaVersion": 1,
+	"date": "2026-10-19",
+	"mode": "mock/scripted; no live inference",
+	"baseCommit": "11e19b471999013455383511439e737de8bc0cf7",
+	"workingTree": true,
+	"sources": {
+		"apps/cli/src/internal.ts": {
+			"sha256": "e30b36d5e3c9eb917d4e24ca2af1008ebeded4de2ab4ee64f1fa0f52b47c4a27",
+			"bytes": 2056
+		},
+		"apps/f1/test-drives/assets/api-responsiveness.ts": {
+			"sha256": "1f6d61f6b4c8b31999dc54528cde22de075a7f3347631c6050bde2b23b775614",
+			"bytes": 16727
+		},
+		"apps/f1/test-drives/assets/architecture-approval-continuation.mjs": {
+			"sha256": "9bebbb6756c1c24638e25f8b05b6cb2376c14c3f27526de3963d1dc09914a834",
+			"bytes": 11677
+		},
+		"apps/f1/test-drives/assets/codex-context-readiness.ts": {
+			"sha256": "ed986c16ff34d6fe89d124c578cb2cb4caf7b1b8a85bad4cdea4c3db15ea5cb1",
+			"bytes": 17152
+		},
+		"apps/f1/test-drives/assets/context-handoff-memory.mjs": {
+			"sha256": "ff59d77fb9063d56b032bacd4f4909c942062458e6c91c8f8b73eddd86112efb",
+			"bytes": 3575
+		},
+		"apps/f1/test-drives/assets/factory-audit-review-context.mjs": {
+			"sha256": "cbcb22b1729246062fb40ebdbe0ff29461564f4b412ba4fe3b1fe6e8d75dada0",
+			"bytes": 20685
+		},
+		"apps/f1/test-drives/assets/frozen-workflow-approval-context.mjs": {
+			"sha256": "9bc627f260a7658fa636ede6f0695e93adb7b9fa45566d1d8319e60e2b6b45f6",
+			"bytes": 15675
+		},
+		"apps/f1/test-drives/assets/impact-feedback-recovery.mjs": {
+			"sha256": "189dda01042de58e9a8693ef6c312d2d9b4be47287a54172cf72c3a988979c3c",
+			"bytes": 13131
+		},
+		"apps/f1/test-drives/assets/question-choices-mock.mjs": {
+			"sha256": "2719e97b934f76941c7e3cd46d65a036f1446037d9b8f75a54077607e87c3365",
+			"bytes": 17013
+		},
+		"apps/f1/test-drives/assets/refinement-recommendations-mock.mjs": {
+			"sha256": "2c6bee09180a771664766f959316e32000f50a8c824dfd795c61f07d9758c421",
+			"bytes": 10286
+		},
+		"apps/f1/test-drives/assets/review-brief.ts": {
+			"sha256": "971890352fafd3bff2aec6f11ba89546f752eb9f835391e08167f1aae4e15c9d",
+			"bytes": 19317
+		},
+		"apps/f1/test-drives/assets/review-story.ts": {
+			"sha256": "6189fb024a39545baf15e501ca3b409df432b6b0f564bc9e23ec686aafff14f3",
+			"bytes": 18190
+		},
+		"apps/f1/test-drives/assets/tui-inbox.ts": {
+			"sha256": "c012df57d63af52d419e252eb074ee6998d2c09a4b721a9d632416722001687b",
+			"bytes": 8490
+		},
+		"packages/core/src/JsonSnapshotStore.ts": {
+			"sha256": "51eebba4dee0062b38c357f1c1a6cc79df7162b6782e92f19461da23fab1352e",
+			"bytes": 21249
+		},
+		"packages/core/src/index.ts": {
+			"sha256": "e5ac7f2dc97ad6772833570681e9d52d066b3031e01e9ebe1f3560bbe0e7f355",
+			"bytes": 8649
+		},
+		"packages/edge-worker/src/EdgeWorker.ts": {
+			"sha256": "47db42e112e24a7c76ecb5281618417497e5c497ef6dec27c6e9492ee64b0844",
+			"bytes": 435519
+		},
+		"packages/edge-worker/src/factory/Incremental.ts": {
+			"sha256": "718b0c559a63fcfe02b24f40f6976c8245f83245d518d4378aa5e660bf5320e5",
+			"bytes": 20829
+		},
+		"packages/edge-worker/src/factory/RepositoryScope.ts": {
+			"sha256": "f99da0201af8be42e157442bfcbf7a8574fde4db242938b7c063e541a90ceb61",
+			"bytes": 11870
+		},
+		"packages/edge-worker/src/factory/WorkflowInput.ts": {
+			"sha256": "4557180a4c418378f4573206613b57634d0c5a12596ad7c7fef070f25903a0a0",
+			"bytes": 1914
+		},
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": {
+			"sha256": "8bedc226eb73df1edab174b7acf39573eef452447da898f865b517e87b6fe123",
+			"bytes": 137011
+		},
+		"packages/edge-worker/test/EdgeWorker.capture-recovery.test.ts": {
+			"sha256": "98e9293b2e8b9a93871c64a6d128edec8f3e6d71c3b945859e38f39ac8104a4d",
+			"bytes": 35667
+		},
+		"packages/edge-worker/test/EdgeWorker.message-persistence.test.ts": {
+			"sha256": "22f8665a1f9f65a78e81de87a3a1f421383dee8590163f249e77f48a81daa7d7",
+			"bytes": 9067
+		},
+		"packages/edge-worker/test/FactoryRepositoryScope.test.ts": {
+			"sha256": "82209aafa0927d37df2c45cd21613082321ac56007da7c89c14d043bc756945f",
+			"bytes": 15535
+		},
+		"packages/edge-worker/test/Incremental.test.ts": {
+			"sha256": "f53ce8a5dbafeb37003fa81fb4b7fc131d3f4bdd9a234b8b433d58b2ddb5fc31",
+			"bytes": 14190
+		},
+		"packages/edge-worker/test/SpecialistReview.test.ts": {
+			"sha256": "9fd46705363408fc1ead94d5a029e6777fd278b9c17e10c15b541ef16dbc8eb3",
+			"bytes": 52356
+		},
+		"packages/edge-worker/test/WorkflowRuntime.test.ts": {
+			"sha256": "81d6b0eb20cbaa18fdfc043bddfb26feef674664dce36e08e994132d47e35496",
+			"bytes": 111100
+		},
+		"packages/mcp-tools/src/factory-context-main.ts": {
+			"sha256": "b65058e09e7a14dc111398b7912d2a2be4e15356ccb0350d12c589dc2122b96d",
+			"bytes": 217
+		},
+		"packages/mcp-tools/src/factory-context-stdio.ts": {
+			"sha256": "25c3571daac389d2ca45341af6db3063fc6f7e7ce36b7cbe2fdd3cbbaa6cb20b",
+			"bytes": 1446
+		},
+		"packages/mcp-tools/src/factoryContext.test.ts": {
+			"sha256": "74afc853d061dffd1f4aca97f45df5eb7847a2465648bc14163af92342ebd50a",
+			"bytes": 26060
+		},
+		"packages/mcp-tools/src/factoryContext.ts": {
+			"sha256": "c6c42d8f50a0a2bbacef06bac095ca885619d648aca9345d2bc09e59179ba914",
+			"bytes": 12838
+		},
+		"packages/mcp-tools/src/factoryContextMemory.ts": {
+			"sha256": "a6a93c59bfe66f72a8c2835ff78fc46c78cfff1321f82b8e2ade7c7d1c93cb70",
+			"bytes": 6326
+		},
+		"packages/mcp-tools/src/factoryContextSnapshot.ts": {
+			"sha256": "288f303c130f95674e6dd4c8b1f1cb3389015e5abc030adb3f5def8a335f6e13",
+			"bytes": 16934
+		},
+		"packages/mcp-tools/src/index.ts": {
+			"sha256": "1038643a3b8b4ece8424ce04f8320c7c9003f7944454811bfb3245e03dc67dd5",
+			"bytes": 1301
+		},
+		"packages/mcp-tools/test/factory-operator-recovery.f1.test.ts": {
+			"sha256": "76bdcf7a1d938796a7651f62bf2aa29cd74334d4ac4cd90052d526ca7262b002",
+			"bytes": 8949
+		}
+	},
+	"apiWorkflow": {
+		"mode": "mock",
+		"source": {
+			"commit": "11e19b471999013455383511439e737de8bc0cf7",
+			"workingTree": true
+		},
+		"checks": [
+			"ticket response visible",
+			"compact launch/retry acknowledgements",
+			"cold saved question context",
+			"lean dashboard configuration",
+			"compact inbox history",
+			"bounded focus and detail",
+			"explicit full artifact",
+			"durable answer continuation",
+			"responsive resumed role preparation with large saved history",
+			"stdio full-history reads preserve original baseline context and Unicode",
+			"retry preserves evidence",
+			"dedicated capacity counts",
+			"guarded partial recipe edit and default choice"
+		],
+		"measurements": [
+			{
+				"path": "/api/runs",
+				"status": 202,
+				"requestBytes": 92,
+				"bytes": 141,
+				"ms": 46.680875000000015
+			},
+			{
+				"path": "/api/config",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 98328,
+				"ms": 4.352416000000176
+			},
+			{
+				"path": "/api/config?view=dashboard",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 8299,
+				"ms": 2.433208000000377
+			},
+			{
+				"path": "/api/runs",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 1726,
+				"ms": 0.9146249999998872
+			},
+			{
+				"path": "/api/runs/manual-17456151-0586-4a6c-952f-7ff00a2ac3a3?view=focus",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 6068,
+				"ms": 1.8959159999999429
+			},
+			{
+				"path": "/api/runs/manual-17456151-0586-4a6c-952f-7ff00a2ac3a3?view=dashboard",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 12010,
+				"ms": 33.46891700000015
+			},
+			{
+				"path": "/api/runs/manual-17456151-0586-4a6c-952f-7ff00a2ac3a3/artifacts/large",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 2400130,
+				"ms": 9.850374999999985
+			},
+			{
+				"path": "/api/runs/manual-17456151-0586-4a6c-952f-7ff00a2ac3a3/answer",
+				"status": 200,
+				"requestBytes": 154,
+				"bytes": 109,
+				"ms": 15.853542000000289
+			},
+			{
+				"path": "/api/runs",
+				"status": 202,
+				"requestBytes": 81,
+				"bytes": 141,
+				"ms": 39.81512500000099
+			},
+			{
+				"path": "/api/runs/manual-1ef1591c-e22e-4f69-a23e-44a9d4b8024b/retry",
+				"status": 202,
+				"requestBytes": 2,
+				"bytes": 109,
+				"ms": 1.418083000000479
+			},
+			{
+				"path": "/api/runs/session-1/activity?limit=8",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 616,
+				"ms": 1.1432920000006561
+			},
+			{
+				"path": "/api/version",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 206,
+				"ms": 0.22474999999940337
+			},
+			{
+				"path": "/api/capacity",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 76,
+				"ms": 1.840833999998722
+			},
+			{
+				"path": "/api/config?view=recipes",
+				"status": 200,
+				"requestBytes": 0,
+				"bytes": 97968,
+				"ms": 1.2609169999996084
+			},
+			{
+				"path": "/api/workflows",
+				"status": 200,
+				"requestBytes": 585,
+				"bytes": 882,
+				"ms": 3.7497910000001866
+			},
+			{
+				"path": "/api/workflows/default",
+				"status": 200,
+				"requestBytes": 28,
+				"bytes": 170,
+				"ms": 2.7639579999995476
+			}
+		],
+		"memory": {
+			"logicalHistoryBytes": 57603120,
+			"fullContextReads": 1,
+			"versionRequests": 626,
+			"maxVersionMs": 50.643583999999464
+		}
+	},
+	"boundedHandoff": {
+		"command": "node --max-old-space-size=64 apps/f1/test-drives/assets/context-handoff-memory.mjs",
+		"mode": "controlled/no-inference",
+		"logicalCharacters": 1133497580,
+		"diskBytes": 996217,
+		"heartbeats": 78,
+		"maxHeartbeatGapMs": 11.33016699999996,
+		"peakRssMiB": 112.5625,
+		"heapSizeLimitMiB": 256,
+		"execArgv": ["--max-old-space-size=64"],
+		"selectedCompleteReceiptsAndNativeIdsPreserved": true,
+		"limitations": "Repeated shared strings; logical-history scaling, not unique-disk throughput or live provider execution."
+	},
+	"workflowHistory": {
+		"command": "bun run /tmp/bobs-factory-memory-proof/runtime-sites.ts 16",
+		"fixture": "Isolated /tmp home, actual WorkflowRuntime create/save/shutdown/restart/launch with 16 immutable 128KiB history receipts and an unrestricted tool hook; no live agents",
+		"before": {
+			"totalDecodesBeforeHook": 33,
+			"decodedBytes": 4297254,
+			"historyDecodesFromActivityMarkers": 16,
+			"historyDecodesFromStructuredClone": 16,
+			"catalogDecodes": 1
+		},
+		"after": {
+			"totalDecodesBeforeHook": 1,
+			"decodedBytes": 94806,
+			"historyDecodesBeforeHook": 0,
+			"catalogDecodes": 1
+		},
+		"originalHistoryPageHashesPreserved": true,
+		"fixedCutoffAndMutablePlanIsolation": "Verified by real runtime regression test; late history append excluded while first/last original complete receipts remain accessible."
+	},
+	"messagePersistence": {
+		"recordedOn": "2026-10-19",
+		"baselineCommit": "11e19b471999013455383511439e737de8bc0cf7",
+		"scope": "Synthetic temporary homes only; no production histories or live agents loaded; these are completed historical results, not new runs.",
+		"messageBurstCaptureRegression": {
+			"testFile": "packages/edge-worker/test/EdgeWorker.message-persistence.test.ts",
+			"testName": "coalesces message bursts behind a busy run commit and flushes the latest native state",
+			"setup": "Actual WorkflowRuntime and JsonSnapshotStore, no-op AgentSessionManager; initial fixture save already complete before write spy; one explicit run save held at first encoder; forty routine assistant messages, each accompanied by an agent activity log; flush(run.id) requested while encoder remains held.",
+			"routineMessages": 40,
+			"before": {
+				"capturesWhileFirstEncoderBlocked": 41,
+				"expectedBoundedCaptures": 1,
+				"result": "FAILED: expected write to be called 1 times, but got 41 times"
+			},
+			"after": {
+				"capturesWhileFirstEncoderBlocked": 1,
+				"capturesAfterReleaseAndFlush": 2,
+				"result": "PASS: latest mutable artifact, Activity 40 and native session snapshot all persisted"
+			},
+			"command": {
+				"cwd": "/Users/jappy/.t3/worktrees/bobs-factory/t3-8503ea9d/packages/edge-worker",
+				"cmd": "pnpm exec vitest run test/EdgeWorker.message-persistence.test.ts test/EdgeWorker.persistence.test.ts"
+			},
+			"latestCompletedResult": {
+				"testFilesPassed": 2,
+				"testsPassed": 9,
+				"newMessagePersistenceTests": 5,
+				"existingGlobalPersistenceTests": 4
+			},
+			"note": "This is the forty-message capture-count experiment. It is separate from the thirty-two-message heap experiment below; no after-fix heap value was measured for forty messages."
+		},
+		"actualMessageHandlerHeapBaseline": {
+			"script": "/tmp/factory-agent-save-backlog-repro.mjs",
+			"command": {
+				"cwd": "/Users/jappy/.t3/worktrees/bobs-factory/t3-8503ea9d",
+				"cmd": "node --expose-gc /tmp/factory-agent-save-backlog-repro.mjs"
+			},
+			"setup": "Actual built EdgeWorker.prototype.handleClaudeMessage, WorkflowRuntime and JsonSnapshotStore; only AgentSessionManager mocked. First encoder held, then 32 total assistant messages; mutable artifact has 12000 objects. Heap measured after three explicit GC calls per sample.",
+			"rawResult": {
+				"before": {
+					"heapMiB": 100,
+					"rssMiB": 262.6
+				},
+				"points": [
+					{
+						"messages": 1,
+						"captures": 1,
+						"heapMiB": 106.5,
+						"rssMiB": 265.2
+					},
+					{
+						"messages": 8,
+						"captures": 8,
+						"heapMiB": 151,
+						"rssMiB": 368.9
+					},
+					{
+						"messages": 16,
+						"captures": 16,
+						"heapMiB": 201.9,
+						"rssMiB": 421.6
+					},
+					{
+						"messages": 32,
+						"captures": 32,
+						"heapMiB": 303.6,
+						"rssMiB": 525.1
+					}
+				],
+				"queued": {
+					"heapMiB": 303.6,
+					"rssMiB": 525.2
+				},
+				"after": {
+					"heapMiB": 102.6,
+					"rssMiB": 534.8
+				},
+				"messageWorkMs": 273,
+				"captures": 32,
+				"commits": 32,
+				"finalNativeSnapshotCurrent": true
+			},
+			"note": "Recorded before call-site fix against then-current built dist. The after field means queue drained, not after-fix memory. Rebuilt current dist changes behavior; do not treat a current rerun as the old baseline."
+		},
+		"storeQueueHeapIsolation": {
+			"script": "/tmp/factory-persistence-memory-repro.mts",
+			"command": {
+				"cwd": "/Users/jappy/.t3/worktrees/bobs-factory/t3-8503ea9d",
+				"cmd": "node --expose-gc --experimental-transform-types /tmp/factory-persistence-memory-repro.mts queue"
+			},
+			"setup": "Actual JsonSnapshotStore with first encoder held; 32 captured revisions of the same mutable artifact. Every committed revision version verified separately; capture-time durability preserved.",
+			"rawResult": {
+				"mode": "queue",
+				"before": {
+					"heapMiB": 10.8,
+					"rssMiB": 112.6
+				},
+				"points": [
+					{
+						"pending": 1,
+						"heapMiB": 17.2,
+						"rssMiB": 124
+					},
+					{
+						"pending": 8,
+						"heapMiB": 61.7,
+						"rssMiB": 218.9
+					},
+					{
+						"pending": 16,
+						"heapMiB": 112.5,
+						"rssMiB": 326.2
+					},
+					{
+						"pending": 32,
+						"heapMiB": 214.2,
+						"rssMiB": 430
+					}
+				],
+				"queued": {
+					"heapMiB": 214.2,
+					"rssMiB": 430.1
+				},
+				"after": {
+					"heapMiB": 11.1,
+					"rssMiB": 248.2
+				},
+				"captureMs": 318,
+				"commits": 32,
+				"verified": 32,
+				"bytesWritten": 1058681
+			},
+			"immutableControl": {
+				"commandMode": "immutable-queue",
+				"beforeHeapMiB": 19.8,
+				"queuedHeapMiB": 19.9,
+				"afterDrainHeapMiB": 20.1,
+				"commits": 32,
+				"verified": 32
+			}
+		},
+		"restoreCacheControl": {
+			"script": "/tmp/factory-persistence-memory-repro.mts",
+			"setup": "Scan64 restored history entries, each256KiB; JSON pages of size1. Immutable transcript uses existing four-page cache.",
+			"immutable": {
+				"commandMode": "immutable-restore",
+				"beforeHeapMiB": 9.1,
+				"scannedHeapMiB": 10.2,
+				"totalCharacters": 16777398,
+				"firstStillReadable": true
+			},
+			"mutable": {
+				"commandMode": "mutable-restore",
+				"beforeHeapMiB": 9.1,
+				"scannedHeapMiB": 25.2,
+				"totalCharacters": 16777398,
+				"firstStillReadable": true
+			},
+			"conclusion": "Immutable restored history page cache did not retain all scanned pages. Mutable page cache retains loaded pages as designed."
+		},
+		"unchangedStoreDurabilityValidation": {
+			"command": {
+				"cwd": "/Users/jappy/.t3/worktrees/bobs-factory/t3-8503ea9d/packages/core",
+				"cmd": "pnpm exec vitest run test/JsonSnapshotStore.test.ts test/PersistenceManager.atomic-write.test.ts"
+			},
+			"testFilesPassed": 2,
+			"testsPassed": 22
+		},
+		"implementationFiles": [
+			"packages/edge-worker/src/EdgeWorker.ts",
+			"packages/edge-worker/test/EdgeWorker.message-persistence.test.ts"
+		],
+		"sharedSchedulerOwner": "prove_workflow_memory",
+		"limitations": [
+			"Measurements prove backlog-dependent snapshot retention; they do not attribute the complete production50GiB footprint to this cause.",
+			"No after-fix heap measurement was recorded; after-fix protection is the actual-store bounded-capture regression and durability checks.",
+			"No production changes, commits, releases or new test runs were performed while packaging this evidence."
+		]
+	},
+	"limits": "Controlled proof establishes eager-allocation and queued-capture mechanisms, not exact attribution of the 50 GiB production footprint. The capped-heap handoff uses repeated shared strings; it does not measure unique-disk throughput or live-provider behavior. Three selected complete receipts and native IDs are verified page by page.",
+	"boundedSyntheticGrowth": {
+		"command": "bun run /tmp/bobs-factory-memory-proof/repro.ts growth",
+		"fixture": "32 rounds maximum, six 4KiB specialist summaries per round, exact production frozenReviewContext and immutableJson, runtime input clone shape; no production history loaded",
+		"rows": [
+			{
+				"round": 4,
+				"historyMiB": 0.569,
+				"retainedRoundsMiB": 0.372,
+				"latestBaselineMiB": 0.173,
+				"clonedInputMiB": 0.767,
+				"projectedInputMiB": 0.222,
+				"cloneMs": 1.24,
+				"projectMs": 2.39
+			},
+			{
+				"round": 8,
+				"historyMiB": 1.953,
+				"retainedRoundsMiB": 1.559,
+				"latestBaselineMiB": 0.371,
+				"clonedInputMiB": 2.349,
+				"projectedInputMiB": 0.42,
+				"cloneMs": 3.86,
+				"projectMs": 0.65
+			},
+			{
+				"round": 16,
+				"historyMiB": 7.094,
+				"retainedRoundsMiB": 6.306,
+				"latestBaselineMiB": 0.766,
+				"clonedInputMiB": 7.885,
+				"projectedInputMiB": 0.816,
+				"cloneMs": 8.0,
+				"projectMs": 0.61
+			},
+			{
+				"round": 32,
+				"historyMiB": 26.868,
+				"retainedRoundsMiB": 25.292,
+				"latestBaselineMiB": 1.557,
+				"clonedInputMiB": 28.45,
+				"projectedInputMiB": 1.607,
+				"cloneMs": 208.9,
+				"projectMs": 7.22
+			}
+		],
+		"note": "Preprojection comparison establishes unnecessary allocation but is NOT the implemented global projection: implementation retains full baseline.context on demand."
+	},
+	"readBarrier": {
+		"before": {
+			"targetAtReadInvocation": 1,
+			"checkpoints": [
+				{
+					"persistedMarker": 1,
+					"laterCaptureInProgress": 2,
+					"readCompleted": false
+				},
+				{
+					"persistedMarker": 2,
+					"laterCaptureInProgress": 3,
+					"readCompleted": false
+				},
+				{
+					"persistedMarker": 3,
+					"laterCaptureInProgress": 4,
+					"readCompleted": false
+				}
+			],
+			"readCompletedOnlyAfterStreamStops": true,
+			"finalPersistedMarker": 4,
+			"commits": 5
+		},
+		"after": {
+			"targetAtReadInvocation": 1,
+			"checkpoints": [
+				{
+					"persistedMarker": 1,
+					"laterCaptureInProgress": 2,
+					"readCompleted": true
+				},
+				{
+					"persistedMarker": 2,
+					"laterCaptureInProgress": 3,
+					"readCompleted": true
+				},
+				{
+					"persistedMarker": 3,
+					"laterCaptureInProgress": 4,
+					"readCompleted": true
+				}
+			],
+			"readCompletedWhileLaterCaptureHeld": true,
+			"readCompletedOnlyAfterStreamStops": false,
+			"finalPersistedMarker": 4,
+			"commits": 5
+		},
+		"consumerReviewAndValidation": {
+			"reviewed": "All production WorkflowRuntime.flush(id) and flush() call sites found by rg in packages/edge-worker/src were read before bounded-barrier implementation.",
+			"callTimeConsumers": [
+				{
+					"path": "packages/edge-worker/src/factory/WorkflowRuntime.ts",
+					"sites": [
+						"execute startup",
+						"decideArchitecture authorization handoff",
+						"human review decide handoff",
+						"question explanation handoff",
+						"answer handoff",
+						"prepareDashboard"
+					],
+					"required": "Accepted run/input/decision state at invocation must be durable; future streamed messages must not extend read/acknowledgement barriers."
+				},
+				{
+					"path": "packages/edge-worker/src/EdgeWorker.ts",
+					"sites": [
+						"sendFactoryChat architecture answer",
+						"sendFactoryChat Simple continuation"
+					],
+					"required": "Accept and persist the triggering answer/continuation before acknowledgement; do not wait for the new agent response stream."
+				},
+				{
+					"path": "packages/edge-worker/src/factory/FactoryServer.ts",
+					"sites": [
+						"POST /api/runs",
+						"GET /api/runs/:id full/legacy read",
+						"GET /api/runs/:id dashboard/architecture through prepareDashboard",
+						"POST external-reverify",
+						"POST external-recovery",
+						"POST architecture-decision",
+						"POST review"
+					],
+					"required": "Durable invocation state and committed output previews; bounded acknowledgement/read under later activity."
+				},
+				{
+					"path": "packages/edge-worker/src/factory/OperatorService.ts",
+					"sites": ["answer"],
+					"required": "Durable accepted answer before success response."
+				}
+			],
+			"fullDrainConsumers": [
+				{
+					"path": "packages/edge-worker/src/factory/WorkflowRuntime.ts",
+					"sites": ["shutdown"],
+					"required": "After aborting controllers and awaiting executions, persist all pending/dirty activity and flush all snapshot queues."
+				}
+			],
+			"otherFlushTypesExcluded": [
+				"TicketTracking.flush(run,...) is a delivery-outbox method, not WorkflowRuntime.flush(id)."
+			],
+			"design": "Each activity promise now covers one finite batch. capturedActivity records whether that batch had captured before a per-run barrier began. A clean barrier awaits its call-time pending save; a dirty barrier waits an uncaptured active batch or, when needed, a captured active batch plus one successor. Global flush retains a full-drain loop. Explicit save captures synchronously as before.",
+			"regressions": {
+				"file": "packages/edge-worker/test/EdgeWorker.message-persistence.test.ts",
+				"dashboardStreamVariants": [
+					"no active activity batch",
+					"active batch already captured",
+					"active batch waiting to capture behind a prior explicit commit"
+				],
+				"checks": [
+					"call-time marker1 is durable before read resolves",
+					"read resolves while later marker2 encoder remains held",
+					"global flush still waits and drains marker3 accepted after invocation",
+					"forty-message burst remains one capture while blocked and two total",
+					"explicit init/result snapshots and original failure rejections retained"
+				]
+			},
+			"validation": {
+				"command": "pnpm exec vitest run test/EdgeWorker.message-persistence.test.ts test/WorkflowRuntime.test.ts",
+				"cwd": "packages/edge-worker",
+				"testsPassed": 130,
+				"filesPassed": 2,
+				"durationSeconds": 28.37,
+				"biome": "2 files passed"
+			},
+			"sha256": {
+				"packages/edge-worker/src/factory/WorkflowRuntime.ts": "8bedc226eb73df1edab174b7acf39573eef452447da898f865b517e87b6fe123",
+				"packages/edge-worker/test/EdgeWorker.message-persistence.test.ts": "22f8665a1f9f65a78e81de87a3a1f421383dee8590163f249e77f48a81daa7d7"
+			}
+		}
+	},
+	"validation": {
+		"build": "passed after finite-batch correction",
+		"typecheck": "passed after finite-batch correction",
+		"biome": "repository check passed; 25 existing warnings",
+		"broadEdgeWorker": {
+			"passed": 2206,
+			"failedWaitTimeouts": 2,
+			"skipped": 1,
+			"unhandledErrors": 1,
+			"notes": "Capacity failure left pending work touching removed fixture. Focused full files passed: IntegrationCapacity 15/15; FactoryReviewOutcome 2/2. No test edits."
+		}
+	}
+}

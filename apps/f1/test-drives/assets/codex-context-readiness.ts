@@ -13,6 +13,7 @@ import { CodexRunner } from "../../../../packages/codex-runner/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { FactoryServer } from "../../../../packages/edge-worker/test/fixtures/authenticated-factory.ts";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
 const requireMcp = createRequire(
@@ -294,11 +295,8 @@ function makeWorker() {
 					/software-factory step: Context fixture ([^.]+)\./,
 				)?.[1];
 				assert(role);
-				const context = JSON.parse(
-					readFileSync(
-						(config.mcpConfig!["factory-context"] as any).args.at(-1),
-						"utf8",
-					),
+				const context = loadFactoryContextSnapshot<any>(
+					(config.mcpConfig!["factory-context"] as any).args.at(-1),
 				);
 				const mode = String(context.originalInput).match(/MODE:(\w+)/)![1];
 				const key = `${mode}:${role}`;

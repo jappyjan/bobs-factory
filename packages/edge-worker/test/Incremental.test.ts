@@ -84,6 +84,43 @@ it("keeps per-role results and exposes only new history and exact revision chang
 	writeFileSync(join(workspace, "a.txt"), "dirty");
 	expect((await roleProgress(ctx)).uncertain).toBe(true);
 });
+it("uses history metadata for progress while retaining exact lazy evidence and its cutoff", async () => {
+	const { context: ctx } = context();
+	const previous = { summary: "Original result", nativeSessionId: "native-42" };
+	const historical = {
+		step: "old-review-gate",
+		at: "",
+		output: {
+			baseline: { context: { evidence: "complete original evidence" } },
+		},
+	};
+	const readHistorical = vi.fn(() => historical);
+	ctx.run.history = [
+		historical,
+		{ step: ctx.run.step!, at: "", output: previous },
+	];
+	Object.defineProperty(ctx.run.history, 0, {
+		enumerable: true,
+		configurable: true,
+		get: readHistorical,
+	});
+	ctx.historyIndex = () => [
+		{ step: historical.step, at: "" },
+		{ step: ctx.run.step!, at: "" },
+	];
+	const progress = await roleProgress(ctx);
+	expect(readHistorical).not.toHaveBeenCalled();
+	expect(progress.previousOutput).toEqual(previous);
+	expect(progress.visit).toBe(2);
+	ctx.run.history.push({
+		step: "later-result",
+		at: "",
+		output: { later: true },
+	});
+	expect(progress.newHistory).toHaveLength(2);
+	expect(progress.newHistory[0]).toEqual(historical);
+	expect(progress.newHistory[1]).toEqual(ctx.run.history[1]);
+});
 it("keeps explanation progress and completion separate from the blocked role revision", async () => {
 	const { context: ctx, workspace, git } = context();
 	ctx.step = {

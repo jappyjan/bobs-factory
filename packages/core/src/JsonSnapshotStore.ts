@@ -111,6 +111,12 @@ export function immutableJson<T>(value: T): T {
 	freeze(json);
 	return json as T;
 }
+
+/** Recognize published JSON without treating a shallow Object.freeze as deep immutability. */
+export function isImmutableJson(value: unknown): boolean {
+	return !!value && typeof value === "object" && immutableValues.has(value);
+}
+
 export function immutableTranscript(entries: unknown[]): void {
 	const lazy = lazyArrays.get(entries);
 	if (lazy) {

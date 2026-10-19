@@ -11,13 +11,16 @@ export {
 	submitFactoryResultArtifact,
 } from "./factoryArtifacts.js";
 export {
+	createFactoryContextServerFromSnapshot,
 	factoryContextInstructions,
 	prepareFactoryContext,
+	prepareFactoryContextAsync,
 } from "./factoryContext.js";
 export {
 	FactoryContextInfrastructureError,
 	verifyFactoryContext,
 } from "./factoryContextReadiness.js";
+export { loadFactoryContextSnapshot } from "./factoryContextSnapshot.js";
 export {
 	createFactoryOperatorBridge,
 	operatorCatalog,

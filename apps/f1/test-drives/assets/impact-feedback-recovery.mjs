@@ -1,17 +1,12 @@
 // F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/impact-feedback-recovery.mjs
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import {
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	realpathSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -205,11 +200,8 @@ const config = {
 					runnerConfig,
 					JSON.stringify({ title: "F1 recovery" }),
 				);
-			const context = JSON.parse(
-				readFileSync(
-					runnerConfig.mcpConfig["factory-context"].args.at(-1),
-					"utf8",
-				),
+			const context = loadFactoryContextSnapshot(
+				runnerConfig.mcpConfig["factory-context"].args.at(-1),
 			);
 			const role = run.step.split("/").at(-1);
 			turns.push({
