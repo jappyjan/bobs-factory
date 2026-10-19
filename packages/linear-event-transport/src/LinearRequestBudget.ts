@@ -14,6 +14,7 @@ export class LinearRequestBudget {
 	private jobs: Job[] = [];
 	private running = false;
 	private nextAt = 0;
+	private rateLimitUntil = 0;
 	private throttleCount = 0;
 	private constructor(private intervalMs: number) {}
 
@@ -66,7 +67,9 @@ export class LinearRequestBudget {
 	}
 
 	get retryAt(): number {
-		return this.nextAt;
+		// Outboxes must join the queue during normal pacing, rather than wait
+		// for all other SDK traffic to stop. Only a provider throttle pauses them.
+		return this.rateLimitUntil;
 	}
 
 	private async drain(): Promise<void> {
@@ -87,8 +90,8 @@ export class LinearRequestBudget {
 			} catch (error) {
 				if (isLinearRateLimit(error)) {
 					this.throttleCount++;
-					this.nextAt = Math.max(
-						this.nextAt,
+					this.rateLimitUntil = Math.max(
+						this.rateLimitUntil,
 						linearRetryAt(
 							error,
 							Math.min(
@@ -97,6 +100,7 @@ export class LinearRequestBudget {
 							),
 						),
 					);
+					this.nextAt = Math.max(this.nextAt, this.rateLimitUntil);
 				}
 				job.reject(error);
 			}

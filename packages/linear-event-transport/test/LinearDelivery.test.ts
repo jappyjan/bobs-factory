@@ -170,6 +170,70 @@ it("budgets simultaneous tracker and direct SDK requests together across one cre
 	expect(requests).toEqual([0, 2000, 4000]);
 });
 
+it("delivers an acknowledgment through the shared budget while SDK reads keep arriving", async () => {
+	vi.useFakeTimers();
+	vi.setSystemTime(0);
+	const { mkdtempSync, rmSync } = await import("node:fs");
+	const { tmpdir } = await import("node:os");
+	const { join } = await import("node:path");
+	const home = mkdtempSync(join(tmpdir(), "linear-busy-budget-"));
+	const requests: { kind: string; at: number }[] = [];
+	const client = new LinearClient({ accessToken: "busy-budget-test" });
+	client.client.request = vi.fn(async (_document, variables: any) => {
+		requests.push({
+			kind: variables.input ? "acknowledgment" : "read",
+			at: Date.now(),
+		});
+		return variables.input
+			? {
+					agentActivityCreate: {
+						success: true,
+						agentActivity: { id: variables.input.id },
+						lastSyncId: 1,
+					},
+				}
+			: { issue: { id: "issue", reactions: [] } };
+	}) as any;
+	const tracker = new LinearIssueTrackerService(client, undefined, undefined, {
+		workspaceId: "busy-budget-workspace",
+		factoryHome: home,
+		requestIntervalMs: 2000,
+	});
+	tracker.startDelivery();
+	await tracker.getClient().issue("initial");
+	const acknowledgment = tracker
+		.createAgentActivity({
+			agentSessionId: "session",
+			content: { type: "thought", body: "Starting work on your ticket." },
+		})
+		.then(
+			() => "delivered",
+			() => "pending",
+		);
+	const reads = Promise.all([
+		tracker.getClient().issue("one"),
+		tracker.getClient().issue("two"),
+		tracker.getClient().issue("three"),
+	]);
+	try {
+		await vi.advanceTimersByTimeAsync(2000);
+		expect(requests).toEqual([
+			{ kind: "read", at: 0 },
+			{ kind: "acknowledgment", at: 2000 },
+		]);
+		await expect(acknowledgment).resolves.toBe("delivered");
+		expect(tracker.getActivityDeliveryStatus()).toMatchObject({
+			pending: 0,
+			delivered: 1,
+		});
+	} finally {
+		await vi.advanceTimersByTimeAsync(10_000);
+		await reads;
+		tracker.stopDelivery();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
 it("reuses one SDK client budget when a tracker wrapper is rebuilt", async () => {
 	vi.useFakeTimers();
 	vi.setSystemTime(0);
