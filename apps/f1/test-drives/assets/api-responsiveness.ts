@@ -380,7 +380,10 @@ try {
 			commit: execFileSync("git", ["rev-parse", "HEAD"], {
 				encoding: "utf8",
 			}).trim(),
-			workingTree: true,
+			workingTree:
+				execFileSync("git", ["status", "--porcelain"], {
+					encoding: "utf8",
+				}).trim().length > 0,
 		},
 		checks: [
 			"ticket response visible",

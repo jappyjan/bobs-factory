@@ -172,6 +172,7 @@ try {
 					"architecture.log",
 					"architecture-continuation.log",
 					"impact-feedback-recovery.log",
+					"api-responsiveness.log",
 				].sort(),
 			),
 		"Incomplete current full-payload CI/mock workflow coverage",

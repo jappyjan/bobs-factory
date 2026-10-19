@@ -51,6 +51,7 @@ The receipt includes timings for this local mocked drive. They are observations,
 - **CLI onboarding and terminal:** 2 files / 32 tests passed.
 - After the final focus activity-read restriction: FactoryServer and FactoryWebClient **73 tests passed**, followed by edge-worker build/typecheck and another passing F1 drive.
 - Repository build/typecheck, changed-code Biome checks and `git diff --check` passed.
+- Before shipping, integrated main's recorded-decision attribution fix (`c06051c1`) and repeated the mocked API drive successfully. The nightly workflow now runs this same fixture and requires its hashed log alongside the existing full-payload checks.
 - Regression coverage includes cold missing payload chunks, small compact previews, checkpoint presence, exact fork-link behavior, event-only final replies, permission revocations across cached editor scopes, late stale reads, action acknowledgement context, and independent-read/SSE catch-up.
 
 Read-only inspection of two existing production snapshots also exercised the actual updated GET handlers in an isolated server with no execution or saves. The question run's prior approximately 5.96 MB dashboard response became a **12,870-byte focus response** and a **93,951-byte overview**. The running run's focus response was **14,367 bytes**. Full retained run serialization was approximately 21.8 MB and 86.1 MB respectively; compact action receipts were 140 and 143 bytes. Production state and the installed running binary were not changed.
