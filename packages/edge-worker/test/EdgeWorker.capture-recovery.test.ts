@@ -1,13 +1,8 @@
 import { execFileSync } from "node:child_process";
-import {
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { loadFactoryContextSnapshot } from "bobs-factory-mcp-tools";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
@@ -111,8 +106,8 @@ async function fixture() {
 	let input: any;
 	const runner = {
 		start: vi.fn(async () => {
-			input = JSON.parse(
-				readFileSync(config.mcpConfig["factory-context"].args.at(-1), "utf8"),
+			input = loadFactoryContextSnapshot(
+				config.mcpConfig["factory-context"].args.at(-1),
 			);
 			config.onMessage({
 				type: "system",

@@ -11,7 +11,9 @@ export async function runInternal(args: string[]): Promise<void> {
 		return;
 	}
 	if (mode === "factory-context") {
-		await serveFactoryContext(rest[0]);
+		await serveFactoryContext(rest[0] === "--snapshot" ? rest[1] : rest[0], {
+			snapshot: rest[0] === "--snapshot",
+		});
 		return;
 	}
 	if (mode === "cursor-permission") {

@@ -1290,6 +1290,14 @@ it("shares immutable revision/context across six branches and preserves each bra
 	expect(fixture.run.status, fixture.run.error).toBe("completed");
 	expect(contexts).toHaveLength(6);
 	expect(new Set(contexts.map((c) => JSON.stringify(c.input))).size).toBe(1);
+	const inputs = contexts.map(
+		(context) => context.input as { reviewBaseline: ReviewBaseline },
+	);
+	expect(
+		new Set(inputs.map((input) => input.reviewBaseline.context)).size,
+	).toBe(1);
+	expect(Object.isFrozen(inputs[0]!.reviewBaseline.context)).toBe(true);
+	expect(inputs[0]!.reviewBaseline).toBe(fixture.run.reviewRounds![0]);
 	expect(new Set(contexts.map((c) => c.stepKey)).size).toBe(6);
 	const aggregate = fixture.run.outputs["review-gate"] as AggregateReview;
 	expect(aggregate.approved).toBe(true);

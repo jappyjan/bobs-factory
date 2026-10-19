@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { GitProviderConfig, RepositoryConfig } from "bobs-factory-core";
 import type { GitProviderSnapshot } from "./GitProvider.js";
+import { snapshotHistory } from "./WorkflowInput.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 /** Frozen repository identity and worktree, shared by every workflow in a run. */
@@ -252,7 +253,7 @@ export function repositoryRun(
 		repositories: undefined,
 		gitProvider: repository.providerSnapshot,
 		outputs,
-		history: run.history.map((item) => ({
+		history: snapshotHistory(run.history, 0, run.history.length, (item) => ({
 			...item,
 			output: project(item.output),
 		})),
@@ -262,10 +263,15 @@ export function repositoryRun(
 				project(value),
 			]),
 		) as FactoryRun["roleRevisions"],
-		reviewRounds: run.reviewRounds?.map(
-			(round) =>
-				project(round) as NonNullable<FactoryRun["reviewRounds"]>[number],
-		),
+		reviewRounds: run.reviewRounds
+			? snapshotHistory(
+					run.reviewRounds,
+					0,
+					run.reviewRounds.length,
+					(round) =>
+						project(round) as NonNullable<FactoryRun["reviewRounds"]>[number],
+				)
+			: undefined,
 		humanDecisions: run.humanDecisions?.map((decision) => {
 			const approved = decision.repositories?.find(
 				(item) => item.repositoryId === repository.id,

@@ -7,7 +7,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { JsonSnapshotStore } from "bobs-factory-core";
+import { immutableJson, JsonSnapshotStore } from "bobs-factory-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
@@ -155,6 +155,107 @@ function start(runtime: WorkflowRuntime, definition: Workflow) {
 		workflow: definition,
 	});
 }
+
+it("creates exact role inputs without reading cold history and retains their original cutoff", async () => {
+	const { runtime, home } = create();
+	const definition = workflow([
+		{ id: "inspect", name: "Inspect", type: "tool", tool: "fixture" },
+	]);
+	const run = start(runtime, definition);
+	run.activitySteps = [];
+	run.checkpoint = { current: "inspect", visits: {} };
+	run.outputs.plan = { nested: { accepted: "original plan" } };
+	const historical = Array.from({ length: 8 }, (_, index) =>
+		immutableJson({
+			step: "review-gate",
+			at: run.createdAt,
+			output: {
+				baseline: {
+					round: index,
+					headSha: `head-${index}`,
+					context: { evidence: "complete evidence ".repeat(8192) },
+				},
+				nativeSessionId: `native-${index}`,
+			},
+		}),
+	);
+	run.history.push(...historical);
+	await runtime.save(run);
+	await runtime.shutdown();
+	const path = join(home, "factory", "runs", `${run.id}.json`);
+	const stored = JSON.parse(readFileSync(path, "utf8"));
+	const historyHashes = stored.fields.history.pages.map(
+		(page: { hash: string }) => page.hash,
+	);
+	let visited = false;
+	const restarted = reload(home, {
+		tool: async (context) => {
+			const historyReads = decode.mock.calls.filter(([reference]) =>
+				historyHashes.includes(reference.hash),
+			);
+			expect(historyReads).toHaveLength(0);
+			const input = context.input as {
+				history: FactoryRun["history"];
+				outputs: { plan: { nested: { accepted: string } } };
+			};
+			(
+				context.run.outputs.plan as { nested: { accepted: string } }
+			).nested.accepted = "changed live plan";
+			context.run.history.push(
+				immutableJson({
+					step: "concurrent-result",
+					at: run.createdAt,
+					output: { complete: true },
+				}),
+			);
+			expect(input.outputs.plan.nested.accepted).toBe("original plan");
+			expect(input.history).toHaveLength(historical.length);
+			expect(input.history[0]).toEqual(historical[0]);
+			expect(input.history.at(-1)).toEqual(historical.at(-1));
+			visited = true;
+			return { complete: true };
+		},
+	});
+	const snapshots = (
+		restarted as unknown as {
+			snapshots: { decode(reference: { hash: string }): unknown };
+		}
+	).snapshots;
+	const decode = vi.spyOn(snapshots, "decode");
+	await restarted.launch(restarted.get(run.id));
+	expect(restarted.get(run.id).error).toBeUndefined();
+	expect(visited).toBe(true);
+	const saved = JSON.parse(readFileSync(path, "utf8"));
+	expect(
+		saved.fields.history.pages
+			.slice(0, historical.length)
+			.map((page: { hash: string }) => page.hash),
+	).toEqual(historyHashes);
+});
+
+it("isolates mutable children of shallow-frozen live outputs in role input", async () => {
+	const { runtime } = create({
+		tool: async (context) => {
+			const live = context.run.outputs.plan as { nested: { accepted: string } };
+			const input = context.input as {
+				outputs: { plan: typeof live };
+			};
+			live.nested.accepted = "changed live plan";
+			expect(input.outputs.plan.nested.accepted).toBe("original plan");
+			return { complete: true };
+		},
+	});
+	const run = start(
+		runtime,
+		workflow([
+			{ id: "inspect", name: "Inspect", type: "tool", tool: "fixture" },
+		]),
+	);
+	run.outputs.plan = Object.freeze({ nested: { accepted: "original plan" } });
+	await runtime.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("completed");
+});
 
 it("keeps completed receipts independent of mutable live outputs and immutable after restart", async () => {
 	const output = { nested: { text: "accepted result" } };

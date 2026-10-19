@@ -5,13 +5,7 @@
 // Set F1_HOLD=1 to keep the dashboard on :3542 until <root>/stop exists.
 import assert from "node:assert/strict";
 import { execFile as execFileCallback, execFileSync } from "node:child_process";
-import {
-	existsSync,
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { createCLIIssueTracker } from "bobs-factory-core";
@@ -34,6 +28,7 @@ import {
 	githubApiReceipt,
 	githubRequest,
 } from "../../../../packages/edge-worker/test/fixtures/github-api.ts";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
 const execFile = promisify(execFileCallback);
@@ -361,8 +356,8 @@ function makeWorker() {
 			createAgentRunner: (_runner, config) => {
 				const contextConfig = config.mcpConfig?.["factory-context"];
 				assert(contextConfig && "args" in contextConfig);
-				const context = JSON.parse(
-					readFileSync(contextConfig.args![1]!, "utf8"),
+				const context = loadFactoryContextSnapshot<any>(
+					contextConfig.args!.at(-1)!,
 				);
 				const role = config.appendSystemPrompt?.match(
 					/software-factory step: Fixture (guide|ci-fix)\./,

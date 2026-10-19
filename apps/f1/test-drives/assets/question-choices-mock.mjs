@@ -5,10 +5,11 @@
 // Supply F1_PLAYWRIGHT_MODULE when Playwright is installed outside this workspace.
 import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 const root = process.cwd();
@@ -123,7 +124,7 @@ const mockedRunner = (type, config) => {
 				arg.endsWith(".json"),
 			);
 			assert.ok(snapshotPath, JSON.stringify(contextConfig.args));
-			const input = JSON.parse(readFileSync(snapshotPath, "utf8"));
+			const input = loadFactoryContextSnapshot(snapshotPath);
 			assert.match(config.appendSystemPrompt, /questionRecommendations/);
 			assert.match(
 				config.appendSystemPrompt,
