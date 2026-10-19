@@ -99,6 +99,34 @@ function webhook(body: string) {
 		},
 	};
 }
+it("acknowledges an accepted session before slow ticket preflight and ignores redelivery", async () => {
+	const { edge, fullIssue, repository } = setup();
+	let release!: () => void;
+	const preflight = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	edge.fetchFullIssueDetails.mockImplementation(async () => {
+		await preflight;
+		return fullIssue;
+	});
+	vi.spyOn(edge, "routeAcceptedTicketLaunch").mockResolvedValue(undefined);
+	const event = webhook("This thread is for an agent session");
+	const launch = edge.handleAgentSessionCreatedWebhook(event, [repository]);
+	try {
+		await vi.waitFor(() =>
+			expect(edge.fetchFullIssueDetails).toHaveBeenCalledOnce(),
+		);
+		expect(edge.postInstantAcknowledgment).toHaveBeenCalledWith(
+			"session",
+			"cli-workspace",
+		);
+		await edge.handleAgentSessionCreatedWebhook(event, [repository]);
+		expect(edge.postInstantAcknowledgment).toHaveBeenCalledOnce();
+	} finally {
+		release();
+		await launch;
+	}
+});
 it.each([
 	"This thread is for an agent session",
 	"@Bob please help",

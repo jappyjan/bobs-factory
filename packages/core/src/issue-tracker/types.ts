@@ -527,6 +527,12 @@ export type AgentActivitySDK = LinearSDK.AgentActivity;
 export type AgentActivityCreateInput =
 	LinearSDK.LinearDocument.AgentActivityCreateInput;
 
+/** Local scheduling only; never forwarded in the provider mutation input. */
+export interface AgentActivityDeliveryOptions {
+	/** Reserve interactive priority for time-sensitive session acknowledgments. */
+	priority?: "interactive";
+}
+
 /**
  * Agent activity payload type.
  * Returned from createAgentActivity mutation - contains success status and created activity.

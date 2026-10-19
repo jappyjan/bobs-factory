@@ -5,6 +5,7 @@ export async function issueSnapshot(
 	issue: Issue,
 	labels: string[],
 	tracker?: IIssueTrackerService,
+	purpose?: "tracking",
 ): Promise<unknown> {
 	const comments: unknown[] = [];
 	const cursors = new Set<string>();
@@ -18,7 +19,7 @@ export async function issueSnapshot(
 			? await tracker.fetchComments(issue.id, options)
 			: await issue.comments(options);
 		for (const comment of page.nodes) {
-			const user = await comment.user;
+			const user = purpose === "tracking" ? undefined : await comment.user;
 			comments.push({
 				id: comment.id,
 				body: comment.body,
@@ -36,10 +37,10 @@ export async function issueSnapshot(
 	} while (after);
 	const [state, assignee, team, project, parent] = await Promise.all([
 		issue.state,
-		issue.assignee,
+		purpose === "tracking" ? undefined : issue.assignee,
 		issue.team,
-		issue.project,
-		issue.parent,
+		purpose === "tracking" ? undefined : issue.project,
+		purpose === "tracking" ? undefined : issue.parent,
 	]);
 	const attachments = tracker
 		? await tracker.fetchIssueAttachments(issue.id)
@@ -74,7 +75,13 @@ export async function issueSnapshot(
 		createdAt: issue.createdAt,
 		updatedAt: issue.updatedAt,
 		labels,
-		state: state ? { name: state.name, type: state.type } : undefined,
+		state: state
+			? {
+					...(purpose === "tracking" ? { id: state.id } : {}),
+					name: state.name,
+					type: state.type,
+				}
+			: undefined,
 		assignee: assignee ? { id: assignee.id, name: assignee.name } : undefined,
 		team: team ? { id: team.id, name: team.name, key: team.key } : undefined,
 		project: project ? { id: project.id, name: project.name } : undefined,

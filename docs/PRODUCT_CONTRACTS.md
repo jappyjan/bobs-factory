@@ -154,6 +154,15 @@ writable ownership and a complete installed-byte match. External packages use
 their owner. Preserve quarantine and require the user's per-app macOS allow action.
 See [the desktop update contract](distribution/DESKTOP.md#complete-app-updates).
 
+Accepted Linear sessions acknowledge their durable launch reservation before
+ticket preflight, repository routing and dependency checks. Interactive delivery
+priority is local outbox metadata, survives retries and retains shared API pacing
+and provider throttle windows; historical records keep their normal priority.
+Background lifecycle synchronization yields to foreground requests and reads complete comment pages, attachments,
+fresh state and team information without fetching comment profiles or unrelated
+assignee/project/parent context. Initial ticket and agent context reads retain
+their full snapshots.
+
 ## Factory external ticket delivery
 
 New stock planning outputs use `delivery-v1`. Clarification classifies repository,

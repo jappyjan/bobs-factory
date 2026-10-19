@@ -1,5 +1,6 @@
 import type {
 	AgentActivityCreateInput,
+	AgentActivityDeliveryOptions,
 	IIssueTrackerService,
 	ILogger,
 	RepoSetupHookEvent,
@@ -25,9 +26,12 @@ export class ActivityPoster {
 		issueTracker: IIssueTrackerService,
 		input: AgentActivityCreateInput,
 		label: string,
+		delivery?: AgentActivityDeliveryOptions,
 	): Promise<string | null> {
 		try {
-			const result = await issueTracker.createAgentActivity(input);
+			const result = await (delivery
+				? issueTracker.createAgentActivity(input, delivery)
+				: issueTracker.createAgentActivity(input));
 			if (result.success) {
 				if (result.agentActivityId) return result.agentActivityId;
 				const createdActivity = result.agentActivity;
@@ -88,6 +92,7 @@ export class ActivityPoster {
 				},
 			},
 			"instant acknowledgment",
+			{ priority: "interactive" },
 		);
 	}
 

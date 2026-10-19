@@ -6003,13 +6003,14 @@ ${taskSection}`;
 			this.pendingTriggerOrigins.delete(webhook.agentSession.id);
 			return;
 		}
-		await this.startAcceptedTicketLaunch(result.receipt, repos);
+		await this.startAcceptedTicketLaunch(result.receipt, repos, false, true);
 	}
 
 	private async startAcceptedTicketLaunch(
 		receipt: TicketLaunchReceipt,
 		repos: RepositoryConfig[],
 		propagateFailure = false,
+		acknowledge = false,
 	): Promise<void> {
 		if (
 			this.updateDrain?.active() ||
@@ -6026,6 +6027,13 @@ ${taskSection}`;
 		const { webhook } = receipt;
 		this.pendingTriggerOrigins.set(receipt.sessionId, receipt.origin);
 		try {
+			// Keep this send inside update-drain ownership, but ahead of the
+			// ticket reads that can exceed Linear's ten-second response deadline.
+			if (acknowledge)
+				await this.postInstantAcknowledgment(
+					receipt.sessionId,
+					webhook.organizationId,
+				);
 			await this.preflightTicketLaunch(receipt);
 			if (
 				this.getLaunchAdmission().get(webhook.organizationId, receipt.sessionId)
@@ -6322,8 +6330,10 @@ ${taskSection}`;
 
 		const agentSessionManager = this.agentSessionManager;
 
-		// Post instant acknowledgment thought
-		await this.postInstantAcknowledgment(sessionId, linearWorkspaceId);
+		// Accepted webhook launches already acknowledged their reservation. Keep
+		// this fallback for session initialization without a launch receipt.
+		if (!receipt)
+			await this.postInstantAcknowledgment(sessionId, linearWorkspaceId);
 
 		// Create the session using the shared method (pass full repositories array)
 		const sessionData = await this.createCyrusAgentSession(
