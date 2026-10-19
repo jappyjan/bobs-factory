@@ -42,6 +42,16 @@ External cyrus-hosted tool catalogs are absent from this repository. They cannot
 be updated here. This independent fork does not enroll with the upstream hosted
 control plane. Migration must flag hosted-only setup for explicit conversion.
 
+Dashboard requests use screen-specific projections: compact Today decisions,
+run overviews, explicit architecture versions, launch configuration, recipe
+editing and execution settings. Run mutations acknowledge acceptance and the
+run identity instead of serializing retained execution state. Full artifacts,
+raw activity, recipe exports and legacy full configuration/run reads retain
+their complete data. Capacity updates use their own SSE flag and read endpoint;
+ordinary run actions refresh affected views without waiting for unrelated
+configuration probes. Human decision, question-context, configuration-revision,
+authentication and build guards apply to every projection and mutation.
+
 Factory role context exposes original operator answers and architecture/human
 decision receipts under `/workflowExecution`. Scope extraction, coverage and
 guides use an explicitly recorded name when available, otherwise

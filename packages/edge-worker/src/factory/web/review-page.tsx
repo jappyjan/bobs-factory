@@ -27,7 +27,8 @@ export function ReviewPage({
 		// Direct links also have a return target when this run is still eligible.
 		if (id) writeTextStored("bob-selected", id, true);
 	}, [id, hasRun]);
-	if (query.isLoading) return <p role="status">Loading the review guide…</p>;
+	if (query.isLoading || run?.pendingContext)
+		return <p role="status">Loading the review guide…</p>;
 	if (!run)
 		return (
 			<>

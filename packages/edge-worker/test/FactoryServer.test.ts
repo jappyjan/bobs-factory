@@ -18,6 +18,9 @@ import { FactoryServer as ProtectedFactoryServer } from "../src/factory/FactoryS
 import type { ResolvedLaunchRequest } from "../src/factory/LaunchFields.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { formatActivities } from "../src/factory/web/activity.js";
+import { reviewContext } from "../src/factory/web/review-context.js";
+import { proposal } from "./fixtures/architecture.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { factoryHttp } from "./fixtures/factory-http.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
@@ -181,8 +184,13 @@ it("accepts failed-run retries through the protected API and rejects duplicate r
 			headers,
 		});
 		expect(accepted.statusCode).toBe(202);
-		expect(accepted.json()).toMatchObject({ id: run.id, status: "running" });
-		expect(accepted.json().error).toBeUndefined();
+		expect(accepted.json()).toEqual({
+			accepted: true,
+			id: run.id,
+			title: run.title,
+			status: "running",
+		});
+		expect(accepted.rawPayload.length).toBeLessThan(500);
 		expect(
 			(
 				await server.app.inject({
@@ -334,9 +342,15 @@ it("starts, displays, answers and terminates runs through the local API", async 
 			},
 		});
 		expect(started.statusCode).toBe(202);
-		expect(started.json().reasoningEffort).toBe("high");
-		expect(started.json().serviceTier).toBe("fast");
 		const id = started.json().id;
+		expect(started.json()).toEqual({
+			accepted: true,
+			id,
+			title: runtime.get(id).title,
+			status: runtime.get(id).status,
+		});
+		expect(runtime.get(id).reasoningEffort).toBe("high");
+		expect(runtime.get(id).serviceTier).toBe("fast");
 		await waitFor(() => expect(runtime.get(id).status).toBe("waiting"));
 		const detail = await server.app.inject({ url: `/api/runs/${id}`, headers });
 		expect(detail.json().questions).toEqual(["Which provider?"]);
@@ -367,23 +381,26 @@ it("starts, displays, answers and terminates runs through the local API", async 
 		expect(staleBatch.statusCode).toBe(409);
 		expect(runtime.get(id).answers).toHaveLength(0);
 
-		expect(
-			(
-				await server.app.inject({
-					method: "POST",
-					url: `/api/runs/${id}/answer`,
-					headers,
-					payload: {
-						answer: "Codex",
-						context: {
-							questions: detail.json().questions,
-							questionBatchId: detail.json().questionBatchId,
-							step: detail.json().step,
-						},
-					},
-				})
-			).statusCode,
-		).toBe(200);
+		const answered = await server.app.inject({
+			method: "POST",
+			url: `/api/runs/${id}/answer`,
+			headers,
+			payload: {
+				answer: "Codex",
+				context: {
+					questions: detail.json().questions,
+					questionBatchId: detail.json().questionBatchId,
+					step: detail.json().step,
+				},
+			},
+		});
+		expect(answered.statusCode).toBe(200);
+		expect(answered.json()).toMatchObject({
+			accepted: true,
+			id,
+			status: expect.any(String),
+		});
+		expect(answered.rawPayload.length).toBeLessThan(500);
 		await waitFor(() => expect(runtime.get(id).answers).toHaveLength(1));
 		expect(
 			(
@@ -567,8 +584,13 @@ it("validates the selected workflow's fields, accepts source-only Takeover, and 
 		expect(start).toHaveBeenCalledTimes(calls);
 		const result = await launch("deploy", { inputs: { target: " App " } });
 		expect(result.statusCode).toBe(202);
-		expect(result.json()).toMatchObject({
+		expect(result.json()).toEqual({
+			accepted: true,
+			id: result.json().id,
 			title: result.json().id,
+			status: runtime.get(result.json().id).status,
+		});
+		expect(runtime.get(result.json().id)).toMatchObject({
 			input: "",
 			launchInputs: { target: "App", environment: "staging" },
 		});
@@ -706,6 +728,313 @@ it.each([
 			}).viewState(run.id),
 		).toEqual(state);
 		expect(run.status).toBe("completed");
+	} finally {
+		await server.stop();
+		await runtime.shutdown();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it("keeps focus and overview reads independent of cold checkpoint, artifact and history bodies", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-cold-focus-"));
+	let runtime = new WorkflowRuntime(home, {});
+	let run = runtime.create({
+		id: "cold-focus",
+		title: "A saved question",
+		repositoryId: "repo",
+		workspace: home,
+		input: "Keep the native conversation",
+		workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "factory",
+			at: new Date().toISOString(),
+		},
+	});
+	run.status = "stopped";
+	run.questions = ["Which database should Bob use?"];
+	run.questionBatchId = "exact-batch";
+	run.step = "pipeline/clarify";
+	run.checkpoint = {
+		current: "pipeline",
+		visits: {},
+		outputs: { retained: "checkpoint".repeat(50000) },
+	};
+	run.outputs.custom = {
+		summary: "An explicit artifact",
+		notes: "artifact".repeat(50000),
+	};
+	run.history.push({
+		step: "pipeline/plan",
+		at: new Date().toISOString(),
+		output: { notes: "history".repeat(50000) },
+	});
+	await runtime.save(run);
+	await runtime.shutdown();
+	const manifest = JSON.parse(
+		readFileSync(join(runtime.directory, "runs", `${run.id}.json`), "utf8"),
+	);
+	const chunks = new Set<string>([
+		...manifest.fields.checkpoint.reference.chunks,
+		...manifest.fields.outputs.record.custom.reference.chunks,
+		...manifest.fields.history.pages.flatMap(
+			(page: { chunks: string[] }) => page.chunks,
+		),
+	]);
+	const retained = [...chunks].map((hash) => {
+		const path = join(runtime.directory, "run-chunks", `${hash}.json`);
+		const bytes = readFileSync(path);
+		rmSync(path);
+		return { path, bytes };
+	});
+	runtime = new WorkflowRuntime(home, {});
+	run = runtime.get(run.id);
+	const readEntries = vi.fn(() => []);
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: readEntries,
+		start: async () => run,
+		stop: () => {},
+	});
+	try {
+		const flush = vi.spyOn(runtime, "flush");
+		const events = Object.getOwnPropertyDescriptor(run, "events")!;
+		Object.defineProperty(run, "events", {
+			configurable: true,
+			get: () => {
+				throw new Error("Question/recovery cards must not load activity");
+			},
+		});
+		const focus = await server.app.inject({
+			url: `/api/runs/${run.id}?view=focus`,
+		});
+		Object.defineProperty(run, "events", events);
+		expect(focus.statusCode).toBe(200);
+		expect(readEntries).not.toHaveBeenCalled();
+		expect(flush).not.toHaveBeenCalled();
+		expect(focus.json()).toMatchObject({
+			id: run.id,
+			questions: run.questions,
+			questionBatchId: "exact-batch",
+			step: "pipeline/clarify",
+			resumeAvailable: true,
+		});
+		expect(focus.json().checkpoint).toBeUndefined();
+		expect(focus.json().outputs.custom).toBeUndefined();
+		expect(focus.rawPayload.length).toBeLessThan(50000);
+		const dashboard = await server.app.inject({
+			url: `/api/runs/${run.id}?view=dashboard`,
+		});
+		expect(dashboard.statusCode).toBe(200);
+		expect(dashboard.json().outputs.custom).toMatchObject({
+			__artifactPreview: true,
+			summary: "An explicit artifact",
+		});
+		expect(dashboard.json().history).toEqual([
+			{ step: "pipeline/plan", at: expect.any(String) },
+		]);
+		expect(dashboard.rawPayload.length).toBeLessThan(50000);
+		for (const { path, bytes } of retained) writeFileSync(path, bytes);
+		const artifact = await server.app.inject({
+			url: `/api/runs/${run.id}/artifacts/custom`,
+		});
+		expect(artifact.json()).toEqual({
+			summary: "An explicit artifact",
+			notes: "artifact".repeat(50000),
+		});
+	} finally {
+		for (const { path, bytes } of retained) writeFileSync(path, bytes);
+		await server.stop();
+		await runtime.shutdown();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it("keeps retained architecture versions out of summaries and reads them explicitly", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-architecture-projection-"));
+	const runtime = new WorkflowRuntime(home, {});
+	const run = runtime.create({
+		id: "architecture-summary",
+		title: "Review a design",
+		repositoryId: "repo",
+		workspace: home,
+		input: "",
+		workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "factory",
+			at: new Date().toISOString(),
+		},
+	});
+	run.architectureProposals = Array.from({ length: 10 }, (_, index) => ({
+		id: `proposal-${index}`,
+		version: index + 1,
+		digest: `digest-${index}`,
+		status: "pending",
+		content: proposal(),
+		source: "retained source".repeat(20000),
+		assetDigests: [],
+		feedback: [],
+		at: new Date().toISOString(),
+	}));
+	run.answers.push({
+		questions: ["Which source?"],
+		answer: "Keep the complete human answer.",
+		at: new Date().toISOString(),
+	});
+	run.ticketReference = {
+		provider: "native",
+		platform: "linear",
+		workspaceId: "workspace",
+		id: "ticket",
+		url: "https://linear.app/team/issue/TEST-1",
+	};
+	await runtime.save(run);
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+		start: async () => run,
+		stop: () => {},
+	});
+	try {
+		const summary = await server.app.inject({
+			url: `/api/runs/${run.id}?view=dashboard`,
+		});
+		expect(summary.statusCode).toBe(200);
+		expect(summary.json().answers).toEqual(run.answers);
+		expect(summary.json().ticketReference).toEqual(run.ticketReference);
+		expect(summary.json().architectureProposals).toEqual([
+			{
+				id: "proposal-9",
+				version: 10,
+				status: "pending",
+				content: {
+					title: proposal().title,
+					summary: proposal().summary,
+					decisions: proposal().decisions.map(({ status }) => ({ status })),
+				},
+			},
+		]);
+		expect(summary.rawPayload.length).toBeLessThan(50000);
+		const architecture = await server.app.inject({
+			url: `/api/runs/${run.id}?view=architecture`,
+		});
+		expect(architecture.statusCode).toBe(200);
+		expect(architecture.json().architectureProposals).toEqual(
+			run.architectureProposals,
+		);
+		const raw = await server.app.inject({ url: `/api/runs/${run.id}` });
+		expect(raw.json().architectureProposals).toEqual(run.architectureProposals);
+	} finally {
+		await server.stop();
+		await runtime.shutdown();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it("preserves fork provenance when dashboard artifacts generate review branch links", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-fork-preview-"));
+	const runtime = new WorkflowRuntime(home, {});
+	const run = runtime.create({
+		id: "fork-preview",
+		title: "Review a fork",
+		repositoryId: "repo",
+		workspace: home,
+		input: "",
+		workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "factory",
+			at: new Date().toISOString(),
+		},
+	});
+	const source = {
+		summary: "s".repeat(1800),
+		notes: "n".repeat(780),
+		url: "https://github.com/target/repo/pull/1",
+		headRefName: "fork-branch",
+		isCrossRepository: true,
+	};
+	run.outputs.source = source;
+	await runtime.save(run);
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+		start: async () => run,
+		stop: () => {},
+	});
+	const context = async () => {
+		const response = await server.app.inject({
+			url: `/api/runs/${run.id}?view=dashboard`,
+		});
+		expect(response.statusCode).toBe(200);
+		return reviewContext(response.json());
+	};
+	try {
+		expect(await context()).toMatchObject({
+			branch: "fork-branch",
+			branchUrl: undefined,
+			pr: { url: source.url },
+		});
+		run.outputs.source = { ...source, isCrossRepository: false };
+		await runtime.save(run);
+		expect(await context()).toMatchObject({
+			branch: "fork-branch",
+			branchUrl: "https://github.com/target/repo/tree/fork-branch",
+		});
+	} finally {
+		await server.stop();
+		await runtime.shutdown();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it("retains the final reply for completed event-only sessions in the focus view", async () => {
+	const home = mkdtempSync(join(tmpdir(), "factory-focus-event-response-"));
+	const runtime = new WorkflowRuntime(home, {});
+	const run = runtime.create({
+		id: "event-only",
+		title: "A completed session",
+		repositoryId: "repo",
+		workspace: home,
+		input: "",
+		workflow: defaultWorkflows.find((workflow) => workflow.id === "simple")!,
+		triggerOrigin: {
+			type: "manual",
+			workflowId: "simple",
+			at: new Date().toISOString(),
+		},
+	});
+	const response = "The complete final reply. ".repeat(200);
+	run.status = "completed";
+	run.events.push({
+		at: new Date().toISOString(),
+		step: "simple",
+		source: "agent",
+		message: JSON.stringify({ type: "result", result: response }),
+	});
+	await runtime.save(run);
+	const server = new FactoryServer(runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+		start: async () => run,
+		stop: () => {},
+	});
+	try {
+		const focus = await server.app.inject({
+			url: `/api/runs/${run.id}?view=focus`,
+		});
+		expect(focus.statusCode).toBe(200);
+		expect(
+			formatActivities(focus.json())
+				.filter((activity: { type: string }) => activity.type === "response")
+				.map((activity: { body: string }) => activity.body),
+		).toEqual([response]);
+		expect(focus.rawPayload.length).toBeLessThan(20000);
 	} finally {
 		await server.stop();
 		await runtime.shutdown();

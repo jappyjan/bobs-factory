@@ -116,8 +116,10 @@ function useSettle() {
 						item.id === run.id ? { ...item, viewState: next } : item,
 					),
 				);
-				client.setQueryData<any>(["run", run.id], (previous: any) =>
-					previous ? { ...previous, viewState: next } : previous,
+				client.setQueriesData<any>(
+					{ queryKey: ["run", run.id] },
+					(previous: any) =>
+						previous ? { ...previous, viewState: next } : previous,
 				);
 
 				if (mode !== "seen")

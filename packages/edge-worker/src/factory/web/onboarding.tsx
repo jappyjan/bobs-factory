@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
 import { api, refreshFactory, useConfig } from "./client";
 import { Bob, Button, External } from "./ui";
@@ -31,13 +32,39 @@ export function SetupBoundary({ children }: { children: ReactNode }) {
 		config?.onboarding?.available &&
 		(started || config.onboarding.required)
 	)
+		return <SetupLoader onComplete={() => setFinished(true)} />;
+	return <>{children}</>;
+}
+export function SetupLoader({
+	onComplete,
+	embedded = false,
+}: {
+	onComplete: () => void;
+	embedded?: boolean;
+}) {
+	const query = useQuery({
+		queryKey: ["onboarding"],
+		queryFn: ({ signal }) => api<SetupStatus>("/api/onboarding", { signal }),
+	});
+	if (query.data)
 		return (
 			<Onboarding
-				initial={config.onboarding}
-				onComplete={() => setFinished(true)}
+				initial={query.data}
+				onComplete={onComplete}
+				embedded={embedded}
 			/>
 		);
-	return <>{children}</>;
+	const Frame = embedded ? "section" : "main";
+	return (
+		<Frame className={embedded ? undefined : "onboarding-page"}>
+			<p role={query.error ? "alert" : "status"}>
+				{query.error?.message ?? "Loading project setup…"}
+			</p>
+			{query.error && (
+				<Button onClick={() => void query.refetch()}>Try again</Button>
+			)}
+		</Frame>
+	);
 }
 
 export function Onboarding({

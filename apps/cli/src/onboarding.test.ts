@@ -84,6 +84,14 @@ it("fresh setup needs a project and does not silently select a coding agent", ()
 	expect(f.apply).not.toHaveBeenCalled();
 	expect(existsSync(join(f.home, "config.json"))).toBe(false);
 });
+it("checks the dashboard setup gate without probing native agent installations", () => {
+	const f = fixture();
+	const bin = (process.env.PATH ?? "").split(":")[0]!;
+	writeFileSync(join(bin, "agent"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+	const setup = new LocalOnboarding(f.home, f.apply);
+	expect(setup.summary()).toEqual({ available: true, required: true });
+	expect(resolveCursorInstallation).not.toHaveBeenCalled();
+});
 it("validates the checkout, saves private setup and resumes the same project and agent", async () => {
 	const f = fixture(),
 		setup = new LocalOnboarding(f.home, f.apply);

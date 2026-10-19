@@ -161,15 +161,16 @@ export class FactoryAuth {
 	}
 	session(token: string | undefined, origin: string) {
 		if (!token || token.length > 100) return undefined;
+		const tokenHash = hash(token);
 		const stored = this.store.state.sessions.find(
 			(s) =>
-				s.hash === hash(token) &&
+				s.hash === tokenHash &&
 				s.origin === origin &&
 				(s.expires === null || s.expires > Date.now()),
 		);
 		if (stored && this.store.state.keys.some((k) => k.id === stored.credential))
 			return stored;
-		const terminal = this.terminal.get(hash(token));
+		const terminal = this.terminal.get(tokenHash);
 		if (
 			!terminal ||
 			terminal.origin !== origin ||
@@ -178,7 +179,7 @@ export class FactoryAuth {
 			return undefined;
 		// Terminal sessions are confined to the local terminal, not key management.
 		return {
-			hash: hash(token),
+			hash: tokenHash,
 			credential: "terminal",
 			origin,
 			expires: terminal.expires,
@@ -285,7 +286,7 @@ export class FactoryAuth {
 	logout(token: string | undefined, origin: string) {
 		const session = this.session(token, origin);
 		if (session?.credential === "terminal") this.terminal.delete(session.hash);
-		if (session)
+		else if (session)
 			this.store.update((state) => {
 				state.sessions = state.sessions.filter((s) => s.hash !== session.hash);
 			});

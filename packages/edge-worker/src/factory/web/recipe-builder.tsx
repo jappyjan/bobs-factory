@@ -106,7 +106,7 @@ function useRecipeDraft(server: Recipe[], nativeServer: Record<string, any>) {
 }
 
 export function RecipeBuilder({ id }: { id: string }) {
-	const config = useConfig().data;
+	const config = useConfig("recipes").data;
 	const toast = useToast();
 	const [params, setParams] = useSearchParams();
 	const [created] = useState(() => `recipe-${Date.now().toString(36)}`);
@@ -261,16 +261,10 @@ export function RecipeBuilder({ id }: { id: string }) {
 						(rid) => [rid, draft.lookup(rid) ?? recipe!],
 					),
 				);
-				const workflows = config.workflows.map(
-					(w: Recipe) => changed.get(w.id) ?? w,
-				);
-				for (const [rid, value] of changed)
-					if (!config.workflows.some((w: Recipe) => w.id === rid))
-						workflows.push(value);
 				await action.mutateAsync({
 					path: "/api/workflows",
-					method: "PUT",
-					body: { workflows, defaultWorkflow: config.defaultWorkflow },
+					method: "PATCH",
+					body: { workflows: [...changed.values()] },
 				});
 			}
 			if (draft.nativeDirty)

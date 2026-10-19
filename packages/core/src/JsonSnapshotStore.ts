@@ -659,11 +659,29 @@ export class JsonSnapshotStore {
 		);
 		return commit;
 	}
-	preview(record: Record<string, unknown>, key: string): unknown {
+	/** Check optional saved state without materializing a cold checkpoint. */
+	hasValue(record: Record<string, unknown>, key: string): boolean {
+		const lazy = lazyFields.get(record)?.get(key);
+		if (lazy && !lazy.loaded) {
+			// Falsy scalars are always inline; referenced objects, arrays and large
+			// strings are truthy. Once loaded or replaced, inspect the current value.
+			return "value" in lazy.field ? Boolean(lazy.field.value) : true;
+		}
+		return Boolean(record[key]);
+	}
+	preview(
+		record: Record<string, unknown>,
+		key: string,
+		options: { compact?: boolean } = {},
+	): unknown {
 		const field =
 			this.previews.get(record)?.[key] ??
 			lazyFields.get(record)?.get(key)?.field;
-		if (field && "reference" in field && field.reference.bytes >= 30000) {
+		if (
+			field &&
+			"reference" in field &&
+			(options.compact || field.reference.bytes >= 30000)
+		) {
 			return {
 				...(field.reference.preview &&
 				typeof field.reference.preview === "object"

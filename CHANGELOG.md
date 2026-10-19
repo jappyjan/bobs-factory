@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Speed up dashboard loading and actions with focused API responses, lazy recipe/settings data, compact action receipts and coalesced live refreshes; preserve saved decisions and full evidence on explicit reads.
+
 - Stop repeated questions asking who submitted already recorded scope decisions; preserve original operator receipts and use honest unnamed attribution in new and saved workflows without weakening explicit approval or scope-waiver requirements. ([#156](https://github.com/jappyjan/bobs-factory/pull/156))
 
 - Include architecture approval continuation coverage in the nightly evidence validator, so the additional passing F1 log can pass release intake without weakening the complete-inventory guard. ([#154](https://github.com/jappyjan/bobs-factory/pull/154))

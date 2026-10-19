@@ -83,6 +83,7 @@ export interface AppOptions {
 export class TodayApp {
 	private theme: Theme;
 	private config?: FactoryConfig;
+	private capacity?: FactoryConfig["capacity"];
 	private runs: RunItem[] = [];
 	private loaded = false;
 	private loadError?: string;
@@ -109,9 +110,15 @@ export class TodayApp {
 	private refreshTimer?: ReturnType<typeof setTimeout>;
 	private pendingIds = new Set<string>();
 	private pendingConfig = false;
+	private pendingCapacity = false;
 	private ticker?: ReturnType<typeof setInterval>;
 	private stopped = false;
 	private reloadDetails = new Set<string>();
+	private refreshing?: Promise<void>;
+	private applyingChange = false;
+	private runsRequest?: Promise<RunItem[]>;
+	private configRequest?: Promise<FactoryConfig>;
+	private capacityRequest?: Promise<{ capacity?: FactoryConfig["capacity"] }>;
 
 	constructor(private options: AppOptions) {
 		this.theme = tokens(options.theme);
@@ -144,17 +151,70 @@ export class TodayApp {
 
 	// ── data ────────────────────────────────────────────────────────────────
 
-	private async refreshAll() {
+	private refreshAll() {
+		this.refreshing ??= this.refreshAllData().finally(() => {
+			this.refreshing = undefined;
+		});
+		return this.refreshing;
+	}
+
+	private visibleDetails() {
+		return new Set([
+			this.target()?.id,
+			this.overlay?.kind === "answer" ? this.overlay.form.run.id : undefined,
+		]);
+	}
+	private readRuns() {
+		this.runsRequest ??= this.options.client
+			.get<RunItem[]>("/api/runs")
+			.finally(() => {
+				this.runsRequest = undefined;
+			});
+		return this.runsRequest;
+	}
+	private readConfig() {
+		this.configRequest ??= this.options.client
+			.get<FactoryConfig>("/api/config?view=dashboard")
+			.finally(() => {
+				this.configRequest = undefined;
+			});
+		return this.configRequest;
+	}
+	private readCapacity() {
+		this.capacityRequest ??= this.options.client
+			.get<{ capacity?: FactoryConfig["capacity"] }>("/api/capacity")
+			.finally(() => {
+				this.capacityRequest = undefined;
+			});
+		return this.capacityRequest;
+	}
+	private async afterCurrent<T>(
+		pending: Promise<T> | undefined,
+		read: () => Promise<T>,
+	) {
+		// A read already in flight may have captured state before the event.
+		// Let it finish, then fetch once after that event instead of reusing stale data.
+		if (pending) await pending.catch(() => {});
+		return read();
+	}
+
+	private async refreshAllData() {
 		try {
-			const [config, runs] = await Promise.all([
-				this.options.client.get<FactoryConfig>("/api/config"),
-				this.options.client.get<RunItem[]>("/api/runs"),
+			const [config, runs, capacity] = await Promise.all([
+				this.readConfig(),
+				this.readRuns(),
+				this.readCapacity(),
 			]);
 			this.config = config;
 			this.runs = runs;
+			this.capacity = capacity.capacity;
 			this.loaded = true;
 			this.loadError = undefined;
-			for (const id of this.details.keys()) void this.loadDetail(id);
+			const visible = this.visibleDetails();
+			for (const id of this.details.keys()) {
+				if (visible.has(id)) void this.loadDetail(id);
+				else this.details.delete(id);
+			}
 			if (this.view === "run" && this.runId) void this.loadActivity(this.runId);
 			this.ensureSelection();
 		} catch (error) {
@@ -167,34 +227,61 @@ export class TodayApp {
 		if (this.stopped) return;
 		for (const id of change.ids) this.pendingIds.add(id);
 		this.pendingConfig ||= change.config;
-		if (this.refreshTimer) return;
+		this.pendingCapacity ||= Boolean(change.capacity);
+		this.scheduleRefresh();
+	}
+
+	private scheduleRefresh() {
+		if (
+			this.stopped ||
+			this.refreshTimer ||
+			this.applyingChange ||
+			(!this.pendingIds.size && !this.pendingConfig && !this.pendingCapacity)
+		)
+			return;
 		this.refreshTimer = setTimeout(() => {
 			this.refreshTimer = undefined;
 			const ids = [...this.pendingIds];
 			const config = this.pendingConfig;
+			const capacity = this.pendingCapacity;
 			this.pendingIds.clear();
 			this.pendingConfig = false;
-			void this.applyChange(ids, config);
+			this.pendingCapacity = false;
+			this.applyingChange = true;
+			void this.applyChange(ids, config, capacity).finally(() => {
+				this.applyingChange = false;
+				this.scheduleRefresh();
+			});
 		}, 150);
 	}
 
-	private async applyChange(ids: string[], config: boolean) {
+	private async applyChange(ids: string[], config: boolean, capacity: boolean) {
 		try {
-			const [runs, nextConfig] = await Promise.all([
-				this.options.client.get<RunItem[]>("/api/runs"),
+			const [runs, nextConfig, nextCapacity] = await Promise.all([
+				ids.length || config
+					? this.afterCurrent(this.runsRequest, () => this.readRuns())
+					: undefined,
 				config
-					? this.options.client.get<FactoryConfig>("/api/config")
+					? this.afterCurrent(this.configRequest, () => this.readConfig())
+					: undefined,
+				capacity
+					? this.afterCurrent(this.capacityRequest, () => this.readCapacity())
 					: undefined,
 			]);
-			this.runs = runs;
+			if (runs) this.runs = runs;
 			if (nextConfig) this.config = nextConfig;
+			if (nextCapacity) this.capacity = nextCapacity.capacity;
 			this.loadError = undefined;
 		} catch (error) {
 			this.loadError = (error as Error).message;
 		}
 		// Workflow availability changes eligibility without changing saved runs.
+		const visible = this.visibleDetails();
 		for (const id of config ? new Set([...ids, ...this.details.keys()]) : ids) {
-			if (this.details.has(id)) void this.loadDetail(id);
+			if (this.details.has(id)) {
+				if (visible.has(id)) void this.loadDetail(id);
+				else this.details.delete(id);
+			}
 			if (this.view === "run" && id === this.runId) void this.loadActivity(id);
 		}
 		this.ensureSelection();
@@ -920,7 +1007,7 @@ export class TodayApp {
 			x -= 2;
 		};
 		right(this.live ? "● live" : "○ offline", this.live ? t.review : t.stuck);
-		const capacity = this.config?.capacity;
+		const capacity = this.capacity;
 		if (capacity?.limit) {
 			const used = Math.min(capacity.limit, capacity.active ?? 0);
 			const bar =
