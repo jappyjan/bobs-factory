@@ -1,4 +1,4 @@
-name: Prepare or publish verified Bob’s Factory binaries
+name: Release / 3. Publish
 on:
   workflow_dispatch:
     inputs:
@@ -16,13 +16,14 @@ on:
         description: Stable or beta, exact assetsDigest from the prepared publication plan
         type: string
   workflow_run:
-    workflows: ["Validate and upload Bob's Factory release evidence"]
+    workflows: ["Release / 2. Collect evidence"]
     types: [completed]
 permissions:
   contents: read
   actions: read
 jobs:
   resolve:
+    name: Resolve validated inputs
     if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-24.04
     outputs:
@@ -85,6 +86,7 @@ jobs:
           name: release-input-${{ github.run_id }}
           path: ${{ runner.temp }}/input/
   prepare:
+    name: Prepare immutable release assets
     if: needs.resolve.outputs.digest != ''
     needs: resolve
     runs-on: ubuntu-24.04
@@ -119,6 +121,7 @@ jobs:
           path: ${{ runner.temp }}/public-release/
           if-no-files-found: ignore
   publish:
+    name: Publish approved assets
     needs: [resolve, prepare]
     if: needs.resolve.outputs.publish == 'true'
     runs-on: ubuntu-24.04

@@ -1,24 +1,10 @@
-name: 'Install Dependencies'
-description: 'Sets up pnpm and installs locked dependencies'
+name: Install workspace dependencies
+description: Set up the packageManager-pinned pnpm and install locked workspace dependencies
 runs:
-  using: 'composite'
+  using: composite
   steps:
-    - name: Extract pnpm version
-      shell: bash
-      run: |
-        PNPM_VERSION=$(node -e "console.log(require('./package.json').packageManager.split('@')[1])")
-        if [ -z "$PNPM_VERSION" ]; then
-          echo "Unable to extract pnpm version from package.json"
-          exit 1
-        fi
-        echo "PNPM_VERSION=$PNPM_VERSION" >> $GITHUB_ENV
-        echo "Installing pnpm version: $PNPM_VERSION"
-    
-    - name: Install dependencies with pnpm
+    - name: Install pinned pnpm
       uses: pnpm/action-setup@v6
-      with:
-        version: ${{ env.PNPM_VERSION }}
-
     - name: Install locked dependencies
       shell: bash
       run: pnpm install --frozen-lockfile --strict-peer-dependencies

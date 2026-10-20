@@ -26,6 +26,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Recover stuck runs through bounded role correction, explicit architecture questions and automatic impact reassessment. Keep independently required corrections running when CI turns green. Restore provable committed worktrees, reconcile already-merged approved revisions, and keep workers running after their launch directory is deleted; preserve independent review, human approvals and recovery limits. ([#163](https://github.com/jappyjan/bobs-factory/pull/163))
+
 - Let CI fixers repair merge conflicts and failed checks when the latest specialist review has not finished; require fresh review afterward and retain approval safeguards. ([#161](https://github.com/jappyjan/bobs-factory/pull/161))
 
 - Acknowledge Linear sessions before slow startup checks and background API reads; reduce lifecycle synchronization traffic while retaining complete agent context and fresh status checks. ([#160](https://github.com/jappyjan/bobs-factory/pull/160))
@@ -181,6 +183,8 @@ All notable changes to this project will be documented in this file.
 - Keep desktop and operator recovery validation reliable when Node CI runs tests concurrently, without rebuilding shared prerequisites during testing ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).
 
 ### Changed
+
+- Make GitHub Actions easier to navigate with consistent workflow names, ordered release stages and documented responsibilities; share CI/release test setup, cancel superseded CI runs, and retire obsolete branch triggers and fixed-binary diagnostics while preserving release safeguards. ([#165](https://github.com/jappyjan/bobs-factory/pull/165))
 
 - Select affected review and verification work through independent impact assessments, retain original evidence with explicit reuse records, and stop unchanged correction cycles for assistance. Safe minor corrections may carry prior explicit approval forward after required checks; frozen runs keep their accepted workflows ([#124](https://github.com/jappyjan/bobs-factory/pull/124); [Taskbot #132](https://taskbot.apps.janjaap.de/p/bobs-factory/t/132)).
 - Replace remote dashboard passkey sign-in with API keys managed in Settings (add, remove and rotate). Upgrading revokes existing passkeys and browser sessions; an operator must create the first key in localhost Settings before remote access is available again. Localhost continues to work without a key ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).

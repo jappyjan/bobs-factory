@@ -274,12 +274,12 @@ function achieved(state: TicketState, op: DeliveryReceipt["intent"]): boolean {
 		: state.relationships.some((r) => sameRelation(r, op.relationship)) ===
 				(op.kind === "add");
 }
-export function freezeDelivery(run: FactoryRun, value: unknown): DeliveryState {
+/** Validate an authored candidate without changing the accepted delivery state. */
+export function validateDeliveryContract(
+	run: FactoryRun,
+	value: unknown,
+): DeliveryContract {
 	const contract = DeliveryContractSchema.parse(value);
-	if (contract.authorization.status !== "authorized")
-		throw new Error(
-			`Execution is deferred: ${contract.authorization.reference}`,
-		);
 	const contractDigest = digest(contract);
 	if (
 		contract.executionReference !==
@@ -296,7 +296,7 @@ export function freezeDelivery(run: FactoryRun, value: unknown): DeliveryState {
 	if (run.delivery && run.delivery.contractDigest !== contractDigest) {
 		if (contract.version <= run.delivery.contract.version)
 			throw new Error(
-				"Revised delivery contract must advance its reviewed version",
+				`Revised delivery contract must advance its reviewed version beyond ${run.delivery.contract.version}; return version ${run.delivery.contract.version + 1} or later for independent review`,
 			);
 		for (const target of contract.targets)
 			for (const op of target.operations) {
@@ -307,6 +307,18 @@ export function freezeDelivery(run: FactoryRun, value: unknown): DeliveryState {
 				)
 					throw new Error("Changed operation intents require new stable IDs");
 			}
+	}
+	return contract;
+}
+export function freezeDelivery(run: FactoryRun, value: unknown): DeliveryState {
+	const contract = DeliveryContractSchema.parse(value);
+	if (contract.authorization.status !== "authorized")
+		throw new Error(
+			`Execution is deferred: ${contract.authorization.reference}`,
+		);
+	validateDeliveryContract(run, contract);
+	const contractDigest = digest(contract);
+	if (run.delivery && run.delivery.contractDigest !== contractDigest) {
 		run.deliveryContracts ??= [];
 		run.deliveryContracts.push(structuredClone(run.delivery));
 		run.delivery = {

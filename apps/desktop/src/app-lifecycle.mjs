@@ -307,6 +307,7 @@ export class DesktopAppLifecycle {
 			this.launchArgs ?? [],
 			{
 				detached: true,
+				cwd: this.home,
 				stdio: "ignore",
 				env: {
 					...process.env,

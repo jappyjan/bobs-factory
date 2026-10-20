@@ -259,6 +259,7 @@ async function local() {
 			["--home", home, "--port", String(port), "--no-open"],
 			{
 				detached: true,
+				cwd: home,
 				stdio: ["ignore", log, log],
 				env: { ...process.env, BOBS_FACTORY_DESKTOP_OWNER: "1" },
 			},
@@ -293,6 +294,7 @@ async function local() {
 		],
 		{
 			detached: true,
+			cwd: home,
 			stdio: ["ignore", log, log],
 			env: { ...process.env, BOBS_FACTORY_DESKTOP_OWNER: "1" },
 		},

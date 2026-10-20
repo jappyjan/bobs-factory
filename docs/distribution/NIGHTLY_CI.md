@@ -1,6 +1,8 @@
 # Automatic nightly CI
 
-The hourly `release-channel.yml` poll retains the changed-main and six-hour
+See [the workflow map](../../.github/README.md) for names, triggers and shared setup.
+
+The hourly **Release / 1. Build candidates** (`release-channel.yml`) poll retains the changed-main and six-hour
 eligibility checks. Manual nightly dispatches can explicitly set `skip_cooldown=true`
 to skip only the six-hour delay. The frozen candidate records the choice, and the
 publisher verifies the original manual workflow run before honoring it; retries

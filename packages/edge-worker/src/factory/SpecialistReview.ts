@@ -652,12 +652,17 @@ export function validateContractOutput(
 		latestAggregate(context.run, baseline.key),
 		context.step.id,
 	);
-	return validateSpecialist(
+	const reviewed = validateSpecialist(
 		value,
 		baseline,
 		contract === "coverage-v1",
 		previous,
 	);
+	// Authoring errors, including escaping symlinks, must reach the role's bounded
+	// output-correction loop before the graph stamps a completed receipt.
+	if (reviewed.evidenceBoundary)
+		boundaryDigest(context.run, reviewed.evidenceBoundary);
+	return reviewed;
 }
 /** The aggregate retains dispositions even when a later receipt omits them. */
 function priorReviewer(
@@ -792,21 +797,24 @@ export function aggregateReview(
 	const findings = actionable.filter((f) => {
 		if (!f.duplicateOf) return true;
 		const original = actionable.find((o) => o.id === f.duplicateOf);
-		if (
+		// An unproven duplicate remains an independent blocker. Keep its original
+		// claim in rawFindings; it must neither erase evidence nor stall aggregation.
+		return (
 			!original ||
-			original.duplicateOf ||
+			!!original.duplicateOf ||
 			original.id === f.id ||
 			qaDigest([
 				original.requirementIds,
 				original.evidence,
 				original.remedy,
 			]) !== qaDigest([f.requirementIds, f.evidence, f.remedy])
-		)
-			throw new Error(
-				`${f.id}: duplicate requires the same demonstrated cause, remedy and requirement evidence`,
-			);
-		return false;
+		);
 	});
+	// Unproven aliases must not tell the fixer that an actionable item is covered elsewhere.
+	for (let index = 0; index < findings.length; index++) {
+		const { duplicateOf: _claim, ...finding } = findings[index]!;
+		findings[index] = finding;
+	}
 	const coverage = reviewers.find(
 		(r) =>
 			baseline.reviewers.find((e) => e.id === r.stamp.reviewer)?.contract ===
@@ -986,4 +994,4 @@ export function frozenReviewContext(input: unknown): unknown {
 	return compact(input);
 }
 
-export const calibratedReviewInstructions = `This impact-v1 round requires calibrated findings. For every open rating 2/3 finding return category:"defect|requirement|mandatory-rule|investigation|integration|verification", requirementIds or ruleReference, concrete evidence, consequence, remedy and investigation:{state:"confirmed|needs-evidence",missingEvidence,nextAction}. Optional cleanup, aesthetics and speculative redesign are rating 1 observations with category:"optional". Optional disagreements belong in optionalDisagreements, never consequential disputes. Uncertain consequential behavior is a blocked investigation with missing evidence and next action, not an invented defect or approval. Duplicate findings may name duplicateOf:"reviewer:local-id" only with the same demonstrated cause, requirement and remedy; retain original identities/evidence. Declare evidenceBoundary:{requirementIds,areas,dependencies,independence} only after inspecting complete relevant dependency/caller/configuration boundaries. Runtime fingerprints these sources for future independent reuse. Do not infer independence from file names. Coverage may use status:"deferred", obligation:{stage:"qa|guide|acceptance|delivery",action} only for a requirement explicitly declared for that later stage in the accepted inventory. Future guide, QA, human or provider work cannot block code review; these obligations remain mandatory at their own gates.`;
+export const calibratedReviewInstructions = `This impact-v1 round requires calibrated findings. For every open rating 2/3 finding return category:"defect|requirement|mandatory-rule|investigation|integration|verification", requirementIds or ruleReference, concrete evidence, consequence, remedy and investigation:{state:"confirmed|needs-evidence",missingEvidence,nextAction}. Optional cleanup, aesthetics and speculative redesign are rating 1 observations with category:"optional". Optional disagreements belong in optionalDisagreements, never consequential disputes. Uncertain consequential behavior is a blocked investigation with missing evidence and next action, not an invented defect or approval. Duplicate findings may name duplicateOf:"reviewer:local-id" only with the same demonstrated cause, requirement and remedy; retain original identities/evidence. Declare evidenceBoundary:{requirementIds,areas,dependencies,independence} only after inspecting complete relevant dependency/caller/configuration boundaries. Dependencies must name actual relative repository files or directory/** boundaries. Factory-context JSON pointers such as /progress/newHistory belong in finding evidence, never in dependencies. Runtime fingerprints these sources for future independent reuse. Unproven duplicate claims remain independent actionable findings. Do not infer independence from file names. Coverage may use status:"deferred", obligation:{stage:"qa|guide|acceptance|delivery",action} only for a requirement explicitly declared for that later stage in the accepted inventory. Future guide, QA, human or provider work cannot block code review; these obligations remain mandatory at their own gates.`;

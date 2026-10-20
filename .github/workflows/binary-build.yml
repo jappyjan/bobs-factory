@@ -1,4 +1,4 @@
-name: Verify Bob’s Factory binary candidate
+name: Release / Build CLI
 on:
   workflow_call:
     inputs:
@@ -18,6 +18,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   binary:
+    # Release provenance accepts this prefix and target, including historical job names.
+    name: binary (${{ matrix.target }})
     strategy:
       fail-fast: false
       matrix:
