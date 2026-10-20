@@ -68,6 +68,7 @@ import {
 } from "./DeliveryCoordination.js";
 import {
 	defaultWorkflows,
+	upgradedArchitectureSteps,
 	upgradedGuideStep,
 	upgradeHandoffReadiness,
 } from "./defaultWorkflows.js";
@@ -2214,7 +2215,8 @@ export class WorkflowRuntime {
 					}
 					if (step.architectureContract === "architecture-v1") {
 						const architecture = ArchitectureSchema.parse(output);
-						if (step.architectureBrief) assertReviewBrief(architecture);
+						if (step.architectureBrief)
+							assertReviewBrief(architecture, step.architectureBrief);
 						run.architectureProposals ??= [];
 						const proposals = run.architectureProposals;
 						const proposal = await snapshotProposal(
@@ -2823,6 +2825,7 @@ export class WorkflowRuntime {
 						signal.throwIfAborted();
 					} else {
 						proposal.status = "pending";
+						proposal.shownAt ??= new Date().toISOString();
 						run.architectureGate = {
 							proposalId: proposal.id,
 							source,
@@ -3314,6 +3317,24 @@ export class WorkflowRuntime {
 				proposal.content.candidate,
 			);
 		} else {
+			// A human-requested version of a stock proposal is written as a check-in.
+			let upgraded = false;
+			for (const workflow of [
+				run.workflow,
+				...(run.workflowDefinitions ?? []),
+			]) {
+				const steps = upgradedArchitectureSteps(workflow.steps);
+				if (!steps) continue;
+				// The waiting graph holds this array; replace the frozen steps in place.
+				workflow.steps.splice(0, workflow.steps.length, ...steps);
+				upgraded = true;
+			}
+			if (upgraded)
+				this.log(
+					run,
+					gate!.stepKey,
+					"The next version is written as a check-in with the current stock prompt.",
+				);
 			proposal.status =
 				decision.decision === "revise" ? "rejected" : "superseded";
 			proposal.feedback.push({

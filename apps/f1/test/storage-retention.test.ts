@@ -410,6 +410,7 @@ it.each([
 					"assess-impact": {
 						snapshot: {
 							schemaVersion: 1,
+							digest: "retained-impact-fixture",
 							repositories: [
 								{
 									repositoryId: configured.id,
@@ -437,6 +438,7 @@ it.each([
 	run.outputs["assess-impact"] = {
 		snapshot: {
 			schemaVersion: 1,
+			digest: "retained-impact-fixture",
 			repositories: [
 				{
 					repositoryId: configured.id,
@@ -447,6 +449,22 @@ it.each([
 			],
 		},
 	};
+	const impact = run.outputs["assess-impact"] as {
+		snapshot: unknown;
+		checkResults?: unknown[];
+	};
+	impact.checkResults = [
+		{
+			id: "build",
+			exitCode: 0,
+			evidence: `> build ${run.workspace}\nBuild completed successfully`,
+		},
+	];
+	run.impactDecisions = [structuredClone(impact)] as typeof run.impactDecisions;
+	(
+		run.reviewRounds[0]!.context as { outputs: Record<string, unknown> }
+	).outputs["assess-impact"] = structuredClone(impact);
+
 	run.history.push({
 		step: "assess-impact",
 		output: run.outputs["assess-impact"],
@@ -546,6 +564,42 @@ it.each([
 			for (let index = 0; index < 1200; index++)
 				runtime.runs.delete(`retained-${index}`);
 		}
+		for (const reference of [
+			{
+				id: configured.id,
+				repositoryPath: configured.repositoryPath,
+				baseBranch: "main",
+				workspace: join(delivered.path, "file"),
+			},
+			{
+				id: configured.id,
+				repositoryPath: configured.repositoryPath,
+				baseBranch: "main",
+				workspace: delivered.path,
+			},
+			{
+				snapshot: {
+					digest: "retained-impact-fixture",
+					repositories: [
+						{
+							repositoryId: configured.id,
+							workspace: join(delivered.path, "file"),
+							headSha: head,
+							files: [],
+						},
+					],
+				},
+			},
+		]) {
+			stopped.outputs.repositoryShaped = reference;
+			await runtime.save(stopped);
+			await runtime.flush(stopped.id);
+			expect((await observe()).protection.join(" ")).toContain(
+				"references this workspace",
+			);
+		}
+		delete stopped.outputs.repositoryShaped;
+
 		stopped.outputs.otherWorkspaceEvidence = join(delivered.path, "file");
 		await runtime.save(stopped);
 		await runtime.flush(stopped.id);

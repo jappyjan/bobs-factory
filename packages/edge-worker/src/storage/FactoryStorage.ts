@@ -62,6 +62,21 @@ class ProtectionReasons extends Array<string> {
 		return this.length;
 	}
 }
+interface ReferencePolicy {
+	snapshots: Map<
+		string,
+		NonNullable<FactoryRun["impactDecisions"]>[number]["snapshot"]
+	>;
+	receipts: Set<string>;
+}
+type ReferenceLocation =
+	| "content"
+	| "context"
+	| "snapshot"
+	| "repositories"
+	| "repository"
+	| "checks"
+	| "check";
 /** Stream every retained value and evidence link. Identity metadata is handled by
  * the owning record, while actual content paths remain live dependencies. */
 async function* retainedReferences(
@@ -69,6 +84,9 @@ async function* retainedReferences(
 	workspace: string,
 	protection: string[],
 	signal?: AbortSignal,
+	policy?: ReferencePolicy,
+	location: ReferenceLocation = "content",
+	identity?: unknown,
 ): AsyncGenerator<void> {
 	signal?.throwIfAborted();
 	if (value === undefined || value === null) return;
@@ -93,33 +111,89 @@ async function* retainedReferences(
 			}
 		}
 	} else if (value && typeof value === "object") {
-		for (const key in value)
+		const record = value as Record<string, unknown>;
+		const snapshot = record.snapshot as { digest?: string } | undefined;
+		const canonical = snapshot?.digest
+			? policy?.snapshots.get(snapshot.digest)
+			: undefined;
+		for (const key in record) {
+			if (!Object.hasOwn(record, key)) continue;
+			const item = record[key];
+			// Only runtime locations and exact enrolled identities have identity semantics.
+			// Arbitrary agent output never acquires them from sibling property names.
 			if (
-				Object.hasOwn(value, key) &&
-				!(
-					key === "workspace" &&
-					typeof (value as Record<string, unknown>)[key] === "string" &&
-					((value as Record<string, string>)[key] === workspace ||
-						(value as Record<string, string>)[key]!.startsWith(
-							`${workspace}${sep}`,
-						)) &&
-					// Only schema-owned identity fields are exempt. File paths,
-					// prose and all other fields in these records are still scanned.
-					(("repositoryId" in value &&
-						"headSha" in value &&
-						"files" in value) ||
-						("outputs" in value && "repositories" in value) ||
-						("id" in value &&
-							"repositoryPath" in value &&
-							"baseBranch" in value))
+				key === "workspace" &&
+				item ===
+					(location === "context"
+						? (identity as { workspace?: string })?.workspace
+						: identity) &&
+				(location === "context" || location === "repository")
+			)
+				continue;
+			if (
+				location === "check" &&
+				key === "evidence" &&
+				policy?.receipts.has(
+					storageDigest({
+						id: record.id,
+						exitCode: record.exitCode,
+						evidence: item,
+					}),
 				)
 			)
-				yield* retainedReferences(
-					(value as Record<string, unknown>)[key],
-					workspace,
-					protection,
-					signal,
+				continue; // Saved command output is self-contained historical text.
+			let next: ReferenceLocation = "content";
+			let nextIdentity: unknown;
+			if (canonical && key === "snapshot") {
+				next = "snapshot";
+				nextIdentity = canonical;
+			}
+			if (canonical && key === "checkResults") next = "checks";
+			if (location === "snapshot" && key === "repositories") {
+				next = "repositories";
+				nextIdentity = identity;
+			}
+			if (location === "context" && key === "repositories") {
+				next = "repositories";
+				nextIdentity = identity;
+			}
+			if (location === "repositories") {
+				const repo = item as Record<string, unknown> | null;
+				const candidates =
+					typeof identity === "object" && identity && "repositories" in identity
+						? (
+								identity as {
+									repositories: {
+										repositoryId?: string;
+										id?: string;
+										workspace: string;
+									}[];
+								}
+							).repositories
+						: [];
+				const match = candidates.find(
+					(candidate) =>
+						repo &&
+						(candidate.repositoryId ?? candidate.id) ===
+							(repo.repositoryId ?? repo.id) &&
+						candidate.workspace === repo.workspace,
 				);
+				if (match) {
+					next = "repository";
+					nextIdentity = match.workspace;
+				}
+			}
+			if (location === "checks") next = "check";
+			yield* retainedReferences(
+				item,
+				workspace,
+				protection,
+				signal,
+				policy,
+				next,
+				nextIdentity,
+			);
+		}
 	}
 }
 async function* evidenceReferences(
@@ -185,6 +259,22 @@ export function factoryStorage(
 			| undefined;
 		if (!descriptor) return [];
 		const owners: FactoryRun[] = [];
+		const policy: ReferencePolicy = {
+			snapshots: new Map(),
+			receipts: new Set(),
+		};
+		for (const run of runtime.runs.values()) {
+			yield;
+			for (const decision of run.impactDecisions ?? []) {
+				signal?.throwIfAborted();
+				yield;
+				policy.snapshots.set(decision.snapshot.digest, decision.snapshot);
+				for (const receipt of decision.checkResults) {
+					yield;
+					policy.receipts.add(storageDigest(receipt));
+				}
+			}
+		}
 		const protection = new ProtectionReasons();
 		protection.push(
 			...((await hooks.protection?.(workspace)) ?? [
@@ -228,17 +318,20 @@ export function factoryStorage(
 				workspace,
 				protection,
 				signal,
+				policy,
 			);
 			for (const round of run.reviewRounds ?? []) {
 				const context = round.context as Record<string, unknown> | undefined;
-				if (context) {
-					const {
-						workspace: _workspaceIdentity,
-						repositories: _repositoryIdentity,
-						...content
-					} = context;
-					yield* retainedReferences(content, workspace, protection, signal);
-				}
+				if (context)
+					yield* retainedReferences(
+						context,
+						workspace,
+						protection,
+						signal,
+						policy,
+						"context",
+						run,
+					);
 			}
 			if (!owns) continue;
 			owners.push(run);

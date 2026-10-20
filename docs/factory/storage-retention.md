@@ -37,7 +37,9 @@ checkpoints remain live dependencies. Review records and guides are inspected fo
 actual file dependencies instead of blocking release merely because they exist. Retained
 history, impact decisions and frozen review contexts receive the same bounded
 inspection. Their repository workspace identity fields are historical metadata; file
-paths and evidence remain dependencies.
+paths and evidence remain dependencies. Only exact workspace identities in runtime-owned
+records are exempt. Saved selected-command output remains self-contained historical
+text; arbitrary output objects and descendant file paths still protect their files.
 A completed
 run's workspace identity is released only after content/native references are
 independently absent and the release is recorded durably. When native lookup
@@ -102,7 +104,9 @@ Migration observations expose only the `state` and `factory` directories inside
 the committed preparation copy. Their operation is the migration source digest.
 New migrations automatically register these narrow preparation directories under shared
 process-aware claims. Only copies reconciled against current authoritative state become
-eligible. Migration apply and restore share an owner, and recovery claims the same
+eligible. An interrupted committed migration resumes registration, integrity verification
+and replacement reconciliation on retry, reusing only verified ownership records.
+Authoritative-state drift still refuses replay. Migration apply and restore share an owner, and recovery claims the same
 preparation directories as cleanup. Historical copies still require an explicit
 election, which rechecks the committed journal, exact directory identity and current
 authoritative files. Source, native and external backups remain outside cleanup.

@@ -943,3 +943,117 @@ it("automatically expires reconciled migration state while recovery and cleanup 
 		await coordinator.stop();
 	}
 });
+
+for (const boundary of [
+	"initialize",
+	"register",
+	"integrity",
+	"replacement",
+] as const) {
+	it(`resumes migration enrollment after interruption at ${boundary}`, async () => {
+		const { source, destination, backup } = fixture();
+		mkdirSync(join(source, "state"));
+		writeFileSync(join(source, "state", "saved.json"), '{"note":"preserved"}');
+		const { StorageRetentionStore } = await import("bobs-factory-core");
+		const manifest = inspectMigration(source, destination);
+		const method =
+			boundary === "initialize"
+				? "initialize"
+				: boundary === "register"
+					? "register"
+					: "revise";
+		const original = StorageRetentionStore.prototype[method];
+		let interrupted = false;
+		const spy = vi
+			.spyOn(StorageRetentionStore.prototype, method)
+			.mockImplementation(async function (...args: unknown[]) {
+				const result = await (
+					original as (...args: unknown[]) => Promise<unknown>
+				).apply(this, args);
+				const record = result as
+					| { evidence?: string[]; authoritativeReplacement?: unknown }
+					| undefined;
+				if (
+					!interrupted &&
+					(boundary === "initialize" ||
+						boundary === "register" ||
+						(boundary === "integrity" && record?.evidence?.length) ||
+						(boundary === "replacement" && record?.authoritativeReplacement))
+				) {
+					interrupted = true;
+					throw new Error("injected enrollment interruption");
+				}
+				return result;
+			});
+		try {
+			await applyMigration(manifest, backup);
+		} catch (error) {
+			expect(String(error)).toContain("injected enrollment interruption");
+		} finally {
+			spy.mockRestore();
+		}
+		expect(interrupted).toBe(true);
+		expect((await applyMigration(manifest, backup)).status).toBe(
+			"already-applied",
+		);
+		const store = new StorageRetentionStore(destination);
+		const ids = await store.inventoryPage(0);
+		expect(ids).toHaveLength(1);
+		const record = await store.record(ids[0]!);
+		expect(record.dependencies).toEqual([]);
+		expect(record.authoritativeReplacement?.path).toBe(
+			join(destination, "state"),
+		);
+		expect(
+			JSON.parse(
+				readFileSync(join(destination, "state", "saved.json"), "utf8"),
+			),
+		).toEqual({ note: "preserved" });
+		expect(existsSync(join(backup, "source", "state", "saved.json"))).toBe(
+			true,
+		);
+		expect((await applyMigration(manifest, backup)).status).toBe(
+			"already-applied",
+		);
+		expect(await store.inventoryPage(0)).toEqual(ids);
+	});
+}
+
+it.each([
+	"authoritative",
+	"preparation",
+])("retains changed %s data during interrupted enrollment replay", async (changed) => {
+	const { source, destination, backup } = fixture();
+	mkdirSync(join(source, "state"));
+	writeFileSync(join(source, "state", "saved.json"), '{"note":"original"}');
+	const { StorageRetentionStore } = await import("bobs-factory-core");
+	const original = StorageRetentionStore.prototype.revise;
+	let interrupted = false;
+	const spy = vi
+		.spyOn(StorageRetentionStore.prototype, "revise")
+		.mockImplementation(async function (...args) {
+			const record = await original.apply(this, args);
+			if (!interrupted) {
+				interrupted = true;
+				throw new Error("injected after integrity publication");
+			}
+			return record;
+		});
+	const manifest = inspectMigration(source, destination);
+	try {
+		await expect(applyMigration(manifest, backup)).rejects.toThrow("injected");
+	} finally {
+		spy.mockRestore();
+	}
+	const path =
+		changed === "authoritative"
+			? join(destination, "state", "saved.json")
+			: join(backup, "staged", "state", "saved.json");
+	writeFileSync(path, '{"note":"unique change"}');
+	await expect(applyMigration(manifest, backup)).rejects.toThrow();
+	expect(readFileSync(path, "utf8")).toBe('{"note":"unique change"}');
+	const store = new StorageRetentionStore(destination);
+	const record = await store.record((await store.inventoryPage(0))[0]!);
+	expect(record.dependencies).not.toEqual([]);
+	expect(record.authoritativeReplacement).toBeUndefined();
+});

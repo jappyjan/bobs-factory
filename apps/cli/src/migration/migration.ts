@@ -21,7 +21,10 @@ import {
 	reconcileStorageCopy,
 	resolvePath,
 	StorageRetentionStore,
+	sameStorageIdentity,
 	storageDigest,
+	storageIdentity,
+	verifyStorageIntegrity,
 	writeStorageIntegrity,
 } from "bobs-factory-core";
 import { parse } from "dotenv";
@@ -531,6 +534,17 @@ function verifyCopy(home: string, expected: Entry[]) {
 	if (hash(JSON.stringify(inventory(home))) !== hash(JSON.stringify(expected)))
 		throw new Error("Backup integrity verification failed");
 }
+function authoritativeDigest(destination: string) {
+	return hash(
+		JSON.stringify(
+			inventory(destination).filter(
+				(entry) =>
+					entry.path !== "storage-retention" &&
+					!entry.path.startsWith("storage-retention/"),
+			),
+		),
+	);
+}
 /** Migration and recovery share a process-aware owner outside the homes being copied.
  * Cleanup separately claims each enrolled preparation directory. */
 export async function applyMigration(
@@ -548,9 +562,23 @@ export async function applyMigration(
 	return new OwnedResourceClaim(`${backup}.migration.lock`, "migration").run(
 		async () => {
 			const result = applyMigrationCopy(manifest, backup);
-			if (result.status !== "applied") return result;
+			// Enrollment is a separate resumable phase after the destination commits.
+			// Its own writes must not invalidate the authoritative-data replay check.
+			const journalPath = join(backup, "journal.json");
+			const journal = readJson(journalPath);
+			if (
+				result.status === "already-applied" &&
+				journal.enrollment === "completed"
+			)
+				return result;
+			save(journalPath, {
+				...journal,
+				enrollment: "pending",
+				authoritativeDigest: authoritativeDigest(manifest.destination),
+			});
 			const store = new StorageRetentionStore(manifest.destination);
 			await store.initialize();
+			let enrollmentComplete = true;
 			for (const name of ["state", "factory"]) {
 				const path = join(backup, "staged", name);
 				if (
@@ -560,23 +588,49 @@ export async function applyMigration(
 				)
 					continue;
 				await store.workspaceClaim(path).run(async () => {
-					const record = await store.register({
-						path,
-						root: join(backup, "staged"),
-						category: "migration",
-						producer: "applyMigration",
-						operation: manifest.sourceDigest,
-						dependencies: ["migration reconciliation incomplete"],
-						evidence: [],
-						completedAt: new Date().toISOString(),
-					});
-					const integrity = await writeStorageIntegrity(
-						path,
-						join(store.directory, "proofs", `${record.id}.ndjson`),
-					);
-					await store.revise(record.id, (value) => {
-						value.evidence = [`integrity:${integrity}`];
-					});
+					const existing = (await readStorageJson(
+						join(
+							store.directory,
+							"path-records",
+							`${storageDigest(path)}.json`,
+						),
+					)) as { id: string } | undefined;
+					const record = existing
+						? await store.record(existing.id)
+						: await store.register({
+								path,
+								root: join(backup, "staged"),
+								category: "migration",
+								producer: "applyMigration",
+								operation: manifest.sourceDigest,
+								dependencies: ["migration reconciliation incomplete"],
+								evidence: [],
+								completedAt: new Date().toISOString(),
+							});
+					if (
+						record.producer !== "applyMigration" ||
+						record.operation !== manifest.sourceDigest ||
+						record.category !== "migration" ||
+						record.path !== path ||
+						!sameStorageIdentity(
+							record.identity,
+							await storageIdentity(path, join(backup, "staged")),
+						)
+					)
+						throw new Error(
+							"Migration preparation ownership changed; refusing enrollment replay",
+						);
+					const proof = join(store.directory, "proofs", `${record.id}.ndjson`);
+					const previous = record.evidence
+						.find((item) => item.startsWith("integrity:"))
+						?.slice(10);
+					if (previous) await verifyStorageIntegrity(path, proof, previous);
+					else {
+						const integrity = await writeStorageIntegrity(path, proof);
+						await store.revise(record.id, (value) => {
+							value.evidence = [`integrity:${integrity}`];
+						});
+					}
 					try {
 						await reconcileStorageCopy(
 							store,
@@ -585,14 +639,15 @@ export async function applyMigration(
 							true,
 						);
 					} catch {
+						enrollmentComplete = false;
 						// Mixed, native, linked or uncertain content stays enrolled but protected.
 						// Source, external and native backups are never enrolled.
 					}
 				}, true);
 			}
-			const journalPath = join(backup, "journal.json");
 			save(journalPath, {
 				...readJson(journalPath),
+				enrollment: enrollmentComplete ? "completed" : "pending",
 				destinationDigest: hash(
 					JSON.stringify(inventory(manifest.destination)),
 				),
@@ -677,8 +732,11 @@ function applyMigrationCopy(manifest: MigrationManifest, backupPath: string) {
 			existsSync(manifest.destination)
 		) {
 			if (
-				hash(JSON.stringify(inventory(manifest.destination))) !==
-				journal.destinationDigest
+				journal.enrollment === "pending"
+					? authoritativeDigest(manifest.destination) !==
+						journal.authoritativeDigest
+					: hash(JSON.stringify(inventory(manifest.destination))) !==
+						journal.destinationDigest
 			)
 				throw new Error("Committed destination changed; refusing replay");
 			return { backup, status: "already-applied" };

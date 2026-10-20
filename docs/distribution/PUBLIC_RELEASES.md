@@ -77,7 +77,7 @@ release evidence before retrying.
 
 ### Manual nightly cooldown override
 
-In Actions → **Freeze eligible nightly or stable promotion** → **Run workflow**,
+In Actions → **Release / 1. Build candidates** → **Run workflow**,
 choose `channel=nightly` and enable **Skip nightly cooldown**. It defaults to off.
 The equivalent CLI dispatch is:
 
