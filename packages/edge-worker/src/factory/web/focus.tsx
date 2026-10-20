@@ -882,6 +882,16 @@ export function FocusCard({
 			)}
 			{detail.isLoading || run.pendingContext ? (
 				<p role="status">Bob is loading this run…</p>
+			) : kind === "question" && run.improvement ? (
+				<div>
+					<p>
+						Review the architectural opportunities, choose Fix, File issue,
+						Ignore or Ask follow-up, then approve the action batch.
+					</p>
+					<Link className="button" to={`/runs/${run.id}`}>
+						Review improvement choices
+					</Link>
+				</div>
 			) : kind === "question" && run.architectureGate ? (
 				<ArchitectureEntry run={run} />
 			) : kind === "question" ? (

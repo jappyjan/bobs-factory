@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 @import "@xyflow/react/dist/style.css";
 @source "./*.tsx";
 :root {
@@ -9162,3 +9163,19 @@ select.recipe-route-target {
 		border-radius: 22px 22px 0 0;
 	}
 }
+
+.improvement-panel { margin-block: 24px; }
+.improvement-item { border-top: 1px solid var(--line); padding-block: 20px; }
+.improvement-heading, .improvement-options { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.improvement-heading { justify-content: space-between; }
+.improvement-options label { display: inline-flex; gap: 8px; align-items: center; }
+.improvement-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.improvement-panel fieldset { display: grid; gap: 12px; margin-top: 16px; border: 0; padding: 0; }
+.improvement-panel fieldset > label { display: grid; gap: 6px; }
+.improvement-panel select, .improvement-panel textarea, .improvement-panel input:not([type="radio"]) { width: 100%; }
+.improvement-panel details { margin-block: 12px; }
+.improvement-panel .improvement-decision, .improvement-manifest { border-top: 1px solid var(--line); padding-block: 16px; }
+@media (max-width: 600px) { .improvement-comparison { grid-template-columns: 1fr; } }
+
+.improvement-options label { flex-direction: row; min-height: 44px; }
+.improvement-options input[type="radio"] { width: 18px; height: 18px; min-height: 18px; padding: 0; margin: 0; flex: none; }

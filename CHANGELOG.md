@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Discover substantial architectural improvements with parallel research coordinators and cheaper workers. Review each proposal with Fix, File issue, Ignore or Ask follow-up; explicitly apply the batch to file deferred backlog issues and launch only selected fixes as independent Factory runs, with normal approvals and dependency-aware delivery.
+
 - Sign in on devices with difficult keyboards using an explicitly enabled six-digit code from Settings → Access. Compare confirmation numbers and approve the device before its browser can collect a separate revocable API key. Codes expire after five minutes; request throttling preserves active pairing, and framing protection guards approval controls. ([#162](https://github.com/jappyjan/bobs-factory/pull/162))
 
 - Below the show & tell, Dig deeper answers “show me” in four tabs. How it works redraws each flow in plain words with a Show code link to the exact line, a step-through mode and a before/now toggle. The code shows the whole diff as one tour in the order a colleague would present it, with Bob’s notes pinned to the lines that matter, tests under the files they test, repeated edits grouped and reformatting folded away. Checks lists each requirement in plain words with what was tried and seen, keeping the recorded values one tap away. Choices shows how the ask was interpreted. Regenerating a pending stock guide adopts the new format. ([#155](https://github.com/jappyjan/bobs-factory/pull/155))

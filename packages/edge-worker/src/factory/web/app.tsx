@@ -47,6 +47,7 @@ import {
 	RunTitleStatus,
 	WorkingRow,
 } from "./focus";
+import { ImprovementPanel } from "./improvements";
 import { Composer } from "./launcher";
 import { NotificationsProvider } from "./notifications-ui";
 import { SetupBoundary } from "./onboarding";
@@ -877,7 +878,11 @@ function RunPage({
 								(run.workflowBlock
 									? "Workflow disabled · Resume required"
 									: kind === "question"
-										? `${run.questions?.length ?? 0} question(s) for you`
+										? run.improvement
+											? run.improvement.phase === "dispatch"
+												? "Tracking improvement runs"
+												: "Review improvement choices"
+											: `${run.questions?.length ?? 0} question(s) for you`
 										: kind === "stuck"
 											? run.status === "stopped"
 												? "Stopped — resume?"
@@ -933,6 +938,15 @@ function RunPage({
 				<ArchitectureEntry run={run} />
 			)}
 			<ExecutionDetails run={run} />
+			{run.improvement && <ImprovementPanel run={run} />}
+			{run.improvementParent && (
+				<p>
+					Improvement batch:{" "}
+					<Link to={`/runs/${run.improvementParent.runId}`}>
+						View parent proposal and progress
+					</Link>
+				</p>
+			)}
 			{run.deliveryCoordination?.phase === "queued" && (
 				<p role="status">
 					{workingLabel(run)}.{" "}

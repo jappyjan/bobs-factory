@@ -320,6 +320,7 @@ describe("workflow trigger permissions", () => {
 			["factory", ["workflow", "manual", "ticket-assignment"]],
 			["takeover", ["workflow", "manual", "ticket-assignment"]],
 			["factory-pipeline", ["workflow"]],
+			["improve-codebase", ["manual"]],
 			["custom", ["workflow", "manual", "ticket-assignment"]],
 		]);
 		expect(migrated.listWorkflows().at(-1)!.steps[0]!.model).toBe(
