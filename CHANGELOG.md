@@ -26,9 +26,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Stop repeated review loops caused by stale pull-request target commits. Let correction roles use retained findings when review is unfinished, and give selected checks the normal twenty-minute command budget while keeping independent review and human approval required.
+- Stop repeated review loops caused by stale pull-request target commits. Let correction roles use retained findings when review is unfinished, and give selected checks the normal twenty-minute command budget while keeping independent review and human approval required. ([#169](https://github.com/jappyjan/bobs-factory/pull/169))
 
-- Double built-in step iteration limits, including a one-time allowance for existing stock runs that preserves saved work, previous iteration grants and approval decisions.
+- Double built-in step iteration limits, including a one-time allowance for existing stock runs that preserves saved work, previous iteration grants and approval decisions. ([#169](https://github.com/jappyjan/bobs-factory/pull/169))
 
 - Keep review navigation and decision controls visible in a compact fixed footer, collapse Dig deeper by default, and remove swipe/tap slide changes and overlapping sticky layers while scrolling. ([#168](https://github.com/jappyjan/bobs-factory/pull/168))
 
