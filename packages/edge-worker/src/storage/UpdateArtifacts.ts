@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import {
 	createReadStream,
+	linkSync,
 	lstatSync,
 	renameSync,
 	rmdirSync,
@@ -358,7 +359,7 @@ export class UpdateArtifacts implements StorageAdapter {
 		].map((resolvePath) => resolve(resolvePath));
 		if (
 			record.category === "migration" &&
-			record.historicalElection &&
+			(record.historicalElection || record.producer === "applyMigration") &&
 			record.authoritativeReplacement
 		) {
 			const observation = (await readStorageJson(
@@ -390,7 +391,11 @@ export class UpdateArtifacts implements StorageAdapter {
 			dirname(record.path) !== record.root
 		)
 			protection.push("Root is not an enrolled update artifact root");
-		if (record.category === "migration" && !record.historicalElection)
+		if (
+			record.category === "migration" &&
+			!record.historicalElection &&
+			record.producer !== "applyMigration"
+		)
 			protection.push(
 				"Migration source and native backups require explicit verified election",
 			);
@@ -548,7 +553,9 @@ export class UpdateArtifacts implements StorageAdapter {
 				} catch (error) {
 					if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 				}
-				await rename(slot, source);
+				// link is exclusive: a concurrently occupied name is never overwritten.
+				linkSync(slot, source);
+				unlinkSync(slot);
 			} catch (error) {
 				if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 			}
@@ -723,10 +730,7 @@ export class UpdateArtifacts implements StorageAdapter {
 							hash.update(bytes);
 						valid = hash.digest("hex") === entry.value;
 					}
-					if (!valid) {
-						renameSync(slot, path);
-						throw new Error("Detached artifact content changed");
-					}
+					if (!valid) throw new Error("Detached artifact content changed");
 					const final = lstatSync(slot);
 					if (
 						final.ino !== moved.ino ||

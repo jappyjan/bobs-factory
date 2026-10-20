@@ -286,7 +286,6 @@ export class WorktreeArtifacts implements StorageAdapter {
 					protection.push(
 						"Unexpected parent-level content retains the workspace group",
 					);
-				break;
 			}
 		}
 		const completedAt =

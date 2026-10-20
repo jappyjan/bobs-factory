@@ -627,7 +627,7 @@ export class FactoryTools {
 		context.run.ciSupervision ??= { retries: [] };
 		if (context.step.tool === "impact-checks")
 			return selectedChecks(context, (ctx, script) =>
-				this.command(ctx, "/bin/sh", ["-c", script], 120000),
+				this.command(ctx, "/bin/sh", ["-c", script], 20 * 60 * 1000),
 			);
 		if (context.step.tool === "merge")
 			context.executionApproval = await effectiveApproval(context);

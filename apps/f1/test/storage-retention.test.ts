@@ -404,7 +404,24 @@ it.each([
 			historyLength: 0,
 			reviewers: [],
 			context: {
-				outputs: { review: { summary: "Retained independent review" } },
+				workspace: run.workspace,
+				repositories: run.repositories,
+				outputs: {
+					"assess-impact": {
+						snapshot: {
+							schemaVersion: 1,
+							repositories: [
+								{
+									repositoryId: configured.id,
+									workspace: run.repositories?.[0]?.workspace ?? run.workspace,
+									headSha: head,
+									files: [],
+								},
+							],
+						},
+					},
+					review: { summary: "Retained independent review" },
+				},
 			},
 			at: new Date().toISOString(),
 		},
@@ -417,6 +434,24 @@ it.each([
 			at: new Date().toISOString(),
 		},
 	};
+	run.outputs["assess-impact"] = {
+		snapshot: {
+			schemaVersion: 1,
+			repositories: [
+				{
+					repositoryId: configured.id,
+					workspace: run.repositories?.[0]?.workspace ?? run.workspace,
+					headSha: head,
+					files: [],
+				},
+			],
+		},
+	};
+	run.history.push({
+		step: "assess-impact",
+		output: run.outputs["assess-impact"],
+		at: new Date().toISOString(),
+	});
 	run.outputs.guide = {
 		title: "Retained reviewed delivery",
 		summary: "Independent historical guide",
@@ -518,6 +553,17 @@ it.each([
 			"references this workspace",
 		);
 		delete stopped.outputs.otherWorkspaceEvidence;
+		stopped.history.push({
+			step: "capture",
+			output: { evidence: join(delivered.path, "file") },
+			at: new Date().toISOString(),
+		});
+		await runtime.save(stopped);
+		await runtime.flush(stopped.id);
+		expect((await observe()).protection.join(" ")).toContain(
+			"references this workspace",
+		);
+		stopped.history.pop();
 		await runtime.save(stopped);
 		await runtime.flush(stopped.id);
 		const { symlink, unlink } = await import("node:fs/promises");
@@ -1078,7 +1124,67 @@ it("resumes saved native progress through the runtime while cleanup sees durable
 		{} as import("../../../packages/edge-worker/src/GitService.js").GitService,
 		{ protection: () => [], verifyDelivery: async () => false },
 	);
+	const { StorageRetention } = await import(
+		"../../../packages/edge-worker/src/storage/StorageRetention.js"
+	);
+	let deletionEntered = false;
+	let finishDeletion!: () => void;
+	const deleting = new Promise<void>((resolve) => {
+		finishDeletion = resolve;
+	});
+	// Control eligibility to isolate the race boundary. The real coordinator
+	// acquires its deletion claim and calls remove; no native content is erased.
+	const cleanup = new StorageRetention(home, {
+		worktree: {
+			observe: async (record) => ({
+				record,
+				complete: true,
+				protection: [],
+				filesystemEntries: 0,
+			}),
+			remove: async (_record, _signal, journal) => {
+				await journal("controlled-deletion-barrier");
+				deletionEntered = true;
+				await deleting;
+				throw new Error("Controlled cleanup interruption retains native files");
+			},
+		},
+	});
+	await store.revise(record.id, (value) => {
+		value.completedAt =
+			value.verifiedAt =
+			value.reconciledAt =
+				"2020-01-01T00:00:00.000Z";
+	});
 	try {
+		let preview = await cleanup.preview();
+		while (!preview.complete) preview = await cleanup.preview();
+		await cleanup.execute(preview.id, [record.id]);
+		await expect.poll(() => deletionEntered).toBe(true);
+		try {
+			runtime.resume(run.id);
+			await expect.poll(() => runtime.get(run.id).status).toBe("failed");
+			expect(entered).toBe(false);
+			expect(runtime.get(run.id).error).toMatch(
+				/owner is still running|owns this resource/,
+			);
+			expect(await readFile(join(workspace, "native-sentinel"), "utf8")).toBe(
+				"saved conversation files",
+			);
+		} finally {
+			finishDeletion();
+		}
+		await expect
+			.poll(async () => (await cleanup.status()).outcome?.completedAt)
+			.toBeTruthy();
+		expect((await cleanup.status()).outcome?.results[0]?.phase).toBe(
+			"controlled-deletion-barrier",
+		);
+		expect((await cleanup.status()).outcome?.results[0]?.reason).toContain(
+			"Controlled cleanup interruption",
+		);
+		// A failed admission retains the saved checkpoint for an explicit retry.
+		runtime.stop(run.id);
 		runtime.resume(run.id);
 		await expect.poll(() => entered).toBe(true);
 		let observation: Awaited<
@@ -1098,6 +1204,8 @@ it("resumes saved native progress through the runtime while cleanup sees durable
 		await expect.poll(() => runtime.get(run.id).status).toBe("completed");
 		expect(runtime.get(run.id).outputs.continue).toEqual({ continued: true });
 	} finally {
+		finishDeletion();
+		await cleanup.stop();
 		release();
 		await runtime.shutdown();
 		await retention.stop();

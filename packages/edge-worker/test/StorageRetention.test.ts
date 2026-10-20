@@ -432,3 +432,28 @@ it("does not certify a rollback with unresolved runtime link dependencies", asyn
 	).toContain("Protected verified rollback snapshot");
 	await coordinator.stop();
 });
+
+it("resumes a real filesystem inventory after crossing the 1000-entry slice boundary", async () => {
+	const { coordinator } = await fixture();
+	const record = await artifact(coordinator, 100, "staging");
+	for (let i = 0; i < 1100; i++)
+		await writeFile(join(record.path, `entry-${i}`), "bytes");
+	const { StorageUsage } = await import("../src/storage/StorageUsage.js");
+	const usage = new StorageUsage(coordinator.store.directory);
+	try {
+		let slice = await usage.step(record, new AbortController().signal);
+		expect(slice.complete).toBe(false);
+		expect(slice.entries).toBeLessThanOrEqual(1000);
+		let total = slice.entries;
+		while (!slice.complete) {
+			slice = await usage.step(record, new AbortController().signal);
+			expect(slice.entries).toBeLessThanOrEqual(1000);
+			total += slice.entries;
+		}
+		expect(total).toBeGreaterThan(1000);
+		expect(slice.apparentBytes).toBe(1100 * 5 + 2);
+	} finally {
+		await usage.close();
+		await coordinator.stop();
+	}
+});

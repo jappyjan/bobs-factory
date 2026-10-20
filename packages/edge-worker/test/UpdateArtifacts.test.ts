@@ -330,3 +330,64 @@ it("discovers and elects narrow committed migration preparation while preserving
 	);
 	await historical.close();
 });
+
+it("retains both detached changed content and a concurrent replacement on verification failure", async () => {
+	const { default: fs } = await import("node:fs");
+	const { syncBuiltinESMExports } = await import("node:module");
+	const { dirname } = await import("node:path");
+	const { home, path, root, store } = await fixture();
+	let record = await store.register({
+		category: "staging",
+		path,
+		root,
+		producer: "fixture",
+		operation: "leaf race",
+		dependencies: [],
+		evidence: [],
+		completedAt: "2020-01-01T00:00:00.000Z",
+		verifiedAt: "2020-01-01T00:00:00.000Z",
+		reconciledAt: "2020-01-01T00:00:00.000Z",
+	});
+	const integrity = await writeStorageIntegrity(
+		path,
+		join(store.directory, "proofs", `${record.id}.ndjson`),
+	);
+	record = await store.revise(record.id, (value) => {
+		value.evidence = [`integrity:${integrity}`];
+	});
+	const quarantine = join(root, `.bobs-factory-removal-${record.id}`);
+	const original = fs.createReadStream;
+	let detached = "";
+	fs.createReadStream = ((target, options) => {
+		if (
+			!detached &&
+			typeof target === "string" &&
+			dirname(target) === quarantine
+		) {
+			detached = target;
+			fs.writeFileSync(target, "changed original");
+			fs.writeFileSync(
+				join(quarantine, "payload", "unique"),
+				"concurrent replacement",
+			);
+		}
+		return original(target, options);
+	}) as typeof fs.createReadStream;
+	syncBuiltinESMExports();
+	const adapter = new UpdateArtifacts(home);
+	try {
+		await expect(
+			adapter.remove(record, new AbortController().signal, async () => {}),
+		).rejects.toThrow("Detached artifact content changed");
+		expect(detached).not.toBe("");
+		expect(await readFile(detached, "utf8")).toBe("changed original");
+		expect(await readFile(join(quarantine, "payload", "unique"), "utf8")).toBe(
+			"concurrent replacement",
+		);
+		await expect(adapter.recover(record)).rejects.toThrow("replacement");
+	} finally {
+		fs.createReadStream = original;
+		syncBuiltinESMExports();
+		await adapter.close();
+	}
+});

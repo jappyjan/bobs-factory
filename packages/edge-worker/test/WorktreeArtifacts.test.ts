@@ -256,6 +256,15 @@ it("protects a whole group for one waiting member, then revalidates remaining me
 	await expect(
 		adapter.remove(record, new AbortController().signal, async () => {}),
 	).rejects.toThrow("Unexpected parent-level");
+	expect(await readFile(join(first, "file"), "utf8")).toBe(
+		"durable delivered content",
+	);
+	expect(await readFile(join(second, "file"), "utf8")).toBe(
+		"durable delivered content",
+	);
+	await expect(readFile(join(home, "hook-output"))).rejects.toMatchObject({
+		code: "ENOENT",
+	});
 	await rm(join(group, "unexpected-parent-data"));
 	await adapter.remove(record, new AbortController().signal, async () => {});
 	expect(git(["worktree", "list", "--porcelain"])).not.toContain(group);
@@ -391,3 +400,19 @@ it("requires explicit idempotent retry after a crash between teardown effects an
 		await coordinator.stop();
 	}
 });
+
+it("expires the two-minute teardown limit and cancels its process before removing Git content", async () => {
+	const { home, workspace, record, adapter } = await fixture(
+		'#!/bin/sh\nprintf started > "$RETENTION_OUTPUT"\nsleep 150\nprintf finished > "$RETENTION_OUTPUT"\n',
+	);
+	const started = performance.now();
+	await expect(
+		adapter.remove(record, new AbortController().signal, async () => {}),
+	).rejects.toThrow(/timed out/);
+	expect(performance.now() - started).toBeGreaterThanOrEqual(119000);
+	expect(performance.now() - started).toBeLessThan(128000);
+	expect(await readFile(join(home, "hook-output"), "utf8")).toBe("started");
+	expect(await readFile(join(workspace, "file"), "utf8")).toBe(
+		"durable delivered content",
+	);
+}, 135000);

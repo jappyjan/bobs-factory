@@ -39,7 +39,7 @@ const git = (directory: string, args: string[]) =>
 it.each([
 	true,
 	false,
-])("repairs both worktree links and restores original metadata (main repo moves: %s)", (mainMoves) => {
+])("repairs both worktree links and restores original metadata (main repo moves: %s)", async (mainMoves) => {
 	const root = canonicalPath(
 		mkdtempSync(join(tmpdir(), "factory-git-migrate-")),
 	);
@@ -73,7 +73,7 @@ it.each([
 	const original = readFileSync(join(worktree, ".git"));
 	const manifest = inspectMigration(source, destination);
 	expect(manifest.blockers).toEqual([]);
-	expect(applyMigration(manifest, backup).status).toBe("applied");
+	expect((await applyMigration(manifest, backup)).status).toBe("applied");
 	const newRepo = mainMoves ? join(destination, "repo") : repo;
 	const newWorktree = mainMoves ? worktree : join(destination, "worktree");
 	expect(git(newRepo, ["worktree", "list", "--porcelain"])).toContain(
@@ -85,8 +85,10 @@ it.each([
 	expect(readFileSync(join(newWorktree, "uncommitted"), "utf8")).toBe(
 		"preserve work",
 	);
-	expect(applyMigration(manifest, backup).status).toBe("already-applied");
-	expect(restoreMigration(backup).status).toBe("restored");
+	expect((await applyMigration(manifest, backup)).status).toBe(
+		"already-applied",
+	);
+	expect((await restoreMigration(backup)).status).toBe("restored");
 	expect(readFileSync(join(worktree, ".git"))).toEqual(original);
 	expect(git(repo, ["worktree", "list", "--porcelain"])).toContain(worktree);
 	expect(git(worktree, ["rev-parse", "HEAD"])).toBe(

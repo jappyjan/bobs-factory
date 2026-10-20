@@ -29,7 +29,10 @@ import {
 } from "./transform.js";
 
 const roots: string[] = [];
-vi.mock("node:child_process", () => ({ execFileSync: vi.fn(() => "") }));
+vi.mock("node:child_process", async (importOriginal) => ({
+	...(await importOriginal<typeof import("node:child_process")>()),
+	execFileSync: vi.fn(() => ""),
+}));
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.stubEnv("CYRUS_CAPACITY_DIRECTORY", undefined);
@@ -45,7 +48,7 @@ afterEach(() => {
 it.each([
 	"CYRUS_CAPACITY_DIRECTORY",
 	"BOBS_FACTORY_CAPACITY_DIRECTORY",
-])("blocks %s in .env until the pool is explicitly reconciled", (key) => {
+])("blocks %s in .env until the pool is explicitly reconciled", async (key) => {
 	const { source, destination, backup } = fixture();
 	const custom = join(source, "custom-capacity");
 	mkdirSync(custom);
@@ -80,7 +83,7 @@ it.each([
 			/Capacity directory override requires explicit reconciliation/,
 		),
 	);
-	expect(() => applyMigration(manifest, backup)).toThrow(
+	await expect(applyMigration(manifest, backup)).rejects.toThrow(
 		/Capacity directory override/,
 	);
 	expect(existsSync(backup)).toBe(false);
@@ -95,7 +98,7 @@ it.each([
 	writeFileSync(join(source, ".env"), "");
 	const reconciled = inspectMigration(source, destination);
 	expect(reconciled.blockers).toEqual([]);
-	applyMigration(reconciled, backup);
+	await applyMigration(reconciled, backup);
 	expect(
 		JSON.parse(
 			readFileSync(join(destination, "machine-capacity/state.json"), "utf8"),
@@ -113,14 +116,14 @@ it.each([
 it.each([
 	"CYRUS_CAPACITY_DIRECTORY",
 	"BOBS_FACTORY_CAPACITY_DIRECTORY",
-])("rechecks inherited %s at apply without exposing its value", (key) => {
+])("rechecks inherited %s at apply without exposing its value", async (key) => {
 	const { source, destination, backup } = fixture();
 	const preview = inspectMigration(source, destination);
 	expect(preview.blockers).toEqual([]);
 	vi.stubEnv(key, "/private/shared-pool");
 	const current = inspectMigration(source, destination);
 	expect(JSON.stringify(current)).not.toContain("/private/shared-pool");
-	expect(() => applyMigration(preview, backup)).toThrow(
+	await expect(applyMigration(preview, backup)).rejects.toThrow(
 		/Capacity directory override/,
 	);
 	expect(existsSync(backup)).toBe(false);
@@ -153,8 +156,8 @@ function fixture() {
 	symlinkSync("credentials", join(source, "credential-link"));
 	return { root, source, destination, backup };
 }
-describe("migration preservation and recovery", () => {
-	it("previews without source mutation or credentials in the manifest", () => {
+describe("migration preservation and recovery", async () => {
+	it("previews without source mutation or credentials in the manifest", async () => {
 		const { root, source, destination } = fixture();
 		const first = inspectMigration(source, destination);
 		writePreview(first, join(root, "preview.json"));
@@ -162,11 +165,11 @@ describe("migration preservation and recovery", () => {
 		expect(existsSync(destination)).toBe(false);
 		expect(JSON.stringify(first)).not.toMatch(/private-token|private-secret/);
 	});
-	it("backs up bytes, preserves credentials/modes/links, applies once and retains changed destination on recovery", () => {
+	it("backs up bytes, preserves credentials/modes/links, applies once and retains changed destination on recovery", async () => {
 		const { source, destination, backup } = fixture();
 		const manifest = inspectMigration(source, destination);
 		const original = readFileSync(join(source, "config.json"));
-		expect(applyMigration(manifest, backup).status).toBe("applied");
+		expect((await applyMigration(manifest, backup)).status).toBe("applied");
 		expect(readFileSync(join(backup, "source/config.json"))).toEqual(original);
 		expect(readFileSync(join(source, "config.json"))).toEqual(original);
 		const config = JSON.parse(
@@ -179,24 +182,28 @@ describe("migration preservation and recovery", () => {
 			Buffer.from([0, 1, 2, 255]),
 		);
 		expect(statSync(join(destination, ".env")).mode & 0o777).toBe(0o600);
-		expect(applyMigration(manifest, backup).status).toBe("already-applied");
+		expect((await applyMigration(manifest, backup)).status).toBe(
+			"already-applied",
+		);
 		writeFileSync(join(destination, "new-run"), "retain this");
-		expect(() => applyMigration(manifest, backup)).toThrow(/changed/);
-		expect(restoreMigration(backup).status).toBe("restored");
+		await expect(applyMigration(manifest, backup)).rejects.toThrow(/changed/);
+		expect((await restoreMigration(backup)).status).toBe("restored");
 		expect(
 			readFileSync(join(backup, "destination-recovery/new-run"), "utf8"),
 		).toBe("retain this");
 		expect(existsSync(destination)).toBe(false);
 	});
-	it("refuses destination conflicts, changed previews, corrupt state and env collisions before backup", () => {
+	it("refuses destination conflicts, changed previews, corrupt state and env collisions before backup", async () => {
 		const { source, destination, backup } = fixture();
 		const manifest = inspectMigration(source, destination);
 		mkdirSync(destination);
-		expect(() => applyMigration(manifest, backup)).toThrow(/Destination/);
+		await expect(applyMigration(manifest, backup)).rejects.toThrow(
+			/Destination/,
+		);
 		expect(existsSync(backup)).toBe(false);
 		rmSync(destination, { recursive: true });
 		chmodSync(join(source, "credentials"), 0o644);
-		expect(() => applyMigration(manifest, backup)).toThrow(/changed/);
+		await expect(applyMigration(manifest, backup)).rejects.toThrow(/changed/);
 		writeFileSync(join(source, ".env"), "CYRUS_HOME=a\nBOBS_FACTORY_HOME=b\n");
 		expect(inspectMigration(source, destination).blockers).toContain(
 			"Invalid or conflicting structured state: .env",
@@ -210,7 +217,7 @@ describe("migration preservation and recovery", () => {
 			"Unsupported worker persistence version",
 		);
 	});
-	it("blocks active consumers, hosted enrollment and unverified native continuation", () => {
+	it("blocks active consumers, hosted enrollment and unverified native continuation", async () => {
 		const { source, destination } = fixture();
 		vi.mocked(childProcess.execFileSync).mockReturnValue(
 			"9999 /usr/bin/cyrus start\n",
@@ -225,7 +232,7 @@ describe("migration preservation and recovery", () => {
 		expect(manifest.blockers).toHaveLength(3);
 		expect(JSON.stringify(manifest)).not.toContain("keep-private");
 	});
-	it("refuses worktree relocation before any backup or external Git metadata mutation", () => {
+	it("refuses worktree relocation before any backup or external Git metadata mutation", async () => {
 		const { source, destination, backup } = fixture();
 		const worktree = join(source, "worktrees", "issue");
 		mkdirSync(worktree, { recursive: true });
@@ -234,7 +241,7 @@ describe("migration preservation and recovery", () => {
 			"gitdir: /external/repo/.git/worktrees/issue\n",
 		);
 		const manifest = inspectMigration(source, destination);
-		expect(() => applyMigration(manifest, backup)).toThrow(
+		await expect(applyMigration(manifest, backup)).rejects.toThrow(
 			/Git metadata backup/,
 		);
 		expect(existsSync(backup)).toBe(false);
@@ -247,7 +254,7 @@ describe("migration preservation and recovery", () => {
 		).toBe(true);
 	});
 });
-it("changes only structured operational fields and refuses ambiguous env keys", () => {
+it("changes only structured operational fields and refuses ambiguous env keys", async () => {
 	expect(
 		transformState(
 			{
@@ -269,7 +276,7 @@ it("changes only structured operational fields and refuses ambiguous env keys", 
 		transformEnvironment("CYRUS_HOME=a\nBOBS_FACTORY_HOME=a\n"),
 	).toThrow(/collision/);
 });
-it("migrates exact server-wide allow/deny permissions without matching other servers", () => {
+it("migrates exact server-wide allow/deny permissions without matching other servers", async () => {
 	expect(
 		transformState(
 			{
@@ -296,7 +303,7 @@ it("migrates exact server-wide allow/deny permissions without matching other ser
 	});
 });
 
-it("reconciles referenced MCP files while preserving credentials, custom servers and backups", () => {
+it("reconciles referenced MCP files while preserving credentials, custom servers and backups", async () => {
 	const { source, destination, backup } = fixture();
 	mkdirSync(join(source, "mcp-configs"));
 	const original = {
@@ -323,7 +330,7 @@ it("reconciles referenced MCP files while preserving credentials, custom servers
 	writeFileSync(join(source, "config.json"), JSON.stringify(config));
 	const manifest = inspectMigration(source, destination);
 	expect(manifest.blockers).toEqual([]);
-	applyMigration(manifest, backup);
+	await applyMigration(manifest, backup);
 	expect(
 		JSON.parse(
 			readFileSync(join(destination, "mcp-configs/linear.json"), "utf8"),
@@ -349,7 +356,7 @@ it("reconciles referenced MCP files while preserving credentials, custom servers
 	).toEqual([join(destination, "mcp-configs/linear.json")]);
 });
 
-it("blocks external MCP reconciliation and owned server collisions before backup", () => {
+it("blocks external MCP reconciliation and owned server collisions before backup", async () => {
 	const { root, source, destination, backup } = fixture();
 	const external = join(root, "external.json");
 	writeFileSync(
@@ -363,9 +370,9 @@ it("blocks external MCP reconciliation and owned server collisions before backup
 	const config = JSON.parse(readFileSync(join(source, "config.json"), "utf8"));
 	config.githubMcpConfigs = [external];
 	writeFileSync(join(source, "config.json"), JSON.stringify(config));
-	expect(() =>
+	await expect(
 		applyMigration(inspectMigration(source, destination), backup),
-	).toThrow(/MCP configuration/);
+	).rejects.toThrow(/MCP configuration/);
 	expect(existsSync(backup)).toBe(false);
 	delete config.githubMcpConfigs;
 	writeFileSync(join(source, "config.json"), JSON.stringify(config));
@@ -376,13 +383,13 @@ it("blocks external MCP reconciliation and owned server collisions before backup
 			mcpServers: { "cyrus-tools": {}, "bobs-factory-tools": {} },
 		}),
 	);
-	expect(() =>
+	await expect(
 		applyMigration(inspectMigration(source, destination), backup),
-	).toThrow(/Invalid or conflicting structured state/);
+	).rejects.toThrow(/Invalid or conflicting structured state/);
 	expect(existsSync(backup)).toBe(false);
 });
 
-it("migrates saved and frozen workflow tool steps while preserving workflow-shaped receipts and gates", () => {
+it("migrates saved and frozen workflow tool steps while preserving workflow-shaped receipts and gates", async () => {
 	const { source, destination, backup } = fixture();
 	mkdirSync(join(source, "factory/runs"), { recursive: true });
 	const workflow = {
@@ -445,7 +452,7 @@ it("migrates saved and frozen workflow tool steps while preserving workflow-shap
 		JSON.stringify({ workflows: [workflow], defaultWorkflow: "custom" }),
 	);
 	writeFileSync(join(source, "factory/runs/run.json"), JSON.stringify(run));
-	applyMigration(inspectMigration(source, destination), backup);
+	await applyMigration(inspectMigration(source, destination), backup);
 	const expected = {
 		...workflow,
 		steps: [
@@ -536,7 +543,7 @@ it.each([
 		evidenceDir: join(destination, "factory/evidence/run"),
 	});
 });
-it("relocates owned environment paths while keeping secret values and comments", () => {
+it("relocates owned environment paths while keeping secret values and comments", async () => {
 	expect(
 		transformEnvironment(
 			"CYRUS_HOME='/old' # state\nCYRUS_WORKTREES_DIR=\"/old/worktrees\"\nCYRUS_TOKEN=/old/secret\n",
@@ -550,7 +557,7 @@ it("relocates owned environment paths while keeping secret values and comments",
 		transformEnvironment("CYRUS_HOME=/old\n", "/old", "/new home"),
 	).toThrow(/quotes/);
 });
-it("moves the recognized stock plugin while retaining customized skill bytes", () => {
+it("moves the recognized stock plugin while retaining customized skill bytes", async () => {
 	const { source, destination, backup } = fixture();
 	mkdirSync(join(source, "cyrus-skills-plugin/.claude-plugin"), {
 		recursive: true,
@@ -570,7 +577,7 @@ it("moves the recognized stock plugin while retaining customized skill bytes", (
 	const config = JSON.parse(readFileSync(join(source, "config.json"), "utf8"));
 	config.plugins = [{ path: join(source, "cyrus-skills-plugin") }];
 	writeFileSync(join(source, "config.json"), JSON.stringify(config));
-	applyMigration(inspectMigration(source, destination), backup);
+	await applyMigration(inspectMigration(source, destination), backup);
 	expect(
 		readFileSync(
 			join(destination, "bobs-factory-skills-plugin/skills/custom/SKILL.md"),
@@ -594,7 +601,7 @@ it("moves the recognized stock plugin while retaining customized skill bytes", (
 	).toBe(join(destination, "bobs-factory-skills-plugin"));
 	expect(existsSync(join(source, "cyrus-skills-plugin"))).toBe(true);
 });
-it("distinguishes participating workers from unrelated explicit homes and shell text", () => {
+it("distinguishes participating workers from unrelated explicit homes and shell text", async () => {
 	const { source, destination } = fixture();
 	vi.mocked(childProcess.execFileSync).mockReturnValue(
 		"9999 bobs-factory start --home /unrelated\n9998 /bin/sh -c echo cyrus\n",
@@ -660,7 +667,7 @@ it.each([
 	{ suffix: "start --port 3600", equals: false, target: "source" },
 	{ suffix: "local --port 3600", equals: true, target: "source" },
 	{ suffix: "--port 3600", equals: false, target: "source" },
-])("blocks default local's spaced symlink home: $suffix, equals=$equals, $target", ({
+])("blocks default local's spaced symlink home: $suffix, equals=$equals, $target", async ({
 	suffix,
 	equals,
 	target,
@@ -697,7 +704,9 @@ it.each([
 	expect(manifest.blockers).toContain(
 		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
 	);
-	expect(() => applyMigration(manifest, backup)).toThrow(/worker or agent/);
+	await expect(applyMigration(manifest, backup)).rejects.toThrow(
+		/worker or agent/,
+	);
 	expect(existsSync(backup)).toBe(false);
 	expect(existsSync(destination)).toBe(target === "destination");
 	expect(
@@ -780,7 +789,7 @@ it.skipIf(process.getuid?.() === 0)(
 		}
 	},
 );
-it("blocks a worker whose effective home environment cannot be read", () => {
+it("blocks a worker whose effective home environment cannot be read", async () => {
 	const { source, destination } = fixture();
 	vi.mocked(childProcess.execFileSync).mockImplementation((_file, args) => {
 		if (Array.isArray(args) && args.includes("eww"))
@@ -791,7 +800,7 @@ it("blocks a worker whose effective home environment cannot be read", () => {
 		"A worker or agent may still be running; disable intake, drain and verify descendants before apply",
 	);
 });
-it("resolves process homes without exposing environment secrets and blocks ambiguous homes", () => {
+it("resolves process homes without exposing environment secrets and blocks ambiguous homes", async () => {
 	const { source, destination } = fixture();
 	const command = "9999 node /repo/apps/cli/dist/src/app.js";
 	vi.mocked(childProcess.execFileSync).mockImplementation((_file, args) =>
@@ -820,7 +829,7 @@ it("resolves process homes without exposing environment secrets and blocks ambig
 	);
 });
 
-it("relocates capacity run ownership while retaining exchanged positions and original age", () => {
+it("relocates capacity run ownership while retaining exchanged positions and original age", async () => {
 	const source = "/migration-old",
 		destination = "/migration-new";
 	const request = {
@@ -869,4 +878,65 @@ it("relocates capacity run ownership while retaining exchanged positions and ori
 	).toEqual({
 		capacityLeaves: { leaf: { phase: "queued", request: expected } },
 	});
+});
+
+it("automatically expires reconciled migration state while recovery and cleanup exclude each other", async () => {
+	const { source, destination, backup } = fixture();
+	mkdirSync(join(source, "state"));
+	writeFileSync(
+		join(source, "state", "saved.json"),
+		JSON.stringify({ note: "authoritative state" }),
+	);
+	await applyMigration(inspectMigration(source, destination), backup);
+	const { StorageRetentionStore } = await import("bobs-factory-core");
+	const { StorageRetention } = await import(
+		"../../../../packages/edge-worker/src/storage/StorageRetention.js"
+	);
+	const { UpdateArtifacts } = await import(
+		"../../../../packages/edge-worker/src/storage/UpdateArtifacts.js"
+	);
+	const store = new StorageRetentionStore(destination);
+	const record = await store.record((await store.inventoryPage(0))[0]!);
+	expect(record.path).toBe(join(backup, "staged", "state"));
+	expect(record.dependencies).toEqual([]);
+	expect(record.authoritativeReplacement?.path).toBe(
+		join(destination, "state"),
+	);
+	const coordinator = new StorageRetention(
+		destination,
+		{ migration: new UpdateArtifacts(destination) },
+		() => Date.now() + 8 * 86400000,
+	);
+	try {
+		await store.workspaceClaim(record.path).run(async () => {
+			await expect(restoreMigration(backup)).rejects.toThrow(
+				/owner is still running|owns this resource/,
+			);
+			expect(existsSync(destination)).toBe(true);
+		});
+		let preview = await coordinator.preview();
+		while (!preview.complete) preview = await coordinator.preview();
+		expect(
+			preview.candidates.find((c) => c.record.id === record.id)?.eligible,
+		).toBe(true);
+		await coordinator.execute(preview.id, [record.id]);
+		await expect
+			.poll(async () => (await coordinator.status()).outcome?.completedAt)
+			.toBeTruthy();
+		expect((await coordinator.status()).outcome?.results[0]?.phase).toBe(
+			"completed",
+		);
+		expect(existsSync(record.path)).toBe(false);
+		expect(
+			JSON.parse(
+				readFileSync(join(destination, "state", "saved.json"), "utf8"),
+			),
+		).toEqual({ note: "authoritative state" });
+		expect(existsSync(join(backup, "source", "state", "saved.json"))).toBe(
+			true,
+		);
+		expect(existsSync(join(source, "state", "saved.json"))).toBe(true);
+	} finally {
+		await coordinator.stop();
+	}
 });

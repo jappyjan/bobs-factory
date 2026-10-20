@@ -1501,7 +1501,9 @@ it("selects and checks grouped repositories with different layouts, targets and 
 	const checks: string[] = [];
 	const tools = new FactoryTools({
 		postComment: async () => {},
-		command: async (ctx, exe, args) => {
+		command: async (ctx, exe, args, timeout) => {
+			// Independent workspace checks routinely exceed two minutes.
+			if (exe === "/bin/sh") expect(timeout).toBe(20 * 60 * 1000);
 			checks.push(ctx.run.workspace);
 			return execFileSync(exe, args, {
 				cwd: ctx.run.workspace,

@@ -71,6 +71,7 @@ async function* retainedReferences(
 	signal?: AbortSignal,
 ): AsyncGenerator<void> {
 	signal?.throwIfAborted();
+	if (value === undefined || value === null) return;
 	yield;
 	if (typeof value === "string") {
 		if (value.includes(workspace)) {
@@ -93,7 +94,26 @@ async function* retainedReferences(
 		}
 	} else if (value && typeof value === "object") {
 		for (const key in value)
-			if (Object.hasOwn(value, key))
+			if (
+				Object.hasOwn(value, key) &&
+				!(
+					key === "workspace" &&
+					typeof (value as Record<string, unknown>)[key] === "string" &&
+					((value as Record<string, string>)[key] === workspace ||
+						(value as Record<string, string>)[key]!.startsWith(
+							`${workspace}${sep}`,
+						)) &&
+					// Only schema-owned identity fields are exempt. File paths,
+					// prose and all other fields in these records are still scanned.
+					(("repositoryId" in value &&
+						"headSha" in value &&
+						"files" in value) ||
+						("outputs" in value && "repositories" in value) ||
+						("id" in value &&
+							"repositoryPath" in value &&
+							"baseBranch" in value))
+				)
+			)
 				yield* retainedReferences(
 					(value as Record<string, unknown>)[key],
 					workspace,
@@ -184,7 +204,27 @@ export function factoryStorage(
 				);
 			// References are independent of ownership, including stopped and completed runs.
 			yield* retainedReferences(
-				[run.outputs, run.input, run.launchAttachments],
+				[
+					run.outputs,
+					run.history,
+					run.input,
+					run.launchInputs,
+					run.launchAttachments,
+					run.repositoryOutputs,
+					run.answers,
+					run.questionRequests,
+					run.questions,
+					run.simplePrompt,
+					run.simpleExecution,
+					run.architectureProposals,
+					run.architectureDecisions,
+					run.humanDecisions,
+					run.events,
+					run.impactDecisions,
+					run.checkpoint,
+					run.reviewGate,
+					run.sessionSnapshot,
+				],
 				workspace,
 				protection,
 				signal,

@@ -30,10 +30,14 @@ Worktree cleanup checks the exact repository mapping, Git administration, local
 HEAD and fresh confirmation from the accepted Git provider. It retains tracked
 changes, untracked files, unique ignored content, nested repositories and uncertain
 submodules. Gitignore is insufficient proof of rebuildability. Saved stopped,
-failed, waiting, queued and native continuation work stays protected. Completed workflow checkpoints at `end` keep their role session IDs as historical
+failed, waiting, queued and native continuation work stays protected. Completed workflow
+checkpoints at `end` keep their role session IDs as historical
 identity; they cannot Resume or Retry. Simple conversations and unfinished native
 checkpoints remain live dependencies. Review records and guides are inspected for
-actual file dependencies instead of blocking release merely because they exist.
+actual file dependencies instead of blocking release merely because they exist. Retained
+history, impact decisions and frozen review contexts receive the same bounded
+inspection. Their repository workspace identity fields are historical metadata; file
+paths and evidence remain dependencies.
 A completed
 run's workspace identity is released only after content/native references are
 independently absent and the release is recorded durably. When native lookup
@@ -82,7 +86,8 @@ bobs-factory --home HOME --port PORT storage classify \
 
 Inspect the exact directory, ownership evidence, originating operation,
 reconciliation proof and dependencies first. The explicit election binds to its
-preview and filesystem identity. Staging and rollback classification require a retained completed, acknowledged
+preview and filesystem identity. Staging and rollback classification require a retained
+completed, acknowledged
 producer transaction proving the exact path. Preparation and recovery can instead
 use an explicit operation label (for example `manual-copy`) when every selected
 file independently matches current authoritative Factory state. Mixed contents,
@@ -95,7 +100,11 @@ retained. Source/native/external migration backups keep their original retention
 requirement; a name or successful-looking journal cannot elect them implicitly.
 Migration observations expose only the `state` and `factory` directories inside
 the committed preparation copy. Their operation is the migration source digest.
-An election rechecks the committed journal, exact directory identity and current
+New migrations automatically register these narrow preparation directories under shared
+process-aware claims. Only copies reconciled against current authoritative state become
+eligible. Migration apply and restore share an owner, and recovery claims the same
+preparation directories as cleanup. Historical copies still require an explicit
+election, which rechecks the committed journal, exact directory identity and current
 authoritative files. Source, native and external backups remain outside cleanup.
 
 ## Failures and interruption
@@ -120,7 +129,9 @@ Update artifacts move into a private quarantine after the journal and filesystem
 identity are rechecked. Leaves are detached and verified individually; empty-only
 directory removal preserves unexpected contents. Interrupted quarantines are
 restored under the original identity before retry; replacements and unresolved
-detached leaves require inspection.
+detached leaves require inspection. A failed leaf verification preserves both a changed
+detached file and any concurrent replacement. Leaf restoration uses exclusive creation
+and refuses to overwrite an occupied name.
 
 Update-artifact retries verify every remaining file against the original manifest;
 new or changed files retain the artifact. An absent original target can reconcile

@@ -31,7 +31,7 @@ export function addMigrationCommands(program: Command) {
 				"--preservation-plan <path>",
 				"Verified native continuations and external service/store backups",
 			)
-			.action((options) => {
+			.action(async (options) => {
 				const manifest = inspectMigration(
 					resolvePath(options.source),
 					resolvePath(options.destination),
@@ -54,20 +54,22 @@ export function addMigrationCommands(program: Command) {
 			"--backup <path>",
 			"Absent private backup directory, outside both homes",
 		)
-		.action((options) => {
+		.action(async (options) => {
 			const manifest: MigrationManifest = JSON.parse(
 				readFileSync(resolvePath(options.manifest), "utf8"),
 			);
 			console.log(
-				JSON.stringify(applyMigration(manifest, resolvePath(options.backup))),
+				JSON.stringify(
+					await applyMigration(manifest, resolvePath(options.backup)),
+				),
 			);
 		});
 	migration
 		.command("restore")
 		.requiredOption("--backup <path>", "Verified backup directory")
-		.action((options) =>
+		.action(async (options) =>
 			console.log(
-				JSON.stringify(restoreMigration(resolvePath(options.backup))),
+				JSON.stringify(await restoreMigration(resolvePath(options.backup))),
 			),
 		);
 }
