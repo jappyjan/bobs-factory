@@ -6,11 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Before building, Bob checks in like a colleague at your desk instead of handing you a 16,000-pixel proposal: what he thinks you want, how he’d do it with a before/after sketch of what people will experience, who will notice, the calls he’d like you to check, how big it is and what he won’t do or can’t fully prove. React to each point with 👍 or a short note; your notes go back as one change request, or say “Go ahead, build it”. Listen reads it aloud. Files, ticket coverage, the system map and the full plan stay in Bob’s notes, and drafts his reviewer sent back are counted instead of shown. Asking for changes on a pending proposal switches that run to the check-in. ([#166](https://github.com/jappyjan/bobs-factory/pull/166))
+
 - Sign in on devices with difficult keyboards using an explicitly enabled six-digit code from Settings → Access. Compare confirmation numbers and approve the device before its browser can collect a separate revocable API key. Codes expire after five minutes; request throttling preserves active pairing, and framing protection guards approval controls. ([#162](https://github.com/jappyjan/bobs-factory/pull/162))
 
 - Below the show & tell, Dig deeper answers “show me” in four tabs. How it works redraws each flow in plain words with a Show code link to the exact line, a step-through mode and a before/now toggle. The code shows the whole diff as one tour in the order a colleague would present it, with Bob’s notes pinned to the lines that matter, tests under the files they test, repeated edits grouped and reformatting folded away. Checks lists each requirement in plain words with what was tried and seen, keeping the recorded values one tap away. Choices shows how the ask was interpreted. Regenerating a pending stock guide adopts the new format. ([#155](https://github.com/jappyjan/bobs-factory/pull/155))
 
-- Review guides open with a show & tell: Bob walks you through the change one slide at a time, like a colleague at your desk: what you asked for and where each part landed, the main change as a before/after picture, measured results as charts, screenshots, your decisions, and what he could not prove. The detailed evidence stays one tap away. Works on phones with swipe and tap. Regenerating a pending guide on an existing run switches it to the new format. ([#151](https://github.com/jappyjan/bobs-factory/pull/151))
+- Review guides open with a show & tell: Bob walks you through the change one slide at a time, like a colleague at your desk: what you asked for and where each part landed, the main change as a before/after picture, measured results as charts, screenshots, your decisions, and what he could not prove. The detailed evidence stays one tap away. Works on phones with Back/Next controls. Regenerating a pending guide on an existing run switches it to the new format. ([#151](https://github.com/jappyjan/bobs-factory/pull/151))
 
 - Recipes are now a visual workbench. A gallery shows each recipe as a map of its run; opening one shows every step on a canvas grouped into phases, with the main path, conditional routes and loops drawn out and called building blocks shown inline. Select a step to tune its agent, edit instructions and routes, add steps from a palette, draw a route by dragging between steps, and simulate a run outcome by outcome to see where reviews loop back. Edits are kept as a draft until you save, changes made elsewhere are detected instead of overwritten, and the JSON stays available for advanced fields ([#143](https://github.com/jappyjan/bobs-factory/pull/143)).
 
@@ -24,11 +26,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Allocate dynamic listener ports for guide, architecture, review and recovery test drives so unrelated local runs can keep their servers running. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+- Allocate dynamic listener ports for guide, architecture, review and recovery test drives so unrelated local runs can keep their servers running. Align the architecture continuation fixture with the stock check-in format. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
+- Keep review navigation and decision controls visible in a compact fixed footer, collapse Dig deeper by default, and remove swipe/tap slide changes and overlapping sticky layers while scrolling. ([#168](https://github.com/jappyjan/bobs-factory/pull/168))
 
 - Recover stuck runs through bounded role correction, explicit architecture questions and automatic impact reassessment. Keep independently required corrections running when CI turns green. Restore provable committed worktrees, reconcile already-merged approved revisions, and keep workers running after their launch directory is deleted; preserve independent review, human approvals and recovery limits. ([#163](https://github.com/jappyjan/bobs-factory/pull/163))
 

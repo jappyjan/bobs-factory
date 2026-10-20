@@ -450,3 +450,38 @@ fixed-port resource declarations, determine which original receipts can be
 reused, and obtain required runtime receipts. These local correction results do
 not approve that gate. Fresh launcher QA, provider readiness, human acceptance
 and confirmed merge remain required. No real inference provider was called.
+
+
+## Combined-target correction on 2026-10-20
+
+Fetched `origin/main` at `121ebe302f869c1cfce36560904953d0c2233970` and
+resolved conflicts in the changelog, capability reference and complete routing
+prompt expectation. The result preserves Simple-only launch overrides, dynamic
+ports, incoming architecture check-ins and reader changes, and both changelog
+histories. The complete prompt assertion remains intact.
+
+The architecture continuation drive initially failed because it copied the new
+stock `checkin-v1` workflow but returned a `briefVersion: 1` proposal. It now uses
+the shared `checkin()` fixture. Its approval, restart, continuation and external
+interface-change assertions remain unchanged. The corrected drive passed with
+four proposals and two explicit simulated human approvals; these fixture actions
+are test evidence, not acceptance of this PR.
+
+Local checks of the resolved combined tree passed:
+
+- Workspace build and typecheck.
+- Fourteen focused suites: 275 tests, including launcher, complete routing
+  prompt, credential isolation, runtime, architecture, check-in and reader models.
+- Port allocator suite: two tests.
+- Seven simulated-agent drives: launcher, architecture continuation, frozen
+  workflow context, stuck-run recovery, incomplete-review CI recovery,
+  impact-feedback recovery and review-story creation/regeneration.
+- Repository lint: zero errors and 30 warnings. Changed-file formatting and
+  whitespace checks passed.
+
+Full logs, including the original architecture fixture failure and successful
+rerun, are retained as `ci-fix-r17-*.log` in this run's evidence directory. These
+are local corrective checks of the working merge; they do not replace the
+independently selected runtime checks or new specialist review. No real agent
+provider was called, unrelated listener stopped, PR marked ready or delivery
+approval granted. Fresh QA and subsequent human/provider gates remain required.

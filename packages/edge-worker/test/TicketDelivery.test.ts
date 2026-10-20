@@ -37,7 +37,7 @@ import {
 	type FactoryRun,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
-import { proposal } from "./fixtures/architecture.js";
+import { checkin } from "./fixtures/architecture.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
@@ -1063,7 +1063,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 						feedback: [],
 					};
 				case "architecture":
-					return proposal();
+					return checkin();
 				case "architecture-review":
 					return { approved: true, feedback: [] };
 				case "implement":
