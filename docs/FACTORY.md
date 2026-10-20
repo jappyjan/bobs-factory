@@ -127,11 +127,15 @@ By default, sessions last twelve hours without sliding renewal. Select **Stay si
 
 ### Sign in with a device code
 
-For devices where entering a long key is difficult, open **Settings → Access → Pair a device** on localhost or an already signed-in device. Enter a device name and choose **Enable code sign-in**. On the other device, open the configured HTTPS dashboard, choose **Use a 6-digit code**, and enter the displayed code. The login option becomes available automatically while a code is active, including before the first API key exists.
+For devices where entering a long key is difficult, open **Settings → Access → Pair a device** on localhost or an already signed-in device. Enter a device name and choose **Enable code sign-in**. On the other device, open the configured HTTPS dashboard, choose **Use a 6-digit code**, and enter the displayed code. Both screens then show a separate confirmation number. Compare them and choose **Approve device** in Settings only for the matching request from the device in your possession. The login option becomes available automatically while a code is active, including before the first API key exists.
 
-Code sign-in is disabled by default. One code is active per instance, works once, expires after five minutes, and is disabled after five failed attempts across all devices. **Cancel code** disables it immediately; generating a replacement disables the previous code. A restart, authentication recovery, or expiry/sign-out/revocation of the remote session that enabled it also disables the code. Codes and pending grants stay in memory, and other tabs can inspect or cancel a pending grant without reading its secret.
+Code sign-in is disabled by default. One code is active per instance and can authorize one device within five minutes. Entering a correct code creates a pending request without issuing a key. Each receiving browser gets its own unguessable secret in a Secure, HttpOnly, SameSite=Strict, host-only cookie; confirmation numbers and request IDs alone cannot collect a key. Pending requests survive reload through that cookie. Approval selects one exact request, invalidates the others, and stops accepting the code. Only the approved browser can collect the key, once, before the original deadline.
 
-Successful redemption transmits a new full-strength API key to the device over HTTPS. The browser uses that key through the existing sign-in endpoint and keeps only its normal HttpOnly session cookie; the key is never saved in web storage. **Stay signed in** and normal session expiry continue to work. The new device key appears under its chosen name in Settings, where rotation or removal revokes its sessions. If the browser cookie is lost, enable another code to reconnect and remove unused device keys as needed. Code pairing requires a configured public HTTPS origin and grants the same access as an ordinary API key.
+**Reject request** and the receiver’s **Cancel request** remove only that pending request. **Cancel code** disables the entire grant immediately; generating a replacement disables the previous code and its requests. A restart, authentication recovery, or expiry/sign-out/revocation of the remote session that enabled the code also disables it, including approved requests that have not collected a key. Grants, request secrets (hashed) and approvals stay in memory. Other trusted tabs can inspect requests and approve/reject them without reading the original code. The dashboard refuses framing to protect approval controls against clickjacking.
+
+Code submissions are limited to five per socket peer per minute and thirty per instance per minute. Collection/cancellation requests have separate limits of sixty per peer and three hundred per instance per minute. Throttling returns HTTP 429 with `Retry-After` and never cancels the code or another browser’s request. Forwarding headers do not establish a new peer. Reverse-proxy clients share the proxy’s peer allowance, so a sustained flood can still delay pairing; deployments can add connection/request limits at their perimeter. At most twenty pending requests are retained; reject unwanted requests to free space. These controls complement the required trusted-device approval.
+
+After approval, collection transmits a new full-strength API key to the bound browser over HTTPS and clears its temporary pairing cookie. The browser uses that key through the existing sign-in endpoint and keeps only its normal HttpOnly session cookie; the key is never saved in web storage. **Stay signed in** and normal session expiry continue to work. The new device key appears under its chosen name in Settings, where rotation or removal revokes its sessions. If the browser cookie is lost, enable another code to reconnect and remove unused device keys as needed. Code pairing requires a configured public HTTPS origin and grants the same access as an ordinary API key.
 
 ### Migration and local recovery
 
@@ -152,9 +156,10 @@ This command does not start services. The running server consumes the private re
 | --- | --- |
 | Direct HTTP loopback dashboard/API/media/SSE | Validated socket peer, loopback Host and same-origin context; no key |
 | Remote HTTPS dashboard/API/media/SSE | Origin-bound browser session established by key sign-in |
-| Static shell, version, access status and key sign-in | Public; status exposes only whether code sign-in is available |
-| Device code redemption | Public HTTPS, single-use explicitly enabled code; standard key login follows |
-| Key listing/add/remove/rotate and device code generation/cancellation | Validated local request or valid remote browser session |
+| Static shell, version, access status and key sign-in | Public; status exposes code availability and the receiving browser’s own pending request only with its pairing cookie |
+| Device pairing request | Public HTTPS, explicitly enabled code, throttled; creates no key |
+| Device key collection / request withdrawal | Public HTTPS, unguessable receiving-browser cookie; key collection also requires exact trusted approval |
+| Key listing/add/remove/rotate, device code generation/cancellation and pairing approval/rejection | Validated local request or valid remote browser session |
 | Provider webhook/OAuth listener | Separate provider verification, unchanged |
 
 ### Rollout and device checks

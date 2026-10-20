@@ -127,12 +127,30 @@ function KeyReveal({
 	);
 }
 
+type PairingRequest = {
+	id: string;
+	confirmation: string;
+	expires: number;
+	createdAt: number;
+	approved: boolean;
+};
+
 export function AccessBoundary({ children }: { children: ReactNode }) {
 	const access = useAccess(),
 		pwa = usePwa();
 	const [key, setKey] = useState("");
 	const [mode, setMode] = useState<"key" | "code">("key");
 	const [pairingAvailable, setPairingAvailable] = useState(false);
+	const [pending, setPending] = useState<PairingRequest>();
+	const pendingRef = useRef<PairingRequest | undefined>(undefined);
+	const claiming = useRef<string | undefined>(undefined);
+	const claimInFlight = useRef(false);
+	const [staySignedIn, setStaySignedIn] = useState(false);
+	const updatePending = useCallback((request: PairingRequest | undefined) => {
+		pendingRef.current = request;
+		if (!request) claiming.current = undefined;
+		setPending(request);
+	}, []);
 	const [reveal, setReveal] = useState<{ key: string; signedOut: boolean }>();
 	const revealing = useRef(false);
 	const [busy, setBusy] = useState(false),
@@ -149,6 +167,7 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 			revealing.current = false;
 			setKey("");
 			setReveal(undefined);
+			updatePending(undefined);
 		};
 		const unsubscribe = onAccessLost(clear);
 		window.addEventListener("hashchange", clear);
@@ -157,7 +176,7 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 			unsubscribe();
 			window.removeEventListener("hashchange", clear);
 		};
-	}, []);
+	}, [updatePending]);
 	useEffect(() => {
 		if (location.protocol === "http:" && location.hostname === "127.0.0.1") {
 			const canonical = new URL(location.href);
@@ -167,11 +186,15 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 		}
 		void checkAccess();
 		const visible = () => {
-			if (document.visibilityState === "visible" && !revealing.current)
+			if (
+				document.visibilityState === "visible" &&
+				!revealing.current &&
+				!claimInFlight.current
+			)
 				void checkAccess();
 		};
 		const page = () => {
-			if (!revealing.current) void checkAccess();
+			if (!revealing.current && !claimInFlight.current) void checkAccess();
 		};
 		const offline = () =>
 			accessRequired("Factory is offline. Reconnect to sign in.");
@@ -190,16 +213,26 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 		if (access.status === "authenticated") {
 			setKey("");
 			setMode("key");
+			updatePending(undefined);
 			setError(undefined);
 		}
-	}, [access.status]);
+	}, [access.status, updatePending]);
 	useEffect(() => {
 		if (access.status !== "required" || busy) return;
 		let active = true;
 		const refresh = async () => {
 			try {
 				const status = await authRequest("status", undefined, "GET");
-				if (active) setPairingAvailable(Boolean(status.pairingAvailable));
+				if (active) {
+					setPairingAvailable(Boolean(status.pairingAvailable));
+					if (status.pairingRequest) updatePending(status.pairingRequest);
+					else if (pendingRef.current) {
+						updatePending(undefined);
+						setError(
+							"Pairing expired, was rejected, or was cancelled. Enable a new code on your trusted device.",
+						);
+					}
+				}
 			} catch {
 				if (active) setPairingAvailable(false);
 			}
@@ -210,7 +243,41 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 			active = false;
 			clearInterval(timer);
 		};
-	}, [access.status, busy]);
+	}, [access.status, busy, updatePending]);
+	const claim = useCallback(
+		async (request: PairingRequest) => {
+			if (claiming.current === request.id) return;
+			claiming.current = request.id;
+			claimInFlight.current = true;
+			setBusy(true);
+			setError(undefined);
+			try {
+				await rotateSession(async () => {
+					const result = await authRequest("pairing/claim", { id: request.id });
+					await authRequest("login", { key: result.key, staySignedIn });
+					updatePending(undefined);
+					await checkAccess();
+				});
+			} catch (error) {
+				setError(
+					error instanceof Error ? error.message : "Pairing failed. Try again.",
+				);
+			} finally {
+				claimInFlight.current = false;
+				setBusy(false);
+			}
+		},
+		[staySignedIn, updatePending],
+	);
+	useEffect(() => {
+		if (
+			pending?.approved &&
+			!busy &&
+			access.status === "required" &&
+			pwa.status === "ready"
+		)
+			void claim(pending);
+	}, [pending, busy, access.status, pwa.status, claim]);
 	if (reveal)
 		return (
 			<KeyReveal
@@ -224,23 +291,23 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 			/>
 		);
 	if (access.status === "authenticated") return <>{children}</>;
-	const submit = async (submittedKey: string, staySignedIn: boolean) => {
+	const submit = async (submittedKey: string, remember: boolean) => {
 		setBusy(true);
 		setError(undefined);
+		setStaySignedIn(remember);
 		try {
-			await rotateSession(async () => {
-				// The code only transfers a normal key. All session behavior uses the existing login path.
-				const apiKey =
-					mode === "code"
-						? (
-								await authRequest("pairing/redeem", {
-									code: submittedKey.trim(),
-								})
-							).key
-						: submittedKey.trim();
-				await authRequest("login", { key: apiKey, staySignedIn });
-				await checkAccess();
-			});
+			if (mode === "code")
+				updatePending(
+					await authRequest("pairing/request", { code: submittedKey.trim() }),
+				);
+			else
+				await rotateSession(async () => {
+					await authRequest("login", {
+						key: submittedKey.trim(),
+						staySignedIn: remember,
+					});
+					await checkAccess();
+				});
 		} catch (error) {
 			setError(
 				error instanceof Error ? error.message : "Sign-in failed. Try again.",
@@ -257,7 +324,7 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 				<h1>
 					{access.status === "checking"
 						? "Checking Factory access…"
-						: access.setupRequired && mode === "key"
+						: access.setupRequired && mode === "key" && !pending
 							? "Set up remote access locally"
 							: "Sign in to Bob’s Factory"}
 				</h1>
@@ -265,7 +332,75 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 				{access.status !== "checking" && (
 					<>
 						<p>{access.error}</p>
-						{access.setupRequired && mode === "key" ? (
+						{pending ? (
+							<section
+								className="device-pairing"
+								aria-label="Pending device approval"
+							>
+								<h2>Approve on your trusted device</h2>
+								<p>
+									In Settings → Access, approve only the request showing this
+									same confirmation number. Keep this screen open.
+								</p>
+								<output
+									className="pairing-code"
+									aria-label="Pairing confirmation number"
+								>
+									{pending.confirmation.slice(0, 3)}{" "}
+									{pending.confirmation.slice(3)}
+								</output>
+								<p role="status">
+									{pending.approved
+										? "Approved. Finishing sign-in…"
+										: "Waiting for approval. No API key has been issued."}
+								</p>
+								<p>
+									Expires at {new Date(pending.expires).toLocaleTimeString()}.
+								</p>
+								<label className="auth-remember">
+									<input
+										type="checkbox"
+										checked={staySignedIn}
+										disabled={busy}
+										onChange={(event) => setStaySignedIn(event.target.checked)}
+									/>
+									Stay signed in (no session expiry)
+								</label>
+								{error && pending.approved && (
+									<Button
+										disabled={busy || updateRequired}
+										onClick={() => {
+											claiming.current = undefined;
+											void claim(pending);
+										}}
+									>
+										Retry sign-in
+									</Button>
+								)}
+								<Button
+									variant="secondary"
+									disabled={busy || updateRequired}
+									onClick={() => {
+										setBusy(true);
+										void authRequest("pairing/withdraw", { id: pending.id })
+											.then(() => {
+												updatePending(undefined);
+												setError(undefined);
+											})
+											.catch((error) =>
+												setError(
+													error instanceof Error
+														? error.message
+														: "Could not cancel request",
+												),
+											)
+											.finally(() => setBusy(false));
+									}}
+								>
+									Cancel request
+								</Button>
+							</section>
+						) : access.setupRequired && mode === "key" ? (
 							<p>
 								Open Bob’s Factory on localhost and create an API key in
 								Settings → Access. Then return here to sign in.
@@ -285,8 +420,8 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 								{mode === "code" ? (
 									<p>
 										Enter the code enabled on your trusted device in Settings →
-										Access. It works once, for five minutes. This device
-										receives its own API key.
+										Access. Then compare the confirmation number on both devices
+										and approve this device there.
 									</p>
 								) : (
 									<p>
@@ -342,18 +477,20 @@ export function AccessBoundary({ children }: { children: ReactNode }) {
 								</Button>
 							</form>
 						)}
-						<Button
-							variant="secondary"
-							disabled={busy || (mode === "key" && !pairingAvailable)}
-							onClick={() => {
-								setMode(mode === "key" ? "code" : "key");
-								setKey("");
-								setError(undefined);
-							}}
-						>
-							{mode === "key" ? "Use a 6-digit code" : "Use an API key"}
-						</Button>
-						{!pairingAvailable && (
+						{!pending && (
+							<Button
+								variant="secondary"
+								disabled={busy || (mode === "key" && !pairingAvailable)}
+								onClick={() => {
+									setMode(mode === "key" ? "code" : "key");
+									setKey("");
+									setError(undefined);
+								}}
+							>
+								{mode === "key" ? "Use a 6-digit code" : "Use an API key"}
+							</Button>
+						)}
+						{!pairingAvailable && !pending && (
 							<p>
 								Code sign-in is off. On a trusted device, open Settings → Access
 								→ Pair a device to enable a code.
@@ -375,7 +512,13 @@ type ApiKey = {
 	lastUsedAt?: number;
 	current: boolean;
 };
-type Pairing = { id: string; label: string; expires: number; code?: string };
+type Pairing = {
+	id: string;
+	label: string;
+	expires: number;
+	code?: string;
+	requests: PairingRequest[];
+};
 function DevicePairing({ refreshKeys }: { refreshKeys: () => Promise<void> }) {
 	const pwa = usePwa();
 	const [pairing, setPairing] = useState<Pairing>();
@@ -457,8 +600,9 @@ function DevicePairing({ refreshKeys }: { refreshKeys: () => Promise<void> }) {
 				code here, then enter it on that device’s login screen.
 			</p>
 			<p>
-				Code sign-in is off until you enable it. Each code works once, expires
-				after five minutes and is disabled after five failed attempts.
+				Code sign-in is off until you enable it. Codes expire after five
+				minutes. A device receives its key only after you approve its matching
+				confirmation number. Wrong guesses are throttled.
 			</p>
 			<form
 				className="api-key-add"
@@ -488,7 +632,9 @@ function DevicePairing({ refreshKeys }: { refreshKeys: () => Promise<void> }) {
 			</form>
 			{pairing && (
 				<div className="device-pairing">
-					{pairing.code ? (
+					{pairing.requests.some((request) => request.approved) ? (
+						<p>Approved. Waiting for the selected device to collect its key.</p>
+					) : pairing.code ? (
 						<output className="pairing-code" aria-label="Device pairing code">
 							{pairing.code.slice(0, 3)} {pairing.code.slice(3)}
 						</output>
@@ -502,6 +648,66 @@ function DevicePairing({ refreshKeys }: { refreshKeys: () => Promise<void> }) {
 						For {pairing.label} · Expires in {Math.floor(seconds / 60)}:
 						{String(seconds % 60).padStart(2, "0")}
 					</p>
+					{pairing.requests.map((request) => (
+						<div className="pairing-request" key={request.id}>
+							<h3>Check the device in your hands</h3>
+							<p>
+								Approve only if this confirmation number matches the one on that
+								device. Reject requests you do not recognize.
+							</p>
+							<output
+								className="pairing-code"
+								aria-label="Pairing confirmation number"
+							>
+								{request.confirmation.slice(0, 3)}{" "}
+								{request.confirmation.slice(3)}
+							</output>
+							{request.approved ? (
+								<p>Approved</p>
+							) : (
+								<div className="settings-actions">
+									{(["approve", "reject"] as const).map((action) => (
+										<Button
+											key={action}
+											variant={action === "approve" ? "primary" : "secondary"}
+											disabled={busy || paused}
+											aria-label={`${action === "approve" ? "Approve" : "Reject"} device ${request.confirmation}`}
+											onClick={() =>
+												void run(async () => {
+													await authRequest(
+														`pairing/${encodeURIComponent(pairing.id)}/${action}`,
+														{
+															requestId: request.id,
+															confirmation: request.confirmation,
+														},
+													);
+													const result: Pairing | null = await authRequest(
+														"pairing",
+														undefined,
+														"GET",
+													);
+													setPairing(
+														result
+															? {
+																	...result,
+																	...(result.id === pairing.id
+																		? { code: pairing.code }
+																		: {}),
+																}
+															: undefined,
+													);
+												})
+											}
+										>
+											{action === "approve"
+												? "Approve device"
+												: "Reject request"}
+										</Button>
+									))}
+								</div>
+							)}
+						</div>
+					))}
 					<Button
 						variant="secondary"
 						disabled={busy || paused}

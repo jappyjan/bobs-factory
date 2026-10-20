@@ -77,9 +77,14 @@ function fixture(useEnvironment = false, localPort?: number) {
 	};
 }
 
-it("protects device-code management and atomically exchanges a single-use code for a revocable API key", async () => {
+it("protects device-code management and requires a matching trusted approval and browser cookie before a single-use API key exchange", async () => {
 	const f = fixture();
 	const cookie = await f.enroll();
+	const shell = await f.server.app.inject({ url: "/", headers: { host } });
+	expect(shell.headers["content-security-policy"]).toBe(
+		"frame-ancestors 'none'",
+	);
+	expect(shell.headers["x-frame-options"]).toBe("DENY");
 	for (const method of ["GET", "POST", "DELETE"] as const) {
 		const denied = await f.server.app.inject({
 			method,
@@ -116,6 +121,7 @@ it("protects device-code management and atomically exchanges a single-use code f
 		id: grant.id,
 		label: "Tablet",
 		expires: grant.expires,
+		requests: [],
 	});
 	for (const headers of [
 		{ ...f.writeHeaders, origin: "https://evil.test" },
@@ -124,7 +130,7 @@ it("protects device-code management and atomically exchanges a single-use code f
 	]) {
 		const denied = await f.server.app.inject({
 			method: "POST",
-			url: "/api/auth/pairing/redeem",
+			url: "/api/auth/pairing/request",
 			headers,
 			payload: { code: grant.code },
 		});
@@ -132,24 +138,96 @@ it("protects device-code management and atomically exchanges a single-use code f
 	}
 	const redacted = await f.server.app.inject({
 		method: "POST",
-		url: "/api/auth/pairing/redeem",
+		url: "/api/auth/pairing/request",
 		headers: { ...f.writeHeaders, "content-type": "application/json" },
 		payload: '{"code":"secret-malformed',
 	});
 	expect(redacted.statusCode).toBe(400);
 	expect(redacted.json()).toEqual({ error: "Invalid or expired sign-in code" });
-	const results = await Promise.all(
+	const requests = await Promise.all(
 		[1, 2].map(() =>
 			f.server.app.inject({
 				method: "POST",
-				url: "/api/auth/pairing/redeem",
+				url: "/api/auth/pairing/request",
 				headers: f.writeHeaders,
 				payload: { code: grant.code },
 			}),
 		),
 	);
+	expect(requests.map((result) => result.statusCode)).toEqual([200, 200]);
+	const first = requests[0]!.json(),
+		second = requests[1]!.json();
+	const boundCookie = String(requests[0]!.headers["set-cookie"]);
+	const otherCookie = String(requests[1]!.headers["set-cookie"]);
+	expect(boundCookie).toContain("__Host-factory-pairing=");
+	expect(boundCookie).toContain("HttpOnly; SameSite=Strict; Secure;");
+	expect(first.key).toBeUndefined();
+	expect(first.token).toBeUndefined();
+	expect(first.confirmation).not.toBe(second.confirmation);
+	expect(f.server.auth.store.state.keys).toHaveLength(1);
+	const browserStatus = await f.server.app.inject({
+		url: "/api/auth/status",
+		headers: { host, cookie: boundCookie },
+	});
+	expect(browserStatus.json().pairingRequest).toEqual(first);
+	expect(
+		(
+			await f.server.app.inject({ url: "/api/auth/status", headers: { host } })
+		).json().pairingRequest,
+	).toBeUndefined();
+	const claim = (cookie?: string) =>
+		f.server.app.inject({
+			method: "POST",
+			url: "/api/auth/pairing/claim",
+			headers: { ...f.writeHeaders, ...(cookie ? { cookie } : {}) },
+			payload: { id: first.id },
+		});
+	expect((await claim(boundCookie)).statusCode).toBe(409);
+	const approval = {
+		method: "POST" as const,
+		url: `/api/auth/pairing/${grant.id}/approve`,
+		payload: { requestId: first.id, confirmation: first.confirmation },
+	};
+	expect(
+		(await f.server.app.inject({ ...approval, headers: f.writeHeaders }))
+			.statusCode,
+	).toBe(401);
+	expect(
+		(
+			await f.server.app.inject({
+				...approval,
+				headers: { ...f.writeHeaders, cookie },
+				payload: {
+					requestId: first.id,
+					confirmation: first.confirmation === "000000" ? "000001" : "000000",
+				},
+			})
+		).statusCode,
+	).toBe(409);
+	expect(
+		(
+			await f.server.app.inject({
+				...approval,
+				headers: { ...f.writeHeaders, cookie },
+			})
+		).statusCode,
+	).toBe(200);
+	for (const stolenCookie of [
+		undefined,
+		otherCookie,
+		`__Host-factory-pairing=${grant.code}`,
+		`__Host-factory-pairing=${first.id}`,
+	])
+		expect((await claim(stolenCookie)).statusCode).toBe(409);
+	expect(f.server.auth.store.state.keys).toHaveLength(1);
+	const results = await Promise.all([claim(boundCookie), claim(boundCookie)]);
 	expect(results.map((result) => result.statusCode).sort()).toEqual([200, 409]);
-	const device = results.find((result) => result.statusCode === 200)!.json();
+	const issued = results.find((result) => result.statusCode === 200)!;
+	expect(issued.headers["cache-control"]).toBe("no-store");
+	expect(String(issued.headers["set-cookie"])).toContain(
+		"Expires=Thu, 01 Jan 1970",
+	);
+	const device = issued.json();
 	expect(device.key).toMatch(/^[A-Za-z0-9_-]{43}$/);
 	const login = await f.server.app.inject({
 		method: "POST",
@@ -194,6 +272,41 @@ it("protects device-code management and atomically exchanges a single-use code f
 		(await f.server.app.inject({ url: "/api/runs", headers: { host, cookie } }))
 			.statusCode,
 	).toBe(200);
+});
+
+it("returns bounded retry information for repeated guesses, ignores spoofed forwarding addresses and keeps pairing enabled", async () => {
+	const f = fixture();
+	const grant = f.server.auth.beginPairing(undefined, origin, "Tablet", true);
+	const wrong = grant.code === "000000" ? "000001" : "000000";
+	for (let i = 0; i < 5; i++) {
+		const result = await f.server.app.inject({
+			method: "POST",
+			url: "/api/auth/pairing/request",
+			headers: { ...f.writeHeaders, "x-forwarded-for": `203.0.113.${i + 1}` },
+			payload: { code: wrong },
+		});
+		expect(result.statusCode).toBe(409);
+	}
+	const limited = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/pairing/request",
+		headers: f.writeHeaders,
+		payload: { code: grant.code },
+	});
+	expect(limited.statusCode).toBe(429);
+	expect(Number(limited.headers["retry-after"])).toBeGreaterThan(0);
+	expect(Number(limited.headers["retry-after"])).toBeLessThanOrEqual(60);
+	expect(f.server.auth.pairingAvailable()).toBe(true);
+	const legitimate = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/pairing/request",
+		headers: f.writeHeaders,
+		remoteAddress: "203.0.113.100",
+		payload: { code: grant.code },
+	});
+	expect(legitimate.statusCode).toBe(200);
+	expect(legitimate.json().approved).toBe(false);
+	expect(f.server.auth.store.state.keys).toEqual([]);
 });
 
 it("grants local operator access without credentials, cookies, enrollment or transferable sessions", async () => {
