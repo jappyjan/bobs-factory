@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "bobs-factory-core";
@@ -6,6 +6,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import * as tools from "../src/factory/FactoryTools.js";
+import { pendingMergeConfirmation } from "../src/factory/MergeRecovery.js";
 import type { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 
 const directories: string[] = [];
@@ -73,6 +74,119 @@ async function fixture() {
 	};
 	return { runtime, run, home };
 }
+
+function handoff(run: Awaited<ReturnType<typeof fixture>>["run"]) {
+	run.step = "pipeline/handoff";
+	run.checkpoint!.active!.children![0]!.current = "handoff";
+	const approval = run.humanDecisions!.at(-1)!;
+	run.reviewGate = {
+		id: approval.reviewId,
+		headSha: approval.headSha,
+		url: "https://github.com/test/repo/pull/1",
+		status: "approve",
+	};
+	run.outputs["human-review"] = approval;
+	run.history.push({
+		step: "pipeline/human-review",
+		output: approval,
+		at: "now",
+	});
+}
+it.each([
+	"missing",
+	"clean",
+	"dirty",
+	"changed-head",
+])("reconciles a replayed handoff with prior explicit approval and real merged evidence (%s)", async (local) => {
+	const { runtime, run } = await fixture();
+	handoff(run);
+	if (local !== "missing") mkdirSync(run.workspace);
+	const history = structuredClone(run.history),
+		decisions = structuredClone(run.humanDecisions);
+	const tool = vi
+		.spyOn(tools.FactoryTools.prototype, "tool")
+		.mockRejectedValue(new Error("Delivery mutation must not run"));
+	vi.spyOn(tools, "executeCommand").mockImplementation(
+		async (_context, exe, args) => {
+			if (exe === "git")
+				return args[0] === "rev-parse"
+					? local === "changed-head"
+						? "changed"
+						: "approved"
+					: local === "dirty"
+						? " M pending.txt"
+						: "";
+			expect(exe).toBe("bobs-factory:github-api");
+			expect(JSON.parse(args[0]!).method).toBe("GET");
+			return JSON.stringify({
+				html_url: "https://github.com/test/repo/pull/1",
+				number: 1,
+				title: "Fixture",
+				body: "",
+				draft: false,
+				state: "closed",
+				merged: true,
+				head: {
+					ref: "feature",
+					sha: "approved",
+					repo: { full_name: "test/repo" },
+				},
+				base: { ref: "main", repo: { full_name: "test/repo" } },
+			});
+		},
+	);
+	await runtime.launch(run);
+	expect(tool).not.toHaveBeenCalled();
+	expect(run.humanDecisions).toEqual(decisions);
+	expect(run.history.slice(0, history.length)).toEqual(history);
+	if (local === "missing" || local === "clean") {
+		expect(run.status, run.error).toBe("completed");
+		expect(run.outputs.merge).toMatchObject({
+			merged: true,
+			headSha: "approved",
+		});
+		expect(run.history.filter((h) => h.step === "pipeline/merge")).toHaveLength(
+			1,
+		);
+	} else {
+		expect(run.status).toBe("failed");
+		expect(run.error).toMatch(/Local work changed/);
+		expect(run.outputs.merge).toBeUndefined();
+	}
+	await runtime.shutdown();
+});
+it.each([
+	"missing-history",
+	"pending",
+	"latest-rejected",
+	"intervening-work",
+	"after-merge-work",
+])("does not shortcut a handoff with an unfinished or unapproved route (%s)", async (reason) => {
+	const { runtime, run } = await fixture();
+	handoff(run);
+	const steps = run.workflowDefinitions!.find(
+		(w) => w.id === "factory-pipeline",
+	)!.steps;
+	if (reason === "missing-history") run.history.pop();
+	if (reason === "pending") run.reviewGate!.status = "pending";
+	if (reason === "latest-rejected")
+		run.humanDecisions!.push({
+			...run.humanDecisions![0]!,
+			decision: "reject",
+		});
+	if (reason === "intervening-work")
+		steps.find((s) => s.id === "human-review")!.next = "guide";
+	if (reason === "after-merge-work")
+		steps.find((s) => s.id === "merge")!.next = "guide";
+	expect(
+		pendingMergeConfirmation(run, {
+			merged: true,
+			headSha: "approved",
+			url: "https://github.com/test/repo/pull/1",
+		}),
+	).toBeUndefined();
+	await runtime.shutdown();
+});
 
 it.each([
 	"approved",

@@ -191,10 +191,15 @@ import {
 	type Architecture,
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
+	architectureQuestionInstructions,
 	assertReviewBrief,
 	assertRevisionChanges,
 } from "./factory/Architecture.js";
-import { TicketDelivery, type TicketTarget } from "./factory/Delivery.js";
+import {
+	TicketDelivery,
+	type TicketTarget,
+	validateDeliveryContract,
+} from "./factory/Delivery.js";
 import {
 	executionCapabilities,
 	validateProfileRunner,
@@ -263,6 +268,7 @@ import {
 import {
 	confirmedMerge,
 	pendingMergeConfirmation,
+	recordMergeConfirmation,
 } from "./factory/MergeRecovery.js";
 import { OperatorConfiguration } from "./factory/OperatorConfiguration.js";
 import { OperatorGrants } from "./factory/OperatorGrants.js";
@@ -361,6 +367,10 @@ import {
 	WorkflowRuntime,
 } from "./factory/WorkflowRuntime.js";
 import { resolveWorkflowSelector } from "./factory/WorkflowSelector.js";
+import {
+	committedRecoveryRevision,
+	restoreCommittedWorktree,
+} from "./factory/WorktreeRecovery.js";
 import { GitService, setupExecutionScope } from "./GitService.js";
 import { GlobalSessionRegistry } from "./GlobalSessionRegistry.js";
 import {
@@ -9175,7 +9185,7 @@ ${taskSection}`;
 
 		// Review fixers and QA roles can request assistance without askQuestions;
 		// saved recipes must receive the same question guidance as new ones.
-		const instruction = `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${step.prompt}\n${repositoryScopeInstructions(run)}\nGit provider: ${JSON.stringify(run.gitProvider ?? { gitProvider: repository.gitProvider, githubUrl: repository.githubUrl, gitlabUrl: repository.gitlabUrl })}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${run.gitProvider?.type === "custom" ? (run.gitProvider.instructions ?? "") : repository.gitProvider?.type === "custom" ? (repository.gitProvider.instructions ?? "") : ""}\nOriginating ticket: ${run.ticketReference ? JSON.stringify(run.ticketReference) : "none"}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${questionInstructions(run.id)}\n${workflowTriggerInstructions}\n${workflowExecutionInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${["code-review", "visual-review"].includes(step.id) || ["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") ? reviewCompletionInstructions : ""}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
+		const instruction = `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${step.prompt}\n${repositoryScopeInstructions(run)}\nGit provider: ${JSON.stringify(run.gitProvider ?? { gitProvider: repository.gitProvider, githubUrl: repository.githubUrl, gitlabUrl: repository.gitlabUrl })}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${run.gitProvider?.type === "custom" ? (run.gitProvider.instructions ?? "") : repository.gitProvider?.type === "custom" ? (repository.gitProvider.instructions ?? "") : ""}\nOriginating ticket: ${run.ticketReference ? JSON.stringify(run.ticketReference) : "none"}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${questionInstructions(run.id)}\n${step.architectureContract === "architecture-review-v1" ? architectureQuestionInstructions : ""}\n${workflowTriggerInstructions}\n${workflowExecutionInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${["code-review", "visual-review"].includes(step.id) || ["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") ? reviewCompletionInstructions : ""}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
 		const built = await this.buildAgentRunnerConfig(
 			session,
 			repository,
@@ -9396,7 +9406,7 @@ ${taskSection}`;
 					context.chat && runner.supportsStreamingInput && runner.startStreaming
 						? runner.startStreaming.bind(runner)
 						: runner.start.bind(runner);
-				const nativePrompt = `${outputCorrection && !captureCorrection ? "Your previous output failed validation. Read /outputCorrection from the NEW factory-context connection: it contains the rejected candidate, precise issues, and revision. Correct those issues and return the COMPLETE result for this role. Preserve accepted evidence and completed work; correct only this role output and, for capture, invalid states. Do not replay other pipeline roles. This is an output correction, not a process restart.\n\n" : captureCorrection ? "Your completed capture failed screenshot-reuse validation. Read /captureCorrection through the new factory-context tools: rejectedOutput contains your complete saved inventory, and screenshots lists every rejected state. Replace those images with fresh filenames; preserve the other valid captures and return the COMPLETE corrected inventory. Do not repeat completed setup or unrelated captures. The old factory-context connection is gone.\n\n" : context.resumeAgent?.sessionId ? "Continue this role from your existing conversation and worktree. Read the latest answers through the new factory-context connection and inspect current files and past tool results before repeating actions. The old factory-context connection is gone; use the new factory-context tools below.\n\n" : ""}${factoryContextInstructions}\n\nEvidence directory: ${context.evidenceDir}`;
+				const nativePrompt = `${outputCorrection && !captureCorrection ? "Your previous output failed validation. Read /outputCorrection from the NEW factory-context connection: it contains the rejected candidate, precise issues, and revision. Correct those issues and return the COMPLETE result for this role. Preserve accepted evidence and completed work; correct only this role output and, for capture, invalid states. Do not replay other pipeline roles. This is an output correction, not a process restart.\n\n" : captureCorrection ? "Your completed capture failed screenshot-reuse validation. Read /captureCorrection through the new factory-context tools: rejectedOutput contains your complete saved inventory, and screenshots lists every rejected state. Replace those images with fresh filenames; preserve the other valid captures and return the COMPLETE corrected inventory. Do not repeat completed setup or unrelated captures. The old factory-context connection is gone.\n\n" : context.resumeAgent?.sessionId ? "Continue this role from your existing conversation and worktree. Read the latest answers through the new factory-context connection and inspect current files and past tool results before repeating actions. The old factory-context connection is gone; use the new factory-context tools below.\n\n" : ""}${factoryContextInstructions}\n${step.architectureContract === "architecture-review-v1" ? architectureQuestionInstructions : ""}\n\nEvidence directory: ${context.evidenceDir}`;
 				// Include the managed capacity addendum applied by buildRunnerForType.
 				// Provider implicit defaults are outside this Factory-supplied identity.
 				const nativeConfig = this.managedRunnerConfig(built.config);
@@ -9593,6 +9603,23 @@ ${taskSection}`;
 			}
 			if (step.architectureContract === "architecture-review-v1")
 				output = ArchitectureReviewSchema.parse(output);
+			if (
+				step.id === "plan" &&
+				output &&
+				typeof output === "object" &&
+				"deliveryContract" in output
+			) {
+				try {
+					validateDeliveryContract(run, output.deliveryContract);
+				} catch (error) {
+					throw new OutputValidationError(value, [
+						{
+							path: "/deliveryContract",
+							message: error instanceof Error ? error.message : String(error),
+						},
+					]);
+				}
+			}
 			if (
 				step.impactContract ||
 				step.architectureContract ||
@@ -10273,16 +10300,21 @@ ${taskSection}`;
 		if ((!run.workspace || run.setupComplete === false) && run.launchRequest)
 			await this.prepareManualFactoryRun(run, run.launchRequest, signal);
 		signal.throwIfAborted();
-		if (!run.workspace || !existsSync(run.workspace)) {
+		{
 			const pending = pendingMergeConfirmation(run);
 			const url = readFactoryPath(run.outputs, "draft-pr.url");
 			if (
 				pending &&
+				((run.repositories?.length ?? 0) <= 1 || !existsSync(run.workspace)) &&
 				run.humanDecisions?.at(-1)?.decision === "approve" &&
 				typeof url === "string" &&
 				isPullRequestSource(url)
 			) {
-				if (run.repositories && run.repositories.length > 1) {
+				if (
+					run.repositories &&
+					run.repositories.length > 1 &&
+					!existsSync(run.workspace)
+				) {
 					const evidenceDir = join(
 						this.getFactoryRuntime().directory,
 						"evidence",
@@ -10348,27 +10380,69 @@ ${taskSection}`;
 					headSha: pr.headRefOid,
 				});
 				if (output && pendingMergeConfirmation(run, output)) {
-					run.outputs[pending.step.id] = output;
-					if (pending.checkpoint.active!.phase === "executing")
-						run.history.push(
-							immutableJson({
-								step: pending.key,
-								output,
-								at: new Date().toISOString(),
-							}),
+					if (existsSync(run.workspace)) {
+						const local = { ...context, run };
+						const head = await executeCommand(
+							local,
+							"git",
+							["rev-parse", "HEAD"],
+							60000,
 						);
-					pending.checkpoint.active!.phase = "result";
+						const dirty = await executeCommand(
+							local,
+							"git",
+							["status", "--porcelain"],
+							60000,
+						);
+						if (head !== output.headSha || dirty)
+							throw new Error(
+								"Local work changed after approval; merged delivery recovery blocked",
+							);
+					}
+					recordMergeConfirmation(run, pending, output);
 					this.getFactoryRuntime().log(
 						run,
 						pending.key,
-						"Confirmed the approved PR revision was merged after worktree cleanup.",
+						"Confirmed the explicitly approved PR revision was already merged; retained history and approval.",
 					);
 					return;
 				}
 			}
-			throw new Error(
-				"Saved worktree is unavailable; recovery cannot recreate unfinished work",
-			);
+			if (
+				!existsSync(run.workspace) &&
+				committedRecoveryRevision(run) &&
+				typeof url === "string" &&
+				isPullRequestSource(url)
+			) {
+				const context: ExecutionContext = {
+					factoryHome: this.factoryHome,
+					execution: await this.resolveRunExecution(run),
+					run: { ...run, workspace: repository.repositoryPath },
+					step: pending?.step ?? run.workflow.steps[0]!,
+					input: {},
+					signal,
+					evidenceDir: join(
+						this.getFactoryRuntime().directory,
+						"evidence",
+						run.id,
+					),
+					log: () => {},
+				};
+				const command = (exe: string, args: string[]) =>
+					executeCommand(context, exe, args, 60000);
+				const provider = await resolveGitProvider(context, command, url);
+				const published = await provider.inspect(url);
+				if (await restoreCommittedWorktree(run, repository, published, command))
+					this.getFactoryRuntime().log(
+						run,
+						"run",
+						"Restored the exact saved clean worktree from its retained local branch and published revision. Completed work and all gates remain retained.",
+					);
+			}
+			if (!run.workspace || !existsSync(run.workspace))
+				throw new Error(
+					"Saved worktree is unavailable; recovery cannot recreate unfinished work",
+				);
 		}
 		let session = this.agentSessionManager.getSession(run.id);
 		if (!session) {

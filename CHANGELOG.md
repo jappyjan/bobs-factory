@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Add per-instance Storage settings and CLI previews, retention policy, explicit historical classification and audited cleanup. Protect usable rollback snapshots, update recovery, unique files and resumable work; replace immediate forced terminal worktree deletion with verified retention. ([Taskbot #134](https://taskbot.apps.janjaap.de/p/bobs-factory/t/134))
+- Add per-instance Storage settings and CLI previews, retention policy, explicit historical classification and audited cleanup. Protect usable rollback snapshots, update recovery, unique files and resumable work; replace immediate forced terminal worktree deletion with verified retention. ([Taskbot #134](https://taskbot.apps.janjaap.de/p/bobs-factory/t/134), [#164](https://github.com/jappyjan/bobs-factory/pull/164))
 
 - Sign in on devices with difficult keyboards using an explicitly enabled six-digit code from Settings → Access. Compare confirmation numbers and approve the device before its browser can collect a separate revocable API key. Codes expire after five minutes; request throttling preserves active pairing, and framing protection guards approval controls. ([#162](https://github.com/jappyjan/bobs-factory/pull/162))
 
@@ -25,6 +25,8 @@ All notable changes to this project will be documented in this file.
 - Launch tasks from a chat-style composer: the project name in "What should we build in …?" picks the project, attached files appear as chips above the prompt, and the bottom bar picks the recipe, agent and reasoning, with per-run settings behind one button. Files can be attached, dropped or pasted, and typed text and attachments survive project or recipe changes. New stock workflows accept private file attachments with clear limits, removal, and retained read access across restart, retry and follow-up. Machine selection remains separate work. ([Taskbot #85](https://taskbot.apps.janjaap.de/p/bobs-factory/t/85), [#123](https://github.com/jappyjan/bobs-factory/pull/123))
 
 ### Fixed
+
+- Recover stuck runs through bounded role correction, explicit architecture questions and automatic impact reassessment. Keep independently required corrections running when CI turns green. Restore provable committed worktrees, reconcile already-merged approved revisions, and keep workers running after their launch directory is deleted; preserve independent review, human approvals and recovery limits. ([#163](https://github.com/jappyjan/bobs-factory/pull/163))
 
 - Let CI fixers repair merge conflicts and failed checks when the latest specialist review has not finished; require fresh review afterward and retain approval safeguards. ([#161](https://github.com/jappyjan/bobs-factory/pull/161))
 

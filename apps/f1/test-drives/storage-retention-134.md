@@ -61,3 +61,35 @@ The screenshots use deliberately small update fixtures and a high warning thresh
 Native provider inference and real native continuation were not exercised. Directory-independent native continuation has not been assumed: uncertain references retain their workspace. The tests use local simulated delivery evidence and never approve or merge a real delivery. Native Electron/platform behavior on other operating systems remains unverified; one desktop test skips an unavailable materialized Electron binary. No large production-data performance benchmark was run.
 
 Unclassified historical data, uncertain native/review references, consumed desktop staging with changed contents and unreconciled recovery remain retained. Partial workspace groups require independently established remaining mappings. Interrupted teardown never retries automatically without explicit verified idempotency. These conservative cases are described in `docs/factory/storage-retention.md`.
+
+## Integration with recovery changes from main
+
+On 2026-10-20, integrated target `28d748d44852e6c304453defa34f16019eb38eee`
+into task head `09a40cdeb3a4fba2101134d739ba1c97a29c39ca` for PR #164.
+The automatic merge had no conflicts. Combined tree before this evidence and
+changelog-link update: `d1ba0558894f1209ab6be719009a9e755016e010`.
+No additional runtime source edits were needed.
+
+Validation ran with inherited `BOBS_FACTORY_*` settings removed,
+`F1_AGENT_MODE=mock` and `OPENCODE_LIVE=0`:
+
+- `pnpm build` and `pnpm typecheck`: passed.
+- EdgeWorker WorktreeRecovery, merge-recovery, capture-recovery,
+  WorkflowRuntime, WorktreeArtifacts and StorageRetention suites: 219 passed.
+- `pnpm --filter bobs-factory-f1 exec vitest run test/storage-retention.test.ts`:
+  all three scenarios passed. Native mock continuation and terminal-event bytes
+  survived restart; aged delivered work was reclaimed while stopped work and
+  durable approval/output records survived. Five update cycles reproduced the
+  table above, with at most one simulated worker.
+- `F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/stuck-run-recovery.mjs`:
+  all ten grouped assertions passed, including exact committed-worktree
+  restoration, already-merged approved delivery reconciliation without provider
+  mutation, and independently required correction after green CI. Synthetic
+  evidence remains at
+  `/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-stuck-recovery-A5aOjw/evidence.json`.
+- CLI local startup and OwnedUpdateLifecycle suites: 13 passed.
+- Desktop suite and repository Biome CI checks: passed.
+
+This establishes simulated orchestration on the combined source tree. It does
+not add real-provider continuation or other-platform native evidence; the limits
+above remain. Fresh independent review and downstream QA remain required.

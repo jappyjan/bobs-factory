@@ -80,7 +80,33 @@ export async function launchFactory(values: {
 					opencodeDefaultModel: values.model,
 				}
 			: {}),
-		repositories: config.repositories,
+		// Preserve the original interpretation across the move to the persistent
+		// home and later config reloads. Bare executable names still use PATH.
+		repositories: config.repositories.map((repo) => ({
+			...repo,
+			repositoryPath: resolvePath(repo.repositoryPath),
+			workspaceBaseDir: resolvePath(repo.workspaceBaseDir),
+			mcpConfigPath: Array.isArray(repo.mcpConfigPath)
+				? repo.mcpConfigPath.map(resolvePath)
+				: repo.mcpConfigPath
+					? resolvePath(repo.mcpConfigPath)
+					: undefined,
+			promptTemplatePath: repo.promptTemplatePath
+				? resolvePath(repo.promptTemplatePath)
+				: undefined,
+			gitProvider:
+				repo.gitProvider?.type === "custom" &&
+				repo.gitProvider.command.includes("/")
+					? {
+							...repo.gitProvider,
+							command: resolvePath(repo.gitProvider.command),
+						}
+					: repo.gitProvider,
+		})),
+		slackMcpConfigs: config.slackMcpConfigs?.map(resolvePath),
+		zulipMcpConfigs: config.zulipMcpConfigs?.map(resolvePath),
+		linearMcpConfigs: config.linearMcpConfigs?.map(resolvePath),
+		githubMcpConfigs: config.githubMcpConfigs?.map(resolvePath),
 	};
 	// Zod parsing can reorder keys without changing settings. Keep the original
 	// bytes so restarting an identical owned runtime preserves the update receipt.
@@ -128,6 +154,9 @@ export async function launchFactory(values: {
 			repositoryPath: repository.repositoryPath,
 			runner: selected as RunnerType,
 		});
+	// Resolve launch/config paths first, then leave the caller's disposable
+	// checkout. The long-lived worker must survive that worktree being removed.
+	process.chdir(home);
 	const address = `http://localhost:${port}`;
 	console.log(`Bob's Factory: ${address}\nState: ${home}`);
 	if (values.open !== false) {
