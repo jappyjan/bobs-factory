@@ -1,4 +1,4 @@
-name: Website
+name: Website / Build and deploy
 
 # Builds website PRs and publishes main/releases to GitHub Pages.
 on:
@@ -26,8 +26,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'deploy' }}
@@ -35,7 +33,12 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build website
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
     defaults:
       run:
         working-directory: website
@@ -74,9 +77,14 @@ jobs:
           path: website/dist
 
   deploy:
+    name: Deploy GitHub Pages
     if: github.event_name != 'pull_request'
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

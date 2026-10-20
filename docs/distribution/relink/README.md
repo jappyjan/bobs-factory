@@ -1,5 +1,8 @@
 # Pinned Linux x64 relink diagnostic
 
+Run **Diagnostics / Relink Bun** manually in Actions; its former delivery-branch
+push trigger is retired. Start with `configure` and select a relink mode explicitly.
+
 This is disposable engineering work for [Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116).
 It does not change the Factory runtime or produce a release/source-license
 acceptance receipt. The initial branch starts at PR #91 commit
