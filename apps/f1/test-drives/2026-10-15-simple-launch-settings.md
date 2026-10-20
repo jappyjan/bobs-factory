@@ -385,3 +385,68 @@ fresh QA, independent review, provider readiness, human acceptance or confirmed
 merge. The desktop helper suite exited zero with one skipped test; lint retained
 25 warnings. No real inference provider was called. This follow-up changes only
 the report; the original failures and historical QA remain preserved.
+
+## Dynamic-port correction on 2026-10-20
+
+The Factory operator (name not recorded) answered the listener question at
+`2026-10-20T20:23:53.389Z`: “make it so test runs use dynamic ports and dont
+collide.” Source: `/workflowExecution/answers/5`. This authorizes the fixture
+correction; it does not waive verification or delivery gates.
+
+Added `apps/f1/src/ports.mjs`, which asks the OS for available ports and reserves
+both IPv4 and IPv6 loopback listeners through fixture setup. It retries an IPv6
+port conflict, supports hosts without IPv6, and closes reservations on allocation
+failure. Each fixture releases its reservation immediately before worker startup
+and retains its chosen ports through restart. This follows the existing launch
+fixture's reservation/handoff pattern, with both address families reserved.
+There remains a short release-to-bind handoff; the worker does not inherit the
+reservation socket. Production listener behavior is unchanged.
+
+Six selected drives now use the allocated ports consistently in their worker
+configuration, Factory origin, HTTP requests and F1 CLI environment:
+
+- `review-story.ts`
+- `architecture-approval-continuation.mjs`
+- `frozen-workflow-approval-context.mjs`
+- `ci-fix-incomplete-review.mjs`
+- `stuck-run-recovery.mjs`
+- `impact-feedback-recovery.mjs`
+
+Each prints `F1_PORTS` for debugging or an optional held dashboard. Existing
+behavior assertions, approval waits, simulated agents and worker cleanup remain.
+The final drive was included because it also used the shared 3540/3600 pair.
+
+All six drives passed using their existing selected commands. During execution,
+the validation wrapper held every available former port in the set
+3540, 3541, 3542, 3600, 3601, 3602 and 3604. Existing listeners were left alone;
+the wrapper closed only its own listeners afterward. All six drives selected
+different ports. The five initially affected drives passed at code commit
+`e980c57f`; the additional impact-feedback drive passed at `4803dfc7`.
+
+The two allocator regression tests passed: simultaneous fixture reservations
+remain distinct and exclusive, release permits worker rebinding, repeated cleanup
+is safe, another listener remains active, and invalid counts reject. The first
+test attempt exposed macOS's separate IPv4/IPv6 binding behavior; explicit
+reservations for both families corrected it. Build and typecheck passed in the
+required commit hooks. Changed-file Biome, helper syntax and whitespace checks
+passed.
+
+Evidence in the retained run directory:
+
+- `fix-r15-drive-receipts.json` and `fix-r15-impact-drive-receipts.json` record
+  exact commands, tested revisions, allocated ports and occupied former ports.
+- `fix-r15-<command-id>.log` contains each complete drive execution.
+- `fix-r15-commit-checks.log` and `fix-r15-impact-commit-checks.log` contain build
+  and typecheck results.
+- `fix-r15-dynamic-ports.patch` retains the fixture/helper correction.
+- `fix-r15-verification-inventory.json` contains six fresh passing receipts and
+  51 earlier passing receipts covering all 57 selected command IDs. Earlier
+  receipts retain their original revisions and provenance; they are not claimed
+  as 57 fresh executions of this revision. The prior failures remain retained.
+
+The listener blocker is corrected without stopping unrelated services. Independent
+impact assessment must reassess the changed fixtures, remove their obsolete
+fixed-port resource declarations, determine which original receipts can be
+reused, and obtain required runtime receipts. These local correction results do
+not approve that gate. Fresh launcher QA, provider readiness, human acceptance
+and confirmed merge remain required. No real inference provider was called.
