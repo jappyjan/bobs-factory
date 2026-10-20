@@ -24,7 +24,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Recover stuck runs through bounded role correction, explicit architecture questions and automatic impact reassessment. Restore provable committed worktrees, reconcile already-merged approved revisions, and keep workers running after their launch directory is deleted; preserve independent review, human approvals and recovery limits.
+- Recover stuck runs through bounded role correction, explicit architecture questions and automatic impact reassessment. Restore provable committed worktrees, reconcile already-merged approved revisions, and keep workers running after their launch directory is deleted; preserve independent review, human approvals and recovery limits. ([#163](https://github.com/jappyjan/bobs-factory/pull/163))
 
 - Let CI fixers repair merge conflicts and failed checks when the latest specialist review has not finished; require fresh review afterward and retain approval safeguards. ([#161](https://github.com/jappyjan/bobs-factory/pull/161))
 
