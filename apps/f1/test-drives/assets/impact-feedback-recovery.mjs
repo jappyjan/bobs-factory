@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
@@ -33,7 +34,18 @@ writeFileSync(
 git("add", ".");
 git("commit", "-qm", "Initial fixture");
 git("remote", "add", "origin", repo);
-process.env.BOBS_FACTORY_FACTORY_PORT = "3540";
+async function freePort() {
+	const server = createServer();
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const port = server.address().port;
+	await new Promise((resolve) => server.close(resolve));
+	return port;
+}
+const rpcPort = await freePort(),
+	factoryPort = await freePort();
+const rpcOrigin = `http://127.0.0.1:${rpcPort}`;
+const factoryOrigin = `http://localhost:${factoryPort}`;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
@@ -170,7 +182,7 @@ function assessment(run, correction) {
 }
 const config = {
 	factoryHome: home,
-	serverPort: 3600,
+	serverPort: rpcPort,
 	serverHost: "127.0.0.1",
 	defaultRunner: "codex",
 	issueTrackerFactory: () => tracker,
@@ -287,7 +299,7 @@ async function until(check, message) {
 	throw new Error(message);
 }
 async function rpc(method, params = {}) {
-	const response = await fetch("http://localhost:3600/cli/rpc", {
+	const response = await fetch(`${rpcOrigin}/cli/rpc`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
@@ -396,11 +408,11 @@ try {
 	construct();
 	await worker.start();
 	const retry = await fetch(
-		"http://localhost:3540/api/runs/saved-impact-result/retry",
+		`${factoryOrigin}/api/runs/saved-impact-result/retry`,
 		{
 			method: "POST",
 			headers: {
-				Origin: "http://localhost:3540",
+				Origin: factoryOrigin,
 				"X-Factory-Request": "1",
 				"Content-Type": "application/json",
 			},
