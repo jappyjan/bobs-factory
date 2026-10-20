@@ -51,7 +51,12 @@ are retained with the exact revision in the run evidence directory:
 
 An initial workspace replay at `10c56943` was interrupted after inspection found
 a backup-alias claim mismatch. Its superseded log is retained. The final receipt
-binds the corrected committed source.
+binds the corrected committed source. A replay at `64735f34` then exposed existing
+one-second ticket-recovery polling deadlines. An isolated reproduction failed
+those waits; the same four checks passed with the existing five-second runtime
+helper, taking 1.1–1.9 seconds each. The publication promise remains blocked, so
+completion still proves that publication does not hold execution. The known-failed
+full replay was stopped and retained before the final restart.
 
 The workspace command is replayed through production `FactoryTools.tool` and
 `selectedChecks`, using the independently selected declaration from this run.

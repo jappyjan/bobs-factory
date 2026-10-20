@@ -18,6 +18,7 @@ import {
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import type { MachineCapacity } from "../src/MachineCapacity.js";
+import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 interface WorkerInternals {
 	getFactoryRuntime(): WorkflowRuntime;
@@ -137,7 +138,7 @@ it.each(
 		);
 		const tracking = restarted.worker.getTicketTracking();
 		restarted.runtime.resumeAll();
-		await vi.waitFor(() => {
+		await waitForRuntime(() => {
 			expect(adapter.publish).toHaveBeenCalled();
 			expect(restarted.runtime.get(run.id).status).toBe("completed");
 		});
@@ -160,7 +161,7 @@ it.each(
 		await restarted.worker.runnerSlots.shutdown();
 		tracking.stop();
 		failDelivery(new Error("Tracker unavailable"));
-		await vi.waitFor(() => expect(tracking.isBusy()).toBe(false));
+		await waitForRuntime(() => expect(tracking.isBusy()).toBe(false));
 		await restarted.runtime.flush();
 		expect(receipt.error).toBe("Tracker unavailable");
 		expect(recovered.status).toBe("completed");
@@ -191,7 +192,7 @@ it.each(
 			worker.getTicketTracking().stop();
 			await worker.runnerSlots.shutdown();
 			await worker.getFactoryRuntime().shutdown();
-			await vi.waitFor(() =>
+			await waitForRuntime(() =>
 				expect(worker.getTicketTracking().isBusy()).toBe(false),
 			);
 			await worker.getFactoryRuntime().flush();
@@ -332,7 +333,7 @@ it.each(
 	try {
 		await runtime.save(run);
 		const executing = runtime.launch(run);
-		await vi.waitFor(() => {
+		await waitForRuntime(() => {
 			expect(publish).toHaveBeenCalled();
 			expect(run.status).toBe("completed");
 		});
@@ -362,7 +363,7 @@ it.each(
 	} finally {
 		rejectPublication(new Error("Controlled publication outage"));
 		worker.getTicketTracking().stop();
-		await vi.waitFor(() =>
+		await waitForRuntime(() =>
 			expect(worker.getTicketTracking().isBusy()).toBe(false),
 		);
 		await runtime.shutdown();
