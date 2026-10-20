@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { loadFactoryContextSnapshot } from "bobs-factory-mcp-tools";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
+import { digest, freezeDelivery } from "../src/factory/Delivery.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { captureEvidence } from "../src/factory/FactoryTools.js";
 import type { ImpactSnapshot } from "../src/factory/Impact.js";
@@ -14,6 +15,7 @@ import {
 	inspectMergeReadiness,
 } from "../src/factory/MergeReadiness.js";
 import { questionInstructions } from "../src/factory/Questions.js";
+import { validateInventory } from "../src/factory/SpecialistReview.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { SessionSemaphore } from "../src/RunnerConcurrency.js";
@@ -162,6 +164,152 @@ async function fixture() {
 		getInput: () => input,
 	};
 }
+
+it.each([
+	false,
+	true,
+])("corrects repository-boundary mistakes inside the specialist role (saved=%s)", async (saved) => {
+	const f = await fixture();
+	const inventory = validateInventory({
+		schemaVersion: 1,
+		requirements: [
+			{
+				id: "R1",
+				criterion: "Preserve restricted model selection",
+				classification: "active",
+				sources: [{ source: "originalInput", reference: "/input" }],
+			},
+		],
+		decisions: [],
+		conflicts: [],
+		sourceReceipt: {
+			considered: [{ source: "originalInput", reference: "/input" }],
+			unavailable: [],
+		},
+		questions: [],
+	});
+	f.ctx.run.reviewRounds = [
+		{
+			schemaVersion: 1,
+			round: 1,
+			key: "specialist-review",
+			inventory,
+			headSha: f.ctx.progress!.currentRevision!.headSha,
+			baseSha: "base",
+			historyLength: 0,
+			reviewers: [
+				{
+					id: "security",
+					key: "specialist-review/0/security",
+					group: 0,
+					contract: "specialist-v1",
+				},
+			],
+			context: {},
+			at: "now",
+		},
+	];
+	f.ctx.step = {
+		...f.ctx.step,
+		id: "security",
+		reviewContract: "specialist-v1",
+	};
+	f.ctx.run.step = "specialist-review/0/security";
+	f.ctx.stepKey = f.ctx.run.step;
+	const boundary = {
+		requirementIds: ["R1"],
+		areas: ["selection"],
+		independence: "Inspected actual repository sources",
+		dependencies: ["view.txt"],
+	};
+	const corrected = {
+		status: "completed",
+		summary: "Reviewed the current source",
+		blockers: [],
+		findings: [],
+		evidenceBoundary: boundary,
+	};
+	const invalid = {
+		...corrected,
+		evidenceBoundary: {
+			...boundary,
+			dependencies: ["/progress/newHistory/7/output/comments"],
+		},
+	};
+	let turns = 0;
+	f.runner.getMessages = () => [
+		{
+			type: "result",
+			result: JSON.stringify(!saved && turns++ === 0 ? invalid : corrected),
+		},
+	];
+	if (saved) f.ctx.resumeAgent!.result!.output = invalid;
+	else f.ctx.resumeAgent = undefined;
+	const result = await f.worker.executeFactoryAgent(f.ctx);
+	expect(result.evidenceBoundary.dependencies).toEqual(["view.txt"]);
+	expect(f.getInput().outputCorrection.issues).toEqual(
+		expect.arrayContaining([
+			expect.objectContaining({
+				path: "/evidenceBoundary/dependencies/0",
+				message: expect.stringContaining("relative repository"),
+			}),
+		]),
+	);
+	expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
+	expect(f.runner.start).toHaveBeenCalledTimes(saved ? 1 : 2);
+});
+
+it("corrects a revised delivery version in its saved planner conversation before independent review", async () => {
+	const f = await fixture();
+	f.ctx.step = { ...f.ctx.step, id: "plan" };
+	f.ctx.run.step = "pipeline/plan";
+	const contract = {
+		format: "delivery-v1",
+		version: 1,
+		mode: "repository",
+		authorization: { status: "authorized", reference: "Original user request" },
+		executionReference: digest({
+			runner: f.ctx.run.runner,
+			repositoryId: f.ctx.run.repositoryId,
+		}),
+		targets: [],
+	};
+	freezeDelivery(f.ctx.run, contract);
+	const original = structuredClone(f.ctx.run.delivery);
+	const changed = {
+		...contract,
+		authorization: {
+			...contract.authorization,
+			reference: "Explicit new privacy answer",
+		},
+	};
+	f.ctx.resumeAgent!.result!.output = {
+		plan: "Revised plan",
+		assets: [],
+		deliveryContract: changed,
+	};
+	f.runner.getMessages = () => [
+		{
+			type: "result",
+			result: JSON.stringify({
+				plan: "Revised plan",
+				assets: [],
+				deliveryContract: { ...changed, version: 2 },
+			}),
+		},
+	];
+	const output = await f.worker.executeFactoryAgent(f.ctx);
+	expect(output.deliveryContract.version).toBe(2);
+	expect(f.getInput().outputCorrection.issues).toEqual([
+		expect.objectContaining({
+			path: "/deliveryContract",
+			message: expect.stringContaining("advance its reviewed version beyond 1"),
+		}),
+	]);
+	expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
+	expect(f.ctx.run.delivery).toEqual(original);
+	expect(f.ctx.run.deliveryContracts ?? []).toEqual([]);
+});
 
 it("supplies accepted workflow gates and original operator receipts to a restricted-input implementer, overriding model-supplied policy", async () => {
 	const f = await fixture();
