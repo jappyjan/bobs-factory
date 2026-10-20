@@ -21,6 +21,7 @@ import type { MachineCapacity } from "../src/MachineCapacity.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 interface WorkerInternals {
+	stop(): Promise<void>;
 	getFactoryRuntime(): WorkflowRuntime;
 	getTicketTracking(): TicketTracking;
 	factoryTicketAdapter(run: FactoryRun): Promise<TicketAdapter>;
@@ -129,8 +130,7 @@ it.each(
 			receipts: [{ key: "saved-progress", body: "Retained publication" }],
 		};
 		await first.runtime.save(run);
-		await first.runtime.shutdown();
-		await first.worker.runnerSlots.shutdown();
+		await first.worker.stop();
 
 		const restarted = boot();
 		vi.spyOn(restarted.worker, "factoryTicketAdapter").mockResolvedValue(
@@ -157,8 +157,7 @@ it.each(
 		expect(deliveryId).toBeDefined();
 		expect(receipt.delivered).not.toBe(true);
 		// An unavailable tracker must not hold shutdown after work has settled.
-		await restarted.runtime.shutdown();
-		await restarted.worker.runnerSlots.shutdown();
+		await restarted.worker.stop();
 		tracking.stop();
 		failDelivery(new Error("Tracker unavailable"));
 		await waitForRuntime(() => expect(tracking.isBusy()).toBe(false));
@@ -190,8 +189,7 @@ it.each(
 		failDelivery(new Error("Fixture cleanup"));
 		for (const worker of workers) {
 			worker.getTicketTracking().stop();
-			await worker.runnerSlots.shutdown();
-			await worker.getFactoryRuntime().shutdown();
+			await worker.stop();
 			await waitForRuntime(() =>
 				expect(worker.getTicketTracking().isBusy()).toBe(false),
 			);
@@ -366,8 +364,7 @@ it.each(
 		await waitForRuntime(() =>
 			expect(worker.getTicketTracking().isBusy()).toBe(false),
 		);
-		await runtime.shutdown();
-		await worker.runnerSlots.shutdown();
+		await worker.stop();
 		vi.restoreAllMocks();
 		rmSync(home, { recursive: true, force: true });
 	}

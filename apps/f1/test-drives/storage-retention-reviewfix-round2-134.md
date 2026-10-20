@@ -56,7 +56,12 @@ one-second ticket-recovery polling deadlines. An isolated reproduction failed
 those waits; the same four checks passed with the existing five-second runtime
 helper, taking 1.1–1.9 seconds each. The publication promise remains blocked, so
 completion still proves that publication does not hold execution. The known-failed
-full replay was stopped and retained before the final restart.
+full replay was stopped and retained before the final restart. The complete
+429-second replay at `93505761` passed the behavior checks but hit one MCP
+fixture cleanup race: it removed a home before the worker's retention callbacks
+had stopped. The affected MCP and ticket-recovery fixtures now await full worker shutdown
+before deleting homes or constructing their replacements; all 20 checks pass. The entire check
+is rerun at the resulting revision. Failed receipts and logs remain retained.
 
 The workspace command is replayed through production `FactoryTools.tool` and
 `selectedChecks`, using the independently selected declaration from this run.
