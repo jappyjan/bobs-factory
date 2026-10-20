@@ -898,6 +898,7 @@ export function assertAggregateRevision(
 
 export function aggregateForContext(
 	context: ExecutionContext,
+	options: { requireComplete?: boolean } = {},
 ): AggregateReview | undefined {
 	if (!context.run.reviewRounds?.length) return;
 	const prefix = (
@@ -922,10 +923,13 @@ export function aggregateForContext(
 	}
 	if (!baseline) return;
 	const aggregate = latestAggregate(context.run, baseline.key);
-	if (!aggregate || aggregate.baseline.round !== baseline.round)
+	if (!aggregate || aggregate.baseline.round !== baseline.round) {
+		// Correction paths can proceed without approval; never reuse an older round.
+		if (options.requireComplete === false) return;
 		throw new Error(
 			"Latest configured specialist round has no complete aggregate; approval is blocked",
 		);
+	}
 	return aggregate;
 }
 
