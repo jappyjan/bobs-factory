@@ -4,6 +4,7 @@ import {
 	type ReactNode,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import type { GuideChapter } from "../FactoryResults";
@@ -102,9 +103,29 @@ export function BriefReview({
 	const evidenceOpen = !brief.story || evidenceShown;
 	// brief-v3 replaces the evidence below the story with Dig deeper.
 	const dive = Boolean(brief.tour);
+	const [diveOpen, setDiveOpen] = useState(false);
 	const [diveFocus, setDiveFocus] = useState<DiveFocus>();
-	const focusDive = (focus: Omit<DiveFocus, "nonce">) =>
+	const focusDive = (focus: Omit<DiveFocus, "nonce">) => {
+		setDiveOpen(true);
 		setDiveFocus({ ...focus, nonce: Date.now() });
+	};
+	const [navigationTarget, setNavigationTarget] =
+		useState<HTMLDivElement | null>(null);
+	const footer = useRef<HTMLElement>(null);
+	const container = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const bar = footer.current;
+		if (!bar) return;
+		const measure = () =>
+			container.current?.style.setProperty(
+				"--brief-footer-height",
+				`${bar.offsetHeight}px`,
+			);
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(bar);
+		return () => observer.disconnect();
+	}, []);
 	const [deckSlide, setDeckSlide] = useState<{
 		slide: "calls" | "beyond";
 		nonce: number;
@@ -404,22 +425,26 @@ export function BriefReview({
 					};
 	};
 	return (
-		<div className="brief">
+		<div className="brief brief-with-footer" ref={container}>
 			<div className="brief-main">
 				{dive && brief.story && (
 					<>
 						<StoryDeck
 							brief={brief}
+							navigationTarget={navigationTarget}
 							story={brief.story}
 							storageKey={storageKey}
 							readiness={readiness}
 							proof={proof}
 							judge={(i) => judge(`/yourCall/${i}`, ["Fine", "Change it"])}
-							onEvidence={() =>
-								document
-									.getElementById("brief-dive")
-									?.scrollIntoView({ behavior: "smooth", block: "start" })
-							}
+							onEvidence={() => {
+								setDiveOpen(true);
+								requestAnimationFrame(() =>
+									document
+										.getElementById("brief-dive")
+										?.scrollIntoView({ behavior: "smooth", block: "start" }),
+								);
+							}}
 							onDecide={decide}
 							annotate={(path, label, kind, context, node) => (
 								<Commentable
@@ -438,6 +463,11 @@ export function BriefReview({
 							show={deckSlide}
 						/>
 						<DigDeeper
+							expanded={diveOpen}
+							onExpandedChange={(open) => {
+								setDiveOpen(open);
+								if (!open) setDiveFocus(undefined);
+							}}
 							brief={brief}
 							files={manifest?.files}
 							filesError={
@@ -474,6 +504,7 @@ export function BriefReview({
 				)}
 				{!dive && brief.story && (
 					<StoryDeck
+						navigationTarget={navigationTarget}
 						brief={brief}
 						story={brief.story}
 						storageKey={storageKey}
@@ -873,18 +904,27 @@ export function BriefReview({
 				)}
 			</div>
 
-			{feedback && (
-				<DecisionPanel
-					run={run}
-					controller={feedback}
-					requirements={judged(linePaths.slice(0, brief.requirements.length))}
-					requirementTotal={brief.requirements.length}
-					calls={judged(linePaths.slice(brief.requirements.length))}
-					callTotal={brief.yourCall.length}
-					objections={objections}
-					comments={comments}
-				/>
-			)}
+			<footer className="brief-footer" ref={footer}>
+				<div className="brief-footer-inner">
+					{brief.story && (
+						<div className="brief-slide-controls" ref={setNavigationTarget} />
+					)}
+					{feedback && (
+						<DecisionPanel
+							run={run}
+							controller={feedback}
+							requirements={judged(
+								linePaths.slice(0, brief.requirements.length),
+							)}
+							requirementTotal={brief.requirements.length}
+							calls={judged(linePaths.slice(brief.requirements.length))}
+							callTotal={brief.yourCall.length}
+							objections={objections}
+							comments={comments}
+						/>
+					)}
+				</div>
+			</footer>
 
 			<Modal
 				open={Boolean(lightbox)}
@@ -996,7 +1036,10 @@ function DecisionPanel({
 					disabled={!matching || comments > 0}
 					onClick={approve}
 				>
-					Approve {String(run.reviewGate?.headSha ?? "").slice(0, 8)}
+					Approve{" "}
+					<span className="brief-approval-revision">
+						{String(run.reviewGate?.headSha ?? "").slice(0, 8)}
+					</span>
 				</Button>
 			)}
 			<Button variant="secondary" onClick={decide}>

@@ -83,6 +83,8 @@ const lineKey = (file: string, line: DiffLine) =>
  */
 export function DigDeeper({
 	brief,
+	expanded,
+	onExpandedChange,
 	files,
 	filesError,
 	usePatch,
@@ -94,6 +96,8 @@ export function DigDeeper({
 	checksFooter,
 }: {
 	brief: ReviewBrief;
+	expanded: boolean;
+	onExpandedChange: (open: boolean) => void;
 	files?: ReviewFile[];
 	filesError?: ReactNode;
 	usePatch: (file: ReviewFile) => PatchState;
@@ -120,7 +124,7 @@ export function DigDeeper({
 	const [openCheck, setOpenCheck] = useState<string>();
 	// biome-ignore lint/correctness/useExhaustiveDependencies: runs once per jump request
 	useEffect(() => {
-		if (!focus) return;
+		if (!focus || !expanded) return;
 		setTab(focus.tab);
 		if (focus.file) {
 			const owner = tourOwner(tour, focus.file)?.file ?? focus.file;
@@ -130,6 +134,7 @@ export function DigDeeper({
 		if (check) setOpenCheck(brief.requirements[Number(check[1])]?.id);
 		// Wait for the tab and any opened file or patch to render before scrolling.
 		let tries = 0;
+		let timer: ReturnType<typeof setTimeout>;
 		const scroll = () => {
 			const file = focus.file && files?.find((f) => f.path === focus.file);
 			const element =
@@ -150,11 +155,15 @@ export function DigDeeper({
 					));
 			if (element)
 				element.scrollIntoView({ behavior: "smooth", block: "center" });
-			else if (tries++ < 20) setTimeout(scroll, 100);
+			else if (tries++ < 20) timer = setTimeout(scroll, 100);
 		};
-		requestAnimationFrame(scroll);
-	}, [focus]);
-	// Sticky tabs sit below the app header, whose height changes with the layout.
+		const frame = requestAnimationFrame(scroll);
+		return () => {
+			cancelAnimationFrame(frame);
+			clearTimeout(timer);
+		};
+	}, [focus, expanded]);
+	// Keep explicit jumps clear of the app header at every layout size.
 	const [top, setTop] = useState(0);
 	useEffect(() => {
 		const header = document.querySelector<HTMLElement>(".site-header");
@@ -167,72 +176,79 @@ export function DigDeeper({
 		(e) => e.flag || e.pins?.some((p) => p.flag),
 	).length;
 	return (
-		<section
+		<details
+			open={expanded}
+			onToggle={(event) => onExpandedChange(event.currentTarget.open)}
 			id="brief-dive"
 			className="dive"
 			aria-labelledby="dive-title"
 			style={{ "--dive-top": `${top}px` } as CSSProperties}
 		>
-			<header>
-				<h2 id="dive-title">Dig deeper</h2>
-				<p className="muted">
-					Everything behind the story, one question at a time.
-				</p>
-			</header>
-			<nav className="dive-tabs" aria-label="Dig deeper">
-				{tabs.map(([id, label]) => (
-					<button
-						type="button"
-						key={id}
-						aria-pressed={tab === id}
-						onClick={() => {
-							setTab(id);
-							document
-								.getElementById("brief-dive")
-								?.scrollIntoView({ behavior: "smooth", block: "start" });
-						}}
-					>
-						{label}
-						{id === "code" && flagged > 0 && (
-							<span className="dive-count" title={`${flagged} worth a look`}>
-								{flagged}
-							</span>
-						)}
-					</button>
-				))}
-			</nav>
-			{tab === "how" && system && (
-				<HowItWorks
-					system={system}
-					highlight={focus?.flow}
-					onCode={(file, match) => onFocus({ tab: "code", file, match })}
-				/>
-			)}
-			{tab === "code" && (
-				<TheCode
-					tour={tour}
-					files={files}
-					error={filesError}
-					usePatch={usePatch}
-					open={open}
-					setOpen={setOpen}
-					target={focus?.tab === "code" ? focus : undefined}
-				/>
-			)}
-			{tab === "checks" && (
-				<Checks
-					brief={brief}
-					open={openCheck}
-					setOpen={setOpenCheck}
-					proof={proof}
-					judge={judge}
-					target={target}
-					onFile={(file) => onFocus({ tab: "code", file })}
-					footer={checksFooter}
-				/>
-			)}
-			{tab === "choices" && <Choices brief={brief} target={target} />}
-		</section>
+			<summary className="dive-summary">
+				<div>
+					<h2 id="dive-title">Dig deeper</h2>
+					<p className="muted">How it works, the code, checks and choices.</p>
+				</div>
+				<span className="dive-chev" aria-hidden="true">
+					{expanded ? "▾" : "▸"}
+				</span>
+			</summary>
+			<div className="dive-content">
+				<nav className="dive-tabs" aria-label="Dig deeper">
+					{tabs.map(([id, label]) => (
+						<button
+							type="button"
+							key={id}
+							aria-pressed={tab === id}
+							onClick={() => {
+								setTab(id);
+								document
+									.getElementById("brief-dive")
+									?.scrollIntoView({ behavior: "smooth", block: "start" });
+							}}
+						>
+							{label}
+							{id === "code" && flagged > 0 && (
+								<span className="dive-count" title={`${flagged} worth a look`}>
+									{flagged}
+								</span>
+							)}
+						</button>
+					))}
+				</nav>
+				{tab === "how" && system && (
+					<HowItWorks
+						system={system}
+						highlight={focus?.flow}
+						onCode={(file, match) => onFocus({ tab: "code", file, match })}
+					/>
+				)}
+				{tab === "code" && (
+					<TheCode
+						tour={tour}
+						files={files}
+						error={filesError}
+						usePatch={usePatch}
+						open={open}
+						setOpen={setOpen}
+						target={focus?.tab === "code" ? focus : undefined}
+					/>
+				)}
+				{tab === "checks" && (
+					<Checks
+						brief={brief}
+						open={openCheck}
+						setOpen={setOpenCheck}
+						proof={proof}
+						judge={judge}
+						target={target}
+						onFile={(file) => onFocus({ tab: "code", file })}
+						footer={checksFooter}
+					/>
+				)}
+				{tab === "choices" && <Choices brief={brief} target={target} />}
+			</div>
+		</details>
 	);
 }
 
