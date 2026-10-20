@@ -54,6 +54,7 @@ import {
 	digest,
 	externalCompletionProven,
 	freezeDelivery,
+	validateDeliveryContract,
 } from "./Delivery.js";
 import {
 	acquireDelivery,
@@ -98,6 +99,10 @@ import {
 	type LaunchAttachments,
 } from "./LaunchAssets.js";
 import { recordFeedbackAssessment } from "./MergeReadiness.js";
+import {
+	pendingMergeConfirmation,
+	recordMergeConfirmation,
+} from "./MergeRecovery.js";
 import { beginStepAttempt, finishStepAttempt } from "./Provenance.js";
 import { qaDigest as importDigest } from "./Qa.js";
 import {
@@ -1393,6 +1398,14 @@ export class WorkflowRuntime {
 				);
 			}
 			run.step = key;
+			if (
+				step.tool === "delivery-route" &&
+				!parallel &&
+				this.reopenInvalidDeliveryPlan(run, checkpoint, steps, prefix)
+			) {
+				await this.save(run);
+				continue;
+			}
 			this.log(run, key, `Starting ${step.name} (pass ${count})`);
 			const deliveryAware =
 				!!run.delivery || steps.some((s) => s.tool === "delivery-route");
@@ -1594,7 +1607,21 @@ export class WorkflowRuntime {
 					);
 					decision.snapshot = snapshot;
 				}
-				await assertImpactFresh(context, decision, fanout);
+				try {
+					await assertImpactFresh(context, decision, fanout);
+				} catch (error) {
+					if (
+						!signal.aborted &&
+						!parallel &&
+						error instanceof Error &&
+						error.message === STALE_IMPACT_MESSAGE &&
+						this.renewStaleImpact(run, checkpoint, steps, prefix)
+					) {
+						await this.save(run);
+						continue;
+					}
+					throw error;
+				}
 				await this.save(run);
 			}
 			if (step.impactContract && state.phase === "executing") {
@@ -2243,8 +2270,33 @@ export class WorkflowRuntime {
 								? "blocked"
 								: "failed",
 					);
+					if (
+						!signal.aborted &&
+						!parallel &&
+						error instanceof Error &&
+						error.message === STALE_IMPACT_MESSAGE &&
+						this.renewStaleImpact(run, checkpoint, steps, prefix)
+					) {
+						await this.save(run);
+						continue;
+					}
 					throw error;
 				}
+			}
+			if (step.tool === "handoff" && readPath(output, "merged") === true) {
+				const pending = pendingMergeConfirmation(run, output);
+				if (!pending?.fromHandoff)
+					throw new Error(
+						"Merged handoff cannot skip unfinished workflow work",
+					);
+				recordMergeConfirmation(run, pending, output);
+				this.log(
+					run,
+					key,
+					"Confirmed the previously approved revision was already merged.",
+				);
+				await this.save(run);
+				continue;
 			}
 			// Restored waits must use current gate logic, retaining all role evidence.
 			if (
@@ -2649,6 +2701,29 @@ export class WorkflowRuntime {
 				signal.throwIfAborted();
 				continue;
 			}
+			if (
+				step.architectureContract === "architecture-review-v1" &&
+				Array.isArray(readPath(output, "questions")) &&
+				(readPath(output, "questions") as unknown[]).length
+			) {
+				if (parallel)
+					throw new Error("Human checkpoints belong outside fanout branches");
+				if (state.phase !== "answered")
+					await this.waitForAnswers(
+						run,
+						readPath(output, "questions") as string[],
+						signal,
+						state,
+						undefined,
+						context,
+					);
+				// Keep the accepted graph: a rejected review returns to its configured
+				// candidate route with the explicit answer, never an implicit acceptance.
+				checkpoint.current = this.nextStep(steps, step, output);
+				checkpoint.active = undefined;
+				await this.save(run);
+				continue;
+			}
 			if (step.tool === "architecture-decision") {
 				if (parallel)
 					throw new Error("Human checkpoints belong outside fanout branches");
@@ -2855,11 +2930,24 @@ export class WorkflowRuntime {
 					step.impactSource &&
 					continuationEligible(impact, latestAggregate(run, context.reviewKey));
 				if (continued) {
-					await assertImpactFresh(
-						context,
-						impact!,
-						impactFanout(context, impact!),
-					);
+					try {
+						await assertImpactFresh(
+							context,
+							impact!,
+							impactFanout(context, impact!),
+						);
+					} catch (error) {
+						if (
+							!signal.aborted &&
+							error instanceof Error &&
+							error.message === STALE_IMPACT_MESSAGE &&
+							this.renewStaleImpact(run, checkpoint, steps, prefix)
+						) {
+							await this.save(run);
+							continue;
+						}
+						throw error;
+					}
 					const result = output as { headSha: string };
 					run.approvalContinuations ??= [];
 					run.approvalContinuations.push({
@@ -3624,6 +3712,74 @@ export class WorkflowRuntime {
 			key,
 		);
 	}
+	private reopenInvalidDeliveryPlan(
+		run: FactoryRun,
+		frame: GraphCheckpoint,
+		steps: WorkflowStep[],
+		prefix: string,
+	): boolean {
+		const candidate = run.outputs.plan;
+		try {
+			validateDeliveryContract(run, readPath(candidate, "deliveryContract"));
+			return false;
+		} catch (error) {
+			const plan = steps.find((s) => s.id === "plan" && s.type === "agent");
+			const review = steps.find(
+				(s) => s.id === "plan-review" && s.type === "agent",
+			);
+			const revision = run.roleRevisions?.[`${prefix}plan`];
+			// Only re-enter the accepted author -> independent review -> gate route.
+			if (
+				!plan ||
+				!review ||
+				!revision ||
+				revision.dirty ||
+				this.nextStep(steps, plan, candidate) !== review.id ||
+				this.nextStep(steps, review, run.outputs[review.id]) !== frame.current
+			)
+				return false;
+			frame.current = plan.id;
+			frame.visits[plan.id] = (frame.visits[plan.id] ?? 0) + 1;
+			frame.active = {
+				phase: "executing",
+				agent: {
+					...frame.agentSessions?.[plan.id],
+					runner:
+						frame.agentSessions?.[plan.id]?.runner ??
+						AgentSettingsSchema.shape.runner
+							.unwrap()
+							.parse(plan.runner ?? run.runner ?? "claude"),
+					result: { output: candidate, revision },
+				},
+			};
+			this.log(
+				run,
+				"run",
+				`Returning invalid delivery candidate to ${prefix}plan for bounded output correction and fresh independent review: ${error instanceof Error ? error.message : String(error)}`,
+			);
+			return true;
+		}
+	}
+	private renewStaleImpact(
+		run: FactoryRun,
+		frame: GraphCheckpoint,
+		steps: WorkflowStep[],
+		prefix: string,
+	): boolean {
+		const source = steps.find((s) => s.id === frame.current)?.impactSource;
+		const assessor = steps.find(
+			(s) => s.id === source && s.impactContract === "impact-v1",
+		);
+		if (!assessor) return false;
+		frame.current = assessor.id;
+		frame.active = undefined;
+		this.log(
+			run,
+			"run",
+			`Renewing stale impact through ${prefix}${assessor.id}; completed work and evidence remain retained and required gates must pass again. Existing pass limits still apply.`,
+		);
+		return true;
+	}
 	retry(id: string): FactoryRun {
 		const run = this.get(id);
 		this.requireRunAvailable(run);
@@ -3643,23 +3799,11 @@ export class WorkflowRuntime {
 		) => {
 			let step = steps.find((item) => item.id === frame.current);
 			if (!step) return;
-			const impactSource = step.impactSource;
-			if (run.error === STALE_IMPACT_MESSAGE && impactSource) {
-				const assessor = steps.find(
-					(item) =>
-						item.id === impactSource && item.impactContract === "impact-v1",
-				);
-				if (assessor) {
-					frame.current = assessor.id;
-					frame.active = undefined;
-					step = assessor;
-					this.log(
-						run,
-						"run",
-						`Retry renews stale impact through ${prefix}${assessor.id}; completed work and evidence remain retained and required gates must pass again.`,
-					);
-				}
-			}
+			if (
+				run.error === STALE_IMPACT_MESSAGE &&
+				this.renewStaleImpact(run, frame, steps, prefix)
+			)
+				step = steps.find((s) => s.id === frame.current)!;
 			const key = `${prefix}${step.id}`;
 			const agent =
 				frame.active?.phase === "executing" ? frame.active.agent : undefined;

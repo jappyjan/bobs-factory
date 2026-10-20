@@ -451,6 +451,7 @@ export class OwnedUpdateLifecycle {
 				],
 				{
 					detached: true,
+					cwd: this.home,
 					stdio: ["ignore", log, log],
 					env: { ...process.env, BOBS_FACTORY_DESKTOP_OWNER: "1" },
 				},

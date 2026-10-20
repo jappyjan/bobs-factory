@@ -15,6 +15,7 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 | Linear publication | shared presenter, activity sinks, queued delivery | Routine progress and role outcomes use `thought`; native lifecycle/input activities retain their types and automatic threaded comments; explicit documentation uses comments | Present legacy queued records before sending; retain raw evidence locally |
 | Change impact and evidence reuse | Accepted workflow role, Factory/Takeover scheduler, review/QA and delivery gates | [`impact-v1`](factory/impact-decisions.md); original receipts plus explicit reuse links; configurable repeat limit; separate approval continuation | New stock definitions opt in. Saved/custom recipes and accepted run snapshots retain conservative graphs; custom workflows opt in explicitly with configured inventory/fanout associations |
 | Persistence | worker state, factory runs / chats / evidence | `<home>/state`, `<home>/factory`; version 5 session manifests, immutable chunks and lazy run payloads | Preserve IDs, receipts, gates, accepted definitions and legacy document backups; commit referenced chunks before manifests; move/restore complete homes with their chunks |
+| Workflow recovery | role validation, accepted checkpoints and Git provider evidence | Bounded role correction, declared impact reassessment, exact merged-delivery reconciliation and provable committed-worktree restoration | Retain frozen graphs, native conversations, evidence and human decisions. Refuse missing uncommitted data, changed/locked branches, path escapes or unfinished custom work; CLI workers leave the resolved launch directory and desktop children start in the persistent Factory home |
 | Coordinator | MachineCapacity and execution scope | `<factoryHome>/machine-capacity`, one pool per instance | Stop old consumers and descendants before transfer; capacity-directory overrides block apply until explicitly reconciled |
 | Takeover repository base | FactoryTools inspection, retained repositories and planning context | Existing PR base stays distinct from the branch used to seed its worktree | Correct a self-targeting retained base only after the inspected PR head matches the working branch; preserve the PR, worktree and historical prompts. Operator recovery of an older run confirms the current provider base and records the correction |
 | Repo hooks | GitService setup / teardown | `bobs-factory-setup.sh`, `bobs-factory-teardown.sh` | Rename only explicitly approved repository files |
@@ -61,6 +62,29 @@ an explicit task or mandatory repository rule requiring an identified approver
 still applies. Runtime attribution instructions also apply to frozen workflows
 without rewriting their graphs, historical decisions, digests or native sessions.
 Discussion, automated review and rejection never become human acceptance.
+
+Architecture candidate reviewers may return `approved: false` with concrete
+`questions` when an unresolved product, privacy or architecture choice needs human
+input. The saved question survives restart. An answer follows the accepted rejection
+route to revise and independently review the candidate; required exact-version human
+architecture acceptance remains separate. Runtime guidance covers frozen roles
+without replacing their definitions or resetting iteration budgets.
+
+Delivery candidates validate their accepted execution identity, stable operation
+IDs and advancing revision version while the planner can still correct output.
+Legacy invalid delivery checkpoints re-enter only their existing planner →
+independent reviewer → delivery gate route. The runtime never increments an accepted
+contract or fabricates a review. Earlier contracts and receipts remain retained.
+
+An already-merged PR can finish a saved terminal merge, or a repeated handoff whose
+existing human gate already recorded that exact approval. Provider and approval
+heads must match; any retained worktree must be clean at that head. Custom
+intervening/downstream work remains required. Missing single-repository worktrees
+at passive CI/handoff/review/merge checkpoints can be restored only from a retained
+clean committed role revision matching both the local branch and open PR. Staged
+indexes, locked/other checkouts, unsafe paths and in-flight agents/scripts block
+restoration. Missing evidence, chunks, native transcripts and uncommitted work
+cannot be reconstructed from a branch.
 
 Architecture candidate plans accept up to 64 deliverables, each with at most
 40 declared file operations. Large plans retain their complete runtime footprint

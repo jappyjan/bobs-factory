@@ -3,6 +3,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
+	realpathSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
@@ -20,7 +21,9 @@ beforeEach(() => {
 });
 
 const roots: string[] = [];
+const launchDirectory = process.cwd();
 afterEach(() => {
+	process.chdir(launchDirectory);
 	vi.restoreAllMocks();
 	vi.unstubAllEnvs();
 	for (const root of roots.splice(0))
@@ -131,6 +134,57 @@ it("retains operator connection repairs across local restart and preserves proje
 		else process.env.BOBS_FACTORY_FACTORY_PORT = previousPort;
 		vi.mocked(EdgeWorker).mockReset();
 	}
+});
+
+it("leaves a disposable launch directory after resolving a relative Factory home", async () => {
+	const { EdgeWorker } = await import("bobs-factory-edge-worker");
+	const root = mkdtempSync(join(tmpdir(), "factory-launch-directory-"));
+	roots.push(root);
+	const caller = join(root, "old-worktree"),
+		home = join(root, "home");
+	mkdirSync(caller);
+	vi.spyOn(process, "once").mockReturnValue(process);
+	vi.spyOn(console, "log").mockImplementation(() => {});
+	vi.mocked(EdgeWorker).mockImplementation(function () {
+		return {
+			start: async () => {},
+			setConfigPath: () => {},
+		} as unknown as InstanceType<typeof EdgeWorker>;
+	});
+	process.chdir(caller);
+	savePrivateJson(join(home, "config.json"), {
+		repositories: [
+			{
+				id: "retained",
+				name: "Retained",
+				isActive: true,
+				baseBranch: "main",
+				repositoryPath: "../repo",
+				workspaceBaseDir: "../worktrees",
+				mcpConfigPath: ["../tools.json"],
+				promptTemplatePath: "../prompt.md",
+			},
+		],
+		slackMcpConfigs: ["../slack.json"],
+	});
+	await launchLocal({ home: "../home", port: "3457", open: false });
+	rmSync(caller, { recursive: true });
+	expect(process.cwd()).toBe(realpathSync(home));
+	const saved = JSON.parse(readFileSync(join(home, "config.json"), "utf8"));
+	expect(saved.repositories[0]).toMatchObject({
+		repositoryPath: join(realpathSync(root), "repo"),
+		workspaceBaseDir: join(realpathSync(root), "worktrees"),
+		mcpConfigPath: [join(realpathSync(root), "tools.json")],
+		promptTemplatePath: join(realpathSync(root), "prompt.md"),
+	});
+	expect(saved.slackMcpConfigs).toEqual([
+		join(realpathSync(root), "slack.json"),
+	]);
+	expect(
+		execFileSync(process.execPath, ["-p", "process.cwd()"], {
+			encoding: "utf8",
+		}).trim(),
+	).toBe(process.cwd());
 });
 
 it("starts guided setup from any folder without Git, an agent or a repository", async () => {

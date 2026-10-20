@@ -323,17 +323,23 @@ export const ArchitectureReviewSchema = z
 	.object({
 		approved: z.boolean(),
 		feedback: z.array(text),
+		questions: z.array(text).optional(),
 		continuation: ArchitectureContinuationSchema.optional(),
 	})
 	.strict()
 	.refine(
-		(r) => r.approved || r.feedback.length > 0,
+		(r) => r.approved || r.feedback.length > 0 || !!r.questions?.length,
 		"Rejected candidate review requires feedback",
+	)
+	.refine(
+		(r) => !r.approved || !r.questions?.length,
+		"A candidate with unanswered questions cannot be approved",
 	)
 	.refine(
 		(r) => !r.continuation || r.approved,
 		"Rejected reviews cannot continue approval",
 	);
+export const architectureQuestionInstructions = `When a genuine product, privacy or architecture choice requires human input that the accepted answers and repository do not settle, return approved:false and questions:["the concrete unresolved choice and its consequences"], with feedback describing any candidate changes needed. The runtime asks these questions before another drafting pass, then follows the accepted rejection route to revise and independently review the candidate using the saved answer. Do not repeat unchanged drafting to obtain an answer or invent a policy. Questions and answers never accept an architecture proposal; exact-candidate review and any required human architecture acceptance still follow.`;
 export type Architecture = z.infer<typeof ArchitectureSchema>;
 export interface ArchitectureProposal {
 	id: string;
