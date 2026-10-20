@@ -84,13 +84,18 @@ export function applyImprovementAction(
 		delete state.manifest;
 		state.phase = "discussion";
 	}
-	if (action.comment?.trim())
+	if (action.comment?.trim()) {
 		state.comments.push({
 			itemId: action.itemId,
 			text: action.comment.trim(),
 			actor,
 			at: new Date().toISOString(),
 		});
+		if (action.action === "choose") {
+			delete state.manifest;
+			state.phase = "discussion";
+		}
+	}
 	if (action.action === "follow-up") {
 		if (!action.comment?.trim())
 			throw new Error("Enter the follow-up question");
@@ -108,6 +113,7 @@ export function applyImprovementAction(
 		delete state.manifest;
 	} else if (action.action === "prepare") {
 		validateChoices(proposal, state.choices, true);
+		delete state.manifest;
 		state.phase = "planning";
 	} else if (action.action === "apply") {
 		const manifest = state.manifest;
@@ -495,7 +501,17 @@ export async function runImprovement(
 					comments: state.comments,
 					choices: state.choices,
 				},
-				ProposalOutputSchema,
+				ProposalOutputSchema.superRefine((value, ctx) => {
+					try {
+						validateOpportunities(value.opportunities);
+					} catch (error) {
+						ctx.addIssue({
+							code: "custom",
+							path: ["opportunities"],
+							message: error instanceof Error ? error.message : String(error),
+						});
+					}
+				}),
 			);
 			validateOpportunities(output.opportunities);
 			const proposal = {
@@ -529,10 +545,11 @@ export async function runImprovement(
 		} else if (state.phase === "planning") {
 			const proposal = state.proposals.at(-1)!;
 			validateChoices(proposal, state.choices, true);
-			const version = improvementDigest([proposal.digest, state.choices]).slice(
-				0,
-				16,
-			);
+			const version = improvementDigest([
+				proposal.digest,
+				state.choices,
+				state.comments,
+			]).slice(0, 16);
 			const refined = await Promise.all(
 				proposal.opportunities
 					.filter((i) => state.choices[i.id]?.action === "fix")
@@ -572,6 +589,7 @@ export async function runImprovement(
 					)
 				: [];
 			if (checks.some((c) => !c.approved)) {
+				delete state.manifest;
 				state.comments.push({
 					text: `Independent plan corrections: ${checks.flatMap((c) => c.feedback).join("\n")}`,
 					actor: "independent plan checks",

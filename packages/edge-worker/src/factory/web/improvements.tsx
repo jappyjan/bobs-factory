@@ -33,12 +33,18 @@ type View = Pick<
 		}
 	>;
 };
-export function ImprovementPanel({ run }: { run: any }) {
-	const query = useQuery({
-		queryKey: ["run", run.id, "improvements"],
+export function useImprovementResearch(
+	run: { id: string; improvement?: unknown } | undefined,
+) {
+	return useQuery({
+		queryKey: ["run", run?.id, "improvements"],
+		enabled: Boolean(run?.improvement),
 		queryFn: ({ signal }) =>
-			api<View>(`/api/runs/${run.id}/improvements`, { signal }),
+			api<View>(`/api/runs/${run!.id}/improvements`, { signal }),
 	});
+}
+export function ImprovementPanel({ run }: { run: any }) {
+	const query = useImprovementResearch(run);
 	return (
 		<section
 			className="improvement-panel"
@@ -80,6 +86,11 @@ function ImprovementContent({ run, state }: { run: any; state: View }) {
 				limitations: string[];
 			}>(`/api/runs/${run.id}/improvement-destinations`, { signal }),
 	});
+	const planFeedback =
+		state.phase === "discussion" &&
+		state.comments.at(-1)?.actor === "independent plan checks"
+			? state.comments.at(-1)
+			: undefined;
 	const pending =
 		run.status === "waiting" &&
 		!state.acceptance &&
@@ -133,6 +144,16 @@ function ImprovementContent({ run, state }: { run: any; state: View }) {
 						))}
 					</ul>
 				</details>
+			)}
+			{planFeedback && (
+				<section role="status">
+					<h3>Plan needs revision</h3>
+					<Markdown>{planFeedback.text}</Markdown>
+					<p>
+						Revise the selected plans to address this feedback before applying
+						the batch.
+					</p>
+				</section>
 			)}
 			{visible && (
 				<>
@@ -425,7 +446,9 @@ function ImprovementContent({ run, state }: { run: any; state: View }) {
 									}
 									onClick={() => void submit("prepare", { choices })}
 								>
-									Prepare selected actions
+									{planFeedback
+										? "Revise selected plans"
+										: "Prepare selected actions"}
 								</Button>
 								<Button
 									requiresConnection
@@ -451,12 +474,29 @@ function ImprovementContent({ run, state }: { run: any; state: View }) {
 				</>
 			)}
 			{destinations.error && <p role="alert">{destinations.error.message}</p>}
+			{destinations.data &&
+				destinations.data.options.length === 0 &&
+				Object.values(choices).some((c) => c.action === "issue") &&
+				!state.acceptance && (
+					<p role="status">
+						No connected issue destinations are available. Connect Linear or
+						Taskbot in <Link to="/settings/tickets">Ticket managers</Link>, then{" "}
+						<button
+							type="button"
+							className="link"
+							onClick={() => void destinations.refetch()}
+						>
+							refresh destinations
+						</button>
+						.
+					</p>
+				)}
 			{destinations.data?.limitations.map((l) => (
 				<p className="muted" key={l}>
 					{l}
 				</p>
 			))}
-			{state.manifest && (
+			{state.manifest && current && (
 				<section className="improvement-manifest">
 					<h3>Review the action batch</h3>
 					{!state.acceptance &&

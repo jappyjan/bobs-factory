@@ -638,3 +638,95 @@ it("reconciles a lost Linear creation response using the same UUID without assig
 	).resolves.toEqual({ id: saved.id, url: saved.url });
 	expect(createIssue).toHaveBeenCalledTimes(1);
 });
+
+it("does not cache an invalid dependency proposal as completed and reuses successful research on Retry", async () => {
+	let invalid = true;
+	const f = fixture({
+		agent: async (context) => {
+			const output = await f.agent(context);
+			if (context.step.id === "synthesize" && invalid) {
+				invalid = false;
+				return {
+					...output,
+					opportunities: [opportunity("a", ["not-in-shortlist"])],
+				};
+			}
+			return output;
+		},
+	});
+	void f.runtime.launch(f.run);
+	await vi.waitFor(() => expect(f.run.status).toBe("failed"));
+	expect(f.run.improvementState!.proposals).toHaveLength(0);
+	expect(f.run.improvementState!.jobs["proposal-0"]!.status).toBe("failed");
+	const workers = f.calls.filter((k) => k.startsWith("worker-")).length;
+	await vi.waitFor(() => expect(f.runtime.isExecuting(f.run.id)).toBe(false));
+	void f.runtime.launch(f.run);
+	await waitDiscussion(f.run);
+	expect(f.calls.filter((k) => k.startsWith("worker-")).length).toBe(workers);
+	expect(f.run.improvementState!.proposals).toHaveLength(1);
+});
+
+it("replans after independent feedback instead of replaying a cached rejected plan", async () => {
+	let reject = true;
+	const f = fixture({
+		agent: async (context) => {
+			const output = await f.agent(context);
+			if (context.step.id === "check-security" && reject) {
+				reject = false;
+				return {
+					approved: false,
+					feedback: [
+						"Fallback recovery must wait for reconciliation before execution",
+					],
+				};
+			}
+			return output;
+		},
+	});
+	void f.runtime.launch(f.run);
+	await waitDiscussion(f.run);
+	await f.decide("prepare", { a: { action: "fix", comment: "" } });
+	await vi.waitFor(() => {
+		expect(f.run.status).toBe("waiting");
+		expect(f.run.improvementState?.comments.at(-1)?.actor).toBe(
+			"independent plan checks",
+		);
+	});
+	expect(f.run.improvementState!.manifest).toBeUndefined();
+	expect(f.calls.filter((k) => k.startsWith("package-")).length).toBe(1);
+	await f.decide("prepare");
+	await vi.waitFor(() => {
+		expect(f.run.status).toBe("waiting");
+		expect(f.run.improvementState?.phase).toBe("ready");
+	});
+	expect(f.calls.filter((k) => k.startsWith("package-")).length).toBe(2);
+	expect(f.run.improvementState!.manifest!.checks).toHaveLength(3);
+	expect(f.runtime.runs.size).toBe(1);
+});
+
+it("invalidates a prepared manifest when a new planning comment arrives", async () => {
+	const f = fixture();
+	void f.runtime.launch(f.run);
+	await waitDiscussion(f.run);
+	await f.decide("prepare", { a: { action: "fix", comment: "" } });
+	await vi.waitFor(() => {
+		expect(f.run.status).toBe("waiting");
+		expect(f.run.improvementState?.phase).toBe("ready");
+	});
+	const state = f.run.improvementState!,
+		proposal = state.proposals.at(-1)!;
+	await f.runtime.decideImprovement(
+		f.run.id,
+		{
+			action: "choose",
+			expectedRevision: state.revision,
+			version: proposal.version,
+			digest: proposal.digest,
+			comment: "Keep fallback recovery paused until reconciliation",
+		},
+		"human",
+	);
+	await waitDiscussion(f.run);
+	expect(f.run.improvementState!.manifest).toBeUndefined();
+	expect(f.run.improvementState!.choices.a?.action).toBe("fix");
+});

@@ -1,5 +1,7 @@
 # Improve codebase: research, per-item actions and independent Factory handoff
 
+Additional evidence: [real Codex research and iterative plan review](2026-10-20-improve-codebase-live.md), tested separately against Bob without applying the final batch.
+
 **Date:** 2026-10-20
 **Changed behavior:** bundled `improve-codebase` discovery with no task prompt, bounded coordinator/worker research, iterative choices, deferred issue filing and independent Factory runs.
 **Source:** implementation worktree based on `dd0b591a480593d6b9952b0e1e5acadba574ee23`; changed files are in the accompanying commit.

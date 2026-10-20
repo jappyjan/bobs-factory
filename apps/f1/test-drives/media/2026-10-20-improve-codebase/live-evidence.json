@@ -1,0 +1,541 @@
+{
+	"mode": "live",
+	"sourceSha": "2294d5abd0d80fbd4aea2f6b1ba2046ad87ecab1",
+	"runId": "manual-0df4538b-9dfb-4bca-b314-22a38c5d1c04",
+	"models": {
+		"coordinators": "gpt-6.1-sol",
+		"workers": "gpt-6-luna"
+	},
+	"observedHistory": 30,
+	"status": "waiting",
+	"phase": "ready",
+	"totalJobs": 59,
+	"uniqueNativeSessions": 59,
+	"proposals": [
+		{
+			"version": 1,
+			"digest": "4752d64408ea0741f51ef908aac7b5f99cf333006e47c5c90d68ffe98ab63b48",
+			"items": [
+				{
+					"id": "checkpoint-durability",
+					"title": "Make critical workflow checkpoints durable before continuing",
+					"strength": "worth-exploring"
+				}
+			]
+		},
+		{
+			"version": 2,
+			"digest": "896a9cae1588eaaf681f2c40aade8c3e37b641cf87c5c413db9240cf2ddd4d6d",
+			"items": [
+				{
+					"id": "checkpoint-durability",
+					"title": "Add opt-in durable checkpoints for accepted authorizations",
+					"strength": "worth-exploring"
+				}
+			]
+		}
+	],
+	"accepted": false,
+	"issues": 0,
+	"children": 0,
+	"jobs": [
+		{
+			"key": "lead",
+			"role": "lead",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-changes",
+			"role": "coordinate-changes",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-architecture",
+			"role": "coordinate-architecture",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-security",
+			"role": "coordinate-security",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-structure",
+			"role": "coordinate-structure",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-patterns",
+			"role": "coordinate-patterns",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-verification",
+			"role": "coordinate-verification",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-reliability",
+			"role": "coordinate-reliability",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-operations",
+			"role": "coordinate-operations",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-structure-structure-runtime-locality",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-structure-structure-package-boundaries",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-architecture-architecture-lifecycle",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-architecture-architecture-execution-boundaries",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-security-security-ingress-authority",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-security-security-execution-data-boundaries",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-changes-changes-recovery-ownership",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-changes-changes-read-boundaries",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-patterns-configuration-boundaries",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-patterns-durable-integration-outcomes",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-verification-verification-runtime-seams",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-verification-verification-ci-feedback",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-reliability-reliability-durable-recovery",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-reliability-reliability-shared-resources",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-operations-operations-capture-recovery",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-operations-operations-workflow-progress",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-structure",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-architecture",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-changes",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-security",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-verification",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-patterns",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-reliability",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-operations",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "proposal-0",
+			"role": "synthesize",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-architecture-followup-1",
+			"role": "coordinate-architecture",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-patterns-followup-1",
+			"role": "coordinate-patterns",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-verification-followup-1",
+			"role": "coordinate-verification",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "coordinate-reliability-followup-1",
+			"role": "coordinate-reliability",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-reliability-critical-decision-boundaries-followup-1",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-reliability-opt-in-checkpoint-barrier-followup-1",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-patterns-critical-decision-boundaries-followup-1",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-patterns-opt-in-checkpoint-contract-followup-1",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-architecture-critical-decision-boundaries-followup-1",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-architecture-opt-in-checkpoint-contract-followup-1",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-verification-checkpoint-storage-verification-followup-1",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "worker-verification-checkpoint-workflow-verification-followup-1",
+			"role": "research-worker",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-reliability-followup-1",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-architecture-followup-1",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-patterns-followup-1",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "results-verification-followup-1",
+			"role": "coordinate-results",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "proposal-1",
+			"role": "synthesize",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "package-57785234a560a6b2-checkpoint-durability",
+			"role": "package",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "check-architecture-57785234a560a6b2",
+			"role": "check-architecture",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true,
+			"check": {
+				"approved": true,
+				"feedback": []
+			}
+		},
+		{
+			"key": "check-security-57785234a560a6b2",
+			"role": "check-security",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true,
+			"check": {
+				"approved": false,
+				"feedback": [
+					"Define a safe recovery policy for older durable generations before adding automatic fallback. /manifest/packages/0 restores an earlier snapshot when current state or referenced content is invalid, but only requires existing revision and provider checks. Those checks cannot recover a later stop decision or prove that arbitrary agent/script work has not already executed. Evidence: pinned revision 2294d5abd0d80fbd4aea2f6b1ba2046ad87ecab1, packages/edge-worker/src/factory/WorkflowRuntime.ts, constructor/resume at character offsets 16000–32000 and stop at 106000–122000: execution position and stopped status belong to the restored run state. This introduces a possible rollback of lifecycle decisions and completed work; no incident is established. Mark fallback recovery explicitly and prevent automatic execution until affected work is reconciled, requesting operator assistance where safe continuation cannot be established. Add restart tests covering a checkpoint followed by completed side effects or an explicit stop, then corruption of the ordinary snapshot. Retaining authorization evidence alone should not authorize replay."
+				]
+			}
+		},
+		{
+			"key": "check-dependencies-57785234a560a6b2",
+			"role": "check-dependencies",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true,
+			"check": {
+				"approved": true,
+				"feedback": []
+			}
+		},
+		{
+			"key": "package-6a6c89960c522dec-checkpoint-durability",
+			"role": "package",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true
+		},
+		{
+			"key": "check-architecture-6a6c89960c522dec",
+			"role": "check-architecture",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true,
+			"check": {
+				"approved": true,
+				"feedback": []
+			}
+		},
+		{
+			"key": "check-security-6a6c89960c522dec",
+			"role": "check-security",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true,
+			"check": {
+				"approved": true,
+				"feedback": []
+			}
+		},
+		{
+			"key": "check-dependencies-6a6c89960c522dec",
+			"role": "check-dependencies",
+			"status": "completed",
+			"attempts": 1,
+			"runner": "codex",
+			"hasNativeSession": true,
+			"check": {
+				"approved": true,
+				"feedback": []
+			}
+		}
+	]
+}

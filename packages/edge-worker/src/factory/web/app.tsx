@@ -47,7 +47,7 @@ import {
 	RunTitleStatus,
 	WorkingRow,
 } from "./focus";
-import { ImprovementPanel } from "./improvements";
+import { ImprovementPanel, useImprovementResearch } from "./improvements";
 import { Composer } from "./launcher";
 import { NotificationsProvider } from "./notifications-ui";
 import { SetupBoundary } from "./onboarding";
@@ -781,6 +781,7 @@ function RunPage({
 	const { id } = useParams(),
 		query = useRun(id),
 		run = query.data,
+		research = useImprovementResearch(run),
 		action = useAction(),
 		toast = useToast(),
 		settle = useSettle(),
@@ -846,8 +847,13 @@ function RunPage({
 	const reason = settleReason(run, runs),
 		kind = attention(run),
 		artifacts = artifactsOf(run),
-		steps = stepsOf(run, config),
-		visited = new Set(run.history?.map((h: any) => h.step));
+		steps = stepsOf(run, config, research.data?.jobs),
+		visited = new Set([
+			...(run.history?.map((h: any) => h.step) ?? []),
+			...steps
+				.filter((s) => s.researchStatus === "completed")
+				.map((s) => s.key),
+		]);
 	const graphRows = steps.length
 			? steps
 			: [{ id: "simple", key: "simple", name: "Bob’s Factory session" }],
@@ -1019,7 +1025,7 @@ function RunPage({
 			<section className="steps-section">
 				<div className="section-heading">
 					<h2>
-						Steps{" "}
+						{run.improvement ? "Research activity" : "Steps"}{" "}
 						<small>
 							{steps.length
 								? `${rows.filter((step) => visited.has(step.key)).length} of ${steps.length} done`
@@ -1034,6 +1040,7 @@ function RunPage({
 							).length,
 							started =
 								visited.has(step.key) ||
+								Boolean(step.researchStatus) ||
 								Boolean(run.capacityLeaves?.[step.key]) ||
 								current === step.key ||
 								!steps.length,
@@ -1062,6 +1069,9 @@ function RunPage({
 										<span className="chip">
 											{capacityPhaseLabel(run.capacityLeaves[step.key].phase)}
 										</span>
+									)}
+									{step.researchStatus && !run.capacityLeaves?.[step.key] && (
+										<span className="chip">{step.researchStatus}</span>
 									)}
 									{count > 1 && <span className="chip">↺ {count}</span>}
 									{artifact && (
