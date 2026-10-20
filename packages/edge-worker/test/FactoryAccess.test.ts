@@ -77,6 +77,125 @@ function fixture(useEnvironment = false, localPort?: number) {
 	};
 }
 
+it("protects device-code management and atomically exchanges a single-use code for a revocable API key", async () => {
+	const f = fixture();
+	const cookie = await f.enroll();
+	for (const method of ["GET", "POST", "DELETE"] as const) {
+		const denied = await f.server.app.inject({
+			method,
+			url: `/api/auth/pairing${method === "DELETE" ? "/missing" : ""}`,
+			headers: f.writeHeaders,
+			...(method === "POST" ? { payload: { label: "Unauthorized" } } : {}),
+		});
+		expect(denied.statusCode).toBe(401);
+	}
+	const created = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/pairing",
+		headers: { ...f.writeHeaders, cookie },
+		payload: { label: "Tablet" },
+	});
+	expect(created.statusCode).toBe(200);
+	expect(created.headers["cache-control"]).toBe("no-store");
+	const grant = created.json();
+	const status = await f.server.app.inject({
+		url: "/api/auth/status",
+		headers: { host },
+	});
+	expect(status.json()).toEqual({
+		authenticated: false,
+		setupRequired: false,
+		pairingAvailable: true,
+		origin,
+	});
+	const management = await f.server.app.inject({
+		url: "/api/auth/pairing",
+		headers: { host, cookie },
+	});
+	expect(management.json()).toEqual({
+		id: grant.id,
+		label: "Tablet",
+		expires: grant.expires,
+	});
+	for (const headers of [
+		{ ...f.writeHeaders, origin: "https://evil.test" },
+		{ host, origin },
+		{ ...f.writeHeaders, "x-factory-build": "old" },
+	]) {
+		const denied = await f.server.app.inject({
+			method: "POST",
+			url: "/api/auth/pairing/redeem",
+			headers,
+			payload: { code: grant.code },
+		});
+		expect([403, 409]).toContain(denied.statusCode);
+	}
+	const redacted = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/pairing/redeem",
+		headers: { ...f.writeHeaders, "content-type": "application/json" },
+		payload: '{"code":"secret-malformed',
+	});
+	expect(redacted.statusCode).toBe(400);
+	expect(redacted.json()).toEqual({ error: "Invalid or expired sign-in code" });
+	const results = await Promise.all(
+		[1, 2].map(() =>
+			f.server.app.inject({
+				method: "POST",
+				url: "/api/auth/pairing/redeem",
+				headers: f.writeHeaders,
+				payload: { code: grant.code },
+			}),
+		),
+	);
+	expect(results.map((result) => result.statusCode).sort()).toEqual([200, 409]);
+	const device = results.find((result) => result.statusCode === 200)!.json();
+	expect(device.key).toMatch(/^[A-Za-z0-9_-]{43}$/);
+	const login = await f.server.app.inject({
+		method: "POST",
+		url: "/api/auth/login",
+		headers: f.writeHeaders,
+		payload: { key: device.key, staySignedIn: true },
+	});
+	expect(login.json()).toEqual({ authenticated: true, expires: null });
+	const deviceCookie = String(login.headers["set-cookie"]);
+	expect(deviceCookie).toContain("HttpOnly; SameSite=Strict; Secure;");
+	expect(
+		(
+			await f.server.app.inject({
+				url: "/api/runs",
+				headers: { host, cookie: deviceCookie },
+			})
+		).statusCode,
+	).toBe(200);
+	expect(
+		(
+			await f.server.app.inject({
+				url: "/api/runs",
+				headers: { host, authorization: `Bearer ${device.key}` },
+			})
+		).statusCode,
+	).toBe(401);
+	const removed = await f.server.app.inject({
+		method: "DELETE",
+		url: `/api/auth/keys/${device.id}`,
+		headers: { ...f.writeHeaders, cookie },
+	});
+	expect(removed.statusCode).toBe(200);
+	expect(
+		(
+			await f.server.app.inject({
+				url: "/api/runs",
+				headers: { host, cookie: deviceCookie },
+			})
+		).statusCode,
+	).toBe(401);
+	expect(
+		(await f.server.app.inject({ url: "/api/runs", headers: { host, cookie } }))
+			.statusCode,
+	).toBe(200);
+});
+
 it("grants local operator access without credentials, cookies, enrollment or transferable sessions", async () => {
 	const f = fixture();
 	const credentials = structuredClone(f.server.auth.store.state);

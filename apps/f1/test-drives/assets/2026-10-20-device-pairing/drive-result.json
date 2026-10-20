@@ -1,0 +1,1692 @@
+{
+	"success": true,
+	"commit": "b963ba106028e0af8aacfb89558048051a372fe4",
+	"sourceSha256": {
+		"packages/edge-worker/src/factory/FactoryAuth.ts": "f0eace2c782ab163d9a3166c093d8f9d25b63715a9a623fb9048c6c55bf2facf",
+		"packages/edge-worker/src/factory/FactoryServer.ts": "66c46f4d5357b94159536cdeff7e71b210e8cbe36003ba4f4e7842ac59d25dfc",
+		"packages/edge-worker/src/factory/web/auth.tsx": "ef33c7e77af02d174bed2a3c7b4f4bb46fedde1b4657f5d7e9f3729a2567463a",
+		"packages/edge-worker/src/factory/web/styles.css": "a58586d777a21731fee28c0ed01f67c921956a6d13540ff52e385c9a6df27756",
+		"apps/f1/test-drives/assets/device-pairing.ts": "4dc899cc3ce7c25f94f86ea0dc9dabaf6f031fc92d25b54d5d43ff36336f3027"
+	},
+	"checks": [
+		"remote access and code redemption start locked; anonymous code generation is denied",
+		"explicit code transfers a normal digest-only key exactly once over HTTPS and uses standard persistent-session login",
+		"paired device launches and reads a completed scripted workflow in a real isolated EdgeWorker worktree",
+		"removing the paired device key revokes its normal session and key without affecting local operator access",
+		"five failed HTTPS guesses or explicit cancellation disable code access and issue no keys"
+	],
+	"requests": [
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 401
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing",
+			"status": 401
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/login",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/onboarding/project",
+			"status": 200
+		},
+		{
+			"method": "PUT",
+			"path": "/api/workflows",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/runs",
+			"status": 202
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be",
+			"status": 200
+		},
+		{
+			"method": "DELETE",
+			"path": "/api/auth/keys/SD9w49VOxLXonLxWIf9hj-pUWhPKedLzB2ccJ3hvp0s",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 401
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/login",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "DELETE",
+			"path": "/api/auth/pairing/ZyuKERP3n6p8wS6iUCKjh-1CbXNYLLex_0KweJLuzFM",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "GET",
+			"path": "/",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/styles.5644cccacf983666b8b18f19.css",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/app.0b8e2696a5ceebe577cc5b88.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/manifest.webmanifest",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/icon-192.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/icon-192.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/app.0b8e2696a5ceebe577cc5b88.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/styles.5644cccacf983666b8b18f19.css",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/manifest.webmanifest",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/icon-192.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/icon-512.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/maskable-512.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/apple-touch-icon.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/keys",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/push",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/styles.5644cccacf983666b8b18f19.css",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/app.0b8e2696a5ceebe577cc5b88.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/manifest.webmanifest",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/icon-192.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/icon-192.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/app.0b8e2696a5ceebe577cc5b88.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/styles.5644cccacf983666b8b18f19.css",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/manifest.webmanifest",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/icon-192.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/icon-512.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/maskable-512.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/icons/apple-touch-icon.png",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/push",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 409
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing/redeem",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/login",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/push",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be/activity/entries/undefined",
+			"status": 400
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be/activity/entries/undefined",
+			"status": 400
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/keys",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be/activity/entries/undefined",
+			"status": 400
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be/activity/entries/undefined",
+			"status": 400
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/push",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/push",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be/activity/entries/undefined",
+			"status": 400
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/push",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs/manual-28590b7c-e32e-4b1c-9425-233908e7d2be",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/keys",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/push",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "DELETE",
+			"path": "/api/auth/pairing/ntM6uEcUUjHi3M0SiwP_0eRm2-IV7DpNOzOCFN6nhd4",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/keys",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/keys",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "POST",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/push",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/events",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/events",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/events",
+			"status": 200
+		},
+		{
+			"method": "DELETE",
+			"path": "/api/auth/keys/e9akQSp18XyrvntR4tb3ur_-CkWuVHJmRHihXyihuIw",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/keys",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/events",
+			"status": 401
+		},
+		{
+			"method": "GET",
+			"path": "/api/config",
+			"status": 401
+		},
+		{
+			"method": "GET",
+			"path": "/api/runs",
+			"status": 401
+		},
+		{
+			"method": "GET",
+			"path": "/api/version",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/sw.js",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/keys",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/pairing",
+			"status": 200
+		},
+		{
+			"method": "GET",
+			"path": "/api/auth/status",
+			"status": 200
+		}
+	],
+	"directory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-device-pairing-rIiqNA",
+	"limitations": "Mock agents, disposable tool stubs, real scripted workflow and local self-signed TLS proxy. No provider calls, packaged desktop or physical mobile/PWA validation. Fixture retained for inspection; worker and listeners stopped."
+}

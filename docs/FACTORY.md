@@ -107,7 +107,7 @@ legacy Tailscale proxy belong to the separate host setup work.
 
 ## API key access and first setup
 
-Direct HTTP localhost access opens the dashboard, controls and onboarding without a key, cookie or expiry deadline. Settings → Access manages instance API keys locally and in signed-in remote browsers. Remote HTTPS sign-in requires a key and creates an origin-bound browser session. An empty remote store directs the operator to localhost Settings; it never permits anonymous remote key creation.
+Direct HTTP localhost access opens the dashboard, controls and onboarding without a key, cookie or expiry deadline. Settings → Access manages instance API keys locally and in signed-in remote browsers. Remote HTTPS sign-in uses a key and creates an origin-bound browser session. An empty remote store directs the operator to localhost Settings; remote key creation requires existing access or an explicitly enabled device code.
 
 For an HTTPS tunnel, configure the exact browser origin before starting Factory:
 
@@ -124,6 +124,14 @@ Every valid remote browser session can list, add, remove and rotate keys, withou
 The sign-in form supports password-manager saving and autofill. Factory does not store the raw key in browser storage; save it in your password manager to reconnect. Session expiry does not invalidate the API key: sign in again with the same saved key.
 
 By default, sessions last twelve hours without sliding renewal. Select **Stay signed in (no session expiry)** at sign-in for a session with no Factory expiry; logout, key rotation/removal and local authentication recovery still revoke it. Browsers can clear cookies or cap their lifetime: Factory refreshes the persistent cookie for 400 days on each access-status check, including returning to the app. Browser data removal or a longer absence can still require signing in again with the same key. `--session-hours` or `BOBS_FACTORY_FACTORY_SESSION_HOURS` permits 1–24 hours; the explicit CLI option takes precedence. Invalid lifetimes fail startup. Hashed sessions survive restart while their issuing key exists. HTTPS cookies are host-only `__Host-` cookies with Secure, HttpOnly, SameSite=Strict and Path=/. Local access creates no cookie. Logout, expiry and revocation clear private views and unsent edits across tabs. Connection loss clears private views; reconnect rechecks access. The service worker caches only the static shell, never auth/API/media responses.
+
+### Sign in with a device code
+
+For devices where entering a long key is difficult, open **Settings → Access → Pair a device** on localhost or an already signed-in device. Enter a device name and choose **Enable code sign-in**. On the other device, open the configured HTTPS dashboard, choose **Use a 6-digit code**, and enter the displayed code. The login option becomes available automatically while a code is active, including before the first API key exists.
+
+Code sign-in is disabled by default. One code is active per instance, works once, expires after five minutes, and is disabled after five failed attempts across all devices. **Cancel code** disables it immediately; generating a replacement disables the previous code. A restart, authentication recovery, or expiry/sign-out/revocation of the remote session that enabled it also disables the code. Codes and pending grants stay in memory, and other tabs can inspect or cancel a pending grant without reading its secret.
+
+Successful redemption transmits a new full-strength API key to the device over HTTPS. The browser uses that key through the existing sign-in endpoint and keeps only its normal HttpOnly session cookie; the key is never saved in web storage. **Stay signed in** and normal session expiry continue to work. The new device key appears under its chosen name in Settings, where rotation or removal revokes its sessions. If the browser cookie is lost, enable another code to reconnect and remove unused device keys as needed. Code pairing requires a configured public HTTPS origin and grants the same access as an ordinary API key.
 
 ### Migration and local recovery
 
@@ -144,8 +152,9 @@ This command does not start services. The running server consumes the private re
 | --- | --- |
 | Direct HTTP loopback dashboard/API/media/SSE | Validated socket peer, loopback Host and same-origin context; no key |
 | Remote HTTPS dashboard/API/media/SSE | Origin-bound browser session established by key sign-in |
-| Static shell, version, access status and key sign-in | Public; no protected data or key metadata |
-| Key listing/add/remove/rotate | Validated local request or valid remote browser session |
+| Static shell, version, access status and key sign-in | Public; status exposes only whether code sign-in is available |
+| Device code redemption | Public HTTPS, single-use explicitly enabled code; standard key login follows |
+| Key listing/add/remove/rotate and device code generation/cancellation | Validated local request or valid remote browser session |
 | Provider webhook/OAuth listener | Separate provider verification, unchanged |
 
 ### Rollout and device checks

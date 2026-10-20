@@ -110,6 +110,15 @@ the old live stream and cancels requests bound to the old cookie without clearin
 the credential-management form. It reconnects after session verification;
 connection loss, expiry and current-session rejection still clear private views.
 
+Device code sign-in is explicitly enabled in Settings → Access by local authority
+or a valid remote session. A single memory-only six-digit grant works once for
+five minutes, with five failed guesses allowed across requests. Cancellation,
+replacement, recovery, restart and loss of its issuing remote session disable it.
+Only availability is public; grant metadata requires access and its code is shown
+once. HTTPS redemption issues a distinct normal API key, then the client uses
+existing key sign-in and session behavior without persisting the raw key. The
+version-3 digest-only store and existing key/session revocation remain unchanged.
+
 Migration blocks `CYRUS_CAPACITY_DIRECTORY` and `BOBS_FACTORY_CAPACITY_DIRECTORY`
 in the source `.env` or the helper's inherited environment. These overrides no
 longer select a runtime pool. Reconcile custom/shared coordinator state and all

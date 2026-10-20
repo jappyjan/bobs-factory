@@ -49,6 +49,160 @@ it("requires a session for remote management even with an empty store", () => {
 		f.auth.create(undefined, "https://evil.test", "Remote", true),
 	).toThrow("origin");
 });
+it("only explicitly enabled device codes issue a separate normal key, without persisting grants or plaintext keys", () => {
+	const f = fixture();
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(() => f.auth.redeemPairing("123456", origin)).toThrow(
+		"Invalid or expired",
+	);
+	expect(() => f.auth.beginPairing(undefined, origin, "Tablet")).toThrow(
+		"Sign in",
+	);
+	expect(() => f.auth.pairingStatus(undefined, origin)).toThrow("Sign in");
+	expect(() => f.auth.cancelPairing(undefined, origin, "missing")).toThrow(
+		"Sign in",
+	);
+	const before = readFileSync(f.auth.store.path, "utf8");
+	const grant = f.auth.beginPairing(undefined, origin, " Tablet ", true);
+	expect(grant).toEqual({
+		id: expect.any(String),
+		code: expect.stringMatching(/^[0-9]{6}$/),
+		expires: expect.any(Number),
+		label: "Tablet",
+	});
+	expect(f.auth.pairingAvailable()).toBe(true);
+	expect(f.auth.pairingStatus(undefined, origin, true)).toEqual({
+		id: grant.id,
+		label: "Tablet",
+		expires: grant.expires,
+	});
+	expect(readFileSync(f.auth.store.path, "utf8")).toBe(before);
+	expect(() => f.auth.redeemPairing(grant.code, "https://evil.test")).toThrow(
+		"origin",
+	);
+	const device = f.auth.redeemPairing(grant.code, origin);
+	expect(device.key).toMatch(/^[A-Za-z0-9_-]{43}$/);
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(() => f.auth.redeemPairing(grant.code, origin)).toThrow(
+		"Invalid or expired",
+	);
+	expect(readFileSync(f.auth.store.path, "utf8")).not.toContain(device.key);
+	const session = f.auth.login(device.key, origin, undefined, true);
+	expect(session.expires).toBeNull();
+	expect(f.auth.keys(session.token, origin)).toEqual([
+		{
+			id: device.id,
+			label: "Tablet",
+			createdAt: expect.any(Number),
+			lastUsedAt: expect.any(Number),
+			current: true,
+		},
+	]);
+	f.auth.remove(undefined, origin, device.id, true);
+	expect(f.auth.session(session.token, origin)).toBeUndefined();
+	expect(() => f.auth.login(device.key, origin)).toThrow("Invalid API key");
+});
+it("expires and cancels pairing, and replacing a code invalidates it without letting stale tabs cancel the replacement", () => {
+	vi.useFakeTimers();
+	const f = fixture();
+	const first = f.auth.beginPairing(undefined, origin, "First", true);
+	const second = f.auth.beginPairing(undefined, origin, "Second", true);
+	expect(second.id).not.toBe(first.id);
+	f.auth.cancelPairing(undefined, origin, first.id, true);
+	expect(f.auth.pairingAvailable()).toBe(true);
+	expect(second.code).not.toBe(first.code);
+	expect(() => f.auth.redeemPairing(first.code, origin)).toThrow(
+		"Invalid or expired",
+	);
+	f.auth.cancelPairing(undefined, origin, second.id, true);
+	expect(() => f.auth.redeemPairing(second.code, origin)).toThrow(
+		"Invalid or expired",
+	);
+	const expiring = f.auth.beginPairing(undefined, origin, "Expires", true);
+	expect(expiring.expires).toBe(Date.now() + 5 * 60000);
+	vi.setSystemTime(expiring.expires);
+	expect(() => f.auth.redeemPairing(expiring.code, origin)).toThrow(
+		"Invalid or expired",
+	);
+	expect(f.auth.pairingStatus(undefined, origin, true)).toBeNull();
+	expect(f.auth.store.state.keys).toEqual([]);
+});
+it("disables a code after five failed guesses across requests without blocking normal API key login", () => {
+	const f = fixture(),
+		key = f.create();
+	const grant = f.auth.beginPairing(undefined, origin, "Tablet", true);
+	const wrong = grant.code === "000000" ? "000001" : "000000";
+	for (let i = 0; i < 4; i++)
+		expect(() => f.auth.redeemPairing(wrong, origin)).toThrow(
+			"Invalid or expired",
+		);
+	expect(f.auth.pairingAvailable()).toBe(true);
+	expect(() => f.auth.redeemPairing(wrong, origin)).toThrow(
+		"Invalid or expired",
+	);
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(() => f.auth.redeemPairing(grant.code, origin)).toThrow(
+		"Invalid or expired",
+	);
+	expect(
+		f.auth.session(f.auth.login(key.key, origin).token, origin),
+	).toBeDefined();
+	expect(f.auth.store.state.keys).toHaveLength(1);
+});
+it.each([
+	"logout",
+	"rotate",
+	"remove",
+	"expiry",
+	"replacement",
+	"recovery",
+	"restart",
+] as const)("revokes pending device access on issuer %s", (action) => {
+	vi.useFakeTimers();
+	const f = fixture(),
+		key = f.create(),
+		login = f.auth.login(key.key, origin);
+	const grant = f.auth.beginPairing(login.token, origin, "Tablet");
+	if (action === "logout") f.auth.logout(login.token, origin);
+	if (action === "rotate") f.auth.rotate(login.token, origin, key.id);
+	if (action === "remove") f.auth.remove(login.token, origin, key.id);
+	if (action === "expiry") {
+		// Put the issuer near expiry so the grant would otherwise outlive it.
+		f.auth.store.update((state) => {
+			state.sessions[0]!.expires = Date.now() + 1000;
+		});
+		vi.setSystemTime(Date.now() + 1000);
+	}
+	if (action === "replacement") f.auth.login(key.key, origin, login.token);
+	if (action === "recovery") {
+		writeFileSync(
+			join(f.auth.store.directory, "recover"),
+			"RESET FACTORY AUTHENTICATION",
+		);
+		f.auth.checkRecovery();
+	}
+	if (action === "restart") {
+		f.auth.close();
+		const restarted = new FactoryAuth(f.home, { origins: [origin] });
+		services.push(restarted);
+		expect(() => restarted.redeemPairing(grant.code, origin)).toThrow(
+			"Invalid or expired",
+		);
+	}
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(() => f.auth.redeemPairing(grant.code, origin)).toThrow(
+		"Invalid or expired",
+	);
+});
+it("fails closed if issuing a paired key cannot be persisted", () => {
+	const f = fixture();
+	const grant = f.auth.beginPairing(undefined, origin, "Tablet", true);
+	rmSync(f.auth.store.path);
+	mkdirSync(f.auth.store.path);
+	expect(() => f.auth.redeemPairing(grant.code, origin)).toThrow();
+	expect(f.auth.store.state.keys).toEqual([]);
+	expect(f.auth.pairingAvailable()).toBe(false);
+});
 it("persists only digests, keeps private permissions and origin-bound sessions across restart", () => {
 	const f = fixture(),
 		key = f.create(),
@@ -253,6 +407,7 @@ it("grants localhost-only terminal sessions from local operator requests that ca
 	expect(auth.session(token, local)).toMatchObject({ credential: "terminal" });
 	expect(auth.session(token, origin)).toBeUndefined();
 	expect(() => auth.keys(token, local)).toThrow("Sign in");
+	expect(() => auth.beginPairing(token, local, "Tablet")).toThrow("Sign in");
 	// Terminal sessions are memory-only and never persisted with key sessions.
 	expect(auth.store.state.sessions).toHaveLength(0);
 	const persist = vi.spyOn(auth.store, "update");

@@ -1,4 +1,9 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+	createHash,
+	randomBytes,
+	randomInt,
+	timingSafeEqual,
+} from "node:crypto";
 import { existsSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
@@ -14,6 +19,15 @@ const terminalRequestSchema = z.object({
 	expires: z.number(),
 });
 const maxTerminalSessions = 50;
+const pairingMs = 5 * 60000;
+type DevicePairing = {
+	id: string;
+	digest: string;
+	label: string;
+	expires: number;
+	attempts: number;
+	issuer?: { hash: string; origin: string };
+};
 export interface FactoryAccess {
 	origins: string[];
 	sessionHours?: number;
@@ -47,6 +61,8 @@ export class FactoryAuth {
 	private recoveryTimer: ReturnType<typeof setInterval>;
 	/** Terminal sessions are memory-only: a restart revokes them and the TUI re-requests one locally. */
 	private terminal = new Map<string, { origin: string; expires: number }>();
+	// Explicit, single-use grants never survive restart or reach the auth store.
+	private pairing?: DevicePairing;
 	readonly sessionMs: number;
 	constructor(
 		directory: string,
@@ -78,7 +94,7 @@ export class FactoryAuth {
 			throw new Error("Invalid Factory authentication origins");
 		this.sessionMs = hours * 3600000;
 		this.store = new FactoryAuthStore(directory, access.origins);
-		// Retire all legacy enrollment grants; keys can only be created in Settings.
+		// Retire legacy enrollment grants; device pairing is explicitly enabled in Settings.
 		const grant = join(this.store.directory, "enroll.json");
 		if (existsSync(grant)) unlinkSync(grant);
 		this.recoveryTimer = setInterval(() => {
@@ -97,6 +113,7 @@ export class FactoryAuth {
 		});
 		unlinkSync(path);
 		this.terminal.clear();
+		this.pairing = undefined;
 		this.changed();
 	}
 	/**
@@ -157,6 +174,7 @@ export class FactoryAuth {
 	close() {
 		clearInterval(this.recoveryTimer);
 		this.terminal.clear();
+		this.pairing = undefined;
 		this.listeners.clear();
 	}
 	session(token: string | undefined, origin: string) {
@@ -243,6 +261,102 @@ export class FactoryAuth {
 			current: !local && key.id === current,
 		}));
 	}
+	private currentPairing() {
+		const pairing = this.pairing;
+		if (!pairing) return undefined;
+		if (
+			pairing.expires <= Date.now() ||
+			(pairing.issuer &&
+				!this.store.state.sessions.some(
+					(session) =>
+						session.hash === pairing.issuer!.hash &&
+						session.origin === pairing.issuer!.origin &&
+						(session.expires === null || session.expires > Date.now()) &&
+						this.store.state.keys.some((key) => key.id === session.credential),
+				))
+		) {
+			this.pairing = undefined;
+			return undefined;
+		}
+		return pairing;
+	}
+	pairingAvailable() {
+		return Boolean(this.currentPairing());
+	}
+	pairingStatus(token: string | undefined, origin: string, local = false) {
+		this.authorize(token, origin, local);
+		const pairing = this.currentPairing();
+		return pairing
+			? { id: pairing.id, label: pairing.label, expires: pairing.expires }
+			: null;
+	}
+	beginPairing(
+		token: string | undefined,
+		origin: string,
+		label: string,
+		local = false,
+	) {
+		this.authorize(token, origin, local);
+		if (!this.access.origins.some((item) => item.startsWith("https:")))
+			throw new Error(
+				"Configure a public HTTPS origin before pairing a device",
+			);
+		const name = this.keyName(label);
+		let code: string;
+		do {
+			code = randomInt(1000000).toString().padStart(6, "0");
+		} while (hash(code) === this.pairing?.digest);
+		const session = this.session(token, origin);
+		this.pairing = {
+			id: secret(),
+			digest: hash(code),
+			label: name,
+			expires: Date.now() + pairingMs,
+			attempts: 0,
+			...(!local && session ? { issuer: { hash: session.hash, origin } } : {}),
+		};
+		return { ...this.pairingStatus(token, origin, local)!, code };
+	}
+	cancelPairing(
+		token: string | undefined,
+		origin: string,
+		id: string,
+		local = false,
+	) {
+		this.authorize(token, origin, local);
+		// A stale tab must never cancel a newly enabled code.
+		if (this.currentPairing()?.id === id) this.pairing = undefined;
+		return { cancelled: true };
+	}
+	redeemPairing(code: string, origin: string) {
+		if (!this.access.origins.includes(origin) || !origin.startsWith("https:"))
+			throw new Error("Invalid Factory origin");
+		const pairing = this.currentPairing();
+		if (
+			!pairing ||
+			!/^[0-9]{6}$/.test(code) ||
+			!timingSafeEqual(
+				Buffer.from(hash(code), "hex"),
+				Buffer.from(pairing.digest, "hex"),
+			)
+		) {
+			if (pairing && ++pairing.attempts >= 5) this.pairing = undefined;
+			throw new Error(
+				"Invalid or expired sign-in code. Generate a new code in Settings → Access.",
+			);
+		}
+		// Consume before issuing a key. Synchronous mutation makes concurrent redemption single-use.
+		this.pairing = undefined;
+		return this.issueKey(pairing.label);
+	}
+	private keyName(label: string) {
+		const name = label.trim();
+		if (!name || name.length > 80)
+			throw new Error("API key name must contain 1–80 characters");
+		if (this.store.state.keys.length >= 100)
+			throw new Error("Remove an API key before adding more (limit 100)");
+		return name;
+	}
 	create(
 		token: string | undefined,
 		origin: string,
@@ -250,11 +364,10 @@ export class FactoryAuth {
 		local = false,
 	) {
 		this.authorize(token, origin, local);
-		const name = label.trim();
-		if (!name || name.length > 80)
-			throw new Error("API key name must contain 1–80 characters");
-		if (this.store.state.keys.length >= 100)
-			throw new Error("Remove an API key before adding more (limit 100)");
+		return this.issueKey(label);
+	}
+	private issueKey(label: string) {
+		const name = this.keyName(label);
 		const key = secret(),
 			id = secret();
 		this.store.update((state) =>

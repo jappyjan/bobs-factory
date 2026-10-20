@@ -188,13 +188,20 @@ export class FactoryServer {
 		this.app.setErrorHandler((error, request, reply) => {
 			// Parser errors can include fragments of the submitted body. Never echo a login secret.
 			if (
-				request.url.split("?")[0] === "/api/auth/login" &&
+				["/api/auth/login", "/api/auth/pairing/redeem"].includes(
+					request.url.split("?")[0]!,
+				) &&
 				(error instanceof z.ZodError ||
 					(error instanceof Error &&
 						"code" in error &&
 						String(error.code).startsWith("FST_ERR_CTP_")))
 			)
-				return reply.code(400).send({ error: "Invalid API key" });
+				return reply.code(400).send({
+					error:
+						request.url.split("?")[0] === "/api/auth/login"
+							? "Invalid API key"
+							: "Invalid or expired sign-in code",
+				});
 			if (
 				request.url.startsWith("/api/launch-assets") &&
 				(error as { code?: string }).code === "FST_ERR_CTP_BODY_TOO_LARGE"
@@ -333,6 +340,7 @@ export class FactoryServer {
 			"/api/version",
 			"/api/auth/status",
 			"/api/auth/login",
+			"/api/auth/pairing/redeem",
 			...shell.assets.map((asset) => asset.path),
 		]);
 		const controlIntake = (request: FastifyRequest) =>
@@ -476,6 +484,7 @@ export class FactoryServer {
 				authenticated: Boolean(session),
 				expires: session?.expires,
 				setupRequired: !local && !this.auth.store.state.keys.length,
+				...(this.auth.pairingAvailable() ? { pairingAvailable: true } : {}),
 				origin,
 			};
 		});
@@ -505,6 +514,46 @@ export class FactoryServer {
 		});
 		this.app.get("/api/auth/keys", (request) =>
 			this.auth.keys(tokenFor(request), originFor(request)!, localFor(request)),
+		);
+		this.app.get("/api/auth/pairing", (request) =>
+			this.auth.pairingStatus(
+				tokenFor(request),
+				originFor(request)!,
+				localFor(request),
+			),
+		);
+		this.app.post("/api/auth/pairing", { bodyLimit: 1024 }, (request) => {
+			const body = z
+				.object({ label: z.string().min(1).max(80) })
+				.strict()
+				.parse(request.body);
+			return this.auth.beginPairing(
+				tokenFor(request),
+				originFor(request)!,
+				body.label,
+				localFor(request),
+			);
+		});
+		this.app.delete<{ Params: { id: string } }>(
+			"/api/auth/pairing/:id",
+			(request) =>
+				this.auth.cancelPairing(
+					tokenFor(request),
+					originFor(request)!,
+					request.params.id,
+					localFor(request),
+				),
+		);
+		this.app.post(
+			"/api/auth/pairing/redeem",
+			{ bodyLimit: 1024 },
+			(request) => {
+				const body = z
+					.object({ code: z.string().max(100) })
+					.strict()
+					.parse(request.body);
+				return this.auth.redeemPairing(body.code, originFor(request)!);
+			},
 		);
 		this.app.post("/api/auth/keys", { bodyLimit: 1024 }, (request) => {
 			const body = z
