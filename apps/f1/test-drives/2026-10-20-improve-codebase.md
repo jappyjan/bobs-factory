@@ -29,9 +29,11 @@ Recorded passing run: `manual-4fe7567d-d733-4b43-b2a3-4eb836c434fd`; independent
 
 ## Dashboard and targeted checks
 
-A second mocked instance was inspected through the collaborative browser. All four per-item actions, current/historical proposal versions, before/after designs, issue destination and exact batch counts rendered. Changing a choice disabled Apply and required preparing the changed batch again; restoring it enabled Apply. Browser Apply produced one issue and one child, with no run for Ignore. Desktop layout had no horizontal overflow. The final layout and waiting labels were checked after rebuilding.
+A second mocked instance was inspected through the collaborative browser. All four per-item actions, current/historical proposal versions, before/after designs, issue destination and exact batch counts rendered. Changing a choice disabled Apply and required preparing the changed batch again; restoring it enabled Apply. Browser Apply produced one issue and one child, with no run for Ignore. Desktop and 390px mobile layouts had no horizontal overflow. Mobile before/after designs use one column. The final layout and waiting labels were checked after rebuilding.
 
 Focused regression coverage additionally verifies sixteen workers with two assignments per perspective; simultaneous independent fixes; dependency release only after exact approved delivery; stale choice rejection; preserved choices and native child identity across restart; issue response-loss reconciliation for Linear and Taskbot; partial tracker failure without blocking independent fixes; Bob history sampling, legitimate waits and sanitized error categories; and pinned repository reads excluding symlinks, private paths, working-tree drift and writes.
+
+[Desktop proposal](media/2026-10-20-improve-codebase/proposal-desktop.png) · [Mobile proposal](media/2026-10-20-improve-codebase/proposal-mobile.png)
 
 ## Limits
 

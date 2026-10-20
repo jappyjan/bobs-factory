@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Discover substantial architectural improvements with parallel research coordinators and cheaper workers. Review each proposal with Fix, File issue, Ignore or Ask follow-up; explicitly apply the batch to file deferred backlog issues and launch only selected fixes as independent Factory runs, with normal approvals and dependency-aware delivery.
+- Discover substantial architectural improvements with parallel research coordinators and cheaper workers. Review each proposal with Fix, File issue, Ignore or Ask follow-up; explicitly apply the batch to file deferred backlog issues and launch only selected fixes as independent Factory runs, with normal approvals and dependency-aware delivery. ([#167](https://github.com/jappyjan/bobs-factory/pull/167))
 
 - Sign in on devices with difficult keyboards using an explicitly enabled six-digit code from Settings → Access. Compare confirmation numbers and approve the device before its browser can collect a separate revocable API key. Codes expire after five minutes; request throttling preserves active pairing, and framing protection guards approval controls. ([#162](https://github.com/jappyjan/bobs-factory/pull/162))
 
