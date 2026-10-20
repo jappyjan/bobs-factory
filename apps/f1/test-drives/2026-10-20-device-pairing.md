@@ -96,7 +96,8 @@ Inspected captures:
   terminal-session rejection and failed persistence. Route tests cover concurrent
   redemption, origin/action/build guards, secret redaction and device revocation.
 - Edge-worker build/typecheck, CLI typecheck, changed TypeScript/fixture Biome
-  checks and repository lint passed. Repository lint reports 25 warnings.
+  checks and repository lint passed. Repository lint reports 25 warnings. Commit
+  hooks also passed the full `pnpm build` and `pnpm typecheck` workspace gates.
 
 Expiry uses a controlled clock in unit tests; it was not a five-minute physical
 device test. Browser dimensions establish responsive rendering, not a physical
