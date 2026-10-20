@@ -8,6 +8,7 @@ import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
+import { reserveLoopbackPorts } from "../../src/ports.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 for (const key of Object.keys(process.env))
@@ -33,7 +34,10 @@ writeFileSync(
 git("add", ".");
 git("commit", "-qm", "Initial fixture");
 git("remote", "add", "origin", repo);
-process.env.BOBS_FACTORY_FACTORY_PORT = "3540";
+const portLease = await reserveLoopbackPorts(2);
+const [factoryPort, rpcPort] = portLease.ports;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
@@ -170,7 +174,7 @@ function assessment(run, correction) {
 }
 const config = {
 	factoryHome: home,
-	serverPort: 3600,
+	serverPort: rpcPort,
 	serverHost: "127.0.0.1",
 	defaultRunner: "codex",
 	issueTrackerFactory: () => tracker,
@@ -287,7 +291,7 @@ async function until(check, message) {
 	throw new Error(message);
 }
 async function rpc(method, params = {}) {
-	const response = await fetch("http://localhost:3600/cli/rpc", {
+	const response = await fetch(`http://localhost:${rpcPort}/cli/rpc`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
@@ -308,6 +312,7 @@ try {
 		[...runtime.listWorkflows(), pipeline, workflow],
 		workflow.id,
 	);
+	await portLease.release();
 	await worker.start();
 	const { issue } = await rpc("createIssue", {
 		teamId: "team-default",
@@ -396,11 +401,11 @@ try {
 	construct();
 	await worker.start();
 	const retry = await fetch(
-		"http://localhost:3540/api/runs/saved-impact-result/retry",
+		`http://localhost:${factoryPort}/api/runs/saved-impact-result/retry`,
 		{
 			method: "POST",
 			headers: {
-				Origin: "http://localhost:3540",
+				Origin: `http://localhost:${factoryPort}`,
 				"X-Factory-Request": "1",
 				"Content-Type": "application/json",
 			},
@@ -468,5 +473,6 @@ try {
 	);
 	console.log(`PASS ${directory}`);
 } finally {
+	await portLease.release();
 	await worker?.stop();
 }
