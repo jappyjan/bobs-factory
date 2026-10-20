@@ -24,7 +24,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Keep review navigation and decision controls visible in a compact fixed footer, collapse Dig deeper by default, and remove swipe/tap slide changes and overlapping sticky layers while scrolling.
+- Keep review navigation and decision controls visible in a compact fixed footer, collapse Dig deeper by default, and remove swipe/tap slide changes and overlapping sticky layers while scrolling. ([#168](https://github.com/jappyjan/bobs-factory/pull/168))
 
 - Recover stuck runs through bounded role correction, explicit architecture questions and automatic impact reassessment. Keep independently required corrections running when CI turns green. Restore provable committed worktrees, reconcile already-merged approved revisions, and keep workers running after their launch directory is deleted; preserve independent review, human approvals and recovery limits. ([#163](https://github.com/jappyjan/bobs-factory/pull/163))
 
