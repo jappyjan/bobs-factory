@@ -3,6 +3,7 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+	existsSync,
 	mkdtempSync,
 	readFileSync,
 	rmSync,
@@ -51,6 +52,9 @@ function behavior(w) {
 	scan(w.steps);
 	return w;
 }
+function stepBehavior(step) {
+	return behavior({ steps: [step] }).steps[0];
+}
 const revs = execFileSync(
 	"git",
 	[
@@ -87,6 +91,13 @@ const historyPath = join(
 	"packages/edge-worker/src/factory/historicalWorkflowDigests.json",
 );
 const map = JSON.parse(readFileSync(historyPath, "utf8"));
+const stepsPath = join(
+	cwd,
+	"packages/edge-worker/src/factory/historicalStepDigests.json",
+);
+const stepMap = existsSync(stepsPath)
+	? JSON.parse(readFileSync(stepsPath, "utf8"))
+	: {};
 try {
 	for (const revision of revs) {
 		try {
@@ -129,6 +140,17 @@ try {
 					.digest("hex");
 				map[w.id] ??= {};
 				map[w.id][hash] ??= revision;
+				const recordSteps = (steps) => {
+					for (const step of steps) {
+						const hash = createHash("sha256")
+							.update(JSON.stringify(canonical(stepBehavior(step))))
+							.digest("hex");
+						stepMap[w.id] ??= {};
+						stepMap[w.id][hash] ??= revision;
+						for (const group of step.groups ?? []) recordSteps(group);
+					}
+				};
+				recordSteps(WorkflowSchema.parse(w).steps);
 			}
 			console.log(revision.slice(0, 8), "recorded");
 		} catch (e) {
@@ -146,3 +168,4 @@ writeFileSync(
 	join(cwd, "packages/edge-worker/src/factory/historicalWorkflowDigests.json"),
 	`${JSON.stringify(map, null, "\t")}\n`,
 );
+writeFileSync(stepsPath, `${JSON.stringify(stepMap, null, "\t")}\n`);

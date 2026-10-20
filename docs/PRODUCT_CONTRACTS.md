@@ -103,6 +103,23 @@ current contract only on its exact clean revision. A now-valid candidate keeps
 its native conversation and continues to independent review and human acceptance;
 stale, dirty or invalid candidates still require normal correction.
 
+GitHub readiness binds the current named target branch, rather than the PR's
+retained base commit. Target changes during pagination invalidate the inspection;
+an unavailable target cannot authorize an open delivery. Named provider targets
+must still match the run's accepted branch before check coordination or ref updates.
+Correction roles can
+inspect exact-round retained specialist findings before aggregation completes,
+including unresolved earlier findings and explicit incomplete-review blockers.
+This correction context never supplies approval: independent aggregation, checks,
+QA and human decisions retain their existing gates. Selected checks use the
+normal twenty-minute workflow command budget instead of a shorter hidden limit.
+
+Built-in step budgets default to 16 visits, with high-frequency built-in steps
+allowing 200. Existing recognized stock steps receive an idempotent, recorded
+allowance equal to their original 8/100 visits. Frozen graphs, prior extra-visit
+grants, checkpoints, native conversations and human decisions remain intact;
+customized step behavior and explicit custom limits retain their budgets.
+
 New stock Factory and Takeover architecture decisions opt into `continueAccepted`.
 An independent candidate review can link a complete follow-up proposal to the latest
 exact human acceptance with `continuation: {proposalId, version, digest, reason}`.

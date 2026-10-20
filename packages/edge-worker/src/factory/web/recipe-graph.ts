@@ -1,5 +1,6 @@
 import { layout as dagreLayout, graphlib } from "@dagrejs/dagre";
 import type { WorkflowStep } from "../Workflow.js";
+import { DEFAULT_STEP_MAX_VISITS } from "../WorkflowLimits.js";
 
 export type Step = WorkflowStep;
 export type Recipe = {
@@ -560,7 +561,7 @@ export function newStep(
 	id: string,
 	callable?: string,
 ): Step {
-	const base = { id, branches: [], maxVisits: 8 };
+	const base = { id, branches: [], maxVisits: DEFAULT_STEP_MAX_VISITS };
 	switch (kind) {
 		case "agent":
 			return {
@@ -602,7 +603,7 @@ export function newStep(
 							name: "Reviewer A",
 							type: "agent",
 							branches: [],
-							maxVisits: 8,
+							maxVisits: DEFAULT_STEP_MAX_VISITS,
 							prompt: "Review the change and return findings.",
 						},
 					],

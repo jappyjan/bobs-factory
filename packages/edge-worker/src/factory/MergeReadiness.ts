@@ -6,7 +6,11 @@ import {
 	feedbackPolicies,
 } from "./FeedbackPolicy.js";
 import { providerForUrl, resolveGitProvider } from "./GitProvider.js";
-import { groupedOutput, scopeRevision } from "./RepositoryScope.js";
+import {
+	groupedOutput,
+	runRepositories,
+	scopeRevision,
+} from "./RepositoryScope.js";
 import { scopeContextDigest } from "./SpecialistReview.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
@@ -56,6 +60,8 @@ export interface MergeReadiness {
 	/** Local revision that a synchronization attempt must publish to this PR. */
 	worktreeHeadSha?: string;
 	baseSha: string;
+	/** Current named provider target, when exposed by the adapter. */
+	baseRefName?: string;
 	url: string;
 	state: string;
 	isDraft: boolean;
@@ -139,11 +145,13 @@ export async function inspectReadinessWithRetry(
 		context.assertSchedulingOpen?.();
 		try {
 			const provider = await resolveGitProvider(context, command, url);
-			const snapshot = await superviseCI(
-				context,
-				provider,
-				await provider.readiness(url),
-			);
+			const readiness = await provider.readiness(url);
+			const acceptedTarget = runRepositories(context.run)[0]!.baseBranch;
+			if (readiness.baseRefName && readiness.baseRefName !== acceptedTarget)
+				throw new Error(
+					`PR target changed from accepted branch ${acceptedTarget} to ${readiness.baseRefName}; reconcile the delivery target before continuing`,
+				);
+			const snapshot = await superviseCI(context, provider, readiness);
 			if (context.currentScope)
 				snapshot.scopeDigest = scopeContextDigest(context.currentScope());
 			return snapshot;

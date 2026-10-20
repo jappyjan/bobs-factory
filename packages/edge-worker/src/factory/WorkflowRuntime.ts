@@ -261,9 +261,15 @@ export interface RunViewState {
 	seenAt?: string;
 }
 
+import {
+	type StepVisitBudgetUpgrade,
+	stepVisitLimit,
+	upgradeStockStepVisits,
+} from "./StepVisitBudget.js";
 import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
+	stepVisitBudget?: StepVisitBudgetUpgrade;
 	workflowBlock?: WorkflowBlock;
 	delivery?: DeliveryState;
 	deliveryContracts?: DeliveryState[];
@@ -567,6 +573,7 @@ export class WorkflowRuntime {
 			run.workflow = WorkflowSchema.parse(run.workflow);
 			if (run.recoveryWorkflow)
 				run.recoveryWorkflow = WorkflowSchema.parse(run.recoveryWorkflow);
+			const visitBudgetUpgraded = upgradeStockStepVisits(run);
 			// Process-owned operations must reacquire after restart. Legacy broad
 			// ownership cannot block restored passive parent/CI frames.
 			if (["running", "waiting", "interrupted"].includes(run.status))
@@ -584,6 +591,7 @@ export class WorkflowRuntime {
 				run.workflowBlock = this.catalog.getBlock(run.id);
 				run.status = "blocked";
 			}
+			if (visitBudgetUpgraded) this.save(run);
 		}
 		this.launchAssets.cleanupRuns(new Set(this.runs.keys()));
 		cleanupVideoEvidence(
@@ -1099,6 +1107,9 @@ export class WorkflowRuntime {
 			throw new Error("Run is already executing");
 		const controller = new AbortController();
 		if (run.status === "waiting") run.status = "running";
+		// Explicit Resume makes stopped stock work eligible without changing its
+		// frozen graph. Persist the one-time allowance before any resumed role.
+		if (upgradeStockStepVisits(run)) this.save(run);
 		this.controllers.set(run.id, controller);
 		const execution = this.execute(run, controller, task);
 		this.executions.set(run.id, execution);
@@ -1389,8 +1400,12 @@ export class WorkflowRuntime {
 			}
 			const state = checkpoint.active;
 			const count = checkpoint.visits[step.id]!;
-			const limit =
-				step.maxVisits + (checkpoint.additionalVisits?.[step.id] ?? 0);
+			const limit = stepVisitLimit(
+				run,
+				key,
+				step,
+				checkpoint.additionalVisits?.[step.id],
+			);
 			if (count > limit) {
 				run.step = key;
 				run.iterationLimit = { step: key, visits: count, limit };
@@ -3929,7 +3944,12 @@ export class WorkflowRuntime {
 					`Removed invalid Codex startup checkpoint for ${key}; retry starts this role with saved context, work and evidence retained.`,
 				);
 			}
-			const limit = step.maxVisits + (frame.additionalVisits?.[step.id] ?? 0);
+			const limit = stepVisitLimit(
+				run,
+				key,
+				step,
+				frame.additionalVisits?.[step.id],
+			);
 			if ((frame.visits[step.id] ?? 0) > limit) {
 				frame.additionalVisits ??= {};
 				frame.additionalVisits[step.id] =

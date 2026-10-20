@@ -2,6 +2,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { passiveTools } from "../CapacityPolicy";
+import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits";
 import { useAction, useConfig } from "./client";
 import { AgentSettings } from "./forms";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
@@ -1176,9 +1177,9 @@ function Inspector({
 							type="number"
 							className="short"
 							min={1}
-							max={100}
+							max={MAX_STEP_VISITS}
 							disabled={!local}
-							value={step.maxVisits ?? 8}
+							value={step.maxVisits ?? DEFAULT_STEP_MAX_VISITS}
 							onChange={(e) => onChange({ maxVisits: Number(e.target.value) })}
 						/>
 						visits to this step
@@ -1561,7 +1562,7 @@ function SimulationPanel({
 			[to]: (simulation.visits[to] ?? 0) + 1,
 		};
 		const target = steps.find((s) => s.id === to);
-		const limit = target?.maxVisits ?? 8;
+		const limit = target?.maxVisits ?? DEFAULT_STEP_MAX_VISITS;
 		onChange({
 			trail: [...simulation.trail, to],
 			visits,

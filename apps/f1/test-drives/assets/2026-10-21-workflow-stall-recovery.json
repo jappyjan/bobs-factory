@@ -1,0 +1,150 @@
+{
+	"recordedAt": "2026-10-20T21:49:06.551Z",
+	"testedSource": {
+		"baseCommit": "121ebe302f869c1cfce36560904953d0c2233970",
+		"workingTree": "uncommitted candidate; exact runtime and harness content hashes below",
+		"sourceSha256": {
+			"packages/edge-worker/src/factory/GithubReadiness.ts": "c74c1cd0a946fa74c5f6dbb539bf066f1bb26f0c7355cc2eb1fc6c992502fcda",
+			"packages/edge-worker/src/factory/MergeReadiness.ts": "2a810a286dcdb71f7b5f3463fa6b1acb317074ed9b12e426a3de65ab68bd064c",
+			"packages/edge-worker/src/factory/ReviewRecovery.ts": "669022260dfdb6cc65cb15c6b32c9384ab0a57712a75c707d8bcb0554d542a81",
+			"packages/edge-worker/src/factory/SpecialistReview.ts": "dfaf4e394444e1024a1727a0e954eed7185bc933e0bd8288529be3c8aaa701cc",
+			"packages/edge-worker/src/factory/FactoryTools.ts": "87ba992c9062d15dfd342ee37e82c3acff8f8595390db6a494ecaeab0cb0eaf6",
+			"packages/edge-worker/src/factory/StepVisitBudget.ts": "a23cc741f2b0379ffa5de079984fc40b1c823010535171e913f8de5d8cb23509",
+			"packages/edge-worker/src/factory/WorkflowRuntime.ts": "940819788bfa720fe5a961e4dc032021690fea56c499026908b2e886b22a200a",
+			"packages/edge-worker/src/factory/WorkflowLimits.ts": "4322477fbd6ca7b0704ba84028d4725df4a9e53ff0cc5023c02ceaa166018273",
+			"packages/edge-worker/src/factory/WorkflowCatalog.ts": "163dea3ef11655a1d6f206db63bcaf69a6924c95cad92e665a1f612b79b38c31",
+			"packages/edge-worker/src/factory/defaultWorkflows.ts": "a97c043c59d85bdadabd47839207535d5dad7285d6c04c3bc9fcf85ea58194fc",
+			"packages/edge-worker/src/factory/Workflow.ts": "1a6312477ab7f99abd53034d0c97cdecd34d3949e054e0b00f05d683164c1038",
+			"apps/f1/test-drives/assets/workflow-stall-recovery.mjs": "ea8f00f4d42b41317d8545846bcdf3afa365e037a89aa7d194d45f91c3114707",
+			"apps/f1/test-drives/assets/workflow-stall-production-replay.ts": "c9385a36db8f580b05c116a89856a91d4980edac590282c734be64033584c920"
+		},
+		"compiledSha256": {
+			"packages/edge-worker/dist/factory/GithubReadiness.js": "223eec46e5eccd2941b80c054c16ca86465d86ed35cd30b8a59937b241bcb73b",
+			"packages/edge-worker/dist/factory/MergeReadiness.js": "b62fd11f68535669e726401d588109f19763c169613a2f856b03f5387f6d08ee",
+			"packages/edge-worker/dist/factory/ReviewRecovery.js": "7577368f82178fe4c1b515a01ae6078090bae50d63d85fbdde23b49c323091cd",
+			"packages/edge-worker/dist/factory/SpecialistReview.js": "34b690508266ec5f6525f902e3a584e1dfcb95529f339ccc2bcb029ffefe7998",
+			"packages/edge-worker/dist/factory/FactoryTools.js": "8d410ce4926becf1a8debc0b07f2c8aa53f0f8211929867c7ca172cce8f84a50",
+			"packages/edge-worker/dist/factory/StepVisitBudget.js": "5b73ad849ad160d3ce731efc7880d036ba6a8fa37d92b40afd0a953a21bcfce0",
+			"packages/edge-worker/dist/factory/WorkflowRuntime.js": "e96544d3e98a290b212848fdcb2034ebf4258f2d59a5ab93b1f914a824ad7cf8",
+			"packages/edge-worker/dist/factory/WorkflowLimits.js": "ad048b5be4e11350dc9514904f6799d94475b67d57ef554668a0bdb0f774e0c8",
+			"packages/edge-worker/dist/factory/WorkflowCatalog.js": "9b933a5324f219c424f9e562ad24ea3f8bd981c254e4619af13862ae08f47253",
+			"packages/edge-worker/dist/factory/defaultWorkflows.js": "ed5eab65646ad0e1369068646d4ea15647fa21ec83dc831bdd3ad80fc164a59f",
+			"packages/edge-worker/dist/factory/Workflow.js": "ad3c26b78224e2811ca2201262b2e83486677d5cfbcb97683865cd374f7d5efc"
+		}
+	},
+	"productionReproduction": {
+		"mode": "private production snapshot and recorded provider replay",
+		"sourceScope": "factory/runs and referenced factory/run-chunks only",
+		"snapshotsCopied": 8,
+		"referencedChunksCopied": 21666,
+		"bytesCopied": 1121914960,
+		"credentialStoresOrFactoryConfigCopied": false,
+		"gitClone": {
+			"independentObjectStore": true,
+			"gitDirectory": true,
+			"noAlternates": true,
+			"liveRemotes": 0
+		},
+		"before": {
+			"sourceBaselineCommit": "121ebe302f869c1cfce36560904953d0c2233970",
+			"incompleteCorrectionError": "Latest configured specialist round has no complete aggregate; approval is blocked",
+			"retainedConsequentialFindings": 14,
+			"legacyProviderBaselineDisagreesWithActualTarget": true
+		},
+		"after": {
+			"assertions": {
+				"incompleteRoundCorrectionReceivesEveryConsequentialFinding": true,
+				"missingDispositionsRemainBlocked": true,
+				"incompleteRoundApprovalRemainsBlocked": true,
+				"unprovenDuplicateRemainsActionable": true,
+				"providerUsesActualTargetRef": true,
+				"productionCiToolDoesNotRegressTheClonedTarget": true,
+				"clonedGitRefAndSavedBaselineAgree": true,
+				"repeatedInspectionDoesNotRegressTarget": true,
+				"existingProductionStockBudgetsDoubleOnceWithoutGraphChanges": true,
+				"savedProductionSnapshotsUnchanged": true
+			},
+			"counts": {
+				"correctionFindings": 14,
+				"duplicateClaimsRetained": 1,
+				"providerRequestsReplayed": 3,
+				"upgradedStockSteps": [46, 46, 43]
+			}
+		},
+		"privateRawDataCommitted": false
+	},
+	"f1": {
+		"mode": "mock/scripted",
+		"issueId": "issue-1",
+		"assertions": {
+			"issueSessionAndActivities": true,
+			"incompleteCorrectionNativeSessionResumed": true,
+			"correctionProvenanceRecorded": true,
+			"approvalRemainsBlocked": true,
+			"existingStockBudgetDoubledWithoutGraphChanges": true,
+			"priorAdditionalPassesPreserved": true,
+			"restartDoesNotDoubleAgain": true,
+			"ciUsesLiveTarget": true,
+			"localTargetRemainsStable": true
+		},
+		"turns": [
+			{
+				"run": "session-1",
+				"role": "entry"
+			},
+			{
+				"run": "session-1",
+				"role": "code-fix",
+				"nativeSessionId": "retained-code-fix"
+			},
+			{
+				"run": "saved-stock-budget",
+				"role": "clarify",
+				"nativeSessionId": "retained-clarification"
+			},
+			{
+				"run": "live-target",
+				"role": "hold"
+			}
+		],
+		"providerRequests": [
+			{
+				"method": "POST",
+				"path": "graphql"
+			},
+			{
+				"method": "GET",
+				"path": "repos/fixture/repository/issues/1/comments?per_page=100&page=1"
+			},
+			{
+				"method": "GET",
+				"path": "repos/fixture/repository/pulls/1/reviews?per_page=100&page=1"
+			}
+		],
+		"contexts": [
+			{
+				"role": "code-fix",
+				"review": {
+					"key": "specialist-review",
+					"round": 1,
+					"headSha": "1ce43b6037f5e64c850ba23ac52f4b3d5613cd5b",
+					"baseSha": "1ce43b6037f5e64c850ba23ac52f4b3d5613cd5b",
+					"status": "incomplete",
+					"blockers": [
+						"Specialist round 1 has no complete aggregate. Run its configured review gate after correction; required independent review remains pending."
+					]
+				},
+				"findingIds": ["business:F1"]
+			}
+		]
+	},
+	"commands": [
+		"F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/workflow-stall-recovery.mjs",
+		"bun apps/f1/test-drives/assets/workflow-stall-production-replay.ts <private-production-clone>"
+	],
+	"limitations": [
+		"F1 providers and agents are deterministic scripted mocks; no inference or provider mutations were invoked.",
+		"Production replay uses real copied snapshots and captured read-only GitHub API responses; it does not assert that target-repository product findings are resolved.",
+		"Validation covers the candidate source build; published binary artifacts must pass the separate nightly release gates."
+	]
+}

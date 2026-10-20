@@ -19,6 +19,41 @@ const command = (extra = {}) =>
 	vi.fn(async (_exe: string, args: string[]) =>
 		JSON.stringify(githubApiReceipt(args, extra)),
 	);
+it("refuses a retargeted PR before coordinating checks or changing accepted tracking refs", async () => {
+	const context = {
+		run: {
+			repositoryId: "repo",
+			workspace: "/fixture",
+			gitProvider: {
+				type: "github",
+				repositoryUrl: "https://github.com/test/repo",
+			},
+			outputs: { repository: { baseBranch: "release/accepted" } },
+		},
+		signal: new AbortController().signal,
+		log: vi.fn(),
+	} as unknown as ExecutionContext;
+	const cmd = command({
+		baseRefName: "other-target",
+		baseRef: { name: "other-target", target: { oid: "base" } },
+	});
+	await expect(inspectReadinessWithRetry(context, cmd, url)).rejects.toThrow(
+		"PR target changed from accepted branch release/accepted to other-target",
+	);
+	expect(
+		cmd.mock.calls.every(
+			(call) =>
+				githubRequest(call[1]).method === "GET" ||
+				(githubRequest(call[1]).body as { query?: string })?.query?.startsWith(
+					"query",
+				),
+		),
+	).toBe(true);
+	expect(context.run.outputs).toEqual({
+		repository: { baseBranch: "release/accepted" },
+	});
+});
+
 it("reports readiness progress once while retaining fresh complete polling receipts", async () => {
 	const ctx = {
 		run: { outputs: {} },

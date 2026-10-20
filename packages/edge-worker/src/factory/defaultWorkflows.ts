@@ -25,6 +25,7 @@ import {
 } from "./specialistSteps.js";
 import { videoPrompts } from "./videoPrompts.js";
 import { validateWorkflows, type WorkflowStep } from "./Workflow.js";
+import { MAX_STEP_VISITS } from "./WorkflowLimits.js";
 
 const agent = (id: string, name: string, prompt: string, extra = {}) => ({
 	id,
@@ -38,7 +39,7 @@ const tool = (id: string, name: string, tool: string, extra = {}) => ({
 	name,
 	type: "tool",
 	tool,
-	maxVisits: 100,
+	maxVisits: MAX_STEP_VISITS,
 	...extra,
 });
 const back = (path: string, next: string) => [
@@ -536,7 +537,7 @@ function installImpact(steps: Record<string, any>[]) {
 					maxUnchangedCycles: 3,
 				},
 				askQuestions: true,
-				maxVisits: 100,
+				maxVisits: MAX_STEP_VISITS,
 				branches: [
 					{
 						when: { path: "correctionRequired", equals: true },
