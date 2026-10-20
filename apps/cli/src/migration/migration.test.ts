@@ -887,7 +887,10 @@ it("automatically expires reconciled migration state while recovery and cleanup 
 		join(source, "state", "saved.json"),
 		JSON.stringify({ note: "authoritative state" }),
 	);
-	await applyMigration(inspectMigration(source, destination), backup);
+	const alias = join(source, "..", "backup-alias");
+	symlinkSync(join(source, ".."), alias);
+	const aliasBackup = join(alias, "backup");
+	await applyMigration(inspectMigration(source, destination), aliasBackup);
 	const { StorageRetentionStore } = await import("bobs-factory-core");
 	const { StorageRetention } = await import(
 		"../../../../packages/edge-worker/src/storage/StorageRetention.js"
@@ -909,7 +912,7 @@ it("automatically expires reconciled migration state while recovery and cleanup 
 	);
 	try {
 		await store.workspaceClaim(record.path).run(async () => {
-			await expect(restoreMigration(backup)).rejects.toThrow(
+			await expect(restoreMigration(aliasBackup)).rejects.toThrow(
 				/owner is still running|owns this resource/,
 			);
 			expect(existsSync(destination)).toBe(true);

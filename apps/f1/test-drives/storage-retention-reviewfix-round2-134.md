@@ -21,7 +21,8 @@ production cleanup or forge merge are used.
   under shared claims. Verified authoritative replacements release dependencies.
   The migration regression advances the age by eight days, removes eligible
   preparation and preserves authoritative state, the source and its backup.
-  Recovery refuses an active cleanup claim on enrolled preparation.
+  Recovery refuses an active cleanup claim on enrolled preparation, including
+  when migration and recovery use a symlink alias for the backup path.
 - The real cleanup coordinator enters a controlled deletion barrier while holding
   its claim. Actual runtime Resume fails admission before starting an agent.
   Interrupting the controlled deletion preserves native files; explicit Resume
@@ -47,6 +48,10 @@ are retained with the exact revision in the run evidence directory:
 - `reviewfix-r2-f1.log`, `reviewfix-r2-resume.log`, `reviewfix-r2-impact.log`
 - `reviewfix-r2-build.log`, `reviewfix-r2-all-types.log`, `reviewfix-r2-lint.log`
 - `reviewfix-r2-selected-check.json`, `reviewfix-r2-workspace.log`
+
+An initial workspace replay at `10c56943` was interrupted after inspection found
+a backup-alias claim mismatch. Its superseded log is retained. The final receipt
+binds the corrected committed source.
 
 The workspace command is replayed through production `FactoryTools.tool` and
 `selectedChecks`, using the independently selected declaration from this run.

@@ -537,7 +537,7 @@ export async function applyMigration(
 	manifest: MigrationManifest,
 	backupPath: string,
 ) {
-	const backup = resolve(backupPath);
+	const backup = canonicalPath(backupPath);
 	if (manifest.version !== 1) throw new Error("Unknown manifest version");
 	if (
 		contained(manifest.source, backup) ||
@@ -603,7 +603,7 @@ export async function applyMigration(
 	);
 }
 export async function restoreMigration(backupPath: string) {
-	const backup = resolve(backupPath);
+	const backup = canonicalPath(backupPath);
 	const manifest: MigrationManifest = readJson(join(backup, "manifest.json"));
 	return new OwnedResourceClaim(`${backup}.migration.lock`, "migration").run(
 		async () => {
