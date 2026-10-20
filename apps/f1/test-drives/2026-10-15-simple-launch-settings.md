@@ -234,3 +234,57 @@ assessor must adopt the two replacement commands and obtain its own runtime
 receipts; these local executions do not claim that gate has run. Fresh launcher
 browser QA and delivery approval remain obligations of their later gates.
 Historical failures remain retained; no merge or ready transition was performed.
+
+
+## Isolated recovery and authentication integration — 2026-10-20
+
+Integrated target `cfc307cb8f701bfb7946b4122d06680bc7cb1037` in merge revision
+`11b9986b7d2b9ce671a2292649fece3094b74c1a`. Both changelog histories remain.
+The resulting tree matches the independently calculated combined tree
+`3515bb445ebec6b046509e6ed41f076f54fd92c9`.
+
+The selected recovery drive previously failed before its assertions because
+shared port 3600 was occupied. A retained replacement allocates two distinct
+OS-assigned ports and updates its request URLs and origins consistently.
+Only imports and port setup differ; assertions, timeouts, simulated handlers
+and worker cleanup are preserved. Use this replacement for `target-recovery-f1`:
+
+```sh
+F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/ci-fix-r16-role-recovery.mjs
+```
+
+It passed fresh/saved role completion, durable publication recovery, stale-impact
+retry, takeover base preservation and the 1,024-file architecture acceptance
+wait. Its original source remains unchanged. `ci-fix-r16-role-recovery.patch`,
+`ci-fix-r16-recovery-receipt.json` and `ci-fix-r16-role-recovery.log` retain the
+exact replacement, fingerprints, tested revision and successful shutdown.
+The replacement uses isolated ports rather than the shared 3540/3600 resources.
+
+The new target's authentication integration also passed all seven server checks:
+
+```sh
+env -u F1_DEVICE_HOLD F1_AGENT_MODE=mock F1_DEVICE_PORT=3690 bun run apps/f1/test-drives/assets/device-pairing-approval.ts
+```
+
+This exercised trusted approval, receiving-browser cookie binding, concurrent
+single-use key collection, persistent login, a protected scripted launch and
+read, key revocation and recovery after the real throttling window. Worker and
+listeners stopped. The complete receipt is in `ci-fix-r16-device-pairing.log` in
+the same retained evidence directory. This server-only execution uses simulated
+agents; it does not claim fresh browser screenshots or real-provider behavior.
+
+The launcher drive also passed required-input and disabled-selection admission,
+two configured steps, Simple effort/tier and variant propagation, and direct API
+override compatibility. Its worker stopped; `ci-fix-r16-launcher-f1.log` retains
+the assertions and cleanup.
+
+All 383 tests passed across the 14 selected launcher, execution, credential,
+authentication and recipe suites with one Vitest worker. The structured receipt
+`ci-fix-r16-tests.json` records zero failed or skipped tests. The first run exited
+zero but had no test summary, so only the structured rerun establishes the count.
+Workspace build and typecheck passed. The configured impact checks must adopt
+the replacement recovery command and obtain their own current-revision receipts.
+All 50 selected checks, fresh specialist review, launcher browser QA and human
+delivery approval remain required at their configured gates. Earlier executions
+and failures retain their original provenance; no merge or ready transition on
+GitHub was performed.
