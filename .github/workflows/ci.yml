@@ -1,75 +1,67 @@
-name: CI
+name: CI / Validate
 
 on:
   push:
-    branches:
-      - main
-      - 'cypack-*'
+    branches: [main]
   pull_request:
-    branches:
-      - main
-      - 'cypack-*'
+    branches: [main]
 
 permissions:
   contents: read
-  id-token: write
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24.18.0'
+          package-manager-cache: false
+      - uses: ./.github/actions/install-dependencies
+      - name: Check formatting and code quality
+        run: pnpm biome ci
+      - name: Check GitHub Actions workflows
+        uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
   test:
-    runs-on: ubuntu-latest
-    
+    name: Build and test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
         node-version: [22.x, 24.x]
-    
     steps:
-    - uses: actions/checkout@v7
-    
-    - uses: actions/setup-node@v7
-      with:
-        node-version: ${{ matrix.node-version }}
-        package-manager-cache: false
-
-    - uses: oven-sh/setup-bun@v2
-      with:
-        bun-version: '1.4.2'
-    
-    - name: Install dependencies
-      uses: ./.github/actions/install-dependencies
-
-    - name: Install video and release test tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install --no-install-recommends -y ffmpeg jq
-        ffmpeg -version
-        ffprobe -version
-    
-    - name: Create .env file
-      run: |
-        cat > .env << EOF
-        LINEAR_WEBHOOK_SECRET=test
-        WEBHOOK_PORT=3000
-        WORKSPACE_BASE_DIR=./tmp/workspaces
-        PROMPT_TEMPLATE_PATH=./examples/prompt-template.txt
-        ANTHROPIC_API_KEY=test
-        EOF
-    
-    - name: Run Biome
-      run: pnpm biome ci
-    
-    - name: Build Packages
-      run: pnpm build
-    
-    - name: Run Tests
-      run: pnpm -r test:run
-
-    - name: Verify public installation and immutable publication guards
-      run: node --test scripts/tests/*.test.mjs
-    
-    - name: Upload coverage
-      uses: codecov/codecov-action@v7
-      continue-on-error: true
-      with:
-        directory: ./coverage/
-        fail_ci_if_error: false
-        use_oidc: true
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-tests
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Create test environment
+        run: |
+          cat > .env << EOF
+          LINEAR_WEBHOOK_SECRET=test
+          WEBHOOK_PORT=3000
+          WORKSPACE_BASE_DIR=./tmp/workspaces
+          PROMPT_TEMPLATE_PATH=./examples/prompt-template.txt
+          ANTHROPIC_API_KEY=test
+          EOF
+      # Each TypeScript build checks its types before emitting; keep both Node versions.
+      - name: Build workspace packages and dashboard
+        run: pnpm build
+      - name: Run workspace tests
+        run: pnpm -r test:run
+      - name: Verify installation and release safeguards
+        run: node --test scripts/tests/*.test.mjs

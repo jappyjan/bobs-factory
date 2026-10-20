@@ -84,7 +84,7 @@ is independent of #84's second-machine UI acceptance; a second physical machine
 is not a prerequisite for every #122 criterion. Reboot and genuine provider
 continuation remain unproved.
 
-The new [bounded Linux acceptance workflow](../../.github/workflows/isolated-service-acceptance.yml)
+The new [bounded Linux acceptance workflow](acceptance/isolated-service-acceptance.yml)
 and [ownership/handoff procedure](acceptance/README.md) reuse the frozen `.21`
 Linux x64 artifact. They test actual foreground/external systemd processes,
 interrupted setup, native crash/backoff/burst limits, enrollment and maintenance.

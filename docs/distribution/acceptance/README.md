@@ -1,6 +1,10 @@
 # Isolated service acceptance
 
-`isolated-service-acceptance.yml` runs one disposable Linux x64 GitHub runner.
+The historical [`isolated-service-acceptance.yml`](isolated-service-acceptance.yml)
+is archived beside this harness and is no longer registered in GitHub Actions.
+It ran one disposable Linux x64 GitHub runner against a fixed binary; its retained
+receipts are historical evidence. Current native service validation runs in the
+four-target desktop candidate matrix. The following describes the archived run.
 It reuses artifact `11682662326` from run `38086228778`, verifies its API
 source/container digest and retained archive hash, and executes source
 `b82c37c4fb9a3e18d1cb222c6d56d3fef852096f`, candidate

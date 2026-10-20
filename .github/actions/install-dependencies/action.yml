@@ -1,4 +1,4 @@
-name: 'Install Dependencies'
+name: Install workspace dependencies
 description: 'Sets up pnpm and installs locked dependencies'
 runs:
   using: 'composite'
@@ -11,7 +11,7 @@ runs:
           echo "Unable to extract pnpm version from package.json"
           exit 1
         fi
-        echo "PNPM_VERSION=$PNPM_VERSION" >> $GITHUB_ENV
+        echo "PNPM_VERSION=$PNPM_VERSION" >> "$GITHUB_ENV"
         echo "Installing pnpm version: $PNPM_VERSION"
     
     - name: Install dependencies with pnpm

@@ -1,7 +1,7 @@
-name: Validate and upload Bob's Factory release evidence
+name: Release / 2. Collect evidence
 on:
   workflow_run:
-    workflows: ["Freeze eligible nightly or stable promotion"]
+    workflows: ["Release / 1. Build candidates"]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -26,6 +26,7 @@ permissions:
   contents: read
 jobs:
   automatic-nightly:
+    name: Assemble nightly and beta evidence
     if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-24.04
     # Verified full-source transfer took 56 minutes; allow intake and source assembly too.
@@ -57,6 +58,7 @@ jobs:
           path: ${{ runner.temp }}/release-evidence/
           if-no-files-found: error
   evidence:
+    name: Import reviewed evidence
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 30

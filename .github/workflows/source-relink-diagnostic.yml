@@ -1,4 +1,4 @@
-name: Pinned Linux source relink diagnostic
+name: Diagnostics / Relink Bun
 on:
   workflow_dispatch:
     inputs:
@@ -7,11 +7,6 @@ on:
         type: choice
         options: [configure, unchanged, modified]
         default: configure
-  push:
-    branches: [delivery/taskbot-116-source-relink]
-    paths:
-      - '.github/workflows/source-relink-diagnostic.yml'
-      - 'docs/distribution/relink/**'
 permissions:
   contents: read
   actions: read
@@ -20,6 +15,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   linux-x64:
+    name: Relink Bun (Linux x64)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -34,7 +30,7 @@ jobs:
           WORKFLOW_SHA: ${{ github.sha }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
-          RELINK_MODE: ${{ inputs.mode || 'modified' }}
+          RELINK_MODE: ${{ inputs.mode || 'configure' }}
         run: |
           mkdir -p "$RUNNER_TEMP/relink-evidence"
           python3 - <<'PY'
@@ -56,7 +52,7 @@ jobs:
       - name: Configure and optionally relink genuine native inputs
         shell: bash
         env:
-          RELINK_MODE: ${{ inputs.mode || 'modified' }}
+          RELINK_MODE: ${{ inputs.mode || 'configure' }}
         run: |
           set -euo pipefail
           python3 docs/distribution/relink/linux-x64.py \
