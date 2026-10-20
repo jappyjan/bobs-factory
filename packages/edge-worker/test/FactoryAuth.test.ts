@@ -13,7 +13,10 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import { FactoryAuth } from "../src/factory/FactoryAuth.js";
+import {
+	FactoryAuth,
+	PairingRateLimitError,
+} from "../src/factory/FactoryAuth.js";
 import {
 	requestFactoryAuthRecovery,
 	requestFactoryTerminalSession,
@@ -48,6 +51,387 @@ it("requires a session for remote management even with an empty store", () => {
 	expect(() =>
 		f.auth.create(undefined, "https://evil.test", "Remote", true),
 	).toThrow("origin");
+});
+it("requires matching trusted approval and a separate browser secret before issuing a normal key", () => {
+	const f = fixture();
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(() => f.auth.requestPairing("123456", origin, "device-a")).toThrow(
+		"Invalid or expired",
+	);
+	expect(() => f.auth.beginPairing(undefined, origin, "Tablet")).toThrow(
+		"Sign in",
+	);
+	expect(() => f.auth.pairingStatus(undefined, origin)).toThrow("Sign in");
+	expect(() => f.auth.cancelPairing(undefined, origin, "missing")).toThrow(
+		"Sign in",
+	);
+	const before = readFileSync(f.auth.store.path, "utf8");
+	const grant = f.auth.beginPairing(undefined, origin, " Tablet ", true);
+	expect(grant).toEqual({
+		id: expect.any(String),
+		code: expect.stringMatching(/^[0-9]{6}$/),
+		expires: expect.any(Number),
+		label: "Tablet",
+		requests: [],
+	});
+	expect(f.auth.pairingAvailable()).toBe(true);
+	expect(f.auth.pairingStatus(undefined, origin, true)).toEqual({
+		id: grant.id,
+		label: "Tablet",
+		expires: grant.expires,
+		requests: [],
+	});
+	expect(readFileSync(f.auth.store.path, "utf8")).toBe(before);
+	expect(() =>
+		f.auth.requestPairing(grant.code, "https://evil.test", "device-a"),
+	).toThrow("origin");
+	const request = f.auth.requestPairing(grant.code, origin, "device-a");
+	expect(request).toMatchObject({
+		confirmation: expect.stringMatching(/^[0-9]{6}$/),
+		token: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
+		approved: false,
+	});
+	expect(request.confirmation).not.toBe(grant.code);
+	expect(f.auth.store.state.keys).toEqual([]);
+	expect(readFileSync(f.auth.store.path, "utf8")).toBe(before);
+	expect(f.auth.pairingRequest(request.token, origin)).toEqual({
+		id: request.id,
+		confirmation: request.confirmation,
+		createdAt: request.createdAt,
+		expires: grant.expires,
+		approved: false,
+	});
+	expect(
+		f.auth.pairingRequest(request.token, "https://evil.test"),
+	).toBeUndefined();
+	expect(() =>
+		f.auth.claimPairing(request.token, origin, request.id, "device-a"),
+	).toThrow("not been approved");
+	expect(() =>
+		f.auth.decidePairing(
+			undefined,
+			origin,
+			grant.id,
+			request.id,
+			request.confirmation,
+			true,
+		),
+	).toThrow("Sign in");
+	expect(() =>
+		f.auth.decidePairing(
+			undefined,
+			origin,
+			grant.id,
+			request.id,
+			"wrong",
+			true,
+			true,
+		),
+	).toThrow("changed or expired");
+	f.auth.decidePairing(
+		undefined,
+		origin,
+		grant.id,
+		request.id,
+		request.confirmation,
+		true,
+		true,
+	);
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(f.auth.store.state.keys).toEqual([]);
+	for (const token of [undefined, "x".repeat(43), grant.code])
+		expect(() =>
+			f.auth.claimPairing(token, origin, request.id, "attacker"),
+		).toThrow("not been approved");
+	expect(() =>
+		f.auth.claimPairing(
+			request.token,
+			"https://evil.test",
+			request.id,
+			"attacker",
+		),
+	).toThrow("not been approved");
+	expect(() =>
+		f.auth.claimPairing(request.token, origin, "wrong-id", "attacker"),
+	).toThrow("not been approved");
+	const device = f.auth.claimPairing(
+		request.token,
+		origin,
+		request.id,
+		"device-a",
+	);
+	expect(device.key).toMatch(/^[A-Za-z0-9_-]{43}$/);
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(() => f.auth.requestPairing(grant.code, origin, "device-a")).toThrow(
+		"Invalid or expired",
+	);
+	expect(() =>
+		f.auth.claimPairing(request.token, origin, request.id, "device-a"),
+	).toThrow("not been approved");
+	expect(readFileSync(f.auth.store.path, "utf8")).not.toContain(device.key);
+	const session = f.auth.login(device.key, origin, undefined, true);
+	expect(session.expires).toBeNull();
+	expect(f.auth.keys(session.token, origin)).toEqual([
+		{
+			id: device.id,
+			label: "Tablet",
+			createdAt: expect.any(Number),
+			lastUsedAt: expect.any(Number),
+			current: true,
+		},
+	]);
+	f.auth.remove(undefined, origin, device.id, true);
+	expect(f.auth.session(session.token, origin)).toBeUndefined();
+	expect(() => f.auth.login(device.key, origin)).toThrow("Invalid API key");
+});
+it("expires and cancels pairing, and replacing a code invalidates it without letting stale tabs cancel the replacement", () => {
+	vi.useFakeTimers();
+	const f = fixture();
+	const first = f.auth.beginPairing(undefined, origin, "First", true);
+	const second = f.auth.beginPairing(undefined, origin, "Second", true);
+	expect(second.id).not.toBe(first.id);
+	f.auth.cancelPairing(undefined, origin, first.id, true);
+	expect(f.auth.pairingAvailable()).toBe(true);
+	expect(second.code).not.toBe(first.code);
+	expect(() => f.auth.requestPairing(first.code, origin, "device-a")).toThrow(
+		"Invalid or expired",
+	);
+	f.auth.cancelPairing(undefined, origin, second.id, true);
+	expect(() => f.auth.requestPairing(second.code, origin, "device-a")).toThrow(
+		"Invalid or expired",
+	);
+	const expiring = f.auth.beginPairing(undefined, origin, "Expires", true);
+	expect(expiring.expires).toBe(Date.now() + 5 * 60000);
+	vi.setSystemTime(expiring.expires);
+	expect(() =>
+		f.auth.requestPairing(expiring.code, origin, "device-a"),
+	).toThrow("Invalid or expired");
+	expect(f.auth.pairingStatus(undefined, origin, true)).toBeNull();
+	expect(f.auth.store.state.keys).toEqual([]);
+});
+it("throttles guessing without cancelling the code or preventing a different peer from pairing", () => {
+	vi.useFakeTimers();
+	const f = fixture(),
+		key = f.create();
+	const grant = f.auth.beginPairing(undefined, origin, "Tablet", true);
+	const wrong = grant.code === "000000" ? "000001" : "000000";
+	for (let i = 0; i < 5; i++)
+		expect(() => f.auth.requestPairing(wrong, origin, "device-a")).toThrow(
+			"Invalid or expired",
+		);
+	expect(f.auth.pairingAvailable()).toBe(true);
+	expect(() => f.auth.requestPairing(grant.code, origin, "device-a")).toThrow(
+		PairingRateLimitError,
+	);
+	expect(f.auth.pairingAvailable()).toBe(true);
+	const request = f.auth.requestPairing(grant.code, origin, "device-b");
+	expect(request.approved).toBe(false);
+	vi.setSystemTime(Date.now() + 60001);
+	expect(f.auth.requestPairing(grant.code, origin, "device-a").approved).toBe(
+		false,
+	);
+	expect(
+		f.auth.session(f.auth.login(key.key, origin).token, origin),
+	).toBeDefined();
+	expect(f.auth.store.state.keys).toHaveLength(1);
+});
+it("limits attempts across rotating peers and leaves an active grant usable after the throttle window", () => {
+	vi.useFakeTimers();
+	const f = fixture();
+	const grant = f.auth.beginPairing(undefined, origin, "Tablet", true);
+	const wrong = grant.code === "000000" ? "000001" : "000000";
+	for (let i = 0; i < 30; i++)
+		expect(() => f.auth.requestPairing(wrong, origin, `peer-${i}`)).toThrow(
+			"Invalid or expired",
+		);
+	expect(() =>
+		f.auth.requestPairing(grant.code, origin, "another-peer"),
+	).toThrow(PairingRateLimitError);
+	expect(f.auth.pairingAvailable()).toBe(true);
+	vi.setSystemTime(Date.now() + 60001);
+	expect(
+		f.auth.requestPairing(grant.code, origin, "another-peer").approved,
+	).toBe(false);
+});
+it("isolates requests from different browsers and makes rejection, withdrawal and approval specific to their request", () => {
+	const f = fixture();
+	const grant = f.auth.beginPairing(undefined, origin, "Tablet", true);
+	const attacker = f.auth.requestPairing(grant.code, origin, "attacker");
+	const device = f.auth.requestPairing(grant.code, origin, "device");
+	expect(device.confirmation).not.toBe(attacker.confirmation);
+	expect(
+		f.auth.requestPairing(grant.code, origin, "device", device.token),
+	).toEqual(device);
+	expect(f.auth.pairingStatus(undefined, origin, true)?.requests).toHaveLength(
+		2,
+	);
+	f.auth.withdrawPairing(attacker.token, origin, device.id, "attacker");
+	expect(f.auth.pairingRequest(device.token, origin)).toBeDefined();
+	f.auth.decidePairing(
+		undefined,
+		origin,
+		grant.id,
+		attacker.id,
+		attacker.confirmation,
+		false,
+		true,
+	);
+	expect(f.auth.pairingRequest(attacker.token, origin)).toBeUndefined();
+	expect(f.auth.pairingRequest(device.token, origin)).toBeDefined();
+	expect(f.auth.pairingAvailable()).toBe(true);
+	f.auth.decidePairing(
+		undefined,
+		origin,
+		grant.id,
+		device.id,
+		device.confirmation,
+		true,
+		true,
+	);
+	expect(() =>
+		f.auth.claimPairing(attacker.token, origin, device.id, "attacker"),
+	).toThrow("not been approved");
+	f.auth.withdrawPairing(device.token, origin, device.id, "device");
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(() =>
+		f.auth.claimPairing(device.token, origin, device.id, "device"),
+	).toThrow("not been approved");
+	expect(f.auth.store.state.keys).toEqual([]);
+});
+it("expires approved requests and rejects stale approvals after code replacement", () => {
+	vi.useFakeTimers();
+	const f = fixture();
+	const old = f.auth.beginPairing(undefined, origin, "Old", true);
+	const request = f.auth.requestPairing(old.code, origin, "device");
+	const grant = f.auth.beginPairing(undefined, origin, "New", true);
+	expect(() =>
+		f.auth.decidePairing(
+			undefined,
+			origin,
+			old.id,
+			request.id,
+			request.confirmation,
+			true,
+			true,
+		),
+	).toThrow("changed or expired");
+	const next = f.auth.requestPairing(grant.code, origin, "device");
+	f.auth.decidePairing(
+		undefined,
+		origin,
+		grant.id,
+		next.id,
+		next.confirmation,
+		true,
+		true,
+	);
+	vi.setSystemTime(grant.expires);
+	expect(f.auth.pairingRequest(next.token, origin)).toBeUndefined();
+	expect(() =>
+		f.auth.claimPairing(next.token, origin, next.id, "device"),
+	).toThrow("not been approved");
+	expect(f.auth.store.state.keys).toEqual([]);
+});
+it("bounds pending requests and lets the trusted operator reject an unwanted request to admit their device", () => {
+	const f = fixture();
+	const grant = f.auth.beginPairing(undefined, origin, "Tablet", true);
+	const requests = Array.from({ length: 20 }, (_, i) =>
+		f.auth.requestPairing(grant.code, origin, `peer-${i}`),
+	);
+	expect(() =>
+		f.auth.requestPairing(grant.code, origin, "another-peer"),
+	).toThrow("Too many devices waiting");
+	f.auth.decidePairing(
+		undefined,
+		origin,
+		grant.id,
+		requests[0]!.id,
+		requests[0]!.confirmation,
+		false,
+		true,
+	);
+	expect(
+		f.auth.requestPairing(grant.code, origin, "another-peer").approved,
+	).toBe(false);
+	expect(f.auth.store.state.keys).toEqual([]);
+});
+it.each([
+	"logout",
+	"rotate",
+	"remove",
+	"expiry",
+	"replacement",
+	"recovery",
+	"restart",
+] as const)("revokes pending device access on issuer %s", (action) => {
+	vi.useFakeTimers();
+	const f = fixture(),
+		key = f.create(),
+		login = f.auth.login(key.key, origin);
+	const grant = f.auth.beginPairing(login.token, origin, "Tablet");
+	const request = f.auth.requestPairing(grant.code, origin, "device");
+	f.auth.decidePairing(
+		login.token,
+		origin,
+		grant.id,
+		request.id,
+		request.confirmation,
+		true,
+	);
+	if (action === "logout") f.auth.logout(login.token, origin);
+	if (action === "rotate") f.auth.rotate(login.token, origin, key.id);
+	if (action === "remove") f.auth.remove(login.token, origin, key.id);
+	if (action === "expiry") {
+		// Put the issuer near expiry so the grant would otherwise outlive it.
+		f.auth.store.update((state) => {
+			state.sessions[0]!.expires = Date.now() + 1000;
+		});
+		vi.setSystemTime(Date.now() + 1000);
+	}
+	if (action === "replacement") f.auth.login(key.key, origin, login.token);
+	if (action === "recovery") {
+		writeFileSync(
+			join(f.auth.store.directory, "recover"),
+			"RESET FACTORY AUTHENTICATION",
+		);
+		f.auth.checkRecovery();
+	}
+	if (action === "restart") {
+		f.auth.close();
+		const restarted = new FactoryAuth(f.home, { origins: [origin] });
+		services.push(restarted);
+		expect(() =>
+			restarted.requestPairing(grant.code, origin, "device-a"),
+		).toThrow("Invalid or expired");
+	}
+	expect(f.auth.pairingAvailable()).toBe(false);
+	expect(() =>
+		f.auth.claimPairing(request.token, origin, request.id, "device"),
+	).toThrow("not been approved");
+	expect(() => f.auth.requestPairing(grant.code, origin, "device-a")).toThrow(
+		"Invalid or expired",
+	);
+});
+it("fails closed if issuing a paired key cannot be persisted", () => {
+	const f = fixture();
+	const grant = f.auth.beginPairing(undefined, origin, "Tablet", true);
+	const request = f.auth.requestPairing(grant.code, origin, "device");
+	f.auth.decidePairing(
+		undefined,
+		origin,
+		grant.id,
+		request.id,
+		request.confirmation,
+		true,
+		true,
+	);
+	rmSync(f.auth.store.path);
+	mkdirSync(f.auth.store.path);
+	expect(() =>
+		f.auth.claimPairing(request.token, origin, request.id, "device"),
+	).toThrow();
+	expect(f.auth.store.state.keys).toEqual([]);
+	expect(f.auth.pairingAvailable()).toBe(false);
 });
 it("persists only digests, keeps private permissions and origin-bound sessions across restart", () => {
 	const f = fixture(),
@@ -253,6 +637,7 @@ it("grants localhost-only terminal sessions from local operator requests that ca
 	expect(auth.session(token, local)).toMatchObject({ credential: "terminal" });
 	expect(auth.session(token, origin)).toBeUndefined();
 	expect(() => auth.keys(token, local)).toThrow("Sign in");
+	expect(() => auth.beginPairing(token, local, "Tablet")).toThrow("Sign in");
 	// Terminal sessions are memory-only and never persisted with key sessions.
 	expect(auth.store.state.sessions).toHaveLength(0);
 	const persist = vi.spyOn(auth.store, "update");

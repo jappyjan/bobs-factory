@@ -4151,6 +4151,27 @@ kbd {
 	max-width: 44rem;
 	margin-inline: auto;
 }
+.device-pairing {
+	margin-top: 1rem;
+}
+.pairing-request {
+	margin-block: 1rem;
+	padding: 1rem;
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+}
+.pairing-code {
+	display: block;
+	font-size: clamp(2rem, 10vw, 3rem);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.15em;
+}
+#factory-sign-in-code {
+	font-size: 1.5rem;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.2em;
+}
 .settings-card {
 	padding: 1.5rem;
 	margin-top: 1.5rem;
