@@ -851,6 +851,70 @@ it("uses a renamed aggregate for unchanged-revision readiness after a fix", asyn
 		baseSha: "base",
 	});
 });
+
+it.each([
+	"missing",
+	"superseded",
+])("allows CI correction with a %s aggregate and still requires fresh review", async (state) => {
+	const b = baseline();
+	b.key = "pipeline/specialist-review";
+	b.reviewers[0]!.key = `${b.key}/0/business`;
+	const accepted = aggregateReview(b, [{ business: receipt(b) }]);
+	const context = {
+		step: { id: "ci-fix", tool: "ci-fix-readiness" },
+		stepKey: "pipeline/ci-fix",
+		reviewKey: b.key,
+		currentScope: () => ({}),
+		run: {
+			answers: [],
+			reviewRounds: state === "missing" ? [b] : [b, { ...b, round: 2 }],
+			history:
+				state === "missing"
+					? []
+					: [{ step: "pipeline/review-gate", output: accepted }],
+			roleRevisions: {
+				"pipeline/code-review": { headSha: "head", dirty: false },
+			},
+			outputs: {
+				"draft-pr": { url: "https://github.com/test/repo/pull/1" },
+				"review-gate": accepted,
+			},
+		},
+		signal: new AbortController().signal,
+		log: vi.fn(),
+	} as unknown as ExecutionContext;
+	let conflicting = true;
+	const tools = new FactoryTools({
+		postComment: vi.fn(),
+		command: async (_context, exe, args) =>
+			exe === "git"
+				? args[0] === "status"
+					? ""
+					: "head"
+				: JSON.stringify(
+						githubApiReceipt(args, {
+							mergeable: conflicting ? "CONFLICTING" : "MERGEABLE",
+						}),
+					),
+	});
+	await expect(tools.tool(context)).resolves.toMatchObject({
+		fix: true,
+		skipFix: false,
+	});
+	// The provider can resolve a queued failure, but that does not complete review.
+	conflicting = false;
+	await expect(tools.tool(context)).resolves.toMatchObject({ skipFix: true });
+	context.step = { ...context.step, tool: "review-after-fix" };
+	await expect(tools.tool(context)).resolves.toMatchObject({
+		reviewRequired: true,
+		headSha: "head",
+		baseSha: "base",
+	});
+	context.step = { ...context.step, tool: "human-review" };
+	await expect(tools.tool(context)).rejects.toThrow("no complete aggregate");
+	expect(context.run.outputs["review-gate"]).toBe(accepted);
+});
+
 it("retains stable IDs and historical scope, requires amendments and explicit accepted skips", () => {
 	const original = inventory();
 	expect(validateInventory(original, original).version).toBe(1);
