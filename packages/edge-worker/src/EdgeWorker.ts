@@ -9483,7 +9483,8 @@ ${taskSection}`;
 			);
 			if (step.architectureContract === "architecture-v1") {
 				output = ArchitectureSchema.parse(output);
-				if (step.architectureBrief) assertReviewBrief(output as Architecture);
+				if (step.architectureBrief)
+					assertReviewBrief(output as Architecture, step.architectureBrief);
 				assertRevisionChanges(
 					output as Architecture,
 					run.architectureProposals?.length ?? 0,
