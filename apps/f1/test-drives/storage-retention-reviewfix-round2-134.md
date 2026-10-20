@@ -70,6 +70,14 @@ claim that reviewer reassessment has occurred. It removes inherited
 `BOBS_FACTORY_*` settings and uses `F1_AGENT_MODE=mock`, `OPENCODE_LIVE=0`,
 `npm_config_workspace_concurrency=1`, and `VITEST_MAX_WORKERS=4`.
 
+The completed required workspace replay at
+`537663fd9027f2fc6ee96d28e07f4162003a1c2d` passed in 310.446 seconds: 3,855
+Vitest tests and 41 desktop tests passed, with three existing optional skips.
+The receipt confirms the source stayed clean and unchanged throughout execution.
+The final follow-up records these results and the internal changelog only;
+`reviewfix-r2-final-revision.json` binds that documentation-only diff to the tested
+revision. No production code, test code or dependency changed after this pass.
+
 ## Limits
 
 Stock delivery scenarios start from retained reviewed checkpoints and use
