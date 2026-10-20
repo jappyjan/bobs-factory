@@ -326,3 +326,62 @@ Logs are retained in the evidence directory above as `ci-r19-build.log`,
 This validates recovery integration; it does not replace fresh launcher browser
 QA, independent impact review, provider CI or human approval for the new revision.
 Historical results and failed evidence remain unchanged.
+
+## Review verification follow-up on 2026-10-20
+
+At source revision `7860f51d8dd5618df2aeff752d00c3bce2a66353` against target
+`dd0b591a480593d6b9952b0e1e5acadba574ee23`, the original guide-test port
+collision no longer reproduced. Ports 3542 and 3602 were available, and the
+unchanged selected command passed:
+
+```sh
+env -u BOBS_FACTORY_INTERNAL_EXECUTABLE F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/review-story.ts
+```
+
+Its success marker records both new-guide and saved-guide upgrade assertions,
+preserved model settings, and pending human approval. The worker and shared
+listener stopped. No service was stopped to obtain these ports, and no fixture,
+assertion, command or production source was changed.
+
+Executed all 26 subsequent selections sequentially with simulated agents where
+applicable. Twenty-two passed, including context transport, bounded-memory
+context handling, API responsiveness, device pairing and revocation, recovery
+tests, CLI and desktop helpers, workflow lint and release safeguards. Together
+with the original 30 passing runtime receipts and the guide rerun, the inventory
+contains 53 passing commands out of 57. Original receipts retain their original
+provenance; they were not rerun or assigned new execution dates.
+
+Four drives remain blocked by occupied listeners:
+
+| Selected command ID | Occupied port |
+| --- | --- |
+| `target-architecture-continuation-f1` | 3600 |
+| `target-operator-context-f1` | 3601 |
+| `target-incomplete-review-f1` | 3600 |
+| `target-stuck-recovery-f1` | 3600 |
+
+`lsof` and `ps` identify both listeners as PID 92802, running
+`bun apps/f1/test-drives/media/2026-10-20-improve-codebase/live-drive.ts` in
+the separate worktree `/Users/jappy/.t3/worktrees/bobs-factory/t3-a8e35145`.
+The process remained active at the final listener check. It was left running:
+the review findings explicitly require preserving unrelated services. The
+listener owner must release these resources before the unchanged commands can
+be retried. Changing their fixtures or commands instead requires independent
+impact reassessment before execution.
+
+Evidence remains under
+`/Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/`:
+
+- `fix-r14-verification-inventory.json` binds all 57 selections to passing or
+  blocked receipts and preserves the original guide failure.
+- `fix-r14-selected-checks.json`, `fix-r14-original-receipts.json` and
+  `fix-r14-fresh-receipts.json` retain exact commands and execution results.
+- `fix-r14-<command-id>.log` retains each fresh execution's complete output.
+- `fix-r14-port-owners.txt` records the unrelated listener owner.
+
+All six current verification findings remain open because four required drives
+lack passing receipts. This report does not establish code readiness or waive
+fresh QA, independent review, provider readiness, human acceptance or confirmed
+merge. The desktop helper suite exited zero with one skipped test; lint retained
+25 warnings. No real inference provider was called. This follow-up changes only
+the report; the original failures and historical QA remain preserved.
