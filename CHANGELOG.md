@@ -25,6 +25,19 @@ All notable changes to this project will be documented in this file.
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
+- Let CI fixers repair merge conflicts and failed checks when the latest specialist review has not finished; require fresh review afterward and retain approval safeguards. ([#161](https://github.com/jappyjan/bobs-factory/pull/161))
+
+- Acknowledge Linear sessions before slow startup checks and background API reads; reduce lifecycle synchronization traffic while retaining complete agent context and fresh status checks. ([#160](https://github.com/jappyjan/bobs-factory/pull/160))
+
+- Deliver Linear acknowledgments and activity while other SDK requests continue; reserve delivery pauses for actual provider throttles while preserving shared API pacing. ([#158](https://github.com/jappyjan/bobs-factory/pull/158))
+
+- Fix worker memory growth and dashboard stalls caused by copying large workflow histories and saving every streamed message; preserve full evidence, checkpoints and native conversations. ([#159](https://github.com/jappyjan/bobs-factory/pull/159))
+
+- Speed up dashboard loading and actions with focused API responses, lazy recipe/settings data, compact action receipts and coalesced live refreshes; preserve saved decisions and full evidence on explicit reads. ([#157](https://github.com/jappyjan/bobs-factory/pull/157))
+
+- Stop repeated questions asking who submitted already recorded scope decisions; preserve original operator receipts and use honest unnamed attribution in new and saved workflows without weakening explicit approval or scope-waiver requirements. ([#156](https://github.com/jappyjan/bobs-factory/pull/156))
+
 - Include architecture approval continuation coverage in the nightly evidence validator, so the additional passing F1 log can pass release intake without weakening the complete-inventory guard. ([#154](https://github.com/jappyjan/bobs-factory/pull/154))
 
 - Continue an existing architecture approval after independent review confirms cumulative implementation discoveries remain within the accepted design, preventing repeated approval requests for necessary tests and callers while preserving material-change and explicit approval gates. ([#153](https://github.com/jappyjan/bobs-factory/pull/153))

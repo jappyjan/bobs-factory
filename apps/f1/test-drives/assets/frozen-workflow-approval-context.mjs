@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 delete process.env.BOBS_FACTORY_INTERNAL_EXECUTABLE;
@@ -35,6 +36,9 @@ await import(
 const { EdgeWorker } = await import(
 	join(root, "packages/edge-worker/dist/index.js")
 );
+const { createCLIIssueTracker } = await import(
+	join(root, "packages/core/dist/index.js")
+);
 const { WorkflowRuntime } = await import(
 	join(root, "packages/edge-worker/dist/factory/WorkflowRuntime.js")
 );
@@ -62,6 +66,13 @@ const agent = (id, extra = {}) => ({
 	prompt: `[F1_ROLE=${id}] Execute only this fixture role.`,
 	...extra,
 });
+// Keep the pre-fix instruction to exercise the runtime rule on saved workflows.
+const extraction = agent("scope", {
+	prompt:
+		"[F1_ROLE=scope] Extract scope. Scope decisions require the actual accepting person, rationale and source, not a reviewer preference.",
+	reviewContract: "inventory-v1",
+	askQuestions: true,
+});
 const pipeline = {
 	id: "context-pipeline",
 	name: "Context pipeline",
@@ -70,6 +81,7 @@ const pipeline = {
 		agent("plan"),
 		agent("plan-review"),
 		agent("implement", { inputs: ["plan"], askQuestions: true }),
+		extraction,
 	],
 };
 const workflow = {
@@ -108,6 +120,7 @@ const newer = {
 			},
 		},
 		agent("implement", { inputs: ["plan"], askQuestions: true }),
+		extraction,
 	],
 };
 const proposal = {
@@ -152,7 +165,7 @@ function scriptedRunner(_type, config) {
 			if (!role) return delegate.start(prompt);
 			assert.ok(instruction.includes(workflowExecutionInstructions));
 			const scoped = config.mcpConfig["factory-context"];
-			const input = JSON.parse(readFileSync(scoped.args.at(-1), "utf8"));
+			const input = loadFactoryContextSnapshot(scoped.args.at(-1));
 			const client = new Client({ name: "f1-frozen-context", version: "1" });
 			await client.connect(
 				new StdioClientTransport({
@@ -186,7 +199,55 @@ function scriptedRunner(_type, config) {
 				else if (role === "plan-review" || role === "candidate-review")
 					output = { approved: true, feedback: [] };
 				else if (role === "design") output = proposal;
-				else {
+				else if (role === "scope") {
+					assert.deepEqual(policy.answers, input.answers);
+					assert.deepEqual(
+						policy.architectureDecisions,
+						input.architectureDecisions,
+					);
+					const records = hasGate
+						? policy.architectureDecisions
+						: policy.answers;
+					assert.equal(records.length, 1);
+					assert.equal(records[0].acceptedBy, undefined);
+					assert.equal(records[0].actor, undefined);
+					assert.ok(records[0].at);
+					if (hasGate) assert.equal(records[0].decision, "accept");
+					else
+						assert.equal(
+							records[0].answer,
+							"Automated plan review is accepted. The saved graph has no architecture gate. Continue implementation; final delivery approval remains separate.",
+						);
+					const source = {
+						source: "factory-context",
+						reference: `/workflowExecution/${hasGate ? "architectureDecisions" : "answers"}/0`,
+					};
+					output = {
+						schemaVersion: 1,
+						requirements: [
+							{
+								id: "R1",
+								criterion: "Implement the fixture change.",
+								classification: "active",
+								sources: [source],
+							},
+						],
+						decisions: [
+							{
+								id: "D1",
+								acceptedBy: policy.decisionAttribution.unnamedOperator,
+								kind: "scope",
+								requirementIds: ["R1"],
+								source,
+								rationale:
+									"The original operator receipt authorizes the fixture scope; final delivery approval remains separate.",
+							},
+						],
+						conflicts: [],
+						sourceReceipt: { considered: [source], unavailable: [] },
+						questions: [],
+					};
+				} else {
 					assert.equal(role, "implement");
 					assert.equal(input.outputs, undefined);
 					assert.ok(input.plan);
@@ -243,8 +304,9 @@ const configRuntime = new WorkflowRuntime(home, {
 });
 configRuntime.updateWorkflows([...defaultWorkflows, workflow, pipeline]);
 await configRuntime.shutdown();
+const tracker = createCLIIssueTracker();
 const config = {
-	platform: "cli",
+	issueTrackerFactory: () => tracker,
 	factoryHome: home,
 	serverHost: "127.0.0.1",
 	serverPort: 3604,
@@ -398,6 +460,25 @@ try {
 	});
 	assert.equal(approved.architectureDecisions.at(-1).proposalId, p.id);
 	assert.equal(calls.filter((c) => c.role === "implement").length, 3);
+	for (const run of [complete, approved]) {
+		assert.equal(
+			run.outputs.scope.decisions[0].acceptedBy,
+			"Factory operator (name not recorded)",
+		);
+		assert.deepEqual(run.outputs.scope.questions, []);
+		assert.deepEqual(run.outputs.scope.conflicts, []);
+		assert.deepEqual(run.humanDecisions ?? [], []);
+	}
+	assert.equal(
+		complete.answers.length,
+		1,
+		"No identity answer should be needed",
+	);
+	assert.equal(
+		approved.answers.length,
+		0,
+		"Architecture acceptance needs no identity question",
+	);
 	writeFileSync(
 		join(home, "results.json"),
 		JSON.stringify(
@@ -411,6 +492,8 @@ try {
 					"frozen graph recovery",
 					"native conversation continuity",
 					"real gate preserved",
+					"unnamed answer and exact acceptance receipts survive scoped MCP and extraction",
+					"saved actual-person prompt receives runtime attribution rule without rewriting the graph",
 				],
 			},
 			null,

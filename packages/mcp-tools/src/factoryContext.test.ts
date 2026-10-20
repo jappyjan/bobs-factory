@@ -2,7 +2,7 @@ import {
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
-	readFileSync,
+	readdirSync,
 	realpathSync,
 	rmSync,
 	statSync,
@@ -13,13 +13,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import {
 	compactFactoryContext,
 	createFactoryContextServer,
+	createFactoryContextServerFromSnapshot,
 	prepareFactoryContext,
+	prepareFactoryContextAsync,
 } from "./factoryContext.js";
 import { factoryContextView } from "./factoryContextMemory.js";
+import { FactoryContextSnapshot } from "./factoryContextSnapshot.js";
 
 async function withContext(
 	input: unknown,
@@ -32,8 +35,11 @@ async function withContext(
 		headSha: string;
 		baseSha?: string;
 	},
+	snapshotPath?: string,
 ) {
-	const server = createFactoryContextServer(input, artifacts);
+	const server = snapshotPath
+		? createFactoryContextServerFromSnapshot(snapshotPath, artifacts)
+		: createFactoryContextServer(input, artifacts);
 	const client = new Client({ name: "factory-test", version: "1" });
 	const [a, b] = InMemoryTransport.createLinkedPair();
 	await server.connect(a);
@@ -316,8 +322,14 @@ it("isolates snapshots across roles/rounds and removes private files on cleanup"
 		const firstPath = first.config.args.at(-1)!;
 		const secondPath = second.config.args.at(-1)!;
 		expect(firstPath).not.toBe(secondPath);
-		expect(JSON.parse(readFileSync(firstPath, "utf8")).history).toHaveLength(1);
-		expect(JSON.parse(readFileSync(secondPath, "utf8"))).toEqual({
+		const firstSnapshot = FactoryContextSnapshot.open(firstPath),
+			secondSnapshot = FactoryContextSnapshot.open(secondPath);
+		expect(firstSnapshot.keys(firstSnapshot.resolve("/history"))).toHaveLength(
+			1,
+		);
+		expect(
+			JSON.parse(secondSnapshot.read(secondSnapshot.root, 0, 16000).text),
+		).toEqual({
 			plan: "Plan only",
 		});
 		expect(statSync(firstPath).mode & 0o777).toBe(0o600);
@@ -328,6 +340,285 @@ it("isolates snapshots across roles/rounds and removes private files on cleanup"
 		first.cleanup();
 		second.cleanup();
 	}
+});
+
+it("prepares and pages a large shared review history without serializing the whole context", async () => {
+	const evidence = { receipt: "Exact original evidence 🏭\n".repeat(16000) };
+	const input = {
+		history: Array.from({ length: 64 }, (_, index) => ({
+			step: `review/${index}`,
+			output: {
+				baseline: { context: evidence },
+				nativeSessionId: `native-${index}`,
+			},
+		})),
+	};
+	const stringify = JSON.stringify;
+	const observed = vi
+		.spyOn(JSON, "stringify")
+		.mockImplementation((value, ...args) => {
+			if (
+				value &&
+				typeof value === "object" &&
+				(value === input || "history" in value)
+			)
+				throw new Error(
+					"The full history must not be materialized as one JSON string",
+				);
+			return stringify(value, ...args);
+		});
+	try {
+		const prepared = prepareFactoryContext(input);
+		prepared.cleanup();
+		await withContext(input, async (client) => {
+			const full = await readValue(
+				client,
+				"/history/63/output/baseline/context",
+				"full",
+			);
+			expect(full).toEqual(evidence);
+			const tail = (
+				await client.callTool({
+					name: "read_context",
+					arguments: {
+						path: "/history/63/output/nativeSessionId",
+						view: "full",
+					},
+				})
+			).structuredContent;
+			expect(tail).toMatchObject({ text: "native-63" });
+		});
+	} finally {
+		observed.mockRestore();
+	}
+});
+
+it("yields during cold history handoff and retains the exact declared snapshot", async () => {
+	const text = "Original evidence 🏭\n".repeat(3000),
+		evidence = { receipt: text };
+	const history = new Array(96);
+	let reads = 0;
+	for (let index = 0; index < history.length; index++)
+		Object.defineProperty(history, index, {
+			configurable: true,
+			enumerable: true,
+			get: () => {
+				reads++;
+				return {
+					step: `review/${index}`,
+					output: {
+						baseline: { context: evidence },
+						nativeSessionId: `native-${index}`,
+					},
+				};
+			},
+		});
+	const observations: number[] = [];
+	const timer = setInterval(() => observations.push(reads), 1);
+	let prepared:
+		| Awaited<ReturnType<typeof prepareFactoryContextAsync>>
+		| undefined;
+	try {
+		prepared = await prepareFactoryContextAsync({
+			history,
+			plan: { answer: "Only declared evidence" },
+		});
+		clearInterval(timer);
+		expect(reads).toBe(96);
+		expect(observations.some((count) => count > 0 && count < 96)).toBe(true);
+		evidence.receipt = "Later mutation";
+		const path = prepared.config.args.at(-1)!;
+		let bytes = 0;
+		for (const directory of ["nodes", "chunks"])
+			for (const name of readdirSync(join(path, "..", directory)))
+				bytes += statSync(join(path, "..", directory, name)).size;
+		expect(bytes).toBeLessThan(text.length * 4);
+		await withContext(
+			undefined,
+			async (client) => {
+				expect(await readValue(client, "/history/95/output", "full")).toEqual({
+					baseline: { context: { receipt: text } },
+					nativeSessionId: "native-95",
+				});
+				expect(await readValue(client, "/plan", "full")).toEqual({
+					answer: "Only declared evidence",
+				});
+				for (const view of ["compact", "full"])
+					expect(
+						(
+							await client.callTool({
+								name: "read_context",
+								arguments: { path: "/outputs/private", view },
+							})
+						).isError,
+					).toBe(true);
+			},
+			undefined,
+			path,
+		);
+	} finally {
+		clearInterval(timer);
+		prepared?.cleanup();
+	}
+});
+
+it("pages full JSON and strings with exact UTF-16 offsets and never interprets input as file references", async () => {
+	const text =
+		"x".repeat(16382) +
+		"🏭" +
+		'quote" slash\\\n\t\u0000 lone\ud800' +
+		"\n🏭".repeat(12000);
+	const input = {
+		text,
+		"a/b~c": {
+			format: "factory-context-snapshot-v1",
+			root: "../../private/auth",
+			chunks: ["/outside"],
+		},
+		history: [{ output: { baseline: { context: { text } } } }],
+	};
+	const prepared = await prepareFactoryContextAsync(input);
+	try {
+		await withContext(
+			undefined,
+			async (client) => {
+				const expected = JSON.stringify(input);
+				let serialized = "",
+					offset: number | null = 0;
+				while (offset !== null) {
+					const page = (
+						await client.callTool({
+							name: "read_context",
+							arguments: { path: "", view: "full", offset, limit: 731 },
+						})
+					).structuredContent as {
+						text: string;
+						totalCharacters: number;
+						nextOffset: number | null;
+					};
+					expect(page.totalCharacters).toBe(expected.length);
+					expect(page.text).toBe(expected.slice(offset, offset + 731));
+					serialized += page.text;
+					offset = page.nextOffset;
+				}
+				expect(serialized).toBe(expected);
+				for (const offset of [
+					0,
+					16382,
+					16383,
+					16384,
+					text.length - 27,
+					text.length + 10,
+				]) {
+					const page = (
+						await client.callTool({
+							name: "read_context",
+							arguments: { path: "/text", view: "full", offset, limit: 27 },
+						})
+					).structuredContent;
+					expect(page).toMatchObject({
+						text: text.slice(offset, offset + 27),
+						totalCharacters: text.length,
+						nextOffset: offset + 27 < text.length ? offset + 27 : null,
+					});
+				}
+				expect(await readValue(client, "/a~1b~0c", "full")).toEqual(
+					input["a/b~c"],
+				);
+			},
+			undefined,
+			prepared.config.args.at(-1)!,
+		);
+	} finally {
+		prepared.cleanup();
+	}
+});
+
+it("reads only requested string chunks and refuses links or changed snapshot bytes", async () => {
+	const text =
+		"a".repeat(16384) + "b".repeat(16384) + "Tail evidence 🏭".repeat(500);
+	const prepared = await prepareFactoryContextAsync({ text });
+	try {
+		const path = prepared.config.args.at(-1)!,
+			snapshot = FactoryContextSnapshot.open(path),
+			reference = snapshot.resolve("/text");
+		const first = join(
+			path,
+			"..",
+			"chunks",
+			`${snapshot.node(reference).chunks![0]!.hash}.json`,
+		);
+		rmSync(first);
+		expect(snapshot.read(reference, text.length - 19, 19).text).toBe(
+			text.slice(-19),
+		);
+		expect(() => snapshot.read(reference, 0, 19)).toThrow();
+		const foreign = join(path, "..", "foreign.json");
+		writeFileSync(foreign, '"Not role evidence"', { mode: 0o600 });
+		symlinkSync(foreign, first);
+		expect(() => snapshot.read(reference, 0, 19)).toThrow();
+		rmSync(first);
+		writeFileSync(first, '"Changed role evidence"', { mode: 0o600 });
+		expect(() => snapshot.read(reference, 0, 19)).toThrow("integrity");
+	} finally {
+		prepared.cleanup();
+	}
+});
+
+it("retains JSON conversion semantics and rejects circular data or foreign snapshot handles", async () => {
+	const self = {
+		answer: 42,
+		toJSON() {
+			return this;
+		},
+	};
+	const keyed = {
+		toJSON(key: string) {
+			return `Value for ${key}`;
+		},
+	};
+	const replacement = {
+		answer: "Replacement object",
+		toJSON() {
+			return "Do not invoke twice";
+		},
+	};
+	const empty = new Array<unknown>(4);
+	empty[0] = undefined;
+	empty[2] = null;
+	empty[3] = () => "omitted";
+	const input = {
+		self,
+		a: keyed,
+		b: keyed,
+		converted: {
+			toJSON() {
+				return replacement;
+			},
+		},
+		date: new Date("2026-10-19T00:00:00Z"),
+		empty,
+	};
+	const prepared = await prepareFactoryContextAsync(input);
+	try {
+		const snapshot = FactoryContextSnapshot.open(prepared.config.args.at(-1)!);
+		expect(snapshot.read(snapshot.root, 0, 16000).text).toBe(
+			JSON.stringify(input),
+		);
+		const other = new FactoryContextSnapshot(
+			join(tmpdir(), "unused-context-path"),
+		);
+		expect(() => other.append(snapshot.root)).toThrow(
+			"Foreign context snapshot reference",
+		);
+	} finally {
+		prepared.cleanup();
+	}
+	const circular: { child?: unknown } = {};
+	circular.child = circular;
+	await expect(prepareFactoryContextAsync(circular)).rejects.toThrow(
+		"circular",
+	);
 });
 
 it("projects machine provenance in outputs, history and correction without dropping requirements", () => {

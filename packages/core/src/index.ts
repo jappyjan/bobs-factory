@@ -140,6 +140,7 @@ export type {
 	AgentActivity,
 	AgentActivityContent,
 	AgentActivityCreateInput,
+	AgentActivityDeliveryOptions,
 	AgentActivityPayload,
 	AgentActivitySDK,
 	AgentEvent,
@@ -209,6 +210,7 @@ export {
 export {
 	immutableJson,
 	immutableTranscript,
+	isImmutableJson,
 	type JsonSnapshot,
 	JsonSnapshotStore,
 	snapshotArrayTimestamps,

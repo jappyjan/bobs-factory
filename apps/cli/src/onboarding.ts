@@ -270,6 +270,12 @@ export class LocalOnboarding implements FactoryOnboarding {
 	) {
 		this.config = loadLocalConfig(home);
 	}
+	summary() {
+		return {
+			available: true,
+			required: !this.config.repositories.length || !this.config.defaultRunner,
+		};
+	}
 	status() {
 		const authPath = join(this.home, "github-auth.json");
 		let account: string | undefined;
@@ -283,8 +289,7 @@ export class LocalOnboarding implements FactoryOnboarding {
 			}
 		}
 		return {
-			available: true,
-			required: !this.config.repositories.length || !this.config.defaultRunner,
+			...this.summary(),
 			project: this.config.repositories[0]
 				? {
 						path: this.config.repositories[0].repositoryPath,

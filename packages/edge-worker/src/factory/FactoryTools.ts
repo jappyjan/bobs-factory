@@ -1093,10 +1093,15 @@ export class FactoryTools {
 					/[^/]+$/,
 					"",
 				);
-				const aggregate = aggregateForContext(context);
+				const aggregate = aggregateForContext(context, {
+					requireComplete: false,
+				});
+				// Once specialist review exists, a legacy receipt cannot fill its gap.
 				const reviewed = aggregate
 					? { headSha: aggregate.baseline.headSha, dirty: false }
-					: run.roleRevisions?.[`${prefix}code-review`];
+					: run.reviewRounds?.length
+						? undefined
+						: run.roleRevisions?.[`${prefix}code-review`];
 				const headSha = await command("git", ["rev-parse", "HEAD"]);
 				const dirty = Boolean(await command("git", ["status", "--porcelain"]));
 				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
@@ -1343,7 +1348,9 @@ export class FactoryTools {
 				const digest = scopeContextDigest(
 					context.currentScope?.() ?? context.input,
 				);
-				const aggregate = aggregateForContext(context);
+				const aggregate = aggregateForContext(context, {
+					requireComplete: false,
+				});
 				const scopeUnchanged =
 					previous?.scopeDigest === digest ||
 					Boolean(

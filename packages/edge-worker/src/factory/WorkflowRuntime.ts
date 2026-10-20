@@ -134,6 +134,7 @@ import {
 	type WorkflowStep,
 } from "./Workflow.js";
 import { type WorkflowBlock, WorkflowCatalog } from "./WorkflowCatalog.js";
+import { snapshotHistory, snapshotWorkflowInput } from "./WorkflowInput.js";
 
 export type RunStatus =
 	| "running"
@@ -402,6 +403,7 @@ export interface ExecutionContext {
 	execution?: ResolvedExecutionEnvironment;
 	stepKey?: string;
 	reviewBaseline?: ReviewBaseline;
+	historyIndex?: () => { step: string; at: string }[];
 	currentScope?: () => unknown;
 	capacity?: CapacityOptions;
 	chat?: boolean;
@@ -495,6 +497,7 @@ export class WorkflowRuntime {
 	private snapshots: JsonSnapshotStore;
 	private pendingSaves = new Map<string, Promise<void>>();
 	private activitySaves = new Map<string, Promise<void>>();
+	private capturedActivity = new Set<string>();
 	private dirtyActivity = new Set<string>();
 	private legacyRuns = new Set<string>();
 	private summaries = new Map<
@@ -1055,7 +1058,11 @@ export class WorkflowRuntime {
 		call?: WorkflowCall,
 	): void {
 		const at = new Date().toISOString();
-		run.activitySteps ??= activityMarkers(run);
+		run.activitySteps ??= activityMarkers({
+			createdAt: run.createdAt,
+			events: run.events,
+			history: this.historyPreviews(run),
+		});
 		if (
 			!["run", "prepare"].includes(step) &&
 			run.activitySteps.at(-1)?.step !== step
@@ -1073,18 +1080,8 @@ export class WorkflowRuntime {
 		);
 		if (run.events.length > 1500)
 			run.events.splice(0, run.events.length - 1500);
-		if (source === "agent") {
-			// A native turn can emit thousands of tool events in one burst. Persist
-			// activity together so repeated full-run writes cannot starve HTTP I/O.
-			if (!this.pendingActivitySaves.has(run.id)) {
-				const timer = setTimeout(() => {
-					this.pendingActivitySaves.delete(run.id);
-					void this.saveActivity(run).catch(() => {});
-				}, 250);
-				timer.unref();
-				this.pendingActivitySaves.set(run.id, timer);
-			}
-		} else this.save(run);
+		if (source === "agent") this.scheduleSave(run);
+		else this.save(run);
 	}
 	launch(
 		run: FactoryRun,
@@ -1400,7 +1397,7 @@ export class WorkflowRuntime {
 			const deliveryAware =
 				!!run.delivery || steps.some((s) => s.tool === "delivery-route");
 			const input = reviewBaseline
-				? structuredClone({
+				? snapshotWorkflowInput({
 						...(reviewBaseline.context as Record<string, unknown>),
 						reviewBaseline,
 					})
@@ -1464,10 +1461,10 @@ export class WorkflowRuntime {
 									}
 								: {}),
 							launchInputs: structuredClone(run.launchInputs ?? {}),
-							outputs: structuredClone(outputs),
+							outputs: snapshotWorkflowInput(outputs),
 							answers: structuredClone(run.answers),
 							chatMessages: structuredClone(this.chatMessages(run.id)),
-							history: structuredClone(run.history),
+							history: snapshotHistory(run.history),
 							humanDecisions: structuredClone(run.humanDecisions ?? []),
 							architectureProposals: structuredClone(
 								run.architectureProposals ?? [],
@@ -1505,6 +1502,7 @@ export class WorkflowRuntime {
 				step,
 				stepKey: key,
 				reviewBaseline,
+				historyIndex: () => this.historyPreviews(run),
 				currentScope: () => ({
 					originalInput: run.input,
 					launchAttachments: run.launchAttachments,
@@ -3610,7 +3608,20 @@ export class WorkflowRuntime {
 			!this.catalog.unavailable(run.workflow, run.workflowDefinitions ?? [])
 				.length &&
 			!this.controllers.has(id) &&
-			!!(run.checkpoint || run.simpleExecution)
+			(this.snapshots.hasValue(
+				run as unknown as Record<string, unknown>,
+				"checkpoint",
+			) ||
+				this.snapshots.hasValue(
+					run as unknown as Record<string, unknown>,
+					"simpleExecution",
+				))
+		);
+	}
+	hasRunValue(run: FactoryRun, key: keyof FactoryRun): boolean {
+		return this.snapshots.hasValue(
+			run as unknown as Record<string, unknown>,
+			key,
 		);
 	}
 	retry(id: string): FactoryRun {
@@ -3941,22 +3952,39 @@ export class WorkflowRuntime {
 		};
 		return recover(run.workflow.steps, run.outputs, "");
 	}
+	/** Batch routine native messages; checkpoints continue to use save directly. */
+	scheduleSave(run: FactoryRun): void {
+		this.dirtyActivity.add(run.id);
+		if (this.pendingActivitySaves.has(run.id) || this.activitySaves.has(run.id))
+			return;
+		const timer = setTimeout(() => {
+			this.pendingActivitySaves.delete(run.id);
+			void this.saveActivity(run).catch(() => {});
+		}, 250);
+		timer.unref();
+		this.pendingActivitySaves.set(run.id, timer);
+	}
 	private saveActivity(run: FactoryRun): Promise<void> {
 		this.dirtyActivity.add(run.id);
 		const active = this.activitySaves.get(run.id);
 		if (active) return active;
 		const save = (async () => {
-			while (this.dirtyActivity.has(run.id)) {
-				await this.pendingSaves.get(run.id);
-				this.dirtyActivity.delete(run.id);
-				await this.save(run);
-			}
+			// One batch has one durability boundary. Later messages are scheduled
+			// after it settles, so readers need not wait for a stream to become idle.
+			await this.pendingSaves.get(run.id)?.catch(() => {});
+			this.dirtyActivity.delete(run.id);
+			this.capturedActivity.add(run.id);
+			await this.save(run);
 		})();
 		this.activitySaves.set(run.id, save);
-		void save.then(
-			() => this.activitySaves.delete(run.id),
-			() => this.activitySaves.delete(run.id),
-		);
+		const settled = () => {
+			this.activitySaves.delete(run.id);
+			this.capturedActivity.delete(run.id);
+			// A message can arrive after the batch finishes but before this promise
+			// reaction. It still needs a timer after the old writer releases ownership.
+			if (this.dirtyActivity.has(run.id)) this.scheduleSave(run);
+		};
+		void save.then(settled, settled);
 		return save;
 	}
 	save(run: FactoryRun): Promise<void> {
@@ -3965,6 +3993,7 @@ export class WorkflowRuntime {
 			clearTimeout(pending);
 			this.pendingActivitySaves.delete(run.id);
 		}
+		this.dirtyActivity.delete(run.id);
 		run.updatedAt = new Date().toISOString();
 		const summary = this.runSummary(run);
 		const save = this.snapshots.write(
@@ -3973,7 +4002,13 @@ export class WorkflowRuntime {
 			summary,
 			["outputs", "repositoryOutputs"],
 			[],
-			{ events: 1, history: 1, reviewRounds: 1 },
+			{
+				events: 1,
+				history: 1,
+				reviewRounds: 1,
+				architectureProposals: 1,
+				impactDecisions: 1,
+			},
 		);
 		this.pendingSaves.set(run.id, save);
 		// Background activity saves have an observer; durability barriers still
@@ -3989,23 +4024,49 @@ export class WorkflowRuntime {
 		return save;
 	}
 	async flush(id?: string): Promise<void> {
-		if (id) await this.pendingSaves.get(id);
-		else {
+		if (id) {
+			if (!this.dirtyActivity.has(id)) {
+				await this.pendingSaves.get(id);
+				return;
+			}
+			const run = this.runs.get(id);
+			if (!run) return;
+			const active = this.activitySaves.get(id);
+			const alreadyCaptured = this.capturedActivity.has(id);
+			if (active) {
+				await active;
+				// A batch still waiting to capture at invocation includes the entire
+				// call-time input. Messages accepted afterward belong to later reads.
+				if (!alreadyCaptured) return;
+			}
+			if (this.dirtyActivity.has(id)) {
+				const timer = this.pendingActivitySaves.get(id);
+				if (timer) clearTimeout(timer);
+				this.pendingActivitySaves.delete(id);
+				await this.saveActivity(run);
+			} else await this.pendingSaves.get(id);
+			return;
+		}
+		do {
+			for (const runId of this.dirtyActivity) {
+				const timer = this.pendingActivitySaves.get(runId);
+				if (timer) clearTimeout(timer);
+				this.pendingActivitySaves.delete(runId);
+				const run = this.runs.get(runId);
+				if (run) void this.saveActivity(run).catch(() => {});
+			}
 			await Promise.all(this.activitySaves.values());
 			await Promise.all(this.pendingSaves.values());
-			await this.snapshots.flush();
-		}
+		} while (this.dirtyActivity.size || this.activitySaves.size);
+		await this.snapshots.flush();
 	}
+
 	private runSummary(
 		run: FactoryRun,
 	): Record<string, any> & { id: string; createdAt: string } {
 		const cached = this.summaries.get(run.id);
 		const coldHistory = !!Object.getOwnPropertyDescriptor(run, "history")?.get;
 		const coldOutputs = !!Object.getOwnPropertyDescriptor(run, "outputs")?.get;
-		const historyIndex =
-			cached && cached.history?.length <= run.history.length
-				? cached.history
-				: [];
 		const videoAssets =
 			cached && cached.videoAssets === undefined && (coldHistory || coldOutputs)
 				? undefined
@@ -4046,15 +4107,42 @@ export class WorkflowRuntime {
 			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
 				? this.summaries.get(run.id)?.hasGuide
 				: Boolean(run.outputs.guide),
-			history: coldHistory
-				? (cached?.history ?? [])
-				: [
-						...historyIndex,
-						...run.history
-							.slice(historyIndex.length)
-							.map(({ step, at, call }) => ({ step, at, call })),
-					],
+			history: this.historyPreviews(run),
 		};
+	}
+	/** Cached receipt metadata lets views skip the retained, often large, outputs. */
+	historyPreviews(
+		run: FactoryRun,
+	): { step: string; at: string; call?: WorkflowCall }[] {
+		const cached = this.summaries.get(run.id)?.history as
+			| { step: string; at: string; call?: WorkflowCall }[]
+			| undefined;
+		if (Object.getOwnPropertyDescriptor(run, "history")?.get && cached)
+			return cached;
+		const history = run.history;
+		const retained = cached && cached.length <= history.length ? cached : [];
+		if (retained.length === history.length) return retained;
+		return [
+			...retained,
+			...history
+				.slice(retained.length)
+				.map(({ step, at, call }) => ({ step, at, call })),
+		];
+	}
+	previousReviewGuide(run: FactoryRun, guidePreview: unknown): unknown {
+		const head = (guidePreview as { previousHeadSha?: string } | undefined)
+			?.previousHeadSha;
+		if (!head) return undefined;
+		const index = this.historyPreviews(run);
+		for (let position = index.length - 1; position >= 0; position--) {
+			const step = index[position]!.step;
+			if (step !== "guide" && !step.endsWith("/guide")) continue;
+			const guide = run.history[position]?.output as
+				| { reviewFiles?: { headSha?: string }; chapters?: unknown }
+				| undefined;
+			if (guide?.reviewFiles?.headSha === head && guide.chapters) return guide;
+		}
+		return undefined;
 	}
 	async prepareDashboard(run: FactoryRun): Promise<void> {
 		// Completed legacy runs may never execute another step. Give their first
@@ -4067,12 +4155,32 @@ export class WorkflowRuntime {
 		}
 		await this.flush(run.id);
 	}
-	outputPreviews(run: FactoryRun): Record<string, unknown> {
+	outputPreviews(
+		run: FactoryRun,
+		keys = Object.keys(run.outputs),
+		options: { compact?: boolean } = {},
+	): Record<string, unknown> {
 		return Object.fromEntries(
-			Object.keys(run.outputs).map((key) => [
-				key,
-				this.snapshots.preview(run.outputs, key),
-			]),
+			keys
+				.filter((key) => Object.hasOwn(run.outputs, key))
+				.map((key) => [
+					key,
+					this.snapshots.preview(
+						run.outputs,
+						key,
+						[
+							"guide",
+							"draft-pr",
+							"source",
+							"existing-work",
+							"external-final",
+							"merge-readiness",
+							"ci",
+						].includes(key)
+							? {}
+							: options,
+					),
+				]),
 		);
 	}
 	listRuns(): (Record<string, any> & { id: string; createdAt: string })[] {

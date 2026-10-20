@@ -136,6 +136,7 @@ jobs:
           BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY=$(mktemp -d) bun run apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/f1-drive.ts > "$RUNNER_TEMP/nightly-checks/architecture.log" 2>&1
           bun run apps/f1/test-drives/assets/architecture-approval-continuation.mjs > "$RUNNER_TEMP/nightly-checks/architecture-continuation.log" 2>&1
           bun run apps/f1/test-drives/assets/impact-feedback-recovery.mjs > "$RUNNER_TEMP/nightly-checks/impact-feedback-recovery.log" 2>&1
+          bun run apps/f1/test-drives/assets/api-responsiveness.ts > "$RUNNER_TEMP/nightly-checks/api-responsiveness.log" 2>&1
       - name: Record only completed current checks
         run: |
           node --input-type=module <<'JS'
@@ -143,7 +144,7 @@ jobs:
           import {fileRecord,jsonBytes} from './scripts/lib/binary-release.mjs';
           import {validateCandidate} from './scripts/lib/release-candidate.mjs';
           const c=validateCandidate(JSON.parse(process.env.CANDIDATE_JSON)),dir=process.env.RUNNER_TEMP+'/nightly-checks';
-          const logs=['tests.log','release-tests.log','update-lifecycle.log','update-maintenance.log','desktop-service-lifecycle.log','desktop-shell-update.log','localhost-noauth.log','linear-delivery.log','architecture.log','architecture-continuation.log','impact-feedback-recovery.log'].map(f=>fileRecord(dir+'/'+f,f));
+          const logs=['tests.log','release-tests.log','update-lifecycle.log','update-maintenance.log','desktop-service-lifecycle.log','desktop-shell-update.log','localhost-noauth.log','linear-delivery.log','architecture.log','architecture-continuation.log','impact-feedback-recovery.log','api-responsiveness.log'].map(f=>fileRecord(dir+'/'+f,f));
           writeFileSync(dir+'/nightly-checks.json',jsonBytes({schemaVersion:1,status:'passed',mode:'mock/scripted',candidateDigest:c.digest,commit:c.candidate.commit,workflowSha:c.candidate.workflowSha,runId:Number(process.env.GITHUB_RUN_ID),logs}));
           JS
       - uses: actions/upload-artifact@v6

@@ -511,7 +511,8 @@ it("shows the blocked reason and resumes only eligible runs from the terminal", 
 	const client = {
 		origin: "http://localhost:3457",
 		get: vi.fn(async (path: string) => {
-			if (path === "/api/config") return { repositories: [], workflows: [] };
+			if (path === "/api/config?view=dashboard")
+				return { repositories: [], workflows: [] };
 			if (path === "/api/runs") return [blocked];
 			return { ...blocked, resumeEligible: eligible };
 		}),
@@ -548,5 +549,98 @@ it("shows the blocked reason and resumes only eligible runs from the terminal", 
 		);
 	} finally {
 		app.stop();
+	}
+});
+
+it("shares terminal startup reads and coalesces changes while a run-list read is slow", async () => {
+	vi.useFakeTimers();
+	const item = run("question", "waiting");
+	let reads = 0,
+		active = 0,
+		peak = 0;
+	let release: (() => void) | undefined;
+	let frame = "",
+		queued = 2;
+	let changed: (change: {
+		ids: string[];
+		config: boolean;
+		capacity?: boolean;
+	}) => void = () => {};
+	const get = vi.fn(async (path: string) => {
+		if (path === "/api/config?view=dashboard")
+			return { repositories: [], workflows: [] };
+		if (path === "/api/capacity")
+			return { capacity: { limit: 4, active: 1, queued } };
+		if (path === "/api/runs") {
+			reads++;
+			active++;
+			peak = Math.max(peak, active);
+			if (reads === 1 || reads === 3)
+				await new Promise<void>((resolve) => {
+					release = resolve;
+				});
+			active--;
+			return [item];
+		}
+		return { ...item, questions: ["Continue?"] };
+	});
+	const client = {
+		origin: "http://localhost:3457",
+		get,
+		events: (callback: typeof changed, live: (connected: boolean) => void) => {
+			changed = callback;
+			live(true);
+			return () => {};
+		},
+	} as unknown as FactoryClient;
+	const app = new TodayApp({
+		client,
+		theme: "dark",
+		sgr: () => "",
+		write: (value) => {
+			frame = value;
+		},
+		size: () => ({ columns: 100, rows: 30 }),
+		openUrl: async () => {},
+		quit: () => {},
+	});
+	try {
+		app.start();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(reads).toBe(1);
+		expect(
+			get.mock.calls.filter(([path]) => path.startsWith("/api/config")),
+		).toHaveLength(1);
+		// One event during the initial independent read still gets a fresh result.
+		changed({ ids: [item.id], config: false });
+		await vi.advanceTimersByTimeAsync(151);
+		expect(reads).toBe(1);
+		release!();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(reads).toBe(2);
+		expect(frame).toContain("1/4 +2 queued");
+		changed({ ids: [item.id], config: false });
+		await vi.advanceTimersByTimeAsync(151);
+		expect(reads).toBe(3);
+		changed({ ids: [item.id], config: false });
+		changed({ ids: [item.id], config: false });
+		await vi.advanceTimersByTimeAsync(500);
+		expect(reads).toBe(3);
+		release!();
+		await vi.advanceTimersByTimeAsync(151);
+		expect(reads).toBe(4);
+		expect(peak).toBe(1);
+		queued = 3;
+		changed({ ids: [], config: false, capacity: true });
+		await vi.advanceTimersByTimeAsync(151);
+		expect(frame).toContain("1/4 +3 queued");
+		expect(reads).toBe(4);
+		expect(
+			get.mock.calls.filter(([path]) => path.startsWith("/api/config")),
+		).toHaveLength(1);
+	} finally {
+		release?.();
+		app.stop();
+		vi.useRealTimers();
 	}
 });

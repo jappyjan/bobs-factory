@@ -106,6 +106,38 @@ function fixture() {
 	return { directory, forge, tools, runtime, run, context, execute, approve };
 }
 
+it("projects retained repository history on demand with the original cutoff", async () => {
+	const { runtime, run, forge } = fixture();
+	const api = forge.repositories[1]!;
+	const original = {
+		step: "draft-pr",
+		at: run.createdAt,
+		output: {
+			scopeVersion: 1,
+			deliveries: forge.repositories.map((repository) => ({
+				repositoryId: repository.id,
+				name: repository.name,
+				output: { nativeSessionId: `native-${repository.id}` },
+			})),
+		},
+	};
+	run.history.push(original);
+	const read = vi.fn(() => original);
+	Object.defineProperty(run.history, 0, {
+		enumerable: true,
+		configurable: true,
+		get: read,
+	});
+	const projected = repositoryRun(run, api);
+	expect(read).not.toHaveBeenCalled();
+	run.history.push({ step: "later-result", at: run.createdAt, output: {} });
+	expect(projected.history).toHaveLength(1);
+	expect(projected.history[0]!.output).toEqual({
+		nativeSessionId: `native-${api.id}`,
+	});
+	await runtime.shutdown();
+});
+
 it.each([
 	"unchanged",
 	"dirty",

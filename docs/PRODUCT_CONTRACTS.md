@@ -42,6 +42,26 @@ External cyrus-hosted tool catalogs are absent from this repository. They cannot
 be updated here. This independent fork does not enroll with the upstream hosted
 control plane. Migration must flag hosted-only setup for explicit conversion.
 
+Dashboard requests use screen-specific projections: compact Today decisions,
+run overviews, explicit architecture versions, launch configuration, recipe
+editing and execution settings. Run mutations acknowledge acceptance and the
+run identity instead of serializing retained execution state. Full artifacts,
+raw activity, recipe exports and legacy full configuration/run reads retain
+their complete data. Capacity updates use their own SSE flag and read endpoint;
+ordinary run actions refresh affected views without waiting for unrelated
+configuration probes. Human decision, question-context, configuration-revision,
+authentication and build guards apply to every projection and mutation.
+
+Factory role context exposes original operator answers and architecture/human
+decision receipts under `/workflowExecution`. Scope extraction, coverage and
+guides use an explicitly recorded name when available, otherwise
+`Factory operator (name not recorded)` with the original receipt and rationale.
+Missing name metadata alone does not reopen accepted scope or require a question;
+an explicit task or mandatory repository rule requiring an identified approver
+still applies. Runtime attribution instructions also apply to frozen workflows
+without rewriting their graphs, historical decisions, digests or native sessions.
+Discussion, automated review and rejection never become human acceptance.
+
 Architecture candidate plans accept up to 64 deliverables, each with at most
 40 declared file operations. Large plans retain their complete runtime footprint
 and normal exact-version review and acceptance. This widens schema capacity;
@@ -133,6 +153,15 @@ access or a publisher-authentication claim. DMG/user AppImage updates require
 writable ownership and a complete installed-byte match. External packages use
 their owner. Preserve quarantine and require the user's per-app macOS allow action.
 See [the desktop update contract](distribution/DESKTOP.md#complete-app-updates).
+
+Accepted Linear sessions acknowledge their durable launch reservation before
+ticket preflight, repository routing and dependency checks. Interactive delivery
+priority is local outbox metadata, survives retries and retains shared API pacing
+and provider throttle windows; historical records keep their normal priority.
+Background lifecycle synchronization yields to foreground requests and reads complete comment pages, attachments,
+fresh state and team information without fetching comment profiles or unrelated
+assignee/project/parent context. Initial ticket and agent context reads retain
+their full snapshots.
 
 ## Factory external ticket delivery
 

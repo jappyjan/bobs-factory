@@ -14,6 +14,7 @@ import type {
 } from "./IAgentEventTransport.js";
 import type {
 	AgentActivityCreateInput,
+	AgentActivityDeliveryOptions,
 	AgentActivityPayload,
 	AgentSessionCreateOnCommentInput,
 	AgentSessionCreateOnIssueInput,
@@ -735,7 +736,11 @@ export interface IIssueTrackerService {
 	 */
 	createAgentActivity(
 		input: AgentActivityCreateInput,
+		delivery?: AgentActivityDeliveryOptions,
 	): Promise<AgentActivityPayload>;
+
+	/** Keep refresh-only reads behind foreground requests in the same API budget. */
+	withBackgroundRequests?<T>(operation: () => Promise<T>): Promise<T>;
 
 	// ========================================================================
 	// FILE OPERATIONS

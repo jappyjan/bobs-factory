@@ -18,6 +18,29 @@ const entry = (type: string, content: string, metadata = {}) => ({
 });
 
 describe("factory conversation history", () => {
+	it("keeps the source index for full text and tool data behind projected content blocks", () => {
+		const source = {
+			type: "assistant",
+			message: {
+				content: [
+					{ type: "text", text: "The final answer preview" },
+					{
+						type: "tool_use",
+						id: "tool",
+						name: "Read",
+						input: { file_path: "file.ts" },
+					},
+				],
+			},
+			activityIndex: 29,
+			activityTruncated: true,
+		};
+		const result = formatActivities({ createdAt: at, entries: [source] });
+		expect(result.map((item: { raw: unknown }) => item.raw)).toEqual([
+			source,
+			source,
+		]);
+	});
 	it("does not display truncated duplicate agent JSON as workflow chat", () => {
 		const result = formatActivities({
 			createdAt: at,

@@ -587,9 +587,9 @@ export class WorkflowCatalog {
 	defaultWorkflow(): string {
 		return this.state.defaultWorkflow;
 	}
-	metadata(id: string) {
-		const w = this.list().find((w) => w.id === id)!;
-		const unavailable = this.unavailable(w, this.list());
+	metadata(id: string, definitions = this.list()) {
+		const w = definitions.find((w) => w.id === id)!;
+		const unavailable = this.unavailable(w, definitions);
 		return {
 			ownership: reserved.has(id) ? "bundled" : "local",
 			enabled: this.state.enabled[id] !== false,

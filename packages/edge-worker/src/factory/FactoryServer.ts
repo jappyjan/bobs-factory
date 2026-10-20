@@ -15,6 +15,13 @@ import {
 import { activityMarkers, activityPage } from "./ActivityPage.js";
 import { reasoningLevels, serviceTierRunners } from "./AgentSettings.js";
 import { ArchitectureDecisionSchema } from "./Architecture.js";
+import {
+	capacitySummary,
+	launchExecutionProfiles,
+	onboardingSummary,
+	workflowDisplay,
+	workflowSummary,
+} from "./ConfigProjection.js";
 import { ExecutionSelectionSchema } from "./ExecutionProfiles.js";
 import {
 	type FactoryAccess,
@@ -49,10 +56,18 @@ import {
 	readReviewPatch,
 	resolveGuideSnapshot,
 } from "./ReviewFiles.js";
+import {
+	dashboardRun,
+	entryPreviews,
+	focusRun,
+	runActionResult,
+	ticketSyncSummary,
+} from "./RunProjection.js";
 import type { ChatState } from "./SessionChat.js";
 import type { TicketManagers } from "./TicketManagers.js";
 import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
+import { WorkflowSchema } from "./Workflow.js";
 import type { FactoryRun, WorkflowRuntime } from "./WorkflowRuntime.js";
 import { capacityRunStatus } from "./WorkflowRuntime.js";
 
@@ -129,6 +144,17 @@ export class FactoryServer {
 		),
 	) {
 		const operator = new OperatorService(runtime, hooks, "dashboard");
+		const actionResult = (id: string) => {
+			const run = runtime.runs.get(id);
+			if (run) return runActionResult(run);
+			const session = hooks.sessions().find((item) => item.id === id);
+			return {
+				accepted: true,
+				id,
+				title: session?.title,
+				status: session?.status,
+			};
+		};
 		const shell = factoryWebAssets();
 		const home = dirname(runtime.directory);
 		// The dashboard queues consent; the external owner supervises activation.
@@ -193,17 +219,24 @@ export class FactoryServer {
 		});
 		const pendingIds = new Set<string>();
 		let configChanged = false;
+		let capacityChanged = false;
 		let timer: ReturnType<typeof setTimeout> | undefined;
-		const broadcast = (change: { id?: string; config?: boolean }) => {
+		const broadcast = (change: {
+			id?: string;
+			config?: boolean;
+			capacity?: boolean;
+		}) => {
 			if (!this.streams.size) return;
 			if (change.id) pendingIds.add(change.id);
 			if (change.config) configChanged = true;
+			if (change.capacity) capacityChanged = true;
 			if (timer || !this.streams.size) return;
 			timer = setTimeout(() => {
 				timer = undefined;
-				const data = `event: change\ndata: ${JSON.stringify({ ids: [...pendingIds], config: configChanged })}\n\n`;
+				const data = `event: change\ndata: ${JSON.stringify({ ids: [...pendingIds], config: configChanged, ...(capacityChanged ? { capacity: true } : {}) })}\n\n`;
 				pendingIds.clear();
 				configChanged = false;
+				capacityChanged = false;
 				for (const stream of this.streams) {
 					const session = this.streamSessions.get(stream);
 					if (
@@ -219,7 +252,7 @@ export class FactoryServer {
 			}, 500);
 		};
 		const unsubscribeCapacity = hooks.capacity?.subscribe(() =>
-			broadcast({ config: true }),
+			broadcast({ capacity: true }),
 		);
 		const unsubscribeRuntime = runtime.subscribe(broadcast);
 		const unsubscribeSessions = hooks.subscribe?.((id) => broadcast({ id }));
@@ -654,36 +687,84 @@ export class FactoryServer {
 				return hooks.ticketManagers.assignRepository(request.body);
 			},
 		);
-		this.app.get("/api/config", async (request) => ({
-			updates: updates.status(),
-			onboarding:
-				hooks.onboarding && localFor(request)
-					? await hooks.onboarding.status()
-					: undefined,
-			capacity: await hooks.capacity?.snapshot(),
-			configRevision: configRevision(),
-			executionProfiles: runtime.executionProfiles.read(),
-			gitSettings: runtime.gitSettings.status(),
-			executionConsumers: [...runtime.runs.values()]
-				.filter((run) => run.executionSnapshot)
-				.map((run) => ({
-					id: run.id,
-					status: run.status,
-					identity: run.executionSnapshot?.identity?.id,
-					tools: run.executionSnapshot?.tools?.id,
-				})),
-			repositories: hooks.repositories(),
-			workflows: runtime.listWorkflows().map((workflow) => ({
-				...workflow,
-				...runtime.catalog.metadata(workflow.id),
-				launchFields: getLaunchFields(workflow),
-			})),
-			workflowConfiguration: runtime.catalog.read(),
-			defaultWorkflow: runtime.getDefaultWorkflow(),
-			defaultRunner: hooks.defaultRunner?.() ?? "claude",
-			titleGeneration: runtime.getTitleSettings(),
-			reasoningLevels,
-			serviceTierRunners,
+		this.app.get<{ Querystring: { view?: string } }>(
+			"/api/config",
+			async (request) => {
+				const dashboard = request.query.view === "dashboard";
+				const settings = request.query.view === "settings";
+				const recipes = request.query.view === "recipes";
+				const common = {
+					configRevision: configRevision(),
+					defaultRunner: hooks.defaultRunner?.() ?? "claude",
+					reasoningLevels,
+					serviceTierRunners,
+				};
+				const workflows = () => {
+					const definitions = runtime.listWorkflows();
+					return definitions.map((workflow) => ({
+						...(dashboard ? workflowSummary(workflow) : workflow),
+						...runtime.catalog.metadata(workflow.id, definitions),
+						launchFields: getLaunchFields(workflow),
+					}));
+				};
+				if (recipes)
+					return {
+						...common,
+						workflows: workflows(),
+						workflowConfiguration: runtime.catalog.read(),
+						defaultWorkflow: runtime.getDefaultWorkflow(),
+					};
+				const profiles = runtime.executionProfiles.read();
+				const execution = () => ({
+					gitSettings: runtime.gitSettings.status(),
+					executionConsumers: [...runtime.runs.values()]
+						.filter((run) => run.executionSnapshot)
+						.map((run) => ({
+							id: run.id,
+							status: run.status,
+							identity: run.executionSnapshot?.identity?.id,
+							tools: run.executionSnapshot?.tools?.id,
+						})),
+				});
+				if (settings)
+					return {
+						...common,
+						executionProfiles: profiles,
+						...execution(),
+						repositories: hooks.repositories(),
+					};
+				return {
+					...common,
+					...(!dashboard
+						? {
+								updates: updates.status(),
+								capacity: await hooks.capacity?.snapshot(),
+							}
+						: {}),
+					onboarding:
+						hooks.onboarding && localFor(request)
+							? dashboard
+								? await onboardingSummary(hooks.onboarding)
+								: await hooks.onboarding.status()
+							: undefined,
+					executionProfiles: dashboard
+						? launchExecutionProfiles(profiles)
+						: profiles,
+					...(!dashboard
+						? {
+								...execution(),
+								workflowConfiguration: runtime.catalog.read(),
+							}
+						: {}),
+					repositories: hooks.repositories(),
+					workflows: workflows(),
+					defaultWorkflow: runtime.getDefaultWorkflow(),
+					titleGeneration: runtime.getTitleSettings(),
+				};
+			},
+		);
+		this.app.get("/api/capacity", async () => ({
+			capacity: capacitySummary(await hooks.capacity?.snapshot()),
 		}));
 		const localOnboarding = (request: FastifyRequest) => {
 			if (!hooks.onboarding) throw new Error("Local setup is unavailable");
@@ -784,7 +865,7 @@ export class FactoryServer {
 				.transform((body) => body.concurrency ?? body.limit!)
 				.parse(request.body);
 			await hooks.capacity.setLimit(limit);
-			return { capacity: await hooks.capacity.snapshot() };
+			return { capacity: capacitySummary(await hooks.capacity.snapshot()) };
 		});
 		this.app.put("/api/title-settings", (request) => {
 			// Check after body parsing, in the same synchronous turn as the write.
@@ -795,6 +876,19 @@ export class FactoryServer {
 			};
 		});
 
+		const workflowChanges = (ids?: string[]) => {
+			const definitions = runtime.listWorkflows();
+			return {
+				updatedWorkflows: definitions
+					.filter((workflow) => !ids || ids.includes(workflow.id))
+					.map((workflow) => ({
+						...workflow,
+						...runtime.catalog.metadata(workflow.id, definitions),
+						launchFields: getLaunchFields(workflow),
+					})),
+				configRevision: configRevision(),
+			};
+		};
 		this.app.put("/api/workflows", (request) => {
 			checkConfigRevision(request);
 			// Retain the original array API for existing local clients.
@@ -818,6 +912,47 @@ export class FactoryServer {
 				configRevision: configRevision(),
 			};
 		});
+		this.app.put("/api/workflows/default", { bodyLimit: 1024 }, (request) => {
+			checkConfigRevision(request);
+			const { defaultWorkflow } = z
+				.object({ defaultWorkflow: z.string().min(1) })
+				.parse(request.body);
+			runtime.updateWorkflows(runtime.listWorkflows(), defaultWorkflow);
+			return {
+				defaultWorkflow: runtime.getDefaultWorkflow(),
+				workflowConfigurationPatch: {
+					defaultWorkflow: runtime.getDefaultWorkflow(),
+				},
+				configRevision: configRevision(),
+			};
+		});
+		this.app.patch("/api/workflows", (request) => {
+			checkConfigRevision(request);
+			const { workflows } = z
+				.object({ workflows: z.array(WorkflowSchema).min(1).max(50) })
+				.parse(request.body);
+			const replacements = new Map(
+				workflows.map((workflow) => [workflow.id, workflow]),
+			);
+			if (replacements.size !== workflows.length)
+				throw new Error("Duplicate workflow IDs");
+			const current = runtime.listWorkflows();
+			const existing = new Set(current.map((workflow) => workflow.id));
+			const saved = runtime.updateWorkflows([
+				...current.map((workflow) => replacements.get(workflow.id) ?? workflow),
+				...workflows.filter((workflow) => !existing.has(workflow.id)),
+			]);
+			return {
+				updatedWorkflows: saved
+					.filter((workflow) => replacements.has(workflow.id))
+					.map((workflow) => ({
+						...workflow,
+						...runtime.catalog.metadata(workflow.id, saved),
+						launchFields: getLaunchFields(workflow),
+					})),
+				configRevision: configRevision(),
+			};
+		});
 		this.app.get("/api/workflows/export", () => runtime.catalog.read());
 		this.app.post<{ Params: { id: string } }>(
 			"/api/workflows/:id/fork",
@@ -826,7 +961,19 @@ export class FactoryServer {
 				const body = z
 					.object({ name: z.string().trim().min(1).max(200).optional() })
 					.parse(request.body);
-				return runtime.forkWorkflow(request.params.id, body.name);
+				const existing = new Set(
+					runtime.listWorkflows().map((workflow) => workflow.id),
+				);
+				const fork = runtime.forkWorkflow(request.params.id, body.name);
+				return {
+					...fork,
+					...workflowChanges(
+						runtime
+							.listWorkflows()
+							.filter((workflow) => !existing.has(workflow.id))
+							.map((workflow) => workflow.id),
+					),
+				};
 			},
 		);
 		this.app.put<{ Params: { id: string } }>(
@@ -834,7 +981,13 @@ export class FactoryServer {
 			(request) => {
 				checkConfigRevision(request);
 				runtime.updatePreferences(request.params.id, request.body);
-				return { saved: true };
+				return {
+					saved: true,
+					...workflowChanges([request.params.id]),
+					workflowConfigurationPatch: {
+						preferences: runtime.catalog.read().preferences,
+					},
+				};
 			},
 		);
 		this.app.post<{ Params: { index: string } }>(
@@ -853,7 +1006,15 @@ export class FactoryServer {
 					body.target,
 				);
 				runtime.updateWorkflows(runtime.catalog.list());
-				return { saved: true };
+				const catalog = runtime.catalog.read();
+				return {
+					saved: true,
+					...workflowChanges(body.target ? [body.target.workflow] : []),
+					workflowConfigurationPatch: {
+						preferences: catalog.preferences,
+						inactive: catalog.inactive,
+					},
+				};
 			},
 		);
 		const availabilityImpact = (id: string) =>
@@ -902,7 +1063,18 @@ export class FactoryServer {
 						"Review the current disable impact and confirm interruption before applying",
 					);
 				runtime.setWorkflowEnabled(request.params.id, body.enabled);
-				return { saved: true };
+				const definitions = runtime.listWorkflows();
+				return {
+					saved: true,
+					configRevision: configRevision(),
+					workflowMetadata: definitions.map((workflow) => ({
+						id: workflow.id,
+						...runtime.catalog.metadata(workflow.id, definitions),
+					})),
+					workflowConfigurationPatch: {
+						enabled: runtime.catalog.read().enabled,
+					},
+				};
 			},
 		);
 		this.app.post("/api/workflows/import/impact", (request) => {
@@ -947,24 +1119,43 @@ export class FactoryServer {
 					"Configuration or affected runs changed. Review import impact again before applying",
 				);
 			runtime.importWorkflows(proposed);
-			return { saved: true };
+			const saved = workflowChanges();
+			return {
+				saved: true,
+				workflows: saved.updatedWorkflows,
+				configRevision: saved.configRevision,
+				workflowConfiguration: runtime.catalog.read(),
+				defaultWorkflow: runtime.getDefaultWorkflow(),
+			};
 		});
 		this.app.post("/api/workflows/simple/resolve-migration", (request) => {
 			checkConfigRevision(request);
 			z.object({ useBundledSimple: z.literal(true) }).parse(request.body);
 			runtime.catalog.resolveSimpleConflict();
 			runtime.updateWorkflows(runtime.catalog.list());
-			return { saved: true };
+			const catalog = runtime.catalog.read();
+			return {
+				saved: true,
+				...workflowChanges(["simple"]),
+				workflowConfigurationPatch: {
+					migration: catalog.migration,
+					preferences: catalog.preferences,
+				},
+			};
 		});
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/resume",
 			async (request, reply) => {
 				if (runtime.runs.has(request.params.id))
-					return reply.code(202).send(runtime.resume(request.params.id));
+					return reply
+						.code(202)
+						.send(runActionResult(runtime.resume(request.params.id)));
 				if (!hooks.resume)
 					throw new Error("Native session Resume is unavailable");
 				await hooks.resume(request.params.id);
-				return reply.code(202).send({ resumed: true });
+				return reply
+					.code(202)
+					.send({ ...actionResult(request.params.id), resumed: true });
 			},
 		);
 		this.app.get("/api/runs", () => {
@@ -973,6 +1164,14 @@ export class FactoryServer {
 			return [
 				...workflowRuns.map((run) => ({
 					...run,
+					error: run.error?.slice(0, 4000),
+					// The list renders progress dots; repeated receipts and call payloads
+					// belong to the run's detail and activity endpoints.
+					history: [
+						...new Set(
+							(run.history ?? []).map((entry: { step: string }) => entry.step),
+						),
+					].map((step) => ({ step })),
 					viewState: runtime.viewState(run.id),
 				})),
 				...hooks
@@ -1077,7 +1276,7 @@ export class FactoryServer {
 			}
 			const run = await hooks.start(resolved);
 			await runtime.flush(run.id);
-			return reply.code(202).send(run);
+			return reply.code(202).send(runActionResult(run));
 		});
 		this.app.get<{ Params: { id: string } }>(
 			"/api/runs/:id/provenance",
@@ -1096,36 +1295,48 @@ export class FactoryServer {
 					.find((item) => item.id === request.params.id);
 				if (!run && !session)
 					return reply.code(404).send({ error: "Run not found" });
-				const dashboard = request.query.view === "dashboard";
+				const architecture = request.query.view === "architecture";
+				const dashboard = request.query.view === "dashboard" || architecture;
+				const focus = request.query.view === "focus";
 				if (run && dashboard) await runtime.prepareDashboard(run);
-				else await runtime.flush(request.params.id);
-				const hidden = new Set([
-					"checkpoint",
-					"sessionSnapshot",
-					"reviewRounds",
-					"externalReverifications",
-					"deliveryRecovery",
-					"history",
-					"outputs",
-					"events",
-				]);
+				else if (!focus) await runtime.flush(request.params.id);
 				const projected =
-					run && dashboard
-						? Object.fromEntries(
-								Object.keys(run)
-									.filter((key) => !hidden.has(key))
-									.map((key) => [
-										key,
-										(run as unknown as Record<string, unknown>)[key],
-									]),
+					run && focus
+						? focusRun(
+								run,
+								runtime.outputPreviews(run, ["guide", "draft-pr"]),
+								runtime.hasRunValue(run, "deliveryRecovery"),
 							)
-						: run;
+						: run && dashboard
+							? dashboardRun(
+									run,
+									runtime.outputPreviews(run, undefined, { compact: true }),
+									runtime.hasRunValue(run, "deliveryRecovery"),
+									architecture,
+								)
+							: run;
+				const status = runtime.catalog.getBlock(request.params.id)
+					? "blocked"
+					: run
+						? capacityRunStatus(run)
+						: session!.status;
+				const focusReply =
+					focus &&
+					!(projected as { outputs?: Record<string, unknown> } | undefined)
+						?.outputs?.guide &&
+					(["completed", "complete"].includes(status) ||
+						(status === "waiting" && run?.reviewGate?.status === "pending"));
 				const detail = {
 					...(projected ?? {
 						...session,
-						workflow: runtime
-							.listWorkflows()
-							.find((item) => item.id === "simple"),
+						workflow:
+							dashboard || focus
+								? workflowDisplay(
+										runtime
+											.listWorkflows()
+											.find((item) => item.id === "simple")!,
+									)
+								: runtime.listWorkflows().find((item) => item.id === "simple"),
 						events: [],
 						questions: [],
 						outputs: {},
@@ -1146,11 +1357,7 @@ export class FactoryServer {
 						(run
 							? !runtime.isExecuting(run.id)
 							: (hooks.resumeEligible?.(request.params.id) ?? false)),
-					status: runtime.catalog.getBlock(request.params.id)
-						? "blocked"
-						: run
-							? capacityRunStatus(run)
-							: session!.status,
+					status,
 					chat:
 						run?.status === "waiting" && run.architectureGate
 							? {
@@ -1163,12 +1370,37 @@ export class FactoryServer {
 									enabled: false,
 									available: false,
 								}),
-					chatMessages: runtime.chatMessages(request.params.id),
-					entries: hooks.entries(request.params.id),
+					chatMessages: focus
+						? undefined
+						: runtime.chatMessages(request.params.id),
+					entries:
+						focus && !focusReply
+							? []
+							: dashboard || focus
+								? entryPreviews(hooks.entries(request.params.id))
+								: hooks.entries(request.params.id),
 					viewState: runtime.viewState(request.params.id),
 					resumeAvailable: run ? runtime.canResume(run.id) : false,
 				};
-				if (request.query.view !== "dashboard") return detail;
+				if (focus)
+					return {
+						...detail,
+						// Legacy sessions may retain their final reply only as an agent event.
+						// Keep each stored message intact so its JSON remains readable.
+						events:
+							!focusReply || detail.entries.length
+								? []
+								: (run?.events ?? [])
+										.slice(-15)
+										.map(({ at, step, source, sequence, message }) => ({
+											at,
+											step,
+											source,
+											sequence,
+											message: message.slice(-20000),
+										})),
+					};
+				if (!dashboard) return detail;
 				const {
 					sessionSnapshot: _session,
 					checkpoint: _checkpoint,
@@ -1179,70 +1411,20 @@ export class FactoryServer {
 				};
 				return {
 					...slim,
-					outputs: run ? runtime.outputPreviews(run) : {},
 					// Supply only the adjacent retained guide for legacy reading-progress
 					// migration. Other historical outputs stay out of dashboard responses.
-					previousReviewGuide:
-						run &&
-						(run?.outputs.guide as { previousHeadSha?: string } | undefined)
-							?.previousHeadSha
-							? run.history
-									.slice()
-									.reverse()
-									.find((entry) => {
-										const guide = entry.output as
-											| {
-													reviewFiles?: { headSha?: string };
-													chapters?: unknown;
-											  }
-											| undefined;
-										return (
-											(entry.step === "guide" ||
-												entry.step.endsWith("/guide")) &&
-											guide?.reviewFiles?.headSha ===
-												(run.outputs.guide as { previousHeadSha?: string })
-													.previousHeadSha &&
-											guide?.chapters
-										);
-									})?.output
-							: undefined,
-					history: (
-						runtime.listRuns().find((item) => item.id === request.params.id)
-							?.history ?? []
-					).map(
-						({
-							step,
-							at,
-							call,
-						}: {
-							step: string;
-							at: string;
-							call?: unknown;
-						}) => ({
-							step,
-							at,
-							call,
-						}),
-					),
+					previousReviewGuide: run
+						? runtime.previousReviewGuide(
+								run,
+								(projected as { outputs?: Record<string, unknown> }).outputs
+									?.guide,
+							)
+						: undefined,
+					history: run ? runtime.historyPreviews(run) : [],
 					events: (run?.events ?? []).slice(-15).map((event) => ({
 						...event,
 						message: event.message.slice(0, 1000),
 					})),
-					entries: detail.entries.slice(-12).map((value) => {
-						const entry = value as Record<string, any>;
-						return {
-							...entry,
-							content:
-								typeof entry.content === "string"
-									? entry.content.slice(0, 3000)
-									: "Recorded activity",
-							metadata: {
-								timestamp: entry.metadata?.timestamp,
-								toolName: entry.metadata?.toolName,
-								toolUseId: entry.metadata?.toolUseId,
-							},
-						};
-					}),
 				};
 			},
 		);
@@ -1257,7 +1439,7 @@ export class FactoryServer {
 					return reply.code(404).send({ error: "Run not found" });
 				if (!hooks.retryTitle) throw new Error("Title retry unavailable");
 				hooks.retryTitle(id);
-				return reply.code(202).send({ accepted: true });
+				return reply.code(202).send(actionResult(id));
 			},
 		);
 		this.app.get<{
@@ -1328,7 +1510,14 @@ export class FactoryServer {
 				})
 				.parse(request.query);
 			const run = runtime.runs.get(request.params.id);
-			const markers = run ? activityMarkers(run) : undefined;
+			const markers = run
+				? activityMarkers({
+						activitySteps: run.activitySteps,
+						createdAt: run.createdAt,
+						history: runtime.historyPreviews(run),
+						events: run.events,
+					})
+				: undefined;
 			return activityPage(
 				hooks.entries(request.params.id),
 				run?.events ?? [],
@@ -1368,9 +1557,12 @@ export class FactoryServer {
 						text,
 						proposalRun.step ?? "architecture-decision",
 					);
-					return reply.code(202).send({ message, mode: "continue" });
+					return reply
+						.code(202)
+						.send({ ...actionResult(id), message, mode: "continue" });
 				}
-				return reply.code(202).send(await operator.steer(id, text));
+				const result = await operator.steer(id, text);
+				return reply.code(202).send({ ...actionResult(id), ...result });
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
@@ -1378,7 +1570,8 @@ export class FactoryServer {
 			async (request, reply) => {
 				await operator.retryTracking(request.params.id);
 				return reply.send({
-					ticketSync: runtime.get(request.params.id).ticketSync,
+					...actionResult(request.params.id),
+					ticketSync: ticketSyncSummary(runtime.get(request.params.id)),
 				});
 			},
 		);
@@ -1389,7 +1582,7 @@ export class FactoryServer {
 				const session = sessionFor(request)!;
 				runtime.reverifyExternal(request.params.id, session.credential);
 				await runtime.flush(request.params.id);
-				return reply.code(202).send({ accepted: true });
+				return reply.code(202).send(actionResult(request.params.id));
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
@@ -1411,7 +1604,7 @@ export class FactoryServer {
 					session.credential,
 				);
 				await runtime.flush(request.params.id);
-				return reply.code(202).send({ accepted: true });
+				return reply.code(202).send(actionResult(request.params.id));
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
@@ -1423,7 +1616,7 @@ export class FactoryServer {
 						ArchitectureDecisionSchema.parse(request.body),
 					);
 					await runtime.flush(request.params.id);
-					return reply.code(202).send({ accepted: true });
+					return reply.code(202).send(actionResult(request.params.id));
 				} catch (error) {
 					return reply.code(409).send({
 						error: error instanceof Error ? error.message : String(error),
@@ -1448,7 +1641,7 @@ export class FactoryServer {
 					.parse(request.body);
 				runtime.decide(request.params.id, decision);
 				await runtime.flush(request.params.id);
-				return reply.code(202).send({ accepted: true });
+				return reply.code(202).send(actionResult(request.params.id));
 			},
 		);
 		this.app.put<{ Params: { id: string } }>(
@@ -1487,7 +1680,9 @@ export class FactoryServer {
 					.parse(request.body);
 				return reply
 					.code(202)
-					.send(await hooks.followup(request.params.id, feedback));
+					.send(
+						runActionResult(await hooks.followup(request.params.id, feedback)),
+					);
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
@@ -1499,7 +1694,7 @@ export class FactoryServer {
 				)
 					return reply.code(404).send({ error: "Run not found" });
 				operator.stop(request.params.id);
-				return { stopped: true };
+				return { ...actionResult(request.params.id), stopped: true };
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
@@ -1510,13 +1705,19 @@ export class FactoryServer {
 					.parse(request.body);
 				return reply
 					.code(202)
-					.send(await runtime.refreshGuide(request.params.id, reviewId));
+					.send(
+						runActionResult(
+							await runtime.refreshGuide(request.params.id, reviewId),
+						),
+					);
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/retry",
 			(request, reply) =>
-				reply.code(202).send(operator.retry(request.params.id)),
+				reply
+					.code(202)
+					.send(runActionResult(operator.retry(request.params.id))),
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/answer",
@@ -1535,7 +1736,7 @@ export class FactoryServer {
 					})
 					.parse(request.body);
 				await operator.answer(request.params.id, answer, kind, context);
-				return { accepted: true };
+				return actionResult(request.params.id);
 			},
 		);
 		this.app.get<{ Params: { id: string } }>(
@@ -1631,12 +1832,13 @@ export class FactoryServer {
 				return reply
 					.code(409)
 					.send({ error: "Screenshot content changed after verification" });
-			const versions = [
-				shot.imageSha256,
-				shot.path,
-				createHash("sha256").update(JSON.stringify(value)).digest("hex"),
-			];
-			if (request.query.v && !versions.includes(request.query.v))
+			if (
+				request.query.v &&
+				request.query.v !== shot.imageSha256 &&
+				request.query.v !== shot.path &&
+				request.query.v !==
+					createHash("sha256").update(JSON.stringify(value)).digest("hex")
+			)
 				return reply
 					.code(409)
 					.send({ error: "Screenshot changed; refresh this run" });

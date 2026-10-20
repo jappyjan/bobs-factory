@@ -18,6 +18,7 @@ type Delivery<Input> = {
 	presentation?: { version: 1; input?: Input; reason?: string };
 	originalEvidence?: Input;
 	stateGroup?: string;
+	priority?: number;
 };
 
 export class LinearDeliveryPendingError extends Error {
@@ -43,7 +44,10 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 		home: string,
 		workspaceId: string,
 		owner: object,
-		send: (input: Input) => Promise<{ success: boolean; id?: string }>,
+		send: (
+			input: Input,
+			priority: number,
+		) => Promise<{ success: boolean; id?: string }>,
 		logger: ILogger,
 		reconcile: (input: Input) => Promise<boolean>,
 		retryAt: () => number,
@@ -85,7 +89,10 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 	private constructor(
 		home: string,
 		workspaceId: string,
-		private send: (input: Input) => Promise<{ success: boolean; id?: string }>,
+		private send: (
+			input: Input,
+			priority: number,
+		) => Promise<{ success: boolean; id?: string }>,
 		private logger: ILogger,
 		private reconcile: (input: Input) => Promise<boolean>,
 		private retryAt: () => number,
@@ -129,7 +136,10 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 		}
 	}
 
-	async post(input: Input): Promise<{ success: boolean; id?: string }> {
+	async post(
+		input: Input,
+		priority?: number,
+	): Promise<{ success: boolean; id?: string }> {
 		const fingerprint = this.fingerprint(input);
 		const stateGroup = this.stateGroup?.(input);
 		let record = input.id
@@ -167,6 +177,7 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 				createdAt: Date.now(),
 				attempts: 0,
 				nextAt: Math.max(0, this.retryAt()),
+				...(priority !== undefined ? { priority } : {}),
 			};
 			this.records.push(record);
 			this.save(); // The identity exists before any mutation is sent.
@@ -246,7 +257,11 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 			}
 			const record = pending
 				.filter((r) => r.nextAt <= Date.now())
-				.sort((a, b) => this.priority(b.input!) - this.priority(a.input!))[0];
+				.sort(
+					(a, b) =>
+						(b.priority ?? this.priority(b.input!)) -
+						(a.priority ?? this.priority(a.input!)),
+				)[0];
 			if (!record) break;
 			try {
 				if (record.ambiguous) {
@@ -295,6 +310,7 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 				this.save();
 				const result = await this.send(
 					record.presentation?.input ?? record.input!,
+					record.priority ?? this.priority(record.input!),
 				);
 				if (!result.success)
 					throw new Error("Linear activity mutation returned success=false");

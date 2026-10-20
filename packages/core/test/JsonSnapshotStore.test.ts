@@ -134,6 +134,63 @@ it("bounds dashboard previews for artifacts with many individually small fields"
 	);
 });
 
+it("reads compact artifact metadata without loading small retained payloads", async () => {
+	const { store, path, directory } = await fixture();
+	await store.write(
+		path,
+		{
+			outputs: {
+				result: { summary: "Readable summary", notes: "x".repeat(10000) },
+				inline: { complete: true },
+			},
+		},
+		{},
+		["outputs"],
+	);
+	const snapshot = JSON.parse(await readFile(path, "utf8"));
+	const reference = snapshot.fields.outputs.record.result.reference;
+	expect(reference.bytes).toBeLessThan(30000);
+	await rm(join(directory, "chunks", `${reference.chunks[0]}.json`));
+	const restored = store.load<{ outputs: Record<string, unknown> }>(path).value;
+	const preview = store.preview(restored.outputs, "result", { compact: true });
+	expect(preview).toMatchObject({
+		summary: "Readable summary",
+		__artifactPreview: true,
+		__artifactHash: reference.hash,
+		size: reference.bytes,
+		keys: ["summary", "notes"],
+	});
+	expect(preview).not.toHaveProperty("notes");
+	expect(store.preview(restored.outputs, "inline", { compact: true })).toEqual({
+		complete: true,
+	});
+	// The default remains an explicit read for small artifacts, with integrity checks.
+	expect(() => store.preview(restored.outputs, "result")).toThrow();
+});
+
+it("checks cold checkpoint presence without reading payloads and observes replaced values", async () => {
+	const { store, path, directory } = await fixture();
+	await store.write(path, {
+		checkpoint: { text: "x".repeat(10000) },
+		nullable: null,
+		missing: undefined,
+		disabled: false,
+		empty: "",
+		array: [],
+	});
+	const snapshot = JSON.parse(await readFile(path, "utf8"));
+	const reference = snapshot.fields.checkpoint.reference;
+	await rm(join(directory, "chunks", `${reference.chunks[0]}.json`));
+	const restored = store.load<Record<string, unknown>>(path).value;
+	expect(store.hasValue(restored, "checkpoint")).toBe(true);
+	for (const key of ["nullable", "missing", "disabled", "empty", "absent"])
+		expect(store.hasValue(restored, key)).toBe(false);
+	expect(store.hasValue(restored, "array")).toBe(true);
+	expect(() => restored.checkpoint).toThrow();
+	restored.checkpoint = undefined;
+	expect(store.hasValue(restored, "checkpoint")).toBe(false);
+});
+
 it("writes only new immutable events when the capped activity window rolls forward", async () => {
 	const { store, path } = await fixture();
 	const events = Array.from({ length: 128 }, (_, sequence) =>

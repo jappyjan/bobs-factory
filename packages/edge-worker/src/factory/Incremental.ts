@@ -24,6 +24,7 @@ import {
 	scopeRevision,
 } from "./RepositoryScope.js";
 import { reviewFixInstructions } from "./ReviewRecovery.js";
+import { snapshotHistory } from "./WorkflowInput.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 const exec = promisify(execFile);
@@ -56,6 +57,29 @@ export interface RoleProgress {
 			name: string;
 			workspace: string;
 		})[];
+	};
+}
+function historyProgress(context: ExecutionContext) {
+	const { run } = context;
+	const key = context.stepKey ?? run.step ?? context.step.id;
+	const index = context.historyIndex?.() ?? run.history;
+	let visits = 0;
+	let previous = -1;
+	for (let position = 0; position < index.length; position++)
+		if (index[position]!.step === key) {
+			visits++;
+			previous = position;
+		}
+	return {
+		visit: visits + 1,
+		previousOutput: previous < 0 ? undefined : run.history[previous]!.output,
+		newHistory: context.step.inputs
+			? []
+			: snapshotHistory(
+					run.history,
+					run.roleRevisions?.[key]?.historyLength ?? 0,
+					context.reviewBaseline?.historyLength ?? run.history.length,
+				),
 	};
 }
 export async function roleProgress(
@@ -102,15 +126,7 @@ export async function roleProgress(
 		return {
 			...first,
 			previousRevision,
-			previousOutput: [...context.run.history]
-				.reverse()
-				.find((item) => item.step === key)?.output,
-			newHistory: context.step.inputs
-				? []
-				: (context.reviewBaseline
-						? context.run.history.slice(0, context.reviewBaseline.historyLength)
-						: context.run.history
-					).slice(previousRevision?.historyLength ?? 0),
+			...historyProgress(context),
 			currentRevision:
 				revisions.length === repositories.length
 					? {
@@ -169,22 +185,12 @@ export async function roleProgress(
 	const { run } = context,
 		key = context.stepKey ?? run.step ?? context.step.id;
 	const previousRevision = run.roleRevisions?.[key];
-	const previousOutput = [...run.history]
-		.reverse()
-		.find((item) => item.step === key)?.output;
 	const result: RoleProgress = {
-		visit: run.history.filter((item) => item.step === key).length + 1,
+		...historyProgress(context),
 		previousRevision,
-		previousOutput,
 		changedFiles: [],
 		unchangedCode: false,
 		uncertain: true,
-		newHistory: context.step.inputs
-			? []
-			: (context.reviewBaseline
-					? run.history.slice(0, context.reviewBaseline.historyLength)
-					: run.history
-				).slice(previousRevision?.historyLength ?? 0),
 	};
 	const git = async (args: string[]) =>
 		(

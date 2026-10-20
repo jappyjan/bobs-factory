@@ -189,20 +189,88 @@ export function activityMarkers(run: {
 		);
 }
 // Full raw details are fetched on demand; one large MCP result cannot swamp a page.
-function activityPreview(value: unknown): Record<string, any> {
-	if (JSON.stringify(value).length <= 16000)
-		return value as Record<string, any>;
+export function activityPreview(
+	value: unknown,
+	limit = 16000,
+): Record<string, any> {
+	let remaining = limit;
+	const ancestors = new Set<object>();
+	const fits = (part: unknown, depth = 0): boolean => {
+		if (remaining < 0 || depth > 64) return false;
+		if (typeof part === "string") {
+			// Reject large strings before allocating their escaped JSON representation.
+			if (part.length > remaining) return false;
+			remaining -= JSON.stringify(part).length;
+		} else if (part && typeof part === "object") {
+			if (ancestors.has(part)) return false;
+			ancestors.add(part);
+			remaining -= 2;
+			try {
+				if (Array.isArray(part)) {
+					if (part.length > remaining) return false;
+					for (const entry of part) {
+						remaining--;
+						if (!fits(entry, depth + 1)) return false;
+					}
+				} else {
+					for (const key in part) {
+						if (!Object.hasOwn(part, key)) continue;
+						if (!fits(key, depth + 1)) return false;
+						remaining -= 2;
+						if (!fits((part as Record<string, unknown>)[key], depth + 1))
+							return false;
+					}
+				}
+			} finally {
+				ancestors.delete(part);
+			}
+		} else remaining -= 8;
+		return remaining >= 0;
+	};
+	if (fits(value)) return value as Record<string, any>;
+	remaining = Math.min(12000, limit - 1000);
+	let nodes = 200;
 	const trim = (part: any, depth = 0): any => {
-		if (typeof part === "string") return part.slice(0, 3000);
-		if (!part || typeof part !== "object") return part;
-		if (depth >= 5) return "Open Raw data for complete details";
-		if (Array.isArray(part))
-			return part.slice(0, 12).map((item) => trim(item, depth + 1));
-		return Object.fromEntries(
-			Object.entries(part)
-				.slice(0, 24)
-				.map(([key, item]) => [key, trim(item, depth + 1)]),
-		);
+		if (typeof part === "string") {
+			const result = part.slice(
+				0,
+				Math.max(0, Math.min(3000, Math.floor((remaining - 2) / 6))),
+			);
+			remaining -= JSON.stringify(result).length;
+			return result;
+		}
+		if (!part || typeof part !== "object") {
+			remaining -= 8;
+			return part;
+		}
+		if (depth >= 5) return trim("Open Raw data for complete details", depth);
+		remaining -= 2;
+		nodes--;
+		if (Array.isArray(part)) {
+			const result: unknown[] = [];
+			for (
+				let index = 0;
+				index < Math.min(part.length, 12) && remaining > 8 && nodes > 0;
+				index++
+			) {
+				remaining--;
+				result.push(trim(part[index], depth + 1));
+			}
+			return result;
+		}
+		const result: Record<string, unknown> = {};
+		let keys = 0;
+		for (const key in part) {
+			if (!Object.hasOwn(part, key)) continue;
+			if (keys++ >= 24 || remaining <= 16 || nodes <= 0) break;
+			const displayKey = key.slice(
+				0,
+				Math.max(0, Math.min(256, Math.floor((remaining - 12) / 6))),
+			);
+			remaining -= JSON.stringify(displayKey).length + 2;
+			result[displayKey] = trim(part[key], depth + 1);
+		}
+		return result;
 	};
 	return { ...trim(value), activityTruncated: true };
 }

@@ -254,6 +254,33 @@ it("previews oversized tool results without transferring their full bodies", () 
 	expect(page.entries[0]!.activityTruncated).toBe(true);
 	expect(JSON.stringify(page).length).toBeLessThan(10000);
 });
+it("bounds traversal of oversized payloads instead of serializing their unused tails", () => {
+	const payload = Array.from({ length: 100000 }, () => ({
+		text: "x".repeat(1000),
+	}));
+	Object.defineProperty(payload, 100, {
+		get: () => {
+			throw new Error("The unused raw tail must stay cold");
+		},
+	});
+	const page = activityPage(
+		[
+			{
+				type: "user",
+				content: payload,
+				metadata: { timestamp: stamp, toolUseId: "large-result" },
+			},
+		],
+		[],
+		{ limit: 120 },
+	);
+	expect(page.entries[0]).toMatchObject({
+		type: "user",
+		activityIndex: 0,
+		activityTruncated: true,
+	});
+	expect(JSON.stringify(page).length).toBeLessThan(16000);
+});
 it("limits representative screenshot plans and requires justified exceptions", () => {
 	const area = {
 		name: "Drawer",

@@ -111,6 +111,12 @@ export function immutableJson<T>(value: T): T {
 	freeze(json);
 	return json as T;
 }
+
+/** Recognize published JSON without treating a shallow Object.freeze as deep immutability. */
+export function isImmutableJson(value: unknown): boolean {
+	return !!value && typeof value === "object" && immutableValues.has(value);
+}
+
 export function immutableTranscript(entries: unknown[]): void {
 	const lazy = lazyArrays.get(entries);
 	if (lazy) {
@@ -659,11 +665,29 @@ export class JsonSnapshotStore {
 		);
 		return commit;
 	}
-	preview(record: Record<string, unknown>, key: string): unknown {
+	/** Check optional saved state without materializing a cold checkpoint. */
+	hasValue(record: Record<string, unknown>, key: string): boolean {
+		const lazy = lazyFields.get(record)?.get(key);
+		if (lazy && !lazy.loaded) {
+			// Falsy scalars are always inline; referenced objects, arrays and large
+			// strings are truthy. Once loaded or replaced, inspect the current value.
+			return "value" in lazy.field ? Boolean(lazy.field.value) : true;
+		}
+		return Boolean(record[key]);
+	}
+	preview(
+		record: Record<string, unknown>,
+		key: string,
+		options: { compact?: boolean } = {},
+	): unknown {
 		const field =
 			this.previews.get(record)?.[key] ??
 			lazyFields.get(record)?.get(key)?.field;
-		if (field && "reference" in field && field.reference.bytes >= 30000) {
+		if (
+			field &&
+			"reference" in field &&
+			(options.compact || field.reference.bytes >= 30000)
+		) {
 			return {
 				...(field.reference.preview &&
 				typeof field.reference.preview === "object"

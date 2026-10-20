@@ -962,7 +962,7 @@ function Chat({
 
 export function ArchitecturePage() {
 	const { id } = useParams();
-	const query = useRun(id);
+	const query = useRun(id, "architecture");
 	const run = query.data;
 	const heading = useRef<HTMLHeadingElement>(null);
 	const question = useRef<HTMLDivElement>(null);
@@ -983,7 +983,8 @@ export function ArchitecturePage() {
 	const [tab, setTab] = useState<"proposal" | "chat">("proposal");
 	const action = useAction(`architecture:${run?.id}`, context);
 	const cache = useQueryClient();
-	if (query.isLoading) return <p role="status">Loading the proposal…</p>;
+	if (query.isLoading || run?.pendingContext)
+		return <p role="status">Loading the proposal…</p>;
 	if (!run || !state || !latest)
 		return (
 			<>

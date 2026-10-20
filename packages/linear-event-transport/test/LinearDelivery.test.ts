@@ -170,6 +170,144 @@ it("budgets simultaneous tracker and direct SDK requests together across one cre
 	expect(requests).toEqual([0, 2000, 4000]);
 });
 
+it("delivers an acknowledgment through the shared budget while SDK reads keep arriving", async () => {
+	vi.useFakeTimers();
+	vi.setSystemTime(0);
+	const { mkdtempSync, rmSync } = await import("node:fs");
+	const { tmpdir } = await import("node:os");
+	const { join } = await import("node:path");
+	const home = mkdtempSync(join(tmpdir(), "linear-busy-budget-"));
+	const requests: { kind: string; at: number }[] = [];
+	const client = new LinearClient({ accessToken: "busy-budget-test" });
+	client.client.request = vi.fn(async (_document, variables: any) => {
+		requests.push({
+			kind: variables.input ? "acknowledgment" : "read",
+			at: Date.now(),
+		});
+		return variables.input
+			? {
+					agentActivityCreate: {
+						success: true,
+						agentActivity: { id: variables.input.id },
+						lastSyncId: 1,
+					},
+				}
+			: { issue: { id: "issue", reactions: [] } };
+	}) as any;
+	const tracker = new LinearIssueTrackerService(client, undefined, undefined, {
+		workspaceId: "busy-budget-workspace",
+		factoryHome: home,
+		requestIntervalMs: 2000,
+	});
+	tracker.startDelivery();
+	await tracker.getClient().issue("initial");
+	const acknowledgment = tracker
+		.createAgentActivity({
+			agentSessionId: "session",
+			content: { type: "thought", body: "Starting work on your ticket." },
+		})
+		.then(
+			() => "delivered",
+			() => "pending",
+		);
+	const reads = Promise.all([
+		tracker.getClient().issue("one"),
+		tracker.getClient().issue("two"),
+		tracker.getClient().issue("three"),
+	]);
+	try {
+		await vi.advanceTimersByTimeAsync(2000);
+		expect(requests).toEqual([
+			{ kind: "read", at: 0 },
+			{ kind: "acknowledgment", at: 2000 },
+		]);
+		await expect(acknowledgment).resolves.toBe("delivered");
+		expect(tracker.getActivityDeliveryStatus()).toMatchObject({
+			pending: 0,
+			delivered: 1,
+		});
+	} finally {
+		await vi.advanceTimersByTimeAsync(10_000);
+		await reads;
+		tracker.stopDelivery();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it.each([
+	true,
+	false,
+])("acknowledges ahead of queued background reads without bypassing pacing (durable: %s)", async (durable) => {
+	vi.useFakeTimers();
+	vi.setSystemTime(0);
+	const { mkdtempSync, rmSync } = await import("node:fs");
+	const { tmpdir } = await import("node:os");
+	const { join } = await import("node:path");
+	const home = mkdtempSync(join(tmpdir(), "linear-interactive-budget-"));
+	const requests: { kind: string; at: number }[] = [];
+	const client = new LinearClient({
+		accessToken: `interactive-budget-${durable}`,
+	});
+	client.client.request = vi.fn(async (_document, variables: any) => {
+		requests.push({
+			kind: variables.input
+				? variables.input.content.body === "Earlier progress"
+					? "routine"
+					: "acknowledgment"
+				: "read",
+			at: Date.now(),
+		});
+		return variables.input
+			? {
+					agentActivityCreate: {
+						success: true,
+						agentActivity: { id: variables.input.id ?? "ack" },
+						lastSyncId: 1,
+					},
+				}
+			: { issue: { id: "issue", reactions: [] } };
+	}) as any;
+	const tracker = new LinearIssueTrackerService(client, undefined, undefined, {
+		workspaceId: "interactive-budget",
+		...(durable ? { factoryHome: home } : {}),
+		requestIntervalMs: 2000,
+	});
+	await tracker.getClient().issue("warmup");
+	const backlog = Promise.all(
+		Array.from({ length: 8 }, (_, index) =>
+			tracker.getClient().issue(`background-${index}`),
+		),
+	);
+	// A durable drain may already be waiting for an ordinary progress write.
+	const routine = durable
+		? tracker.createAgentActivity({
+				agentSessionId: "other-session",
+				content: { type: "thought", body: "Earlier progress" },
+			})
+		: Promise.resolve();
+	const acknowledgment = tracker.createAgentActivity(
+		{
+			agentSessionId: "session",
+			content: { type: "thought", body: "Starting work on your ticket." },
+		},
+		{ priority: "interactive" },
+	);
+	try {
+		await vi.advanceTimersByTimeAsync(durable ? 4000 : 2000);
+		expect(requests).toEqual([
+			{ kind: "read", at: 0 },
+			...(durable ? [{ kind: "routine", at: 2000 }] : []),
+			{ kind: "acknowledgment", at: durable ? 4000 : 2000 },
+		]);
+		await acknowledgment;
+	} finally {
+		await vi.advanceTimersByTimeAsync(20_000);
+		await Promise.allSettled([acknowledgment, backlog, routine]);
+		tracker.stopDelivery();
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
 it("reuses one SDK client budget when a tracker wrapper is rebuilt", async () => {
 	vi.useFakeTimers();
 	vi.setSystemTime(0);
@@ -199,6 +337,41 @@ it("reuses one SDK client budget when a tracker wrapper is rebuilt", async () =>
 	await vi.advanceTimersByTimeAsync(4000);
 	expect(requests).toEqual([0, 2000]);
 	await work;
+});
+
+it("lets foreground ticket reads progress ahead of a background synchronization backlog", async () => {
+	vi.useFakeTimers();
+	vi.setSystemTime(0);
+	const requests: { id: string; at: number }[] = [];
+	const client = new LinearClient({ accessToken: "background-sync-budget" });
+	client.client.request = vi.fn(async (_document, variables: any) => {
+		requests.push({ id: variables.id, at: Date.now() });
+		return { issue: { id: variables.id, reactions: [] } };
+	}) as any;
+	const tracker = new LinearIssueTrackerService(client, undefined, undefined, {
+		workspaceId: "background-sync-budget",
+		requestIntervalMs: 2000,
+	});
+	await client.issue("warmup");
+	const read = () =>
+		Promise.all(
+			Array.from({ length: 8 }, (_, index) =>
+				client.issue(`background-${index}`),
+			),
+		);
+	const background = tracker.withBackgroundRequests(read);
+	const foreground = client.issue("new-ticket");
+	try {
+		await vi.advanceTimersByTimeAsync(2000);
+		expect(requests).toEqual([
+			{ id: "warmup", at: 0 },
+			{ id: "new-ticket", at: 2000 },
+		]);
+		await foreground;
+	} finally {
+		await vi.advanceTimersByTimeAsync(20_000);
+		await Promise.all([background, foreground]);
+	}
 });
 
 it("prioritizes a newly queued question ahead of a routine backlog while delivery is already draining", async () => {

@@ -1,11 +1,11 @@
 import { Navigate, NavLink, useNavigate, useParams } from "react-router-dom";
 import { AccessSettings } from "./auth";
-import { useAction, useConfig } from "./client";
+import { useAction, useCapacity, useConfig } from "./client";
 import { ExecutionEditor } from "./execution";
 import { useFormState } from "./form-state";
 import { AgentSettings } from "./forms";
 import { NotificationsSettings } from "./notifications-ui";
-import { Onboarding } from "./onboarding";
+import { SetupLoader } from "./onboarding";
 import { revisionOf } from "./restoration";
 import { TicketManagerSettings } from "./ticket-managers";
 import { Button, useToast } from "./ui";
@@ -69,8 +69,16 @@ export function Settings() {
 	const { "*": requestedPage } = useParams();
 	const page =
 		pages.find((entry) => entry.id === requestedPage)?.id ?? "execution";
-	const config = useConfig().data;
-	if (!config) return <p>Loading settings…</p>;
+	const shell = useConfig().data;
+	const execution = ["execution", "identities", "tools"].includes(page);
+	const query = useConfig(execution ? "settings" : "dashboard");
+	const config = query.data ? { ...shell, ...query.data } : undefined;
+	if (!config)
+		return (
+			<p role={query.error ? "alert" : "status"}>
+				{query.error?.message ?? "Loading settings…"}
+			</p>
+		);
 	return (
 		<>
 			{requestedPage !== page && <Navigate to="/settings/execution" replace />}
@@ -93,18 +101,16 @@ export function Settings() {
 				</nav>
 				<div className="settings-content">
 					{page === "setup" && config.onboarding?.available && (
-						<Onboarding
-							embedded
-							initial={config.onboarding}
-							onComplete={() => navigate("/")}
-						/>
+						<SetupLoader embedded onComplete={() => navigate("/")} />
 					)}
-					<ExecutionEditor key={page} config={config} page={page} />
+					{execution && (
+						<ExecutionEditor key={page} config={config} page={page} />
+					)}
 					{page === "tickets" && <TicketManagerSettings />}
 					{page === "notifications" && <NotificationsSettings />}
 					{page === "access" && <AccessSettings />}
 					{page === "updates" && <UpdateSettings />}
-					{page === "capacity" && <MachineCapacitySettings config={config} />}
+					{page === "capacity" && <MachineCapacitySettings />}
 					{page === "titles" && <RunTitleSettings config={config} />}
 				</div>
 			</div>
@@ -112,15 +118,21 @@ export function Settings() {
 	);
 }
 
-function MachineCapacitySettings({ config }: { config: any }) {
-	const capacity = config.capacity;
+function MachineCapacitySettings() {
+	const query = useCapacity();
+	const capacity = query.data?.capacity;
 	const action = useAction("capacity", revisionOf(capacity?.limit));
 	const [draft, setDraft] = useFormState<{ limit: string } | undefined>(
 		revisionOf(capacity?.limit),
 		undefined,
 	);
 	const limit = draft?.limit ?? String(capacity?.limit ?? 4);
-	if (!capacity) return null;
+	if (!capacity)
+		return (
+			<p role={query.error ? "alert" : "status"}>
+				{query.error?.message ?? "Loading instance capacity…"}
+			</p>
+		);
 	return (
 		<section className="recipe" aria-labelledby="machine-capacity">
 			<h2 id="machine-capacity">Instance capacity</h2>

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { QuestionChoices } from "../Questions.js";
@@ -5,6 +6,7 @@ import { ArchitectureEntry } from "./architecture";
 import {
 	active,
 	ago,
+	api,
 	attention,
 	elapsed,
 	finished,
@@ -523,6 +525,35 @@ function LocalDecisions(props: DecisionProps) {
 	);
 	return <ReviewDecisions {...props} controller={controller} />;
 }
+export function FinalMessage({ run }: { run: any }) {
+	const latest = activitiesOf(run)
+		.filter((item) => item.type === "response" || item.type === "thought")
+		.at(-1);
+	const index = latest?.raw?.activityIndex;
+	const full = useQuery({
+		queryKey: ["raw-entry", run.id, index],
+		enabled: latest?.raw?.activityTruncated && typeof index === "number",
+		queryFn: ({ signal }) =>
+			api(`/api/runs/${encodeURIComponent(run.id)}/activity/entries/${index}`, {
+				signal,
+			}),
+		staleTime: 60000,
+		gcTime: 60000,
+	});
+	const message = full.data
+		? activitiesOf({ ...run, entries: [full.data], events: [] })
+				.filter((item) => item.type === "response" || item.type === "thought")
+				.at(-1)?.body
+		: latest?.body;
+	return (
+		<div className="final-message">
+			<Bob mood="happy" size={32} />
+			<Markdown>{message ?? "Bob finished this run."}</Markdown>
+			{full.isLoading && <p role="status">Loading the complete response…</p>}
+			{full.error && <p role="alert">{full.error.message}</p>}
+		</div>
+	);
+}
 function ReviewDecisions({
 	run,
 	identity = `factory-review/${run.id}/finished`,
@@ -615,16 +646,7 @@ function ReviewDecisions({
 					matching guide is loaded.
 				</p>
 			)}
-			{!guide && (
-				<div className="final-message">
-					<Bob mood="happy" size={32} />
-					<Markdown>
-						{activitiesOf(run)
-							.filter((i) => i.type === "response" || i.type === "thought")
-							.at(-1)?.body ?? "Bob finished this run."}
-					</Markdown>
-				</div>
-			)}
+			{!guide && <FinalMessage run={run} />}
 			{(guide || feedbackOpen) && (
 				<form
 					className="feedback-form"
@@ -830,7 +852,7 @@ export function FocusCard({
 	onSkip?: () => void;
 	navigation?: React.ReactNode;
 }) {
-	const detail = useRun(summary.id),
+	const detail = useRun(summary.id, full ? "dashboard" : "focus"),
 		run = detail.data ?? summary,
 		kind = attention(run) ?? "review",
 		stopped = ["stopped", "cancelled"].includes(run.status),
@@ -858,7 +880,7 @@ export function FocusCard({
 					<Link to={`/runs/${run.id}`}>{run.title}</Link>
 				</h2>
 			)}
-			{detail.isLoading ? (
+			{detail.isLoading || run.pendingContext ? (
 				<p role="status">Bob is loading this run…</p>
 			) : kind === "question" && run.architectureGate ? (
 				<ArchitectureEntry run={run} />

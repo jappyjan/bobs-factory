@@ -3,10 +3,11 @@
 // implement F1_AGENT_MODE. No live provider is reachable from this fixture.
 import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 const root = process.cwd();
@@ -107,7 +108,7 @@ worker.buildRunnerForType = (type, config) => {
 				config.onMessage?.(messages[0]);
 				return { sessionId: "mock-title" };
 			}
-			const input = JSON.parse(readFileSync(contextConfig.args[1], "utf8"));
+			const input = loadFactoryContextSnapshot(contextConfig.args.at(-1));
 			assert.match(config.appendSystemPrompt, /questionRecommendations/);
 			assert.match(
 				config.appendSystemPrompt,

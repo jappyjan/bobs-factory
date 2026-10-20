@@ -274,7 +274,6 @@ function ChatComposer({ run }: { run: any }) {
 	const [text, setText] = useFormState(context, "");
 	const [notice, setNotice] = useFormState(context, "");
 	const action = useAction(`chat/${run.id}`, context);
-	const cache = useQueryClient();
 	const send = async () => {
 		if (!text.trim() || !run.chat.available || action.isPending) return;
 		const submittedText = text;
@@ -292,7 +291,6 @@ function ChatComposer({ run }: { run: any }) {
 						? "Request to resume the conversation sent."
 						: "Message sent to the agent.",
 			);
-			void cache.invalidateQueries({ queryKey: ["transcript", run.id] });
 		} catch {
 			/* Mutation exposes the delivery error and retains the draft. */
 		}

@@ -560,6 +560,59 @@ it("uses ticket team states, native links and a nonterminal fallback when Review
 		"completed",
 	);
 });
+it("synchronizes native lifecycle without loading unrelated comment profiles", async () => {
+	const f = fixture();
+	const tracker = new CLIIssueTrackerService();
+	tracker.seedDefaultData();
+	const issue = await tracker.createIssue({
+		teamId: "team-default",
+		title: "Busy lifecycle",
+	});
+	await tracker.createComment(issue.id, { body: "Retained ticket discussion" });
+	const fetchComments = tracker.fetchComments.bind(tracker);
+	let profileReads = 0;
+	vi.spyOn(tracker, "fetchComments").mockImplementation(async (...args) => {
+		const page = await fetchComments(...args);
+		for (const comment of page.nodes)
+			Object.defineProperty(comment, "user", {
+				get() {
+					profileReads++;
+					throw new Error("Comment profile lookup unavailable");
+				},
+			});
+		return page;
+	});
+	f.run.ticketReference = {
+		provider: "native",
+		platform: "cli",
+		workspaceId: "cli",
+		id: issue.id,
+		url: issue.url,
+	};
+	const adapter = nativeAdapter(f.run.ticketReference, tracker);
+	const service = new TicketTracking(
+		async () => adapter,
+		(run) => f.runtime.save(run),
+		() => {},
+	);
+	services.push(service);
+	await service.record(f.run, {
+		key: "start",
+		body: "Starting work",
+		stage: "in_progress",
+	});
+	expect(f.run.ticketSync?.error).toBeUndefined();
+	expect(f.run.ticketSync?.receipts.at(-1)?.delivered).toBe(true);
+	expect((await (await tracker.fetchIssue(issue.id)).state)?.type).toBe(
+		"started",
+	);
+	expect(profileReads).toBe(0);
+	// Launch and agent context reads retain the complete author-aware snapshot.
+	await expect(adapter.read()).rejects.toThrow(
+		"Comment profile lookup unavailable",
+	);
+});
+
 it("serializes concurrent updates to the same provider ticket", async () => {
 	const f = fixture();
 	const other = { ...f.run, id: "other", ticketSync: undefined } as FactoryRun;
