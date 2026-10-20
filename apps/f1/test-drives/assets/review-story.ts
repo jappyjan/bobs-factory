@@ -2,7 +2,7 @@
 // worktrees, deterministic MockAgentRunner roles and scripted GitHub responses.
 //   pnpm --filter bobs-factory-edge-worker build && pnpm --filter f1 build
 //   F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/review-story.ts
-// Set F1_HOLD=1 to keep the dashboard on :3542 until <root>/stop exists.
+// Set F1_HOLD=1 to keep the dashboard on its printed F1_PORTS until <root>/stop exists.
 import assert from "node:assert/strict";
 import { execFile as execFileCallback, execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -30,6 +30,7 @@ import {
 } from "../../../../packages/edge-worker/test/fixtures/github-api.ts";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
+import { reserveLoopbackPorts } from "../../src/ports.mjs";
 
 const execFile = promisify(execFileCallback);
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -53,7 +54,10 @@ process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	root,
 	"legacy-capacity",
 );
-process.env.BOBS_FACTORY_FACTORY_PORT = "3542";
+const portLease = await reserveLoopbackPorts(2);
+const [factoryPort, rpcPort] = portLease.ports;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
 delete process.env.BOBS_FACTORY_FACTORY_ORIGIN;
 delete process.env.BOBS_FACTORY_FACTORY_PUBLIC_ORIGIN;
 
@@ -338,7 +342,7 @@ function makeWorker() {
 		},
 		factoryHome: home,
 		serverHost: "127.0.0.1",
-		serverPort: 3602,
+		serverPort: rpcPort,
 		maxConcurrentSessions: 1,
 		defaultRunner: "codex",
 		repositories: [
@@ -459,11 +463,11 @@ function makeWorker() {
 const worker = makeWorker();
 let token = "";
 async function api(path: string, body?: unknown) {
-	const response = await fetch(`http://localhost:3542${path}`, {
+	const response = await fetch(`http://localhost:${factoryPort}${path}`, {
 		method: body === undefined ? "GET" : "POST",
 		headers: {
 			authorization: `Bearer ${token}`,
-			origin: "http://localhost:3542",
+			origin: `http://localhost:${factoryPort}`,
 			"content-type": "application/json",
 			"x-factory-request": "1",
 		},
@@ -488,13 +492,14 @@ const pending = (r: FactoryRun) =>
 const cli = async (...args: string[]) =>
 	(
 		await execFile(join(process.cwd(), "apps/f1/f1"), args, {
-			env: { ...process.env, BOBS_FACTORY_PORT: "3602" },
+			env: { ...process.env, BOBS_FACTORY_PORT: String(rpcPort) },
 		})
 	).stdout;
 const guideStep = (run: FactoryRun) =>
 	run.workflow.steps.find((s) => s.id === "guide")!;
 
 try {
+	await portLease.release();
 	await worker.start();
 	token = requestFactoryTerminalSession(home);
 	await cli("ping");
@@ -581,6 +586,7 @@ try {
 			await new Promise((resolve) => setTimeout(resolve, 500));
 	}
 } finally {
+	await portLease.release();
 	await worker.stop();
 	process.off("unhandledRejection", onUnhandled);
 	writeFileSync(join(root, "receipts.json"), JSON.stringify(receipts, null, 2));

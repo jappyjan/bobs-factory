@@ -16,6 +16,7 @@ import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/
 import { proposal } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
+import { reserveLoopbackPorts } from "../../src/ports.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 for (const key of Object.keys(process.env))
@@ -41,7 +42,10 @@ writeFileSync(
 git("add", ".");
 git("commit", "-qm", "Initial fixture");
 git("remote", "add", "origin", repo);
-process.env.BOBS_FACTORY_FACTORY_PORT = "3541";
+const portLease = await reserveLoopbackPorts(2);
+const [factoryPort, rpcPort] = portLease.ports;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
@@ -105,7 +109,7 @@ function design(version) {
 }
 const config = {
 	factoryHome: home,
-	serverPort: 3600,
+	serverPort: rpcPort,
 	serverHost: "127.0.0.1",
 	defaultRunner: "codex",
 	issueTrackerFactory: () => tracker,
@@ -246,7 +250,7 @@ async function until(check) {
 	}
 	throw new Error("Architecture fixture timed out");
 }
-const ui = "http://localhost:3541";
+const ui = `http://localhost:${factoryPort}`;
 async function api(path, body) {
 	const response = await fetch(ui + path, {
 		method: body ? "POST" : "GET",
@@ -262,7 +266,7 @@ async function api(path, body) {
 	return value;
 }
 async function rpc(method, params) {
-	const response = await fetch("http://localhost:3600/cli/rpc", {
+	const response = await fetch(`http://localhost:${rpcPort}/cli/rpc`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
@@ -292,6 +296,7 @@ try {
 		[...runtime.listWorkflows(), pipeline, workflow],
 		workflow.id,
 	);
+	await portLease.release();
 	await worker.start();
 	const { issue } = await rpc("createIssue", {
 		teamId: "team-default",
@@ -377,5 +382,6 @@ try {
 	);
 	console.log(JSON.stringify(result, null, 2));
 } finally {
+	await portLease.release();
 	await worker?.stop();
 }

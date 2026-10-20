@@ -9,6 +9,7 @@ import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js"
 import { FactoryTools } from "../../../../packages/edge-worker/dist/factory/FactoryTools.js";
 import { githubApiReceipt } from "../../../../packages/edge-worker/test/fixtures/github-api.ts";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
+import { reserveLoopbackPorts } from "../../src/ports.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 for (const key of Object.keys(process.env))
@@ -37,7 +38,10 @@ git(repo, "add", ".");
 git(repo, "commit", "-qm", "Initial fixture");
 git(repo, "remote", "add", "origin", repo);
 const base = git(repo, "rev-parse", "HEAD");
-process.env.BOBS_FACTORY_FACTORY_PORT = "3541";
+const portLease = await reserveLoopbackPorts(2);
+const [factoryPort, rpcPort] = portLease.ports;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
@@ -102,7 +106,7 @@ const source = { source: "originalInput", reference: "/" };
 const config = {
 	factoryHome: home,
 	serverHost: "127.0.0.1",
-	serverPort: 3600,
+	serverPort: rpcPort,
 	defaultRunner: "codex",
 	issueTrackerFactory: () => tracker,
 	linearWorkspaces: {
@@ -206,7 +210,7 @@ function construct() {
 	runtime.hooks.tool = (context) => tools.tool(context);
 }
 async function rpc(method, params) {
-	const response = await fetch("http://127.0.0.1:3600/cli/rpc", {
+	const response = await fetch(`http://127.0.0.1:${rpcPort}/cli/rpc`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
@@ -228,6 +232,7 @@ async function waitForHold(id) {
 try {
 	construct();
 	runtime.updateWorkflows([...runtime.listWorkflows(), workflow], workflow.id);
+	await portLease.release();
 	await worker.start();
 	const { issue } = await rpc("createIssue", {
 		teamId: "team-default",
@@ -286,15 +291,18 @@ try {
 	await worker.start();
 	for (const state of ["missing", "superseded"]) {
 		const id = `saved-${state}`;
-		const response = await fetch(`http://127.0.0.1:3541/api/runs/${id}/retry`, {
-			method: "POST",
-			headers: {
-				Origin: "http://127.0.0.1:3541",
-				"X-Factory-Request": "1",
-				"Content-Type": "application/json",
+		const response = await fetch(
+			`http://127.0.0.1:${factoryPort}/api/runs/${id}/retry`,
+			{
+				method: "POST",
+				headers: {
+					Origin: `http://127.0.0.1:${factoryPort}`,
+					"X-Factory-Request": "1",
+					"Content-Type": "application/json",
+				},
+				body: "{}",
 			},
-			body: "{}",
-		});
+		);
 		assert.equal(response.status, 202, await response.text());
 		const saved = await waitForHold(id);
 		assert.deepEqual(
@@ -349,5 +357,6 @@ try {
 	);
 	console.log(JSON.stringify({ passed: true, directory, receipts }));
 } finally {
+	await portLease.release();
 	await worker?.stop();
 }

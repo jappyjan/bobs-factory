@@ -24,6 +24,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Allocate dynamic listener ports for guide, architecture, review and recovery test drives so unrelated local runs can keep their servers running. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))

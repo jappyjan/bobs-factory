@@ -24,6 +24,7 @@ import { validateWorkflows } from "../../../../packages/edge-worker/dist/factory
 import { proposal } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.ts";
+import { reserveLoopbackPorts } from "../../src/ports.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 for (const key of Object.keys(process.env))
@@ -55,7 +56,10 @@ writeFileSync(join(repo, "source.txt"), "Committed fixture source\n");
 git(repo, "add", ".");
 git(repo, "commit", "-qm", "Initial fixture");
 git(repo, "remote", "add", "origin", repo);
-process.env.BOBS_FACTORY_FACTORY_PORT = "3540";
+const portLease = await reserveLoopbackPorts(2);
+const [factoryPort, rpcPort] = portLease.ports;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
 const providerFile = join(directory, "provider.json"),
 	providerCalls = join(directory, "provider-calls.jsonl"),
 	providerScript = join(directory, "provider.mjs");
@@ -207,7 +211,7 @@ function assessment(current, extra = {}) {
 }
 const config = {
 	factoryHome: home,
-	serverPort: 3600,
+	serverPort: rpcPort,
 	serverHost: "127.0.0.1",
 	defaultRunner: "codex",
 	issueTrackerFactory: createCLIIssueTracker,
@@ -405,7 +409,7 @@ async function until(check, message) {
 	throw Error(message);
 }
 async function rpc(method, params = {}) {
-	const response = await fetch("http://localhost:3600/cli/rpc", {
+	const response = await fetch(`http://localhost:${rpcPort}/cli/rpc`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
@@ -415,15 +419,18 @@ async function rpc(method, params = {}) {
 	return result.result;
 }
 async function action(id, path, body) {
-	const response = await fetch(`http://localhost:3540/api/runs/${id}/${path}`, {
-		method: "POST",
-		headers: {
-			Origin: "http://localhost:3540",
-			"X-Factory-Request": "1",
-			"Content-Type": "application/json",
+	const response = await fetch(
+		`http://localhost:${factoryPort}/api/runs/${id}/${path}`,
+		{
+			method: "POST",
+			headers: {
+				Origin: `http://localhost:${factoryPort}`,
+				"X-Factory-Request": "1",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(body),
 		},
-		body: JSON.stringify(body),
-	});
+	);
 	assert(response.ok, await response.text());
 }
 function create(id, workflowId, workspace) {
@@ -486,6 +493,7 @@ try {
 		validateWorkflows([...runtime.listWorkflows(), ...workflows]),
 		"intake-fixture",
 	);
+	await portLease.release();
 	await worker.start();
 	assert(await rpc("ping"));
 	const { issue } = await rpc("createIssue", {
@@ -785,7 +793,7 @@ try {
 	runtime.stop(stale.id);
 	const activities = await (
 		await fetch(
-			`http://localhost:3540/api/runs/${delivery.id}/activity?limit=200`,
+			`http://localhost:${factoryPort}/api/runs/${delivery.id}/activity?limit=200`,
 		)
 	).json();
 	assert(activities.entries.some((entry) => entry.type === "result"));
@@ -843,5 +851,6 @@ try {
 		}),
 	);
 } finally {
+	await portLease.release();
 	await worker?.stop();
 }
