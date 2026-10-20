@@ -260,3 +260,134 @@ it("protects a whole group for one waiting member, then revalidates remaining me
 	await adapter.remove(record, new AbortController().signal, async () => {});
 	expect(git(["worktree", "list", "--porcelain"])).not.toContain(group);
 });
+
+it("cancels an in-flight teardown and retains the original Git worktree", async () => {
+	const { home, workspace, record, adapter } = await fixture(
+		'#!/bin/sh\nprintf started > "$RETENTION_OUTPUT"\nsleep 30\n',
+	);
+	const controller = new AbortController();
+	const removing = adapter.remove(record, controller.signal, async () => {});
+	await expect
+		.poll(async () => {
+			try {
+				return await readFile(join(home, "hook-output"), "utf8");
+			} catch {
+				return "";
+			}
+		})
+		.toBe("started");
+	controller.abort(new Error("Fixture cancellation"));
+	await expect(removing).rejects.toThrow("cancelled");
+	expect(await readFile(join(workspace, "file"), "utf8")).toBe(
+		"durable delivered content",
+	);
+});
+
+it("yields at one second while an ownership check is still in flight and resumes that exact check", async () => {
+	const { record } = await fixture();
+	let release!: (proofs: RetainedWorkspaceProof[]) => void;
+	const pending = new Promise<RetainedWorkspaceProof[]>((resolve) => {
+		release = resolve;
+	});
+	let calls = 0;
+	const adapter = new WorktreeArtifacts(
+		{
+			inspect: async () => {
+				calls++;
+				return pending;
+			},
+			remove: async () => {},
+		},
+		process.env,
+	);
+	const started = performance.now();
+	try {
+		const first = await adapter.observe(record, new AbortController().signal);
+		expect(first.complete).toBe(false);
+		expect(performance.now() - started).toBeLessThan(1600);
+		release([]);
+		const next = await adapter.observe(record, new AbortController().signal);
+		expect(next.complete).toBe(true);
+		expect(calls).toBe(1);
+	} finally {
+		release([]);
+		await adapter.close();
+	}
+});
+
+it("times out stalled Git removal and retains the exact original workspace", async () => {
+	const { home, workspace, proof, environment } = await fixture();
+	const bin = join(home, "controlled-bin");
+	await mkdir(bin);
+	await writeFile(
+		join(bin, "git"),
+		'#!/bin/sh\ncase "$*" in *"worktree remove"*) exec sleep 60;; *) exec /usr/bin/git "$@";; esac\n',
+		{ mode: 0o755 },
+	);
+	const service = new GitService({
+		factoryHome: home,
+		childEnvironment: { ...environment, PATH: `${bin}:${environment.PATH}` },
+	});
+	const started = performance.now();
+	await expect(
+		service.removeRetainedWorktrees(
+			workspace,
+			[proof],
+			"TIMEOUT-134",
+			new AbortController().signal,
+			async () => {},
+			async () => {},
+		),
+	).rejects.toThrow();
+	expect(performance.now() - started).toBeLessThan(35000);
+	expect(await readFile(join(workspace, "file"), "utf8")).toBe(
+		"durable delivered content",
+	);
+}, 40000);
+
+it("requires explicit idempotent retry after a crash between teardown effects and its success receipt", async () => {
+	const { home, workspace, record, adapter } = await fixture(
+		'#!/bin/sh\nprintf "run\\n" >> "$RETENTION_OUTPUT"\n',
+	);
+	const { StorageRetention } = await import(
+		"../src/storage/StorageRetention.js"
+	);
+	const coordinator = new StorageRetention(home, { worktree: adapter });
+	const remove = adapter.remove.bind(adapter);
+	let crash = true;
+	adapter.remove = (record, signal, journal) =>
+		remove(record, signal, async (phase) => {
+			if (crash && phase.startsWith("hook-completed:")) {
+				crash = false;
+				throw new Error("Injected crash before hook success receipt");
+			}
+			await journal(phase);
+		});
+	const execute = async (idempotent = false) => {
+		let preview = await coordinator.preview();
+		while (!preview.complete) preview = await coordinator.preview();
+		await coordinator.execute(preview.id, [record.id], idempotent);
+		await expect
+			.poll(async () => (await coordinator.status()).outcome?.completedAt, {
+				timeout: 10000,
+			})
+			.toBeTruthy();
+		return (await coordinator.status()).outcome!;
+	};
+	try {
+		expect((await execute()).results[0]?.reason).toContain("Injected crash");
+		expect((await execute()).results[0]?.reason).toContain(
+			"Interrupted teardown may have run",
+		);
+		expect(await readFile(join(home, "hook-output"), "utf8")).toBe("run\n");
+		expect(await readFile(join(workspace, "file"), "utf8")).toBe(
+			"durable delivered content",
+		);
+		expect((await execute(true)).results[0]?.phase).toBe("completed");
+		expect(await readFile(join(home, "hook-output"), "utf8")).toBe(
+			"run\nrun\n",
+		);
+	} finally {
+		await coordinator.stop();
+	}
+});

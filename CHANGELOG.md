@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Add per-instance Storage settings and CLI previews, retention policy, explicit historical classification and audited cleanup. Protect usable rollback snapshots, update recovery, unique files and resumable work; replace immediate forced terminal worktree deletion with verified retention. ([Taskbot #134](https://taskbot.apps.janjaap.de/p/bobs-factory/t/134), [#164](https://github.com/jappyjan/bobs-factory/pull/164))
+- Add per-instance Storage settings and CLI previews, retention policy, explicit historical classification and audited cleanup. Protect usable rollback snapshots, update recovery, unique files and resumable work; replace immediate forced terminal worktree deletion with verified retention. Verify installed rollback runtimes, preserve references across runs, and reconcile exact historical copies before cleanup. ([Taskbot #134](https://taskbot.apps.janjaap.de/p/bobs-factory/t/134), [#164](https://github.com/jappyjan/bobs-factory/pull/164))
 
 - Sign in on devices with difficult keyboards using an explicitly enabled six-digit code from Settings → Access. Compare confirmation numbers and approve the device before its browser can collect a separate revocable API key. Codes expire after five minutes; request throttling preserves active pairing, and framing protection guards approval controls. ([#162](https://github.com/jappyjan/bobs-factory/pull/162))
 

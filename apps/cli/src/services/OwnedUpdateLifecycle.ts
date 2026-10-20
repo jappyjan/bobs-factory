@@ -18,9 +18,11 @@ import { promisify } from "node:util";
 import {
 	publishStorageJson,
 	readStorageJson,
+	reconcileStorageCopy,
 	StorageRetentionStore,
 	storageDigest,
 	writeStorageIntegrity,
+	writeStorageRollbackProof,
 } from "bobs-factory-core";
 import { requestFactoryTerminalSession } from "bobs-factory-edge-worker";
 import { FactoryClient } from "../tui/client.js";
@@ -287,6 +289,13 @@ export class OwnedUpdateLifecycle {
 				record.reconciledAt =
 					new Date().toISOString();
 		});
+		// Preflight may rewrite state. Only byte-proven copies acquire an
+		// authoritative replacement; changed preparation remains independently held.
+		try {
+			await reconcileStorageCopy(retention, preparation.id);
+		} catch {
+			/* Keep its original retention proof. */
+		}
 		this.staged = { ...staged, executable, previousExecutable: previous };
 		return { stateCompatible: true as const };
 	}
@@ -346,9 +355,15 @@ export class OwnedUpdateLifecycle {
 			path,
 			join(retention.directory, "proofs", `${artifact.id}.ndjson`),
 		);
+		const runtimeProof = await writeStorageRollbackProof(
+			this.home,
+			artifact.id,
+			this.staged?.previousExecutable ?? this.owner.executable,
+		);
 		await retention.revise(artifact.id, (record) => {
 			record.completedAt = record.verifiedAt = new Date().toISOString();
 			record.evidence = [
+				runtimeProof,
 				`integrity:${integrity}`,
 				this.staged?.previousExecutable ?? this.owner.executable,
 			];
@@ -673,8 +688,13 @@ export class OwnedUpdateLifecycle {
 			),
 		);
 		await this.health(old);
+		const recoveryIntegrity = await writeStorageIntegrity(
+			retained,
+			join(retention.directory, "proofs", `${recovery.id}.ndjson`),
+		);
 		await retention.revise(recovery.id, (record) => {
 			record.completedAt = record.verifiedAt = new Date().toISOString();
+			record.evidence = [`integrity:${recoveryIntegrity}`];
 		});
 	}
 	async releaseMaintenance(transactionId: string) {

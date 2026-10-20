@@ -169,3 +169,164 @@ it("classifies a proven historical directory only after exact explicit election"
 	).toEqual([]);
 	await historical.close();
 });
+
+it("preserves a replacement installed during journal publication", async () => {
+	const { home, path, root, store } = await fixture();
+	let record = await store.register({
+		category: "staging",
+		path,
+		root,
+		producer: "fixture",
+		operation: "race",
+		dependencies: [],
+		evidence: [],
+		completedAt: "2020-01-01T00:00:00.000Z",
+		verifiedAt: "2020-01-01T00:00:00.000Z",
+		reconciledAt: "2020-01-01T00:00:00.000Z",
+	});
+	const integrity = await writeStorageIntegrity(
+		path,
+		join(store.directory, "proofs", `${record.id}.ndjson`),
+	);
+	record = await store.revise(record.id, (value) => {
+		value.evidence = [`integrity:${integrity}`];
+	});
+	await expect(
+		new UpdateArtifacts(home).remove(
+			record,
+			new AbortController().signal,
+			async () => {
+				await rename(path, `${path}-original`);
+				await mkdir(path);
+				await writeFile(join(path, "replacement"), "unique replacement");
+			},
+		),
+	).rejects.toThrow("identity changed");
+	expect(await readFile(join(path, "replacement"), "utf8")).toBe(
+		"unique replacement",
+	);
+	expect(await readFile(join(`${path}-original`, "unique"), "utf8")).toBe(
+		"preserved data",
+	);
+});
+
+it.each([
+	"preparation",
+	"recovery",
+] as const)("elects only an exact authoritative historical %s copy", async (category) => {
+	const { home, historical } = await fixture();
+	const root = join(
+			home,
+			"updates",
+			category === "recovery" ? "recovery-retained" : "preparation",
+		),
+		path = join(root, "legacy-copy");
+	await mkdir(join(path, "state"), { recursive: true });
+	await mkdir(join(home, "state"));
+	await writeFile(join(path, "state", "saved.json"), '{"retained":true}');
+	await writeFile(join(home, "state", "saved.json"), '{"retained":true}');
+	const preview = await historical.preview(),
+		candidate = preview.candidates.find((value) => value.path === path)!;
+	const elected = await historical.classify({
+		previewId: preview.id,
+		candidateId: candidate.id,
+		category,
+		operation: "manual-copy",
+		contentsVerifiedDisposable: true,
+	});
+	expect(elected.dependencies).toEqual([]);
+	expect(elected.authoritativeReplacement?.path).toBe(home);
+	const adapter = new UpdateArtifacts(home);
+	let observation: Awaited<ReturnType<UpdateArtifacts["observe"]>>;
+	do {
+		observation = await adapter.observe(elected, new AbortController().signal);
+	} while (!observation.complete);
+	expect(observation.protection).toEqual([]);
+	await adapter.remove(elected, new AbortController().signal, async () => {});
+	expect(await readFile(join(home, "state", "saved.json"), "utf8")).toBe(
+		'{"retained":true}',
+	);
+	await historical.close();
+});
+
+it("preserves mixed and unique historical recovery contents after election fails", async () => {
+	const { home, historical, store } = await fixture();
+	const root = join(home, "updates", "recovery-retained"),
+		path = join(root, "mixed");
+	await mkdir(join(path, "factory", "auth"), { recursive: true });
+	await mkdir(join(home, "factory", "auth"), { recursive: true });
+	for (const base of [path, home])
+		await writeFile(
+			join(base, "factory", "auth", "key"),
+			"credential sentinel",
+		);
+	const preview = await historical.preview(),
+		candidate = preview.candidates.find((value) => value.path === path)!;
+	await expect(
+		historical.classify({
+			previewId: preview.id,
+			candidateId: candidate.id,
+			category: "recovery",
+			operation: "manual-copy",
+			contentsVerifiedDisposable: true,
+		}),
+	).rejects.toThrow("Mixed");
+	const record = await store.record((await store.inventoryPage(0))[0]!);
+	expect(record.dependencies.length).toBeGreaterThan(0);
+	expect(record.reconciledAt).toBeUndefined();
+	expect(await readFile(join(path, "factory", "auth", "key"), "utf8")).toBe(
+		"credential sentinel",
+	);
+	await historical.close();
+});
+
+it("discovers and elects narrow committed migration preparation while preserving source and native backups", async () => {
+	const { home, store, historical } = await fixture();
+	const backup = join(home, "migration-backup"),
+		preparation = join(backup, "staged"),
+		path = join(preparation, "state"),
+		operation = "a".repeat(64);
+	await mkdir(path, { recursive: true });
+	await mkdir(join(home, "state"));
+	await mkdir(join(backup, "source"));
+	await writeFile(join(backup, "source", "native"), "native source sentinel");
+	await writeFile(join(path, "run.json"), '{"saved":true}');
+	await writeFile(join(home, "state", "run.json"), '{"saved":true}');
+	await writeFile(
+		join(backup, "journal.json"),
+		JSON.stringify({
+			phase: "committed",
+			sourceDigest: operation,
+			destination: home,
+		}),
+	);
+	const { publishStorageJson } = await import("bobs-factory-core");
+	await publishStorageJson(
+		join(store.directory, "migration-observations", `${operation}.json`),
+		{ operation, preparation, backup, protected: true },
+	);
+	const preview = await historical.preview(),
+		candidate = preview.candidates.find((value) => value.path === path)!;
+	expect(candidate.category).toBe("migration");
+	const elected = await historical.classify({
+		previewId: preview.id,
+		candidateId: candidate.id,
+		category: "migration",
+		operation,
+		contentsVerifiedDisposable: true,
+	});
+	const adapter = new UpdateArtifacts(home);
+	let observation: Awaited<ReturnType<UpdateArtifacts["observe"]>>;
+	do {
+		observation = await adapter.observe(elected, new AbortController().signal);
+	} while (!observation.complete);
+	expect(observation.protection).toEqual([]);
+	await adapter.remove(elected, new AbortController().signal, async () => {});
+	expect(await readFile(join(backup, "source", "native"), "utf8")).toBe(
+		"native source sentinel",
+	);
+	expect(await readFile(join(home, "state", "run.json"), "utf8")).toBe(
+		'{"saved":true}',
+	);
+	await historical.close();
+});

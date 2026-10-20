@@ -13,6 +13,7 @@ import {
 	StoragePolicySchema,
 	type StorageRecord,
 	writeStorageIntegrity,
+	writeStorageRollbackProof,
 } from "bobs-factory-core";
 import { afterEach, expect, it } from "vitest";
 import {
@@ -72,8 +73,18 @@ async function artifact(
 		path,
 		join(coordinator.store.directory, "proofs", `${record.id}.ndjson`),
 	);
+	const runtime = join(coordinator.home, "installed", String(index));
+	await mkdir(runtime, { recursive: true });
+	await writeFile(join(runtime, "bobs-factory"), "verified rollback runtime", {
+		mode: 0o755,
+	});
+	const runtimeProof = await writeStorageRollbackProof(
+		coordinator.home,
+		record.id,
+		join(runtime, "bobs-factory"),
+	);
 	record = await coordinator.store.revise(record.id, (value) => {
-		value.evidence = [`integrity:${integrity}`];
+		value.evidence = [`integrity:${integrity}`, runtimeProof];
 	});
 	return record;
 }
@@ -239,4 +250,185 @@ it("reconciles interrupted artifact removal without deleting replacement data", 
 	expect(await readFile(join(record.path, "replacement-data"), "utf8")).toBe(
 		"new unique data",
 	);
+});
+
+it("completes fresh multi-slice verification before removing a large artifact", async () => {
+	const { coordinator } = await fixture();
+	let record = await artifact(coordinator, 100, "staging");
+	for (let index = 0; index < 550; index++)
+		await writeFile(join(record.path, `file-${index}`), "owned");
+	const integrity = await writeStorageIntegrity(
+		record.path,
+		join(coordinator.store.directory, "proofs", `${record.id}.ndjson`),
+	);
+	record = await coordinator.store.revise(record.id, (value) => {
+		value.completedAt = "2020-01-01T00:00:00.000Z";
+		value.evidence = [`integrity:${integrity}`];
+	});
+	let preview: Awaited<ReturnType<StorageRetention["preview"]>> | undefined;
+	for (let index = 0; index < 30; index++) {
+		preview = await coordinator.preview();
+		if (
+			preview.candidates.some(
+				(value) => value.record.id === record.id && value.eligible,
+			)
+		)
+			break;
+	}
+	expect(
+		preview!.candidates.find((value) => value.record.id === record.id)
+			?.eligible,
+	).toBe(true);
+	await coordinator.execute(preview!.id, [record.id]);
+	await expect
+		.poll(async () => (await coordinator.status()).outcome?.completedAt, {
+			timeout: 20000,
+		})
+		.toBeTruthy();
+	expect((await coordinator.status()).outcome?.results[0]?.phase).toBe(
+		"completed",
+	);
+	await expect(stat(record.path)).rejects.toMatchObject({ code: "ENOENT" });
+	await coordinator.stop();
+}, 30000);
+it.each([
+	"missing",
+	"replaced",
+	"corrupt",
+])("does not count a %s rollback runtime", async (failure) => {
+	const { coordinator, home } = await fixture();
+	const older = await artifact(coordinator, 10);
+	await artifact(coordinator, 2);
+	await artifact(coordinator, 1);
+	const path = join(home, "installed", "1", "bobs-factory");
+	if (failure === "missing") await rm(path);
+	else if (failure === "replaced") {
+		await rm(join(home, "installed", "1"), { recursive: true });
+		await mkdir(join(home, "installed", "1"));
+		await writeFile(path, "verified rollback runtime", { mode: 0o755 });
+	} else await writeFile(path, "corrupt runtime");
+	const candidates = await allCandidates(coordinator);
+	expect(
+		candidates.find((value) => value.record.id === older.id)?.reasons,
+	).toContain("Protected verified rollback snapshot");
+	expect(
+		candidates.find((value) => value.record.operation === "1")
+			?.rollbackVerified,
+	).toBe(false);
+	await coordinator.stop();
+});
+
+it("limits each inventory page to 100 candidates and continues through the retained inventory", async () => {
+	const { coordinator, home } = await fixture();
+	const root = join(home, "updates", "staging");
+	await mkdir(root, { recursive: true });
+	for (let index = 0; index < 105; index++) {
+		const path = join(root, `bounded-${index}`);
+		await mkdir(path);
+		await coordinator.store.register({
+			path,
+			root,
+			category: "staging",
+			producer: "bounded inventory fixture",
+			operation: String(index),
+			dependencies: [],
+			evidence: [],
+			completedAt: "2020-01-01T00:00:00.000Z",
+			verifiedAt: "2020-01-01T00:00:00.000Z",
+			reconciledAt: "2020-01-01T00:00:00.000Z",
+		});
+	}
+	coordinator.adapters.staging = {
+		observe: async (record) => ({
+			record,
+			complete: true,
+			protection: [],
+			filesystemEntries: 0,
+		}),
+		remove: async () => {
+			throw new Error("Preview-only fixture");
+		},
+	};
+	const ids = new Set<string>();
+	for (let slice = 0; slice < 30; slice++) {
+		const preview = await coordinator.preview();
+		expect(preview.candidates.length).toBeLessThanOrEqual(100);
+		for (const candidate of preview.candidates) ids.add(candidate.record.id);
+		if (preview.complete) break;
+	}
+	expect(ids.size).toBe(105);
+	await coordinator.stop();
+}, 30000);
+
+it("recovers a crash after root and leaf detachment using the durable leaf receipt", async () => {
+	const { coordinator } = await fixture();
+	const record = await artifact(coordinator, 100, "staging");
+	await coordinator.store.revise(record.id, (value) => {
+		value.completedAt = "2020-01-01T00:00:00.000Z";
+	});
+	const { rename } = await import("node:fs/promises");
+	const { publishStorageJson } = await import("bobs-factory-core");
+	const quarantine = join(record.root, `.bobs-factory-removal-${record.id}`);
+	await mkdir(quarantine, { mode: 0o700 });
+	await rename(record.path, join(quarantine, "payload"));
+	const source = join(quarantine, "payload", "lifecycle-receipt.json"),
+		info = await stat(source);
+	const slot = "00000000-0000-4000-8000-000000000001";
+	await publishStorageJson(join(quarantine, "leaf.json"), {
+		source: "lifecycle-receipt.json",
+		slot,
+		identity: {
+			device: String(info.dev),
+			inode: String(info.ino),
+			birthtime: info.birthtimeMs,
+		},
+	});
+	await rename(source, join(quarantine, slot));
+	await publishStorageJson(
+		join(coordinator.store.directory, "receipts", `${record.id}.json`),
+		{ phase: "removing", identity: record.identity },
+	);
+	const preview = await coordinator.preview();
+	expect(
+		preview.candidates.find((value) => value.record.id === record.id)?.eligible,
+	).toBe(true);
+	await coordinator.execute(preview.id, [record.id]);
+	await expect
+		.poll(async () => (await coordinator.status()).outcome?.completedAt)
+		.toBeTruthy();
+	expect((await coordinator.status()).outcome?.results[0]?.phase).toBe(
+		"completed",
+	);
+	await expect(stat(quarantine)).rejects.toMatchObject({ code: "ENOENT" });
+	await coordinator.stop();
+});
+
+it("does not certify a rollback with unresolved runtime link dependencies", async () => {
+	const { coordinator, home } = await fixture();
+	const older = await artifact(coordinator, 10),
+		newer = await artifact(coordinator, 1);
+	const { symlink } = await import("node:fs/promises");
+	const dependency = join(home, "external-runtime-data");
+	await writeFile(dependency, "restoration dependency");
+	await symlink(dependency, join(home, "installed", "1", "dependency"));
+	const proof = await writeStorageRollbackProof(
+		home,
+		newer.id,
+		join(home, "installed", "1", "bobs-factory"),
+	);
+	await coordinator.store.revise(newer.id, (value) => {
+		value.evidence = [
+			...value.evidence.filter((entry) => !entry.startsWith("runtime-proof:")),
+			proof,
+		];
+	});
+	await rm(dependency);
+	const candidates = await allCandidates(coordinator);
+	expect(
+		candidates.find((value) => value.record.id === newer.id)?.rollbackVerified,
+	).toBe(false);
+	expect(
+		candidates.find((value) => value.record.id === older.id)?.reasons,
+	).toContain("Protected verified rollback snapshot");
+	await coordinator.stop();
 });

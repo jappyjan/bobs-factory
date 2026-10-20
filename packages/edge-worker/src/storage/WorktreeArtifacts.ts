@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { lstat, opendir, readFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
+import { setImmediate as yieldToIO } from "node:timers/promises";
 import { promisify } from "node:util";
 import {
 	type StorageIdentity,
@@ -24,11 +25,20 @@ export interface RetainedWorkspaceProof {
 	/** All owners, including retained native/evidence references, must independently release use. */
 	protection: string[];
 }
+export interface WorkspaceInspection {
+	proofs: RetainedWorkspaceProof[];
+	entries: number;
+	complete: boolean;
+}
 export interface WorkspaceRetentionSource {
+	close?(): Promise<void>;
+	reset?(path: string): Promise<void>;
+	generation?(): number;
 	inspect(
 		path: string,
 		signal?: AbortSignal,
-	): Promise<RetainedWorkspaceProof[]>;
+		bounds?: { maxEntries?: number; deadline?: number },
+	): Promise<RetainedWorkspaceProof[] | WorkspaceInspection>;
 	remove(
 		proofs: RetainedWorkspaceProof[],
 		signal: AbortSignal,
@@ -37,13 +47,98 @@ export interface WorkspaceRetentionSource {
 }
 /** Gitignore never authorizes disposal: ignored files are included in status. */
 export class WorktreeArtifacts implements StorageAdapter {
+	private states = new Map<
+		string,
+		{
+			generation?: number;
+			iterator: AsyncGenerator<number, StorageObservation>;
+			pending?: Promise<IteratorResult<number, StorageObservation>>;
+		}
+	>();
+	async reset(record: StorageRecord) {
+		const state = this.states.get(record.id);
+		if (state) {
+			await state.pending;
+			await state.iterator.return({ record, protection: [], complete: false });
+		}
+		this.states.delete(record.id);
+		await this.source.reset?.(record.path);
+	}
+	async observe(
+		record: StorageRecord,
+		signal: AbortSignal,
+		bounds: { maxEntries?: number; deadline?: number; members?: string[] } = {},
+	): Promise<StorageObservation> {
+		let state = this.states.get(record.id);
+		if (state && state.generation !== this.source.generation?.()) {
+			await this.reset(record);
+			state = undefined;
+		}
+		if (!state) {
+			state = {
+				generation: this.source.generation?.(),
+				iterator: this.observeAll(record, signal, bounds.members),
+			};
+			this.states.set(record.id, state);
+		}
+		const deadline = bounds.deadline ?? performance.now() + 1000;
+		let entries = 100;
+		while (
+			entries < Math.max(100, (bounds.maxEntries ?? 1000) - 100) &&
+			performance.now() < deadline
+		) {
+			signal.throwIfAborted();
+			state.pending ??= state.iterator.next();
+			let timer: ReturnType<typeof setTimeout> | undefined;
+			let next: IteratorResult<number, StorageObservation> | undefined;
+			try {
+				next = await Promise.race([
+					state.pending,
+					new Promise<undefined>((resolve) => {
+						timer = setTimeout(
+							() => resolve(undefined),
+							Math.max(1, deadline - performance.now()),
+						);
+					}),
+				]);
+			} finally {
+				clearTimeout(timer);
+			}
+			if (!next) break; // Keep the exact in-flight operation for the next slice.
+			state.pending = undefined;
+			if (next.done) {
+				this.states.delete(record.id);
+				if (state.generation !== this.source.generation?.())
+					return {
+						record,
+						complete: false,
+						protection: [],
+						filesystemEntries: entries,
+					};
+				return { ...next.value, filesystemEntries: entries };
+			}
+			entries += next.value;
+		}
+		return {
+			record,
+			protection: [],
+			complete: false,
+			filesystemEntries: entries,
+		};
+	}
 	constructor(
 		private readonly source: WorkspaceRetentionSource,
 		private readonly environment: NodeJS.ProcessEnv,
 		private readonly usage?: StorageUsage,
 	) {}
 	async close() {
+		for (const state of this.states.values()) {
+			await state.pending?.catch(() => {});
+			await state.iterator.return(undefined as never);
+		}
+		this.states.clear();
 		await this.usage?.close();
+		await this.source.close?.();
 	}
 	private async git(path: string, args: string[], signal: AbortSignal) {
 		return (
@@ -55,24 +150,32 @@ export class WorktreeArtifacts implements StorageAdapter {
 			})
 		).stdout.trim();
 	}
-	async observe(
+	private async *observeAll(
 		record: StorageRecord,
 		signal: AbortSignal,
-		bounds: { maxEntries?: number; deadline?: number; members?: string[] } = {},
-	): Promise<StorageObservation> {
+		members?: string[],
+	): AsyncGenerator<number, StorageObservation> {
 		signal.throwIfAborted();
 		const protection: string[] = [];
-		const inspectionSignal = bounds.deadline
-			? AbortSignal.any([
-					signal,
-					AbortSignal.timeout(
-						Math.max(1, Math.ceil(bounds.deadline - performance.now())),
-					),
-				])
-			: signal;
-		const mapping = await this.source.inspect(record.path, inspectionSignal);
-		const proofs = bounds.members
-			? mapping.filter((proof) => bounds.members!.includes(proof.path))
+		let mapping: RetainedWorkspaceProof[];
+		while (true) {
+			const inspected = await this.source.inspect(record.path, signal, {
+				maxEntries: 100,
+				deadline: performance.now() + 1000,
+			});
+			if (Array.isArray(inspected)) {
+				mapping = inspected;
+				break;
+			}
+			yield inspected.entries;
+			if (inspected.complete) {
+				mapping = inspected.proofs;
+				break;
+			}
+		}
+
+		const proofs = members
+			? mapping.filter((proof) => members.includes(proof.path))
 			: mapping;
 		if (!proofs.length)
 			protection.push(
@@ -86,6 +189,8 @@ export class WorktreeArtifacts implements StorageAdapter {
 		)
 			protection.push("Workspace identity changed");
 		for (const proof of proofs) {
+			yield 1;
+			signal.throwIfAborted();
 			protection.push(...proof.protection);
 			if (!proof.creator || resolve(proof.root) !== resolve(record.root))
 				protection.push("Creator or configured workspace root is unverified");
@@ -118,12 +223,12 @@ export class WorktreeArtifacts implements StorageAdapter {
 				const common = await this.git(
 					proof.path,
 					["rev-parse", "--path-format=absolute", "--git-common-dir"],
-					inspectionSignal,
+					signal,
 				);
 				const repositoryCommon = await this.git(
 					proof.repository,
 					["rev-parse", "--path-format=absolute", "--git-common-dir"],
-					inspectionSignal,
+					signal,
 				);
 				if (common !== repositoryCommon)
 					throw new Error("Source repository identity differs");
@@ -136,7 +241,7 @@ export class WorktreeArtifacts implements StorageAdapter {
 							"--untracked-files=all",
 							"--ignored=matching",
 						],
-						inspectionSignal,
+						signal,
 					)
 				)
 					protection.push(
@@ -146,15 +251,11 @@ export class WorktreeArtifacts implements StorageAdapter {
 					await this.git(
 						proof.path,
 						["submodule", "status", "--recursive"],
-						inspectionSignal,
+						signal,
 					)
 				)
 					protection.push("Submodule content needs explicit retention proof");
-				const head = await this.git(
-					proof.path,
-					["rev-parse", "HEAD"],
-					inspectionSignal,
-				);
+				const head = await this.git(proof.path, ["rev-parse", "HEAD"], signal);
 				if (head !== proof.mergedHead)
 					protection.push("Local commits differ from the delivered revision");
 				// A merge receipt alone does not establish durable object retention in the source repository.
@@ -162,7 +263,7 @@ export class WorktreeArtifacts implements StorageAdapter {
 					await this.git(
 						proof.repository,
 						["cat-file", "-e", `${proof.mergedHead}^{commit}`],
-						inspectionSignal,
+						signal,
 					);
 			} catch (error) {
 				protection.push(
@@ -173,6 +274,8 @@ export class WorktreeArtifacts implements StorageAdapter {
 		if (mapping.length > 1) {
 			const directory = await opendir(record.path);
 			for await (const entry of directory) {
+				yield 1;
+				signal.throwIfAborted();
 				if (
 					!proofs.some(
 						(proof) =>
@@ -183,6 +286,7 @@ export class WorktreeArtifacts implements StorageAdapter {
 					protection.push(
 						"Unexpected parent-level content retains the workspace group",
 					);
+				break;
 			}
 		}
 		const completedAt =
@@ -191,7 +295,17 @@ export class WorktreeArtifacts implements StorageAdapter {
 						Math.max(...proofs.map((proof) => Date.parse(proof.completedAt!))),
 					).toISOString()
 				: record.completedAt;
-		const usage = await this.usage?.step(record, signal, bounds);
+		let usage: Awaited<ReturnType<StorageUsage["step"]>> | undefined;
+		if (this.usage) {
+			do {
+				usage = await this.usage.step(record, signal, {
+					maxEntries: 100,
+					deadline: performance.now() + 1000,
+				});
+				yield usage.entries;
+				if (!usage.complete) await yieldToIO();
+			} while (!usage.complete);
+		}
 		return {
 			filesystemEntries: usage?.entries ?? 0,
 			apparentBytes: usage?.apparentBytes,
@@ -203,7 +317,7 @@ export class WorktreeArtifacts implements StorageAdapter {
 				reconciledAt: protection.length ? record.reconciledAt : completedAt,
 			},
 			complete: usage?.complete ?? true,
-			protection: [...new Set(protection)],
+			protection: [...new Set(protection)].slice(0, 20),
 		};
 	}
 	async remove(
@@ -211,12 +325,26 @@ export class WorktreeArtifacts implements StorageAdapter {
 		signal: AbortSignal,
 		journal: (phase: string) => Promise<void>,
 	) {
-		const fresh = await this.observe(record, signal);
+		await this.reset(record);
+		let fresh: StorageObservation;
+		do {
+			fresh = await this.observe(record, signal);
+			if (!fresh.complete) await yieldToIO();
+		} while (!fresh.complete);
 		if (fresh.protection.length) throw new Error(fresh.protection.join("; "));
-		await this.source.remove(
-			await this.source.inspect(record.path, signal),
-			signal,
-			journal,
-		);
+		let mapping: RetainedWorkspaceProof[];
+		while (true) {
+			const inspected = await this.source.inspect(record.path, signal);
+			if (Array.isArray(inspected)) {
+				mapping = inspected;
+				break;
+			}
+			if (inspected.complete) {
+				mapping = inspected.proofs;
+				break;
+			}
+			await yieldToIO();
+		}
+		await this.source.remove(mapping, signal, journal);
 	}
 }

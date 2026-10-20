@@ -300,7 +300,14 @@ fresh accepted-provider delivery checks, complete owner/reference checks and saf
 Git removal. Symlinked owned roots, changed identity, unique ignored files, native
 continuation uncertainty and protected group members retain data. Ticket closure
 only requests reconciliation; the legacy deletion API defers to Storage. Artifact
-manifest verification and usage scans yield with continuation. Failed or uncertain
+manifest verification and usage scans yield with continuation. Cleanup verifies
+rollback runtimes, scans dependencies across every retained run and evidence link,
+and detaches verified artifacts into private quarantine before removal. Completed
+workflow role-session identities and review history alone do not retain a delivered
+workspace; Simple conversations and unfinished native checkpoints still do.
+Historical preparation/recovery elections require exact current-state comparisons;
+committed migration preparation exposes only narrow state/factory copies, keeping
+source/native/external backups protected. Failed or uncertain
 hooks need explicit verified idempotent retry. Receipts and original evidence stay
 retained. Apparent bytes and observed volume free-space changes remain separate.
 See [storage retention](factory/storage-retention.md) for limits and recovery.

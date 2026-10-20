@@ -77,6 +77,14 @@ export const StorageRecordSchema = z
 		verifiedAt: z.string().datetime().optional(),
 		reconciledAt: z.string().datetime().optional(),
 		replacement: z.string().optional(),
+		authoritativeReplacement: z
+			.object({
+				path: z.string(),
+				identity: StorageIdentitySchema,
+				integrity: z.string(),
+			})
+			.strict()
+			.optional(),
 		dependencies: z.array(z.string().max(1000)).max(1000),
 		evidence: z.array(z.string().max(1000)).max(100),
 		historicalElection: z

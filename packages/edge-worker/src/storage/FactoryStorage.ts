@@ -1,5 +1,6 @@
-import { opendir } from "node:fs/promises";
+import { lstat, opendir, realpath } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
+import { setImmediate as yieldToIO } from "node:timers/promises";
 import {
 	publishStorageJson,
 	readStorageJson,
@@ -43,6 +44,7 @@ interface StorageHooks {
 function hasNative(checkpoint?: GraphCheckpoint): boolean {
 	return (
 		!!checkpoint &&
+		(checkpoint.current !== "end" || !!checkpoint.active) &&
 		(Object.values(checkpoint.agentSessions ?? {}).some(
 			(agent) => !!agent.sessionId,
 		) ||
@@ -51,17 +53,81 @@ function hasNative(checkpoint?: GraphCheckpoint): boolean {
 			!!checkpoint.active?.children?.some((child) => hasNative(child)))
 	);
 }
-/** Bounded reference inspection fails closed rather than materializing unbounded transcripts. */
-function retainedReference(value: unknown, workspace: string): boolean {
-	let remaining = 1000;
-	const visit = (entry: unknown): boolean => {
-		if (--remaining < 0) return true;
-		if (typeof entry === "string") return entry.includes(workspace);
-		return (
-			!!entry && typeof entry === "object" && Object.values(entry).some(visit)
-		);
-	};
-	return visit(value);
+class ProtectionReasons extends Array<string> {
+	total = 0;
+	override push(...values: string[]) {
+		this.total += values.length;
+		for (const value of values)
+			if (this.length < 20 && !this.includes(value)) super.push(value);
+		return this.length;
+	}
+}
+/** Stream every retained value and evidence link. Identity metadata is handled by
+ * the owning record, while actual content paths remain live dependencies. */
+async function* retainedReferences(
+	value: unknown,
+	workspace: string,
+	protection: string[],
+	signal?: AbortSignal,
+): AsyncGenerator<void> {
+	signal?.throwIfAborted();
+	yield;
+	if (typeof value === "string") {
+		if (value.includes(workspace)) {
+			protection.push(
+				"Retained input, output or evidence references this workspace",
+			);
+			return;
+		}
+		if (value.startsWith("/") && !value.includes("\n")) {
+			try {
+				const target = await realpath(value);
+				if (target === workspace || target.startsWith(`${workspace}${sep}`))
+					protection.push(
+						"Retained evidence link resolves into this workspace",
+					);
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code !== "ENOENT")
+					protection.push("Retained path dependency cannot be inspected");
+			}
+		}
+	} else if (value && typeof value === "object") {
+		for (const key in value)
+			if (Object.hasOwn(value, key))
+				yield* retainedReferences(
+					(value as Record<string, unknown>)[key],
+					workspace,
+					protection,
+					signal,
+				);
+	}
+}
+async function* evidenceReferences(
+	path: string,
+	workspace: string,
+	protection: string[],
+	signal?: AbortSignal,
+): AsyncGenerator<void> {
+	signal?.throwIfAborted();
+	yield;
+	try {
+		const stat = await lstat(path);
+		if (stat.isSymbolicLink()) {
+			yield* retainedReferences(path, workspace, protection, signal);
+		} else if (stat.isDirectory()) {
+			const directory = await opendir(path);
+			for await (const entry of directory)
+				yield* evidenceReferences(
+					join(path, entry.name),
+					workspace,
+					protection,
+					signal,
+				);
+		}
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT")
+			protection.push("Evidence dependency inventory is unreadable");
+	}
 }
 
 /** Runtime memory, retained state and durable reservations are consulted again
@@ -73,10 +139,10 @@ export function factoryStorage(
 ) {
 	const home = dirname(runtime.directory),
 		store = new StorageRetentionStore(home);
-	const inspect = async (
+	const inspectAll = async function* (
 		workspace: string,
 		signal?: AbortSignal,
-	): Promise<RetainedWorkspaceProof[]> => {
+	): AsyncGenerator<void, RetainedWorkspaceProof[]> {
 		const descriptor = (await readStorageJson(
 			join(
 				store.directory,
@@ -98,39 +164,51 @@ export function factoryStorage(
 			  }
 			| undefined;
 		if (!descriptor) return [];
-		const owners = [...runtime.runs.values()].filter(
-			(run) =>
+		const owners: FactoryRun[] = [];
+		const protection = new ProtectionReasons();
+		protection.push(
+			...((await hooks.protection?.(workspace)) ?? [
+				"Active process and descendant ownership is unavailable",
+			]),
+		);
+		for (const run of runtime.runs.values()) {
+			signal?.throwIfAborted();
+			yield;
+			const owns =
 				run.workspace === workspace ||
 				run.workspace.startsWith(`${workspace}${sep}`) ||
 				run.repositories?.some(
 					(repo) =>
 						repo.workspace === workspace ||
 						repo.workspace.startsWith(`${workspace}${sep}`),
-				),
-		);
-		const protection: string[] = [
-			...((await hooks.protection?.(workspace)) ?? [
-				"Active process and descendant ownership is unavailable",
-			]),
-		];
-		if (!owners.length)
-			protection.push("No retained run proves complete workspace ownership");
-		for (const run of owners) {
-			signal?.throwIfAborted();
+				);
+			// References are independent of ownership, including stopped and completed runs.
+			yield* retainedReferences(
+				[run.outputs, run.input, run.launchAttachments],
+				workspace,
+				protection,
+				signal,
+			);
+			for (const round of run.reviewRounds ?? []) {
+				const context = round.context as Record<string, unknown> | undefined;
+				if (context) {
+					const {
+						workspace: _workspaceIdentity,
+						repositories: _repositoryIdentity,
+						...content
+					} = context;
+					yield* retainedReferences(content, workspace, protection, signal);
+				}
+			}
+			if (!owns) continue;
+			owners.push(run);
 			await runtime.flush(run.id);
 			if (run.status !== "completed" || runtime.isExecuting(run.id))
 				protection.push(`Run ${run.id} needs this workspace (${run.status})`);
 			if (run.capacityLeaves && Object.keys(run.capacityLeaves).length)
 				protection.push(`Run ${run.id} retains capacity or descendant work`);
-			if (
-				run.reviewGate ||
-				run.reviewRounds?.length ||
-				Object.keys(run.roleRevisions ?? {}).length ||
-				run.outputs.guide
-			)
-				protection.push(
-					`Run ${run.id}: retained review state has not been proven independent of this workspace`,
-				);
+			if (run.reviewGate?.status === "pending")
+				protection.push(`Run ${run.id} is awaiting human review`);
 			if (
 				hasNative(run.checkpoint) ||
 				run.simpleExecution?.agent?.sessionId ||
@@ -139,16 +217,15 @@ export function factoryStorage(
 				protection.push(
 					`Run ${run.id}: native continuation has not been proven independent of this directory`,
 				);
-			if (
-				retainedReference(
-					[run.outputs, run.input, run.launchAttachments],
-					workspace,
-				)
-			)
-				protection.push(
-					`Run ${run.id}: retained input, output or evidence still references this workspace`,
-				);
 		}
+		if (!owners.length)
+			protection.push("No retained run proves complete workspace ownership");
+		yield* evidenceReferences(
+			join(runtime.directory, "evidence"),
+			workspace,
+			protection,
+			signal,
+		);
 		const uses: { file: string; owner?: string; state?: string }[] = [];
 		try {
 			const directory = await opendir(
@@ -159,10 +236,8 @@ export function factoryStorage(
 				),
 			);
 			for await (const entry of directory) {
-				if (uses.length >= 100) {
-					protection.push("Workspace owner inventory exceeds this scan slice");
-					break;
-				}
+				yield;
+				signal?.throwIfAborted();
 				const file = join(directory.path, entry.name),
 					use = (await readStorageJson(file)) as
 						| { state?: string; owner?: string }
@@ -190,9 +265,15 @@ export function factoryStorage(
 			: undefined;
 		const proofs: RetainedWorkspaceProof[] = [];
 		for (const repo of descriptor.repositories) {
-			const reasons = [...protection];
+			yield;
+			const reasons = [...new Set(protection)].slice(0, 20);
+			if (protection.total > 20)
+				reasons.push(
+					`${protection.total} protection observations; inspect retained runs and evidence`,
+				);
 			let mergedHead: string | undefined;
 			for (const run of owners) {
+				yield;
 				const approval = run.humanDecisions?.at(-1);
 				const approved =
 					approval?.decision === "approve"
@@ -221,7 +302,14 @@ export function factoryStorage(
 								abort();
 								return;
 							}
-							void hooks.verifyDelivery!(run, repo.id, approved, signal)
+							void hooks.verifyDelivery!(
+								run,
+								repo.id,
+								approved,
+								signal
+									? AbortSignal.any([signal, AbortSignal.timeout(1000)])
+									: AbortSignal.timeout(1000),
+							)
 								.then(resolve, reject)
 								.finally(() => signal?.removeEventListener("abort", abort));
 						}))
@@ -288,9 +376,79 @@ export function factoryStorage(
 		}
 		return proofs;
 	};
+	let generation = 0;
+	const pending = new Map<
+		string,
+		{
+			generation: number;
+			iterator: AsyncGenerator<void, RetainedWorkspaceProof[]>;
+		}
+	>();
+	const unsubscribe = runtime.subscribe(() => {
+		generation++;
+	});
+	const inspect = async (
+		workspace: string,
+		signal?: AbortSignal,
+		bounds: { maxEntries?: number; deadline?: number } = {},
+	) => {
+		let state = pending.get(workspace);
+		if (state && state.generation !== generation) {
+			await state.iterator.return([]);
+			pending.delete(workspace);
+			state = undefined;
+		}
+		if (!state) {
+			state = { generation, iterator: inspectAll(workspace, signal) };
+			pending.set(workspace, state);
+		}
+		let entries = 0;
+		const deadline = bounds.deadline ?? performance.now() + 1000;
+		while (
+			entries < (bounds.maxEntries ?? 1000) &&
+			performance.now() < deadline
+		) {
+			signal?.throwIfAborted();
+			const next = await state.iterator.next();
+			entries++;
+			if (next.done) {
+				pending.delete(workspace);
+				if (state.generation !== generation)
+					return { proofs: [], entries, complete: false };
+				return { proofs: next.value, entries, complete: true };
+			}
+		}
+		await publishStorageJson(
+			join(
+				store.directory,
+				"workspace-inspection",
+				`${storageDigest(workspace)}.json`,
+			),
+			{
+				workspace,
+				complete: false,
+				observedEntries: entries,
+				restart:
+					"Reinspect retained dependencies from the beginning after restart",
+			},
+		);
+		return { proofs: [], entries, complete: false };
+	};
+
 	const worktrees = new WorktreeArtifacts(
 		{
 			inspect,
+			generation: () => generation,
+			reset: async (workspace) => {
+				const state = pending.get(workspace);
+				if (state) await state.iterator.return([]);
+				pending.delete(workspace);
+			},
+			close: async () => {
+				unsubscribe();
+				for (const state of pending.values()) await state.iterator.return([]);
+				pending.clear();
+			},
 			remove: async (proofs, signal, journal) => {
 				const workspace =
 					proofs.length === 1 ? proofs[0]!.path : dirname(proofs[0]!.path);
@@ -302,11 +460,16 @@ export function factoryStorage(
 							`${storageDigest(resolve(workspace))}.json`,
 						),
 					)) as { recordId: string };
-					const checked = await worktrees.observe(
-						await store.record(descriptor.recordId),
-						signal,
-						{ members: remaining },
-					);
+					await worktrees.reset(await store.record(descriptor.recordId));
+					let checked: Awaited<ReturnType<WorktreeArtifacts["observe"]>>;
+					do {
+						checked = await worktrees.observe(
+							await store.record(descriptor.recordId),
+							signal,
+							{ members: remaining },
+						);
+						if (!checked.complete) await yieldToIO();
+					} while (!checked.complete);
 					if (checked.protection.length)
 						throw new Error(checked.protection.join("; "));
 				};

@@ -27,9 +27,12 @@ export interface StorageObservation {
 	usageObservedAt?: string;
 	filesystemEntries?: number;
 	complete: boolean;
+	rollbackVerified?: boolean;
 }
 export interface StorageAdapter {
 	close?(): Promise<void>;
+	recover?(record: StorageRecord): Promise<void>;
+	reset?(record: StorageRecord): Promise<void>;
 	observe(
 		record: StorageRecord,
 		signal: AbortSignal,
@@ -211,10 +214,14 @@ export class StorageRetention {
 		};
 		const path = join(this.store.directory, "rollback-index.json");
 		const saved = (await readStorageJson(path)) as
-			| { index?: Index; checksum?: string }
+			| { index?: Index; checksum?: string; completedPreview?: boolean }
 			| undefined;
 		let index = saved?.index;
-		if (!index || saved?.checksum !== storageDigest(JSON.stringify(index)))
+		if (
+			!index ||
+			saved?.completedPreview ||
+			saved?.checksum !== storageDigest(JSON.stringify(index))
+		)
 			index = undefined;
 		if (
 			!index ||
@@ -270,10 +277,7 @@ export class StorageRetention {
 				);
 				entries += observation.filesystemEntries ?? 0;
 				if (!observation.complete) break;
-				if (
-					observation.complete &&
-					!observation.protection.includes("Rollback verification failed")
-				) {
+				if (observation.complete && observation.rollbackVerified === true) {
 					index.newest.push({ id, completedAt: record.completedAt });
 					index.newest.sort(
 						(a, b) => Date.parse(b.completedAt) - Date.parse(a.completedAt),
@@ -413,6 +417,7 @@ export class StorageRetention {
 					entries += observation.filesystemEntries ?? 0;
 				} catch (error) {
 					observation.protection = [String(error).slice(0, 1000)];
+					observation.complete = true;
 				}
 				preview.candidates.push(
 					evaluateStorageRetention(
@@ -442,6 +447,7 @@ export class StorageRetention {
 						});
 					}
 				}
+				if (!observation.complete) break;
 				offset++;
 				if (offset % 100 === 0) break;
 			}
@@ -455,6 +461,14 @@ export class StorageRetention {
 					revision: policy.revision,
 				},
 			);
+		}
+		if (preview.complete) {
+			const path = join(this.store.directory, "rollback-index.json");
+			const index = await readStorageJson(path);
+			await publishStorageJson(path, {
+				...(index as object),
+				completedPreview: true,
+			});
 		}
 		await publishStorageJson(
 			join(this.store.directory, "preview.json"),
@@ -530,6 +544,23 @@ export class StorageRetention {
 		void this.running.catch(() => {});
 		return { operationId: outcome.id };
 	}
+	private async observeComplete(
+		adapter: StorageAdapter,
+		record: StorageRecord,
+	) {
+		await adapter.reset?.(record);
+		let observation: StorageObservation;
+		do {
+			this.abort.signal.throwIfAborted();
+			observation = await adapter.observe(record, this.abort.signal, {
+				maxEntries: 1000,
+				deadline: performance.now() + 1000,
+			});
+			if (!observation.complete) await yieldToIO();
+		} while (!observation.complete);
+		return observation;
+	}
+
 	private async perform(
 		preview: StoragePreview,
 		selected: string[],
@@ -584,6 +615,7 @@ export class StorageRetention {
 										"receipts",
 										`${id}.json`,
 									);
+									await adapter.recover?.(record);
 									const previous = (await readStorageJson(journalPath)) as
 										| { phase?: string; identity?: StorageRecord["identity"] }
 										| undefined;
@@ -623,27 +655,24 @@ export class StorageRetention {
 											"Identity changed; original intent ended and replacement retained",
 										);
 									}
-									const fresh = await adapter.observe(
-										record,
-										this.abort.signal,
-									);
-									const rollbackIndex = await this.rollbacks(policy);
-									if (!rollbackIndex.complete)
-										throw new Error(
-											"Rollback inventory changed; refresh preview",
-										);
+									const fresh = await this.observeComplete(adapter, record);
+									let rollbackIndex = await this.rollbacks(policy);
+									while (!rollbackIndex.complete) {
+										await yieldToIO();
+										rollbackIndex = await this.rollbacks(policy);
+									}
 									for (const protectedId of rollbackIndex.ids) {
 										const protectedRecord =
 											await this.store.record(protectedId);
-										const verified = await this.adapters.snapshot?.observe(
-											protectedRecord,
-											this.abort.signal,
-										);
+										const verified = this.adapters.snapshot
+											? await this.observeComplete(
+													this.adapters.snapshot,
+													protectedRecord,
+												)
+											: undefined;
 										if (
 											!verified?.complete ||
-											verified.protection.includes(
-												"Rollback verification failed",
-											)
+											verified.rollbackVerified !== true
 										)
 											throw new Error(
 												"Protected rollback changed; refresh inventory",

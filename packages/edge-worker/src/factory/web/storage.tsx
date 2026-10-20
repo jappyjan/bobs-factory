@@ -245,8 +245,8 @@ export function StorageSettings() {
 			<h3>Historical directories</h3>
 			<p>
 				Names alone never establish ownership. Classification requires a
-				retained, acknowledged update transaction and your explicit election
-				that the exact directory contains disposable Bob-owned data.
+				producer proof or an exact verified copy of current Factory state, plus
+				your explicit election that the selected contents are disposable.
 				Classification still applies ordinary retention and preservation checks.
 			</p>
 			<Button
@@ -265,7 +265,7 @@ export function StorageSettings() {
 							: "Historical scan incomplete; inspect again for the next slice"}
 					</p>
 					<label>
-						Originating update transaction ID
+						Originating operation ID
 						<input
 							value={operation}
 							onChange={(event) => setOperation(event.target.value)}

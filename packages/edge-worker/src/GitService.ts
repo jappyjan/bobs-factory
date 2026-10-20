@@ -84,6 +84,7 @@ const HOOK_OUTPUT_TAIL_MAX_LINES = 40;
 type HookKind = "setup" | "teardown";
 
 interface HookScriptOptions {
+	signal?: AbortSignal;
 	failOnError?: boolean;
 	scriptPath: string;
 	hook: HookKind;
@@ -101,6 +102,7 @@ interface HookScriptOptions {
 }
 
 interface NodeExecError {
+	timedOut?: boolean;
 	signal?: string;
 	message?: string;
 	code?: number | string;
@@ -1210,6 +1212,7 @@ export class GitService {
 				workspacePath: member.path,
 				env: { LINEAR_ISSUE_IDENTIFIER: issueIdentifier },
 				timeoutMs: TEARDOWN_TIMEOUT_MS,
+				signal,
 				failOnError: true,
 			});
 			await journal(`hook-completed:${member.path}`);
@@ -1298,6 +1301,7 @@ export class GitService {
 	 * first compatible variant with `cwd` set to `workspacePath`.
 	 */
 	private async runRepoHookScript(opts: {
+		signal?: AbortSignal;
 		hook: HookKind;
 		workspacePath: string;
 		env: Record<string, string>;
@@ -1347,6 +1351,7 @@ export class GitService {
 			issueIdentifier: opts.issueIdentifier,
 			onRepoSetupHookEvent: opts.onRepoSetupHookEvent,
 			failOnError: opts.failOnError,
+			signal: opts.signal,
 		});
 	}
 
@@ -1522,7 +1527,8 @@ export class GitService {
 					shell,
 				});
 				let timedOut = false;
-				const signal = setupExecutionScope.getStore()?.signal;
+				const executionSignal =
+					opts.signal ?? setupExecutionScope.getStore()?.signal;
 				let killTimer: ReturnType<typeof setTimeout> | undefined;
 				const kill = (how: NodeJS.Signals) => {
 					try {
@@ -1536,8 +1542,8 @@ export class GitService {
 					killTimer ??= setTimeout(() => kill("SIGKILL"), 2000);
 					killTimer.unref();
 				};
-				signal?.addEventListener("abort", terminate, { once: true });
-				if (signal?.aborted) terminate();
+				executionSignal?.addEventListener("abort", terminate, { once: true });
+				if (executionSignal?.aborted) terminate();
 				const timeout = setTimeout(() => {
 					timedOut = true;
 					terminate();
@@ -1557,21 +1563,22 @@ export class GitService {
 					reject(error);
 				});
 				child.on("close", (code, signal) => {
-					setupExecutionScope
-						.getStore()
-						?.signal.removeEventListener("abort", terminate);
+					executionSignal?.removeEventListener("abort", terminate);
 					if (killTimer) clearTimeout(killTimer);
 					clearTimeout(timeout);
-					if (code === 0) {
+					if (code === 0 && !executionSignal?.aborted) {
 						resolve();
 						return;
 					}
 					const error = new Error(
-						timedOut
-							? "Script execution timed out"
-							: `Script exited with code ${code ?? "unknown"}${signal ? ` (${signal})` : ""}`,
+						executionSignal?.aborted
+							? "Script execution cancelled"
+							: timedOut
+								? "Script execution timed out"
+								: `Script exited with code ${code ?? "unknown"}${signal ? ` (${signal})` : ""}`,
 					) as Error &
 						NodeExecError & { stdoutTail?: string; stderrTail?: string };
+					error.timedOut = timedOut;
 					error.code = code === null ? undefined : code;
 					error.signal = timedOut ? "SIGTERM" : (signal ?? undefined);
 					const stdoutTail = stdoutCollector.tail({
@@ -1603,7 +1610,9 @@ export class GitService {
 			}
 		} catch (error) {
 			const timeoutMinutes = Math.round(timeoutMs / 60_000);
-			const isTimeout = isNodeExecError(error) && error.signal === "SIGTERM";
+			const isTimeout =
+				isNodeExecError(error) &&
+				(error.timedOut ?? error.signal === "SIGTERM");
 			const errorMessage = isTimeout
 				? `Script execution timed out (exceeded ${timeoutMinutes} minute${timeoutMinutes === 1 ? "" : "s"})`
 				: error instanceof Error

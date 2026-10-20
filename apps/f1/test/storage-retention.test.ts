@@ -177,14 +177,6 @@ it("keeps native continuation and durable ownership after a terminal issue event
 		await restarted.start();
 		const receipt = JSON.parse(await readFile(nativeRunPath, "utf8"));
 		expect(receipt.nativeSessionIds.claude).toBe(nativeSessionId);
-		const resumed = f1AgentHandlers("mock")!.createAgentRunner!("claude", {
-			factoryHome: home,
-			workingDirectory: workspace,
-			resumeSessionId: nativeSessionId,
-		});
-		expect((await resumed.start("Resume saved fixture")).sessionId).toBe(
-			nativeSessionId,
-		);
 		expect(
 			await readFile(join(workspace, "unique-ignored-user-data"), "utf8"),
 		).toBe("must survive terminal event");
@@ -194,7 +186,13 @@ it("keeps native continuation and durable ownership after a terminal issue event
 	}
 }, 60_000);
 
-it("removes an aged delivered worktree through startup reconciliation while retaining stopped Resume work", async () => {
+it.each([
+	"manual",
+	"ticket",
+	"nested",
+	"grouped",
+	"takeover",
+])("releases reviewed delivered %s work through startup reconciliation while retaining Resume work and cross-run evidence", async (route) => {
 	const { GitService } = await import(
 		"../../../packages/edge-worker/src/GitService.js"
 	);
@@ -273,32 +271,69 @@ it("removes an aged delivered worktree through startup reconciliation while reta
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	});
-	const delivered = await service.createGitWorktree(issue("delivered"), [
-		configured,
-	]);
+	const configurations = [configured];
+	if (route === "grouped") {
+		const secondRepository = join(home, "repo-second");
+		execFileSync("git", ["clone", "-q", repository, secondRepository], {
+			env: environment,
+		});
+		configurations.push({
+			...configured,
+			id: "second",
+			name: "Second",
+			repositoryPath: secondRepository,
+		});
+	}
+	const delivered = await service.createGitWorktree(
+		issue("delivered"),
+		configurations,
+	);
 	const resumable = await service.createGitWorktree(issue("resumable"), [
 		configured,
 	]);
-	const workflow = validateWorkflows([
+	const nested = validateWorkflows([
 		...defaultWorkflows,
 		{
-			id: "storage-fixture",
-			name: "Storage fixture",
+			id: "storage-parent",
+			name: "Nested stock Factory",
+			allowedTriggers: ["manual"],
 			steps: [
 				{
-					id: "finish",
-					name: "Finish",
-					type: "script",
-					script: "fixture",
+					id: "child",
+					name: "Stock child",
+					type: "workflow",
+					workflow: "factory",
 					next: "end",
 				},
 			],
 		},
 	]).at(-1)!;
+	const definitions = [...defaultWorkflows, nested];
+	const workflow =
+		route === "nested"
+			? nested
+			: defaultWorkflows.find(
+					(value) =>
+						value.id === (route === "takeover" ? "takeover" : "factory"),
+				)!;
 	const runtime = new WorkflowRuntime(home, {
-		agent: async () => ({}),
-		script: async () => ({ done: true }),
-		tool: async () => ({}),
+		agent: async () => {
+			throw new Error(
+				"Fixture must start from its retained reviewed checkpoint",
+			);
+		},
+		script: async () => ({}),
+		tool: async (context) =>
+			context.step.tool === "merge"
+				? {
+						merged: true,
+						url: "https://github.com/f1-fixture/storage/pull/1",
+						headSha: head,
+					}
+				: {
+						headSha: head,
+						url: "https://github.com/f1-fixture/storage/pull/1",
+					},
 	});
 	const create = (id: string, workspace: string) =>
 		runtime.create({
@@ -308,9 +343,10 @@ it("removes an aged delivered worktree through startup reconciliation while reta
 			title: id,
 			workspace,
 			workflow,
+			workflowDefinitions: definitions,
 			input: "Controlled fixture",
 			triggerOrigin: {
-				type: "manual",
+				type: route === "ticket" ? "ticket-assignment" : "manual",
 				workflowId: workflow.id,
 				at: new Date().toISOString(),
 			},
@@ -320,16 +356,91 @@ it("removes an aged delivered worktree through startup reconciliation while reta
 	const stopped = create("resumable-run", resumable.path);
 	stopped.issueId = "resumable";
 	runtime.stop(stopped.id);
-	await runtime.launch(run);
+	if (route === "grouped")
+		run.repositories = configurations.map((config) => ({
+			repositoryId: config.id,
+			name: config.name,
+			repositoryPath: config.repositoryPath,
+			baseBranch: "main",
+			workspace: join(delivered.path, config.name),
+			gitProvider: {
+				type: "github",
+				host: "github.com",
+				owner: "f1-fixture",
+				repository: "storage",
+				url: config.githubUrl,
+			},
+		})) as typeof run.repositories;
+	// A retained, already reviewed stock graph resumes at its delivery segment.
+	// All previous review records are synthetic; the stock graph is unchanged.
+	const terminal = {
+		current: "merge",
+		visits: {},
+		agentSessions: {
+			guide: { runner: "claude" as const, sessionId: "f1-mock-retained-role" },
+		},
+	};
+	const pipeline = {
+		current: "pipeline",
+		visits: { pipeline: 1 },
+		active: { phase: "executing" as const, children: [terminal] },
+	};
+	run.checkpoint =
+		route === "nested"
+			? {
+					current: "child",
+					visits: { child: 1 },
+					active: { phase: "executing", children: [pipeline] },
+				}
+			: pipeline;
+	run.reviewRounds = [
+		{
+			schemaVersion: 1,
+			round: 1,
+			key: "pipeline/specialist-review",
+			inventory: { schemaVersion: 1, requirements: [] },
+			headSha: head,
+			baseSha: head,
+			historyLength: 0,
+			reviewers: [],
+			context: {
+				outputs: { review: { summary: "Retained independent review" } },
+			},
+			at: new Date().toISOString(),
+		},
+	] as typeof run.reviewRounds;
+	run.roleRevisions = {
+		guide: {
+			headSha: head,
+			dirty: false,
+			historyLength: 0,
+			at: new Date().toISOString(),
+		},
+	};
+	run.outputs.guide = {
+		title: "Retained reviewed delivery",
+		summary: "Independent historical guide",
+	};
 	run.humanDecisions = [
 		{
 			decision: "approve",
 			reviewId: "simulated-fixture-approval",
 			headSha: head,
 			url: "https://github.com/f1-fixture/storage/pull/1",
+			repositories:
+				route === "grouped"
+					? configurations.map((config) => ({
+							repositoryId: config.id,
+							name: config.name,
+							headSha: head,
+							url: `${config.githubUrl}/pull/1`,
+						}))
+					: undefined,
 			at: new Date().toISOString(),
 		},
 	];
+	await runtime.launch(run);
+	expect(run.status, run.error).toBe("completed");
 	await runtime.save(run);
 	await runtime.flush(run.id);
 	const expectedOutputs = structuredClone(run.outputs);
@@ -347,10 +458,95 @@ it("removes an aged delivered worktree through startup reconciliation while reta
 		() => Date.now() + 31 * 86_400_000,
 	);
 	try {
+		const candidate = (
+			await Promise.all(
+				(
+					await retention.store.inventoryPage(0)
+				).map((id) => retention.store.record(id)),
+			)
+		).find((value) => value.path === delivered.path)!;
+		const observe = async () => {
+			let observed: Awaited<
+				ReturnType<NonNullable<typeof retention.adapters.worktree>["observe"]>
+			>;
+			do {
+				observed = await retention.adapters.worktree!.observe(
+					candidate,
+					new AbortController().signal,
+				);
+			} while (!observed.complete);
+			return observed;
+		};
+		if (route === "manual") {
+			for (let index = 0; index < 1200; index++)
+				runtime.runs.set(`retained-${index}`, {
+					...stopped,
+					id: `retained-${index}`,
+					outputs: {
+						note:
+							index === 1199
+								? join(delivered.path, "file")
+								: "independent retained result",
+					},
+				});
+			const firstSlice = await retention.adapters.worktree!.observe(
+				candidate,
+				new AbortController().signal,
+			);
+			expect(firstSlice.complete).toBe(false);
+			expect(firstSlice.filesystemEntries).toBeLessThanOrEqual(1000);
+			let observed = firstSlice;
+			for (let slice = 0; !observed.complete && slice < 40; slice++) {
+				observed = await retention.adapters.worktree!.observe(
+					candidate,
+					new AbortController().signal,
+				);
+				expect(observed.filesystemEntries).toBeLessThanOrEqual(1000);
+			}
+			expect(observed.complete).toBe(true);
+			expect(observed.protection.join(" ")).toContain(
+				"references this workspace",
+			);
+			expect(observed.protection.length).toBeLessThanOrEqual(20);
+			for (let index = 0; index < 1200; index++)
+				runtime.runs.delete(`retained-${index}`);
+		}
+		stopped.outputs.otherWorkspaceEvidence = join(delivered.path, "file");
+		await runtime.save(stopped);
+		await runtime.flush(stopped.id);
+		expect((await observe()).protection.join(" ")).toContain(
+			"references this workspace",
+		);
+		delete stopped.outputs.otherWorkspaceEvidence;
+		await runtime.save(stopped);
+		await runtime.flush(stopped.id);
+		const { symlink, unlink } = await import("node:fs/promises");
+		await mkdir(join(home, "factory", "evidence"), { recursive: true });
+		const evidenceLink = join(home, "factory", "evidence", "cross-workspace");
+		await symlink(
+			route === "grouped"
+				? join(delivered.path, configured.name, "file")
+				: join(delivered.path, "file"),
+			evidenceLink,
+		);
+		expect((await observe()).protection.join(" ")).toContain("evidence link");
+		await unlink(evidenceLink);
+		expect((await observe()).protection).toEqual([]);
+		await retention.store.workspaceClaim(delivered.path).run(async () => {
+			await expect(
+				service.createGitWorktree(issue("delivered"), configurations),
+			).rejects.toThrow("owner is still running");
+		});
 		await retention.start();
 		await expect
 			.poll(
 				async () => {
+					const current = (await retention.status()).outcome;
+					if (
+						current?.completedAt &&
+						current.results.some((value) => value.phase !== "completed")
+					)
+						throw new Error(JSON.stringify(current));
 					try {
 						await stat(delivered.path);
 						return false;
@@ -394,7 +590,9 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 	const { StorageRetention } = await import(
 		"../../../packages/edge-worker/src/storage/StorageRetention.js"
 	);
-	const { writeStorageIntegrity } = await import("bobs-factory-core");
+	const { writeStorageIntegrity, writeStorageRollbackProof } = await import(
+		"bobs-factory-core"
+	);
 	const { copyUpdateStateForRetention } = await import(
 		"../../cli/src/services/UpdateStateSnapshot.js"
 	);
@@ -404,6 +602,11 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 	homes.push(home);
 	const store = new StorageRetentionStore(home);
 	await store.configure({ enabled: false }, 0);
+	const previousExecutable = join(home, "installed", "bobs-factory");
+	await mkdir(join(home, "installed"));
+	await writeFile(previousExecutable, "verified controlled rollback runtime", {
+		mode: 0o755,
+	});
 	for (const path of [
 		"state",
 		"factory/runs",
@@ -423,6 +626,7 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 	};
 	for (const [path, content] of Object.entries(sentinels))
 		await writeFile(join(home, path), content);
+	let rollbackCalls = 0;
 	let cycle = 0,
 		workers = 1,
 		maximumWorkers = 1;
@@ -434,9 +638,15 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		manifestSha256: String(cycle).repeat(64),
 		publishedAt: "2026-10-01T00:00:00.000Z",
 	});
+	let stageBarrier: Promise<void> | undefined;
+	let stageEntered = false;
 	const source = {
 		discover: async () => candidate(),
 		stage: async () => {
+			if (stageBarrier) {
+				stageEntered = true;
+				await stageBarrier;
+			}
 			const root = join(home, "updates", "staging"),
 				path = join(root, `cycle-${cycle}`);
 			await mkdir(path, { recursive: true });
@@ -467,7 +677,7 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 			return {
 				candidate: candidate(),
 				executable: join(path, "bobs-factory"),
-				previousExecutable: join(home, "previous-owned-runtime"),
+				previousExecutable,
 			};
 		},
 	};
@@ -543,8 +753,13 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 				path,
 				join(store.directory, "proofs", `${record.id}.ndjson`),
 			);
+			const runtimeProof = await writeStorageRollbackProof(
+				home,
+				record.id,
+				previousExecutable,
+			);
 			await store.revise(record.id, (value) => {
-				value.evidence = [`integrity:${integrity}`];
+				value.evidence = [`integrity:${integrity}`, runtimeProof];
 				value.completedAt = value.verifiedAt = new Date().toISOString();
 			});
 			return path;
@@ -557,9 +772,21 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 			workers++;
 			maximumWorkers = Math.max(maximumWorkers, workers);
 		},
-		health: async () => {},
-		rollback: async () => {
-			throw Error("Unexpected fixture rollback");
+		health: async () => {
+			if (cycle === 6) {
+				await writeFile(
+					join(home, "state", "retained-chunk"),
+					"failed replacement state",
+				);
+				throw new Error("Injected replacement health failure");
+			}
+		},
+		rollback: async (transaction: { snapshot?: string }) => {
+			if (!transaction.snapshot) throw new Error("No rollback snapshot");
+			workers--;
+			await copyUpdateStateForRetention(transaction.snapshot, home, "snapshot");
+			workers++;
+			rollbackCalls++;
 		},
 		releaseMaintenance: async () => {},
 	};
@@ -568,9 +795,61 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		commit: "0".repeat(40),
 		target: "linux-x64",
 	});
+	const unusedRoot = join(home, "updates", "staging"),
+		unusedPath = join(unusedRoot, "expired-before-update");
+	await mkdir(unusedPath, { recursive: true });
+	await writeFile(join(unusedPath, "owned"), "disposable staging");
+	const unused = await store.register({
+		category: "staging",
+		path: unusedPath,
+		root: unusedRoot,
+		producer: "race fixture",
+		operation: "old-operation",
+		dependencies: [],
+		evidence: [],
+		completedAt: "2020-01-01T00:00:00.000Z",
+		verifiedAt: "2020-01-01T00:00:00.000Z",
+		reconciledAt: "2020-01-01T00:00:00.000Z",
+	});
+	const unusedIntegrity = await writeStorageIntegrity(
+		unusedPath,
+		join(store.directory, "proofs", `${unused.id}.ndjson`),
+	);
+	await store.revise(unused.id, (value) => {
+		value.evidence = [`integrity:${unusedIntegrity}`];
+	});
 	for (cycle = 1; cycle <= 5; cycle++) {
 		await manager.check();
-		await manager.stage();
+		if (cycle === 1) {
+			let release!: () => void;
+			stageBarrier = new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			const racing = manager.stage();
+			await expect.poll(() => stageEntered).toBe(true);
+			const adapter = new UpdateArtifacts(home),
+				concurrent = new StorageRetention(home, { staging: adapter });
+			try {
+				const preview = await concurrent.preview();
+				await concurrent.execute(preview.id, [unused.id]);
+				await expect
+					.poll(async () => (await concurrent.status()).outcome?.completedAt, {
+						timeout: 10000,
+					})
+					.toBeTruthy();
+				expect((await concurrent.status()).outcome?.error).toContain(
+					"update operation",
+				);
+				expect(await readFile(join(unusedPath, "owned"), "utf8")).toBe(
+					"disposable staging",
+				);
+			} finally {
+				release();
+				await racing;
+				stageBarrier = undefined;
+				await concurrent.stop();
+			}
+		} else await manager.stage();
 		const state = manager.status();
 		manager.requestInstall(
 			candidateKey(state.pending!.candidate),
@@ -584,6 +863,7 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 			retention = new StorageRetention(home, {
 				snapshot: updates,
 				staging: updates,
+				preparation: updates,
 			});
 		for (let slice = 0; slice < 20; slice++) {
 			const preview = await retention.preview();
@@ -593,8 +873,18 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 			if (eligible.length) {
 				await retention.execute(preview.id, eligible);
 				await expect
-					.poll(async () => (await retention.status()).outcome?.completedAt)
+					.poll(async () => (await retention.status()).outcome?.completedAt, {
+						timeout: 10000,
+					})
 					.toBeTruthy();
+				expect(
+					(await retention.status()).outcome?.results.map((value) => ({
+						phase: value.phase,
+						reason: value.reason,
+					})),
+				).toEqual(
+					eligible.map(() => ({ phase: "completed", reason: undefined })),
+				);
 			}
 			if (preview.complete) break;
 		}
@@ -615,6 +905,49 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		expect(preparationBytes).toBe(firstPreparationBytes * cycle);
 		measurements.push({ cycle, snapshotBytes, preparationBytes });
 	}
+	cycle = 6;
+	await manager.check();
+	await manager.stage();
+	const rollbackState = manager.status();
+	manager.requestInstall(
+		candidateKey(rollbackState.pending!.candidate),
+		rollbackState.revision,
+	);
+	await manager.reconcile();
+	expect(manager.status().transaction?.phase).toBe("rolled-back");
+	expect(rollbackCalls).toBe(1);
+	expect(workers).toBe(1);
+	for (const [path, content] of Object.entries(sentinels))
+		expect(await readFile(join(home, path), "utf8")).toBe(content);
+	const expiredArtifacts = new UpdateArtifacts(home);
+	const expired = new StorageRetention(
+		home,
+		{
+			snapshot: expiredArtifacts,
+			staging: expiredArtifacts,
+			preparation: expiredArtifacts,
+		},
+		() => Date.now() + 8 * 86400000,
+	);
+	for (let slice = 0; slice < 30; slice++) {
+		const preview = await expired.preview();
+		const selected = preview.candidates
+			.filter((value) => value.eligible)
+			.map((value) => value.record.id);
+		if (selected.length) {
+			await expired.execute(preview.id, selected);
+			await expect
+				.poll(async () => (await expired.status()).outcome?.completedAt, {
+					timeout: 10000,
+				})
+				.toBeTruthy();
+		}
+		if (preview.complete) break;
+	}
+	await expired.stop();
+	expect(await readdir(join(home, "updates", "preparation"))).toEqual([]);
+	for (const [path, content] of Object.entries(sentinels))
+		expect(await readFile(join(home, path), "utf8")).toBe(content);
 	expect(maximumWorkers).toBe(1);
 	process.stdout.write(
 		`${JSON.stringify({ storageRetentionCycles: measurements, maximumSimulatedWorkers: maximumWorkers })}\n`,
@@ -623,3 +956,150 @@ it("keeps update retention bounded through five preflight/update/restart cycles 
 		(await readdir(join(home, "updates", "snapshots"))).length,
 	).toBeLessThanOrEqual(2);
 }, 60_000);
+
+it("resumes saved native progress through the runtime while cleanup sees durable active ownership", async () => {
+	const { WorkflowRuntime } = await import(
+		"../../../packages/edge-worker/src/factory/WorkflowRuntime.js"
+	);
+	const { validateWorkflows } = await import(
+		"../../../packages/edge-worker/src/factory/Workflow.js"
+	);
+	const { defaultWorkflows } = await import(
+		"../../../packages/edge-worker/src/factory/defaultWorkflows.js"
+	);
+	const { factoryStorage } = await import(
+		"../../../packages/edge-worker/src/storage/FactoryStorage.js"
+	);
+	const home = await realpath(
+		await mkdtemp(join(tmpdir(), "f1-retention-resume-")),
+	);
+	homes.push(home);
+	const workspace = join(home, "worktrees", "resume");
+	await mkdir(workspace, { recursive: true });
+	await writeFile(
+		join(workspace, "native-sentinel"),
+		"saved conversation files",
+	);
+	const store = new StorageRetentionStore(home);
+	const record = await store.register({
+		path: workspace,
+		root: join(home, "worktrees"),
+		category: "worktree",
+		producer: "resume fixture",
+		operation: "resume",
+		dependencies: [],
+		evidence: [],
+	});
+	const { publishStorageJson, storageDigest } = await import(
+		"bobs-factory-core"
+	);
+	await publishStorageJson(
+		join(store.directory, "workspaces", `${storageDigest(workspace)}.json`),
+		{
+			recordId: record.id,
+			issueIdentifier: "resume",
+			repositories: [
+				{
+					id: "fixture",
+					repository: home,
+					path: workspace,
+					root: record.root,
+					creator: "resume fixture",
+					identity: record.identity,
+				},
+			],
+		},
+	);
+	const workflow = validateWorkflows([
+		...defaultWorkflows,
+		{
+			id: "resume-fixture",
+			name: "Resume fixture",
+			steps: [
+				{
+					id: "continue",
+					name: "Continue saved progress",
+					type: "agent",
+					prompt: "Continue",
+					next: "end",
+				},
+			],
+		},
+	]).at(-1)!;
+	let release!: () => void;
+	const held = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	let entered = false;
+	const hooks = {
+		script: async () => ({}),
+		tool: async () => ({}),
+		agent: async (
+			context: import("../../../packages/edge-worker/src/factory/WorkflowRuntime.js").ExecutionContext,
+		) => {
+			expect(context.resumeAgent?.sessionId).toBe("f1-mock-saved-native");
+			entered = true;
+			await held;
+			const runner = f1AgentHandlers("mock")!.createAgentRunner!("claude", {
+				factoryHome: home,
+				workingDirectory: workspace,
+				resumeSessionId: context.resumeAgent!.sessionId,
+			});
+			expect((await runner.start("Continue saved fixture")).sessionId).toBe(
+				"f1-mock-saved-native",
+			);
+			return { continued: true };
+		},
+	};
+	const initial = new WorkflowRuntime(home, hooks);
+	const run = initial.create({
+		id: "resume-run",
+		issueId: "resume",
+		repositoryId: "fixture",
+		workspace,
+		workflow,
+		input: "Saved continuation",
+		triggerOrigin: { type: "manual", workflowId: workflow.id },
+	});
+	run.checkpoint = {
+		current: "continue",
+		visits: { continue: 1 },
+		active: {
+			phase: "executing",
+			agent: { runner: "claude", sessionId: "f1-mock-saved-native" },
+		},
+	};
+	initial.stop(run.id);
+	await initial.flush(run.id);
+	await initial.shutdown();
+	const runtime = new WorkflowRuntime(home, hooks);
+	const retention = factoryStorage(
+		runtime,
+		{} as import("../../../packages/edge-worker/src/GitService.js").GitService,
+		{ protection: () => [], verifyDelivery: async () => false },
+	);
+	try {
+		runtime.resume(run.id);
+		await expect.poll(() => entered).toBe(true);
+		let observation: Awaited<
+			ReturnType<NonNullable<typeof retention.adapters.worktree>["observe"]>
+		>;
+		do {
+			observation = await retention.adapters.worktree!.observe(
+				record,
+				new AbortController().signal,
+			);
+		} while (!observation.complete);
+		expect(observation.protection.join(" ")).toContain("running");
+		expect(await readFile(join(workspace, "native-sentinel"), "utf8")).toBe(
+			"saved conversation files",
+		);
+		release();
+		await expect.poll(() => runtime.get(run.id).status).toBe("completed");
+		expect(runtime.get(run.id).outputs.continue).toEqual({ continued: true });
+	} finally {
+		release();
+		await runtime.shutdown();
+		await retention.stop();
+	}
+}, 30000);

@@ -21,6 +21,7 @@ import {
 	sameStorageIdentity,
 	storageIdentity,
 	verifyStorageIntegrity,
+	verifyStorageReplacement,
 } from "bobs-factory-core";
 
 /** Synchronous compatibility entry for retained validation scripts. New update producers use the cancellable retention-aware copy below. */
@@ -72,12 +73,22 @@ export async function copyUpdateStateForRetention(
 	signal?: AbortSignal,
 ) {
 	await mkdir(destination, { recursive: true, mode: 0o700 });
+	home = new StorageRetentionStore(home).home;
 	const store = new StorageRetentionStore(home),
 		excluded = new Set<string>();
 	const count = await store.inventoryCount();
 	for (let offset = 0; offset < count; offset += 100) {
 		for (const id of await store.inventoryPage(offset)) {
 			const record = await store.record(id);
+			if (record.authoritativeReplacement) {
+				try {
+					if (await verifyStorageReplacement(store, id, signal))
+						excluded.add(record.path);
+				} catch {
+					/* Replacement drift revokes exclusion; preserve the old copy. */
+				}
+				continue;
+			}
 			if (
 				!record.replacement ||
 				!record.verifiedAt ||

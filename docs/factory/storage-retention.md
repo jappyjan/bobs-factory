@@ -14,7 +14,7 @@ saved-state snapshots.
 
 | Category | Default eligibility |
 | --- | --- |
-| Verified usable rollback snapshots | Keep the newest two at any age. Unprotected overflow is eligible immediately. At least one rollback is mandatory. |
+| Verified usable rollback snapshots | Keep the newest two at any age after verifying the installed rollback runtime and its complete integrity manifest. Unprotected overflow is eligible immediately. At least one rollback is mandatory. |
 | Unused staged updates and completed preparation | Seven days after verified durable completion and reconciliation |
 | Reconciled recovery and migration preparation | Seven days; unresolved recovery, source/native/external backups remain protected |
 | Delivered worktrees | Thirty days after verified durable completion, with exact delivery and every owner's release proved |
@@ -30,7 +30,11 @@ Worktree cleanup checks the exact repository mapping, Git administration, local
 HEAD and fresh confirmation from the accepted Git provider. It retains tracked
 changes, untracked files, unique ignored content, nested repositories and uncertain
 submodules. Gitignore is insufficient proof of rebuildability. Saved stopped,
-failed, waiting, queued and native continuation work stays protected. A completed
+failed, waiting, queued and native continuation work stays protected. Completed workflow checkpoints at `end` keep their role session IDs as historical
+identity; they cannot Resume or Retry. Simple conversations and unfinished native
+checkpoints remain live dependencies. Review records and guides are inspected for
+actual file dependencies instead of blocking release merely because they exist.
+A completed
 run's workspace identity is released only after content/native references are
 independently absent and the release is recorded durably. When native lookup
 cannot be proven independent of the directory, the directory stays retained.
@@ -78,14 +82,21 @@ bobs-factory --home HOME --port PORT storage classify \
 
 Inspect the exact directory, ownership evidence, originating operation,
 reconciliation proof and dependencies first. The explicit election binds to its
-preview and filesystem identity. Classification requires a retained completed,
-acknowledged producer transaction proving that exact path. It does not enroll
+preview and filesystem identity. Staging and rollback classification require a retained completed, acknowledged
+producer transaction proving the exact path. Preparation and recovery can instead
+use an explicit operation label (for example `manual-copy`) when every selected
+file independently matches current authoritative Factory state. Mixed contents,
+authentication and symbolic links are refused. Recovery dependencies are released
+only after this comparison succeeds. It does not enroll
 arbitrary external paths or override normal eligibility. A historically elected
 snapshot is disposable data, not a newly certified usable rollback; it never
 replaces the mandatory retained rollback. Unproven lookalikes remain
 retained. Source/native/external migration backups keep their original retention
 requirement; a name or successful-looking journal cannot elect them implicitly.
-Migration writes observational preparation records, not automatic deletion grants.
+Migration observations expose only the `state` and `factory` directories inside
+the committed preparation copy. Their operation is the migration source digest.
+An election rechecks the committed journal, exact directory identity and current
+authoritative files. Source, native and external backups remain outside cleanup.
 
 ## Failures and interruption
 
@@ -104,6 +115,12 @@ waive new files, native references, Git checks, ownership or policy. Hook failur
 and newly created user files retain the target. Git removal uses the exact mapping
 without force or a recursive fallback. Interrupted partial groups remain protected
 when the remaining mapping cannot be independently established.
+
+Update artifacts move into a private quarantine after the journal and filesystem
+identity are rechecked. Leaves are detached and verified individually; empty-only
+directory removal preserves unexpected contents. Interrupted quarantines are
+restored under the original identity before retry; replacements and unresolved
+detached leaves require inspection.
 
 Update-artifact retries verify every remaining file against the original manifest;
 new or changed files retain the artifact. An absent original target can reconcile
