@@ -838,9 +838,11 @@ it("preserves grouped original execution stamps while validating repository proj
 	expect(receipt.projection?.original).toBe(grouped);
 });
 it.each([
-	false,
-	true,
-])("retries stale impact through its accepted assessor across restart (nested=%s)", async (nested) => {
+	[false, false],
+	[true, false],
+	[false, true],
+	[true, true],
+])("renews stale impact through its accepted assessor (nested=%s, legacy Retry=%s)", async (nested, legacyRetry) => {
 	const options = { fail: true, nested };
 	const fixture = await drive(true, "js", options);
 	const { run } = fixture;
@@ -851,42 +853,45 @@ it.each([
 		: run.checkpoint!;
 	frame.current = "gate";
 	frame.active = undefined;
-	run.model = "changed-runtime-binding";
-	await fixture.runtime.launch(run);
-	expect(run.status).toBe("failed");
-	expect(run.error).toBe(STALE_IMPACT_MESSAGE);
 	const history = structuredClone(run.history);
+	const previousDigest =
+		run.impactDecisions!.at(-1)!.snapshot.environmentDigest;
 	const repairs = fixture.calls.filter((id) => id === "repair").length;
 	const assessments = fixture.calls.filter((id) => id === "assessor").length;
 	const agent = fixture.hooks.agent;
 	fixture.hooks.agent = async (context) => {
 		if (!context.step.impactContract) return agent(context);
 		fixture.calls.push(context.step.id);
-		// Changed execution bindings require fresh evidence, never a copied approval.
 		const snapshot = (context.input as { impactSnapshot: ImpactSnapshot })
 			.impactSnapshot;
 		return { ...assessment(snapshot), classification: "full" as const };
 	};
-	await fixture.runtime.shutdown();
-	const restored = new WorkflowRuntime(fixture.home, fixture.hooks);
-	runtimes.push(restored);
-	restored.retry(run.id);
-	const retry = restored.get(run.id);
-	const retryFrame = nested
-		? retry.checkpoint!.active!.children![0]!
-		: retry.checkpoint!;
-	expect(retryFrame.current).toBe("assessor");
-	await waitFor(() => expect(retry.status, retry.error).toBe("completed"), {
-		timeout: 10000,
-	});
-	expect(retry.history.slice(0, history.length)).toEqual(history);
+	run.model = "changed-runtime-binding";
+	let recovered = run;
+	if (legacyRetry) {
+		run.status = "failed";
+		run.error = STALE_IMPACT_MESSAGE;
+		await fixture.runtime.save(run);
+		await fixture.runtime.shutdown();
+		const restored = new WorkflowRuntime(fixture.home, fixture.hooks);
+		runtimes.push(restored);
+		restored.retry(run.id);
+		recovered = restored.get(run.id);
+		await waitFor(
+			() => expect(recovered.status, recovered.error).toBe("completed"),
+			{ timeout: 10000 },
+		);
+	} else await fixture.runtime.launch(run);
+	expect(recovered.status, recovered.error).toBe("completed");
+	expect(recovered.history.slice(0, history.length)).toEqual(history);
 	expect(fixture.calls.filter((id) => id === "repair")).toHaveLength(repairs);
 	expect(fixture.calls.filter((id) => id === "assessor")).toHaveLength(
 		assessments + 1,
 	);
-	expect(retry.impactDecisions!.at(-1)!.snapshot.environmentDigest).not.toBe(
-		run.impactDecisions!.at(-1)!.snapshot.environmentDigest,
-	);
+	expect(
+		recovered.impactDecisions!.at(-1)!.snapshot.environmentDigest,
+	).not.toBe(previousDigest);
+	expect(recovered.humanDecisions).toBeUndefined();
 });
 
 it("recovers selected work in a nested graph without replaying completed agents or assessment", async () => {

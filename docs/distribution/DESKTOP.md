@@ -107,15 +107,16 @@ build checks pause stale writes. No connection or shell update updates remote ho
 
 ## Candidate preparation and validation
 
-`desktop-build.yml` prepares unsigned four-target installers from frozen candidate
-bytes, with a hash-verified matching runtime, exact source/version/target and
-`desktop-build.json` inventory. Its pull-request preparation route executes only
-for the same-repository desktop delivery branch; it freezes the exact PR head
-for both source and tooling, never the synthetic merge. One candidate is shared
-across all native jobs. This lets review obtain unsigned native evidence without
-merging the product to register a dispatch workflow. Read-only permissions and
-credential-free checkouts accompany builds with publication disabled; no signing
-or publication secrets are supplied. It never uses publisher certificates, notarizes or publishes. Native Apple Silicon
+`desktop-build.yml` (**Release / Build desktop**) prepares unsigned four-target
+installers from frozen candidate bytes, with a hash-verified matching runtime,
+exact source/version/target and `desktop-build.json` inventory. It runs as a
+reusable builder from **Release / 1. Build candidates**, reusing that run's
+completed native matrix. Manual preparation accepts the exact `candidate_json`
+when dispatched from its frozen tooling ref and builds its own native matrix.
+The former special delivery-branch/PR preparation routes are retired. Read-only
+permissions and credential-free checkouts accompany builds with publication
+disabled; no signing or publication secrets are supplied. It never uses publisher
+certificates, notarizes or publishes. Native Apple Silicon
 packaging applies only free local ad-hoc signing for executable validity. Local build:
 
 ```sh

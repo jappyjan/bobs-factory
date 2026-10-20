@@ -288,3 +288,41 @@ All 50 selected checks, fresh specialist review, launcher browser QA and human
 delivery approval remain required at their configured gates. Earlier executions
 and failures retain their original provenance; no merge or ready transition on
 GitHub was performed.
+
+
+## Merge validation against main on 2026-10-20
+
+Merged target `dd0b591a` into launcher head
+`ee4a9c1a3410b21dd9dec2cec920e3263bae9522`. The only conflict was
+`CHANGELOG.md`; both launcher corrections and the target recovery entry remain.
+The tested combined source tree before this report addition was
+`922b724896ebb60d90989f635bec28c01e3c3032`.
+
+`pnpm build`, `pnpm typecheck`, `pnpm biome ci` and whitespace checks passed.
+Biome reported 25 warnings. The affected test command passed 12 suites and
+373 tests:
+
+```sh
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker exec vitest run \
+  test/FactoryLauncher.test.ts test/FactoryAgentSettings.test.ts \
+  test/FactoryWebClient.test.ts test/RunnerConfigBuilder.github-token-env.test.ts \
+  test/prompt-assembly.routing-context.test.ts test/Architecture.test.ts \
+  test/CISupervision.test.ts test/SpecialistReview.test.ts \
+  test/WorkflowRuntime.test.ts test/WorktreeRecovery.test.ts \
+  test/EdgeWorker.capture-recovery.test.ts test/EdgeWorker.merge-recovery.test.ts
+F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/stuck-run-recovery.mjs
+```
+
+The target adds runtime recovery behavior, so F1 applies to the combined revision.
+The recovery driver passed all ten assertions, including retained architecture
+questions, explicit acceptance, worktree restoration, correction after green CI,
+merged-delivery reconciliation and stale-impact reassessment. It used simulated
+agents and a read-only scripted provider. Its isolated directory was
+`/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-stuck-recovery-A7uryE`;
+fixture servers stopped successfully. No real inference provider was called.
+
+Logs are retained in the evidence directory above as `ci-r19-build.log`,
+`ci-r19-typecheck.log`, `ci-r19-tests.log`, `ci-r19-lint.log` and `ci-r19-f1.log`.
+This validates recovery integration; it does not replace fresh launcher browser
+QA, independent impact review, provider CI or human approval for the new revision.
+Historical results and failed evidence remain unchanged.

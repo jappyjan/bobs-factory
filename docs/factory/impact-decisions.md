@@ -31,6 +31,17 @@ recipe upgrades use conservative definitions. Operators opt custom workflows in
 by declaring the contracts and their correction/assistance routes; adding a role
 does not authorize changing delivery or approval policies.
 
+An assessment's `correctionRequired: true` branch retains its declared fixer even
+when a fresh provider check reports that an earlier CI failure cleared. The runtime
+supplies `/assessedCorrection` with the current same-frame assessment's summary,
+rationale, uncertainty and comment assessments, including for frozen roles with
+restricted inputs. The fixer addresses source and verification work within accepted
+scope, then returns through the existing independent assessment and gates. A blocked
+assessment can take this route after its assistance answer; it still cannot authorize
+evidence reuse. An unrelated or superseded assessment does not prevent obsolete
+provider-only work from being skipped. Existing iteration and convergence limits
+remain in force.
+
 ## Evidence and source boundaries
 
 Reviewers declare covered requirements, areas, dependencies and the reason their
@@ -39,6 +50,11 @@ actual source and execution environment. Unknown dependencies, changed shared
 configuration, conflicting integration, weakened test assertions or missing
 provenance expand validation. A filename, small diff or matching head cannot
 establish safe reuse.
+
+Dependencies are relative repository files or `directory/**` boundaries. Context
+JSON Pointers belong in finding evidence. Invalid paths and escaping symlinks
+enter the author's bounded output correction before a specialist receipt is
+stamped, including when a saved native result is resumed.
 
 An inventory's stable IDs and version survive unchanged source criteria. New
 requirements require extraction. A new operational answer can preserve the
@@ -72,6 +88,11 @@ Unknown isolation keeps repository-scoped shared QA protection. Completed checks
 and selected review branches are retained on recovery; changed state invalidates
 an assessment before a consuming gate can use it.
 
+When that assessment is stale, its consuming step returns automatically to the
+declared assessor in the same accepted workflow frame. Completed work and original
+receipts remain retained; required gates run again. Existing pass and convergence
+limits still apply. A legacy failed checkpoint uses the same route on Retry.
+
 ## Target advancement and approval
 
 The task baseline, last automated review and current delivery target remain
@@ -99,6 +120,10 @@ rule, evidence, remedy and investigation state. Optional cleanup and optional
 disagreements stay visible without blocking. Demonstrated duplicates retain all
 original identities and evidence while presenting one actionable issue. Settled
 findings need changed evidence before reopening.
+
+A duplicate claim suppresses an actionable item only when its original finding,
+requirement IDs, concrete evidence and remedy match. Missing, cyclic or mismatched
+aliases remain independent actionable findings; the raw receipt retains the claim.
 
 A code gate can track a declared future QA, guide, acceptance or delivery obligation
 without treating that future receipt as an implementation defect. Deferral never

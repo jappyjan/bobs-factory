@@ -170,6 +170,43 @@ function receipt(b = baseline(), value: unknown = review()) {
 }
 
 it.each([
+	"exact",
+	"different-evidence",
+	"different-remedy",
+	"missing-original",
+	"cyclic",
+])("only proven duplicates suppress a consequential finding (%s)", (kind) => {
+	const b = baseline();
+	const finding = {
+		id: "F1",
+		rating: 3,
+		summary: "Invalid input fails",
+		evidence: "validator.ts:4 dereferences null",
+		status: "open",
+		requirementIds: ["R1"],
+		remedy: "Reject null before dereferencing",
+	};
+	const duplicate = { ...finding, id: "F2", duplicateOf: "business:F1" };
+	if (kind === "different-evidence")
+		duplicate.evidence = "validator.ts:8 loses a required result";
+	if (kind === "different-remedy")
+		duplicate.remedy = "Return the required result";
+	if (kind === "missing-original") duplicate.duplicateOf = "absent:F1";
+	const first =
+		kind === "cyclic" ? { ...finding, duplicateOf: "business:F2" } : finding;
+	const result = aggregateReview(b, [
+		{ business: receipt(b, { ...review(), findings: [first, duplicate] }) },
+	]);
+	expect(result.approved).toBe(false);
+	expect(result.rawFindings).toHaveLength(2);
+	expect(result.rawFindings[1]!.duplicateOf).toBe(duplicate.duplicateOf);
+	expect(result.findings.every((f) => !f.duplicateOf)).toBe(true);
+	expect(result.findings.map((f) => f.id)).toEqual(
+		kind === "exact" ? ["business:F1"] : ["business:F1", "business:F2"],
+	);
+});
+
+it.each([
 	"qa",
 	"guide",
 	"acceptance",

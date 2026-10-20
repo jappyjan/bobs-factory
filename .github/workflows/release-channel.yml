@@ -1,4 +1,4 @@
-name: Freeze eligible nightly or stable promotion
+name: Release / 1. Build candidates
 on:
   schedule:
     - cron: '17 * * * *'
@@ -24,7 +24,9 @@ permissions:
   actions: read
 jobs:
   prepare:
+    name: Freeze eligible candidate
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     concurrency:
       group: bobs-factory-candidate-freeze
       cancel-in-progress: false
@@ -76,6 +78,7 @@ jobs:
             echo 'Nightly and beta CI derive evidence from the pinned accepted baseline and fresh checks; beta and stable publication require exact prepared-asset approval.' >> "$GITHUB_STEP_SUMMARY"
           fi
   binary:
+    name: Build CLI binaries
     needs: prepare
     if: needs.prepare.outputs.candidate_json != ''
     uses: ./.github/workflows/binary-build.yml
@@ -83,6 +86,7 @@ jobs:
       candidate_json: ${{ needs.prepare.outputs.candidate_json }}
 
   desktop:
+    name: Build desktop installers
     needs: [prepare, binary]
     if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel != 'stable'
     uses: ./.github/workflows/desktop-build.yml
@@ -90,6 +94,7 @@ jobs:
       candidate_json: ${{ needs.prepare.outputs.candidate_json }}
       reuse_native: true
   checks:
+    name: Validate candidate workflows
     needs: prepare
     if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel != 'stable'
     runs-on: ubuntu-24.04
@@ -103,18 +108,9 @@ jobs:
         with:
           ref: ${{ fromJSON(needs.prepare.outputs.candidate_json).candidate.commit }}
           persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '24.18.0'
-          package-manager-cache: false
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.4.2'
-      - uses: ./.github/actions/install-dependencies
-      - name: Prepare controlled test tools
+      - uses: ./.github/actions/setup-tests
+      - name: Prepare candidate check logs
         run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y ffmpeg jq
           mkdir -p "$RUNNER_TEMP/nightly-checks"
           echo "F1_EVIDENCE_DIR=$RUNNER_TEMP/nightly-checks" >> "$GITHUB_ENV"
       - run: pnpm build

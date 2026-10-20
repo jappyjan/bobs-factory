@@ -86,6 +86,7 @@ export async function appUpdates({
 			],
 			{
 				detached: true,
+				cwd: home,
 				stdio: "ignore",
 				env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
 			},

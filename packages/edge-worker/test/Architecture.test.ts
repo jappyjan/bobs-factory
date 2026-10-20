@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
 	type Architecture,
+	ArchitectureReviewSchema,
 	ArchitectureSchema,
 	assertRevisionChanges,
 	snapshotProposal,
@@ -850,6 +851,74 @@ it("never advances an exhausted failed candidate-review loop", async () => {
 	expect(implemented).toEqual([]);
 	expect(run.architectureDecisions ?? []).toEqual([]);
 	await runtime.shutdown();
+});
+
+it("persists an architecture review question across restart and still requires acceptance of the revised proposal", async () => {
+	let drafts = 0,
+		reviews = 0,
+		implementations = 0;
+	const f = setup("meaningful", {
+		agent: async (context) => {
+			if (context.step.architectureContract === "architecture-v1") {
+				drafts++;
+				return proposal();
+			}
+			if (context.step.architectureContract === "architecture-review-v1") {
+				reviews++;
+				return reviews === 1
+					? {
+							approved: false,
+							feedback: ["Record the privacy choice"],
+							questions: [
+								"May eligible users browse minimal supervisor names?",
+							],
+						}
+					: { approved: true, feedback: [] };
+			}
+			implementations++;
+			return {
+				status: "completed",
+				summary: "Implemented accepted design",
+				checks: [],
+				questions: [],
+			};
+		},
+	});
+	await waiting(f.run);
+	expect(f.run.step).toBe("candidate-review");
+	expect(drafts).toBe(1);
+	expect(reviews).toBe(1);
+	expect(f.run.architectureGate).toBeUndefined();
+	expect(f.run.architectureDecisions ?? []).toEqual([]);
+	await f.runtime.shutdown();
+	const restored = new WorkflowRuntime(f.home, f.hooks);
+	const run = restored.get(f.run.id);
+	void restored.launch(run);
+	await waiting(run);
+	expect(drafts).toBe(1);
+	expect(reviews).toBe(1);
+	restored.answer(run.id, "Allow eligible users to browse minimal names");
+	await waitFor(() => expect(run.architectureGate).toBeDefined());
+	await waiting(run);
+	expect(drafts).toBe(2);
+	expect(reviews).toBe(2);
+	expect(run.answers.at(-1)?.answer).toBe(
+		"Allow eligible users to browse minimal names",
+	);
+	expect(implementations).toBe(0);
+	expect(run.architectureDecisions ?? []).toEqual([]);
+	decide(restored, run);
+	await finished(restored, run);
+	expect(implementations).toBe(1);
+});
+it("cannot approve an architecture review while asking an unresolved human question", () => {
+	expect(() =>
+		ArchitectureReviewSchema.parse({
+			approved: true,
+			feedback: [],
+			questions: ["Which privacy policy?"],
+		}),
+	).toThrow("unanswered questions");
 });
 
 it("requires fresh acceptance when later requirements change the accepted architecture", async () => {

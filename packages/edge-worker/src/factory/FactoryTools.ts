@@ -47,7 +47,7 @@ import {
 	reportReadiness,
 	waitForNextPoll,
 } from "./MergeReadiness.js";
-import { confirmedMerge } from "./MergeRecovery.js";
+import { confirmedMerge, pendingMergeConfirmation } from "./MergeRecovery.js";
 import { OutputValidationError } from "./OutputValidation.js";
 import {
 	QA_CONTRACT,
@@ -1576,6 +1576,18 @@ export class FactoryTools {
 				);
 				if (await command("git", ["status", "--porcelain"]))
 					throw new Error("Worktree changed after review; handoff blocked");
+				if (pr.state === "MERGED") {
+					const receipt = confirmedMerge(run, {
+						state: pr.state,
+						headSha: pr.headRefOid,
+					});
+					if (
+						receipt &&
+						headSha === receipt.headSha &&
+						pendingMergeConfirmation(run, receipt)
+					)
+						return receipt;
+				}
 				if (pr.state !== "OPEN")
 					throw new Error("PR is no longer open; handoff blocked");
 				if (
