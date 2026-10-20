@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Let CI fixers repair merge conflicts and failed checks when the latest specialist review has not finished; require fresh review afterward and retain approval safeguards.
+- Let CI fixers repair merge conflicts and failed checks when the latest specialist review has not finished; require fresh review afterward and retain approval safeguards. ([#161](https://github.com/jappyjan/bobs-factory/pull/161))
 
 - Acknowledge Linear sessions before slow startup checks and background API reads; reduce lifecycle synchronization traffic while retaining complete agent context and fresh status checks. ([#160](https://github.com/jappyjan/bobs-factory/pull/160))
 

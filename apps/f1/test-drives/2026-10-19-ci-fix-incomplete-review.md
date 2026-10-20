@@ -64,3 +64,20 @@ It records `dirty: true` and is not a published release. The canonical
 identity, MCP, shutdown and restart using an isolated home and ports 4397/4398.
 Log: `/tmp/bobs-factory-ci-review-fix-smoke.log`. The existing worker and failed
 run were not changed; deploying the patch requires the configured human approval.
+
+## Integration verification, 2026-10-20
+
+Rebased the fix onto `47a3d416` (main's newer Linear intake change), preserving
+both changelog entries. Full `pnpm build` and `pnpm typecheck`, the same 151 tests,
+changed-file Biome and the mocked F1 drive passed again. Both recovery cases
+retained their original evidence and reached fresh review without human approval.
+This source fix is tracked in [PR #161](https://github.com/jappyjan/bobs-factory/pull/161).
+
+Updated F1 evidence:
+`/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-ci-review-k75EDs/receipt.json`.
+Logs: `/tmp/f1-ci-fix-incomplete-review-main.log`,
+`/tmp/bobs-factory-ci-review-main-tests.log`,
+`/tmp/bobs-factory-ci-review-main-build.log`,
+`/tmp/bobs-factory-ci-review-main-typecheck.log`.
+The earlier development binary/smoke remains evidence for its recorded source;
+it does not include the newer main commit.
