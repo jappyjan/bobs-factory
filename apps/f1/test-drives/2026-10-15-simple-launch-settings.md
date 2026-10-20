@@ -181,3 +181,56 @@ Logs and the screenshot are in the retained run evidence directory under
 `ci-fix-r10-*`. These checks validate the integration, not the later fresh
 launcher browser QA or human acceptance. No real agents or provider credits
 were used. Historical failed QA remains retained.
+
+## Combined-revision verification correction — 2026-10-20
+
+Tested clean revision `8c3f4cb4cfedf100d9fa942905fc469ad07d36bb`, including
+target `b963ba106028e0af8aacfb89558048051a372fe4`. No production code changed.
+The saved-review fixture parsed the context snapshot manifest as role input;
+the manifest now contains references rather than the complete input. A retained
+replacement fixture uses the exported `loadFactoryContextSnapshot` loader.
+Every assertion and the saved workflow graph remain unchanged. The original
+fixture and failed runtime receipt remain available.
+
+Use this replacement command for `target-review-stage-f1`:
+
+```sh
+F1_AGENT_MODE=mock node /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/fix-r13-review-stage.mjs
+```
+
+It passed inventory, coverage, QA and acceptance routing. Acceptance remained an
+unanswered human wait; restart retained the graph and history without replaying
+roles or inventing approval. The isolated worker stopped successfully.
+
+All 22 previously unexecuted selected checks also passed. The API responsiveness
+fixture first failed because the inherited internal executable tried to run a
+missing `internal` script. Removing that override only from its child process
+passed with unchanged assertions. Retain this replacement command:
+
+```sh
+env -u BOBS_FACTORY_INTERNAL_EXECUTABLE F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/api-responsiveness.ts
+```
+
+The 23 fresh successful receipts cover the replacement saved-review drive,
+launcher, update draining, impact recovery, guide generation, architecture
+continuation, API responsiveness, bounded-memory context delivery, operator
+submissions, incomplete-review recovery and Linear simulations; configuration,
+activity, persistence, execution, core snapshot, MCP transport and CLI tests;
+nightly evidence checks, lint and whitespace validation. Commands ran
+sequentially, each within 120 seconds. No provider inference was used.
+
+Evidence directory:
+`/Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741`.
+`fix-r13-passing-checks.json` records all 49 unique successful selections:
+26 original runtime receipts retained at their original revision and 23 newly
+executed commands. `fix-r13-check-results.json` preserves the failed API attempt;
+`fix-r13-replacement-results.json` records its successful replacement and the
+remaining commands. `fix-r13-fixture.patch` and
+`fix-r13-review-stage-receipt.json` record the exact loader correction, fixture
+hashes, passing log and isolated fixture home. Full logs use `fix-r13-*` names.
+
+Only this existing report is changed in the repository. The configured impact
+assessor must adopt the two replacement commands and obtain its own runtime
+receipts; these local executions do not claim that gate has run. Fresh launcher
+browser QA and delivery approval remain obligations of their later gates.
+Historical failures remain retained; no merge or ready transition was performed.
