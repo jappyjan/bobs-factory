@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Changed
 
+- Allow five seconds for the scripted Codex cancellation probe to start during workspace tests; cancellation and process-exit assertions remain unchanged. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
+
 - Strengthen storage-retention preservation and operating-limit checks, settle durable runtime transitions with bounded waits, and stop owned workers before fixture cleanup. Give independently selected workspace checks the standard twenty-minute command limit. ([Taskbot #134](https://taskbot.apps.janjaap.de/p/bobs-factory/t/134), [#164](https://github.com/jappyjan/bobs-factory/pull/164))
 
 - Add maintained native desktop acceptance proofs for isolated remote auth/ownership, client mismatch, guided onboarding and active-job/waiting-state continuity through UI quit/relaunch and worker restart ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#88](https://github.com/jappyjan/bobs-factory/pull/88)).
