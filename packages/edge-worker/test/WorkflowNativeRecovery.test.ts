@@ -21,6 +21,7 @@ function fixture() {
 	});
 	const session: any = {
 		id: "native",
+		workspace: { path: join(home, "workspace"), isGitWorktree: true },
 		status: AgentSessionStatus.Error,
 		codexSessionId: "saved-thread",
 		triggerOrigin: { workflowId: "simple" },
@@ -64,6 +65,7 @@ function fixture() {
 	const worker: any = Object.create(EdgeWorker.prototype);
 	Object.assign(worker, {
 		factoryRuntime: runtime,
+		factoryHome: home,
 		launchAdmission: admission,
 		getFactoryRuntime: () => runtime,
 		getLaunchAdmission: () => admission,

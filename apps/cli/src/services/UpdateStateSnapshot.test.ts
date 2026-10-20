@@ -13,24 +13,24 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { copyUpdateState } from "./UpdateStateSnapshot.js";
+import { copyUpdateStateForRetention as copyUpdateState } from "./UpdateStateSnapshot.js";
 
-it("does not silently discard a dangling saved-state root", () => {
+it("does not silently discard a dangling saved-state root", async () => {
 	const root = mkdtempSync(join(tmpdir(), "factory-dangling-state-"));
 	try {
 		const home = join(root, "home");
 		mkdirSync(home);
 		symlinkSync(join(root, "gone"), join(home, "state"));
 		for (const purpose of ["preflight", "snapshot"] as const)
-			expect(() => copyUpdateState(home, join(root, purpose), purpose)).toThrow(
-				"Snapshot refuses external/special owned state",
-			);
+			await expect(
+				copyUpdateState(home, join(root, purpose), purpose),
+			).rejects.toThrow("Snapshot refuses external/special owned state");
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
 });
 
-it("preflight omits retained evidence links; snapshots and rollback keep their exact targets", () => {
+it("preflight omits retained evidence links; snapshots and rollback keep their exact targets", async () => {
 	const root = mkdtempSync(join(tmpdir(), "factory-linked-evidence-"));
 	try {
 		const home = join(root, "home"),
@@ -54,8 +54,8 @@ it("preflight omits retained evidence links; snapshots and rollback keep their e
 			symlinkSync(target, join(evidence, name));
 		const preflight = join(root, "preflight"),
 			snapshot = join(root, "snapshot");
-		copyUpdateState(home, preflight, "preflight");
-		copyUpdateState(home, snapshot, "snapshot");
+		await copyUpdateState(home, preflight, "preflight");
+		await copyUpdateState(home, snapshot, "snapshot");
 		for (const [name, target] of Object.entries(links)) {
 			expect(() =>
 				lstatSync(join(preflight, "factory/evidence/task", name)),
@@ -94,7 +94,7 @@ it.each([
 	"state",
 	"factory/evidence",
 	"factory/runs/run.json",
-])("refuses linked configuration/state at %s for both snapshot purposes", (relative) => {
+])("refuses linked configuration/state at %s for both snapshot purposes", async (relative) => {
 	const root = mkdtempSync(join(tmpdir(), "factory-linked-state-"));
 	try {
 		const home = join(root, "home"),
@@ -104,9 +104,9 @@ it.each([
 		writeFileSync(external, "external state");
 		symlinkSync(external, source);
 		for (const purpose of ["preflight", "snapshot"] as const)
-			expect(() => copyUpdateState(home, join(root, purpose), purpose)).toThrow(
-				"Snapshot refuses external/special owned state",
-			);
+			await expect(
+				copyUpdateState(home, join(root, purpose), purpose),
+			).rejects.toThrow("Snapshot refuses external/special owned state");
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}

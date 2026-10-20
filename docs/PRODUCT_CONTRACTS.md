@@ -252,3 +252,23 @@ profiles using shared host signing use the instance agent. Saving never retries 
 run or approves publication automatically. After repairing access, use the failed
 run’s **Retry step** action. An agent connection test does not sign a commit or
 establish that a particular signing key is unlocked.
+
+## Storage retention
+
+Settings → Storage and the protected `bobs-factory storage` service commands share
+one per-instance coordinator. Versioned policy, producer ownership, identity-bound
+historical elections, workspace reservations and compact deletion receipts live in
+`<factoryHome>/storage-retention`, outside frozen workflows and state snapshots.
+Defaults are automatic startup/daily reconciliation, two verified usable rollbacks
+(minimum one), seven-day disposable artifacts, thirty-day delivered worktrees and
+a five-GiB warning threshold. Preservation overrides age, count and disk pressure.
+
+Cleanup uses process-start-aware exclusion, durable use before provider execution,
+fresh accepted-provider delivery checks, complete owner/reference checks and safe
+Git removal. Symlinked owned roots, changed identity, unique ignored files, native
+continuation uncertainty and protected group members retain data. Ticket closure
+only requests reconciliation; the legacy deletion API defers to Storage. Artifact
+manifest verification and usage scans yield with continuation. Failed or uncertain
+hooks need explicit verified idempotent retry. Receipts and original evidence stay
+retained. Apparent bytes and observed volume free-space changes remain separate.
+See [storage retention](factory/storage-retention.md) for limits and recovery.

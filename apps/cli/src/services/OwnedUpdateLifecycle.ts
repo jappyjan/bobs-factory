@@ -13,9 +13,15 @@ import {
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
+import {
+	publishStorageJson,
+	readStorageJson,
+	StorageRetentionStore,
+	storageDigest,
+	writeStorageIntegrity,
+} from "bobs-factory-core";
 import { requestFactoryTerminalSession } from "bobs-factory-edge-worker";
 import { FactoryClient } from "../tui/client.js";
 import { desktopStopped, lifecycleGuard } from "./DesktopLifecycle.js";
@@ -30,7 +36,7 @@ import {
 	workerOwner,
 } from "./InstanceLock.js";
 import { ServiceLifecycle } from "./ServiceLifecycle.js";
-import { copyUpdateState } from "./UpdateStateSnapshot.js";
+import { copyUpdateStateForRetention as copyUpdateState } from "./UpdateStateSnapshot.js";
 
 const runFile = promisify(execFile);
 export interface LifecycleCandidate {
@@ -210,7 +216,7 @@ export class OwnedUpdateLifecycle {
 		return receipt.idle;
 	}
 	private copyOwned(destination: string, purpose: "preflight" | "snapshot") {
-		copyUpdateState(this.home, destination, purpose);
+		return copyUpdateState(this.home, destination, purpose, this.signal);
 	}
 	async preflight(staged: LifecycleStaged, installed: { version: string }) {
 		if (
@@ -238,31 +244,49 @@ export class OwnedUpdateLifecycle {
 			metadata.executable.size !== bytes.length
 		)
 			throw new Error("Staged runtime identity/integrity mismatch");
-		const isolated = mkdtempSync(join(tmpdir(), "factory-update-preflight-"));
-		try {
-			this.copyOwned(isolated, "preflight");
-			const { stdout } = await runFile(
-				executable,
-				["--home", isolated, "--no-open", "service", "validate-state"],
-				{ timeout: 30000, env: { PATH: process.env.PATH, HOME: isolated } },
+		const preparationRoot = join(this.home, "updates", "preparation");
+		mkdirSync(preparationRoot, { recursive: true, mode: 0o700 });
+		const isolated = mkdtempSync(join(preparationRoot, "preflight-"));
+		const retention = new StorageRetentionStore(this.home);
+		const preparation = await retention.register({
+			category: "preparation",
+			path: isolated,
+			root: preparationRoot,
+			producer: "OwnedUpdateLifecycle",
+			operation: this.transactionId ?? staged.candidate.commit,
+			dependencies: [],
+			evidence: [],
+		});
+		// Failed or interrupted preparation remains unverified and retained.
+		await this.copyOwned(isolated, "preflight");
+		const { stdout } = await runFile(
+			executable,
+			["--home", isolated, "--no-open", "service", "validate-state"],
+			{ timeout: 30000, env: { PATH: process.env.PATH, HOME: isolated } },
+		);
+		const result = JSON.parse(stdout);
+		if (result.stateCompatible !== true)
+			throw new Error("Candidate state preflight failed");
+		if (result.preservationContract !== this.preservation?.preservationContract)
+			throw new Error(
+				"Update preservation contract changed; use an owner-managed stopped-worker upgrade for this boundary. The running worker has not been replaced.",
 			);
-			const result = JSON.parse(stdout);
-			if (result.stateCompatible !== true)
-				throw new Error("Candidate state preflight failed");
-			if (
-				result.preservationContract !== this.preservation?.preservationContract
-			)
-				throw new Error(
-					"Update preservation contract changed; use an owner-managed stopped-worker upgrade for this boundary. The running worker has not been replaced.",
-				);
-			if (
-				JSON.stringify(result.runIds) !==
-				JSON.stringify(this.preservation?.runIds)
-			)
-				throw new Error("Preflight lost preserved workflow identities");
-		} finally {
-			rmSync(isolated, { recursive: true, force: true });
-		}
+		if (
+			JSON.stringify(result.runIds) !==
+			JSON.stringify(this.preservation?.runIds)
+		)
+			throw new Error("Preflight lost preserved workflow identities");
+		const integrity = await writeStorageIntegrity(
+			isolated,
+			join(retention.directory, "proofs", `${preparation.id}.ndjson`),
+		);
+		await retention.revise(preparation.id, (record) => {
+			record.evidence = [`integrity:${integrity}`];
+			record.completedAt =
+				record.verifiedAt =
+				record.reconciledAt =
+					new Date().toISOString();
+		});
 		this.staged = { ...staged, executable, previousExecutable: previous };
 		return { stateCompatible: true as const };
 	}
@@ -274,12 +298,61 @@ export class OwnedUpdateLifecycle {
 			throw new Error(
 				"Snapshot already exists: recover the persisted transaction",
 			);
-		this.copyOwned(path, "snapshot");
+		mkdirSync(path, { recursive: true, mode: 0o700 });
+		const retention = new StorageRetentionStore(this.home);
+		const artifact = await retention.register({
+			category: "snapshot",
+			rollback: "usable",
+			path,
+			root: join(this.home, "updates", "snapshots"),
+			producer: "OwnedUpdateLifecycle",
+			operation: transactionId,
+			dependencies: [],
+			evidence: [],
+		});
+		// A retained snapshot also retains the runtime it can roll back to.
+		let target = dirname(
+			this.staged?.previousExecutable ?? this.owner.executable,
+		);
+		while (target !== dirname(target)) {
+			const indexed = (await readStorageJson(
+				join(
+					retention.directory,
+					"path-records",
+					`${storageDigest(target)}.json`,
+				),
+			)) as { id: string } | undefined;
+			if (indexed) {
+				await publishStorageJson(
+					join(
+						retention.directory,
+						"dependencies",
+						indexed.id,
+						`${artifact.id}.json`,
+					),
+					{ ownerId: artifact.id },
+				);
+				break;
+			}
+			target = dirname(target);
+		}
+		await this.copyOwned(path, "snapshot");
 		writeFileSync(
 			join(path, "lifecycle-receipt.json"),
 			JSON.stringify(this.preservation),
 			{ mode: 0o600 },
 		);
+		const integrity = await writeStorageIntegrity(
+			path,
+			join(retention.directory, "proofs", `${artifact.id}.ndjson`),
+		);
+		await retention.revise(artifact.id, (record) => {
+			record.completedAt = record.verifiedAt = new Date().toISOString();
+			record.evidence = [
+				`integrity:${integrity}`,
+				this.staged?.previousExecutable ?? this.owner.executable,
+			];
+		});
 		return path;
 	}
 	private async stopDesktopOwner() {
@@ -560,6 +633,18 @@ export class OwnedUpdateLifecycle {
 			transaction.id,
 		);
 		mkdirSync(retained, { recursive: true, mode: 0o700 });
+		const retention = new StorageRetentionStore(this.home);
+		const recovery = await retention.register({
+			category: "recovery",
+			path: retained,
+			root: join(this.home, "updates", "recovery-retained"),
+			producer: "OwnedUpdateLifecycle",
+			operation: transaction.id,
+			dependencies: [
+				"Failure-era state needs explicit reconciliation with current authoritative state",
+			],
+			evidence: [],
+		});
 		for (const name of ["config.json", "state", "factory"]) {
 			const current = join(this.home, name),
 				backup = join(transaction.snapshot, name);
@@ -587,6 +672,9 @@ export class OwnedUpdateLifecycle {
 			),
 		);
 		await this.health(old);
+		await retention.revise(recovery.id, (record) => {
+			record.completedAt = record.verifiedAt = new Date().toISOString();
+		});
 	}
 	async releaseMaintenance(transactionId: string) {
 		if (!this.transactionId) {

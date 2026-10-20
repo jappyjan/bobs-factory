@@ -2,10 +2,14 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { createServer, type Server, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
-import { factoryRuntimeIdentity } from "bobs-factory-core";
+import {
+	factoryRuntimeIdentity,
+	StorageCategorySchema,
+} from "bobs-factory-core";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { MachineCapacity } from "../MachineCapacity.js";
+import type { StorageRetention } from "../storage/StorageRetention.js";
 import { PublishedUpdateSource } from "../updates/PublishedUpdateSource.js";
 import type { UpdateDrain } from "../updates/UpdateDrain.js";
 import {
@@ -77,6 +81,7 @@ interface ServerHooks {
 	resumeEligible?(id: string): boolean;
 	availabilityImpact?(id: string): string[];
 	updates?: UpdateManager;
+	storage?: StorageRetention;
 	updateDrain?: UpdateDrain;
 	onboarding?: FactoryOnboarding;
 	ticketManagers?: TicketManagers;
@@ -439,6 +444,63 @@ export class FactoryServer {
 			)
 				reply.header("Cache-Control", "no-store");
 		});
+		if (hooks.storage) {
+			const storage = hooks.storage;
+			this.app.addHook("onReady", async () => storage.start());
+			this.app.addHook("onClose", async () => storage.stop());
+			this.app.get("/api/storage", () => storage.status());
+			this.app.put("/api/storage/policy", async (request) => {
+				const body = z
+					.object({
+						revision: z.number().int().nonnegative(),
+						policy: z.unknown(),
+					})
+					.strict()
+					.parse(request.body);
+				const result = await storage.store.configure(
+					body.policy,
+					body.revision,
+				);
+				storage.requestReconciliation();
+				return result;
+			});
+			this.app.post("/api/storage/preview", () => storage.preview());
+			this.app.post("/api/storage/historical/preview", () =>
+				storage.historical.preview(),
+			);
+			this.app.post("/api/storage/classify", (request) => {
+				const body = z
+					.object({
+						previewId: z.string().uuid(),
+						candidateId: z.string().regex(/^[a-f0-9]{64}$/),
+						category: StorageCategorySchema,
+						operation: z.string().min(1).max(100),
+						contentsVerifiedDisposable: z.literal(true),
+					})
+					.strict()
+					.parse(request.body);
+				return storage.historical.classify(body);
+			});
+			this.app.post("/api/storage/execute", async (request, reply) => {
+				const body = z
+					.object({
+						previewId: z.string().uuid(),
+						selected: z.array(z.string().uuid()).max(100),
+						idempotentTeardown: z.boolean().optional(),
+					})
+					.strict()
+					.parse(request.body);
+				return reply
+					.code(202)
+					.send(
+						await storage.execute(
+							body.previewId,
+							body.selected,
+							body.idempotentTeardown,
+						),
+					);
+			});
+		}
 		this.app.get("/api/updates", () => updates.status());
 		this.app.put("/api/updates/settings", (request) => {
 			const body = z

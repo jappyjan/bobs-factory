@@ -730,6 +730,26 @@ export function applyMigration(
 				stdio: "ignore",
 			});
 		}
+	// Observational ownership only. This never enrolls the source/native/external
+	// backup or its preparation into automatic deletion authority.
+	const retention = join(
+		manifest.destination,
+		"storage-retention",
+		"migration-observations",
+	);
+	mkdirSync(retention, { recursive: true, mode: 0o700 });
+	save(join(retention, `${manifest.sourceDigest}.json`), {
+		version: 1,
+		producer: "applyMigration",
+		operation: manifest.sourceDigest,
+		preparation: join(backup, "staged"),
+		backup,
+		source: manifest.source,
+		reconciledAt: new Date().toISOString(),
+		protected: true,
+		reason:
+			"Source, native and external backups require verified explicit cleanup election",
+	});
 	const destinationDigest = hash(
 		JSON.stringify(inventory(manifest.destination)),
 	);

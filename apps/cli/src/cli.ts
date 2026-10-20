@@ -18,6 +18,7 @@ import { RefreshTokenCommand } from "./commands/RefreshTokenCommand.js";
 import { SelfAddRepoCommand } from "./commands/SelfAddRepoCommand.js";
 import { SelfAuthCommand } from "./commands/SelfAuthCommand.js";
 import { addServiceCommands } from "./commands/service.js";
+import { addStorageCommands } from "./commands/storage.js";
 import { addUpdateCommands } from "./commands/update.js";
 import { gitCredential, githubApiRequest } from "./github.js";
 import { addMigrationCommands } from "./migration/command.js";
@@ -69,6 +70,7 @@ program
 	);
 
 addUpdateCommands(program);
+addStorageCommands(program);
 
 // Machine-owner setup/recovery must remain outside the dashboard auth boundary.
 program

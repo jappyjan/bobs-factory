@@ -86,9 +86,13 @@ import {
 	PersistenceManager,
 	presentLinearPublication,
 	publicFailure,
+	publishStorageJson,
 	type RunTitleJob,
 	requireLinearWorkspaceId,
+	reserveOwnedStorageWorkspace,
 	resolvePath,
+	StorageRetentionStore,
+	storageDigest,
 	WebhookIpValidator,
 } from "bobs-factory-core";
 import { CursorRunner } from "bobs-factory-cursor-runner";
@@ -287,6 +291,7 @@ import {
 	questionNotification,
 } from "./factory/Questions.js";
 import {
+	repositoryRun,
 	repositoryScopeInstructions,
 	repositoryScopes,
 	snapshotRepositories,
@@ -395,6 +400,8 @@ import {
 import { SlackChatAdapter } from "./SlackChatAdapter.js";
 import type { IActivitySink } from "./sinks/IActivitySink.js";
 import { LinearActivitySink } from "./sinks/LinearActivitySink.js";
+import { factoryStorage } from "./storage/FactoryStorage.js";
+import type { StorageRetention } from "./storage/StorageRetention.js";
 import { ToolPermissionResolver } from "./ToolPermissionResolver.js";
 import type { AgentSessionData, EdgeWorkerEvents } from "./types.js";
 import { UserAccessControl } from "./UserAccessControl.js";
@@ -451,6 +458,7 @@ export class EdgeWorker extends EventEmitter {
 	private sharedApplicationServer: SharedApplicationServer;
 	private factoryHome: string;
 	private factoryRuntime?: WorkflowRuntime;
+	private storageRetention?: StorageRetention;
 	private executionResolver?: ExecutionEnvironmentResolver;
 	private ticketTracking?: TicketTracking;
 	private titleGenerator?: RunTitleGenerator;
@@ -1118,6 +1126,7 @@ export class EdgeWorker extends EventEmitter {
 		) {
 			this.factoryPush ??= new FactoryPush(this.factoryHome);
 			this.factoryServer = new FactoryServer(this.getFactoryRuntime(), {
+				storage: this.storageRetention,
 				onboarding: this.localSetup,
 				ticketManagers: this.ticketManagers,
 				updateDrain: this.updateDrain,
@@ -1254,6 +1263,7 @@ export class EdgeWorker extends EventEmitter {
 			);
 		}
 		const runtime = this.getFactoryRuntime();
+		await this.storageRetention?.start();
 		const grants = new OperatorGrants(this.factoryHome);
 		const configuration = new OperatorConfiguration(
 			this.factoryHome,
@@ -3579,6 +3589,7 @@ ${taskSection}`;
 	 * Stop the edge worker
 	 */
 	async stop(): Promise<void> {
+		await this.storageRetention?.stop();
 		this.stopping = true;
 		this.webhookIpValidator.stopRefreshing();
 		for (const tracker of this.issueTrackers.values())
@@ -4442,7 +4453,7 @@ ${taskSection}`;
 
 	/**
 	 * Handle issue state change message (terminal state reached).
-	 * Stops active sessions and deletes worktrees for the issue.
+	 * Stops active sessions and retains workspace use for verified reconciliation.
 	 */
 	private async handleIssueStateChangeMessage(
 		message: IssueStateChangeMessage,
@@ -4463,6 +4474,33 @@ ${taskSection}`;
 
 		// Stop all active sessions for this issue
 		const sessions = this.agentSessionManager.getSessionsByIssueId(issueId);
+		const retention = new StorageRetentionStore(this.factoryHome);
+		await retention.initialize();
+		for (const session of sessions) {
+			await publishStorageJson(
+				join(
+					retention.directory,
+					"terminal-observations",
+					`${storageDigest(session.id)}.json`,
+				),
+				{
+					version: 1,
+					sessionId: session.id,
+					nativeSessionIds: {
+						claude: session.claudeSessionId,
+						codex: session.codexSessionId,
+						gemini: session.geminiSessionId,
+						cursor: session.cursorSessionId,
+						opencode: session.opencodeSessionId,
+					},
+					workspace: session.workspace.path,
+					repositoryId: this.sessionRepositories.get(session.id),
+					at: new Date().toISOString(),
+					reason:
+						"Terminal ticket observed; delivery and continuation remain unverified",
+				},
+			);
+		}
 		for (const session of sessions) {
 			this.logger.info(
 				`Stopping agent runner for ${message.workItemIdentifier} (issue terminal)`,
@@ -4484,56 +4522,9 @@ ${taskSection}`;
 			this.agentSessionManager.removeSession(session.id);
 		}
 
-		// Build the set of repositories involved with this issue so per-repo
-		// bobs-factory-teardown.sh scripts (if present) can run before worktrees are
-		// removed. Source-of-truth is the session manager: each session's
-		// repositoryId maps to a configured RepositoryConfig.
-		const repoIds = new Set<string>();
-		for (const session of sessions) {
-			const repoId = this.sessionRepositories.get(session.id);
-			if (repoId) repoIds.add(repoId);
-		}
-		const teardownRepositories: RepositoryConfig[] = [];
-		for (const repoId of repoIds) {
-			const repo = this.repositories.get(repoId);
-			if (repo) teardownRepositories.push(repo);
-		}
-
-		// Delete worktrees for this issue, keyed by the Linear issue identifier.
-		const configured = sessions.find(
-			(session) => session.metadata?.executionSnapshot,
-		);
-		let teardownService = this.gitService;
-		if (configured) {
-			const snapshot = ExecutionSnapshotSchema.parse(
-				configured.metadata!.executionSnapshot,
-			);
-			const resolved = await this.getExecutionResolver().resolve(
-				snapshot,
-				configured.id,
-				configured.workspace.path,
-				configured.titleGeneration?.settings.runner ??
-					this.runnerSelectionService.getDefaultRunner(),
-			);
-			teardownService = this.gitService.withEnvironment(resolved.environment);
-		}
-		const owningRun = sessions
-			.map((session) => this.factoryRuntime?.runs.get(session.id))
-			.filter((run): run is FactoryRun => !!run)
-			.sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))[0];
-		await setupExecutionScope.run(
-			{
-				signal: new AbortController().signal,
-				service: this.runnerSlots,
-				capacity: owningRun
-					? this.factoryRuntime!.capacityOptions(owningRun, "teardown")
-					: undefined,
-			},
-			() =>
-				teardownService.deleteWorktree(message.workItemIdentifier, {
-					repositories: teardownRepositories,
-				}),
-		);
+		// A closed ticket does not prove durable delivery or release native continuation.
+		// Reconciliation retains these workspaces until all owners supply release evidence.
+		this.storageRetention?.requestReconciliation();
 
 		this.logger.info(
 			`Completed cleanup for ${message.workItemIdentifier}: stopped ${sessions.length} session(s)`,
@@ -7742,6 +7733,12 @@ ${taskSection}`;
 				return;
 			}
 			if (!session) throw new Error("Saved native session not found");
+			await reserveOwnedStorageWorkspace(
+				this.factoryHome,
+				session.workspace.path,
+				id,
+				"Native workflow Resume",
+			);
 			const chat = this.chatHandlerForSession(id);
 			if (chat) {
 				runtime.catalog.clearBlock(id);
@@ -7990,7 +7987,112 @@ ${taskSection}`;
 					await this.agentSessionManager.createResponseActivity(run.id, body);
 				},
 			});
+			this.storageRetention = factoryStorage(
+				this.factoryRuntime,
+				this.gitService,
+				{
+					protection: async (workspace) => {
+						const reasons = this.agentSessionManager
+							.getAllSessions()
+							.filter(
+								(session) =>
+									(session.workspace.path === workspace ||
+										session.workspace.path.startsWith(`${workspace}/`)) &&
+									(!this.factoryRuntime?.runs.has(session.id) ||
+										session.agentRunner?.isRunning()),
+							)
+							.map((session) => `Session ${session.id} retains this workspace`);
+						const capacity = await this.runnerSlots.snapshot();
+						if (capacity.error || capacity.conflict)
+							reasons.push(
+								"Execution and descendant ownership cannot be verified",
+							);
+						if (
+							capacity.active ||
+							capacity.stopping ||
+							capacity.queued ||
+							this.preparationStarts.size
+						)
+							reasons.push(
+								"Instance execution, preparation or descendant leases are busy; retry when idle",
+							);
+						return reasons;
+					},
+					removeWorkspace: async (
+						run,
+						workspace,
+						members,
+						signal,
+						revalidate,
+						journal,
+						issueIdentifier,
+					) => {
+						const execution = await this.resolveRunExecution(run);
+						const service = execution
+							? this.gitService.withEnvironment(execution.environment)
+							: this.gitService;
+						await setupExecutionScope.run(
+							{
+								signal,
+								service: this.runnerSlots,
+								capacity: this.factoryRuntime!.capacityOptions(run, "teardown"),
+							},
+							() =>
+								service.removeRetainedWorktrees(
+									workspace,
+									members,
+									issueIdentifier,
+									signal,
+									revalidate,
+									journal,
+								),
+						);
+					},
+					verifyDelivery: async (run, repositoryId, approved, signal) => {
+						const repository = run.repositories?.find(
+							(repo) => repo.id === repositoryId,
+						);
+						const projected = repository ? repositoryRun(run, repository) : run;
+						const execution = await this.resolveRunExecution(projected);
+						const context: ExecutionContext = {
+							factoryHome: this.factoryHome,
+							execution,
+							run: projected,
+							step: {
+								id: "storage-proof",
+								name: "Verify retained merge",
+								type: "tool",
+								tool: "merge",
+								branches: [],
+								maxVisits: 1,
+							},
+							input: {},
+							signal: signal ?? new AbortController().signal,
+							log: () => {},
+							evidenceDir: join(
+								this.factoryHome,
+								"factory",
+								"evidence",
+								run.id,
+							),
+						};
+						const command = (exe: string, args: string[]) =>
+							executeCommand(context, exe, args, 30_000);
+						const provider = await resolveGitProvider(
+							context,
+							command,
+							approved.url,
+						);
+						const remote = await provider.view(approved.url);
+						return (
+							remote.state === "MERGED" &&
+							remote.headRefOid === approved.headSha
+						);
+					},
+				},
+			);
 			this.factoryRuntime.subscribe(({ id }) => {
+				this.storageRetention?.requestReconciliation();
 				const run = id ? this.factoryRuntime?.runs.get(id) : undefined;
 				if (run && run.status !== "running") this.startRunTitle(run.id);
 			});
