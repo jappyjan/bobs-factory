@@ -1,4 +1,9 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+	createHash,
+	randomBytes,
+	randomInt,
+	timingSafeEqual,
+} from "node:crypto";
 import { existsSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
@@ -14,6 +19,28 @@ const terminalRequestSchema = z.object({
 	expires: z.number(),
 });
 const maxTerminalSessions = 50;
+const pairingMs = 5 * 60000;
+type PairingRequest = {
+	id: string;
+	hash: string;
+	origin: string;
+	confirmation: string;
+	createdAt: number;
+};
+type DevicePairing = {
+	id: string;
+	digest: string;
+	label: string;
+	expires: number;
+	requests: PairingRequest[];
+	approved?: string;
+	issuer?: { hash: string; origin: string };
+};
+export class PairingRateLimitError extends Error {
+	constructor(readonly retryAfter: number) {
+		super("Too many pairing requests. Wait a minute and try again.");
+	}
+}
 export interface FactoryAccess {
 	origins: string[];
 	sessionHours?: number;
@@ -47,6 +74,9 @@ export class FactoryAuth {
 	private recoveryTimer: ReturnType<typeof setInterval>;
 	/** Terminal sessions are memory-only: a restart revokes them and the TUI re-requests one locally. */
 	private terminal = new Map<string, { origin: string; expires: number }>();
+	// Explicit, single-use grants never survive restart or reach the auth store.
+	private pairing?: DevicePairing;
+	private pairingLimits = new Map<string, { count: number; expires: number }>();
 	readonly sessionMs: number;
 	constructor(
 		directory: string,
@@ -78,7 +108,7 @@ export class FactoryAuth {
 			throw new Error("Invalid Factory authentication origins");
 		this.sessionMs = hours * 3600000;
 		this.store = new FactoryAuthStore(directory, access.origins);
-		// Retire all legacy enrollment grants; keys can only be created in Settings.
+		// Retire legacy enrollment grants; device pairing is explicitly enabled in Settings.
 		const grant = join(this.store.directory, "enroll.json");
 		if (existsSync(grant)) unlinkSync(grant);
 		this.recoveryTimer = setInterval(() => {
@@ -97,6 +127,7 @@ export class FactoryAuth {
 		});
 		unlinkSync(path);
 		this.terminal.clear();
+		this.pairing = undefined;
 		this.changed();
 	}
 	/**
@@ -157,7 +188,9 @@ export class FactoryAuth {
 	close() {
 		clearInterval(this.recoveryTimer);
 		this.terminal.clear();
+		this.pairing = undefined;
 		this.listeners.clear();
+		this.pairingLimits.clear();
 	}
 	session(token: string | undefined, origin: string) {
 		if (!token || token.length > 100) return undefined;
@@ -243,6 +276,257 @@ export class FactoryAuth {
 			current: !local && key.id === current,
 		}));
 	}
+	private currentPairing() {
+		const pairing = this.pairing;
+		if (!pairing) return undefined;
+		if (
+			pairing.expires <= Date.now() ||
+			(pairing.issuer &&
+				!this.store.state.sessions.some(
+					(session) =>
+						session.hash === pairing.issuer!.hash &&
+						session.origin === pairing.issuer!.origin &&
+						(session.expires === null || session.expires > Date.now()) &&
+						this.store.state.keys.some((key) => key.id === session.credential),
+				))
+		) {
+			this.pairing = undefined;
+			return undefined;
+		}
+		return pairing;
+	}
+	pairingAvailable() {
+		const pairing = this.currentPairing();
+		return Boolean(pairing && !pairing.approved);
+	}
+	private pairingView(pairing: DevicePairing, request: PairingRequest) {
+		return {
+			id: request.id,
+			confirmation: request.confirmation,
+			createdAt: request.createdAt,
+			expires: pairing.expires,
+			approved: pairing.approved === request.id,
+		};
+	}
+	private boundPairing(token: string | undefined, origin: string, id?: string) {
+		if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return undefined;
+		const pairing = this.currentPairing();
+		const digest = hash(token);
+		const request = pairing?.requests.find(
+			(request) =>
+				request.hash === digest &&
+				request.origin === origin &&
+				(id === undefined || request.id === id),
+		);
+		return pairing && request ? { pairing, request } : undefined;
+	}
+	/** Only the receiving browser's HttpOnly cookie can recover its pending request. */
+	pairingRequest(token: string | undefined, origin: string) {
+		const bound = this.boundPairing(token, origin);
+		return bound ? this.pairingView(bound.pairing, bound.request) : undefined;
+	}
+	pairingStatus(token: string | undefined, origin: string, local = false) {
+		this.authorize(token, origin, local);
+		const pairing = this.currentPairing();
+		return pairing
+			? {
+					id: pairing.id,
+					label: pairing.label,
+					expires: pairing.expires,
+					requests: pairing.requests.map((request) =>
+						this.pairingView(pairing, request),
+					),
+				}
+			: null;
+	}
+	beginPairing(
+		token: string | undefined,
+		origin: string,
+		label: string,
+		local = false,
+	) {
+		this.authorize(token, origin, local);
+		if (!this.access.origins.some((item) => item.startsWith("https:")))
+			throw new Error(
+				"Configure a public HTTPS origin before pairing a device",
+			);
+		const name = this.keyName(label);
+		let code: string;
+		do {
+			code = randomInt(1000000).toString().padStart(6, "0");
+		} while (hash(code) === this.pairing?.digest);
+		const session = this.session(token, origin);
+		this.pairing = {
+			id: secret(),
+			digest: hash(code),
+			label: name,
+			expires: Date.now() + pairingMs,
+			requests: [],
+			...(!local && session ? { issuer: { hash: session.hash, origin } } : {}),
+		};
+		return { ...this.pairingStatus(token, origin, local)!, code };
+	}
+	cancelPairing(
+		token: string | undefined,
+		origin: string,
+		id: string,
+		local = false,
+	) {
+		this.authorize(token, origin, local);
+		// A stale tab must never cancel a newly enabled code.
+		if (this.currentPairing()?.id === id) this.pairing = undefined;
+		return { cancelled: true };
+	}
+	private limitPairing(action: "request" | "claim", source: string) {
+		const now = Date.now();
+		for (const [key, limit] of this.pairingLimits)
+			if (limit.expires <= now) this.pairingLimits.delete(key);
+		const limits = [
+			[`${action}:all`, action === "request" ? 30 : 300],
+			[`${action}:peer:${source}`, action === "request" ? 5 : 60],
+		] as const;
+		for (const [key, maximum] of limits) {
+			const limit = this.pairingLimits.get(key);
+			if (limit && limit.count >= maximum)
+				throw new PairingRateLimitError(
+					Math.max(1, Math.ceil((limit.expires - now) / 1000)),
+				);
+		}
+		// Bound memory even when many distinct socket peers send invalid requests.
+		if (
+			this.pairingLimits.size >= 1000 &&
+			!this.pairingLimits.has(limits[1][0])
+		)
+			throw new PairingRateLimitError(60);
+		for (const [key] of limits) {
+			const limit = this.pairingLimits.get(key) ?? {
+				count: 0,
+				expires: now + 60000,
+			};
+			limit.count++;
+			this.pairingLimits.set(key, limit);
+		}
+	}
+	requestPairing(
+		code: string,
+		origin: string,
+		source: string,
+		previous?: string,
+	) {
+		if (!this.access.origins.includes(origin) || !origin.startsWith("https:"))
+			throw new Error("Invalid Factory origin");
+		this.limitPairing("request", source);
+		const pairing = this.currentPairing();
+		if (
+			!pairing ||
+			pairing.approved ||
+			!/^[0-9]{6}$/.test(code) ||
+			!timingSafeEqual(
+				Buffer.from(hash(code), "hex"),
+				Buffer.from(pairing.digest, "hex"),
+			)
+		) {
+			throw new Error(
+				"Invalid or expired sign-in code. Generate a new code in Settings → Access.",
+			);
+		}
+		const existing = this.boundPairing(previous, origin);
+		if (existing)
+			return {
+				...this.pairingView(pairing, existing.request),
+				token: previous!,
+			};
+		if (pairing.requests.length >= 20)
+			throw new Error(
+				"Too many devices waiting. Reject unused requests in Settings → Access.",
+			);
+		let confirmation: string;
+		do {
+			confirmation = randomInt(1000000).toString().padStart(6, "0");
+		} while (
+			pairing.requests.some(
+				(request) => request.confirmation === confirmation,
+			) ||
+			hash(confirmation) === pairing.digest
+		);
+		const token = secret();
+		const request = {
+			id: secret(),
+			hash: hash(token),
+			origin,
+			confirmation,
+			createdAt: Date.now(),
+		};
+		pairing.requests.push(request);
+		return { ...this.pairingView(pairing, request), token };
+	}
+	decidePairing(
+		token: string | undefined,
+		origin: string,
+		id: string,
+		requestId: string,
+		confirmation: string,
+		approve: boolean,
+		local = false,
+	) {
+		this.authorize(token, origin, local);
+		const pairing = this.currentPairing();
+		const request = pairing?.requests.find(
+			(request) =>
+				request.id === requestId && request.confirmation === confirmation,
+		);
+		if (!pairing || pairing.id !== id || !request || pairing.approved)
+			throw new Error(
+				"Pairing request changed or expired. Refresh before approving.",
+			);
+		if (approve) {
+			pairing.approved = request.id;
+			pairing.requests = [request];
+		} else
+			pairing.requests = pairing.requests.filter((item) => item !== request);
+		return { approved: approve };
+	}
+	claimPairing(
+		token: string | undefined,
+		origin: string,
+		id: string,
+		source: string,
+	) {
+		this.limitPairing("claim", source);
+		const bound = this.boundPairing(token, origin, id);
+		if (!bound || bound.pairing.approved !== id)
+			throw new Error(
+				"Pairing has not been approved, or has expired. Check your trusted device.",
+			);
+		// Only an approved, browser-bound request can consume the grant and issue a key.
+		this.pairing = undefined;
+		return this.issueKey(bound.pairing.label);
+	}
+	withdrawPairing(
+		token: string | undefined,
+		origin: string,
+		id: string,
+		source: string,
+	) {
+		this.limitPairing("claim", source);
+		const bound = this.boundPairing(token, origin, id);
+		if (bound) {
+			if (bound.pairing.approved === id) this.pairing = undefined;
+			else
+				bound.pairing.requests = bound.pairing.requests.filter(
+					(request) => request !== bound.request,
+				);
+		}
+		return { cancelled: true };
+	}
+	private keyName(label: string) {
+		const name = label.trim();
+		if (!name || name.length > 80)
+			throw new Error("API key name must contain 1–80 characters");
+		if (this.store.state.keys.length >= 100)
+			throw new Error("Remove an API key before adding more (limit 100)");
+		return name;
+	}
 	create(
 		token: string | undefined,
 		origin: string,
@@ -250,11 +534,10 @@ export class FactoryAuth {
 		local = false,
 	) {
 		this.authorize(token, origin, local);
-		const name = label.trim();
-		if (!name || name.length > 80)
-			throw new Error("API key name must contain 1–80 characters");
-		if (this.store.state.keys.length >= 100)
-			throw new Error("Remove an API key before adding more (limit 100)");
+		return this.issueKey(label);
+	}
+	private issueKey(label: string) {
+		const name = this.keyName(label);
 		const key = secret(),
 			id = secret();
 		this.store.update((state) =>

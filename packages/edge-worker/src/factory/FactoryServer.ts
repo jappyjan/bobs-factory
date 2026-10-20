@@ -27,6 +27,7 @@ import {
 	type FactoryAccess,
 	FactoryAuth,
 	factoryAccess,
+	PairingRateLimitError,
 } from "./FactoryAuth.js";
 import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
@@ -186,15 +187,26 @@ export class FactoryServer {
 			});
 		registerVideoRoutes(this.app, runtime);
 		this.app.setErrorHandler((error, request, reply) => {
+			if (error instanceof PairingRateLimitError)
+				return reply
+					.code(429)
+					.header("Retry-After", String(error.retryAfter))
+					.send({ error: error.message });
 			// Parser errors can include fragments of the submitted body. Never echo a login secret.
 			if (
-				request.url.split("?")[0] === "/api/auth/login" &&
+				(request.url.split("?")[0] === "/api/auth/login" ||
+					request.url.startsWith("/api/auth/pairing/")) &&
 				(error instanceof z.ZodError ||
 					(error instanceof Error &&
 						"code" in error &&
 						String(error.code).startsWith("FST_ERR_CTP_")))
 			)
-				return reply.code(400).send({ error: "Invalid API key" });
+				return reply.code(400).send({
+					error:
+						request.url.split("?")[0] === "/api/auth/login"
+							? "Invalid API key"
+							: "Invalid or expired sign-in code",
+				});
 			if (
 				request.url.startsWith("/api/launch-assets") &&
 				(error as { code?: string }).code === "FST_ERR_CTP_BODY_TOO_LARGE"
@@ -285,6 +297,10 @@ export class FactoryServer {
 				throw new Error("Recipe settings changed. Refresh before sending.");
 		};
 		this.app.addHook("onSend", async (request, reply) => {
+			if (request.url.split("?")[0] === "/") {
+				reply.header("Content-Security-Policy", "frame-ancestors 'none'");
+				reply.header("X-Frame-Options", "DENY");
+			}
 			if (request.url.startsWith("/api/")) {
 				reply.header("Cache-Control", "no-store");
 				reply.header("X-Factory-Build", shell.build);
@@ -329,10 +345,24 @@ export class FactoryServer {
 				"Set-Cookie",
 				`${cookieName(origin)}=${token}; Path=/; HttpOnly; SameSite=Strict; ${origin.startsWith("https:") ? "Secure; " : ""}${expires === null ? "Max-Age=34560000" : `Expires=${new Date(expires).toUTCString()}`}`,
 			);
+		const pairingToken = (request: FastifyRequest) =>
+			cookie(request, "__Host-factory-pairing");
+		const pairingCookie = (
+			reply: import("fastify").FastifyReply,
+			token: string,
+			expires: number,
+		) =>
+			reply.header(
+				"Set-Cookie",
+				`__Host-factory-pairing=${token}; Path=/; HttpOnly; SameSite=Strict; Secure; Expires=${new Date(expires).toUTCString()}`,
+			);
 		const publicPaths = new Set([
 			"/api/version",
 			"/api/auth/status",
 			"/api/auth/login",
+			"/api/auth/pairing/request",
+			"/api/auth/pairing/claim",
+			"/api/auth/pairing/withdraw",
 			...shell.assets.map((asset) => asset.path),
 		]);
 		const controlIntake = (request: FastifyRequest) =>
@@ -467,6 +497,10 @@ export class FactoryServer {
 			const origin = originFor(request)!;
 			const session = sessionFor(request);
 			const local = localFor(request);
+			const pairingRequest = this.auth.pairingRequest(
+				pairingToken(request),
+				origin,
+			);
 			// Browsers cap persistent cookies. Refresh the cookie on foreground
 			// verification while the server session itself has no expiry.
 			if (session?.expires === null)
@@ -476,6 +510,8 @@ export class FactoryServer {
 				authenticated: Boolean(session),
 				expires: session?.expires,
 				setupRequired: !local && !this.auth.store.state.keys.length,
+				...(this.auth.pairingAvailable() ? { pairingAvailable: true } : {}),
+				...(pairingRequest ? { pairingRequest } : {}),
 				origin,
 			};
 		});
@@ -506,6 +542,104 @@ export class FactoryServer {
 		this.app.get("/api/auth/keys", (request) =>
 			this.auth.keys(tokenFor(request), originFor(request)!, localFor(request)),
 		);
+		this.app.get("/api/auth/pairing", (request) =>
+			this.auth.pairingStatus(
+				tokenFor(request),
+				originFor(request)!,
+				localFor(request),
+			),
+		);
+		this.app.post("/api/auth/pairing", { bodyLimit: 1024 }, (request) => {
+			const body = z
+				.object({ label: z.string().min(1).max(80) })
+				.strict()
+				.parse(request.body);
+			return this.auth.beginPairing(
+				tokenFor(request),
+				originFor(request)!,
+				body.label,
+				localFor(request),
+			);
+		});
+		this.app.delete<{ Params: { id: string } }>(
+			"/api/auth/pairing/:id",
+			(request) =>
+				this.auth.cancelPairing(
+					tokenFor(request),
+					originFor(request)!,
+					request.params.id,
+					localFor(request),
+				),
+		);
+		for (const action of ["approve", "reject"] as const)
+			this.app.post<{ Params: { id: string } }>(
+				`/api/auth/pairing/:id/${action}`,
+				{ bodyLimit: 1024 },
+				(request) => {
+					const body = z
+						.object({
+							requestId: z.string().max(100),
+							confirmation: z.string().regex(/^[0-9]{6}$/),
+						})
+						.strict()
+						.parse(request.body);
+					return this.auth.decidePairing(
+						tokenFor(request),
+						originFor(request)!,
+						request.params.id,
+						body.requestId,
+						body.confirmation,
+						action === "approve",
+						localFor(request),
+					);
+				},
+			);
+		this.app.post(
+			"/api/auth/pairing/request",
+			{ bodyLimit: 1024 },
+			(request, reply) => {
+				const body = z
+					.object({ code: z.string().max(100) })
+					.strict()
+					.parse(request.body);
+				// Fastify uses the socket peer; untrusted forwarding headers cannot reset limits.
+				const { token, ...result } = this.auth.requestPairing(
+					body.code,
+					originFor(request)!,
+					request.ip,
+					pairingToken(request),
+				);
+				pairingCookie(reply, token, result.expires);
+				return result;
+			},
+		);
+		for (const action of ["claim", "withdraw"] as const)
+			this.app.post(
+				`/api/auth/pairing/${action}`,
+				{ bodyLimit: 1024 },
+				(request, reply) => {
+					const body = z
+						.object({ id: z.string().max(100) })
+						.strict()
+						.parse(request.body);
+					const result =
+						action === "claim"
+							? this.auth.claimPairing(
+									pairingToken(request),
+									originFor(request)!,
+									body.id,
+									request.ip,
+								)
+							: this.auth.withdrawPairing(
+									pairingToken(request),
+									originFor(request)!,
+									body.id,
+									request.ip,
+								);
+					pairingCookie(reply, "", 0);
+					return result;
+				},
+			);
 		this.app.post("/api/auth/keys", { bodyLimit: 1024 }, (request) => {
 			const body = z
 				.object({ label: z.string().min(1).max(80) })

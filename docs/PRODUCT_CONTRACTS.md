@@ -110,6 +110,24 @@ the old live stream and cancels requests bound to the old cookie without clearin
 the credential-management form. It reconnects after session verification;
 connection loss, expiry and current-session rejection still clear private views.
 
+Device code sign-in is explicitly enabled in Settings → Access by local authority
+or a valid remote session. A single memory-only six-digit grant can authorize one
+device within five minutes. Correct code entry creates a pending browser-bound
+request; matching confirmation numbers and exact trusted approval precede any key
+issuance. An independent 256-bit receiving-browser secret lives in a temporary
+Secure/HttpOnly/SameSite=Strict host-only cookie, with only its hash held server-side.
+Code possession, request IDs and confirmation numbers cannot collect a key alone.
+Approval reserves the grant for one request; collection consumes it synchronously.
+Cancellation, replacement, recovery, restart and loss of its issuing remote session
+disable pending and uncollected approved requests. Receiver withdrawal and trusted
+rejection are request-specific. Throttling never revokes the code; bounded per-peer
+and instance request windows ignore untrusted forwarding headers. Proxy peers share
+their allowance and sustained network floods can still delay pairing. Public status
+exposes availability and cookie-bound own-request metadata; management requires
+access. Dashboard framing is denied. HTTPS collection issues a distinct normal key,
+then existing key sign-in and session behavior apply without persisting the raw key.
+The version-3 digest-only store and key/session revocation remain unchanged.
+
 Migration blocks `CYRUS_CAPACITY_DIRECTORY` and `BOBS_FACTORY_CAPACITY_DIRECTORY`
 in the source `.env` or the helper's inherited environment. These overrides no
 longer select a runtime pool. Reconcile custom/shared coordinator state and all
