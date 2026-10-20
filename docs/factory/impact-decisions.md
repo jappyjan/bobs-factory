@@ -31,6 +31,17 @@ recipe upgrades use conservative definitions. Operators opt custom workflows in
 by declaring the contracts and their correction/assistance routes; adding a role
 does not authorize changing delivery or approval policies.
 
+An assessment's `correctionRequired: true` branch retains its declared fixer even
+when a fresh provider check reports that an earlier CI failure cleared. The runtime
+supplies `/assessedCorrection` with the current same-frame assessment's summary,
+rationale, uncertainty and comment assessments, including for frozen roles with
+restricted inputs. The fixer addresses source and verification work within accepted
+scope, then returns through the existing independent assessment and gates. A blocked
+assessment can take this route after its assistance answer; it still cannot authorize
+evidence reuse. An unrelated or superseded assessment does not prevent obsolete
+provider-only work from being skipped. Existing iteration and convergence limits
+remain in force.
+
 ## Evidence and source boundaries
 
 Reviewers declare covered requirements, areas, dependencies and the reason their

@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import {
 	mkdirSync,
 	mkdtempSync,
@@ -3496,6 +3497,123 @@ it("waits for CI assistance and retries the existing fixer after an answer witho
 	expect(calls).toEqual(["ci-fix", "ci-fix"]);
 	expect(run.status).toBe("completed");
 	await runtime.shutdown();
+});
+
+it.each([
+	"required",
+	"blocked",
+	"clear",
+	"other-frame",
+	"other-route",
+	"superseded",
+])("keeps assessed correction separate from obsolete provider failures (%s)", async (kind) => {
+	const called: ExecutionContext[] = [];
+	const readiness = vi.fn(async () => ({ skipFix: true, fix: false }));
+	const { runtime, home } = create({
+		agent: async (context) => {
+			called.push(context);
+			return {
+				summary:
+					"Addressed independently assessed source and verification work",
+				checks: [],
+				addressedCommentIds: [],
+				addressedReviewIds: [],
+				reviewRequired: true,
+			};
+		},
+		tool: readiness,
+	});
+	const workspace = join(home, "repo");
+	mkdirSync(workspace);
+	const git = (...args: string[]) =>
+		execFileSync("git", args, { cwd: workspace, stdio: "pipe" });
+	git("init", "-b", "main");
+	git(
+		"-c",
+		"user.name=Fixture",
+		"-c",
+		"user.email=fixture@example.invalid",
+		"-c",
+		"commit.gpgsign=false",
+		"commit",
+		"--allow-empty",
+		"-m",
+		"Fixture",
+	);
+	git("update-ref", "refs/remotes/origin/main", "HEAD");
+	const definitions = structuredClone(defaultWorkflows);
+	const pipeline = definitions.find((w) => w.id === "factory-pipeline")!;
+	pipeline.steps.find((s) => s.id === "ci-fix")!.next = "end";
+	pipeline.steps.find((s) => s.id === "ci-fix")!.inputs = ["plan"];
+	if (kind === "other-route")
+		pipeline.steps.find((s) => s.id === "assess-impact")!.branches[0]!.next =
+			"code-fix";
+	const run = runtime.create({
+		repositoryId: "repo",
+		workspace,
+		workflow: definitions.find((w) => w.id === "factory")!,
+		workflowDefinitions: definitions,
+		input: "Repair accepted code findings",
+		triggerOrigin: { type: "manual", workflowId: "factory" },
+	});
+	// Model the already accepted snapshot, ending after the fixer under test.
+	run.workflowDefinitions = definitions;
+	const required = kind === "required" || kind === "blocked";
+	const decision = {
+		status: kind === "blocked" ? "blocked" : "completed",
+		correctionRequired: kind !== "clear",
+		summary: "Open authentication and transaction defects remain",
+		rationale: "Provider checks passing do not resolve independent findings",
+		uncertainty: ["Retest the shutdown race after correction"],
+		commentAssessments: [],
+		snapshot: {
+			key:
+				kind === "other-frame"
+					? "other/specialist-review"
+					: "pipeline/specialist-review",
+			digest: "accepted-snapshot",
+		},
+		at: "2026-10-20T00:00:00Z",
+	};
+	run.impactDecisions = [decision] as FactoryRun["impactDecisions"];
+	run.outputs["assess-impact"] = decision;
+	if (kind === "superseded")
+		run.impactDecisions!.push({
+			...run.impactDecisions![0]!,
+			correctionRequired: false,
+			at: "2026-10-20T00:01:00Z",
+		});
+	run.outputs["draft-pr"] = { url: "https://github.com/test/repo/pull/1" };
+	run.checkpoint = {
+		current: "pipeline",
+		visits: { pipeline: 1 },
+		active: {
+			phase: "executing",
+			children: [{ current: "ci-fix", visits: {} }],
+		},
+	};
+	const frozen = structuredClone(run.workflowDefinitions);
+	await runtime.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	expect(readiness).toHaveBeenCalledOnce();
+	expect(called).toHaveLength(required ? 1 : 0);
+	if (required) {
+		expect(called[0]!.input).toMatchObject({
+			assessedCorrection: {
+				source: "pipeline/assess-impact",
+				required: true,
+				snapshotDigest: "accepted-snapshot",
+				summary: decision.summary,
+				uncertainty: decision.uncertainty,
+			},
+		});
+		expect(run.outputs["ci-fix"]).toMatchObject({ reviewRequired: true });
+		expect((run.outputs["ci-fix"] as { skipped?: boolean }).skipped).not.toBe(
+			true,
+		);
+	} else expect(run.outputs["ci-fix"]).toMatchObject({ skipped: true });
+	expect(run.workflowDefinitions).toEqual(frozen);
+	expect(run.humanDecisions ?? []).toEqual([]);
 });
 
 it("passes original owning-run age to agents and intensive nested leaves", async () => {

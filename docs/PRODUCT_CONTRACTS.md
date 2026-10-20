@@ -70,6 +70,14 @@ route to revise and independently review the candidate; required exact-version h
 architecture acceptance remains separate. Runtime guidance covers frozen roles
 without replacing their definitions or resetting iteration budgets.
 
+When an impact assessment requires correction, fresh provider readiness cannot
+skip its declared fixer merely because the provider failure cleared. The fixer
+receives the current assessment's summary, rationale, uncertainty and feedback,
+scoped to the same accepted workflow frame and exact saved assessment. It returns
+through the existing independent assessment and required gates. Blocked assessments
+retain that obligation after their assistance answer; unrelated or superseded
+assessments do not revive obsolete CI work.
+
 Delivery candidates validate their accepted execution identity, stable operation
 IDs and advancing revision version while the planner can still correct output.
 Legacy invalid delivery checkpoints re-enter only their existing planner →

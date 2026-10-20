@@ -1568,9 +1568,22 @@ export class WorkflowRuntime {
 				: checkpoint.reviewKey;
 			context.coordinateDelivery = (operation) =>
 				this.coordinate(context, operation);
+			const assessedCorrection = this.assessedCorrection(
+				run,
+				steps,
+				outputs,
+				prefix,
+				step.id,
+			);
+			if (assessedCorrection)
+				context.input = {
+					...(context.input as Record<string, unknown>),
+					assessedCorrection,
+				};
 			if (
 				step.type === "agent" &&
-				(step.id === "ci-fix" ||
+				(assessedCorrection ||
+					step.id === "ci-fix" ||
 					steps.some(
 						(item) =>
 							item.tool === "ci" &&
@@ -2027,7 +2040,10 @@ export class WorkflowRuntime {
 											tool: "ci-fix-readiness",
 										},
 									});
-									if (readPath(fresh, "skipFix") === true) {
+									if (
+										readPath(fresh, "skipFix") === true &&
+										!assessedCorrection
+									) {
 										context.log(
 											"Fresh readiness resolved the queued failure; skipping the obsolete fixer and retaining review/QA/approval gates.",
 										);
@@ -2039,6 +2055,10 @@ export class WorkflowRuntime {
 											skipped: true,
 										};
 									}
+									if (readPath(fresh, "skipFix") === true && assessedCorrection)
+										context.log(
+											`Provider failure cleared; ${assessedCorrection.source} still requires correction. Retaining the declared fixer and independent follow-up gates.`,
+										);
 									// Supply current head/base, feedback and checks, not the obsolete queued receipt.
 									context.input = {
 										...(context.input as Record<string, unknown>),
@@ -3759,6 +3779,52 @@ export class WorkflowRuntime {
 			);
 			return true;
 		}
+	}
+	private assessedCorrection(
+		run: FactoryRun,
+		steps: WorkflowStep[],
+		outputs: Record<string, unknown>,
+		prefix: string,
+		fixer: string,
+	) {
+		for (const assessor of steps) {
+			if (
+				assessor.impactContract !== "impact-v1" ||
+				!assessor.impact ||
+				!assessor.branches.some(
+					(branch) =>
+						branch.when.path === "correctionRequired" &&
+						branch.when.equals === true &&
+						branch.next === fixer,
+				)
+			)
+				continue;
+			// A blocked assessment can route here after its assistance answer. It is
+			// still an obligation, though it cannot authorize evidence reuse.
+			const decision = [...(run.impactDecisions ?? [])]
+				.reverse()
+				.find(
+					(item) => item.snapshot.key === `${prefix}${assessor.impact!.fanout}`,
+				);
+			if (
+				!decision?.correctionRequired ||
+				readPath(outputs[assessor.id], "snapshot.digest") !==
+					decision.snapshot.digest ||
+				readPath(outputs[assessor.id], "at") !== decision.at ||
+				this.nextStep(steps, assessor, decision) !== fixer
+			)
+				continue;
+			return {
+				source: `${prefix}${assessor.id}`,
+				required: true,
+				snapshotDigest: decision.snapshot.digest,
+				summary: decision.summary,
+				rationale: decision.rationale,
+				uncertainty: [...decision.uncertainty],
+				commentAssessments: structuredClone(decision.commentAssessments),
+			};
+		}
+		return undefined;
 	}
 	private renewStaleImpact(
 		run: FactoryRun,

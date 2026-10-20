@@ -19,8 +19,10 @@ import {
 	freezeDelivery,
 } from "../../../../packages/edge-worker/dist/factory/Delivery.js";
 import { collectImpactSnapshot } from "../../../../packages/edge-worker/dist/factory/Impact.js";
+import { scopeContextDigest } from "../../../../packages/edge-worker/dist/factory/SpecialistReview.js";
 import { validateWorkflows } from "../../../../packages/edge-worker/dist/factory/Workflow.js";
 import { proposal } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { f1AgentHandlers } from "../../src/MockAgentRunner.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
@@ -169,8 +171,40 @@ const workflows = [
 let worker,
 	runtime,
 	designReviews = 0,
-	specialistTurns = 0;
+	specialistTurns = 0,
+	assessedTurns = 0;
 const calls = [];
+function assessment(current, extra = {}) {
+	return {
+		impactContract: "impact-v1",
+		status: "blocked",
+		summary: "Fresh evidence needs fixture access",
+		classification: "full",
+		rationale: "Environment changed",
+		uncertainty: ["Fixture access"],
+		extractRequirements: true,
+		specialists: current.workflowDefinitions
+			.find((w) => w.id === "factory-pipeline")
+			.steps.find((s) => s.id === "specialist-review")
+			.groups.flat()
+			.map((s) => s.id),
+		requirementIds: [],
+		checks: [],
+		qaCriteria: [],
+		reuse: [],
+		invalidate: [],
+		targetCompatible: true,
+		testAssertions: {
+			inspected: true,
+			weakened: false,
+			evidence: "No assertions weakened",
+		},
+		humanReview: "no-prior-approval",
+		approvalRationale: "No approval supplied",
+		questions: ["Restore fixture access"],
+		...extra,
+	};
+}
 const config = {
 	factoryHome: home,
 	serverPort: 3600,
@@ -251,34 +285,47 @@ const config = {
 						};
 				}
 				if (current.id === "stale" && current.step === "pipeline/assess-impact")
+					response = assessment(current);
+				if (
+					current.id === "assessed" &&
+					current.step === "pipeline/assess-impact"
+				) {
+					const first = ++assessedTurns === 1;
+					response = assessment(current, {
+						status: first ? "completed" : "blocked",
+						correctionRequired: first,
+						summary: first
+							? "Independent source defect still needs correction"
+							: "Independent verification still needs access",
+						rationale:
+							"Passing provider checks do not resolve independent findings",
+						uncertainty: ["Retest the required source behavior"],
+						questions: first ? [] : ["Restore fixture access"],
+					});
+				}
+				if (current.id === "assessed" && current.step === "pipeline/ci-fix") {
+					const input = loadFactoryContextSnapshot(
+						config.mcpConfig["factory-context"].args.at(-1),
+					);
+					assert.deepEqual(input.assessedCorrection, {
+						source: "pipeline/assess-impact",
+						required: true,
+						snapshotDigest: current.impactDecisions[0].snapshot.digest,
+						summary: "Independent source defect still needs correction",
+						rationale:
+							"Passing provider checks do not resolve independent findings",
+						uncertainty: ["Retest the required source behavior"],
+						commentAssessments: [],
+					});
+					calls.at(-1).assessedCorrection = input.assessedCorrection;
 					response = {
-						impactContract: "impact-v1",
-						status: "blocked",
-						summary: "Fresh evidence needs fixture access",
-						classification: "full",
-						rationale: "Environment changed",
-						uncertainty: ["Fixture access"],
-						extractRequirements: true,
-						specialists: current.workflowDefinitions
-							.find((w) => w.id === "factory-pipeline")
-							.steps.find((s) => s.id === "specialist-review")
-							.groups.flat()
-							.map((s) => s.id),
-						requirementIds: [],
+						summary:
+							"Mocked corrective role returned to independent assessment",
 						checks: [],
-						qaCriteria: [],
-						reuse: [],
-						invalidate: [],
-						targetCompatible: true,
-						testAssertions: {
-							inspected: true,
-							weakened: false,
-							evidence: "No assertions weakened",
-						},
-						humanReview: "no-prior-approval",
-						approvalRationale: "No approval supplied",
-						questions: ["Restore fixture access"],
+						addressedCommentIds: [],
+						addressedReviewIds: [],
 					};
+				}
 			}
 			// The system instruction identifies each concurrent role independently of the shared run cursor.
 			if (current?.id === "specialists") {
@@ -594,6 +641,61 @@ try {
 	await complete(recovery);
 	assert(existsSync(deleted));
 	assert.equal(git(deleted, "rev-parse", "HEAD"), head);
+	const assessed = create("assessed", "factory", workspace);
+	assessed.gitProvider = provider;
+	assessed.outputs["draft-pr"] = { url };
+	assessed.outputs.retained = { work: "Original source and findings retained" };
+	assessed.outputs.ci = {
+		...JSON.parse(readFileSync(providerFile, "utf8")).readiness,
+		scopeDigest: scopeContextDigest({
+			originalInput: assessed.input,
+			outputs: assessed.outputs,
+			answers: [],
+			chatMessages: [],
+			humanDecisions: [],
+		}),
+	};
+	assessed.checkpoint = {
+		current: "pipeline",
+		visits: { pipeline: 1 },
+		active: {
+			phase: "executing",
+			children: [{ current: "assess-impact", visits: {} }],
+		},
+	};
+	const accepted = structuredClone(assessed.workflowDefinitions);
+	publish(head, git(workspace, "branch", "--show-current"));
+	const assessedExecution = runtime.launch(assessed);
+	await until(
+		() => assessed.status === "waiting" || assessed.status === "failed",
+		"Assessed correction did not reach independent reassessment",
+	);
+	assert.equal(assessed.status, "waiting", assessed.error);
+	assert.equal(assessed.step, "pipeline/assess-impact");
+	assert.equal(assessedTurns, 2);
+	assert.equal(
+		calls.filter((c) => c.run === "assessed" && c.step === "pipeline/ci-fix")
+			.length,
+		1,
+	);
+	assert(
+		assessed.events.some((e) =>
+			e.message.startsWith(
+				"Provider failure cleared; pipeline/assess-impact still requires correction.",
+			),
+		),
+	);
+	assert.equal(assessed.outputs.ci.fix, false);
+	assert.equal(assessed.outputs["ci-fix"].skipped, undefined);
+	assert.equal(assessed.impactDecisions[0].correctionRequired, true);
+	assert.deepEqual(assessed.outputs.retained, {
+		work: "Original source and findings retained",
+	});
+	assert.deepEqual(assessed.workflowDefinitions, accepted);
+	assert.equal(assessed.humanDecisions?.length ?? 0, 0);
+	assert.deepEqual(assessed.questions, ["Restore fixture access"]);
+	runtime.stop(assessed.id);
+	await assessedExecution;
 	const merged = create("merged", "factory", join(worktrees, "gone-merged"));
 	merged.gitProvider = provider;
 	merged.step = "pipeline/handoff";
@@ -734,6 +836,7 @@ try {
 				"invalid specialist boundary corrected",
 				"unproven duplicate remains actionable",
 				"deleted clean committed worktree restored",
+				"green provider checks retain independently assessed correction and reassessment",
 				"exact approved merged delivery reconciled without mutation",
 				"stale impact automatically renewed with blockers preserved",
 			],
