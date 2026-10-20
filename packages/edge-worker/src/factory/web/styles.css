@@ -6326,6 +6326,7 @@ kbd {
 }
 /* Show & tell: one idea per slide, presented before the evidence. */
 .story {
+	scroll-margin-top: var(--story-top, 112px);
 	display: grid;
 	gap: 12px;
 	min-width: 0;
@@ -6671,30 +6672,50 @@ kbd {
 }
 /* Dig deeper (brief-v3): flows, the code tour, checks and choices. */
 .dive {
-	display: grid;
-	gap: 14px;
+	display: block;
 	min-width: 0;
 	scroll-margin-top: calc(var(--dive-top, 0px) + 8px);
 }
-.dive > header h2 {
+.dive-summary h2 {
 	margin: 0;
 	font-size: 22px;
 }
-.dive > header p {
+.dive-summary p {
 	margin: 2px 0 0;
 }
+.dive-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 18px;
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	background: var(--surface);
+	cursor: pointer;
+	list-style: none;
+}
+.dive-summary::-webkit-details-marker {
+	display: none;
+}
+.dive-summary:focus-visible {
+	outline: 3px solid #7b61ff;
+	outline-offset: 3px;
+}
+.dive-content {
+	display: grid;
+	gap: 14px;
+	padding-top: 14px;
+	min-width: 0;
+}
 .dive-tabs {
-	position: sticky;
-	top: var(--dive-top, 0px);
-	z-index: 5;
 	display: flex;
 	gap: 4px;
 	padding: 6px;
 	margin: 0 -4px;
 	overflow-x: auto;
 	scrollbar-width: none;
-	background: color-mix(in srgb, var(--bg) 88%, transparent);
-	backdrop-filter: blur(10px);
+	background: var(--bg);
 	border-radius: 16px;
 }
 .dive-tabs button {
@@ -6812,7 +6833,7 @@ kbd {
 	border: 1px solid var(--line);
 	border-radius: 20px;
 	box-shadow: var(--shadow);
-	scroll-margin-top: calc(var(--dive-top, 0px) + 64px);
+	scroll-margin-top: calc(var(--dive-top, 0px) + 16px);
 }
 .dive-flow > header {
 	display: flex;
@@ -6866,8 +6887,6 @@ kbd {
 	font-size: 14px;
 }
 .dive-actors {
-	position: sticky;
-	top: calc(var(--dive-top, 0px) + 56px);
 	z-index: 2;
 	display: grid;
 	grid-template-columns: repeat(var(--lanes), minmax(0, 1fr));
@@ -7134,7 +7153,7 @@ kbd {
 	background: var(--surface);
 	border: 1px solid var(--line);
 	border-radius: 18px;
-	scroll-margin-top: calc(var(--dive-top, 0px) + 64px);
+	scroll-margin-top: calc(var(--dive-top, 0px) + 16px);
 }
 .dive-file.key {
 	border-left: 4px solid #7b61ff;
@@ -7240,7 +7259,7 @@ kbd {
 .dive-line {
 	display: grid;
 	grid-template-columns: 2.6em 1.2em 1fr;
-	scroll-margin: calc(var(--dive-top, 0px) + 120px);
+	scroll-margin-top: calc(var(--dive-top, 0px) + 16px);
 }
 .dive-line code {
 	padding-right: 8px;
@@ -7336,7 +7355,7 @@ kbd {
 	margin: 0 8px 8px;
 	border-radius: 12px;
 	background: var(--quiet);
-	scroll-margin-top: calc(var(--dive-top, 0px) + 64px);
+	scroll-margin-top: calc(var(--dive-top, 0px) + 16px);
 }
 .dive-related-head {
 	padding: 8px 10px;
@@ -7379,7 +7398,7 @@ kbd {
 	background: var(--surface);
 	border: 1px solid var(--line);
 	border-radius: 16px;
-	scroll-margin-top: calc(var(--dive-top, 0px) + 64px);
+	scroll-margin-top: calc(var(--dive-top, 0px) + 16px);
 }
 .dive-check-head {
 	all: unset;
@@ -7569,6 +7588,100 @@ kbd {
 	}
 	.dive-step {
 		transition: none;
+	}
+}
+
+/* One persistent review bar; reserve its measured height below the document. */
+.brief.brief-with-footer {
+	grid-template-columns: minmax(0, 1fr);
+	padding-bottom: calc(var(--brief-footer-height, 170px) + 24px);
+}
+.brief-with-footer
+	:where([id], [data-comment-path], button, textarea, summary) {
+	scroll-margin-bottom: calc(var(--brief-footer-height, 170px) + 12px);
+}
+.brief-footer {
+	position: fixed;
+	inset: auto 0 0;
+	z-index: 25;
+	border-top: 1px solid var(--line);
+	background: var(--surface);
+	box-shadow: 0 -6px 24px #00000012;
+	padding: 10px max(16px, env(safe-area-inset-right))
+		max(10px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.brief-footer-inner {
+	max-width: 1200px;
+	margin: auto;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 20px;
+}
+.brief-slide-controls {
+	flex: 1 0 230px;
+	max-width: 330px;
+	margin-right: auto;
+}
+.brief-footer .brief-panel {
+	position: static;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 8px 14px;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+.brief-footer .brief-panel-title,
+.brief-footer .brief-panel-foot,
+.brief-footer .brief-progress progress {
+	display: none;
+}
+.brief-footer .brief-progress {
+	font-size: 12px;
+	white-space: nowrap;
+}
+.brief-footer .brief-objections {
+	flex-basis: 100%;
+	font-size: 12px;
+	text-align: right;
+}
+@media (max-width: 800px) {
+	.brief-footer-inner {
+		flex-direction: column;
+		gap: 8px;
+	}
+	.brief-slide-controls {
+		flex: none;
+		width: 100%;
+		max-width: none;
+	}
+	.brief-footer .brief-panel {
+		width: 100%;
+		justify-content: stretch;
+		gap: 8px;
+	}
+	.brief-footer .brief-panel > button {
+		flex: 1;
+	}
+	.brief-footer .brief-progress {
+		display: none;
+	}
+	.brief-footer .brief-objections {
+		text-align: left;
+	}
+	.brief-footer .button,
+	.brief-footer button {
+		min-height: 44px;
+	}
+}
+
+@media (max-width: 520px) {
+	.brief-footer .brief-approval-revision {
+		display: none;
 	}
 }
 .brief-lightbox {
