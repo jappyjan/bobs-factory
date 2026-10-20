@@ -6,14 +6,14 @@ order; reusable builders sit beside them. Keep workflow names and their
 
 | Workflow | File | When it runs | Responsibility |
 | --- | --- | --- | --- |
-| CI / Validate | `ci.yml` | Main pushes and pull requests targeting main | Lint once; build and test on Node 22 and 24; verify installation and release safeguards. |
-| Release / 1. Build candidates | `release-channel.yml` | Hourly eligibility poll or manual dispatch | Freeze a candidate, build four native targets and desktop installers, and collect current test receipts. |
-| Release / 2. Collect evidence | `release-evidence.yml` | Successful candidate workflow or manual evidence import | Validate and retain candidate-bound source and evidence. |
-| Release / 3. Publish | `binary-release.yml` | Successful evidence workflow or manual dispatch | Prepare immutable assets; publish only when the existing channel and approval gates permit it. |
-| Release / Build CLI | `binary-build.yml` | Reusable call or manual frozen-candidate dispatch | Build and smoke-test CLI binaries on all four native targets. |
-| Release / Build desktop | `desktop-build.yml` | Reusable call or manual frozen-candidate dispatch | Package and validate unsigned desktop installers using verified native runtime bytes. |
-| Website / Build and deploy | `website.yml` | Relevant main pushes/PRs, published releases, or manual dispatch | Build PRs; deploy other events to GitHub Pages. |
-| Diagnostics / Relink Bun | `source-relink-diagnostic.yml` | Manual dispatch | Run the pinned Linux source/relink experiment on demand. |
+| CI / Validate | [ci.yml](workflows/ci.yml) | Main pushes and pull requests targeting main | Lint once; build and test on Node 22 and 24; verify installation and release safeguards. |
+| Release / 1. Build candidates | [release-channel.yml](workflows/release-channel.yml) | Hourly eligibility poll or manual dispatch | Freeze a candidate, build four native targets and desktop installers, and collect current test receipts. |
+| Release / 2. Collect evidence | [release-evidence.yml](workflows/release-evidence.yml) | Successful candidate workflow or manual evidence import | Validate and retain candidate-bound source and evidence. |
+| Release / 3. Publish | [binary-release.yml](workflows/binary-release.yml) | Successful evidence workflow or manual dispatch | Prepare immutable assets; publish only when the existing channel and approval gates permit it. |
+| Release / Build CLI | [binary-build.yml](workflows/binary-build.yml) | Reusable call or manual frozen-candidate dispatch | Build and smoke-test CLI binaries on all four native targets. |
+| Release / Build desktop | [desktop-build.yml](workflows/desktop-build.yml) | Reusable call or manual frozen-candidate dispatch | Package and validate unsigned desktop installers using verified native runtime bytes. |
+| Website / Build and deploy | [website.yml](workflows/website.yml) | Relevant main pushes/PRs, published releases, or manual dispatch | Build PRs; deploy other events to GitHub Pages. |
+| Diagnostics / Relink Bun | [source-relink-diagnostic.yml](workflows/source-relink-diagnostic.yml) | Manual dispatch | Run the pinned Linux source/relink experiment on demand. |
 
 ## CI and shared setup
 

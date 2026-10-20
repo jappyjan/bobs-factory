@@ -182,6 +182,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Make GitHub Actions easier to navigate with consistent workflow names, ordered release stages and documented responsibilities; share CI/release test setup, cancel superseded CI runs, and retire obsolete branch triggers and fixed-binary diagnostics while preserving release safeguards. ([#165](https://github.com/jappyjan/bobs-factory/pull/165))
+
 - Select affected review and verification work through independent impact assessments, retain original evidence with explicit reuse records, and stop unchanged correction cycles for assistance. Safe minor corrections may carry prior explicit approval forward after required checks; frozen runs keep their accepted workflows ([#124](https://github.com/jappyjan/bobs-factory/pull/124); [Taskbot #132](https://taskbot.apps.janjaap.de/p/bobs-factory/t/132)).
 - Replace remote dashboard passkey sign-in with API keys managed in Settings (add, remove and rotate). Upgrading revokes existing passkeys and browser sessions; an operator must create the first key in localhost Settings before remote access is available again. Localhost continues to work without a key ([#117](https://github.com/jappyjan/bobs-factory/pull/117)).
 
