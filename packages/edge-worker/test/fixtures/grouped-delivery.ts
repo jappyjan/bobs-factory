@@ -131,6 +131,7 @@ export function deliveryFixture(directory: string) {
 		const receipt = githubApiReceipt(args, {
 			url: request.url,
 			headRefOid: request.headSha,
+			baseRefName: repository.baseBranch,
 			baseRefOid: git(
 				repository,
 				"rev-parse",

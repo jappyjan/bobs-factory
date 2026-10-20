@@ -856,6 +856,9 @@ export function FocusCard({
 		run = detail.data ?? summary,
 		kind = attention(run) ?? "review",
 		stopped = ["stopped", "cancelled"].includes(run.status),
+		iterationExhausted =
+			!!run.iterationLimit &&
+			run.iterationLimit.visits > run.iterationLimit.limit,
 		canResume = run.status === "stopped" && run.resumeAvailable === true,
 		toast = useToast(),
 		action = useAction();
@@ -916,9 +919,11 @@ export function FocusCard({
 									? "Enable the workflow and its dependencies in Recipes. Resume continues this saved checkpoint after the previous executor stops."
 									: stopped
 										? "Bring back keeps this run visible. Resume continues its saved progress; it does not restart finished steps."
-										: run.iterationLimit
+										: iterationExhausted
 											? "Continue grants 4 more passes for this step. Your work and history stay intact."
-											: "Retry keeps the worktree, your answers and every finished step."}
+											: run.iterationLimit
+												? `The saved budget now allows ${run.iterationLimit.limit} passes for this step. Retry continues from saved progress.`
+												: "Retry keeps the worktree, your answers and every finished step."}
 							</small>
 						</div>
 					</div>
@@ -951,7 +956,7 @@ export function FocusCard({
 								? "Resume"
 								: stopped
 									? "Resume run"
-									: run.iterationLimit
+									: iterationExhausted
 										? "Continue (+4 passes)"
 										: "Retry step"}{" "}
 							<kbd>r</kbd>

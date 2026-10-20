@@ -904,17 +904,15 @@ export function assertAggregateRevision(
 		throw new Error("Aggregate review evidence changed after approval");
 }
 
-export function aggregateForContext(
+export function reviewBaselineForContext(
 	context: ExecutionContext,
-	options: { requireComplete?: boolean } = {},
-): AggregateReview | undefined {
+): ReviewBaseline | undefined {
 	if (!context.run.reviewRounds?.length) return;
 	const prefix = (
 		context.stepKey ??
 		context.run.step ??
 		context.step.id
 	).replace(/[^/]+$/, "");
-	let baseline: ReviewBaseline | undefined;
 	for (let index = context.run.reviewRounds.length - 1; index >= 0; index--) {
 		const round = context.run.reviewRounds[index]!;
 		// Older persisted checkpoints have no association. Retain safeguards for
@@ -924,11 +922,17 @@ export function aggregateForContext(
 			context.reviewKey
 				? round.key === context.reviewKey
 				: reviewPrefix.startsWith(prefix) || prefix.startsWith(reviewPrefix)
-		) {
-			baseline = round;
-			break;
-		}
+		)
+			return round;
 	}
+	return undefined;
+}
+
+export function aggregateForContext(
+	context: ExecutionContext,
+	options: { requireComplete?: boolean } = {},
+): AggregateReview | undefined {
+	const baseline = reviewBaselineForContext(context);
 	if (!baseline) return;
 	const aggregate = latestAggregate(context.run, baseline.key);
 	if (!aggregate || aggregate.baseline.round !== baseline.round) {
