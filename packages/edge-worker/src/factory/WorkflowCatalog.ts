@@ -205,6 +205,7 @@ export function stepBehaviorDigest(step: WorkflowStep): string {
 			if (item.type === "agent")
 				for (const key of settingsKeys) delete item[key];
 			for (const group of item.groups ?? []) visit(group);
+			if (item.body) visit(item.body);
 		}
 	};
 	visit([result]);

@@ -625,6 +625,82 @@ describe("durable For each execution", () => {
 		});
 	});
 
+	it("retains accepted call inputs when a called role mutates graph outputs and its input copies", async () => {
+		const directory = home();
+		const observed: unknown[] = [];
+		const instance = runtime(directory, {
+			agent: async (context) => {
+				if (context.step.id === "first") {
+					(context.outputs!.topic as { brief: string }).brief =
+						"changed graph output";
+					const input = context.input as {
+						accepted: { brief: string };
+						item: { details: { brief: string } };
+					};
+					input.accepted.brief = "changed named read";
+					input.item.details.brief = "changed lexical input copy";
+					return { complete: true };
+				}
+				const bindings = stepBindings(context);
+				observed.push(bindings);
+				return bindings;
+			},
+		});
+		const child = {
+			id: "worker",
+			name: "Worker",
+			stepConfigVersion: "step-config-v1",
+			allowedTriggers: ["workflow"],
+			steps: [
+				agent("first", { reads: { accepted: "@callInputs/topic" } }),
+				agent("second", {
+					reads: { accepted: "@callInputs/topic", current: "@item" },
+				}),
+			],
+		};
+		const item = { id: "a", details: { brief: "original" } };
+		const run = create(
+			instance,
+			directory,
+			[
+				each(
+					[item],
+					[
+						{
+							id: "call",
+							name: "Call",
+							type: "workflow",
+							workflow: "worker",
+							inputMapping: { topic: "/item/details" },
+						},
+						agent("outer", { reads: { current: "@item" } }),
+					],
+				),
+			],
+			[child],
+		);
+		await instance.launch(run);
+		expect(run.error).toBeUndefined();
+		expect(run.status).toBe("completed");
+		expect(observed).toEqual([
+			{ accepted: { brief: "original" }, current: item },
+			{ current: item },
+		]);
+		expect(run.foreachIterations?.[0]?.snapshot.items[0]?.value).toEqual(item);
+		expect(run.outputs.each).toMatchObject({
+			results: {
+				a: {
+					call: {
+						outputs: {
+							second: { accepted: { brief: "original" }, current: item },
+						},
+					},
+					outer: { current: item },
+				},
+			},
+		});
+	});
+
 	it("runs nested called intensive leaves at real machine capacity one without retaining parent slots", async () => {
 		const directory = home();
 		const capacity = new MachineCapacity(

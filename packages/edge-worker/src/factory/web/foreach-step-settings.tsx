@@ -127,9 +127,8 @@ export function ForeachStepSettings({
 				}
 			/>
 			<small>
-				For example{" "}
-				{`{"assignments":{"from":"coordinate","path":"/assignments"}}`} makes
-				the list available at /inputs/assignments.
+				For example {`{"assignments":"coordinate/assignments"}`} makes the list
+				available at /inputs/assignments.
 			</small>
 			<label>
 				Item source

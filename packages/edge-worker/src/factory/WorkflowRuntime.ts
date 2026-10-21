@@ -1897,7 +1897,9 @@ export class WorkflowRuntime {
 				iteration: checkpoint.iteration
 					? immutableJson(checkpoint.iteration)
 					: undefined,
-				callInputs: checkpoint.callInputs,
+				callInputs: checkpoint.callInputs
+					? immutableJson(checkpoint.callInputs)
+					: undefined,
 				run,
 				step,
 				stepKey: key,
@@ -2564,10 +2566,10 @@ export class WorkflowRuntime {
 							);
 							state.children[0]!.outputs = {
 								...snapshotWorkflowInput(outputs),
-								...mappings,
+								...snapshotWorkflowInput(mappings),
 							};
 							state.children[0]!.callInputs = step.inputMapping
-								? mappings
+								? immutableJson(mappings)
 								: checkpoint.callInputs;
 						}
 						await this.save(run);
