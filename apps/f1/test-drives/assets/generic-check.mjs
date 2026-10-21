@@ -899,10 +899,47 @@ function checkEvidence(run) {
 		const siblingIndex = siblings.findIndex(([other]) => other === key);
 		const destination =
 			branch?.next ?? step.next ?? siblings[siblingIndex + 1]?.[1].id ?? "end";
-		const finished = run.events.findLastIndex(
+		let finished = run.events.findLastIndex(
 			(event) =>
 				event.step === key && event.message === `Finished ${step.name}`,
 		);
+		let completion;
+		if (finished < 0) {
+			assert(
+				step.checks.some(
+					(check) =>
+						(typeof check === "string" ? check : check.check) ===
+						"review-assistance",
+				),
+				`${key} needs an explicit assistance protocol for checkpoint routing`,
+			);
+			assert.equal(output.reviewIncomplete, true);
+			const attempt = run.stepAttempts.findLast(
+				(attempt) => attempt.step === key && attempt.type === "check",
+			);
+			assert.equal(attempt?.outcome, "blocked");
+			assert(attempt.endedAt);
+			assert(Date.parse(history.at(-1).at) <= Date.parse(attempt.endedAt));
+			finished = run.events.findLastIndex(
+				(event) =>
+					event.step === key && event.message.startsWith("Human answer: "),
+			);
+			assert(finished >= 0, `${key} requires the saved assistance answer`);
+			const answer = run.events[finished];
+			assert(
+				run.answers.some(
+					({ answer: text }) => answer.message === `Human answer: ${text}`,
+				),
+			);
+			assert(Date.parse(attempt.endedAt) <= Date.parse(answer.at));
+			completion = {
+				kind: "answered-checkpoint",
+				attemptId: attempt.id,
+				outcome: attempt.outcome,
+				endedAt: attempt.endedAt,
+				answerAt: answer.at,
+			};
+		}
 		assert(finished >= 0, `${key} must finish in real runtime`);
 		const next = run.events
 			.slice(finished + 1)
@@ -921,6 +958,7 @@ function checkEvidence(run) {
 			configuration: step.check,
 			evidence: step.checks,
 			reads: step.reads,
+			...(completion ? { completion } : {}),
 		});
 	}
 	assert(checks.length, "Scenario must execute actual Check nodes");
