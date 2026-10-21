@@ -156,6 +156,7 @@ it.each([
 			expect(checks).toContain("Build pending");
 			expect(checks).toContain("CI 0/1");
 			expect(checks).not.toContain("CI ✓");
+			expect(checks).toContain('role="status" aria-label="Merge blockers"');
 		}
 		reportReadiness(context, readiness(false));
 		const next = await server.app.inject({

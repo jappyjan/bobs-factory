@@ -61,11 +61,11 @@ export function ProviderChecks({ run }: { run: any }) {
 				</span>
 			)}
 			{blockers.length > 0 && (
-				<ul aria-label="Merge blockers">
+				<div role="status" aria-label="Merge blockers">
 					{blockers.map((blocker: { message: string }, index: number) => (
-						<li key={index}>{blocker.message}</li>
+						<p key={index}>{blocker.message}</p>
 					))}
-				</ul>
+				</div>
 			)}
 		</>
 	);

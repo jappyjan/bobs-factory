@@ -189,3 +189,57 @@ the actual selected metadata, producer receipts and frame outputs. A remaining
 restart failure exposed a production screenshot-reuse lookup of a literal root
 `visual-review`; it now reads the declared review binding. All 101 original cases
 pass, including their unchanged approval, publication, retry and failure outcomes.
+
+The final Node 24 package gate exposed the five-second default test deadline in
+the inherited core storage durability suites. Unfinished filesystem operations
+then overlapped fixture deletion and rename-spy restoration, producing secondary
+cleanup and fault-injection errors. Both complete files passed unchanged in
+isolation (16/16). `OwnedResourceClaim.test.ts` and the interrupted-publication
+cases in `StorageRetention.test.ts` now have explicit thirty-second integration
+budgets; rename spies restore in `finally` blocks. The production ownership
+deadlines, fsync behavior, conflict rejection, retained unfinished markers,
+private-file permissions and every existing outcome assertion are unchanged.
+The updated focused suites pass 16/16; the complete package gate is rerun
+separately after other validation activity settles.
+
+The final storage F1 caught a main-integration flag dependency: the retained
+reference scanner still required `impactContract`, which modern presets replace
+with the `impact-reuse` evidence check. Storage now associates exact accepted
+producer keys with the declared impact/fanout bindings. Frozen review contexts
+and checkpoint output maps use their accepted call frame; global outputs and
+history require qualified modern keys. Only normalized historical producers may
+recover shared leaf aliases, without overriding an authored root producer.
+`FactoryStorageReferences.test.ts` covers modern receipt release, local-frame
+snapshots, root/sibling/unknown-frame copies, protocol opt-in, content references
+and genuine old flag-shaped definitions. The existing F1 storage fixtures now
+retain qualified executed receipts and local checkpoint outputs; their delivery,
+provider, copy-protection and deletion assertions are unchanged.
+
+## Final combined-main and browser checks
+
+`apps/f1/test/storage-retention.test.ts` retains every startup/restart, page eviction,
+copy/reference, cross-run evidence, native continuation, provider confirmation,
+workspace claim, cleanup and preserved-state assertion. Its synthetic current-stock
+checkpoint now supplies qualified global impact/check/guide slots, qualified
+history/revisions, and lexical called-frame outputs as the production runtime does.
+This exposed and verifies the real integrated-main `FactoryStorage` adapter change
+from removed contract flags to configured checks and exact frame associations.
+`FactoryStorageReferences.test.ts` independently checks opt-in, root/sibling
+collisions, old shapes, checkpoint/round frames and mismatching/copied evidence.
+
+The existing stock/renamed readiness render regression also requires a pending
+blocker to be a live status message. The browser found that using the existing
+successful-hygiene list would otherwise decorate “Build pending” with a checkmark.
+The fix changes only blocker markup; successful hygiene and passed CI assertions
+remain intact.
+
+The revision F1 harness is a new copy; the historical harness and reports remain
+unchanged. It retains raw turn order and every original outcome/command/approval
+assertion. Only contiguous members of the exact declared parallel specialist group
+are compared without scheduler ordering, with each configured member required once
+and all surrounding serial keys/formats still compared exactly.
+
+Node 24-only engine/setup/CI, trial and prepared-Cursor changes follow the user's
+explicit support decision. Negative tests reject unsupported major versions before
+launcher side effects or SDK loading; existing installation/native-session/security
+assertions remain. This does not change old recipe compatibility.

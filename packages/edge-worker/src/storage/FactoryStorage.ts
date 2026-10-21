@@ -8,6 +8,12 @@ import {
 	StorageRetentionStore,
 	storageDigest,
 } from "bobs-factory-core";
+import {
+	consumesImpact,
+	hasCheck,
+	readStep,
+	resolveStepConfig,
+} from "../factory/StepConfig.js";
 import type { WorkflowStep } from "../factory/Workflow.js";
 import type {
 	FactoryRun,
@@ -70,6 +76,9 @@ interface ReferencePolicy {
 		NonNullable<FactoryRun["impactDecisions"]>[number]["snapshot"]
 	>;
 	receipts: WeakSet<object>;
+	prefix: string;
+	step(key: string): WorkflowStep | undefined;
+	inFrame(prefix: string): ReferencePolicy;
 	enroll(value: unknown, key?: string): ReferencePolicy;
 }
 function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
@@ -102,66 +111,96 @@ function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
 	};
 	if (decisions.length)
 		yield* collect(run.workflow.steps, "", [run.workflow.id]);
-	const enroll = (value: unknown, key?: string): ReferencePolicy => {
-		const policy: ReferencePolicy = {
-			snapshots: new WeakMap(),
-			receipts: new WeakSet(),
-			enroll,
-		};
-		if (!value || typeof value !== "object") return policy;
-		const record = value as Record<string, unknown>;
-		const associated = (decision: (typeof decisions)[number]) => {
-			if (key === undefined) return undefined;
-			const qualified = key.includes("/")
-				? key
-				: `${decision.snapshot.key.slice(0, decision.snapshot.key.lastIndexOf("/") + 1)}${key}`;
-			return steps.get(qualified);
-		};
-		const candidates = decisions.filter(
-			(d) =>
-				key === undefined ||
-				!key.includes("/") ||
-				d.snapshot.key.slice(0, d.snapshot.key.lastIndexOf("/") + 1) ===
-					key.slice(0, key.lastIndexOf("/") + 1),
-		);
-		if (record.snapshot) {
-			const decision = candidates.find(
-				(d) =>
-					(key === undefined || associated(d)?.impactContract) &&
-					storageDigest(record.snapshot) === storageDigest(d.snapshot) &&
-					record.at === d.at,
-			);
-			if (decision) {
-				policy.snapshots.set(value, decision.snapshot);
-				if (Array.isArray(record.checkResults))
-					for (const receipt of record.checkResults)
-						if (
-							receipt &&
-							typeof receipt === "object" &&
-							decision.checkResults.some(
-								(r) => storageDigest(r) === storageDigest(receipt),
+	const prefixOf = (key: string) => key.slice(0, key.lastIndexOf("/") + 1);
+	const makePolicy = (prefix = ""): ReferencePolicy => {
+		const enroll = (value: unknown, key?: string): ReferencePolicy => {
+			const policy: ReferencePolicy = {
+				snapshots: new WeakMap(),
+				receipts: new WeakSet(),
+				prefix,
+				step: (key) => steps.get(key),
+				inFrame: makePolicy,
+				enroll,
+			};
+			if (!value || typeof value !== "object") return policy;
+			const record = value as Record<string, unknown>;
+			const associated = (decision: (typeof decisions)[number]) => {
+				if (key === undefined || prefix === "@unbound/") return undefined;
+				const qualified = key.includes("/") ? key : `${prefix}${key}`;
+				const exact = steps.get(qualified);
+				if (exact) return { step: exact, key: qualified };
+				// Old calls shared a global leaf output map. Only a normalized old
+				// producer may recover that alias, and never over an authored root step.
+				if (prefix || key.includes("/") || steps.has(key)) return undefined;
+				const legacyKey = `${prefixOf(decision.snapshot.key)}${key}`;
+				const legacy = steps.get(legacyKey);
+				return legacy && !resolveStepConfig(legacy).explicit
+					? { step: legacy, key: legacyKey }
+					: undefined;
+			};
+			const assesses = (
+				producer: ReturnType<typeof associated>,
+				decision: (typeof decisions)[number],
+			) =>
+				!!producer &&
+				hasCheck(producer.step, "impact-reuse") &&
+				!!readStep(producer.step, "fanout") &&
+				`${prefixOf(producer.key)}${readStep(producer.step, "fanout")}` ===
+					decision.snapshot.key;
+			if (record.snapshot) {
+				const decision = decisions.find(
+					(d) =>
+						(key === undefined || assesses(associated(d), d)) &&
+						storageDigest(record.snapshot) === storageDigest(d.snapshot) &&
+						record.at === d.at,
+				);
+				if (decision) {
+					policy.snapshots.set(value, decision.snapshot);
+					if (Array.isArray(record.checkResults))
+						for (const receipt of record.checkResults)
+							if (
+								receipt &&
+								typeof receipt === "object" &&
+								decision.checkResults.some(
+									(r) => storageDigest(r) === storageDigest(receipt),
+								)
 							)
-						)
-							policy.receipts.add(receipt);
+								policy.receipts.add(receipt);
+				}
 			}
-		}
-		if (Array.isArray(record.checks))
-			for (const receipt of record.checks)
-				if (
-					receipt &&
-					typeof receipt === "object" &&
-					candidates.some(
-						(d) =>
-							associated(d)?.tool === "impact-checks" &&
-							d.checkResults.some(
-								(r) => storageDigest(r) === storageDigest(receipt),
-							),
+			if (Array.isArray(record.checks))
+				for (const receipt of record.checks)
+					if (
+						receipt &&
+						typeof receipt === "object" &&
+						decisions.some((d) => {
+							const producer = associated(d);
+							const source = producer && readStep(producer.step, "impact");
+							const sourceKey =
+								producer && source
+									? `${prefixOf(producer.key)}${source}`
+									: undefined;
+							const assessor = sourceKey && steps.get(sourceKey);
+							return (
+								!!producer &&
+								producer.step.type === "tool" &&
+								producer.step.tool === "impact-checks" &&
+								consumesImpact(producer.step) &&
+								!!assessor &&
+								!!sourceKey &&
+								assesses({ step: assessor, key: sourceKey }, d) &&
+								d.checkResults.some(
+									(r) => storageDigest(r) === storageDigest(receipt),
+								)
+							);
+						})
 					)
-				)
-					policy.receipts.add(receipt);
-		return policy;
+						policy.receipts.add(receipt);
+			return policy;
+		};
+		return enroll(undefined);
 	};
-	return enroll(undefined);
+	return makePolicy();
 }
 type ReferenceLocation =
 	| "content"
@@ -241,14 +280,27 @@ async function* retainedReferences(
 				key === "output" &&
 				typeof record.step === "string"
 			)
-				nextPolicy = policy?.enroll(item, record.step);
+				nextPolicy = policy?.inFrame("").enroll(item, record.step);
 			if (location === "context" || location === "checkpoint") {
 				if (key === "outputs") next = "outputs";
 				if (location === "context" && key === "history") next = "history";
-				if (location === "checkpoint" && key === "active") next = "active";
+				if (location === "checkpoint" && key === "active") {
+					next = "active";
+					nextPolicy = policy?.inFrame(`${policy.prefix}${record.current}`);
+				}
 			}
 			if (location === "active" && key === "children") next = "children";
-			if (location === "children") next = "checkpoint";
+			if (location === "children") {
+				next = "checkpoint";
+				const parent = policy?.step(policy.prefix);
+				nextPolicy = policy?.inFrame(
+					parent?.type === "workflow" && key === "0"
+						? `${policy.prefix}/`
+						: parent?.groups?.[Number(key)]
+							? `${policy.prefix}/${key}/`
+							: "@unbound/",
+				);
+			}
 			if (canonical && key === "snapshot") {
 				next = "snapshot";
 				nextIdentity = canonical;
@@ -426,7 +478,11 @@ export function factoryStorage(
 						workspace,
 						protection,
 						signal,
-						policy,
+						policy.inFrame(
+							policy.step(round.key)
+								? round.key.slice(0, round.key.lastIndexOf("/") + 1)
+								: "@unbound/",
+						),
 						"context",
 						run,
 					);
