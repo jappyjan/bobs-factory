@@ -39,9 +39,13 @@ assert([undefined, "0", "1"].includes(process.env.F1_CHECK_RECOVERY));
 const recoveryEnabled = process.env.F1_CHECK_RECOVERY === "1";
 const diagnosticScenario = process.env.F1_CHECK_RECOVERY_ONLY ?? "";
 assert(
-	["", "stock-specialist-assistance", "renamed-specialist-assistance"].includes(
-		diagnosticScenario,
-	),
+	[
+		"",
+		"stock-specialist-assistance",
+		"renamed-specialist-assistance",
+		"native-recovery-alternate",
+		"native-recovery-inspect",
+	].includes(diagnosticScenario),
 	"Unknown focused recovery scenario",
 );
 assert(!diagnosticScenario || recoveryEnabled);
@@ -1445,7 +1449,7 @@ async function nativeRecoveryDestination(destination) {
 	if (destination === "alternate") {
 		assert.deepEqual(
 			run.history.find((receipt) => receipt.step === "nested/alternate").output,
-			{ completed: true },
+			Object.assign(Object.create(null), { completed: true }),
 		);
 		assert.equal(
 			actual[1].resumeSessionId,
@@ -1655,9 +1659,12 @@ try {
 			"factory",
 		);
 		if (diagnosticScenario) {
-			await specialistRecovery(
-				diagnosticScenario === "renamed-specialist-assistance",
-			);
+			if (diagnosticScenario.startsWith("native-recovery-"))
+				await nativeRecoveryDestination(diagnosticScenario.slice(16));
+			else
+				await specialistRecovery(
+					diagnosticScenario === "renamed-specialist-assistance",
+				);
 			assert.deepEqual(
 				recoveryResults.map(({ scenario }) => scenario),
 				[diagnosticScenario],
@@ -1669,7 +1676,11 @@ try {
 			await nativeRecoveryDestination("alternate");
 			await nativeRecoveryDestination("inspect");
 		}
-		const deliveries = diagnosticScenario ? 1 : 4;
+		const deliveries = diagnosticScenario.startsWith("native-recovery-")
+			? 0
+			: diagnosticScenario
+				? 1
+				: 4;
 		assert.deepEqual(forge.publications, Array(deliveries).fill(repository.id));
 		assert.deepEqual(forge.merges, Array(deliveries).fill(repository.id));
 	}
