@@ -10,7 +10,10 @@ import {
 } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { z } from "zod";
-import { OwnedResourceClaim } from "./OwnedResourceClaim.js";
+import {
+	OwnedResourceBusyError,
+	OwnedResourceClaim,
+} from "./OwnedResourceClaim.js";
 
 export const StorageCategorySchema = z.enum([
 	"snapshot",
@@ -630,5 +633,17 @@ export async function reserveOwnedStorageWorkspace(
 		join(store.directory, "path-records", `${storageDigest(resource)}.json`),
 	)) as { id: string } | undefined;
 	if (!index || (await store.record(index.id)).category !== "worktree") return;
-	await reserveStorageWorkspace(home, workspace, owner, reason);
+	// Startup reconciliation briefly takes the same claim to inspect a retained
+	// workspace. Wait for it to finish without stealing the claim or replaying work.
+	const deadline = Date.now() + 5000;
+	for (;;) {
+		try {
+			await reserveStorageWorkspace(home, workspace, owner, reason);
+			return;
+		} catch (error) {
+			if (!(error instanceof OwnedResourceBusyError) || Date.now() >= deadline)
+				throw error;
+			await new Promise((resolve) => setTimeout(resolve, 20));
+		}
+	}
 }

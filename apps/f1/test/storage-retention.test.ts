@@ -1315,7 +1315,11 @@ it("resumes saved native progress through the runtime while cleanup sees durable
 		await expect.poll(() => deletionEntered).toBe(true);
 		try {
 			runtime.resume(run.id);
-			await expect.poll(() => runtime.get(run.id).status).toBe("failed");
+			// Admission waits briefly for transient inspection claims. A held
+			// deletion claim must still fail without entering provider execution.
+			await expect
+				.poll(() => runtime.get(run.id).status, { timeout: 10000 })
+				.toBe("failed");
 			expect(entered).toBe(false);
 			expect(runtime.get(run.id).error).toMatch(
 				/owner is still running|owns this resource/,

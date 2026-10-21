@@ -685,3 +685,77 @@ from the prior driver; complete assertions are unchanged. Historical receipts
 remain intact. These are local corrective checks, not independent gate receipts.
 Fresh assessment, configured review/QA, guide, human acceptance and provider
 readiness remain at their existing gates. No real inference provider was called.
+
+## Verification inventory reconciliation on 2026-10-21
+
+The frozen version-19 inventory still names `eda52f3a` / `a4990127` and
+requires the 65 selections at `/history/300/output/checks`. The current
+26-command selection at `/history/345/output/checks` covers source revision
+`a38f182bc2e745464314c83557d4596a70fd5ec3` and included target
+`4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7`. It cannot silently replace
+the retained coverage.
+
+[The reconciliation manifest](assets/simple-launch-verification-selection.json)
+maps all 65 historical selections by index and ID. Sixteen map to current runtime
+receipts at `/history/346/output/checks`; 49 were absent and were executed locally.
+The union retains all 65 obligations and ten additional storage/runner selections,
+for 75 commands. Three replacements update the target merge/whitespace checks
+and select the storage-integrated overlap driver. Direct comparison of the two
+overlap drivers found identical assertions and child code; only evidence names
+and included-target metadata differ. Original commands and receipt paths remain
+in the manifest. No original execution is restamped.
+
+The restored local batch initially passed 43 of 49 commands. The six failures
+are retained in `fix-r23-receipts.json` and the corresponding logs in this run's
+evidence directory. Three restart drives exposed contention between startup
+storage inspection and run continuation. A fast-fail workspace claim could also
+fail during release while an inspection held its reclaim guard, leaving its
+primary claim owned by the still-live process.
+
+The correction makes claim release wait within a bounded deadline for the
+inspection guard, and makes launch/continuation retry only typed busy-claim
+errors briefly before reserving the workspace. It never steals ownership;
+other storage errors still stop execution. Existing direct reservation and
+artifact-acquisition rejection assertions remain intact. Added regression
+coverage holds an inspection guard during release and verifies subsequent
+acquisition. Core storage/ownership tests pass all 23 cases. All three previously
+failing restart drives pass with unchanged assertions after the complete fix.
+Build and type checking pass. The complete launcher/integration selection also
+passes after the capability reference and full routing-prompt expectation update.
+
+`fix-r23-reconciliation-input.json` and `fix-r23-current-runtime-receipts.json`
+retain the original mapping and current runtime results. `fix-r23-receipts.json`
+contains initial local executions; `fix-r23-corrected-receipts.json` retains the
+partial correction attempt; `fix-r23-final-receipts.json` records the complete
+source correction checks with working-diff fingerprints. Earlier overlap files
+were copied to `fix-r23-original-ci-fix-r22-overlap-*` before reexecution.
+
+The next independent assessment must select `extractRequirements=true` and send
+R11 through the configured extraction step. The manifest supplies a proposed
+amendment: bind the delivered revision and actual target, preserve the 75-command
+union and all assertions, and account for every obligation with fresh runtime
+receipts or explicit, independently justified reuse at its original revision.
+The source correction invalidates affected earlier evidence. These fixer logs
+are supporting evidence, not an updated frozen inventory or gate approval.
+Fresh QA, visual review, guide, human acceptance and provider-confirmed delivery
+remain at their configured gates. All agents in these checks are simulated.
+
+Final corrective reruns passed both complete stale-assessment selections (all
+four automatic/legacy, top-level/nested cases), the saved-answer API drive,
+repository lint (34 existing warnings), all 59 storage integration tests and
+all eight storage F1 scenarios. The complete overlap driver also passed. The
+initial timing failures occurred during substantial unrelated host load and
+remain failed historical evidence; the passing reruns have separate logs.
+`fix-r23-timing-receipts.json` records the unchanged timing-sensitive commands
+and complete storage integration rerun. The final full storage F1 output is
+`fix-r23-storage-f1-low-load.log`.
+
+One F1 polling deadline was deliberately aligned with the new admission wait:
+the held-deletion negative case now polls for ten seconds, beyond the bounded
+five-second busy-claim retry. It still requires failure, no provider entry,
+unchanged native files and an explicit subsequent retry. The earlier one-second
+poll expired while admission was correctly still waiting. No other assertion
+or deadline changed; in particular, the stale-assessment, source-history,
+saved-answer and cleanup deadlines remain intact. A later cleanup-poll failure
+is also retained in `fix-r23-final-storage-f1-aligned.log`; the complete final
+eight-scenario rerun passed.
