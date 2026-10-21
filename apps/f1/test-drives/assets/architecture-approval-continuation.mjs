@@ -8,12 +8,13 @@ import {
 	realpathSync,
 	writeFileSync,
 } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
-import { proposal } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
+import { checkin } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
@@ -41,7 +42,18 @@ writeFileSync(
 git("add", ".");
 git("commit", "-qm", "Initial fixture");
 git("remote", "add", "origin", repo);
-process.env.BOBS_FACTORY_FACTORY_PORT = "3541";
+async function freePort() {
+	const server = createServer();
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const port = server.address().port;
+	await new Promise((resolve) => server.close(resolve));
+	return port;
+}
+const rpcPort = await freePort(),
+	factoryPort = await freePort();
+const rpcOrigin = `http://127.0.0.1:${rpcPort}`;
+const factoryOrigin = `http://localhost:${factoryPort}`;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
@@ -80,7 +92,7 @@ const tracker = createCLIIssueTracker(),
 	turns = [];
 let worker, runtime;
 function design(version) {
-	const value = proposal();
+	const value = checkin();
 	value.title = "Preserve behavior while completing caller tests";
 	value.summary = "Add necessary caller tests within the approved behavior.";
 	value.changes =
@@ -105,7 +117,7 @@ function design(version) {
 }
 const config = {
 	factoryHome: home,
-	serverPort: 3600,
+	serverPort: rpcPort,
 	serverHost: "127.0.0.1",
 	defaultRunner: "codex",
 	issueTrackerFactory: () => tracker,
@@ -246,12 +258,11 @@ async function until(check) {
 	}
 	throw new Error("Architecture fixture timed out");
 }
-const ui = "http://localhost:3541";
 async function api(path, body) {
-	const response = await fetch(ui + path, {
+	const response = await fetch(factoryOrigin + path, {
 		method: body ? "POST" : "GET",
 		headers: {
-			Origin: ui,
+			Origin: factoryOrigin,
 			"X-Factory-Request": "1",
 			"Content-Type": "application/json",
 		},
@@ -262,7 +273,7 @@ async function api(path, body) {
 	return value;
 }
 async function rpc(method, params) {
-	const response = await fetch("http://localhost:3600/cli/rpc", {
+	const response = await fetch(`${rpcOrigin}/cli/rpc`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),

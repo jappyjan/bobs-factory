@@ -130,6 +130,7 @@ it("discovers scopes without Linear and revokes existing SDK clients durably", a
 	const names = (await c.client.listTools()).tools.map((t) => t.name);
 	expect(names).toContain("inspect_run");
 	expect(names).not.toContain("retry_run");
+	expect(names).not.toContain("recheck_run");
 	expect(names).not.toContain("update_mcp_connection");
 	expect(
 		(
@@ -530,6 +531,45 @@ it("binds answers to the current batch and keeps explanation requests out of ans
 	).toBe(true);
 	await vi.waitFor(() => expect(f.run.status).toBe("completed"));
 	expect(f.run.answers).toHaveLength(1);
+});
+it("rechecks only the inspected question batch through operate grants without submitting an answer", async () => {
+	const f = fixture(),
+		c = await sdk(f);
+	f.agent
+		.mockResolvedValueOnce({
+			status: "blocked",
+			questions: ["Restore access"],
+		} as any)
+		.mockResolvedValue({ status: "completed", questions: [] });
+	const waiting = new Promise<void>((resolve) => {
+		f.question.mockImplementationOnce(async () => resolve());
+	});
+	f.runtime.retry(f.run.id);
+	await waiting;
+	const first = (await c.call("inspect_run", { runId: f.run.id })).result;
+	expect(first.actions.recheck_run.available).toBe(true);
+	const request = {
+		runId: f.run.id,
+		expectedRevision: first.revision,
+		context: first.questionContext,
+	};
+	expect(
+		(
+			await c.call("recheck_run", {
+				...request,
+				context: { ...request.context, questionBatchId: "old" },
+			})
+		).error.code,
+	).toBe("stale_state");
+	expect(f.agent).toHaveBeenCalledTimes(1);
+	expect((await c.call("recheck_run", request)).ok).toBe(true);
+	await vi.waitFor(() => expect(f.run.status).toBe("completed"));
+	expect(f.agent).toHaveBeenCalledTimes(2);
+	expect(f.run.answers).toEqual([]);
+	expect(f.run.history.filter((entry) => entry.step === "work")).toHaveLength(
+		2,
+	);
+	expect((await c.call("recheck_run", request)).error.code).toBe("stale_state");
 });
 it.each([
 	"interrupted",

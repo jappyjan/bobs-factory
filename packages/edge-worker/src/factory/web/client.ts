@@ -664,7 +664,28 @@ export function phase(id: string) {
 	if (/implement|draft|simple/.test(id)) return "yellow";
 	return "red";
 }
-export function stepsOf(run: any, config: any): any[] {
+export function stepsOf(
+	run: any,
+	config: any,
+	researchJobs?: Record<string, { role: string; status: string }>,
+): any[] {
+	if (run.improvement && researchJobs) {
+		const roles = workflowOf(run, config)?.steps ?? [];
+		return Object.entries(researchJobs).map(([key, job]) => {
+			const role = roles.find((s: any) => s.id === job.role);
+			const detail = key
+				.replace(/^worker-/, "")
+				.replace(/^([^-]+)-\1-/, "$1 · ")
+				.replaceAll("-", " ");
+			return {
+				...role,
+				id: job.role,
+				key,
+				name: `${role?.name ?? "Research assignment"}${key === job.role ? "" : ` · ${detail}`}`,
+				researchStatus: job.status,
+			};
+		});
+	}
 	const walk = (steps: any[], prefix = "", seen: string[] = []): any[] =>
 		steps.flatMap((step) => {
 			const key = prefix + step.id;

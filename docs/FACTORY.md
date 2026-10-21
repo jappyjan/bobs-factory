@@ -982,7 +982,7 @@ An existing run failed at the visual gate for missing evidence opens the capture
 assistance checkpoint on Retry. Its frozen recipe must contain the standard
 `capture` → `visual-review` → visual-gate path in the same graph; unsupported
 custom graphs fail with instructions rather than skipping required review.
-An exhausted iteration limit shows **Continue (+4 passes)**. Each explicit continuation grants four additional visits only to the exhausted step, including nested workflows; historical counters and finished steps remain intact. If those additional visits are exhausted, the run stops again rather than looping indefinitely. The limit counts cumulative visits, including returns after real code/visual corrections. Stock coordination tools (review gates, readiness and routing) have a bounded 100-visit ceiling so they do not immediately block an authorized extra agent pass; customized limits are retained.
+An exhausted iteration limit shows **Continue (+4 passes)**. Each explicit continuation grants four additional visits only to the exhausted step, including nested workflows; historical counters and finished steps remain intact. If those additional visits are exhausted, the run stops again rather than looping indefinitely. The limit counts cumulative visits, including returns after real code/visual corrections. Stock coordination tools (review gates, readiness and routing) have a bounded 200-visit ceiling so they do not immediately block an authorized extra agent pass; customized limits are retained. Restoring an unfinished older stock run adds a one-time persisted allowance that doubles its original stock step budgets (8 to 16, 100 to 200). Full behavior fingerprints identify stock graphs or unchanged stock steps in an older bundled graph. Customized steps and local recipes retain their limits. Frozen workflow definitions, existing counters, explicit additional passes, evidence and human waits are preserved; failed runs still need individual Retry.
 
 Completed or explicitly terminated runs cannot be retried. Publication uses a
 short conventional commit message (`chore: …`) derived from the ticket title,
@@ -1019,6 +1019,14 @@ Custom title fields have been removed from launch forms. Legacy request titles
 are ignored, and title editing is deferred to future work.
 
 ## Workflow definition
+
+[Improve codebase](factory/improve-codebase.md) is a bundled manual workflow with
+optional focus and no task prompt. Parallel perspective coordinators delegate
+bounded research to a configured cheaper worker model. Review the biggest
+architectural opportunities, then choose **Fix**, **File issue**, **Ignore** or
+**Ask follow-up** per item. Prepare and explicitly apply the batch: only Fix
+launches independent normal Factory runs; issue items become deferred backlog
+work. Configure the research-worker model in Recipes before first launch.
 
 ### Launch fields
 
@@ -1114,7 +1122,7 @@ cannot change an active run.
 Steps execute in array order unless `next` or a matching `branches` edge names
 another step. `next: "end"` finishes. A branch such as
 `{"when":{"path":"approved","equals":false},"next":"plan"}` loops back.
-Each step defaults to at most eight visits (`maxVisits`, configurable up to 100).
+Each step defaults to at most sixteen visits (`maxVisits`, configurable up to 200).
 Agents return JSON unless `json: false`. `inputs: ["plan"]` restricts supplied
 context to those output keys (plus `/answers` when `askQuestions: true`);
 otherwise agents receive the original input,

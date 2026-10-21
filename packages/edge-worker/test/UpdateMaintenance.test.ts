@@ -490,6 +490,7 @@ it("rejects all new operator mutations during maintenance while authenticated in
 	for (const name of [
 		"stop_run",
 		"answer_run",
+		"recheck_run",
 		"resume_run",
 		"retry_run",
 		"steer_run",

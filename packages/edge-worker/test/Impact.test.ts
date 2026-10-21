@@ -11,7 +11,7 @@ import {
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { createFactoryContextServer } from "../../mcp-tools/src/factoryContext.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { captureEvidence, FactoryTools } from "../src/factory/FactoryTools.js";
@@ -47,7 +47,7 @@ import {
 	validateInventory,
 	validateSpecialist,
 } from "../src/factory/SpecialistReview.js";
-import { validateWorkflows } from "../src/factory/Workflow.js";
+import { StepSchema, validateWorkflows } from "../src/factory/Workflow.js";
 import {
 	type ExecutionContext,
 	type FactoryRun,
@@ -804,6 +804,207 @@ it("bounds unchanged cycles across dates, receipt identities and unrelated targe
 	);
 	expect(run.humanDecisions).toBeUndefined();
 });
+it("rechecks one exact convergence wait without resetting the correction limit", async () => {
+	const { run } = await drive(true);
+	const blocked = structuredClone(run.impactDecisions!.at(-1)!);
+	blocked.correctionRequired = true;
+	run.impactConvergence = {};
+	expect(recordConvergence(run, "experts", blocked, 3)).toEqual([]);
+	expect(recordConvergence(run, "experts", blocked, 3)).toEqual([]);
+	blocked.questions = recordConvergence(run, "experts", blocked, 3);
+	expect(blocked.questions).toHaveLength(1);
+	blocked.status = "blocked";
+	run.impactDecisions!.push(blocked);
+	const recheck = {
+		key: "experts",
+		snapshotDigest: blocked.snapshot.digest,
+		at: blocked.at,
+	};
+	const fresh = {
+		...structuredClone(blocked),
+		status: "completed" as const,
+		questions: [],
+		at: "2026-10-21T08:00:00Z",
+	};
+	const convergence = structuredClone(run.impactConvergence);
+	const history = [...run.history];
+	expect(recordConvergence(run, "experts", fresh, 3, recheck)).toEqual([]);
+	expect(run.impactConvergence).toEqual(convergence);
+	expect(run.history).toEqual(history);
+	expect(fresh.status).toBe("completed");
+	expect(fresh.correctionRequired).toBe(true);
+	expect(run.humanDecisions).toBeUndefined();
+	// Saving the fresh result consumes the binding even if an old receipt is replayed.
+	run.impactDecisions!.push(fresh);
+	expect(recordConvergence(run, "experts", fresh, 3, recheck)[0]).toContain(
+		"returned 4 times",
+	);
+});
+it("persists a consumed convergence recheck only with its completed role receipt", async () => {
+	const root = repository();
+	const home = mkdtempSync(join(tmpdir(), "impact-recheck-commit-"));
+	homes.push(home);
+	const workflow = definition(true);
+	const assessor = workflow.steps.find((step) => step.id === "assessor")!;
+	assessor.next = assessor.id;
+	assessor.branches = [
+		{
+			when: { path: "rationale", equals: "Fresh explicit correction" },
+			next: "hold",
+		},
+	];
+	workflow.steps.push(
+		StepSchema.parse(agent("hold", { askQuestions: true, next: "end" })),
+	);
+	const runtime = new WorkflowRuntime(home, {
+		agent: async (context) =>
+			context.step.id === "hold"
+				? { questions: ["Inspect the retained correction before continuing."] }
+				: {
+						...assessment(
+							(context.input as { impactSnapshot: ImpactSnapshot })
+								.impactSnapshot,
+						),
+						correctionRequired: true,
+						rationale: context.questionRecheck
+							? "Fresh explicit correction"
+							: "Unchanged correction",
+					},
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	runtimes.push(runtime);
+	runtime.updateWorkflows([...defaultWorkflows, workflow]);
+	const run = runtime.create({
+		triggerOrigin: {
+			type: "manual",
+			workflowId: workflow.id,
+			at: new Date().toISOString(),
+		},
+		title: "Convergence checkpoint durability",
+		repositoryId: "fixture-repo",
+		workspace: root,
+		input: "Retain the correction while preserving every gate.",
+		workflow,
+		repositories: [
+			{
+				id: "fixture-repo",
+				name: "Fixture",
+				workspace: root,
+				repositoryPath: root,
+				baseBranch: "trunk",
+			},
+		],
+	});
+	void runtime.launch(run);
+	await waitFor(() => expect(run.status).toBe("waiting"));
+	expect(run.step).toBe("assessor");
+	expect(run.impactConvergence!.experts!.repeats).toBe(3);
+	const captured: {
+		phase: string;
+		outputAt?: string;
+		receiptAt?: string;
+		decisionAt: string;
+	}[] = [];
+	const save = runtime.save.bind(runtime);
+	vi.spyOn(runtime, "save").mockImplementation((value) => {
+		const state = value.checkpoint?.active;
+		if (state?.questionRecheck?.convergenceConsumed)
+			captured.push({
+				phase: state.phase,
+				outputAt: (value.outputs.assessor as { at?: string }).at,
+				receiptAt: (
+					value.history.findLast((receipt) => receipt.step === "assessor")
+						?.output as { at?: string }
+				)?.at,
+				decisionAt: value.impactDecisions!.at(-1)!.at,
+			});
+		return save(value);
+	});
+	await runtime.recheckQuestions(run.id, {
+		step: run.step!,
+		questionBatchId: run.questionBatchId!,
+		questions: [...run.questions],
+	});
+	await waitFor(() => {
+		expect(run.status).toBe("waiting");
+		expect(run.step).toBe("hold");
+	});
+	expect(captured.length).toBeGreaterThan(0);
+	for (const snapshot of captured) {
+		expect(snapshot.phase).toBe("result");
+		expect(snapshot.outputAt).toBe(snapshot.decisionAt);
+		expect(snapshot.receiptAt).toBe(snapshot.decisionAt);
+	}
+	expect(run.impactConvergence!.experts!.repeats).toBe(3);
+	expect(run.impactDecisions).toHaveLength(4);
+	expect(run.impactDecisions!.at(-1)!.status).toBe("completed");
+	expect(run.answers).toEqual([]);
+	expect(run.humanDecisions ?? []).toEqual([]);
+});
+it("rejects recheck bindings from another wait, frame or correction state", async () => {
+	const fixture = await drive(true);
+	for (const invalid of [
+		"key",
+		"frame",
+		"digest",
+		"at",
+		"completed",
+		"changed",
+	] as const) {
+		const run = structuredClone(fixture.run);
+		const blocked = structuredClone(run.impactDecisions!.at(-1)!);
+		blocked.correctionRequired = true;
+		run.impactConvergence = {};
+		recordConvergence(run, "experts", blocked, 3);
+		recordConvergence(run, "experts", blocked, 3);
+		blocked.questions = recordConvergence(run, "experts", blocked, 3);
+		blocked.status = invalid === "completed" ? "completed" : "blocked";
+		run.impactDecisions!.push(blocked);
+		const fresh = {
+			...structuredClone(blocked),
+			status: "completed" as const,
+			questions: [],
+		};
+		if (invalid === "changed") fresh.snapshot.repositories[0]!.treeSha = "new";
+		if (invalid === "frame") fresh.snapshot.key = "other/experts";
+		const assistance = recordConvergence(run, "experts", fresh, 3, {
+			key: invalid === "key" ? "other/experts" : "experts",
+			snapshotDigest: invalid === "digest" ? "other" : blocked.snapshot.digest,
+			at: invalid === "at" ? "other" : blocked.at,
+		});
+		if (invalid === "changed") {
+			expect(assistance).toEqual([]);
+			expect(run.impactConvergence!.experts!.repeats).toBe(1);
+		} else {
+			expect(assistance[0], invalid).toContain("returned 4 times");
+			expect(run.impactConvergence!.experts!.repeats).toBe(4);
+		}
+	}
+});
+it("preserves concrete assessor questions and failures at the convergence limit", async () => {
+	const { run } = await drive(true);
+	const decision = structuredClone(run.impactDecisions!.at(-1)!);
+	decision.correctionRequired = true;
+	run.impactConvergence = {};
+	recordConvergence(run, "experts", decision, 3);
+	recordConvergence(run, "experts", decision, 3);
+	recordConvergence(run, "experts", decision, 3);
+	const convergence = structuredClone(run.impactConvergence);
+	for (const status of ["completed", "blocked", "failed"] as const) {
+		const assessed = {
+			...decision,
+			status,
+			questions: ["Restore the missing integration fixture before correction."],
+		};
+		expect(recordConvergence(run, "experts", assessed, 3)).toEqual([]);
+		expect(assessed.status).toBe(status);
+		expect(assessed.questions).toEqual([
+			"Restore the missing integration fixture before correction.",
+		]);
+		expect(run.impactConvergence).toEqual(convergence);
+	}
+});
 it("preserves grouped original execution stamps while validating repository projections", async () => {
 	const { run } = await drive(true);
 	const original = run.outputs.gate as AggregateReview;
@@ -1452,6 +1653,63 @@ it("continues explicit approval for a safe cumulative production correction only
 	});
 	expect((await effectiveApproval(context))!.decision).toBe("reject");
 });
+it("allows selected repository checks the normal workflow command budget", async () => {
+	const checked: string[] = [];
+	const context = {
+		run: {
+			id: "long-check",
+			repositoryId: "repo",
+			workspace: "/fixture",
+			outputs: {},
+			impactDecisions: [
+				{
+					status: "completed",
+					snapshot: { key: "experts" },
+					checks: [
+						{
+							id: "workspace-suite",
+							repositoryId: "repo",
+							command: "run-workspace-checks",
+						},
+					],
+					checkResults: [],
+					pending: { checks: ["workspace-suite"] },
+				},
+			],
+		},
+		step: { id: "checks", tool: "impact-checks" },
+		impactKey: "experts",
+		stepKey: "checks",
+		signal: new AbortController().signal,
+		log: () => {},
+	} as unknown as ExecutionContext;
+	const tools = new FactoryTools({
+		postComment: async () => {},
+		command: async (_ctx, exe, args, timeout) => {
+			expect(exe).toBe("/bin/sh");
+			expect(args).toEqual(["-c", "run-workspace-checks"]);
+			// This successful suite exceeds the old two-minute selected-check limit.
+			if (!timeout || timeout < 3 * 60 * 1000)
+				throw new Error("Check timed out");
+			checked.push("workspace-suite");
+			return "Workspace checks passed";
+		},
+	});
+	await expect(tools.tool(context)).resolves.toEqual({
+		questions: [],
+		checks: [
+			{
+				id: "workspace-suite",
+				exitCode: 0,
+				evidence: "Workspace checks passed",
+			},
+		],
+	});
+	expect(checked).toEqual(["workspace-suite"]);
+	await tools.tool(context);
+	expect(checked).toEqual(["workspace-suite"]);
+});
+
 it("selects and checks grouped repositories with different layouts, targets and provider bindings", async () => {
 	const group = mkdtempSync(join(tmpdir(), "impact-grouped-"));
 	homes.push(group);

@@ -403,6 +403,43 @@ export function QuestionForm({ run }: { run: any }) {
 			>
 				Send answers <kbd>⌘⏎</kbd>
 			</Button>
+			{run.recheckAvailable && (
+				<Button
+					type="button"
+					requiresConnection
+					busy={action.isPending}
+					onClick={async () => {
+						if (submitting.current || action.isPending || action.isBlocked)
+							return;
+						submitting.current = true;
+						try {
+							await action.mutateAsync({
+								path: `/api/runs/${run.id}/recheck`,
+								body: {
+									context: {
+										step: run.step,
+										questionBatchId: run.questionBatchId,
+										questions,
+									},
+								},
+							});
+							toast({ text: "Bob is checking the blocker again" });
+						} catch {
+							/* error stays visible; answer draft is retained */
+						} finally {
+							submitting.current = false;
+						}
+					}}
+				>
+					Check again
+				</Button>
+			)}
+			{run.recheckAvailable && (
+				<p className="muted">
+					After an update or access change, Bob can reassess the blocker. This
+					sends no answers or approval.
+				</p>
+			)}
 		</form>
 	);
 }
@@ -856,6 +893,9 @@ export function FocusCard({
 		run = detail.data ?? summary,
 		kind = attention(run) ?? "review",
 		stopped = ["stopped", "cancelled"].includes(run.status),
+		iterationExhausted =
+			!!run.iterationLimit &&
+			run.iterationLimit.visits > run.iterationLimit.limit,
 		canResume = run.status === "stopped" && run.resumeAvailable === true,
 		toast = useToast(),
 		action = useAction();
@@ -882,6 +922,19 @@ export function FocusCard({
 			)}
 			{detail.isLoading || run.pendingContext ? (
 				<p role="status">Bob is loading this run…</p>
+			) : kind === "question" && run.improvement ? (
+				<div className="imp-focus">
+					<p>
+						{run.improvement.phase === "ready"
+							? "The plans passed their checks. Review the batch and launch the fixes."
+							: "Bob finished researching. Decide which improvements to fix, file as issues or skip."}
+					</p>
+					<Link className="button primary" to={`/runs/${run.id}`}>
+						{run.improvement.phase === "ready"
+							? "Review and launch →"
+							: "Review improvements →"}
+					</Link>
+				</div>
 			) : kind === "question" && run.architectureGate ? (
 				<ArchitectureEntry run={run} />
 			) : kind === "question" ? (
@@ -916,9 +969,11 @@ export function FocusCard({
 									? "Enable the workflow and its dependencies in Recipes. Resume continues this saved checkpoint after the previous executor stops."
 									: stopped
 										? "Bring back keeps this run visible. Resume continues its saved progress; it does not restart finished steps."
-										: run.iterationLimit
+										: iterationExhausted
 											? "Continue grants 4 more passes for this step. Your work and history stay intact."
-											: "Retry keeps the worktree, your answers and every finished step."}
+											: run.iterationLimit
+												? `The saved budget now allows ${run.iterationLimit.limit} passes for this step. Retry continues from saved progress.`
+												: "Retry keeps the worktree, your answers and every finished step."}
 							</small>
 						</div>
 					</div>
@@ -951,7 +1006,7 @@ export function FocusCard({
 								? "Resume"
 								: stopped
 									? "Resume run"
-									: run.iterationLimit
+									: iterationExhausted
 										? "Continue (+4 passes)"
 										: "Retry step"}{" "}
 							<kbd>r</kbd>

@@ -153,11 +153,13 @@ export function reviewGuideMarkdown(value: unknown, headSha: string): string {
 	return `## Goal\n${guide.goal}\n\n${guide.summary}\n\n## Decision\n${guide.decision.status}: ${guide.decision.summary}\n\n## Before and after\n${guide.behavior.map((item) => `### ${item.scenario}\nBefore: ${item.before}\n\nAfter: ${item.after}`).join("\n\n")}\n\n## Requirements\n${guide.requirements.map((item) => `- **${item.criterion}** (${item.status}): ${item.evidence.join("; ")}`).join("\n")}\n\n${coverage}\n\n## Checks\n${list(guide.checks)}\n\n## Risks\n${list(guide.risks)}\n\n## Human review\n${list(guide.reviewInstructions)}\n\nRevision: ${headSha}\nScreenshots and complete decision/review history are available in the local factory dashboard.\n\n<!-- generated-by-bobs-factory -->`;
 }
 
+const commandTimeoutMs = 20 * 60 * 1000;
+
 export function executeCommand(
 	context: ExecutionContext,
 	command: string,
 	args: string[],
-	timeoutMs = 20 * 60 * 1000,
+	timeoutMs = commandTimeoutMs,
 ): Promise<string> {
 	context.signal.throwIfAborted();
 	if (command === GITHUB_API_COMMAND) return executeGithubApi(context, args);
@@ -627,7 +629,7 @@ export class FactoryTools {
 		context.run.ciSupervision ??= { retries: [] };
 		if (context.step.tool === "impact-checks")
 			return selectedChecks(context, (ctx, script) =>
-				this.command(ctx, "/bin/sh", ["-c", script], 20 * 60 * 1000),
+				this.command(ctx, "/bin/sh", ["-c", script]),
 			);
 		if (context.step.tool === "merge")
 			context.executionApproval = await effectiveApproval(context);
@@ -680,7 +682,7 @@ export class FactoryTools {
 		context: ExecutionContext,
 		executable: string,
 		args: string[],
-		timeout?: number,
+		timeout = commandTimeoutMs,
 	): Promise<string> {
 		return this.hooks.command
 			? this.hooks.command(context, executable, args, timeout)

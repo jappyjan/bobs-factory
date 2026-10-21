@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Changed
 
+- Integrate current workflow question recovery and shared command deadlines with storage retention, preserving full worker shutdown and routing-prompt coverage. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
+
 - Allow five seconds for the scripted Codex cancellation probe to start during workspace tests; cancellation and process-exit assertions remain unchanged. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
 
 - Strengthen storage-retention preservation and operating-limit checks, settle durable runtime transitions with bounded waits, and stop owned workers before fixture cleanup. Give independently selected workspace checks the standard twenty-minute command limit. ([Taskbot #134](https://taskbot.apps.janjaap.de/p/bobs-factory/t/134), [#164](https://github.com/jappyjan/bobs-factory/pull/164))
@@ -23,6 +25,10 @@ This changelog documents internal development changes, refactors, tooling update
 - Prepare private workspace packages, embedded runtime assets, binary candidate verification and migration preservation checks for Taskbot #38. Retire upstream npm publication; retain historical tooling. Load user-prepared Cursor through a separate Node process with native ID, MCP, stream and cancellation regression checks; exclude its SDK/native sidecars from archives. Validate referenced MCP configuration before migration, preserve frozen workflow history while updating executable tool names, and share environment-file ownership between bootstrap and reload. Cover visual-review assistance batch recovery with regression tests and a simulated-agent F1 restart drive. ([#34](https://github.com/Attraccess/bobs-factory/pull/34))
 
 ### Fixed
+
+- Keep recovery checks reliable under load with the maintained runtime-transition wait helper and simulated polling delays for an immediately confirmed grouped-merge fixture; preserve provider rereads and approval assertions. ([#171](https://github.com/jappyjan/bobs-factory/pull/171))
+
+- Repair nightly architecture fixtures for the current check-in contract, dispatch mocked roles by saved step IDs, and allocate independent loopback ports for architecture and impact recovery drives. Preserve exact-version approval, revision and restart assertions ([#170](https://github.com/jappyjan/bobs-factory/pull/170)).
 
 - Make nightly localhost/API-key and native desktop maintenance-race fixtures finish and clean up promptly; bound their CI steps separately. Retain the original source baseline while recording the exact reviewed removal-only WebAuthn dependency inputs ([#135](https://github.com/jappyjan/bobs-factory/pull/135)).
 

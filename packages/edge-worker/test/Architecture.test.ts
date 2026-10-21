@@ -20,6 +20,7 @@ import {
 } from "../src/factory/Architecture.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
+import { validateReviewFix } from "../src/factory/ReviewRecovery.js";
 import {
 	StepSchema,
 	validateWorkflows,
@@ -68,6 +69,7 @@ function setup(
 	classification: Architecture["classification"] = "meaningful",
 	extra: Partial<RuntimeHooks> = {},
 	decisionArguments: Record<string, unknown> = {},
+	implementationId = "implement",
 ) {
 	const home = mkdtempSync(join(tmpdir(), "architecture-test-"));
 	homes.push(home);
@@ -129,7 +131,7 @@ function setup(
 			},
 		},
 		{
-			id: "implement",
+			id: implementationId,
 			name: "Implement",
 			type: "agent",
 			prompt: "Implement",
@@ -180,6 +182,104 @@ async function finished(runtime: WorkflowRuntime, run: FactoryRun) {
 }
 
 describe("architecture authorization boundary", () => {
+	it.each([
+		"code-fix",
+		"visual-fix",
+	])("routes a validated %s handback through the configured proposal and fresh acceptance", async (fixer) => {
+		let fixes = 0;
+		const finding = {
+			id: "boundary-correction",
+			rating: 3,
+			status: "open",
+			summary: "The accepted boundary needs correction.",
+			evidence: "A focused probe shows the current boundary is insufficient.",
+		};
+		const gate = fixer === "visual-fix" ? "visual-gate" : "review-gate";
+		const { runtime, run, running } = setup(
+			"meaningful",
+			{
+				agent: async (context) => {
+					if (context.step.architectureContract === "architecture-v1") {
+						const candidate = proposal();
+						if (fixes) {
+							candidate.candidate.plan += "\nRevise the security boundary.";
+							candidate.changes = [
+								{ text: "Revise the security boundary.", from: "bob" },
+							];
+						}
+						return candidate;
+					}
+					if (context.step.architectureContract === "architecture-review-v1")
+						return { approved: true, feedback: [] };
+					fixes++;
+					context.run.outputs[gate] = { approved: false, findings: [finding] };
+					const output = validateFactoryResult(
+						fixer,
+						fixes === 1
+							? {
+									status: "blocked",
+									architectureRevision: true,
+									summary: "Revise the accepted security boundary first.",
+									dispositions: [],
+									questions: [],
+								}
+							: {
+									summary:
+										"The accepted correction is ready for independent review.",
+									dispositions: [
+										{
+											id: finding.id,
+											status: "fixed",
+											reason: "Updated after exact proposal acceptance.",
+										},
+									],
+									questions: [],
+								},
+					);
+					validateReviewFix(context, output);
+					return output;
+				},
+			},
+			{ approval: "always" },
+			fixer,
+		);
+		try {
+			await waiting(run);
+			expect(fixes).toBe(0);
+			const first = run.architectureProposals![0]!;
+			decide(runtime, run);
+			await waitFor(() => expect(run.architectureProposals).toHaveLength(2));
+			await waiting(run);
+			expect(run.error).toBeUndefined();
+			expect(fixes).toBe(1);
+			expect(run.outputs[fixer]).toMatchObject({ architectureRevision: true });
+			expect(run.outputs[gate]).toEqual({
+				approved: false,
+				findings: [finding],
+			});
+			expect(run.architectureDecisions).toHaveLength(1);
+			expect(run.architectureProposals![1]!.status).toBe("pending");
+			expect(() =>
+				runtime.decideArchitecture(run.id, {
+					proposalId: first.id,
+					version: first.version,
+					digest: first.digest,
+					decision: "accept",
+				}),
+			).toThrow();
+			decide(runtime, run);
+			await running;
+			expect(run.status).toBe("completed");
+			expect(fixes).toBe(2);
+			expect(run.architectureDecisions).toHaveLength(2);
+			expect(run.outputs[gate]).toEqual({
+				approved: false,
+				findings: [finding],
+			});
+		} finally {
+			await runtime.shutdown();
+		}
+	});
 	it("rejects absent and empty HTTP assets before approval or implementation", async () => {
 		const server = createServer((request, response) => {
 			response.statusCode = request.url === "/absent" ? 204 : 200;

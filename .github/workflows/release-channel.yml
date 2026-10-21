@@ -132,6 +132,7 @@ jobs:
           BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY=$(mktemp -d) bun run apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/f1-drive.ts > "$RUNNER_TEMP/nightly-checks/architecture.log" 2>&1
           bun run apps/f1/test-drives/assets/architecture-approval-continuation.mjs > "$RUNNER_TEMP/nightly-checks/architecture-continuation.log" 2>&1
           bun run apps/f1/test-drives/assets/impact-feedback-recovery.mjs > "$RUNNER_TEMP/nightly-checks/impact-feedback-recovery.log" 2>&1
+          bun run apps/f1/test-drives/assets/workflow-stall-recovery.mjs >> "$RUNNER_TEMP/nightly-checks/impact-feedback-recovery.log" 2>&1
           bun run apps/f1/test-drives/assets/api-responsiveness.ts > "$RUNNER_TEMP/nightly-checks/api-responsiveness.log" 2>&1
       - name: Record only completed current checks
         run: |

@@ -619,6 +619,8 @@ else result={};process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result
 									url,
 									headRefOid: "head",
 									baseRefOid: "base",
+									baseRefName: "main",
+									baseRef: { name: "main", target: { oid: "base" } },
 									state: tool === "merge" && !pending ? "MERGED" : "OPEN",
 									isDraft: false,
 									isCrossRepository: false,
