@@ -343,3 +343,7 @@ concurrent replacement files survive failed leaf verification. Failed or uncerta
 hooks need explicit verified idempotent retry. Receipts and original evidence stay
 retained. Apparent bytes and observed volume free-space changes remain separate.
 See [storage retention](factory/storage-retention.md) for limits and recovery.
+
+Capacity lock acquisition retries transient symlink replacement/removal within its
+existing deadline. It still verifies live ownership before admission and refuses
+unexpected regular files occupying a lock path.

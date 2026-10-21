@@ -6,6 +6,7 @@ import {
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
+import * as promises from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -15,6 +16,11 @@ import {
 	assertLegacyCapacityDrained,
 	MachineCapacity,
 } from "../src/MachineCapacity.js";
+
+vi.mock("node:fs/promises", async (importOriginal) => {
+	const original = await importOriginal<typeof import("node:fs/promises")>();
+	return { ...original, readlink: vi.fn(original.readlink) };
+});
 
 const roots: string[] = [];
 const children: ChildProcess[] = [];
@@ -536,4 +542,72 @@ it("shares workflow position exchanges between processes", async () => {
 		.map((event) => event.kind);
 	expect(starts).toEqual(["workflow-old", "queued", "workflow-new"]);
 	expect((await service.snapshot()).requests).toEqual([]);
+});
+
+it.each([
+	"replaced",
+	"removed",
+])("retries a transient lock read after the symlink is %s without bypassing ownership", async (state) => {
+	const directory = root();
+	const lock = join(directory, "lock");
+	const owner = {
+		pid: process.pid,
+		start: execFileSync("ps", ["-p", String(process.pid), "-o", "lstart="], {
+			encoding: "utf8",
+		}).trim(),
+		incarnation: "fixture-holder",
+	};
+	symlinkSync(JSON.stringify(owner), lock);
+	const original =
+		await vi.importActual<typeof import("node:fs/promises")>(
+			"node:fs/promises",
+		);
+	let injected = false;
+	vi.mocked(promises.readlink).mockImplementation(async (...args) => {
+		if (String(args[0]) === lock && !injected) {
+			injected = true;
+			await promises.unlink(lock);
+			if (state === "replaced")
+				await promises.symlink(
+					JSON.stringify({ ...owner, incarnation: "replacement-holder" }),
+					lock,
+				);
+			throw Object.assign(new Error("transient symlink read"), {
+				code: "EINVAL",
+			});
+		}
+		return original.readlink(...args);
+	});
+	const service = new MachineCapacity(undefined, directory);
+	let ready = false;
+	const pending = service.ready().then(() => {
+		ready = true;
+	});
+	try {
+		await vi.waitFor(() => expect(injected).toBe(true));
+		if (state === "replaced") {
+			await delay(50);
+			expect(ready).toBe(false);
+			expect(() =>
+				readFileSync(join(directory, "state.json"), "utf8"),
+			).toThrow();
+			await promises.unlink(lock);
+		}
+		await pending;
+		const lease = await service.acquireLease();
+		expect((await service.snapshot()).active).toBe(1);
+		await lease.release();
+	} finally {
+		vi.mocked(promises.readlink).mockImplementation(original.readlink);
+		await service.shutdown();
+	}
+});
+
+it("does not replace or ignore a regular file occupying the capacity lock", async () => {
+	const directory = root(),
+		lock = join(directory, "lock");
+	writeFileSync(lock, "foreign content");
+	const service = new MachineCapacity(undefined, directory);
+	await expect(service.ready()).rejects.toMatchObject({ code: "EINVAL" });
+	expect(readFileSync(lock, "utf8")).toBe("foreign content");
 });

@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Changed
 
+- Retry transient macOS symlink-read races during capacity lock acquisition within the existing deadline. Replacement owners still block admission, and foreign regular files remain untouched. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
+
 - Integrate current workflow question recovery and shared command deadlines with storage retention, preserving full worker shutdown and routing-prompt coverage. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
 
 - Allow five seconds for the scripted Codex cancellation probe to start during workspace tests; cancellation and process-exit assertions remain unchanged. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
