@@ -1,3 +1,4 @@
+import * as filesystem from "node:fs/promises";
 import {
 	mkdir,
 	mkdtemp,
@@ -10,13 +11,17 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	StoragePolicySchema,
 	StorageRetentionStore,
 	sameStorageIdentity,
 	storageIdentity,
 } from "../src/StorageRetention.js";
+
+vi.mock("node:fs/promises", async (importOriginal) => ({
+	...(await importOriginal<typeof import("node:fs/promises")>()),
+}));
 
 const homes: string[] = [];
 async function fixture() {
@@ -30,6 +35,7 @@ async function fixture() {
 	return { home, root, path, store: new StorageRetentionStore(home) };
 }
 afterEach(async () => {
+	vi.restoreAllMocks();
 	await Promise.all(
 		homes.splice(0).map((home) => rm(home, { recursive: true, force: true })),
 	);
@@ -131,4 +137,173 @@ it("yields bounded integrity verification and resumes the actual manifest stream
 	await expect(verifyStorageIntegrity(path, manifest, digest)).rejects.toThrow(
 		"unexpected files",
 	);
+});
+
+for (const boundary of [
+	"records",
+	"path-records",
+	"inventory",
+	"inventory-count.json",
+	"finish",
+] as const) {
+	it(`recovers interrupted registration at ${boundary} without duplicating inventory`, async () => {
+		const { store, home, path, root } = await fixture();
+		const rename = filesystem.rename;
+		let interrupted = false;
+		const spy = vi
+			.spyOn(filesystem, "rename")
+			.mockImplementation(async (source, destination) => {
+				const target = String(destination);
+				const matches =
+					boundary === "finish"
+						? target.endsWith("inventory-revision.json") &&
+							JSON.parse(await readFile(String(source), "utf8")).writing ===
+								false
+						: target.includes(`/${boundary}/`) ||
+							target.endsWith(`/${boundary}`);
+				if (!interrupted && matches) {
+					interrupted = true;
+					throw new Error("injected publication interruption");
+				}
+				return rename(source, destination);
+			});
+		await expect(
+			store.register({
+				path,
+				root,
+				category: "migration",
+				producer: "test",
+				operation: "interrupted",
+				dependencies: ["unreconciled"],
+				evidence: [],
+			}),
+		).rejects.toThrow("injected");
+		spy.mockRestore();
+		expect(interrupted).toBe(true);
+		const restarted = new StorageRetentionStore(home);
+		await expect(restarted.inventoryRevision()).rejects.toThrow("unfinished");
+		await restarted.recoverPublication();
+		await restarted.recoverPublication();
+		expect(await restarted.inventoryRevision()).toBe(1);
+		expect(await restarted.inventoryCount()).toBe(1);
+		const ids = await restarted.inventoryPage(0);
+		expect(ids).toHaveLength(1);
+		const record = await restarted.record(ids[0]!);
+		expect(record.path).toBe(path);
+		expect(record.dependencies).toEqual(["unreconciled"]);
+		const { storageDigest } = await import("../src/StorageRetention.js");
+		expect(
+			JSON.parse(
+				await readFile(
+					join(store.directory, "path-records", `${storageDigest(path)}.json`),
+					"utf8",
+				),
+			),
+		).toEqual({ id: record.id, identity: record.identity });
+	});
+}
+
+it.each([
+	"identity",
+	"record",
+	"index",
+	"page",
+	"count",
+])("preserves the unfinished marker when interrupted publication has conflicting %s", async (conflict) => {
+	const { store, path, root } = await fixture();
+	const rename = filesystem.rename;
+	const spy = vi
+		.spyOn(filesystem, "rename")
+		.mockImplementation(async (source, destination) => {
+			if (
+				String(destination).endsWith("inventory-revision.json") &&
+				JSON.parse(await readFile(String(source), "utf8")).writing === false
+			)
+				throw new Error("injected publication interruption");
+			return rename(source, destination);
+		});
+	await expect(
+		store.register({
+			path,
+			root,
+			category: "migration",
+			producer: "test",
+			operation: "one",
+			dependencies: ["unreconciled"],
+			evidence: [],
+		}),
+	).rejects.toThrow("injected");
+	spy.mockRestore();
+	const { publishStorageJson, storageDigest } = await import(
+		"../src/StorageRetention.js"
+	);
+	if (conflict === "identity") {
+		await filesystem.rename(path, `${path}-retained`);
+		await mkdir(path);
+	}
+	if (conflict === "index")
+		await publishStorageJson(
+			join(store.directory, "path-records", `${storageDigest(path)}.json`),
+			{ id: "conflict" },
+		);
+
+	if (conflict === "page")
+		await publishStorageJson(join(store.directory, "inventory", "0.json"), [
+			"10000000-0000-4000-8000-000000000001",
+		]);
+	if (conflict === "record") {
+		const id = (await store.inventoryPage(0))[0]!;
+		await publishStorageJson(store.recordPath(id), {
+			...(await store.record(id)),
+			operation: "foreign change",
+		});
+	}
+
+	if (conflict === "count")
+		await publishStorageJson(join(store.directory, "inventory-count.json"), 8);
+	await expect(store.recoverPublication()).rejects.toThrow();
+	await expect(store.inventoryRevision()).rejects.toThrow("unfinished");
+	expect((await filesystem.stat(path)).isDirectory()).toBe(true);
+});
+
+it("recovers an interrupted record revision while preserving its index and count", async () => {
+	const { store, home, path, root } = await fixture();
+	const record = await store.register({
+		path,
+		root,
+		category: "migration",
+		producer: "test",
+		operation: "one",
+		dependencies: ["pending"],
+		evidence: [],
+	});
+	const rename = filesystem.rename;
+	const spy = vi
+		.spyOn(filesystem, "rename")
+		.mockImplementation(async (source, destination) => {
+			if (
+				String(destination).endsWith("inventory-revision.json") &&
+				JSON.parse(await readFile(String(source), "utf8")).writing === false
+			)
+				throw new Error("injected revision interruption");
+			return rename(source, destination);
+		});
+	try {
+		await expect(
+			store.revise(record.id, (value) => {
+				value.evidence = ["verified proof"];
+			}),
+		).rejects.toThrow("injected");
+	} finally {
+		spy.mockRestore();
+	}
+	const restarted = new StorageRetentionStore(home);
+	await restarted.recoverPublication();
+	expect(await restarted.inventoryCount()).toBe(1);
+	expect(await restarted.inventoryPage(0)).toEqual([record.id]);
+	expect((await restarted.record(record.id)).evidence).toEqual([
+		"verified proof",
+	]);
+	expect((await restarted.record(record.id)).dependencies).toEqual(["pending"]);
+	expect(await restarted.inventoryRevision()).toBe(2);
 });

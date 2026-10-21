@@ -38,8 +38,11 @@ actual file dependencies instead of blocking release merely because they exist. 
 history, impact decisions and frozen review contexts receive the same bounded
 inspection. Their repository workspace identity fields are historical metadata; file
 paths and evidence remain dependencies. Only exact workspace identities in runtime-owned
-records are exempt. Saved selected-command output remains self-contained historical
-text; arbitrary output objects and descendant file paths still protect their files.
+records are exempt. Exemptions require the owning run’s enrolled snapshot or exact
+command receipt at its configured assessment or check-tool location, including
+retained history and frozen review copies. Copying a digest or receipt into arbitrary
+output grants no exemption. Saved command logs remain historical text; other file
+paths and evidence links still protect their files.
 A completed
 run's workspace identity is released only after content/native references are
 independently absent and the release is recorded durably. When native lookup
@@ -141,6 +144,13 @@ Update-artifact retries verify every remaining file against the original manifes
 new or changed files retain the artifact. An absent original target can reconcile
 its receipt without rerunning hooks or claiming measured savings. A replacement
 identity ends the old intent and remains protected. Keep receipts during recovery.
+
+Interrupted ownership publication keeps cleanup blocked until the producer retries.
+Registration and record revisions save their intended writes before publishing.
+Migration retries acquire the inventory claim, verify directory identity and every
+partial record/index/page/count association, then complete only matching writes.
+Conflicting data or an unknown publication intent leaves the marker and data intact.
+Retrying again is safe and does not create duplicate inventory entries.
 
 ## Measurements and limits
 

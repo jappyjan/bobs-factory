@@ -8,6 +8,7 @@ import {
 	StorageRetentionStore,
 	storageDigest,
 } from "bobs-factory-core";
+import type { WorkflowStep } from "../factory/Workflow.js";
 import type {
 	FactoryRun,
 	GraphCheckpoint,
@@ -63,20 +64,143 @@ class ProtectionReasons extends Array<string> {
 	}
 }
 interface ReferencePolicy {
-	snapshots: Map<
-		string,
+	// Object identity is granted only by the owning run's runtime record locations.
+	snapshots: WeakMap<
+		object,
 		NonNullable<FactoryRun["impactDecisions"]>[number]["snapshot"]
 	>;
-	receipts: Set<string>;
+	receipts: WeakSet<object>;
+}
+function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
+	const policy: ReferencePolicy = {
+		snapshots: new WeakMap(),
+		receipts: new WeakSet(),
+	};
+	const decisions = run.impactDecisions ?? [];
+	if (!decisions.length) return policy;
+	const steps = new Map<string, WorkflowStep>();
+	const collect = function* (
+		items: WorkflowStep[],
+		prefix = "",
+		ancestors: string[] = [],
+	): Generator<void> {
+		for (const step of items) {
+			yield;
+			const key = `${prefix}${step.id}`;
+			steps.set(key, step);
+			for (const [index, group] of (step.groups ?? []).entries())
+				yield* collect(group, `${key}/${index}/`, ancestors);
+			if (
+				step.type === "workflow" &&
+				step.workflow &&
+				!ancestors.includes(step.workflow)
+			) {
+				const child = run.workflowDefinitions?.find(
+					(w) => w.id === step.workflow,
+				);
+				if (child)
+					yield* collect(child.steps, `${key}/`, [...ancestors, child.id]);
+			}
+		}
+	};
+	yield* collect(run.workflow.steps, "", [run.workflow.id]);
+	const enroll = (value: unknown, key: string) => {
+		if (!value || typeof value !== "object") return;
+		const record = value as Record<string, unknown>;
+		const associated = (decision: (typeof decisions)[number]) => {
+			const qualified = key.includes("/")
+				? key
+				: `${decision.snapshot.key.slice(0, decision.snapshot.key.lastIndexOf("/") + 1)}${key}`;
+			return steps.get(qualified);
+		};
+		const candidates = decisions.filter(
+			(d) =>
+				!key.includes("/") ||
+				d.snapshot.key.slice(0, d.snapshot.key.lastIndexOf("/") + 1) ===
+					key.slice(0, key.lastIndexOf("/") + 1),
+		);
+		if (record.snapshot) {
+			const decision = candidates.find(
+				(d) =>
+					associated(d)?.impactContract &&
+					storageDigest(record.snapshot) === storageDigest(d.snapshot) &&
+					record.at === d.at,
+			);
+			if (decision) {
+				policy.snapshots.set(value, decision.snapshot);
+				if (Array.isArray(record.checkResults))
+					for (const receipt of record.checkResults)
+						if (
+							receipt &&
+							typeof receipt === "object" &&
+							decision.checkResults.some(
+								(r) => storageDigest(r) === storageDigest(receipt),
+							)
+						)
+							policy.receipts.add(receipt);
+			}
+		}
+		if (Array.isArray(record.checks))
+			for (const receipt of record.checks)
+				if (
+					receipt &&
+					typeof receipt === "object" &&
+					candidates.some(
+						(d) =>
+							associated(d)?.tool === "impact-checks" &&
+							d.checkResults.some(
+								(r) => storageDigest(r) === storageDigest(receipt),
+							),
+					)
+				)
+					policy.receipts.add(receipt);
+	};
+	const outputs = function* (value: unknown): Generator<void> {
+		if (value && typeof value === "object")
+			for (const [key, output] of Object.entries(value)) {
+				yield;
+				enroll(output, key);
+			}
+	};
+	const history = function* (value: unknown): Generator<void> {
+		if (Array.isArray(value))
+			for (const entry of value) {
+				yield;
+				if (entry && typeof entry.step === "string")
+					enroll(entry.output, entry.step);
+			}
+	};
+	for (const decision of decisions) {
+		yield;
+		policy.snapshots.set(decision, decision.snapshot);
+		for (const receipt of decision.checkResults) {
+			yield;
+			policy.receipts.add(receipt);
+		}
+	}
+	yield* outputs(run.outputs);
+	yield* history(run.history);
+	for (const round of run.reviewRounds ?? []) {
+		yield;
+		const context = round.context as Record<string, unknown> | undefined;
+		yield* outputs(context?.outputs);
+		yield* history(context?.history);
+	}
+	const checkpoint = function* (frame?: GraphCheckpoint): Generator<void> {
+		if (!frame) return;
+		yield;
+		yield* outputs(frame.outputs);
+		for (const child of frame.active?.children ?? []) yield* checkpoint(child);
+	};
+	yield* checkpoint(run.checkpoint);
+	return policy;
 }
 type ReferenceLocation =
 	| "content"
 	| "context"
 	| "snapshot"
 	| "repositories"
-	| "repository"
-	| "checks"
-	| "check";
+	| "repository";
 /** Stream every retained value and evidence link. Identity metadata is handled by
  * the owning record, while actual content paths remain live dependencies. */
 async function* retainedReferences(
@@ -112,10 +236,7 @@ async function* retainedReferences(
 		}
 	} else if (value && typeof value === "object") {
 		const record = value as Record<string, unknown>;
-		const snapshot = record.snapshot as { digest?: string } | undefined;
-		const canonical = snapshot?.digest
-			? policy?.snapshots.get(snapshot.digest)
-			: undefined;
+		const canonical = policy?.snapshots.get(record);
 		for (const key in record) {
 			if (!Object.hasOwn(record, key)) continue;
 			const item = record[key];
@@ -130,25 +251,14 @@ async function* retainedReferences(
 				(location === "context" || location === "repository")
 			)
 				continue;
-			if (
-				location === "check" &&
-				key === "evidence" &&
-				policy?.receipts.has(
-					storageDigest({
-						id: record.id,
-						exitCode: record.exitCode,
-						evidence: item,
-					}),
-				)
-			)
-				continue; // Saved command output is self-contained historical text.
+			if (key === "evidence" && policy?.receipts.has(record)) continue; // Exact enrolled command receipt at a runtime-owned location.
+
 			let next: ReferenceLocation = "content";
 			let nextIdentity: unknown;
 			if (canonical && key === "snapshot") {
 				next = "snapshot";
 				nextIdentity = canonical;
 			}
-			if (canonical && key === "checkResults") next = "checks";
 			if (location === "snapshot" && key === "repositories") {
 				next = "repositories";
 				nextIdentity = identity;
@@ -183,7 +293,6 @@ async function* retainedReferences(
 					nextIdentity = match.workspace;
 				}
 			}
-			if (location === "checks") next = "check";
 			yield* retainedReferences(
 				item,
 				workspace,
@@ -259,22 +368,6 @@ export function factoryStorage(
 			| undefined;
 		if (!descriptor) return [];
 		const owners: FactoryRun[] = [];
-		const policy: ReferencePolicy = {
-			snapshots: new Map(),
-			receipts: new Set(),
-		};
-		for (const run of runtime.runs.values()) {
-			yield;
-			for (const decision of run.impactDecisions ?? []) {
-				signal?.throwIfAborted();
-				yield;
-				policy.snapshots.set(decision.snapshot.digest, decision.snapshot);
-				for (const receipt of decision.checkResults) {
-					yield;
-					policy.receipts.add(storageDigest(receipt));
-				}
-			}
-		}
 		const protection = new ProtectionReasons();
 		protection.push(
 			...((await hooks.protection?.(workspace)) ?? [
@@ -282,6 +375,7 @@ export function factoryStorage(
 			]),
 		);
 		for (const run of runtime.runs.values()) {
+			const policy = yield* referencePolicy(run);
 			signal?.throwIfAborted();
 			yield;
 			const owns =

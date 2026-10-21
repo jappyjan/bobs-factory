@@ -577,7 +577,7 @@ export async function applyMigration(
 				authoritativeDigest: authoritativeDigest(manifest.destination),
 			});
 			const store = new StorageRetentionStore(manifest.destination);
-			await store.initialize();
+			await store.recoverPublication();
 			let enrollmentComplete = true;
 			for (const name of ["state", "factory"]) {
 				const path = join(backup, "staged", name);

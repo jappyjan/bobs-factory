@@ -176,6 +176,22 @@ export async function readStorageJson(
 		throw error;
 	}
 }
+const InventoryPublicationSchema = z
+	.object({
+		record: StorageRecordSchema,
+		previousRecord: StorageRecordSchema.optional(),
+		registration: z
+			.object({
+				count: z.number().int().nonnegative(),
+				page: z.array(z.string().uuid()).max(99),
+				previousIndex: z
+					.object({ id: z.string().uuid(), identity: StorageIdentitySchema })
+					.optional(),
+			})
+			.optional(),
+	})
+	.strict();
+type InventoryPublication = z.infer<typeof InventoryPublicationSchema>;
 /** Private per-instance data, deliberately outside state/factory snapshot payloads. */
 export class StorageRetentionStore {
 	readonly directory: string;
@@ -230,6 +246,7 @@ export class StorageRetentionStore {
 		});
 		await new OwnedResourceClaim(join(this.directory, "inventory.lock")).run(
 			async () => {
+				await this.recoverInventoryWrite();
 				const existing = (await readStorageJson(
 					join(
 						this.directory,
@@ -261,7 +278,10 @@ export class StorageRetentionStore {
 					.parse((await readStorageJson(pagePath)) ?? []);
 				if (page.length !== count % 100)
 					throw new Error("Storage inventory index requires reconciliation");
-				const revision = await this.beginInventoryWrite();
+				const revision = await this.beginInventoryWrite({
+					record,
+					registration: { count, page, previousIndex: existing },
+				});
 				await publishStorageJson(this.recordPath(record.id), record);
 				await publishStorageJson(
 					join(
@@ -299,11 +319,12 @@ export class StorageRetentionStore {
 			);
 		return revision.revision;
 	}
-	private async beginInventoryWrite() {
+	private async beginInventoryWrite(publication: InventoryPublication) {
 		const revision = await this.inventoryRevision();
 		await publishStorageJson(join(this.directory, "inventory-revision.json"), {
 			revision: revision + 1,
 			writing: true,
+			publication: InventoryPublicationSchema.parse(publication),
 		});
 		return revision + 1;
 	}
@@ -312,6 +333,144 @@ export class StorageRetentionStore {
 			revision,
 			writing: false,
 		});
+	}
+	/** Only the producer retries publication; readers continue to fail closed. */
+	async recoverPublication() {
+		await this.initialize();
+		return new OwnedResourceClaim(join(this.directory, "inventory.lock")).run(
+			() => this.recoverInventoryWrite(),
+			true,
+		);
+	}
+	private async recoverInventoryWrite() {
+		const state = (await readStorageJson(
+			join(this.directory, "inventory-revision.json"),
+		)) as
+			| { revision: number; writing: boolean; publication?: unknown }
+			| undefined;
+		if (!state?.writing) return;
+		z.number().int().positive().parse(state.revision);
+		if (!state.publication)
+			throw new Error(
+				"Interrupted storage publication has no saved intent; independent reconciliation is required",
+			);
+		const intent = InventoryPublicationSchema.parse(state.publication);
+		const { record, previousRecord, registration } = intent;
+		if (
+			!sameStorageIdentity(
+				record.identity,
+				await storageIdentity(record.path, record.root),
+			)
+		)
+			throw new Error(
+				"Interrupted storage publication identity changed; refusing recovery",
+			);
+		const writes: { path: string; before: unknown; after: unknown }[] = [
+			{
+				path: this.recordPath(record.id),
+				before: previousRecord,
+				after: record,
+			},
+		];
+		if (registration) {
+			const { count, page, previousIndex } = registration;
+			if (
+				previousRecord ||
+				page.length !== count % 100 ||
+				page.includes(record.id)
+			)
+				throw new Error("Interrupted storage inventory intent is inconsistent");
+			writes.push(
+				{
+					path: join(
+						this.directory,
+						"path-records",
+						`${storageDigest(record.path)}.json`,
+					),
+					before: previousIndex,
+					after: { id: record.id, identity: record.identity },
+				},
+				{
+					path: join(
+						this.directory,
+						"inventory",
+						`${Math.floor(count / 100)}.json`,
+					),
+					before: page,
+					after: [...page, record.id],
+				},
+				{
+					path: join(this.directory, "inventory-count.json"),
+					before: count,
+					after: count + 1,
+				},
+			);
+		} else {
+			if (
+				!previousRecord ||
+				previousRecord.id !== record.id ||
+				previousRecord.path !== record.path ||
+				previousRecord.root !== record.root ||
+				!sameStorageIdentity(previousRecord.identity, record.identity)
+			)
+				throw new Error("Interrupted storage revision intent is inconsistent");
+			const index = await readStorageJson(
+				join(
+					this.directory,
+					"path-records",
+					`${storageDigest(record.path)}.json`,
+				),
+			);
+			if (
+				JSON.stringify(index) !==
+				JSON.stringify({ id: record.id, identity: record.identity })
+			)
+				throw new Error("Interrupted storage revision path index changed");
+		}
+		const count = await this.inventoryCount();
+		const expectedCount = registration?.count ?? count;
+		const seen = new Set<string>();
+		for (let offset = 0; offset < expectedCount; offset += 100) {
+			const page = await this.inventoryPage(offset);
+			const expectedLength = Math.min(100, expectedCount - offset);
+			const lastRegistrationPage =
+				registration && Math.floor(expectedCount / 100) === offset / 100;
+			const ids =
+				lastRegistrationPage && page.at(-1) === record.id
+					? page.slice(0, -1)
+					: page;
+			if (ids.length !== expectedLength)
+				throw new Error("Interrupted storage inventory page count changed");
+			for (const id of ids) {
+				if (seen.has(id))
+					throw new Error(
+						"Interrupted storage inventory contains duplicate ownership",
+					);
+				seen.add(id);
+			}
+		}
+		if (registration ? seen.has(record.id) : !seen.has(record.id))
+			throw new Error(
+				"Interrupted storage inventory record association changed",
+			);
+		// Validate every file before repairing any of them. A conflict preserves the marker.
+		for (const write of writes) {
+			let current = await readStorageJson(write.path);
+			if (current === undefined && write.path.includes("/inventory/"))
+				current = [];
+			if (current === undefined && write.path.endsWith("/inventory-count.json"))
+				current = 0;
+			if (
+				JSON.stringify(current) !== JSON.stringify(write.before) &&
+				JSON.stringify(current) !== JSON.stringify(write.after)
+			)
+				throw new Error(
+					"Interrupted storage publication conflicts with retained inventory",
+				);
+		}
+		for (const write of writes)
+			await publishStorageJson(write.path, write.after);
+		await this.finishInventoryWrite(state.revision);
 	}
 	async inventoryCount(): Promise<number> {
 		return z
@@ -345,7 +504,9 @@ export class StorageRetentionStore {
 		return new OwnedResourceClaim(
 			join(this.directory, `record-${id}.lock`),
 		).run(async () => {
+			await this.recoverPublication();
 			const record = await this.record(id);
+			const previousRecord = structuredClone(record);
 			if (
 				!sameStorageIdentity(
 					record.identity,
@@ -359,7 +520,11 @@ export class StorageRetentionStore {
 			StorageRecordSchema.parse(record);
 			return new OwnedResourceClaim(join(this.directory, "inventory.lock")).run(
 				async () => {
-					const revision = await this.beginInventoryWrite();
+					await this.recoverInventoryWrite();
+					const revision = await this.beginInventoryWrite({
+						record,
+						previousRecord,
+					});
 					await publishStorageJson(this.recordPath(id), record);
 					await this.finishInventoryWrite(revision);
 					return record;

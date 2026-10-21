@@ -397,7 +397,10 @@ it.each([
 		{
 			schemaVersion: 1,
 			round: 1,
-			key: "pipeline/specialist-review",
+			key:
+				route === "nested"
+					? "child/pipeline/specialist-review"
+					: "pipeline/specialist-review",
 			inventory: { schemaVersion: 1, requirements: [] },
 			headSha: head,
 			baseSha: head,
@@ -411,6 +414,10 @@ it.each([
 						snapshot: {
 							schemaVersion: 1,
 							digest: "retained-impact-fixture",
+							key:
+								route === "nested"
+									? "child/pipeline/specialist-review"
+									: "pipeline/specialist-review",
 							repositories: [
 								{
 									repositoryId: configured.id,
@@ -439,6 +446,10 @@ it.each([
 		snapshot: {
 			schemaVersion: 1,
 			digest: "retained-impact-fixture",
+			key:
+				route === "nested"
+					? "child/pipeline/specialist-review"
+					: "pipeline/specialist-review",
 			repositories: [
 				{
 					repositoryId: configured.id,
@@ -450,9 +461,11 @@ it.each([
 		},
 	};
 	const impact = run.outputs["assess-impact"] as {
+		at?: string;
 		snapshot: unknown;
 		checkResults?: unknown[];
 	};
+	impact.at = new Date().toISOString();
 	impact.checkResults = [
 		{
 			id: "build",
@@ -470,6 +483,35 @@ it.each([
 		output: run.outputs["assess-impact"],
 		at: new Date().toISOString(),
 	});
+	const checkOutput = {
+		questions: [],
+		checks: structuredClone(impact.checkResults),
+	};
+	run.outputs["impact-checks"] = checkOutput;
+	run.history.push({
+		step:
+			route === "nested"
+				? "child/pipeline/impact-checks"
+				: "pipeline/impact-checks",
+		output: structuredClone(checkOutput),
+		at: new Date().toISOString(),
+	});
+	const frozen = run.reviewRounds[0]!.context as {
+		outputs: Record<string, unknown>;
+		history?: unknown[];
+	};
+	frozen.outputs["impact-checks"] = structuredClone(checkOutput);
+	frozen.history = [
+		{
+			step:
+				route === "nested"
+					? "child/pipeline/impact-checks"
+					: "pipeline/impact-checks",
+			output: structuredClone(checkOutput),
+			at: new Date().toISOString(),
+		},
+	];
+
 	run.outputs.guide = {
 		title: "Retained reviewed delivery",
 		summary: "Independent historical guide",
@@ -590,6 +632,13 @@ it.each([
 					],
 				},
 			},
+			{
+				snapshot: structuredClone(
+					impact.snapshot as { repositories: unknown[] },
+				),
+			},
+			structuredClone(impact),
+			structuredClone(checkOutput),
 		]) {
 			stopped.outputs.repositoryShaped = reference;
 			await runtime.save(stopped);
@@ -598,6 +647,26 @@ it.each([
 				"references this workspace",
 			);
 		}
+		// Copying a complete record does not enroll it in another run, even under a real step name.
+		stopped.outputs["assess-impact"] = structuredClone(impact);
+		stopped.outputs["impact-checks"] = structuredClone(checkOutput);
+		delete stopped.outputs.repositoryShaped;
+		expect((await observe()).protection.join(" ")).toContain(
+			"references this workspace",
+		);
+		delete stopped.outputs["assess-impact"];
+		delete stopped.outputs["impact-checks"];
+		for (const copied of [
+			structuredClone(impact),
+			structuredClone(checkOutput),
+		]) {
+			run.outputs.arbitraryCopy = copied;
+			expect((await observe()).protection.join(" ")).toContain(
+				"references this workspace",
+			);
+			delete run.outputs.arbitraryCopy;
+		}
+
 		delete stopped.outputs.repositoryShaped;
 
 		stopped.outputs.otherWorkspaceEvidence = join(delivered.path, "file");

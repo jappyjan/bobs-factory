@@ -28,6 +28,10 @@ import {
 	transformState,
 } from "./transform.js";
 
+vi.mock("node:fs/promises", async (importOriginal) => ({
+	...(await importOriginal<typeof import("node:fs/promises")>()),
+}));
+
 const roots: string[] = [];
 vi.mock("node:child_process", async (importOriginal) => ({
 	...(await importOriginal<typeof import("node:child_process")>()),
@@ -1056,4 +1060,99 @@ it.each([
 	const record = await store.record((await store.inventoryPage(0))[0]!);
 	expect(record.dependencies).not.toEqual([]);
 	expect(record.authoritativeReplacement).toBeUndefined();
+});
+
+it.each([
+	"records",
+	"path-records",
+	"inventory",
+	"inventory-count.json",
+	"finish",
+])("recovers migration publication interrupted inside %s and expires only preparation", async (boundary) => {
+	const { source, destination, backup } = fixture();
+	mkdirSync(join(source, "state"));
+	writeFileSync(join(source, "state", "saved.json"), '{"note":"preserved"}');
+	const filesystem = await import("node:fs/promises");
+	const rename = filesystem.rename;
+	let interrupted = false;
+	const spy = vi
+		.spyOn(filesystem, "rename")
+		.mockImplementation(async (from, to) => {
+			const target = String(to);
+			const matches =
+				target.startsWith(join(destination, "storage-retention")) &&
+				(boundary === "finish"
+					? target.endsWith("inventory-revision.json") &&
+						JSON.parse(await filesystem.readFile(String(from), "utf8"))
+							.writing === false
+					: target.includes(`/${boundary}/`) ||
+						target.endsWith(`/${boundary}`));
+			if (!interrupted && matches) {
+				interrupted = true;
+				throw new Error("injected inside publication");
+			}
+			return rename(from, to);
+		});
+	const manifest = inspectMigration(source, destination);
+	try {
+		await expect(applyMigration(manifest, backup)).rejects.toThrow("injected");
+	} finally {
+		spy.mockRestore();
+	}
+	expect(interrupted).toBe(true);
+	const { StorageRetentionStore } = await import("bobs-factory-core");
+	const store = new StorageRetentionStore(destination);
+	await expect(store.inventoryRevision()).rejects.toThrow("unfinished");
+	expect((await applyMigration(manifest, backup)).status).toBe(
+		"already-applied",
+	);
+	expect((await applyMigration(manifest, backup)).status).toBe(
+		"already-applied",
+	);
+	const ids = await store.inventoryPage(0);
+	expect(ids).toHaveLength(1);
+	const record = await store.record(ids[0]!);
+	expect(record.dependencies).toEqual([]);
+	expect(record.authoritativeReplacement?.path).toBe(
+		join(destination, "state"),
+	);
+	const { StorageRetention } = await import(
+		"../../../../packages/edge-worker/src/storage/StorageRetention.js"
+	);
+	const { UpdateArtifacts } = await import(
+		"../../../../packages/edge-worker/src/storage/UpdateArtifacts.js"
+	);
+	const coordinator = new StorageRetention(
+		destination,
+		{ migration: new UpdateArtifacts(destination) },
+		() => Date.now() + 8 * 86_400_000,
+	);
+	try {
+		let preview = await coordinator.preview();
+		for (let i = 0; !preview.complete && i < 100; i++)
+			preview = await coordinator.preview();
+		expect(preview.complete).toBe(true);
+		const candidate = preview.candidates.find(
+			(c) => c.record.id === record.id,
+		)!;
+		expect(candidate.eligible, candidate.reasons.join("; ")).toBe(true);
+		await coordinator.execute(preview.id, [record.id]);
+		await expect
+			.poll(async () => (await coordinator.status()).outcome?.completedAt)
+			.toBeTruthy();
+		expect((await coordinator.status()).outcome?.results[0]?.phase).toBe(
+			"completed",
+		);
+		expect(existsSync(record.path)).toBe(false);
+		for (const path of [
+			join(destination, "state", "saved.json"),
+			join(source, "state", "saved.json"),
+			join(backup, "source", "state", "saved.json"),
+		])
+			expect(JSON.parse(readFileSync(path, "utf8"))).toEqual({
+				note: "preserved",
+			});
+	} finally {
+		await coordinator.stop();
+	}
 });

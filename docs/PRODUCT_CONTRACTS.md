@@ -335,9 +335,13 @@ workspace; Simple conversations and unfinished native checkpoints still do.
 Historical preparation/recovery elections require exact current-state comparisons;
 new committed migration preparation enrolls only reconciled state/factory copies
 under shared claims, keeping source/native/external backups protected. Interrupted
-enrollment resumes on migration retry. Runtime-owned workspace identities and saved
-command logs remain historical; arbitrary output and descendant file references
-still protect their content. Historical
+enrollment resumes on migration retry after validating and completing its saved
+ownership publication intent, record, path index, inventory page and count. Changed
+identities or conflicting records preserve the unfinished marker and all data.
+Runtime-owned workspace identities and exact saved command receipts remain
+historical only at configured workflow locations associated with the owning run.
+Copied snapshot digests, copied receipts in arbitrary outputs and descendant file
+references still protect their content. Historical
 run dependencies and every grouped parent entry are checked before removal;
 concurrent replacement files survive failed leaf verification. Failed or uncertain
 hooks need explicit verified idempotent retry. Receipts and original evidence stay
