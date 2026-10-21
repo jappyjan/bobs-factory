@@ -316,25 +316,27 @@ it.each([
 					(value) =>
 						value.id === (route === "takeover" ? "takeover" : "factory"),
 				)!;
-	const runtime = new WorkflowRuntime(home, {
-		agent: async () => {
-			throw new Error(
-				"Fixture must start from its retained reviewed checkpoint",
-			);
-		},
-		script: async () => ({}),
-		tool: async (context) =>
-			context.step.tool === "merge"
-				? {
-						merged: true,
-						url: "https://github.com/f1-fixture/storage/pull/1",
-						headSha: head,
-					}
-				: {
-						headSha: head,
-						url: "https://github.com/f1-fixture/storage/pull/1",
-					},
-	});
+	const createRuntime = () =>
+		new WorkflowRuntime(home, {
+			agent: async () => {
+				throw new Error(
+					"Fixture must start from its retained reviewed checkpoint",
+				);
+			},
+			script: async () => ({}),
+			tool: async (context) =>
+				context.step.tool === "merge"
+					? {
+							merged: true,
+							url: "https://github.com/f1-fixture/storage/pull/1",
+							headSha: head,
+						}
+					: {
+							headSha: head,
+							url: "https://github.com/f1-fixture/storage/pull/1",
+						},
+		});
+	let runtime = createRuntime();
 	const create = (id: string, workspace: string) =>
 		runtime.create({
 			id,
@@ -351,9 +353,9 @@ it.each([
 				at: new Date().toISOString(),
 			},
 		});
-	const run = create("delivered-run", delivered.path);
+	let run = create("delivered-run", delivered.path);
 	run.issueId = "delivered";
-	const stopped = create("resumable-run", resumable.path);
+	let stopped = create("resumable-run", resumable.path);
 	stopped.issueId = "resumable";
 	runtime.stop(stopped.id);
 	if (route === "grouped")
@@ -512,6 +514,15 @@ it.each([
 		},
 	];
 
+	// More than four one-entry pages must evict and recreate restored history.
+	for (let index = 0; index < 6; index++) {
+		run.history.push({
+			step: index % 2 === 0 ? "assess-impact" : "impact-checks",
+			output: structuredClone(index % 2 === 0 ? impact : checkOutput),
+			at: new Date().toISOString(),
+		});
+	}
+
 	run.outputs.guide = {
 		title: "Retained reviewed delivery",
 		summary: "Independent historical guide",
@@ -539,6 +550,15 @@ it.each([
 	await runtime.save(run);
 	await runtime.flush(run.id);
 	const expectedOutputs = structuredClone(run.outputs);
+	await runtime.shutdown();
+	runtime = createRuntime();
+	run = runtime.runs.get(run.id)!;
+	stopped = runtime.runs.get(stopped.id)!;
+	const firstEntry = run.history[0];
+	for (let index = 1; index < run.history.length; index++)
+		void run.history[index]; // Force the real snapshot cache to evict.
+	expect(run.history[0]).not.toBe(firstEntry);
+
 	// A controlled local remote supplies simulated provider proof. No forge or
 	// provider inference request is made, and no real human decision is claimed.
 	const base = factoryStorage(runtime, service, {
@@ -665,6 +685,15 @@ it.each([
 				"references this workspace",
 			);
 			delete run.outputs.arbitraryCopy;
+			run.history.push({
+				step: "arbitraryCopy",
+				output: copied,
+				at: new Date().toISOString(),
+			});
+			expect((await observe()).protection.join(" ")).toContain(
+				"references this workspace",
+			);
+			run.history.pop();
 		}
 
 		delete stopped.outputs.repositoryShaped;

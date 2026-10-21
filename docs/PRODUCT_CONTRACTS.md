@@ -340,6 +340,8 @@ ownership publication intent, record, path index, inventory page and count. Chan
 identities or conflicting records preserve the unfinished marker and all data.
 Runtime-owned workspace identities and exact saved command receipts remain
 historical only at configured workflow locations associated with the owning run.
+Inspection validates each loaded record during traversal, so restored paged
+history preserves these semantics without requiring stable cached object identities.
 Copied snapshot digests, copied receipts in arbitrary outputs and descendant file
 references still protect their content. Historical
 run dependencies and every grouped parent entry are checked before removal;

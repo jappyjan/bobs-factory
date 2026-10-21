@@ -64,20 +64,17 @@ class ProtectionReasons extends Array<string> {
 	}
 }
 interface ReferencePolicy {
-	// Object identity is granted only by the owning run's runtime record locations.
+	// Exemptions are scoped to the record currently being traversed.
 	snapshots: WeakMap<
 		object,
 		NonNullable<FactoryRun["impactDecisions"]>[number]["snapshot"]
 	>;
 	receipts: WeakSet<object>;
+	enroll(value: unknown, key?: string): ReferencePolicy;
 }
 function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
-	const policy: ReferencePolicy = {
-		snapshots: new WeakMap(),
-		receipts: new WeakSet(),
-	};
 	const decisions = run.impactDecisions ?? [];
-	if (!decisions.length) return policy;
+
 	const steps = new Map<string, WorkflowStep>();
 	const collect = function* (
 		items: WorkflowStep[],
@@ -103,11 +100,18 @@ function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
 			}
 		}
 	};
-	yield* collect(run.workflow.steps, "", [run.workflow.id]);
-	const enroll = (value: unknown, key: string) => {
-		if (!value || typeof value !== "object") return;
+	if (decisions.length)
+		yield* collect(run.workflow.steps, "", [run.workflow.id]);
+	const enroll = (value: unknown, key?: string): ReferencePolicy => {
+		const policy: ReferencePolicy = {
+			snapshots: new WeakMap(),
+			receipts: new WeakSet(),
+			enroll,
+		};
+		if (!value || typeof value !== "object") return policy;
 		const record = value as Record<string, unknown>;
 		const associated = (decision: (typeof decisions)[number]) => {
+			if (key === undefined) return undefined;
 			const qualified = key.includes("/")
 				? key
 				: `${decision.snapshot.key.slice(0, decision.snapshot.key.lastIndexOf("/") + 1)}${key}`;
@@ -115,6 +119,7 @@ function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
 		};
 		const candidates = decisions.filter(
 			(d) =>
+				key === undefined ||
 				!key.includes("/") ||
 				d.snapshot.key.slice(0, d.snapshot.key.lastIndexOf("/") + 1) ===
 					key.slice(0, key.lastIndexOf("/") + 1),
@@ -122,7 +127,7 @@ function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
 		if (record.snapshot) {
 			const decision = candidates.find(
 				(d) =>
-					associated(d)?.impactContract &&
+					(key === undefined || associated(d)?.impactContract) &&
 					storageDigest(record.snapshot) === storageDigest(d.snapshot) &&
 					record.at === d.at,
 			);
@@ -154,53 +159,23 @@ function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
 					)
 				)
 					policy.receipts.add(receipt);
+		return policy;
 	};
-	const outputs = function* (value: unknown): Generator<void> {
-		if (value && typeof value === "object")
-			for (const [key, output] of Object.entries(value)) {
-				yield;
-				enroll(output, key);
-			}
-	};
-	const history = function* (value: unknown): Generator<void> {
-		if (Array.isArray(value))
-			for (const entry of value) {
-				yield;
-				if (entry && typeof entry.step === "string")
-					enroll(entry.output, entry.step);
-			}
-	};
-	for (const decision of decisions) {
-		yield;
-		policy.snapshots.set(decision, decision.snapshot);
-		for (const receipt of decision.checkResults) {
-			yield;
-			policy.receipts.add(receipt);
-		}
-	}
-	yield* outputs(run.outputs);
-	yield* history(run.history);
-	for (const round of run.reviewRounds ?? []) {
-		yield;
-		const context = round.context as Record<string, unknown> | undefined;
-		yield* outputs(context?.outputs);
-		yield* history(context?.history);
-	}
-	const checkpoint = function* (frame?: GraphCheckpoint): Generator<void> {
-		if (!frame) return;
-		yield;
-		yield* outputs(frame.outputs);
-		for (const child of frame.active?.children ?? []) yield* checkpoint(child);
-	};
-	yield* checkpoint(run.checkpoint);
-	return policy;
+	return enroll(undefined);
 }
 type ReferenceLocation =
 	| "content"
 	| "context"
 	| "snapshot"
 	| "repositories"
-	| "repository";
+	| "repository"
+	| "outputs"
+	| "history"
+	| "historyEntry"
+	| "decisions"
+	| "checkpoint"
+	| "active"
+	| "children";
 /** Stream every retained value and evidence link. Identity metadata is handled by
  * the owning record, while actual content paths remain live dependencies. */
 async function* retainedReferences(
@@ -255,6 +230,25 @@ async function* retainedReferences(
 
 			let next: ReferenceLocation = "content";
 			let nextIdentity: unknown;
+			let nextPolicy = policy;
+			// Classify at the trusted location while holding this exact loaded record.
+			// Paged transcripts may recreate objects after cache eviction.
+			if (location === "outputs") nextPolicy = policy?.enroll(item, key);
+			if (location === "decisions") nextPolicy = policy?.enroll(item);
+			if (location === "history") next = "historyEntry";
+			if (
+				location === "historyEntry" &&
+				key === "output" &&
+				typeof record.step === "string"
+			)
+				nextPolicy = policy?.enroll(item, record.step);
+			if (location === "context" || location === "checkpoint") {
+				if (key === "outputs") next = "outputs";
+				if (location === "context" && key === "history") next = "history";
+				if (location === "checkpoint" && key === "active") next = "active";
+			}
+			if (location === "active" && key === "children") next = "children";
+			if (location === "children") next = "checkpoint";
 			if (canonical && key === "snapshot") {
 				next = "snapshot";
 				nextIdentity = canonical;
@@ -298,7 +292,7 @@ async function* retainedReferences(
 				workspace,
 				protection,
 				signal,
-				policy,
+				nextPolicy,
 				next,
 				nextIdentity,
 			);
@@ -389,8 +383,6 @@ export function factoryStorage(
 			// References are independent of ownership, including stopped and completed runs.
 			yield* retainedReferences(
 				[
-					run.outputs,
-					run.history,
 					run.input,
 					run.launchInputs,
 					run.launchAttachments,
@@ -404,8 +396,6 @@ export function factoryStorage(
 					run.architectureDecisions,
 					run.humanDecisions,
 					run.events,
-					run.impactDecisions,
-					run.checkpoint,
 					run.reviewGate,
 					run.sessionSnapshot,
 				],
@@ -414,6 +404,20 @@ export function factoryStorage(
 				signal,
 				policy,
 			);
+			for (const [value, location] of [
+				[run.outputs, "outputs"],
+				[run.history, "history"],
+				[run.impactDecisions, "decisions"],
+				[run.checkpoint, "checkpoint"],
+			] as const)
+				yield* retainedReferences(
+					value,
+					workspace,
+					protection,
+					signal,
+					policy,
+					location,
+				);
 			for (const round of run.reviewRounds ?? []) {
 				const context = round.context as Record<string, unknown> | undefined;
 				if (context)
