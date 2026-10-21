@@ -1,0 +1,29 @@
+{
+  "source": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+  "uiBundle": "439e34cad97e0e35a98dcbb4",
+  "all11FinalUiHashesIndependentlyVerified": true,
+  "screenshotCaptureSource": "50e020294b8b414b2920af8952fd1467ae521180",
+  "screenshotSha256": {
+    "working-desktop-light.png": "7b5a7f87ab2b895f55da3b46484ff300451611256757f6977b897e6f56c973b8",
+    "working-desktop-dark.png": "dc6cd2c24c8be6a22192fb54ce0549f34c2969f3f18331752518dbf979069a33",
+    "working-mobile-dark.png": "2f5d48d57ec57de700b049066158817df55910e14bf919cecba543038f821ca9",
+    "working-mobile-light.png": "cc67b96ae5f245ea558313b406852a2d9a666b17e6a0f838e608f12fd6937a95",
+    "review-desktop-light.png": "7faa8480e76f4efeb8edfeadd6372cd90eb099487f471338053ea99db4bf697a",
+    "review-desktop-dark.png": "51c9723de662f8a3ad3d69abc99dd55d2feb5fea4cebf45511f661d4a8f6aec9",
+    "review-mobile-dark.png": "292b218189e9d7bfa180df8b4a6d49e1f4b0f2d3edbb11fe4081edb725c12cfe",
+    "review-mobile-light.png": "5ebfc6d330f23bd09660da84b64d848a62eefdc98f2b2f1e4bc779bfd49e72ee",
+    "builder-desktop-light-schema.png": "ae04caa74f9eb5f7ff990f1d8046364e5ac3f898e27be75c1fa9424fcb770d4f",
+    "builder-desktop-light-evidence.png": "b263539dbc77bf4d358be0e6a39a15525349e73fb2002dedcbe6c59ab482b1e3",
+    "builder-desktop-dark-schema.png": "30e775f7a771cff6db039e1cd13905544703cb36ad1c29114ebd297a3b005d38",
+    "builder-desktop-dark-evidence.png": "50e877d5ab589f303139b3235f2324246ad16728e2e9e17af663277ba48f327f",
+    "builder-mobile-dark-schema.png": "2c99b8c55ec9e21bd55810bafeb64444a45637d38890b8e4a3886c8f31adce6c",
+    "builder-mobile-dark-evidence.png": "40b72dcf0d7f28d785e01724e235f732d236404956b3c119d10638430a5273be",
+    "builder-mobile-light-schema.png": "8b8cb44bf19361be838d7c36b43faac6ae31ace26d97916f901c3aae43b46c33",
+    "builder-mobile-light-evidence.png": "b4ac8faa3a8ed1bfddfd77fca78d5728679198a69a6b5645eeac6a75646ef5f1",
+    "builder-mobile-light-rules.png": "749db54df8fa6fc2ccfe473e564574816f430b87030a5f04eb89a6f8a86f745a",
+    "builder-mobile-light-revision.png": "19c9a9bb47b6df0a37f680ccf6645c0b36bce37b15d4cafff8304899c80d2a0e",
+    "builder-mobile-dark-rules.png": "6d072b33e84e1f31a2159b5e5f4fa337e71fc2a8ff9514f65f0ecfb34c6aa1f6",
+    "builder-mobile-dark-revision.png": "503644552e66724e54937fea6b09999c5cf92bf63c85efb9afaa38421d276983"
+  },
+  "images": 20
+}

@@ -3,6 +3,7 @@ import type { CapacitySnapshot } from "../MachineCapacity.js";
 import type { ExecutionProfiles } from "./ExecutionProfiles.js";
 import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { getLaunchFields } from "./LaunchFields.js";
+import { type StepPresentation, stepPresentation } from "./StepPresentation.js";
 import type { Workflow, WorkflowStep } from "./Workflow.js";
 
 export interface WorkflowStepSummary {
@@ -10,6 +11,7 @@ export interface WorkflowStepSummary {
 	name: string;
 	type: WorkflowStep["type"];
 	tool?: string;
+	presentation: StepPresentation;
 	workflow?: string;
 	groups?: WorkflowStepSummary[][];
 }
@@ -19,6 +21,7 @@ function stepSummary(step: WorkflowStep): WorkflowStepSummary {
 		id: step.id,
 		name: step.name,
 		type: step.type,
+		presentation: stepPresentation(step),
 		...(step.tool ? { tool: step.tool } : {}),
 		...(step.workflow ? { workflow: step.workflow } : {}),
 		...(step.groups
@@ -33,7 +36,18 @@ export function workflowDisplay(workflow: Workflow) {
 		id: workflow.id,
 		name: workflow.name,
 		icon: workflow.icon,
-		steps: workflow.steps.map(stepSummary),
+		steps: workflow.steps.map((step) => ({
+			...stepSummary(step),
+			...(workflow.id === "simple"
+				? {
+						presentation: {
+							phase: "yellow" as const,
+							icon: "⚡",
+							fixing: false,
+						},
+					}
+				: {}),
+		})),
 	};
 }
 

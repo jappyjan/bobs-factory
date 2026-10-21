@@ -1,0 +1,49 @@
+{
+  "binary": "/tmp/ticket136-binary-final-807b963c/artifacts/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+  "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/factory-r1-product-CSH7Xd",
+  "identity": {
+    "build": "439e34cad97e0e35a98dcbb4",
+    "protocol": 1,
+    "runtime": {
+      "version": "1.0.0-beta",
+      "commit": "807b963cfd2879ae466add6e041a8907eecffd22",
+      "dirty": false,
+      "target": "darwin-arm64",
+      "resourceDigest": "dfef96a2353a2f1dfa272d2ae7761b4f7571138a674291ef3da5527b574bf54b",
+      "packaged": true
+    },
+    "capabilities": [
+      "desktop-app-maintenance-v1"
+    ]
+  },
+  "privateDispatch": true,
+  "usefulSchema": true,
+  "unsafeRejected": true,
+  "expensiveCompile": {
+    "result": {
+      "status": 200,
+      "valid": false,
+      "issues": [
+        "Inline JSON Schema worker exceeded the 2000 ms wall limit"
+      ]
+    },
+    "elapsedMs": 2165,
+    "probes": 18,
+    "maxPingMs": 35,
+    "faultInjection": "SIGSTOP own validator child to simulate a nonresponsive engine; production parent deadline must SIGKILL",
+    "observedChildren": [
+      {
+        "pid": 6619,
+        "command": "/private/tmp/ticket136-binary-final-807b963c/artifacts/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory internal-schema-validator"
+      }
+    ],
+    "childrenAfterResponse": []
+  },
+  "cancelChildren": [
+    {
+      "pid": 7129,
+      "command": "/private/tmp/ticket136-binary-final-807b963c/artifacts/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory internal-schema-validator"
+    }
+  ],
+  "abortReclaimed": true
+}

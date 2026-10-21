@@ -37,6 +37,7 @@ import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
 import { factoryWebAssets } from "./FactoryWebAssets.js";
 import { ImprovementActionSchema } from "./Improvement.js";
+import { withAsyncInlineSchemas } from "./InlineSchema.js";
 import {
 	launchAssetFingerprint,
 	launchAssetLimits,
@@ -63,6 +64,11 @@ import {
 	resolveGuideSnapshot,
 } from "./ReviewFiles.js";
 import {
+	artifactOutputKey,
+	presentationOutputKeys,
+	presentationRoleRevisions,
+} from "./RunOutputRoles.js";
+import {
 	dashboardRun,
 	entryPreviews,
 	focusRun,
@@ -70,7 +76,17 @@ import {
 	ticketSyncSummary,
 } from "./RunProjection.js";
 import type { ChatState } from "./SessionChat.js";
+import {
+	ACCESS_MODES,
+	CHECK_IDS,
+	CONTEXT_SOURCES,
+	FORMAT_IDS,
+	INSTRUCTION_IDS,
+	inlineSchemaIssuesAsync,
+	materializeWorkflowConfig,
+} from "./StepConfig.js";
 import type { TicketManagers } from "./TicketManagers.js";
+import { outputForCheck } from "./ToolBindings.js";
 import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
 import { WorkflowSchema } from "./Workflow.js";
@@ -899,7 +915,11 @@ export class FactoryServer {
 				const workflows = () => {
 					const definitions = runtime.listWorkflows();
 					return definitions.map((workflow) => ({
-						...(dashboard ? workflowSummary(workflow) : workflow),
+						...(dashboard
+							? workflowSummary(workflow)
+							: recipes
+								? materializeWorkflowConfig(workflow)
+								: workflow),
 						...runtime.catalog.metadata(workflow.id, definitions),
 						launchFields: getLaunchFields(workflow),
 					}));
@@ -1086,6 +1106,116 @@ export class FactoryServer {
 				configRevision: configRevision(),
 			};
 		};
+		const schemaRequests = new WeakMap<object, AbortController>();
+		this.app.addHook("onRequest", (request, reply, done) => {
+			if ((request.routeOptions.url ?? "").startsWith("/api/workflows")) {
+				const controller = new AbortController();
+				schemaRequests.set(request, controller);
+				reply.raw.once("close", () =>
+					controller.abort(
+						new DOMException("Schema request closed", "AbortError"),
+					),
+				);
+				withAsyncInlineSchemas(done);
+			} else done();
+		});
+		// Precompile custom schemas asynchronously before synchronous catalogue
+		// validation. Successful results are cached; revision checks still run in
+		// the write handler after this await, so concurrent edits cannot be lost.
+		this.app.addHook("preHandler", async (request) => {
+			const route = request.routeOptions.url ?? "";
+			if (
+				!route.startsWith("/api/workflows") ||
+				route.endsWith("/step-config/validate") ||
+				!["POST", "PUT", "PATCH"].includes(request.method)
+			)
+				return;
+			const body = request.body as
+				| { workflows?: unknown[] }
+				| unknown[]
+				| undefined;
+			const replacements = Array.isArray(body) ? body : body?.workflows;
+			const replacingIds = new Set(
+				(Array.isArray(replacements) ? replacements : []).flatMap((workflow) =>
+					workflow && typeof workflow === "object" && "id" in workflow
+						? [workflow.id]
+						: [],
+				),
+			);
+			const retained = route.startsWith("/api/workflows/import")
+				? []
+				: runtime
+						.listWorkflows()
+						.filter((workflow) => !replacingIds.has(workflow.id));
+			const pending: { value: unknown; depth: number }[] = [
+				{ value: request.body, depth: 0 },
+				{ value: retained, depth: 0 },
+			];
+			const schemas = new Set<string>();
+			let nodes = 0;
+			while (pending.length) {
+				const { value, depth } = pending.pop()!;
+				if (++nodes > 50_000 || depth > 80)
+					throw new Error(
+						"Recipe configuration exceeds the validation complexity limit",
+					);
+				if (!value || typeof value !== "object") continue;
+				if (!Array.isArray(value) && Object.hasOwn(value, "output")) {
+					const output = (value as { output?: { schema?: unknown } }).output;
+					if (
+						output?.schema &&
+						typeof output.schema === "object" &&
+						!Array.isArray(output.schema)
+					) {
+						const key = JSON.stringify(output.schema);
+						if (schemas.has(key)) continue;
+						schemas.add(key);
+						if (schemas.size > 64)
+							throw new Error(
+								"Recipe configuration supports at most 64 distinct inline JSON Schemas",
+							);
+						const issues = await inlineSchemaIssuesAsync(
+							output.schema as Record<string, unknown>,
+							{ signal: schemaRequests.get(request)?.signal },
+						);
+						if (issues.length)
+							throw new z.ZodError([
+								{
+									code: "custom",
+									path: [],
+									message: `Invalid output schema: ${issues.join("; ")}`,
+								},
+							]);
+					}
+				}
+				for (const [key, child] of Object.entries(value))
+					if (key !== "output")
+						pending.push({ value: child, depth: depth + 1 });
+			}
+		});
+		this.app.get("/api/workflows/step-config/catalog", () => ({
+			formats: FORMAT_IDS.map((id) => ({
+				id,
+				version: Number(id.match(/-v(\d+)$/)?.[1] ?? 1),
+			})),
+			checks: CHECK_IDS,
+			instructions: INSTRUCTION_IDS,
+			access: ACCESS_MODES,
+			contextSources: CONTEXT_SOURCES,
+		}));
+		this.app.post(
+			"/api/workflows/step-config/validate",
+			{ bodyLimit: 70 * 1024 },
+			async (request) => {
+				const { schema } = z
+					.object({ schema: z.record(z.string(), z.unknown()) })
+					.parse(request.body);
+				const issues = await inlineSchemaIssuesAsync(schema, {
+					signal: schemaRequests.get(request)?.signal,
+				});
+				return { valid: issues.length === 0, issues };
+			},
+		);
 		this.app.put("/api/workflows", (request) => {
 			checkConfigRevision(request);
 			// Retain the original array API for existing local clients.
@@ -1501,7 +1631,12 @@ export class FactoryServer {
 					run && focus
 						? focusRun(
 								run,
-								runtime.outputPreviews(run, ["guide", "draft-pr"]),
+								runtime.outputPreviews(
+									run,
+									Object.entries(presentationOutputKeys(run))
+										.filter(([name]) => ["guide", "draft-pr"].includes(name))
+										.map(([, key]) => key),
+								),
 								runtime.hasRunValue(run, "deliveryRecovery"),
 							)
 						: run && dashboard
@@ -1538,6 +1673,15 @@ export class FactoryServer {
 						questions: [],
 						outputs: {},
 					}),
+					...(run && !focus
+						? {
+								outputRoles: presentationOutputKeys(run),
+								roleRevisions: presentationRoleRevisions(run),
+							}
+						: {}),
+					reviewCapabilities: {
+						refreshGuide: !!run && runtime.canRefreshGuide(run.id),
+					},
 					workflowBlock: runtime.catalog.getBlock(request.params.id),
 					recheckAvailable: !!run && runtime.canRecheckQuestions(run.id),
 					resumeEligible:
@@ -1614,8 +1758,9 @@ export class FactoryServer {
 					previousReviewGuide: run
 						? runtime.previousReviewGuide(
 								run,
-								(projected as { outputs?: Record<string, unknown> }).outputs
-									?.guide,
+								(projected as { outputs?: Record<string, unknown> }).outputs?.[
+									presentationOutputKeys(run).guide ?? ""
+								],
 							)
 						: undefined,
 					history: run ? runtime.historyPreviews(run) : [],
@@ -1645,9 +1790,9 @@ export class FactoryServer {
 			Querystring: { v?: string };
 		}>("/api/runs/:id/artifacts/:name", (request, reply) => {
 			const run = runtime.get(request.params.id);
-			if (!Object.hasOwn(run.outputs, request.params.name))
-				return reply.code(404).send({ error: "Artifact not found" });
-			const value = run.outputs[request.params.name];
+			const key = artifactOutputKey(run, request.params.name);
+			if (!key) return reply.code(404).send({ error: "Artifact not found" });
+			const value = run.outputs[key];
 			if (
 				request.query.v &&
 				request.query.v !==
@@ -2029,7 +2174,7 @@ export class FactoryServer {
 			"/api/runs/:id/evidence",
 			(request) => {
 				const run = runtime.get(request.params.id);
-				const capture = run.outputs.capture as
+				const capture = outputForCheck(run, "capture-evidence") as
 					| {
 							screenshots?: {
 								area: string;
@@ -2041,9 +2186,7 @@ export class FactoryServer {
 					  }
 					| undefined;
 				return {
-					videos: (
-						(run.outputs.capture as VideoCapture | undefined)?.videos ?? []
-					)
+					videos: ((capture as VideoCapture | undefined)?.videos ?? [])
 						.filter((v) => v.validation)
 						.map((v) => ({
 							taskId: v.taskId,
@@ -2059,8 +2202,7 @@ export class FactoryServer {
 							available: existsSync(v.path) && existsSync(v.posterPath),
 						})),
 					videoUnavailable:
-						(run.outputs.capture as VideoCapture | undefined)
-							?.videoUnavailable ?? [],
+						(capture as VideoCapture | undefined)?.videoUnavailable ?? [],
 					screenshots: (capture?.screenshots ?? []).map(
 						({ area, state, caption, context, imageSha256 }, index) => ({
 							area,
@@ -2102,9 +2244,11 @@ export class FactoryServer {
 				.int()
 				.nonnegative()
 				.parse(request.params.index);
-			const shot = CaptureSchema.parse(
-				run.outputs[request.query.artifact ?? "capture"],
-			).screenshots[index];
+			const key = request.query.artifact
+				? artifactOutputKey(run, request.query.artifact)
+				: presentationOutputKeys(run).capture;
+			const value = key ? run.outputs[key] : undefined;
+			const shot = CaptureSchema.parse(value).screenshots[index];
 			if (!shot) return reply.code(404).send({ error: "Screenshot not found" });
 			const path = verifiedScreenshot(
 				shot.path,
@@ -2112,7 +2256,6 @@ export class FactoryServer {
 				shot.imageSha256,
 			);
 			const bytes = readFileSync(path);
-			const value = run.outputs[request.query.artifact ?? "capture"];
 			const actualHash = createHash("sha256").update(bytes).digest("hex");
 			if (shot.imageSha256 && shot.imageSha256 !== actualHash)
 				return reply

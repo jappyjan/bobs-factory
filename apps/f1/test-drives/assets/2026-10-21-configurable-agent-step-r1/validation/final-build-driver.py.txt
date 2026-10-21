@@ -1,0 +1,37 @@
+from pathlib import Path
+import subprocess,hashlib,json,shutil,datetime,sys
+root=Path('/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery')
+out=root/'apps/f1/test-drives/assets/2026-10-21-configurable-agent-step-r1/validation'
+if len(sys.argv)>1:out=Path(sys.argv[1])
+out.mkdir(parents=True,exist_ok=True)
+paths=sorted([*root.glob('packages/*/dist'),root/'apps/cli/dist',root/'apps/f1/dist'])
+source=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()
+def files(p):
+ result={}
+ for f in sorted(p.rglob('*')):
+  assert not f.is_symlink(),str(f)
+  if f.is_file():result[str(f.relative_to(p))]=hashlib.sha256(f.read_bytes()).hexdigest()
+ return result
+before=[]
+for p in paths:
+ if not p.exists():continue
+ rel=str(p.relative_to(root))
+ assert not p.is_symlink(),rel
+ assert not subprocess.check_output(['git','ls-files',rel],cwd=root).strip(),rel
+ assert subprocess.run(['git','check-ignore','-q',rel],cwd=root).returncode==0,rel
+ before.append({'directory':rel,'files':files(p)})
+(out/'pre-clean-artifacts-final.json.txt').write_text(json.dumps({'source':source,'directories':before},indent=2)+'\n')
+for item in before:shutil.rmtree(root/item['directory'])
+with (out/'final-build.log').open('w') as log:
+ log.write(json.dumps({'command':['pnpm','build'],'source':source,'node':subprocess.check_output(['node','--version'],text=True).strip(),'started':datetime.datetime.now(datetime.timezone.utc).isoformat()})+'\n');log.flush()
+ code=subprocess.run(['pnpm','build'],cwd=root,stdout=log,stderr=subprocess.STDOUT).returncode
+ log.write('\n'+json.dumps({'exitCode':code,'ended':datetime.datetime.now(datetime.timezone.utc).isoformat()})+'\n')
+if code:sys.exit(code)
+after={str(p.relative_to(root)):files(p) for p in paths if p.exists()}
+tracked=subprocess.check_output(['git','ls-files','-z'],cwd=root).decode().split('\0')
+production={f:hashlib.sha256((root/f).read_bytes()).hexdigest() for f in tracked if f and (root/f).is_file() and (f.startswith(('packages/','apps/cli/','apps/desktop/','apps/f1/src/','scripts/','distribution/','.github/')) or f in ['package.json','pnpm-lock.yaml','pnpm-workspace.yaml','.npmrc','.node-version']) and not f.startswith('apps/f1/test-drives/')}
+manifest={'source':source,'node':subprocess.check_output(['node','--version'],text=True).strip(),'bun':subprocess.check_output(['bun','--version'],text=True).strip(),'lockfileSha256':hashlib.sha256((root/'pnpm-lock.yaml').read_bytes()).hexdigest(),'productionInputs':production,'artifacts':after}
+manifest['artifactFilesDigest']=hashlib.sha256(json.dumps(after,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+manifest['productionInputsDigest']=hashlib.sha256(json.dumps(production,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+(out/'final-build-manifest.json.txt').write_text(json.dumps(manifest,indent=2)+'\n')
+print(json.dumps({k:v for k,v in manifest.items() if k not in ['productionInputs','artifacts']},indent=2),flush=True)

@@ -1,0 +1,3 @@
+{"runtime":"Node 24.21.0","acceptedWorkflow":true,"limits":{"conditions":100000,"work":1000000,"slice":2048,"collection":20000,"dataDepth":48,"canonicalCharacters":1000000},"results":[{"items":5000,"inputBytes":58901,"limited":true,"ticks":137,"maxDelayMs":80.2273750000004,"elapsedMs":435.83900000000017},{"items":20000,"inputBytes":248901,"limited":true,"ticks":193,"maxDelayMs":4.510833000000275,"elapsedMs":239.6742909999998}],"cancelled":true,"cancelElapsedMs":18.52237500000001,"usefulRulePassed":true}
+(node:47850) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)

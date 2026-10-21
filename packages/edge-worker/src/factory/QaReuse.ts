@@ -16,19 +16,72 @@ import {
 	qaDigest,
 } from "./Qa.js";
 import { runRepositories } from "./RepositoryScope.js";
+import { consumesImpact, hasCheck, readOutput } from "./StepConfig.js";
+import { boundStepKey } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 type Criterion = QaExecution["results"][number]["criteria"][number];
 function decision(context: ExecutionContext) {
+	if (!consumesImpact(context.step)) return undefined;
 	const key = context.impactKey ?? context.reviewKey;
 	return key ? decisionFor(context.run, key) : undefined;
 }
+type QaHistory = ExecutionContext["run"]["history"];
+function captureHistory(context: ExecutionContext, history: QaHistory) {
+	const key =
+		boundStepKey(context, "capture") ?? context.stepKey ?? context.step.id;
+	return history.filter((entry) => entry.step === key);
+}
+function gateHistory(context: ExecutionContext, history: QaHistory) {
+	const key = boundStepKey(context, "qaGate");
+	return key ? history.filter((entry) => entry.step === key) : [];
+}
+/** Canonical reuse inputs can be compared without executing environment probes. */
+export function qaReuseBindingInputs(
+	context: ExecutionContext,
+	history?: QaHistory,
+) {
+	if (
+		!hasCheck(context.step, "capture-evidence") ||
+		!consumesImpact(context.step)
+	)
+		return undefined;
+	const impact = decision(context);
+	if (!impact) return undefined;
+	const receipts = history ?? context.run.history;
+	return {
+		assessment: {
+			snapshot: impact.snapshot,
+			qaReuse: impact.qaReuse,
+			qaCriteria: impact.qaCriteria,
+		},
+		scope: readOutput(
+			context.step,
+			"scope",
+			context.outputs ?? context.run.outputs,
+		),
+		captures: captureHistory(context, receipts).map((entry) => entry.output),
+		approvals: gateHistory(context, receipts).map((entry) => entry.output),
+		scopeContinuity: (context.run.impactDecisions ?? [])
+			.filter((item) => item.snapshot.key === impact.snapshot.key)
+			.map((item) => ({
+				status: item.status,
+				sourceDigest: item.snapshot.sourceDigest,
+				scopeReuse: item.scopeReuse,
+				uncertainty: item.uncertainty,
+			})),
+		environmentDigest: environmentDigest(context.run),
+	};
+}
+
 /** Behavioral reuse is independent of screenshot acceptance and never restamps execution. */
 export function qaReuseContext(context: ExecutionContext) {
 	const impact = decision(context);
-	const scope = (context.outputs ?? context.run.outputs)["visual-scope"] as
-		| QaScope
-		| undefined;
+	const scope = readOutput(
+		context.step,
+		"scope",
+		context.outputs ?? context.run.outputs,
+	) as QaScope | undefined;
 	if (!impact || !scope)
 		return { criteria: [] as { storyId: string; criterion: Criterion }[] };
 	const criteria: { storyId: string; criterion: Criterion }[] = [];
@@ -66,9 +119,8 @@ export function qaReuseContext(context: ExecutionContext) {
 			paths.some((f) => story.dependencies!.some((d) => dependencyCovers(f, d)))
 		)
 			throw new Error("Affected behavior needs fresh execution");
-		const prior = [...context.run.history]
+		const prior = captureHistory(context, context.run.history)
 			.reverse()
-			.filter((h) => h.step.endsWith("/capture") || h.step === "capture")
 			.map((h) => QaExecutionSchema.safeParse(h.output))
 			.filter((p) => p.success)
 			.map((p) => p.data!)
@@ -109,9 +161,8 @@ export function qaReuseContext(context: ExecutionContext) {
 				"Behavioral reuse needs passed original evidence with unchanged definitions, sources, fixtures and environment",
 			);
 		// A previous failed/blocked gate cannot authorize reuse of its apparently passed pieces.
-		const approved = context.run.history.some(
+		const approved = gateHistory(context, context.run.history).some(
 			(h) =>
-				(h.step.endsWith("/visual-gate") || h.step === "visual-gate") &&
 				(h.output as { approved?: boolean; headSha?: string }).approved ===
 					true &&
 				(h.output as { headSha?: string }).headSha === original.origin!.headSha,
@@ -139,9 +190,11 @@ export function stampQaCriteria(
 ) {
 	const impact = decision(context);
 	if (!impact) return execution;
-	const scope = (context.outputs ?? context.run.outputs)[
-		"visual-scope"
-	] as QaScope;
+	const scope = readOutput(
+		context.step,
+		"scope",
+		context.outputs ?? context.run.outputs,
+	) as QaScope;
 	const reusable = qaReuseContext(context).criteria;
 	for (const result of execution.results) {
 		const story = scope.stories.find((s) => s.id === result.storyId);
@@ -226,9 +279,11 @@ export function stampQaCriteria(
 
 /** Probe current fixture/tool/environment state; declarations alone cannot authorize reuse. */
 export async function verifyQaEnvironment(context: ExecutionContext) {
-	const scope = (context.outputs ?? context.run.outputs)["visual-scope"] as
-		| QaScope
-		| undefined;
+	const scope = readOutput(
+		context.step,
+		"scope",
+		context.outputs ?? context.run.outputs,
+	) as QaScope | undefined;
 	delete context.qaEnvironmentProof;
 	if (!scope?.environmentEvidence) return;
 	const probe = scope.environmentEvidence;

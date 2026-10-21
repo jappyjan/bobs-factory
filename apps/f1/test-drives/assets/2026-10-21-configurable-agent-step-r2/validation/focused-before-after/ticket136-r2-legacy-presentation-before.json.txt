@@ -1,0 +1,127 @@
+{
+  "loadedKeys": [
+    "guide",
+    "capture",
+    "draft-pr"
+  ],
+  "roles": {
+    "draft-pr": "draft-pr"
+  },
+  "loadedGuideSummary": "Accepted historical guide",
+  "responses": {
+    "raw": {
+      "status": 200,
+      "outputs": {
+        "guide": {
+          "summary": "Accepted historical guide",
+          "chapters": [
+            {
+              "id": "chapter",
+              "title": "Retained guide",
+              "summary": "Read me",
+              "files": []
+            }
+          ]
+        },
+        "capture": {
+          "screenshots": [
+            {
+              "path": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/136-r2-legacy-presentation-cqQCeH/factory/evidence/legacy-review/screen.png",
+              "area": "Retained",
+              "state": "saved",
+              "caption": "Saved screenshot",
+              "imageSha256": "5d33f59da4616d85727498b31cc7c8276596c6416bc660dee49a6bc907984eb9"
+            }
+          ],
+          "unavailable": []
+        },
+        "draft-pr": {
+          "url": "https://github.com/selected/repo/pull/136",
+          "headSha": "accepted"
+        }
+      },
+      "outputRoles": {
+        "draft-pr": "draft-pr"
+      },
+      "reviewCapabilities": {
+        "refreshGuide": true
+      }
+    },
+    "dashboard": {
+      "status": 200,
+      "outputs": {
+        "guide": {
+          "summary": "Accepted historical guide",
+          "chapters": [
+            {
+              "id": "chapter",
+              "title": "Retained guide",
+              "summary": "Read me",
+              "files": []
+            }
+          ]
+        },
+        "capture": {
+          "screenshots": [
+            {
+              "path": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/136-r2-legacy-presentation-cqQCeH/factory/evidence/legacy-review/screen.png",
+              "area": "Retained",
+              "state": "saved",
+              "caption": "Saved screenshot",
+              "imageSha256": "5d33f59da4616d85727498b31cc7c8276596c6416bc660dee49a6bc907984eb9"
+            }
+          ],
+          "unavailable": []
+        },
+        "draft-pr": {
+          "url": "https://github.com/selected/repo/pull/136",
+          "headSha": "accepted"
+        }
+      },
+      "outputRoles": {
+        "draft-pr": "draft-pr"
+      },
+      "hasGuide": false,
+      "reviewCapabilities": {
+        "refreshGuide": true
+      }
+    },
+    "focus": {
+      "status": 200,
+      "outputs": {
+        "draft-pr": {
+          "url": "https://github.com/selected/repo/pull/136"
+        }
+      },
+      "reviewCapabilities": {
+        "refreshGuide": true
+      }
+    },
+    "/evidence": {
+      "status": 200,
+      "body": {
+        "videos": [],
+        "videoUnavailable": [],
+        "screenshots": [
+          {
+            "area": "Retained",
+            "state": "saved",
+            "caption": "Saved screenshot",
+            "imageSha256": "5d33f59da4616d85727498b31cc7c8276596c6416bc660dee49a6bc907984eb9",
+            "index": 0
+          }
+        ]
+      }
+    },
+    "/screenshots/0": {
+      "status": 400,
+      "body": {
+        "error": "Invalid input: expected object, received undefined"
+      }
+    },
+    "/screenshots/0?artifact=capture": {
+      "status": 200,
+      "bytes": 68
+    }
+  }
+}

@@ -1,0 +1,75 @@
+Scope: 3 of 20 workspace projects
+apps/cli test:run$ vitest run --passWithNoTests --maxWorkers=1
+apps/desktop test:run$ bun build src/update-services.ts --target node --format esm --outfile src/update-services.mjs && node --test test/*.test.mjs --maxWorkers=1
+apps/f1 test:run$ vitest run --passWithNoTests --maxWorkers=1
+apps/desktop test:run: Bundled 150 modules in 201ms
+apps/desktop test:run:   update-services.mjs  2.93 MB  (entry point)
+apps/cli test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/cli
+apps/f1 test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/f1
+apps/desktop test:run: ✔ TERM-ignoring child escalates; PASS appears only after all child close events (2068.536291ms)
+apps/desktop test:run: ✔ existing PASS and FAIL receipts are rejected before work and preserved byte-for-byte (21.038541ms)
+apps/desktop test:run: ✔ partial final receipt write keeps the reserved pending FAIL and removes temp file (1295.117209ms)
+apps/desktop test:run: ✔ cleanup failure plus final rename failure leaves only the current pending receipt (26.347291ms)
+apps/desktop test:run: ✔ leader exits first; its TERM-ignoring descendant is still drained (3036.3345ms)
+apps/f1 test:run:  Test Files  1 passed (1)
+apps/f1 test:run:       Tests  9 passed (9)
+apps/f1 test:run:    Start at  19:08:09
+apps/f1 test:run:    Duration  8.86s (transform 3.59s, setup 0ms, import 7.50s, tests 24ms, environment 0ms)
+apps/f1 test:run: Done
+apps/desktop test:run: ✔ failed owned lock removal fails receipt while unrelated foreground process survives (4923.125ms)
+apps/desktop test:run: ✔ overwritten lock cannot authorize signaling or removal of unrelated PID (2959.956917ms)
+apps/desktop test:run: ✔ actual controller SIGTERM creates FAIL after cleanup, receipt outside fixture HOME (2332.571125ms)
+apps/desktop test:run: ✔ stale PID stamp never signals a reused unrelated process (1585.893542ms)
+apps/desktop test:run: ✔ cleanup exception produces a failed receipt and nonzero controller exit (437.636875ms)
+apps/desktop test:run: ✔ replacement fixture home cannot authorize removing a copied lock (1641.905667ms)
+apps/desktop test:run: ﹣ pinned Electron Node helper inventories and archives the physical ASAR bytes, mode and symlinks (0.83675ms) # Electron binary is not materialized
+apps/desktop test:run: ✔ retained standalone helper resolves its full module closure and runs recovery without repository modules (11329.909083ms)
+apps/desktop test:run: ✔ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (9015.455083ms)
+apps/desktop test:run: ✔ packaging requires exact pinned vendor notices; recovery retains bytes and missing/tampered notices fail closed (18.1085ms)
+apps/desktop test:run: (node:56080) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+apps/desktop test:run: (Use `node --trace-deprecation ...` to show where the warning was created)
+apps/desktop test:run: ✔ macOS complete-app staging preserves actual quarantine without changing byte identity (1642.212542ms)
+apps/desktop test:run: ✔ macOS complete-app replacement and rollback preserves actual quarantine without changing byte identity (2462.098ms)
+apps/desktop test:run: ✔ macOS complete-app interrupted recovery preserves actual quarantine without changing byte identity (3512.010209ms)
+apps/desktop test:run: (node:56081) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+apps/desktop test:run: (Use `node --trace-deprecation ...` to show where the warning was created)
+apps/desktop test:run: ✔ first nightly shell subscribes to nightly idle-auto; saved stable/manual choices survive reopening a nightly app (199.589584ms)
+apps/desktop test:run: ✔ complete app archive preserves framework symlinks and modes; traversal/special ancestry fails before extraction (15.0805ms)
+apps/desktop test:run: ✔ intermediate directory symlinks resolve before ..; actual outside sentinel cannot be packed or extracted (7.217291ms)
+apps/desktop test:run: ✔ unsigned app source binds exact payload, channel, target and full inventory; publisher tamper never stages (1583.659709ms)
+apps/desktop test:run: ✔ user-owned DMG app accepts candidate-bound unsigned integrity receipts; external symlink handoff remains (1306.658333ms)
+apps/desktop test:run: ✔ nightly app replacement keeps runtime state, old app and policy; failed health rolls back and suppresses candidate (9080.978167ms)
+apps/desktop test:run: ✔ app final authorization rejects raced policy {"paused":true} (2648.326625ms)
+apps/desktop test:run: ✔ app final authorization rejects raced policy {"pin":"2.0.0"} (2545.182125ms)
+apps/desktop test:run: ✔ app final authorization rejects raced policy {"channel":"stable"} (1868.83ms)
+apps/desktop test:run: ✔ app final authorization rejects raced policy {"policy":"manual"} (1463.029292ms)
+apps/desktop test:run: ✔ stable requires exact candidate Install; Quit is never consent, stale receipt rejects (1507.778042ms)
+apps/desktop test:run: ✔ forged staged fingerprint/receipt never executes, including self-consistent local tampering (1291.008834ms)
+apps/desktop test:run: ✔ interrupted recovery preserves foreign-bytes on repeated attempts; authenticated missing/restored installs still recover (2134.515666ms)
+apps/desktop test:run: ✔ interrupted recovery preserves foreign-symlink on repeated attempts; authenticated missing/restored installs still recover (2885.128875ms)
+apps/desktop test:run: ✔ interrupted recovery preserves foreign-dangling-symlink on repeated attempts; authenticated missing/restored installs still recover (2636.271917ms)
+apps/desktop test:run: ✔ remote origins cannot become local filesystem or insecure bridge targets (3.333292ms)
+apps/desktop test:run: ✔ macOS desktop children find prepared CLIs from a noisy login shell (584.863875ms)
+apps/desktop test:run: ✔ missing or slow macOS shells retain PATH and find user-local CLIs (530.396291ms)
+apps/desktop test:run: ✔ Linux desktop retains its supplied environment (0.356916ms)
+apps/desktop test:run: ✔ open launcher refreshes automatic candidates/results without discarding edits or changing captured consent (18.309959ms)
+apps/desktop test:run: ✔ native receipt survives noisy Electron streams and immediate exit (641.193083ms)
+apps/desktop test:run: ✔ native receipt refuses relative paths and existing files or links (1.279791ms)
+apps/desktop test:run: (node:56113) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+apps/desktop test:run: (Use `node --trace-deprecation ...` to show where the warning was created)
+apps/desktop test:run: ✔ nightly native shell lane preserves input identity, selects an eligible supported update and binds its receipt truthfully (5992.562875ms)
+apps/desktop test:run: ✔ beta native shell lane preserves input identity, selects an eligible supported update and binds its receipt truthfully (4988.0925ms)
+apps/desktop test:run: ℹ tests 42
+apps/desktop test:run: ℹ suites 0
+apps/desktop test:run: ℹ pass 41
+apps/desktop test:run: ℹ fail 0
+apps/desktop test:run: ℹ cancelled 0
+apps/desktop test:run: ℹ skipped 1
+apps/desktop test:run: ℹ todo 0
+apps/desktop test:run: ℹ duration_ms 33554.426708
+apps/desktop test:run: Done
+apps/cli test:run:  Test Files  20 passed (20)
+apps/cli test:run:       Tests  233 passed (233)
+apps/cli test:run:    Start at  19:08:09
+apps/cli test:run:    Duration  93.19s (transform 17.85s, setup 0ms, import 51.84s, tests 28.22s, environment 17ms)
+apps/cli test:run: Done

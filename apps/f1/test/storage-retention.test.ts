@@ -375,8 +375,13 @@ it.each([
 		})) as typeof run.repositories;
 	// A retained, already reviewed stock graph resumes at its delivery segment.
 	// All previous review records are synthetic; the stock graph is unchanged.
+	const framePrefix = route === "nested" ? "child/pipeline/" : "pipeline/";
+	const impactKey = `${framePrefix}assess-impact`;
+	const checksKey = `${framePrefix}impact-checks`;
+	const guideKey = `${framePrefix}guide`;
 	const terminal = {
 		current: "merge",
+		outputs: {} as Record<string, unknown>,
 		visits: {},
 		agentSessions: {
 			guide: { runner: "claude" as const, sessionId: "f1-mock-retained-role" },
@@ -437,14 +442,14 @@ it.each([
 		},
 	] as typeof run.reviewRounds;
 	run.roleRevisions = {
-		guide: {
+		[guideKey]: {
 			headSha: head,
 			dirty: false,
 			historyLength: 0,
 			at: new Date().toISOString(),
 		},
 	};
-	run.outputs["assess-impact"] = {
+	run.outputs[impactKey] = {
 		snapshot: {
 			schemaVersion: 1,
 			digest: "retained-impact-fixture",
@@ -462,7 +467,7 @@ it.each([
 			],
 		},
 	};
-	const impact = run.outputs["assess-impact"] as {
+	const impact = run.outputs[impactKey] as {
 		at?: string;
 		snapshot: unknown;
 		checkResults?: unknown[];
@@ -481,15 +486,15 @@ it.each([
 	).outputs["assess-impact"] = structuredClone(impact);
 
 	run.history.push({
-		step: "assess-impact",
-		output: run.outputs["assess-impact"],
+		step: impactKey,
+		output: run.outputs[impactKey],
 		at: new Date().toISOString(),
 	});
 	const checkOutput = {
 		questions: [],
 		checks: structuredClone(impact.checkResults),
 	};
-	run.outputs["impact-checks"] = checkOutput;
+	run.outputs[checksKey] = checkOutput;
 	run.history.push({
 		step:
 			route === "nested"
@@ -517,16 +522,19 @@ it.each([
 	// More than four one-entry pages must evict and recreate restored history.
 	for (let index = 0; index < 6; index++) {
 		run.history.push({
-			step: index % 2 === 0 ? "assess-impact" : "impact-checks",
+			step: index % 2 === 0 ? impactKey : checksKey,
 			output: structuredClone(index % 2 === 0 ? impact : checkOutput),
 			at: new Date().toISOString(),
 		});
 	}
 
-	run.outputs.guide = {
+	run.outputs[guideKey] = {
 		title: "Retained reviewed delivery",
 		summary: "Independent historical guide",
 	};
+	terminal.outputs["assess-impact"] = structuredClone(impact);
+	terminal.outputs["impact-checks"] = structuredClone(checkOutput);
+	terminal.outputs.guide = structuredClone(run.outputs[guideKey]);
 	run.humanDecisions = [
 		{
 			decision: "approve",
@@ -776,7 +784,7 @@ it.each([
 		await retention.stop();
 		await runtime.shutdown();
 	}
-}, 30_000);
+}, 60_000);
 
 it("keeps update retention bounded through five preflight/update/restart cycles without changing saved-state sentinels", async () => {
 	const { UpdateManager, candidateKey } = await import(

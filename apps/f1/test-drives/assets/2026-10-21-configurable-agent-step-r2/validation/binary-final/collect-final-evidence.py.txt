@@ -1,0 +1,52 @@
+import hashlib,json,pathlib,shutil
+base=pathlib.Path('/tmp/ticket136-binary-r2-7106f734');out=base/'evidence';out.mkdir(exist_ok=True)
+source='7106f734ca6fc4066448e2766495f5bacb4fa0d9';stage=base/'artifacts/bobs-factory-1.0.0-beta-darwin-arm64';meta=json.loads((stage/'build.json').read_text());assert meta['commit']==source and not meta['dirty'];strict=json.loads((base/'strict-stress.log.txt').read_text());tight=json.loads((base/'reviewer-many-summary.json.txt').read_text());assert strict['result']==tight['result']=='PASS';assert tight['ordinaryInvalidResponses']==0
+for name in ['prebuild-input-proof.json.txt','postcritical-input-proof.json.txt','postsmoke-input-proof.json.txt','build.log.txt','reviewer-many.log.txt','reviewer-many-summary.json.txt','strict-stress.log.txt','canonical-smoke.log.txt','canonical-smoke-port.txt','install-smoke.log.txt']:
+ shutil.copyfile(base/name,out/name)
+for name in ['reviewer-many.mjs','install-smoke.py']:
+ shutil.copyfile(base/name,out/(name+'.txt'))
+shutil.copyfile(stage/'build.json',out/'build.json.txt');shutil.copyfile(base/'artifacts/bobs-factory-1.0.0-beta-darwin-arm64.manifest.json',out/'archive.manifest.json.txt')
+raw=(base/'reviewer-many.log.txt').read_text();reviewer=json.loads(raw[raw.index('\n{')+1:])
+for label,home in [('reviewer',reviewer['home']),('strict',strict['home'])]:
+ log=pathlib.Path(home)/'worker.log'
+ if log.exists():shutil.copyfile(log,out/(label+'-service.log.txt'))
+shutil.copyfile('/tmp/ticket136-r11-verify-build-inputs.py',out/'verify-build-inputs.py.txt')
+shutil.copyfile(__file__,out/'collect-final-evidence.py.txt')
+extra={
+ 'before-watchdog-summary.json.txt':'/tmp/ticket136-r11-before-summary.json.txt',
+ 'before-watchdog-many.log.txt':'/tmp/ticket136-r11-before-many.log',
+ 'before-watchdog-observed.log.txt':'/tmp/ticket136-r11-before-observed.log',
+ 'before-watchdog-observer.jsonl.txt':'/tmp/ticket136-r11-ps-observer.jsonl',
+ 'vm250-preserved-failure.log.txt':'/tmp/ticket136-r11-bun-source-stress-final.log',
+ 'vm-clock-findings.md':'/tmp/ticket136-r11-vm-clock-findings.md',
+ 'vm-clock-matrix.jsonl.txt':'/tmp/ticket136-r11-engine-clock-matrix.jsonl',
+ 'vm-recovery.jsonl.txt':'/tmp/ticket136-r11-vm-recovery.jsonl',
+ 'engine-batch-summary.json.txt':'/tmp/ticket136-r11-engine-benchmark-summary.json.txt',
+ 'parent-batch-summary.json.txt':'/tmp/ticket136-r11-parent-timed-summary.json.txt',
+ 'focused-schema-tests.log.txt':'/tmp/ticket136-r11-focused-allowance.log',
+ 'focused-schema-types.log.txt':'/tmp/ticket136-r11-types-allowance.log',
+ 'source-stress-1000ms.log.txt':'/tmp/ticket136-r11-bun-source-final-1000ms.log',
+ 'bootstrap-functional-tests.log.txt':'/tmp/ticket136-r11-bootstrap-test.log',
+ 'source-stress-after-bootstrap.log.txt':'/tmp/ticket136-r11-bootstrap-source-stress.log',
+ 'preliminary96-many-failures.json.txt':'/tmp/ticket136-binary-r2-96b7cb03/reviewer-many-failures.json.txt',
+ 'preliminary96-many.log.txt':'/tmp/ticket136-binary-r2-96b7cb03/reviewer-many.log.txt',
+ 'preliminary96-build.json.txt':'/tmp/ticket136-binary-r2-96b7cb03/artifacts/bobs-factory-1.0.0-beta-darwin-arm64/build.json',
+ 'preliminary96-direct-helper-timings.json.txt':'/tmp/ticket136-binary-r2-96b7cb03/direct-helper-timings.json.txt',
+ 'preliminary96-lifecycle.jsonl.txt':'/tmp/ticket136-r11-96b-lifecycle.jsonl',
+ 'preliminary96-timeline-summary.json.txt':'/tmp/ticket136-r11-96b-timeline-summary.json.txt',
+ 'preliminary96-lifecycle-first-diagnostic-error.log.txt':'/tmp/ticket136-r11-96b-lifecycle-driver.log',
+ 'preliminary96-lifecycle-diagnostic-pass.log.txt':'/tmp/ticket136-r11-96b-lifecycle-driver2.log',
+ 'preliminary96-lifecycle-preload.cjs.txt':'/tmp/ticket136-r11-lifecycle-preload.cjs',
+ 'startup-prototype-comparison.json.txt':'/tmp/ticket136-r11-startup-comparison-results.json.txt',
+ 'startup-prototype-engine-comparison.json.txt':'/tmp/ticket136-r11-startup-more-results.json.txt',
+ 'startup-prototype-build.mjs.txt':'/tmp/ticket136-r11-startup-comparison.mjs',
+ 'startup-prototype-measure.mjs.txt':'/tmp/ticket136-r11-startup-measure.mjs',
+ 'startup-prototype-bytecode-rejected.log.txt':'/tmp/ticket136-r11-startup-more-build2.log',
+}
+for name,src in extra.items():
+ assert pathlib.Path(src).exists(),src
+ shutil.copyfile(src,out/name)
+report={'source':source,'binarySha256':meta['executable']['sha256'],'binarySize':meta['executable']['size'],'resourceDigest':meta['resourceDigest'],'target':meta['target'],'dirty':False,'tight100':tight,'strict':{k:strict[k] for k in ['compileRequests','evaluations','cancellations','postCancelCompiles','postCancelEvaluations','invalidOutputRemainsCorrection','wall','childrenAfter','result']},'canonicalSmoke':'PASS','isolatedInstallSafeguards':'PASS','inputProof':'postsmoke-input-proof.json.txt','preliminary96OrdinaryInvalidResponses':20,'paidAgentCalls':0,'published':False}
+(out/'results.json.txt').write_text(json.dumps(report,indent=2)+'\n')
+print('Copyable text-only evidence:',out)
+print('Files',len(list(out.iterdir())))

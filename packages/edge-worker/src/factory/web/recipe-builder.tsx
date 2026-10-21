@@ -1,8 +1,9 @@
 import { ReactFlowProvider } from "@xyflow/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { passiveTools } from "../CapacityPolicy";
 import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits";
+import { AgentStepSettings } from "./agent-step-settings";
 import { useAction, useConfig } from "./client";
 import { AgentSettings } from "./forms";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
@@ -126,6 +127,7 @@ export function RecipeBuilder({ id }: { id: string }) {
 					labels: [],
 					allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 					ownership: "local",
+					stepConfigVersion: "step-config-v1",
 					steps: [newStep("agent", "work")],
 				} as Recipe)
 			: undefined);
@@ -135,7 +137,20 @@ export function RecipeBuilder({ id }: { id: string }) {
 	const [panel, setPanel] = useState<"settings" | "json">();
 	const [simulation, setSimulation] = useState<Simulation>();
 	const [error, setError] = useState("");
+	const [draftGeneration, setDraftGeneration] = useState(0);
+	const [settingsErrors, setSettingsErrors] = useState<Record<string, string>>(
+		{},
+	);
 	const selectedId = params.get("step") ?? undefined;
+	const reportConfigError = useCallback(
+		(field: string, error: string) => {
+			setSettingsErrors((current) => {
+				const key = `${selectedId}/${field}`;
+				return current[key] === error ? current : { ...current, [key]: error };
+			});
+		},
+		[selectedId],
+	);
 	const select = (step?: string) =>
 		setParams(
 			(p) => {
@@ -148,7 +163,8 @@ export function RecipeBuilder({ id }: { id: string }) {
 		);
 
 	const dirtyRef = useRef(false);
-	dirtyRef.current = draft.dirty || id === "new";
+	dirtyRef.current =
+		draft.dirty || id === "new" || Object.values(settingsErrors).some(Boolean);
 	useEffect(() => {
 		const warn = (event: BeforeUnloadEvent) => {
 			if (dirtyRef.current) event.preventDefault();
@@ -242,12 +258,16 @@ export function RecipeBuilder({ id }: { id: string }) {
 		setSimulation(undefined);
 		select(stepId);
 	};
-	const problems = draft.dirtyIds.flatMap((rid) =>
-		draftProblems(draft.lookup(rid)!).map((p) =>
-			rid === recipe.id ? p : `${draft.lookup(rid)!.name}: ${p}`,
+	const problems = [
+		...Object.values(settingsErrors).filter(Boolean),
+		...draft.dirtyIds.flatMap((rid) =>
+			draftProblems(draft.lookup(rid)!).map((p) =>
+				rid === recipe.id ? p : `${draft.lookup(rid)!.name}: ${p}`,
+			),
 		),
-	);
-	const unsaved = draft.dirty || id === "new";
+	];
+	const unsaved =
+		draft.dirty || id === "new" || Object.values(settingsErrors).some(Boolean);
 
 	async function save() {
 		setError("");
@@ -376,14 +396,21 @@ export function RecipeBuilder({ id }: { id: string }) {
 								Unsaved changes
 							</span>
 							{id !== "new" && (
-								<Button variant="ghost" onClick={() => draft.reset()}>
+								<Button
+									variant="ghost"
+									onClick={() => {
+										draft.reset();
+										setSettingsErrors({});
+										setDraftGeneration((value) => value + 1);
+									}}
+								>
 									Discard
 								</Button>
 							)}
 							<Button
 								requiresConnection
 								busy={action.isPending}
-								disabled={draft.conflicts.length > 0}
+								disabled={draft.conflicts.length > 0 || problems.length > 0}
 								onClick={() => void save()}
 							>
 								Save
@@ -514,7 +541,7 @@ export function RecipeBuilder({ id }: { id: string }) {
 				)}
 				{!panel && !simulation && selectedStep && top && (
 					<Inspector
-						key={selectedId}
+						key={`${selectedId}/${draftGeneration}`}
 						step={selectedStep}
 						parent={child ? ownedTop : undefined}
 						owner={ownerOf(top)}
@@ -527,7 +554,9 @@ export function RecipeBuilder({ id }: { id: string }) {
 								updateStep(r, selectedStep.id, patch, child ? top : undefined),
 							)
 						}
+						onConfigError={reportConfigError}
 						onRemove={() => {
+							setSettingsErrors({});
 							edit(ownerOf(top), (r) => removeStep(r, selectedStep.id));
 							select(undefined);
 						}}
@@ -687,6 +716,7 @@ function Inspector({
 	config,
 	onChange,
 	onRemove,
+	onConfigError,
 	onSelect,
 	onOpenRecipe,
 	onClose,
@@ -700,6 +730,7 @@ function Inspector({
 	config: any;
 	onChange: (patch: Partial<Step>) => void;
 	onRemove: () => void;
+	onConfigError: (field: string, error: string) => void;
 	onSelect: (id: string) => void;
 	onOpenRecipe: (id: string) => void;
 	onClose: () => void;
@@ -838,76 +869,17 @@ function Inspector({
 								/>
 								Structured JSON output
 							</label>
-							<label>
-								Output contract
-								<select
-									value={step.reviewContract ?? ""}
-									onChange={(e) =>
-										onChange({
-											reviewContract: (e.target.value ||
-												undefined) as Step["reviewContract"],
-										})
-									}
-								>
-									<option value="">Legacy / custom output</option>
-									<option value="inventory-v1">Requirement inventory</option>
-									<option value="specialist-v1">Specialist findings</option>
-									<option value="coverage-v1">
-										Findings and complete requirement coverage
-									</option>
-								</select>
-							</label>
-							{step.id === "guide" && (
-								<label>
-									Review format
-									<select
-										value={step.guideContract ?? ""}
-										onChange={(e) =>
-											onChange({
-												guideContract: (e.target.value ||
-													undefined) as Step["guideContract"],
-											})
-										}
-									>
-										<option value="brief-v3">
-											Show &amp; tell with Dig deeper
-										</option>
-										<option value="brief-v2">
-											Show &amp; tell with review brief
-										</option>
-										<option value="brief-v1">
-											Review brief (requirement-first)
-										</option>
-										<option value="">Chapter guide (legacy)</option>
-									</select>
-									<small>
-										The instructions must ask for the selected format. Saved
-										runs keep their format until a stock guide is regenerated.
-									</small>
-								</label>
-							)}
-							{step.reviewContract && (
-								<p className="recipe-note">
-									Review contracts require structured JSON. Replace the coverage
-									supplier before removing it.
-								</p>
-							)}
-							{step.impactContract && (
-								<p className="recipe-note">
-									Independent impact assessment selects affected reviewers and
-									checks. Configure its inventory, reviewer group and
-									unchanged-cycle limit in the recipe JSON.
-								</p>
-							)}
-							{step.architectureContract && (
-								<p className="recipe-note">
-									Architecture output: {step.architectureContract}. Configure
-									meaningful, always or never approval in the recipe JSON.
-								</p>
-							)}
 						</>
 					)}
 				</section>
+			)}
+			{step.type === "agent" && (
+				<AgentStepSettings
+					step={step}
+					readOnly={!local}
+					onChange={onChange}
+					onError={onConfigError}
+				/>
 			)}
 			{(step.type === "tool" || step.type === "script") && local && (
 				<section className="recipe-section">

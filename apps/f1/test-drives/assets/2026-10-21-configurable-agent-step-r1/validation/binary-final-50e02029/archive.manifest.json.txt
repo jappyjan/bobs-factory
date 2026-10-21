@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "product": "bobs-factory",
+  "version": "1.0.0-beta",
+  "commit": "50e020294b8b414b2920af8952fd1467ae521180",
+  "dirty": true,
+  "target": "darwin-arm64",
+  "file": "bobs-factory-1.0.0-beta-darwin-arm64.tar.gz",
+  "size": 34575132,
+  "sha256": "452c4c300280ecd043179df102268bf0882e9c75c29d854ac3c0f67426b08804"
+}

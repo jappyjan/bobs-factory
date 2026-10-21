@@ -1,0 +1,11 @@
+{
+  "source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+  "fixture": "packages/edge-worker/test/fixtures/stock-role-prompts.json",
+  "sha256": "5527a0d252575a58807ed998c0f6b13226e9cb8a12d55ac04584acc33afe33a1",
+  "reviewedHead": "d041487e44f4e41a78278fb5edfabbe6497c240a",
+  "unchangedFromReviewedHead": true,
+  "completeVariants": 675,
+  "sharedTextCount": 103,
+  "capabilityReference": "packages/edge-worker/src/factory/Workflow.ts:workflowTriggerInstructions",
+  "capabilityFullExpectedPrompt": "packages/edge-worker/test/prompt-assembly.routing-context.test.ts"
+}

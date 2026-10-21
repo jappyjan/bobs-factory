@@ -83,12 +83,23 @@ function context(tool: string): ExecutionContext {
 			id: "run",
 			title: "Continue work",
 			repositoryId: "repo",
+			repositories: [
+				{
+					id: "repo",
+					name: "Selected",
+					repositoryPath: "/tmp",
+					workspace: "/tmp",
+					baseBranch: "main",
+					githubUrl: "https://github.com/owner/repo",
+				},
+			],
 			workflow: defaultWorkflows[2]!,
 			status: "running",
 			workspace: "/tmp",
 			input: "Continue",
 			createdAt: "",
 			updatedAt: "",
+			takeoverSource: { ...pr, isDraft: true },
 			outputs: {
 				source: { ...pr, isDraft: true },
 				repository: { baseBranch: "main" },
@@ -114,6 +125,7 @@ function context(tool: string): ExecutionContext {
 }
 it("takes over the same PR, converts it to draft and never creates a replacement PR", async () => {
 	const ctx = context("inspect-existing");
+	ctx.run.takeoverSource = pr;
 	ctx.run.outputs.source = pr;
 	ctx.run.repositories = [
 		{
@@ -122,6 +134,7 @@ it("takes over the same PR, converts it to draft and never creates a replacement
 			repositoryPath: "/tmp",
 			workspace: "/tmp",
 			baseBranch: pr.headRefName,
+			githubUrl: "https://github.com/owner/repo",
 		},
 	];
 	const commands: string[][] = [];

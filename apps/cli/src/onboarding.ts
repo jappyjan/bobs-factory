@@ -90,15 +90,15 @@ function agentAvailability(agent: (typeof agents)[number]) {
 				timeout: 5000,
 				stdio: ["ignore", "pipe", "ignore"],
 			}).trim();
-			const [major, minor] = version.replace(/^v/, "").split(".").map(Number);
-			if (!major || major < 22 || (major === 22 && (!minor || minor < 13)))
-				throw new Error("Cursor needs a prepared Node runtime >=22.13.");
+			const major = Number(version.replace(/^v/, "").split(".")[0]);
+			if (major !== 24)
+				throw new Error("Cursor needs a prepared Node 24.x runtime.");
 		}
 		return { installed: true };
 	} catch {
 		return {
 			installed: false,
-			note: "Cursor needs separately prepared @cursor/sdk 1.0.19 and Node >=22.13. Complete the Cursor setup in the distribution guide, then refresh.",
+			note: "Cursor needs separately prepared @cursor/sdk 1.0.19 and Node 24.x. Complete the Cursor setup in the distribution guide, then refresh.",
 		};
 	}
 }

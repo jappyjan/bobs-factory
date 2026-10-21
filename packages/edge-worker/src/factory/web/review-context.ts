@@ -1,4 +1,5 @@
 import { pullRequestReference } from "../GitProviderReference.js";
+import { roleOutput } from "./run-output";
 
 type RecordValue = Record<string, unknown>;
 export type ReviewLink = { url: string; label: string };
@@ -7,7 +8,7 @@ export type CheckoutCommand = { label: string; command: string; help: string };
 export function reviewDeliveries(value: unknown) {
 	const run = record(value),
 		gate = record(run.reviewGate);
-	const draft = record(record(run.outputs)["draft-pr"]);
+	const draft = record(roleOutput(run, "draft-pr"));
 	const entries = Array.isArray(gate.repositories)
 		? gate.repositories
 		: Array.isArray(draft.deliveries)
@@ -177,7 +178,7 @@ export function reviewContext(value: unknown) {
 	const run = record(value),
 		outputs = record(run.outputs),
 		gate = record(run.reviewGate),
-		draft = record(outputs["draft-pr"]),
+		draft = record(roleOutput(run, "draft-pr")),
 		source = record(outputs.source),
 		existing = record(outputs["existing-work"]);
 	const prUrl = [gate.url, draft.url, source.url].map(webUrl).find((url) => {

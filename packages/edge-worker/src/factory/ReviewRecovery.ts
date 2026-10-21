@@ -1,3 +1,5 @@
+export { reviewFixInstructions } from "./InstructionText.js";
+
 import { createHash } from "node:crypto";
 import { qaDigest } from "./EvidenceDigest.js";
 import { feedbackInstructionFingerprint } from "./FeedbackPolicy.js";
@@ -9,6 +11,8 @@ import {
 	type ReviewerReceipt,
 	reviewBaselineForContext,
 } from "./SpecialistReview.js";
+import { readStep, resolveStepConfig } from "./StepConfig.js";
+import { boundOutput, boundStepKey, stepForRun } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 interface Finding {
@@ -24,8 +28,6 @@ interface FixAssessment {
 	unchangedCode: boolean;
 	instructionsSha256: string;
 }
-
-export const reviewFixInstructions = `Read /reviewFix/findings for ALL unresolved consequential findings, even when customized recipe inputs hide the gate. If /reviewFix/review is incomplete, its retained findings are correction inputs, never completed review or approval. Repair concrete findings and preserve the declared independent reassessment; report missing access or evidence in questions. When no usable findings exist, identify the configured review work that must run again instead of claiming review passed. Return a fixed or evidence-backed rejected disposition for each finding you can address. If the correction needs a materially changed architecture or a genuine scope revision, preserve work and use the existing configured proposal route: return status:"blocked", architectureRevision:true, a concrete summary, dispositions only for findings already addressed, and questions:[]. The runtime redrafts and independently reviews the proposal before any required exact-candidate acceptance. This handback leaves unresolved findings open and never authorizes implementation or delivery. Do not ask the human to schedule proposal drafting. If no applicable route exists, report that specific limitation. If missing deployment, access, fixtures, evidence or a necessary human decision prevents progress, return questions:["specific assistance needed"] alongside summary and dispositions; asking only in summary does not pause the workflow. Never mark blocked findings fixed or rejected merely to advance. Return questions:[] when assistance is unnecessary. Read /reviewFix/answers before retrying. An answer does not waive findings, required QA or approval. A rejected complaint still receives reviewer reassessment.`;
 
 function openFindings(value: unknown): Finding[] {
 	const findings = (value as { findings?: Finding[] } | undefined)?.findings;
@@ -65,7 +67,7 @@ function codeReviewForFix(context: ExecutionContext): {
 		};
 	const baseline = reviewBaselineForContext(context);
 	if (!baseline) {
-		const gate = context.run.outputs["review-gate"] as
+		const gate = boundOutput(context, "reviewGate") as
 			| { baseline?: ReviewBaseline }
 			| undefined;
 		if (!context.run.reviewRounds?.length && !gate?.baseline)
@@ -127,9 +129,20 @@ function codeReviewForFix(context: ExecutionContext): {
 		const output = context.run.history[index]!.output;
 		if (matches(output, expected)) receipts.set(expected.id, output);
 	}
-	const fanout = (context.outputs ?? context.run.outputs)[
-		baseline.key.split("/").at(-1)!
-	] as Record<string, unknown>[] | undefined;
+	// Modern receipts need an executed exact producer. A data output cannot
+	// authenticate itself by copying a specialist's baseline stamp.
+	const fanoutStep = stepForRun(context.run, baseline.key);
+	const fanout = (
+		!resolveStepConfig(context.step).explicit
+			? (context.outputs ?? context.run.outputs)[
+					baseline.key.split("/").at(-1)!
+				]
+			: fanoutStep?.type === "fanout"
+				? [...context.run.history]
+						.reverse()
+						.find((entry) => entry.step === baseline.key)?.output
+				: undefined
+	) as Record<string, unknown>[] | undefined;
 	const currentIds = new Set<string>();
 	const dispositions: ReviewerReceipt["inheritedDispositions"] = [];
 	for (const expected of baseline.reviewers) {
@@ -183,13 +196,12 @@ function codeReviewForFix(context: ExecutionContext): {
 	};
 }
 export function factoryReviewFixContext(context: ExecutionContext) {
-	const { baseline: _baseline, ...review } =
-		context.step.id === "visual-fix"
-			? {
-					findings: openFindings(context.run.outputs["visual-gate"]),
-					baseline: undefined,
-				}
-			: codeReviewForFix(context);
+	const { baseline: _baseline, ...review } = readStep(context.step, "qaGate")
+		? {
+				findings: openFindings(boundOutput(context, "qaGate")),
+				baseline: undefined,
+			}
+		: codeReviewForFix(context);
 	return {
 		...review,
 		answers: context.run.answers ?? [],
@@ -227,16 +239,15 @@ export function recordReviewFix(
 	output: unknown,
 	completed?: RoleRevision,
 ) {
-	const prefix = (context.run.step ?? context.step.id).replace(/[^/]+$/, "");
-	const source =
-		context.step.id === "visual-fix" ? "visual-review" : "code-review";
-	const baseline =
-		context.step.id === "visual-fix"
-			? undefined
-			: codeReviewForFix(context).baseline;
+	const source = boundStepKey(context, "review");
+	const baseline = readStep(context.step, "qaGate")
+		? undefined
+		: codeReviewForFix(context).baseline;
 	const started = baseline
 		? { headSha: baseline.headSha, dirty: false }
-		: context.run.roleRevisions?.[`${prefix}${source}`];
+		: source
+			? context.run.roleRevisions?.[source]
+			: undefined;
 	return {
 		...(output as Record<string, unknown>),
 		reviewAssessment: {
@@ -263,12 +274,10 @@ export function reviewRecoveryQuestions(
 ): string[] {
 	const findings = openFindings(gate);
 	if (!findings.length || revision.dirty) return [];
-	const visual = context.step.tool === "visual-gate";
-	const prefix = (context.run.step ?? context.step.id).replace(/[^/]+$/, "");
-	const fixer = visual ? "visual-fix" : "code-fix";
+	const fixer = boundStepKey(context, "fix");
 	const previous = [...context.run.history]
 		.reverse()
-		.find((item) => item.step === `${prefix}${fixer}`);
+		.find((item) => item.step === fixer);
 	const assessed = (
 		previous?.output as { reviewAssessment?: FixAssessment } | undefined
 	)?.reviewAssessment;

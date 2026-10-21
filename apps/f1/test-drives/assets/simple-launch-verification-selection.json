@@ -1238,5 +1238,25 @@
 		"evidence": "Local initial failures and corrected executions use fix-r23- prefixes in the run evidence directory.",
 		"revisionBinding": "The assessedHead field preserves the starting revision. The next independent assessment must bind the delivered revision, including this source correction, and invalidate affected earlier receipts.",
 		"fixtureAlignment": "The held-deletion negative case retains its failed-state, no-provider-entry and native-file assertions. Its poll waits ten seconds for the new bounded five-second admission retry; no other deadline is changed."
+	},
+	"integrationRefresh": {
+		"source": "/history/359/output/checks",
+		"previousSuccessfulBatch": "/history/358/output/checks",
+		"priorHead": "1d6ebaac8ef93597c9384d6bf31005750b29ccb8",
+		"priorTarget": "4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7",
+		"target": "95f79ef3be57bd8aa83d53b68c8130c28ef19dc9",
+		"retainedCheckCount": 75,
+		"addedCheckIds": [
+			"advanced-step-config-tests",
+			"advanced-revision-provenance-tests",
+			"advanced-schema-tests",
+			"advanced-presentation-tests",
+			"advanced-configurable-workflow-f1",
+			"advanced-schema-source-isolation"
+		],
+		"nextSelectionCount": 81,
+		"overlapWrapper": "ci-fix-r24-scheduled-overlap.mjs",
+		"requirementRefresh": ["R11", "R13", "R24", "R29"],
+		"note": "Historical records above retain original revisions and commands. All 75 retained obligations plus six discovered selections remain pending independent reassessment of the corrected head and target, including requirement extraction and fresh specialist/QA gates. Local correction checks are not independent gate receipts."
 	}
 }

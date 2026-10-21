@@ -4,6 +4,7 @@ import { DEFAULT_STEP_MAX_VISITS } from "../WorkflowLimits.js";
 
 export type Step = WorkflowStep;
 export type Recipe = {
+	stepConfigVersion?: "step-config-v1";
 	id: string;
 	name: string;
 	icon?: string;
@@ -27,6 +28,7 @@ export type Recipe = {
 
 /** Fields a recipe owns; catalog metadata (enabled, provenance…) is not edited here. */
 const editableKeys = [
+	"stepConfigVersion",
 	"id",
 	"name",
 	"icon",
@@ -561,7 +563,12 @@ export function newStep(
 	id: string,
 	callable?: string,
 ): Step {
-	const base = { id, branches: [], maxVisits: DEFAULT_STEP_MAX_VISITS };
+	const base = {
+		id,
+		configVersion: "step-config-v1" as const,
+		branches: [],
+		maxVisits: DEFAULT_STEP_MAX_VISITS,
+	};
 	switch (kind) {
 		case "agent":
 			return {

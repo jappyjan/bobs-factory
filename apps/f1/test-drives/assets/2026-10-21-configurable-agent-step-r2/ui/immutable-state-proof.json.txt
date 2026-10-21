@@ -1,0 +1,68 @@
+{
+  "legacy-review": {
+    "originalSha256": "de2bc1c77760cc3149362f7c95c824b54ab1f4956f65898c55e47bde212d5c0d",
+    "preservedLegacySha256": "de2bc1c77760cc3149362f7c95c824b54ab1f4956f65898c55e47bde212d5c0d",
+    "originalBytesPreserved": true,
+    "storedOutputKeys": [
+      "guide",
+      "capture",
+      "draft-pr"
+    ],
+    "apiOutputKeys": [
+      "guide",
+      "capture",
+      "draft-pr"
+    ],
+    "unchangedApiFields": {
+      "workflow": true,
+      "workflowDefinitions": true,
+      "outputs": true
+    },
+    "rawRoleRevisionKeys": [
+      "pipeline/guide"
+    ],
+    "projectedRoleRevisionKeys": [
+      "pipeline/guide",
+      "guide"
+    ],
+    "currentStorageKind": "bobs-factory-json-snapshot-1",
+    "hashes": {
+      "workflow": "05890b7756d05e1d7d7c236395df0b9d70532f9025ac7f15a80970d255ec8cba",
+      "workflowDefinitions": "66dea00e8bf17e527ed5cd181592236e886d66181ba127060b0f19cb2af58f1f",
+      "outputs": "044d7b4467055d6ab11e773ba0429967e12115138284775a0fd4c9a584f3a3c3"
+    }
+  },
+  "legacy-completed": {
+    "originalSha256": "4f9dadf23c08d6279792f9fe34f1f65a84b06e689f6d676995ed21dfe5ea8423",
+    "preservedLegacySha256": "4f9dadf23c08d6279792f9fe34f1f65a84b06e689f6d676995ed21dfe5ea8423",
+    "originalBytesPreserved": true,
+    "storedOutputKeys": [
+      "guide",
+      "capture",
+      "draft-pr"
+    ],
+    "apiOutputKeys": [
+      "guide",
+      "capture",
+      "draft-pr"
+    ],
+    "unchangedApiFields": {
+      "workflow": true,
+      "workflowDefinitions": true,
+      "outputs": true
+    },
+    "rawRoleRevisionKeys": [
+      "pipeline/guide"
+    ],
+    "projectedRoleRevisionKeys": [
+      "pipeline/guide",
+      "guide"
+    ],
+    "currentStorageKind": "bobs-factory-json-snapshot-1",
+    "hashes": {
+      "workflow": "05890b7756d05e1d7d7c236395df0b9d70532f9025ac7f15a80970d255ec8cba",
+      "workflowDefinitions": "66dea00e8bf17e527ed5cd181592236e886d66181ba127060b0f19cb2af58f1f",
+      "outputs": "91a4f721957389d40560463d3118c3510863389bbdd5cf69b998e29d091fccff"
+    }
+  }
+}

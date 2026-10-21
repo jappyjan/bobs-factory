@@ -63,9 +63,12 @@ it("reports the prepared Cursor SDK and checks its selected Node", () => {
 });
 it.each([
 	"v22.12.0",
+	"v22.23.3",
 	"v20.19.0",
+	"v23.11.0",
+	"v25.0.0",
 	"invalid",
 ])("rejects unsupported prepared Cursor Node %s", (version) => {
 	exec.mockReturnValue(version);
-	expect(() => executionCapabilities("cursor")).toThrow("Node >=22.13");
+	expect(() => executionCapabilities("cursor")).toThrow("Node 24");
 });

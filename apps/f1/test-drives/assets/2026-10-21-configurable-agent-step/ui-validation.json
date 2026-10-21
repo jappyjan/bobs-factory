@@ -1,0 +1,145 @@
+{
+	"attempts": [
+		{
+			"name": "format",
+			"status": 400,
+			"body": {
+				"error": "Unknown output format: missing-v1"
+			}
+		},
+		{
+			"name": "check",
+			"status": 400,
+			"body": {
+				"error": "Unknown evidence check: missing-check"
+			}
+		},
+		{
+			"name": "instruction",
+			"status": 400,
+			"body": {
+				"error": "Unknown shared instruction: missing-instruction"
+			}
+		},
+		{
+			"name": "script-rule",
+			"status": 400,
+			"body": {
+				"error": "Invalid input"
+			}
+		}
+	],
+	"overflow": 0,
+	"fields": [
+		"Reads",
+		"Output format",
+		"Rules",
+		"Checks",
+		"Revision binding",
+		"Access",
+		"Allowed tools",
+		"Shared instructions"
+	],
+	"browser": "T3 collaborative preview",
+	"cssViewports": [
+		{
+			"width": 1440,
+			"height": 1000,
+			"schemes": ["light", "dark"]
+		},
+		{
+			"width": 390,
+			"height": 844,
+			"schemes": ["light", "dark"]
+		}
+	],
+	"checks": {
+		"customSchemaRemoteRefRejected": true,
+		"validCustomSchemaSavedAndReloaded": true,
+		"readsRulesRevisionAccessSavedAndReloaded": true,
+		"bundledSettingsReadOnly": true,
+		"bundledAgentPreferencesEditable": true,
+		"malformedJsonDisablesSave": true,
+		"discardRestoresValidJson": true,
+		"horizontalOverflow": 0,
+		"switchingFromInvalidCustomSchemaClearsErrors": true,
+		"readsSavedAndReloaded": true,
+		"rulesSavedAndReloaded": true,
+		"checksSavedAndReloaded": true,
+		"revisionSavedAndReloaded": true,
+		"accessSavedAndReloaded": true,
+		"allowedToolsSavedAndReloaded": true,
+		"sharedInstructionsSavedAndReloaded": true,
+		"readOnlyRejectsUnpinnedNativeTools": true,
+		"unknownFormatRejected": true,
+		"unknownCheckRejected": true,
+		"unknownInstructionRejected": true,
+		"scriptRuleRejected": true,
+		"finalImprovementSchemasListed": true
+	},
+	"finalWebBuild": "1a1a48664aff8c7713ab3375",
+	"screenshotWebBuild": "1a1a48664aff8c7713ab3375",
+	"notes": [
+		"All screenshots were refreshed and visually inspected on the final UI bundle.",
+		"Server-only validation fixes and dependency metadata cleanup retain the identical captured UI bundle. The final accepted source revision and the source used for browser interaction are recorded separately.",
+		"Screenshots show a valid saved custom Factory fork configuration.",
+		"Mobile Rules and Access captures show additional bottom-sheet scroll positions.",
+		"Read-only access rejected native Read/Grep with a clear pinned-tool allowlist, then accepted explicit pinned repository tools; tools and shared instructions persisted across reload."
+	],
+	"sourceRevision": "754228be98fc3bce92baf349bd74f6b7979d2b8c",
+	"verifiedAt": "2026-10-21T15:36:42.973665+00:00",
+	"screenshots": [
+		{
+			"file": "builder-desktop-dark-evidence.png",
+			"sha256": "0ce3276b61889bdf2ae250aad59e7a52569707ffac10ff0da7724492aca087d9"
+		},
+		{
+			"file": "builder-desktop-dark-schema.png",
+			"sha256": "29ebe9b1490aee88e05b673028a1400089df70835e94c1e9871cebad06c3e5f1"
+		},
+		{
+			"file": "builder-desktop-light-evidence.png",
+			"sha256": "cf08740e58a386c6e6a1b9118ca3e11ebd3ed6712ff1c8d3a23da65604822bd2"
+		},
+		{
+			"file": "builder-desktop-light-schema.png",
+			"sha256": "e72ac75bf413deb8fc8ed8c4549b762d6ac3cf4b179a586dfe8f04dfa0105f7e"
+		},
+		{
+			"file": "builder-mobile-dark-access.png",
+			"sha256": "887eeb32499fa948d5603abfa1426cdd8c4b4ae2a1e01536b540370138fb57a6"
+		},
+		{
+			"file": "builder-mobile-dark-evidence.png",
+			"sha256": "ed19949d837f305738bb48e5e0e7afcac814df3134354aa735840b693548a66a"
+		},
+		{
+			"file": "builder-mobile-dark-rules.png",
+			"sha256": "e0dbf6ec3c72031410555184031f55ad93d13f18e15352f144f89b491075ac33"
+		},
+		{
+			"file": "builder-mobile-dark-schema.png",
+			"sha256": "2ced9fd1366117126bf4f1a46517ef74af794ce3be664e385aa716c12b02649d"
+		},
+		{
+			"file": "builder-mobile-light-access.png",
+			"sha256": "57584ecdf96be98a3d21d7c9566b8b0507a6ae3c951e4fd4155e9347e85357ff"
+		},
+		{
+			"file": "builder-mobile-light-evidence.png",
+			"sha256": "772ce6b279d3794d6b20f1ac10e1572fdc6a5406cbca3d580764ea36c2e515c0"
+		},
+		{
+			"file": "builder-mobile-light-rules.png",
+			"sha256": "a288ea33166fafaa3b6c732422c284997faa9738358148a0420e0fc7079711b1"
+		},
+		{
+			"file": "builder-mobile-light-schema.png",
+			"sha256": "e6c4a21b7a41aef2fd699e0b645ca60d3d6208f38fb5bdf0306a294372605d81"
+		}
+	],
+	"browserSourceRevision": "10d14fd21059f2044494d9719b1a5a11c2d8f5af",
+	"finalBuiltJavaScriptSha256": "ddc324d3e4094eaaf995ae52566254c6ecda9492b48e5668aa0492a95dc7dcd2",
+	"buildIdentityRecheckedAt": "2026-10-21T16:10:50.496963+00:00",
+	"cleanedLockSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"
+}

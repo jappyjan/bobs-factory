@@ -13,6 +13,8 @@ import {
 	defaultWorkflows,
 	upgradedArchitectureSteps,
 } from "../src/factory/defaultWorkflows.js";
+import { renderInstructionTemplate } from "../src/factory/InstructionLibrary.js";
+import { formatOf, hasCheck } from "../src/factory/StepConfig.js";
 import {
 	validateWorkflows,
 	type WorkflowStep,
@@ -76,11 +78,13 @@ it("asks check-in steps for briefVersion=2 while review-v1 steps accept both", (
 	expect(() => assertReviewBrief(v2)).not.toThrow();
 	const stock = defaultWorkflows
 		.flatMap((w) => w.steps)
-		.filter((s) => s.architectureContract === "architecture-v1");
+		.filter((s) => hasCheck(s, "architecture-proposal"));
 	expect(stock.length).toBeGreaterThan(0);
 	for (const step of stock) {
-		expect(step.architectureBrief).toBe("checkin-v1");
-		expect(step.prompt).toBe(checkinInstructions);
+		expect(formatOf(step)).toBe("architecture-checkin-v1");
+		expect(renderInstructionTemplate(step, step.prompt!)).toBe(
+			checkinInstructions,
+		);
 	}
 });
 

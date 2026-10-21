@@ -34,10 +34,10 @@ for (const signal of ["SIGTERM", "SIGINT"]) {
 process.on("message", async (message) => {
 	try {
 		if (message.type === "init") {
-			const [major, minor] = process.versions.node.split(".").map(Number);
-			if (major < 22 || (major === 22 && minor < 13))
+			const major = Number(process.versions.node.split(".")[0]);
+			if (major !== 24)
 				throw new Error(
-					"Prepared Cursor SDK requires Node >=22.13; configure BOBS_FACTORY_CURSOR_NODE",
+					"Prepared Cursor SDK requires Node 24.x; configure BOBS_FACTORY_CURSOR_NODE",
 				);
 			const { Agent } = require("@cursor/sdk");
 			agent = message.sessionId

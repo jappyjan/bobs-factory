@@ -1,0 +1,37 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker
+
+ ❯ test/EdgeWorker.capture-recovery.test.ts (47 tests | 1 failed | 46 skipped) 191ms
+   × still revalidates valid saved output without restarting the runner 190ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/EdgeWorker.capture-recovery.test.ts > still revalidates valid saved output without restarting the runner
+TypeError: Cannot read properties of undefined (reading 'every')
+ ❯ steps src/factory/StepConfig.ts:1290:11
+    1288|   seen.add(workflow.id);
+    1289|   const steps = (values: object[]): boolean =>
+    1290|    values.every((step) => {
+       |           ^
+    1291|     if (isExplicitStep(step)) return false;
+    1292|     const value = step as {
+ ❯ old src/factory/StepConfig.ts:1303:10
+ ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+ ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+ ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+ ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+ ❯ roleProgress src/factory/Incremental.ts:83:23
+ ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+ ❯ test/EdgeWorker.capture-recovery.test.ts:785:50
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 46 skipped (47)
+   Start at  20:49:39
+   Duration  7.12s (transform 4.12s, setup 247ms, import 6.17s, tests 191ms, environment 0ms)
+

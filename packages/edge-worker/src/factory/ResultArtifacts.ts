@@ -9,6 +9,7 @@ import {
 	OutputValidationError,
 	outputValidationError,
 } from "./OutputValidation.js";
+import { formatOf, hasCheck } from "./StepConfig.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 export function roleResultArtifactBinding(
@@ -56,11 +57,15 @@ export async function resolveRoleResult(
 		throw outputValidationError(value, error);
 	}
 	try {
-		if (context.step.id !== "guide" || !output || typeof output !== "object")
+		if (
+			!hasCheck(context.step, "requirement-coverage") ||
+			!output ||
+			typeof output !== "object"
+		)
 			return output;
 		const guide = structuredClone(output) as Record<string, unknown>;
 		const files = context.progress?.reviewScope?.files;
-		if (context.step.guideContract) {
+		if (formatOf(context.step)?.startsWith("review-brief-v")) {
 			const since = guide.sinceLastReview as { changes?: unknown } | undefined;
 			const groups: [string, unknown][] = [
 				["requirements", guide.requirements],

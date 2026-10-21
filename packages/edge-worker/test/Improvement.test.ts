@@ -23,6 +23,7 @@ import {
 	type RuntimeHooks,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
+import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 const runtimes: WorkflowRuntime[] = [],
 	directories: string[] = [];
@@ -655,7 +656,7 @@ it("does not cache an invalid dependency proposal as completed and reuses succes
 		},
 	});
 	void f.runtime.launch(f.run);
-	await vi.waitFor(() => expect(f.run.status).toBe("failed"));
+	await waitForRuntime(() => expect(f.run.status).toBe("failed"));
 	expect(f.run.improvementState!.proposals).toHaveLength(0);
 	expect(f.run.improvementState!.jobs["proposal-0"]!.status).toBe("failed");
 	const workers = f.calls.filter((k) => k.startsWith("worker-")).length;

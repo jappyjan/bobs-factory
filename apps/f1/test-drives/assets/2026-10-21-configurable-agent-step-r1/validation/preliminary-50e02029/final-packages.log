@@ -1,0 +1,774 @@
+{"identity": {"source": "50e020294b8b414b2920af8952fd1467ae521180", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["pnpm", "test:packages:run", "--maxWorkers=2"], "started": "2026-10-21T17:45:38.286761+00:00"}
+
+> bobs-factory-monorepo@1.0.1 test:packages:run /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery
+> pnpm --filter './packages/*' test:run --maxWorkers=2
+
+Scope: 16 of 20 workspace projects
+packages/cloudflare-tunnel-client test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/core test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/mcp-tools test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/mcp-tools test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/mcp-tools
+packages/core test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/core
+packages/cloudflare-tunnel-client test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/cloudflare-tunnel-client
+packages/cloudflare-tunnel-client test:run:  Test Files  2 passed (2)
+packages/cloudflare-tunnel-client test:run:       Tests  26 passed (26)
+packages/cloudflare-tunnel-client test:run:    Start at  20:45:39
+packages/cloudflare-tunnel-client test:run:    Duration  446ms (transform 80ms, setup 0ms, import 143ms, tests 78ms, environment 0ms)
+packages/cloudflare-tunnel-client test:run: Done
+packages/mcp-tools test:run: To /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-operator-Jej5Xu/upstream.git
+packages/mcp-tools test:run:  * [new branch]      main -> main
+packages/core test:run:  Test Files  19 passed (19)
+packages/core test:run:       Tests  263 passed (263)
+packages/core test:run:    Start at  20:45:39
+packages/core test:run:    Duration  6.02s (transform 730ms, setup 0ms, import 2.18s, tests 5.05s, environment 2ms)
+packages/core test:run: Done
+packages/mcp-tools test:run:  Test Files  14 passed (14)
+packages/mcp-tools test:run:       Tests  82 passed (82)
+packages/mcp-tools test:run:    Start at  20:45:39
+packages/mcp-tools test:run:    Duration  25.36s (transform 4.85s, setup 0ms, import 12.02s, tests 33.59s, environment 2ms)
+packages/mcp-tools test:run: Done
+packages/claude-runner test:run$ vitest run --maxWorkers=2
+packages/config-updater test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/github-event-transport test:run$ vitest run --maxWorkers=2
+packages/gitlab-event-transport test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/claude-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/claude-runner
+packages/config-updater test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/config-updater
+packages/github-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/github-event-transport
+packages/gitlab-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/gitlab-event-transport
+packages/gitlab-event-transport test:run:  Test Files  1 passed (1)
+packages/gitlab-event-transport test:run:       Tests  11 passed (11)
+packages/gitlab-event-transport test:run:    Start at  20:46:07
+packages/gitlab-event-transport test:run:    Duration  925ms (transform 82ms, setup 0ms, import 118ms, tests 17ms, environment 0ms)
+packages/gitlab-event-transport test:run: Done
+packages/linear-event-transport test:run$ vitest run --maxWorkers=2
+packages/linear-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/linear-event-transport
+packages/github-event-transport test:run:  Test Files  5 passed (5)
+packages/github-event-transport test:run:       Tests  117 passed (117)
+packages/github-event-transport test:run:    Start at  20:46:07
+packages/github-event-transport test:run:    Duration  5.15s (transform 2.50s, setup 0ms, import 4.41s, tests 657ms, environment 1ms)
+packages/github-event-transport test:run: Done
+packages/slack-event-transport test:run$ vitest run --maxWorkers=2
+packages/slack-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/slack-event-transport
+packages/slack-event-transport test:run:  Test Files  3 passed (3)
+packages/slack-event-transport test:run:       Tests  82 passed (82)
+packages/slack-event-transport test:run:    Start at  20:46:14
+packages/slack-event-transport test:run:    Duration  2.95s (transform 1.21s, setup 0ms, import 2.37s, tests 204ms, environment 1ms)
+packages/slack-event-transport test:run: Done
+packages/zulip-event-transport test:run$ vitest run --maxWorkers=2
+packages/claude-runner test:run:  Test Files  12 passed (12)
+packages/claude-runner test:run:       Tests  137 passed (137)
+packages/claude-runner test:run:    Start at  20:46:06
+packages/claude-runner test:run:    Duration  11.73s (transform 4.96s, setup 0ms, import 12.93s, tests 1.53s, environment 3ms)
+packages/claude-runner test:run: Done
+packages/zulip-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/zulip-event-transport
+packages/linear-event-transport test:run:  Test Files  6 passed (6)
+packages/linear-event-transport test:run:       Tests  75 passed (75)
+packages/linear-event-transport test:run:    Start at  20:46:10
+packages/linear-event-transport test:run:    Duration  7.94s (transform 3.68s, setup 0ms, import 9.99s, tests 1.81s, environment 1ms)
+packages/linear-event-transport test:run: Done
+packages/zulip-event-transport test:run:  Test Files  3 passed (3)
+packages/zulip-event-transport test:run:       Tests  25 passed (25)
+packages/zulip-event-transport test:run:    Start at  20:46:18
+packages/zulip-event-transport test:run:    Duration  1.92s (transform 1.14s, setup 0ms, import 1.65s, tests 29ms, environment 0ms)
+packages/zulip-event-transport test:run: Done
+packages/config-updater test:run:  Test Files  8 passed (8)
+packages/config-updater test:run:       Tests  52 passed (52)
+packages/config-updater test:run:    Start at  20:46:06
+packages/config-updater test:run:    Duration  14.59s (transform 2.15s, setup 0ms, import 6.20s, tests 16.27s, environment 1ms)
+packages/config-updater test:run: Done
+packages/simple-agent-runner test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/simple-agent-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/simple-agent-runner
+packages/simple-agent-runner test:run:  Test Files  2 passed (2)
+packages/simple-agent-runner test:run:       Tests  24 passed (24)
+packages/simple-agent-runner test:run:    Start at  20:46:22
+packages/simple-agent-runner test:run:    Duration  597ms (transform 159ms, setup 0ms, import 235ms, tests 218ms, environment 0ms)
+packages/simple-agent-runner test:run: Done
+packages/codex-runner test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/cursor-runner test:run$ node ../../node_modules/.pnpm/node_modules/vitest/vitest.mjs run --passWithNoTests --maxWorkers=2
+packages/gemini-runner test:run$ vitest run --maxWorkers=2
+packages/opencode-runner test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/cursor-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/cursor-runner
+packages/gemini-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/gemini-runner
+packages/codex-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/codex-runner
+packages/opencode-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/opencode-runner
+packages/gemini-runner test:run:  Test Files  4 passed (4)
+packages/gemini-runner test:run:       Tests  200 passed | 1 skipped (201)
+packages/gemini-runner test:run:    Start at  20:46:23
+packages/gemini-runner test:run:    Duration  6.24s (transform 4.06s, setup 0ms, import 6.58s, tests 1.87s, environment 1ms)
+packages/gemini-runner test:run: Done
+packages/cursor-runner test:run:  Test Files  8 passed (8)
+packages/cursor-runner test:run:       Tests  56 passed (56)
+packages/cursor-runner test:run:    Start at  20:46:23
+packages/cursor-runner test:run:    Duration  11.81s (transform 2.83s, setup 0ms, import 4.45s, tests 14.16s, environment 4ms)
+packages/cursor-runner test:run: Done
+packages/codex-runner test:run:  Test Files  17 passed (17)
+packages/codex-runner test:run:       Tests  140 passed (140)
+packages/codex-runner test:run:    Start at  20:46:24
+packages/codex-runner test:run:    Duration  12.01s (transform 3.38s, setup 0ms, import 8.79s, tests 5.90s, environment 6ms)
+packages/codex-runner test:run: Done
+packages/opencode-runner test:run:  Test Files  4 passed (4)
+packages/opencode-runner test:run:       Tests  34 passed (34)
+packages/opencode-runner test:run:    Start at  20:46:24
+packages/opencode-runner test:run:    Duration  14.17s (transform 4.40s, setup 0ms, import 9.40s, tests 10.07s, environment 1ms)
+packages/opencode-runner test:run: Done
+packages/edge-worker test:run$ vitest run --maxWorkers=2
+packages/edge-worker test:run: (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+packages/edge-worker test:run:   - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+packages/edge-worker test:run: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+packages/edge-worker test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts (47 tests | 47 failed) 14299ms
+packages/edge-worker test:run:    × corrects repository-boundary mistakes inside the specialist role (saved=false) 294ms
+packages/edge-worker test:run:    × corrects repository-boundary mistakes inside the specialist role (saved=true) 291ms
+packages/edge-worker test:run:    × corrects a resource-limited inline result in the saved native conversation 234ms
+packages/edge-worker test:run:    × cancels inline validation without consuming native correction attempts 250ms
+packages/edge-worker test:run:    × corrects a revised delivery version in its saved planner conversation before independent review 268ms
+packages/edge-worker test:run:    × supplies accepted workflow gates and original operator receipts to a restricted-input implementer, overriding model-supplied policy 295ms
+packages/edge-worker test:run:    × retains structured assistance and runtime findings for code-fix with restricted recipe inputs 291ms
+packages/edge-worker test:run:    × retains structured assistance and runtime findings for visual-fix with restricted recipe inputs 299ms
+packages/edge-worker test:run:    × exposes runtime feedback to a restricted-input CI fixer (legacy: false, saved result: false) 330ms
+packages/edge-worker test:run:    × exposes runtime feedback to a restricted-input CI fixer (legacy: true, saved result: false) 267ms
+packages/edge-worker test:run:    × exposes runtime feedback to a restricted-input CI fixer (legacy: true, saved result: true) 252ms
+packages/edge-worker test:run:    × corrects a ticket comment claimed as PR feedback inside the impact agent (saved: false) 440ms
+packages/edge-worker test:run:    × corrects a ticket comment claimed as PR feedback inside the impact agent (saved: true) 360ms
+packages/edge-worker test:run:    × resumes a rejected completed capture to replace only invalid evidence 381ms
+packages/edge-worker test:run:    × still revalidates valid saved output without restarting the runner 336ms
+packages/edge-worker test:run:    × keeps filesystem/finalization failures retryable without discarding the saved result 397ms
+packages/edge-worker test:run:    × requests only available context tools (dirty: false, resume: false) 468ms
+packages/edge-worker test:run:    × requests only available context tools (dirty: false, resume: true) 300ms
+packages/edge-worker test:run:    × requests only available context tools (dirty: true, resume: false) 405ms
+packages/edge-worker test:run:    × requests only available context tools (dirty: true, resume: true) 411ms
+packages/edge-worker test:run:    × validates recovered guide coverage and resumes the same conversation with exact issues 481ms
+packages/edge-worker test:run:    × finalizes a customized restricted-input guide (saved result: false) 367ms
+packages/edge-worker test:run:    × finalizes a customized restricted-input guide (saved result: true) 296ms
+packages/edge-worker test:run:    × corrects fresh malformed JSON and missing PR files through the same boundary 335ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'start' failure ('Transport offline') without spending its budget 368ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'start' failure ('thread/start failed: error creating t…') without spending its budget 608ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'result' failure ('thread/start failed: error creating t…') without spending its budget 276ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'start' failure ('thread/resume failed: error creating …') without spending its budget 270ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'result' failure ('thread/resume failed: error creating …') without spending its budget 370ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'start' failure ('thread/start timed out after 60000ms') without spending its budget 271ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'result' failure ('thread/start timed out after 60000ms') without spending its budget 269ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'start' failure ('thread/resume timed out after 60000ms') without spending its budget 338ms
+packages/edge-worker test:run:    × preserves a correction through pre-turn 'result' failure ('thread/resume timed out after 60000ms') without spending its budget 295ms
+packages/edge-worker test:run:    × retains a fresh MCP startup failure without inventing a native session 215ms
+packages/edge-worker test:run:    × refunds confirmed transport failures and still bounds repeated validation rejection 211ms
+packages/edge-worker test:run:    × applies schema validation to recovered malformed guides before accepting them 221ms
+packages/edge-worker test:run:    × corrects recovered capture budget violations instead of replaying the same rejected output 223ms
+packages/edge-worker test:run:    × bounds capture semantic corrections across finalization without resetting the rejection count 235ms
+packages/edge-worker test:run:    × retries IO failures during correction by revalidating the completed candidate without another native turn 222ms
+packages/edge-worker test:run:    × corrects invalid recommendation indices from a custom question-enabled role 225ms
+packages/edge-worker test:run:    × retains extraction recommendations and corrects invalid inventory output (saved result: false) 225ms
+packages/edge-worker test:run:    × retains extraction recommendations and corrects invalid inventory output (saved result: true) 252ms
+packages/edge-worker test:run:    × gives saved review fixers question guidance even without askQuestions 258ms
+packages/edge-worker test:run:    × resumes one silent Codex turn in the same conversation and persists the retry budget 233ms
+packages/edge-worker test:run:    × never retries a repeatedly silent or cancelled turn indefinitely 240ms
+packages/edge-worker test:run:    × corrects a missing nonvisual map through the same guide-only conversation 209ms
+packages/edge-worker test:run:    × corrects a renamed generic schema and rule in the existing bounded native conversation 213ms
+packages/edge-worker test:run: Note: switching to 'HEAD~1'.
+packages/edge-worker test:run: You are in 'detached HEAD' state. You can look around, make experimental
+packages/edge-worker test:run: changes and commit them, and you can discard any commits you make in this
+packages/edge-worker test:run: state without impacting any branches by switching back to a branch.
+packages/edge-worker test:run: If you want to create a new branch to retain commits you create, you may
+packages/edge-worker test:run: do so (now or later) by using -c with the switch command. Example:
+packages/edge-worker test:run:   git switch -c <new-branch-name>
+packages/edge-worker test:run: Or undo this operation with:
+packages/edge-worker test:run:   git switch -
+packages/edge-worker test:run: Turn off this advice by setting config variable advice.detachedHead to false
+packages/edge-worker test:run: HEAD is now at ffc3160 fixture
+packages/edge-worker test:run:  ❯ test/Incremental.test.ts (10 tests | 1 failed) 7354ms
+packages/edge-worker test:run:    × keeps explanation progress and completion separate from the blocked role revision 280ms
+packages/edge-worker test:run:  ❯ test/WorkflowRuntime.test.ts (138 tests | 1 failed) 79700ms
+packages/edge-worker test:run:    × creates exact role inputs without reading cold history and retains their original cutoff 458ms
+packages/edge-worker test:run: {"layout":"js","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1043612}}}
+packages/edge-worker test:run: {"layout":"python","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1045868}}}
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯ Failed Tests 49 ⎯⎯⎯⎯⎯⎯⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects repository-boundary mistakes inside the specialist role (saved=false)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects repository-boundary mistakes inside the specialist role (saved=true)
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:193:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects a resource-limited inline result in the saved native conversation
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:284:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > cancels inline validation without consuming native correction attempts
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:321:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects a revised delivery version in its saved planner conversation before independent review
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:347:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > supplies accepted workflow gates and original operator receipts to a restricted-input implementer, overriding model-supplied policy
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:399:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > retains structured assistance and runtime findings for code-fix with restricted recipe inputs
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > retains structured assistance and runtime findings for visual-fix with restricted recipe inputs
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:488:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > exposes runtime feedback to a restricted-input CI fixer (legacy: false, saved result: false)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > exposes runtime feedback to a restricted-input CI fixer (legacy: true, saved result: false)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > exposes runtime feedback to a restricted-input CI fixer (legacy: true, saved result: true)
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:550:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects a ticket comment claimed as PR feedback inside the impact agent (saved: false)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects a ticket comment claimed as PR feedback inside the impact agent (saved: true)
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:647:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > resumes a rejected completed capture to replace only invalid evidence
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:749:9
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > still revalidates valid saved output without restarting the runner
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:785:50
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > keeps filesystem/finalization failures retryable without discarding the saved result
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:794:50
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > requests only available context tools (dirty: false, resume: false)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > requests only available context tools (dirty: false, resume: true)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > requests only available context tools (dirty: true, resume: false)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > requests only available context tools (dirty: true, resume: true)
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:911:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > validates recovered guide coverage and resumes the same conversation with exact issues
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ guideFixture test/EdgeWorker.capture-recovery.test.ts:805:18
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:941:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > finalizes a customized restricted-input guide (saved result: false)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > finalizes a customized restricted-input guide (saved result: true)
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ guideFixture test/EdgeWorker.capture-recovery.test.ts:805:18
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:967:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects fresh malformed JSON and missing PR files through the same boundary
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ guideFixture test/EdgeWorker.capture-recovery.test.ts:805:18
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:989:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'start' failure ('Transport offline') without spending its budget
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'start' failure ('thread/start failed: error creating t…') without spending its budget
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'result' failure ('thread/start failed: error creating t…') without spending its budget
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'start' failure ('thread/resume failed: error creating …') without spending its budget
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'result' failure ('thread/resume failed: error creating …') without spending its budget
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'start' failure ('thread/start timed out after 60000ms') without spending its budget
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'result' failure ('thread/start timed out after 60000ms') without spending its budget
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'start' failure ('thread/resume timed out after 60000ms') without spending its budget
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > preserves a correction through pre-turn 'result' failure ('thread/resume timed out after 60000ms') without spending its budget
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ guideFixture test/EdgeWorker.capture-recovery.test.ts:805:18
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1033:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > retains a fresh MCP startup failure without inventing a native session
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ guideFixture test/EdgeWorker.capture-recovery.test.ts:805:18
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1064:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > refunds confirmed transport failures and still bounds repeated validation rejection
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ guideFixture test/EdgeWorker.capture-recovery.test.ts:805:18
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1096:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > applies schema validation to recovered malformed guides before accepting them
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ guideFixture test/EdgeWorker.capture-recovery.test.ts:805:18
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1134:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects recovered capture budget violations instead of replaying the same rejected output
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1153:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > bounds capture semantic corrections across finalization without resetting the rejection count
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1175:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > retries IO failures during correction by revalidating the completed candidate without another native turn
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1189:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects invalid recommendation indices from a custom question-enabled role
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1217:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > retains extraction recommendations and corrects invalid inventory output (saved result: false)
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > retains extraction recommendations and corrects invalid inventory output (saved result: true)
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1262:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > gives saved review fixers question guidance even without askQuestions
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1321:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > resumes one silent Codex turn in the same conversation and persists the retry budget
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1350:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > never retries a repeatedly silent or cancelled turn indefinitely
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1371:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects a missing nonvisual map through the same guide-only conversation
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ guideFixture test/EdgeWorker.capture-recovery.test.ts:805:18
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1396:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/49]⎯
+packages/edge-worker test:run:  FAIL  test/EdgeWorker.capture-recovery.test.ts > corrects a renamed generic schema and rule in the existing bounded native conversation
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ fixture test/EdgeWorker.capture-recovery.test.ts:87:23
+packages/edge-worker test:run:  ❯ test/EdgeWorker.capture-recovery.test.ts:1416:18
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/49]⎯
+packages/edge-worker test:run:  FAIL  test/Incremental.test.ts > keeps explanation progress and completion separate from the blocked role revision
+packages/edge-worker test:run: TypeError: Cannot read properties of undefined (reading 'every')
+packages/edge-worker test:run:  ❯ steps src/factory/StepConfig.ts:1290:11
+packages/edge-worker test:run:     1288|   if (seen.has(workflow.id)) return true;
+packages/edge-worker test:run:     1289|   seen.add(workflow.id);
+packages/edge-worker test:run:     1290|   const steps = (values: object[]): boolean =>
+packages/edge-worker test:run:        |           ^
+packages/edge-worker test:run:     1291|    values.every((step) => {
+packages/edge-worker test:run:     1292|     if (isExplicitStep(step)) return false;
+packages/edge-worker test:run:  ❯ old src/factory/StepConfig.ts:1303:10
+packages/edge-worker test:run:  ❯ legacyToolOutputKey src/factory/StepConfig.ts:1305:7
+packages/edge-worker test:run:  ❯ legacyToolOutput src/factory/StepConfig.ts:1328:14
+packages/edge-worker test:run:  ❯ repositoryMetadata src/factory/RepositoryScope.ts:60:6
+packages/edge-worker test:run:  ❯ runRepositories src/factory/RepositoryScope.ts:136:19
+packages/edge-worker test:run:  ❯ roleProgress src/factory/Incremental.ts:83:23
+packages/edge-worker test:run:  ❯ test/Incremental.test.ts:137:26
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/49]⎯
+packages/edge-worker test:run:  FAIL  test/WorkflowRuntime.test.ts > creates exact role inputs without reading cold history and retains their original cutoff
+packages/edge-worker test:run: AssertionError: expected 'expected [ Array(8) ] to have a lengt…' to be undefined
+packages/edge-worker test:run: - Expected:
+packages/edge-worker test:run: undefined
+packages/edge-worker test:run: + Received:
+packages/edge-worker test:run: "expected [ Array(8) ] to have a length of +0 but got 8"
+packages/edge-worker test:run:  ❯ test/WorkflowRuntime.test.ts:227:38
+packages/edge-worker test:run:     225|  const decode = vi.spyOn(snapshots, "decode");
+packages/edge-worker test:run:     226|  await restarted.launch(restarted.get(run.id));
+packages/edge-worker test:run:     227|  expect(restarted.get(run.id).error).toBeUndefined();
+packages/edge-worker test:run:        |                                      ^
+packages/edge-worker test:run:     228|  expect(visited).toBe(true);
+packages/edge-worker test:run:     229|  const saved = JSON.parse(readFileSync(path, "utf8"));
+packages/edge-worker test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/49]⎯
+packages/edge-worker test:run:  Test Files  3 failed | 190 passed (193)
+packages/edge-worker test:run:       Tests  49 failed | 2420 passed | 1 skipped (2470)
+packages/edge-worker test:run:    Start at  20:46:39
+packages/edge-worker test:run:    Duration  795.58s (transform 17.05s, setup 3.20s, import 159.86s, tests 1326.39s, environment 17ms)
+packages/edge-worker test:run: Failed
+/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 test:run: `vitest run --maxWorkers=2`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+
+{"exitCode": 1, "ended": "2026-10-21T17:59:56.123537+00:00"}

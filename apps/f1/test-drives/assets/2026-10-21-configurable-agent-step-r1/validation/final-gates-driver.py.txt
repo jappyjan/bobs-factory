@@ -1,0 +1,21 @@
+from pathlib import Path
+import subprocess,json,datetime,hashlib,glob,sys
+root=Path('/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery')
+out=root/'apps/f1/test-drives/assets/2026-10-21-configurable-agent-step-r1/validation'
+if len(sys.argv)>1:out=Path(sys.argv[1])
+out.mkdir(parents=True,exist_ok=True)
+def capture(*args): return subprocess.check_output(args,cwd=root,text=True).strip()
+identity={'source':capture('git','rev-parse','HEAD'),'node':capture('node','--version'),'pnpm':capture('pnpm','--version'),'bun':capture('bun','--version'),'lockfileSha256':hashlib.sha256((root/'pnpm-lock.yaml').read_bytes()).hexdigest()}
+commands=[('typecheck',['pnpm','typecheck']),('lint',['pnpm','lint','--max-diagnostics=100']),('packages',['pnpm','test:packages:run','--maxWorkers=2']),('apps-vitest',['pnpm','--workspace-concurrency=1','--filter','./apps/cli','--filter','./apps/f1','test:run','--maxWorkers=1']),('desktop',['pnpm','--filter','./apps/desktop','test:run']),('scripts',['node','--test','--test-concurrency=2',*sorted(glob.glob('scripts/tests/*.test.mjs',root_dir=root))]),('audit',['pnpm','audit']),('workflow-lint',['actionlint'])]
+summary={'identity':identity,'checks':[]}
+for name,args in commands:
+ started=datetime.datetime.now(datetime.timezone.utc).isoformat()
+ with (out/f'final-{name}.log').open('w') as log:
+  log.write(json.dumps({'identity':identity,'command':args,'started':started})+'\n');log.flush()
+  result=subprocess.run(args,cwd=root,stdout=log,stderr=subprocess.STDOUT)
+  ended=datetime.datetime.now(datetime.timezone.utc).isoformat()
+  log.write('\n'+json.dumps({'exitCode':result.returncode,'ended':ended})+'\n')
+ summary['checks'].append({'name':name,'command':args,'exitCode':result.returncode,'started':started,'ended':ended})
+ (out/'final-gates.json.txt').write_text(json.dumps(summary,indent=2)+'\n')
+ print(name,'exit',result.returncode,flush=True)
+sys.exit(any(item['exitCode']!=0 for item in summary['checks']))

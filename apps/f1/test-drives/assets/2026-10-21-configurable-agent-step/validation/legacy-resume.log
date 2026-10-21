@@ -1,0 +1,12 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  18:28:26
+   Duration  2.55s (transform 761ms, setup 34ms, import 1.21s, tests 1.18s, environment 0ms)
+

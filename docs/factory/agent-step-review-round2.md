@@ -1,0 +1,56 @@
+# Configurable agent step: review round 2 response
+
+This records the implementation response to [Taskbot #136, comment 2036](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136) on [PR #173](https://github.com/jappyjan/bobs-factory/pull/173). The reviewed head was `d041487e44f4e41a78278fb5edfabbe6497c240a`, including main `4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7`. It records implementation evidence, not independent acceptance. No merge or later-ticket work is included.
+
+| Finding | Root cause and implementation response | Consequential regression |
+| --- | --- | --- |
+| **R8: custom architecture data starts a protocol** | Runtime inspected `architectureRevision` on every agent output. Handback now requires the explicit `architecture-revision` check and an associated local architecture decision/proposal route. A modern graph with multiple decisions selects one through `reads.architectureDecision`. Stock presets declare this capability; historical normalization derives the original behavior only from the accepted old local decision graph. | `GenericOutputProtocols.test.ts` executes standalone modern no-setting, reads-only, format-only and inline-schema agents with ordinary protocol-shaped fields. Positive handback and otherwise-identical non-opted-in graphs retain their different intended routes. Existing architecture acceptance/review tests remain. |
+| **R9: historic reviews lose guide/media roles** | Historical calls stored leaf output slots with qualified execution history. Check-selected roles required a qualified slot, unlike the old stored representation. A view adapter now admits a leaf only for a wholly historical accepted graph, its exact executed producer, an unambiguous graph leaf and matching latest leaf receipt. It derives the guide's revision from that same producer. Stored definitions, outputs and qualified revisions remain immutable. Historical chapters without optional collections receive view-only empty lists, including the arrays consumed by progress effects. Modern/mixed graphs and publication authority retain exact qualified ownership. | `LegacyPresentation.test.ts` loads actual old-shaped disk state through normal production storage, renders pending/completed FullReview, verifies guide/head metadata and default/explicit PNG bytes, and asserts immutable saved state. `FactoryReviewState.test.ts` exercises the real sparse-chapter progress write/read handler. Missing execution proof, root/sibling collisions, modern settings, unrelated revisions and stale/tampered media remain denied. |
+| **R10: nested rule work bypasses its budget** | Only AST visits were charged. Inner lookup scans, comparisons and canonicalization could perform quadratic synchronous work. The shared evaluator now charges those primitives, pointer/string/sort/set work and fixed-parser arguments. Agent parsing yields every bounded work slice and honors cancellation; synchronous package APIs retain the same total-work limit. Conditional reads share one budget without hydrating unrelated lazy history. | `RulesBudget.test.ts` and the compiled-Bun parser fixture execute the accepted 5,000/20,000-item configurations with heartbeat and cancellation probes. Smaller useful lookups, sync/async parity and related collection/comparison/canonicalization paths remain covered. |
+| **R11: ordinary binary schemas intermittently fail** | A `ps` sample could report zero/missing RSS after OS process retirement but before Bun delivered exit/close. Immediate rejection confused this lifecycle race with an unavailable live watchdog. Untrusted work now waits for a positive startup sample; a bounded recheck reconciles exit/close or confirmed `ESRCH`. A genuinely unobservable live child still fails closed. The parent retains its independent wall/RSS limits and resolves only after child close/reclamation. | `InlineSchema.child.test.ts` covers startup, retirement, live watchdog loss, failed exits, memory, wall, cancellation and slot reuse. `scripts/verify-inline-schema-isolation.mjs` separately repeats ordinary compile/evaluation and post-cancellation recovery through source Bun and the actual product executable, with resource fault controls. Timing diagnostics and final binary results are recorded with validation evidence. |
+| **R12: custom question fields contradict their schema** | Post-schema normalization ran whenever a field happened to be named `questions`, choices or recommendations. It now runs only for a declared question capability or intended question-bearing library format. Selecting a format validates metadata; human pauses still require their configured action/capability. Async inline validation retains the original declared configuration through the post-schema stage. | `GenericOutputProtocols.test.ts` accepts integer `questions=42` and ordinary choice/recommendation data without a question capability. Positive question format/check/action cases preserve trimming, choices, recommendations and correction failures. Existing question and native recovery suites remain. |
+
+The audit also inspected neighboring output-property hooks. Runtime question pauses and assistance/recovery routes remain gated by configured actions/checks; review disposition handling remains inside its explicit review contract. Familiar field names alone do not add these protocols.
+
+R9 validation includes browser effects and navigation, beyond server rendering.
+The sparse retained guide receives neutral absence text where old decision,
+criteria, verification or instructions are missing. No ready/supported state is
+synthesized. The reader retains the raw guide's identity and progress keys, and
+valid modern empty-check guides keep their existing presentation. Pending and
+completed historical fixtures cover overview, chapter, files and Decide pages.
+
+R11 diagnosis retained an additional ordinary null-schema failure at the earlier
+250 ms engine deadline. Its exact historical delay was not instrumented, so it is
+not attributed conclusively to scheduling. Measurements exclude child startup,
+input wait and inherited cancellation state from that clock. The real engine
+rejects the same valid null schema when paused for 500 ms inside its callback,
+using under 3 ms CPU; the guard measures elapsed time. A bounded 1,300-job ordinary
+batch passed, with a maximum 86 ms engine time. The fixed engine allowance is now
+one second on Node and Bun, from one shared constant, within the unchanged
+two-second parent hard wall. This permits the measured pause plus cold compilation;
+residual expensive work may occupy a slot up to 750 ms longer before the engine
+guard stops it. It does not disable isolation, memory monitoring, cancellation,
+queue/stream limits or fail-closed live-watchdog handling. Both the failed sample
+and the targeted timing/resource controls are retained; passing repetitions are
+not relabeled as evidence about the uninstrumented failed child.
+
+The preliminary `96b7cb03` product loop then exposed 20/100 ordinary two-second
+wall-limit failures while other validation work was active. Those failures are
+retained and are not a passing reliability result. Quiet lifecycle traces show
+input admission within 5 ms, roughly 300 ms of unrelated application bootstrap
+before the schema reader, then about 20–25 ms validation and prompt process exit.
+The private schema command now dispatches before the normal CLI/core integration
+imports; normal helper initialization and executable ownership remain unchanged.
+Prototype measurements show lower startup work/RSS, while full-bundle parsing and
+first OS launch still have cost. These measurements do not conclusively assign
+the phase of each uninstrumented failed request. The actual canonical binary's
+ordinary/post-cancellation stress, startup and install checks must pass separately
+on the corrected source; the outer deadline remains two seconds.
+
+All 675 complete stock/frozen prompt fixtures remain unchanged. Only the entire capability-reference expectation changes to describe explicit protocols and total rule-work limits. [Configuration restrictions](agent-step-configuration.md) and the [test-change rationale](agent-step-test-changes.md) document the public limits and every existing test mechanism change. The six earlier old-shaped cases remain **one true restart plus five conditional-input cases**, supplemented by genuine historical review/media loading here.
+
+R1–R7 are preserved through the existing schema/correction, exact producer/provider/credential, effective input/restart, original pinned snapshot, impact opt-in/convergence and stock/renamed operational presentation suites. Their original independent reproductions were cleared in round 2; this document does not extend that finding to untested behavior.
+
+The [round 2 report and gallery](../../apps/f1/test-drives/2026-10-21-configurable-agent-step-r2.md) records exact production source `7106f734ca6fc4066448e2766495f5bacb4fa0d9`, the unchanged dependency graph, all complete gates, stock and every-step-renamed Factory F1, actual binary and historical/modern browser evidence. The complete commands passed 4,334 cases with three skipped; audit reports zero advisories. Historical reports and failed reproductions remain separate, and source-mode diagnostics are not presented as packaged-binary executions. A subsequent documentation/evidence-only HEAD requires the recorded clean-build identity bridge and a new independent acceptance review.
+
+The strict #136–143 sequence and added epic follow-ups #144–148 remain separate. No later-ticket behavior or production deployment is included. Future context shaping must preserve effective-input revision binding and exact producer/frame ownership.

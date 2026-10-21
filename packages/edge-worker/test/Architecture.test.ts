@@ -21,6 +21,7 @@ import {
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
 import { validateReviewFix } from "../src/factory/ReviewRecovery.js";
+import { hasCheck } from "../src/factory/StepConfig.js";
 import {
 	StepSchema,
 	validateWorkflows,
@@ -830,8 +831,11 @@ describe("architecture authorization boundary", () => {
 	it("uses the shared stock path and preserves operator-customized planning", () => {
 		const pipeline = defaultWorkflows.find((w) => w.id === "factory-pipeline")!;
 		expect(
-			pipeline.steps.find((s) => s.id === "architecture")?.architectureContract,
-		).toBe("architecture-v1");
+			hasCheck(
+				pipeline.steps.find((s) => s.id === "architecture")!,
+				"architecture-proposal",
+			),
+		).toBe(true);
 		const custom = structuredClone(defaultWorkflows);
 		custom
 			.find((w) => w.id === "factory-pipeline")!
@@ -1063,6 +1067,7 @@ it("upgrades untouched stock planning, preserving customized model settings and 
 		"../src/factory/defaultWorkflows.js"
 	);
 	const old = structuredClone(defaultWorkflows);
+	delete old.find((w) => w.id === "factory-pipeline")!.stepConfigVersion;
 	old.find((w) => w.id === "factory-pipeline")!.steps = legacyReviewSteps.map(
 		(s) => StepSchema.parse(s),
 	);
@@ -1070,16 +1075,19 @@ it("upgrades untouched stock planning, preserving customized model settings and 
 	expect(
 		upgraded
 			.find((w) => w.id === "factory-pipeline")!
-			.steps.some((s) => s.architectureContract === "architecture-v1"),
+			.steps.some((s) => hasCheck(s, "architecture-proposal")),
 	).toBe(true);
 	const customized = structuredClone(defaultWorkflows);
+	delete customized.find((w) => w.id === "factory-pipeline")!.stepConfigVersion;
 	customized.find((w) => w.id === "factory-pipeline")!.steps =
 		legacyReviewSteps.map((s) => StepSchema.parse(s));
 	customized
 		.find((w) => w.id === "factory-pipeline")!
 		.steps.find((s) => s.id === "plan-review")!.model = "operator-selected";
 	expect(
-		migrate(customized).pipeline.steps.some((s) => s.architectureContract),
+		migrate(customized).pipeline.steps.some((s) =>
+			hasCheck(s, "architecture-proposal"),
+		),
 	).toBe(true);
 	expect(
 		migrate(customized).pipeline.steps.find((s) => s.id === "plan-review")!

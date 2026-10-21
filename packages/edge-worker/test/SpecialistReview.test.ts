@@ -502,7 +502,7 @@ it.each([
 	expect(second.reviewers[0]!.findings).toEqual([]);
 	const thirdBaseline = { ...b, round: 3 };
 	const context = {
-		step: { id: "business", reviewContract: "coverage-v1" },
+		step: { id: "business", type: "agent", reviewContract: "coverage-v1" },
 		stepKey: b.reviewers[0]!.key,
 		run: {
 			reviewRounds: [b, secondBaseline, thirdBaseline],
@@ -615,6 +615,7 @@ it.each([
 				};
 				gate.progress = await roleProgress(gate);
 				gate.run.outputs["visual-scope"] = scope;
+				gate.outputs!["visual-scope"] = scope;
 				const capture = captureEvidence(gate, qaExecution());
 				Object.assign(gate.run.outputs, {
 					"visual-scope": scope,
@@ -632,7 +633,11 @@ it.each([
 						},
 					},
 				});
-				gate.outputs!["visual-scope"] = scope;
+				Object.assign(gate.outputs!, {
+					"visual-scope": scope,
+					capture,
+					"visual-review": gate.run.outputs["visual-review"],
+				});
 				const prefix = gate.stepKey!.replace(/[^/]+$/, "");
 				gate.run.roleRevisions ??= {};
 				for (const id of ["capture", "visual-review"])
@@ -857,12 +862,33 @@ it("uses a renamed aggregate for unchanged-revision readiness after a fix", asyn
 	b.reviewers[0]!.key = `${b.key}/0/business`;
 	const aggregate = aggregateReview(b, [{ business: receipt(b) }]);
 	const context = {
-		step: { id: "review-after-fix", tool: "review-after-fix" },
+		step: {
+			id: "review-after-fix",
+			type: "tool",
+			tool: "review-after-fix",
+			reads: {
+				draftPr: "draft-pr",
+				ci: "ci",
+				reviewGate: "aggregate-review",
+				review: "code-review",
+			},
+		},
 		stepKey: "review-after-fix",
 		reviewKey: b.key,
 		currentScope: () => ({}),
 		run: {
 			answers: [],
+			repositoryId: "repo",
+			repositories: [
+				{
+					id: "repo",
+					name: "Selected",
+					repositoryPath: "/tmp",
+					workspace: "/tmp",
+					baseBranch: "main",
+					githubUrl: "https://github.com/test/repo",
+				},
+			],
 			reviewRounds: [b],
 			history: [{ step: "child/aggregate-review", output: aggregate }],
 			outputs: {
@@ -898,12 +924,33 @@ it.each([
 	b.reviewers[0]!.key = `${b.key}/0/business`;
 	const accepted = aggregateReview(b, [{ business: receipt(b) }]);
 	const context = {
-		step: { id: "ci-fix", tool: "ci-fix-readiness" },
+		step: {
+			id: "ci-fix",
+			type: "tool",
+			tool: "ci-fix-readiness",
+			reads: {
+				draftPr: "draft-pr",
+				ci: "ci",
+				reviewGate: "review-gate",
+				review: "code-review",
+			},
+		},
 		stepKey: "pipeline/ci-fix",
 		reviewKey: b.key,
 		currentScope: () => ({}),
 		run: {
 			answers: [],
+			repositoryId: "repo",
+			repositories: [
+				{
+					id: "repo",
+					name: "Selected",
+					repositoryPath: "/tmp",
+					workspace: "/tmp",
+					baseBranch: "main",
+					githubUrl: "https://github.com/test/repo",
+				},
+			],
 			reviewRounds: state === "missing" ? [b] : [b, { ...b, round: 2 }],
 			history:
 				state === "missing"
@@ -921,6 +968,7 @@ it.each([
 		log: vi.fn(),
 	} as unknown as ExecutionContext;
 	let conflicting = true;
+	context.outputs = { ...context.run.outputs };
 	const tools = new FactoryTools({
 		postComment: vi.fn(),
 		command: async (_context, exe, args) =>

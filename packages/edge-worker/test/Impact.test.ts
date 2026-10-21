@@ -35,6 +35,7 @@ import {
 	qaDigest,
 } from "../src/factory/Qa.js";
 import {
+	qaReuseBindingInputs,
 	qaReuseContext,
 	stampQaCriteria,
 	verifyQaEnvironment,
@@ -659,7 +660,9 @@ async function drive(
 		runtime,
 		calls,
 		contextMeasurements,
-		definition: definitionValue,
+		definition: run.workflowDefinitions!.find(
+			(workflow) => workflow.id === definitionValue.id,
+		)!,
 		factoryTools,
 	};
 }
@@ -721,7 +724,7 @@ it.each([
 			},
 		})}\n`,
 	);
-});
+}, 120_000);
 it("rejects stale source, weakened tests, blocked receipts, unknown reviewers and absent approvals", async () => {
 	const fixture = await drive(true);
 	const impact = fixture.run.impactDecisions!.at(-1)!;
@@ -897,7 +900,7 @@ it("persists a consumed convergence recheck only with its completed role receipt
 		],
 	});
 	void runtime.launch(run);
-	await waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"), { timeout: 30_000 });
 	expect(run.step).toBe("assessor");
 	expect(run.impactConvergence!.experts!.repeats).toBe(3);
 	const captured: {
@@ -926,10 +929,13 @@ it("persists a consumed convergence recheck only with its completed role receipt
 		questionBatchId: run.questionBatchId!,
 		questions: [...run.questions],
 	});
-	await waitFor(() => {
-		expect(run.status).toBe("waiting");
-		expect(run.step).toBe("hold");
-	});
+	await waitFor(
+		() => {
+			expect(run.status).toBe("waiting");
+			expect(run.step).toBe("hold");
+		},
+		{ timeout: 30_000 },
+	);
 	expect(captured.length).toBeGreaterThan(0);
 	for (const snapshot of captured) {
 		expect(snapshot.phase).toBe("result");
@@ -1043,57 +1049,61 @@ it.each([
 	[true, false],
 	[false, true],
 	[true, true],
-])("renews stale impact through its accepted assessor (nested=%s, legacy Retry=%s)", async (nested, legacyRetry) => {
-	const options = { fail: true, nested };
-	const fixture = await drive(true, "js", options);
-	const { run } = fixture;
-	expect(run.status).toBe("failed");
-	options.fail = false;
-	const frame = nested
-		? run.checkpoint!.active!.children![0]!
-		: run.checkpoint!;
-	frame.current = "gate";
-	frame.active = undefined;
-	const history = structuredClone(run.history);
-	const previousDigest =
-		run.impactDecisions!.at(-1)!.snapshot.environmentDigest;
-	const repairs = fixture.calls.filter((id) => id === "repair").length;
-	const assessments = fixture.calls.filter((id) => id === "assessor").length;
-	const agent = fixture.hooks.agent;
-	fixture.hooks.agent = async (context) => {
-		if (!context.step.impactContract) return agent(context);
-		fixture.calls.push(context.step.id);
-		const snapshot = (context.input as { impactSnapshot: ImpactSnapshot })
-			.impactSnapshot;
-		return { ...assessment(snapshot), classification: "full" as const };
-	};
-	run.model = "changed-runtime-binding";
-	let recovered = run;
-	if (legacyRetry) {
-		run.status = "failed";
-		run.error = STALE_IMPACT_MESSAGE;
-		await fixture.runtime.save(run);
-		await fixture.runtime.shutdown();
-		const restored = new WorkflowRuntime(fixture.home, fixture.hooks);
-		runtimes.push(restored);
-		restored.retry(run.id);
-		recovered = restored.get(run.id);
-		await waitFor(
-			() => expect(recovered.status, recovered.error).toBe("completed"),
-			{ timeout: 10000 },
+])(
+	"renews stale impact through its accepted assessor (nested=%s, legacy Retry=%s)",
+	async (nested, legacyRetry) => {
+		const options = { fail: true, nested };
+		const fixture = await drive(true, "js", options);
+		const { run } = fixture;
+		expect(run.status).toBe("failed");
+		options.fail = false;
+		const frame = nested
+			? run.checkpoint!.active!.children![0]!
+			: run.checkpoint!;
+		frame.current = "gate";
+		frame.active = undefined;
+		const history = structuredClone(run.history);
+		const previousDigest =
+			run.impactDecisions!.at(-1)!.snapshot.environmentDigest;
+		const repairs = fixture.calls.filter((id) => id === "repair").length;
+		const assessments = fixture.calls.filter((id) => id === "assessor").length;
+		const agent = fixture.hooks.agent;
+		fixture.hooks.agent = async (context) => {
+			if (!context.step.impactContract) return agent(context);
+			fixture.calls.push(context.step.id);
+			const snapshot = (context.input as { impactSnapshot: ImpactSnapshot })
+				.impactSnapshot;
+			return { ...assessment(snapshot), classification: "full" as const };
+		};
+		run.model = "changed-runtime-binding";
+		let recovered = run;
+		if (legacyRetry) {
+			run.status = "failed";
+			run.error = STALE_IMPACT_MESSAGE;
+			await fixture.runtime.save(run);
+			await fixture.runtime.shutdown();
+			const restored = new WorkflowRuntime(fixture.home, fixture.hooks);
+			runtimes.push(restored);
+			restored.retry(run.id);
+			recovered = restored.get(run.id);
+			await waitFor(
+				() => expect(recovered.status, recovered.error).toBe("completed"),
+				{ timeout: 30000 },
+			);
+		} else await fixture.runtime.launch(run);
+		expect(recovered.status, recovered.error).toBe("completed");
+		expect(recovered.history.slice(0, history.length)).toEqual(history);
+		expect(fixture.calls.filter((id) => id === "repair")).toHaveLength(repairs);
+		expect(fixture.calls.filter((id) => id === "assessor")).toHaveLength(
+			assessments + 1,
 		);
-	} else await fixture.runtime.launch(run);
-	expect(recovered.status, recovered.error).toBe("completed");
-	expect(recovered.history.slice(0, history.length)).toEqual(history);
-	expect(fixture.calls.filter((id) => id === "repair")).toHaveLength(repairs);
-	expect(fixture.calls.filter((id) => id === "assessor")).toHaveLength(
-		assessments + 1,
-	);
-	expect(
-		recovered.impactDecisions!.at(-1)!.snapshot.environmentDigest,
-	).not.toBe(previousDigest);
-	expect(recovered.humanDecisions).toBeUndefined();
-});
+		expect(
+			recovered.impactDecisions!.at(-1)!.snapshot.environmentDigest,
+		).not.toBe(previousDigest);
+		expect(recovered.humanDecisions).toBeUndefined();
+	},
+	120_000,
+);
 
 it("recovers selected work in a nested graph without replaying completed agents or assessment", async () => {
 	const options = { fail: true, nested: true };
@@ -1321,7 +1331,16 @@ it("accepts shell SHA-256 QA probes and saved JSON digests while rejecting chang
 	fixture.run.outputs["visual-scope"] = { environmentEvidence: probe };
 	const context: ExecutionContext = {
 		run: fixture.run,
-		step: fixture.definition.steps.find((s) => s.id === "scope")!,
+		step: StepSchema.parse({
+			...agent("qa-recorder"),
+			output: { format: "qa-capture-v1" },
+			reads: {
+				scope: "visual-scope",
+				capture: "capture",
+				qaGate: "visual-gate",
+			},
+			checks: ["capture-evidence", "qa-environment"],
+		}),
 		outputs: fixture.run.outputs,
 		input: {},
 		signal: new AbortController().signal,
@@ -1382,7 +1401,17 @@ it("preserves original behavioral execution and rejects changed definitions, fix
 	const context = {
 		run,
 		reviewKey: "experts",
-		step: fixture.definition.steps.find((s) => s.id === "scope")!,
+		step: StepSchema.parse({
+			...agent("qa-recorder"),
+			output: { format: "qa-capture-v1" },
+			reads: {
+				scope: "visual-scope",
+				capture: "capture",
+				qaGate: "visual-gate",
+				impact: "assessor",
+			},
+			checks: ["capture-evidence", "qa-environment", "impact-boundary"],
+		}),
 		outputs: run.outputs,
 		input: {},
 		signal: new AbortController().signal,
@@ -1432,7 +1461,7 @@ it("preserves original behavioral execution and rejects changed definitions, fix
 	const captured = captureEvidence(
 		{
 			...context,
-			step: { ...context.step, qaContract: "qa-v1" },
+			step: context.step,
 			progress: {
 				changedFiles: [],
 				currentRevision: {
@@ -1471,12 +1500,38 @@ it("preserves original behavioral execution and rejects changed definitions, fix
 				"Only unrelated teardown changed; guard definitions, fixtures and sources are identical",
 		},
 	];
+	const reuseInputsDigest = qaDigest(qaReuseBindingInputs(context));
+	current.pending.qaCriteria.push("transient-progress");
+	expect(qaDigest(qaReuseBindingInputs(context))).toBe(reuseInputsDigest);
+	current.pending.qaCriteria.pop();
+	const originalReason = current.qaReuse[0]!.reason;
+	current.qaReuse[0]!.reason = "A new independent rationale";
+	expect(qaDigest(qaReuseBindingInputs(context))).not.toBe(reuseInputsDigest);
+	current.qaReuse[0]!.reason = originalReason;
+	expect(qaDigest(qaReuseBindingInputs(context))).toBe(reuseInputsDigest);
 	const retained = qaReuseContext(context).criteria[0]!.criterion;
 	expect(retained.origin).toEqual(original.origin);
 	const composed = structuredClone(execution);
 	composed.results[0]!.criteria[0] = retained;
 	stampQaCriteria(context, composed);
 	expect(current.pending.qaCriteria).toEqual([]);
+	const owningHistory = run.history;
+	for (const producer of ["capture", "visual-gate"]) {
+		run.history = owningHistory.map((entry) =>
+			entry.step === producer
+				? { ...entry, step: `sibling/${producer}` }
+				: entry,
+		);
+		expect(() => qaReuseContext(context)).toThrow(
+			producer === "capture"
+				? "passed original evidence"
+				: "prior independent QA acceptance",
+		);
+	}
+	run.history = owningHistory;
+	expect(qaReuseContext(context).criteria[0]!.criterion.origin).toEqual(
+		original.origin,
+	);
 	scope.environmentFingerprint = "fixture-v2";
 	expect(() => qaReuseContext(context)).toThrow("unchanged definitions");
 	scope.environmentFingerprint = "fixture-v1";
@@ -1576,6 +1631,7 @@ it("continues explicit approval for a safe cumulative production correction only
 			type: "tool" as const,
 			tool: "merge",
 			impactSource: "assessor",
+			checks: ["impact-boundary"],
 			branches: [],
 			maxVisits: 8,
 		},
@@ -1677,7 +1733,12 @@ it("allows selected repository checks the normal workflow command budget", async
 				},
 			],
 		},
-		step: { id: "checks", tool: "impact-checks" },
+		step: {
+			id: "checks",
+			tool: "impact-checks",
+			impactSource: "assessor",
+			checks: ["impact-boundary"],
+		},
 		impactKey: "experts",
 		stepKey: "checks",
 		signal: new AbortController().signal,

@@ -54,6 +54,7 @@ it("serves question images only from the requested run, rejecting traversal, ext
 			workspace: home,
 			input: "",
 			workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
+			workflowDefinitions: defaultWorkflows,
 		});
 	const run = create("with-image");
 	create("without-image");
@@ -85,7 +86,7 @@ it("serves question images only from the requested run, rejecting traversal, ext
 		expect((await get(run.id, "..%2F..%2Foutside.png")).statusCode).toBe(400);
 		// Completed receipts retain their original paths after a home move.
 		const imageSha256 = createHash("sha256").update(png).digest("hex");
-		run.outputs.capture = {
+		run.outputs["pipeline/capture"] = {
 			screenshots: [
 				{
 					path: join(
@@ -103,6 +104,11 @@ it("serves question images only from the requested run, rejecting traversal, ext
 			],
 			unavailable: [],
 		};
+		run.history.push({
+			step: "pipeline/capture",
+			at: new Date().toISOString(),
+			output: run.outputs["pipeline/capture"],
+		});
 		const screenshot = () =>
 			server.app.inject({
 				url: `/api/runs/${run.id}/screenshots/0?v=${imageSha256}`,
@@ -2335,19 +2341,25 @@ it("supplies only the adjacent retained guide in the protected dashboard for leg
 		repositoryId: "repo",
 		workspace: home,
 		input: "",
-		workflow: defaultWorkflows[1]!,
+		workflow: defaultWorkflows.find((workflow) => workflow.id === "factory")!,
+		workflowDefinitions: defaultWorkflows,
 	});
 	const old = {
 		chapters: [{ id: "authorization" }],
 		reviewFiles: { headSha: "old" },
 	};
-	run.outputs.guide = { previousHeadSha: "old" };
+	run.outputs["pipeline/guide"] = { previousHeadSha: "old" };
 	run.history.push(
-		{ step: "custom/guide", at: new Date().toISOString(), output: old },
+		{ step: "pipeline/guide", at: new Date().toISOString(), output: old },
 		{
-			step: "capture",
+			step: "pipeline/capture",
 			at: new Date().toISOString(),
 			output: { notes: "Large unrelated evidence" },
+		},
+		{
+			step: "custom/guide",
+			at: new Date().toISOString(),
+			output: { ...old, chapters: [{ id: "unrelated-guide" }] },
 		},
 	);
 	const server = new FactoryServer(runtime, {
@@ -2365,7 +2377,7 @@ it("supplies only the adjacent retained guide in the protected dashboard for leg
 		expect(response.json().history.every((entry: any) => !entry.output)).toBe(
 			true,
 		);
-		run.outputs.guide = { previousHeadSha: "missing" };
+		run.outputs["pipeline/guide"] = { previousHeadSha: "missing" };
 		const missing = await server.app.inject({
 			method: "GET",
 			url: "/api/runs/reader?view=dashboard",

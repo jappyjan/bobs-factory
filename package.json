@@ -5,6 +5,9 @@
 	"description": "Monorepo for Bob’s Factory - Linear Claude Agent integration",
 	"homepage": "https://jappyjan.github.io/bobs-factory/",
 	"packageManager": "pnpm@10.33.1",
+	"engines": {
+		"node": "24.x"
+	},
 	"type": "module",
 	"scripts": {
 		"factory": "pnpm --filter 'bobs-factory...' build && bun run scripts/factory.ts",

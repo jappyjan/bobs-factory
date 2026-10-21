@@ -1,0 +1,2 @@
+{"items": 5000, "elapsedMs": 4020, "deadlineKilled": true, "stdout": "{\"acceptedWorkflow\":true,\"items\":5000,\"inputBytes\":58901,\"ruleBytes\":176}\n"}
+{"items": 20000, "elapsedMs": 4025, "deadlineKilled": true, "stdout": "{\"acceptedWorkflow\":true,\"items\":20000,\"inputBytes\":248901,\"ruleBytes\":176}\n"}

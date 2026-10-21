@@ -1,0 +1,11 @@
+import {build} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/node_modules/esbuild/lib/main.js';
+import {createElement} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/node_modules/react/index.js';
+import {renderToStaticMarkup} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/node_modules/react-dom/server.node.js';
+import {writeFileSync,readFileSync,mkdirSync,symlinkSync,existsSync} from 'node:fs';
+mkdirSync('/tmp/ticket136-r2-legacy-render-before',{recursive:true});
+if(!existsSync('/tmp/ticket136-r2-legacy-render-before/node_modules'))symlinkSync('/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/node_modules','/tmp/ticket136-r2-legacy-render-before/node_modules');
+await build({entryPoints:['/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/src/factory/web/focus.tsx'],bundle:true,platform:'node',format:'esm',packages:'external',outfile:'/tmp/ticket136-r2-legacy-render-before/focus.mjs',jsx:'automatic',logLevel:'silent'});
+const {FullReview}=await import('/tmp/ticket136-r2-legacy-render-before/focus.mjs');
+const evidence=JSON.parse(readFileSync('/tmp/ticket136-r2-legacy-presentation-before.json','utf8'));
+try {const result=renderToStaticMarkup(createElement(FullReview,{run:{id:'legacy-review',outputs:evidence.responses.dashboard.outputs,outputRoles:evidence.responses.dashboard.outputRoles,reviewGate:{id:'review',headSha:'accepted',status:'pending'}},onSettled:()=>{}}));console.log(JSON.stringify({rendered:result.slice(0,300)}));}
+catch(error){console.log(JSON.stringify({error:error.message,stack:error.stack},null,2));}

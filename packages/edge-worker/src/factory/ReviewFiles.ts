@@ -12,6 +12,14 @@ import {
 import { join, relative } from "node:path";
 import { promisify } from "node:util";
 import { runRepositories } from "./RepositoryScope.js";
+import { readStep } from "./StepConfig.js";
+import {
+	configuredOutputKeys,
+	historyForCheck,
+	historyForTool,
+	stepForRun,
+	toolForStep,
+} from "./ToolBindings.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
 const exec = promisify(execFile);
@@ -414,19 +422,26 @@ export async function resolveGuideSnapshot(
 	evidence: string,
 	expectedGuide: string,
 ): Promise<ReviewFilesReference> {
+	const guideKeys = new Set(
+		historyForCheck(run, "requirement-coverage").map((entry) => entry.step),
+	);
 	const candidates = [
-		...run.history
-			.filter((h) => h.step === "guide" || h.step.endsWith("/guide"))
-			.map((h) => h.output),
-		run.outputs.guide,
+		...run.history.filter((entry) => guideKeys.has(entry.step)),
+		...configuredOutputKeys(run, { check: "requirement-coverage" }).map(
+			(step) => ({
+				step,
+				output: run.outputs[step],
+			}),
+		),
 	];
-	const guide = candidates.find(
-		(value) => value && guideDigest(value) === expectedGuide,
-	) as { reviewFiles?: ReviewFilesReference } | undefined;
-	if (!guide)
+	const retained = candidates.find(
+		({ output }) => output && guideDigest(output) === expectedGuide,
+	);
+	if (!retained)
 		throw new Error(
 			"Guide changed or is not retained in this run; refresh the review",
 		);
+	const guide = retained.output as { reviewFiles?: ReviewFilesReference };
 	if (guide.reviewFiles) return guide.reviewFiles;
 	const retainedPath = join(
 		evidence,
@@ -442,35 +457,47 @@ export async function resolveGuideSnapshot(
 		(h) =>
 			h.output &&
 			guideDigest(h.output) === expectedGuide &&
-			(h.step === "guide" || h.step.endsWith("/guide")),
+			h.step === retained.step,
 	);
 	if (index < 0)
 		throw new Error(
 			"Historical guide revision is unavailable. Open the PR diff.",
 		);
+	const prefix = retained.step.replace(/[^/]+$/, "");
+	const guideStep = stepForRun(run, retained.step)!;
+	const readiness = readStep(guideStep, "ci");
+	const readinessKey = readiness ? `${prefix}${readiness}` : undefined;
+	const readinessTool = toolForStep(run, readinessKey);
+	const handoffKeys = new Set(
+		historyForTool(run, "handoff")
+			.filter((entry) => {
+				const step = stepForRun(run, entry.step)!;
+				const guide = readStep(step, "guide");
+				return (
+					guide &&
+					`${entry.step.replace(/[^/]+$/, "")}${guide}` === retained.step
+				);
+			})
+			.map((entry) => entry.step),
+	);
 	const receipt = [...run.history.slice(0, index)]
 		.reverse()
 		.find(
-			(h) =>
-				h.step === "merge-readiness" ||
-				h.step.endsWith("/merge-readiness") ||
-				h.step === "ci" ||
-				h.step.endsWith("/ci"),
+			(entry) =>
+				entry.step === readinessKey &&
+				(readinessTool === "merge-readiness" || readinessTool === "ci"),
 		)?.output as { baseSha?: string; headSha?: string } | undefined;
 	// A later handoff establishes the guide head independently of current branch data.
 	const handoff = run.history
 		.slice(index + 1)
 		.find(
-			(h) =>
-				h.step === "handoff" ||
-				h.step.endsWith("/handoff") ||
-				h.step === "guide" ||
-				h.step.endsWith("/guide"),
+			(entry) => handoffKeys.has(entry.step) || entry.step === retained.step,
 		);
 	const head =
-		handoff?.step === "handoff" || handoff?.step.endsWith("/handoff")
+		handoff && handoffKeys.has(handoff.step)
 			? (handoff.output as { headSha?: string })?.headSha
 			: undefined;
+
 	if (!receipt?.baseSha || !head || head !== receipt.headSha)
 		throw new Error(
 			"Exact historical base/head receipts are unavailable. Open the PR diff.",

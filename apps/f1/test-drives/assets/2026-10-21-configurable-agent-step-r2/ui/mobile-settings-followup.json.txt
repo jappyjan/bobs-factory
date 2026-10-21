@@ -1,0 +1,121 @@
+{
+  "source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+  "screenshots": [
+    {
+      "name": "builder-mobile-light-reads.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "label": "Reads",
+      "labelTop": 394.8515625,
+      "labelHeight": 318.5,
+      "value": "{\n  \"scopeClarify\": \"clarify\",\n  \"scopeDecisions\": \"decisions\",\n  \"scopePlan\": \"plan\",\n  \"scopeSource\": \"@source\",\n  \"scopeTicket\": \"@ticket\"\n}",
+      "selected": [],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiprex-6dd4227c.png",
+      "catalogFirstOptions": []
+    },
+    {
+      "name": "builder-mobile-light-rules.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "label": "Rules",
+      "labelTop": 394.8515625,
+      "labelHeight": 204.5,
+      "value": "[]",
+      "selected": [],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiprrn-53eb3ea0.png",
+      "catalogFirstOptions": []
+    },
+    {
+      "name": "builder-mobile-light-instructions.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "label": "Shared instructions",
+      "labelTop": 394.8515625,
+      "labelHeight": 207.9765625,
+      "selected": [
+        "implementation-scope",
+        "ticket-plan",
+        "delivery",
+        "delivery-plan"
+      ],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviips1j-80e78adc.png",
+      "catalogFirstOptions": [
+        "implementation-scope",
+        "architecture-continuation",
+        "architecture-questions-brief",
+        "feedback-policy",
+        "ci-assessment"
+      ]
+    },
+    {
+      "name": "builder-mobile-dark-reads.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "label": "Reads",
+      "labelTop": 394.8515625,
+      "labelHeight": 318.5,
+      "value": "{\n  \"scopeClarify\": \"clarify\",\n  \"scopeDecisions\": \"decisions\",\n  \"scopePlan\": \"plan\",\n  \"scopeSource\": \"@source\",\n  \"scopeTicket\": \"@ticket\"\n}",
+      "selected": [],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviipspt-30c39beb.png",
+      "catalogFirstOptions": []
+    },
+    {
+      "name": "builder-mobile-dark-rules.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "label": "Rules",
+      "labelTop": 394.8515625,
+      "labelHeight": 204.5,
+      "value": "[]",
+      "selected": [],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviipt1t-d4f709e3.png",
+      "catalogFirstOptions": []
+    },
+    {
+      "name": "builder-mobile-dark-instructions.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "label": "Shared instructions",
+      "labelTop": 394.8515625,
+      "labelHeight": 207.9765625,
+      "selected": [
+        "implementation-scope",
+        "ticket-plan",
+        "delivery",
+        "delivery-plan"
+      ],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiptdh-54543cb2.png",
+      "catalogFirstOptions": [
+        "implementation-scope",
+        "architecture-continuation",
+        "architecture-questions-brief",
+        "feedback-policy",
+        "ci-assessment"
+      ]
+    }
+  ]
+}

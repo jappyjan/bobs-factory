@@ -26,6 +26,11 @@ import historicalDigests from "./historicalWorkflowDigests.json" with {
 };
 import { getLaunchFields } from "./LaunchFields.js";
 import {
+	hasLegacyFlags,
+	registerWorkflowConfig,
+	STEP_CONFIG_VERSION,
+} from "./StepConfig.js";
+import {
 	StepSchema,
 	validateWorkflows,
 	type Workflow,
@@ -212,10 +217,12 @@ export function recognizedStock(workflow: Workflow): boolean {
 	if (["factory", "factory-pipeline"].includes(workflow.id)) {
 		const pipeline = reserved.get("factory-pipeline")!;
 		templates.push({ ...current, steps: pipeline.steps });
-		templates.push({
+		const legacyTemplate = {
 			...current,
 			steps: legacyReviewSteps.map((step) => StepSchema.parse(step)),
-		});
+		};
+		delete legacyTemplate.stepConfigVersion;
+		templates.push(legacyTemplate);
 	}
 	return templates.some((template) =>
 		isDeepStrictEqual(behavior(workflow), behavior(template)),
@@ -550,6 +557,7 @@ export class WorkflowCatalog {
 					Object.assign(step, state.preferences[w.id]?.[role] ?? {});
 			}
 		}
+		for (const workflow of definitions) registerWorkflowConfig(workflow);
 		return definitions.sort(
 			(a, b) =>
 				(state.order.indexOf(a.id) < 0 ? 999 : state.order.indexOf(a.id)) -
@@ -696,7 +704,40 @@ export class WorkflowCatalog {
 		value: unknown,
 		defaultWorkflow = this.state.defaultWorkflow,
 	): Workflow[] {
-		const proposed = validateWorkflows(value);
+		// New authored graphs are modern even when every optional setting is absent.
+		// Existing unversioned recipes retain their explicit legacy load boundary.
+		const incoming = z.array(WorkflowSchema).parse(value);
+		for (const workflow of incoming) {
+			const previous = this.state.locals.find((old) => old.id === workflow.id);
+			if (
+				!reserved.has(workflow.id) &&
+				!previous &&
+				!workflow.stepConfigVersion &&
+				!workflow.steps.some(function legacy(step): boolean {
+					return (
+						hasLegacyFlags(step) ||
+						(step.groups ?? []).some((group) => group.some(legacy))
+					);
+				})
+			)
+				workflow.stepConfigVersion = STEP_CONFIG_VERSION;
+			if (
+				previous &&
+				!previous.stepConfigVersion &&
+				!workflow.stepConfigVersion
+			) {
+				const stampNew = (steps: WorkflowStep[], oldSteps: WorkflowStep[]) => {
+					for (const step of steps) {
+						const old = oldSteps.find((item) => item.id === step.id);
+						if (!old) step.configVersion = STEP_CONFIG_VERSION;
+						for (const [index, group] of (step.groups ?? []).entries())
+							stampNew(group, old?.groups?.[index] ?? []);
+					}
+				};
+				stampNew(workflow.steps, previous.steps);
+			}
+		}
+		const proposed = validateWorkflows(incoming);
 		const next = structuredClone(this.state);
 		next.locals = [];
 		next.defaultWorkflow = defaultWorkflow;

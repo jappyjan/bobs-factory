@@ -1,0 +1,55 @@
+{"command": ["pnpm", "build"], "source": "96b7cb0306b4ec526e702e3becb935432d40087f", "node": "v24.21.0", "started": "2026-10-21T19:11:44.124526+00:00"}
+
+> bobs-factory-monorepo@1.0.1 build /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery
+> pnpm -r --filter='!bobs-factory-electron' build
+
+No projects matched the filters "bobs-factory-electron" in "/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery"
+Scope: all 20 workspace projects
+apps/desktop build$ node --check src/main.mjs
+packages/cloudflare-tunnel-client build$ tsgo
+packages/core build$ tsgo
+packages/mcp-tools build$ tsgo
+apps/desktop build: Done
+packages/cloudflare-tunnel-client build: Done
+packages/core build: Done
+packages/mcp-tools build: Done
+packages/claude-runner build$ tsgo
+packages/config-updater build$ tsgo
+packages/github-event-transport build$ tsgo
+packages/gitlab-event-transport build$ tsgo
+packages/gitlab-event-transport build: Done
+packages/linear-event-transport build$ tsgo
+packages/claude-runner build: Done
+packages/slack-event-transport build$ tsgo
+packages/github-event-transport build: Done
+packages/zulip-event-transport build$ tsgo
+packages/config-updater build: Done
+packages/slack-event-transport build: Done
+packages/linear-event-transport build: Done
+packages/zulip-event-transport build: Done
+packages/simple-agent-runner build$ tsgo
+packages/simple-agent-runner build: Done
+packages/codex-runner build$ tsgo
+packages/cursor-runner build$ tsgo && node -e "for(const f of ['permission-check.mjs','sdk-host.mjs']) require('node:fs').copyFileSync('src/'+f, 'dist/'+f)"
+packages/gemini-runner build$ tsgo && cp -r src/prompts dist/prompts
+packages/opencode-runner build$ tsgo
+packages/codex-runner build: Done
+packages/opencode-runner build: Done
+packages/gemini-runner build: Done
+packages/cursor-runner build: Done
+packages/edge-worker build$ tsgo && tsgo -p tsconfig.web.json && npm run copy-prompts
+packages/edge-worker build: npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: npm warn Unknown env config "recursive". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: > bobs-factory-edge-worker@0.2.73 copy-prompts
+packages/edge-worker build: > cp label-prompt-template.md dist/ && cp -r prompts dist/ && rm -rf dist/bobs-factory-skills-plugin && cp -rL bobs-factory-skills-plugin dist/bobs-factory-skills-plugin && node scripts/build-factory-web.mjs
+packages/edge-worker build: Factory web build: fb71e1029766fcc047eadec9
+packages/edge-worker build: Done
+apps/cli build$ tsgo
+apps/f1 build$ tsgo
+apps/f1 build: Done
+apps/cli build: Done
+
+{"exitCode": 0, "ended": "2026-10-21T19:12:02.885999+00:00"}

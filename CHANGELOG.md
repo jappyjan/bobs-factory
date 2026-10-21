@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Configure agent steps with named inputs, library or bounded custom output schemas, declarative rules, evidence checks, revision binding, access and shared instructions in Recipes. Renaming Factory steps preserves behavior and review controls; live CI blockers remain visible, and frozen legacy definitions retain their original contracts, guides and media. Custom question and architecture fields remain ordinary data unless their protocol is configured. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136), [#173](https://github.com/jappyjan/bobs-factory/pull/173))
+
 - Add per-instance Storage settings and CLI previews, retention policy, explicit historical classification and audited cleanup. Protect usable rollback snapshots, update recovery, unique files and resumable work; replace immediate forced terminal worktree deletion with verified retention. Verify installed rollback runtimes, preserve references across current and historical run records, and reconcile exact copies before cleanup. Automatically enroll narrow migration preparation and safely resume interrupted ownership publication. Bind historical snapshot and build-log handling to the owning run and workflow location, including paged history restored after restart, preserving copied references as live dependencies. Retain concurrent replacement files and check every grouped-workspace entry. ([Taskbot #134](https://taskbot.apps.janjaap.de/p/bobs-factory/t/134), [#164](https://github.com/jappyjan/bobs-factory/pull/164))
 
 - Discover substantial architectural improvements with parallel research coordinators and cheaper workers. Review each proposal with Fix it, File issue, Skip or Ask Bob, see prerequisite and alternative conflicts before submitting, and preview which fixes start in parallel; explicitly launch the batch to file deferred backlog issues and launch only selected fixes as independent Factory runs, with traceable research activity, fresh plan checks after feedback, normal approvals and dependency-aware delivery. ([#167](https://github.com/jappyjan/bobs-factory/pull/167))
@@ -30,7 +32,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Reject retained architecture approval actions after proposal navigation, replacement or gate changes, and update vulnerable MCP and test-tool dependencies. Let run recovery wait for a brief storage inspection without stealing its workspace lock. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+- Reject retained architecture approval actions after proposal navigation, replacement or gate changes, and update vulnerable MCP and test-tool dependencies. Let run recovery wait for a brief storage inspection without stealing its workspace lock, and preserve configurable workflow steps when integrating the updated base. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Allocate dynamic listener ports for guide, architecture, review and recovery test drives so unrelated local runs can keep their servers running. Align the architecture continuation fixture with the stock check-in format. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 

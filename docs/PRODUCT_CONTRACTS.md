@@ -6,6 +6,7 @@ Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain h
 
 | Contract | Maintained producer / consumer | New representation | Explicit migration |
 | --- | --- | --- | --- |
+| Source toolchain | Workspace engines, CI/setup and trial launcher | Node 24.x only (pinned 24.18.0), pnpm 10.33.1; Bun 1.4.2 embeds the binary runtime | Remove Node 22 support outright. Factory binaries require no separate Node/Bun; Git and prepared agent tools/credentials stay external |
 | Executable / service | CLI, launcher, install / service docs | `bobs-factory` | Replace approved service command; no alias |
 | Workspace packages | manifests, imports, filters, lockfile | `bobs-factory-*`, private | Build-time only; upstream monorepo npm publishing stays retired |
 | Public trial launcher | Proposed npm package `bobs-factory-trial`, website download guide | Small `npx` launcher for stable/nightly verified native artifacts; npm/Node required for launcher only | Registry name was unclaimed when checked on 2026-10-10; confirm authenticated project ownership before publishing. Never publish workspace packages or bypass release integrity verification |

@@ -24,6 +24,7 @@ import {
 	treeFiles,
 } from "./review-model";
 import { signature } from "./review-state";
+import { roleOutput } from "./run-output";
 import { Button, External, Modal } from "./ui";
 export function FileLink({
 	path,
@@ -359,7 +360,7 @@ export function ChangedFiles({
 			index: number;
 		}>(),
 		manifest = query.data?.manifest,
-		url = run.reviewGate?.url ?? run.outputs["draft-pr"]?.url;
+		url = run.reviewGate?.url ?? roleOutput(run, "draft-pr")?.url;
 	if (!manifest)
 		return (
 			<section>

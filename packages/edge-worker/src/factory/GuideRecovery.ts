@@ -1,3 +1,5 @@
+export { guideGapFixInstructions } from "./InstructionText.js";
+
 import { createHash } from "node:crypto";
 import type { Guide } from "./FactoryResults.js";
 import { feedbackInstructionFingerprint } from "./FeedbackPolicy.js";
@@ -9,17 +11,16 @@ import {
 	guideWhy,
 	isReviewBrief,
 } from "./ReviewBrief.js";
+import { boundOutput } from "./ToolBindings.js";
 import { readPath } from "./Workflow.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
-
-export const guideGapFixInstructions = `Read /feedback/handoff and /feedback/guide for unresolved human-guide requirements and delivery gaps. Correct every actionable gap against the accepted plan, including PR continuity and description reconciliation, and provide concrete evidence for the next guide. Do not silently substitute a PR, waive scope, upgrade unsupported evidence, or rewrite the guide to claim success. Missing access, a replacement-PR decision, tracker conflicts owned by the runtime, or other human-only actions require specific questions alongside summary and checks. Read /feedback/userInstructions for the original input and human answers before retrying, even when recipe inputs are restricted. Set reviewRequired=true for changed requirements, source changes or disputed scope; metadata-only corrections may set false when accepted requirements and code are unchanged. The pipeline rebuilds the guide and rechecks readiness; human approval remains required.`;
 
 /** A guide is another source of corrective work, rather than a terminal failure. */
 export function guideGapRecovery(
 	context: ExecutionContext,
 	readiness: MergeReadiness,
 ): MergeReadiness | undefined {
-	const guide = context.run.outputs.guide;
+	const guide = boundOutput(context, "guide");
 	if (!isReviewBrief(guide) && !(guide as Partial<Guide> | undefined)?.decision)
 		return;
 	const gaps = guideGaps(guide);

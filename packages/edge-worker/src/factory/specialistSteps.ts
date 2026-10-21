@@ -1,3 +1,11 @@
+import { legacyStepPreset } from "./StepConfig.js";
+import { StepSchema, type WorkflowStep } from "./Workflow.js";
+
+export {
+	inventoryGuideInstructions,
+	inventoryQaInstructions,
+} from "./InstructionText.js";
+
 const shared = `Read /reviewBaseline first. Review ONLY the frozen clean head/base and requirement inventory in that baseline. All reviewers receive the same immutable context and history cutoff. Read /contextMemory/reviewLedger and /contextMemory/reviewRounds when present; these preserve previous findings, fixer dispositions and review reasoning. Use original outputPath records for relevant disagreement or evidence details, rather than rereading every old review output. Without compact memory, read complete previous review rounds and fixer dispositions. Preserve stable local finding IDs. Reassess every prior open rating 2/3 finding. Settled findings may reopen only with freshEvidence describing new evidence or changed requirements. Resolved or accepted-rejection needs concrete evidence and reason. A fixer saying fixed is not proof. Preserve contradictory recommendations in disagreements until evidence resolves them. Removing a prior disagreement requires disputeResolutions:[{disagreement,reason,evidence}]. To reassess an inherited finding from a removed reviewer, use inheritedDispositions:[{id:"reviewer:local-id",status:"resolved or accepted-rejection",reason,evidence}]. Unmentioned inherited complaints remain open. Do not change product files, commit, publish, run hidden harness subagents or ask a question inside fanout. Report missing evidence instead of inventing a pass. Ratings: 1 nonblocking observation, 2 consequential should-fix, 3 must-fix.
 Return {"summary":"concrete result","findings":[{"id":"stable-local-id","rating":2,"summary":"concrete failure","evidence":"file:line or actual check receipt","status":"open or resolved or accepted-rejection","requirementIds":["stable inventory ID"],"reason":"required for settled dispositions","freshEvidence":"required for reopening settled findings"}],"disagreements":["unresolved conflicting recommendation and evidence"]}. Runtime owns reviewer/revision/round stamps. Do not claim later QA executed; distinguish current code/local checks from future QA.`;
 export const extractionPrompt = `Extract scope independently of the implementation. Read complete originalInput (parse embedded JSON), ticket/acceptance criteria, ALL paginated comments, attachments/assets, clarification answers and accepted decisions/plan, later chat/human steering, takeover/PR discussions and past review rounds/dispositions through factory-context. Use /contextMemory/reviewLedger and /contextMemory/reviewRounds for historical claims and reasoning, following original outputPath records when scope or disagreement evidence is needed. Follow nextOffset to null. Missing source access requires a concrete questions entry; never omit unavailable scope. Read previous inventories, retain every historical ID and decision, and record amendments/supersessions with changeReason. Suggestions are not accepted scope. Contradictions stay in conflicts and questions until explicitly resolved outside fanout. Scope decisions require explicit human acceptance, rationale and source, not a reviewer preference. Follow the runtime decision-attribution rule: use a recorded name when available, otherwise identify the Factory operator with the name not recorded; do not ask for a name merely to complete attribution. Use kind:"skip" only for an explicit scope waiver, and list the precise requirementIds it authorizes skipping; other accepted scope decisions use kind:"scope". List considered sources and unavailable sources in sourceReceipt. Semantic extraction completeness needs source inspection; structural validation alone cannot prove it.
@@ -34,7 +42,8 @@ const specialists = [
 		"Own complete acceptance coverage. Assess EVERY active requirement exactly once; preserve superseded/suggestion records as context. Return coverage:[{requirementId,status:'met or not_met or deliberately_skipped',evidence:['concrete evidence at frozen revision'],reason:'why',decisionId:'accepted decision for deliberate skip'}] alongside review fields. Missing or inconclusive evidence is not_met, with an actionable open rating 2/3 finding referencing the ID. A skip needs an explicitly accepted decision, recorded person or unnamed Factory operator, rationale and source. Missing personal-name metadata alone cannot block coverage. Do not let reviewer/fixer preference waive scope.",
 	],
 ];
-export const specialistSteps = [
+/** Historical stock assembly retained for saved-recipe recognition. */
+export const legacySpecialistSteps = [
 	{
 		id: "extract-requirements",
 		name: "Extract requirements",
@@ -60,5 +69,37 @@ export const specialistSteps = [
 		]),
 	},
 ];
-export const inventoryQaInstructions = ` For specialist review runs, use the frozen review-gate.baseline.inventory active stable IDs as requirementRefs. Every active ID needs a relevant executable story or a justified exclusion, including accepted skips. QA exclusion does not waive scope. Earlier business coverage cannot override failed/blocked required QA.`;
-export const inventoryGuideInstructions = ` For specialist review runs, author requirements in the exact active frozen inventory order, with requirementId and the exact criterion. Map chapter requirementIndexes to this order. Evidence and statuses must agree with review-gate coverage; met is supported, not_met is gap, deliberately_skipped is waived and cites the accepted decision, recorded person or unnamed Factory operator, rationale and source. Executed QA failures or blockers still prevent readiness. Runtime attaches complete validated coverage, specialist observations, disputes and QA receipts for expandable evidence. Never invent coverage or upgrade gaps.`;
+
+/** Composable specialist presets used by new stock definitions and forks. */
+function configure(step: WorkflowStep): WorkflowStep {
+	const preset = legacyStepPreset(step, { workflowId: "factory-pipeline" });
+	const {
+		reviewContract: _legacyContract,
+		review: _legacyReview,
+		...configured
+	} = step;
+	return {
+		...configured,
+		configVersion: "step-config-v1",
+		reads: Object.fromEntries(
+			Object.entries(preset.reads).map(([name, read]) => [
+				name,
+				read.when ? read : read.from,
+			]),
+		),
+		...(preset.output ? { output: preset.output } : {}),
+		rules: preset.rules,
+		checks: preset.checks.map(({ check, args }) =>
+			Object.keys(args).length ? { check, ...args } : check,
+		),
+		...(preset.revision ? { revision: preset.revision } : {}),
+		access: preset.access,
+		instructions: preset.instructions,
+		...(step.groups
+			? { groups: step.groups.map((group) => group.map(configure)) }
+			: {}),
+	};
+}
+export const specialistSteps = legacySpecialistSteps.map((step) =>
+	configure(StepSchema.parse(step)),
+);

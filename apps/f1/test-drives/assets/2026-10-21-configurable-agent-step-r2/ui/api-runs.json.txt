@@ -1,0 +1,122 @@
+{
+  "legacy-review": {
+    "status": 200,
+    "keys": [
+      "id",
+      "title",
+      "workflow",
+      "workflowDefinitions",
+      "repositoryId",
+      "workspace",
+      "input",
+      "status",
+      "createdAt",
+      "updatedAt",
+      "step",
+      "answers",
+      "questions",
+      "events",
+      "outputs",
+      "history",
+      "roleRevisions",
+      "reviewGate",
+      "checkpoint",
+      "outputRoles",
+      "reviewCapabilities",
+      "recheckAvailable",
+      "resumeEligible",
+      "chat",
+      "chatMessages",
+      "entries",
+      "viewState",
+      "resumeAvailable"
+    ],
+    "workflow": "05890b7756d05e1d7d7c236395df0b9d70532f9025ac7f15a80970d255ec8cba",
+    "workflowDefinitions": "66dea00e8bf17e527ed5cd181592236e886d66181ba127060b0f19cb2af58f1f",
+    "outputs": "044d7b4467055d6ab11e773ba0429967e12115138284775a0fd4c9a584f3a3c3",
+    "outputKeys": [
+      "guide",
+      "capture",
+      "draft-pr"
+    ],
+    "roleRevisions": {
+      "pipeline/guide": {
+        "headSha": "accepted",
+        "dirty": false,
+        "historyLength": 0,
+        "at": "2026-10-01T00:00:00Z"
+      },
+      "guide": {
+        "headSha": "accepted",
+        "dirty": false,
+        "historyLength": 0,
+        "at": "2026-10-01T00:00:00Z"
+      }
+    },
+    "outputRoles": {
+      "guide": "guide",
+      "capture": "capture",
+      "draft-pr": "draft-pr"
+    }
+  },
+  "legacy-completed": {
+    "status": 200,
+    "keys": [
+      "id",
+      "title",
+      "workflow",
+      "workflowDefinitions",
+      "repositoryId",
+      "workspace",
+      "input",
+      "status",
+      "createdAt",
+      "updatedAt",
+      "step",
+      "answers",
+      "questions",
+      "events",
+      "outputs",
+      "history",
+      "roleRevisions",
+      "reviewGate",
+      "checkpoint",
+      "outputRoles",
+      "reviewCapabilities",
+      "recheckAvailable",
+      "resumeEligible",
+      "chat",
+      "chatMessages",
+      "entries",
+      "viewState",
+      "resumeAvailable"
+    ],
+    "workflow": "05890b7756d05e1d7d7c236395df0b9d70532f9025ac7f15a80970d255ec8cba",
+    "workflowDefinitions": "66dea00e8bf17e527ed5cd181592236e886d66181ba127060b0f19cb2af58f1f",
+    "outputs": "91a4f721957389d40560463d3118c3510863389bbdd5cf69b998e29d091fccff",
+    "outputKeys": [
+      "guide",
+      "capture",
+      "draft-pr"
+    ],
+    "roleRevisions": {
+      "pipeline/guide": {
+        "headSha": "accepted",
+        "dirty": false,
+        "historyLength": 0,
+        "at": "2026-10-01T00:00:00Z"
+      },
+      "guide": {
+        "headSha": "accepted",
+        "dirty": false,
+        "historyLength": 0,
+        "at": "2026-10-01T00:00:00Z"
+      }
+    },
+    "outputRoles": {
+      "guide": "guide",
+      "capture": "capture",
+      "draft-pr": "draft-pr"
+    }
+  }
+}

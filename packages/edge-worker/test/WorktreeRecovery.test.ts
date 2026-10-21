@@ -147,6 +147,30 @@ it.each([
 	expect(f.commands).toEqual([]);
 	expect(existsSync(f.workspace)).toBe(false);
 });
+it("rejects a passive-looking receipt outside the accepted workflow frame", () => {
+	const f = fixture();
+	f.run.history.push({ step: "unexecuted/handoff", output: {}, at: "later" });
+	expect(committedRecoveryRevision(f.run)).toBeUndefined();
+});
+it("does not confuse an accepted passive action with an unrelated same-name agent", () => {
+	const f = fixture();
+	f.run.workflowDefinitions = [
+		{
+			...f.run.workflow,
+			id: "unused",
+			steps: [
+				StepSchema.parse({
+					id: "handoff",
+					name: "Data",
+					type: "agent",
+					prompt: "Return data",
+				}),
+			],
+		},
+	];
+	f.run.history.push({ step: "handoff", output: {}, at: "later" });
+	expect(committedRecoveryRevision(f.run)).toBe(f.head);
+});
 it.each([
 	"published-head",
 	"local-head",

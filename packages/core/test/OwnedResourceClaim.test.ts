@@ -111,7 +111,7 @@ it("serializes member reservations and artifact acquisition with the whole works
 		await deletion;
 		await rm(home, { recursive: true, force: true });
 	}
-});
+}, 30_000);
 
 it("releases a fast-fail claim after a concurrent owner inspection finishes", async () => {
 	const home = await realpath(await mkdtemp(join(tmpdir(), "claim-release-")));

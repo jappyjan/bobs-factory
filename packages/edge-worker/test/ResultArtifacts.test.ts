@@ -56,7 +56,22 @@ function fixture(count = 3781) {
 			history: [],
 			humanDecisions: [],
 		},
-		step: { id: "guide", prompt: "Feature guide" },
+		step: {
+			id: "guide",
+			type: "agent",
+			prompt: "Feature guide",
+			configVersion: "step-config-v1",
+			output: { format: "guide-v1" },
+			checks: [
+				"requirement-coverage",
+				{ check: "code-refs-valid", adapter: "guide" },
+			],
+			reads: {
+				capture: "capture",
+				scope: "visual-scope",
+				qaReview: "visual-review",
+			},
+		},
 		stepKey: "pipeline/guide",
 		evidenceDir,
 		progress: {

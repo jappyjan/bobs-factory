@@ -1,0 +1,18 @@
+{
+  "accepted": true,
+  "inspectedFeedbackHead": "provider-A",
+  "currentFeedbackHead": "provider-B",
+  "output": {
+    "noticedHead": "provider-A",
+    "questions": [],
+    "addressedCommentIds": [],
+    "feedbackPolicies": [],
+    "feedbackAssessment": {
+      "headSha": "provider-B",
+      "baseSha": "base",
+      "instructionsSha256": "6e3abd658e5b1f19973fc6d39fe0e2e07ffe737c26f147190b4048e1e903edf8"
+    },
+    "assessedComments": []
+  },
+  "input": {}
+}

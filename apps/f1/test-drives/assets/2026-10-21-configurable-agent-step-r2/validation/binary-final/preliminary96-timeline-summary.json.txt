@@ -1,0 +1,1674 @@
+[
+  {
+    "pid": 4970,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 1
+      },
+      {
+        "event": "rss-result",
+        "ms": 3,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 4,
+        "bytes": 174
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 5
+      },
+      {
+        "event": "preload",
+        "ms": 29
+      },
+      {
+        "event": "rss-result",
+        "ms": 55,
+        "rss": "30944",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 108,
+        "rss": "67744",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 159,
+        "rss": "79712",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 212,
+        "rss": "93728",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 263,
+        "rss": "123536",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 296
+      },
+      {
+        "event": "stdin-next",
+        "ms": 297,
+        "bytes": 174,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 298,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 319,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 320,
+        "bytes": 31
+      },
+      {
+        "event": "rss-result",
+        "ms": 320,
+        "rss": "140000",
+        "error": null
+      },
+      {
+        "event": "self-exit",
+        "ms": 321,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 324,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 325,
+        "code": 0,
+        "signal": null
+      }
+    ]
+  },
+  {
+    "pid": 5000,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 1
+      },
+      {
+        "event": "rss-result",
+        "ms": 5,
+        "rss": "192",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 5,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 5
+      },
+      {
+        "event": "preload",
+        "ms": 35
+      },
+      {
+        "event": "rss-result",
+        "ms": 56,
+        "rss": "27952",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 107,
+        "rss": "63072",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 160,
+        "rss": "75424",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 212,
+        "rss": "86848",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 262,
+        "rss": "105520",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 314,
+        "rss": "132096",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 324
+      },
+      {
+        "event": "stdin-next",
+        "ms": 326,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 326,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 351,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 351,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 353,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 358,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 358,
+        "code": 0,
+        "signal": null
+      }
+    ]
+  },
+  {
+    "pid": 5037,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 3,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 4,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 4
+      },
+      {
+        "event": "preload",
+        "ms": 29
+      },
+      {
+        "event": "rss-result",
+        "ms": 55,
+        "rss": "29408",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 108,
+        "rss": "63856",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 162,
+        "rss": "75808",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 212,
+        "rss": "86976",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 267,
+        "rss": "117568",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 307
+      },
+      {
+        "event": "stdin-next",
+        "ms": 309,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 309,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "rss-result",
+        "ms": 314,
+        "rss": "136352",
+        "error": null
+      },
+      {
+        "event": "stdout-write",
+        "ms": 329,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 329,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 330,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 333,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 333,
+        "code": 0,
+        "signal": null
+      }
+    ]
+  },
+  {
+    "pid": 5087,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 3,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 3,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 4
+      },
+      {
+        "event": "preload",
+        "ms": 30
+      },
+      {
+        "event": "rss-result",
+        "ms": 57,
+        "rss": "29856",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 105,
+        "rss": "63888",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 159,
+        "rss": "76016",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 210,
+        "rss": "88128",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 262,
+        "rss": "111840",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 308
+      },
+      {
+        "event": "stdin-next",
+        "ms": 310,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 310,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "rss-result",
+        "ms": 315,
+        "rss": "135616",
+        "error": null
+      },
+      {
+        "event": "stdout-write",
+        "ms": 330,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 330,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 331,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 334,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 334,
+        "code": 0,
+        "signal": null
+      }
+    ]
+  },
+  {
+    "pid": 5133,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 3,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 3,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 3
+      },
+      {
+        "event": "preload",
+        "ms": 28
+      },
+      {
+        "event": "rss-result",
+        "ms": 55,
+        "rss": "30320",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 108,
+        "rss": "65152",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 160,
+        "rss": "77760",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 212,
+        "rss": "88992",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 265,
+        "rss": "111216",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 316,
+        "rss": "135856",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 321
+      },
+      {
+        "event": "stdin-next",
+        "ms": 323,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 324,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 345,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 345,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 347,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 350,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 350,
+        "code": 0,
+        "signal": null
+      }
+    ]
+  },
+  {
+    "pid": 5188,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 4,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 4,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 4
+      },
+      {
+        "event": "preload",
+        "ms": 31
+      },
+      {
+        "event": "rss-result",
+        "ms": 57,
+        "rss": "28832",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 108,
+        "rss": "62992",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 161,
+        "rss": "75552",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 213,
+        "rss": "84848",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 264,
+        "rss": "105056",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 314,
+        "rss": "131440",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 327
+      },
+      {
+        "event": "stdin-next",
+        "ms": 328,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 329,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 351,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 351,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 353,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 356,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 356,
+        "code": 0,
+        "signal": null
+      }
+    ]
+  },
+  {
+    "pid": 5219,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 5,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 5,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 5
+      },
+      {
+        "event": "preload",
+        "ms": 31
+      },
+      {
+        "event": "rss-result",
+        "ms": 56,
+        "rss": "29088",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 107,
+        "rss": "64880",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 159,
+        "rss": "78704",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 211,
+        "rss": "96256",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 264,
+        "rss": "127680",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 287
+      },
+      {
+        "event": "stdin-next",
+        "ms": 288,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 289,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 306,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 306,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 308,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 312,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 312,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 313,
+        "rss": "",
+        "error": null
+      }
+    ]
+  },
+  {
+    "pid": 5256,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 3,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 3,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 3
+      },
+      {
+        "event": "preload",
+        "ms": 30
+      },
+      {
+        "event": "rss-result",
+        "ms": 55,
+        "rss": "28912",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 107,
+        "rss": "64816",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 160,
+        "rss": "77984",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 212,
+        "rss": "91120",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 263,
+        "rss": "122576",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 296
+      },
+      {
+        "event": "stdin-next",
+        "ms": 297,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 298,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "rss-result",
+        "ms": 315,
+        "rss": "139360",
+        "error": null
+      },
+      {
+        "event": "stdout-write",
+        "ms": 316,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 317,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 318,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 322,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 322,
+        "code": 0,
+        "signal": null
+      }
+    ]
+  },
+  {
+    "pid": 5302,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 3,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 4,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 4
+      },
+      {
+        "event": "preload",
+        "ms": 29
+      },
+      {
+        "event": "rss-result",
+        "ms": 56,
+        "rss": "30112",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 107,
+        "rss": "65264",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 159,
+        "rss": "78688",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 212,
+        "rss": "94368",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 260,
+        "rss": "123040",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 286
+      },
+      {
+        "event": "stdin-next",
+        "ms": 288,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 288,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 302,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 303,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 304,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 308,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 308,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 308,
+        "rss": "",
+        "error": null
+      }
+    ]
+  },
+  {
+    "pid": 5345,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 3,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 3,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 3
+      },
+      {
+        "event": "preload",
+        "ms": 25
+      },
+      {
+        "event": "rss-result",
+        "ms": 56,
+        "rss": "38560",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 107,
+        "rss": "68848",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 158,
+        "rss": "83040",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 210,
+        "rss": "108192",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 265,
+        "rss": "132016",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 281
+      },
+      {
+        "event": "stdin-next",
+        "ms": 283,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 283,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 311,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 313,
+        "code": 0
+      },
+      {
+        "event": "child-stdout",
+        "ms": 314,
+        "bytes": 31
+      },
+      {
+        "event": "child-exit",
+        "ms": 318,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 319,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 320,
+        "rss": "",
+        "error": 1
+      }
+    ]
+  },
+  {
+    "pid": 5358,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 12,
+        "rss": "5632",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 12,
+        "bytes": 73
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 12
+      },
+      {
+        "event": "preload",
+        "ms": 40
+      },
+      {
+        "event": "rss-result",
+        "ms": 62,
+        "rss": "26288",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 113,
+        "rss": "49152",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 166,
+        "rss": "68416",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 225,
+        "rss": "77584",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 280,
+        "rss": "87200",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 332,
+        "rss": "98672",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 383,
+        "rss": "120032",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 439,
+        "rss": "135296",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 443
+      },
+      {
+        "event": "stdin-next",
+        "ms": 445,
+        "bytes": 73,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 446,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 479,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 480,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 482,
+        "code": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 487,
+        "rss": "0",
+        "error": null
+      },
+      {
+        "event": "child-exit",
+        "ms": 487,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 487,
+        "code": 0,
+        "signal": null
+      }
+    ]
+  },
+  {
+    "pid": 5415,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 5,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 6,
+        "bytes": 53818
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 6
+      },
+      {
+        "event": "preload",
+        "ms": 34
+      },
+      {
+        "event": "rss-result",
+        "ms": 59,
+        "rss": "28720",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 107,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 159,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 210,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 262,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 314,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 366,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 418,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 470,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 522,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 572,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 624,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 673,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 725,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 776,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 828,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 878,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 928,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 980,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1038,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1084,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1136,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1187,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1240,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1292,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1343,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1396,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1448,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1499,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1552,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1603,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1656,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1707,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1758,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1809,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1860,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1911,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 1963,
+        "rss": "47440",
+        "error": null
+      },
+      {
+        "event": "child-exit",
+        "ms": 2005,
+        "code": null,
+        "signal": "SIGKILL"
+      },
+      {
+        "event": "child-close",
+        "ms": 2005,
+        "code": null,
+        "signal": "SIGKILL"
+      }
+    ]
+  },
+  {
+    "pid": 6054,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 3,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 3,
+        "bytes": 53818
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 4
+      },
+      {
+        "event": "preload",
+        "ms": 29
+      },
+      {
+        "event": "rss-result",
+        "ms": 56,
+        "rss": "29840",
+        "error": null
+      },
+      {
+        "event": "child-exit",
+        "ms": 80,
+        "code": null,
+        "signal": "SIGKILL"
+      },
+      {
+        "event": "child-close",
+        "ms": 80,
+        "code": null,
+        "signal": "SIGKILL"
+      }
+    ]
+  },
+  {
+    "pid": 6121,
+    "timeline": [
+      {
+        "event": "spawn-return",
+        "ms": 0
+      },
+      {
+        "event": "spawn-event",
+        "ms": 0
+      },
+      {
+        "event": "rss-result",
+        "ms": 2,
+        "rss": "176",
+        "error": null
+      },
+      {
+        "event": "stdin-end-call",
+        "ms": 2,
+        "bytes": 46
+      },
+      {
+        "event": "stdin-finish",
+        "ms": 3
+      },
+      {
+        "event": "preload",
+        "ms": 29
+      },
+      {
+        "event": "rss-result",
+        "ms": 55,
+        "rss": "30400",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 107,
+        "rss": "65392",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 158,
+        "rss": "78368",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 210,
+        "rss": "94032",
+        "error": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 263,
+        "rss": "127344",
+        "error": null
+      },
+      {
+        "event": "stdin-iterator",
+        "ms": 284
+      },
+      {
+        "event": "stdin-next",
+        "ms": 286,
+        "bytes": 46,
+        "done": false
+      },
+      {
+        "event": "stdin-next",
+        "ms": 286,
+        "bytes": 0,
+        "done": true
+      },
+      {
+        "event": "stdout-write",
+        "ms": 306,
+        "bytes": 31
+      },
+      {
+        "event": "child-stdout",
+        "ms": 306,
+        "bytes": 31
+      },
+      {
+        "event": "self-exit",
+        "ms": 308,
+        "code": 0
+      },
+      {
+        "event": "child-exit",
+        "ms": 311,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "child-close",
+        "ms": 311,
+        "code": 0,
+        "signal": null
+      },
+      {
+        "event": "rss-result",
+        "ms": 311,
+        "rss": "",
+        "error": null
+      }
+    ]
+  }
+]

@@ -96,7 +96,7 @@ There are no old command aliases or implicit old-home fallback.
 
 ## Develop from a checkout
 
-For development of Bob’s Factory itself, prepare Git, Node 22+, pnpm 10.33.1 and
+For development of Bob’s Factory itself, prepare Git, Node 24 (24.18.0 is pinned), pnpm 10.33.1 and
 Bun 1.4.2:
 
 ```sh

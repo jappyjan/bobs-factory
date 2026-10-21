@@ -1,0 +1,10 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/f1
+
+{"storageRetentionCycles":[{"cycle":1,"snapshotBytes":143,"preparationBytes":120},{"cycle":2,"snapshotBytes":286,"preparationBytes":240},{"cycle":3,"snapshotBytes":286,"preparationBytes":360},{"cycle":4,"snapshotBytes":286,"preparationBytes":480},{"cycle":5,"snapshotBytes":286,"preparationBytes":600}],"maximumSimulatedWorkers":1}
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  20:41:44
+   Duration  52.57s (transform 2.00s, setup 0ms, import 3.79s, tests 48.57s, environment 0ms)
+

@@ -12,6 +12,7 @@ import {
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { UpdatePausedError } from "../src/updates/UpdatePausedError.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
+import { legacyExecutionContext } from "./fixtures/legacy-execution-context.js";
 import { providerReceipt } from "./fixtures/merge-readiness.js";
 
 const url = "https://github.com/test/repo/pull/1";
@@ -20,7 +21,7 @@ const command = (extra = {}) =>
 		JSON.stringify(githubApiReceipt(args, extra)),
 	);
 it("refuses a retargeted PR before coordinating checks or changing accepted tracking refs", async () => {
-	const context = {
+	const context = legacyExecutionContext({
 		run: {
 			repositoryId: "repo",
 			workspace: "/fixture",
@@ -32,7 +33,7 @@ it("refuses a retargeted PR before coordinating checks or changing accepted trac
 		},
 		signal: new AbortController().signal,
 		log: vi.fn(),
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const cmd = command({
 		baseRefName: "other-target",
 		baseRef: { name: "other-target", target: { oid: "base" } },
@@ -55,17 +56,17 @@ it("refuses a retargeted PR before coordinating checks or changing accepted trac
 });
 
 it("reports readiness progress once while retaining fresh complete polling receipts", async () => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: { outputs: {} },
 		log: vi.fn(),
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const snapshot = await inspectMergeReadiness(command(), url);
 	reportReadiness(ctx, snapshot);
 	const updated = structuredClone(snapshot);
 	updated.comments = [{ id: 1, body: "Changed informational metadata" }];
 	reportReadiness(ctx, updated);
 	expect(ctx.log).toHaveBeenCalledTimes(1);
-	expect(ctx.run.outputs["merge-readiness"]).toEqual(updated);
+	expect(ctx.run.mergeReadiness).toEqual(updated);
 	const progress = structuredClone(updated);
 	progress.checks.push({
 		name: "build",
@@ -136,7 +137,9 @@ it("keeps all pages of discussion and waits for reapproval after recorded assess
 	});
 	const snapshot = await inspectMergeReadiness(cmd, url);
 	snapshot.comments = [{ id: 1, body: "Please clarify this" }];
-	const context = { run: { history: [] } } as unknown as ExecutionContext;
+	const context = legacyExecutionContext({
+		run: { history: [] },
+	} as unknown as ExecutionContext);
 	assessFeedback(context, snapshot);
 	expect(snapshot.fix).toBe(true);
 	context.run.history = [
@@ -164,7 +167,7 @@ it.each([
 	"head",
 	"different-head",
 ])("confirms a completed merge without using a deleted worktree (provider head %s)", async (headRefOid) => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: {
 			workspace: "/deleted-worktree",
 			history: [],
@@ -175,7 +178,7 @@ it.each([
 		evidenceDir: "/retained-evidence",
 		signal: new AbortController().signal,
 		log: () => {},
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const cmd = vi.fn(
 		async (input: ExecutionContext, exe: string, args: string[]) => {
 			expect(exe).toBe(GITHUB_API_COMMAND);
@@ -201,7 +204,7 @@ it.each([
 });
 
 it("invalidates approval for a clean unpushed local commit", async () => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: {
 			history: [],
 			humanDecisions: [{ decision: "approve", headSha: "head" }],
@@ -210,7 +213,7 @@ it("invalidates approval for a clean unpushed local commit", async () => {
 		step: { tool: "merge" },
 		signal: new AbortController().signal,
 		log: () => {},
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const cmd = vi.fn(
 		async (_ctx: ExecutionContext, exe: string, args: string[]) =>
 			exe === "git"
@@ -238,7 +241,7 @@ it("invalidates approval for a clean unpushed local commit", async () => {
 	).toBe(false);
 });
 it("assesses new feedback during human review before any merge request", async () => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: {
 			history: [],
 			humanDecisions: [{ decision: "approve", headSha: "head" }],
@@ -247,7 +250,7 @@ it("assesses new feedback during human review before any merge request", async (
 		step: { tool: "merge" },
 		signal: new AbortController().signal,
 		log: () => {},
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const cmd = vi.fn(
 		async (_ctx: ExecutionContext, exe: string, args: string[]) =>
 			exe === "git"
@@ -277,9 +280,9 @@ it("assesses new feedback during human review before any merge request", async (
 
 it("ignores only recognized bot notices and re-assesses edited comment content", async () => {
 	const snapshot = await inspectMergeReadiness(command(), url);
-	const context = {
+	const context = legacyExecutionContext({
 		run: { history: [], outputs: { ci: snapshot } },
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const comment = {
 		id: "12",
 		body: "Fix the actual billing calculation",
@@ -336,11 +339,11 @@ it("retries transient readiness errors without a fixer and cancels waiting promp
 	try {
 		const cmd = command();
 		cmd.mockRejectedValueOnce(new Error("Command timed out: gh"));
-		const ctx = {
+		const ctx = legacyExecutionContext({
 			run: { outputs: { "draft-pr": { url } } },
 			signal: new AbortController().signal,
 			log: vi.fn(),
-		} as unknown as ExecutionContext;
+		} as unknown as ExecutionContext);
 		const pending = inspectReadinessWithRetry(ctx, cmd, url);
 		await vi.advanceTimersByTimeAsync(10000);
 		await expect(pending).resolves.toMatchObject({ reviewReady: true });
@@ -377,14 +380,14 @@ it("suspends a transport backoff before another provider request when maintenanc
 		const cmd = vi.fn(async () => {
 			throw new Error("HTTP 503");
 		});
-		const ctx = {
+		const ctx = legacyExecutionContext({
 			run: { outputs: {} },
 			signal: new AbortController().signal,
 			log: vi.fn(),
 			assertSchedulingOpen: () => {
 				if (frozen) throw new UpdatePausedError();
 			},
-		} as unknown as ExecutionContext;
+		} as unknown as ExecutionContext);
 		const polling = inspectReadinessWithRetry(ctx, cmd, url);
 		const suspended = expect(polling).rejects.toBeInstanceOf(UpdatePausedError);
 		await vi.advanceTimersByTimeAsync(1);
@@ -404,7 +407,7 @@ it.each([
 	["head", "base", true, true, true],
 	["head", "base", false, false, true],
 ])("routes CI assessments using actual revision provenance (%s,%s,%s,%s)", async (head, base, dirty, provenance, required) => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: {
 			step: "pipeline/after-ci-fix",
 			roleRevisions: provenance
@@ -419,7 +422,7 @@ it.each([
 		step: { tool: "review-after-fix" },
 		signal: new AbortController().signal,
 		log: vi.fn(),
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const cmd = async (_ctx: ExecutionContext, exe: string, args: string[]) =>
 		exe === "git"
 			? args[0] === "rev-parse"
@@ -445,7 +448,7 @@ it.each([
 	[false, false, "reviews", "fix"],
 	[false, false, "reviews", "human"],
 ])("requires review for substantive fixes rather than pending human approval (%s, %s, %s, %s)", async (flag, required, kind, action) => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: {
 			step: "pipeline/after-ci-fix",
 			roleRevisions: {
@@ -461,7 +464,7 @@ it.each([
 		step: { tool: "review-after-fix" },
 		signal: new AbortController().signal,
 		log: vi.fn(),
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const cmd = async (_ctx: ExecutionContext, exe: string, args: string[]) =>
 		exe === "git"
 			? args[0] === "rev-parse"
@@ -481,7 +484,7 @@ it.each([
 	"same-job",
 	"new-job",
 ])("parks an unchanged failed CI check only when no new execution occurred (%s)", async (link) => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: {
 			step: "pipeline/after-ci-fix",
 			history: [],
@@ -510,7 +513,7 @@ it.each([
 		step: { tool: "review-after-fix" },
 		signal: new AbortController().signal,
 		log: vi.fn(),
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const cmd = async (_ctx: ExecutionContext, exe: string, args: string[]) =>
 		exe === "git"
 			? args[0] === "rev-parse"
@@ -553,7 +556,7 @@ it.each([
 	false,
 	true,
 ])("parks repeated actionable feedback without revision progress (review=%s)", async (reviewRequired) => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: {
 			step: "pipeline/after-ci-fix",
 			history: [],
@@ -569,7 +572,7 @@ it.each([
 		step: { tool: "review-after-fix" },
 		signal: new AbortController().signal,
 		log: vi.fn(),
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const extra = {
 		headRefOid: "head",
 		baseRefOid: "base",
@@ -607,7 +610,7 @@ it.each([
 });
 
 it("allows a review of substantive rejection and resets repetition after new human direction", async () => {
-	const ctx = {
+	const ctx = legacyExecutionContext({
 		run: {
 			step: "pipeline/after-ci-fix",
 			history: [],
@@ -623,7 +626,7 @@ it("allows a review of substantive rejection and resets repetition after new hum
 		step: { tool: "review-after-fix" },
 		signal: new AbortController().signal,
 		log: vi.fn(),
-	} as unknown as ExecutionContext;
+	} as unknown as ExecutionContext);
 	const extra = {
 		headRefOid: "head",
 		baseRefOid: "base",

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import { deliveryRevisions } from "./RepositoryScope.js";
+import { outputForTool } from "./ToolBindings.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 const text = z.string().min(1);
@@ -662,10 +663,10 @@ export function validExternalSnapshot(delivery: DeliveryState): boolean {
 	});
 }
 export function repositoryCompletionProven(run: FactoryRun): boolean {
-	const merged = run.outputs.merge as
+	const merged = outputForTool(run, "merge") as
 		| { merged?: boolean; url?: string; headSha?: string }
 		| undefined;
-	const published = run.outputs["draft-pr"] as
+	const published = outputForTool(run, "draft-pr") as
 		| { url?: string; headSha?: string }
 		| undefined;
 	const decision = run.humanDecisions?.at(-1);

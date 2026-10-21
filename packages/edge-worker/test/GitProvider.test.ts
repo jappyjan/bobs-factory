@@ -1,12 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import { expect, it, vi } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { conservativeWorkflows } from "../src/factory/defaultWorkflows.js";
 import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { gitProvider, resolveGitProvider } from "../src/factory/GitProvider.js";
 import {
 	assessFeedback,
 	inspectMergeReadiness,
 } from "../src/factory/MergeReadiness.js";
+import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
 import { TakeoverSourceSchema } from "../src/factory/Takeover.js";
 import { originatingTicket } from "../src/factory/TicketTracking.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
@@ -35,13 +36,14 @@ const mr = {
 	},
 };
 function context(tool = "draft-pr"): ExecutionContext {
-	return {
+	const result: ExecutionContext = {
 		run: {
 			id: "run",
 			repositoryId: "repo",
 			title: "Change",
 			workspace: "/tmp",
-			workflow: defaultWorkflows[1]!,
+			workflow: conservativeWorkflows[1]!,
+			workflowDefinitions: conservativeWorkflows,
 			status: "running",
 			input: "Change",
 			createdAt: "",
@@ -65,6 +67,11 @@ function context(tool = "draft-pr"): ExecutionContext {
 		signal: new AbortController().signal,
 		log: vi.fn(),
 	};
+	registerWorkflowConfig(
+		{ id: "factory-pipeline", steps: [result.step] },
+		"factory",
+	);
+	return result;
 }
 function gitlab(
 	extra: Record<string, unknown> = {},

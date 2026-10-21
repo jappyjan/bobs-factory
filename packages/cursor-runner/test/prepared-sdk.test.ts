@@ -1,6 +1,13 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPreparedCursorAgent } from "../src/sdk.js";
 
@@ -129,5 +136,25 @@ describe("user-prepared Cursor SDK host", () => {
 		await expect(createPreparedCursorAgent(options())).rejects.toThrow(
 			"native session compatibility",
 		);
+	});
+	it.each([
+		"22.13.0",
+		"23.11.0",
+		"25.0.0",
+	])("rejects Node %s before loading the prepared SDK", async (version) => {
+		const preload = join(root, "unsupported-runtime.mjs");
+		writeFileSync(
+			preload,
+			`Object.defineProperty(process.versions, 'node', { value: ${JSON.stringify(version)} });`,
+		);
+		vi.stubEnv("NODE_OPTIONS", `--import=${pathToFileURL(preload).href}`);
+		writeFileSync(
+			join(root, "index.js"),
+			`require('node:fs').writeFileSync(${JSON.stringify(join(root, "sdk-loaded"))}, 'loaded'); throw new Error('SDK must not load');`,
+		);
+		await expect(createPreparedCursorAgent(options())).rejects.toThrow(
+			"Prepared Cursor SDK requires Node 24.x; configure BOBS_FACTORY_CURSOR_NODE",
+		);
+		expect(existsSync(join(root, "sdk-loaded"))).toBe(false);
 	});
 });

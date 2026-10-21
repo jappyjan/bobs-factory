@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
+import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import {
 	createReviewSnapshot,
 	finalizeGuideFiles,
@@ -20,6 +21,7 @@ import {
 	readReviewPatch,
 	resolveGuideSnapshot,
 } from "../src/factory/ReviewFiles.js";
+import { validateWorkflows } from "../src/factory/Workflow.js";
 import {
 	type ExecutionContext,
 	WorkflowRuntime,
@@ -73,6 +75,188 @@ function fixture() {
 		evidence: join(home, "evidence"),
 	};
 }
+it.each([
+	"root",
+	"sibling",
+])("rejects a %s generic guide output impersonating an unexecuted called guide", async (location) => {
+	const f = fixture();
+	const ref = await createReviewSnapshot(
+		f.evidence,
+		"run",
+		f.repo,
+		f.baseSha,
+		f.headSha,
+	);
+	const guide = { summary: "Unrelated data", reviewFiles: ref };
+	const ordinary = {
+		id: "document",
+		name: "Ordinary data",
+		type: "agent",
+		prompt: "Return data",
+		checks: [],
+		next: "end",
+	};
+	const call = (id: string, workflow: string) => ({
+		id,
+		name: id,
+		type: "workflow",
+		workflow,
+		next: "end",
+	});
+	const definitions = validateWorkflows([
+		...defaultWorkflows,
+		{
+			id: "guide-owner",
+			name: "Owner",
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				location === "root" ? ordinary : call("observe", "guide-observer"),
+				call("publish", "guide-child"),
+			],
+		},
+		{
+			id: "guide-observer",
+			name: "Observer",
+			allowedTriggers: ["workflow"],
+			stepConfigVersion: "step-config-v1",
+			steps: [ordinary],
+		},
+		{
+			id: "guide-child",
+			name: "Child",
+			allowedTriggers: ["workflow"],
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					...ordinary,
+					output: { format: "guide-v1" },
+					checks: ["requirement-coverage"],
+				},
+			],
+		},
+	]);
+	const runtime = new WorkflowRuntime(f.home, {
+		agent: async () => structuredClone(guide),
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	runtime.updateWorkflows(definitions);
+	const run = runtime.create({
+		id: "run",
+		repositoryId: "repo",
+		workspace: f.repo,
+		input: "",
+		workflow: definitions.find((w) => w.id === "guide-owner")!,
+		workflowDefinitions: definitions,
+		triggerOrigin: { type: "manual", workflowId: "guide-owner" },
+	});
+	try {
+		await runtime.launch(run);
+		expect(run.status, run.error).toBe("completed");
+		expect(run.history.map((h) => h.step)).not.toContain("publish/document");
+		await expect(
+			resolveGuideSnapshot(run, f.evidence, guideDigest(guide)),
+		).rejects.toThrow("Guide changed");
+	} finally {
+		await runtime.shutdown();
+	}
+});
+
+it("does not reconstruct a historical guide from a sibling frame's CI and handoff", async () => {
+	const f = fixture();
+	const definitions = validateWorkflows([
+		...defaultWorkflows,
+		{
+			id: "guide-owner",
+			name: "Owner",
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					id: "owner",
+					name: "Owner",
+					type: "workflow",
+					workflow: "guide-child",
+					next: "sibling",
+				},
+				{
+					id: "sibling",
+					name: "Sibling",
+					type: "workflow",
+					workflow: "guide-child",
+				},
+			],
+		},
+		{
+			id: "guide-child",
+			name: "Child",
+			allowedTriggers: ["workflow"],
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					id: "verify",
+					name: "CI",
+					type: "tool",
+					tool: "ci",
+					next: "document",
+				},
+				{
+					id: "document",
+					name: "Guide",
+					type: "agent",
+					prompt: "Write guide",
+					output: { format: "guide-v1" },
+					checks: ["requirement-coverage"],
+					reads: { ci: "verify" },
+					next: "complete",
+				},
+				{
+					id: "complete",
+					name: "Handoff",
+					type: "tool",
+					tool: "handoff",
+					reads: { guide: "document" },
+				},
+			],
+		},
+	]);
+	const runtime = new WorkflowRuntime(f.home, {
+		agent: async () => ({}),
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	runtime.updateWorkflows(definitions);
+	const run = runtime.create({
+		id: "run",
+		repositoryId: "repo",
+		workspace: f.repo,
+		input: "",
+		workflow: definitions.find((w) => w.id === "guide-owner")!,
+		workflowDefinitions: definitions,
+		triggerOrigin: { type: "manual", workflowId: "guide-owner" },
+	});
+	const guide = { summary: "Historical guide" };
+	run.history = [
+		{
+			step: "sibling/verify",
+			at: "1",
+			output: { baseSha: f.baseSha, headSha: f.headSha },
+		},
+		{ step: "owner/document", at: "2", output: guide },
+		{ step: "sibling/complete", at: "3", output: { headSha: f.headSha } },
+	];
+	try {
+		await expect(
+			resolveGuideSnapshot(run, f.evidence, guideDigest(guide)),
+		).rejects.toThrow("Exact historical");
+		run.history[0]!.step = "owner/verify";
+		run.history[2]!.step = "owner/complete";
+		expect(
+			await resolveGuideSnapshot(run, f.evidence, guideDigest(guide)),
+		).toMatchObject({ baseSha: f.baseSha, headSha: f.headSha });
+	} finally {
+		await runtime.shutdown();
+	}
+});
 it("captures complete immutable files, statistics, renames, binary, mode and bounded patches across branch advancement and restart", async () => {
 	const f = fixture(),
 		ref = await createReviewSnapshot(
@@ -266,8 +450,15 @@ it("authorizes API requests against retained guide identity and never substitute
 			f.baseSha,
 			f.headSha,
 		);
-	run.outputs.guide = { summary: "guide", reviewFiles: ref };
-	const hash = guideDigest(run.outputs.guide);
+	run.outputs["pipeline/guide"] = { summary: "guide", reviewFiles: ref };
+	run.history = [
+		{
+			step: "pipeline/guide",
+			at: "now",
+			output: run.outputs["pipeline/guide"],
+		},
+	];
+	const hash = guideDigest(run.outputs["pipeline/guide"]);
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],
@@ -307,21 +498,40 @@ it("authorizes API requests against retained guide identity and never substitute
 				})
 			).statusCode,
 		).toBe(403);
-		run.outputs.guide = { summary: "legacy" };
+		run.outputs["pipeline/guide"] = { summary: "legacy" };
+		run.history = [
+			{
+				step: "pipeline/guide",
+				at: "now",
+				output: run.outputs["pipeline/guide"],
+			},
+		];
 		await expect(
-			resolveGuideSnapshot(run, evidence, guideDigest(run.outputs.guide)),
-		).rejects.toThrow("Historical guide revision");
+			resolveGuideSnapshot(
+				run,
+				evidence,
+				guideDigest(run.outputs["pipeline/guide"]),
+			),
+		).rejects.toThrow("Exact historical");
 		run.history = [
 			{
 				step: "pipeline/ci",
 				at: "1",
 				output: { baseSha: f.baseSha, headSha: f.headSha },
 			},
-			{ step: "pipeline/guide", at: "2", output: run.outputs.guide },
+			{
+				step: "pipeline/guide",
+				at: "2",
+				output: run.outputs["pipeline/guide"],
+			},
 			{ step: "pipeline/handoff", at: "3", output: { headSha: f.headSha } },
 		];
 		expect(
-			await resolveGuideSnapshot(run, evidence, guideDigest(run.outputs.guide)),
+			await resolveGuideSnapshot(
+				run,
+				evidence,
+				guideDigest(run.outputs["pipeline/guide"]),
+			),
 		).toEqual(ref);
 		await expect(
 			resolveGuideSnapshot(
@@ -329,19 +539,23 @@ it("authorizes API requests against retained guide identity and never substitute
 				evidence,
 				guideDigest({ summary: "other" }),
 			),
-		).rejects.toThrow("Historical");
+		).rejects.toThrow("Guide changed");
 		// A reconstructed reference survives removal of the old worktree.
 		expect(
 			await resolveGuideSnapshot(
 				{ ...run, workspace: "/does-not-exist" },
 				evidence,
-				guideDigest(run.outputs.guide),
+				guideDigest(run.outputs["pipeline/guide"]),
 			),
 		).toEqual(ref);
 		rmSync(join(evidence, "historical-guides"), { recursive: true });
 		run.history[0]!.output = { baseSha: f.baseSha, headSha: "1".repeat(40) };
 		await expect(
-			resolveGuideSnapshot(run, evidence, guideDigest(run.outputs.guide)),
+			resolveGuideSnapshot(
+				run,
+				evidence,
+				guideDigest(run.outputs["pipeline/guide"]),
+			),
 		).rejects.toThrow("Exact historical");
 	} finally {
 		await server.app.close();

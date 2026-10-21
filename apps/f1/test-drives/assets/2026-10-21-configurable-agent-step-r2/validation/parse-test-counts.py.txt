@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Derive complete-gate test counts from actual terminal summaries, never subsets."""
+import argparse, hashlib, json, pathlib, re
+ROOT = pathlib.Path('/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery')
+SOURCE = '7106f734ca6fc4066448e2766495f5bacb4fa0d9'
+NAMES = {'typecheck', 'lint', 'packages', 'apps-vitest', 'desktop', 'scripts', 'audit', 'workflow-lint'}
+ANSI = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def counts(text):
+    pairs = re.findall(r'(\d+)\s+(passed|failed|skipped|todo)', text)
+    assert pairs, 'No terminal count terms: ' + text
+    result = {label: 0 for label in ['passed', 'failed', 'skipped', 'todo']}
+    for number, label in pairs:
+        result[label] += int(number)
+    total = re.search(r'\((\d+)\)\s*$', text)
+    assert total and sum(result.values()) == int(total.group(1)), 'Summary total mismatch: ' + text
+    result['total'] = int(total.group(1))
+    return result
+
+
+def vitest_rows(path, kind):
+    rows = {}
+    current = None
+    for original in path.read_text().splitlines():
+        line = ANSI.sub('', original)
+        if kind == 'packages':
+            matched = re.match(r'^(packages/[^ ]+) test:run:\s*(.*)$', line)
+            if not matched:
+                continue
+            workspace, body = matched.groups()
+        else:
+            run = re.match(r'^\s*RUN\s+v\S+\s+(.+)$', line)
+            if run:
+                absolute = pathlib.Path(run.group(1).strip())
+                current = absolute.relative_to(ROOT).as_posix()
+            workspace, body = current, line.strip()
+            if workspace is None:
+                continue
+        summary = re.match(r'^\s*(Test Files|Tests)\s+(.*)$', body)
+        if not summary:
+            continue
+        field = 'files' if summary.group(1) == 'Test Files' else 'tests'
+        row = rows.setdefault(workspace, {'workspace': workspace, 'rawTerminalLines': []})
+        assert field not in row, f'Duplicate terminal summary: {workspace}/{field}'
+        row[field] = counts(summary.group(2))
+        row['rawTerminalLines'].append(original)
+    for row in rows.values():
+        assert 'files' in row and 'tests' in row, 'Incomplete Vitest summary: ' + row['workspace']
+        assert row['files']['failed'] == row['tests']['failed'] == 0, 'Failed terminal cases'
+    return rows
+
+
+def node_row(path, name):
+    lines = [ANSI.sub('', line) for line in path.read_text().splitlines()]
+    starts = [i for i, line in enumerate(lines) if re.match(r'^ℹ tests \d+\s*$', line)]
+    assert starts, 'No final Node test summary: ' + str(path)
+    start = starts[-1]
+    summary = {}
+    raw = []
+    for line in lines[start:start+10]:
+        item = re.match(r'^ℹ (tests|suites|pass|fail|cancelled|skipped|todo) (\d+)\s*$', line)
+        if item:
+            summary[item.group(1)] = int(item.group(2)); raw.append(line)
+    assert set(summary) == {'tests', 'suites', 'pass', 'fail', 'cancelled', 'skipped', 'todo'}, 'Incomplete final Node summary'
+    assert summary['tests'] == sum(summary[key] for key in ['pass', 'fail', 'cancelled', 'skipped', 'todo'])
+    assert summary['fail'] == summary['cancelled'] == 0
+    return {'workspace': name, 'tests': {'passed': summary['pass'], 'failed': summary['fail'], 'cancelled': summary['cancelled'], 'skipped': summary['skipped'], 'todo': summary['todo'], 'total': summary['tests']}, 'nodeSuites': summary['suites'], 'rawTerminalLines': raw}
+
+
+def totals(rows):
+    return {key: sum(row['tests'].get(key, 0) for row in rows) for key in ['passed', 'failed', 'cancelled', 'skipped', 'todo', 'total']}
+
+
+def derive(directory):
+    packages = vitest_rows(directory/'final-packages.log', 'packages')
+    expected = {p.parent.relative_to(ROOT).as_posix() for p in (ROOT/'packages').glob('*/package.json') if 'test:run' in json.loads(p.read_text()).get('scripts', {})}
+    assert set(packages) == expected, 'Missing/extra package summaries: ' + str(sorted(set(packages) ^ expected))
+    apps = vitest_rows(directory/'final-apps-vitest.log', 'apps')
+    assert set(apps) == {'apps/cli', 'apps/f1'}, 'Both complete app terminal summaries required'
+    desktop = node_row(directory/'final-desktop.log', 'apps/desktop')
+    scripts = node_row(directory/'final-scripts.log', 'scripts/tests')
+    rows = list(packages.values()) + list(apps.values()) + [desktop, scripts]
+    return {'packages': packages, 'apps': apps, 'desktop': desktop, 'scripts': scripts, 'packageAggregate': totals(list(packages.values())), 'appAggregate': totals(list(apps.values())), 'aggregate': totals(rows)}
+
+
+def markdown(record):
+    lines = ['### Complete-command test counts', '', 'Derived from terminal summary lines in the complete final logs; no focused/manual F1/binary run is added to this total. Skipped/todo cases remain separate from passing cases.', '', '| Workspace / suite | Vitest files | Passed | Skipped | Todo | Total cases |', '| --- | --- | --- | --- | --- | --- |']
+    rows = list(record['packages'].values()) + list(record['apps'].values()) + [record['desktop'], record['scripts']]
+    for row in rows:
+        tests = row['tests']; files = str(row['files']['total']) if 'files' in row else '—'
+        lines.append(f'| `{row["workspace"]}` | {files} | {tests["passed"]} | {tests["skipped"]} | {tests["todo"]} | {tests["total"]} |')
+    result = record['aggregate']
+    lines += [f'| **All complete commands** | — | **{result["passed"]}** | **{result["skipped"]}** | **{result["todo"]}** | **{result["total"]}** |', '', f'Failures: {result["failed"]}; cancelled: {result["cancelled"]}. Package-only and app-only aggregates, raw terminal lines and source log hashes are retained in [test-counts.json.txt](test-counts.json.txt).', '']
+    return '\n'.join(lines)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--gates', required=True, type=pathlib.Path)
+    parser.add_argument('--out', required=True, type=pathlib.Path)
+    parser.add_argument('--markdown', required=True, type=pathlib.Path)
+    args = parser.parse_args()
+    assert all(not path.resolve().is_relative_to(ROOT.resolve()) for path in [args.out, args.markdown]), 'Outputs must stay outside checkout'
+    gates = json.loads(args.gates.read_text())
+    assert gates['identity']['source'] == SOURCE
+    assert len(gates['checks']) == 8 and {item['name'] for item in gates['checks']} == NAMES and all(item['exitCode'] == 0 for item in gates['checks']), 'Wait for all eight complete exits0'
+    directory = args.gates.parent
+    for check in gates['checks']:
+        assert json.loads((directory/f'final-{check["name"]}.log').read_text().splitlines()[-1])['exitCode'] == 0
+    result = {'source': SOURCE, 'scope': 'Terminal summaries of complete final gate commands only; manual F1/binary and focused repeats excluded.', 'gatesSha256': sha(args.gates), 'logs': {name: sha(directory/name) for name in ['final-packages.log', 'final-apps-vitest.log', 'final-desktop.log', 'final-scripts.log']}, **derive(directory)}
+    args.out.write_text(json.dumps(result, indent=2)+'\n'); args.markdown.write_text(markdown(result))
+    print(json.dumps({'source': SOURCE, 'packages': len(result['packages']), 'apps': len(result['apps']), 'aggregate': result['aggregate']}, indent=2))
+
+
+if __name__ == '__main__':
+    main()

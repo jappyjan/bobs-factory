@@ -1,0 +1,11 @@
+{
+  "source": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+  "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72",
+  "lockedPackages": 892,
+  "installedIdentities": 950,
+  "identicalToAcceptedCleanup": true,
+  "lockedIdentical": true,
+  "installedIdentical": true,
+  "fullInstalledPnpmGraphIdenticalTo50e": true,
+  "comparison": "Entire parsed recursive pnpm list, including dependency edges, paths, identities and workspace metadata, equals retained 50e graph; lockfile bytes unchanged."
+}
