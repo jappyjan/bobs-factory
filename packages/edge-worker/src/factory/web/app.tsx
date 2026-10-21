@@ -946,10 +946,10 @@ function RunPage({
 			<ExecutionDetails run={run} />
 			{run.improvement && <ImprovementPanel run={run} />}
 			{run.improvementParent && (
-				<p>
-					Improvement batch:{" "}
+				<p className="imp-parent">
+					<span aria-hidden="true">🌱</span> Part of an improvement batch ·{" "}
 					<Link to={`/runs/${run.improvementParent.runId}`}>
-						View parent proposal and progress
+						See the whole batch →
 					</Link>
 				</p>
 			)}
@@ -987,7 +987,7 @@ function RunPage({
 						"Saved updates are being delivered in the background."}
 				</p>
 			)}
-			{kind && !reason && (
+			{kind && !reason && !(kind === "question" && run.improvement) && (
 				<FocusCard
 					summary={run}
 					config={config}

@@ -37,6 +37,12 @@ Focused regression coverage additionally verifies sixteen workers with two assig
 
 [Desktop proposal](media/2026-10-20-improve-codebase/proposal-desktop.png) · [Mobile proposal](media/2026-10-20-improve-codebase/proposal-mobile.png)
 
+### Dashboard redesign
+
+The review surface was redesigned after the drives above. `media/2026-10-20-improve-codebase/design-preview.ts` starts a mocked instance (default port 3700) with five varied opportunities, one prerequisite, one alternative pair, a first plan check that requests corrections, and two issue destinations; set `BOBS_FACTORY_IMPROVE_WORKER_DELAY_MS` to watch research progress. It was driven through every phase in the collaborative browser: research, per-item choices, inline prerequisite/alternative/destination problems, Ask Bob follow-up and a second proposal version, rejected plan checks, revision, ready batch with parallel waves, launch, child tracking and filed issue. Desktop light/dark and 390px mobile had no horizontal overflow. The mocked runner answers the follow-up with the same proposal, so it shows the flow, not the quality of the research.
+
+[Research](media/2026-10-20-improve-codebase/redesign-research.png) · [Choices](media/2026-10-20-improve-codebase/redesign-choices.png) · [Ask Bob](media/2026-10-20-improve-codebase/redesign-ask-bob.png) · [Plan feedback](media/2026-10-20-improve-codebase/redesign-plan-feedback.png) · [Ready, dark](media/2026-10-20-improve-codebase/redesign-ready-dark.png) · [Tracking](media/2026-10-20-improve-codebase/redesign-tracking.png) · [Mobile](media/2026-10-20-improve-codebase/redesign-mobile.png) · [Today](media/2026-10-20-improve-codebase/redesign-today.png)
+
 ## Limits
 
 Evidence proves orchestration, HTTP guards, persistence, projections and mocked runner lifecycle. It does not establish live model research quality, provider pricing/availability, live Linear/Taskbot creation or a real merged PR. Dependency delivery uses scripted exact-revision receipts in targeted tests. Operational collection initially supports retained repository-matched Bob histories and tracked evidence; arbitrary live log/database connectors are not part of this implementation. Research budgets bound work/time, not billed currency. Existing workflows and native credential stores retain their normal behavior.
