@@ -92,6 +92,7 @@ export type {
 	IActivitySink,
 } from "./sinks/index.js";
 export { LinearActivitySink } from "./sinks/index.js";
+export { StorageRetention } from "./storage/StorageRetention.js";
 export type { PromptType } from "./ToolPermissionResolver.js";
 export { ToolPermissionResolver } from "./ToolPermissionResolver.js";
 export type { EdgeWorkerEvents } from "./types.js";

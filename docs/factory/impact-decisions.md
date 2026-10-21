@@ -22,7 +22,9 @@ true. Other output contracts cannot share this role.
 
 The fanout, its aggregate gate and consuming tools declare the same
 `impactSource`. Correction branches return to that assessment. Check execution
-uses the `impact-checks` tool. Gate names and specialist identities are configurable;
+uses the `impact-checks` tool. Each selected command has the standard twenty-minute
+execution limit and remains cancellable; full workspace regressions can exceed two
+minutes. Gate names and specialist identities are configurable;
 review associations survive called workflows and restart. Coverage-required groups
 still have exactly one `coverage-v1` supplier.
 

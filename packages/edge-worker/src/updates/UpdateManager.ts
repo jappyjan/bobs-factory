@@ -13,7 +13,11 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { factoryRuntimeIdentity } from "bobs-factory-core";
+import {
+	factoryRuntimeIdentity,
+	publishStorageJson,
+	StorageRetentionStore,
+} from "bobs-factory-core";
 import { z } from "zod";
 import { compareReleaseVersions } from "../../../../scripts/lib/binary-release.mjs";
 import { UpdateOperationLock } from "./UpdateOperationLock.js";
@@ -113,6 +117,7 @@ const TransactionSchema = z
 				message: "Maintenance release must belong to its transaction",
 			});
 	});
+export const UpdateTransactionSchema = TransactionSchema;
 export type UpdateTransaction = z.infer<typeof TransactionSchema>;
 const StateSchema = z.object({
 	schemaVersion: z.literal(1),
@@ -134,6 +139,7 @@ const StateSchema = z.object({
 	lastCheckedAt: z.string().optional(),
 	error: z.string().optional(),
 });
+export const UpdateStateSchema = StateSchema;
 export type UpdateState = z.infer<typeof StateSchema>;
 export interface UpdateSource {
 	discover(
@@ -601,6 +607,20 @@ export class UpdateManager {
 				state.transaction.phase = state.transaction.release!.outcome;
 				state.transaction.release!.status = "acknowledged";
 			});
+			const retention = new StorageRetentionStore(this.home);
+			const count = await retention.inventoryCount();
+			for (let offset = 0; offset < count; offset += 100) {
+				for (const id of await retention.inventoryPage(offset)) {
+					const artifact = await retention.record(id);
+					if (
+						artifact.operation === transactionId &&
+						artifact.category === "snapshot"
+					)
+						await retention.revise(id, (record) => {
+							record.reconciledAt = new Date().toISOString();
+						});
+				}
+			}
 		} catch (error) {
 			this.phase("recovery-required", {
 				error: `Maintenance release failed: ${(error as Error).message}`,
@@ -627,6 +647,12 @@ export class UpdateManager {
 				throw new Error(
 					"Stage and verify the selected update before activation.",
 				);
+			if (state.transaction) {
+				await publishStorageJson(
+					join(this.directory, "history", `${state.transaction.id}.json`),
+					state.transaction,
+				);
+			}
 			const transaction: UpdateTransaction = {
 				id: randomUUID(),
 				candidate: pending.candidate,

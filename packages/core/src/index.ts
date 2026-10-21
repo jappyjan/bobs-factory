@@ -338,6 +338,7 @@ export {
 	presentLinearPublication,
 	publicFailure,
 } from "./LinearPublication.js";
+export * from "./OwnedResourceClaim.js";
 export { ProjectArtifactLease } from "./ProjectArtifactLease.js";
 export { preparedExecutable } from "./prepared-executable.js";
 export {
@@ -349,3 +350,5 @@ export {
 	factoryRuntimeIdentity,
 	type RuntimeIdentity,
 } from "./runtime-identity.js";
+export * from "./StorageIntegrity.js";
+export * from "./StorageRetention.js";

@@ -7,11 +7,17 @@ import { AgentSettings } from "./forms";
 import { NotificationsSettings } from "./notifications-ui";
 import { SetupLoader } from "./onboarding";
 import { revisionOf } from "./restoration";
+import { StorageSettings } from "./storage";
 import { TicketManagerSettings } from "./ticket-managers";
 import { Button, useToast } from "./ui";
 import { UpdateSettings } from "./updates";
 
 const pages = [
+	{
+		id: "storage",
+		name: "Storage",
+		description: "Retention policy, previews and cleanup outcomes",
+	},
 	{
 		id: "tickets",
 		name: "Ticket managers",
@@ -110,6 +116,7 @@ export function Settings() {
 					{page === "notifications" && <NotificationsSettings />}
 					{page === "access" && <AccessSettings />}
 					{page === "updates" && <UpdateSettings />}
+					{page === "storage" && <StorageSettings />}
 					{page === "capacity" && <MachineCapacitySettings />}
 					{page === "titles" && <RunTitleSettings config={config} />}
 				</div>

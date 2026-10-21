@@ -191,8 +191,26 @@ export class DesktopAppSource {
 			throw Error("Invalid app delivery receipt");
 		validateElectronLicenses(metadata.electronLicenses);
 		mkdirSync(this.directory, { recursive: true, mode: 0o700 });
-		const work = mkdtempSync(join(this.directory, "stage-")),
-			bytes = await download(item.updateArchive ?? item.archive);
+		const staging = join(this.directory, "staging");
+		mkdirSync(staging, { recursive: true, mode: 0o700 });
+		const work = mkdtempSync(join(staging, "stage-"));
+		// Older retained helper bundles lack retention services; their artifacts
+		// remain unclassified rather than acquiring inferred deletion authority.
+		const retention = this.services.StorageRetentionStore
+			? new this.services.StorageRetentionStore(
+					dirname(dirname(this.directory)),
+				)
+			: undefined;
+		const owned = await retention?.register({
+			category: "staging",
+			path: work,
+			root: staging,
+			producer: "DesktopAppSource",
+			operation: candidate.manifestSha256,
+			dependencies: [],
+			evidence: [],
+		});
+		const bytes = await download(item.updateArchive ?? item.archive);
 		let path;
 		if (this.target.startsWith("darwin")) {
 			if (
@@ -236,6 +254,19 @@ export class DesktopAppSource {
 			}),
 			{ mode: 0o600, flush: true },
 		);
+		if (owned) {
+			const integrity = await this.services.writeStorageIntegrity(
+				work,
+				join(retention.directory, "proofs", `${owned.id}.ndjson`),
+			);
+			await retention.revise(owned.id, (record) => {
+				record.evidence = [`integrity:${integrity}`, candidate.manifestSha256];
+				record.completedAt =
+					record.verifiedAt =
+					record.reconciledAt =
+						new Date().toISOString();
+			});
+		}
 		return { candidate, executable: path, previousExecutable: this.install };
 	}
 	async enroll(identity) {
