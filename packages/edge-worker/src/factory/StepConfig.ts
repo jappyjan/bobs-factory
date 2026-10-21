@@ -1283,7 +1283,8 @@ export function legacyToolOutputKey(
 	);
 	const seen = new Set<string>();
 	const old = (workflow: NonNullable<typeof run.workflow>): boolean => {
-		if (workflow.stepConfigVersion) return false;
+		if (workflow.stepConfigVersion || !Array.isArray(workflow.steps))
+			return false;
 		if (seen.has(workflow.id)) return true;
 		seen.add(workflow.id);
 		const steps = (values: object[]): boolean =>

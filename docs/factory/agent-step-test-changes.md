@@ -243,3 +243,20 @@ Node 24-only engine/setup/CI, trial and prepared-Cursor changes follow the user'
 explicit support decision. Negative tests reject unsupported major versions before
 launcher side effects or SDK loading; existing installation/native-session/security
 assertions remain. This does not change old recipe compatibility.
+
+The Node 24 CI job at source `50e02029` exposed two additional production adapter
+errors, reproduced by unchanged tests: 47 native capture/recovery cases and one
+Incremental case reached legacy graph inspection with an incomplete workflow;
+the adapter now fails closed when `steps` is absent, granting no old raw authority.
+The existing cold-history runtime case also caught a scan despite there being no
+accepted matching producer; an empty-producer lookup now returns without loading
+history. Neither native nor Incremental nor cold-history assertions were changed.
+A new provenance case verifies that an incomplete graph cannot authorize raw
+source/ticket/repository data while verified host context remains usable.
+
+The real grouped storage startup case reached the former 30-second outer test
+limit during the complete app gate, while its original reference/provider and
+cleanup work was still active; the remaining seven cases passed. Its route table
+now allows 60 seconds for the disk/Git integration scenario. Runtime claim, command
+and deletion deadlines and every outcome assertion remain unchanged. The existing
+finally cleanup still closes the coordinator/runtime before fixture deletion.

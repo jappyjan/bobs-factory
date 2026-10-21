@@ -40,7 +40,8 @@ verified before extraction into a content-addressed private resource directory.
 The installed Factory executable and its internal helpers require no separate
 Node, npm, pnpm or Bun installation. Git and prepared coding agents remain external
 prerequisites; their executables, SDKs, native sidecars and credentials are not all
-bundled.
+bundled. [Video evidence validation](../FACTORY.md#authentic-demonstration-videos) also requires
+local `ffprobe` and `ffmpeg`.
 
 Source development, builds, tests and the optional trial npm launcher support
 **Node 24 only**. `.node-version`, CI and frozen release tooling pin 24.18.0; the
@@ -99,10 +100,8 @@ Ubuntu kernel/image variants or other Linux distributions. Historical native
 acceptance is documented in [the final report](FINAL_NATIVE_116.md). Its prior paid-signing
 gates are superseded by the current [unsigned release contract](PUBLIC_RELEASES.md); musl and
 Windows are not claimed.
-Official packaging references: [Bun executables](https://bun.sh/docs/bundler/executables)
-and [Node SEA fallback](https://nodejs.org/api/single-executable-applications.html).
-Bun reached actual worker startup; resources/helpers require the explicit boundary
-implemented here. Node SEA has not been selected or validated as a fallback.
+The build uses [Bun executables](https://bun.sh/docs/bundler/executables), with
+resources and helpers embedded through the explicit boundary implemented here.
 
 ## Attribution and rebuilding
 

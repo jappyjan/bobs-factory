@@ -293,6 +293,7 @@ function outputForKeys(
 	run: ExecutionContext["run"],
 	keys: Set<string>,
 ): unknown {
+	if (!keys.size) return undefined;
 	for (let index = (run.history ?? []).length - 1; index >= 0; index--) {
 		const entry = run.history[index]!;
 		if (keys.has(entry.step)) return entry.output;

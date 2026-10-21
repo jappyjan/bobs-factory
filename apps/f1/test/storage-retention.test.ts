@@ -784,7 +784,7 @@ it.each([
 		await retention.stop();
 		await runtime.shutdown();
 	}
-}, 30_000);
+}, 60_000);
 
 it("keeps update retention bounded through five preflight/update/restart cycles without changing saved-state sentinels", async () => {
 	const { UpdateManager, candidateKey } = await import(

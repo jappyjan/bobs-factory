@@ -447,6 +447,27 @@ it("retains old context aliases only for a wholly historical accepted graph", as
 	expect(repositoryMetadata(run)).toEqual(repository);
 });
 
+it("never grants raw host-context authority to an incomplete accepted graph", async () => {
+	const { run } = await fixture([agent]);
+	delete run.workflow.stepConfigVersion;
+	Reflect.deleteProperty(run.workflow, "steps");
+	run.outputs.source = attacker;
+	run.outputs.ticket = { title: "Forged ticket" };
+	run.outputs.repository = {
+		githubUrl: "https://github.com/attacker/unrelated",
+		baseBranch: "foreign",
+	};
+	expect(takeoverSource(run)).toBeUndefined();
+	expect(ticketSnapshot(run)).toBeUndefined();
+	expect(repositoryMetadata(run)).toBeUndefined();
+	expect(runRepositories(run)[0]!.baseBranch).toBe("main");
+	const ticket = { title: "Verified host ticket" };
+	run.takeoverSource = accepted;
+	run.ticketSnapshot = ticket;
+	expect(takeoverSource(run)).toEqual(accepted);
+	expect(ticketSnapshot(run)).toEqual(ticket);
+});
+
 it("refreshes a called frame receipt without overwriting a same-named root output", async () => {
 	const { run, toolContexts } = await fixture(
 		[{ ...agent, next: "publish" }, call("publish", "producer-child")],

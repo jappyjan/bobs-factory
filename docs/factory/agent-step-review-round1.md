@@ -24,6 +24,8 @@ Final combined-state checks also exercised main's new storage-retention integrat
 
 The first local lint failure was formatting of newly generated raw evidence JSON, not production code. Raw records use `.json.txt` to preserve their bytes. Before-fix gate output is retained separately from the final passing output.
 
+The later Node 24 job [119383310302](https://github.com/jappyjan/bobs-factory/actions/runs/39646488717/job/119383310302) at `50e02029` failed 49 package cases after a successful install/build: 48 identical incomplete-graph `.every` exceptions and one unnecessary cold-history read. Both reproduced locally. The legacy adapter now rejects a missing `steps` array without granting old authority, and output lookup returns immediately when no accepted producer matches. All 47 native recovery cases, the Incremental progress case and the cold-history assertions remain unchanged and pass focused verification. Complete raw job output and the subsequent full gates are retained; no infrastructure rerun was requested.
+
 ## User-directed single Node runtime
 
 The user explicitly replaced dual Node support with **Node 24 only**, with no compatibility shim or migration. The source workspace engine and strict install policy, F1 package/template, CI/shared setup, website setup, contributor docs, trial launcher and prepared Cursor host now agree. CI/release tooling and `.node-version` pin **24.18.0**; local validation records its exact supported 24.x patch. Node 22's CI job and configurable dual-version setup input are removed. Old logs are retained as historical diagnosis, not current support evidence.
