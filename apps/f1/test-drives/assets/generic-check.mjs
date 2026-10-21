@@ -1121,9 +1121,10 @@ async function specialistRecovery(renamed) {
 	const gate = graphSteps(run.workflow.id, run.workflowDefinitions).get(
 		run.step,
 	);
-	const blocked = run.history.findLast(
+	const blockedEntry = run.history.findLast(
 		(receipt) => receipt.step === run.step,
-	).output;
+	);
+	const blocked = blockedEntry.output;
 	assert.equal(
 		blocked.reviewIncomplete,
 		true,
@@ -1139,7 +1140,12 @@ async function specialistRecovery(renamed) {
 		undefined,
 		"Controlled incomplete output makes no native-session claim",
 	);
-	const controlledReceipt = blocked.reviewers.find(
+	const originalReview = blockedEntry.evidence?.["review-evidence"];
+	assert(
+		originalReview,
+		"Exact original review evidence stays outside pure results",
+	);
+	const controlledReceipt = originalReview.reviewers.find(
 		(reviewer) => reviewer.stamp.stepKey === controlledTurn.key,
 	);
 	assert(
