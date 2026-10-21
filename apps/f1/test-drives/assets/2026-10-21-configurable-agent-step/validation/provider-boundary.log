@@ -1,0 +1,16 @@
+
+> bobs-factory-edge-worker@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker
+> vitest run test/GitProvider.test.ts test/SpecialistReview.test.ts --maxWorkers=2
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker
+
+
+ Test Files  2 passed (2)
+      Tests  69 passed (69)
+   Start at  18:50:02
+   Duration  28.47s (transform 2.54s, setup 108ms, import 4.48s, tests 25.76s, environment 0ms)
+
