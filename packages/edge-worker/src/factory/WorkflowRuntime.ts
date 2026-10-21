@@ -47,7 +47,6 @@ import {
 	snapshotProposal,
 	verifyProposal,
 } from "./Architecture.js";
-import { ciFixRuntimeInstructions } from "./CISupervision.js";
 import {
 	DeliveryContractSchema,
 	type DeliveryState,
@@ -126,16 +125,15 @@ import {
 import { deliveryRevisions, runRepositories } from "./RepositoryScope.js";
 import { guideHeadline } from "./ReviewBrief.js";
 import { reviewRecoveryQuestions } from "./ReviewRecovery.js";
+import { withRuntimeRolePrompt } from "./RolePrompt.js";
 import { buildTitleContext } from "./RunTitleGenerator.js";
 import {
 	aggregateReview,
-	calibratedReviewInstructions,
 	frozenReviewContext,
 	type Inventory,
 	latestAggregate,
 	type ReviewBaseline,
 	reviewedRunRevision,
-	reviewStageInstructions,
 	scopeContextDigest,
 	stampSpecialist,
 	validateContractOutput,
@@ -1767,28 +1765,10 @@ export class WorkflowRuntime {
 					...(context.input as Record<string, unknown>),
 					assessedCorrection,
 				};
-			if (
-				step.type === "agent" &&
-				(assessedCorrection ||
-					step.id === "ci-fix" ||
-					steps.some(
-						(item) =>
-							item.tool === "ci" &&
-							item.branches.some(
-								(branch) =>
-									branch.next === step.id && branch.when.path === "fix",
-							),
-					))
-			)
-				context.step = {
-					...context.step,
-					prompt: `${context.step.prompt ?? ""}\n\n${ciFixRuntimeInstructions}`,
-				};
-			if (step.reviewContract)
-				context.step = {
-					...context.step,
-					prompt: `${context.step.prompt}\n${reviewStageInstructions(step.reviewContract)}${reviewBaseline?.impact ? `\n${calibratedReviewInstructions}` : ""}`,
-				};
+			context.step = withRuntimeRolePrompt(context.step, steps, {
+				assessedCorrection: !!assessedCorrection,
+				calibratedReview: !!reviewBaseline?.impact,
+			});
 			mkdirSync(context.evidenceDir, { recursive: true });
 			if (step.tool === "impact-checks" && state.phase === "executing") {
 				const source = steps.find((s) => s.id === step.impactSource)!;

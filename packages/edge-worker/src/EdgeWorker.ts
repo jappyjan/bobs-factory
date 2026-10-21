@@ -150,7 +150,6 @@ import {
 	createFetchFailureModesClient,
 	FactoryContextInfrastructureError,
 	type FailureModesHttpClient,
-	factoryContextInstructions,
 	listConfiguredTools,
 	prepareFactoryContextAsync,
 	type ResolvedSession,
@@ -187,7 +186,6 @@ import {
 	type Architecture,
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
-	architectureQuestionInstructions,
 	assertReviewBrief,
 	assertRevisionChanges,
 } from "./factory/Architecture.js";
@@ -211,10 +209,7 @@ import {
 import { atomicPrivateFile, privateFile } from "./factory/FactoryAuthStore.js";
 import type { FactoryOnboarding } from "./factory/FactoryOnboarding.js";
 import { FactoryPush } from "./factory/FactoryPush.js";
-import {
-	reviewCompletionInstructions,
-	validateFactoryResult,
-} from "./factory/FactoryResults.js";
+import { validateFactoryResult } from "./factory/FactoryResults.js";
 import { FactoryServer } from "./factory/FactoryServer.js";
 import {
 	CaptureReuseError,
@@ -247,12 +242,7 @@ import {
 	fileLinearImprovement,
 	fileTaskbotImprovement,
 } from "./factory/ImprovementIssues.js";
-import {
-	completedAgentResult,
-	incrementalInstructions,
-	roleInstructions,
-	roleProgress,
-} from "./factory/Incremental.js";
+import { completedAgentResult, roleProgress } from "./factory/Incremental.js";
 import { issueSnapshot } from "./factory/issueSnapshot.js";
 import {
 	LaunchAdmission,
@@ -320,6 +310,10 @@ import {
 	validateReviewFix,
 } from "./factory/ReviewRecovery.js";
 import {
+	factoryNativePrompt,
+	factoryRoleInstruction,
+} from "./factory/RolePrompt.js";
+import {
 	buildTitleContext,
 	RunTitleGenerator,
 	type TitleContext,
@@ -363,12 +357,8 @@ import {
 	readPath as readFactoryPath,
 	type Workflow,
 	type WorkflowStep,
-	workflowTriggerInstructions,
 } from "./factory/Workflow.js";
-import {
-	workflowExecutionContext,
-	workflowExecutionInstructions,
-} from "./factory/WorkflowExecution.js";
+import { workflowExecutionContext } from "./factory/WorkflowExecution.js";
 import {
 	type ExecutionContext,
 	type FactoryRun,
@@ -9232,7 +9222,26 @@ ${taskSection}`;
 
 		// Review fixers and QA roles can request assistance without askQuestions;
 		// saved recipes must receive the same question guidance as new ones.
-		const instruction = `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${step.prompt}\n${repositoryScopeInstructions(run)}\nGit provider: ${JSON.stringify(run.gitProvider ?? { gitProvider: repository.gitProvider, githubUrl: repository.githubUrl, gitlabUrl: repository.gitlabUrl })}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${run.gitProvider?.type === "custom" ? (run.gitProvider.instructions ?? "") : repository.gitProvider?.type === "custom" ? (repository.gitProvider.instructions ?? "") : ""}\nOriginating ticket: ${run.ticketReference ? JSON.stringify(run.ticketReference) : "none"}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${questionInstructions(run.id)}\n${step.architectureContract === "architecture-review-v1" ? architectureQuestionInstructions : ""}\n${workflowTriggerInstructions}\n${workflowExecutionInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${["code-review", "visual-review"].includes(step.id) || ["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") ? reviewCompletionInstructions : ""}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
+		const instruction = factoryRoleInstruction(step, {
+			repositoryScope: repositoryScopeInstructions(run),
+			gitProvider: JSON.stringify(
+				run.gitProvider ?? {
+					gitProvider: repository.gitProvider,
+					githubUrl: repository.githubUrl,
+					gitlabUrl: repository.gitlabUrl,
+				},
+			),
+			customProviderInstructions:
+				run.gitProvider?.type === "custom"
+					? (run.gitProvider.instructions ?? "")
+					: repository.gitProvider?.type === "custom"
+						? (repository.gitProvider.instructions ?? "")
+						: "",
+			ticket: run.ticketReference
+				? JSON.stringify(run.ticketReference)
+				: "none",
+			questions: questionInstructions(run.id),
+		});
 		const built = await this.buildAgentRunnerConfig(
 			session,
 			repository,
@@ -9461,7 +9470,12 @@ ${taskSection}`;
 					context.chat && runner.supportsStreamingInput && runner.startStreaming
 						? runner.startStreaming.bind(runner)
 						: runner.start.bind(runner);
-				const nativePrompt = `${outputCorrection && !captureCorrection ? "Your previous output failed validation. Read /outputCorrection from the NEW factory-context connection: it contains the rejected candidate, precise issues, and revision. Correct those issues and return the COMPLETE result for this role. Preserve accepted evidence and completed work; correct only this role output and, for capture, invalid states. Do not replay other pipeline roles. This is an output correction, not a process restart.\n\n" : captureCorrection ? "Your completed capture failed screenshot-reuse validation. Read /captureCorrection through the new factory-context tools: rejectedOutput contains your complete saved inventory, and screenshots lists every rejected state. Replace those images with fresh filenames; preserve the other valid captures and return the COMPLETE corrected inventory. Do not repeat completed setup or unrelated captures. The old factory-context connection is gone.\n\n" : context.resumeAgent?.sessionId ? "Continue this role from your existing conversation and worktree. Read the latest answers through the new factory-context connection and inspect current files and past tool results before repeating actions. The old factory-context connection is gone; use the new factory-context tools below.\n\n" : ""}${factoryContextInstructions}\n${step.architectureContract === "architecture-review-v1" ? architectureQuestionInstructions : ""}\n\nEvidence directory: ${context.evidenceDir}`;
+				const nativePrompt = factoryNativePrompt(step, {
+					outputCorrection: !!outputCorrection,
+					captureCorrection: !!captureCorrection,
+					resumed: !!context.resumeAgent?.sessionId,
+					evidenceDir: context.evidenceDir,
+				});
 				// Include the managed capacity addendum applied by buildRunnerForType.
 				// Provider implicit defaults are outside this Factory-supplied identity.
 				const nativeConfig = this.managedRunnerConfig(built.config);
