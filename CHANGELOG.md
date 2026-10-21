@@ -28,7 +28,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Reduce pauses before Factory agents start by reusing context lengths already calculated during capture, while preserving complete scoped evidence and integrity checks. ([#172](https://github.com/jappyjan/bobs-factory/pull/172))
+- Reduce pauses in Factory runs by reusing calculated context lengths and batching verbose workflow command activity, while preserving complete scoped evidence, integrity checks, failed results and explicit checkpoint/read barriers. ([#172](https://github.com/jappyjan/bobs-factory/pull/172))
 
 - Recheck waiting questions after an update or access repair without inventing an answer or losing the original conversation. Let correction roles return genuine design changes through proposal review, and keep supervised concurrency checks within the run's capacity allowance. ([#171](https://github.com/jappyjan/bobs-factory/pull/171))
 

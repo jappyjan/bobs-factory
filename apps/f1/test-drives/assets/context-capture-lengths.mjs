@@ -1,4 +1,5 @@
 // F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/context-capture-lengths.mjs
+// Add --workflow-logs to exercise verbose scripted work and failed-step recovery.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import {
@@ -12,12 +13,16 @@ import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
+import {
+	createCLIIssueTracker,
+	JsonSnapshotStore,
+} from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
+const workflowLogs = process.argv.includes("--workflow-logs");
 for (const key of Object.keys(process.env))
 	if (key.startsWith("BOBS_FACTORY_")) delete process.env[key];
 const require = createRequire(
@@ -73,6 +78,11 @@ const fixture = {
 		evidence: `Retained receipt ${index}`,
 	})),
 };
+const repairedMarker = join(directory, "script-environment-repaired");
+const stdoutLines = Array.from(
+	{ length: 96 },
+	(_, index) => `F1_TOOL_OUTPUT_${index}\n`,
+).join("");
 const rows = Array.from({ length: 32 }, (_, index) => ({
 	step: `review/${index}`,
 	output: structuredClone(fixture),
@@ -90,6 +100,21 @@ const workflow = {
 			prompt: "[F1_CONTEXT_ENTRY] Retain the checkpoint",
 			askQuestions: true,
 		},
+		...(workflowLogs
+			? [
+					{
+						id: "stream",
+						name: "Stream trusted command output",
+						type: "script",
+						script:
+							"node - <<'F1_SCRIPT'\n" +
+							"const fs = require('node:fs');\n" +
+							"(async () => { for (let i = 0; i < 96; i++) { process.stdout.write('F1_TOOL_OUTPUT_' + i + '\\n'); await new Promise(r => setTimeout(r, 5)); }\n" +
+							`if (!fs.existsSync(${JSON.stringify(repairedMarker)})) process.exitCode = 7; })();\n` +
+							"F1_SCRIPT",
+					},
+				]
+			: []),
 		{
 			id: "inspect",
 			name: "Inspect exact cold evidence",
@@ -106,6 +131,10 @@ let worker,
 	fixtureId,
 	continued = false,
 	checked = false;
+let streamChunks = 0,
+	firstStreamCommit,
+	streamCommits,
+	failedScriptRetained = false;
 const tracker = createCLIIssueTracker();
 const turns = [];
 async function read(client, path) {
@@ -216,6 +245,16 @@ const config = {
 function construct() {
 	worker = new EdgeWorker(config);
 	runtime = worker.getFactoryRuntime();
+	if (workflowLogs) {
+		const log = runtime.log.bind(runtime);
+		runtime.log = (run, step, message, ...rest) => {
+			if (step === "stream" && message.includes("F1_TOOL_OUTPUT_")) {
+				firstStreamCommit ??= runtime.snapshots.metrics.commits;
+				streamChunks++;
+			}
+			return log(run, step, message, ...rest);
+		};
+	}
 }
 async function rpc(method, params = {}) {
 	const response = await fetch(`${rpcOrigin}/cli/rpc`, {
@@ -280,6 +319,39 @@ try {
 		}),
 	});
 	assert.equal(response.status, 200, await response.text());
+	if (workflowLogs) {
+		const deadline = Date.now() + 120000;
+		while (
+			(runtime.get(id).status !== "failed" || runtime.isExecuting(id)) &&
+			Date.now() < deadline
+		)
+			await new Promise((resolve) => setTimeout(resolve, 25));
+		assert.equal(runtime.get(id).status, "failed");
+		assert.match(runtime.get(id).error, /exited 7/);
+		await runtime.flush(id);
+		const saved = new JsonSnapshotStore(
+			join(home, "factory", "run-chunks"),
+		).load(join(home, "factory", "runs", `${id}.json`)).value;
+		assert.equal(saved.status, "failed");
+		const savedOutput = saved.events
+			.filter((e) => e.step === "stream" && e.source === "workflow")
+			.map((e) => e.message)
+			.join("");
+		for (const line of stdoutLines.trimEnd().split("\n"))
+			assert(savedOutput.includes(line));
+		failedScriptRetained = true;
+		writeFileSync(repairedMarker, "Explicit isolated fixture repair\n");
+		const retry = await fetch(`${factoryOrigin}/api/runs/${id}/retry`, {
+			method: "POST",
+			headers: {
+				Origin: factoryOrigin,
+				"X-Factory-Request": "1",
+				"Content-Type": "application/json",
+			},
+			body: "{}",
+		});
+		assert.equal(retry.status, 202, await retry.text());
+	}
 	await until(
 		() =>
 			runtime.get(id)?.status === "waiting" &&
@@ -291,6 +363,15 @@ try {
 	]);
 	assert.equal(runtime.get(id).history[0].output.findings.length, 256);
 	assert.equal(runtime.get(id).reviewGate?.status, undefined);
+	if (workflowLogs) {
+		assert.equal(runtime.get(id).outputs.stream.stdout, stdoutLines.trimEnd());
+		streamCommits = runtime.snapshots.metrics.commits - firstStreamCommit;
+		assert(streamChunks > 10, "Exercise actual multiple stdout chunks");
+		assert(
+			streamCommits < streamChunks / 2,
+			"Avoid a full commit for each command output chunk",
+		);
+	}
 	await until(async () => {
 		const activities = await rpc("viewSession", { sessionId: id, limit: 100 });
 		return JSON.stringify(activities).includes(
@@ -309,6 +390,14 @@ try {
 			undeclaredOutputDenied: true,
 			humanDecisionStillRequired: true,
 			activitiesVisible: true,
+			...(workflowLogs
+				? {
+						streamChunks,
+						streamCommits,
+						failedScriptRetained,
+						scriptedRetryAfterRepair: true,
+					}
+				: {}),
 		}),
 	);
 } finally {

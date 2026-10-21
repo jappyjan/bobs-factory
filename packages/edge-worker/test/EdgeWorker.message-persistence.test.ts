@@ -114,7 +114,10 @@ async function fixture() {
 	};
 }
 
-it("coalesces message bursts behind a busy run commit and flushes the latest native state", async () => {
+it.each([
+	"agent",
+	"workflow",
+] as const)("coalesces %s bursts behind a busy run commit and flushes the latest native state", async (source) => {
 	const {
 		runtime,
 		run,
@@ -132,7 +135,7 @@ it("coalesces message bursts behind a busy run commit and flushes the latest nat
 		artifact.marker = revision;
 		session.updatedAt = revision;
 		session.metadata.usage.output_tokens = revision;
-		runtime.log(run, "work", `Activity ${revision}`, "agent");
+		runtime.log(run, "work", `Activity ${revision}`, source);
 		await worker.handleClaudeMessage(
 			run.id,
 			{ type: "assistant" } as SDKMessage,

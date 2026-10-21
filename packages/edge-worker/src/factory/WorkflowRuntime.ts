@@ -1147,8 +1147,7 @@ export class WorkflowRuntime {
 		);
 		if (run.events.length > 1500)
 			run.events.splice(0, run.events.length - 1500);
-		if (source === "agent") this.scheduleSave(run);
-		else this.save(run);
+		this.scheduleSave(run);
 	}
 	launch(
 		run: FactoryRun,
@@ -4528,7 +4527,7 @@ export class WorkflowRuntime {
 		};
 		return recover(run.workflow.steps, run.outputs, "");
 	}
-	/** Batch routine native messages; checkpoints continue to use save directly. */
+	/** Batch activity messages; checkpoints continue to use save directly. */
 	scheduleSave(run: FactoryRun): void {
 		this.dirtyActivity.add(run.id);
 		if (this.pendingActivitySaves.has(run.id) || this.activitySaves.has(run.id))
