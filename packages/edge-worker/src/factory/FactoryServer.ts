@@ -1476,6 +1476,7 @@ export class FactoryServer {
 						outputs: {},
 					}),
 					workflowBlock: runtime.catalog.getBlock(request.params.id),
+					recheckAvailable: !!run && runtime.canRecheckQuestions(run.id),
 					resumeEligible:
 						!!runtime.catalog.getBlock(request.params.id) &&
 						!runtime.catalog.unavailable(
@@ -1852,6 +1853,28 @@ export class FactoryServer {
 				reply
 					.code(202)
 					.send(runActionResult(operator.retry(request.params.id))),
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/recheck",
+			async (request, reply) => {
+				const { context } = z
+					.object({
+						context: z
+							.object({
+								step: z.string().min(1),
+								questionBatchId: z.string().min(1),
+								questions: z.array(z.string()).min(1),
+							})
+							.strict(),
+					})
+					.strict()
+					.parse(request.body);
+				return reply
+					.code(202)
+					.send(
+						runActionResult(await operator.recheck(request.params.id, context)),
+					);
+			},
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/answer",

@@ -552,6 +552,52 @@ it("shows the blocked reason and resumes only eligible runs from the terminal", 
 	}
 });
 
+it("rechecks a waiting role with its exact question context instead of submitting an answer", async () => {
+	const waiting = run("waiting", "waiting", { step: "pipeline/code-fix" });
+	const context = {
+		step: waiting.step,
+		questionBatchId: "current-batch",
+		questions: ["Restore access"],
+	};
+	const post = vi.fn(async () => ({}));
+	let frame = "";
+	const client = {
+		origin: "http://localhost:3457",
+		get: vi.fn(async (path: string) => {
+			if (path === "/api/config?view=dashboard")
+				return { repositories: [], workflows: [] };
+			if (path === "/api/runs") return [waiting];
+			return { ...waiting, ...context, recheckAvailable: true };
+		}),
+		post,
+		events: () => () => {},
+	} as unknown as FactoryClient;
+	const app = new TodayApp({
+		client,
+		theme: "dark",
+		sgr: () => "",
+		write: (value) => {
+			frame = value;
+		},
+		size: () => ({ columns: 120, rows: 32 }),
+		openUrl: async () => {},
+		quit: () => {},
+	});
+	app.start();
+	try {
+		await vi.waitFor(() => expect(frame).toContain("c check again"));
+		app.key({ name: "text", text: "c" });
+		await vi.waitFor(() =>
+			expect(post).toHaveBeenCalledExactlyOnceWith(
+				"/api/runs/waiting/recheck",
+				{ context },
+			),
+		);
+	} finally {
+		app.stop();
+	}
+});
+
 it("shares terminal startup reads and coalesces changes while a run-list read is slow", async () => {
 	vi.useFakeTimers();
 	const item = run("question", "waiting");

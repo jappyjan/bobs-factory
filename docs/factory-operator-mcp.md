@@ -34,7 +34,7 @@ Capabilities are independent:
 | Capability | Operations |
 | --- | --- |
 | `inspect` | List/inspect runs, read workflow activity, inspect/check MCP connections |
-| `operate` | Retry, resume, stop, answer, steer, retry ticket synchronization |
+| `operate` | Retry, resume, recheck questions, stop, answer, steer, retry ticket synchronization |
 | `configure` | Update owned MCP connections and matching permissions |
 
 Grant only the needed capabilities. For recovery, `inspect,operate,configure`
@@ -85,6 +85,7 @@ the correct operation. Run results identify the instance and run.
 | `resume_run` | Resume interrupted or explicitly stopped saved progress, or a disabled run after its workflow is enabled and execution has stopped |
 | `retry_ticket_sync` | Retry tracker synchronization only |
 | `stop_run` | Stop an active/waiting/interrupted run and retain work |
+| `recheck_run` | Reassess a waiting agent's current questions in its retained conversation after an update, access repair or other changed condition |
 | `answer_run` | Answer current questions or request an explanation with `kind: "explanation"` |
 | `steer_run` | Send a message through enabled and currently available workflow chat |
 | `inspect_mcp_connections` | Actual runner, source provenance, endpoint, permission decision, authentication mechanism and configuration revision |
@@ -97,12 +98,21 @@ provider bodies or credentials. Ticket synchronization includes the most recent
 25 receipt summaries and retains errors/limitations.
 
 Run mutations require `expectedRevision` from a fresh `inspect_run` result.
-`answer_run` additionally requires its complete `questionContext` as `context`.
+`answer_run` and `recheck_run` additionally require the complete `questionContext` as `context`.
 Changed questions, batches or steps reject without answering. An explanation
 request remains an explanation; it does not count as an answer or approval.
 Parallel mutations are serialized per run, and stale requests reject without
 replaying work. Accepted action receipts distinguish accepted recovery from
 completed recovery; inspect again to observe progress.
+
+The dashboard's **Check again** button and terminal's `c check again` action use
+the same bounded recheck operation. Restart alone keeps unanswered questions.
+Recheck records an investigation request, submits no answer and grants no extra
+iterations. It retains the native conversation, accepted recipe, completed work
+and decisions. Approval gates cannot be rechecked this way. An exact blocked
+impact assessment may reassess once before the engine's repeated-state guard
+pauses it again; its own missing-input questions and all independent checks and
+approval obligations remain required.
 
 Completed, stopped, active and pending-human-review runs are not resumable merely
 because they have a checkpoint. Retry/resume retains completed outputs, publication

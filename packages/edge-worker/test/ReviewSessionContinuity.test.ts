@@ -1,10 +1,11 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, it, vi } from "vitest";
+import { expect, it } from "vitest";
 import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 it.each([
 	"checkpoint",
@@ -90,9 +91,7 @@ it.each([
 	});
 	try {
 		void runtime.launch(run);
-		await vi.waitFor(() =>
-			expect(runtime.pendingAnswers.has(run.id)).toBe(true),
-		);
+		await waitFor(() => expect(runtime.pendingAnswers.has(run.id)).toBe(true));
 		if (storage === "historical-init") {
 			delete run.checkpoint!.agentSessions;
 			runtime.save(run);
@@ -100,13 +99,9 @@ it.each([
 		await runtime.shutdown();
 		runtime = new WorkflowRuntime(home, hooks);
 		runtime.resumeAll();
-		await vi.waitFor(() =>
-			expect(runtime.pendingAnswers.has(run.id)).toBe(true),
-		);
+		await waitFor(() => expect(runtime.pendingAnswers.has(run.id)).toBe(true));
 		runtime.answer(run.id, "Required review input restored");
-		await vi.waitFor(() =>
-			expect(runtime.get(run.id).status).toBe("completed"),
-		);
+		await waitFor(() => expect(runtime.get(run.id).status).toBe("completed"));
 		expect(visits).toEqual([
 			{ step: "capture", session: undefined },
 			{ step: "code-review", session: undefined },
