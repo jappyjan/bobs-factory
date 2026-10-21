@@ -6,12 +6,40 @@ fixture forbids launching agents, scripts or runs. Its private, fixture-seeded
 session does not establish passkey-login coverage. Simulation inputs and evidence
 are synthetic; these checks do not authenticate live review or QA receipts.
 
-UI build: `7a010438ed36462fe2fe92f5`. Exact source-file, built-backend and web-asset
+Original screenshot UI build: `7a010438ed36462fe2fe92f5`. Exact source-file, built-backend and web-asset
 hashes are retained in [identity.json](../../../../apps/f1/test-drives/assets/generic-check-ui/identity.json).
 This was an integrated development tree on base `95f79ef3`; it is not a claim that
 later runtime edits passed this earlier build. The coordinator retains final
 source equivalence and full-gate evidence separately. The UI source stayed
 unchanged throughout these captures.
+
+## Final frozen-source replay
+
+The final replay used clean source commit `ff5e2b20e035626c48bf0bd9ef5fa0ec00432572`
+and built UI/backend `0317923a2f79a813228a55be`. The [final equivalence receipt](check-ui-final.json) records the
+current source, executable-module and asset hashes separately from the original
+screenshot build. All four builder/editor/graph/style source hashes match their
+original capture values. The complete saved recipe also matches exactly
+(SHA-256 `88eac57cb3c7c901e51ac67057e41fee35c2d594e874330ae712a78ca0cc43e2`), and
+its rules remain valid under the final Check schema. All 17 original PNG hashes
+were rechecked without modifying the images.
+
+The current browser loaded the final app and stylesheet, showed editable Check
+controls at 1440×1000 and 390×844 in both themes, blocked malformed JSON with the
+same inline error, and used the production evaluator to follow both declared
+continuations. Eight final HTTP checks covered passing/failing outputs, missing
+collections, undeclared evidence, invalid configuration and the new selector
+safeguard: an ordinary true rule cannot bypass missing or unsuccessful synthetic
+`files-exist` evidence; an explicit `{verified:true}` fixture is required. Such a
+fixture still does not authenticate a live file. The fresh disposable server
+stopped with zero launched runs.
+
+The original screenshots remain the visual artifacts because their component
+source and recipe render data are unchanged. The compiled bundles/backends are
+not claimed to be identical; the final browser and endpoint replay establishes
+current behavior. Transient canvas camera positions are not claimed to be pixel
+identical. No new screenshots, agents, builds or test suites were needed for this
+lightweight replay.
 
 Commands, all using Node `v24.21.0`:
 

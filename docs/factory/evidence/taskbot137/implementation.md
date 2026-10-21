@@ -108,3 +108,50 @@ confirmation. Integration decisions/failures are retained in comment **2071**.
   The driver now shares one exact-target scripted adapter across both independent
   production paths. Final-state and approval checks are unchanged; retained failed
   evidence is not relabeled as passing.
+
+
+## Final validation and identity
+
+Validated runtime commit: **ff5e2b20e035626c48bf0bd9ef5fa0ec00432572**.
+The final required gates ran on a clean checkout; its source stayed unchanged
+through all commands. The [small evidence index](validation-index.json) records
+full commands, counts, exits, original log paths/SHA-256 and exact runtime trees.
+Complete original logs remain at those paths; no histories are recopied.
+
+| Final command / drive | Result |
+| --- | --- |
+| `pnpm build` | Pass |
+| `pnpm typecheck` | Pass |
+| `pnpm lint` | Pass; 34 existing warnings |
+| `pnpm test:packages:run --maxWorkers=2` | 313 files; 3,935 passed, 2 existing skips; edge-worker 205 files / 2,611 passed / 1 skip |
+| `pnpm --filter './apps/*' test:run` | CLI 254 + F1 17 + desktop 41 passed; 1 existing desktop skip |
+| `node --test scripts/tests/*.test.mjs` | All 24 files; 179 passed |
+| `pnpm audit` | Zero advisories; dependency graph unchanged |
+| Native Bun 1.4.2 darwin-arm64 | Build, startup/restart, assets, protected API, scoped MCP and 5 compiled Check API cases passed |
+| Actual EdgeWorker / CLI F1 | Stock repository, renamed/called repository and external delivery passed; zero paid calls |
+| Final browser replay | Four viewport/theme visuals, structured editing/errors and pass/fail routes passed; unchanged original 17 screenshots reused |
+
+The [F1 report](../../../../apps/f1/test-drives/2026-10-22-generic-check.md)
+and [final UI equivalence receipt](check-ui-final.json) distinguish actual
+execution from mocked provider/model behavior and reused visual evidence.
+The compiled binary records commit `ff5e2b20`, `dirty:false`, target darwin-arm64,
+SHA-256 `5360c188dc697c9d0425e194b49a62dcead28bcd793e77155574ea992ce15d5a`
+and resource digest `cd8af2b5060c4de2bab1980d86ef872b3d7081df760b1b8bdae1fef172f0635c`.
+Its original producer metadata remains unchanged; completed runtime smoke is a
+separate receipt. This is one native target smoke, with no release publication.
+
+The extra native API harness first omitted the exact Origin header (correctly
+rejected with 403), then expected 400 for a runtime rule error whose existing
+Factory contract returns 409. Correcting only those harness inputs/expectations
+made all five cases pass on the same binary. Earlier logs remain indexed; no
+production authentication/error rule or accepted assertion was weakened.
+
+Subsequent commits contain only documentation, evidence and the actual PR link.
+Their scoped diff and runtime/input tree identities are checked against the
+validated commit; no additional build/F1 replay is needed for those unchanged
+inputs. In particular, packages, CLI/F1/desktop runtime source, scripts, skills,
+dependency inputs and both maintained Check drivers remain identical. Historical
+reports, accepted run definitions, state and native conversations are preserved.
+
+No implementation blocker remains. Independent acceptance review and green PR CI
+are still required; ticket status, merge and later epic work belong to the parent.
