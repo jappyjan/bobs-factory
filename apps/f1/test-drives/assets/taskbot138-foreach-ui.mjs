@@ -356,7 +356,11 @@ try {
 		const statuses = runtime
 			.get(run.id)
 			.foreach?.perspectives?.items.map((item) => item.status);
-		if (JSON.stringify(statuses) === JSON.stringify(expected)) break;
+		if (
+			JSON.stringify(statuses) === JSON.stringify(expected) &&
+			hookCalls.length === 5
+		)
+			break;
 		if (runtime.get(run.id).status !== "running")
 			throw new Error(
 				`Fixture run unexpectedly became ${runtime.get(run.id).status}: ${runtime.get(run.id).error}`,
