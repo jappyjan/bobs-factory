@@ -642,3 +642,46 @@ merged revision and fresh runtime-owned checks. All eleven prior aggregate
 findings remain for independent reassessment. Fresh launcher QA, guide, human
 acceptance and provider readiness remain at their configured gates. No real
 agent provider was called and no delivery approval is claimed.
+
+## Storage-target integration recheck on 2026-10-21
+
+Integrated `4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7` into
+`55945c7a55cf9d671b92f06a7b96697dcd9e92cd`. The two prompt conflicts
+retain the complete incoming storage/capacity description and the Simple-only
+launcher description. The expected routing prompt still checks the full prompt.
+No launcher behavior or existing assertion was removed.
+
+Local corrective checks on that clean merged revision passed: frozen install,
+zero-advisory audit, workspace build and typecheck, 331 launcher/integration
+tests, 74 approval/recovery tests, 59 server/storage integration tests and
+16 core ownership/storage tests. Lint passed with 34 warnings; task-to-target
+whitespace and merge-tree checks passed. The storage batch took 187.69 seconds,
+including the existing real two-minute teardown timeout test. The current
+FactoryTools command budget is twenty minutes; no test split or assertion
+change is needed.
+
+Relevant F1 validation also passed with simulated agents:
+
+```sh
+F1_AGENT_MODE=mock bun run apps/f1/test-drives/media/2026-10-15-simple-launch-settings/f1-drive.ts
+F1_AGENT_MODE=mock pnpm --filter bobs-factory-f1 test:run test/storage-retention.test.ts
+F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/ci-fix-r22-scheduled-overlap.mjs
+```
+
+The launcher drive preserves configured per-step settings, Simple overrides,
+required-input/disabled-workflow rejection and direct API compatibility. All
+eight storage F1 scenarios passed, including retained native continuation and
+workspace ownership across terminal events and restart. Both complete
+architecture drives overlapped at startup and restart with four distinct ports.
+All eight former-port sentinels remained reachable; all four owned ports could
+be rebound on IPv4 and IPv6 after cleanup. Capacity ended with zero active and
+queued executions. Only owned sentinels were stopped.
+
+Evidence uses the `ci-fix-r22-` prefix in this run's evidence directory.
+`ci-fix-r22-checks.json` binds commands, logs, durations, head and base;
+`ci-fix-r22-overlap-receipt.json` also records barriers, capacity and cleanup.
+The new overlap copies only update evidence names and integrated-base metadata
+from the prior driver; complete assertions are unchanged. Historical receipts
+remain intact. These are local corrective checks, not independent gate receipts.
+Fresh assessment, configured review/QA, guide, human acceptance and provider
+readiness remain at their existing gates. No real inference provider was called.
