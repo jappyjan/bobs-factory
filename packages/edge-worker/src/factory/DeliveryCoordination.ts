@@ -10,6 +10,13 @@ import {
 	runRepositories,
 } from "./RepositoryScope.js";
 import { deliveryTargetLabel } from "./RunAttention.js";
+import {
+	accessMode,
+	hasCheck,
+	readOutput,
+	resolveStepConfig,
+} from "./StepConfig.js";
+import { outputForTool } from "./ToolBindings.js";
 import type { WorkflowStep } from "./Workflow.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
@@ -59,15 +66,19 @@ export function deliveryScopes(run: FactoryRun): string[] {
 				.filter((repository) => {
 					const projected = repositoryRun(run, repository);
 					if (
-						["source", "draft-pr", "merge"].some(
-							(key) =>
-								typeof (projected.outputs[key] as { url?: unknown } | undefined)
-									?.url === "string",
+						[
+							projected.outputs.source,
+							outputForTool(projected, "draft-pr"),
+							outputForTool(projected, "merge"),
+						].some(
+							(value) =>
+								typeof (value as { url?: unknown } | undefined)?.url ===
+								"string",
 						)
 					)
 						return true;
 					if (
-						groupedOutput(run.outputs["draft-pr"])?.deliveries.some(
+						groupedOutput(outputForTool(run, "draft-pr"))?.deliveries.some(
 							(d) => d.repositoryId === repository.id,
 						)
 					)
@@ -121,13 +132,13 @@ export function deliveryScopes(run: FactoryRun): string[] {
 
 /** Concrete mutations, including renamed correction branches in frozen definitions. */
 export function deliveryStep(run: FactoryRun, step: WorkflowStep): boolean {
-	if (step.delivery === "exclusive") return true;
+	if (accessMode(step) === "push") return true;
 	if (step.tool === "draft-pr") return true;
 	// Merge owns short inspect/mutation reservations internally, releasing between provider polls.
 	if (step.tool === "merge") return false;
 	if (["fanout", "workflow"].includes(step.type)) return false;
-	if (["ci-fix", "code-fix", "visual-fix", "human-fix"].includes(step.id))
-		return true;
+	// New recipes opt into the mutation lease through access; graph inference is legacy-only.
+	if (resolveStepConfig(step).explicit) return false;
 	const definitions = [run.workflow, ...(run.workflowDefinitions ?? [])];
 	const correction = (steps: WorkflowStep[]): boolean =>
 		steps.some(
@@ -196,9 +207,9 @@ export function resourceScopes(context: ExecutionContext): string[] {
 		}
 		return [...scopes].sort();
 	}
-	if (context.step.id !== "capture") return [];
+	if (!hasCheck(context.step, "qa-environment")) return [];
 	const environment = (
-		context.outputs?.["visual-scope"] as
+		readOutput(context.step, "scope", context.outputs ?? context.run.outputs) as
 			| {
 					environment?: { isolation: string; resources?: string[] };
 			  }

@@ -68,7 +68,14 @@ import {
 	assertAggregateRevision,
 	scopeContextDigest,
 } from "./SpecialistReview.js";
+import {
+	formatOf,
+	hasCheck,
+	readStep,
+	resolveStepConfig,
+} from "./StepConfig.js";
 import { inspectPullRequest } from "./Takeover.js";
+import { boundOutput, boundStepKey, writeBoundOutput } from "./ToolBindings.js";
 import {
 	VideoCaptureFields,
 	VideoReceiptSchema,
@@ -454,33 +461,30 @@ export class FactoryTools {
 		const { run } = context;
 		// Import at execution time to share the scope safeguards without a schema initialization cycle.
 		const { QaScopeSchema } = await import("./FactoryResults.js");
-		const scope = QaScopeSchema.parse(run.outputs["visual-scope"]);
+		const scope = QaScopeSchema.parse(boundOutput(context, "scope"));
 		await verifyQaEnvironment(context);
-		const capture = QaCaptureSchema.parse(run.outputs.capture);
+		const capture = QaCaptureSchema.parse(boundOutput(context, "capture"));
 		// Validate original behavioral provenance again at the consuming gate.
-		if (context.step.impactSource) {
+		if (readStep(context.step, "impact")) {
 			const cloned = structuredClone(capture);
 			stampQaCriteria(context, cloned, true);
 			if (qaDigest(cloned.results) !== qaDigest(capture.results))
 				throw new Error("QA criterion provenance changed after execution");
 		}
-		const review = filterReview(run.outputs["visual-review"]);
+		const review = filterReview(boundOutput(context, "qaReview"));
 		const headSha = (await command("git", ["rev-parse", "HEAD"])).trim();
 		const dirty = Boolean(
 			(await command("git", ["status", "--porcelain"])).trim(),
 		);
-		if (context.step.impactSource) await assertCurrentImpact(context);
+		if (readStep(context.step, "impact")) await assertCurrentImpact(context);
 		const scopeHash = qaDigest(scope),
 			captureHash = qaDigest(capture),
 			reviewHash = qaDigest(review);
 		const stamp = capture.testedRevision,
 			reviewed = review.qaReviewStamp;
-		const prefix = (context.stepKey ?? run.step ?? context.step.id).replace(
-			/[^/]+$/,
-			"",
-		);
-		const provenance = ["capture", "visual-review"].every((id) => {
-			const revision = run.roleRevisions?.[`${prefix}${id}`];
+		const provenance = ["capture", "qaReview"].every((name) => {
+			const key = boundStepKey(context, name);
+			const revision = key ? run.roleRevisions?.[key] : undefined;
 			return revision && !revision.dirty && revision.headSha === headSha;
 		});
 		const coverage = qaCoverage(scope, capture);
@@ -497,7 +501,10 @@ export class FactoryTools {
 		coverage.errors.push(
 			...qaRequirementIssues(
 				scope,
-				context.outputs ?? run.outputs,
+				(boundOutput(context, "scopeClarify") ??
+					boundOutput(context, "scopeDecisions")) as
+					| { requirements?: string[]; decisions?: unknown[] }
+					| undefined,
 				run.answers,
 				aggregateForContext(context)?.baseline.inventory,
 			),
@@ -636,13 +643,16 @@ export class FactoryTools {
 		if (
 			runRepositories(context.run).length > 1 &&
 			context.run.delivery?.contract.mode !== "external" &&
-			context.step.id !== "external-human-review"
+			!resolveStepConfig(context.step).reads.external
 		) {
-			if (context.step.tool === "handoff" && context.step.qaContract) {
+			if (
+				context.step.tool === "handoff" &&
+				hasCheck(context.step, "qa-evidence")
+			) {
 				const gate = await this.qaGate(context, (exe, args) =>
 					scopeCommand(context, this.command.bind(this), exe, args),
 				);
-				const accepted = context.run.outputs["visual-gate"];
+				const accepted = boundOutput(context, "qaGate");
 				if (
 					!gate.approved ||
 					["headSha", "captureHash", "scopeHash", "reviewHash"].some(
@@ -661,7 +671,19 @@ export class FactoryTools {
 						this.repositoryTool(
 							child.run === context.run
 								? child
-								: { ...child, step: { ...child.step, qaContract: undefined } },
+								: {
+										...child,
+										step: {
+											...child.step,
+											reads: resolveStepConfig(child.step).reads,
+											checks: resolveStepConfig(child.step)
+												.checks.filter((check) => check.check !== "qa-evidence")
+												.map((check) => ({
+													check: check.check,
+													...check.args,
+												})),
+										},
+									},
 						);
 					return child.step.tool === "draft-pr" && child.coordinateDelivery
 						? child.coordinateDelivery(execute)
@@ -669,7 +691,7 @@ export class FactoryTools {
 				},
 			);
 			if (context.step.tool === "ci-fix-readiness") {
-				context.run.outputs.ci = output;
+				writeBoundOutput(context, "ci", output);
 				await context.save?.();
 			}
 			return output;
@@ -784,18 +806,18 @@ export class FactoryTools {
 				};
 			case "delivery-route": {
 				const contract = DeliveryContractSchema.parse(
-					readPath(run.outputs, "plan.deliveryContract"),
+					boundOutput(context, "plan", "deliveryContract"),
 				);
 				if (
-					readPath(run.outputs, "plan-review.approved") !== true ||
-					readPath(run.outputs, "plan-review.deliveryContractDigest") !==
+					boundOutput(context, "planReview", "approved") !== true ||
+					boundOutput(context, "planReview", "deliveryContractDigest") !==
 						digest(contract)
 				)
 					throw new Error(
 						"Plan review must confirm the exact delivery contract digest",
 					);
 				if (
-					readPath(run.outputs, "clarify.deliveryMode") !==
+					boundOutput(context, "clarify", "deliveryMode") !==
 						readPath(contract, "mode") &&
 					!(run.deliveryRecovery && contract.mode === "external")
 				)
@@ -868,15 +890,16 @@ export class FactoryTools {
 					receipts: delivery.receipts,
 					verification: snapshot,
 				};
-				run.outputs.guide =
+				const updatedGuide =
 					delivery.contract.mode === "mixed"
 						? {
-								...(run.outputs.guide as Record<string, unknown>),
+								...(boundOutput(context, "guide") as Record<string, unknown>),
 								...externalEvidence,
 							}
 						: guide;
+				writeBoundOutput(context, "guide", updatedGuide);
 				await context.save?.();
-				return run.outputs.guide;
+				return updatedGuide;
 			}
 			case "external-final": {
 				if (!this.hooks.ticketDelivery)
@@ -885,7 +908,7 @@ export class FactoryTools {
 				return { drift: !valid, complete: valid };
 			}
 			case "record-decisions": {
-				const decisions = run.outputs.clarify;
+				const decisions = boundOutput(context, "clarify");
 				const records =
 					(decisions as { decisions?: unknown[] } | undefined)?.decisions ?? [];
 				for (const decision of records) {
@@ -902,9 +925,9 @@ export class FactoryTools {
 				return decisions;
 			}
 			case "draft-pr": {
-				if (readPath(run.outputs, "implement.status") === "blocked")
+				if (boundOutput(context, "implementation", "status") === "blocked")
 					throw new Error(
-						`Implementation is blocked: ${String(readPath(run.outputs, "implement.summary"))}. Answer the implementation questions before publishing.`,
+						`Implementation is blocked: ${String(boundOutput(context, "implementation", "summary"))}. Answer the implementation questions before publishing.`,
 					);
 				const branch = await command("git", ["branch", "--show-current"]);
 				if (!branch) throw new Error("Draft PR requires a branch");
@@ -963,7 +986,7 @@ export class FactoryTools {
 					if (context.allowUnchangedRepository) return { unchanged: true };
 				if (commits.trim() === "0" || !changes.trim())
 					throw new Error(
-						`No implementation changes to publish against ${baseBranch}. ${String(readPath(run.outputs, "implement.summary") ?? "The worktree has no deliverable changes.")} Resolve the implementation blocker before delivery; retrying PR creation cannot fix an empty branch.`,
+						`No implementation changes to publish against ${baseBranch}. ${String(boundOutput(context, "implementation", "summary") ?? "The worktree has no deliverable changes.")} Resolve the implementation blocker before delivery; retrying PR creation cannot fix an empty branch.`,
 					);
 				const forge = await provider();
 				await command("git", ["push", "-u", "origin", "HEAD"]);
@@ -1002,13 +1025,11 @@ export class FactoryTools {
 			case "visual-gate": {
 				const recovery = async (gate: Record<string, unknown>) => {
 					if (gate.approved || gate.questions) return gate;
-					const prefix = (run.step ?? context.step.id).replace(/[^/]+$/, "");
-					const fixer =
-						context.step.tool === "visual-gate" ? "visual-fix" : "code-fix";
+					const fixer = boundStepKey(context, "fix");
 					if (
 						!run.history.some(
 							(item) =>
-								item.step === `${prefix}${fixer}` &&
+								item.step === fixer &&
 								readPath(item.output, "reviewAssessment.unchangedCode") ===
 									true,
 						)
@@ -1026,12 +1047,16 @@ export class FactoryTools {
 						? { ...gate, reviewBlocked: true, questions }
 						: gate;
 				};
-				const source =
-					context.step.tool === "review-gate" ? "code-review" : "visual-review";
-				const review = filterReview(run.outputs[source]);
+				const source = readStep(context.step, "review") ?? "configured review";
+				const review = filterReview(boundOutput(context, "review"));
 				if (review.status !== "completed" || review.blockers.length) {
-					if (source === "visual-review" && context.step.qaContract) {
-						const capture = QaCaptureSchema.safeParse(run.outputs.capture);
+					if (
+						context.step.tool === "visual-gate" &&
+						hasCheck(context.step, "qa-evidence")
+					) {
+						const capture = QaCaptureSchema.safeParse(
+							boundOutput(context, "capture"),
+						);
 						// An incomplete reviewer cannot approve, but recorded product failures
 						// still need correction before fresh QA and a complete review.
 						if (
@@ -1063,14 +1088,17 @@ export class FactoryTools {
 				const open = review.findings.filter(
 					(finding) => finding.status === "open",
 				);
-				if (source === "visual-review" && context.step.qaContract) {
+				if (
+					context.step.tool === "visual-gate" &&
+					hasCheck(context.step, "qa-evidence")
+				) {
 					return recovery(await this.qaGate(context, command));
 				}
-				if (source === "visual-review") {
-					const capture = CaptureSchema.parse(run.outputs.capture);
+				if (context.step.tool === "visual-gate") {
+					const capture = CaptureSchema.parse(boundOutput(context, "capture"));
 					const gaps = captureGaps(
 						capture,
-						readPath(run.outputs, "visual-scope.areas"),
+						boundOutput(context, "scope", "areas"),
 					);
 					if (!capture.screenshots.length || gaps.length)
 						return {
@@ -1091,10 +1119,6 @@ export class FactoryTools {
 				return recovery({ approved: open.length === 0, findings: open });
 			}
 			case "review-after-fix": {
-				const prefix = (context.stepKey ?? run.step ?? context.step.id).replace(
-					/[^/]+$/,
-					"",
-				);
 				const aggregate = aggregateForContext(context, {
 					requireComplete: false,
 				});
@@ -1103,10 +1127,12 @@ export class FactoryTools {
 					? { headSha: aggregate.baseline.headSha, dirty: false }
 					: run.reviewRounds?.length
 						? undefined
-						: run.roleRevisions?.[`${prefix}code-review`];
+						: boundStepKey(context, "review")
+							? run.roleRevisions?.[boundStepKey(context, "review")!]
+							: undefined;
 				const headSha = await command("git", ["rev-parse", "HEAD"]);
 				const dirty = Boolean(await command("git", ["status", "--porcelain"]));
-				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
+				const url = String(boundOutput(context, "draftPr", "url") ?? "");
 				const readiness = await inspectReadinessWithRetry(
 					context,
 					command,
@@ -1116,10 +1142,10 @@ export class FactoryTools {
 					blockRevisionMismatch(readiness, headSha);
 				const previousBase =
 					aggregate?.baseline.baseSha ??
-					readPath(run.outputs, "ci.correctionBaseSha") ??
-					readPath(run.outputs, "ci.baseSha");
+					boundOutput(context, "ci", "correctionBaseSha") ??
+					boundOutput(context, "ci", "baseSha");
 				assessFeedback(context, readiness);
-				const feedback = readPath(run.outputs, "ci.blockers") as
+				const feedback = boundOutput(context, "ci", "blockers") as
 					| { kind: string; action?: string }[]
 					| undefined;
 				const substantiveFeedback =
@@ -1127,17 +1153,17 @@ export class FactoryTools {
 						(item) =>
 							["threads", "reviews", "revision"].includes(item.kind) &&
 							(item.action === undefined || item.action === "fix") &&
-							(readPath(run.outputs, "ci-fix.reviewRequired") !== false ||
+							(boundOutput(context, "fix", "reviewRequired") !== false ||
 								readiness.blockers.some(
 									(current) =>
 										current.kind === item.kind && current.action === "fix",
 								)),
 					) ||
 					(feedback?.some((item) => item.kind === "comments") &&
-						readPath(run.outputs, "ci-fix.reviewRequired") !== false);
+						boundOutput(context, "fix", "reviewRequired") !== false);
 				const reviewRequired =
 					substantiveFeedback ||
-					readPath(run.outputs, "ci-fix.reviewRequired") === true ||
+					boundOutput(context, "fix", "reviewRequired") === true ||
 					!reviewed ||
 					reviewed.dirty ||
 					dirty ||
@@ -1146,7 +1172,7 @@ export class FactoryTools {
 					!previousBase ||
 					previousBase !== readiness.baseSha ||
 					(aggregate?.approved ??
-						readPath(run.outputs, "review-gate.approved")) !== true ||
+						boundOutput(context, "reviewGate", "approved")) !== true ||
 					Boolean(
 						aggregate &&
 							(!aggregate.approved ||
@@ -1160,7 +1186,7 @@ export class FactoryTools {
 							: "Changed source revision, substantive feedback or missing review provenance requires code review."
 						: "Accepted code and base are unchanged; returning directly to merge readiness.",
 				);
-				const previousChecks = readPath(run.outputs, "ci.checks");
+				const previousChecks = boundOutput(context, "ci", "checks");
 				const failures = (checks: unknown) =>
 					Array.isArray(checks)
 						? checks
@@ -1170,11 +1196,13 @@ export class FactoryTools {
 						: [];
 				const unchangedFailures =
 					!reviewRequired &&
-					readPath(run.outputs, "ci.headSha") === headSha &&
+					boundOutput(context, "ci", "headSha") === headSha &&
 					failures(readiness.checks).length > 0 &&
 					JSON.stringify(failures(previousChecks)) ===
 						JSON.stringify(failures(readiness.checks));
-				const previous = run.outputs.ci as MergeReadiness | undefined;
+				const previous = boundOutput(context, "ci") as
+					| MergeReadiness
+					| undefined;
 				const unchangedRevision =
 					!dirty &&
 					readiness.headSha !== headSha &&
@@ -1186,7 +1214,7 @@ export class FactoryTools {
 					.slice(0, -1)
 					.some(
 						(item) =>
-							item.step === `${prefix}ci-fix` &&
+							item.step === boundStepKey(context, "fix") &&
 							readPath(item.output, "feedbackAssessment.fingerprint") ===
 								fingerprint &&
 							readPath(item.output, "feedbackAssessment.instructionsSha256") ===
@@ -1248,7 +1276,7 @@ export class FactoryTools {
 				};
 			}
 			case "ci": {
-				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
+				const url = String(boundOutput(context, "draftPr", "url") ?? "");
 				if (!url) throw new Error("No PR to check");
 				for (;;) {
 					const snapshot = await inspectReadinessWithRetry(
@@ -1274,22 +1302,22 @@ export class FactoryTools {
 					reportReadiness(context, snapshot);
 					const aggregate = aggregateForContext(context);
 					if (
-						context.step.impactSource &&
+						readStep(context.step, "impact") &&
 						snapshot.unassessedComments?.length &&
 						!snapshot.ciAssistance?.length &&
 						!snapshot.queued
 					) {
-						run.outputs.ci = snapshot;
+						writeBoundOutput(context, "ci", snapshot);
 						return { ...snapshot, impactRequired: true };
 					}
 					if (
-						context.step.impactSource &&
+						readStep(context.step, "impact") &&
 						aggregate &&
 						aggregate.baseline.baseSha !== snapshot.baseSha &&
 						!snapshot.ciAssistance?.length &&
 						!snapshot.queued
 					) {
-						run.outputs.ci = snapshot;
+						writeBoundOutput(context, "ci", snapshot);
 						await command("git", ["fetch", "origin", snapshot.baseSha]);
 						await command("git", [
 							"update-ref",
@@ -1304,11 +1332,11 @@ export class FactoryTools {
 						snapshot.reviewReady ||
 						snapshot.approved
 					) {
-						const priorQa = run.outputs["visual-gate"] as
+						const priorQa = boundOutput(context, "qaGate") as
 							| { approved?: boolean; headSha?: string }
 							| undefined;
 						if (
-							context.step.impactSource &&
+							readStep(context.step, "impact") &&
 							snapshot.reviewReady &&
 							priorQa?.approved &&
 							priorQa.headSha === headSha &&
@@ -1316,7 +1344,7 @@ export class FactoryTools {
 							aggregate.baseline.headSha === headSha &&
 							!this.scopeChanged(context, aggregate.baseline.context)
 						) {
-							const scope = run.outputs["visual-scope"] as
+							const scope = boundOutput(context, "scope") as
 								| import("./Qa.js").QaScope
 								| undefined;
 							await verifyQaEnvironment(context);
@@ -1338,8 +1366,10 @@ export class FactoryTools {
 			case "architecture-decision":
 				return {}; // Runtime owns proposal identity and the passive wait.
 			case "ci-fix-readiness": {
-				const previous = run.outputs.ci as MergeReadiness | undefined;
-				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
+				const previous = boundOutput(context, "ci") as
+					| MergeReadiness
+					| undefined;
+				const url = String(boundOutput(context, "draftPr", "url") ?? "");
 				const snapshot = await inspectReadinessWithRetry(context, command, url);
 				assessFeedback(context, snapshot);
 				const head = (await command("git", ["rev-parse", "HEAD"])).trim();
@@ -1364,15 +1394,15 @@ export class FactoryTools {
 					!snapshot.fix &&
 					!dirty &&
 					scopeUnchanged &&
-					!readPath(run.outputs, "handoff.guideRecovery") &&
-					readPath(run.outputs, "visual-gate.approved") !== false &&
-					readPath(run.outputs, "review-gate.approved") !== false;
+					!boundOutput(context, "handoff", "guideRecovery") &&
+					boundOutput(context, "qaGate", "approved") !== false &&
+					boundOutput(context, "reviewGate", "approved") !== false;
 				const refreshed = {
 					...snapshot,
 					scopeDigest: digest,
 					correctionBaseSha: previous?.correctionBaseSha ?? previous?.baseSha,
 				};
-				run.outputs.ci = refreshed;
+				writeBoundOutput(context, "ci", refreshed);
 				reportReadiness(context, snapshot);
 				await context.save?.();
 				return { ...refreshed, skipFix };
@@ -1380,7 +1410,7 @@ export class FactoryTools {
 			case "human-review": {
 				if (
 					run.delivery?.contract.mode === "external" ||
-					context.step.id === "external-human-review"
+					resolveStepConfig(context.step).reads.external
 				) {
 					const delivery = run.delivery;
 					if (!delivery)
@@ -1388,18 +1418,18 @@ export class FactoryTools {
 					const snapshot = delivery.verification;
 					if (
 						!snapshot ||
-						readPath(run.outputs, "guide.externalDigest") !== snapshot.digest
+						boundOutput(context, "guide", "externalDigest") !== snapshot.digest
 					)
 						throw new Error(
 							"External guide must bind current independent verification",
 						);
 					if (delivery.contract.mode === "mixed") {
-						if (readPath(run.outputs, "merge.merged") !== true)
+						if (boundOutput(context, "merge", "merged") !== true)
 							throw new Error(
 								"Mixed external reacceptance requires retained confirmed repository merge proof",
 							);
 						return {
-							...(run.outputs["draft-pr"] as Record<string, unknown>),
+							...(boundOutput(context, "draftPr") as Record<string, unknown>),
 							mode: "mixed",
 							externalDigest: snapshot.digest,
 						};
@@ -1412,7 +1442,7 @@ export class FactoryTools {
 					};
 				}
 				const headSha = await command("git", ["rev-parse", "HEAD"]);
-				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
+				const url = String(boundOutput(context, "draftPr", "url") ?? "");
 				const snapshot = await inspectReadinessWithRetry(context, command, url);
 				assessFeedback(context, snapshot);
 				const aggregate = aggregateForContext(context);
@@ -1444,7 +1474,7 @@ export class FactoryTools {
 				}
 				if (
 					snapshot.headSha !== headSha ||
-					readPath(run.outputs, "handoff.headSha") !== headSha
+					boundOutput(context, "handoff", "headSha") !== headSha
 				)
 					throw new Error(
 						"Review guide revision changed; retry review before approving",
@@ -1453,7 +1483,9 @@ export class FactoryTools {
 					if (!this.hooks.ticketDelivery)
 						throw new Error("Ticket delivery integration unavailable");
 					const snapshot = await this.hooks.ticketDelivery.verify(run);
-					if (readPath(run.outputs, "guide.externalDigest") !== snapshot.digest)
+					if (
+						boundOutput(context, "guide", "externalDigest") !== snapshot.digest
+					)
 						return {
 							rework: true,
 							reason: "External evidence changed after guide; review it again",
@@ -1483,7 +1515,7 @@ export class FactoryTools {
 						: originalApproved;
 				if (approved?.decision !== "approve")
 					throw new Error("Explicit human approval required before merge");
-				const url = String(readPath(run.outputs, "draft-pr.url") ?? "");
+				const url = String(boundOutput(context, "draftPr", "url") ?? "");
 				let submitted = false;
 				for (;;) {
 					context.assertSchedulingOpen?.();
@@ -1571,7 +1603,7 @@ export class FactoryTools {
 			}
 			case "handoff": {
 				const headSha = await command("git", ["rev-parse", "HEAD"]);
-				const url = String(readPath(run.outputs, "draft-pr.url"));
+				const url = String(boundOutput(context, "draftPr", "url"));
 				const pr = await (await provider(url)).view(
 					url,
 					"headRefOid,isDraft,state",
@@ -1594,7 +1626,7 @@ export class FactoryTools {
 					throw new Error("PR is no longer open; handoff blocked");
 				if (
 					pr.headRefOid !== headSha ||
-					readPath(run.outputs, "ci.headSha") !== headSha
+					boundOutput(context, "ci", "headSha") !== headSha
 				) {
 					if (
 						!context.step.branches.some(
@@ -1621,7 +1653,7 @@ export class FactoryTools {
 						message:
 							"PR/worktree revision changed after CI; synchronize the branch and repeat review and validation before handoff",
 					});
-					run.outputs.ci = readiness;
+					writeBoundOutput(context, "ci", readiness);
 					return readiness;
 				}
 				let readiness: MergeReadiness;
@@ -1640,10 +1672,10 @@ export class FactoryTools {
 					)
 						throw new Error("Worktree changed after review; handoff blocked");
 					if (
-						context.step.impactSource &&
+						readStep(context.step, "impact") &&
 						readiness.unassessedComments?.length
 					) {
-						run.outputs.ci = readiness;
+						writeBoundOutput(context, "ci", readiness);
 						return { ...readiness, impactRequired: true };
 					}
 					if (readiness.fix) {
@@ -1655,7 +1687,7 @@ export class FactoryTools {
 						) {
 							// The existing fixer and its review gate consume the latest
 							// CI receipt, including feedback arriving after the guide.
-							run.outputs.ci = readiness;
+							writeBoundOutput(context, "ci", readiness);
 							return readiness;
 						}
 						throw new Error(
@@ -1678,7 +1710,7 @@ export class FactoryTools {
 									...readiness,
 									fix: true,
 									scopeReviewRequired: true,
-									impactRequired: Boolean(context.step.impactSource),
+									impactRequired: Boolean(readStep(context.step, "impact")),
 									reason:
 										"Accepted context changed after review; extract a new requirement baseline",
 								};
@@ -1697,16 +1729,16 @@ export class FactoryTools {
 				}
 				const recovery = guideGapRecovery(context, readiness);
 				if (recovery) {
-					run.outputs.ci = recovery;
+					writeBoundOutput(context, "ci", recovery);
 					return recovery;
 				}
-				if (!guideReady(run.outputs.guide))
+				if (!guideReady(boundOutput(context, "guide")))
 					throw new Error(
 						"Review guide reports unresolved gaps; handoff blocked",
 					);
-				if (context.step.qaContract) {
+				if (hasCheck(context.step, "qa-evidence")) {
 					const gate = await this.qaGate(context, command);
-					const accepted = run.outputs["visual-gate"];
+					const accepted = boundOutput(context, "qaGate");
 					if (
 						!gate.approved ||
 						readPath(accepted, "headSha") !== headSha ||
@@ -1718,9 +1750,10 @@ export class FactoryTools {
 							"QA evidence changed or is incomplete; handoff blocked",
 						);
 				}
-				const guide = isReviewBrief(run.outputs.guide)
-					? briefMarkdown(run.outputs.guide, headSha)
-					: reviewGuideMarkdown(run.outputs.guide, headSha);
+				const guideOutput = boundOutput(context, "guide");
+				const guide = isReviewBrief(guideOutput)
+					? briefMarkdown(guideOutput, headSha)
+					: reviewGuideMarkdown(guideOutput, headSha);
 				await (await provider(url)).description(url, guide);
 				if (!run.ticketReference)
 					await this.hooks.postComment(
@@ -1785,13 +1818,16 @@ export function captureEvidence(
 	context: ExecutionContext,
 	output: unknown,
 ): unknown {
+	const qa =
+		formatOf(context.step) === "qa-capture-v1" ||
+		hasCheck(context.step, "qa-evidence");
 	const capture: z.infer<typeof CaptureSchema> &
-		Partial<z.infer<typeof QaCaptureSchema>> = context.step.qaContract
+		Partial<z.infer<typeof QaCaptureSchema>> = qa
 		? QaCaptureSchema.parse(output)
 		: CaptureSchema.parse(output);
-	const areas = readPath(context.run.outputs, "visual-scope.areas");
-	if (context.step.qaContract) {
-		const scope = context.run.outputs["visual-scope"] as {
+	const areas = boundOutput(context, "scope", "areas");
+	if (qa) {
+		const scope = boundOutput(context, "scope") as {
 			stories: { id: string; goal: string; criteria: unknown[] }[];
 			notApplicableReason?: string;
 		};
@@ -1825,7 +1861,7 @@ export function captureEvidence(
 			)
 				throw new Error(`Unknown screenshot task ${shot.area}/${shot.state}`);
 	}
-	const budget = readPath(context.run.outputs, "visual-scope.captureBudget");
+	const budget = boundOutput(context, "scope", "captureBudget");
 	// Old persisted inventories remain readable/resumable; new evidence plans are bounded.
 	if (typeof budget === "number") {
 		if (capture.screenshots.length > budget)
@@ -1862,7 +1898,7 @@ export function captureEvidence(
 			]);
 	}
 	capture.unavailable = captureGaps(capture, areas);
-	const scope = context.run.outputs["visual-scope"] as
+	const scope = boundOutput(context, "scope") as
 		| {
 				areas?: { name: string; dependencies?: string[]; changed?: boolean }[];
 				nonVisualFiles?: string[];
@@ -1935,7 +1971,7 @@ export function captureEvidence(
 				old.area !== shot.area ||
 				old.state !== shot.state ||
 				old.imageSha256 !== imageSha256 ||
-				(readPath(context.run.outputs, "visual-gate.approved") !== true &&
+				(boundOutput(context, "qaGate", "approved") !== true &&
 					!(
 						readPath(
 							context.run.outputs,
@@ -1970,7 +2006,6 @@ export function captureEvidence(
 		shot.fingerprintVersion = 2;
 	}
 	if (rejected.length) throw new CaptureReuseError(rejected);
-	if (context.step.qaContract)
-		stampQaCriteria(context, capture as import("./Qa.js").QaExecution);
+	if (qa) stampQaCriteria(context, capture as import("./Qa.js").QaExecution);
 	return capture;
 }

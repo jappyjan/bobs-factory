@@ -12,6 +12,14 @@ import {
 } from "./RepositoryScope.js";
 import type { AggregateReview, ReviewerReceipt } from "./SpecialistReview.js";
 import { latestAggregate, scopeContextDigest } from "./SpecialistReview.js";
+import {
+	checkArgs,
+	formatOf,
+	readOutput,
+	readStep,
+	resolveStepConfig,
+} from "./StepConfig.js";
+import { outputForTool } from "./ToolBindings.js";
 import type { WorkflowStep } from "./Workflow.js";
 import type {
 	ExecutionContext,
@@ -347,11 +355,11 @@ export async function collectImpactSnapshot(
 			);
 		}
 		const url =
-			deliveryRevisions(run.outputs["draft-pr"]).find(
+			deliveryRevisions(outputForTool(run, "draft-pr")).find(
 				(d) => d.repositoryId === repo.id,
 			)?.url ??
 			(runRepositories(run).length === 1
-				? (run.outputs["draft-pr"] as { url?: string } | undefined)?.url
+				? (outputForTool(run, "draft-pr") as { url?: string } | undefined)?.url
 				: undefined);
 		repositories.push({
 			repositoryId: repo.id,
@@ -403,7 +411,7 @@ export async function collectImpactSnapshot(
 		}),
 		inventoryDigest:
 			(
-				(context.outputs ?? run.outputs)[fanout.review?.inventory ?? ""] as
+				readOutput(fanout, "inventory", context.outputs ?? run.outputs) as
 					| { digest?: string }
 					| undefined
 			)?.digest ?? previous?.baseline.inventory.digest,
@@ -414,7 +422,7 @@ export async function collectImpactSnapshot(
 		reviewers: (fanout.groups ?? []).flat().map((s) => ({
 			id: s.id,
 			name: s.name,
-			contract: s.reviewContract!,
+			contract: formatOf(s)!,
 			promptDigest: qaDigest({
 				prompt: s.prompt,
 				runner: s.runner,
@@ -851,7 +859,7 @@ export function impactFanout(
 				(s.groups ?? []).flat().map((r) => ({
 					id: r.id,
 					name: r.name,
-					contract: r.reviewContract!,
+					contract: formatOf(r)!,
 					promptDigest: qaDigest({
 						prompt: r.prompt,
 						runner: r.runner,
@@ -865,7 +873,7 @@ export function impactFanout(
 	return fanout;
 }
 export async function assertCurrentImpact(context: ExecutionContext) {
-	if (!context.step.impactSource) return;
+	if (!readStep(context.step, "impact")) return;
 	const key =
 		context.impactKey ??
 		context.reviewKey ??
@@ -940,7 +948,7 @@ export async function selectedChecks(
 export async function effectiveApproval(context: ExecutionContext) {
 	const original = context.run.humanDecisions?.at(-1);
 	const continued = context.run.approvalContinuations?.at(-1);
-	if (!context.step.impactSource || !continued) return original;
+	if (!readStep(context.step, "impact") || !continued) return original;
 	const impact = await assertCurrentImpact(context);
 	const aggregate = impact
 		? latestAggregate(context.run, impact.snapshot.key)
@@ -961,17 +969,21 @@ export async function effectiveApproval(context: ExecutionContext) {
 }
 
 export function feedbackDigest(run: FactoryRun): string {
-	const group = groupedOutput(run.outputs["merge-readiness"] ?? run.outputs.ci);
+	const group = groupedOutput(run.mergeReadiness ?? outputForTool(run, "ci"));
 	if (group)
 		return qaDigest(
 			group.deliveries
 				.map((delivery) => ({
 					repositoryId: delivery.repositoryId,
-					digest: feedbackDigest({ ...run, outputs: { ci: delivery.output } }),
+					digest: feedbackDigest({
+						...run,
+						mergeReadiness:
+							delivery.output as unknown as typeof run.mergeReadiness,
+					}),
 				}))
 				.sort((a, b) => a.repositoryId.localeCompare(b.repositoryId)),
 		);
-	const receipt = (run.outputs["merge-readiness"] ?? run.outputs.ci) as
+	const receipt = (run.mergeReadiness ?? outputForTool(run, "ci")) as
 		| { comments?: unknown[]; threads?: unknown[]; reviews?: unknown[] }
 		| undefined;
 	const records = (values: unknown[] = []): unknown[] =>
@@ -1085,17 +1097,17 @@ function impactSourceDigest(
 	const scope = inputScope(context) as Record<string, unknown>;
 	const legacy = scopeContextDigest(scope);
 	const inventory = (context.outputs ?? context.run.outputs)[
-		fanout.review?.inventory ?? ""
+		readStep(fanout, "inventory") ?? ""
 	] as import("./SpecialistReview.js").Inventory | undefined;
-	const conventional = new Set([
-		"clarify",
-		"decisions",
-		"plan",
-		"existing-work",
-		"assess-existing",
-		"source",
-		"ticket",
-	]);
+	const sources = checkArgs(fanout, "scope-inputs")?.sources;
+	const config = resolveStepConfig(fanout);
+	const conventional = new Set(
+		Object.values(sources && typeof sources === "object" ? sources : {})
+			.map((name) =>
+				config.reads[String(name)]?.from.split("/")[0]?.replace(/^@/, ""),
+			)
+			.filter(Boolean),
+	);
 	const pointers = [
 		...new Set(
 			(inventory?.requirements ?? [])
@@ -1105,7 +1117,7 @@ function impactSourceDigest(
 					(p) =>
 						p.startsWith("/outputs/") &&
 						!conventional.has(p.split("/")[2]!) &&
-						p.split("/")[2] !== fanout.review?.inventory,
+						p.split("/")[2] !== readStep(fanout, "inventory"),
 				),
 		),
 	].sort();
@@ -1114,7 +1126,7 @@ function impactSourceDigest(
 	// evidence is the original history receipt, not the next assessment replacing
 	// the same output slot. Otherwise saving a decision invalidates itself.
 	const prefix = key.slice(0, key.lastIndexOf("/") + 1);
-	const inventoryKey = `${prefix}${fanout.review?.inventory}`;
+	const inventoryKey = `${prefix}${readStep(fanout, "inventory")}`;
 	const inventoryReceipt = [...context.run.history]
 		.reverse()
 		.find(
@@ -1125,15 +1137,18 @@ function impactSourceDigest(
 	const inventoryIndex = inventoryReceipt
 		? context.run.history.indexOf(inventoryReceipt)
 		: -1;
-	const assessmentKey = `${prefix}${fanout.impactSource}`;
+	const assessmentKey = `${prefix}${readStep(fanout, "impact")}`;
 	const originalAssessment = context.run.history
 		.slice(0, Math.max(0, inventoryIndex))
 		.reverse()
 		.find((item) => item.step === assessmentKey)?.output;
 	const declared = pointers.map((path) => {
-		const assessmentSource = path.split("/")[2] === fanout.impactSource;
+		const assessmentSource = path.split("/")[2] === readStep(fanout, "impact");
 		let value: unknown = assessmentSource
-			? { ...scope, outputs: { [fanout.impactSource!]: originalAssessment } }
+			? {
+					...scope,
+					outputs: { [readStep(fanout, "impact")!]: originalAssessment },
+				}
 			: scope;
 		for (const key of path
 			.slice(1)

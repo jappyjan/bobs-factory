@@ -1,4 +1,6 @@
 import { immutableJson } from "bobs-factory-core";
+import { readOutput } from "./StepConfig.js";
+import { outputForTool } from "./ToolBindings.js";
 import { readPath, type WorkflowStep } from "./Workflow.js";
 import type { FactoryRun, GraphCheckpoint } from "./WorkflowRuntime.js";
 
@@ -36,7 +38,8 @@ export function pendingMergeConfirmation(
 				(b) =>
 					b.when.path === "externalPending" &&
 					b.when.equals === true &&
-					b.next === "external-final",
+					steps.find((candidate) => candidate.id === b.next)?.tool ===
+						"external-final",
 			));
 	const find = (
 		checkpoint: GraphCheckpoint | undefined,
@@ -68,7 +71,7 @@ export function pendingMergeConfirmation(
 			(run.repositories?.length ?? 0) <= 1
 		) {
 			const approval = run.humanDecisions?.at(-1);
-			const url = readPath(run.outputs, "draft-pr.url");
+			const url = readPath(readOutput(step, "draftPr", run.outputs), "url");
 			const human = steps.find(
 				(s) =>
 					s.id ===
@@ -145,7 +148,7 @@ export function confirmedMerge(
 ): { merged: true; url: string; headSha: string } | undefined {
 	if (pr.state !== "MERGED") return;
 	const approval = run.humanDecisions?.at(-1);
-	const url = readPath(run.outputs, "draft-pr.url");
+	const url = readPath(outputForTool(run, "draft-pr"), "url");
 	if (
 		approval?.decision !== "approve" ||
 		typeof pr.headSha !== "string" ||

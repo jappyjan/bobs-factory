@@ -253,6 +253,9 @@ export function repositoryRun(
 		repositories: undefined,
 		gitProvider: repository.providerSnapshot,
 		outputs,
+		mergeReadiness: run.mergeReadiness
+			? (project(run.mergeReadiness) as FactoryRun["mergeReadiness"])
+			: undefined,
 		history: snapshotHistory(run.history, 0, run.history.length, (item) => ({
 			...item,
 			output: project(item.output),

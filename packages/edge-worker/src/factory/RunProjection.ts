@@ -1,5 +1,9 @@
 import { activityPreview } from "./ActivityPage.js";
 import { workflowDisplay } from "./ConfigProjection.js";
+import {
+	presentationOutputKeys,
+	presentationOutputs,
+} from "./RunOutputRoles.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 const focusFields = [
@@ -71,6 +75,7 @@ export function focusRun(
 	outputs: Record<string, unknown>,
 	deliveryRecovery: boolean,
 ) {
+	outputs = presentationOutputs(run, outputs);
 	const guide = outputs.guide as
 		| { verdict?: { headline?: string }; summary?: string; goal?: string }
 		| undefined;
@@ -154,6 +159,8 @@ export function dashboardRun(
 				]
 			: [],
 		outputs,
+		outputRoles: presentationOutputKeys(run),
+		hasGuide: Boolean(presentationOutputKeys(run).guide),
 	};
 }
 

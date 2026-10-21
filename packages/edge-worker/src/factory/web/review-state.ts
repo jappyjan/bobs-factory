@@ -2,6 +2,7 @@ import type { Guide, GuideChapter } from "../FactoryResults";
 import type { ImpactDecision } from "../Impact";
 import { accessState } from "./auth-state";
 import { chaptersFor } from "./review-model";
+import { roleOutput, roleOutputKey } from "./run-output";
 export function signature(value: unknown) {
 	let hash = 2166136261;
 	for (const c of JSON.stringify(value))
@@ -20,13 +21,15 @@ export function ticketTrackingPending(run: any): boolean {
 }
 
 export function guideRevision(run: any) {
-	return (
-		run.roleRevisions?.["pipeline/guide"] ??
-		Object.entries<any>(run.roleRevisions ?? {}).find(
-			([key]) => key === "guide" || key.endsWith("/guide"),
-		)?.[1]
-	);
+	const key = roleOutputKey(run, "guide");
+	return key
+		? (run.roleRevisions?.[key] ??
+				Object.entries<any>(run.roleRevisions ?? {}).find(
+					([candidate]) => candidate.split("/").at(-1) === key,
+				)?.[1])
+		: undefined;
 }
+
 export function reviewRevision(run: any) {
 	return (
 		run.reviewGate?.externalDigest ??
@@ -47,7 +50,9 @@ export function reviewKey(run: any, guide: unknown) {
 
 export function guideMatchesGate(run: any) {
 	if (run.reviewGate?.mode === "external")
-		return run.outputs?.guide?.externalDigest === run.reviewGate.externalDigest;
+		return (
+			roleOutput(run, "guide")?.externalDigest === run.reviewGate.externalDigest
+		);
 	const revision = guideRevision(run);
 	return !revision || revision.headSha === run.reviewGate?.headSha;
 }

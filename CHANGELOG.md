@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Configure agent steps with named inputs, library or custom output schemas, declarative rules, evidence checks, revision binding, access and shared instructions in Recipes. Renaming Factory steps preserves their behavior, and frozen legacy definitions retain their original contracts. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136))
+
 - Discover substantial architectural improvements with parallel research coordinators and cheaper workers. Review each proposal with Fix it, File issue, Skip or Ask Bob, see prerequisite and alternative conflicts before submitting, and preview which fixes start in parallel; explicitly launch the batch to file deferred backlog issues and launch only selected fixes as independent Factory runs, with traceable research activity, fresh plan checks after feedback, normal approvals and dependency-aware delivery. ([#167](https://github.com/jappyjan/bobs-factory/pull/167))
 
 - Before building, Bob checks in like a colleague at your desk instead of handing you a 16,000-pixel proposal: what he thinks you want, how he’d do it with a before/after sketch of what people will experience, who will notice, the calls he’d like you to check, how big it is and what he won’t do or can’t fully prove. React to each point with 👍 or a short note; your notes go back as one change request, or say “Go ahead, build it”. Listen reads it aloud. Files, ticket coverage, the system map and the full plan stay in Bob’s notes, and drafts his reviewer sent back are counted instead of shown. Asking for changes on a pending proposal switches that run to the check-in. ([#166](https://github.com/jappyjan/bobs-factory/pull/166))

@@ -19,6 +19,7 @@ import {
 } from "../src/factory/FactoryTools.js";
 import { roleProgress } from "../src/factory/Incremental.js";
 import { qaDigest } from "../src/factory/Qa.js";
+import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
 import {
 	type ExecutionContext,
 	WorkflowRuntime,
@@ -237,7 +238,7 @@ it("returns visual and CI fixes through code review, keeping dispute history", a
 		input: "Ticket",
 	});
 	await runtime.launch(run);
-	expect(run.status).toBe("completed");
+	expect(run.status, run.error).toBe("completed");
 	expect(order).toEqual([
 		"clarify",
 		"decisions",
@@ -280,6 +281,13 @@ it("returns visual and CI fixes through code review, keeping dispute history", a
 	]);
 });
 
+function legacyFixtureStep(
+	step: ExecutionContext["step"],
+): ExecutionContext["step"] {
+	registerWorkflowConfig({ id: "factory-pipeline", steps: [step] }, "factory");
+	return step;
+}
+
 function context(): ExecutionContext {
 	const directory = home();
 	const runtime = createRuntime(directory, {
@@ -304,15 +312,21 @@ function context(): ExecutionContext {
 		ci: { approved: true, headSha: "old" },
 		guide: {},
 	};
+	let step = legacyFixtureStep({
+		id: "handoff",
+		name: "Handoff",
+		type: "tool",
+		tool: "handoff",
+		branches: [],
+		maxVisits: 8,
+	});
 	return {
 		run,
-		step: {
-			id: "handoff",
-			name: "Handoff",
-			type: "tool",
-			tool: "handoff",
-			branches: [],
-			maxVisits: 8,
+		get step() {
+			return step;
+		},
+		set step(value) {
+			step = legacyFixtureStep(value);
 		},
 		input: {},
 		evidenceDir: directory,
@@ -715,7 +729,7 @@ it.each([
 		await vi.advanceTimersByTimeAsync(1);
 		expect(polls).toBe(1);
 		expect(publish).not.toHaveBeenCalled();
-		expect(input.run.outputs["merge-readiness"]).toMatchObject({
+		expect(input.run.mergeReadiness).toMatchObject({
 			reviewReady: false,
 		});
 		await vi.advanceTimersByTimeAsync(10000);
@@ -725,7 +739,7 @@ it.each([
 		});
 		expect(polls).toBe(2);
 		expect(publish).toHaveBeenCalledOnce();
-		expect(input.run.outputs["merge-readiness"]).toMatchObject({
+		expect(input.run.mergeReadiness).toMatchObject({
 			reviewReady: true,
 		});
 	} finally {
@@ -790,7 +804,7 @@ it.each([
 		);
 		expect(publish).not.toHaveBeenCalled();
 		if (change === "feedback")
-			expect(input.run.outputs["merge-readiness"]).toMatchObject({
+			expect(input.run.mergeReadiness).toMatchObject({
 				fix: true,
 				blockers: expect.arrayContaining([
 					{
@@ -903,7 +917,7 @@ it("waits on blocked implementation across restart and supplies the answer witho
 		input: "Private ticket and metadata",
 	});
 	const first = runtime.launch(run);
-	await waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status, run.error).toBe("waiting"));
 	expect(run.step).toBe("pipeline/implement");
 	expect(run.questions).toEqual([question]);
 	expect(tool).toHaveBeenCalledTimes(1); // Decision recording only; no delivery.
@@ -1021,7 +1035,7 @@ it.each([
 		question: questionPosted,
 	};
 	const runtime = createRuntime(directory, hooks);
-	const definitions = localReviewWorkflows(runtime.listWorkflows());
+	const definitions = localReviewWorkflows();
 	const pipeline = definitions.find((w) => w.id === "fixture-pipeline")!;
 	pipeline.steps = pipeline.steps.filter((s) =>
 		["capture", "visual-review", "visual-gate"].includes(s.id),
@@ -1053,7 +1067,7 @@ it.each([
 		})),
 	};
 	const first = runtime.launch(run);
-	await waitFor(() => expect(run.status).toBe("waiting"), {
+	await waitFor(() => expect(run.status, run.error).toBe("waiting"), {
 		timeout: 10000,
 	});
 	expect(run.step).toBe("pipeline/visual-gate");
@@ -1155,7 +1169,7 @@ it("waits again when capture remains blocked after an answer, and stops without 
 		},
 		tool: (ctx) => tools.tool(ctx),
 	});
-	const definitions = localReviewWorkflows(runtime.listWorkflows());
+	const definitions = localReviewWorkflows();
 	const pipeline = definitions.find((w) => w.id === "fixture-pipeline")!;
 	pipeline.steps = pipeline.steps.filter((s) =>
 		["capture", "visual-review", "visual-gate"].includes(s.id),
@@ -1186,10 +1200,10 @@ it("waits again when capture remains blocked after an answer, and stops without 
 		input: "Fixture",
 	});
 	const execution = runtime.launch(run);
-	await waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status, run.error).toBe("waiting"));
 	runtime.answer(run.id, "Approve it anyway.");
 	await waitFor(() => {
-		expect(run.status).toBe("waiting");
+		expect(run.status, run.error).toBe("waiting");
 		expect(
 			run.history.filter((h) => h.step === "pipeline/capture"),
 		).toHaveLength(2);
@@ -1211,6 +1225,11 @@ it("fails safely when a custom visual gate has no capture recovery path", async 
 		...ctx.step,
 		id: "visual-gate",
 		tool: "visual-gate",
+		reads: {
+			scope: "visual-scope",
+			capture: "capture",
+			review: "visual-review",
+		},
 		next: "end",
 	};
 	ctx.run.workflow.steps = [gate];
@@ -1357,7 +1376,11 @@ function qaContext(surface: "ui" | "api" | "cli" = "api") {
 	return ctx;
 }
 function stampQa(ctx: ExecutionContext, output = qaExecution()) {
-	const captureStep = { ...ctx.step, id: "capture" };
+	const captureStep = legacyFixtureStep({
+		...ctx.step,
+		id: "capture",
+		type: "agent",
+	});
 	ctx.run.outputs.capture = captureEvidence(
 		{ ...ctx, step: captureStep },
 		output,

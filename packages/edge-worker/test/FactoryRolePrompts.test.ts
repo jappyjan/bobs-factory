@@ -8,11 +8,17 @@ import {
 	upgradedGuideStep,
 } from "../src/factory/defaultWorkflows.js";
 import { incrementalInstructions } from "../src/factory/Incremental.js";
+import { renderInstructionTemplate } from "../src/factory/InstructionLibrary.js";
+import {
+	feedbackPolicyInstructions,
+	implementationScopeInstructions,
+} from "../src/factory/InstructionText.js";
 import {
 	factoryNativePrompt,
 	factoryRoleInstruction,
 	withRuntimeRolePrompt,
 } from "../src/factory/RolePrompt.js";
+import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
 import {
 	StepSchema,
 	type Workflow,
@@ -71,7 +77,10 @@ function prompts(workflows: Workflow[], set: string) {
 				walk(group, `${key}/${index}`);
 		}
 	};
-	for (const workflow of workflows) walk(workflow.steps, `/${workflow.id}`);
+	for (const workflow of workflows) {
+		registerWorkflowConfig(workflow);
+		walk(workflow.steps, `/${workflow.id}`);
+	}
 	return result;
 }
 
@@ -128,11 +137,34 @@ it("keeps every stock and legacy Factory role prompt byte-identical", () => {
 	}
 	const expected = expand(JSON.parse(readFileSync(promptFixture, "utf8")));
 	expect(Object.keys(actual).sort()).toEqual(Object.keys(expected).sort());
-	for (const key of Object.keys(expected))
+	for (const key of Object.keys(expected)) {
 		expect({ key, prompt: actual[key] }).toEqual({
 			key,
 			prompt: expected[key],
 		});
+	}
+});
+
+it("applies selected shared snippets without requiring prompt tokens and preserves explicit slot placement", () => {
+	const step = {
+		configVersion: "step-config-v1",
+		instructions: [
+			"implementation-scope",
+			"feedback-policy",
+			"review-completion",
+		],
+	};
+	expect(renderInstructionTemplate(step, "Execute the role.")).toBe(
+		`Execute the role.\n${implementationScopeInstructions}\n${feedbackPolicyInstructions}`,
+	);
+	expect(
+		renderInstructionTemplate(
+			step,
+			"First {{instruction:feedback-policy}} then {{instruction:implementation-scope}}.",
+		),
+	).toBe(
+		`First ${feedbackPolicyInstructions} then ${implementationScopeInstructions}.`,
+	);
 });
 
 /**

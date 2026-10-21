@@ -12,6 +12,7 @@ import {
 	scopeRevision,
 } from "./RepositoryScope.js";
 import { scopeContextDigest } from "./SpecialistReview.js";
+import { boundOutput, historyForCheck } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 export type ProviderCommand = (
@@ -122,16 +123,14 @@ export function reportReadiness(
 		).length;
 		return `Merge readiness: ${passed}/${value.checks.length} checks passed; ${value.blockers.map((item) => item.message).join("; ") || (value.state === "MERGED" ? "Merged" : value.queued ? "In merge queue" : "Ready")}`;
 	};
-	const previous = context.run.outputs["merge-readiness"] as
-		| MergeReadiness
-		| undefined;
+	const previous = context.run.mergeReadiness as MergeReadiness | undefined;
 	const message = describe(snapshot);
 	const changed =
 		!previous ||
 		previous.headSha !== snapshot.headSha ||
 		previous.baseSha !== snapshot.baseSha ||
 		describe(previous) !== message;
-	context.run.outputs["merge-readiness"] = snapshot;
+	context.run.mergeReadiness = snapshot;
 	if (changed) context.log(message);
 }
 
@@ -214,7 +213,7 @@ export function recordFeedbackAssessment(
 	const ids = new Set((value.addressedCommentIds ?? []).map(String));
 	const policies = authorizeFeedbackPolicies(context, value.feedbackPolicies);
 	const active = feedbackPolicies(context, policies);
-	const raw = context.run.outputs["merge-readiness"] ?? context.run.outputs.ci;
+	const raw = context.run.mergeReadiness ?? boundOutput(context, "ci");
 	const group = groupedOutput(raw);
 	// Match repository-scoped IDs used by repositoryRun when projecting history.
 	const scoped = (repositoryId: string, comments: FeedbackComment[] = []) =>
@@ -334,13 +333,10 @@ export function assessFeedback(
 ): void {
 	const addressedComments = new Map<string, { hash?: string; at: string }>(),
 		addressedReviews = new Set<string>();
-	for (const item of context.run.history ?? []) {
-		if (
-			item.step.split("/").at(-1) !== "ci-fix" &&
-			(item.output as { impactContract?: string })?.impactContract !==
-				"impact-v1"
-		)
-			continue;
+	for (const item of historyForCheck(context.run, [
+		"feedback-assessment",
+		"impact-reuse",
+	])) {
 		const output = item.output as
 			| {
 					addressedCommentIds?: string[];

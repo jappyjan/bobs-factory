@@ -33,6 +33,7 @@ import {
 import { fileTotals } from "./review-model";
 import { readStored, signature, writeStored } from "./review-state";
 import { StoryDeck } from "./review-story";
+import { roleOutput } from "./run-output";
 import { Button, External, Modal } from "./ui";
 
 type Inventory = {
@@ -146,8 +147,8 @@ export function BriefReview({
 		queryKey: [
 			"guide-evidence",
 			run.id,
-			run.outputs.capture?.__artifactHash ??
-				signature(run.outputs.capture ?? {}),
+			roleOutput(run, "capture")?.__artifactHash ??
+				signature(roleOutput(run, "capture") ?? {}),
 		],
 		queryFn: ({ signal }) => api(`/api/runs/${run.id}/evidence`, { signal }),
 		staleTime: Infinity,
@@ -322,7 +323,7 @@ export function BriefReview({
 	};
 	const files = fileQuery.data?.manifest.files;
 	const totals = files ? fileTotals(files) : undefined;
-	const receipt = run.outputs?.["merge-readiness"] ?? run.outputs?.ci;
+	const receipt = roleOutput(run, "merge-readiness") ?? roleOutput(run, "ci");
 	// Older and scripted receipts may not carry provider checks; never let them break reading.
 	const checks: { bucket?: string }[] | undefined = Array.isArray(
 		receipt?.checks,

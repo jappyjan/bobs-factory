@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import type { FastifyInstance } from "fastify";
 import { runRepositories, scopeRevision } from "./RepositoryScope.js";
+import { outputForCheck } from "./ToolBindings.js";
 import {
 	byteRange,
 	evidenceFile,
@@ -33,9 +34,9 @@ export function registerVideoRoutes(
 				.header("Cache-Control", "no-store")
 				.header("X-Content-Type-Options", "nosniff");
 			const run = runtime.get(request.params.id),
-				video = (run.outputs.capture as VideoCapture | undefined)?.videos?.find(
-					(v) => v.taskId === request.params.task,
-				),
+				video = (
+					outputForCheck(run, "capture-evidence") as VideoCapture | undefined
+				)?.videos?.find((v) => v.taskId === request.params.task),
 				validation = video?.validation;
 			if (!video || !validation)
 				return reply.code(404).send({ error: "Video evidence is unavailable" });

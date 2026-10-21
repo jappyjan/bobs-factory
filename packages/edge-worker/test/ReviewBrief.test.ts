@@ -370,13 +370,19 @@ it("requires a code tour for brief-v3 that places every changed file once", () =
 	);
 });
 
-it("stamps the contract only for brief guide steps", () => {
+it("stamps the configured brief format independently of its step ID", () => {
 	const { contract: _contract, ...authored } = brief();
 	expect(stampGuideContract(stockBrief, authored)).toMatchObject({
 		contract: DIVE_CONTRACT,
 	});
-	const legacy = { ...stockBrief, guideContract: undefined };
+	const legacy = { ...stockBrief, output: { format: "guide-v1" } };
 	expect(stampGuideContract(legacy, authored)).toBe(authored);
+	expect(
+		stampGuideContract(
+			{ id: "renamed", output: { format: "review-brief-v1" } },
+			authored,
+		),
+	).toMatchObject({ contract: BRIEF_CONTRACT });
 	expect(
 		stampGuideContract(
 			{ id: "capture", guideContract: BRIEF_CONTRACT },
@@ -517,9 +523,14 @@ it("routes not-ready briefs back to correction and publishes Markdown without re
 	]);
 	const ctx = context();
 	ctx.run.outputs.guide = value;
-	(ctx.step as { branches: unknown[] }).branches = [
-		{ when: { path: "fix", equals: true }, next: "ci-fix" },
-	];
+	ctx.step = {
+		...ctx.step,
+		id: "present",
+		type: "tool",
+		tool: "handoff",
+		reads: { guide: "guide" },
+		branches: [{ when: { path: "fix", equals: true }, next: "ci-fix" }],
+	};
 	const readiness = {
 		url: "https://github.com/o/r/pull/1",
 		headSha: "head",

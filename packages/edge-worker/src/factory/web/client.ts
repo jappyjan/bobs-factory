@@ -36,6 +36,7 @@ import {
 	usePwa,
 	versionMismatch,
 } from "./pwa";
+import { roleOutput } from "./run-output";
 
 export {
 	active,
@@ -773,7 +774,10 @@ export function artifactsOf(
 		}));
 }
 export function screenshotUrl(run: any, index: number, artifact = "capture") {
-	const value = run.outputs?.[artifact];
+	const value =
+		artifact === "capture"
+			? roleOutput(run, "capture")
+			: run.outputs?.[artifact];
 	const shot = value?.screenshots?.[index];
 	const version =
 		shot?.imageSha256 ??

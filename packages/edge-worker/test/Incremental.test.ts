@@ -17,6 +17,7 @@ import {
 	dependencyHashes,
 	roleProgress,
 } from "../src/factory/Incremental.js";
+import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 
 const homes: string[] = [];
@@ -58,9 +59,10 @@ function context() {
 				"visual-gate": { approved: true },
 			},
 		},
-		step: { id: "capture" },
+		step: { id: "capture", type: "agent" },
 		evidenceDir,
 	} as unknown as ExecutionContext;
+	registerWorkflowConfig({ id: "factory", steps: [context.step] });
 	return { context, workspace, git };
 }
 it("keeps per-role results and exposes only new history and exact revision changes", async () => {
@@ -283,7 +285,7 @@ it("gives the guide the entire PR file inventory separately from the last role d
 	git("commit", "-m", "feat: a");
 	ctx.step.id = "guide";
 	ctx.run.step = "pipeline/guide";
-	ctx.run.outputs["merge-readiness"] = { baseSha };
+	ctx.run.outputs.ci = { baseSha };
 	ctx.run.roleRevisions = {
 		"pipeline/guide": (await roleProgress(ctx)).currentRevision!,
 	};

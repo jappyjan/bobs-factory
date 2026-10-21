@@ -28,16 +28,16 @@
 		"CLAUDE.md"
 	],
 	"dependencies": {
-		"commander": "^14.0.2",
 		"bobs-factory-claude-runner": "workspace:*",
 		"bobs-factory-core": "workspace:*",
 		"bobs-factory-edge-worker": "workspace:*",
-		"bobs-factory-slack-event-transport": "workspace:*"
+		"bobs-factory-slack-event-transport": "workspace:*",
+		"commander": "^14.0.2"
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",
 		"@typescript/native-preview": "7.0.0-dev.20260707.2",
-		"vitest": "^4.1.11"
+		"vitest": "^4.1.12"
 	},
 	"engines": {
 		"node": ">=18.0.0"

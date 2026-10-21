@@ -17,7 +17,8 @@ overrides:
   # electron-builder's latest app-builder-lib pins old @electron/get -> global-agent
   # -> roarr -> unpatched sprintf-js. get 5 removes that vulnerable dependency chain.
   'app-builder-lib>@electron/get': '5.1.0'
-  "@opentelemetry/core": ">=2.8.0"
+  # Existing telemetry SDK uses the 2.x API peer; keep its patched major on refresh.
+  "@opentelemetry/core": ">=2.8.0 <3"
   "uuid": ">=11.1.1"
   "body-parser": ">=2.3.0"
   "js-yaml": ">=5.2.2"
@@ -26,9 +27,6 @@ overrides:
   "systeminformation": ">=5.31.7"
   "undici": ">=7.28.0"
   "@grpc/grpc-js": ">=1.14.4"
-  "ajv": ">=8.18.0"
   "picomatch": ">=4.0.4"
   "postcss": ">=8.5.26"
-  "hono": ">=4.13.5"
-  "@hono/node-server": ">=2.0.5"
   "@opentelemetry/propagator-jaeger": ">=2.9.0"

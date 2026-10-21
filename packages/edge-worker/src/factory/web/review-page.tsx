@@ -5,6 +5,7 @@ import { FullReview, RunMeta } from "./focus";
 import { ReviewContextRow } from "./review-context-row";
 import { useReviewInput } from "./review-input";
 import { ticketTrackingPending, writeTextStored } from "./review-state";
+import { roleOutput } from "./run-output";
 import { Button } from "./ui";
 
 export function ReviewPage({
@@ -47,7 +48,7 @@ export function ReviewPage({
 			</>
 		);
 	const gate = run.reviewGate,
-		guide = run.outputs?.guide,
+		guide = roleOutput(run, "guide"),
 		complete = ["complete", "completed"].includes(run.status),
 		trackingPending = ticketTrackingPending(run);
 	return (
@@ -92,12 +93,13 @@ export function ReviewPage({
 					loaded review.
 				</p>
 			)}
-			{gate?.status === "pending" && run.outputs?.["external-final"]?.drift && (
-				<p className="notice" role="status">
-					Ticket state changed or could not be checked after acceptance. Review
-					the refreshed evidence and accept it again.
-				</p>
-			)}
+			{gate?.status === "pending" &&
+				roleOutput(run, "external-final")?.drift && (
+					<p className="notice" role="status">
+						Ticket state changed or could not be checked after acceptance.
+						Review the refreshed evidence and accept it again.
+					</p>
+				)}
 			{trackingPending && (
 				<p className="notice" role={run.ticketSync?.error ? "alert" : "status"}>
 					Ticket synchronization pending.{" "}

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { externalCompletionProven } from "./Delivery.js";
 import { isPullRequestSource } from "./GitProviderReference.js";
 import { issueSnapshot } from "./issueSnapshot.js";
+import { outputForTool } from "./ToolBindings.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 export const TicketReferenceSchema = z
@@ -556,8 +557,8 @@ export function recordTicketMilestone(
 				!milestone.completion ||
 				milestone.completion.digest !== run.delivery.verification?.digest ||
 				(run.delivery.contract.mode === "mixed" &&
-					(run.outputs.merge as { merged?: boolean } | undefined)?.merged !==
-						true)
+					(outputForTool(run, "merge") as { merged?: boolean } | undefined)
+						?.merged !== true)
 			)
 				throw new Error(
 					"Done requires the accepted external completion proof and all mixed repository merges",

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 import {
 	defaultWorkflows,
@@ -23,8 +24,18 @@ import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 const stockBrief = defaultWorkflows
 	.find((w) => w.id === "factory-pipeline")!
 	.steps.find((s) => s.id === "guide")!;
+const frozenBrief = JSON.parse(
+	readFileSync(
+		new URL("./fixtures/legacy-workflows-a4990127.json", import.meta.url),
+		"utf8",
+	),
+)
+	.default.find(
+		(workflow: { id: string }) => workflow.id === "factory-pipeline",
+	)
+	.steps.find((step: { id: string }) => step.id === "guide");
 const legacyGuideStep = {
-	...stockBrief,
+	...frozenBrief,
 	guideContract: undefined,
 	prompt: legacyGuidePrompt + videoPrompts.guide + inventoryGuideInstructions,
 };
@@ -306,24 +317,24 @@ it("regenerates stock guides with Dig deeper while keeping custom guides and rol
 		model: "operator-model",
 		reasoningEffort: "high" as const,
 	};
-	const impact = stockBrief.prompt!.slice(
-		stockBrief.prompt!.indexOf("\nFor impact-v1 follow-ups"),
+	const impact = frozenBrief.prompt.slice(
+		frozenBrief.prompt.indexOf("\nFor impact-v1 follow-ups"),
 	);
 	const v1 = briefPrompt + briefVideoInstructions;
 	const v2 = storyPrompt + briefVideoInstructions;
 	for (const [old, expected] of [
 		[legacyGuideStep, divePrompt + briefVideoInstructions],
 		[
-			{ ...stockBrief, guideContract: BRIEF_CONTRACT, prompt: v1 },
+			{ ...frozenBrief, guideContract: BRIEF_CONTRACT, prompt: v1 },
 			divePrompt + briefVideoInstructions,
 		],
 		[
-			{ ...stockBrief, guideContract: BRIEF_CONTRACT, prompt: v1 + impact },
-			stockBrief.prompt,
+			{ ...frozenBrief, guideContract: BRIEF_CONTRACT, prompt: v1 + impact },
+			frozenBrief.prompt,
 		],
 		[
-			{ ...stockBrief, guideContract: STORY_CONTRACT, prompt: v2 + impact },
-			stockBrief.prompt,
+			{ ...frozenBrief, guideContract: STORY_CONTRACT, prompt: v2 + impact },
+			frozenBrief.prompt,
 		],
 	] as const) {
 		const upgraded = upgradedGuideStep({ ...old, ...settings });

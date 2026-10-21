@@ -194,6 +194,7 @@ import {
 	type TicketTarget,
 	validateDeliveryContract,
 } from "./factory/Delivery.js";
+import { runEvidenceChecks } from "./factory/EvidenceChecks.js";
 import {
 	executionCapabilities,
 	validateProfileRunner,
@@ -209,7 +210,6 @@ import {
 import { atomicPrivateFile, privateFile } from "./factory/FactoryAuthStore.js";
 import type { FactoryOnboarding } from "./factory/FactoryOnboarding.js";
 import { FactoryPush } from "./factory/FactoryPush.js";
-import { validateFactoryResult } from "./factory/FactoryResults.js";
 import { FactoryServer } from "./factory/FactoryServer.js";
 import {
 	CaptureReuseError,
@@ -273,6 +273,7 @@ import {
 	inspectOperatorTransport,
 	operatorSanitize,
 } from "./factory/OperatorTransport.js";
+import { parseStepOutput } from "./factory/OutputFormats.js";
 import {
 	OutputValidationError,
 	outputValidationError,
@@ -310,6 +311,10 @@ import {
 	validateReviewFix,
 } from "./factory/ReviewRecovery.js";
 import {
+	outputRevisionBinding,
+	pinReadOnlyAccess,
+} from "./factory/RevisionBinding.js";
+import {
 	factoryNativePrompt,
 	factoryRoleInstruction,
 } from "./factory/RolePrompt.js";
@@ -328,6 +333,16 @@ import {
 	aggregateForContext,
 	validateContractOutput,
 } from "./factory/SpecialistReview.js";
+import {
+	accessMode,
+	checkArgs,
+	formatOf,
+	hasCheck,
+	hasInstruction,
+	legacyImprovementTemplate,
+	readOutput,
+	resolveStepConfig,
+} from "./factory/StepConfig.js";
 import {
 	inspectPullRequest,
 	type TakeoverPullRequest,
@@ -351,6 +366,7 @@ import {
 	taskbotSource,
 } from "./factory/TicketTracking.js";
 import { titleMcpConfig } from "./factory/TitleMcpConfig.js";
+import { outputForTool, toolForStep } from "./factory/ToolBindings.js";
 import { finalizeVideoEvidence, videoGateIssues } from "./factory/Video.js";
 import {
 	capacityInstructions,
@@ -7804,7 +7820,7 @@ ${taskSection}`;
 	): Promise<void> {
 		if (
 			workflow.improvement?.workerFallback === "block" &&
-			!workflow.steps.find((s) => s.id === "research-worker")?.model
+			!legacyImprovementTemplate(workflow, "research-worker")?.model
 		)
 			throw new Error(
 				"Configure a cheaper research-worker model in Recipes → Improve codebase before launching this workflow",
@@ -9040,7 +9056,7 @@ ${taskSection}`;
 		const saved = context.resumeAgent;
 		const rejected = saved?.rejected;
 		if (
-			context.step.architectureContract !== "architecture-v1" ||
+			!hasCheck(context.step, "architecture-proposal") ||
 			!saved ||
 			!rejected?.revision ||
 			!(rejected.retryGeneration && rejected.retryGeneration > 0)
@@ -9083,6 +9099,10 @@ ${taskSection}`;
 	private async executeFactoryAgent(
 		context: ExecutionContext,
 	): Promise<unknown> {
+		if (accessMode(context.step) === "read-only" && !context.readOnlyResearch) {
+			context.readOnlyResearch = true;
+			context.researchAccess = await pinReadOnlyAccess(context);
+		}
 		await this.revalidateRetriedArchitecture(context);
 		if (
 			context.resumeAgent?.rejected?.exhausted &&
@@ -9372,9 +9392,7 @@ ${taskSection}`;
 		}
 		built.config.allowedTools = [
 			...(context.readOnlyResearch ? researchTools : []),
-			...(step.id === "question-explanation"
-				? []
-				: (built.config.allowedTools ?? [])),
+			...(built.config.allowedTools ?? []),
 			"mcp__factory-context__list_context",
 			"mcp__factory-context__read_context",
 			...(artifactBinding
@@ -9383,19 +9401,37 @@ ${taskSection}`;
 		];
 		if (artifactBinding)
 			await mkdir(artifactBinding.directory, { recursive: true });
-		if (step.id === "capture") await verifyQaEnvironment(context);
+		const access = resolveStepConfig(step).access;
+		if (access.tools)
+			built.config.allowedTools = context.readOnlyResearch
+				? built.config.allowedTools?.filter((tool) =>
+						access.tools!.includes(tool),
+					)
+				: [
+						...access.tools,
+						"mcp__factory-context__list_context",
+						"mcp__factory-context__read_context",
+						...(artifactBinding
+							? ["mcp__factory-context__submit_result_artifact"]
+							: []),
+					];
+		if (hasCheck(step, "qa-environment")) await verifyQaEnvironment(context);
 		const factoryContext = await prepareFactoryContextAsync(
 			{
 				...(context.input && typeof context.input === "object"
 					? context.input
 					: { input: context.input }),
 				workflowExecution: workflowExecutionContext(context),
+				stepConfiguration: resolveStepConfig(step),
 				progress: context.progress,
-				...(step.id === "capture" ? { qaReuse: qaReuseContext(context) } : {}),
-				...(step.id === "ci-fix" || step.impactContract
+				...(hasCheck(step, "capture-evidence")
+					? { qaReuse: qaReuseContext(context) }
+					: {}),
+				...(hasCheck(step, "feedback-assessment") ||
+				hasCheck(step, "impact-reuse")
 					? { feedback: factoryFeedbackContext(context) }
 					: {}),
-				...(["code-fix", "visual-fix"].includes(step.id)
+				...(hasCheck(step, "review-dispositions")
 					? { reviewFix: factoryReviewFixContext(context) }
 					: {}),
 				...(captureCorrection ? { captureCorrection } : {}),
@@ -9530,7 +9566,8 @@ ${taskSection}`;
 				}
 				const authoredScope = context.progress?.reviewScope;
 				context.progress = await roleProgress(context);
-				if (step.id === "guide") context.progress.reviewScope = authoredScope;
+				if (hasCheck(step, "requirement-coverage"))
+					context.progress.reviewScope = authoredScope;
 				output = await resolveRoleResult(context, output);
 				if (
 					output &&
@@ -9548,9 +9585,7 @@ ${taskSection}`;
 					throw new FactoryContextInfrastructureError(failure.reason, output);
 				}
 				if (
-					["specialist-v1", "coverage-v1"].includes(
-						step.reviewContract ?? "",
-					) &&
+					hasCheck(step, "specialist-evidence") &&
 					output &&
 					typeof output === "object" &&
 					"status" in output &&
@@ -9561,7 +9596,7 @@ ${taskSection}`;
 						output,
 					);
 				output = this.validateFactoryAgentOutput(context, output);
-				if (["code-review", "visual-review"].includes(step.id)) {
+				if (hasInstruction(step, "review-completion")) {
 					const status = (output as { status?: string }).status;
 					if (status === "blocked" || status === "failed")
 						reviewOutcome = status;
@@ -9578,6 +9613,7 @@ ${taskSection}`;
 						result: {
 							output,
 							revision: completed,
+							binding: await outputRevisionBinding(context),
 							finalizing: true,
 							reviewScope: context.progress?.reviewScope,
 						},
@@ -9655,8 +9691,7 @@ ${taskSection}`;
 	): unknown {
 		const { run, step } = context;
 		try {
-			if (context.readOnlyResearch)
-				return context.validateRoleOutput?.(value) ?? value;
+			if (context.validateRoleOutput) return context.validateRoleOutput(value);
 			let output = validateContractOutput(
 				context,
 				stampGuideContract(
@@ -9664,19 +9699,28 @@ ${taskSection}`;
 					step.askQuestions ? normalizeQuestionResult(value) : value,
 				),
 			);
-			if (step.architectureContract === "architecture-v1") {
+			if (hasCheck(step, "architecture-proposal")) {
 				output = ArchitectureSchema.parse(output);
-				if (step.architectureBrief)
-					assertReviewBrief(output as Architecture, step.architectureBrief);
+				if (
+					["architecture-brief-v1", "architecture-checkin-v1"].includes(
+						formatOf(step) ?? "",
+					)
+				)
+					assertReviewBrief(
+						output as Architecture,
+						formatOf(step) === "architecture-checkin-v1"
+							? "checkin-v1"
+							: "review-v1",
+					);
 				assertRevisionChanges(
 					output as Architecture,
 					run.architectureProposals?.length ?? 0,
 				);
 			}
-			if (step.architectureContract === "architecture-review-v1")
+			if (hasCheck(step, "architecture-candidate"))
 				output = ArchitectureReviewSchema.parse(output);
 			if (
-				step.id === "plan" &&
+				hasCheck(step, "delivery-contract") &&
 				output &&
 				typeof output === "object" &&
 				"deliveryContract" in output
@@ -9692,24 +9736,8 @@ ${taskSection}`;
 					]);
 				}
 			}
-			if (
-				step.impactContract ||
-				step.architectureContract ||
-				step.qaContract ||
-				["factory", "takeover"].includes(run.workflow.id) ||
-				run.workflowDefinitions
-					?.find((item) => item.id === "factory-pipeline")
-					?.steps.includes(step)
-			)
-				output = validateFactoryResult(
-					step.id,
-					output,
-					step.qaContract,
-					step.videoContract,
-					step.architectureContract,
-					step.impactContract,
-				);
-			if (step.impactContract) {
+			output = parseStepOutput(step, output);
+			if (hasCheck(step, "impact-reuse")) {
 				output = validateImpact(
 					output,
 					(context.input as { impactSnapshot: ImpactSnapshot }).impactSnapshot,
@@ -9724,24 +9752,30 @@ ${taskSection}`;
 				)
 					output = recordFeedbackAssessment(context, output);
 			}
-			if (step.id === "visual-scope" && step.qaContract) {
+			if (checkArgs(step, "ids-resolve")?.adapter === "qa-scope") {
 				const issues = qaRequirementIssues(
 					output as QaScope,
-					context.outputs ?? run.outputs,
+					(readOutput(step, "scopeClarify", context.outputs ?? run.outputs) ??
+						readOutput(
+							step,
+							"scopeDecisions",
+							context.outputs ?? run.outputs,
+						)) as
+						| { requirements?: string[]; decisions?: unknown[] }
+						| undefined,
 					run.answers,
 					aggregateForContext(context)?.baseline.inventory,
 				);
 				if (issues.length) throw new Error(issues.join("; "));
 			}
-			if (step.id === "guide") validateGuide(context, output);
-			if (step.id === "ci-fix") {
+			if (hasCheck(step, "requirement-coverage"))
+				validateGuide(context, output);
+			if (hasCheck(step, "feedback-assessment")) {
 				this.refreshFactoryFeedbackContext(context);
-				output = validateFactoryResult(step.id, output);
 				output = recordFeedbackAssessment(context, output);
 			}
-			if (["code-fix", "visual-fix"].includes(step.id)) {
+			if (hasCheck(step, "review-dispositions")) {
 				this.refreshFactoryFeedbackContext(context);
-				output = validateFactoryResult(step.id, output);
 				validateReviewFix(context, output);
 			}
 			return output;
@@ -9752,8 +9786,9 @@ ${taskSection}`;
 
 	private refreshFactoryFeedbackContext(context: ExecutionContext): void {
 		if (
-			!["ci-fix", "code-fix", "visual-fix"].includes(context.step.id) &&
-			!context.step.impactContract
+			!hasCheck(context.step, "feedback-assessment") &&
+			!hasCheck(context.step, "impact-reuse") &&
+			!hasCheck(context.step, "review-dispositions")
 		)
 			return;
 		if (this.factoryRuntime) {
@@ -9763,9 +9798,16 @@ ${taskSection}`;
 				chatMessages: context.chatMessages,
 			};
 		}
-		if (context.step.id === "ci-fix" || context.step.impactContract) {
-			const receipt = (context.run.outputs["merge-readiness"] ??
-				context.run.outputs.ci) as MergeReadiness | undefined;
+		if (
+			hasCheck(context.step, "feedback-assessment") ||
+			hasCheck(context.step, "impact-reuse")
+		) {
+			const receipt = (context.run.mergeReadiness ??
+				readOutput(
+					context.step,
+					"ci",
+					context.outputs ?? context.run.outputs,
+				)) as MergeReadiness | undefined;
 			// Runs paused before feedback recovery was installed retain legacy
 			// receipts. Derive the exact pending versions before exposing context
 			// or validating a recovered result, without inventing assessments.
@@ -9786,8 +9828,9 @@ ${taskSection}`;
 		const { run, step } = context;
 		value = await resolveRoleResult(context, value);
 		let output = this.validateFactoryAgentOutput(context, value);
-		if (step.id === "guide") {
-			if (step.videoContract) {
+		output = await runEvidenceChecks(context, output, "correction");
+		if (hasCheck(step, "requirement-coverage")) {
+			if (checkArgs(step, "media-valid")?.video) {
 				const issues = await videoGateIssues(
 					context,
 					context.progress?.currentRevision?.headSha ?? "",
@@ -9803,21 +9846,25 @@ ${taskSection}`;
 				attachRequirementCoverage(context, output),
 			);
 		}
-		if (step.id === "capture") {
+		if (hasCheck(step, "capture-evidence")) {
 			output = captureEvidence(context, output);
 			output = await finalizeVideoEvidence(context, output);
 		}
 		const completed = (await roleProgress(context)).currentRevision;
-		if (["code-fix", "visual-fix"].includes(step.id))
+		if (hasCheck(step, "review-dispositions"))
 			output = recordReviewFix(context, output, completed);
-		if (completed && step.id === "visual-review" && step.qaContract) {
+		if (completed && hasCheck(step, "qa-review-evidence")) {
 			output = {
 				...(output as Record<string, unknown>),
 				qaReviewStamp: {
 					headSha: completed.headSha,
 					dirty: completed.dirty,
-					captureHash: qaDigest(run.outputs.capture),
-					scopeHash: qaDigest(run.outputs["visual-scope"]),
+					captureHash: qaDigest(
+						readOutput(step, "capture", context.outputs ?? run.outputs),
+					),
+					scopeHash: qaDigest(
+						readOutput(step, "scope", context.outputs ?? run.outputs),
+					),
 				},
 			};
 		}
@@ -9835,7 +9882,7 @@ ${taskSection}`;
 		});
 		if (
 			presented.destination === "transcript" &&
-			!["plan", "implement"].includes(step.id)
+			!hasCheck(step, "ticket-milestone")
 		) {
 			const key = `role-outcome:${context.stepKey ?? step.id}:${createHash("sha256").update(presented.markdown).digest("hex")}`;
 			if (run.ticketReference)
@@ -9896,7 +9943,9 @@ ${taskSection}`;
 		if (typeof repositoryId !== "string")
 			throw new Error("Run repository unavailable");
 		const source =
-			readFactoryPath(run?.outputs, "draft-pr.url") ??
+			(run
+				? readFactoryPath(outputForTool(run, "draft-pr"), "url")
+				: undefined) ??
 			run?.source ??
 			session?.issue?.identifier;
 		const workflow = runtime.selectWorkflow(
@@ -10374,7 +10423,7 @@ ${taskSection}`;
 		signal.throwIfAborted();
 		{
 			const pending = pendingMergeConfirmation(run);
-			const url = readFactoryPath(run.outputs, "draft-pr.url");
+			const url = readFactoryPath(outputForTool(run, "draft-pr"), "url");
 			if (
 				pending &&
 				((run.repositories?.length ?? 0) <= 1 || !existsSync(run.workspace)) &&
@@ -10742,13 +10791,14 @@ ${taskSection}`;
 			await this.getTicketTracking().flush(run, reassess);
 			return;
 		}
-		const merged = readFactoryPath(run.outputs, "merge.merged") === true;
+		const merged =
+			readFactoryPath(outputForTool(run, "merge"), "merged") === true;
 		const pr =
-			readFactoryPath(run.outputs, "merge.url") ??
-			readFactoryPath(run.outputs, "draft-pr.url");
+			readFactoryPath(outputForTool(run, "merge"), "url") ??
+			readFactoryPath(outputForTool(run, "draft-pr"), "url");
 		const review =
 			run.reviewGate?.status === "pending" ||
-			(/(?:human-review|merge)$/.test(run.step ?? "") &&
+			(["human-review", "merge"].includes(toolForStep(run, run.step) ?? "") &&
 				!["failed", "stopped"].includes(run.status));
 		const active = ["running", "waiting", "failed", "interrupted"].includes(
 			run.status,
@@ -10781,7 +10831,7 @@ ${taskSection}`;
 				return;
 		} else if (
 			!["running", "waiting"].includes(run.status) &&
-			readFactoryPath(run.outputs, "merge.merged") !== true
+			readFactoryPath(outputForTool(run, "merge"), "merged") !== true
 		) {
 			// Historical attempts are not new work. Only recover active legacy runs
 			// or confirmed merges; explicit tracking retry can reconcile older runs.

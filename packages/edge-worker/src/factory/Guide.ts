@@ -15,6 +15,7 @@ import {
 	aggregateForContext,
 	assertAggregateRevision,
 } from "./SpecialistReview.js";
+import { formatOf, readOutput } from "./StepConfig.js";
 import type { VideoCapture } from "./Video.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
@@ -82,15 +83,27 @@ export function validateGuideCoverage(
 		files = new Set<string>();
 	const shots =
 		(
-			context.run.outputs.capture as
-				| { screenshots?: { area: string; state: string }[] }
-				| undefined
+			readOutput(
+				context.step,
+				"capture",
+				context.outputs ?? context.run.outputs,
+			) as { screenshots?: { area: string; state: string }[] } | undefined
 		)?.screenshots ?? [];
 	const videos =
-		(context.run.outputs.capture as VideoCapture | undefined)?.videos ?? [];
+		(
+			readOutput(
+				context.step,
+				"capture",
+				context.outputs ?? context.run.outputs,
+			) as VideoCapture | undefined
+		)?.videos ?? [];
 	const receipts =
 		(
-			context.run.outputs["visual-review"] as
+			readOutput(
+				context.step,
+				"qaReview",
+				context.outputs ?? context.run.outputs,
+			) as
 				| {
 						acceptedVideos?: {
 							taskId: string;
@@ -155,9 +168,11 @@ export function validateGuideCoverage(
 				},
 			]);
 	}
-	const visualScope = context.run.outputs["visual-scope"] as
-		| { nonVisualFiles?: string[] }
-		| undefined;
+	const visualScope = readOutput(
+		context.step,
+		"scope",
+		context.outputs ?? context.run.outputs,
+	) as { nonVisualFiles?: string[] } | undefined;
 	if (
 		guide.scope?.kind === "purely-visual" &&
 		visualScope?.nonVisualFiles?.some((file) => scope?.files.includes(file))
@@ -243,19 +258,14 @@ export function validateGuideGeneration(value: unknown): void {
 }
 
 /** Brief steps own their contract; agents never need to author it. */
-export function stampGuideContract(
-	step: { id: string; guideContract?: string },
-	value: unknown,
-): unknown {
-	if (
-		step.id !== "guide" ||
-		!step.guideContract ||
-		!value ||
-		typeof value !== "object" ||
-		Array.isArray(value)
-	)
+export function stampGuideContract(step: object, value: unknown): unknown {
+	const format = formatOf(step);
+	const contract = format?.startsWith("review-brief-v")
+		? `brief-v${format.slice(-1)}`
+		: undefined;
+	if (!contract || !value || typeof value !== "object" || Array.isArray(value))
 		return value;
-	return { ...value, contract: step.guideContract };
+	return { ...value, contract };
 }
 
 /** Attach authoritative coverage instead of trusting an agent-authored coverage table. */

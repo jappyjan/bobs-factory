@@ -21,6 +21,11 @@ import {
 	type AggregateReview,
 	assertAggregateRevision,
 } from "../src/factory/SpecialistReview.js";
+import {
+	formatOf,
+	inheritStepConfig,
+	registerWorkflowConfig,
+} from "../src/factory/StepConfig.js";
 import { specialistSteps } from "../src/factory/specialistSteps.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import {
@@ -35,6 +40,12 @@ afterEach(() => {
 	for (const directory of directories.splice(0))
 		rmSync(directory, { recursive: true, force: true });
 });
+function legacyFixtureStep(
+	step: ExecutionContext["step"],
+): ExecutionContext["step"] {
+	registerWorkflowConfig({ id: "fixture", steps: [step] });
+	return step;
+}
 function fixture() {
 	const directory = mkdtempSync(join(tmpdir(), "grouped-delivery-"));
 	directories.push(directory);
@@ -51,6 +62,7 @@ function fixture() {
 			(tool) => ({ id: tool, name: tool, type: "tool", tool }),
 		),
 	});
+	registerWorkflowConfig(workflow);
 	const runtime = new WorkflowRuntime(directory, {
 		agent: async () => ({}),
 		script: async () => ({}),
@@ -166,7 +178,7 @@ it.each([
 	});
 	const runtime = new WorkflowRuntime(directory, {
 		agent: async (context) => {
-			if (context.step.reviewContract === "inventory-v1")
+			if (formatOf(context.step) === "inventory-v1")
 				return {
 					schemaVersion: 1,
 					requirements: [
@@ -208,7 +220,7 @@ it.each([
 				summary: "Reviewed complete scope",
 				findings: [],
 				disagreements: [],
-				...(context.step.reviewContract === "coverage-v1"
+				...(formatOf(context.step) === "coverage-v1"
 					? {
 							coverage: [
 								{
@@ -269,14 +281,14 @@ it.each([
 		await expect(
 			tools.tool({
 				run,
-				step: {
+				step: legacyFixtureStep({
 					id: "merge",
 					name: "Merge",
 					type: "tool",
 					tool: "merge",
 					branches: [],
 					maxVisits: 8,
-				},
+				}),
 				input: (run.outputs["review-gate"] as AggregateReview).baseline.context,
 				signal: new AbortController().signal,
 				evidenceDir: directory,
@@ -495,7 +507,9 @@ it("retains all repository revisions and builds immutable review files without c
 	await execute("draft-pr");
 	await execute("ci");
 	const ctx = context("handoff");
-	ctx.step = { ...ctx.step, id: "guide" };
+	const guideStep = { ...ctx.step, id: "guide", type: "agent" as const };
+	inheritStepConfig(ctx.step, guideStep);
+	ctx.step = guideStep;
 	ctx.progress = await roleProgress(ctx);
 	expect(ctx.progress.currentRevision?.repositories).toHaveLength(3);
 	expect(ctx.progress.reviewScope?.files).toEqual([

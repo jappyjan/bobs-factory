@@ -58,6 +58,7 @@ import {
 	readReviewPatch,
 	resolveGuideSnapshot,
 } from "./ReviewFiles.js";
+import { artifactOutputKey, presentationOutputKeys } from "./RunOutputRoles.js";
 import {
 	dashboardRun,
 	entryPreviews,
@@ -66,7 +67,17 @@ import {
 	ticketSyncSummary,
 } from "./RunProjection.js";
 import type { ChatState } from "./SessionChat.js";
+import {
+	ACCESS_MODES,
+	CHECK_IDS,
+	CONTEXT_SOURCES,
+	FORMAT_IDS,
+	INSTRUCTION_IDS,
+	inlineSchemaIssues,
+	materializeWorkflowConfig,
+} from "./StepConfig.js";
 import type { TicketManagers } from "./TicketManagers.js";
+import { outputForCheck } from "./ToolBindings.js";
 import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
 import { WorkflowSchema } from "./Workflow.js";
@@ -837,7 +848,11 @@ export class FactoryServer {
 				const workflows = () => {
 					const definitions = runtime.listWorkflows();
 					return definitions.map((workflow) => ({
-						...(dashboard ? workflowSummary(workflow) : workflow),
+						...(dashboard
+							? workflowSummary(workflow)
+							: recipes
+								? materializeWorkflowConfig(workflow)
+								: workflow),
 						...runtime.catalog.metadata(workflow.id, definitions),
 						launchFields: getLaunchFields(workflow),
 					}));
@@ -1024,6 +1039,27 @@ export class FactoryServer {
 				configRevision: configRevision(),
 			};
 		};
+		this.app.get("/api/workflows/step-config/catalog", () => ({
+			formats: FORMAT_IDS.map((id) => ({
+				id,
+				version: Number(id.match(/-v(\d+)$/)?.[1] ?? 1),
+			})),
+			checks: CHECK_IDS,
+			instructions: INSTRUCTION_IDS,
+			access: ACCESS_MODES,
+			contextSources: CONTEXT_SOURCES,
+		}));
+		this.app.post(
+			"/api/workflows/step-config/validate",
+			{ bodyLimit: 70 * 1024 },
+			(request) => {
+				const { schema } = z
+					.object({ schema: z.record(z.string(), z.unknown()) })
+					.parse(request.body);
+				const issues = inlineSchemaIssues(schema);
+				return { valid: issues.length === 0, issues };
+			},
+		);
 		this.app.put("/api/workflows", (request) => {
 			checkConfigRevision(request);
 			// Retain the original array API for existing local clients.
@@ -1439,7 +1475,12 @@ export class FactoryServer {
 					run && focus
 						? focusRun(
 								run,
-								runtime.outputPreviews(run, ["guide", "draft-pr"]),
+								runtime.outputPreviews(
+									run,
+									Object.entries(presentationOutputKeys(run))
+										.filter(([name]) => ["guide", "draft-pr"].includes(name))
+										.map(([, key]) => key),
+								),
 								runtime.hasRunValue(run, "deliveryRecovery"),
 							)
 						: run && dashboard
@@ -1476,6 +1517,9 @@ export class FactoryServer {
 						questions: [],
 						outputs: {},
 					}),
+					...(run && !focus
+						? { outputRoles: presentationOutputKeys(run) }
+						: {}),
 					workflowBlock: runtime.catalog.getBlock(request.params.id),
 					recheckAvailable: !!run && runtime.canRecheckQuestions(run.id),
 					resumeEligible:
@@ -1552,8 +1596,9 @@ export class FactoryServer {
 					previousReviewGuide: run
 						? runtime.previousReviewGuide(
 								run,
-								(projected as { outputs?: Record<string, unknown> }).outputs
-									?.guide,
+								(projected as { outputs?: Record<string, unknown> }).outputs?.[
+									presentationOutputKeys(run).guide ?? ""
+								],
 							)
 						: undefined,
 					history: run ? runtime.historyPreviews(run) : [],
@@ -1583,9 +1628,9 @@ export class FactoryServer {
 			Querystring: { v?: string };
 		}>("/api/runs/:id/artifacts/:name", (request, reply) => {
 			const run = runtime.get(request.params.id);
-			if (!Object.hasOwn(run.outputs, request.params.name))
-				return reply.code(404).send({ error: "Artifact not found" });
-			const value = run.outputs[request.params.name];
+			const key = artifactOutputKey(run, request.params.name);
+			if (!key) return reply.code(404).send({ error: "Artifact not found" });
+			const value = run.outputs[key];
 			if (
 				request.query.v &&
 				request.query.v !==
@@ -1967,7 +2012,7 @@ export class FactoryServer {
 			"/api/runs/:id/evidence",
 			(request) => {
 				const run = runtime.get(request.params.id);
-				const capture = run.outputs.capture as
+				const capture = outputForCheck(run, "capture-evidence") as
 					| {
 							screenshots?: {
 								area: string;
@@ -1979,9 +2024,7 @@ export class FactoryServer {
 					  }
 					| undefined;
 				return {
-					videos: (
-						(run.outputs.capture as VideoCapture | undefined)?.videos ?? []
-					)
+					videos: ((capture as VideoCapture | undefined)?.videos ?? [])
 						.filter((v) => v.validation)
 						.map((v) => ({
 							taskId: v.taskId,
@@ -1997,8 +2040,7 @@ export class FactoryServer {
 							available: existsSync(v.path) && existsSync(v.posterPath),
 						})),
 					videoUnavailable:
-						(run.outputs.capture as VideoCapture | undefined)
-							?.videoUnavailable ?? [],
+						(capture as VideoCapture | undefined)?.videoUnavailable ?? [],
 					screenshots: (capture?.screenshots ?? []).map(
 						({ area, state, caption, context, imageSha256 }, index) => ({
 							area,
@@ -2040,9 +2082,11 @@ export class FactoryServer {
 				.int()
 				.nonnegative()
 				.parse(request.params.index);
-			const shot = CaptureSchema.parse(
-				run.outputs[request.query.artifact ?? "capture"],
-			).screenshots[index];
+			const key = request.query.artifact
+				? artifactOutputKey(run, request.query.artifact)
+				: presentationOutputKeys(run).capture;
+			const value = key ? run.outputs[key] : undefined;
+			const shot = CaptureSchema.parse(value).screenshots[index];
 			if (!shot) return reply.code(404).send({ error: "Screenshot not found" });
 			const path = verifiedScreenshot(
 				shot.path,
@@ -2050,7 +2094,6 @@ export class FactoryServer {
 				shot.imageSha256,
 			);
 			const bytes = readFileSync(path);
-			const value = run.outputs[request.query.artifact ?? "capture"];
 			const actualHash = createHash("sha256").update(bytes).digest("hex");
 			if (shot.imageSha256 && shot.imageSha256 !== actualHash)
 				return reply

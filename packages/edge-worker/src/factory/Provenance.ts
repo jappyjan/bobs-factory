@@ -4,6 +4,13 @@ import {
 	type RuntimeIdentity,
 } from "bobs-factory-core";
 import { FACTORY_RESULT_CONTRACT_VERSION } from "./FactoryResults.js";
+import {
+	checkArgs,
+	formatOf,
+	hasCheck,
+	resolveStepConfig,
+	reviewEvidenceContract,
+} from "./StepConfig.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
 export type AttemptReason =
@@ -90,11 +97,18 @@ export function beginStepAttempt(
 	const contract = {
 		validator: FACTORY_RESULT_CONTRACT_VERSION,
 		version: run.contractVersion ?? null,
-		architecture: step.architectureContract ?? null,
-		review: step.reviewContract ?? null,
-		impact: step.impactContract ?? null,
-		qa: step.qaContract ?? null,
-		video: step.videoContract ?? null,
+		architecture: hasCheck(step, "architecture-proposal")
+			? "architecture-v1"
+			: hasCheck(step, "architecture-candidate")
+				? "architecture-review-v1"
+				: null,
+		review: reviewEvidenceContract(step) ?? null,
+		impact: hasCheck(step, "impact-reuse") ? "impact-v1" : null,
+		qa:
+			formatOf(step)?.startsWith("qa-") || hasCheck(step, "qa-evidence")
+				? "qa-v1"
+				: null,
+		video: checkArgs(step, "media-valid")?.video ? "video-v1" : null,
 	};
 	const contextHashes = {
 		human: digest(
@@ -156,7 +170,13 @@ export function beginStepAttempt(
 		),
 		contract: {
 			...contract,
-			hash: digest(canonical({ ...contract, json: step.json })),
+			hash: digest(
+				canonical({
+					...contract,
+					json: step.json,
+					config: resolveStepConfig(step),
+				}),
+			),
 		},
 		instructionsHash: digest(step.prompt ?? ""),
 		instructionsSource: "recipe",

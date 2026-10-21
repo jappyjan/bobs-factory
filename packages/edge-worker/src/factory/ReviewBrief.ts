@@ -13,6 +13,7 @@ import {
 	aggregateForContext,
 	assertAggregateRevision,
 } from "./SpecialistReview.js";
+import { readOutput } from "./StepConfig.js";
 import type { VideoCapture } from "./Video.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
@@ -713,15 +714,27 @@ export function validateBriefCoverage(
 
 	const shots =
 		(
-			context.run.outputs.capture as
-				| { screenshots?: { area: string; state: string }[] }
-				| undefined
+			readOutput(
+				context.step,
+				"capture",
+				context.outputs ?? context.run.outputs,
+			) as { screenshots?: { area: string; state: string }[] } | undefined
 		)?.screenshots ?? [];
 	const videos =
-		(context.run.outputs.capture as VideoCapture | undefined)?.videos ?? [];
+		(
+			readOutput(
+				context.step,
+				"capture",
+				context.outputs ?? context.run.outputs,
+			) as VideoCapture | undefined
+		)?.videos ?? [];
 	const receipts =
 		(
-			context.run.outputs["visual-review"] as
+			readOutput(
+				context.step,
+				"qaReview",
+				context.outputs ?? context.run.outputs,
+			) as
 				| {
 						acceptedVideos?: {
 							taskId: string;

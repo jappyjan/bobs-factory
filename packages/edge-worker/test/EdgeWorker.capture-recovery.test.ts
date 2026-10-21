@@ -16,6 +16,7 @@ import {
 } from "../src/factory/MergeReadiness.js";
 import { questionInstructions } from "../src/factory/Questions.js";
 import { validateInventory } from "../src/factory/SpecialistReview.js";
+import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { SessionSemaphore } from "../src/RunnerConcurrency.js";
@@ -72,7 +73,12 @@ async function fixture() {
 				"visual-gate": { approved: true },
 			},
 		},
-		step: { id: "capture", name: "Capture", prompt: "Capture screenshots" },
+		step: {
+			id: "capture",
+			name: "Capture",
+			type: "agent",
+			prompt: "Capture screenshots",
+		},
 		evidenceDir,
 		log: vi.fn(),
 		signal: new AbortController().signal,
@@ -153,6 +159,21 @@ async function fixture() {
 			return runner;
 		}),
 	});
+	// This fixture deliberately exercises the old frozen role shapes. Interpret
+	// them at the same explicit load boundary used by persisted runtime graphs.
+	const execute = worker.executeFactoryAgent.bind(worker);
+	worker.executeFactoryAgent = (context: ExecutionContext) => {
+		context.step.type ??= "agent";
+		registerWorkflowConfig({
+			id: context.run.workflow.id,
+			steps: [context.step],
+		});
+		context.run.mergeReadiness ??= context.run.outputs[
+			"merge-readiness"
+		] as typeof context.run.mergeReadiness;
+		return execute(context);
+	};
+	registerWorkflowConfig({ id: ctx.run.workflow.id, steps: [ctx.step] });
 	return {
 		ctx,
 		saved,
@@ -363,12 +384,21 @@ it("supplies accepted workflow gates and original operator receipts to a restric
 	expect(f.getInput().workflowExecution).toEqual({
 		contract: "workflow-execution-v1",
 		rootWorkflowId: "legacy",
-		currentStep: { key: "implement", id: "implement", type: "agent" },
+		currentStep: {
+			key: "implement",
+			id: "implement",
+			type: "agent",
+		},
 		workflows: [
 			{
 				id: "legacy",
 				steps: [
-					{ id: "implement", name: "Implement", type: "agent", branches: [] },
+					{
+						id: "implement",
+						name: "Implement",
+						type: "agent",
+						branches: [],
+					},
 				],
 			},
 		],
@@ -1317,4 +1347,56 @@ it("corrects a missing nonvisual map through the same guide-only conversation", 
 	);
 	expect(f.ctx.checkpointAgent).toHaveBeenCalled();
 	expect(f.runner.start).toHaveBeenCalledTimes(1);
+});
+
+it("corrects a renamed generic schema and rule in the existing bounded native conversation", async () => {
+	const f = await fixture();
+	f.ctx.step = {
+		id: "independent-step",
+		name: "Validate report",
+		type: "agent",
+		prompt: "Return the configured report",
+		branches: [],
+		maxVisits: 16,
+		output: {
+			schema: {
+				type: "object",
+				required: ["status", "blockers"],
+				properties: {
+					status: { enum: ["completed", "blocked"] },
+					blockers: { type: "array", items: { type: "string" } },
+				},
+				additionalProperties: false,
+			},
+		},
+		rules: [
+			{
+				message: "Completed reports have no blockers",
+				when: { path: "/status", equals: "completed" },
+				require: { path: "/blockers", empty: true },
+			},
+		],
+	};
+	f.ctx.stepKey = f.ctx.run.step = "independent-step";
+	f.ctx.resumeAgent = undefined;
+	const replies = [
+		{ status: "invalid", blockers: [] },
+		{ status: "completed", blockers: ["unresolved"] },
+		{ status: "completed", blockers: [] },
+	];
+	let index = 0;
+	f.runner.getMessages = () => [
+		{
+			type: "result",
+			result: JSON.stringify(replies[Math.min(index++, replies.length - 1)]),
+		},
+	];
+	const result = await f.worker.executeFactoryAgent(f.ctx);
+	expect(result).toEqual(replies[2]);
+	expect(f.runner.start).toHaveBeenCalledTimes(3);
+	expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
+	expect(f.getInput().outputCorrection.issues).toEqual([
+		{ path: "/", message: "Completed reports have no blockers" },
+	]);
+	expect(f.getInput().stepConfiguration.output).toEqual(f.ctx.step.output);
 });

@@ -452,3 +452,73 @@ it.each([
 	expect(run.error).toContain("Saved worktree is unavailable");
 	await runtime.shutdown();
 });
+
+it("recovers a confirmed merge after every accepted step and partner has been renamed", async () => {
+	const { runtime, run } = await fixture();
+	const pipeline = run.workflowDefinitions!.find(
+		(workflow) => workflow.id === "factory-pipeline",
+	)!;
+	const names = new Map(
+		pipeline.steps.map((step, index) => [step.id, `recovery_${index}`]),
+	);
+	names.set("pipeline", "invocation");
+	const reference = (value: string) =>
+		value
+			.split("/")
+			.map((part) => names.get(part) ?? part)
+			.join("/");
+	for (const step of [...run.workflow.steps, ...pipeline.steps]) {
+		step.id = names.get(step.id)!;
+		if (step.next && step.next !== "end") step.next = names.get(step.next)!;
+		for (const branch of step.branches)
+			if (branch.next !== "end") branch.next = names.get(branch.next)!;
+		for (const [name, binding] of Object.entries(step.reads ?? {}))
+			step.reads![name] =
+				typeof binding === "string"
+					? reference(binding)
+					: { ...binding, from: reference(binding.from) };
+	}
+	run.step = reference(run.step!);
+	run.checkpoint!.current = names.get(run.checkpoint!.current)!;
+	run.checkpoint!.active!.children![0]!.current = names.get("merge")!;
+	run.outputs = Object.fromEntries(
+		Object.entries(run.outputs).map(([key, value]) => [reference(key), value]),
+	);
+	run.history = run.history.map((entry) => ({
+		...entry,
+		step: reference(entry.step),
+	}));
+	const tool = vi
+		.spyOn(tools.FactoryTools.prototype, "tool")
+		.mockRejectedValue(new Error("No new delivery mutation"));
+	vi.spyOn(tools, "executeCommand").mockImplementation(
+		async (_context, exe, args) => {
+			expect(exe).toBe("bobs-factory:github-api");
+			expect(JSON.parse(args[0]!).method).toBe("GET");
+			return JSON.stringify({
+				html_url: "https://github.com/test/repo/pull/1",
+				number: 1,
+				title: "Fixture",
+				body: "",
+				draft: false,
+				state: "closed",
+				merged: true,
+				head: {
+					ref: "feature",
+					sha: "approved",
+					repo: { full_name: "test/repo" },
+				},
+				base: { ref: "main", repo: { full_name: "test/repo" } },
+			});
+		},
+	);
+	await runtime.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	expect(run.outputs[names.get("merge")!]).toMatchObject({
+		merged: true,
+		headSha: "approved",
+	});
+	expect(run.outputs.merge).toBeUndefined();
+	expect(tool).not.toHaveBeenCalled();
+	await runtime.shutdown();
+});

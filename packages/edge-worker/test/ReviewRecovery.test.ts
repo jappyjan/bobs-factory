@@ -34,7 +34,13 @@ function fixture(visual = false) {
 	const gate = visual ? "visual-gate" : "review-gate";
 	const fix = visual ? "visual-fix" : "code-fix";
 	return {
-		step: { id: fix },
+		step: {
+			id: fix,
+			reads: {
+				review: visual ? "visual-review" : "code-review",
+				...(visual ? { qaGate: gate } : { reviewGate: gate }),
+			},
+		},
 		input: { "draft-pr": { url: "fixture" } },
 		run: {
 			step: `pipeline/${fix}`,
@@ -63,6 +69,10 @@ function gateContext(context: ExecutionContext, visual = false) {
 	context.step = {
 		id: "gate",
 		tool: visual ? "visual-gate" : "review-gate",
+		reads: {
+			review: visual ? "visual-review" : "code-review",
+			fix: visual ? "visual-fix" : "code-fix",
+		},
 	} as ExecutionContext["step"];
 	return context;
 }

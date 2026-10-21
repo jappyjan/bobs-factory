@@ -26,6 +26,7 @@ import type {
 	ProviderCheck,
 	ProviderCommand,
 } from "./MergeReadiness.js";
+import { outputForTool } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 export type GitProviderSnapshot = GitProviderConfig & { repositoryUrl: string };
@@ -109,7 +110,7 @@ export async function resolveGitProvider(
 					: (gitlabUrl ?? githubUrl);
 		const retainedUrl =
 			(run.outputs.source as { url?: string } | undefined)?.url ??
-			(run.outputs["draft-pr"] as { url?: string } | undefined)?.url;
+			(outputForTool(run, "draft-pr") as { url?: string } | undefined)?.url;
 		const existingUrl = retainedUrl ?? requestUrl;
 		const existing =
 			typeof existingUrl === "string"
@@ -120,7 +121,7 @@ export async function resolveGitProvider(
 				? config.repositoryUrl
 				: typeof configuredUrl === "string"
 					? configuredUrl
-					: ((retainedUrl ? existing?.url : undefined) ??
+					: (existing?.url ??
 						(await command("git", ["remote", "get-url", "origin"]))),
 		);
 		const type =

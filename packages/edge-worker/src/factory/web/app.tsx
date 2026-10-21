@@ -75,6 +75,7 @@ import {
 	writeStored,
 	writeTextStored,
 } from "./review-state";
+import { roleOutput } from "./run-output";
 import { Settings } from "./settings";
 import {
 	applyTheme,
@@ -819,7 +820,7 @@ function RunPage({
 			if (
 				data &&
 				["complete", "completed"].includes(data.status) &&
-				!data.outputs?.guide &&
+				!roleOutput(data, "guide") &&
 				!data.viewState?.keptOpen
 			)
 				void api(`/api/runs/${id}/view`, {
@@ -867,7 +868,7 @@ function RunPage({
 					name: key === "setup" ? "Prepare workspace" : key.split("/").at(-1),
 				})),
 		],
-		pr = run.outputs?.["draft-pr"]?.url;
+		pr = roleOutput(run, "draft-pr")?.url;
 	return (
 		<>
 			<Link className="back-link" to="/">
@@ -894,7 +895,7 @@ function RunPage({
 												? "Stopped — resume?"
 												: "Stuck — retry?"
 											: kind === "review"
-												? run.outputs?.guide
+												? roleOutput(run, "guide")
 													? "Ready for your review"
 													: "Done — take a look"
 												: workingLabel(run))}
@@ -997,7 +998,7 @@ function RunPage({
 					settling={settle.busy}
 				/>
 			)}
-			{run.outputs?.guide && (!kind || reason) && (
+			{roleOutput(run, "guide") && (!kind || reason) && (
 				<section className="review-surface">
 					<ReviewEntry run={run} />
 				</section>

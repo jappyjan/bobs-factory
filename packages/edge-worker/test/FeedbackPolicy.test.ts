@@ -26,16 +26,37 @@ const policy = (action = "ignore", index = 0, instruction = quote) => ({
 	reason: "Explicit user direction",
 	source: { path: `answers/${index}/answer`, quote: instruction },
 });
-const context = () =>
-	({
+const context = () => {
+	const step = {
+		id: "ci-fix",
+		type: "agent",
+		checks: ["feedback-assessment"],
+		reads: { ci: "ci", handoff: "handoff", guide: "guide" },
+	};
+	const workflow = {
+		id: "outer",
+		steps: [{ id: "nested", type: "workflow", workflow: "nested" }],
+	};
+	return {
+		step,
 		run: {
+			workflow,
+			workflowDefinitions: [
+				workflow,
+				{
+					id: "nested",
+					steps: [{ id: "pipeline", type: "workflow", workflow: "leaf" }],
+				},
+				{ id: "leaf", steps: [step, { id: "ci", type: "tool", tool: "ci" }] },
+			],
 			input: "Implement the change",
 			createdAt: "2026-10-07T01:00:00Z",
 			answers: [{ answer: quote, questions: [], at: "2026-10-07T02:00:00Z" }],
 			history: [],
 			outputs: {},
 		},
-	}) as unknown as ExecutionContext;
+	} as unknown as ExecutionContext;
+};
 const snapshot = async (comments = [comment], extra = {}) => {
 	const receipt = await inspectMergeReadiness(
 		async (_exe, args) =>

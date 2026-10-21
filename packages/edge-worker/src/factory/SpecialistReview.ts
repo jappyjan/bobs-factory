@@ -1,3 +1,7 @@
+import { legacyScopeSources } from "./StepConfig.js";
+
+export { calibratedReviewInstructions } from "./InstructionText.js";
+
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { z } from "zod";
@@ -7,6 +11,13 @@ import { EvidenceBoundarySchema } from "./ImpactContracts.js";
 import { qaDigest } from "./Qa.js";
 import { QuestionFieldsSchema } from "./Questions.js";
 import { runRepositories, scopeRevision } from "./RepositoryScope.js";
+import {
+	consumesImpact,
+	consumesReview,
+	hasCheck,
+	readStep,
+	reviewEvidenceContract,
+} from "./StepConfig.js";
 import type { WorkflowStep } from "./Workflow.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
@@ -271,15 +282,7 @@ export function activeRequirements(inventory: Inventory) {
 }
 
 /** Apply the review contract to saved prompts without rewriting accepted graphs. */
-export function reviewStageInstructions(
-	contract: WorkflowStep["reviewContract"],
-): string {
-	if (contract === "inventory-v1")
-		return `Declare each requirement's stage: "code" (default), "qa", "guide", "acceptance" or "delivery", using its accepted source and the retained workflow. Separate implementation outcomes from future workflow receipts. Split mixed criteria into independently assessable requirements, retaining historical IDs and decisions, superseded originals, sources and changeReason. Human acceptance and provider-confirmed merge remain mandatory downstream obligations; their absence before QA is not a code defect. Never move an implementation defect or missing code verification to a later stage. Do not invent downstream gates or waive requirements.`;
-	if (["specialist-v1", "coverage-v1"].includes(contract ?? ""))
-		return `Assess code readiness at this review gate. Coverage may use status:"deferred" with obligation:{stage:"qa|guide|acceptance|delivery",action:"specific required downstream work"} only when the frozen inventory explicitly declares that same later stage. Cite the accepted source and retained gate. Deferral preserves mandatory work; it never claims QA, human acceptance or merge occurred. Missing implementation or code-verification evidence remains not_met with an actionable finding. A mixed or unstaged criterion cannot be deferred; request a traceable inventory correction through the existing fixer/extraction path. Future workflow receipts are nonblocking observations (rating 1, category:"downstream"), not rating 2/3 code findings. Reassess previous routing complaints with evidence-backed dispositions and explicitly resolve any prior disagreements; omission cannot settle them. These runtime review rules apply to saved workflows as well as impact-v1 rounds.`;
-	return "";
-}
+export { reviewStageInstructions } from "./InstructionText.js";
 
 export function validateSpecialist(
 	value: unknown,
@@ -433,14 +436,11 @@ export function validateReviewConfiguration(
 ): void {
 	const byId = new Map(steps.map((s) => [s.id, s]));
 	for (const step of steps) {
-		if (step.impactContract) {
-			const fanout = byId.get(step.impact?.fanout ?? "");
-			if (
-				step.inputs ||
-				step.reviewContract ||
-				step.architectureContract ||
-				step.guideContract
-			)
+		const format = reviewEvidenceContract(step);
+		if (hasCheck(step, "impact-reuse")) {
+			const fanout = byId.get(readStep(step, "fanout") ?? ""),
+				inventory = byId.get(readStep(step, "inventory") ?? "");
+			if (step.inputs)
 				throw new Error(
 					`${step.id}: impact-v1 needs complete context and its own independent output contract`,
 				);
@@ -448,57 +448,72 @@ export function validateReviewConfiguration(
 				step.type !== "agent" ||
 				step.json === false ||
 				!step.askQuestions ||
-				!fanout?.review ||
-				fanout.review.inventory !== step.impact?.inventory ||
-				byId.get(step.impact.inventory)?.reviewContract !== "inventory-v1"
+				fanout?.type !== "fanout" ||
+				!consumesReview(fanout) ||
+				readStep(fanout, "inventory") !== inventory?.id ||
+				!inventory ||
+				reviewEvidenceContract(inventory) !== "inventory-v1"
 			)
 				throw new Error(
 					`${step.id}: impact-v1 requires a structured independent agent, questions and configured inventory/fanout`,
 				);
 		}
+		const impact = consumesImpact(step) ? readStep(step, "impact") : undefined;
 		if (
-			step.impactSource &&
-			byId.get(step.impactSource)?.impactContract !== "impact-v1"
+			impact &&
+			(!byId.has(impact) || !hasCheck(byId.get(impact)!, "impact-reuse"))
 		)
 			throw new Error(`${step.id}: unknown impact source`);
 		if (
-			["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") &&
+			["specialist-v1", "coverage-v1"].includes(format ?? "") &&
 			!specialistBranch
 		)
 			throw new Error(
 				`${step.id}: specialist output contracts belong inside a configured review fanout`,
 			);
-		if (step.reviewContract === "inventory-v1" && step.inputs)
+		if (format === "inventory-v1" && step.inputs)
 			throw new Error(
 				`${step.id}: requirement extraction needs complete context; remove the inputs restriction`,
 			);
-		if (step.reviewContract && (step.type !== "agent" || step.json === false))
+		if (
+			["inventory-v1", "specialist-v1", "coverage-v1"].includes(format ?? "") &&
+			(step.type !== "agent" || step.json === false)
+		)
 			throw new Error(
 				`${step.id}: review contracts require structured JSON agent output`,
 			);
-		if (step.reviewContract === "inventory-v1" && !step.askQuestions)
+		if (format === "inventory-v1" && !step.askQuestions)
 			throw new Error(
 				`${step.id}: requirement extraction needs an outside-fanout question checkpoint`,
 			);
-		if (step.review) {
-			const inventory = byId.get(step.review.inventory);
-			if (inventory?.reviewContract !== "inventory-v1")
+		const inventoryId = consumesReview(step)
+			? readStep(step, "inventory")
+			: undefined;
+		const reviewGraph =
+			(step.type === "fanout" || step.tool === "review-gate") && inventoryId;
+		if (reviewGraph) {
+			const inventory = byId.get(inventoryId);
+			if (!inventory || reviewEvidenceContract(inventory) !== "inventory-v1")
 				throw new Error(
 					`${step.id}: review.inventory must name a requirement extraction agent in this graph`,
 				);
 			const fanout =
-				step.type === "fanout" ? step : byId.get(step.review.fanout ?? "");
+				step.type === "fanout"
+					? step
+					: byId.get(readStep(step, "fanout") ?? "");
 			if (
 				fanout?.type !== "fanout" ||
-				fanout.review?.inventory !== step.review.inventory
+				!consumesReview(fanout) ||
+				readStep(fanout, "inventory") !== inventoryId
 			)
 				throw new Error(
 					`${step.id}: review.fanout must name a configured specialist fanout with the same inventory`,
 				);
 			if (
-				fanout.impactSource &&
+				consumesImpact(fanout) &&
+				readStep(fanout, "impact") &&
 				step.type !== "fanout" &&
-				step.impactSource !== fanout.impactSource
+				impact !== readStep(fanout, "impact")
 			)
 				throw new Error(
 					`${step.id}: an impact review gate must consume the same declared impact source as its fanout`,
@@ -509,7 +524,7 @@ export function validateReviewConfiguration(
 					(s) =>
 						s.type !== "agent" ||
 						!["specialist-v1", "coverage-v1"].includes(
-							s.reviewContract ?? "",
+							reviewEvidenceContract(s) ?? "",
 						) ||
 						s.askQuestions,
 				)
@@ -522,23 +537,18 @@ export function validateReviewConfiguration(
 				"Reviewer identities within a round",
 			);
 			if (
-				reviewers.filter((s) => s.reviewContract === "coverage-v1").length !== 1
+				reviewers.filter((s) => reviewEvidenceContract(s) === "coverage-v1")
+					.length !== 1
 			)
 				throw new Error(
 					`${step.id}: configure exactly one coverage-v1 reviewer. Replace the coverage supplier before removing it; removed roles never execute implicitly.`,
 				);
-			if (
-				step.type !== "fanout" &&
-				!(step.type === "tool" && step.tool === "review-gate")
-			)
-				throw new Error(
-					`${step.id}: review sources belong on a specialist fanout or review-gate tool`,
-				);
 		}
 		for (const group of step.groups ?? [])
-			validateReviewConfiguration(group, Boolean(step.review));
+			validateReviewConfiguration(group, Boolean(reviewGraph));
 	}
 }
+
 const exec = promisify(execFile);
 export async function reviewedRevision(
 	workspace: string,
@@ -635,8 +645,11 @@ export function validateContractOutput(
 	context: ExecutionContext,
 	value: unknown,
 ): unknown {
-	const contract = context.step.reviewContract;
-	if (!contract) return value;
+	const contract = reviewEvidenceContract(context.step);
+	if (
+		!["inventory-v1", "specialist-v1", "coverage-v1"].includes(contract ?? "")
+	)
+		return value;
 	if (contract === "inventory-v1")
 		return validateInventory(
 			value,
@@ -947,7 +960,6 @@ export function aggregateForContext(
 
 export function scopeContextDigest(input: unknown): string {
 	const context = input as Record<string, unknown>;
-	const outputs = (context.outputs ?? {}) as Record<string, unknown>;
 	return qaDigest({
 		originalInput: context.originalInput,
 		answers: context.answers,
@@ -963,17 +975,7 @@ export function scopeContextDigest(input: unknown): string {
 						),
 				)
 			: context.humanDecisions,
-		accepted: Object.fromEntries(
-			[
-				"clarify",
-				"decisions",
-				"plan",
-				"existing-work",
-				"assess-existing",
-				"source",
-				"ticket",
-			].map((k) => [k, outputs[k]]),
-		),
+		accepted: context.scopeSources ?? legacyScopeSources(input),
 	});
 }
 
@@ -997,5 +999,3 @@ export function frozenReviewContext(input: unknown): unknown {
 	};
 	return compact(input);
 }
-
-export const calibratedReviewInstructions = `This impact-v1 round requires calibrated findings. For every open rating 2/3 finding return category:"defect|requirement|mandatory-rule|investigation|integration|verification", requirementIds or ruleReference, concrete evidence, consequence, remedy and investigation:{state:"confirmed|needs-evidence",missingEvidence,nextAction}. Optional cleanup, aesthetics and speculative redesign are rating 1 observations with category:"optional". Optional disagreements belong in optionalDisagreements, never consequential disputes. Uncertain consequential behavior is a blocked investigation with missing evidence and next action, not an invented defect or approval. Duplicate findings may name duplicateOf:"reviewer:local-id" only with the same demonstrated cause, requirement and remedy; retain original identities/evidence. Declare evidenceBoundary:{requirementIds,areas,dependencies,independence} only after inspecting complete relevant dependency/caller/configuration boundaries. Dependencies must name actual relative repository files or directory/** boundaries. Factory-context JSON pointers such as /progress/newHistory belong in finding evidence, never in dependencies. Runtime fingerprints these sources for future independent reuse. Unproven duplicate claims remain independent actionable findings. Do not infer independence from file names. Coverage may use status:"deferred", obligation:{stage:"qa|guide|acceptance|delivery",action} only for a requirement explicitly declared for that later stage in the accepted inventory. Future guide, QA, human or provider work cannot block code review; these obligations remain mandatory at their own gates.`;

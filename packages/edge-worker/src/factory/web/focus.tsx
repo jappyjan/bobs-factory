@@ -51,6 +51,7 @@ import {
 	signature,
 	ticketTrackingPending,
 } from "./review-state";
+import { roleOutput } from "./run-output";
 import { Bob, Button, ConfirmStop, External, Markdown, useToast } from "./ui";
 export const labels: Record<string, string> = {
 	question: "💬 Question",
@@ -444,9 +445,9 @@ export function QuestionForm({ run }: { run: any }) {
 	);
 }
 export function ReviewEntry({ run }: { run: any }) {
-	const guide = run.outputs.guide,
+	const guide = roleOutput(run, "guide"),
 		gate = run.reviewGate,
-		url = gate?.url ?? run.outputs["draft-pr"]?.url;
+		url = gate?.url ?? roleOutput(run, "draft-pr")?.url;
 	return (
 		<div className="review-entry">
 			<p>
@@ -502,7 +503,7 @@ export function FullReview({
 	onSettled: () => void;
 	settling?: boolean;
 }) {
-	const guide = run.outputs.guide,
+	const guide = roleOutput(run, "guide"),
 		version = `${run.reviewGate?.id ?? "historical"}/${run.reviewGate?.headSha ?? ""}/${guide?.__artifactHash ?? signature(guide)}`,
 		previous = useRef(version),
 		[updated, setUpdated] = useState(false);
@@ -612,12 +613,12 @@ function ReviewDecisions({
 		feedbackOpen = draft.open;
 	const setFeedback = (feedback: string) => update((d) => ({ ...d, feedback }));
 	const setFeedbackOpen = (open: boolean) => update((d) => ({ ...d, open }));
-	const guide = run.outputs?.guide,
+	const guide = roleOutput(run, "guide"),
 		gate = run.reviewGate,
 		waiting = gate?.status === "pending",
 		trackingPending = ticketTrackingPending(run),
 		matching = !waiting || (run.status === "waiting" && guideMatchesGate(run)),
-		url = run.outputs?.["draft-pr"]?.url ?? gate?.url;
+		url = roleOutput(run, "draft-pr")?.url ?? gate?.url;
 	const reject = async () => {
 		if (!hasFeedback(draft) || busy || action.isPending || !matching) return;
 		let feedback: string;
@@ -1024,7 +1025,7 @@ export function FocusCard({
 						</p>
 					)}
 				</>
-			) : run.outputs?.guide ? (
+			) : roleOutput(run, "guide") ? (
 				<ReviewEntry run={run} />
 			) : (
 				<DecisionActions
@@ -1120,9 +1121,9 @@ export function WorkingRow({
 						{latest?.body ??
 							`${latest?.title ?? "Bob is working"} ${latest?.parameter ?? ""}`}
 					</Markdown>
-					{data.outputs?.["merge-readiness"]?.blockers?.length > 0 && (
+					{roleOutput(data, "merge-readiness")?.blockers?.length > 0 && (
 						<ul>
-							{data.outputs["merge-readiness"].blockers.map(
+							{roleOutput(data, "merge-readiness").blockers.map(
 								(b: any, i: number) => (
 									<li key={i}>{b.message}</li>
 								),

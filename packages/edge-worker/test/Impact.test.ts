@@ -659,7 +659,9 @@ async function drive(
 		runtime,
 		calls,
 		contextMeasurements,
-		definition: definitionValue,
+		definition: run.workflowDefinitions!.find(
+			(workflow) => workflow.id === definitionValue.id,
+		)!,
 		factoryTools,
 	};
 }
@@ -1321,7 +1323,16 @@ it("accepts shell SHA-256 QA probes and saved JSON digests while rejecting chang
 	fixture.run.outputs["visual-scope"] = { environmentEvidence: probe };
 	const context: ExecutionContext = {
 		run: fixture.run,
-		step: fixture.definition.steps.find((s) => s.id === "scope")!,
+		step: StepSchema.parse({
+			...agent("qa-recorder"),
+			output: { format: "qa-capture-v1" },
+			reads: {
+				scope: "visual-scope",
+				capture: "capture",
+				qaGate: "visual-gate",
+			},
+			checks: ["capture-evidence", "qa-environment"],
+		}),
 		outputs: fixture.run.outputs,
 		input: {},
 		signal: new AbortController().signal,
@@ -1382,7 +1393,16 @@ it("preserves original behavioral execution and rejects changed definitions, fix
 	const context = {
 		run,
 		reviewKey: "experts",
-		step: fixture.definition.steps.find((s) => s.id === "scope")!,
+		step: StepSchema.parse({
+			...agent("qa-recorder"),
+			output: { format: "qa-capture-v1" },
+			reads: {
+				scope: "visual-scope",
+				capture: "capture",
+				qaGate: "visual-gate",
+			},
+			checks: ["capture-evidence", "qa-environment"],
+		}),
 		outputs: run.outputs,
 		input: {},
 		signal: new AbortController().signal,
@@ -1432,7 +1452,7 @@ it("preserves original behavioral execution and rejects changed definitions, fix
 	const captured = captureEvidence(
 		{
 			...context,
-			step: { ...context.step, qaContract: "qa-v1" },
+			step: context.step,
 			progress: {
 				changedFiles: [],
 				currentRevision: {

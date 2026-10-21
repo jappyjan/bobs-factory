@@ -18,6 +18,7 @@ import { validateFactoryResult } from "../src/factory/FactoryResults.js";
 import { FactoryServer as ProtectedFactoryServer } from "../src/factory/FactoryServer.js";
 import { CaptureSchema } from "../src/factory/FactoryTools.js";
 import { scopeRevision } from "../src/factory/RepositoryScope.js";
+import { hasCheck } from "../src/factory/StepConfig.js";
 import {
 	byteRange,
 	cleanupVideoEvidence,
@@ -35,6 +36,7 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { qaScope } from "./fixtures/qa.js";
+import { renamedFactory } from "./fixtures/renamed-factory.js";
 
 const roots: string[] = [];
 afterEach(() => {
@@ -115,6 +117,7 @@ function setup() {
 			},
 		},
 	} as ExecutionContext;
+	ctx.step = { ...ctx.step, reads: { ...ctx.step.reads, capture: "capture" } };
 	const path = join(evidenceDir, "save.mp4"),
 		posterPath = join(evidenceDir, "save.png");
 	execFileSync("ffmpeg", [
@@ -532,6 +535,46 @@ it("streams full/HEAD/open/suffix ranges and rejects stale, malformed, replaced 
 		expect((await get("bytes=0-9")).statusCode).toBe(409);
 		rmSync(f.path);
 		expect((await get()).statusCode).toBe(410);
+	} finally {
+		await server.stop();
+		await f.runtime.shutdown();
+	}
+});
+it("serves renamed capture receipts and rejects unrelated historical output keys", async () => {
+	const f = setup();
+	const capture = (await finalizeVideoEvidence(
+		f.ctx,
+		f.output,
+	)) as VideoCapture;
+	const { definitions } = renamedFactory(defaultWorkflows);
+	f.run.workflow = definitions.find(
+		(workflow) => workflow.id === "renamed-factory",
+	)!;
+	f.run.workflowDefinitions = definitions;
+	const captureStep = definitions
+		.find((workflow) => workflow.id === "renamed-factory-pipeline")!
+		.steps.find((step) => hasCheck(step, "capture-evidence"))!;
+	f.run.outputs = { [captureStep.id]: capture, capture };
+	const video = capture.videos![0]!;
+	const server = new FactoryServer(f.runtime, {
+		repositories: () => [],
+		sessions: () => [],
+		entries: () => [],
+		start: async () => {
+			throw Error("unused");
+		},
+		stop: () => {},
+	});
+	const request = () =>
+		server.app.inject({
+			url: `/api/runs/${f.run.id}/videos/${video.taskId}/media?v=${video.validation!.sha256}`,
+		});
+	try {
+		const response = await request();
+		expect(response.statusCode).toBe(200);
+		expect(response.rawPayload).toEqual(readFileSync(f.path));
+		delete f.run.outputs[captureStep.id];
+		expect((await request()).statusCode).toBe(404);
 	} finally {
 		await server.stop();
 		await f.runtime.shutdown();

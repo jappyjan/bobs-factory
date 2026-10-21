@@ -70,9 +70,7 @@ export function runPushEvent(run: FactoryRun): PushEvent | undefined {
 		};
 	if (run.status === "completed")
 		return { category: "completion", identity: "completed", destination };
-	const readiness = run.outputs["merge-readiness"] as
-		| MergeReadiness
-		| undefined;
+	const readiness = run.mergeReadiness as MergeReadiness | undefined;
 	const human = readiness?.blockers?.filter(
 		(b) =>
 			b.action === "human" &&

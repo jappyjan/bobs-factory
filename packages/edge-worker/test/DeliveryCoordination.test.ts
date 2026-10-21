@@ -8,6 +8,7 @@ import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
+import { legacyExecutionContext } from "./fixtures/legacy-execution-context.js";
 import { providerReceipt } from "./fixtures/merge-readiness.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
@@ -548,21 +549,23 @@ it("keeps consequential base integration on the review path and explains it sepa
 						githubApiReceipt(args, { baseRefOid: "consequential-new-base" }),
 					),
 	});
-	const result = await tools.tool({
-		run,
-		step: {
-			id: "after-ci-fix",
-			name: "Assess",
-			type: "tool",
-			tool: "review-after-fix",
-			branches: [],
-			maxVisits: 8,
-		},
-		input: {},
-		signal: new AbortController().signal,
-		evidenceDir: "/tmp",
-		log: vi.fn(),
-	});
+	const result = await tools.tool(
+		legacyExecutionContext({
+			run,
+			step: {
+				id: "after-ci-fix",
+				name: "Assess",
+				type: "tool",
+				tool: "review-after-fix",
+				branches: [],
+				maxVisits: 8,
+			},
+			input: {},
+			signal: new AbortController().signal,
+			evidenceDir: "/tmp",
+			log: vi.fn(),
+		}),
+	);
 	expect(result).toMatchObject({
 		reviewRequired: true,
 		invalidation: {

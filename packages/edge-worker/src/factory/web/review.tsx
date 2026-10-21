@@ -40,6 +40,7 @@ import {
 	writeReviewProgress,
 } from "./review-state";
 import { ChapterVisual, Screens, SystemMap } from "./review-visuals";
+import { roleOutput, roleOutputKey } from "./run-output";
 import { Button, Markdown } from "./ui";
 
 export type Annotate = (
@@ -100,9 +101,12 @@ export function GuidedReview({
 			queryKey: ["guide", run.id, version],
 			enabled: Boolean(value?.__artifactPreview),
 			queryFn: async ({ signal }) => {
-				const guide = await api(`/api/runs/${run.id}/artifacts/guide`, {
-					signal,
-				});
+				const guide = await api(
+					`/api/runs/${run.id}/artifacts/${encodeURIComponent(roleOutputKey(run, "guide") ?? "guide")}`,
+					{
+						signal,
+					},
+				);
 				// An artifact endpoint returns the latest value. Refuse to label a
 				// replacement guide with the revision from an older dashboard response.
 				const bytes = await crypto.subtle.digest(
@@ -274,8 +278,8 @@ function ReviewReader({
 			queryKey: [
 				"guide-evidence",
 				run.id,
-				run.outputs.capture?.__artifactHash ??
-					signature(run.outputs.capture ?? {}),
+				roleOutput(run, "capture")?.__artifactHash ??
+					signature(roleOutput(run, "capture") ?? {}),
 			],
 			queryFn: ({ signal }) => api(`/api/runs/${run.id}/evidence`, { signal }),
 			staleTime: Infinity,
