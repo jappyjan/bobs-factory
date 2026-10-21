@@ -1133,6 +1133,53 @@ it("recovers selected work in a nested graph without replaying completed agents 
 	expect(run.checkpoint?.reviewKey).toBe("invoke/experts");
 	expect(run.impactDecisions!.at(-1)!.pending.specialists).toEqual([]);
 });
+it("collects complete large revision patches before inspecting the combined tree", async () => {
+	const fixture = await drive(true);
+	const key = "experts";
+	const fanout = fixture.definition.steps.find((s) => s.id === key)!;
+	const previous = fixture.run.outputs.gate as AggregateReview;
+	const oldHead = git(fixture.root, "rev-parse", "HEAD");
+	writeFileSync(
+		join(fixture.root, "large-review.txt"),
+		`${"x".repeat(9 * 1024 * 1024)}\nlast line\n`,
+	);
+	git(fixture.root, "add", ".");
+	git(fixture.root, "commit", "-m", "large revision patch");
+	const head = git(fixture.root, "rev-parse", "HEAD");
+	const expected = execFileSync(
+		"git",
+		["diff", "--no-ext-diff", "--no-textconv", oldHead, head, "--"],
+		{
+			cwd: fixture.root,
+			encoding: "utf8",
+			maxBuffer: 64 * 1024 * 1024,
+		},
+	).trim();
+	expect(Buffer.byteLength(expected)).toBeGreaterThan(8 * 1024 * 1024);
+	const snapshot = await collectImpactSnapshot(
+		{
+			run: fixture.run,
+			step: fanout,
+			reviewKey: key,
+			input: previous.baseline.context,
+			currentScope: () => previous.baseline.context,
+			outputs: fixture.run.outputs,
+			signal: new AbortController().signal,
+			log: () => {},
+			evidenceDir: fixture.root,
+		},
+		fanout,
+		key,
+	);
+	const repo = snapshot.repositories[0]!;
+	expect(repo.diff).toBe(expected);
+	expect(repo.files).toEqual(["large-review.txt"]);
+	expect(repo.combinedTree).toBe(git(fixture.root, "rev-parse", "HEAD^{tree}"));
+	expect(repo.combinedDiff).toBe("");
+	expect(repo.uncertainty).toEqual([]);
+	expect(git(fixture.root, "rev-parse", "HEAD")).toBe(head);
+	expect(git(fixture.root, "status", "--porcelain")).toBe("");
+});
 it("inspects a non-mutating combined tree and invalidates overlap or conflicts instead of target-only regressions", async () => {
 	const fixture = await drive(true);
 	const branchHead = git(fixture.root, "rev-parse", "HEAD");

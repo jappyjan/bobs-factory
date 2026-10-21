@@ -236,7 +236,9 @@ export async function collectImpactSnapshot(
 				await exec("git", args, {
 					cwd: repo.workspace,
 					timeout: 15000,
-					maxBuffer: 8 * 1024 * 1024,
+					// Combined revisions include incoming base changes and retained evidence.
+					// Keep complete patches within a bounded buffer; overflow still blocks reuse.
+					maxBuffer: 64 * 1024 * 1024,
 				})
 			).stdout.trim();
 		const headSha = await git("rev-parse", "HEAD");

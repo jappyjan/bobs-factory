@@ -129,7 +129,9 @@ const invalidComment = {
 	reason: "Originating tracker session notice",
 };
 function assessment(run, correction) {
-	const inventory = run.outputs.gate?.baseline.inventory;
+	const inventory = run.history.findLast(
+		(entry) => entry.step === "pipeline/gate",
+	)?.output.baseline.inventory;
 	return {
 		impactContract: "impact-v1",
 		status: "completed",
@@ -335,7 +337,14 @@ try {
 	assert(freshTurns[1].resumeSessionId);
 	assert.equal(fresh.impactDecisions.length, 1);
 	assert.equal(fresh.impactDecisions[0].checkResults[0].exitCode, 0);
-	assert.deepEqual(fresh.outputs["assess-impact"].commentAssessments, []);
+	const freshAssessment = fresh.history.findLast(
+		(entry) => entry.step === "pipeline/assess-impact",
+	)?.output;
+	assert(
+		freshAssessment,
+		"The nested assessor must retain its accepted output",
+	);
+	assert.deepEqual(freshAssessment.commentAssessments, []);
 	assert(
 		fresh.events.some((e) =>
 			e.message.includes("Output validation rejected assess-impact"),
@@ -370,6 +379,7 @@ try {
 				{
 					current: "assess-impact",
 					visits: { "assess-impact": 1 },
+					outputs: structuredClone(fresh.checkpoint.active.children[0].outputs),
 					active: {
 						phase: "executing",
 						agent: {
@@ -377,7 +387,7 @@ try {
 							sessionId: "retained-impact-conversation",
 							result: {
 								output: {
-									...fresh.outputs["assess-impact"],
+									...freshAssessment,
 									commentAssessments: [invalidComment],
 								},
 								revision: {

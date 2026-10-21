@@ -806,3 +806,35 @@ actual delivered head/target, preserve all 81 obligations and original execution
 stamps, and independently select fresh results or justified reuse. All six
 configured specialist reviews, current 34-criterion QA, guide, human delivery
 acceptance and provider-confirmed delivery remain at their frozen gates.
+
+
+## 2026-10-21 impact-collection correction (r25)
+
+The impact assessor retained a blocked snapshot at `44885063`: its complete
+review-head-to-head patch is 14,865,072 bytes, exceeding the collector's 8 MiB
+subprocess limit. Reproduction fails with `ENOBUFS`; a bounded 64 MiB collection
+returns the complete patch. The collector now uses that bound and retains its
+existing uncertainty path on overflow or Git failure. No evidence is truncated,
+removed or treated as independent acceptance.
+
+A new real-Git regression compares the complete 9 MiB fixture patch and checks
+the file inventory, combined tree, clean workspace and unchanged head. It fails
+with the previous bound and passes with the correction. Five focused impact
+tests pass, including stale assessment and combined-tree/conflict safeguards.
+The worker build and targeted formatting checks pass.
+
+The relevant F1 feedback-recovery drive initially failed because the integrated
+runtime keeps nested outputs locally. The fixture now reads accepted assessor
+and gate records from history and preserves local child outputs in its recreated
+recovery checkpoint. Assertions remain intact. The complete simulated-agent
+drive passes fresh comment correction, restart/retry, unchanged inventory reuse,
+selected checks and absence of invented human acceptance. Earlier failed runs
+and the final passing run are retained in `ci-fix-r25-f1*.log` in the run evidence
+directory; the passing fixture is `f1-impact-feedback-l9Iqyl`.
+
+These are local corrective checks on the dirty revision based on `44885063`,
+not new independent runtime receipts. `ci-fix-r25-validation.json` records the
+source patch fingerprint. The packaged running service must load the corrected
+collector and regenerate its immutable snapshot. Preserve the full 81-check
+selection, six fresh specialists, 34 QA criteria and downstream human/provider
+gates for reassessment. No prior evidence is restamped or waived.

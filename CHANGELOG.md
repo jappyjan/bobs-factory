@@ -32,6 +32,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Collect complete impact-review patches up to 64 MiB so large base integrations retain their file inventory and combined-tree evidence; larger output still blocks review reuse. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
 - Reject retained architecture approval actions after proposal navigation, replacement or gate changes, and update vulnerable MCP and test-tool dependencies. Let run recovery wait for a brief storage inspection without stealing its workspace lock, and preserve configurable workflow steps when integrating the updated base. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Allocate dynamic listener ports for guide, architecture, review and recovery test drives so unrelated local runs can keep their servers running. Align the architecture continuation fixture with the stock check-in format. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
