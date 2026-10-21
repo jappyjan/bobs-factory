@@ -20,7 +20,7 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Fixed
 
-- Keep recovery checks reliable under load with the maintained runtime-transition wait helper and simulated polling delays for an immediately confirmed grouped-merge fixture; preserve provider rereads and approval assertions.
+- Keep recovery checks reliable under load with the maintained runtime-transition wait helper and simulated polling delays for an immediately confirmed grouped-merge fixture; preserve provider rereads and approval assertions. ([#171](https://github.com/jappyjan/bobs-factory/pull/171))
 
 - Repair nightly architecture fixtures for the current check-in contract, dispatch mocked roles by saved step IDs, and allocate independent loopback ports for architecture and impact recovery drives. Preserve exact-version approval, revision and restart assertions ([#170](https://github.com/jappyjan/bobs-factory/pull/170)).
 
