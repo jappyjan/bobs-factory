@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Configure agent steps with named inputs, library or custom output schemas, declarative rules, evidence checks, revision binding, access and shared instructions in Recipes. Renaming Factory steps preserves their behavior, and frozen legacy definitions retain their original contracts. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136))
+- Configure agent steps with named inputs, library or custom output schemas, declarative rules, evidence checks, revision binding, access and shared instructions in Recipes. Renaming Factory steps preserves their behavior, and frozen legacy definitions retain their original contracts. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136), [#173](https://github.com/jappyjan/bobs-factory/pull/173))
 
 - Discover substantial architectural improvements with parallel research coordinators and cheaper workers. Review each proposal with Fix it, File issue, Skip or Ask Bob, see prerequisite and alternative conflicts before submitting, and preview which fixes start in parallel; explicitly launch the batch to file deferred backlog issues and launch only selected fixes as independent Factory runs, with traceable research activity, fresh plan checks after feedback, normal approvals and dependency-aware delivery. ([#167](https://github.com/jappyjan/bobs-factory/pull/167))
 

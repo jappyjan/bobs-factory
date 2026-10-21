@@ -6,7 +6,7 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Changed
 
-- Replace runtime step-ID dispatch with explicit agent configuration and named tool bindings; preserve stock role prompts and historical frozen-run loading. Add raw legacy resume, fully renamed Factory, revision/evidence and builder coverage. Own Ajv directly, refresh MCP SDK and test dependencies to their patched releases, and remove redundant security overrides. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136))
+- Replace runtime step-ID dispatch with explicit agent configuration and named tool bindings; preserve stock role prompts and historical frozen-run loading. Add raw legacy resume, fully renamed Factory, revision/evidence and builder coverage. Own Ajv directly, refresh MCP SDK and test dependencies to their patched releases, and remove redundant security overrides. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136), [#173](https://github.com/jappyjan/bobs-factory/pull/173))
 
 - Add maintained native desktop acceptance proofs for isolated remote auth/ownership, client mismatch, guided onboarding and active-job/waiting-state continuity through UI quit/relaunch and worker restart ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#88](https://github.com/jappyjan/bobs-factory/pull/88)).
 
