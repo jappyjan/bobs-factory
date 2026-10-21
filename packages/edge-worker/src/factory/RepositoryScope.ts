@@ -284,6 +284,16 @@ export function repositoryRun(
 		history: snapshotHistory(run.history, 0, run.history.length, (item) => ({
 			...item,
 			output: project(item.output),
+			...(item.evidence
+				? {
+						evidence: Object.fromEntries(
+							Object.entries(item.evidence).map(([key, value]) => [
+								key,
+								project(value),
+							]),
+						),
+					}
+				: {}),
 		})),
 		roleRevisions: Object.fromEntries(
 			Object.entries(run.roleRevisions ?? {}).map(([key, value]) => [

@@ -456,7 +456,7 @@ export class FactoryTools {
 			)
 		);
 	}
-	private async qaGate(
+	private async qaEvidence(
 		context: ExecutionContext,
 		command: (exe: string, args: string[]) => Promise<string>,
 	) {
@@ -599,8 +599,8 @@ export class FactoryTools {
 				);
 		return {
 			qaContract: QA_CONTRACT,
-			approved:
-				!findings.length && !coverage.blocked.length && !coverage.errors.length,
+			evidenceErrors: coverage.errors,
+			evidenceBlocked: coverage.blocked,
 			...(coverage.errors.length && !coverage.blocked.length
 				? { qaRetry: true, evidenceIssues: coverage.errors }
 				: {}),
@@ -619,6 +619,85 @@ export class FactoryTools {
 						],
 					}
 				: {}),
+		};
+	}
+
+	/** Fixed read-only evidence projections; no rule result or next-step selection. */
+	async evidence(context: ExecutionContext): Promise<Record<string, unknown>> {
+		const evidence: Record<string, unknown> = {};
+		const command = (exe: string, args: string[]) =>
+			scopeCommand(context, this.command.bind(this), exe, args);
+		if (hasCheck(context.step, "review-evidence")) {
+			const review = filterReview(boundOutput(context, "review"));
+			const incomplete =
+				review.status !== "completed" || review.blockers.length > 0;
+			evidence["review-evidence"] = {
+				...review,
+				incomplete,
+				reviewIncomplete: incomplete,
+				questions: incomplete
+					? [
+							`${readStep(context.step, "review") ?? "configured review"} did not complete (${review.status ?? "legacy outcome missing"}). ${review.blockers.join("; ") || review.summary} Restore the required input/tools, then answer to retry only this reviewer. Missing findings do not approve or waive the review.`,
+						]
+					: [],
+			};
+		}
+		if (hasCheck(context.step, "qa-gate-evidence")) {
+			const review = evidence["review-evidence"] as
+				| { incomplete?: boolean }
+				| undefined;
+			const capture = QaCaptureSchema.safeParse(
+				boundOutput(context, "capture"),
+			);
+			// Preserve incomplete-review assistance unless recorded product failures need correction first.
+			if (
+				!review?.incomplete ||
+				(capture.success &&
+					(capture.data.results.some((r) =>
+						r.criteria.some((c) => c.outcome === "failed"),
+					) ||
+						capture.data.findings.some((f) => f.status === "open")))
+			) {
+				const qa = await this.qaEvidence(context, command);
+				evidence["qa-gate-evidence"] = qa;
+				if (review)
+					Object.assign(review, {
+						questions: qa.findings.length
+							? []
+							: "questions" in qa
+								? qa.questions
+								: [],
+					});
+			}
+		}
+		if (hasCheck(context.step, "delivery-evidence"))
+			evidence["delivery-evidence"] = {
+				mode: context.run.delivery?.contract.mode ?? "repository",
+				repositoryComplete:
+					context.run.delivery?.contract.mode === "mixed" &&
+					(context.run.humanDecisions ?? []).some(
+						(decision) =>
+							decision.decision === "approve" &&
+							repositoryCompletionProven({
+								...context.run,
+								humanDecisions: [decision],
+							}),
+					),
+			};
+		return evidence;
+	}
+	private async qaGate(
+		context: ExecutionContext,
+		command: (exe: string, args: string[]) => Promise<string>,
+	) {
+		const evidence = await this.qaEvidence(context, command);
+		const { evidenceErrors, evidenceBlocked, ...retained } = evidence;
+		return {
+			...retained,
+			approved:
+				!evidence.findings.length &&
+				!evidenceBlocked.length &&
+				!evidenceErrors.length,
 		};
 	}
 
@@ -695,6 +774,26 @@ export class FactoryTools {
 			if (context.step.tool === "ci-fix-readiness") {
 				writeBoundOutput(context, "ci", output);
 				await context.save?.();
+			}
+			if (context.step.tool === "inspect-review-readiness") {
+				const joined = output as Record<string, unknown> & {
+					deliveries?: {
+						repositoryId: string;
+						name: string;
+						output: { observations?: Record<string, unknown>[] };
+					}[];
+				};
+				return {
+					...joined,
+					observations:
+						joined.deliveries?.flatMap((delivery) =>
+							(delivery.output.observations ?? []).map((observation) => ({
+								...observation,
+								repositoryId: delivery.repositoryId,
+								repositoryName: delivery.name,
+							})),
+						) ?? [],
+				};
 			}
 			return output;
 		}
@@ -808,6 +907,7 @@ export class FactoryTools {
 								}),
 						),
 				};
+			case "accept-delivery":
 			case "delivery-route": {
 				const contract = DeliveryContractSchema.parse(
 					boundOutput(context, "plan", "deliveryContract"),
@@ -1118,6 +1218,89 @@ export class FactoryTools {
 				}
 				return recovery({ approved: open.length === 0, findings: open });
 			}
+			case "inspect-review-readiness": {
+				const aggregate = aggregateForContext(context, {
+					requireComplete: false,
+				});
+				const reviewed = aggregate
+					? { headSha: aggregate.baseline.headSha, dirty: false }
+					: run.reviewRounds?.length
+						? undefined
+						: boundStepKey(context, "review")
+							? run.roleRevisions?.[boundStepKey(context, "review")!]
+							: undefined;
+				const headSha = await command("git", ["rev-parse", "HEAD"]);
+				const dirty = Boolean(await command("git", ["status", "--porcelain"]));
+				const readiness = await inspectReadinessWithRetry(
+					context,
+					command,
+					String(boundOutput(context, "draftPr", "url") ?? ""),
+				);
+				if (readiness.headSha !== headSha)
+					blockRevisionMismatch(readiness, headSha);
+				assessFeedback(context, readiness);
+				const previous = boundOutput(context, "ci") as
+					| MergeReadiness
+					| undefined;
+				const fingerprint = feedbackWorkFingerprint(readiness);
+				const failures = (checks: unknown) =>
+					Array.isArray(checks)
+						? checks
+								.filter((check) => check.bucket === "fail")
+								.map((check) => [check.name, check.state, check.link])
+								.sort()
+						: [];
+				const observation = {
+					readiness,
+					reviewed: reviewed ?? null,
+					headSha,
+					dirty,
+					previous: previous ?? null,
+					previousBase:
+						aggregate?.baseline.baseSha ??
+						previous?.correctionBaseSha ??
+						previous?.baseSha ??
+						null,
+					feedback: (previous?.blockers ?? []).map((item) => ({
+						...item,
+						fixReviewRequired:
+							boundOutput(context, "fix", "reviewRequired") ?? null,
+						currentFix: readiness.blockers.some(
+							(current) =>
+								current.kind === item.kind && current.action === "fix",
+						),
+					})),
+					fix: boundOutput(context, "fix") ?? {},
+					reviewApproved:
+						aggregate?.approved ??
+						boundOutput(context, "reviewGate", "approved") ??
+						null,
+					scopeChanged: Boolean(
+						aggregate?.baseline.context &&
+							this.scopeChanged(context, aggregate.baseline.context),
+					),
+					failures: failures(readiness.checks),
+					previousFailures: failures(previous?.checks),
+					fingerprint: fingerprint ?? null,
+					previousFingerprint: previous
+						? (feedbackWorkFingerprint(previous) ?? null)
+						: null,
+					repeated: (run.history ?? [])
+						.slice(0, -1)
+						.some(
+							(item) =>
+								item.step === boundStepKey(context, "fix") &&
+								readPath(item.output, "feedbackAssessment.fingerprint") ===
+									fingerprint &&
+								readPath(
+									item.output,
+									"feedbackAssessment.instructionsSha256",
+								) === feedbackInstructionFingerprint(context),
+						),
+				};
+				return { ...observation, observations: [observation] };
+			}
+
 			case "review-after-fix": {
 				const aggregate = aggregateForContext(context, {
 					requireComplete: false,

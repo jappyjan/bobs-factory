@@ -4,6 +4,7 @@ import {
 	checkinInstructions,
 	implementationScopeInstructions,
 } from "./Architecture.js";
+import { installStockChecks } from "./CheckPresets.js";
 import { feedbackPolicyInstructions } from "./FeedbackPolicy.js";
 import {
 	briefVideoInstructions,
@@ -768,6 +769,7 @@ function configuredStock(value: unknown) {
 		}
 	};
 	walk(result.steps);
+	installStockChecks(result.steps);
 	return result;
 }
 export const defaultWorkflows = validateWorkflows([

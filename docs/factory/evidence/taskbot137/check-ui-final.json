@@ -1,0 +1,334 @@
+{
+	"finalCommit": "ff5e2b20e035626c48bf0bd9ef5fa0ec00432572",
+	"originalBuild": "7a010438ed36462fe2fe92f5",
+	"finalBuild": "0317923a2f79a813228a55be",
+	"node": "v24.21.0",
+	"uiEquality": [
+		{
+			"path": "packages/edge-worker/src/factory/web/recipe-builder.tsx",
+			"original": "b4de22293f858daf4a88bdf350abf0def2e5e8beb831b752403de4d9bdf7517e",
+			"final": "b4de22293f858daf4a88bdf350abf0def2e5e8beb831b752403de4d9bdf7517e",
+			"equal": true
+		},
+		{
+			"path": "packages/edge-worker/src/factory/web/check-step-settings.tsx",
+			"original": "d4d73b4e4f52ee3a45484764ec4465f79e814eeff93a822ec2a52d2773ed4087",
+			"final": "d4d73b4e4f52ee3a45484764ec4465f79e814eeff93a822ec2a52d2773ed4087",
+			"equal": true
+		},
+		{
+			"path": "packages/edge-worker/src/factory/web/recipe-graph.ts",
+			"original": "a7797bb8230e81b7629d5b25bdd59a5dbece50689c02ac06057677dbaa48dac6",
+			"final": "a7797bb8230e81b7629d5b25bdd59a5dbece50689c02ac06057677dbaa48dac6",
+			"equal": true
+		},
+		{
+			"path": "packages/edge-worker/src/factory/web/styles.css",
+			"original": "38dc781107ab54d5567cbbe7279fd1d860ae640ede9900506e8a1e998b8530e8",
+			"final": "38dc781107ab54d5567cbbe7279fd1d860ae640ede9900506e8a1e998b8530e8",
+			"equal": true
+		}
+	],
+	"renderInputs": {
+		"exactFullRecipeEquality": true,
+		"originalRecipeSha256": "88eac57cb3c7c901e51ac67057e41fee35c2d594e874330ae712a78ca0cc43e2",
+		"finalRecipeSha256": "88eac57cb3c7c901e51ac67057e41fee35c2d594e874330ae712a78ca0cc43e2",
+		"validWithFinalCheckSchema": true
+	},
+	"finalIdentity": {
+		"startedAt": "2026-10-21T21:02:05.186Z",
+		"node": "v24.21.0",
+		"base": "ff5e2b20e035626c48bf0bd9ef5fa0ec00432572",
+		"source": {
+			"packages/edge-worker/src/factory/Check.ts": "904f7cdea5079ba44eda7f41dd84253d25ad35370a9a548722565d3b2e5a6d09",
+			"packages/edge-worker/src/factory/Rules.ts": "9284c2600abdda13eb2b996d4a13e0e613117a0ada91893e74a78529fd1325c4",
+			"packages/edge-worker/src/factory/FactoryServer.ts": "9374ba6771f1789c2d1c85570f2d21af5946a55a61ebdecc662b0d3a53608ee8",
+			"packages/edge-worker/src/factory/Workflow.ts": "d9e65e9309edd210423f83cfa69983e32870f4d3c590d3037ba625bad808257b",
+			"packages/edge-worker/src/factory/WorkflowRuntime.ts": "74572f3bda7aaff2c672979a48723004b515cf21d20f076e4bb95cff13add106",
+			"packages/edge-worker/src/factory/web/recipe-builder.tsx": "b4de22293f858daf4a88bdf350abf0def2e5e8beb831b752403de4d9bdf7517e",
+			"packages/edge-worker/src/factory/web/check-step-settings.tsx": "d4d73b4e4f52ee3a45484764ec4465f79e814eeff93a822ec2a52d2773ed4087",
+			"packages/edge-worker/src/factory/web/recipe-graph.ts": "a7797bb8230e81b7629d5b25bdd59a5dbece50689c02ac06057677dbaa48dac6",
+			"packages/edge-worker/src/factory/web/styles.css": "38dc781107ab54d5567cbbe7279fd1d860ae640ede9900506e8a1e998b8530e8"
+		},
+		"backend": {
+			"Check.js": "909f7a68360c2205ba3349a78e8676e6fcc23e788480d2fca4d0ba81b29bf274",
+			"Rules.js": "d870015e9d6eda1421d2c7aaf82a9c8c5d0a46ffd1b473d87df93d37f0367c2d",
+			"FactoryServer.js": "034548c3882cf3498ee31f67fb90df564072369dcefe858b9fceee81f06328f7",
+			"Workflow.js": "348c34082b8d4cdd52eed0464f347ee6ffaf4e896244f769ff33ed8b601fd503",
+			"WorkflowRuntime.js": "a8d84f778318815beaba96035657635b71942b1a84bd1b07eb35ab024cbc9a6b"
+		},
+		"build": "0317923a2f79a813228a55be",
+		"assets": [
+			{
+				"path": "/app.dfe9201c59b58bc104e46852.js",
+				"sha256": "dfe9201c59b58bc104e468524cb11a9e5d23343eeb1c46906da88349240f390a"
+			},
+			{
+				"path": "/styles.c383ab36e8be08cf7c039523.css",
+				"sha256": "c383ab36e8be08cf7c03952316329f16beedaca4db29339662cbd9d3ec12b5ba"
+			},
+			{
+				"path": "/",
+				"sha256": "1f6289ced78d227141010cb801eb0bfefc0247bc9b014776cfa653294fc37d6a"
+			},
+			{
+				"path": "/manifest.webmanifest",
+				"sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004"
+			},
+			{
+				"path": "/icons/icon-192.png",
+				"sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961"
+			},
+			{
+				"path": "/icons/icon-512.png",
+				"sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86"
+			},
+			{
+				"path": "/icons/maskable-512.png",
+				"sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9"
+			},
+			{
+				"path": "/icons/apple-touch-icon.png",
+				"sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4"
+			},
+			{
+				"path": "/sw.js",
+				"sha256": "1b0968d6af75657f5b55dfbc2c7067cfe38c00ae8c931c1ffaac12683d1948a8"
+			}
+		],
+		"origin": "http://localhost:3687",
+		"limitations": [
+			"Fixture-seeded private auth session, no passkey login claim",
+			"No agent/run/provider execution",
+			"Simulation fixtures are synthetic; no live evidence authentication claim"
+		],
+		"assertions": []
+	},
+	"productionSimulation": [
+		{
+			"name": "passing original screenshot recipe",
+			"status": 200,
+			"body": {
+				"output": {
+					"passed": true,
+					"allApproved": true,
+					"openFindings": 0
+				},
+				"next": "approved"
+			}
+		},
+		{
+			"name": "failing original screenshot recipe",
+			"status": 200,
+			"body": {
+				"output": {
+					"passed": false,
+					"allApproved": false,
+					"openFindings": 1
+				},
+				"next": "changes"
+			}
+		},
+		{
+			"name": "missing collection fails closed",
+			"status": 409,
+			"body": {
+				"error": "Rule aggregate path /inputs/reviews is missing reviews"
+			}
+		},
+		{
+			"name": "undeclared evidence fails closed",
+			"status": 409,
+			"body": {
+				"error": "Simulation evidence review-evidence is not declared by this Check"
+			}
+		},
+		{
+			"name": "selector cannot be bypassed by true ordinary rule",
+			"status": 409,
+			"body": {
+				"error": "Simulation requires successful synthetic files-exist evidence ({verified:true}); it does not verify live files or receipts"
+			}
+		},
+		{
+			"name": "selector cannot be bypassed by true ordinary rule",
+			"status": 409,
+			"body": {
+				"error": "Simulation requires successful synthetic files-exist evidence ({verified:true}); it does not verify live files or receipts"
+			}
+		},
+		{
+			"name": "explicit successful synthetic selector fixture",
+			"status": 200,
+			"body": {
+				"output": {
+					"passed": true,
+					"ordinaryRule": true
+				},
+				"next": "end"
+			}
+		},
+		{
+			"name": "clear Check configuration error",
+			"status": 400,
+			"body": {
+				"error": "Check needs a boolean result or an explicit passed rule"
+			}
+		}
+	],
+	"limitations": [
+		"Fixture-seeded private auth session, no passkey login claim",
+		"No agent/run/provider execution",
+		"Simulation fixtures are synthetic; no live evidence authentication claim"
+	],
+	"visualChecks": [
+		{
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"themes": ["light", "dark"],
+			"editable": true,
+			"horizontalOverflow": false,
+			"visuallyConfirmed": true,
+			"persistedNewScreenshot": false
+		},
+		{
+			"viewport": {
+				"width": 1440,
+				"height": 1000
+			},
+			"theme": "light",
+			"editable": true,
+			"name": "allApproved",
+			"overflow": false,
+			"themes": ["dark", "light"],
+			"visuallyConfirmed": true,
+			"persistedNewScreenshot": false
+		}
+	],
+	"browserReplay": {
+		"pass": {
+			"output": {
+				"passed": true,
+				"allApproved": true,
+				"openFindings": 0
+			},
+			"next": "Continue → Review complete"
+		},
+		"fail": {
+			"output": {
+				"passed": false,
+				"allApproved": false,
+				"openFindings": 1
+			},
+			"next": "Continue → Request changes"
+		},
+		"failureContinuationTrail": "Collect reviews\nCheck reviews\nRequest changes",
+		"invalidJson": {
+			"saveDisabled": true,
+			"error": "Unexpected end of JSON input"
+		},
+		"loadedScript": "app.dfe9201c59b58bc104e46852.js",
+		"loadedStylesheet": "styles.c383ab36e8be08cf7c039523.css",
+		"nativeActions": true
+	},
+	"recordedAt": "2026-10-21T21:03:58.853Z",
+	"preservedScreenshots": [
+		{
+			"file": "desktop-light-editor.png",
+			"sha256": "da982c0450cee6f196853ff539768db049a33a047d846c7bb3a069f02e15ea73",
+			"unchanged": true
+		},
+		{
+			"file": "desktop-dark-editor.png",
+			"sha256": "66d477a9c0fed3145f7e92e4257fcdd8fe1d6886b2faa8a13f73735ba3c60613",
+			"unchanged": true
+		},
+		{
+			"file": "desktop-dark-json-error.png",
+			"sha256": "60df069ae01799d4458e68ce4de9031faf6b06032d805bcc97257c10cf9fdca0",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-dark-editor.png",
+			"sha256": "9e5e5e257e9fe7f61868a71a21ecd1fe74269e422b9d5bbcd0322ae382991067",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-light-editor.png",
+			"sha256": "a16f4f1e97632aaee57297ec8f2e2330b8c014860a115db394a3599a195e44bf",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-light-rule.png",
+			"sha256": "e90e48761e95c55b014afb33fabd7430d3218503b54098d79b83479b29d0a8e5",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-dark-rule.png",
+			"sha256": "1bce7b1c21d8453cfd3e04003401f959cbd7772d6fdc370af40f8cff256a121a",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-dark-routes.png",
+			"sha256": "e798ece236817182e3674a5a0ed36e63b8b12bfacf9572259cca51aa8cc3f1e3",
+			"unchanged": true
+		},
+		{
+			"file": "desktop-dark-simulation-pass.png",
+			"sha256": "247a2de99e46c4f2740d2cc04b72d9d6745ec3e08c87bb5046220cc2e789879a",
+			"unchanged": true
+		},
+		{
+			"file": "desktop-light-simulation-fail.png",
+			"sha256": "53cb7bd47e20534eaa35ba25d3ba3fbc116fa0655693922efa9d71df2e22f2ae",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-light-simulation-fail.png",
+			"sha256": "6ca715c6822b12c144a3815ad2cd06bcb17b6b0c22a0282354fd18185421abe5",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-dark-simulation-fail.png",
+			"sha256": "1df15ee52ac115049d20e727dfac8110925f6b8473e68325d36309edebde79e6",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-light-simulation-result.png",
+			"sha256": "aba3deec8ddc5c510503210794f659abbaafa3995f7b9422d47cf34160c1d3fc",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-dark-simulation-result.png",
+			"sha256": "d71486d6614277888179e150639410c7f1565beca4ed08071f3059821208db05",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-dark-json-error.png",
+			"sha256": "776fef27cad94d3ae711ea8fb18d1edbdd9d6c7a15b794aa23281dc82a2c409d",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-light-json-error.png",
+			"sha256": "e5136b57476fddf12e155af082943589b2a76fbc84600e5408aafc49e09880fe",
+			"unchanged": true
+		},
+		{
+			"file": "mobile-light-routes-summary.png",
+			"sha256": "303520dc2b41e9258543d0cef9a2a9546e14ac4b2b0f491141221aa384f06917",
+			"unchanged": true
+		}
+	],
+	"canvasSourceUnchangedFromOriginalBase": true,
+	"screenshotReuse": "Retained all 17 original PNGs from build 7a010438ed36462fe2fe92f5. Four component/style source hashes and full recipe props are identical; the current 0317923a2f79a813228a55be browser was visually confirmed at both viewports and themes. The compiled bundle/backend changed and are identified separately; no pixel identity claim for transient canvas camera position.",
+	"fixtureStoppedWithZeroRuns": true,
+	"additionalFinalBackend": {
+		"FactoryTools.js": "a295f2a0a47503f5d7a9d779430bf5980082ae1649028c79ab5a8ba4aa8a93fa",
+		"EvidenceChecks.js": "a3c0df1d4d10916a7d2fed4b1b8d9065862749fe0169cd0ba9deef18dd5c94fb",
+		"StepBindings.js": "8dc867acb859c1d9c9246bc5376aa808c38b7167e34bcc6998877c89d20f2465",
+		"StepConfig.js": "2bdc567972ef44061b6f63120cef7f90cd32d227dc042e698d2aebdb4e3e47c0",
+		"CheckPresets.js": "3ed0c800d961db71a025586d04edf5326933fa8e60e9d6e0dbd586e691c95e6b"
+	}
+}

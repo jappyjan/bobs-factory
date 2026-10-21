@@ -1,0 +1,69 @@
+{
+	"startedAt": "2026-10-21T20:33:52.624Z",
+	"node": "v24.21.0",
+	"base": "95f79ef3be57bd8aa83d53b68c8130c28ef19dc9",
+	"source": {
+		"packages/edge-worker/src/factory/Check.ts": "d0d820d41324cbba1cbc72da21f5d498fdbf1039599ecd5b7f31ec3686a194be",
+		"packages/edge-worker/src/factory/Rules.ts": "3a0b1c4b2fd31bb5c3eaa163059120e4fa435615242fdf6d96745369ce842ea4",
+		"packages/edge-worker/src/factory/FactoryServer.ts": "4eaeda16a75d4f8eda3dd29dd5927ad49438d6cc297c65d1cd0a734a21b929c8",
+		"packages/edge-worker/src/factory/Workflow.ts": "3e51e3df4934fe713acf65fe31989f1ab1f1ea49f01c6b2222b25eb370fcc140",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "3ef70238d764e1d2e1836fa3fda76310cf2949d8325dad87833e327e1348d0d7",
+		"packages/edge-worker/src/factory/web/recipe-builder.tsx": "b4de22293f858daf4a88bdf350abf0def2e5e8beb831b752403de4d9bdf7517e",
+		"packages/edge-worker/src/factory/web/check-step-settings.tsx": "d4d73b4e4f52ee3a45484764ec4465f79e814eeff93a822ec2a52d2773ed4087",
+		"packages/edge-worker/src/factory/web/recipe-graph.ts": "a7797bb8230e81b7629d5b25bdd59a5dbece50689c02ac06057677dbaa48dac6",
+		"packages/edge-worker/src/factory/web/styles.css": "38dc781107ab54d5567cbbe7279fd1d860ae640ede9900506e8a1e998b8530e8"
+	},
+	"backend": {
+		"Check.js": "3c841d15585ae94da8ac7b92e367f30f5702e199fd7db05fe46aafbc6cd3d558",
+		"Rules.js": "6cfffe16139b50862d9cdcacd96c977ed5dfaf4c44b78680242178eee2b28a50",
+		"FactoryServer.js": "cd424580100d551b1846c9afe12cdbd08f8acd297af38bdadc05c8e412cfa6a6",
+		"Workflow.js": "24961177a7436f6ad027a2eb5ddc19525cf3da322cb9480bc82c68c62712dc15",
+		"WorkflowRuntime.js": "c294ebd762f63289e6bc76211027d70a5957bbf066ef74036765ad16cf53b226"
+	},
+	"build": "7a010438ed36462fe2fe92f5",
+	"assets": [
+		{
+			"path": "/app.4e64e86fa9173b70eef7dc56.js",
+			"sha256": "4e64e86fa9173b70eef7dc560614554c2a55f547e4b8050a037ec16105629bd5"
+		},
+		{
+			"path": "/styles.c383ab36e8be08cf7c039523.css",
+			"sha256": "c383ab36e8be08cf7c03952316329f16beedaca4db29339662cbd9d3ec12b5ba"
+		},
+		{
+			"path": "/",
+			"sha256": "2fc7085daa14a2df15c52c0d81cf07d68654be50a3ba582665b79f3e7cae88ff"
+		},
+		{
+			"path": "/manifest.webmanifest",
+			"sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004"
+		},
+		{
+			"path": "/icons/icon-192.png",
+			"sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961"
+		},
+		{
+			"path": "/icons/icon-512.png",
+			"sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86"
+		},
+		{
+			"path": "/icons/maskable-512.png",
+			"sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9"
+		},
+		{
+			"path": "/icons/apple-touch-icon.png",
+			"sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4"
+		},
+		{
+			"path": "/sw.js",
+			"sha256": "fd0744507260a3406f56bfd82f67e0cee96eafd2c92856a2a4430cd8c3b02a94"
+		}
+	],
+	"origin": "http://localhost:3687",
+	"limitations": [
+		"Fixture-seeded private auth session, no passkey login claim",
+		"No agent/run/provider execution",
+		"Simulation fixtures are synthetic; no live evidence authentication claim"
+	],
+	"assertions": []
+}

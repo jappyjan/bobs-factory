@@ -75,6 +75,11 @@ export type FormatId = (typeof FORMAT_IDS)[number];
 
 /** Code-backed evidence checks. Implementations live in EvidenceChecks.ts. */
 export const CHECK_IDS = [
+	"review-evidence",
+	"review-assistance",
+	"qa-gate-evidence",
+	"delivery-evidence",
+	"post-fix-evidence",
 	"review-boundary",
 	"impact-boundary",
 	"capture-evidence",
@@ -100,6 +105,12 @@ export const CHECK_IDS = [
 	"impact-reuse",
 ] as const;
 export type CheckId = (typeof CHECK_IDS)[number];
+export const CHECK_SELECTOR_IDS = [
+	"files-exist",
+	"media-valid",
+	"code-refs-valid",
+	"ids-resolve",
+] as const;
 
 /** Shared instruction snippets. Texts live in InstructionLibrary.ts. */
 export const INSTRUCTION_IDS = [
@@ -1122,12 +1133,86 @@ export function accessMode(step: object): ResolvedStepConfig["access"]["mode"] {
 export const inlineSchemaIssues = compileInlineSchemaSync;
 export const inlineSchemaIssuesAsync = compileInlineSchema;
 
+/** Only protocols implemented by Check may be declared on that node. */
+export function checkStepEvidenceIssues(step: LegacyStep): string[] {
+	if (step.type !== "check") return [];
+	const issues: string[] = [];
+	const config = resolveStepConfig(step);
+	const protocols = new Set<CheckId>([
+		"review-evidence",
+		"review-assistance",
+		"qa-gate-evidence",
+		"delivery-evidence",
+		"post-fix-evidence",
+		"review-boundary",
+		"impact-boundary",
+		"scope-inputs",
+		"qa-evidence",
+	]);
+	for (const { check, args } of config.checks) {
+		if ((CHECK_SELECTOR_IDS as readonly string[]).includes(check)) {
+			if (typeof args.path !== "string") {
+				if (
+					!(
+						check === "media-valid" &&
+						args.adapter === "qa-gate" &&
+						hasCheck(step, "qa-gate-evidence")
+					)
+				)
+					issues.push(
+						`${step.id}: ${check} on Check requires an explicit path selector`,
+					);
+				continue;
+			}
+			if (
+				args.path.length > 400 ||
+				!/^\/(?:[^/]*(?:\/[^/]*)*)?$/.test(args.path)
+			)
+				issues.push(
+					`${step.id}: ${check} path must be a JSON Pointer of at most 400 characters`,
+				);
+			if (
+				check === "media-valid" &&
+				args.kind !== undefined &&
+				!["image", "video"].includes(String(args.kind))
+			)
+				issues.push(`${step.id}: media-valid kind must be image or video`);
+			if (
+				check === "ids-resolve" &&
+				(typeof args.source !== "string" ||
+					!config.reads[args.source] ||
+					typeof args.ids !== "string" ||
+					args.ids.length > 400 ||
+					!args.ids.startsWith("/"))
+			)
+				issues.push(
+					`${step.id}: ids-resolve requires a named source read and ids JSON Pointer`,
+				);
+		} else if (!protocols.has(check) || typeof args.path === "string")
+			issues.push(
+				`${step.id}: ${check} is not an executable Check evidence protocol; use its agent or action step`,
+			);
+	}
+	for (const [marker, source] of [
+		["review-assistance", "review-evidence"],
+		["review-boundary", "review-evidence"],
+		["qa-evidence", "qa-gate-evidence"],
+	] as const)
+		if (hasCheck(step, marker) && !hasCheck(step, source))
+			issues.push(`${step.id}: ${marker} on Check requires ${source}`);
+	if (step.rules?.length)
+		issues.push(
+			`${step.id}: Check predicates belong in check.results or check.passed; rules validate agent outputs`,
+		);
+	return issues;
+}
+
 /** Save-time validation of one step's configuration and references. */
 export function stepConfigIssues(
 	step: LegacyStep & { prompt?: string },
 	siblings: { id: string }[],
 ): string[] {
-	const issues: string[] = [];
+	const issues: string[] = checkStepEvidenceIssues(step);
 	const ids = new Set(siblings.map((s) => s.id));
 	for (const [name, binding] of Object.entries(step.reads ?? {})) {
 		const from = normalizeRead(binding).from;
@@ -1148,11 +1233,18 @@ export function stepConfigIssues(
 	if (consumesReview(step)) {
 		if (!readStep(step, "inventory"))
 			issues.push(`${step.id}: review-boundary requires reads.inventory`);
-		if (step.type !== "fanout" && step.tool !== "review-gate")
+		if (
+			step.type !== "fanout" &&
+			step.tool !== "review-gate" &&
+			!(step.type === "check" && hasCheck(step, "review-evidence"))
+		)
 			issues.push(
 				`${step.id}: review-boundary requires a review fanout or review-gate action`,
 			);
-		if (step.tool === "review-gate" && !readStep(step, "fanout"))
+		if (
+			(step.tool === "review-gate" || step.type === "check") &&
+			!readStep(step, "fanout")
+		)
 			issues.push(
 				`${step.id}: review-boundary requires reads.fanout on a review-gate action`,
 			);
@@ -1234,8 +1326,9 @@ export function stepConfigIssues(
 						guide &&
 						hasCheck(step, "requirement-coverage")) ||
 					(check.args.adapter === "qa-gate" &&
-						step.type === "tool" &&
-						["visual-gate", "handoff"].includes(step.tool ?? ""))
+						((step.type === "tool" &&
+							["visual-gate", "handoff"].includes(step.tool ?? "")) ||
+							(step.type === "check" && hasCheck(step, "qa-gate-evidence"))))
 				: check.check === "code-refs-valid"
 					? check.args.adapter === "guide" &&
 						guide &&

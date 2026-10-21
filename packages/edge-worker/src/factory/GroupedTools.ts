@@ -77,6 +77,7 @@ const deliveryTools = new Set([
 	"inspect-existing",
 	"draft-pr",
 	"review-after-fix",
+	"inspect-review-readiness",
 	"ci",
 	"ci-fix-readiness",
 	"human-review",
@@ -139,9 +140,12 @@ export async function groupedTool(
 	const scope = runRepositories(run);
 	let published = deliveryRevisions(boundOutput(context, "draftPr"));
 	if (
-		["ci", "ci-fix-readiness", "review-after-fix"].includes(
-			context.step.tool ?? "",
-		)
+		[
+			"ci",
+			"ci-fix-readiness",
+			"review-after-fix",
+			"inspect-review-readiness",
+		].includes(context.step.tool ?? "")
 	) {
 		const deliveries = [
 			...(groupedOutput(boundOutput(context, "draftPr"))?.deliveries ?? []),

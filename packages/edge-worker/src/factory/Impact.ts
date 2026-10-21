@@ -10,12 +10,18 @@ import {
 	groupedOutput,
 	runRepositories,
 } from "./RepositoryScope.js";
-import type { AggregateReview, ReviewerReceipt } from "./SpecialistReview.js";
+import type { OutputRevisionBinding } from "./RevisionBinding.js";
+import type {
+	AggregateReview,
+	Inventory,
+	ReviewerReceipt,
+} from "./SpecialistReview.js";
 import { latestAggregate, scopeContextDigest } from "./SpecialistReview.js";
 import {
 	checkArgs,
 	consumesImpact,
 	formatOf,
+	hasCheck,
 	readOutput,
 	readStep,
 	resolveStepConfig,
@@ -211,15 +217,9 @@ export async function collectImpactSnapshot(
 ): Promise<ImpactSnapshot> {
 	const { run } = context;
 	const previous = retained
-		? [...run.history]
-				.reverse()
-				.map((h) => h.output as AggregateReview)
-				.find(
-					(a) =>
-						a?.baseline?.key === key &&
-						a.baseline.round === retained.reviewRound &&
-						Array.isArray(a.reviewers),
-				)
+		? retained.reviewRound === undefined
+			? undefined
+			: latestAggregate(run, key, retained.reviewRound)
 		: latestAggregate(run, key);
 	const first = run.impactDecisions?.find(
 		(d) => d.snapshot.key === key,
@@ -693,6 +693,96 @@ export function decisionFor(run: FactoryRun, key: string) {
 		.reverse()
 		.find((d) => d.snapshot.key === key);
 	return latest?.status === "completed" ? latest : undefined;
+}
+/** Original inventory is historical evidence, never a newly executed inspection. */
+export async function historicalInventoryRead(
+	context: ExecutionContext,
+	source: WorkflowStep,
+	originalBinding: OutputRevisionBinding,
+	currentBinding: OutputRevisionBinding,
+): Promise<boolean> {
+	const { run, step } = context;
+	if (
+		!resolveStepConfig(step).explicit ||
+		!resolveStepConfig(source).explicit ||
+		!hasCheck(source, "inventory-evidence") ||
+		readStep(step, "inventory") !== source.id ||
+		qaDigest(originalBinding.repositories) !==
+			qaDigest(currentBinding.repositories)
+	)
+		return false;
+	const prefix = (context.stepKey ?? step.id).replace(/[^/]+$/, "");
+	const assessor = hasCheck(step, "impact-reuse")
+		? step
+		: hasCheck(step, "impact-boundary") && readStep(step, "impact")
+			? stepForRun(run, `${prefix}${readStep(step, "impact")}`)
+			: undefined;
+	if (
+		!assessor ||
+		!resolveStepConfig(assessor).explicit ||
+		!hasCheck(assessor, "impact-reuse") ||
+		readStep(assessor, "inventory") !== source.id
+	)
+		return false;
+	const fanoutId = readStep(assessor, "fanout");
+	const key = `${prefix}${fanoutId}`;
+	const fanout = fanoutId ? stepForRun(run, key) : undefined;
+	if (
+		!fanout ||
+		fanout.type !== "fanout" ||
+		!resolveStepConfig(fanout).explicit ||
+		!hasCheck(fanout, "review-boundary") ||
+		readStep(fanout, "inventory") !== source.id ||
+		readStep(fanout, "impact") !== assessor.id ||
+		(readStep(step, "fanout") && readStep(step, "fanout") !== fanoutId) ||
+		(step.type === "fanout" && (context.stepKey ?? step.id) !== key)
+	)
+		return false;
+	const decision = assessor === step ? undefined : decisionFor(run, key);
+	const aggregate =
+		assessor === step
+			? latestAggregate(run, key)
+			: decision?.snapshot.reviewRound === undefined
+				? undefined
+				: latestAggregate(run, key, decision.snapshot.reviewRound);
+	const inventory = (context.outputs ?? run.outputs)[source.id] as
+		| Inventory
+		| undefined;
+	const original = aggregate?.baseline.inventory;
+	if (
+		!inventory ||
+		!original ||
+		qaDigest({
+			...inventory,
+			sourceContextDigest: original.sourceContextDigest,
+			scopeReuse: original.scopeReuse,
+		}) !== qaDigest(original)
+	)
+		return false;
+	// An explicitly configured independent assessor needs the prior inventory to
+	// decide whether new answers change scope. Its old binding remains untouched.
+	if (assessor === step) return qaDigest(inventory) === qaDigest(original);
+	if (
+		!decision?.scopeReuse ||
+		!inventory.scopeReuse ||
+		decision.snapshot.reviewRound !== aggregate.baseline.round ||
+		decision.scopeReuse.inventoryDigest !== original.digest ||
+		decision.scopeReuse.originalSourceDigest !== original.sourceContextDigest ||
+		qaDigest(inventory.scopeReuse) !==
+			qaDigest({
+				...decision.scopeReuse,
+				snapshotDigest: decision.snapshot.digest,
+			}) ||
+		inventory.sourceContextDigest !== scopeContextDigest(context.input)
+	)
+		return false;
+	try {
+		await assertImpactFresh(context, decision, fanout);
+		return true;
+	} catch {
+		context.signal.throwIfAborted();
+		return false;
+	}
 }
 export async function assertImpactFresh(
 	context: ExecutionContext,

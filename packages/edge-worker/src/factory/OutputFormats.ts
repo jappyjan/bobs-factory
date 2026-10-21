@@ -212,7 +212,7 @@ function questionResult(
 		? normalizeQuestionResult(output)
 		: output;
 }
-function conforms(format: string, value: unknown): boolean {
+export function conforms(format: string, value: unknown): boolean {
 	try {
 		parseOutputFormat(format, value);
 		return true;

@@ -1,0 +1,1974 @@
+{
+	"recordedAt": "2026-10-21T20:38:09.938Z",
+	"build": "7a010438ed36462fe2fe92f5",
+	"baseline": {
+		"id": "check-ui",
+		"stepConfigVersion": "step-config-v1",
+		"name": "Check review results",
+		"icon": "✓",
+		"description": "Review a collection, then follow the recipe's declared routes.",
+		"labels": [],
+		"steps": [
+			{
+				"id": "collect",
+				"name": "Collect reviews",
+				"branches": [],
+				"maxVisits": 16,
+				"type": "script",
+				"script": "printf '{\"reviews\":[]}'",
+				"configVersion": "step-config-v1",
+				"reads": {},
+				"rules": [],
+				"checks": [],
+				"access": {
+					"mode": "workspace"
+				},
+				"instructions": []
+			},
+			{
+				"id": "check-reviews",
+				"configVersion": "step-config-v1",
+				"reads": {
+					"reviews": "collect/reviews"
+				},
+				"name": "Check reviews",
+				"next": "approved",
+				"branches": [
+					{
+						"when": {
+							"path": "passed",
+							"equals": false
+						},
+						"next": "changes"
+					}
+				],
+				"maxVisits": 16,
+				"type": "check",
+				"check": {
+					"results": {
+						"approved": {
+							"aggregate": "all",
+							"path": "/inputs/reviews",
+							"require": {
+								"path": "/approved",
+								"equals": true
+							}
+						},
+						"openFindings": {
+							"aggregate": "count",
+							"path": "/inputs/reviews/*/findings/*",
+							"where": {
+								"path": "/rating",
+								"min": 2
+							}
+						}
+					},
+					"passed": {
+						"all": [
+							{
+								"path": "/results/approved",
+								"equals": true
+							},
+							{
+								"path": "/results/openFindings",
+								"max": 0
+							}
+						]
+					}
+				},
+				"rules": [],
+				"checks": [],
+				"access": {
+					"mode": "workspace"
+				},
+				"instructions": []
+			},
+			{
+				"id": "approved",
+				"name": "Review complete",
+				"next": "end",
+				"branches": [],
+				"maxVisits": 16,
+				"type": "script",
+				"script": "printf '{}'",
+				"configVersion": "step-config-v1",
+				"reads": {},
+				"rules": [],
+				"checks": [],
+				"access": {
+					"mode": "workspace"
+				},
+				"instructions": []
+			},
+			{
+				"id": "changes",
+				"name": "Request changes",
+				"next": "end",
+				"branches": [],
+				"maxVisits": 16,
+				"type": "script",
+				"script": "printf '{}'",
+				"configVersion": "step-config-v1",
+				"reads": {},
+				"rules": [],
+				"checks": [],
+				"access": {
+					"mode": "workspace"
+				},
+				"instructions": []
+			}
+		],
+		"allowedTriggers": ["manual", "workflow"],
+		"ownership": "local",
+		"enabled": true,
+		"unavailable": [],
+		"launchFields": [
+			{
+				"name": "prompt",
+				"label": "What should Bob build?",
+				"type": "textarea",
+				"required": true,
+				"placeholder": "What should Bob build?",
+				"options": []
+			}
+		]
+	},
+	"structuredEdit": {
+		"id": "check-reviews",
+		"configVersion": "step-config-v1",
+		"reads": {
+			"reviews": "collect/reviews"
+		},
+		"rules": [],
+		"checks": [],
+		"access": {
+			"mode": "workspace"
+		},
+		"instructions": [],
+		"name": "Check reviews",
+		"next": "approved",
+		"branches": [
+			{
+				"when": {
+					"path": "passed",
+					"equals": false
+				},
+				"next": "changes"
+			}
+		],
+		"maxVisits": 16,
+		"type": "check",
+		"check": {
+			"results": {
+				"allApproved": {
+					"aggregate": "all",
+					"path": "/inputs/reviews",
+					"require": {
+						"path": "/approved",
+						"equals": true
+					}
+				},
+				"openFindings": {
+					"aggregate": "count",
+					"path": "/inputs/reviews/*/findings/*",
+					"where": {
+						"path": "/rating",
+						"min": 2
+					}
+				}
+			},
+			"passed": {
+				"all": [
+					{
+						"path": "/results/allApproved",
+						"equals": true
+					},
+					{
+						"path": "/results/openFindings",
+						"max": 0
+					}
+				]
+			}
+		}
+	},
+	"structuredFilter": {
+		"results": {
+			"allApproved": {
+				"aggregate": "all",
+				"path": "/inputs/reviews",
+				"require": {
+					"path": "/approved",
+					"equals": true
+				}
+			},
+			"openFindings": {
+				"aggregate": "count",
+				"path": "/inputs/reviews/*/findings/*",
+				"where": {
+					"path": "/rating",
+					"min": 2
+				}
+			},
+			"rejectedReviews": {
+				"aggregate": "filter",
+				"path": "/inputs/reviews",
+				"where": {
+					"path": "/approved",
+					"equals": false
+				}
+			}
+		},
+		"passed": {
+			"all": [
+				{
+					"path": "/results/allApproved",
+					"equals": true
+				},
+				{
+					"path": "/results/openFindings",
+					"max": 0
+				}
+			]
+		}
+	},
+	"paletteCreated": {
+		"id": "check-1",
+		"configVersion": "step-config-v1",
+		"reads": {},
+		"name": "Check results",
+		"branches": [],
+		"maxVisits": 16,
+		"type": "check",
+		"check": {
+			"results": {
+				"approved": {
+					"path": "/inputs/review/approved",
+					"equals": true
+				}
+			}
+		},
+		"rules": [],
+		"checks": [],
+		"access": {
+			"mode": "workspace"
+		},
+		"instructions": []
+	},
+	"simulation": {
+		"passed": {
+			"output": {
+				"passed": true,
+				"allApproved": true,
+				"openFindings": 0
+			},
+			"next": "Continue → Review complete"
+		},
+		"failed": {
+			"output": {
+				"passed": false,
+				"allApproved": false,
+				"openFindings": 1
+			},
+			"next": "Continue → Request changes"
+		},
+		"passedTrail": "Collect reviews\nCheck reviews\nReview complete",
+		"failedTrail": "Collect reviews\nCheck reviews\nRequest changes",
+		"missingCollection": "Rule aggregate path /inputs/reviews is missing reviews",
+		"undeclaredEvidence": "Simulation evidence review-evidence is not declared by this Check",
+		"invalidDraftClearsStaleResult": true
+	},
+	"saved": {
+		"id": "check-ui",
+		"stepConfigVersion": "step-config-v1",
+		"name": "Check review results",
+		"icon": "✓",
+		"description": "Review a collection, then follow the recipe's declared routes.",
+		"labels": [],
+		"steps": [
+			{
+				"id": "collect",
+				"configVersion": "step-config-v1",
+				"reads": {},
+				"rules": [],
+				"checks": [],
+				"access": {
+					"mode": "workspace"
+				},
+				"instructions": [],
+				"name": "Collect reviews",
+				"branches": [],
+				"maxVisits": 16,
+				"type": "script",
+				"script": "printf '{\"reviews\":[]}'"
+			},
+			{
+				"id": "check-reviews",
+				"configVersion": "step-config-v1",
+				"reads": {
+					"reviews": "collect/reviews"
+				},
+				"rules": [],
+				"checks": [],
+				"access": {
+					"mode": "workspace"
+				},
+				"instructions": [],
+				"name": "Check reviews",
+				"branches": [
+					{
+						"when": {
+							"path": "passed",
+							"equals": false
+						},
+						"next": "changes"
+					}
+				],
+				"maxVisits": 16,
+				"type": "check",
+				"check": {
+					"results": {
+						"allApproved": {
+							"aggregate": "all",
+							"path": "/inputs/reviews",
+							"require": {
+								"path": "/approved",
+								"equals": true
+							}
+						},
+						"openFindings": {
+							"aggregate": "count",
+							"path": "/inputs/reviews/*/findings/*",
+							"where": {
+								"path": "/rating",
+								"min": 2
+							}
+						}
+					},
+					"passed": {
+						"all": [
+							{
+								"path": "/results/allApproved",
+								"equals": true
+							},
+							{
+								"path": "/results/openFindings",
+								"max": 0
+							}
+						]
+					}
+				}
+			},
+			{
+				"id": "approved",
+				"configVersion": "step-config-v1",
+				"reads": {},
+				"rules": [],
+				"checks": [],
+				"access": {
+					"mode": "workspace"
+				},
+				"instructions": [],
+				"name": "Review complete",
+				"next": "end",
+				"branches": [],
+				"maxVisits": 16,
+				"type": "script",
+				"script": "printf '{}'"
+			},
+			{
+				"id": "changes",
+				"configVersion": "step-config-v1",
+				"reads": {},
+				"rules": [],
+				"checks": [],
+				"access": {
+					"mode": "workspace"
+				},
+				"instructions": [],
+				"name": "Request changes",
+				"branches": [],
+				"maxVisits": 16,
+				"type": "script",
+				"script": "printf '{}'"
+			}
+		],
+		"allowedTriggers": ["manual", "workflow"],
+		"launchFields": [
+			{
+				"name": "prompt",
+				"label": "What should Bob build?",
+				"type": "textarea",
+				"required": true,
+				"placeholder": "What should Bob build?",
+				"options": []
+			}
+		],
+		"ownership": "local",
+		"enabled": true,
+		"unavailable": []
+	},
+	"events": [
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Result 1 name",
+			"value": "allApproved"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Result 1 name",
+			"value": "allApproved"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Passed 1 path",
+			"value": "/results/allApproved"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Passed 1 path",
+			"value": "/results/allApproved"
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Save",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Structured editor",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\"results\":"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Edit as JSON",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "＋ Add named result",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Result 3 name",
+			"value": "rejectedReviews"
+		},
+		{
+			"type": "input",
+			"trusted": false,
+			"label": "rejectedReviews kind",
+			"value": "filter"
+		},
+		{
+			"type": "change",
+			"trusted": false,
+			"label": "rejectedReviews kind",
+			"value": "filter"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Result 3 name",
+			"value": "rejectedReviews"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "rejectedReviews collection path",
+			"value": "/inputs/reviews"
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "",
+			"value": "on"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "",
+			"value": "on"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "",
+			"value": "on"
+		},
+		{
+			"type": "input",
+			"trusted": false,
+			"label": "rejectedReviews filter value",
+			"value": "false"
+		},
+		{
+			"type": "change",
+			"trusted": false,
+			"label": "rejectedReviews filter value",
+			"value": "false"
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Save",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Remove result rejectedReviews",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Save",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "✓Check",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Save",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Delete step",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Save",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "■ Stop",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "✓ Done → Check reviews",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": true,\n      \"findings\": [\n        {\n          \"rating\": 1\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Evaluate Check",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Continue → Review complete",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Restart",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "✓ Done → Check reviews",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{}"
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Evaluate Check",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 1\n        },\n        {\n          \"rating\": 2\n       "
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Evaluate Check",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\"reviews\":"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\n  \"reviews\": [\n    {\n      \"approved\": false,\n      \"findings\": [\n        {\n          \"rating\": 2\n        }\n      ]\n    }\n  ]\n}"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Synthetic evidence",
+			"value": "{\"review-evidence\":{}}"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Synthetic evidence",
+			"value": "{\"review-evidence\":{}}"
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Evaluate Check",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Synthetic evidence",
+			"value": "{}"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Synthetic evidence",
+			"value": "{}"
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Evaluate Check",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Continue → Request changes",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "▶ Simulate",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "■ Stop",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "✓ Done → Check reviews",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\"reviews\":[{\"approved\":false,\"findings\":[{\"rating\":2}]}]}"
+		},
+		{
+			"type": "change",
+			"trusted": true,
+			"label": "Simulation inputs",
+			"value": "{\"reviews\":[{\"approved\":false,\"findings\":[{\"rating\":2}]}]}"
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Evaluate Check",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "▶ Simulate",
+			"value": ""
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Structured editor",
+			"value": ""
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\"results\":"
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "input",
+			"trusted": true,
+			"label": "Check JSON",
+			"value": "{\n  \"results\": {\n    \"allApproved\": {\n      \"aggregate\": \"all\",\n      \"path\": \"/inputs/reviews\",\n      \"require\": {\n        \"path\": \"/approved\",\n     "
+		},
+		{
+			"type": "click",
+			"trusted": true,
+			"label": "Edit as JSON",
+			"value": ""
+		}
+	],
+	"assertions": [
+		"Palette creates and saves a modern Check with no agent or tool",
+		"Structured result rename and matching passed pointer persist exactly",
+		"Structured filter result and item predicate persist exactly",
+		"Invalid JSON is retained with an inline error and disabled Save on desktop and 390px",
+		"Missing collection errors do not offer a route",
+		"Undeclared synthetic evidence cannot activate review checks",
+		"Invalid simulation drafts clear prior results and disable evaluation",
+		"Pass output is passed:true, allApproved:true, openFindings:0; Continue follows Review complete",
+		"Fail output is passed:false, allApproved:false, openFindings:1; Continue follows Request changes",
+		"390px editor and simulation have no horizontal document/container overflow",
+		"Light/dark styles and editable controls visually inspected at desktop and 390px"
+	],
+	"interactionNotes": [
+		"Native preview click/type/select actions record trusted input/change/click events",
+		"Event string values truncated to 150 characters; exact saved configurations are retained separately",
+		"Preview rewrites local 127.0.0.1 to localhost; fixture seeds a localhost-only private server session",
+		"Initial invalid locator for Save and resulting expected missing-save assertion were corrected to the supported native locator before passing verification",
+		"Source/backend identity at fixture start is identity.json; coordinator owns final runtime source equivalence"
+	]
+}

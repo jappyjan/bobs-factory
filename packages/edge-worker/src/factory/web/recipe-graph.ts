@@ -94,7 +94,7 @@ export function describeCondition(when: { path: string; equals?: unknown }) {
 
 export type Kind = { icon: string; label: string; tone: string; hint: string };
 export const kinds: Record<
-	"agent" | "tool" | "script" | "fanout" | "workflow" | "human",
+	"agent" | "check" | "tool" | "script" | "fanout" | "workflow" | "human",
 	Kind
 > = {
 	agent: {
@@ -102,6 +102,12 @@ export const kinds: Record<
 		label: "Agent",
 		tone: "violet",
 		hint: "An AI agent does the work with a prompt",
+	},
+	check: {
+		icon: "✓",
+		label: "Check",
+		tone: "green",
+		hint: "Evaluates named rules; the recipe routes on their results",
 	},
 	tool: {
 		icon: "⚙",
@@ -150,9 +156,14 @@ export const toolText: Record<string, string> = {
 		"Saves the clarified decisions so later steps can rely on them.",
 	"inspect-existing": "Reads the existing branch, PR and discussion.",
 	"draft-pr": "Pushes the branch and opens a draft pull request.",
+	"accept-delivery":
+		"Records the accepted, independently reviewed delivery contract.",
 	"review-gate":
 		"Collects reviewer findings, drops nitpicks and decides whether fixes are needed.",
 	ci: "Watches CI, mergeability and PR comments until the PR is ready.",
+	"ci-fix-readiness": "Refreshes provider readiness before a queued CI fix.",
+	"inspect-review-readiness":
+		"Inspects current revision, feedback and provider evidence for review rules.",
 	"review-after-fix":
 		"Decides whether a fix changed enough to need another review.",
 	"visual-gate": "Checks QA results and screenshots before hand-off.",
@@ -172,7 +183,20 @@ export const toolText: Record<string, string> = {
 	"external-human-review": "Waits for you to accept the external work.",
 	"external-final": "Confirms accepted external state before finishing.",
 };
+/** Retained descriptions explain saved graphs; new recipes use Check instead. */
+export const legacyDecisionTools = new Set([
+	"review-gate",
+	"visual-gate",
+	"delivery-mode",
+	"delivery-route",
+	"review-after-fix",
+]);
+export const authorableTools = Object.keys(toolText).filter(
+	(tool) => !legacyDecisionTools.has(tool),
+);
 export function stepSummary(step: Step, recipes: Recipe[]): string {
+	if (step.type === "check")
+		return `Evaluates ${Object.keys(step.check?.results ?? {}).length} named results. Routes on passed and those results.`;
 	if (step.type === "tool")
 		return toolText[step.tool ?? ""] ?? `Built-in action “${step.tool}”.`;
 	if (step.type === "workflow")
@@ -559,7 +583,7 @@ export function uniqueStepId(taken: Iterable<string>, base: string) {
 	return `${base}-${i}`;
 }
 export function newStep(
-	kind: "agent" | "tool" | "script" | "fanout" | "workflow" | "human",
+	kind: "agent" | "check" | "tool" | "script" | "fanout" | "workflow" | "human",
 	id: string,
 	callable?: string,
 ): Step {
@@ -570,6 +594,18 @@ export function newStep(
 		maxVisits: DEFAULT_STEP_MAX_VISITS,
 	};
 	switch (kind) {
+		case "check":
+			return {
+				...base,
+				name: "Check results",
+				type: "check",
+				reads: {},
+				check: {
+					results: {
+						approved: { path: "/inputs/review/approved", equals: true },
+					},
+				},
+			};
 		case "agent":
 			return {
 				...base,

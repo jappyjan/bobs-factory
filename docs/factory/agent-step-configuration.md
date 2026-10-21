@@ -288,3 +288,130 @@ override. Axios 1.20.0 naturally resolves patched follow-redirects 1.16.1. The
 existing telemetry override remains within its compatible patched 2.x major.
 `pnpm install` and `pnpm audit` verify the resulting lockfile; the final audit has
 zero advisories.
+
+## Check steps (Taskbot #137)
+
+`type: "check"` uses the same `reads`, `checks` and `rules-v1` conditions. It
+runs no agent and invokes no action. Its `check` configuration declares named
+results and an optional final `passed` condition:
+
+```json
+{
+  "id": "inspect-results", "name": "Check results", "type": "check",
+  "configVersion": "step-config-v1",
+  "reads": { "reviews": "parallel-review" },
+  "check": {
+    "results": {
+      "openFindings": {
+        "aggregate": "filter", "path": "/inputs/reviews/*/*/findings/*",
+        "where": { "all": [
+          { "path": "/status", "equals": "open" },
+          { "path": "/rating", "min": 2 }
+        ] }
+      },
+      "approved": {
+        "aggregate": "all", "path": "/inputs/reviews/*/*",
+        "require": { "path": "/approved", "equals": true }
+      }
+    },
+    "passed": { "all": [
+      { "path": "/results/openFindings", "empty": true },
+      { "path": "/results/approved", "equals": true }
+    ] }
+  },
+  "branches": [{ "when": { "path": "passed", "equals": false }, "next": "correct" }],
+  "next": "publish"
+}
+```
+
+This example assumes `correct` and `publish` exist in the same recipe. Paths and
+wildcards are generic: the same expressions work over current Parallel outputs
+and future item-result collections; this release does not add For each.
+
+Every named expression sees `{inputs, evidence}`; the final `passed` expression
+also sees `results`. A normal condition produces a boolean. `aggregate` supports
+`all`, `any` (required `require`, optional `where`) and `count`, `filter` (optional
+`where`). `{select: "/inputs/source/field"}` projects any JSON value, with an
+absent value represented as `null`. An aggregate must select a real array; missing
+and malformed paths fail instead of passing as an empty collection. Empty arrays
+produce all=true, any=false, count=0 and filter=[]. Without `passed`, all emitted
+boolean results must be true and at least one boolean is required. Select-only
+and count/filter-only configurations require an explicit `passed` condition.
+Result names are unique object keys, bounded to 80 characters; `passed`,
+`__proto__`, `prototype` and `constructor` are reserved. At most 50 results share
+one fixed evaluation budget, including output projection and serialization.
+
+The evaluator uses selected data only: unrelated large baselines or lazy history
+are not traversed to evaluate an ordinary condition. Selected properties must be
+own JSON data, never accessors, arbitrary prototypes or custom iterators. Actual
+pointer expansion, collection scans, comparisons, projections, strings and output
+serialization are charged; selected cycles fail. Native and HTTP simulation use
+the same yielding/cancellable implementation and existing total limits. Known
+host ticket `createdAt`/`updatedAt` timestamps use ISO strings for Check reads both
+before and after restart; this does not permit arbitrary `toJSON` execution.
+
+Check can declare `files-exist`, `media-valid`, `code-refs-valid` and `ids-resolve`
+with explicit selectors rooted at `/inputs`. These execute the fixed evidence
+library before any predicate can pass and retain bounded traversal and
+cancellation. `ids-resolve` names a declared `reads` source and an `ids` pointer
+within that source. A bound Check verifies repository files/references at its
+pinned inspection revision. Unsupported agent/action protocols are rejected;
+agent-output `rules` belong on agent nodes, while Check predicates belong in
+`check.results` or `check.passed`. Simulation requires an explicitly successful
+synthetic `{ "verified": true }` receipt for each selector check, and performs no
+live evidence I/O.
+
+Fixed `review-evidence`, `qa-gate-evidence` and `delivery-evidence` declarations
+project verified facts. A binding named `review`, `scope`, `capture`, `impact` or
+`qaReuse` alone never activates them. QA retains exact producer/frame revisions,
+clean HEAD, scope/capture/review digests, original criterion receipts, environment
+probes, screenshot bytes/acceptance and video evidence. Specialist evidence retains
+original inventory, reviewer stamps, ledger/dispositions, settled findings,
+disagreements and required coverage. The complete immutable specialist receipt is
+stored on the exact Check history entry's `evidence` field; pure results do not
+copy its full baseline. Consumers authenticate that exact configured Check/frame
+and the original approval, never an ordinary role-shaped result. Grouped consumers
+project the original receipt with the same repository evidence rules.
+
+`review-assistance` explicitly enables the existing checkpoint protocol for
+`approved`, `findings`, `reviewIncomplete`, `reviewBlocked` and `questions` results.
+It keeps unchanged-fix/instruction fingerprints, waits and native conversation
+identity in runtime bookkeeping. QA recovery validates its declared capture →
+review → Check path; ordinary branches name every recovery destination.
+Read-only `review-evidence` and coincidental result names do not enable assistance.
+An incomplete specialist review routes to its declared impact assessor before a
+product fixer. Native continuation and visits belong to the selected destination:
+retrying the reviewer retains its session, while another agent uses only its own
+saved session or starts independently.
+
+Accepted impact outputs stay immutable while runtime decisions track selected
+checks and pending reviewers separately. Retained snapshot reconstruction uses
+the authenticated original aggregate from its exact producer, frame and round.
+The declared independent impact protocol may inspect that original inventory as
+historical evidence with its original binding retained. Consuming a reused
+inventory additionally requires the exact current scope-reuse decision and
+derivative marker, unchanged repository binding and fresh scope/target/environment
+evidence. New answers require independent reassessment; ordinary reads retain
+their normal effective-input freshness checks. Reuse never claims a fresh
+extraction or grants review/approval.
+
+`post-fix-evidence` requires a `reads.observation` binding to the exact executed
+`inspect-review-readiness` action in the current frame. Its stock rules inspect
+factual observations (including grouped collections); unchanged failures/revision
+mismatches/actionable work enter assistance without waiving review or CI.
+
+Stock contract freezing is the explicit `accept-delivery` action followed by a
+Check. Provider inspection is an explicit `inspect-review-readiness` action
+followed by a Check. CI, queued-fixer readiness, publication, handoff, human gates,
+merge and external apply/verify/final checks retain their action safeguards.
+Historical `review-gate`, `visual-gate`, `delivery-mode`, `delivery-route` and
+`review-after-fix` definitions still load and resume through their existing
+code-backed deterministic handlers; they are absent from the new-step palette.
+Accepted definitions, state, completed receipts and native sessions are not rewritten.
+
+Recipes provides structured nested conditions, collection/selection results,
+named reads, evidence declarations, routes-on summaries and a JSON fallback.
+Invalid rules disable Save with an explanation. The simulator calls the same
+production HTTP evaluator/branch function and clearly labels supplied evidence as
+synthetic fixtures: simulation cannot authenticate real files, receipt provenance
+or human approval. Undeclared fixture evidence is rejected.

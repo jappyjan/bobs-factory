@@ -19,6 +19,7 @@ import {
 import { activityMarkers, activityPage } from "./ActivityPage.js";
 import { reasoningLevels, serviceTierRunners } from "./AgentSettings.js";
 import { ArchitectureDecisionSchema } from "./Architecture.js";
+import { evaluateCheckAsync } from "./Check.js";
 import {
 	capacitySummary,
 	launchExecutionProfiles,
@@ -57,6 +58,7 @@ import {
 	localFactoryOrigin,
 } from "./LocalFactoryAccess.js";
 import { OperatorService } from "./OperatorService.js";
+import { conforms } from "./OutputFormats.js";
 import { runProvenance } from "./Provenance.js";
 import {
 	readReviewManifest,
@@ -79,17 +81,20 @@ import type { ChatState } from "./SessionChat.js";
 import {
 	ACCESS_MODES,
 	CHECK_IDS,
+	CHECK_SELECTOR_IDS,
 	CONTEXT_SOURCES,
+	checkStepEvidenceIssues,
 	FORMAT_IDS,
 	INSTRUCTION_IDS,
 	inlineSchemaIssuesAsync,
 	materializeWorkflowConfig,
+	resolveStepConfig,
 } from "./StepConfig.js";
 import type { TicketManagers } from "./TicketManagers.js";
 import { outputForCheck } from "./ToolBindings.js";
 import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
-import { WorkflowSchema } from "./Workflow.js";
+import { routeResult, StepSchema, WorkflowSchema } from "./Workflow.js";
 import type { FactoryRun, WorkflowRuntime } from "./WorkflowRuntime.js";
 import { capacityRunStatus } from "./WorkflowRuntime.js";
 
@@ -1203,6 +1208,56 @@ export class FactoryServer {
 			access: ACCESS_MODES,
 			contextSources: CONTEXT_SOURCES,
 		}));
+		this.app.post(
+			"/api/workflows/check/simulate",
+			{ bodyLimit: 256 * 1024 },
+			async (request) => {
+				const body = z
+					.object({
+						step: StepSchema,
+						inputs: z.unknown(),
+						evidence: z.record(z.string(), z.unknown()).default({}),
+						fallback: z.string().default("end"),
+					})
+					.parse(request.body);
+				if (body.step.type !== "check" || !body.step.check)
+					throw new Error("Select a configured Check step to simulate");
+				const issues = checkStepEvidenceIssues(body.step);
+				if (issues.length) throw new Error(issues.join("; "));
+				for (const { check, args } of resolveStepConfig(body.step).checks)
+					if (
+						(CHECK_SELECTOR_IDS as readonly string[]).includes(check) &&
+						typeof args.path === "string"
+					) {
+						const supplied = body.evidence[check];
+						if (
+							!supplied ||
+							typeof supplied !== "object" ||
+							!Object.hasOwn(supplied, "verified") ||
+							(supplied as { verified?: unknown }).verified !== true
+						)
+							throw new Error(
+								`Simulation requires successful synthetic ${check} evidence ({verified:true}); it does not verify live files or receipts`,
+							);
+					}
+				const declared = new Set(
+					resolveStepConfig(body.step).checks.map((check) => check.check),
+				);
+				for (const key of Object.keys(body.evidence))
+					if (!declared.has(key as never))
+						throw new Error(
+							`Simulation evidence ${key} is not declared by this Check`,
+						);
+				const output = await evaluateCheckAsync(
+					body.step.check,
+					body.inputs,
+					body.evidence,
+					conforms,
+					schemaRequests.get(request)?.signal,
+				);
+				return { output, next: routeResult(body.step, output, body.fallback) };
+			},
+		);
 		this.app.post(
 			"/api/workflows/step-config/validate",
 			{ bodyLimit: 70 * 1024 },
