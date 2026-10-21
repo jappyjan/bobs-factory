@@ -28,6 +28,8 @@ function fixture() {
 	git("config", "user.email", "fixture@example.test");
 	git("config", "commit.gpgsign", "false");
 	writeFileSync(join(workspace, "proof.ts"), "first\nsecond\n");
+	mkdirSync(join(workspace, "src"));
+	writeFileSync(join(workspace, "src", "nested.ts"), "nested file\n");
 	git("add", ".");
 	git("commit", "-m", "Evidence");
 	const headSha = git("rev-parse", "HEAD"),
@@ -69,6 +71,13 @@ it("checks committed file/line evidence and bound named IDs independent of step 
 		requirements: ["R1"],
 	};
 	await expect(runEvidenceChecks(context, output)).resolves.toEqual(output);
+	for (const directoryEvidence of [
+		{ ...output, files: ["src"] },
+		{ ...output, refs: ["src:1"] },
+	])
+		await expect(runEvidenceChecks(context, directoryEvidence)).rejects.toThrow(
+			"Repository evidence must reference a file (Git blob)",
+		);
 	writeFileSync(join(workspace, "uncommitted.ts"), "uncommitted");
 	for (const invalid of [
 		{ ...output, files: ["uncommitted.ts"] },

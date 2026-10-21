@@ -86,6 +86,24 @@ function fileInWorkspace(root: string, path: string) {
 		throw new Error(`Evidence must be a file within the repository: ${path}`);
 	return file;
 }
+async function repositoryBlob(
+	context: ExecutionContext,
+	workspace: string,
+	head: string,
+	file: string,
+): Promise<string> {
+	const object = `${head}:${safeRelative(file)}`;
+	const { stdout } = await exec("git", ["cat-file", "-t", object], {
+		cwd: workspace,
+		signal: context.signal,
+		maxBuffer: 1024,
+	});
+	if (stdout.trim() !== "blob")
+		throw new Error(
+			`Repository evidence must reference a file (Git blob): ${file} at ${head}`,
+		);
+	return object;
+}
 async function revision(
 	context: ExecutionContext,
 	repositoryId: string,
@@ -152,15 +170,7 @@ export async function runEvidenceChecks(
 					for (const file of strings(output, args.path)) {
 						if (resolveStepConfig(context.step).revision === "bound") {
 							const head = await revision(context, repo.id, repo.workspace);
-							await exec(
-								"git",
-								["cat-file", "-e", `${head}:${safeRelative(file)}`],
-								{
-									cwd: repo.workspace,
-									signal: context.signal,
-									maxBuffer: 1024,
-								},
-							);
+							await repositoryBlob(context, repo.workspace, head, file);
 						} else fileInWorkspace(repo.workspace, file);
 					}
 					break;
@@ -195,15 +205,17 @@ export async function runEvidenceChecks(
 								entry.repositoryId ?? args.repositoryId,
 							),
 							head = await revision(context, repo.id, repo.workspace);
-						const { stdout } = await exec(
-							"git",
-							["show", `${head}:${safeRelative(file)}`],
-							{
-								cwd: repo.workspace,
-								signal: context.signal,
-								maxBuffer: 8 * 1024 * 1024,
-							},
+						const blob = await repositoryBlob(
+							context,
+							repo.workspace,
+							head,
+							file,
 						);
+						const { stdout } = await exec("git", ["cat-file", "blob", blob], {
+							cwd: repo.workspace,
+							signal: context.signal,
+							maxBuffer: 8 * 1024 * 1024,
+						});
 						if (
 							Number(end) >
 							stdout.split("\n").length - (stdout.endsWith("\n") ? 1 : 0)
