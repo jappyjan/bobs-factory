@@ -1,0 +1,22 @@
+✔ explicit stable channel reaches the unsigned bootstrap and rejects beta (756.178334ms)
+✔ unbound default selection retains the authenticated beta fallback (2000.629583ms)
+✔ generated stable package identity reaches the unsigned bootstrap (1401.130208ms)
+✔ generated nightly package identity reaches the unsigned bootstrap (1367.312667ms)
+✔ TERM during bootstrap download stops its owned process group before cleanup (706.971958ms)
+✔ npm exits after TERM reaches a packed launcher during bootstrap download (1932.790583ms)
+✔ rejects unsupported Node 20 before downloads or trial state (119.13575ms)
+✔ rejects unsupported Node 22 before downloads or trial state (126.8115ms)
+✔ rejects unsupported Node 23 before downloads or trial state (102.610792ms)
+✔ rejects unsupported Node 25 before downloads or trial state (209.827083ms)
+✔ packed npm trial usable dashboard, browser, exclusivity and retained state (controlled protocol) (3617.213ms)
+✔ packed npm trial usable dashboard, no-browser, exclusivity and retained state (controlled protocol) (2038.654167ms)
+✔ occupied port rejects launch and leaves no stale lock (56.802459ms)
+✔ invalid options cannot override trial home (50.402416ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18335.5785

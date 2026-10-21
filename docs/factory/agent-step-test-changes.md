@@ -268,3 +268,13 @@ cleanup work was still active; the remaining seven cases passed. Its route table
 now allows 60 seconds for the disk/Git integration scenario. Runtime claim, command
 and deletion deadlines and every outcome assertion remain unchanged. The existing
 finally cleanup still closes the coordinator/runtime before fixture deletion.
+
+The final complete app command initially ran CLI and F1 workspaces concurrently.
+One unchanged `OwnedUpdateLifecycle` preservation-contract case exceeded its
+five-second outer test limit; no preservation assertion failed. All four cases
+passed unchanged in isolation with 320–647 ms bodies. The complete app suites
+then passed with workspace concurrency one: CLI 251/251 and F1 17/17. This changes
+only local validation scheduling; no test source, fixture, assertion, default
+test timeout or production preflight deadline changed. The original full log,
+isolated timings and final full output are retained in the revision validation
+record.

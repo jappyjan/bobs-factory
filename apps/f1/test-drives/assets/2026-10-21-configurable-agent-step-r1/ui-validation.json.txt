@@ -1,0 +1,574 @@
+{
+  "source": "50e020294b8b414b2920af8952fd1467ae521180",
+  "node": "v24.21.0",
+  "bun": "1.4.2",
+  "artifactFilesDigest": "515c9f41f2b4d11d9907f17bbf8b103412c68b37d7f1086a6355f52c878c97ea",
+  "expectedUiBuild": "439e34cad97e0e35a98dcbb4",
+  "screenshots": [
+    {
+      "file": "working-desktop-light.png"
+    },
+    {
+      "file": "working-desktop-dark.png"
+    },
+    {
+      "file": "working-mobile-dark.png"
+    },
+    {
+      "file": "working-mobile-light.png"
+    },
+    {
+      "file": "review-desktop-light.png"
+    },
+    {
+      "file": "review-desktop-dark.png"
+    },
+    {
+      "file": "review-mobile-dark.png"
+    },
+    {
+      "file": "review-mobile-light.png"
+    },
+    {
+      "file": "builder-desktop-light-schema.png"
+    },
+    {
+      "file": "builder-desktop-light-evidence.png"
+    },
+    {
+      "file": "builder-desktop-dark-schema.png"
+    },
+    {
+      "file": "builder-desktop-dark-evidence.png"
+    },
+    {
+      "file": "builder-mobile-dark-schema.png"
+    },
+    {
+      "file": "builder-mobile-dark-evidence.png"
+    },
+    {
+      "file": "builder-mobile-light-schema.png"
+    },
+    {
+      "file": "builder-mobile-light-evidence.png"
+    },
+    {
+      "file": "builder-mobile-light-rules.png"
+    },
+    {
+      "file": "builder-mobile-light-revision.png"
+    },
+    {
+      "file": "builder-mobile-dark-rules.png"
+    },
+    {
+      "file": "builder-mobile-dark-revision.png"
+    }
+  ],
+  "assertions": {
+    "currentReadinessOutranksOldCi": true,
+    "rawDashboardFocusAgree": true,
+    "workingPendingVisible": true,
+    "pendingBlockerPseudoContent": "none",
+    "renamedRefreshVisible": true,
+    "staleRefreshRejected409": true,
+    "actualRefreshStartsGuide": true,
+    "refreshRemovedAfterPoll": true,
+    "allBuilderFieldsSavedAndReloaded": true,
+    "remoteSchemaRefRejected": true,
+    "readOnlyNativeToolRejected": true,
+    "pinnedReadOnlyToolsSaved": true,
+    "malformedJsonDisablesSave": true,
+    "discardRestoresSavedJson": true,
+    "unknownIdsRejectedOnSave": true,
+    "scriptRuleRejected": true,
+    "bundledConfigurationReadOnly": true,
+    "bundledAgentPreferencesEditable": true,
+    "horizontalOverflow": 0,
+    "allScreenshotsVisuallyInspected": true
+  },
+  "browser": "T3 collaborative preview (incognito)",
+  "cssViewports": [
+    {
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "initialApi": {
+    "version": {
+      "build": "439e34cad97e0e35a98dcbb4",
+      "protocol": 1,
+      "runtime": {
+        "version": "0.2.73",
+        "commit": null,
+        "dirty": null,
+        "target": null,
+        "resourceDigest": null,
+        "packaged": false
+      },
+      "capabilities": [
+        "desktop-app-maintenance-v1"
+      ]
+    },
+    "retained": {
+      "headSha": "old-head",
+      "baseSha": "c3864c7cab26c355c6755199ca3ec9b79d7ac44d",
+      "url": "https://example.com/factory/pull/136",
+      "state": "OPEN",
+      "isDraft": false,
+      "approved": false,
+      "reviewReady": true,
+      "fix": false,
+      "queued": false,
+      "mergeMethod": "squash",
+      "checks": [
+        {
+          "name": "Build",
+          "state": "SUCCESS",
+          "bucket": "pass"
+        }
+      ],
+      "blockers": [],
+      "threads": [],
+      "comments": [],
+      "reviews": []
+    },
+    "dashboard": {
+      "headSha": "6cf73808478d66090dba8acf2b47fb29e8ae328a",
+      "baseSha": "c3864c7cab26c355c6755199ca3ec9b79d7ac44d",
+      "url": "https://example.com/factory/pull/136",
+      "state": "OPEN",
+      "isDraft": false,
+      "approved": false,
+      "reviewReady": false,
+      "fix": false,
+      "queued": false,
+      "mergeMethod": "squash",
+      "blockers": [
+        {
+          "kind": "checks",
+          "message": "Build pending",
+          "action": "wait"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Build",
+          "state": "PENDING",
+          "bucket": "pending"
+        }
+      ]
+    },
+    "focus": {
+      "headSha": "6cf73808478d66090dba8acf2b47fb29e8ae328a",
+      "baseSha": "c3864c7cab26c355c6755199ca3ec9b79d7ac44d",
+      "url": "https://example.com/factory/pull/136",
+      "state": "OPEN",
+      "isDraft": false,
+      "approved": false,
+      "reviewReady": false,
+      "fix": false,
+      "queued": false,
+      "mergeMethod": "squash",
+      "blockers": [
+        {
+          "kind": "checks",
+          "message": "Build pending",
+          "action": "wait"
+        }
+      ],
+      "checks": [
+        {
+          "name": "Build",
+          "state": "PENDING",
+          "bucket": "pending"
+        }
+      ]
+    },
+    "currentStep": {
+      "key": "provider-poll",
+      "name": "Watch Build",
+      "presentation": {
+        "phase": "blue",
+        "icon": "🧪",
+        "fixing": false
+      }
+    },
+    "workingBlockerVisible": true,
+    "overflow": 0
+  },
+  "review": {
+    "capability": {
+      "refreshGuide": true
+    },
+    "currentStep": {
+      "key": "external-human-review",
+      "name": "Review changes",
+      "presentation": {
+        "phase": "violet",
+        "icon": "🙋",
+        "fixing": false
+      }
+    },
+    "checks": "CI 0/1\n\nBuild pending",
+    "statusTag": "DIV",
+    "statusRole": "status",
+    "before": "none",
+    "refreshVisible": true,
+    "overflow": 0
+  },
+  "staleRefresh": {
+    "staleStatus": 409,
+    "error": "Only the current pending human guide can be regenerated",
+    "capability": {
+      "refreshGuide": true
+    },
+    "gate": "current-review"
+  },
+  "afterRefresh": {
+    "status": "running",
+    "step": "recap",
+    "capability": {
+      "refreshGuide": false
+    },
+    "gate": null,
+    "error": null,
+    "visibleRefresh": false
+  },
+  "builderRemoteSchema": {
+    "alerts": [
+      "/$ref: only local references (#/...) are allowed"
+    ],
+    "saveDisabled": true,
+    "body": "mental-guide\nincremental-ci-fix\nci-fix-runtime\nreview-stage-inventory\nreview-stage-specialist\nreview-stage-coverage\nSelected snippets are added automatically. Use {{instruction:id}} in the prompt to choose their exact position. Runtime instruction IDs add role guidance.\nWHERE IT GOES NEXT\nThen\n→ Clarify requirements\n→ Record decisions\n→ Review implementation plan\n→ Prepare the check-in\n→ Review the check-in\n→ Check in with you\n→ Implement accepted plan\n→ Push and create draft PR\n→ Assess changed work and retained evidence\n→ Extract requirements\n→ Run independently selected checks\n→ Parallel specialist review\n→ Aggregate specialist findings and coverage\n→ Watch merge readiness\n→ Plan QA stories and screenshots\n→ Execute QA and capture screenshots\n→ Review QA and screenshots\n→ QA and screenshot gate\n→ Fix review findings\n→ Fix CI failures\n→ Check whether code needs another review\n→ Fix QA and visual findings\n→ Prepare human review brief\n→ Verify revision and hand off\n→ Human review\n→ Address human feedback\n→ Merge approved revision\n→ Route requested delivery corrections\n→ Validate accepted delivery contract\n→ Resolve execution deferral\n→ Apply authorized ticket changes\n→ Independently verify ticket state\n→ Route verified deliverables\n→ Prepare external review\n→ Accept completed external work\n→ Plan requested ticket corrections\n→ Check accepted external state\n→ Verify changed external state\n→ Finish\n＋ Add a condition\n\nConditions read the step’s JSON output. The first match wins; otherwise the run continues as shown. Tip: drag from a step’s right edge onto another step to add a route.\n\nReached from Record decisionsReview implementation plan (Changes requested)Resolve execution deferralPlan requested ticket corrections\n\nSAFETY LIMIT\nStop after\nvisits to this step\nDelete step"
+  },
+  "readOnlyNativeRejection": {
+    "alerts": [
+      "plan: read-only access permits only mcp__factory-context__list_context, mcp__factory-context__read_context, mcp__factory-context__list_repository, mcp__factory-context__read_repository"
+    ],
+    "buttons": [
+      {
+        "text": "Discard",
+        "disabled": false
+      },
+      {
+        "text": "Save",
+        "disabled": false
+      }
+    ]
+  },
+  "savedBuilder": {
+    "reads": {
+      "scopeClarify": "clarify",
+      "scopeDecisions": "decisions",
+      "scopePlan": "plan",
+      "scopeSource": "@source",
+      "scopeTicket": "@ticket",
+      "clarification": "clarify"
+    },
+    "schema": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "plan"
+      ],
+      "additionalProperties": true
+    },
+    "rules": [
+      {
+        "id": "nonempty-plan",
+        "message": "A plan must describe the work.",
+        "require": {
+          "path": "/plan",
+          "empty": false
+        }
+      }
+    ],
+    "checks": [
+      {
+        "check": "ticket-milestone",
+        "kind": "plan"
+      },
+      "delivery-contract",
+      {
+        "check": "scope-inputs",
+        "sources": {
+          "clarify": "scopeClarify",
+          "decisions": "scopeDecisions",
+          "plan": "scopePlan",
+          "existing-work": "scopeExistingWork",
+          "assess-existing": "scopeAssessment",
+          "source": "scopeSource",
+          "ticket": "scopeTicket"
+        }
+      },
+      {
+        "check": "files-exist",
+        "path": "/assets/*/path"
+      }
+    ],
+    "revision": true,
+    "access": "read-only",
+    "tools": [
+      "mcp__factory-context__list_repository",
+      "mcp__factory-context__read_repository"
+    ],
+    "instructions": [
+      "implementation-scope",
+      "feedback-policy",
+      "ticket-plan",
+      "delivery",
+      "delivery-plan"
+    ],
+    "overflow": 0
+  },
+  "discard": {
+    "reads": {
+      "scopeClarify": "clarify",
+      "scopeDecisions": "decisions",
+      "scopePlan": "plan",
+      "scopeSource": "@source",
+      "scopeTicket": "@ticket",
+      "clarification": "clarify"
+    },
+    "alerts": [],
+    "saveVisible": false
+  },
+  "rejectedSaves": {
+    "attempts": [
+      {
+        "name": "format",
+        "status": 400,
+        "body": {
+          "error": "Unknown output format: missing-v1"
+        }
+      },
+      {
+        "name": "check",
+        "status": 400,
+        "body": {
+          "error": "Unknown evidence check: missing-check"
+        }
+      },
+      {
+        "name": "instruction",
+        "status": 400,
+        "body": {
+          "error": "Unknown shared instruction: missing-instruction"
+        }
+      },
+      {
+        "name": "script-rule",
+        "status": 400,
+        "body": {
+          "error": "Invalid input: expected string, received undefined\nInvalid input\nUnrecognized key: \"script\""
+        }
+      }
+    ],
+    "unchangedRevision": true,
+    "invalidRecipePersisted": false
+  },
+  "bundledReadOnly": {
+    "readonly": [
+      {
+        "label": "Reads",
+        "readOnly": true,
+        "disabled": false
+      },
+      {
+        "label": "Rules",
+        "readOnly": true,
+        "disabled": false
+      },
+      {
+        "label": "Checks",
+        "readOnly": true,
+        "disabled": false
+      },
+      {
+        "label": "Allowed tools",
+        "readOnly": true,
+        "disabled": false
+      }
+    ],
+    "selects": [
+      {
+        "label": "Output format",
+        "disabled": true
+      },
+      {
+        "label": "Access",
+        "disabled": true
+      },
+      {
+        "label": "Shared instructions",
+        "disabled": true
+      }
+    ],
+    "agent": false,
+    "revision": true,
+    "body": true,
+    "overflow": 0
+  },
+  "verifiedAt": "2026-10-21T17:50:53.313Z",
+  "screenshotSource": "50e020294b8b414b2920af8952fd1467ae521180",
+  "finalBackendSource": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+  "finalBackendArtifactFilesDigest": "773c896829c5bb92961c5b7b67184e5a9c5ea434ee00ee98763f29457184b247",
+  "finalBackendApiRecheck": {
+    "source": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+    "node": "v24.21.0",
+    "uiBuild": "439e34cad97e0e35a98dcbb4",
+    "browser": "T3 collaborative preview (incognito)",
+    "api": {
+      "version": {
+        "build": "439e34cad97e0e35a98dcbb4",
+        "protocol": 1,
+        "runtime": {
+          "version": "0.2.73",
+          "commit": null,
+          "dirty": null,
+          "target": null,
+          "resourceDigest": null,
+          "packaged": false
+        },
+        "capabilities": [
+          "desktop-app-maintenance-v1"
+        ]
+      },
+      "states": [
+        {
+          "headSha": "1a4521a4e9ba9f3fdce1a083763886b74363dd3e",
+          "check": "PENDING",
+          "blocker": "Build pending"
+        },
+        {
+          "headSha": "1a4521a4e9ba9f3fdce1a083763886b74363dd3e",
+          "check": "PENDING",
+          "blocker": "Build pending"
+        },
+        {
+          "headSha": "1a4521a4e9ba9f3fdce1a083763886b74363dd3e",
+          "check": "PENDING",
+          "blocker": "Build pending"
+        }
+      ],
+      "retained": {
+        "headSha": "old-head",
+        "state": "SUCCESS"
+      },
+      "currentStep": {
+        "key": "provider-poll",
+        "name": "Watch Build",
+        "presentation": {
+          "phase": "blue",
+          "icon": "🧪",
+          "fixing": false
+        }
+      },
+      "review": {
+        "capabilities": {
+          "refreshGuide": true
+        },
+        "gate": "current-review",
+        "currentStep": {
+          "key": "external-human-review",
+          "name": "Review changes",
+          "presentation": {
+            "phase": "violet",
+            "icon": "🙋",
+            "fixing": false
+          }
+        }
+      },
+      "scripts": [
+        "http://localhost:3557/app.4fb2cbeec1b48493384d5ab9.js"
+      ],
+      "verifiedAt": "2026-10-21T18:13:46.395Z"
+    },
+    "working": {
+      "pendingVisible": true,
+      "oldSuccessNotShown": true,
+      "overflow": 0,
+      "verifiedAt": "2026-10-21T18:13:53.284Z"
+    },
+    "review": {
+      "statusTag": "DIV",
+      "statusRole": "status",
+      "before": "none",
+      "pendingText": "Build pending",
+      "refreshVisible": true,
+      "overflow": 0,
+      "stale": {
+        "status": 409,
+        "error": "Only the current pending human guide can be regenerated",
+        "gate": "current-review",
+        "capability": true
+      },
+      "verifiedAt": "2026-10-21T18:14:02.859Z"
+    },
+    "afterRefresh": {
+      "status": "running",
+      "step": "recap",
+      "capability": false,
+      "gate": null,
+      "error": null,
+      "visibleRefresh": false,
+      "verifiedAt": "2026-10-21T18:14:03.488Z"
+    },
+    "verifiedAt": "2026-10-21T18:14:23.413Z",
+    "schemaApi": {
+      "formatCount": 46,
+      "checkCount": 22,
+      "instructionCount": 37,
+      "good": {
+        "status": 200,
+        "body": {
+          "valid": true,
+          "issues": []
+        }
+      },
+      "bad": {
+        "status": 200,
+        "body": {
+          "valid": false,
+          "issues": [
+            "/$ref: only local references (#/...) are allowed"
+          ]
+        }
+      },
+      "verifiedAt": "2026-10-21T18:14:23.413Z"
+    }
+  },
+  "finalRecheckedAt": "2026-10-21T18:14:23.413Z",
+  "uiArtifactIdentity": {
+    "capturedSource": "50e020294b8b414b2920af8952fd1467ae521180",
+    "finalBackendSource": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+    "build": "439e34cad97e0e35a98dcbb4",
+    "fileCount": 11,
+    "identical": true,
+    "sha256ByFile": {
+      "app.4fb2cbeec1b48493384d5ab9.js": "4fb2cbeec1b48493384d5ab9e52f172a9bbb08b669e55b7c08e41ac658dd97f6",
+      "frontend-packages.json": "b18207c72fc344f4cf30d9c7319a5e511e14a1177a7f8c1ef5e1e88e1cf7c8a4",
+      "icons/apple-touch-icon.png": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4",
+      "icons/icon-192.png": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961",
+      "icons/icon-512.png": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86",
+      "icons/maskable-512.png": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9",
+      "index.html": "70b88abae7065c37b4da668a4fd3d00f53325c7433e063106c059d9f1c4a6608",
+      "manifest.webmanifest": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004",
+      "shell.json": "d6f1bef00a0a4c2c07d187faf5e3496a5a25b7cd82938dd84a8f6648b90559b1",
+      "styles.3851b389f00b72b0e33ea75e.css": "3851b389f00b72b0e33ea75e8383b659fefc20caf08a522a1b8e157055d286d2",
+      "sw.js": "a4ee13a52ea14fab5a311da68514833bed10178a296b66bc918337a12e3be6d9"
+    },
+    "baseline": "11 hashes read from preserved50e clean-build manifest before evidence parking; verified identical807b then finalf926"
+  }
+}

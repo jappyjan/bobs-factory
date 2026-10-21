@@ -1,0 +1,74 @@
+[
+  {
+    "body": "Factory work started: Software factory. F1 stock Factory. Follow progress in Factory.\n\n<!-- factory:session-1:03494afd4248c42f5fa1 -->"
+  },
+  {
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-1:21cf1a35eaa60d34585d -->"
+  },
+  {
+    "body": "Write implementation plan: Implementation direction recorded in the accepted plan.\n\n<!-- factory:session-1:51fcd108d81f7c5179bf -->"
+  },
+  {
+    "body": "Review completed.\n\n<!-- factory:session-1:4ec498b32aa3c6043df0 -->"
+  },
+  {
+    "body": "Bob pauses after planning so you can approve the design. Merging still needs a separate PR review.\n\n<!-- factory:session-1:674524e9c33d6d30d278 -->"
+  },
+  {
+    "body": "Review completed.\n\n<!-- factory:session-1:c5b188de343c45cb9ee7 -->"
+  },
+  {
+    "body": "Implement accepted plan: Saved a record\n\nChecks:\n- Local record write\n\n<!-- factory:session-1:8e1ed165ab381c0a026a -->"
+  },
+  {
+    "body": "Draft PR created or continued: https://github.com/fixture/app/pull/1. Review and validation are underway.\n\n<!-- factory:session-1:91335bf15ffa0995a8d5 -->"
+  },
+  {
+    "body": "Review the complete implementation\n\n<!-- factory:session-1:508bae785ce5cd8a5fe4 -->"
+  },
+  {
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-1:397758a83361a16e3d9f -->"
+  },
+  {
+    "body": "Record behavior inspected\n\n<!-- factory:session-1:3177a1934ce9ef4915e2 -->"
+  },
+  {
+    "body": "Record behavior inspected\n\n<!-- factory:session-1:b3594a9c1064a3d8a7df -->"
+  },
+  {
+    "body": "Record behavior inspected\n\n<!-- factory:session-1:55250d7d76d40b49ebc8 -->"
+  },
+  {
+    "body": "Record behavior inspected\n\n<!-- factory:session-1:756ae599a6cc54cbceee -->"
+  },
+  {
+    "body": "Record behavior inspected\n\n<!-- factory:session-1:28dd7e01b4c31a4ceac0 -->"
+  },
+  {
+    "body": "Record behavior inspected\n\n<!-- factory:session-1:fbc343f8d0ec254b06c3 -->"
+  },
+  {
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-1:735530356d522b2e6128 -->"
+  },
+  {
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-1:0d5309f349d696928f7c -->"
+  },
+  {
+    "body": "QA readback inspected\n\n<!-- factory:session-1:0ed064fea09b42d03771 -->"
+  },
+  {
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-1:7ce8258ae3268e3f713b -->"
+  },
+  {
+    "body": "Ready for human review: https://github.com/fixture/app/pull/1. Review the guide and explicitly approve this revision or request changes in Factory. The record can be saved\n\nTracking limitation: Tracker has no in_review state; retained nonterminal status. Lifecycle stage is recorded in this comment.\n\n<!-- factory:session-1:1d90cb65a1dfe9072f4f -->"
+  },
+  {
+    "body": "Awaiting explicit human approval for https://github.com/fixture/app/pull/1. Review the guide, then approve this revision or request changes in Factory.\n\n<!-- factory:session-1:1014c0c110a1fba4f770 -->"
+  },
+  {
+    "body": "Human approved the revision. Waiting for provider requirements or confirmed merge; ticket remains In Review.\n\nTracking limitation: Tracker has no in_review state; retained nonterminal status. Lifecycle stage is recorded in this comment.\n\n<!-- factory:session-1:056ffdebe3a8010771db -->"
+  },
+  {
+    "body": "Delivered: https://github.com/fixture/app/pull/1. The Git provider confirmed merge.\n\nSaved a record\n\nVerification:\n- Local record write\n\n<!-- factory:session-1:90c5e9d1091d59baf8b2 -->"
+  }
+]

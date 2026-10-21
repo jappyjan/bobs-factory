@@ -1,0 +1,42 @@
+Install 1: Installed 1.0.0-beta. Add /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/factory-r1-install-kxoq1i0k/prefix/bin to PATH. Previous versions are retained.
+Install 2: Installed 1.0.0-beta. Add /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/factory-r1-install-kxoq1i0k/prefix/bin to PATH. Previous versions are retained.
+{
+  "passed": true,
+  "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/factory-r1-install-kxoq1i0k",
+  "prefix": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/factory-r1-install-kxoq1i0k/prefix",
+  "immutableReinstall": true,
+  "statePreserved": true,
+  "badChecksumRejected": true,
+  "privateDispatch": true,
+  "installedBinarySha256": "7f761a6fe467294b6aef670aefc6d18f72dd8750a16a5046f81dca38ffb6782f",
+  "buildIdentity": {
+    "schemaVersion": 1,
+    "product": "bobs-factory",
+    "version": "1.0.0-beta",
+    "commit": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+    "dirty": false,
+    "target": "darwin-arm64",
+    "tooling": {
+      "bun": "1.4.2"
+    },
+    "executable": {
+      "file": "bobs-factory",
+      "size": 111630834,
+      "sha256": "7f761a6fe467294b6aef670aefc6d18f72dd8750a16a5046f81dca38ffb6782f"
+    },
+    "resourceDigest": "dfef96a2353a2f1dfa272d2ae7761b4f7571138a674291ef3da5527b574bf54b",
+    "validation": "pending runtime smoke",
+    "requirements": "macOS; native target smoke required"
+  },
+  "ownership": {
+    "schemaVersion": 1,
+    "product": "bobs-factory",
+    "owner": "bobs-factory-installer",
+    "source": "archive",
+    "channel": "manual",
+    "version": "1.0.0-beta",
+    "target": "darwin-arm64",
+    "commit": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+    "publisherKeyId": ""
+  }
+}

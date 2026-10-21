@@ -1,0 +1,14 @@
+{
+  "source": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+  "initialFailure": "CLI OwnedUpdateLifecycle preservation-contract case timed out at5000ms while CLI and F1 workspace suites ran concurrently; no assertion failure. F1 canceled by pnpm first-fail.",
+  "unchangedFocusedResult": "4/4 pass, actual test bodies447/629/647/320ms. Production preflight child deadline remains30000ms.",
+  "remedy": "Serialize complete app workspace suites using pnpm --workspace-concurrency=1; preserve original source, fixtures, assertions and default5000ms timeout. Run after other local filesystem-heavy validation drains.",
+  "sourceChanged": false,
+  "testsChanged": false,
+  "testTimeoutChanged": false,
+  "ciRerun": false,
+  "started": "2026-10-21T18:28:36.478362+00:00",
+  "finalExitCode": 0,
+  "completed": "2026-10-21T18:30:04.366554+00:00",
+  "finalCompleteOutput": "final-apps-vitest.log"
+}
