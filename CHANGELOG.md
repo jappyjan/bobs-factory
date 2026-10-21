@@ -26,6 +26,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Reject retained architecture approval actions after proposal navigation, replacement or gate changes, and update vulnerable MCP and test-tool dependencies. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
 - Allocate dynamic listener ports for guide, architecture, review and recovery test drives so unrelated local runs can keep their servers running. Align the architecture continuation fixture with the stock check-in format. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))

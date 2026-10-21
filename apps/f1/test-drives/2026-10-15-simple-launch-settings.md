@@ -485,3 +485,117 @@ are local corrective checks of the working merge; they do not replace the
 independently selected runtime checks or new specialist review. No real agent
 provider was called, unrelated listener stopped, PR marked ready or delivery
 approval granted. Fresh QA and subsequent human/provider gates remain required.
+
+
+## Review correction authorized on 2026-10-21
+
+The operator answered “Yes” to expanding scope for owning dependency manifests,
+the lockfile, architecture approval callbacks and their regression coverage.
+Source: `/workflowExecution/answers/6`, submitted at
+`2026-10-21T12:51:58.497Z`. The same submission answered “Yes” to runtime
+scheduling of overlapping simulated-agent drives. The operator's name was not
+recorded. These answers authorize the corrections and scheduling; they do not
+approve delivery or waive checks.
+
+The correction updates MCP SDK to 1.32.1 in its two owning packages and Vitest
+to 4.1.12 with matching UI/coverage packages. Natural resolution selects
+follow-redirects 1.16.1 and Vite 8.1.6. A temporary Vite resolution anchor was
+removed before verification; no new direct Vite dependency or override remains.
+The pre-existing OpenTelemetry 2 graph is preserved. Existing overrides were
+reviewed against affected owners; none became redundant through these updates.
+
+The architecture page reuses `useCurrentForm` to bind every submission to the
+current proposal identity, version, digest, gate, loading state and selected
+history version. Historical views remain read-only. Tests restore exact
+displayed-candidate assertions and exercise retained actions after navigation,
+replacement, digest changes, pending refresh and gate revocation. Fresh actions
+submit the exact displayed latest candidate. Server-side identity validation is
+preserved. The earlier failing probes remain in `fix-r19-callback-probe.log`;
+they demonstrated stale UI submissions, not server acceptance.
+
+Validation results and any remaining scheduling limitation follow below.
+
+
+### Recovery fixture compatibility
+
+The selected `ci-fix-r16-role-recovery.mjs` failed its retained-proposal
+revalidation assertion because its saved `briefVersion: 1` proposal was paired
+with the current stock `checkin-v1` workflow. The corrected evidence copy changes
+only the imported fixture from `proposal` to `checkin` and its single call. It
+keeps all 1,024 file paths, 26 steps, no-extra-author-turn assertions, explicit
+acceptance wait, restart, publication, stale-impact and cleanup assertions.
+
+Replacement command for independent assessment:
+
+```sh
+F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/fix-r20-role-recovery.mjs
+```
+
+The original failed execution remains in
+`fix-r20-check-failed-recovery-original.log`; the corrected execution passed.
+This local replacement does not change the runtime's independent check
+selection; impact assessment must explicitly adopt it before its check gate.
+
+
+### Executed correction checks
+
+All 59 locally executed selections passed after the documented recovery-fixture
+replacement. Receipts and full logs are retained in
+`fix-r20-check-receipts.json` and `fix-r20-check-*.log` in this run's evidence
+directory. They identify the starting revision and working-diff fingerprint;
+these are local correction results, not runtime-owned independent gate receipts.
+The commands include frozen install, zero-advisory audit, workspace build and
+typecheck, all selected unit/integration suites, relevant simulated-agent
+drives, lint, workflow lint and release safeguards. Repository lint has zero
+errors and 30 existing warnings. Current working-diff whitespace checks pass.
+
+The focused architecture tests passed 36 cases, including five retained-action
+regressions. The complete headless-browser drive passed with four proposals and
+two explicit simulated approvals. Its actual React callback sent zero approval
+requests after navigating to an older version and remained invalid after
+returning to the current proposal. Historical controls were absent; current
+controls remained available. Both screenshots were inspected: no render defect
+was observed. Browser evidence is in `fix-r20-browser-*.json`,
+`fix-r20-browser-drive.log`, `fix-r20-architecture-history.png` and
+`fix-r20-architecture-current.png`. The named browser session and fixture worker
+were closed. No real inference provider was called.
+
+### Scheduled concurrent complete drives
+
+The requested scheduling used an isolated F1 WorkflowRuntime with a two-slot
+MachineCapacity pool and a fanout of two script steps. Each complete drive
+received its own lease. The original architecture-continuation drive was copied
+into evidence with absolute imports and startup/restart barriers; original
+approval, continuation, restart and cleanup assertions remain intact.
+
+Both drives overlapped for about five seconds. Their startup barriers completed
+two milliseconds apart, and their restart barriers eight milliseconds apart.
+They used four distinct ports (52429–52432) while ports 3542, 3543, 3600 and
+3601 were occupied on both IPv4 and IPv6 by owned sentinels. All sentinels
+remained reachable after the drives. All four drive ports could be rebound on
+both families after completion. The capacity pool finished with zero active
+and zero queued executions. Sentinels were then closed; no unrelated listener
+was stopped. This demonstrates the tested overlap, not elimination of every
+possible operating-system port-handoff race.
+
+Independent assessment can rerun the scheduled check with:
+
+```sh
+F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/fix-r20-scheduled-overlap.mjs
+```
+
+The driver, barrier copy, child logs, admission snapshots, overlapping times,
+selected ports and cleanup receipts are retained as `fix-r20-scheduled-overlap.mjs`,
+`fix-r20-overlap-drive.mjs`, `fix-r20-overlap-{a,b}.log` and
+`fix-r20-overlap-receipt.json`. The test creates a fresh isolated workflow and
+capacity pool; it does not modify this run's frozen graph or delivery gates.
+
+Independent impact reassessment must adopt the corrected recovery command,
+select this concurrency check and obtain its own required receipts. Fresh
+launcher QA, human acceptance and provider readiness remain owned by subsequent
+gates. Local simulated approvals are test evidence, not approval of this PR.
+
+
+The complete owning-package MCP suites also passed: 52 config-updater tests and
+80 mcp-tools tests. A final frozen install, zero-advisory audit and whitespace
+check passed after the lockfile cleanup.

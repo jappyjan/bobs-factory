@@ -17,6 +17,7 @@ const fixture = vi.hoisted(() => ({
 	run: undefined as any,
 	selectedVersion: undefined as number | undefined,
 	stateCalls: 0,
+	formContext: "",
 	draft: "",
 	reactions: {} as Record<string, unknown>,
 	submitted: [] as any[],
@@ -65,6 +66,10 @@ vi.mock("../src/factory/web/client.js", () => ({
 }));
 
 vi.mock("../src/factory/web/form-state.js", () => ({
+	useCurrentForm: (context: string) => {
+		fixture.formContext = context;
+		return () => fixture.formContext === context;
+	},
 	useFormState: (_context: string, initial: unknown) => [
 		initial === ""
 			? fixture.draft
@@ -107,6 +112,7 @@ beforeEach(() => {
 	fixture.reactions = {};
 	fixture.selectedVersion = undefined;
 	fixture.stateCalls = 0;
+	fixture.formContext = "";
 	fixture.submitted = [];
 	const first = proposal();
 	first.title = "Version one design";
@@ -170,6 +176,10 @@ it("keeps earlier versions read-only and says go ahead to the exact latest versi
 	const historicalTree = renderPage();
 	const oldCheckIn = historicalTree.find((e) => e.type === CheckIn);
 	expect(oldCheckIn.props.content.title).toBe("Version one design");
+	expect(
+		historicalTree.find((e) => e.type === BobsNotes).props.content.candidate
+			.plan,
+	).toBe("Implement plan one");
 	expect(oldCheckIn.props.onReact).toBeUndefined();
 	expect(buttonWith(historicalTree, "Go ahead")).toBeUndefined();
 
@@ -181,6 +191,9 @@ it("keeps earlier versions read-only and says go ahead to the exact latest versi
 	const currentTree = renderPage();
 	const current = currentTree.find((e) => e.type === CheckIn);
 	expect(current.props.content.title).toBe("Version two design");
+	expect(
+		currentTree.find((e) => e.type === BobsNotes).props.content.candidate.plan,
+	).toBe("Implement plan two");
 	expect(current.props.onReact).toBeDefined();
 	const go = buttonWith(currentTree, "Go ahead, build it");
 	expect(go.props.disabled).toBe(false);
@@ -311,4 +324,65 @@ it("retells older proposals and counts drafts that never reached the human", () 
 	expect(
 		feedbackMessage(open, [{ decision: "boundary", option: "pr" }], [], "Go"),
 	).toBe("Answers:\nWhere should the approval live? → Reuse PR approval\n\nGo");
+});
+
+it.each([
+	"history",
+	"replacement",
+	"digest",
+	"pending-context",
+	"revoked-gate",
+])("rejects retained approval actions after %s changes the displayed proposal", async (change) => {
+	const current = renderPage();
+	const retained = buttonWith(current, "Go ahead, build it").props.onClick;
+	if (change === "history") {
+		elementWithText(current, "button", "v1").props.onClick();
+	} else if (change === "revoked-gate") {
+		fixture.run.architectureGate = undefined;
+	} else if (change === "pending-context") {
+		fixture.run.pendingContext = true;
+	} else {
+		const next = structuredClone(fixture.run.architectureProposals[1]);
+		next.digest = "changed-digest";
+		next.content.candidate.plan = "Implement changed plan";
+		if (change === "replacement") {
+			next.id = "proposal-3";
+			next.version = 3;
+			fixture.run.architectureProposals.push(next);
+		} else {
+			fixture.run.architectureProposals[1] = next;
+		}
+		fixture.run.architectureGate.proposalId = next.id;
+	}
+	const changed = renderPage();
+	if (change !== "pending-context") {
+		expect(
+			changed.find((e) => e.type === BobsNotes).props.content.candidate.plan,
+		).toBe(
+			change === "history"
+				? "Implement plan one"
+				: change === "revoked-gate"
+					? "Implement plan two"
+					: "Implement changed plan",
+		);
+	}
+	await retained();
+	expect(fixture.submitted).toEqual([]);
+	if (change === "replacement" || change === "digest") {
+		await buttonWith(changed, "Go ahead, build it").props.onClick();
+		const shown = changed.find((e) => e.type === CheckIn).props.content;
+		const latest = fixture.run.architectureProposals.at(-1);
+		expect(shown.candidate).toEqual(latest.content.candidate);
+		expect(fixture.submitted).toEqual([
+			{
+				path: "/api/runs/architecture-review/architecture-decision",
+				body: {
+					proposalId: latest.id,
+					version: latest.version,
+					digest: latest.digest,
+					decision: "accept",
+				},
+			},
+		]);
+	}
 });
