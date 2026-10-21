@@ -1,5 +1,11 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { spawnExecution as spawn } from "bobs-factory-core";
+import {
+	publishStorageJson,
+	StorageRetentionStore,
+	spawnExecution as spawn,
+	storageDigest,
+	storageIdentity,
+} from "bobs-factory-core";
 import type { CapacityOptions, ExecutionCapacity } from "./MachineCapacity.js";
 import { isUpdatePaused } from "./updates/UpdatePausedError.js";
 export const setupExecutionScope = new AsyncLocalStorage<{
@@ -9,14 +15,7 @@ export const setupExecutionScope = new AsyncLocalStorage<{
 }>();
 
 import { execFile, execSync } from "node:child_process";
-import {
-	existsSync,
-	mkdirSync,
-	readdirSync,
-	readFileSync,
-	rmSync,
-	statSync,
-} from "node:fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join, resolve as pathResolve } from "node:path";
 import { promisify } from "node:util";
@@ -85,6 +84,8 @@ const HOOK_OUTPUT_TAIL_MAX_LINES = 40;
 type HookKind = "setup" | "teardown";
 
 interface HookScriptOptions {
+	signal?: AbortSignal;
+	failOnError?: boolean;
 	scriptPath: string;
 	hook: HookKind;
 	/** Origin of the script for user-facing log messages. */
@@ -101,6 +102,7 @@ interface HookScriptOptions {
 }
 
 interface NodeExecError {
+	timedOut?: boolean;
 	signal?: string;
 	message?: string;
 	code?: number | string;
@@ -637,6 +639,94 @@ export class GitService {
 		repositories: RepositoryConfig[],
 		options?: CreateGitWorktreeOptions,
 	): Promise<Workspace> {
+		const base =
+			repositories.length === 1
+				? (repositories[0]?.workspaceBaseDir ??
+					getDefaultWorktreesDir(this.factoryHome))
+				: (options?.workspaceBaseDir ?? repositories[0]?.workspaceBaseDir);
+		if (!base)
+			throw new Error(
+				"workspaceBaseDir is required in options when no repositories are provided",
+			);
+		const retention = new StorageRetentionStore(this.factoryHome);
+		await retention.initialize();
+		const path = await retention.workspaceResource(
+			pathResolve(base, issue.identifier),
+		);
+		return retention.workspaceClaim(path).run(async () => {
+			const existed = existsSync(path);
+			await publishStorageJson(
+				join(
+					retention.directory,
+					"workspace-use",
+					storageDigest(path),
+					`${storageDigest(issue.id)}.json`,
+				),
+				{
+					version: 1,
+					owner: issue.id,
+					workspace: path,
+					state: "reserved",
+					updatedAt: new Date().toISOString(),
+					reason: "Workspace creation or continuation is reserved",
+				},
+			);
+			const workspace = await this.createGitWorktreeClaimed(
+				issue,
+				repositories,
+				options,
+			);
+			const { realpath } = await import("node:fs/promises");
+			workspace.path = await realpath(workspace.path);
+			if (workspace.repoPaths)
+				for (const id of Object.keys(workspace.repoPaths))
+					workspace.repoPaths[id] = await realpath(workspace.repoPaths[id]!);
+			if (!existed) {
+				const record = await retention.register({
+					category: "worktree",
+					path,
+					root: pathResolve(base),
+					producer: "GitService",
+					operation: issue.id,
+					dependencies: [],
+					evidence: [],
+				});
+				await publishStorageJson(
+					join(
+						retention.directory,
+						"workspaces",
+						`${storageDigest(path)}.json`,
+					),
+					{
+						version: 1,
+						recordId: record.id,
+						issueIdentifier: issue.identifier,
+						identity: record.identity,
+						repositories: await Promise.all(
+							repositories.map(async (repo) => ({
+								id: repo.id,
+								name: repo.name,
+								repository: repo.repositoryPath,
+								path: workspace.repoPaths?.[repo.id] ?? workspace.path,
+								root: await realpath(base),
+								creator: "GitService",
+								identity: await storageIdentity(
+									workspace.repoPaths?.[repo.id] ?? workspace.path,
+									base,
+								),
+							})),
+						),
+					},
+				);
+			}
+			return workspace;
+		}, true);
+	}
+	private async createGitWorktreeClaimed(
+		issue: Issue,
+		repositories: RepositoryConfig[],
+		options?: CreateGitWorktreeOptions,
+	): Promise<Workspace> {
 		const {
 			globalSetupScript,
 			onRepoSetupHookEvent,
@@ -1103,194 +1193,65 @@ export class GitService {
 		}
 	}
 
-	/**
-	 * Delete worktrees for a given issue identifier.
-	 *
-	 * Removes all git worktrees under the workspace directory for the issue,
-	 * handling both single-repo and multi-repo layouts since the issue identifier
-	 * directory is the root in both cases.
-	 *
-	 * If `options.repositories` is supplied, each repo's per-repo
-	 * `bobs-factory-teardown.sh` (if present in its repo root) is invoked **before**
-	 * the worktrees are removed, with `cwd` set to that repo's worktree
-	 * subdirectory. A failure in one repo's teardown does not block the others
-	 * or the final `rmSync`.
-	 *
-	 * @param issueIdentifier - The issue identifier (e.g., "DEF-123")
-	 * @param options - Optional teardown wiring (see {@link DeleteWorktreeOptions})
-	 */
+	/** Exact verified mapping for retention. No force or recursive fallback. */
+	async removeRetainedWorktrees(
+		workspace: string,
+		members: { path: string; repository: string }[],
+		issueIdentifier: string,
+		signal: AbortSignal,
+		revalidate: (remaining?: string[]) => Promise<void>,
+		journal: (phase: string) => Promise<void>,
+	): Promise<void> {
+		const run = promisify(execFile);
+		await revalidate();
+		for (const member of members) {
+			signal.throwIfAborted();
+			await journal(`hook-intent:${member.path}`);
+			await this.runRepoHookScript({
+				hook: "teardown",
+				workspacePath: member.path,
+				env: { LINEAR_ISSUE_IDENTIFIER: issueIdentifier },
+				timeoutMs: TEARDOWN_TIMEOUT_MS,
+				signal,
+				failOnError: true,
+			});
+			await journal(`hook-completed:${member.path}`);
+			await revalidate();
+		}
+		for (const [index, member] of members.entries()) {
+			signal.throwIfAborted();
+			await revalidate(members.slice(index).map((item) => item.path));
+			await journal(`removing:${member.path}`);
+			await run(
+				"git",
+				["-C", member.repository, "worktree", "remove", member.path],
+				{
+					env: this.commandEnvironment,
+					signal,
+					timeout: 30_000,
+					maxBuffer: 64 * 1024,
+				},
+			);
+			await journal(`removed:${member.path}`);
+		}
+		if (!members.some((member) => member.path === workspace)) {
+			const { rmdir } = await import("node:fs/promises");
+			await rmdir(workspace); // An unexpected parent entry causes failure, never recursive deletion.
+		}
+	}
+
+	/** Retained compatibility API: ticket closure is not deletion authority. */
 	async deleteWorktree(
 		issueIdentifier: string,
-		options: DeleteWorktreeOptions = {},
+		_options: DeleteWorktreeOptions = {},
 	): Promise<void> {
 		const workspacePath = join(
 			getDefaultWorktreesDir(this.factoryHome),
 			issueIdentifier,
 		);
-
-		if (!existsSync(workspacePath)) {
-			this.logger.info(
-				`Worktree directory does not exist for ${issueIdentifier}, nothing to delete`,
-			);
-			return;
-		}
-
 		this.logger.info(
-			`Deleting worktree directory for ${issueIdentifier} at ${workspacePath}`,
+			`Worktree cleanup deferred for ${issueIdentifier} at ${workspacePath}. Use Storage preview and verified retention cleanup.`,
 		);
-
-		// Find all git worktrees that are within this workspace path.
-		// In multi-repo layouts, there may be subdirectories that are each worktrees.
-		const worktreePaths = this.findWorktreesUnderPath(workspacePath);
-
-		// Run per-repo teardown scripts before any worktree is torn down.
-		// Each repo's script runs with cwd set to its own worktree subdirectory.
-		await this.runTeardownsForIssue({
-			issueIdentifier,
-			workspacePath,
-			repositories: options.repositories,
-		});
-
-		// Collect parent repository paths so we can prune stale entries after deletion
-		const parentRepoPaths = new Set<string>();
-
-		for (const wtPath of worktreePaths) {
-			try {
-				this.logger.info(`Removing git worktree: ${wtPath}`);
-				// Derive the main repository path from the worktree's .git file
-				// so we can run the command from a valid git context.
-				const mainRepoPath = this.getMainRepoFromWorktree(wtPath);
-				if (mainRepoPath) {
-					parentRepoPaths.add(mainRepoPath);
-				}
-				// Fall back to the worktree path itself (git reads its .git file to find the parent)
-				const cwd = mainRepoPath ?? wtPath;
-				execSync(`git worktree remove --force "${wtPath}"`, {
-					env: this.commandEnvironment,
-					cwd,
-					stdio: "pipe",
-					timeout: 30_000,
-				});
-			} catch (error) {
-				this.logger.warn(
-					`Failed to remove git worktree at ${wtPath}: ${(error as Error).message}`,
-				);
-				// Continue with directory deletion even if git worktree remove fails
-			}
-		}
-
-		// Remove the entire workspace directory
-		try {
-			rmSync(workspacePath, { recursive: true, force: true });
-			this.logger.info(`Deleted worktree directory for ${issueIdentifier}`);
-		} catch (error) {
-			this.logger.error(
-				`Failed to delete worktree directory for ${issueIdentifier}: ${(error as Error).message}`,
-			);
-		}
-
-		// Prune stale worktree entries from parent repositories.
-		// If git worktree remove failed above, the filesystem directory was still deleted
-		// by rmSync, leaving stale entries in git's internal tracking.
-		for (const repoPath of parentRepoPaths) {
-			try {
-				execSync("git worktree prune", {
-					env: this.commandEnvironment,
-					cwd: repoPath,
-					stdio: "pipe",
-					timeout: 10_000,
-				});
-			} catch {
-				// Best-effort: prune failure is not critical
-			}
-		}
-	}
-
-	/**
-	 * Run per-repo teardown scripts for each repository whose worktree is about
-	 * to be removed. Prefers the explicit `repositories` list passed by the
-	 * caller (source-of-truth from the session manager); falls back to inferring
-	 * the repo mapping from `worktreePaths` (filesystem-driven) — i.e. matches
-	 * each worktree subdirectory to a configured `RepositoryConfig` by
-	 * `repository.repositoryPath`.
-	 *
-	 * Each repo's teardown runs with `cwd` set to its own worktree subdirectory.
-	 * Failures are isolated: one repo failing does not skip subsequent repos
-	 * and does not block worktree deletion.
-	 */
-	private async runTeardownsForIssue(opts: {
-		issueIdentifier: string;
-		workspacePath: string;
-		repositories?: RepositoryConfig[];
-	}): Promise<void> {
-		const { issueIdentifier, workspacePath, repositories } = opts;
-
-		// Build the worktree cwd list. Prefer the explicit list from the caller.
-		const targets: string[] = [];
-
-		if (repositories && repositories.length > 0) {
-			if (repositories.length === 1) {
-				// Single-repo layout: workspace root IS the worktree.
-				targets.push(workspacePath);
-			} else {
-				// Multi-repo layout: each repo's worktree is a named subdir.
-				for (const repo of repositories) {
-					targets.push(join(workspacePath, repo.name));
-				}
-			}
-		}
-
-		if (targets.length === 0) {
-			// No repos provided — nothing to do. The filesystem-driven fallback
-			// would require the caller to provide a repository registry, which
-			// the EdgeWorker is the source of truth for. Without it we skip
-			// teardown rather than guessing.
-			return;
-		}
-
-		for (const workspacePath of targets) {
-			try {
-				await this.runRepoTeardownScript(workspacePath, issueIdentifier);
-			} catch (error) {
-				// runRepoTeardownScript already swallows execSync failures and
-				// logs them; this catch is defensive against unexpected throws
-				// (e.g. unreadable directory) so one bad repo cannot abort the loop.
-				this.logger.error(
-					`Unexpected error running teardown for ${workspacePath}: ${(error as Error).message}`,
-				);
-			}
-		}
-	}
-
-	/**
-	 * Find all git worktree paths that are located under a given directory.
-	 * Checks the directory itself and its immediate subdirectories (for multi-repo layouts).
-	 */
-	private findWorktreesUnderPath(dirPath: string): string[] {
-		const worktrees: string[] = [];
-
-		// Check if the directory itself is a git worktree
-		if (this.isGitWorktree(dirPath)) {
-			worktrees.push(dirPath);
-			return worktrees;
-		}
-
-		// Check immediate subdirectories (multi-repo layout: each repo is a subdirectory)
-		try {
-			const entries = readdirSync(dirPath, { withFileTypes: true });
-			for (const entry of entries) {
-				if (entry.isDirectory()) {
-					const subPath = join(dirPath, entry.name);
-					if (this.isGitWorktree(subPath)) {
-						worktrees.push(subPath);
-					}
-				}
-			}
-		} catch {
-			// Directory listing failed, skip
-		}
-
-		return worktrees;
 	}
 
 	/**
@@ -1307,32 +1268,6 @@ export class GitService {
 			return stats.isFile();
 		} catch {
 			return false;
-		}
-	}
-
-	/**
-	 * Extract the main repository path from a worktree's .git file.
-	 * Worktree .git files contain "gitdir: /path/to/main-repo/.git/worktrees/<name>".
-	 * Returns the main repository directory, or null if it cannot be determined.
-	 */
-	private getMainRepoFromWorktree(worktreePath: string): string | null {
-		try {
-			const gitFilePath = join(worktreePath, ".git");
-			if (!existsSync(gitFilePath)) return null;
-			const stats = statSync(gitFilePath);
-			if (!stats.isFile()) return null;
-
-			const content = readFileSync(gitFilePath, "utf-8").trim();
-			const match = content.match(/^gitdir:\s+(.+)$/);
-			if (!match?.[1]) return null;
-
-			// gitdir points to main-repo/.git/worktrees/<name>
-			// Resolve to absolute path (may be relative), then go up 3 levels
-			const gitDir = pathResolve(worktreePath, match[1]);
-			const mainRepoDir = pathResolve(gitDir, "..", "..", "..");
-			return existsSync(mainRepoDir) ? mainRepoDir : null;
-		} catch {
-			return null;
 		}
 	}
 
@@ -1361,33 +1296,12 @@ export class GitService {
 	}
 
 	/**
-	 * Find and run a repository-specific teardown script (bobs-factory-teardown.sh/.ps1/.cmd/.bat).
-	 *
-	 * Mirrors {@link runRepoSetupScript} but is invoked from {@link deleteWorktree}
-	 * immediately before the worktree subdirectory is removed. Only
-	 * `LINEAR_ISSUE_IDENTIFIER` is guaranteed in the teardown environment because
-	 * the terminal-state message bus path does not carry the full Issue object.
-	 */
-	private async runRepoTeardownScript(
-		workspacePath: string,
-		issueIdentifier: string,
-	): Promise<void> {
-		await this.runRepoHookScript({
-			hook: "teardown",
-			workspacePath,
-			env: {
-				LINEAR_ISSUE_IDENTIFIER: issueIdentifier,
-			},
-			timeoutMs: TEARDOWN_TIMEOUT_MS,
-		});
-	}
-
-	/**
 	 * Shared discovery+dispatch for repo-scoped hook scripts (setup and teardown).
 	 * Looks in `workspacePath` for `bobs-factory-<hook>.{sh,ps1,cmd,bat}` and runs the
 	 * first compatible variant with `cwd` set to `workspacePath`.
 	 */
 	private async runRepoHookScript(opts: {
+		signal?: AbortSignal;
 		hook: HookKind;
 		workspacePath: string;
 		env: Record<string, string>;
@@ -1395,6 +1309,7 @@ export class GitService {
 		repositoryName?: string;
 		issueIdentifier?: string;
 		onRepoSetupHookEvent?: RepoSetupHookEventHandler;
+		failOnError?: boolean;
 	}): Promise<void> {
 		const isWindows = process.platform === "win32";
 		const candidates = [
@@ -1435,6 +1350,8 @@ export class GitService {
 			repositoryName: opts.repositoryName,
 			issueIdentifier: opts.issueIdentifier,
 			onRepoSetupHookEvent: opts.onRepoSetupHookEvent,
+			failOnError: opts.failOnError,
+			signal: opts.signal,
 		});
 	}
 
@@ -1520,6 +1437,8 @@ export class GitService {
 					this.logger.warn(
 						`⚠️  ${labelTitle} script is not executable: ${scriptPath}`,
 					);
+					if (opts.failOnError)
+						throw new Error("Teardown hook is not executable");
 					this.logger.warn(`   Run: chmod +x "${expandedPath}"`);
 					if (shouldPostRepoSetupActivity) {
 						await this.emitRepoSetupHookEvent(onRepoSetupHookEvent, {
@@ -1563,6 +1482,7 @@ export class GitService {
 			if (
 				!this.executionCapacity() &&
 				!shouldPostRepoSetupActivity &&
+				!opts.failOnError &&
 				!this.childEnvironment
 			) {
 				this.runHookScriptInherited({
@@ -1607,7 +1527,8 @@ export class GitService {
 					shell,
 				});
 				let timedOut = false;
-				const signal = setupExecutionScope.getStore()?.signal;
+				const executionSignal =
+					opts.signal ?? setupExecutionScope.getStore()?.signal;
 				let killTimer: ReturnType<typeof setTimeout> | undefined;
 				const kill = (how: NodeJS.Signals) => {
 					try {
@@ -1621,8 +1542,8 @@ export class GitService {
 					killTimer ??= setTimeout(() => kill("SIGKILL"), 2000);
 					killTimer.unref();
 				};
-				signal?.addEventListener("abort", terminate, { once: true });
-				if (signal?.aborted) terminate();
+				executionSignal?.addEventListener("abort", terminate, { once: true });
+				if (executionSignal?.aborted) terminate();
 				const timeout = setTimeout(() => {
 					timedOut = true;
 					terminate();
@@ -1642,21 +1563,22 @@ export class GitService {
 					reject(error);
 				});
 				child.on("close", (code, signal) => {
-					setupExecutionScope
-						.getStore()
-						?.signal.removeEventListener("abort", terminate);
+					executionSignal?.removeEventListener("abort", terminate);
 					if (killTimer) clearTimeout(killTimer);
 					clearTimeout(timeout);
-					if (code === 0) {
+					if (code === 0 && !executionSignal?.aborted) {
 						resolve();
 						return;
 					}
 					const error = new Error(
-						timedOut
-							? "Script execution timed out"
-							: `Script exited with code ${code ?? "unknown"}${signal ? ` (${signal})` : ""}`,
+						executionSignal?.aborted
+							? "Script execution cancelled"
+							: timedOut
+								? "Script execution timed out"
+								: `Script exited with code ${code ?? "unknown"}${signal ? ` (${signal})` : ""}`,
 					) as Error &
 						NodeExecError & { stdoutTail?: string; stderrTail?: string };
+					error.timedOut = timedOut;
 					error.code = code === null ? undefined : code;
 					error.signal = timedOut ? "SIGTERM" : (signal ?? undefined);
 					const stdoutTail = stdoutCollector.tail({
@@ -1688,7 +1610,9 @@ export class GitService {
 			}
 		} catch (error) {
 			const timeoutMinutes = Math.round(timeoutMs / 60_000);
-			const isTimeout = isNodeExecError(error) && error.signal === "SIGTERM";
+			const isTimeout =
+				isNodeExecError(error) &&
+				(error.timedOut ?? error.signal === "SIGTERM");
 			const errorMessage = isTimeout
 				? `Script execution timed out (exceeded ${timeoutMinutes} minute${timeoutMinutes === 1 ? "" : "s"})`
 				: error instanceof Error
@@ -1696,6 +1620,8 @@ export class GitService {
 					: String(error);
 
 			this.logger.error(`❌ ${labelTitle} script failed: ${errorMessage}`);
+			if (opts.failOnError)
+				throw new Error(redactHookOutput(errorMessage, { cwd, env }));
 			this.logger.info(`   Continuing despite ${hook} script failure...`);
 			if (shouldPostRepoSetupActivity) {
 				const nodeError = error as NodeExecError & {

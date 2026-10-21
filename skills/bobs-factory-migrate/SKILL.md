@@ -122,7 +122,12 @@ and preserves owned native-copy changes in `native-recovery`. It restores Git
 backlinks and external files explicitly selected in `restorePaths`. Reconcile
 other assistant-managed service/store changes before enabling the original
 consumer. Verify one active pool and one consumer. Retain backups until the user
-explicitly elects to remove them.
+explicitly elects to remove them. For a later cleanup election, inspect
+Settings → Storage → Historical directories and follow the exact identity-bound
+classification procedure in [the storage runbook](../../docs/factory/storage-retention.md#historical-directories).
+Retain source/native/external backups while ownership or reconciliation is unproven;
+classification never overrides those checks or enrolls arbitrary external paths.
+Migration preparation observations do not authorize removing the containing backup.
 
 There is no old command alias, implicit old-home fallback or deprecation phase.
 Automatic updates, Windows, zrok2 (#39) and independent identity overlays (#57)

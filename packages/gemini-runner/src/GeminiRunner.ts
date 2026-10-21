@@ -261,13 +261,15 @@ export class GeminiRunner extends EventEmitter implements IAgentRunner {
 				// Use project-scoped .gemini/settings.json when a working directory is set.
 				this.artifactAbort = new AbortController();
 				const lease =
-					this.config.runnerArtifactLeaseDirectory &&
+					(this.config.runnerArtifactLeaseDirectory ||
+						this.config.factoryHome) &&
 					this.config.workingDirectory
 						? await ProjectArtifactLease.acquire(
 								this.config.workingDirectory,
 								"gemini",
 								this.config.runnerArtifactLeaseDirectory,
 								this.artifactAbort.signal,
+								this.config.factoryHome,
 							)
 						: undefined;
 				this.settingsCleanup = setupGeminiSettings(

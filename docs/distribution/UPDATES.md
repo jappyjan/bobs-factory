@@ -139,3 +139,18 @@ release publication. The lifecycle lane supplies and separately validates the
 owned service/desktop adapter. Final integrated macOS/Linux target receipts,
 complete byte-bound integrity/functional evidence and exact-candidate publication
 remain necessary before rollout. No publisher signing keys are required.
+
+## Storage retention
+
+Settings → Storage and `bobs-factory storage` preview and clean verified owned
+artifacts. New runtime staging is registered under `updates/staging`; completed
+preflight copies live in `updates/preparation`. Snapshots keep the newest two
+verified usable rollbacks at any age, with a mandatory minimum of one. Unprotected
+overflow is eligible immediately; other disposable preparation/staging ages at
+seven days. Pending/recovery state and executable/rollback dependencies always win.
+
+Runtime and desktop updater exclusion precedes cleanup ownership. Cleanup yields
+during maintenance and never replaces or starts a worker. Unknown historical
+directories require an exact classification backed by a retained producer
+transaction and explicit election. See the [storage runbook](../factory/storage-retention.md)
+for policy, interruption recovery and measurement limits.

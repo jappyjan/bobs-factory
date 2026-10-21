@@ -780,20 +780,25 @@ export class CursorRunner extends EventEmitter implements IAgentRunner {
 	// ---------- Permission artifacts ----------
 
 	private async installPermissionsArtifacts(workspace: string): Promise<void> {
-		this.artifactLease = this.config.runnerArtifactLeaseDirectory
-			? await ProjectArtifactLease.acquire(
-					workspace,
-					"cursor",
-					this.config.runnerArtifactLeaseDirectory,
-					this.artifactAbort?.signal,
-				)
-			: new ProjectArtifactLease(
-					workspace,
-					"cursor",
-					this.config.factoryHome
-						? join(this.config.factoryHome, "runner-artifact-leases")
-						: undefined,
-				);
+		this.artifactLease =
+			this.config.runnerArtifactLeaseDirectory || this.config.factoryHome
+				? await ProjectArtifactLease.acquire(
+						workspace,
+						"cursor",
+						this.config.runnerArtifactLeaseDirectory ??
+							(this.config.factoryHome
+								? join(this.config.factoryHome, "runner-artifact-leases")
+								: undefined),
+						this.artifactAbort?.signal,
+						this.config.factoryHome,
+					)
+				: new ProjectArtifactLease(
+						workspace,
+						"cursor",
+						this.config.factoryHome
+							? join(this.config.factoryHome, "runner-artifact-leases")
+							: undefined,
+					);
 		// 1. Permissions config (auto-deny is merged in by the helper). Pass
 		// the SDK-shaped MCP server map so the helper can derive a logical
 		// server name (e.g. "linear") from the command/url that the

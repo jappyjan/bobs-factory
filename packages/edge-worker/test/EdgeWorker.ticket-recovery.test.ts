@@ -18,9 +18,10 @@ import {
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import type { MachineCapacity } from "../src/MachineCapacity.js";
-import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
+import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 interface WorkerInternals {
+	stop(): Promise<void>;
 	getFactoryRuntime(): WorkflowRuntime;
 	getTicketTracking(): TicketTracking;
 	factoryTicketAdapter(run: FactoryRun): Promise<TicketAdapter>;
@@ -129,8 +130,7 @@ it.each(
 			receipts: [{ key: "saved-progress", body: "Retained publication" }],
 		};
 		await first.runtime.save(run);
-		await first.runtime.shutdown();
-		await first.worker.runnerSlots.shutdown();
+		await first.worker.stop();
 
 		const restarted = boot();
 		vi.spyOn(restarted.worker, "factoryTicketAdapter").mockResolvedValue(
@@ -138,7 +138,7 @@ it.each(
 		);
 		const tracking = restarted.worker.getTicketTracking();
 		restarted.runtime.resumeAll();
-		await waitFor(() => {
+		await waitForRuntime(() => {
 			expect(adapter.publish).toHaveBeenCalled();
 			expect(restarted.runtime.get(run.id).status).toBe("completed");
 		});
@@ -157,11 +157,10 @@ it.each(
 		expect(deliveryId).toBeDefined();
 		expect(receipt.delivered).not.toBe(true);
 		// An unavailable tracker must not hold shutdown after work has settled.
-		await restarted.runtime.shutdown();
-		await restarted.worker.runnerSlots.shutdown();
+		await restarted.worker.stop();
 		tracking.stop();
 		failDelivery(new Error("Tracker unavailable"));
-		await waitFor(() => expect(tracking.isBusy()).toBe(false));
+		await waitForRuntime(() => expect(tracking.isBusy()).toBe(false));
 		await restarted.runtime.flush();
 		expect(receipt.error).toBe("Tracker unavailable");
 		expect(recovered.status).toBe("completed");
@@ -190,9 +189,8 @@ it.each(
 		failDelivery(new Error("Fixture cleanup"));
 		for (const worker of workers) {
 			worker.getTicketTracking().stop();
-			await worker.runnerSlots.shutdown();
-			await worker.getFactoryRuntime().shutdown();
-			await waitFor(() =>
+			await worker.stop();
+			await waitForRuntime(() =>
 				expect(worker.getTicketTracking().isBusy()).toBe(false),
 			);
 			await worker.getFactoryRuntime().flush();
@@ -333,7 +331,7 @@ it.each(
 	try {
 		await runtime.save(run);
 		const executing = runtime.launch(run);
-		await waitFor(() => {
+		await waitForRuntime(() => {
 			expect(publish).toHaveBeenCalled();
 			expect(run.status).toBe("completed");
 		});
@@ -363,11 +361,10 @@ it.each(
 	} finally {
 		rejectPublication(new Error("Controlled publication outage"));
 		worker.getTicketTracking().stop();
-		await waitFor(() =>
+		await waitForRuntime(() =>
 			expect(worker.getTicketTracking().isBusy()).toBe(false),
 		);
-		await runtime.shutdown();
-		await worker.runnerSlots.shutdown();
+		await worker.stop();
 		vi.restoreAllMocks();
 		rmSync(home, { recursive: true, force: true });
 	}

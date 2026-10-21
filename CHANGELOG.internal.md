@@ -8,6 +8,14 @@ This changelog documents internal development changes, refactors, tooling update
 
 - Replace runtime step-ID dispatch with explicit agent configuration and named tool bindings; preserve stock role prompts and historical frozen-run loading. Add raw legacy resume, fully renamed Factory, revision/evidence and builder coverage. Own Ajv directly, refresh MCP SDK and test dependencies to their patched releases, and remove redundant security overrides. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136), [#173](https://github.com/jappyjan/bobs-factory/pull/173))
 
+- Retry transient macOS symlink-read races during capacity lock acquisition within the existing deadline. Replacement owners still block admission, and foreign regular files remain untouched. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
+
+- Integrate current workflow question recovery and shared command deadlines with storage retention, preserving full worker shutdown and routing-prompt coverage. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
+
+- Allow five seconds for the scripted Codex cancellation probe to start during workspace tests; cancellation and process-exit assertions remain unchanged. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
+
+- Strengthen storage-retention preservation and operating-limit checks, settle durable runtime transitions with bounded waits, and stop owned workers before fixture cleanup. Give independently selected workspace checks the standard twenty-minute command limit. ([Taskbot #134](https://taskbot.apps.janjaap.de/p/bobs-factory/t/134), [#164](https://github.com/jappyjan/bobs-factory/pull/164))
+
 - Add maintained native desktop acceptance proofs for isolated remote auth/ownership, client mismatch, guided onboarding and active-job/waiting-state continuity through UI quit/relaunch and worker restart ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#88](https://github.com/jappyjan/bobs-factory/pull/88)).
 
 - Repair the website demo and screenshot capture: script requirement extraction and specialist reviewers, give the demo repository an `origin/main` base, trust the demo's own port and skip passkeys for the local scripted demo. Recapture the review screenshots for the review brief ([#82](https://github.com/jappyjan/bobs-factory/pull/82)).

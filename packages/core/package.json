@@ -35,5 +35,15 @@
 		"vitest": "^4.1.12"
 	},
 	"private": true,
-	"license": "Apache-2.0"
+	"license": "Apache-2.0",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./owned-resource-claim": {
+			"types": "./dist/OwnedResourceClaim.d.ts",
+			"default": "./dist/OwnedResourceClaim.js"
+		}
+	}
 }

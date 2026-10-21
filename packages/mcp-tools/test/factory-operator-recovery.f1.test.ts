@@ -65,13 +65,15 @@ it("F1: repairs missing Taskbot transport entirely through compiled stdio MCP, p
 	execFileSync("git", ["-C", repo, "remote", "add", "origin", remote]);
 	execFileSync("git", ["-C", repo, "push", "-u", "origin", "main"]);
 	const configPath = join(home, "config.json");
-	// EdgeWorker's historical zero-port option selects its default port. Allocate
-	// an explicit fixture port so this drive can coexist with another local run.
+	// Allocate an explicit free fixture port; zero selects EdgeWorker's default.
 	const listener = createServer();
 	await new Promise<void>((resolve) =>
 		listener.listen(0, "127.0.0.1", resolve),
 	);
-	const port = (listener.address() as { port: number }).port;
+	const address = listener.address();
+	if (!address || typeof address === "string")
+		throw new Error("Fixture port unavailable");
+	const fixturePort = address.port;
 	await new Promise<void>((resolve, reject) =>
 		listener.close((error) => (error ? reject(error) : resolve())),
 	);
@@ -80,7 +82,7 @@ it("F1: repairs missing Taskbot transport entirely through compiled stdio MCP, p
 		factoryHome: home,
 		defaultRunner: "opencode" as const,
 		serverHost: "127.0.0.1",
-		serverPort: port,
+		serverPort: fixturePort,
 		repositories: [
 			{
 				id: "repo",

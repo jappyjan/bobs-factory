@@ -18,6 +18,7 @@ import {
 	immutableJson,
 	immutableTranscript,
 	JsonSnapshotStore,
+	reserveOwnedStorageWorkspace,
 } from "bobs-factory-core";
 import type {
 	CapacityOptions,
@@ -1219,6 +1220,13 @@ export class WorkflowRuntime {
 		task?: (signal: AbortSignal) => Promise<void>,
 	): Promise<void> {
 		try {
+			if (run.workspace)
+				await reserveOwnedStorageWorkspace(
+					dirname(this.directory),
+					run.workspace,
+					run.id,
+					"Workflow launch or continuation",
+				);
 			await this.flush(run.id);
 			controller.signal.throwIfAborted();
 			this.assertSchedulingOpen();
@@ -1248,6 +1256,13 @@ export class WorkflowRuntime {
 				) as FactoryRun["mergeReadiness"];
 			this.launchAssets.verify(run.id, run.launchAttachments);
 			await this.hooks.prepare?.(run, controller.signal);
+			if (run.workspace)
+				await reserveOwnedStorageWorkspace(
+					dirname(this.directory),
+					run.workspace,
+					run.id,
+					"Prepared workflow execution",
+				);
 			controller.signal.throwIfAborted();
 			this.requireRunAvailable(run);
 			if (run.ticketReference && this.hooks.track)

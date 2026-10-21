@@ -86,10 +86,9 @@ function fixture(runner: RunnerType, acceptedRunner?: RunnerType) {
 		): Promise<{ read(): Promise<unknown> }>;
 	};
 	const runtime = edge.getFactoryRuntime();
-	cleanups.push(async () => {
-		await edge.runnerSlots.shutdown();
-		await runtime.shutdown();
-	});
+	// The worker owns retention callbacks as well as runtime/capacity state.
+	// Settle all of them before afterEach removes the temporary home.
+	cleanups.push(() => worker.stop());
 	const run = runtime.create({
 		triggerOrigin: {
 			type: "manual",
