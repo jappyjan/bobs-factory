@@ -599,3 +599,46 @@ gates. Local simulated approvals are test evidence, not approval of this PR.
 The complete owning-package MCP suites also passed: 52 config-updater tests and
 80 mcp-tools tests. A final frozen install, zero-advisory audit and whitespace
 check passed after the lockfile cleanup.
+
+
+## Current-target integration on 2026-10-21
+
+Fetched and integrated target `a4990127173a9135b331bbe7956559321a0087e2`
+into starting head `7e9ffbc884be8446565befd1877f58f48deda3ab`. Resolved
+five conflicts while preserving both changelog histories, the Simple-only
+launcher description, and all incoming capability additions. The two affected
+drives retain their complete assertions and use the shared dual-family port
+reservation helper with the target's explicit RPC and Factory origins.
+
+The canonical F1 applicability policy applies to these functional drive changes.
+Local corrective checks passed: frozen install, zero-advisory audit, build,
+typecheck, 345 launcher/integration tests, 61 architecture/reader/workflow tests,
+two port-allocation tests, repository lint (zero errors, 34 warnings), syntax
+and task-to-target whitespace checks. Both affected complete simulated-agent drives and the
+incoming workflow-stall recovery drive passed. Logs are retained as
+`ci-fix-r21-*.log` in this run's evidence directory.
+
+A fresh supervised concurrency check also passed. Two complete architecture
+drives overlapped at startup and restart, used four distinct ports, and released
+all four ports on both address families. Owned sentinels occupied former ports
+3542, 3543, 3600 and 3601 on IPv4 and IPv6 and remained reachable. The isolated
+capacity pool ended with zero active and queued executions; sentinels were then
+closed. No unrelated listener was stopped. The new evidence copy is derived
+from the integrated tracked drive, with only absolute imports and startup/restart
+barriers added; no original assertion was removed. The prior copies and receipts
+remain unchanged.
+
+For independent reassessment, replace the earlier overlap command with:
+
+```sh
+F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/ci-fix-r21-scheduled-overlap.mjs
+```
+
+The driver, barrier copy, child logs and receipt use the `ci-fix-r21-` prefix.
+The receipt binds the starting head, integrated base and working-diff fingerprint;
+it is local precommit correction evidence, not an independent gate receipt.
+The prospective 65-command selection still requires reassessment of the exact
+merged revision and fresh runtime-owned checks. All eleven prior aggregate
+findings remain for independent reassessment. Fresh launcher QA, guide, human
+acceptance and provider readiness remain at their configured gates. No real
+agent provider was called and no delivery approval is claimed.

@@ -10,6 +10,11 @@ export function providerReceipt(extra: Record<string, unknown> = {}) {
 					url: "https://github.com/test/repo/pull/1",
 					headRefOid: "head",
 					baseRefOid: "base",
+					baseRefName: "main",
+					baseRef: {
+						name: extra.baseRefName ?? "main",
+						target: { oid: extra.baseRefOid ?? "base" },
+					},
 					state: "OPEN",
 					isDraft: true,
 					isCrossRepository: false,

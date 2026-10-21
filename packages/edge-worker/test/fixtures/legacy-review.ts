@@ -26,7 +26,7 @@ export function localReviewWorkflows(
 		"factory-pipeline": "fixture-pipeline",
 	};
 	const locals = structuredClone(definitions)
-		.filter((w) => w.id !== "simple")
+		.filter((w) => Object.hasOwn(mapping, w.id))
 		.map((w) => {
 			const original = w.id;
 			w.id = mapping[w.id] ?? w.id;

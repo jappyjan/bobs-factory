@@ -42,6 +42,14 @@ evidence reuse. An unrelated or superseded assessment does not prevent obsolete
 provider-only work from being skipped. Existing iteration and convergence limits
 remain in force.
 
+An explicit **Check again** request can re-enter an unanswered assessment after an
+environment or runtime repair. The request binds the exact saved assessment and
+question batch. A completed reassessment may then take its declared correction
+route once while retaining the repeated-state counter. Another unchanged cycle
+pauses again. The assessor's own missing-input questions take precedence over
+the repeated-state message, and neither rechecking nor answering waives review,
+checks or human acceptance.
+
 ## Evidence and source boundaries
 
 Reviewers declare covered requirements, areas, dependencies and the reason their

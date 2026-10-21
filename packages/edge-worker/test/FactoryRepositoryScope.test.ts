@@ -6,6 +6,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { confirmedGroupedMerge } from "../src/factory/GroupedTools.js";
 import { dependencyHashes, roleProgress } from "../src/factory/Incremental.js";
+import * as readiness from "../src/factory/MergeReadiness.js";
 import {
 	deliveryRevisions,
 	repositoryRun,
@@ -461,22 +462,32 @@ it.each([
 });
 
 it("binds human approval to every delivery and resumes a partial merge without repeating the first merge", async () => {
-	const { forge, execute, approve, run } = fixture();
-	await execute("draft-pr");
-	await execute("ci");
-	await execute("handoff");
-	const human = await execute("human-review");
-	expect(deliveryRevisions(human)).toEqual(
-		deliveryRevisions(run.outputs["draft-pr"]),
-	);
-	approve();
-	forge.failMerge("api");
-	await expect(execute("merge")).rejects.toThrow("api");
-	expect(forge.merges).toEqual(["app"]);
-	expect(run.repositoryOutputs?.app?.merge).toMatchObject({ merged: true });
-	forge.failMerge();
-	await expect(execute("merge")).resolves.toMatchObject({ merged: true });
-	expect(forge.merges).toEqual(["app", "api"]);
+	// The scripted provider confirms each merge immediately. Exercise the fresh
+	// confirmation reads without spending two production 10-second poll delays.
+	const polling = vi
+		.spyOn(readiness, "waitForNextPoll")
+		.mockImplementation(async (context) => context.signal.throwIfAborted());
+	try {
+		const { forge, execute, approve, run } = fixture();
+		await execute("draft-pr");
+		await execute("ci");
+		await execute("handoff");
+		const human = await execute("human-review");
+		expect(deliveryRevisions(human)).toEqual(
+			deliveryRevisions(run.outputs["draft-pr"]),
+		);
+		approve();
+		forge.failMerge("api");
+		await expect(execute("merge")).rejects.toThrow("api");
+		expect(forge.merges).toEqual(["app"]);
+		expect(run.repositoryOutputs?.app?.merge).toMatchObject({ merged: true });
+		forge.failMerge();
+		await expect(execute("merge")).resolves.toMatchObject({ merged: true });
+		expect(forge.merges).toEqual(["app", "api"]);
+		expect(polling).toHaveBeenCalledTimes(2);
+	} finally {
+		polling.mockRestore();
+	}
 });
 
 it("retains all repository revisions and builds immutable review files without colliding identical filenames", async () => {

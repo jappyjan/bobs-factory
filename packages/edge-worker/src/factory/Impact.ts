@@ -745,12 +745,21 @@ export interface ConvergenceState {
 	repeats: number;
 	recent?: string[];
 }
+export interface ImpactConvergenceRecheck {
+	key: string;
+	snapshotDigest: string;
+	at: string;
+}
 export function recordConvergence(
 	run: FactoryRun,
 	key: string,
 	decision: ImpactDecision,
 	limit: number,
+	recheck?: ImpactConvergenceRecheck,
 ) {
+	// The assessor's own missing-input questions and failures remain authoritative.
+	// A convergence question must never replace a concrete assistance request.
+	if (decision.status !== "completed" || decision.questions.length) return [];
 	if (decision.readinessOnly && !decision.correctionRequired) return []; // Informational assessments and waits are not correction cycles.
 	run.impactConvergence ??= {};
 	const fingerprint = qaDigest({
@@ -784,6 +793,25 @@ export function recordConvergence(
 			.sort(),
 	});
 	const prior = run.impactConvergence[key];
+	const blocked = recheck
+		? [...(run.impactDecisions ?? [])]
+				.reverse()
+				.find((item) => item.snapshot.key === key)
+		: undefined;
+	if (
+		recheck?.key === key &&
+		decision.snapshot.key === key &&
+		decision.correctionRequired &&
+		blocked?.status === "blocked" &&
+		blocked.correctionRequired &&
+		blocked.snapshot.digest === recheck.snapshotDigest &&
+		blocked.at === recheck.at &&
+		prior?.fingerprint === fingerprint &&
+		prior.repeats >= limit
+	)
+		// Explicitly rechecking this exact saved wait permits one corrective turn.
+		// Keep the counter: another unchanged assessment must still ask for help.
+		return [];
 	const recent = [
 		...(prior?.recent ?? (prior ? [prior.fingerprint] : [])),
 		fingerprint,

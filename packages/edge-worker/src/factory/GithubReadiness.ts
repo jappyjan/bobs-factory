@@ -6,6 +6,23 @@ import type {
 	ProviderCommand,
 } from "./MergeReadiness.js";
 
+function targetRevision(pr: any): string {
+	const target = pr.baseRef?.target?.oid;
+	if (
+		typeof target === "string" &&
+		target &&
+		pr.baseRef.name === pr.baseRefName
+	)
+		return target;
+	// Closed PRs can outlive their branch. Their retained base is historical
+	// evidence only; an open delivery always needs the actual target ref.
+	if (pr.state !== "OPEN" && typeof pr.baseRefOid === "string" && pr.baseRefOid)
+		return pr.baseRefOid;
+	throw new Error(
+		"GitHub target branch is unavailable; inspect the live target before continuing",
+	);
+}
+
 export async function inspectGithubReadiness(
 	command: ProviderCommand,
 	url: string,
@@ -18,7 +35,7 @@ export async function inspectGithubReadiness(
 	const [owner, name] = reference.project.split("/");
 	const number = reference.number;
 	const api = new GithubApi(command, reference.url);
-	const query = `query($owner:String!,$name:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$name){squashMergeAllowed mergeCommitAllowed rebaseMergeAllowed pullRequest(number:$number){url title headRefOid baseRefOid state isDraft mergeable mergeStateStatus reviewDecision isMergeQueueEnabled isInMergeQueue mergeQueueEntry{id} autoMergeRequest{enabledAt} statusCheckRollup{contexts(first:100){pageInfo{hasNextPage endCursor} nodes{__typename ... on CheckRun{databaseId name status conclusion detailsUrl} ... on StatusContext{context state targetUrl}}}} reviewThreads(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{id isResolved isOutdated comments(first:100){nodes{id body url author{login}} pageInfo{hasNextPage endCursor}}}}}}}`;
+	const query = `query($owner:String!,$name:String!,$number:Int!,$cursor:String){repository(owner:$owner,name:$name){squashMergeAllowed mergeCommitAllowed rebaseMergeAllowed pullRequest(number:$number){url title headRefOid baseRefOid baseRefName baseRef{name target{oid}} state isDraft mergeable mergeStateStatus reviewDecision isMergeQueueEnabled isInMergeQueue mergeQueueEntry{id} autoMergeRequest{enabledAt} statusCheckRollup{contexts(first:100){pageInfo{hasNextPage endCursor} nodes{__typename ... on CheckRun{databaseId name status conclusion detailsUrl} ... on StatusContext{context state targetUrl}}}} reviewThreads(first:100,after:$cursor){pageInfo{hasNextPage endCursor} nodes{id isResolved isOutdated comments(first:100){nodes{id body url author{login}} pageInfo{hasNextPage endCursor}}}}}}}`;
 	const variables = { owner, name, number };
 
 	let cursor: string | undefined;
@@ -47,12 +64,15 @@ export async function inspectGithubReadiness(
 		if (!next) throw new Error("Pull request unavailable");
 		if (
 			pr &&
-			(pr.headRefOid !== next.headRefOid || pr.baseRefOid !== next.baseRefOid)
+			(pr.headRefOid !== next.headRefOid ||
+				pr.baseRefName !== next.baseRefName ||
+				targetRevision(pr) !== targetRevision(next))
 		)
 			throw new Error(
 				"PR changed during provider inspection; inspect the new revision again",
 			);
 		pr ??= next;
+		targetRevision(pr);
 		threads.push(...next.reviewThreads.nodes);
 		cursor = next.reviewThreads.pageInfo.hasNextPage
 			? next.reviewThreads.pageInfo.endCursor
@@ -92,14 +112,15 @@ export async function inspectGithubReadiness(
 			throw new Error("GitHub check pagination is incomplete");
 		seenChecks.add(after);
 		const payload = await api.graphql(
-			`query($owner:String!,$name:String!,$number:Int!,$cursor:String!){repository(owner:$owner,name:$name){pullRequest(number:$number){headRefOid baseRefOid statusCheckRollup{contexts(first:100,after:$cursor){nodes{__typename ... on CheckRun{databaseId name status conclusion detailsUrl} ... on StatusContext{context state targetUrl}} pageInfo{hasNextPage endCursor}}}}}}`,
+			`query($owner:String!,$name:String!,$number:Int!,$cursor:String!){repository(owner:$owner,name:$name){pullRequest(number:$number){headRefOid baseRefOid baseRefName baseRef{name target{oid}} state statusCheckRollup{contexts(first:100,after:$cursor){nodes{__typename ... on CheckRun{databaseId name status conclusion detailsUrl} ... on StatusContext{context state targetUrl}} pageInfo{hasNextPage endCursor}}}}}}`,
 			{ ...variables, cursor: after },
 		);
 		const next = payload.data?.repository?.pullRequest;
 		if (
 			!next ||
 			next.headRefOid !== pr.headRefOid ||
-			next.baseRefOid !== pr.baseRefOid
+			next.baseRefName !== pr.baseRefName ||
+			targetRevision(next) !== targetRevision(pr)
 		)
 			throw new Error(
 				"PR changed during provider inspection; inspect the new revision again",
@@ -324,7 +345,8 @@ export async function inspectGithubReadiness(
 		...(typeof pr.title === "string" ? { metadata: { title: pr.title } } : {}),
 		url: pr.url,
 		headSha: pr.headRefOid,
-		baseSha: pr.baseRefOid,
+		baseSha: targetRevision(pr),
+		baseRefName: pr.baseRefName,
 		state: pr.state,
 		isDraft: pr.isDraft,
 		approved:

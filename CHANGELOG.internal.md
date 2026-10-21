@@ -20,6 +20,10 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Fixed
 
+- Keep recovery checks reliable under load with the maintained runtime-transition wait helper and simulated polling delays for an immediately confirmed grouped-merge fixture; preserve provider rereads and approval assertions. ([#171](https://github.com/jappyjan/bobs-factory/pull/171))
+
+- Repair nightly architecture fixtures for the current check-in contract, dispatch mocked roles by saved step IDs, and allocate independent loopback ports for architecture and impact recovery drives. Preserve exact-version approval, revision and restart assertions ([#170](https://github.com/jappyjan/bobs-factory/pull/170)).
+
 - Make nightly localhost/API-key and native desktop maintenance-race fixtures finish and clean up promptly; bound their CI steps separately. Retain the original source baseline while recording the exact reviewed removal-only WebAuthn dependency inputs ([#135](https://github.com/jappyjan/bobs-factory/pull/135)).
 
 - Remove the desktop test commands' redundant core rebuild to prevent concurrent recursive tests from importing partially rewritten compiled logging exports. Keep the complete compiled-stdio MCP recovery test and build prerequisites intact ([Taskbot #116](https://taskbot.apps.janjaap.de/p/bobs-factory/t/116), [#91](https://github.com/jappyjan/bobs-factory/pull/91)).

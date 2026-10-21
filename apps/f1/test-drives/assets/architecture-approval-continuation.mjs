@@ -46,6 +46,8 @@ const portLease = await reserveLoopbackPorts(2);
 const [factoryPort, rpcPort] = portLease.ports;
 process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
 console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
+const rpcOrigin = `http://127.0.0.1:${rpcPort}`;
+const factoryOrigin = `http://localhost:${factoryPort}`;
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
@@ -250,12 +252,11 @@ async function until(check) {
 	}
 	throw new Error("Architecture fixture timed out");
 }
-const ui = `http://localhost:${factoryPort}`;
 async function api(path, body) {
-	const response = await fetch(ui + path, {
+	const response = await fetch(factoryOrigin + path, {
 		method: body ? "POST" : "GET",
 		headers: {
-			Origin: ui,
+			Origin: factoryOrigin,
 			"X-Factory-Request": "1",
 			"Content-Type": "application/json",
 		},
@@ -266,7 +267,7 @@ async function api(path, body) {
 	return value;
 }
 async function rpc(method, params) {
-	const response = await fetch(`http://localhost:${rpcPort}/cli/rpc`, {
+	const response = await fetch(`${rpcOrigin}/cli/rpc`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),

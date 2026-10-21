@@ -660,6 +660,19 @@ export class TodayApp {
 	}
 
 	private retry(run: RunItem) {
+		const question = this.details.get(run.id);
+		if (attention(run) === "question" && question?.recheckAvailable) {
+			void this.perform("Bob is checking the blocker again", () =>
+				this.options.client.post(this.path(run, "recheck"), {
+					context: {
+						step: question.step,
+						questionBatchId: question.questionBatchId,
+						questions: question.questions,
+					},
+				}),
+			).catch(() => {});
+			return;
+		}
 		if (attention(run) !== "stuck")
 			return this.notify("Only stuck runs can be retried", true);
 		const detail = this.details.get(run.id);
@@ -691,7 +704,8 @@ export class TodayApp {
 		void this.perform(
 			run.status === "stopped"
 				? "Resuming from saved progress"
-				: detail?.iterationLimit
+				: detail?.iterationLimit &&
+						detail.iterationLimit.visits > detail.iterationLimit.limit
 					? "Continuing with 4 more passes"
 					: "Retrying from saved progress",
 			() =>
@@ -1116,7 +1130,10 @@ export class TodayApp {
 				lines.push({ text: line, style: t.text });
 			if (detail?.iterationLimit)
 				lines.push({
-					text: `Iteration limit reached (${detail.iterationLimit.visits}/${detail.iterationLimit.limit}). Continue grants 4 more passes.`,
+					text:
+						detail.iterationLimit.visits > detail.iterationLimit.limit
+							? `Iteration limit reached (${detail.iterationLimit.visits}/${detail.iterationLimit.limit}). Continue grants 4 more passes.`
+							: `The saved budget now allows ${detail.iterationLimit.limit} passes. Retry continues from saved progress.`,
 					style: t.muted,
 				});
 		} else lines.push({ text: this.cardSummary(run), style: t.text });
@@ -1130,14 +1147,14 @@ export class TodayApp {
 			const all = detail?.questions?.every((_, i) =>
 				detail.questionRecommendations?.some((r) => r.questionIndex === i),
 			);
-			return `a answer${all ? " · y accept recommendations" : ""} · enter open · x stop`;
+			return `a answer${all ? " · y accept recommendations" : ""}${detail?.recheckAvailable ? " · c check again" : ""} · enter open · x stop`;
 		}
 		if (kind === "stuck" && (run.workflowBlock || run.status === "blocked"))
 			return detail?.resumeEligible
 				? "c resume · enter open"
 				: "Resume unavailable · enable workflow in Recipes and wait for execution to stop · enter open";
 		if (kind === "stuck")
-			return `c ${run.status === "stopped" ? "resume run" : detail?.iterationLimit ? "continue (+4 passes)" : "retry step"} · enter open · s settle`;
+			return `c ${run.status === "stopped" ? "resume run" : detail?.iterationLimit && detail.iterationLimit.visits > detail.iterationLimit.limit ? "continue (+4 passes)" : "retry step"} · enter open · s settle`;
 		if (run.reviewGate?.status === "pending")
 			return "a approve · r request changes · o open guide in browser · enter open";
 		return "s settle · m follow-up · o open in browser · enter open";

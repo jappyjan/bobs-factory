@@ -320,6 +320,7 @@ describe("workflow trigger permissions", () => {
 			["factory", ["workflow", "manual", "ticket-assignment"]],
 			["takeover", ["workflow", "manual", "ticket-assignment"]],
 			["factory-pipeline", ["workflow"]],
+			["improve-codebase", ["manual"]],
 			["custom", ["workflow", "manual", "ticket-assignment"]],
 		]);
 		expect(migrated.listWorkflows().at(-1)!.steps[0]!.model).toBe(
@@ -3316,6 +3317,340 @@ it.each([
 	expect(recovered.checkpoint.visits[fixer]).toBe(2);
 	expect(recovered.answers).toHaveLength(1);
 	await restarted.shutdown();
+});
+
+it.each([
+	"ci-fix",
+	"code-fix",
+	"custom-assistance",
+])("rechecks %s after restart in its native conversation without answering or approving", async (fixer) => {
+	const conversation = { runner: "codex" as const, sessionId: "waiting-role" };
+	const resumes: ExecutionContext["resumeAgent"][] = [];
+	const calls: string[] = [];
+	let rechecked = false;
+	const hooks: Partial<RuntimeHooks> = {
+		agent: async (ctx) => {
+			calls.push(ctx.step.id);
+			if (ctx.step.id === "completed") return { kept: true };
+			resumes.push(structuredClone(ctx.resumeAgent));
+			const output = {
+				questions: rechecked ? [] : ["Restore runtime access?"],
+			};
+			await ctx.checkpointAgent?.({
+				...conversation,
+				result: {
+					output,
+					revision: {
+						headSha: "retained-head",
+						dirty: false,
+						historyLength: ctx.run.history.length,
+						at: ctx.run.createdAt,
+					},
+				},
+			});
+			return output;
+		},
+		tool: async () => ({
+			headSha: "retained-head",
+			url: "https://example.test/pr/1",
+		}),
+	};
+	const child = {
+		...workflow([
+			agent("completed"),
+			agent(fixer, {
+				askQuestions: fixer === "custom-assistance",
+				maxVisits: 3,
+			}),
+			{
+				id: "accept",
+				name: "Human acceptance",
+				type: "tool",
+				tool: "human-review",
+				next: "end",
+			},
+		]),
+		id: "recheck-child",
+	};
+	const parent = workflow(
+		[
+			{
+				id: "pipeline",
+				name: "Pipeline",
+				type: "workflow",
+				workflow: child.id,
+			},
+		],
+		[child],
+	);
+	const { runtime, home } = create(hooks);
+	runtime.updateWorkflows([...defaultWorkflows, parent, child]);
+	const run = start(runtime, parent);
+	void runtime.launch(run);
+	await waitFor(() => expect(run.status).toBe("waiting"));
+	const history = structuredClone(run.history);
+	const frozen = structuredClone(run.workflowDefinitions);
+	const batch = run.questionBatchId;
+	await runtime.shutdown();
+	const restarted = reload(home, hooks);
+	restarted.resumeAll();
+	const restored = restarted.get(run.id);
+	await waitFor(() => expect(restarted.pendingAnswers.has(run.id)).toBe(true));
+	expect(calls).toEqual(["completed", fixer]);
+	expect(restored.questionBatchId).toBe(batch);
+	expect(restarted.canRecheckQuestions(run.id)).toBe(true);
+	rechecked = true;
+	await restarted.recheckQuestions(run.id, {
+		step: restored.step!,
+		questionBatchId: restored.questionBatchId!,
+		questions: [...restored.questions],
+	});
+	await waitFor(() => expect(restored.reviewGate?.status).toBe("pending"));
+	expect(calls).toEqual(["completed", fixer, fixer]);
+	expect(resumes).toEqual([undefined, conversation]);
+	expect(restored.answers).toEqual([]);
+	expect(restored.humanDecisions ?? []).toEqual([]);
+	expect(restored.architectureDecisions ?? []).toEqual([]);
+	expect(restored.history.slice(0, history.length)).toEqual(history);
+	expect(restored.workflowDefinitions).toEqual(frozen);
+	expect(restored.outputs.completed).toEqual({ kept: true });
+	expect(restored.checkpoint!.active!.children![0]!.visits[fixer]).toBe(2);
+	expect(restored.questions).toEqual([]);
+	expect(restored.questionBatchId).toBeUndefined();
+	expect(restored.status).toBe("waiting");
+	expect(restarted.canRecheckQuestions(run.id)).toBe(false);
+});
+
+it("rejects stale and simultaneous question rechecks without fabricating answers", async () => {
+	let complete = false;
+	const { runtime } = create({
+		agent: async () => ({ questions: complete ? [] : ["Restore access?"] }),
+	});
+	const run = start(runtime, workflow([agent("code-fix", { next: "end" })]));
+	void runtime.launch(run);
+	await waitFor(() => expect(runtime.pendingAnswers.has(run.id)).toBe(true));
+	const context = {
+		step: run.step!,
+		questionBatchId: run.questionBatchId!,
+		questions: [...run.questions],
+	};
+	for (const stale of [
+		{ ...context, step: "other" },
+		{ ...context, questionBatchId: "obsolete-batch" },
+		{ ...context, questions: ["Different decision?"] },
+	])
+		await expect(runtime.recheckQuestions(run.id, stale)).rejects.toThrow(
+			/changed/i,
+		);
+	expect(run.checkpoint!.visits["code-fix"]).toBe(1);
+	expect(run.questions).toEqual(context.questions);
+	complete = true;
+	const rechecking = runtime.recheckQuestions(run.id, context);
+	await expect(runtime.recheckQuestions(run.id, context)).rejects.toThrow(
+		/waiting/i,
+	);
+	await rechecking;
+	await waitFor(() => expect(run.status).toBe("completed"));
+	expect(run.answers).toEqual([]);
+});
+
+it("uses the existing visit limit for question rechecks and retains the blocked receipt", async () => {
+	const hook = vi.fn(async () => ({ questions: ["Restore access?"] }));
+	const { runtime } = create({ agent: hook });
+	const run = start(
+		runtime,
+		workflow([agent("code-fix", { maxVisits: 1, next: "end" })]),
+	);
+	void runtime.launch(run);
+	await waitFor(() => expect(runtime.pendingAnswers.has(run.id)).toBe(true));
+	const history = structuredClone(run.history);
+	await runtime.recheckQuestions(run.id, {
+		step: run.step!,
+		questionBatchId: run.questionBatchId!,
+		questions: [...run.questions],
+	});
+	await waitFor(() => expect(run.status).toBe("failed"));
+	expect(hook).toHaveBeenCalledTimes(1);
+	expect(run.iterationLimit).toEqual({ step: "code-fix", visits: 2, limit: 1 });
+	expect(run.checkpoint!.additionalVisits).toBeUndefined();
+	expect(run.history).toEqual(history);
+	expect(run.answers).toEqual([]);
+});
+
+it("retains the human answer when it arrives before a simultaneous recheck", async () => {
+	const { runtime } = create({
+		agent: async (ctx) => ({
+			questions: ctx.run.answers.length ? [] : ["Restore access?"],
+		}),
+	});
+	const run = start(runtime, workflow([agent("code-fix", { next: "end" })]));
+	void runtime.launch(run);
+	await waitFor(() => expect(runtime.pendingAnswers.has(run.id)).toBe(true));
+	const context = {
+		step: run.step!,
+		questionBatchId: run.questionBatchId!,
+		questions: [...run.questions],
+	};
+	runtime.answer(run.id, "I restored access.");
+	await expect(runtime.recheckQuestions(run.id, context)).rejects.toThrow(
+		/waiting/i,
+	);
+	await waitFor(() => expect(run.status).toBe("completed"));
+	expect(run.answers).toHaveLength(1);
+	expect(run.answers[0]!.answer).toBe("I restored access.");
+	expect(run.history.some((receipt) => receipt.questionRecheck)).toBe(false);
+});
+
+it("persists an explicit question recheck before waking and recovers it after shutdown", async () => {
+	const conversation = {
+		runner: "codex" as const,
+		sessionId: "persisted-recheck",
+	};
+	const resumed: ExecutionContext[] = [];
+	const hooks: Partial<RuntimeHooks> = {
+		agent: async (ctx) => {
+			resumed.push(ctx);
+			await ctx.checkpointAgent?.(conversation);
+			return { questions: ["Access is still unavailable. Restore it?"] };
+		},
+	};
+	const { runtime, home } = create(hooks);
+	const run = start(runtime, workflow([agent("code-fix", { next: "end" })]));
+	void runtime.launch(run);
+	await waitFor(() => expect(runtime.pendingAnswers.has(run.id)).toBe(true));
+	const previous = {
+		step: run.step!,
+		questionBatchId: run.questionBatchId!,
+		questions: [...run.questions],
+	};
+	const history = structuredClone(run.history);
+	let persisted!: () => void;
+	const saved = new Promise<void>((resolve) => {
+		persisted = resolve;
+	});
+	let release!: () => void;
+	const held = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const flush = runtime.flush.bind(runtime);
+	let holdNext = true;
+	vi.spyOn(runtime, "flush").mockImplementation(async (id) => {
+		await flush(id);
+		if (holdNext) {
+			holdNext = false;
+			persisted();
+			await held;
+		}
+	});
+	const request = runtime.recheckQuestions(run.id, previous);
+	await saved;
+	const stored = readJson(join(home, "factory", "runs", `${run.id}.json`));
+	expect(stored.status).toBe("running");
+	expect(stored.checkpoint.active.phase).toBe("executing");
+	expect(stored.checkpoint.active.agent).toEqual(conversation);
+	expect(stored.checkpoint.active.questionRecheck).toEqual({
+		questionBatchId: previous.questionBatchId,
+		questions: previous.questions,
+		at: expect.any(String),
+	});
+	expect(stored.answers).toEqual([]);
+	expect(resumed).toHaveLength(1);
+	expect(() => runtime.answer(run.id, "A concurrent answer")).toThrow(
+		/waiting/i,
+	);
+	await runtime.shutdown();
+	release();
+	await request;
+	const restarted = reload(home, hooks);
+	restarted.resumeAll();
+	const restored = restarted.get(run.id);
+	await waitFor(() => expect(restarted.pendingAnswers.has(run.id)).toBe(true));
+	expect(resumed).toHaveLength(2);
+	expect(resumed[1]!.resumeAgent).toEqual(conversation);
+	expect(resumed[1]!.input).toMatchObject({
+		questionRecheck: stored.checkpoint.active.questionRecheck,
+	});
+	expect(restored.status).toBe("waiting");
+	expect(restored.questions).toEqual(previous.questions);
+	expect(restored.questionBatchId).not.toBe(previous.questionBatchId);
+	expect(restored.history.slice(0, history.length)).toEqual(history);
+	expect(restored.history.at(-1)!.questionRecheck).toEqual(
+		stored.checkpoint.active.questionRecheck,
+	);
+	expect(restored.answers).toEqual([]);
+	expect(restored.humanDecisions ?? []).toEqual([]);
+	await expect(restarted.recheckQuestions(run.id, previous)).rejects.toThrow(
+		/changed/i,
+	);
+});
+
+it.each([
+	"async",
+	"sync",
+])("does not wake a question recheck when its checkpoint cannot be saved (%s)", async (failure) => {
+	const hook = vi.fn(async () => ({ questions: ["Restore access?"] }));
+	const { runtime } = create({ agent: hook });
+	const run = start(runtime, workflow([agent("code-fix", { next: "end" })]));
+	void runtime.launch(run);
+	await waitFor(() => expect(runtime.pendingAnswers.has(run.id)).toBe(true));
+	await runtime.flush(run.id);
+	const history = structuredClone(run.history);
+	const write = vi.spyOn(runtime.snapshots, "write");
+	if (failure === "async")
+		write.mockRejectedValueOnce(new Error("Checkpoint storage unavailable"));
+	else
+		write.mockImplementationOnce(() => {
+			throw new Error("Checkpoint storage unavailable");
+		});
+	await expect(
+		runtime.recheckQuestions(run.id, {
+			step: run.step!,
+			questionBatchId: run.questionBatchId!,
+			questions: [...run.questions],
+		}),
+	).rejects.toThrow("Checkpoint storage unavailable");
+	await waitFor(() => expect(run.status).toBe("failed"));
+	expect(run.error).toBe("Checkpoint storage unavailable");
+	expect(hook).toHaveBeenCalledTimes(1);
+	expect(run.history).toEqual(history);
+	expect(run.answers).toEqual([]);
+	expect(run.checkpoint!.active!.questionRecheck).toMatchObject({
+		questions: ["Restore access?"],
+	});
+});
+
+it("refuses question rechecks for architecture decisions and ambiguous checkpoints", async () => {
+	const hook = vi.fn(async () => ({ questions: ["Restore access?"] }));
+	const { runtime } = create({ agent: hook });
+	const run = start(runtime, workflow([agent("code-fix", { next: "end" })]));
+	void runtime.launch(run);
+	await waitFor(() => expect(runtime.pendingAnswers.has(run.id)).toBe(true));
+	const context = {
+		step: run.step!,
+		questionBatchId: run.questionBatchId!,
+		questions: [...run.questions],
+	};
+	run.architectureGate = {
+		proposalId: "pending-proposal",
+		source: "architecture",
+		stepKey: "decision",
+		planOutput: "plan",
+	};
+	expect(runtime.canRecheckQuestions(run.id)).toBe(false);
+	await expect(runtime.recheckQuestions(run.id, context)).rejects.toThrow(
+		/waiting/i,
+	);
+	delete run.architectureGate;
+	run.checkpoint!.active!.children = [{ current: "other-role", visits: {} }];
+	expect(runtime.canRecheckQuestions(run.id)).toBe(false);
+	await expect(runtime.recheckQuestions(run.id, context)).rejects.toThrow(
+		/waiting/i,
+	);
+	delete run.checkpoint!.active!.children;
+	expect(runtime.canRecheckQuestions(run.id)).toBe(true);
+	expect(run.questions).toEqual(context.questions);
+	expect(run.answers).toEqual([]);
+	expect(hook).toHaveBeenCalledTimes(1);
 });
 
 it.each([

@@ -93,6 +93,16 @@ import {
 	STALE_IMPACT_MESSAGE,
 	validateImpact,
 } from "./Impact.js";
+import {
+	type ImprovementAction,
+	ImprovementActionSchema,
+	type ImprovementState,
+	type IssueDestination,
+} from "./Improvement.js";
+import {
+	applyImprovementAction,
+	runImprovement,
+} from "./ImprovementRuntime.js";
 import type { RoleProgress, RoleRevision } from "./Incremental.js";
 import {
 	attachmentDirectories,
@@ -195,6 +205,13 @@ export interface AgentCheckpoint {
 		screenshots?: { path: string; area: string; state?: string }[];
 	};
 }
+export interface QuestionRecheck {
+	questionBatchId: string;
+	questions: string[];
+	at: string;
+	convergence?: { key: string; snapshotDigest: string; at: string };
+	convergenceConsumed?: true;
+}
 export interface GraphCheckpoint {
 	// Inherited by called workflows and fanout branches; calls return it to their caller.
 	reviewKey?: string;
@@ -206,6 +223,7 @@ export interface GraphCheckpoint {
 	active?: {
 		attemptId?: string;
 		phase: "executing" | "result" | "waiting" | "answered";
+		questionRecheck?: QuestionRecheck;
 		questionDisplay?: {
 			source?: {
 				questions: string[];
@@ -261,9 +279,21 @@ export interface RunViewState {
 	seenAt?: string;
 }
 
+import {
+	type StepVisitBudgetUpgrade,
+	stepVisitLimit,
+	upgradeStockStepVisits,
+} from "./StepVisitBudget.js";
 import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
+	improvementState?: ImprovementState;
+	improvementParent?: {
+		runId: string;
+		manifestDigest: string;
+		packageId: string;
+	};
+	stepVisitBudget?: StepVisitBudgetUpgrade;
 	workflowBlock?: WorkflowBlock;
 	delivery?: DeliveryState;
 	deliveryContracts?: DeliveryState[];
@@ -373,7 +403,13 @@ export interface FactoryRun {
 	roleRevisions?: Record<string, RoleRevision>;
 	reviewRounds?: ReviewBaseline[];
 	outputs: Record<string, unknown>;
-	history: { step: string; output: unknown; at: string; call?: WorkflowCall }[];
+	history: {
+		step: string;
+		output: unknown;
+		at: string;
+		call?: WorkflowCall;
+		questionRecheck?: QuestionRecheck;
+	}[];
 	answers: { questions: string[]; answer: string; at: string }[];
 	questionRequests?: { questions: string[]; text: string; at: string }[];
 	questions: string[];
@@ -392,6 +428,12 @@ export interface ChatMessage {
 	step: string;
 }
 export interface ExecutionContext {
+	validateRoleOutput?: (value: unknown) => unknown;
+	readOnlyResearch?: boolean;
+	researchAccess?: {
+		repositories: { id: string; root: string; revision: string }[];
+		maxCalls: number;
+	};
 	/** Yield passive waits at saved checkpoints when update admission closes. */
 	assertSchedulingOpen?: () => void;
 	/** Revalidate the complete grouped approval under the operation reservation. */
@@ -423,12 +465,25 @@ export interface ExecutionContext {
 	log: (message: string, source?: RunEvent["source"]) => void;
 	evidenceDir: string;
 	resumeAgent?: AgentCheckpoint;
+	questionRecheck?: QuestionRecheck;
 	checkpointAgent?: (agent: AgentCheckpoint) => void | Promise<void>;
 	/** Persist per-repository side effects before the whole step completes. */
 	save?: () => void | Promise<void>;
 	allowUnchangedRepository?: boolean;
 }
 export interface RuntimeHooks {
+	improvementDestinations?(
+		run: FactoryRun,
+		signal: AbortSignal,
+	): Promise<{
+		options: { name: string; destination: IssueDestination }[];
+		limitations: string[];
+	}>;
+	improvementIssue?(
+		run: FactoryRun,
+		issue: ImprovementState["issues"][string],
+		signal: AbortSignal,
+	): Promise<{ id: string; url: string }>;
 	availabilityChanged?(id: string, enabled: boolean): void;
 	execution?(
 		run: FactoryRun,
@@ -494,6 +549,7 @@ export class WorkflowRuntime {
 		ReturnType<typeof setTimeout>
 	>();
 	private shuttingDown = false;
+	private improvementWaiters = new Map<string, () => void>();
 	private defaultWorkflow = "simple";
 	private titleSettings: AgentSettings = {};
 	private viewStates: Record<string, RunViewState> = {};
@@ -567,6 +623,7 @@ export class WorkflowRuntime {
 			run.workflow = WorkflowSchema.parse(run.workflow);
 			if (run.recoveryWorkflow)
 				run.recoveryWorkflow = WorkflowSchema.parse(run.recoveryWorkflow);
+			const visitBudgetUpgraded = upgradeStockStepVisits(run);
 			// Process-owned operations must reacquire after restart. Legacy broad
 			// ownership cannot block restored passive parent/CI frames.
 			if (["running", "waiting", "interrupted"].includes(run.status))
@@ -584,6 +641,7 @@ export class WorkflowRuntime {
 				run.workflowBlock = this.catalog.getBlock(run.id);
 				run.status = "blocked";
 			}
+			if (visitBudgetUpgraded) this.save(run);
 		}
 		this.launchAssets.cleanupRuns(new Set(this.runs.keys()));
 		cleanupVideoEvidence(
@@ -923,6 +981,9 @@ export class WorkflowRuntime {
 	}
 	create(
 		options: {
+			launchRequest?: FactoryRun["launchRequest"];
+			setupComplete?: boolean;
+			improvementParent?: FactoryRun["improvementParent"];
 			repositories?: import("./RepositoryScope.js").RunRepository[];
 			executionSnapshot?: ExecutionSnapshot;
 			executionSelection?: ExecutionSelection;
@@ -1099,6 +1160,9 @@ export class WorkflowRuntime {
 			throw new Error("Run is already executing");
 		const controller = new AbortController();
 		if (run.status === "waiting") run.status = "running";
+		// Explicit Resume makes stopped stock work eligible without changing its
+		// frozen graph. Persist the one-time allowance before any resumed role.
+		if (upgradeStockStepVisits(run)) this.save(run);
 		this.controllers.set(run.id, controller);
 		const execution = this.execute(run, controller, task);
 		this.executions.set(run.id, execution);
@@ -1153,7 +1217,18 @@ export class WorkflowRuntime {
 					body: `Factory work started: ${run.workflow.name}. ${String(readPath(run.outputs, "ticket.title") ?? run.title)}. Follow progress in Factory.`,
 				});
 			if (task) await task(controller.signal);
-			else if (run.workflow.id === "simple") {
+			else if (run.workflow.improvement) {
+				await runImprovement(
+					{
+						runtime: this,
+						agent: (context) => this.hooks.agent(context),
+						issue: this.hooks.improvementIssue,
+						wait: (parent, signal) => this.waitForImprovement(parent, signal),
+					},
+					run,
+					controller.signal,
+				);
+			} else if (run.workflow.id === "simple") {
 				if (!this.hooks.simple)
 					throw new Error("Simple recovery handler unavailable");
 				await this.hooks.simple(run, controller.signal);
@@ -1251,6 +1326,102 @@ export class WorkflowRuntime {
 				}
 			this.controllers.delete(run.id);
 		}
+	}
+	async decideImprovement(
+		id: string,
+		value: ImprovementAction,
+		actor: string,
+	): Promise<void> {
+		const run = this.get(id);
+		const action = ImprovementActionSchema.parse(value);
+		if (
+			!run.workflow.improvement ||
+			(run.status !== "waiting" && action.action !== "stop-batch")
+		)
+			throw new Error(
+				"Improvement decisions require a waiting improvement run",
+			);
+		if (action.action === "stop-batch") {
+			const state = run.improvementState,
+				proposal = state?.proposals.at(-1);
+			if (
+				!state?.acceptance ||
+				state.revision !== action.expectedRevision ||
+				proposal?.digest !== action.digest ||
+				proposal.version !== action.version
+			)
+				throw new Error("Batch changed; refresh before stopping");
+			this.stop(id);
+			for (const child of Object.values(run.improvementState?.children ?? {}))
+				if (
+					["created", "running", "waiting", "interrupted"].includes(
+						this.runs.get(child.runId)?.status ?? "",
+					)
+				)
+					this.stop(child.runId);
+			await this.flush();
+			return;
+		}
+		this.requireRunAvailable(run);
+		if (
+			action.action === "apply" &&
+			run.improvementState?.manifest?.packages.length
+		) {
+			const definitions = run.workflowDefinitions ?? [],
+				factory = definitions.find((w) => w.id === "factory");
+			if (!factory)
+				throw new Error("Accepted Factory definition is unavailable");
+			this.requireAvailable(factory, definitions);
+		}
+		applyImprovementAction(run, action, actor);
+		await this.save(run);
+		this.improvementWaiters.get(id)?.();
+		if (!this.isExecuting(id)) void this.launch(run);
+	}
+	async improvementDestinations(id: string, signal: AbortSignal) {
+		return (
+			this.hooks.improvementDestinations?.(this.get(id), signal) ?? {
+				options: [],
+				limitations: ["No configured issue destination is available"],
+			}
+		);
+	}
+	private waitForImprovement(
+		run: FactoryRun,
+		signal: AbortSignal,
+	): Promise<void> {
+		return new Promise((resolve, reject) => {
+			const finish = () => {
+				unsubscribe();
+				signal.removeEventListener("abort", abort);
+				this.improvementWaiters.delete(run.id);
+				resolve();
+			};
+			const abort = () => {
+				unsubscribe();
+				this.improvementWaiters.delete(run.id);
+				reject(signal.reason ?? new Error("Stopped"));
+			};
+			const unsubscribe = this.subscribe((change) => {
+				const ref = Object.values(run.improvementState?.children ?? {}).find(
+					(c) => c.runId === change.id,
+				);
+				if (ref && this.runs.get(ref.runId)?.status !== ref.status) finish();
+			});
+			this.improvementWaiters.set(run.id, finish);
+			signal.addEventListener("abort", abort, { once: true });
+			if (signal.aborted) abort();
+			else if (
+				(run.step === "discuss-improvements" &&
+					run.improvementState?.phase !== "discussion") ||
+				(run.step === "accept-improvements" &&
+					run.improvementState?.phase !== "ready") ||
+				Object.values(run.improvementState?.children ?? {}).some(
+					(c) => this.runs.get(c.runId)?.status !== c.status,
+				)
+			)
+				finish();
+		});
 	}
 	capacityOptions(run: FactoryRun, key: string, visit = 1): CapacityOptions {
 		return {
@@ -1389,8 +1560,12 @@ export class WorkflowRuntime {
 			}
 			const state = checkpoint.active;
 			const count = checkpoint.visits[step.id]!;
-			const limit =
-				step.maxVisits + (checkpoint.additionalVisits?.[step.id] ?? 0);
+			const limit = stepVisitLimit(
+				run,
+				key,
+				step,
+				checkpoint.additionalVisits?.[step.id],
+			);
 			if (count > limit) {
 				run.step = key;
 				run.iterationLimit = { step: key, visits: count, limit };
@@ -1549,6 +1724,7 @@ export class WorkflowRuntime {
 					this.log(run, key, execution?.redact(message) ?? message, source),
 				evidenceDir: join(this.directory, "evidence", run.id),
 				resumeAgent: state.agent,
+				questionRecheck: state.questionRecheck,
 				checkpointAgent: async (agent) => {
 					state.agent = agent;
 					if (agent.sessionId && agent.sessionId !== "pending") {
@@ -1569,6 +1745,16 @@ export class WorkflowRuntime {
 				: checkpoint.reviewKey;
 			context.coordinateDelivery = (operation) =>
 				this.coordinate(context, operation);
+			if (state.questionRecheck) {
+				context.input = {
+					...(context.input as Record<string, unknown>),
+					questionRecheck: structuredClone(state.questionRecheck),
+				};
+				context.step = {
+					...context.step,
+					prompt: `${context.step.prompt ?? ""}\n\nThe operator requested a fresh check of this role's pending assistance. Read /questionRecheck and current runtime context, inspect the original blocker and verify whether it is resolved. This request supplies no answer, makes no scope decision and grants no approval. Continue only within the existing accepted scope; retain unanswered decisions and require all configured evidence and approval gates. If the blocker remains, return the concrete questions again. Preserve completed work and use the existing native conversation.`,
+				};
+			}
 			const assessedCorrection = this.assessedCorrection(
 				run,
 				steps,
@@ -1595,8 +1781,8 @@ export class WorkflowRuntime {
 					))
 			)
 				context.step = {
-					...step,
-					prompt: `${step.prompt ?? ""}\n\n${ciFixRuntimeInstructions}`,
+					...context.step,
+					prompt: `${context.step.prompt ?? ""}\n\n${ciFixRuntimeInstructions}`,
 				};
 			if (step.reviewContract)
 				context.step = {
@@ -1664,6 +1850,7 @@ export class WorkflowRuntime {
 			}
 			let output: unknown = outputs[step.id];
 			if (state.phase === "executing") {
+				let completionMessage: string | undefined;
 				state.attemptId = beginStepAttempt(context);
 				await this.save(run);
 				signal.throwIfAborted();
@@ -2173,7 +2360,12 @@ export class WorkflowRuntime {
 							fresh.key,
 							decision,
 							step.impact!.maxUnchangedCycles,
+							state.questionRecheck?.convergenceConsumed
+								? undefined
+								: state.questionRecheck?.convergence,
 						);
+						if (state.questionRecheck?.convergence)
+							state.questionRecheck.convergenceConsumed = true;
 						if (assistance.length) {
 							decision.status = "blocked";
 							decision.questions = assistance;
@@ -2191,12 +2383,7 @@ export class WorkflowRuntime {
 							};
 						}
 						output = decision;
-						this.log(
-							run,
-							key,
-							`${decision.summary} Fresh specialists: ${decision.specialists.join(", ") || "none"}. Reused evidence: ${decision.reuseRecords.map((r) => r.original.stamp.reviewer).join(", ") || "none"}. ${decision.approvalRationale}`,
-						);
-						await this.save(run);
+						completionMessage = `${decision.summary} Fresh specialists: ${decision.specialists.join(", ") || "none"}. Reused evidence: ${decision.reuseRecords.map((r) => r.original.stamp.reviewer).join(", ") || "none"}. ${decision.approvalRationale}`;
 					}
 					if (step.architectureContract === "architecture-v1") {
 						const architecture = ArchitectureSchema.parse(output);
@@ -2268,6 +2455,9 @@ export class WorkflowRuntime {
 							output,
 							at: new Date().toISOString(),
 							...(state.call ? { call: state.call } : {}),
+							...(state.questionRecheck
+								? { questionRecheck: state.questionRecheck }
+								: {}),
 						}),
 					);
 					state.phase = "result";
@@ -2281,6 +2471,9 @@ export class WorkflowRuntime {
 								? "blocked"
 								: "completed",
 					);
+					// Logging persists a snapshot too. Publish impact completion only
+					// after its decision, one-shot recheck and result receipt agree.
+					if (completionMessage) this.log(run, key, completionMessage);
 					await this.save(run);
 					signal.throwIfAborted();
 				} catch (error) {
@@ -2899,8 +3092,9 @@ export class WorkflowRuntime {
 				if (questions.length) {
 					if (parallel)
 						throw new Error("Human checkpoints belong outside fanout branches");
-					if (state.phase !== "answered")
-						await this.waitForAnswers(
+					if (
+						state.phase !== "answered" &&
+						(await this.waitForAnswers(
 							run,
 							questions,
 							signal,
@@ -2909,7 +3103,9 @@ export class WorkflowRuntime {
 								| QuestionRecommendation[]
 								| undefined,
 							context,
-						);
+						))
+					)
+						continue;
 					if (step.tool === "impact-checks") {
 						checkpoint.current = step.impactSource!;
 						checkpoint.active = undefined;
@@ -3029,7 +3225,7 @@ export class WorkflowRuntime {
 		state: NonNullable<GraphCheckpoint["active"]>,
 		recommendations: QuestionRecommendation[] | undefined,
 		context: ExecutionContext,
-	): Promise<void> {
+	): Promise<boolean> {
 		const output = context.outputs?.[context.step.id];
 		let choices =
 			output && typeof output === "object" && "questions" in output
@@ -3193,7 +3389,11 @@ export class WorkflowRuntime {
 				signal.removeEventListener("abort", abort);
 				this.pendingAnswers.delete(run.id);
 			}
-			if (!state.questionExplanation) return;
+			if (!state.questionExplanation)
+				return (
+					(state as NonNullable<GraphCheckpoint["active"]>).phase ===
+					"executing"
+				);
 		}
 	}
 
@@ -3406,6 +3606,142 @@ export class WorkflowRuntime {
 			() => pending.resolve(),
 			(error) => pending.reject(error),
 		);
+	}
+	private questionCheckpoint(
+		run: FactoryRun,
+	): { frame: GraphCheckpoint; step: WorkflowStep; key: string } | undefined {
+		if (
+			this.shuttingDown ||
+			run.status !== "waiting" ||
+			!this.pendingAnswers.has(run.id) ||
+			!run.questions.length ||
+			!run.questionBatchId ||
+			run.architectureGate ||
+			run.reviewGate?.status === "pending" ||
+			run.workflowBlock ||
+			this.catalog.unavailable(run.workflow, run.workflowDefinitions ?? [])
+				.length
+		)
+			return;
+		const locate = (
+			frame: GraphCheckpoint | undefined,
+			steps: WorkflowStep[],
+			prefix: string,
+		):
+			| { frame: GraphCheckpoint; step: WorkflowStep; key: string }
+			| undefined => {
+			if (!frame) return;
+			const step = steps.find((s) => s.id === frame.current);
+			if (!step || step.type === "fanout") return;
+			const state = frame.active;
+			if (!state) return;
+			const key = `${prefix}${step.id}`;
+			if (step.type === "workflow") {
+				const child = run.workflowDefinitions?.find(
+					(w) => w.id === step.workflow,
+				);
+				if (!child || state.children?.length !== 1) return;
+				return locate(state.children[0], child.steps, `${key}/`);
+			}
+			if (
+				state.phase !== "waiting" ||
+				state.children?.length ||
+				state.questionExplanation ||
+				step.type !== "agent" ||
+				step.architectureContract ||
+				["human-review", "architecture-decision"].includes(step.tool ?? "") ||
+				key !== run.step ||
+				!(
+					step.askQuestions ||
+					["ci-fix", "code-fix", "visual-fix"].includes(step.id)
+				)
+			)
+				return;
+			return { frame, step, key };
+		};
+		return locate(
+			run.checkpoint,
+			(run.recoveryWorkflow ?? run.workflow).steps,
+			"",
+		);
+	}
+	canRecheckQuestions(id: string): boolean {
+		return !!this.questionCheckpoint(this.get(id));
+	}
+	async recheckQuestions(
+		id: string,
+		context: { step: string; questionBatchId: string; questions: string[] },
+	): Promise<FactoryRun> {
+		const run = this.get(id);
+		this.requireRunAvailable(run);
+		const found = this.questionCheckpoint(run);
+		if (!found)
+			throw new Error("Run is not waiting for recheckable assistance");
+		if (
+			!context.questionBatchId ||
+			context.questionBatchId !== run.questionBatchId ||
+			context.step !== run.step ||
+			!isDeepStrictEqual(context.questions, run.questions)
+		)
+			throw new Error(
+				"The question or step changed. Refresh before rechecking.",
+			);
+		const { frame, step, key } = found;
+		const state = frame.active!;
+		const pending = this.pendingAnswers.get(id)!;
+		const previous = run.outputs[step.id];
+		const decision = step.impactContract
+			? [...(run.impactDecisions ?? [])]
+					.reverse()
+					.find(
+						(item) =>
+							item.snapshot.digest === readPath(previous, "snapshot.digest") &&
+							item.at === readPath(previous, "at"),
+					)
+			: undefined;
+		state.questionRecheck = {
+			questionBatchId: context.questionBatchId,
+			questions: [...run.questions],
+			at: new Date().toISOString(),
+			...(decision?.status === "blocked"
+				? {
+						convergence: {
+							key: decision.snapshot.key,
+							snapshotDigest: decision.snapshot.digest,
+							at: decision.at,
+						},
+					}
+				: {}),
+		};
+		const agent = state.agent ?? frame.agentSessions?.[step.id];
+		// Drop only the completed turn cache. Its receipt and exact native identity
+		// remain retained; an unchanged revision must still perform a fresh check.
+		state.agent = agent
+			? { runner: agent.runner, sessionId: agent.sessionId }
+			: undefined;
+		state.phase = "executing";
+		delete state.attemptId;
+		delete state.questionDisplay;
+		delete state.questionExplanation;
+		frame.visits[step.id] = (frame.visits[step.id] ?? 0) + 1;
+		run.questions = [];
+		delete run.questionRecommendations;
+		delete run.questionChoices;
+		delete run.questionBatchId;
+		run.status = "running";
+		try {
+			this.log(
+				run,
+				key,
+				"Explicit assistance recheck requested. Re-evaluating this role with saved work and conversation retained; no answer or approval was supplied.",
+			);
+			await this.flush(id);
+			pending.resolve();
+		} catch (error) {
+			pending.reject(error instanceof Error ? error : new Error(String(error)));
+			throw error;
+		}
+		return run;
 	}
 	answer(id: string, answer: string, kind?: "answer" | "explanation"): void {
 		const run = this.get(id);
@@ -3744,6 +4080,10 @@ export class WorkflowRuntime {
 				this.snapshots.hasValue(
 					run as unknown as Record<string, unknown>,
 					"simpleExecution",
+				) ||
+				this.snapshots.hasValue(
+					run as unknown as Record<string, unknown>,
+					"improvementState",
 				))
 		);
 	}
@@ -3929,7 +4269,12 @@ export class WorkflowRuntime {
 					`Removed invalid Codex startup checkpoint for ${key}; retry starts this role with saved context, work and evidence retained.`,
 				);
 			}
-			const limit = step.maxVisits + (frame.additionalVisits?.[step.id] ?? 0);
+			const limit = stepVisitLimit(
+				run,
+				key,
+				step,
+				frame.additionalVisits?.[step.id],
+			);
 			if ((frame.visits[step.id] ?? 0) > limit) {
 				frame.additionalVisits ??= {};
 				frame.additionalVisits[step.id] =
@@ -4315,6 +4660,14 @@ export class WorkflowRuntime {
 		return {
 			id: run.id,
 			videoAssets,
+			improvementParent: run.improvementParent,
+			improvement: run.improvementState && {
+				phase: run.improvementState.phase,
+				children: run.improvementState.children,
+				issueCount: Object.values(run.improvementState.issues).filter(
+					(i) => i.phase === "confirmed",
+				).length,
+			},
 			title: run.title,
 			status: capacityRunStatus(run),
 			capacityLeaves: run.capacityLeaves,

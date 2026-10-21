@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Discover substantial architectural improvements with parallel research coordinators and cheaper workers. Review each proposal with Fix it, File issue, Skip or Ask Bob, see prerequisite and alternative conflicts before submitting, and preview which fixes start in parallel; explicitly launch the batch to file deferred backlog issues and launch only selected fixes as independent Factory runs, with traceable research activity, fresh plan checks after feedback, normal approvals and dependency-aware delivery. ([#167](https://github.com/jappyjan/bobs-factory/pull/167))
+
 - Before building, Bob checks in like a colleague at your desk instead of handing you a 16,000-pixel proposal: what he thinks you want, how he’d do it with a before/after sketch of what people will experience, who will notice, the calls he’d like you to check, how big it is and what he won’t do or can’t fully prove. React to each point with 👍 or a short note; your notes go back as one change request, or say “Go ahead, build it”. Listen reads it aloud. Files, ticket coverage, the system map and the full plan stay in Bob’s notes, and drafts his reviewer sent back are counted instead of shown. Asking for changes on a pending proposal switches that run to the check-in. ([#166](https://github.com/jappyjan/bobs-factory/pull/166))
 
 - Sign in on devices with difficult keyboards using an explicitly enabled six-digit code from Settings → Access. Compare confirmation numbers and approve the device before its browser can collect a separate revocable API key. Codes expire after five minutes; request throttling preserves active pairing, and framing protection guards approval controls. ([#162](https://github.com/jappyjan/bobs-factory/pull/162))
@@ -33,6 +35,11 @@ All notable changes to this project will be documented in this file.
 - Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 
 - Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+- Recheck waiting questions after an update or access repair without inventing an answer or losing the original conversation. Let correction roles return genuine design changes through proposal review, and keep supervised concurrency checks within the run's capacity allowance. ([#171](https://github.com/jappyjan/bobs-factory/pull/171))
+
+- Stop repeated review loops caused by stale pull-request target commits. Let correction roles use retained findings when review is unfinished, and give selected checks the normal twenty-minute command budget while keeping independent review and human approval required. ([#169](https://github.com/jappyjan/bobs-factory/pull/169))
+
+- Double built-in step iteration limits, including a one-time allowance for existing stock runs that preserves saved work, previous iteration grants and approval decisions. ([#169](https://github.com/jappyjan/bobs-factory/pull/169))
 
 - Keep review navigation and decision controls visible in a compact fixed footer, collapse Dig deeper by default, and remove swipe/tap slide changes and overlapping sticky layers while scrolling. ([#168](https://github.com/jappyjan/bobs-factory/pull/168))
 

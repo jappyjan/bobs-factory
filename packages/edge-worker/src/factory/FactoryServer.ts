@@ -32,6 +32,7 @@ import {
 import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
 import { factoryWebAssets } from "./FactoryWebAssets.js";
+import { ImprovementActionSchema } from "./Improvement.js";
 import {
 	launchAssetFingerprint,
 	launchAssetLimits,
@@ -1476,6 +1477,7 @@ export class FactoryServer {
 						outputs: {},
 					}),
 					workflowBlock: runtime.catalog.getBlock(request.params.id),
+					recheckAvailable: !!run && runtime.canRecheckQuestions(run.id),
 					resumeEligible:
 						!!runtime.catalog.getBlock(request.params.id) &&
 						!runtime.catalog.unavailable(
@@ -1741,6 +1743,72 @@ export class FactoryServer {
 				return reply.code(202).send(actionResult(request.params.id));
 			},
 		);
+		this.app.get<{ Params: { id: string } }>(
+			"/api/runs/:id/improvements",
+			(request) => {
+				const run = runtime.get(request.params.id),
+					state = run.improvementState;
+				if (!run.workflow.improvement)
+					throw new Error("This run is not an improvement survey");
+				return state
+					? {
+							phase: state.phase,
+							revision: state.revision,
+							proposals: state.proposals,
+							choices: state.choices,
+							comments: state.comments,
+							manifest: state.manifest,
+							acceptance: state.acceptance && {
+								digest: state.acceptance.digest,
+								actor: state.acceptance.actor,
+								at: state.acceptance.at,
+							},
+							jobs: Object.fromEntries(
+								Object.entries(state.jobs).map(([key, job]) => [
+									key,
+									{
+										role: job.role,
+										status: job.status,
+										error: job.error,
+										settings: job.settings,
+									},
+								]),
+							),
+							children: state.children,
+							issues: state.issues,
+							limitations: state.limitations,
+						}
+					: {
+							phase: "preparing",
+							proposals: [],
+							jobs: {},
+							choices: {},
+							comments: [],
+							children: {},
+							issues: {},
+							limitations: [],
+						};
+			},
+		);
+		this.app.get<{ Params: { id: string } }>(
+			"/api/runs/:id/improvement-destinations",
+			(request) =>
+				runtime.improvementDestinations(
+					request.params.id,
+					AbortSignal.timeout(60000),
+				),
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/improvements",
+			async (request, reply) => {
+				await runtime.decideImprovement(
+					request.params.id,
+					ImprovementActionSchema.parse(request.body),
+					sessionFor(request)!.credential,
+				);
+				return reply.code(202).send(actionResult(request.params.id));
+			},
+		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/architecture-decision",
 			async (request, reply) => {
@@ -1852,6 +1920,28 @@ export class FactoryServer {
 				reply
 					.code(202)
 					.send(runActionResult(operator.retry(request.params.id))),
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/recheck",
+			async (request, reply) => {
+				const { context } = z
+					.object({
+						context: z
+							.object({
+								step: z.string().min(1),
+								questionBatchId: z.string().min(1),
+								questions: z.array(z.string()).min(1),
+							})
+							.strict(),
+					})
+					.strict()
+					.parse(request.body);
+				return reply
+					.code(202)
+					.send(
+						runActionResult(await operator.recheck(request.params.id, context)),
+					);
+			},
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/answer",
