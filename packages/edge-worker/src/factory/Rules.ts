@@ -87,6 +87,28 @@ export interface RuleIssue {
 	rule?: string;
 }
 
+/** Collection projections use the same paths, predicates and budget as rules. */
+export type RuleAggregate =
+	| {
+			aggregate: "all" | "any";
+			path: string;
+			where?: RuleCondition;
+			require: RuleCondition;
+	  }
+	| {
+			aggregate: "count" | "filter";
+			path: string;
+			where?: RuleCondition;
+	  };
+export type RuleExpression = RuleCondition | RuleAggregate | { select: string };
+export type RuleResult =
+	| boolean
+	| number
+	| string
+	| null
+	| unknown[]
+	| Record<string, unknown>;
+
 const MAX_DEPTH = 12;
 const MAX_VALUES = 20_000;
 const pointer = z
@@ -297,6 +319,29 @@ export const RuleDataSchema = z.unknown().superRefine((value, context) => {
 });
 export const RulesSchema = RuleDataSchema.pipe(z.array(RuleSchema).max(50));
 
+export const RuleAggregateSchema: z.ZodType<RuleAggregate> = z.union([
+	z
+		.object({
+			aggregate: z.enum(["all", "any"]),
+			path: pointer,
+			where: RuleConditionSchema.optional(),
+			require: RuleConditionSchema,
+		})
+		.strict(),
+	z
+		.object({
+			aggregate: z.enum(["count", "filter"]),
+			path: pointer,
+			where: RuleConditionSchema.optional(),
+		})
+		.strict(),
+]);
+export const RuleExpressionSchema: z.ZodType<RuleExpression> = z.union([
+	RuleConditionSchema,
+	RuleAggregateSchema,
+	z.object({ select: pointer }).strict(),
+]);
+
 /** Independent AST and total-work ceilings; recipe data cannot increase either. */
 export const RULE_EVALUATION_LIMITS = {
 	conditions: 100_000,
@@ -318,6 +363,8 @@ interface Work {
 	validateFormat?: FormatValidator;
 	work: number;
 	slice: number;
+	/** Named Check inputs are lazy JSON; old condition host getters retain their API. */
+	strictJson?: boolean;
 }
 const limit = () => new Error("Rules exceed the evaluation operation limit");
 function* spend(state: Work, amount = 1): Task<void> {
@@ -345,7 +392,31 @@ function state(budget: RuleEvaluationBudget): Work {
 		slice: 0,
 	};
 }
+function selected(value: unknown, state: Work): void {
+	if (!state.strictJson || value === null) return;
+	if (typeof value !== "object") {
+		if (!["undefined", "boolean", "number", "string"].includes(typeof value))
+			throw new Error("Rules accept only JSON data");
+		return;
+	}
+	const prototype = Object.getPrototypeOf(value);
+	if (
+		prototype !== null &&
+		prototype !== (Array.isArray(value) ? Array.prototype : Object.prototype)
+	)
+		throw new Error("Rules accept only JSON data");
+}
+function own(value: object, key: string, state: Work): unknown {
+	if (!state.strictJson) return (value as Record<string, unknown>)[key];
+	const descriptor = Object.getOwnPropertyDescriptor(value, key);
+	if (descriptor && !("value" in descriptor))
+		throw new Error("Rules accept JSON data, not accessors");
+	const result = descriptor?.value;
+	selected(result, state);
+	return result;
+}
 function* members(value: object, state: Work): Task<string[]> {
+	selected(value, state);
 	const keys: string[] = [];
 	for (const key in value) {
 		if (!Object.hasOwn(value, key)) continue;
@@ -423,15 +494,19 @@ function* resolve(
 	root: unknown,
 	path: string,
 	state: Work,
+	strictCollectionPath = false,
 ): Task<unknown> {
 	yield* spend(state, path.length + 1);
 	const fromRoot = path.startsWith("$");
 	const pointer = fromRoot ? path.slice(1) : path;
 	let current: unknown[] = [fromRoot ? root : scope];
 	let expanded = false;
+	let pathDepth = 0;
 	for (const key of pointer === ""
 		? []
 		: pointer.slice(1).split("/").map(decode)) {
+		if (state.strictJson && ++pathDepth > RULE_EVALUATION_LIMITS.dataDepth)
+			throw new Error("Rule data nesting exceeds the evaluation limit");
 		const next: unknown[] = [];
 		const add = (item: unknown) => {
 			if (next.length >= MAX_VALUES)
@@ -440,38 +515,56 @@ function* resolve(
 		};
 		for (const value of current) {
 			yield* spend(state);
+			selected(value, state);
 			if (key === "*") {
 				expanded = true;
 				if (Array.isArray(value)) {
 					if (value.length > MAX_VALUES)
 						throw new Error("Rule selection exceeds the evaluation limit");
-					for (const item of value) {
+					for (const item of yield* collection(value, state)) {
 						yield* spend(state);
 						add(item);
 					}
 				} else if (value && typeof value === "object") {
 					for (const name of yield* members(value, state)) {
 						yield* spend(state);
-						add((value as Record<string, unknown>)[name]);
+						add(own(value, name, state));
 					}
-				}
+				} else if (strictCollectionPath)
+					throw new Error(`Rule aggregate path ${path} has no collection at *`);
 			} else if (
 				value &&
 				typeof value === "object" &&
 				Object.hasOwn(value, key)
 			)
-				add((value as Record<string, unknown>)[key]);
+				add(own(value, key, state));
+			else if (strictCollectionPath)
+				throw new Error(`Rule aggregate path ${path} is missing ${key}`);
 			else if (!expanded) add(undefined);
 		}
 		current = next;
 	}
-	return expanded ? current : current[0];
+	const result = expanded ? current : current[0];
+	selected(result, state);
+	return result;
 }
 function list<T = unknown>(value: unknown): T[] {
 	if (!Array.isArray(value)) return [];
 	if (value.length > MAX_VALUES)
 		throw new Error("Rule collection exceeds the evaluation limit");
 	return value as T[];
+}
+/** Inspect only collection entries actually selected, never a host iterator. */
+function* collection<T = unknown>(value: unknown, state: Work): Task<T[]> {
+	if (!state.strictJson) return list<T>(value);
+	selected(value, state);
+	const array = list<T>(value);
+	const result: T[] = [];
+	for (let index = 0; index < array.length; index++) {
+		yield* spend(state);
+		result.push(own(array, String(index), state) as T);
+	}
+	return result;
 }
 function* size(value: unknown, state: Work): Task<number | undefined> {
 	yield* spend(state);
@@ -521,8 +614,10 @@ function* canonical(
 	value: unknown,
 	state: Work,
 	depth = 0,
+	active = new Set<object>(),
 ): Task<string | undefined> {
 	yield* spend(state);
+	selected(value, state);
 	if (depth > RULE_EVALUATION_LIMITS.dataDepth)
 		throw new Error("Rule data nesting exceeds the evaluation limit");
 	if (typeof value === "string") {
@@ -534,48 +629,58 @@ function* canonical(
 		yield* spend(state, 24);
 		return JSON.stringify(value);
 	}
-	const parts: string[] = [];
-	let characters = 2;
-	const add = (part: string) => {
-		characters += part.length + 1;
-		if (characters > RULE_EVALUATION_LIMITS.canonicalCharacters) throw limit();
-		parts.push(part);
-	};
-	if (Array.isArray(value)) {
-		for (const item of list(value))
-			add((yield* canonical(item, state, depth + 1)) ?? "null");
-		yield* spend(state, characters);
-		return `[${parts.join(",")}]`;
+	if (state.strictJson) {
+		if (active.has(value)) throw new Error("Rule data must be acyclic");
+		active.add(value);
 	}
-	const keys = yield* members(value, state);
-	// Prepay a bounded comparator allowance. The comparator also counts actual
-	// calls, so no engine sort implementation can exceed the paid work.
-	let longest = 0;
-	for (const name of keys) {
-		yield* spend(state);
-		longest = Math.max(longest, name.length);
-	}
-	const comparisons =
-		keys.length * 2 * Math.ceil(Math.log2(Math.max(2, keys.length)));
-	yield* spend(state, comparisons * (longest + 1) * 2);
-	let calls = 0;
-	keys.sort((a, b) => {
-		if (++calls > comparisons) throw limit();
-		return a < b ? -1 : a > b ? 1 : 0;
-	});
-	for (const name of keys) {
-		const item = yield* canonical(
-			(value as Record<string, unknown>)[name],
-			state,
-			depth + 1,
-		);
-		if (item !== undefined) {
-			yield* spend(state, name.length * 6 + 2);
-			add(`${JSON.stringify(name)}:${item}`);
+	try {
+		const parts: string[] = [];
+		let characters = 2;
+		const add = (part: string) => {
+			characters += part.length + 1;
+			if (characters > RULE_EVALUATION_LIMITS.canonicalCharacters)
+				throw limit();
+			parts.push(part);
+		};
+		if (Array.isArray(value)) {
+			for (const item of yield* collection(value, state))
+				add((yield* canonical(item, state, depth + 1, active)) ?? "null");
+			yield* spend(state, characters);
+			return `[${parts.join(",")}]`;
 		}
+		const keys = yield* members(value, state);
+		// Prepay a bounded comparator allowance. The comparator also counts actual
+		// calls, so no engine sort implementation can exceed the paid work.
+		let longest = 0;
+		for (const name of keys) {
+			yield* spend(state);
+			longest = Math.max(longest, name.length);
+		}
+		const comparisons =
+			keys.length * 2 * Math.ceil(Math.log2(Math.max(2, keys.length)));
+		yield* spend(state, comparisons * (longest + 1) * 2);
+		let calls = 0;
+		keys.sort((a, b) => {
+			if (++calls > comparisons) throw limit();
+			return a < b ? -1 : a > b ? 1 : 0;
+		});
+		for (const name of keys) {
+			const item = yield* canonical(
+				own(value, name, state),
+				state,
+				depth + 1,
+				active,
+			);
+			if (item !== undefined) {
+				yield* spend(state, name.length * 6 + 2);
+				add(`${JSON.stringify(name)}:${item}`);
+			}
+		}
+		yield* spend(state, characters);
+		return `{${parts.join(",")}}`;
+	} finally {
+		if (state.strictJson) active.delete(value);
 	}
-	yield* spend(state, characters);
-	return `{${parts.join(",")}}`;
 }
 function* same(a: unknown, b: unknown, state: Work): Task<boolean> {
 	const left = yield* canonical(a, state),
@@ -608,7 +713,10 @@ function* union(
 ): Task<unknown[]> {
 	const values: unknown[] = [];
 	for (const path of Array.isArray(paths) ? paths : [paths]) {
-		for (const item of list(yield* resolve(scope, root, path, state))) {
+		for (const item of yield* collection(
+			yield* resolve(scope, root, path, state),
+			state,
+		)) {
 			yield* spend(state);
 			if (values.length >= MAX_VALUES)
 				throw new Error("Rule collection exceeds the evaluation limit");
@@ -688,8 +796,9 @@ function* conditionTask(
 			state,
 		);
 		if (expected === undefined) return false;
-		for (const item of list(
+		for (const item of yield* collection(
 			yield* resolve(scope, root, condition.sameLength.items, state),
+			state,
 		))
 			if ((yield* size(item, state)) !== expected) return false;
 		return true;
@@ -698,8 +807,9 @@ function* conditionTask(
 		const sought = yield* resolve(scope, root, condition.lookup.value, state);
 		let match: unknown,
 			count = 0;
-		for (const item of list(
+		for (const item of yield* collection(
 			yield* resolve(scope, root, condition.lookup.collection, state),
+			state,
 		)) {
 			yield* spend(state);
 			if (
@@ -741,13 +851,14 @@ function* conditionTask(
 	}
 	if ("each" in condition || "some" in condition) {
 		const each = "each" in condition;
-		for (const item of list(
+		for (const item of yield* collection(
 			yield* resolve(
 				scope,
 				root,
 				each ? condition.each : condition.some,
 				state,
 			),
+			state,
 		)) {
 			yield* spend(state);
 			if (condition.where && !(yield* next(condition.where, item))) continue;
@@ -759,8 +870,9 @@ function* conditionTask(
 	}
 	if ("count" in condition) {
 		let count = 0;
-		for (const item of list(
+		for (const item of yield* collection(
 			yield* resolve(scope, root, condition.count, state),
+			state,
 		)) {
 			yield* spend(state);
 			if (!condition.where || (yield* next(condition.where, item))) count++;
@@ -791,7 +903,7 @@ function* conditionTask(
 	if (condition.maxItem !== undefined) {
 		const maximum = yield* operandValue(condition.maxItem, scope, root, state);
 		if (maximum === undefined || !Array.isArray(value)) return false;
-		for (const item of list(value)) {
+		for (const item of yield* collection(value, state)) {
 			yield* spend(state);
 			if (typeof item !== "number" || item > maximum) return false;
 		}
@@ -846,7 +958,7 @@ function* conditionTask(
 	}
 	if (condition.unique) {
 		const seen = new Set<string | undefined>();
-		for (const item of list(value)) {
+		for (const item of yield* collection(value, state)) {
 			const id = yield* key(item, condition.by, root, state);
 			yield* spend(state, (id?.length ?? 0) + 1);
 			if (seen.has(id)) return false;
@@ -863,7 +975,7 @@ function* conditionTask(
 			other.add(id);
 		}
 		for (const item of Array.isArray(value)
-			? list(value)
+			? yield* collection(value, state)
 			: value === undefined
 				? []
 				: [value]) {
@@ -976,4 +1088,187 @@ export function evaluateRulesAsync(
 	signal?: AbortSignal,
 ): Promise<RuleIssue[]> {
 	return asynchronous(rulesTask(rules, document, validateFormat), signal);
+}
+
+function* expressionTask(
+	expression: RuleExpression,
+	document: unknown,
+	work: Work,
+): Task<RuleResult> {
+	if ("select" in expression) {
+		const encoded = yield* canonical(
+			yield* resolve(document, document, expression.select, work),
+			work,
+		);
+		if (encoded === undefined) return null;
+		// Parsing is bounded by the canonical character ceiling and prepaid in
+		// the shared budget. The result owns its data; projections cannot expose
+		// mutable references into earlier outputs or evidence.
+		yield* spend(work, encoded.length + 1);
+		return JSON.parse(encoded) as RuleResult;
+	}
+	if (!("aggregate" in expression))
+		return yield* conditionTask(expression, document, document, 0, work);
+	const selected = yield* resolve(
+		document,
+		document,
+		expression.path,
+		work,
+		true,
+	);
+	// An absent or malformed producer collection is not a successful empty
+	// collection. Ordinary rules retain their historical missing-path semantics.
+	if (!Array.isArray(selected))
+		throw new Error(
+			`Rule aggregate path ${expression.path || "/"} must select an array`,
+		);
+	let count = 0;
+	const filtered: unknown[] = [];
+	for (const item of yield* collection(selected, work)) {
+		yield* spend(work);
+		if (
+			expression.where &&
+			!(yield* conditionTask(expression.where, item, document, 0, work))
+		)
+			continue;
+		if (expression.aggregate === "count") count++;
+		else if (expression.aggregate === "filter") filtered.push(item);
+		else if ("require" in expression) {
+			const matches = yield* conditionTask(
+				expression.require,
+				item,
+				document,
+				0,
+				work,
+			);
+			if (expression.aggregate === "all" && !matches) return false;
+			if (expression.aggregate === "any" && matches) return true;
+		}
+	}
+	switch (expression.aggregate) {
+		case "all":
+			return true;
+		case "any":
+			return false;
+		case "count":
+			return count;
+		case "filter":
+			return filtered;
+	}
+}
+
+export interface NamedRuleEvaluation {
+	results: Record<string, RuleResult>;
+	passed: boolean;
+}
+
+function* namedRulesTask(
+	expressions: Readonly<Record<string, RuleExpression>>,
+	inputs: unknown,
+	evidence: unknown,
+	passed: RuleCondition | undefined,
+	validateFormat?: FormatValidator,
+): Task<NamedRuleEvaluation> {
+	const work = state({
+		remaining: RULE_EVALUATION_LIMITS.conditions,
+		validateFormat,
+	});
+	work.strictJson = true;
+	const document = { inputs, evidence };
+	yield* footprint({ expressions, passed }, work);
+	const names = yield* members(expressions, work);
+	if (names.length > 50)
+		throw new Error("At most 50 named rule results are allowed");
+	const results: Record<string, RuleResult> = {};
+	let allPassed = true;
+	let booleans = 0;
+	for (const name of names) {
+		if (["passed", "__proto__", "constructor", "prototype"].includes(name))
+			throw new Error(`Reserved named rule result: ${name}`);
+		const result = yield* expressionTask(expressions[name]!, document, work);
+		// Charge each emitted projection, including repeated filtered values, so
+		// many cheap scans cannot manufacture an unbounded serialized output.
+		yield* footprint(result, work);
+		results[name] = result;
+		if (typeof result === "boolean") {
+			booleans++;
+			allPassed &&= result;
+		}
+	}
+	if (!passed && !booleans)
+		throw new Error("Check needs a boolean result or an explicit passed rule");
+	return {
+		results,
+		passed: passed
+			? yield* conditionTask(
+					passed,
+					{ ...document, results },
+					{ ...document, results },
+					0,
+					work,
+				)
+			: allPassed,
+	};
+}
+
+/** Named Check rules share one total budget, including aggregate output size. */
+export function evaluateNamedRules(
+	expressions: Readonly<Record<string, RuleExpression>>,
+	inputs: unknown,
+	evidence: unknown = {},
+	passed?: RuleCondition,
+	validateFormat?: FormatValidator,
+): NamedRuleEvaluation {
+	return sync(
+		namedRulesTask(expressions, inputs, evidence, passed, validateFormat),
+	);
+}
+
+export function evaluateNamedRulesAsync(
+	expressions: Readonly<Record<string, RuleExpression>>,
+	inputs: unknown,
+	evidence: unknown = {},
+	passed?: RuleCondition,
+	validateFormat?: FormatValidator,
+	signal?: AbortSignal,
+): Promise<NamedRuleEvaluation> {
+	return asynchronous(
+		namedRulesTask(expressions, inputs, evidence, passed, validateFormat),
+		signal,
+	);
+}
+
+/** Fixed evidence selectors reuse the same guarded traversal and total budget. */
+export async function selectRuleValuesAsync(
+	document: unknown,
+	path: string,
+	budget: RuleEvaluationBudget,
+	signal?: AbortSignal,
+): Promise<unknown[]> {
+	pointer.parse(path);
+	const work = state(budget);
+	work.strictJson = true;
+	function* run(): Task<unknown[]> {
+		const value = yield* resolve(document, document, path, work, true);
+		const expanded = path.split("/").some((part) => decode(part) === "*");
+		const result: unknown[] = [];
+		for (const item of expanded ? yield* collection(value, work) : [value]) {
+			for (const selected of Array.isArray(item)
+				? yield* collection(item, work)
+				: [item]) {
+				yield* spend(work);
+				if (result.length >= MAX_VALUES)
+					throw new Error("Evidence selection exceeds the limit");
+				yield* footprint(selected, work);
+				result.push(selected);
+			}
+		}
+		return result;
+	}
+	try {
+		return await asynchronous(run(), signal);
+	} finally {
+		budget.remaining = work.remaining;
+		budget.workRemaining = work.work;
+	}
 }

@@ -8,10 +8,36 @@ import type { WorkflowStep } from "./Workflow.js";
 import { snapshotHistory } from "./WorkflowInput.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
+/** Host ticket timestamps have the same JSON representation before/after restart. */
+function checkTicket(value: unknown): unknown {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+	const ticket = value as Record<string, unknown>;
+	const result = { ...ticket };
+	for (const key of ["createdAt", "updatedAt"]) {
+		if (ticket[key] instanceof Date)
+			result[key] = Date.prototype.toISOString.call(ticket[key]);
+	}
+	if (Array.isArray(ticket.comments)) {
+		if (ticket.comments.length > RULE_EVALUATION_LIMITS.collection)
+			throw new Error("Check ticket comments exceed the collection limit");
+		result.comments = ticket.comments.map((comment) => {
+			if (!comment || typeof comment !== "object" || Array.isArray(comment))
+				return comment;
+			const record = { ...comment } as Record<string, unknown>;
+			for (const key of ["createdAt", "updatedAt"])
+				if (record[key] instanceof Date)
+					record[key] = Date.prototype.toISOString.call(record[key]);
+			return record;
+		});
+	}
+	return result;
+}
+
 /** Resolve named input bindings without exposing inherited object properties. */
 export function stepBindings(
 	context: ExecutionContext,
 	history = context.run.history,
+	options?: { checkJson?: boolean },
 ): Record<string, unknown> {
 	const { run, step } = context;
 	const outputs = context.outputs ?? run.outputs;
@@ -35,7 +61,12 @@ export function stepBindings(
 						{ id: run.repositoryId, workspace: run.workspace },
 					]),
 		source: takeoverSource(run),
-		ticket: ticketSnapshot(run),
+		get ticket() {
+			const value = ticketSnapshot(run);
+			return options?.checkJson && step.type === "check"
+				? checkTicket(value)
+				: value;
+		},
 		history: snapshotHistory(history),
 		launchInputs: run.launchInputs ?? {},
 		mergeReadiness: run.mergeReadiness,

@@ -28,6 +28,9 @@ import {
 	type RuntimeHooks,
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
+import legacyWorkflows from "./fixtures/legacy-workflows-a4990127.json" with {
+	type: "json",
+};
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
@@ -2121,6 +2124,12 @@ it("recovers a saved nested handoff through its existing fixer without replaying
 			at: new Date().toISOString(),
 		},
 	});
+	// This checkpoint predates Check steps. Use its real frozen tool graph,
+	// rather than the current bundled graph that new launches accept.
+	run.workflowDefinitions = validateWorkflows(
+		structuredClone(legacyWorkflows.default),
+	);
+	run.workflow = run.workflowDefinitions.find((x) => x.id === "factory")!;
 	run
 		.workflowDefinitions!.find((x) => x.id === "factory-pipeline")!
 		.steps.find((x) => x.id === "handoff")!.branches = [];

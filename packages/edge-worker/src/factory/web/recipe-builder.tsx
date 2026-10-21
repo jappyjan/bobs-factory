@@ -4,10 +4,12 @@ import { useSearchParams } from "react-router-dom";
 import { passiveTools } from "../CapacityPolicy";
 import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits";
 import { AgentStepSettings } from "./agent-step-settings";
-import { useAction, useConfig } from "./client";
+import { CheckJsonField, CheckStepSettings } from "./check-step-settings";
+import { api, useAction, useConfig } from "./client";
 import { AgentSettings } from "./forms";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
 import {
+	authorableTools,
 	connect,
 	describeCondition,
 	draftProblems,
@@ -27,7 +29,6 @@ import {
 	type Step,
 	stepName,
 	stepSummary,
-	toolText,
 	triggers,
 	uniqueStepId,
 	updateStep,
@@ -46,6 +47,7 @@ const nativeKeys = [
 const forkable = ["factory", "takeover"];
 const paletteKinds = [
 	"agent",
+	"check",
 	"human",
 	"tool",
 	"script",
@@ -881,6 +883,14 @@ function Inspector({
 					onError={onConfigError}
 				/>
 			)}
+			{step.type === "check" && (
+				<CheckStepSettings
+					step={step}
+					readOnly={!local}
+					onChange={onChange}
+					onError={onConfigError}
+				/>
+			)}
 			{(step.type === "tool" || step.type === "script") && local && (
 				<section className="recipe-section">
 					<h3>What runs</h3>
@@ -893,7 +903,7 @@ function Inspector({
 								onChange={(e) => onChange({ tool: e.target.value })}
 							/>
 							<datalist id="recipe-tools">
-								{Object.keys(toolText).map((tool) => (
+								{authorableTools.map((tool) => (
 									<option key={tool} value={tool} />
 								))}
 							</datalist>
@@ -1006,6 +1016,15 @@ function Inspector({
 			{topLevel && (
 				<section className="recipe-section">
 					<h3>Where it goes next</h3>
+					{step.type === "check" && (
+						<datalist id="check-route-fields">
+							{["passed", ...Object.keys(step.check?.results ?? {})].map(
+								(name) => (
+									<option key={name} value={name} />
+								),
+							)}
+						</datalist>
+					)}
 					<ul className="recipe-routes">
 						{step.branches.map((branch, index) => (
 							<li key={`${index}-${branch.next}`} data-new={!branch.when.path}>
@@ -1015,6 +1034,9 @@ function Inspector({
 										<input
 											aria-label="Output field"
 											placeholder="output field"
+											list={
+												step.type === "check" ? "check-route-fields" : undefined
+											}
 											value={branch.when.path}
 											onChange={(e) =>
 												onChange({
@@ -1105,7 +1127,10 @@ function Inspector({
 									branches: [
 										...step.branches,
 										{
-											when: { path: "approved", equals: false },
+											when: {
+												path: step.type === "check" ? "passed" : "approved",
+												equals: false,
+											},
 											next: fallback!,
 										},
 									],
@@ -1575,20 +1600,31 @@ function SimulationPanel({
 				step && (
 					<>
 						<p>
-							<b>{step.name}</b> — {stepSummary(step, recipes)} What happens?
+							<b>{step.name}</b> — {stepSummary(step, recipes)}
+							{step.type !== "check" && " What happens?"}
 						</p>
-						<div className="actions">
-							{outcomesOf(steps, step.id).map((outcome) => (
-								<Button
-									key={`${outcome.label}-${outcome.to}`}
-									variant={outcome.branch ? "secondary" : "primary"}
-									onClick={() => go(outcome.to)}
-								>
-									{outcome.branch ? "" : "✓ "}
-									{outcome.label} → {stepName(steps, outcome.to)}
-								</Button>
-							))}
-						</div>
+						{step.type === "check" ? (
+							<CheckSimulation
+								key={`${current}/${simulation.visits[current]}`}
+								step={step}
+								fallback={fallbackOf(steps, step)}
+								steps={steps}
+								onContinue={go}
+							/>
+						) : (
+							<div className="actions">
+								{outcomesOf(steps, step.id).map((outcome) => (
+									<Button
+										key={`${outcome.label}-${outcome.to}`}
+										variant={outcome.branch ? "secondary" : "primary"}
+										onClick={() => go(outcome.to)}
+									>
+										{outcome.branch ? "" : "✓ "}
+										{outcome.label} → {stepName(steps, outcome.to)}
+									</Button>
+								))}
+							</div>
+						)}
 					</>
 				)
 			)}
@@ -1596,5 +1632,133 @@ function SimulationPanel({
 				Restart
 			</button>
 		</section>
+	);
+}
+
+function CheckSimulation({
+	step,
+	fallback,
+	steps,
+	onContinue,
+}: {
+	step: Step;
+	fallback: string;
+	steps: Step[];
+	onContinue: (next: string) => void;
+}) {
+	const [inputs, setInputs] = useState<Record<string, unknown>>({});
+	const [evidence, setEvidence] = useState<Record<string, unknown>>({});
+	const [errors, setErrors] = useState<Record<string, string>>({});
+	const [failure, setFailure] = useState("");
+	const [pending, setPending] = useState(false);
+	const [result, setResult] = useState<{
+		output: Record<string, unknown>;
+		next: string;
+	}>();
+	const request = useRef<AbortController | undefined>(undefined);
+	useEffect(() => () => request.current?.abort(), []);
+	const invalidate = useCallback(() => {
+		request.current?.abort();
+		setPending(false);
+		setResult(undefined);
+		setFailure("");
+	}, []);
+	const reportError = useCallback(
+		(field: string, error: string) => {
+			setErrors((current) =>
+				current[field] === error ? current : { ...current, [field]: error },
+			);
+			if (error) invalidate();
+		},
+		[invalidate],
+	);
+	const evaluate = async () => {
+		invalidate();
+		const controller = new AbortController();
+		request.current = controller;
+		setPending(true);
+		try {
+			const evaluated = await api<{
+				output: Record<string, unknown>;
+				next: string;
+			}>("/api/workflows/check/simulate", {
+				method: "POST",
+				body: JSON.stringify({ step, inputs, evidence, fallback }),
+				signal: controller.signal,
+			});
+			if (!controller.signal.aborted) setResult(evaluated);
+		} catch (error) {
+			if (!controller.signal.aborted)
+				setFailure(
+					error instanceof Error ? error.message : "Check evaluation failed.",
+				);
+		} finally {
+			if (!controller.signal.aborted) setPending(false);
+		}
+	};
+	return (
+		<div className="check-simulation">
+			<p className="recipe-note">
+				Uses the production Check evaluator and recipe route matching. Supply
+				resolved named reads as inputs. Evidence fixtures are synthetic and do
+				not verify live files, media, review receipts or approvals.
+			</p>
+			<div className="check-simulation-inputs">
+				<CheckJsonField
+					label="Simulation inputs"
+					value={inputs}
+					object
+					onError={reportError}
+					onChange={(value) => {
+						invalidate();
+						setInputs(value);
+					}}
+				/>
+				<CheckJsonField
+					label="Synthetic evidence"
+					value={evidence}
+					object
+					onError={reportError}
+					onChange={(value) => {
+						invalidate();
+						setEvidence(value);
+					}}
+				/>
+			</div>
+			<div className="actions">
+				<Button
+					busy={pending}
+					disabled={Object.values(errors).some(Boolean)}
+					onClick={() => void evaluate()}
+				>
+					Evaluate Check
+				</Button>
+				{pending && (
+					<Button variant="secondary" onClick={invalidate}>
+						Cancel
+					</Button>
+				)}
+			</div>
+			{failure && (
+				<p className="error" role="alert">
+					{failure}
+				</p>
+			)}
+			{result && (
+				<div
+					className="check-simulation-result"
+					role="status"
+					data-passed={result.output.passed}
+				>
+					<b>
+						{result.output.passed ? "✓ Check passed" : "Check did not pass"}
+					</b>
+					<pre>{JSON.stringify(result.output, null, 2)}</pre>
+					<Button onClick={() => onContinue(result.next)}>
+						Continue → {stepName(steps, result.next)}
+					</Button>
+				</div>
+			)}
+		</div>
 	);
 }

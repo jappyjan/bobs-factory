@@ -8017,6 +8017,7 @@ ${taskSection}`;
 						() => this.prepareFactoryRun(run, signal),
 					),
 				simple: (run, signal) => this.executeSimpleFactoryRun(run, signal),
+				evidence: (context) => tools.evidence(context),
 				agent: (context) => this.executeFactoryAgent(context),
 				script: (context) => {
 					this.startRunTitle(context.run.id);

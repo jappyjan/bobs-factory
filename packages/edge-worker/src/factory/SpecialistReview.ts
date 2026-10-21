@@ -19,6 +19,7 @@ import {
 	readStep,
 	reviewEvidenceContract,
 } from "./StepConfig.js";
+import { stepForRun } from "./ToolBindings.js";
 import type { WorkflowStep } from "./Workflow.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
@@ -491,7 +492,10 @@ export function validateReviewConfiguration(
 			? readStep(step, "inventory")
 			: undefined;
 		const reviewGraph =
-			(step.type === "fanout" || step.tool === "review-gate") && inventoryId;
+			(step.type === "fanout" ||
+				step.tool === "review-gate" ||
+				(step.type === "check" && hasCheck(step, "review-evidence"))) &&
+			inventoryId;
 		if (reviewGraph) {
 			const inventory = byId.get(inventoryId);
 			if (!inventory || reviewEvidenceContract(inventory) !== "inventory-v1")
@@ -621,7 +625,34 @@ export function latestAggregate(
 	key?: string,
 ): AggregateReview | undefined {
 	for (let index = run.history.length - 1; index >= 0; index--) {
-		const output = run.history[index]!.output as AggregateReview;
+		const entry = run.history[index]!;
+		const stored = entry.output as AggregateReview;
+		const receipt = entry.evidence?.["review-evidence"] as
+			| AggregateReview
+			| undefined;
+		const producer = stepForRun(run, entry.step);
+		const expectedKey =
+			producer && readStep(producer, "fanout")
+				? `${entry.step.replace(/[^/]+$/, "")}${readStep(producer, "fanout")}`
+				: undefined;
+		let output: AggregateReview | undefined;
+		if (!run.workflow)
+			output = stored; // Graphless historical package callers.
+		else if (
+			producer?.type === "check" &&
+			hasCheck(producer, "review-evidence") &&
+			hasCheck(producer, "review-boundary") &&
+			receipt?.approved === stored?.approved &&
+			receipt?.baseline?.key === expectedKey
+		)
+			output = receipt;
+		else if (
+			producer?.type === "tool" &&
+			producer.tool === "review-gate" &&
+			consumesReview(producer) &&
+			stored?.baseline?.key === expectedKey
+		)
+			output = stored;
 		if (
 			output?.baseline?.schemaVersion === 1 &&
 			(!key || output.baseline.key === key) &&

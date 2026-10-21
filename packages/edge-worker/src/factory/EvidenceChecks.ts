@@ -9,6 +9,11 @@ import {
 } from "./OutputValidation.js";
 import { runRepositories } from "./RepositoryScope.js";
 import {
+	RULE_EVALUATION_LIMITS,
+	type RuleEvaluationBudget,
+	selectRuleValuesAsync,
+} from "./Rules.js";
+import {
 	CHECK_IDS,
 	type CheckId,
 	readOutput,
@@ -109,6 +114,13 @@ async function revision(
 	repositoryId: string,
 	workspace: string,
 ) {
+	const pinned =
+		context.step.type === "check"
+			? context.inspectionBinding?.repositories.find(
+					(entry) => entry.id === repositoryId,
+				)
+			: undefined;
+	if (pinned) return pinned.headSha;
 	const revisions = context.progress?.currentRevision;
 	const scoped = revisions?.repositories?.find(
 		(repository) => repository.repositoryId === repositoryId,
@@ -139,7 +151,37 @@ export async function runEvidenceChecks(
 	output: unknown,
 	phase: EvidencePhase = "correction",
 ): Promise<unknown> {
+	const budget: RuleEvaluationBudget | undefined =
+		context.step.type === "check"
+			? {
+					remaining: RULE_EVALUATION_LIMITS.conditions,
+					workRemaining: RULE_EVALUATION_LIMITS.work,
+				}
+			: undefined;
+	const selectedValues = async (document: unknown, path: string) =>
+		budget
+			? selectRuleValuesAsync(document, path, budget, context.signal)
+			: values(document, path);
+	const selectedStrings = async (
+		document: unknown,
+		path: string,
+	): Promise<string[]> => {
+		if (!budget) return strings(document, path);
+		const selected = await selectedValues(document, path);
+		if (selected.some((value) => typeof value !== "string"))
+			throw new Error(`${path}: expected file paths or IDs`);
+		return selected as string[];
+	};
+	let operations = 0;
+	const checkpoint = async () => {
+		context.signal.throwIfAborted();
+		if (budget && operations++ % 64 === 0) {
+			await new Promise<void>((resolve) => setImmediate(resolve));
+			context.signal.throwIfAborted();
+		}
+	};
 	for (const { check, args } of resolveStepConfig(context.step).checks) {
+		context.signal.throwIfAborted();
 		// Checks without explicit selector arguments are stock adapters. Their
 		// existing authoring/finalization/gate implementations own that stage.
 		if (phase !== "correction") continue;
@@ -167,7 +209,8 @@ export async function runEvidenceChecks(
 			switch (check as CheckId) {
 				case "files-exist": {
 					const repo = repository(context, args.repositoryId);
-					for (const file of strings(output, args.path)) {
+					for (const file of await selectedStrings(output, args.path)) {
+						await checkpoint();
 						if (resolveStepConfig(context.step).revision === "bound") {
 							const head = await revision(context, repo.id, repo.workspace);
 							await repositoryBlob(context, repo.workspace, head, file);
@@ -176,7 +219,8 @@ export async function runEvidenceChecks(
 					break;
 				}
 				case "code-refs-valid": {
-					for (const reference of values(output, args.path)) {
+					for (const reference of await selectedValues(output, args.path)) {
+						await checkpoint();
 						const match =
 							typeof reference === "string"
 								? /^(.*):(\d+)(?:-(\d+))?$/.exec(reference)
@@ -229,22 +273,35 @@ export async function runEvidenceChecks(
 						throw new Error(
 							"ids-resolve requires source (a named read) and ids (a JSON Pointer)",
 						);
-					const bound = readOutput(
-						context.step,
-						args.source,
-						context.outputs ?? context.run.outputs,
-					);
+					const inputs =
+						context.step.type === "check" &&
+						output &&
+						typeof output === "object"
+							? (output as { inputs?: Record<string, unknown> }).inputs
+							: undefined;
+					const bound = inputs
+						? Object.hasOwn(inputs, args.source)
+							? inputs[args.source]
+							: undefined
+						: readOutput(
+								context.step,
+								args.source,
+								context.outputs ?? context.run.outputs,
+							);
 					if (bound === undefined)
 						throw new Error(
 							`ids-resolve has no bound output for ${args.source}`,
 						);
-					const ids = new Set(strings(bound, args.ids));
-					for (const id of strings(output, args.path))
+					const ids = new Set(await selectedStrings(bound, args.ids));
+					for (const id of await selectedStrings(output, args.path)) {
+						await checkpoint();
 						if (!ids.has(id)) throw new Error(`Unknown referenced ID: ${id}`);
+					}
 					break;
 				}
 				case "media-valid": {
-					for (const file of strings(output, args.path)) {
+					for (const file of await selectedStrings(output, args.path)) {
+						await checkpoint();
 						if (args.kind === "video")
 							await probeVideo(
 								evidenceFile(file, context.evidenceDir),
@@ -263,6 +320,10 @@ export async function runEvidenceChecks(
 					);
 			}
 		} catch (error) {
+			if (context.signal.aborted)
+				throw context.signal.reason instanceof Error
+					? context.signal.reason
+					: new DOMException("Evidence verification cancelled", "AbortError");
 			const issues = outputValidationError(output, error).issues.map(
 				(issue) => ({
 					...issue,

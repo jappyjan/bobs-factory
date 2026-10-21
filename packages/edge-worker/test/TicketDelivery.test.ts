@@ -324,7 +324,8 @@ it("detects changes during multi-resource collection", async () => {
 });
 it("routes the standard Factory through independent external verification and a snapshot-bound human gate without Git", async () => {
 	const f = setup(),
-		invoked: string[] = [];
+		invoked: string[] = [],
+		inspected: string[] = [];
 	const tools = new FactoryTools({
 		postComment: async () => {},
 		ticketDelivery: f.service,
@@ -363,14 +364,31 @@ it("routes the standard Factory through independent external verification and a 
 			invoked.push(ctx.step.tool!);
 			return tools.tool(ctx);
 		},
+		evidence: async (ctx) => {
+			inspected.push(ctx.step.id);
+			return tools.evidence(ctx);
+		},
 	});
 	const run = runtime.get(f.run.id);
 	delete run.delivery;
 	const executing = runtime.launch(run);
-	await waitFor(() => {
-		if (run.status === "failed") throw new Error(run.error);
-		expect(run.reviewGate?.status).toBe("pending");
-	});
+	// Contract acceptance and Check are separate durable checkpoints. This wait
+	// covers actual persisted execution, not a relaxation of any approval budget.
+	await waitFor(
+		() => {
+			if (run.status === "failed") throw new Error(run.error);
+			expect(
+				run.reviewGate?.status,
+				JSON.stringify({
+					status: run.status,
+					step: run.step,
+					questions: run.questions,
+					history: run.history.slice(-5).map(({ step }) => step),
+				}),
+			).toBe("pending");
+		},
+		{ timeout: 15000 },
+	);
 	expect(run.reviewGate).toMatchObject({
 		mode: "external",
 		headSha: "",
@@ -395,14 +413,24 @@ it("routes the standard Factory through independent external verification and a 
 	expect(run.status).toBe("completed");
 	expect(invoked).toEqual([
 		"record-decisions",
-		"delivery-route",
+		"accept-delivery",
 		"external-apply",
 		"external-verify",
-		"delivery-mode",
 		"external-guide",
 		"human-review",
 		"external-final",
 	]);
+	expect(inspected).toEqual(["delivery-route", "external-after-verify"]);
+	expect(run.outputs["pipeline/delivery-route"]).toEqual({
+		passed: true,
+		deferred: false,
+		mode: "external",
+	});
+	expect(run.outputs["pipeline/external-after-verify"]).toEqual({
+		passed: true,
+		mode: "external",
+		repositoryComplete: false,
+	});
 });
 it("retains partial writes and retries only the remaining relationship", async () => {
 	const f = setup();
@@ -903,13 +931,25 @@ it("corrects mixed external feedback after merge without repeating repository im
 			throw new Error("No repository scripts");
 		},
 		tool: (ctx) => tools.tool(ctx),
+		evidence: (ctx) => tools.evidence(ctx),
 	});
 	const run = runtime.get(f.run.id);
 	const executing = runtime.launch(run);
-	await waitFor(() => {
-		if (run.status === "failed") throw new Error(run.error);
-		expect(run.reviewGate?.status).toBe("pending");
-	});
+	await waitFor(
+		() => {
+			if (run.status === "failed") throw new Error(run.error);
+			expect(
+				run.reviewGate?.status,
+				JSON.stringify({
+					status: run.status,
+					step: run.step,
+					questions: run.questions,
+					history: run.history.slice(-5).map(({ step }) => step),
+				}),
+			).toBe("pending");
+		},
+		{ timeout: 15000 },
+	);
 	expect(run.reviewGate).toMatchObject({
 		mode: "mixed",
 		headSha: "confirmed-head",
@@ -1103,6 +1143,7 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 						externalDigest: ctx.run.delivery!.verification!.digest,
 					})
 				: tools.tool(ctx),
+		evidence: (ctx) => tools.evidence(ctx),
 	});
 	const run = runtime.get(f.run.id);
 	const executing = runtime.launch(run);
@@ -1114,11 +1155,22 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 		decision: "reject",
 		feedback: "Correct ticket description and preserve repository work",
 	});
-	await waitFor(() => {
-		if (run.status === "failed") throw new Error(run.error);
-		expect(run.architectureGate).toBeDefined();
-		expect(run.status).toBe("waiting");
-	});
+	await waitFor(
+		() => {
+			if (run.status === "failed") throw new Error(run.error);
+			expect(
+				run.architectureGate,
+				JSON.stringify({
+					status: run.status,
+					step: run.step,
+					questions: run.questions,
+					history: run.history.slice(-5).map(({ step }) => step),
+				}),
+			).toBeDefined();
+			expect(run.status).toBe("waiting");
+		},
+		{ timeout: 15000 },
+	);
 	expect(visited).not.toContain("implement");
 	expect(f.state().fields.description).toBe("corrected");
 	const candidate = run.architectureProposals!.at(-1)!;

@@ -317,6 +317,7 @@ async function drive(renamed: boolean) {
 			return parsed;
 		},
 		script: async () => ({}),
+		evidence: (context) => tools.evidence(context),
 		tool: async (context) => {
 			visits.push(
 				fork.original(context.stepKey ?? context.run.step ?? context.step.id),

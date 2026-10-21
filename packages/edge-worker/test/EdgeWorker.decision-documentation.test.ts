@@ -2,11 +2,15 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { JsonSnapshotStore } from "bobs-factory-core";
 import { expect, it, vi } from "vitest";
 import { f1AgentHandlers } from "../../../apps/f1/src/MockAgentRunner.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
-import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import {
+	type FactoryRun,
+	WorkflowRuntime,
+} from "../src/factory/WorkflowRuntime.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const provider = vi.hoisted(() => ({
@@ -151,15 +155,22 @@ it("publishes the actual record-decisions hook as one durable Linear comment whi
 	});
 	try {
 		await worker.start();
-		await waitFor(() =>
-			expect(new WorkflowRuntime(home, {}).get(run.id).status).toBe(
-				"completed",
-			),
+		// Poll durable state without rebuilding the entire workflow catalog every
+		// 50ms and starving the worker's disk commits. Verify normal loading once
+		// the persisted transition has completed.
+		const snapshots = new JsonSnapshotStore(
+			join(runtime.directory, "run-chunks"),
 		);
+		const savedRun = () =>
+			snapshots.load<FactoryRun>(
+				join(runtime.directory, "runs", `${run.id}.json`),
+			).value;
+		await waitFor(() => expect(savedRun().status).toBe("completed"));
+		expect(new WorkflowRuntime(home, {}).get(run.id).status).toBe("completed");
 		const expected =
 			"**Which language default should we use?**\n\nUse one server-wide default language\n\nRationale: Readers share a consistent default";
 		await waitFor(() => {
-			const saved = new WorkflowRuntime(home, {}).get(run.id);
+			const saved = savedRun();
 			const receipt = saved.ticketSync!.receipts.find(
 				(entry) => entry.key === `comment:${expected}`,
 			);

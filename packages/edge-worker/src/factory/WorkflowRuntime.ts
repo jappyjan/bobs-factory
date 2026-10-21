@@ -48,6 +48,7 @@ import {
 	snapshotProposal,
 	verifyProposal,
 } from "./Architecture.js";
+import { evaluateCheckAsync } from "./Check.js";
 import {
 	DeliveryContractSchema,
 	type DeliveryState,
@@ -71,12 +72,14 @@ import {
 	upgradedGuideStep,
 	upgradeHandoffReadiness,
 } from "./defaultWorkflows.js";
+import { runEvidenceChecks } from "./EvidenceChecks.js";
 import type { ResolvedExecutionEnvironment } from "./ExecutionEnvironment.js";
 import {
 	ExecutionProfileStore,
 	type ExecutionSelection,
 	type ExecutionSnapshot,
 } from "./ExecutionProfiles.js";
+import { executeCommand, FactoryTools } from "./FactoryTools.js";
 import type { GitProviderSnapshot } from "./GitProvider.js";
 import { GitSettings } from "./GitSettings.js";
 import {
@@ -114,6 +117,7 @@ import {
 	pendingMergeConfirmation,
 	recordMergeConfirmation,
 } from "./MergeRecovery.js";
+import { conforms } from "./OutputFormats.js";
 import { beginStepAttempt, finishStepAttempt } from "./Provenance.js";
 import { qaDigest as importDigest } from "./Qa.js";
 import {
@@ -151,7 +155,9 @@ import {
 import { stepBindings } from "./StepBindings.js";
 import {
 	architectureRevisionDecision,
+	CHECK_SELECTOR_IDS,
 	checkArgs,
+	checkStepEvidenceIssues,
 	consumesImpact,
 	consumesReview,
 	fixerPublication,
@@ -167,6 +173,9 @@ import {
 } from "./StepConfig.js";
 import { recordTicketMilestone } from "./TicketTracking.js";
 import {
+	boundOutput,
+	boundStepKey,
+	boundToolOutput,
 	outputForTool,
 	registerOutputHistory,
 	stepForRun,
@@ -175,6 +184,7 @@ import {
 	isComputeIntensive,
 	readPath,
 	requireTrigger,
+	routeResult,
 	type Workflow,
 	WorkflowSchema,
 	type WorkflowStep,
@@ -450,6 +460,8 @@ export interface FactoryRun {
 	history: {
 		step: string;
 		output: unknown;
+		/** Immutable runtime evidence, separate from pure Check results. */
+		evidence?: Record<string, unknown>;
 		at: string;
 		call?: WorkflowCall;
 		questionRecheck?: QuestionRecheck;
@@ -520,6 +532,7 @@ export interface ExecutionContext {
 	/** Persist per-repository side effects before the whole step completes. */
 	save?: () => void | Promise<void>;
 	allowUnchangedRepository?: boolean;
+	checkEvidence?: Record<string, unknown>;
 }
 export interface RuntimeHooks {
 	improvementDestinations?(
@@ -552,6 +565,7 @@ export interface RuntimeHooks {
 	agent(context: ExecutionContext): Promise<unknown>;
 	script(context: ExecutionContext): Promise<unknown>;
 	tool(context: ExecutionContext): Promise<unknown>;
+	evidence?(context: ExecutionContext): Promise<Record<string, unknown>>;
 	question?(run: FactoryRun): Promise<void>;
 	simple?(run: FactoryRun, signal: AbortSignal): Promise<void>;
 	prepare?(run: FactoryRun, signal: AbortSignal): Promise<void>;
@@ -1791,7 +1805,7 @@ export class WorkflowRuntime {
 			}
 			run.step = key;
 			if (
-				step.tool === "delivery-route" &&
+				["delivery-route", "accept-delivery"].includes(step.tool ?? "") &&
 				!parallel &&
 				this.reopenInvalidDeliveryPlan(run, checkpoint, steps, prefix, outputs)
 			) {
@@ -1800,7 +1814,10 @@ export class WorkflowRuntime {
 			}
 			this.log(run, key, `Starting ${step.name} (pass ${count})`);
 			const deliveryAware =
-				!!run.delivery || steps.some((s) => s.tool === "delivery-route");
+				!!run.delivery ||
+				steps.some((s) =>
+					["delivery-route", "accept-delivery"].includes(s.tool ?? ""),
+				);
 			const boundScope =
 				checkpoint.refreshes?.at(-1)?.source === step.id ||
 				state.phase !== "executing"
@@ -2119,7 +2136,11 @@ export class WorkflowRuntime {
 				await this.save(run);
 				signal.throwIfAborted();
 				try {
-					if (step.tool === "review-gate" && reviewConfig) {
+					if (
+						(step.tool === "review-gate" ||
+							(step.type === "check" && hasCheck(step, "review-evidence"))) &&
+						reviewConfig
+					) {
 						const fanoutKey = `${prefix}${reviewConfig!.fanout}`;
 						const baseline = [...(run.reviewRounds ?? [])]
 							.reverse()
@@ -2180,6 +2201,10 @@ export class WorkflowRuntime {
 								reviewBlocked: true,
 								questions,
 							};
+						if (step.type === "check")
+							output = await this.executeCheck(context, output);
+					} else if (step.type === "check") {
+						output = await this.executeCheck(context);
 					} else if (step.type === "fanout") {
 						if (
 							step.groups?.some((group) =>
@@ -2758,6 +2783,9 @@ export class WorkflowRuntime {
 						immutableJson({
 							step: key,
 							output,
+							...(step.type === "check" && context.checkEvidence
+								? { evidence: context.checkEvidence }
+								: {}),
 							at: new Date().toISOString(),
 							...(state.call ? { call: state.call } : {}),
 							...(state.questionRecheck
@@ -2835,18 +2863,23 @@ export class WorkflowRuntime {
 			}
 			// Restored waits must use current gate logic, retaining all role evidence.
 			if (
-				step.tool === "visual-gate" &&
+				(step.tool === "visual-gate" ||
+					(step.type === "check" && hasCheck(step, "qa-gate-evidence"))) &&
 				state.phase === "waiting" &&
 				hasCheck(step, "qa-evidence")
 			) {
-				output = outputs[step.id] = await this.hooks.tool(context);
+				output = outputs[step.id] =
+					step.type === "check"
+						? await this.executeCheck(context)
+						: await this.hooks.tool(context);
 				// Keep the restored wait until its questions and suggestions are compared
 				// below. Gate revalidation alone does not create a new question batch.
 				await this.save(run);
 				signal.throwIfAborted();
 			}
 			if (
-				step.tool === "visual-gate" &&
+				(step.tool === "visual-gate" ||
+					(step.type === "check" && hasCheck(step, "qa-gate-evidence"))) &&
 				readPath(output, "reviewBlocked") !== true &&
 				Array.isArray(readPath(output, "findings")) &&
 				(readPath(output, "findings") as unknown[]).length
@@ -3014,7 +3047,8 @@ export class WorkflowRuntime {
 			if (
 				readPath(output, "reviewIncomplete") === true &&
 				!impactSourceId &&
-				["review-gate", "visual-gate"].includes(step.tool ?? "")
+				(["review-gate", "visual-gate"].includes(step.tool ?? "") ||
+					(step.type === "check" && hasCheck(step, "review-assistance")))
 			) {
 				if (parallel)
 					throw new Error("Human checkpoints belong outside fanout branches");
@@ -3045,7 +3079,10 @@ export class WorkflowRuntime {
 						undefined,
 						context,
 					);
-				checkpoint.current = reviewer.id;
+				checkpoint.current =
+					step.type === "check"
+						? this.nextStep(steps, step, output)
+						: reviewer.id;
 				let reviewerSession = checkpoint.agentSessions?.[reviewer.id];
 				if (!reviewerSession?.sessionId && reviewer.type === "agent") {
 					// Older frames can retain native init events without a per-role map.
@@ -3088,7 +3125,8 @@ export class WorkflowRuntime {
 				continue;
 			}
 			if (
-				step.tool === "visual-gate" &&
+				(step.tool === "visual-gate" ||
+					(step.type === "check" && hasCheck(step, "qa-gate-evidence"))) &&
 				(readPath(output, "captureBlocked") === true ||
 					readPath(output, "qaBlocked") === true ||
 					readPath(output, "qaRetry") === true) &&
@@ -3121,7 +3159,10 @@ export class WorkflowRuntime {
 						"QA or visual evidence is incomplete and this recipe has no capture → visual-review → visual-gate recovery path. Configure that path for a new run; missing evidence cannot be approved.",
 					);
 				if (readPath(output, "qaRetry") === true) {
-					checkpoint.current = capture.id;
+					checkpoint.current =
+						step.type === "check"
+							? this.nextStep(steps, step, output)
+							: capture.id;
 					checkpoint.active = undefined;
 					run.questions = [];
 					run.status = "running";
@@ -3150,7 +3191,10 @@ export class WorkflowRuntime {
 							| undefined,
 						context,
 					);
-				checkpoint.current = capture.id;
+				checkpoint.current =
+					step.type === "check"
+						? this.nextStep(steps, step, output)
+						: capture.id;
 				checkpoint.active = undefined;
 				this.log(
 					run,
@@ -3160,7 +3204,8 @@ export class WorkflowRuntime {
 				continue;
 			}
 			if (
-				step.tool === "review-after-fix" &&
+				(step.tool === "review-after-fix" ||
+					(step.type === "check" && hasCheck(step, "post-fix-evidence"))) &&
 				Array.isArray(readPath(output, "questions")) &&
 				(readPath(output, "questions") as unknown[]).length
 			) {
@@ -3177,18 +3222,24 @@ export class WorkflowRuntime {
 						undefined,
 						context,
 					);
-				checkpoint.current = readStep(step, "fix")!;
+				checkpoint.current =
+					step.type === "check"
+						? this.nextStep(steps, step, output)
+						: readStep(step, "fix")!;
 				checkpoint.active = undefined;
 				continue;
 			}
 			if (
-				["review-gate", "visual-gate"].includes(step.tool ?? "") &&
+				(["review-gate", "visual-gate"].includes(step.tool ?? "") ||
+					(step.type === "check" && hasCheck(step, "review-evidence"))) &&
 				readPath(output, "reviewBlocked") === true
 			) {
 				if (parallel)
 					throw new Error("Human checkpoints belong outside fanout branches");
 				const fixer =
-					impactSourceId && readPath(output, "reviewIncomplete") === true
+					step.type !== "check" &&
+					impactSourceId &&
+					readPath(output, "reviewIncomplete") === true
 						? impactSourceId
 						: this.nextStep(steps, step, output);
 				if (
@@ -4815,6 +4866,174 @@ export class WorkflowRuntime {
 	private newCheckpoint(steps: WorkflowStep[]): GraphCheckpoint {
 		return { current: steps[0]?.id ?? "end", visits: {} };
 	}
+	/** Runtime owns checkpoint/convergence bookkeeping; the evaluator only consumes data. */
+	private async executeCheck(
+		context: ExecutionContext,
+		preparedReview?: unknown,
+	): Promise<unknown> {
+		const { step, signal } = context;
+		if (!step.check) throw new Error("Check configuration is missing");
+		const issues = checkStepEvidenceIssues(step);
+		if (issues.length) throw new Error(issues.join("; "));
+		const config = resolveStepConfig(step);
+		if (config.revision === "bound") {
+			context.inspectionBinding = await outputRevisionBinding(
+				context,
+				undefined,
+				true,
+			);
+			await assertBoundInspectionFresh(context);
+		}
+		const inputs = stepBindings(context, context.run.history, {
+			checkJson: true,
+		});
+		const selectors = config.checks.filter(
+			({ check, args }) =>
+				(CHECK_SELECTOR_IDS as readonly string[]).includes(check) &&
+				typeof args.path === "string",
+		);
+		if (selectors.length) await runEvidenceChecks(context, { inputs });
+		const declared = new Set(config.checks.map((check) => check.check));
+		const projected =
+			preparedReview === undefined
+				? declared.size
+					? await (this.hooks.evidence?.(context) ??
+							new FactoryTools({ postComment: async () => {} }).evidence(
+								context,
+							))
+					: {}
+				: { "review-evidence": preparedReview };
+		const evidence = Object.fromEntries(
+			Object.entries(projected).filter(([key]) => declared.has(key as never)),
+		);
+		for (const { check } of selectors) evidence[check] = { verified: true };
+
+		context.checkEvidence = evidence;
+		const ruleEvidence = { ...evidence };
+		if (
+			hasCheck(step, "review-boundary") &&
+			hasCheck(step, "review-evidence")
+		) {
+			const aggregate = evidence[
+				"review-evidence"
+			] as import("./SpecialistReview.js").AggregateReview &
+				Record<string, unknown>;
+			ruleEvidence["review-evidence"] = {
+				findings: aggregate.findings,
+				rawFindings: aggregate.rawFindings,
+				coverage: aggregate.coverage,
+				reviewers: aggregate.reviewers.map((reviewer) => ({
+					status: reviewer.status,
+					blockers: reviewer.blockers,
+				})),
+				disagreements: aggregate.disagreements,
+				reviewIncomplete: aggregate.reviewIncomplete ?? false,
+				reviewBlocked: aggregate.reviewBlocked ?? false,
+				questions: aggregate.questions ?? [],
+			};
+		}
+
+		const output = await evaluateCheckAsync(
+			step.check,
+			inputs,
+			ruleEvidence,
+			conforms,
+			signal,
+		);
+		if (
+			hasCheck(step, "review-assistance") &&
+			output.approved !== true &&
+			!(Array.isArray(output.questions) && output.questions.length) &&
+			context.run.history.some(
+				(item) =>
+					item.step === boundStepKey(context, "fix") &&
+					readPath(item.output, "reviewAssessment.unchangedCode") === true,
+			)
+		) {
+			const revision = await reviewedRunRevision(context.run, undefined, {
+				requireClean: false,
+			});
+			const dirty = Boolean(
+				(
+					await executeCommand(context, "git", ["status", "--porcelain"])
+				).trim(),
+			);
+			const questions = reviewRecoveryQuestions(context, output, {
+				headSha: revision.headSha,
+				dirty,
+			});
+			if (questions.length)
+				Object.assign(output, { reviewBlocked: true, questions });
+		}
+		if (hasCheck(step, "post-fix-evidence")) {
+			const observed = boundToolOutput(
+				context,
+				"observation",
+				"inspect-review-readiness",
+			);
+			if (
+				!observed ||
+				importDigest(observed) !==
+					importDigest(boundOutput(context, "observation"))
+			)
+				throw new Error(
+					"Post-fix evidence requires the exact executed provider inspection in this workflow frame",
+				);
+			const questions: string[] = [];
+			const seen = new Set<string>();
+			for (const [name, kind] of [
+				["revisionAssistance", "revision"],
+				["failureAssistance", "failure"],
+				["workAssistance", "work"],
+			]) {
+				const observations = output[name!];
+				if (!Array.isArray(observations)) continue;
+				for (const observation of observations) {
+					const identity = importDigest(observation);
+					if (seen.has(identity)) continue;
+					seen.add(identity);
+					const snapshot = readPath(
+						observation,
+						"readiness",
+					) as import("./MergeReadiness.js").MergeReadiness;
+					const headSha = String(readPath(observation, "headSha"));
+					const question =
+						kind === "revision"
+							? `The same revision mismatch remains after the CI fixer's synchronization attempt: The provider reports ${snapshot.headSha}, while the worktree is at ${headSha}. Restore synchronization between this PR and its branch, then reply to resume. Checks for the older revision remain insufficient; your answer does not approve or waive review and CI.`
+							: kind === "failure"
+								? `The CI fixer made no revision change and these same checks still fail: ${snapshot.checks
+										.filter((check) => check.bucket === "fail")
+										.map(
+											(check) => `${check.name}: ${check.link ?? check.state}`,
+										)
+										.join(
+											"; ",
+										)}. Resolve the external blocker or provide a corrective direction before retrying. The failures remain blocking.`
+								: `The CI fixer made no progress on the same actionable blockers: ${snapshot.blockers
+										.filter((blocker) => blocker.action === "fix")
+										.map((blocker) => blocker.message)
+										.join(
+											"; ",
+										)}. Resolve the blocker or provide a corrective direction before retrying. Review and merge safeguards remain enforced.`;
+					questions.push(
+						typeof readPath(observation, "repositoryName") === "string"
+							? `${readPath(observation, "repositoryName")}: ${question}`
+							: question,
+					);
+				}
+			}
+			if (output.needsAssistance === true) {
+				if (!questions.length)
+					throw new Error(
+						"Post-fix assistance requires declared matching observation results",
+					);
+				Object.assign(output, { questions });
+			}
+		}
+
+		return output;
+	}
+
 	private nextStep(
 		steps: WorkflowStep[],
 		step: WorkflowStep,
@@ -4822,15 +5041,10 @@ export class WorkflowRuntime {
 	): string {
 		const routes = step.tool === "handoff" ? structuredClone(steps) : steps;
 		if (routes !== steps) upgradeHandoffReadiness(routes);
-		const branch = (
-			routes.find((s) => s.id === step.id)?.branches ?? step.branches
-		).find(
-			(candidate) =>
-				JSON.stringify(readPath(output, candidate.when.path)) ===
-				JSON.stringify(candidate.when.equals),
-		);
-		return (
-			branch?.next ?? step.next ?? steps[steps.indexOf(step) + 1]?.id ?? "end"
+		return routeResult(
+			routes.find((s) => s.id === step.id) ?? step,
+			output,
+			steps[steps.indexOf(step) + 1]?.id ?? "end",
 		);
 	}
 	// Upgrade active runs written before checkpoints existed using their completed receipts.

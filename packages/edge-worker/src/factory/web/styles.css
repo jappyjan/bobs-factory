@@ -8921,6 +8921,126 @@ select.recipe-route-target {
 .recipe-simulation .link {
 	justify-self: start;
 }
+.check-section-title,
+.check-result-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+}
+.check-section-title .link {
+	font-size: 12px;
+}
+.check-result-head label {
+	flex: 1;
+	min-width: 0;
+}
+.check-result,
+.check-condition,
+.check-expression,
+.check-literal,
+.check-inputs,
+.check-simulation {
+	display: grid;
+	gap: 9px;
+	min-width: 0;
+}
+.check-result {
+	padding: 12px;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: var(--field);
+}
+.check-condition {
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 10px;
+	margin: 0;
+}
+.check-condition legend {
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--muted);
+	padding: 0 5px;
+	max-width: 100%;
+	overflow-wrap: anywhere;
+}
+.check-condition-item {
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+}
+.check-condition-item > .link {
+	justify-self: start;
+	font-size: 11px;
+}
+.check-literal,
+.check-pair,
+.check-simulation-inputs {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+}
+.check-literal .check-json-field {
+	grid-column: 1 / -1;
+}
+.check-inputs {
+	font-size: 12px;
+	padding-top: 4px;
+}
+.check-inputs summary {
+	cursor: pointer;
+	font-weight: 700;
+	margin-bottom: 8px;
+}
+.check-routes-summary {
+	padding: 10px 12px;
+	background: var(--green);
+	border-radius: 10px;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+.check-routes-summary ul {
+	padding-left: 16px;
+	margin-top: 6px;
+}
+.check-routes-summary p {
+	margin-block: 4px;
+}
+.recipe-check-config small,
+.check-simulation .recipe-note {
+	color: var(--muted);
+	font-size: 11.5px;
+	font-weight: 400;
+	overflow-wrap: anywhere;
+}
+.recipe-check-config .error {
+	color: var(--stuck-text);
+}
+.recipe-simulation:has(.check-simulation) {
+	max-height: calc(100% - 32px);
+	overflow: auto;
+}
+.check-simulation label {
+	display: grid;
+	gap: 5px;
+	font-size: 12px;
+}
+.check-simulation-result {
+	display: grid;
+	gap: 8px;
+	padding: 12px;
+	background: var(--red);
+	border-radius: 12px;
+}
+.check-simulation-result[data-passed="true"] {
+	background: var(--green);
+}
+.check-simulation-result pre {
+	font-size: 12px;
+	max-height: 160px;
+	overflow: auto;
+}
 .recipe-trail {
 	display: flex;
 	gap: 4px;
@@ -8996,6 +9116,9 @@ select.recipe-route-target {
 		bottom: 0;
 		width: 100%;
 		border-radius: 22px 22px 0 0;
+	}
+	.check-simulation-inputs {
+		grid-template-columns: minmax(0, 1fr);
 	}
 }
 

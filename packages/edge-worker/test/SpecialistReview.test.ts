@@ -821,7 +821,52 @@ it.each([
 		// Model a branch persisted before association inheritance was implemented.
 		delete branch.reviewKey;
 	} else {
-		// A branch may have completed its own review before interruption.
+		// Model retained historical producer metadata, not a newly launchable
+		// nested review graph: modern inventories require an outside-fanout
+		// question checkpoint. Only the interrupted check executes on restore.
+		// The original inventory, fanout and legacy gate identities remain declared.
+		const acceptedBranch = fixture.run.workflow.steps.find(
+			(step) => step.id === "post-review",
+		)!.groups![0]!;
+		acceptedBranch[0]!.next = "end";
+		acceptedBranch.push(
+			StepSchema.parse({
+				id: "own-inventory",
+				name: "Completed historical inventory",
+				type: "agent",
+				prompt: "Retain the completed inventory",
+				reviewContract: "inventory-v1",
+				next: "own-review",
+			}),
+			StepSchema.parse({
+				id: "own-review",
+				name: "Completed historical review",
+				type: "fanout",
+				review: { inventory: "own-inventory" },
+				groups: [
+					[
+						{
+							id: "business",
+							name: "Business coverage",
+							type: "agent",
+							prompt: "Retain the completed independent coverage",
+							reviewContract: "coverage-v1",
+						},
+					],
+				],
+				next: "own-aggregate",
+			}),
+			StepSchema.parse({
+				id: "own-aggregate",
+				name: "Completed historical aggregate",
+				type: "tool",
+				tool: "review-gate",
+				configVersion: "step-config-v1",
+				reads: { inventory: "own-inventory", fanout: "own-review" },
+				checks: ["review-boundary"],
+				next: "end",
+			}),
+		);
 		const ownBaseline = baseline();
 		expectedKey = ownBaseline.key = "post-review/0/own-review";
 		ownBaseline.reviewers[0]!.key = `${expectedKey}/0/business`;
@@ -850,7 +895,10 @@ it.each([
 	});
 	resumed.retry(fixture.run.id);
 	await waitFor(
-		() => expect(resumed.get(fixture.run.id).status).toBe("completed"),
+		() => {
+			const current = resumed.get(fixture.run.id);
+			expect(current.status, current.error).toBe("completed");
+		},
 		{ timeout: 3000 },
 	);
 	expect(resumed.get(fixture.run.id).history).toHaveLength(historyLength + 2);
