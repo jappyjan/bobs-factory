@@ -623,6 +623,7 @@ export async function reviewedRunRevision(
 export function latestAggregate(
 	run: FactoryRun,
 	key?: string,
+	round?: number,
 ): AggregateReview | undefined {
 	for (let index = run.history.length - 1; index >= 0; index--) {
 		const entry = run.history[index]!;
@@ -656,6 +657,7 @@ export function latestAggregate(
 		if (
 			output?.baseline?.schemaVersion === 1 &&
 			(!key || output.baseline.key === key) &&
+			(round === undefined || output.baseline.round === round) &&
 			Array.isArray(output.reviewers)
 		)
 			return output;

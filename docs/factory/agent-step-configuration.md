@@ -383,6 +383,18 @@ An incomplete specialist review routes to its declared impact assessor before a
 product fixer. Native continuation and visits belong to the selected destination:
 retrying the reviewer retains its session, while another agent uses only its own
 saved session or starts independently.
+
+Accepted impact outputs stay immutable while runtime decisions track selected
+checks and pending reviewers separately. Retained snapshot reconstruction uses
+the authenticated original aggregate from its exact producer, frame and round.
+The declared independent impact protocol may inspect that original inventory as
+historical evidence with its original binding retained. Consuming a reused
+inventory additionally requires the exact current scope-reuse decision and
+derivative marker, unchanged repository binding and fresh scope/target/environment
+evidence. New answers require independent reassessment; ordinary reads retain
+their normal effective-input freshness checks. Reuse never claims a fresh
+extraction or grants review/approval.
+
 `post-fix-evidence` requires a `reads.observation` binding to the exact executed
 `inspect-review-readiness` action in the current frame. Its stock rules inspect
 factual observations (including grouped collections); unchanged failures/revision

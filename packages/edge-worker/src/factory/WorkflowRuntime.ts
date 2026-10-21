@@ -88,6 +88,7 @@ import {
 	collectImpactSnapshot,
 	continuationEligible,
 	decisionFor,
+	historicalInventoryRead,
 	type ImpactDecision,
 	type ImpactSnapshot,
 	impactDecisionDigest,
@@ -1985,6 +1986,8 @@ export class WorkflowRuntime {
 					receipt,
 				);
 				if (current && !sameOutputBinding(receipt, current)) {
+					if (await historicalInventoryRead(context, source, receipt, current))
+						continue;
 					staleSource = source;
 					break;
 				}
@@ -2695,7 +2698,9 @@ export class WorkflowRuntime {
 								},
 							};
 						}
-						output = decision;
+						// Accepted authored evidence must not share the operational record's
+						// mutable snapshot, pending reviewers or check results.
+						output = structuredClone(decision);
 						completionMessage = `${decision.summary} Fresh specialists: ${decision.specialists.join(", ") || "none"}. Reused evidence: ${decision.reuseRecords.map((r) => r.original.stamp.reviewer).join(", ") || "none"}. ${decision.approvalRationale}`;
 					}
 					if (hasCheck(step, "architecture-proposal")) {

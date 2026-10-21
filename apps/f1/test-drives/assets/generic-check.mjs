@@ -37,6 +37,14 @@ import { f1AgentHandlers } from "../../dist/src/MockAgentRunner.js";
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 assert([undefined, "0", "1"].includes(process.env.F1_CHECK_RECOVERY));
 const recoveryEnabled = process.env.F1_CHECK_RECOVERY === "1";
+const diagnosticScenario = process.env.F1_CHECK_RECOVERY_ONLY ?? "";
+assert(
+	["", "stock-specialist-assistance", "renamed-specialist-assistance"].includes(
+		diagnosticScenario,
+	),
+	"Unknown focused recovery scenario",
+);
+assert(!diagnosticScenario || recoveryEnabled);
 for (const key of Object.keys(process.env))
 	if (key.startsWith("BOBS_FACTORY_")) delete process.env[key];
 const root = process.cwd(),
@@ -90,6 +98,7 @@ const buildSha256 = buildIdentity();
 console.log(
 	JSON.stringify({
 		phase: "setup",
+		diagnosticScenario,
 		directory,
 		revision,
 		deltaSha256: delta,
@@ -1118,6 +1127,29 @@ async function specialistRecovery(renamed) {
 	assert.equal(fork.original(run.step), "pipeline/review-gate");
 	assert(run.questions.length > 0);
 	assert.equal(recovery.blockedTurns, 1);
+	const inventoryKey = turns.find(
+		(turn) => turn.run === run.id && turn.format === "inventory-v1",
+	).key;
+	const originalInventoryBinding = structuredClone(
+		run.boundOutputs[inventoryKey],
+	);
+	assert(
+		originalInventoryBinding,
+		"The original inventory retains its actual input binding",
+	);
+	const acceptedAssessment = run.history.find(
+		(entry) => fork.original(entry.step) === "pipeline/assess-impact",
+	).output;
+	assert.equal(
+		acceptedAssessment.snapshot.digest,
+		recovery.assessments[0].snapshot.digest,
+		"Operational impact bookkeeping cannot rewrite accepted assessment evidence",
+	);
+	assert.equal(
+		acceptedAssessment.pending.specialists.length,
+		recovery.initialImpact.reviewers.length,
+	);
+	const acceptedAssessmentBytes = JSON.stringify(acceptedAssessment);
 	const gate = graphSteps(run.workflow.id, run.workflowDefinitions).get(
 		run.step,
 	);
@@ -1227,6 +1259,12 @@ async function specialistRecovery(renamed) {
 		"Access restoration must retain the independently extracted inventory",
 	);
 	assert.equal(recovery.assessments.length, 2);
+	assert.deepEqual(
+		run.boundOutputs[inventoryKey],
+		originalInventoryBinding,
+		"Scope reuse retains the original inventory binding instead of claiming fresh extraction",
+	);
+	assert.equal(JSON.stringify(acceptedAssessment), acceptedAssessmentBytes);
 	const reassessment = recovery.assessments.at(-1);
 	assert.deepEqual(
 		reassessment.specialists.map(fork.original),
@@ -1303,6 +1341,8 @@ async function specialistRecovery(renamed) {
 				"One blocked coverage result uses the generic runtime agent hook. All other roles, including fresh coverage after assistance, use actual EdgeWorker mock SDK execution. Blocked SDK specialist output remains an infrastructure failure, as separately retained rejected drives show.",
 		},
 		retention: {
+			originalInventoryBinding,
+			acceptedAssessmentSnapshotDigest: acceptedAssessment.snapshot.digest,
 			inventoryExecutions: 1,
 			inventoryDigest: rounds[0].inventory.digest,
 			inventoryVersion: rounds[0].inventory.version,
@@ -1451,6 +1491,7 @@ try {
 		["renamed-repository", true, "repository"],
 		["stock-external", false, "external"],
 	]) {
+		if (diagnosticScenario) break;
 		scenario = mode;
 		if (mode === "external")
 			externalState = {
@@ -1600,24 +1641,37 @@ try {
 			JSON.stringify(timeline, null, 2),
 		);
 	}
-	assert.deepEqual(
-		comparableTurns(results[1].sessionId),
-		comparableTurns(results[0].sessionId),
-	);
-	assert.deepEqual(forge.publications, [repository.id, repository.id]);
-	assert.deepEqual(forge.merges, [repository.id, repository.id]);
+	if (!diagnosticScenario) {
+		assert.deepEqual(
+			comparableTurns(results[1].sessionId),
+			comparableTurns(results[0].sessionId),
+		);
+		assert.deepEqual(forge.publications, [repository.id, repository.id]);
+		assert.deepEqual(forge.merges, [repository.id, repository.id]);
+	}
 	if (recoveryEnabled) {
 		runtime.updateWorkflows(
 			[...runtime.listWorkflows(), ...recoveryDefinitions()],
 			"factory",
 		);
-		await specialistRecovery(false);
-		await specialistRecovery(true);
-		await ordinaryReviewFields();
-		await nativeRecoveryDestination("alternate");
-		await nativeRecoveryDestination("inspect");
-		assert.deepEqual(forge.publications, Array(4).fill(repository.id));
-		assert.deepEqual(forge.merges, Array(4).fill(repository.id));
+		if (diagnosticScenario) {
+			await specialistRecovery(
+				diagnosticScenario === "renamed-specialist-assistance",
+			);
+			assert.deepEqual(
+				recoveryResults.map(({ scenario }) => scenario),
+				[diagnosticScenario],
+			);
+		} else {
+			await specialistRecovery(false);
+			await specialistRecovery(true);
+			await ordinaryReviewFields();
+			await nativeRecoveryDestination("alternate");
+			await nativeRecoveryDestination("inspect");
+		}
+		const deliveries = diagnosticScenario ? 1 : 4;
+		assert.deepEqual(forge.publications, Array(deliveries).fill(repository.id));
+		assert.deepEqual(forge.merges, Array(deliveries).fill(repository.id));
 	}
 	assert.equal(
 		buildIdentity(),
@@ -1641,6 +1695,7 @@ try {
 				},
 				results,
 				recoveryEnabled,
+				diagnosticScenario,
 				recoveryResults,
 				declaredGraphs,
 				externalCalls,
@@ -1663,6 +1718,7 @@ try {
 			finishedAt: new Date().toISOString(),
 			results,
 			recoveryEnabled,
+			diagnosticScenario,
 			recoveryResults,
 			paidCalls: 0,
 		}),
@@ -1673,6 +1729,7 @@ try {
 			{
 				declaredGraphs,
 				recoveryEnabled,
+				diagnosticScenario,
 				recoveryResults,
 				results: results.map(({ scenario, checks, actions }) => ({
 					scenario,
@@ -1697,6 +1754,7 @@ try {
 				directory,
 				completedResults: results,
 				recoveryEnabled,
+				diagnosticScenario,
 				recoveryResults,
 				activeRecovery: recovery,
 				turns,
