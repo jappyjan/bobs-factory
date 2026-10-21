@@ -186,9 +186,25 @@ function normalizeLegacy(workflow: Workflow): Workflow {
 	visit(result.steps);
 	return result;
 }
-function recognizedStock(workflow: Workflow): boolean {
+export function workflowBehaviorDigest(workflow: Workflow): string {
+	return digest(canonical(behavior(workflow)));
+}
+export function stepBehaviorDigest(step: WorkflowStep): string {
+	const result = structuredClone(step);
+	const visit = (steps: WorkflowStep[]) => {
+		for (const item of steps) {
+			if (item.tool === "handoff") delete item.computeIntensive;
+			if (item.type === "agent")
+				for (const key of settingsKeys) delete item[key];
+			for (const group of item.groups ?? []) visit(group);
+		}
+	};
+	visit([result]);
+	return digest(canonical(result));
+}
+export function recognizedStock(workflow: Workflow): boolean {
 	const hashes: Record<string, Record<string, string>> = historicalDigests;
-	if (hashes[workflow.id]?.[digest(canonical(behavior(workflow)))]) return true;
+	if (hashes[workflow.id]?.[workflowBehaviorDigest(workflow)]) return true;
 	workflow = normalizeLegacy(workflow);
 	const current = reserved.get(workflow.id);
 	if (!current) return false;

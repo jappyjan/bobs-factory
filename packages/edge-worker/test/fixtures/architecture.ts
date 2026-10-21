@@ -123,3 +123,38 @@ export function proposal(
 		},
 	};
 }
+
+/** The same design as a check-in (briefVersion=2). */
+export function checkin(
+	classification: Architecture["classification"] = "meaningful",
+): Architecture {
+	const value = proposal(classification);
+	value.briefVersion = 2;
+	value.talk = {
+		understood:
+			"You want to approve a design before Bob builds it, so a wrong direction costs minutes instead of a day.",
+		plan: "I’d pause the run after planning and save the exact design with it. Bob only starts building once you approve that version.",
+		scenes: [
+			{
+				title: "Bob finishes a plan",
+				before: ["Bob writes the plan", "Bob starts building straight away"],
+				after: [
+					"Bob writes the plan",
+					"Bob checks it with you",
+					"Bob builds once you say go",
+				],
+			},
+		],
+		notice: [{ who: "You", what: "Each design waits for your go-ahead." }],
+		checks: [
+			{
+				decision: "boundary",
+				say: "I kept the approval next to the run, so it survives restarts.",
+				instead:
+					"Reusing PR approval needs no new step, but you would only see the design once it is built.",
+			},
+		],
+		size: "Small: one change to how runs pause.",
+	};
+	return value;
+}

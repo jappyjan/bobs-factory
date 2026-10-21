@@ -1,7 +1,7 @@
 import {
 	architectureContinuationInstructions,
-	architectureInstructions,
 	architectureQuestionInstructions,
+	checkinInstructions,
 	implementationScopeInstructions,
 } from "./Architecture.js";
 import { feedbackPolicyInstructions } from "./FeedbackPolicy.js";
@@ -26,6 +26,7 @@ import {
 } from "./specialistSteps.js";
 import { videoPrompts } from "./videoPrompts.js";
 import { validateWorkflows, type WorkflowStep } from "./Workflow.js";
+import { MAX_STEP_VISITS } from "./WorkflowLimits.js";
 
 const agent = (id: string, name: string, prompt: string, extra = {}) => ({
 	id,
@@ -39,7 +40,7 @@ const tool = (id: string, name: string, tool: string, extra = {}) => ({
 	name,
 	type: "tool",
 	tool,
-	maxVisits: 100,
+	maxVisits: MAX_STEP_VISITS,
 	...extra,
 });
 const back = (path: string, next: string) => [
@@ -311,41 +312,77 @@ if (!("prompt" in implementationStep))
 	throw new Error("Stock implementer unavailable");
 implementationStep.prompt +=
 	" If subsequent answers or steering materially change the accepted architecture, preserve completed work and return status=blocked, architectureRevision=true, summary explaining the changed requirement, checks, and questions=[]. The runtime returns to architecture proposal/review and requires fresh acceptance when meaningful. Never implement a materially changed architecture using acceptance of an earlier version.";
+/** Openings of every stock review-v1 proposer and reviewer prompt release. */
+const stockProposalOpening =
+	"Inspect the selected repositories, actual module boundaries and conventions";
+const stockProposalReviewOpening =
+	"Review the architecture candidate and its complete implementation plan";
+const checkinReviewPrompt = `Review the check-in and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Require briefVersion=2 and a check-in a product owner can read in about two minutes: understood restates the human's goal in their terms; plan states the approach; scenes show what people or devices experience before and after as short observable steps; notice names every group that will notice, including upgrades, required configuration and anything that stops working; checks list only calls that need human judgment with the honest alternative; size and split are truthful. Reject jargon, file paths or class names in the check-in, benefit statements in place of behavior, consequences missing from notice, and calls that only the human can judge hidden in decisions. Also require concrete current-state findings, observable deliverables with anticipated files/operations/size estimates and criterion traces, every original acceptance criterion with honest covered/partial/deferred status and plain reason, justified Bob-added work, explicit non-goals, measurable acceptance checks and open decisions with Bob's lean. ${implementationScopeInstructions} Reject invented approval gates for routine dependency edits within the accepted requirements and architecture. ${architectureContinuationInstructions} Only when the COMPLETE candidate remains within that latest human acceptance, with no open decisions or unresolved uncertainty, include continuation:{proposalId:"exact accepted proposal ID",version:1,digest:"exact accepted digest",reason:"concrete evidence that cumulative changes preserve the accepted requirements, decisions, boundaries, limits, exclusions and delivery targets"}. This is an independent continuity assessment, never a new human acceptance. Omit continuation for initial proposals, material changes, explicit reapproval requirements, rejection or uncertainty. Compare the check-in to the full plan: reject hidden deliverables, omitted known conditional work or criteria, vague options, limits whose values or measurement selection rules appear only in the full plan, unsupported coverage claims, unnecessary packages or frontend work, and process status masquerading as technical risk. Inspect runtime footprint warnings, including invalid paths, operation mismatches and unchanged map parts listed for work; require correction or a concrete explanation of intentional cross-area/config changes. Assess repository evidence, decisions and options, map, readability and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. ${architectureQuestionInstructions} Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.`;
 const architectureSteps = [
-	agent("architecture", "Discuss architecture", architectureInstructions, {
+	agent("architecture", "Prepare the check-in", checkinInstructions, {
 		architectureContract: "architecture-v1",
-		architectureBrief: "review-v1",
+		architectureBrief: "checkin-v1",
 	}),
 	{
 		...oldPlanReview,
 		id: "architecture-review",
-		name: "Review architecture candidate",
-		prompt: `Review the architecture candidate and its complete implementation plan against ALL requirements, comments, answers, decisions and inherited Takeover work. Require briefVersion=1, concrete current-state findings, observable deliverables with anticipated files/operations/size estimates and criterion traces, every original acceptance criterion with honest covered/partial/deferred status and reason, justified Bob-added work, explicit non-goals and measurable acceptance checks. ${implementationScopeInstructions} Reject invented approval gates for routine dependency edits within the accepted requirements and architecture. ${architectureContinuationInstructions} Only when the COMPLETE candidate remains within that latest human acceptance, with no open decisions or unresolved uncertainty, include continuation:{proposalId:"exact accepted proposal ID",version:1,digest:"exact accepted digest",reason:"concrete evidence that cumulative changes preserve the accepted requirements, decisions, boundaries, limits, exclusions and delivery targets"}. This is an independent continuity assessment, never a new human acceptance. Omit continuation for initial proposals, material changes, explicit reapproval requirements, rejection or uncertainty. Compare the brief to the full plan: reject hidden deliverables, omitted known conditional work or criteria, vague options, limits whose values or measurement selection rules appear only in the full plan, unsupported coverage claims, unnecessary packages or frontend work, and process status masquerading as technical risk. Inspect runtime footprint warnings, including invalid paths, operation mismatches and unchanged map parts listed for work; require correction or a concrete explanation of intentional cross-area/config changes. Assess repository evidence, decisions and options, map, readability and routine classification. Reject proposals that hide a real choice or leave a decision open that the repository already settles. Do not implement. ${architectureQuestionInstructions} Return {"approved":true,"feedback":[]} or {"approved":false,"feedback":["concrete required changes"]}.`,
+		name: "Review the check-in",
+		prompt: checkinReviewPrompt,
 		architectureContract: "architecture-review-v1",
 		architectureSource: "architecture",
 		// Independent review may retain a prior human decision for implementation-only revisions.
 		branches: back("approved", "architecture"),
 	},
-	tool(
-		"architecture-decision",
-		"Accept architecture proposal",
-		"architecture-decision",
-		{
-			arguments: {
-				proposal: "architecture",
-				review: "architecture-review",
-				planOutput: "plan",
-				revise: "architecture",
-				approval: "meaningful",
-				continueAccepted: true,
-			},
-			next: "implement",
-			branches: [
-				{ when: { path: "decision", equals: "revise" }, next: "architecture" },
-			],
+	tool("architecture-decision", "Check in with you", "architecture-decision", {
+		arguments: {
+			proposal: "architecture",
+			review: "architecture-review",
+			planOutput: "plan",
+			revise: "architecture",
+			approval: "meaningful",
+			continueAccepted: true,
 		},
-	),
+		next: "implement",
+		branches: [
+			{ when: { path: "decision", equals: "revise" }, next: "architecture" },
+		],
+	}),
 ];
+/**
+ * Asking for a new version of a pending stock review-v1 proposal adopts the
+ * current check-in prompt and reviewer. Custom prompts and agent settings stay
+ * as the run accepted them.
+ */
+export function upgradedArchitectureSteps(
+	steps: WorkflowStep[],
+): WorkflowStep[] | undefined {
+	const proposer = steps.find(
+		(s) =>
+			s.type === "agent" &&
+			s.architectureContract === "architecture-v1" &&
+			s.architectureBrief === "review-v1" &&
+			s.prompt?.startsWith(stockProposalOpening),
+	);
+	if (!proposer) return;
+	const reviewer = steps.find(
+		(s) =>
+			s.architectureContract === "architecture-review-v1" &&
+			(s.architectureSource ?? "architecture") === proposer.id &&
+			s.prompt?.startsWith(stockProposalReviewOpening),
+	);
+	if (!reviewer) return;
+	return steps.map((s) =>
+		s === proposer
+			? {
+					...s,
+					prompt: checkinInstructions,
+					architectureBrief: "checkin-v1" as const,
+				}
+			: s === reviewer
+				? { ...s, prompt: checkinReviewPrompt }
+				: s,
+	);
+}
 pipeline.steps.splice(
 	pipeline.steps.findIndex((s) => s.id === "implement"),
 	0,
@@ -501,7 +538,7 @@ function installImpact(steps: Record<string, any>[]) {
 					maxUnchangedCycles: 3,
 				},
 				askQuestions: true,
-				maxVisits: 100,
+				maxVisits: MAX_STEP_VISITS,
 				branches: [
 					{
 						when: { path: "correctionRequired", equals: true },

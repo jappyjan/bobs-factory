@@ -514,6 +514,89 @@ it.each([
 	).rejects.toThrow();
 });
 
+it("reviews the live target branch when the pull request retains an older base commit", async () => {
+	const receipt = await inspectGithubReadiness(
+		async (_exe, args) =>
+			githubRequest(args).path === "graphql"
+				? JSON.stringify(
+						providerReceipt({
+							baseRefOid: "historical-base",
+							baseRefName: "release/next",
+							baseRef: {
+								name: "release/next",
+								target: { oid: "current-target" },
+							},
+						}),
+					)
+				: "[]",
+		url,
+	);
+	expect(receipt.baseSha).toBe("current-target");
+});
+
+it.each([
+	"checks",
+	"threads",
+])("rejects a moving live target during %s pagination even when the retained PR base is unchanged", async (page) => {
+	let calls = 0;
+	await expect(
+		inspectGithubReadiness(async (_exe, args) => {
+			if (githubRequest(args).path !== "graphql") return "[]";
+			return JSON.stringify(
+				providerReceipt({
+					baseRefOid: "historical-base",
+					baseRef: {
+						name: "main",
+						target: { oid: ++calls === 1 ? "target-1" : "target-2" },
+					},
+					...(page === "threads"
+						? {
+								reviewThreads: {
+									nodes: [],
+									pageInfo: { hasNextPage: calls === 1, endCursor: "next" },
+								},
+							}
+						: {
+								statusCheckRollup: {
+									contexts: {
+										nodes: [],
+										pageInfo: { hasNextPage: calls === 1, endCursor: "next" },
+									},
+								},
+							}),
+				}),
+			);
+		}, url),
+	).rejects.toThrow("PR changed during provider inspection");
+});
+
+it("blocks an open PR when its live target is unavailable instead of reusing its historical base", async () => {
+	await expect(
+		inspectGithubReadiness(
+			async (_exe, args) =>
+				githubRequest(args).path === "graphql"
+					? JSON.stringify(providerReceipt({ baseRef: null }))
+					: "[]",
+			url,
+		),
+	).rejects.toThrow("target branch is unavailable");
+});
+
+it("retains the historical base of a merged PR whose target branch was deleted", async () => {
+	const receipt = await inspectGithubReadiness(
+		async (_exe, args) =>
+			githubRequest(args).path === "graphql"
+				? JSON.stringify(providerReceipt({ state: "MERGED", baseRef: null }))
+				: "[]",
+		url,
+	);
+	expect(receipt).toMatchObject({
+		state: "MERGED",
+		baseSha: "base",
+		approved: false,
+	});
+});
+
 it("retains every check and nested discussion page instead of approving a truncated receipt", async () => {
 	const command = vi.fn(async (exe: string, args: string[]) => {
 		expect(exe).toBe(GITHUB_API_COMMAND);

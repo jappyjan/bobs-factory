@@ -47,7 +47,7 @@ export function githubApiReceipt(
 				repo: { full_name: request.project },
 			},
 			base: {
-				ref: "main",
+				ref: pr.baseRefName,
 				sha: pr.baseRefOid,
 				repo: { full_name: request.project },
 			},

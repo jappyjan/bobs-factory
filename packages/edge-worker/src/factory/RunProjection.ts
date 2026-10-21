@@ -37,6 +37,10 @@ function architectureSummary(run: FactoryRun) {
 					content: {
 						title: proposal.content.title,
 						summary: proposal.content.summary,
+						// The Today card opens with what Bob thinks you want.
+						...(proposal.content.talk
+							? { talk: { understood: proposal.content.talk.understood } }
+							: {}),
 						decisions: Array.isArray(proposal.content.decisions)
 							? proposal.content.decisions.map(({ status }) => ({ status }))
 							: undefined,

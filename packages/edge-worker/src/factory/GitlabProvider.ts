@@ -335,6 +335,7 @@ export function gitlabProvider(
 				url: pr.url,
 				headSha: pr.headRefOid,
 				baseSha: base.commit.id,
+				baseRefName: pr.baseRefName,
 				state: pr.state,
 				isDraft: pr.isDraft,
 				approved:

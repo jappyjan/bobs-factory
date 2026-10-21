@@ -29,6 +29,7 @@ export const ReadinessSchema = z
 		metadata: z.object({ title: z.string() }).optional(),
 		headSha: z.string().min(1),
 		baseSha: z.string().min(1),
+		baseRefName: branch.optional(),
 		url: z.string().url(),
 		state: z.enum(["OPEN", "MERGED", "CLOSED"]),
 		isDraft: z.boolean(),

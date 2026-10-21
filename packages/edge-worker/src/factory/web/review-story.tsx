@@ -1,4 +1,5 @@
-import { type ReactNode, type TouchEvent, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type {
 	BriefProof,
 	BriefStory,
@@ -32,7 +33,9 @@ export function StoryDeck({
 	onDecide,
 	annotate,
 	show,
+	navigationTarget,
 }: {
+	navigationTarget?: HTMLElement | null;
 	brief: ReviewBrief;
 	story: BriefStory;
 	storageKey: string;
@@ -225,12 +228,44 @@ export function StoryDeck({
 		const at = slides.findIndex((s) => s.key === show.slide);
 		if (at >= 0) setIndex(at);
 	}, [show]);
-	const go = (to: number) =>
+	const deck = useRef<HTMLElement>(null);
+	const go = (to: number) => {
 		setIndex(Math.max(0, Math.min(slides.length - 1, to)));
-	const touch = useRef<number | undefined>(undefined);
+		requestAnimationFrame(() => {
+			const top = deck.current?.getBoundingClientRect().top;
+			const header =
+				document.querySelector(".site-header")?.getBoundingClientRect()
+					.bottom ?? 0;
+			if (top !== undefined && (top < header || top > innerHeight / 2)) {
+				deck.current?.style.setProperty("--story-top", `${header + 12}px`);
+				deck.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+			}
+		});
+	};
 	const current = slides[index]!;
+	const navigation = (
+		<nav className="story-nav" aria-label="Slides">
+			<Button
+				variant="secondary"
+				disabled={index === 0}
+				onClick={() => go(index - 1)}
+			>
+				← Back
+			</Button>
+			<span className="muted">
+				{index + 1} / {slides.length}
+			</span>
+			<Button
+				disabled={index === slides.length - 1}
+				onClick={() => go(index + 1)}
+			>
+				Next →
+			</Button>
+		</nav>
+	);
 	return (
 		<section
+			ref={deck}
 			className="story"
 			aria-roledescription="presentation"
 			aria-label="Show and tell"
@@ -254,53 +289,12 @@ export function StoryDeck({
 					/>
 				))}
 			</div>
-			{/* biome-ignore lint/a11y/noStaticElementInteractions: taps and swipes mirror the Back/Next buttons */}
-			{/* biome-ignore lint/a11y/useKeyWithClickEvents: the deck handles arrow keys */}
-			<div
-				key={current.key}
-				className="story-slide"
-				aria-live="polite"
-				onClick={(e) => {
-					if (
-						(e.target as HTMLElement).closest(
-							"button, a, input, textarea, summary, img, video, details, fieldset, [data-comment-path]",
-						)
-					)
-						return;
-					const box = e.currentTarget.getBoundingClientRect();
-					go(index + (e.clientX - box.left < box.width / 3 ? -1 : 1));
-				}}
-				onTouchStart={(e: TouchEvent) => {
-					touch.current = e.touches[0]?.clientX;
-				}}
-				onTouchEnd={(e: TouchEvent) => {
-					const start = touch.current;
-					touch.current = undefined;
-					const end = e.changedTouches[0]?.clientX;
-					if (start === undefined || end === undefined) return;
-					if (Math.abs(end - start) > 50) go(index + (end < start ? 1 : -1));
-				}}
-			>
+			<div key={current.key} className="story-slide" aria-live="polite">
 				{current.render()}
 			</div>
-			<nav className="story-nav" aria-label="Slides">
-				<Button
-					variant="secondary"
-					disabled={index === 0}
-					onClick={() => go(index - 1)}
-				>
-					← Back
-				</Button>
-				<span className="muted">
-					{index + 1} / {slides.length}
-				</span>
-				<Button
-					disabled={index === slides.length - 1}
-					onClick={() => go(index + 1)}
-				>
-					Next →
-				</Button>
-			</nav>
+			{navigationTarget
+				? createPortal(navigation, navigationTarget)
+				: navigation}
 		</section>
 	);
 }

@@ -1,7 +1,14 @@
 import { createHash } from "node:crypto";
+import { qaDigest } from "./EvidenceDigest.js";
 import { feedbackInstructionFingerprint } from "./FeedbackPolicy.js";
 import type { RoleRevision } from "./Incremental.js";
-import { aggregateForContext } from "./SpecialistReview.js";
+import {
+	aggregateForContext,
+	latestAggregate,
+	type ReviewBaseline,
+	type ReviewerReceipt,
+	reviewBaselineForContext,
+} from "./SpecialistReview.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 interface Finding {
@@ -18,7 +25,7 @@ interface FixAssessment {
 	instructionsSha256: string;
 }
 
-export const reviewFixInstructions = `Read /reviewFix/findings for ALL unresolved consequential findings, even when customized recipe inputs hide the gate. Return a fixed or evidence-backed rejected disposition for each finding you can address. If missing deployment, access, fixtures, evidence or a necessary decision prevents progress, return questions:["specific assistance needed"] alongside summary and dispositions; asking only in summary does not pause the workflow. Never mark blocked findings fixed or rejected merely to advance. Return questions:[] when assistance is unnecessary. Read /reviewFix/answers before retrying. An answer does not waive findings, required QA or approval. A rejected complaint still receives reviewer reassessment.`;
+export const reviewFixInstructions = `Read /reviewFix/findings for ALL unresolved consequential findings, even when customized recipe inputs hide the gate. If /reviewFix/review is incomplete, its retained findings are correction inputs, never completed review or approval. Repair concrete findings and preserve the declared independent reassessment; report missing access or evidence in questions. When no usable findings exist, identify the configured review work that must run again instead of claiming review passed. Return a fixed or evidence-backed rejected disposition for each finding you can address. If missing deployment, access, fixtures, evidence or a necessary decision prevents progress, return questions:["specific assistance needed"] alongside summary and dispositions; asking only in summary does not pause the workflow. Never mark blocked findings fixed or rejected merely to advance. Return questions:[] when assistance is unnecessary. Read /reviewFix/answers before retrying. An answer does not waive findings, required QA or approval. A rejected complaint still receives reviewer reassessment.`;
 
 function openFindings(value: unknown): Finding[] {
 	const findings = (value as { findings?: Finding[] } | undefined)?.findings;
@@ -36,14 +43,155 @@ function findingFingerprint(findings: Finding[]): string {
 		)
 		.digest("hex");
 }
-export function factoryReviewFixContext(context: ExecutionContext) {
-	const gate = context.step.id === "visual-fix" ? "visual-gate" : "review-gate";
+
+/** Corrections can use retained receipts without turning an unfinished round into approval. */
+function codeReviewForFix(context: ExecutionContext): {
+	findings: Finding[];
+	baseline?: ReviewBaseline;
+	review?: {
+		key?: string;
+		round?: number;
+		headSha?: string;
+		baseSha?: string;
+		status: "incomplete";
+		blockers: string[];
+	};
+} {
+	const aggregate = aggregateForContext(context, { requireComplete: false });
+	if (aggregate)
+		return {
+			findings: openFindings(aggregate),
+			baseline: aggregate.baseline,
+		};
+	const baseline = reviewBaselineForContext(context);
+	if (!baseline) {
+		const gate = context.run.outputs["review-gate"] as
+			| { baseline?: ReviewBaseline }
+			| undefined;
+		if (!context.run.reviewRounds?.length && !gate?.baseline)
+			return { findings: openFindings(gate) };
+		return {
+			findings: [],
+			review: {
+				key: context.reviewKey,
+				status: "incomplete",
+				blockers: [
+					"No specialist baseline is associated with this correction step. Restore its review checkpoint or rerun the configured specialist review; another workflow frame's findings cannot establish this review.",
+				],
+			},
+		};
+	}
+	const previous = latestAggregate(context.run, baseline.key);
+	const findings = new Map(
+		(previous?.rawFindings ?? previous?.findings ?? []).map((finding) => [
+			finding.id,
+			{ ...finding },
+		]),
+	);
+	const blockers = [
+		`Specialist round ${baseline.round} has no complete aggregate. Run its configured review gate after correction; required independent review remains pending.`,
+	];
+	const matches = (
+		value: unknown,
+		expected: ReviewBaseline["reviewers"][number],
+	): value is ReviewerReceipt => {
+		const receipt = value as ReviewerReceipt | undefined;
+		const stamp = receipt?.stamp;
+		if (!receipt || !stamp || !Array.isArray(receipt.findings)) return false;
+		if (
+			stamp.reviewer === expected.id &&
+			stamp.stepKey === expected.key &&
+			stamp.round === baseline.round &&
+			stamp.inventoryDigest === baseline.inventory.digest &&
+			stamp.inventoryVersion === baseline.inventory.version &&
+			stamp.headSha === baseline.headSha &&
+			stamp.baseSha === baseline.baseSha
+		)
+			return true;
+		return Boolean(
+			baseline.impact?.reuse.some(
+				(reuse) =>
+					reuse.original.stamp.reviewer === expected.id &&
+					qaDigest(receipt) === reuse.originalDigest,
+			),
+		);
+	};
+	const expectedByKey = new Map(
+		baseline.reviewers.map((reviewer) => [reviewer.key, reviewer]),
+	);
+	const receipts = new Map<string, ReviewerReceipt>();
+	const history = context.historyIndex?.() ?? context.run.history;
+	for (let index = history.length - 1; index >= 0; index--) {
+		const expected = expectedByKey.get(history[index]!.step);
+		if (!expected || receipts.has(expected.id)) continue;
+		const output = context.run.history[index]!.output;
+		if (matches(output, expected)) receipts.set(expected.id, output);
+	}
+	const fanout = (context.outputs ?? context.run.outputs)[
+		baseline.key.split("/").at(-1)!
+	] as Record<string, unknown>[] | undefined;
+	const currentIds = new Set<string>();
+	const dispositions: ReviewerReceipt["inheritedDispositions"] = [];
+	for (const expected of baseline.reviewers) {
+		const candidate = fanout?.[expected.group]?.[expected.id];
+		const receipt =
+			receipts.get(expected.id) ??
+			(matches(candidate, expected) ? candidate : undefined);
+		if (!receipt) {
+			blockers.push(
+				`${expected.id}: missing, incomplete or stale specialist receipt for round ${baseline.round}; rerun this configured reviewer.`,
+			);
+			continue;
+		}
+		if (receipt.status !== "completed" || receipt.blockers?.length)
+			blockers.push(
+				`${expected.id}: ${receipt.blockers?.join("; ") || receipt.summary || "review has not completed"}`,
+			);
+		for (const finding of receipt.findings) {
+			currentIds.add(`${expected.id}:${finding.id}`);
+			findings.set(`${expected.id}:${finding.id}`, {
+				...finding,
+				id: `${expected.id}:${finding.id}`,
+				reviewer: expected.id,
+			});
+		}
+		dispositions.push(...(receipt.inheritedDispositions ?? []));
+	}
+	for (const disposition of dispositions) {
+		const retained = findings.get(disposition.id);
+		if (retained && !currentIds.has(disposition.id))
+			findings.set(disposition.id, { ...retained, ...disposition });
+	}
 	return {
-		findings: openFindings(
-			context.step.id === "visual-fix"
-				? context.run.outputs[gate]
-				: (aggregateForContext(context) ?? context.run.outputs[gate]),
+		baseline,
+		findings: openFindings({ findings: [...findings.values()] }).map(
+			(finding) => {
+				const { duplicateOf: _claim, ...retained } = finding as Finding & {
+					duplicateOf?: string;
+				};
+				return retained;
+			},
 		),
+		review: {
+			key: baseline.key,
+			round: baseline.round,
+			headSha: baseline.headSha,
+			baseSha: baseline.baseSha,
+			status: "incomplete",
+			blockers,
+		},
+	};
+}
+export function factoryReviewFixContext(context: ExecutionContext) {
+	const { baseline: _baseline, ...review } =
+		context.step.id === "visual-fix"
+			? {
+					findings: openFindings(context.run.outputs["visual-gate"]),
+					baseline: undefined,
+				}
+			: codeReviewForFix(context);
+	return {
+		...review,
 		answers: context.run.answers ?? [],
 	};
 }
@@ -73,10 +221,12 @@ export function recordReviewFix(
 	const prefix = (context.run.step ?? context.step.id).replace(/[^/]+$/, "");
 	const source =
 		context.step.id === "visual-fix" ? "visual-review" : "code-review";
-	const aggregate =
-		context.step.id === "visual-fix" ? undefined : aggregateForContext(context);
-	const started = aggregate
-		? { headSha: aggregate.baseline.headSha, dirty: false }
+	const baseline =
+		context.step.id === "visual-fix"
+			? undefined
+			: codeReviewForFix(context).baseline;
+	const started = baseline
+		? { headSha: baseline.headSha, dirty: false }
 		: context.run.roleRevisions?.[`${prefix}${source}`];
 	return {
 		...(output as Record<string, unknown>),

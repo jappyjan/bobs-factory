@@ -3,16 +3,25 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "bobs-factory-core";
 import { EdgeWorker } from "../../../../../packages/edge-worker/src/EdgeWorker.ts";
 import { WorkflowRuntime } from "../../../../../packages/edge-worker/src/factory/WorkflowRuntime.ts";
-import { proposal } from "../../../../../packages/edge-worker/test/fixtures/architecture.ts";
+import { checkin } from "../../../../../packages/edge-worker/test/fixtures/architecture.ts";
+import { loadFactoryContextSnapshot } from "../../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../../src/MockAgentRunner.ts";
 
+assert.equal(process.env.F1_AGENT_MODE, "mock");
 const evidence = mkdtempSync(join(tmpdir(), "arch-f1-evidence-"));
 const home = mkdtempSync(join(tmpdir(), "bf90-f1-"));
+const listener = createServer();
+await new Promise<void>((resolve) => listener.listen(0, "127.0.0.1", resolve));
+const serverPort = (listener.address() as { port: number }).port;
+await new Promise<void>((resolve, reject) =>
+	listener.close((error) => (error ? reject(error) : resolve())),
+);
 const repo = join(home, "repo");
 mkdirSync(repo);
 const git = (...a: string[]) =>
@@ -20,6 +29,7 @@ const git = (...a: string[]) =>
 git("init", "-b", "main");
 git("config", "user.email", "f1@example.test");
 git("config", "user.name", "F1");
+git("config", "commit.gpgsign", "false");
 writeFileSync(join(repo, "README.md"), "F1 fixture");
 git("add", ".");
 git("commit", "-m", "fixture");
@@ -30,7 +40,7 @@ let current: any;
 let version = 0;
 let omitChanges = false;
 const versioned = () => {
-	const p: any = proposal(classification);
+	const p: any = checkin(classification);
 	version++;
 	if (classification === "meaningful" && version === 1) {
 		Object.assign(p.decisions[0], {
@@ -39,6 +49,8 @@ const versioned = () => {
 			decidedBy: undefined,
 			why: "Depends on how your team reviews.",
 		});
+		// An open choice belongs in the question, not the settled calls to check.
+		p.talk.checks = [];
 	} else if (version > 1) {
 		p.decisions[0].decidedBy = "you";
 		if (!omitChanges) p.changes = [{ text: "Used your answer.", from: "you" }];
@@ -48,8 +60,8 @@ const versioned = () => {
 const worker: any = new EdgeWorker({
 	issueTrackerFactory: createCLIIssueTracker,
 	factoryHome: home,
-	serverPort: 3991,
-	serverHost: "localhost",
+	serverPort,
+	serverHost: "127.0.0.1",
 	repositories: [
 		{
 			id: "f1",
@@ -67,47 +79,46 @@ const worker: any = new EdgeWorker({
 	},
 	handlers: {
 		createAgentRunner: (_type: any, c: any) => {
-			const prompt = c.appendSystemPrompt ?? c.systemPrompt ?? "";
-			const role =
-				prompt.match(/software-factory step: ([^.]+)\./)?.[1] ?? "title";
+			const scoped = c.mcpConfig?.["factory-context"];
+			const role = scoped
+				? loadFactoryContextSnapshot<{
+						workflowExecution: { currentStep: { id: string } };
+					}>(scoped.args.at(-1)).workflowExecution.currentStep.id
+				: "title";
 			roles.push(role);
 			let reply: any = { title: "F1 architecture" };
-			if (role === "Clarify requirements")
+			if (role === "clarify")
 				reply = {
 					questions: [],
 					decisions: [],
 					requirements: ["Require exact architecture acceptance"],
 				};
-			else if (role === "Write implementation plan")
-				reply = proposal(classification).candidate;
-			else if (role === "Discuss architecture") reply = versioned();
-			else if (
-				[
-					"Review implementation plan",
-					"Review architecture candidate",
-				].includes(role)
-			)
+			else if (role === "plan") reply = checkin(classification).candidate;
+			else if (role === "architecture") reply = versioned();
+			else if (["plan-review", "architecture-review"].includes(role))
 				reply = { approved: true, feedback: [] };
-			else if (role === "Implement accepted plan")
+			else if (role === "implement")
 				reply = {
 					status: "completed",
 					summary: "Simulated implementation",
 					checks: [],
 					questions: [],
 				};
-			else if (role === "Assess completed and remaining work")
+			else if (role === "assess-existing")
 				reply = {
 					completed: ["existing branch and PR"],
 					remaining: ["approval boundary"],
 					risks: [],
 					assets: [],
 				};
-			else if (role.toLowerCase().includes("explain"))
+			else if (role === "question-explanation")
 				reply = {
 					questions: [
 						"Accept the exact version or request changes. Explaining does not accept it.",
 					],
 				};
+			else if (role !== "title")
+				throw new Error(`Unscripted F1 architecture role: ${role}`);
 			return new MockAgentRunner(c, JSON.stringify(reply));
 		},
 	},
@@ -195,9 +206,11 @@ try {
 		await until(
 			() => current.status === "waiting" || current.status === "failed",
 		);
-		assert.equal(current.status, "waiting");
+		assert.equal(current.status, "waiting", current.error);
 		assert.equal(implementations.filter((x) => x.id === current.id).length, 0);
 		const first = current.architectureProposals.at(-1);
+		assert.equal(first.content.briefVersion, 2);
+		assert(first.content.talk);
 		assert.equal(first.content.decisions[0].status, "open");
 		assert.throws(
 			() =>

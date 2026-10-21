@@ -1452,6 +1452,63 @@ it("continues explicit approval for a safe cumulative production correction only
 	});
 	expect((await effectiveApproval(context))!.decision).toBe("reject");
 });
+it("allows selected repository checks the normal workflow command budget", async () => {
+	const checked: string[] = [];
+	const context = {
+		run: {
+			id: "long-check",
+			repositoryId: "repo",
+			workspace: "/fixture",
+			outputs: {},
+			impactDecisions: [
+				{
+					status: "completed",
+					snapshot: { key: "experts" },
+					checks: [
+						{
+							id: "workspace-suite",
+							repositoryId: "repo",
+							command: "run-workspace-checks",
+						},
+					],
+					checkResults: [],
+					pending: { checks: ["workspace-suite"] },
+				},
+			],
+		},
+		step: { id: "checks", tool: "impact-checks" },
+		impactKey: "experts",
+		stepKey: "checks",
+		signal: new AbortController().signal,
+		log: () => {},
+	} as unknown as ExecutionContext;
+	const tools = new FactoryTools({
+		postComment: async () => {},
+		command: async (_ctx, exe, args, timeout) => {
+			expect(exe).toBe("/bin/sh");
+			expect(args).toEqual(["-c", "run-workspace-checks"]);
+			// This successful suite exceeds the old two-minute selected-check limit.
+			if (!timeout || timeout < 3 * 60 * 1000)
+				throw new Error("Check timed out");
+			checked.push("workspace-suite");
+			return "Workspace checks passed";
+		},
+	});
+	await expect(tools.tool(context)).resolves.toEqual({
+		questions: [],
+		checks: [
+			{
+				id: "workspace-suite",
+				exitCode: 0,
+				evidence: "Workspace checks passed",
+			},
+		],
+	});
+	expect(checked).toEqual(["workspace-suite"]);
+	await tools.tool(context);
+	expect(checked).toEqual(["workspace-suite"]);
+});
+
 it("selects and checks grouped repositories with different layouts, targets and provider bindings", async () => {
 	const group = mkdtempSync(join(tmpdir(), "impact-grouped-"));
 	homes.push(group);
