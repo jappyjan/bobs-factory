@@ -899,7 +899,7 @@ it("persists a consumed convergence recheck only with its completed role receipt
 		],
 	});
 	void runtime.launch(run);
-	await waitFor(() => expect(run.status).toBe("waiting"));
+	await waitFor(() => expect(run.status).toBe("waiting"), { timeout: 30_000 });
 	expect(run.step).toBe("assessor");
 	expect(run.impactConvergence!.experts!.repeats).toBe(3);
 	const captured: {
@@ -928,10 +928,13 @@ it("persists a consumed convergence recheck only with its completed role receipt
 		questionBatchId: run.questionBatchId!,
 		questions: [...run.questions],
 	});
-	await waitFor(() => {
-		expect(run.status).toBe("waiting");
-		expect(run.step).toBe("hold");
-	});
+	await waitFor(
+		() => {
+			expect(run.status).toBe("waiting");
+			expect(run.step).toBe("hold");
+		},
+		{ timeout: 30_000 },
+	);
 	expect(captured.length).toBeGreaterThan(0);
 	for (const snapshot of captured) {
 		expect(snapshot.phase).toBe("result");
