@@ -300,23 +300,33 @@ export function installStockChecks(steps: WorkflowStep[]): void {
 			const source = readStep(step, "review");
 			const capture = readStep(step, "capture");
 			const impact = readStep(step, "impact");
-			if (source)
-				step.branches.unshift({
+			const incompleteTarget = impact ?? source;
+			const recovery: WorkflowStep["branches"] = [];
+			// Match legacy checkpoint ordering: a direct reviewer retry precedes QA;
+			// impact-aware QA retries capture before reassessing an incomplete review.
+			if (incompleteTarget && (!visual || !impact))
+				recovery.push({
 					when: { path: "reviewIncomplete", equals: true },
-					next: impact ?? source,
+					next: incompleteTarget,
 				});
 			if (capture && visual)
-				step.branches.unshift(
+				recovery.push(
 					...["qaRetry", "qaBlocked", "captureBlocked"].map((path) => ({
 						when: { path, equals: true },
 						next: capture,
 					})),
 				);
+			if (incompleteTarget && visual && impact)
+				recovery.push({
+					when: { path: "reviewIncomplete", equals: true },
+					next: incompleteTarget,
+				});
 			if (fix)
-				step.branches.unshift({
+				recovery.push({
 					when: { path: "reviewBlocked", equals: true },
 					next: fix,
 				});
+			step.branches.unshift(...recovery);
 		}
 
 		step.type = "check";

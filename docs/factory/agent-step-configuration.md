@@ -378,6 +378,11 @@ project the original receipt with the same repository evidence rules.
 It keeps unchanged-fix/instruction fingerprints, waits and native conversation
 identity in runtime bookkeeping. QA recovery validates its declared capture →
 review → Check path; ordinary branches name every recovery destination.
+Read-only `review-evidence` and coincidental result names do not enable assistance.
+An incomplete specialist review routes to its declared impact assessor before a
+product fixer. Native continuation and visits belong to the selected destination:
+retrying the reviewer retains its session, while another agent uses only its own
+saved session or starts independently.
 `post-fix-evidence` requires a `reads.observation` binding to the exact executed
 `inspect-review-readiness` action in the current frame. Its stock rules inspect
 factual observations (including grouped collections); unchanged failures/revision

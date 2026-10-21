@@ -1,4 +1,5 @@
 // F1_AGENT_MODE=mock node apps/f1/test-drives/assets/generic-check.mjs
+// Add F1_CHECK_RECOVERY=1 to include R1/R2/R3 assistance and native-session regressions.
 // Actual EdgeWorker + CLI tracker; deterministic agents and forge/ticket boundaries.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -34,6 +35,8 @@ import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/
 import { f1AgentHandlers } from "../../dist/src/MockAgentRunner.js";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
+assert([undefined, "0", "1"].includes(process.env.F1_CHECK_RECOVERY));
+const recoveryEnabled = process.env.F1_CHECK_RECOVERY === "1";
 for (const key of Object.keys(process.env))
 	if (key.startsWith("BOBS_FACTORY_")) delete process.env[key];
 const root = process.cwd(),
@@ -126,7 +129,118 @@ const tracker = createCLIIssueTracker(),
 	fork = renamedFactory(defaultWorkflows),
 	turns = [],
 	sessions = [],
-	results = [];
+	results = [],
+	recoveryResults = [];
+let recovery;
+const customRecoveryRuns = new Map();
+
+function recoveryDefinitions() {
+	const definition = (id, assistance, destination) => ({
+		id,
+		name: `F1 ${id}`,
+		stepConfigVersion: "step-config-v1",
+		triggers: ["manual", "ticket-assignment", "workflow"],
+		steps: [
+			{
+				id: "inspect",
+				name: "Inspect the fixture evidence",
+				type: "agent",
+				prompt: "Return the scripted review outcome without changing files.",
+				output: { format: "review-v1" },
+				next: "decision",
+			},
+			{
+				id: "decision",
+				name: "Evaluate the declared review result",
+				type: "check",
+				reads: { review: "inspect" },
+				checks: [
+					"review-evidence",
+					...(assistance ? ["review-assistance"] : []),
+				],
+				check: {
+					results: {
+						reviewIncomplete: {
+							path: "/evidence/review-evidence/incomplete",
+							equals: true,
+						},
+						reviewBlocked: {
+							path: "/evidence/review-evidence/incomplete",
+							equals: true,
+						},
+						questions: { select: "/evidence/review-evidence/questions" },
+					},
+					passed: { path: "/results/reviewIncomplete", equals: false },
+				},
+				branches: assistance
+					? [
+							{
+								when: { path: "reviewIncomplete", equals: true },
+								next: destination,
+							},
+						]
+					: [],
+				next: "end",
+			},
+			...(destination === "alternate"
+				? [
+						{
+							id: "alternate",
+							name: "Continue in the alternate agent",
+							type: "agent",
+							prompt:
+								"Return the scripted alternate result without changing files.",
+							next: "end",
+						},
+					]
+				: []),
+		],
+	});
+	const definitions = [definition("f1-ordinary-review-fields", false, "end")];
+	for (const destination of ["alternate", "inspect"]) {
+		const id = `f1-review-recovery-${destination}`;
+		definitions.push(
+			{
+				id,
+				name: `F1 nested ${destination} recovery`,
+				stepConfigVersion: "step-config-v1",
+				triggers: ["manual", "ticket-assignment"],
+				steps: [
+					{
+						id: "nested",
+						name: "Call the recovery recipe",
+						type: "workflow",
+						workflow: `${id}-child`,
+						next: "end",
+					},
+				],
+			},
+			{
+				...definition(`${id}-child`, true, destination),
+				internal: true,
+				triggers: ["workflow"],
+			},
+		);
+	}
+	return definitions;
+}
+
+function customRecoveryReply(run, step) {
+	if (!run.workflow.id.startsWith("f1-")) return;
+	const state = customRecoveryRuns.get(run.id) ?? { reviews: 0 };
+	customRecoveryRuns.set(run.id, state);
+	if (step.id === "alternate") return { completed: true };
+	assert.equal(step.id, "inspect");
+	const blocked = ++state.reviews === 1;
+	return {
+		status: blocked ? "blocked" : "completed",
+		blockers: blocked ? ["Fixture review access needs assistance"] : [],
+		summary: blocked
+			? "The fixture review could not finish"
+			: "The original fixture reviewer resumed",
+		findings: [],
+	};
+}
 const decisionTools = new Set([
 	"review-gate",
 	"visual-gate",
@@ -355,6 +469,22 @@ function guide() {
 	};
 }
 function reply(format, run, snapshot, workingDirectory) {
+	if (
+		recovery?.kind === "specialist" &&
+		format === "specialist-v1" &&
+		fork.original(snapshot.workflowExecution.currentStep.id) ===
+			"correctness-review" &&
+		!recovery.released
+	) {
+		recovery.blockedTurns++;
+		return {
+			status: "blocked",
+			blockers: ["Fixture specialist access is temporarily unavailable"],
+			summary: "Correctness review could not finish",
+			findings: [],
+			disagreements: [],
+		};
+	}
 	const request =
 		scenario === "external"
 			? "Update the fixture ticket description and blocker while preserving its existing relationship"
@@ -420,6 +550,8 @@ function reply(format, run, snapshot, workingDirectory) {
 				questions: [],
 			};
 		case "impact-v1":
+			if (recovery?.kind === "specialist")
+				return specialistRecoveryAssessment(run, snapshot);
 			return {
 				impactContract: "impact-v1",
 				status: "completed",
@@ -468,12 +600,31 @@ function reply(format, run, snapshot, workingDirectory) {
 			};
 		case "specialist-v1":
 		case "coverage-v1":
+			if (recovery?.kind === "specialist")
+				assert.equal(
+					readFileSync(join(workingDirectory, "shared.txt"), "utf8").trim(),
+					"app changed",
+					"Completed specialist boundary observes the actual saved fixture record",
+				);
 			return {
 				status: "completed",
 				blockers: [],
 				summary: "Record behavior inspected",
 				findings: [],
 				disagreements: [],
+				...(recovery?.kind === "specialist"
+					? {
+							evidenceBoundary: {
+								requirementIds: ["R1"],
+								areas: [
+									fork.original(snapshot.workflowExecution.currentStep.id),
+								],
+								dependencies: ["shared.txt"],
+								independence:
+									"Inspected the saved record and its complete local fixture; restoring reviewer access changes no source, callers, configuration, or assertions.",
+							},
+						}
+					: {}),
 				...(format === "coverage-v1"
 					? {
 							coverage: [
@@ -598,18 +749,30 @@ const worker = new EdgeWorker({
 				else if (step.type === "fanout")
 					steps = step.groups[Number(path.shift())];
 			}
-			const format = formatOf(step);
+			const custom = customRecoveryReply(run, step);
+			const format = formatOf(step) ?? (custom ? "f1-generic-json" : undefined);
 			assert(format, role);
-			turns.push({
+			const turn = {
 				run: run.id,
 				key: snapshot.workflowExecution.currentStep.key,
 				role: fork.original(role),
 				format,
-			});
-			return f1AgentHandlers(
+				resumeSessionId: config.resumeSessionId ?? null,
+			};
+			turns.push(turn);
+			const runner = f1AgentHandlers(
 				"mock",
-				JSON.stringify(reply(format, run, snapshot, config.workingDirectory)),
+				JSON.stringify(
+					custom ?? reply(format, run, snapshot, config.workingDirectory),
+				),
 			).createAgentRunner(_type, config);
+			const start = runner.start.bind(runner);
+			runner.start = async (prompt) => {
+				const result = await start(prompt);
+				turn.sessionId = result.sessionId;
+				return result;
+			};
+			return runner;
 		},
 	},
 });
@@ -738,6 +901,440 @@ async function until(check, message) {
 			),
 	);
 }
+
+async function startRecoveryRun(
+	workflowId,
+	title,
+	description = "Inspect the controlled fixture and preserve every required review and approval.",
+) {
+	runtime.updateWorkflows(runtime.listWorkflows(), workflowId);
+	const { issue } = await rpc("createIssue", {
+		teamId: "team-default",
+		title,
+		description,
+	});
+	const { session } = await rpc("startSession", { issueId: issue.id });
+	sessions.push(session.sessionId);
+	await until(
+		() => runtime.runs.has(session.sessionId),
+		"Recovery fixture run was not created",
+	);
+	return runtime.get(session.sessionId);
+}
+
+async function recoveryTimeline(run) {
+	const timeline = await rpc("viewSession", {
+		sessionId: run.id,
+		limit: 1000,
+		offset: 0,
+	});
+	assert(timeline.totalCount > 0);
+	assert(
+		timeline.activities.every(
+			(activity) => activity.content && activity.createdAt,
+		),
+	);
+	return {
+		activityCount: timeline.totalCount,
+		activityTypes: [
+			...new Set(timeline.activities.map((activity) => activity.type)),
+		],
+	};
+}
+
+function specialistRecoveryAssessment(run, snapshot) {
+	const current = snapshot.impactSnapshot;
+	assert(current, "Recovery assessment needs the actual impact snapshot");
+	const prior = current.reviewRound
+		? snapshot.impactEvidence.filter(
+				({ receipt }) =>
+					receipt.status === "completed" &&
+					receipt.blockers.length === 0 &&
+					!receipt.findings.some(
+						(finding) => finding.status === "open" && finding.rating > 1,
+					) &&
+					receipt.disagreements.length === 0 &&
+					receipt.evidenceBoundary,
+			)
+		: [];
+	let scopeReuse;
+	if (current.reviewRound) {
+		assert(recovery.released, "Reassessment follows explicit restored access");
+		assert.equal(
+			current.environmentDigest,
+			recovery.initialImpact.environmentDigest,
+		);
+		assert(
+			current.repositories.every(
+				(repository) =>
+					!repository.diff &&
+					!repository.targetDiff &&
+					!repository.uncertainty.length,
+			),
+			"Reuse requires actual unchanged source and target evidence",
+		);
+		assert.equal(prior.length, current.reviewers.length - 1);
+		assert(
+			prior.every(
+				({ receipt }) =>
+					fork.original(receipt.stamp.reviewer) !== "correctness-review",
+			),
+			"The blocked reviewer cannot supply retained completed evidence",
+		);
+		const baseline = run.reviewRounds.findLast(
+			(round) =>
+				round.key === current.key && round.round === current.reviewRound,
+		);
+		assert(baseline, "Recovery needs the exact prior review frame and round");
+		assert.equal(current.inventoryDigest, baseline.inventory.digest);
+		scopeReuse = {
+			inventoryDigest: baseline.inventory.digest,
+			originalSourceDigest: baseline.inventory.sourceContextDigest,
+			reason:
+				"Independently inspected the access-restoration answer and unchanged source/target diffs; it restores reviewer access without changing the accepted Save a record requirement or waiving review.",
+		};
+		assert(scopeReuse.originalSourceDigest);
+	} else {
+		assert.equal(snapshot.impactEvidence.length, 0);
+		recovery.initialImpact = structuredClone(current);
+	}
+	const reuse = prior.map(({ digest, receipt }) => ({
+		reviewer: receipt.stamp.reviewer,
+		receiptDigest: digest,
+		boundary: structuredClone(receipt.evidenceBoundary.boundary),
+		reason:
+			"The exact original receipt inspected shared.txt; current source and target diffs are empty, runtime environment is unchanged, and the answer changes access alone.",
+	}));
+	const assessment = {
+		impactContract: "impact-v1",
+		status: "completed",
+		summary: current.reviewRound
+			? "Retain completed independent evidence; retry only the blocked correctness reviewer"
+			: "Review the complete implementation",
+		classification: current.reviewRound ? "none" : "full",
+		rationale: current.reviewRound
+			? "Access restoration changes no requirement, source, target, dependency, or assertion; original completed receipts remain independently valid"
+			: "New record behavior needs all configured specialists",
+		uncertainty: [],
+		extractRequirements: !current.reviewRound,
+		...(scopeReuse ? { scopeReuse } : {}),
+		specialists: current.reviewers
+			.map(({ id }) => id)
+			.filter((id) => !reuse.some(({ reviewer }) => reviewer === id)),
+		requirementIds: [],
+		checks: [],
+		qaCriteria: [],
+		qaReuse: [],
+		reuse,
+		invalidate: [],
+		targetCompatible: true,
+		testAssertions: {
+			inspected: true,
+			weakened: false,
+			evidence:
+				"Fixture implementation and unchanged assertions inspected; no code correction or assertion weakening occurred",
+		},
+		humanReview: "no-prior-approval",
+		approvalRationale: "Await the unchanged explicit human acceptance boundary",
+		questions: [],
+	};
+	recovery.assessments.push({
+		snapshot: structuredClone(current),
+		reuse: structuredClone(reuse),
+		scopeReuse,
+		specialists: [...assessment.specialists],
+	});
+	return assessment;
+}
+
+async function specialistRecovery(renamed) {
+	scenario = "repository";
+	recovery = {
+		kind: "specialist",
+		released: false,
+		blockedTurns: 0,
+		assessments: [],
+	};
+	forge.requests.clear();
+	const workflowId = renamed ? "renamed-factory" : "factory";
+	const run = await startRecoveryRun(
+		workflowId,
+		`F1 ${renamed ? "renamed" : "stock"} specialist assistance`,
+		"Save a record. Require the configured specialist review and restore temporary fixture access through assistance without replaying implementation or waiving approval.",
+	);
+	await until(
+		() => run.status === "waiting",
+		"Blocked specialist did not reach assistance",
+	);
+	assert.notEqual(
+		run.reviewGate?.status,
+		"pending",
+		"Incomplete specialist work cannot open acceptance",
+	);
+	assert.equal(fork.original(run.step), "pipeline/review-gate");
+	assert(run.questions.length > 0);
+	assert.equal(recovery.blockedTurns, 1);
+	const gate = graphSteps(run.workflow.id, run.workflowDefinitions).get(
+		run.step,
+	);
+	const blocked = run.history.findLast(
+		(receipt) => receipt.step === run.step,
+	).output;
+	assert.equal(
+		blocked.reviewIncomplete,
+		true,
+		"Specialist incompleteness must remain projected into Check output",
+	);
+	const route = gate.branches.find(
+		(branch) =>
+			JSON.stringify(readPath(blocked, branch.when.path)) ===
+			JSON.stringify(branch.when.equals),
+	);
+	assert.equal(
+		fork.original(route?.next ?? gate.next),
+		"assess-impact",
+		"Incomplete specialist recovery must take precedence over the code fixer route",
+	);
+	const assistance = {
+		step: run.step,
+		questionBatchId: run.questionBatchId,
+		questions: [...run.questions],
+		output: structuredClone(blocked),
+	};
+	const priorTurns = turns.filter((turn) => turn.run === run.id).length;
+	recovery.released = true;
+	runtime.answer(
+		run.id,
+		"Fixture specialist access is restored. Reassess the retained evidence and complete all outstanding review; no review or approval is waived.",
+	);
+	await until(() => {
+		if (run.status === "waiting" && run.reviewGate?.status !== "pending")
+			throw new Error(
+				`Specialist recovery unexpectedly needs further assistance at ${run.step}: ${run.questions.join("; ")}`,
+			);
+		return run.reviewGate?.status === "pending";
+	}, "Specialist recovery did not reach normal explicit acceptance");
+	const actual = turns.filter((turn) => turn.run === run.id);
+	const continuation = actual.slice(priorTurns);
+	const assessment = continuation.findIndex(
+		(turn) => turn.role === "assess-impact",
+	);
+	const reviewed = continuation.findIndex(
+		(turn) => turn.role === "correctness-review",
+	);
+	assert(
+		assessment >= 0 && reviewed > assessment,
+		"The independent assessment must precede fresh outstanding specialist review",
+	);
+	assert.equal(
+		actual.filter((turn) => turn.format === "implement-v1").length,
+		1,
+		"Assistance must not replay implementation",
+	);
+	assert(
+		!actual.some((turn) => turn.role === "code-fix"),
+		"Incomplete review is not a product code-fix obligation",
+	);
+	assert.equal(
+		actual.filter((turn) => turn.format === "inventory-v1").length,
+		1,
+		"Access restoration must retain the independently extracted inventory",
+	);
+	assert.equal(recovery.assessments.length, 2);
+	const reassessment = recovery.assessments.at(-1);
+	assert.deepEqual(
+		reassessment.specialists.map(fork.original),
+		["correctness-review"],
+		"Only the blocked reviewer remains outstanding after reassessment",
+	);
+	const specialistCounts = Object.fromEntries(
+		recovery.initialImpact.reviewers.map(({ id }) => {
+			const role = fork.original(id);
+			const count = actual.filter(
+				(turn) =>
+					["specialist-v1", "coverage-v1"].includes(turn.format) &&
+					turn.role === role,
+			).length;
+			assert.equal(
+				count,
+				role === "correctness-review" ? 2 : 1,
+				`${role}: completed independent reviewers must not replay`,
+			);
+			return [role, count];
+		}),
+	);
+	const rounds = run.reviewRounds.filter(
+		(round) => round.key === reassessment.snapshot.key,
+	);
+	assert.equal(rounds.length, 2);
+	assert.equal(rounds[0].inventory.digest, rounds[1].inventory.digest);
+	assert.equal(rounds[0].inventory.version, rounds[1].inventory.version);
+	const decision = run.impactDecisions.findLast(
+		(decision) => decision.snapshot.digest === reassessment.snapshot.digest,
+	);
+	assert(decision, "Runtime must accept the exact reassessment snapshot");
+	assert.deepEqual(
+		decision.reuseRecords.map(({ originalDigest }) => originalDigest).sort(),
+		reassessment.reuse.map(({ receiptDigest }) => receiptDigest).sort(),
+		"All completed reviewers retain the exact original runtime-stamped receipts",
+	);
+	runtime.decide(run.id, {
+		reviewId: run.reviewGate.id,
+		headSha: run.reviewGate.headSha,
+		decision: "approve",
+	});
+	await until(
+		() => run.status === "completed",
+		"Specialist recovery did not complete guarded delivery",
+	);
+	const result = {
+		scenario: renamed
+			? "renamed-specialist-assistance"
+			: "stock-specialist-assistance",
+		workflowId,
+		sessionId: run.id,
+		status: run.status,
+		assistance,
+		retention: {
+			inventoryExecutions: 1,
+			inventoryDigest: rounds[0].inventory.digest,
+			inventoryVersion: rounds[0].inventory.version,
+			specialistCounts,
+			assessments: structuredClone(recovery.assessments),
+			reusedReceiptDigests: decision.reuseRecords.map(
+				({ originalDigest }) => originalDigest,
+			),
+		},
+		turns: turns.filter((turn) => turn.run === run.id),
+		checks: checkEvidence(run),
+		actions: actionCalls.filter((call) => call.run === run.id),
+		approval: run.humanDecisions.at(-1)?.decision,
+		...(await recoveryTimeline(run)),
+	};
+	recoveryResults.push(result);
+	recovery = undefined;
+}
+
+async function ordinaryReviewFields() {
+	scenario = "repository";
+	const run = await startRecoveryRun(
+		"f1-ordinary-review-fields",
+		"F1 ordinary reviewBlocked and questions fields",
+	);
+	await until(() => {
+		assert.notEqual(
+			run.status,
+			"waiting",
+			"Named reviewBlocked/questions fields cannot implicitly enable assistance",
+		);
+		return run.status === "completed";
+	}, "Ordinary Check did not follow its declared terminal route");
+	const checked = run.history.find(
+		(receipt) => receipt.step === "decision",
+	).output;
+	assert.equal(checked.reviewBlocked, true);
+	assert(Array.isArray(checked.questions) && checked.questions.length > 0);
+	assert.equal(checked.passed, false);
+	assert.equal(turns.filter((turn) => turn.run === run.id).length, 1);
+	assert.equal(run.questions.length, 0);
+	assert(
+		!run.events.some((event) =>
+			/Review assistance has no configured fixer recovery path/.test(
+				event.message,
+			),
+		),
+	);
+	recoveryResults.push({
+		scenario: "ordinary-review-fields",
+		sessionId: run.id,
+		status: run.status,
+		turns: turns.filter((turn) => turn.run === run.id),
+		checks: checkEvidence(run),
+		...(await recoveryTimeline(run)),
+	});
+}
+
+async function nativeRecoveryDestination(destination) {
+	scenario = "repository";
+	const run = await startRecoveryRun(
+		`f1-review-recovery-${destination}`,
+		`F1 exact native recovery to ${destination}`,
+	);
+	await until(
+		() => run.status === "waiting",
+		"Incomplete review did not reach declared assistance",
+	);
+	assert.equal(run.step, "nested/decision");
+	const frame = run.checkpoint.active.children[0];
+	const visitsBefore = structuredClone(frame.visits);
+	const reviewer = turns.find(
+		(turn) => turn.run === run.id && turn.key === "nested/inspect",
+	);
+	assert(reviewer.sessionId);
+	assert.equal(frame.agentSessions?.inspect?.sessionId, reviewer.sessionId);
+	const assistance = {
+		step: run.step,
+		questions: [...run.questions],
+		questionBatchId: run.questionBatchId,
+	};
+	runtime.answer(
+		run.id,
+		"The fixture input is available. Follow this recipe's declared recovery destination; retain the original review and conversation.",
+	);
+	await until(
+		() => run.status === "completed",
+		"Configured native recovery did not complete",
+	);
+	const actual = turns.filter((turn) => turn.run === run.id);
+	assert.deepEqual(
+		actual.map((turn) => turn.key),
+		["nested/inspect", `nested/${destination}`],
+	);
+	assert.equal(
+		frame.agentSessions?.inspect?.sessionId,
+		reviewer.sessionId,
+		"A different destination cannot replace the original reviewer's native identity",
+	);
+	if (destination === "alternate") {
+		assert.deepEqual(
+			run.history.find((receipt) => receipt.step === "nested/alternate").output,
+			{ completed: true },
+		);
+		assert.equal(
+			actual[1].resumeSessionId,
+			null,
+			"An alternate agent must not resume the original reviewer's conversation",
+		);
+		assert.notEqual(actual[1].sessionId, reviewer.sessionId);
+		assert.equal(
+			frame.visits.inspect,
+			visitsBefore.inspect,
+			"An alternate recovery cannot consume the original reviewer's visits",
+		);
+		assert.equal(frame.visits.alternate, 1);
+	} else {
+		assert.equal(
+			actual[1].resumeSessionId,
+			reviewer.sessionId,
+			"Retrying the original reviewer must retain its native conversation",
+		);
+		assert.equal(actual[1].sessionId, reviewer.sessionId);
+		assert.equal(frame.visits.inspect, visitsBefore.inspect + 1);
+	}
+	recoveryResults.push({
+		scenario: `native-recovery-${destination}`,
+		sessionId: run.id,
+		status: run.status,
+		assistance,
+		turns: actual,
+		visitsBefore,
+		visitsAfter: frame.visits,
+		sessions: frame.agentSessions,
+		checks: checkEvidence(run),
+		...(await recoveryTimeline(run)),
+	});
+}
+
 try {
 	runtime.updateWorkflows(fork.definitions, "factory");
 	await worker.start();
@@ -902,6 +1499,19 @@ try {
 	);
 	assert.deepEqual(forge.publications, [repository.id, repository.id]);
 	assert.deepEqual(forge.merges, [repository.id, repository.id]);
+	if (recoveryEnabled) {
+		runtime.updateWorkflows(
+			[...runtime.listWorkflows(), ...recoveryDefinitions()],
+			"factory",
+		);
+		await specialistRecovery(false);
+		await specialistRecovery(true);
+		await ordinaryReviewFields();
+		await nativeRecoveryDestination("alternate");
+		await nativeRecoveryDestination("inspect");
+		assert.deepEqual(forge.publications, Array(4).fill(repository.id));
+		assert.deepEqual(forge.merges, Array(4).fill(repository.id));
+	}
 	assert.equal(
 		buildIdentity(),
 		buildSha256,
@@ -923,6 +1533,8 @@ try {
 					parallelMembers: [...parallelMembers],
 				},
 				results,
+				recoveryEnabled,
+				recoveryResults,
 				declaredGraphs,
 				externalCalls,
 				turns,
@@ -943,6 +1555,8 @@ try {
 			startedAt,
 			finishedAt: new Date().toISOString(),
 			results,
+			recoveryEnabled,
+			recoveryResults,
 			paidCalls: 0,
 		}),
 	);
@@ -951,6 +1565,8 @@ try {
 		JSON.stringify(
 			{
 				declaredGraphs,
+				recoveryEnabled,
+				recoveryResults,
 				results: results.map(({ scenario, checks, actions }) => ({
 					scenario,
 					checks,
@@ -973,6 +1589,9 @@ try {
 				buildSha256,
 				directory,
 				completedResults: results,
+				recoveryEnabled,
+				recoveryResults,
+				activeRecovery: recovery,
 				turns,
 				actionCalls,
 				externalCalls,

@@ -3083,12 +3083,18 @@ export class WorkflowRuntime {
 					step.type === "check"
 						? this.nextStep(steps, step, output)
 						: reviewer.id;
-				let reviewerSession = checkpoint.agentSessions?.[reviewer.id];
-				if (!reviewerSession?.sessionId && reviewer.type === "agent") {
+				const destination = steps.find(
+					(item) => item.id === checkpoint.current,
+				);
+				let recoverySession =
+					destination?.type === "agent"
+						? checkpoint.agentSessions?.[destination.id]
+						: undefined;
+				if (!recoverySession?.sessionId && destination?.type === "agent") {
 					// Older frames can retain native init events without a per-role map.
-					// Accept only the exact reviewer's initialization, never the last run session.
+					// Recover only the chosen destination's identity, never another role's.
 					for (const event of [...run.events].reverse()) {
-						if (event.step !== `${prefix}${reviewer.id}`) continue;
+						if (event.step !== `${prefix}${destination.id}`) continue;
 						try {
 							const message = JSON.parse(event.message);
 							if (
@@ -3099,10 +3105,10 @@ export class WorkflowRuntime {
 								message.session_id !== "pending"
 							) {
 								const runner = AgentSettingsSchema.shape.runner.safeParse(
-									reviewer.runner ?? run.runner ?? "claude",
+									destination.runner ?? run.runner ?? "claude",
 								);
 								if (runner.success && runner.data) {
-									reviewerSession = {
+									recoverySession = {
 										runner: runner.data,
 										sessionId: message.session_id,
 									};
@@ -3114,12 +3120,12 @@ export class WorkflowRuntime {
 						}
 					}
 				}
-				checkpoint.active = reviewerSession?.sessionId
-					? { phase: "executing", agent: { ...reviewerSession } }
+				checkpoint.active = recoverySession?.sessionId
+					? { phase: "executing", agent: { ...recoverySession } }
 					: undefined;
-				if (checkpoint.active)
-					checkpoint.visits[reviewer.id] =
-						(checkpoint.visits[reviewer.id] ?? 0) + 1;
+				if (checkpoint.active && destination)
+					checkpoint.visits[destination.id] =
+						(checkpoint.visits[destination.id] ?? 0) + 1;
 				await this.save(run);
 				signal.throwIfAborted();
 				continue;
@@ -3231,7 +3237,7 @@ export class WorkflowRuntime {
 			}
 			if (
 				(["review-gate", "visual-gate"].includes(step.tool ?? "") ||
-					(step.type === "check" && hasCheck(step, "review-evidence"))) &&
+					(step.type === "check" && hasCheck(step, "review-assistance"))) &&
 				readPath(output, "reviewBlocked") === true
 			) {
 				if (parallel)
