@@ -32,6 +32,8 @@ The user explicitly replaced dual Node support with **Node 24 only**, with no co
 
 The maintained delivery remains the `bobs-factory` native binary. **Bun 1.4.2 embeds its runtime; Factory and internal helpers require no separate Node/Bun installation.** Git, prepared agent launchers/SDKs/native sidecars and authentication remain external. The optional npm trial launcher and separately prepared Cursor host require Node 24. Workspace npm publishing remains retired. See [distribution requirements](../distribution/README.md) and [product contracts](../PRODUCT_CONTRACTS.md). This runtime support reduction does not remove ticket-required legacy recipe loading.
 
+A final bounded support audit caught a second prepared-Cursor Node gate in execution-profile capability discovery. It now rejects every major except 24, agreeing with installation and onboarding. Its selected-executable assertions are retained and unsupported-major negatives expanded. The partial `807b963c` package run was deliberately stopped before that source change; its successful binary/F1 evidence is preliminary. Final complete validation identifies the corrected source separately.
+
 ## Preserved behavior and evidence interpretation
 
 All 675 complete stock/frozen prompt variants still use the immutable base fixture; it was not regenerated. The capability reference and its entire expected prompt describe the new settings and bounded schema restrictions. Original security/outcome assertions are retained; each existing fixture/mechanism adjustment is explained in [the test-change rationale](agent-step-test-changes.md).

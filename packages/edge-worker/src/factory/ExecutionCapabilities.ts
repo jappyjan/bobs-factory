@@ -21,13 +21,9 @@ export function executionCapabilities(runner: RunnerType): {
 				stdio: ["ignore", "pipe", "pipe"],
 			}).trim();
 			const match = /^v(\d+)\.(\d+)\./.exec(nodeVersion);
-			if (
-				!match ||
-				Number(match[1]) < 22 ||
-				(Number(match[1]) === 22 && Number(match[2]) < 13)
-			)
+			if (!match || Number(match[1]) !== 24)
 				throw new Error(
-					"Prepared Cursor SDK requires Node >=22.13; configure BOBS_FACTORY_CURSOR_NODE",
+					"Prepared Cursor SDK requires Node 24; configure BOBS_FACTORY_CURSOR_NODE",
 				);
 		}
 		return {

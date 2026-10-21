@@ -244,6 +244,14 @@ explicit support decision. Negative tests reject unsupported major versions befo
 launcher side effects or SDK loading; existing installation/native-session/security
 assertions remain. This does not change old recipe compatibility.
 
+The final support audit also found a duplicate prepared-Cursor check in execution
+profile capability discovery. It still accepted Node >=22.13 after the installation
+guard had been tightened. That gate now requires major 24 too.
+`ExecutionCapabilities.test.ts` keeps the selected-executable/version assertions,
+changes the obsolete support message, and adds rejection cases for Node 22.23,
+23 and 25 alongside the existing unsupported/invalid cases. This is the explicitly
+requested runtime support removal, not a recipe compatibility change.
+
 The Node 24 CI job at source `50e02029` exposed two additional production adapter
 errors, reproduced by unchanged tests: 47 native capture/recovery cases and one
 Incremental case reached legacy graph inspection with an incomplete workflow;
