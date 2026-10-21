@@ -759,3 +759,50 @@ or deadline changed; in particular, the stale-assessment, source-history,
 saved-answer and cleanup deadlines remain intact. A later cleanup-poll failure
 is also retained in `fix-r23-final-storage-f1-aligned.log`; the complete final
 eight-scenario rerun passed.
+
+
+## Configurable-workflow target integration on 2026-10-21
+
+Fetched `main` at `95f79ef3be57bd8aa83d53b68c8130c28ef19dc9` and resolved
+all seven conflicts in merge commit `90bf51e2`. Owning dependency manifests and
+the regenerated lockfile match that incoming target, including AJV, Vite and the
+patched test tools. Both ownership regression tests remain, with the incoming
+30-second test deadline. The bounded busy-claim retry and release correction
+remain unchanged. The capability reference preserves the entire incoming text
+with exactly the accepted Simple-only launcher and workspace-wait descriptions;
+the complete routing-prompt expectation matches it.
+
+Local corrective checks passed frozen installation, zero-advisory audit, build,
+type checking and lint (34 warnings). The focused suites passed 573 unit and
+integration tests. All eight storage F1 scenarios and the launcher drive passed.
+The discovered configurable-workflow F1 drive passed both stock and renamed
+workflows, and the source-mode schema isolation stress check passed. Agents and
+forge responses were simulated; no paid inference was authorized or used.
+
+The first configurable-workflow drive stopped before startup because its
+`git diff HEAD` fingerprint exceeded the command's default 1 MiB buffer during
+the uncommitted merge. That failure remains in
+`ci-fix-r24-advanced-configurable-workflow-f1.log`. Running the unchanged command
+from clean source commit `90bf51e2` passed. Initial manifest formatting failed
+lint, was formatted, and passed the final lint rerun. Both attempts remain in
+the evidence directory. `ci-fix-r24-local-receipts.json` records the initial
+executions with working-diff fingerprints;
+`ci-fix-r24-final-local-receipts.json` records the final two commands at the clean
+source commit. This report is a later documentation-only change.
+
+The reconciliation manifest retains its historical 65-to-75 mapping and adds an
+integration-refresh record for all 75 retained obligations plus six discovered
+checks. `ci-fix-r24-proposed-selection.json` preserves the assessor's full
+81-command proposal with the refreshed overlap wrapper path. The new
+`ci-fix-r24-scheduled-overlap.mjs` and child are copies of the prior wrappers
+with only output filenames and included-target metadata changed; all assertions
+remain. The old wrappers and receipts remain untouched. The overlap wrapper was
+not reexecuted here: its selected command requires correction and reassessment
+first. Its listener declarations and bounded child ownership remain intact.
+
+These are local corrective results, not independent gate receipts. The next
+assessment must refresh R11/R13/R24/R29 through requirement extraction at the
+actual delivered head/target, preserve all 81 obligations and original execution
+stamps, and independently select fresh results or justified reuse. All six
+configured specialist reviews, current 34-criterion QA, guide, human delivery
+acceptance and provider-confirmed delivery remain at their frozen gates.
