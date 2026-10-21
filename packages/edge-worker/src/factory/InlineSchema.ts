@@ -69,7 +69,11 @@ async function childAsync(job: Job, signal?: AbortSignal): Promise<Result> {
 			bytes = 0,
 			stderrBytes = 0,
 			probing = false,
-			closed = false;
+			closed = false,
+			exited = false,
+			submitted = false;
+		let unavailable: ReturnType<typeof setTimeout> | undefined;
+		let probe: ReturnType<typeof execFile> | undefined;
 		const stop = (result?: Result, error?: Error) => {
 			if (final || failure || closed) return;
 			final = result;
@@ -81,33 +85,66 @@ async function childAsync(job: Job, signal?: AbortSignal): Promise<Result> {
 			() => stop(limitFailure(deadlineMessage, job.validate)),
 			INLINE_SCHEMA_LIMITS.wallMs,
 		);
-		// RSS is measured outside the child, so a stuck JS/native operation cannot
-		// postpone the memory watchdog. An unavailable watchdog fails closed.
+		// Do not send untrusted work until the external watchdog has sampled the
+		// live process. Bun can briefly expose zero RSS during exec or retirement,
+		// before its exit event reaches this parent. Recheck that lifecycle race
+		// for at most 100 ms; a persistently unobservable live child fails closed.
+		// The independent wall deadline and the RSS limit remain active throughout.
 		const measure = () => {
-			if (probing || closed || final || failure || !child.pid) return;
+			if (probing || closed || exited || final || failure || !child.pid) return;
 			probing = true;
-			execFile(
+			probe = execFile(
 				"ps",
 				["-o", "rss=", "-p", String(child.pid)],
 				{ timeout: 500, maxBuffer: 1024 },
 				(error, output) => {
 					probing = false;
-					if (closed || final || failure || child.exitCode !== null) return;
+					probe = undefined;
+					if (closed || exited || final || failure) return;
 					const rss = Number(output.trim()) * 1024;
-					if (error || !Number.isFinite(rss) || rss <= 0)
-						stop(
-							limitFailure(
-								"Inline JSON Schema child memory watchdog unavailable; validation stopped",
-								job.validate,
-							),
-						);
-					else if (rss > INLINE_SCHEMA_LIMITS.childRssBytes)
+					if (error || !Number.isFinite(rss) || rss <= 0) {
+						unavailable ??= setTimeout(() => {
+							unavailable = undefined;
+							if (closed || exited) return;
+							try {
+								process.kill(child.pid!, 0);
+							} catch (error) {
+								if (
+									error instanceof Error &&
+									"code" in error &&
+									error.code === "ESRCH"
+								) {
+									// The OS has already reclaimed the process, even if
+									// Bun has not delivered exit/close yet. Drain its
+									// result under the existing independent wall deadline.
+									exited = true;
+									clearInterval(memory);
+									return;
+								}
+								// EPERM and other errors cannot establish reclamation.
+							}
+							stop(
+								limitFailure(
+									"Inline JSON Schema child memory watchdog unavailable; validation stopped",
+									job.validate,
+								),
+							);
+						}, 100);
+						return;
+					}
+					clearTimeout(unavailable);
+					unavailable = undefined;
+					if (rss > INLINE_SCHEMA_LIMITS.childRssBytes)
 						stop(
 							limitFailure(
 								"Inline JSON Schema child exceeded the 256 MiB RSS limit",
 								job.validate,
 							),
 						);
+					else if (!submitted) {
+						submitted = true;
+						child.stdin.end(JSON.stringify(job));
+					}
 				},
 			);
 		};
@@ -141,15 +178,27 @@ async function childAsync(job: Job, signal?: AbortSignal): Promise<Result> {
 				job.validate,
 			);
 		});
-		child.once("close", () => {
+		child.once("exit", () => {
+			exited = true;
+			clearInterval(memory);
+			clearTimeout(unavailable);
+		});
+		child.once("close", (code, exitSignal) => {
 			closed = true;
 			clearTimeout(deadline);
 			clearInterval(memory);
+			clearTimeout(unavailable);
+			probe?.kill("SIGKILL");
 			signal?.removeEventListener("abort", cancel);
 			if (failure) {
 				reject(failure);
 				return;
 			}
+			if (!final && (code !== 0 || exitSignal))
+				final = limitFailure(
+					"Inline JSON Schema child exited without a successful result",
+					job.validate,
+				);
 			if (!final) {
 				try {
 					final = JSON.parse(stdout) as Result;
@@ -164,7 +213,6 @@ async function childAsync(job: Job, signal?: AbortSignal): Promise<Result> {
 		});
 		signal?.addEventListener("abort", cancel, { once: true });
 		if (signal?.aborted) cancel();
-		else child.stdin.end(JSON.stringify(job));
 	});
 }
 function worker(
@@ -174,7 +222,7 @@ function worker(
 	// Only trusted engine source is evaluated. Schemas/results travel as data,
 	// never interpolated code. Node resolves Ajv; compiled Bun uses an OS child.
 	const source = `const {parentPort,workerData}=require("node:worker_threads");
-	const result = (${executeInlineSchemaJob.toString()})(workerData, require(workerData.ajvModule).Ajv, require("node:vm").runInNewContext, 250);
+	const result = (${executeInlineSchemaJob.toString()})(workerData, require(workerData.ajvModule).Ajv, require("node:vm").runInNewContext, ${INLINE_SCHEMA_LIMITS.executionMs});
 	if(workerData.response){const control=new Int32Array(workerData.response.control),bytes=new Uint8Array(workerData.response.bytes),encoded=new TextEncoder().encode(JSON.stringify(result));
 	if(encoded.length<=bytes.length){bytes.set(encoded);Atomics.store(control,1,encoded.length);Atomics.store(control,0,1);}else Atomics.store(control,0,-1);Atomics.notify(control,0);}
 	else parentPort.postMessage(result);parentPort.close();`;

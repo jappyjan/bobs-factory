@@ -63,7 +63,11 @@ import {
 	readReviewPatch,
 	resolveGuideSnapshot,
 } from "./ReviewFiles.js";
-import { artifactOutputKey, presentationOutputKeys } from "./RunOutputRoles.js";
+import {
+	artifactOutputKey,
+	presentationOutputKeys,
+	presentationRoleRevisions,
+} from "./RunOutputRoles.js";
 import {
 	dashboardRun,
 	entryPreviews,
@@ -1670,7 +1674,10 @@ export class FactoryServer {
 						outputs: {},
 					}),
 					...(run && !focus
-						? { outputRoles: presentationOutputKeys(run) }
+						? {
+								outputRoles: presentationOutputKeys(run),
+								roleRevisions: presentationRoleRevisions(run),
+							}
 						: {}),
 					reviewCapabilities: {
 						refreshGuide: !!run && runtime.canRefreshGuide(run.id),

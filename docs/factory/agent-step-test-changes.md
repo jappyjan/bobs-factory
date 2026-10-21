@@ -278,3 +278,41 @@ only local validation scheduling; no test source, fixture, assertion, default
 test timeout or production preflight deadline changed. The original full log,
 isolated timings and final full output are retained in the revision validation
 record.
+
+## Review round 2
+
+The new `GenericOutputProtocols.test.ts` uses accepted modern definitions through
+the real parser/runtime. Custom `architectureRevision`, `questions`, choices and
+recommendation fields remain data for standalone, reads-only, format-only and
+inline-schema steps. Positive explicitly configured handback and question cases
+retain routing, choices, recommendations and validation failures. The complete
+capability-reference expectation in `prompt-assembly.routing-context.test.ts`
+changes with the documented explicit protocols and total rule-work limits. All
+675 stock/frozen prompt fixtures remain unchanged.
+
+`LegacyPresentation.test.ts` writes genuine historical graph/output shapes to disk
+and loads them through production storage. Pending and completed review rendering,
+the retained guide revision, default/explicit media bytes and immutable saved
+definitions/outputs are asserted. No compatibility registration enables these
+cases. Modern/mixed graphs, root/sibling collisions, unexecuted producers, missing
+history and unrelated revisions remain denied. Existing producer/provider and
+media-security assertions are unchanged.
+
+`RulesBudget.test.ts` and its standalone Bun fixture reproduce the accepted
+5,000/20,000-item nested-lookup configurations. They check bounded failure,
+heartbeat/cancellation, useful smaller rules, synchronous API parity and related
+comparison/serialization/collection paths. Conditional reads share one work budget;
+unselected lazy history remains cold. These are new safeguards, not changes to
+existing correction or runtime deadlines.
+
+`InlineSchema.child.test.ts` adds deterministic startup, zero-RSS, exit/close,
+unavailable live watchdog, memory-limit, cancellation and slot-reclamation cases.
+The real-runtime verification script repeats ordinary compilation/evaluation and
+post-cancellation recovery, then separately injects watchdog/deadline faults. Its
+actual product-binary run is recorded separately from source-mode Bun diagnostics.
+Existing schema safety, hard-wall, resource and output-correction assertions remain.
+`InlineSchema.bun.test.ts` exercises the actual Bun engine with a fixed scheduling
+pause: an ordinary null schema completes within the one-second allowance, while
+a longer pause still triggers the engine cutoff. The existing schema test changes
+only its stale allowance comment; its one-millisecond interruption assertion and
+all original outcomes remain unchanged.

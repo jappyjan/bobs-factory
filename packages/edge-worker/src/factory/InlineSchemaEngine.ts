@@ -1,8 +1,9 @@
 import { runInNewContext } from "node:vm";
 import { Ajv } from "ajv";
-import type {
-	InlineSchemaJob,
-	InlineSchemaResult,
+import {
+	INLINE_SCHEMA_LIMITS,
+	type InlineSchemaJob,
+	type InlineSchemaResult,
 } from "./InlineSchemaProtocol.js";
 
 /** Trusted engine entry: callers isolate this complete operation, including compilation. */
@@ -10,7 +11,7 @@ export function executeInlineSchemaJob(
 	request: InlineSchemaJob,
 	AjvClass = Ajv,
 	evaluate = runInNewContext,
-	executionMs = 250,
+	executionMs: number = INLINE_SCHEMA_LIMITS.executionMs,
 ): InlineSchemaResult {
 	let compiling = true;
 	let result: InlineSchemaResult;

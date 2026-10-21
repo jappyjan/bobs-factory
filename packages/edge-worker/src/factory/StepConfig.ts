@@ -96,6 +96,7 @@ export const CHECK_IDS = [
 	"review-dispositions",
 	"architecture-proposal",
 	"architecture-candidate",
+	"architecture-revision",
 	"impact-reuse",
 ] as const;
 export type CheckId = (typeof CHECK_IDS)[number];
@@ -358,6 +359,8 @@ export interface StepScope {
 	legacy?: boolean;
 	workflowId?: string;
 	rootWorkflowId?: string;
+	/** Historical graphs interpreted architecture handback only within their local decision graph. */
+	architectureRevision?: boolean;
 }
 
 const LEGACY_FLAGS = [
@@ -579,6 +582,8 @@ export function legacyStepPreset(
 	const { output, rules } = legacyFormat(step, scope);
 	let revision: "bound" | undefined;
 	if (step.type === "agent") {
+		if (scope.architectureRevision)
+			checks.push({ check: "architecture-revision", args: {} });
 		if (id === "plan" || id === "implement")
 			checks.push({
 				check: "ticket-milestone",
@@ -937,11 +942,15 @@ export function registerWorkflowConfig(
 	rootWorkflowId = workflow.id,
 ): void {
 	const visit = (steps: object[]) => {
+		const architectureRevision = steps.some(
+			(step) => (step as LegacyStep).tool === "architecture-decision",
+		);
 		for (const step of steps) {
 			registeredScopes.set(step, {
 				workflowId: workflow.id,
 				rootWorkflowId,
 				legacy: !workflow.stepConfigVersion && !isExplicitStep(step),
+				architectureRevision,
 			});
 			for (const group of (step as { groups?: object[][] }).groups ?? [])
 				visit(group);
@@ -1041,6 +1050,22 @@ export function consumesImpact(step: object): boolean {
 export function hasInstruction(step: object, id: InstructionId): boolean {
 	return resolveStepConfig(step).instructions.includes(id);
 }
+
+/** An opt-in handback uses its declared decision in the same lexical graph. */
+export function architectureRevisionDecision<
+	T extends { id: string; tool?: string },
+>(step: object, siblings: T[]): T | undefined {
+	if (!hasCheck(step, "architecture-revision")) return undefined;
+	const decisions = siblings.filter(
+		(sibling) => sibling.tool === "architecture-decision",
+	);
+	const selected = readStep(step, "architectureDecision");
+	return selected
+		? decisions.find((decision) => decision.id === selected)
+		: decisions.length === 1 || !resolveStepConfig(step).explicit
+			? decisions[0]
+			: undefined;
+}
 /** The step ID a named read binds to (undefined for context sources). */
 export function readStep(step: object, name: string): string | undefined {
 	const from = resolveStepConfig(step).reads[name]?.from;
@@ -1136,6 +1161,21 @@ export function stepConfigIssues(
 		issues.push(`${step.id}: impact-boundary requires reads.impact`);
 	if (hasCheck(step, "capture-evidence") && !readStep(step, "scope"))
 		issues.push(`${step.id}: capture-evidence requires reads.scope`);
+	if (hasCheck(step, "architecture-revision")) {
+		const decision = architectureRevisionDecision(step, siblings);
+		const target = decision && readStep(decision, "revise");
+		if (
+			step.type !== "agent" ||
+			!decision ||
+			!siblings.some(
+				(sibling) =>
+					sibling.id === target && hasCheck(sibling, "architecture-proposal"),
+			)
+		)
+			issues.push(
+				`${step.id}: architecture-revision requires a local architecture decision with its proposal revision route; use reads.architectureDecision to select among multiple decisions`,
+			);
+	}
 	const conditions: unknown[] = [...(step.rules ?? [])];
 	while (conditions.length) {
 		const condition = conditions.pop();
@@ -1261,20 +1301,19 @@ export function legacyScopeSources(input: unknown): Record<string, unknown> {
 	);
 }
 
-/** Historical receipt aliases are available only to wholly unversioned accepted graphs. */
-export function legacyToolOutputKey(
-	run: {
-		workflow?: { id: string; stepConfigVersion?: string; steps: object[] };
-		workflowDefinitions?: {
-			id: string;
-			stepConfigVersion?: string;
-			steps: object[];
-		}[];
-		outputs: Record<string, unknown>;
-	},
-	tool: string,
-): string | undefined {
-	if (!run.workflow) return;
+type LegacyOutputRun = {
+	workflow?: { id: string; stepConfigVersion?: string; steps: object[] };
+	workflowDefinitions?: {
+		id: string;
+		stepConfigVersion?: string;
+		steps: object[];
+	}[];
+	outputs: Record<string, unknown>;
+};
+
+/** Only accepted graphs made entirely of historical step shapes shared leaf outputs. */
+export function usesLegacyOutputAliases(run: LegacyOutputRun): boolean {
+	if (!run.workflow) return false;
 	const definitions = new Map(
 		(run.workflowDefinitions ?? [run.workflow]).map((workflow) => [
 			workflow.id,
@@ -1303,7 +1342,15 @@ export function legacyToolOutputKey(
 			});
 		return steps(workflow.steps);
 	};
-	if (!old(run.workflow)) return;
+	return old(run.workflow);
+}
+
+/** Historical receipt aliases are available only to wholly unversioned accepted graphs. */
+export function legacyToolOutputKey(
+	run: LegacyOutputRun,
+	tool: string,
+): string | undefined {
+	if (!usesLegacyOutputAliases(run)) return;
 	const aliases: Record<string, string> = {
 		merge: "merge",
 		"draft-pr": "draft-pr",

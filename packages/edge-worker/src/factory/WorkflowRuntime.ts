@@ -150,6 +150,7 @@ import {
 } from "./SpecialistReview.js";
 import { stepBindings } from "./StepBindings.js";
 import {
+	architectureRevisionDecision,
 	checkArgs,
 	consumesImpact,
 	consumesReview,
@@ -3216,11 +3217,10 @@ export class WorkflowRuntime {
 			}
 			if (
 				step.type === "agent" &&
+				hasCheck(step, "architecture-revision") &&
 				readPath(output, "architectureRevision") === true
 			) {
-				const decisionStep = steps.find(
-					(s) => s.tool === "architecture-decision",
-				);
+				const decisionStep = architectureRevisionDecision(step, steps);
 				const target = String(
 					decisionStep ? readStep(decisionStep, "revise") : undefined,
 				);

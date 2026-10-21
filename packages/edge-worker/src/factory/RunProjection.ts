@@ -4,6 +4,7 @@ import {
 	currentStepView,
 	presentationOutputKeys,
 	presentationOutputs,
+	presentationRoleRevisions,
 } from "./RunOutputRoles.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
@@ -160,7 +161,7 @@ export function dashboardRun(
 		answers: run.answers,
 		executionSnapshot: run.executionSnapshot,
 		executionDiagnostics: run.executionDiagnostics,
-		roleRevisions: run.roleRevisions,
+		roleRevisions: presentationRoleRevisions(run),
 		...(architecture
 			? {
 					architectureProposals: run.architectureProposals,

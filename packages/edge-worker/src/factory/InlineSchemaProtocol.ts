@@ -6,7 +6,9 @@ export const INLINE_SCHEMA_LIMITS = {
 	dataNodes: 20_000,
 	depth: 40,
 	patternLength: 512,
-	executionMs: 250,
+	// VM time includes cold Ajv setup and OS scheduling, not only schema CPU.
+	// Leave headroom within the independent parent wall/RSS/stream limits.
+	executionMs: 1_000,
 	wallMs: 2_000,
 	workers: 2,
 	queued: 16,

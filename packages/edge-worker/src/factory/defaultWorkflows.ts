@@ -684,10 +684,14 @@ function configuredStock(value: unknown) {
 	result.stepConfigVersion = "step-config-v1";
 	const walk = (steps: WorkflowStep[]) => {
 		const ids = new Set(steps.map((step) => step.id));
+		const architectureRevision = steps.some(
+			(step) => step.tool === "architecture-decision",
+		);
 		for (const step of steps) {
 			const preset = legacyStepPreset(step, {
 				workflowId: workflow.id,
 				rootWorkflowId: workflow.id,
+				architectureRevision,
 			});
 			const template = instructionTemplate(step.prompt ?? "");
 			Object.assign(step, {

@@ -6,6 +6,7 @@ import {
 	readOutput,
 	readStep,
 	resolveStepConfig,
+	usesLegacyOutputAliases,
 } from "./StepConfig.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
@@ -166,11 +167,11 @@ function outputHistory(run: Run): OutputHistory {
 	return run.history ?? [];
 }
 
-/** Accepted output slots, without reading artifact getters or cold history bodies. */
-export function configuredOutputKeys(
+/** Accepted output slots and their executed producer, without hydrating artifacts. */
+export function configuredOutputBindings(
 	run: ExecutionContext["run"],
 	selector: { check?: CheckId | CheckId[]; tool?: string | string[] },
-): string[] {
+): { key: string; stepKey?: string }[] {
 	const checks = selector.check
 		? Array.isArray(selector.check)
 			? selector.check
@@ -181,24 +182,52 @@ export function configuredOutputKeys(
 			? selector.tool
 			: [selector.tool]
 		: [];
-	const producers = new Set(
-		stepsForRun(run)
+	const steps = stepsForRun(run);
+	const producers = new Map(
+		steps
 			.filter(
 				({ step }) =>
 					checks.some((check) => hasCheck(step, check)) ||
 					(step.type === "tool" && tools.includes(step.tool ?? "")),
 			)
-			.map(({ key }) => key),
+			.map(({ key, step }) => [key, step]),
 	);
-	const keys = [...outputHistory(run)]
-		.reverse()
-		.map(({ step }) => step)
-		.filter((key) => producers.has(key) && Object.hasOwn(run.outputs, key));
-	if (!keys.length && typeof selector.tool === "string") {
+	const history = [...outputHistory(run)].reverse();
+	const legacy = checks.length > 0 && usesLegacyOutputAliases(run);
+	const bindings: { key: string; stepKey?: string }[] = history.flatMap(
+		({ step: key }) => {
+			const producer = producers.get(key);
+			if (!producer) return [];
+			if (Object.hasOwn(run.outputs, key)) return [{ key, stepKey: key }];
+			// Frozen pre-config calls stored the result under a shared leaf, while
+			// retaining its exact executed graph identity in history. Resolve only
+			// an unambiguous historical producer; modern and mixed graphs never opt in.
+			const leaf = producer.id;
+			return legacy &&
+				key !== leaf &&
+				Object.hasOwn(run.outputs, leaf) &&
+				steps.filter(({ step }) => step.id === leaf).length === 1 &&
+				history.find(({ step }) => step.split("/").at(-1) === leaf)?.step ===
+					key
+				? [{ key: leaf, stepKey: key }]
+				: [];
+		},
+	);
+	if (!bindings.length && typeof selector.tool === "string") {
 		const legacy = legacyToolOutputKey(run, selector.tool);
-		if (legacy) keys.push(legacy);
+		if (legacy) bindings.push({ key: legacy, stepKey: undefined });
 	}
-	return [...new Set(keys)];
+	return [
+		...new Map(bindings.map((binding) => [binding.key, binding])).values(),
+	];
+}
+
+/** Accepted output slots, without reading artifact getters or cold history bodies. */
+export function configuredOutputKeys(
+	run: ExecutionContext["run"],
+	selector: Parameters<typeof configuredOutputBindings>[1],
+): string[] {
+	return configuredOutputBindings(run, selector).map(({ key }) => key);
 }
 
 /** Resolve an accepted step identity without reading execution artifacts. */

@@ -55,7 +55,7 @@ import {
 	isReviewBrief,
 	ReviewBriefSchema,
 } from "./ReviewBrief.js";
-import { evaluateRules } from "./Rules.js";
+import { evaluateRules, evaluateRulesAsync } from "./Rules.js";
 import {
 	CoverageSchema,
 	InventorySchema,
@@ -64,6 +64,7 @@ import {
 import {
 	FORMAT_IDS,
 	type FormatId,
+	type ResolvedStepConfig,
 	resolveStepConfig,
 	type StepScope,
 } from "./StepConfig.js";
@@ -172,6 +173,53 @@ export function parseOutputFormat(format: string, value: unknown): unknown {
 		throw new Error(`Unknown output format: ${format}`);
 	return parsers[format as FormatId](value);
 }
+
+/** These formats intentionally carry the human-question fields; arbitrary JSON does not. */
+const questionFormats = new Set<FormatId>([
+	"question-fields-v1",
+	"clarify-v1",
+	"implement-v1",
+	"ci-fix-v1",
+	"review-fix-v1",
+	"architecture-review-v1",
+	"inventory-v1",
+	"impact-v1",
+]);
+function questionResult(
+	step: object,
+	config: ResolvedStepConfig,
+	output: unknown,
+) {
+	const enabled =
+		(step as { askQuestions?: boolean }).askQuestions === true ||
+		config.checks.some(({ check }) =>
+			[
+				"optional-questions",
+				"architecture-candidate",
+				"inventory-evidence",
+				"impact-reuse",
+			].includes(check),
+		) ||
+		(config.output &&
+			"format" in config.output &&
+			questionFormats.has(config.output.format));
+	return enabled &&
+		output &&
+		typeof output === "object" &&
+		("questions" in output ||
+			"questionChoices" in output ||
+			"questionRecommendations" in output)
+		? normalizeQuestionResult(output)
+		: output;
+}
+function conforms(format: string, value: unknown): boolean {
+	try {
+		parseOutputFormat(format, value);
+		return true;
+	} catch {
+		return false;
+	}
+}
 /** Schema and rule failures reach the same bounded correction loop as legacy output errors. */
 export function parseStepOutput(
 	step: object,
@@ -194,22 +242,9 @@ export function parseStepOutput(
 					throw new OutputValidationError(value, result.issues);
 			}
 		}
-		const issues = evaluateRules(config.rules, output, (format, value) => {
-			try {
-				parseOutputFormat(format, value);
-				return true;
-			} catch {
-				return false;
-			}
-		});
+		const issues = evaluateRules(config.rules, output, conforms);
 		if (issues.length) throw new OutputValidationError(value, issues);
-		return output &&
-			typeof output === "object" &&
-			("questions" in output ||
-				"questionChoices" in output ||
-				"questionRecommendations" in output)
-			? normalizeQuestionResult(output)
-			: output;
+		return questionResult(step, config, output);
 	} catch (error) {
 		throw outputValidationError(value, error);
 	}
@@ -222,32 +257,36 @@ export async function parseStepOutputAsync(
 	signal?: AbortSignal,
 ): Promise<unknown> {
 	const config = resolveStepConfig(step, scope);
-	if (!config.output || "format" in config.output)
-		return parseStepOutput(step, value, scope);
 	try {
 		signal?.throwIfAborted();
-		const result = await validateInlineSchema(
-			config.output.schema,
-			value,
+		let output = value;
+		if (config.output) {
+			if ("format" in config.output)
+				output = parseOutputFormat(config.output.format, value);
+			else {
+				const result = await validateInlineSchema(
+					config.output.schema,
+					value,
+					signal,
+				);
+				signal?.throwIfAborted();
+				if (result.schemaIssues.length)
+					throw new Error(
+						`Invalid output schema: ${result.schemaIssues.join("; ")}`,
+					);
+				if (result.issues.length)
+					throw new OutputValidationError(value, result.issues);
+			}
+		}
+		const issues = await evaluateRulesAsync(
+			config.rules,
+			output,
+			conforms,
 			signal,
 		);
 		signal?.throwIfAborted();
-		if (result.schemaIssues.length)
-			throw new Error(
-				`Invalid output schema: ${result.schemaIssues.join("; ")}`,
-			);
-		if (result.issues.length)
-			throw new OutputValidationError(value, result.issues);
-		// Reuse the normal post-schema rule/question stage without re-running an inline schema.
-		return parseStepOutput(
-			{
-				...step,
-				configVersion: "step-config-v1",
-				output: { format: "json-v1" },
-				rules: config.rules,
-			},
-			value,
-		);
+		if (issues.length) throw new OutputValidationError(value, issues);
+		return questionResult(step, config, output);
 	} catch (error) {
 		if (signal?.aborted) throw error;
 		throw outputValidationError(value, error);

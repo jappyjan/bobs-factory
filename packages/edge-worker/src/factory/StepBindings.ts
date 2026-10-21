@@ -1,6 +1,6 @@
 import { factoryContextView } from "bobs-factory-mcp-tools";
 import { repositoryMetadata } from "./RepositoryScope.js";
-import { evaluateCondition } from "./Rules.js";
+import { evaluateCondition, RULE_EVALUATION_LIMITS } from "./Rules.js";
 import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
 import { pointerValue, resolveStepConfig } from "./StepConfig.js";
 import { stepContextSources } from "./StepContextSources.js";
@@ -61,8 +61,16 @@ export function stepBindings(
 		{ ...outputs },
 		Object.getOwnPropertyDescriptors(sources),
 	);
+	const budget = {
+		remaining: RULE_EVALUATION_LIMITS.conditions,
+		workRemaining: RULE_EVALUATION_LIMITS.work,
+	};
 	for (const [name, binding] of Object.entries(resolveStepConfig(step).reads)) {
-		if (binding.when && !evaluateCondition(binding.when, conditions)) continue;
+		if (
+			binding.when &&
+			!evaluateCondition(binding.when, conditions, conditions, 0, budget)
+		)
+			continue;
 		const value = binding.from.startsWith("@")
 			? pointerValue(sources, binding.from.slice(1))
 			: pointerValue(outputs, binding.from);

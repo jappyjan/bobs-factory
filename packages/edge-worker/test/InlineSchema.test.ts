@@ -78,7 +78,7 @@ it("bounds schema compilation itself without stopping the server event loop", as
 	const schema = { enum: Array.from({ length: 4990 }, (_, i) => ({ i })) };
 	expect(inlineSchemaPreflight(schema)).toEqual([]);
 	// A fixed small engine budget proves actual compilation interruption without
-	// requiring a valid schema to be slower than the production 250 ms allowance.
+	// requiring a valid schema to be slower than the fixed production allowance.
 	const limited = executeInlineSchemaJob(
 		{ schema, validate: false },
 		undefined,

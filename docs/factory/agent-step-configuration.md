@@ -60,8 +60,10 @@ properties, required fields, enums, compositions, useful bounded patterns and
 shared acyclic definitions remain available.
 
 Pattern screening is only a preflight: remaining expensive regular expressions
-and meta-schema checks are still isolated. Node applies a 250 ms execution guard
-for compile plus validation. Every worker has a 2-second wall deadline including
+and meta-schema checks are still isolated. Both runtimes apply a fixed 1-second
+elapsed-time execution guard for compile plus validation. This permits cold Ajv
+work and scheduling pauses within the independent outer limit. Every worker has
+a 2-second wall deadline including
 startup, enforced outside the validator. Node terminates the worker; Bun uses a
 separate process killed with SIGKILL because Bun thread termination cannot
 reliably interrupt native regular expressions. The
@@ -74,8 +76,11 @@ same deadline; HTTP handlers never fall back to that blocking bridge.
 
 Node additionally enforces a 96 MiB old-generation heap, 16 MiB young generation
 and 2 MiB worker stack. Async Bun validation checks child RSS from the parent with
-`ps` every 50 ms, kills above 256 MiB, and fails closed if the watchdog is
-unavailable. This is a sampled process-memory limit, not an engine heap cap;
+`ps` every 50 ms, kills above 256 MiB, and submits untrusted work only after a
+positive startup RSS sample. A zero/missing sample receives a bounded 100 ms
+recheck against process exit/close or confirmed OS reclamation. An unobservable
+live process still fails closed, and a slot is not released before child close.
+This is a sampled process-memory limit, not an engine heap cap;
 synchronous Bun compatibility calls retain the input/graph caps and OS-enforced
 wall deadline. Normal HTTP/native paths always use the asynchronous backend.
 The compiled executable launches its private `internal-schema-validator` JSON
@@ -142,9 +147,39 @@ schema can reuse all QA scope semantics with a rule whose `require` is
 `{conforms: "qa-scope-v1"}`. The same data format can be evaluated by a future
 Check step without allowing arbitrary code.
 
-Configuration size/depth, wildcard expansion, condition nesting and the total
-number of evaluation operations are bounded. A limit violation rejects output;
-it never converts uncertainty into a successful check.
+Configuration size/depth, wildcard expansion, condition nesting and actual work
+are bounded. One evaluation permits at most 100,000 condition visits and
+1,000,000 charged work units. Work includes inner collection scans, pointer
+traversal, comparisons, key sorting, string characters, canonical serialization
+and the argument/refinement cost of fixed format predicates. Collections and
+selections are capped at 20,000 entries, data depth at 48, condition depth at 12,
+and canonical/configuration strings at 1,000,000 characters. Configuration is
+also limited to 50 rules and 10,000 data nodes. Limits are fixed, not recipe settings.
+Native evaluation yields between 2,048-unit slices and honors cancellation;
+synchronous package APIs use the same total-work accounting. Lazy named-context
+conditions inspect only selected sources rather than hydrating unrelated history.
+All conditional reads in one binding pass share the same remaining work budget.
+A limit violation rejects output through correction; it never converts uncertainty
+into success. Large nested lookups may exceed the budget even when each individual
+collection fits: use a simpler rule or smaller output instead of increasing limits.
+
+## Explicit output protocols
+
+An ordinary custom `questions`, `questionChoices`, `questionRecommendations` or
+`architectureRevision` field is data, regardless of the step's ID. Human-question
+metadata is normalized only for `askQuestions`, a configured question-bearing
+check (`optional-questions`, architecture candidate, inventory or impact), or an
+intended question-bearing library format. A format selects validation; it does not
+by itself add a human pause. Existing question actions remain explicitly configured.
+
+Architecture handback opts into `checks: ["architecture-revision"]`. The same
+lexical graph must contain a configured architecture decision with a valid proposal
+revision route. With multiple decisions, bind `reads.architectureDecision` to the
+intended decision. A true `architectureRevision` then returns to that decision's
+declared proposal route, retaining review/acceptance requirements. Stock steps
+declare the check explicitly; the old-definition adapter derives it only from
+the historical accepted local decision graph. Stored definitions and output
+receipts are never rewritten to enable compatibility.
 
 ## Invariant inventory and compatibility
 

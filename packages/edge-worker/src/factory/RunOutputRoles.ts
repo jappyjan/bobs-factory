@@ -1,5 +1,9 @@
 import { stepPresentation } from "./StepPresentation.js";
-import { configuredOutputKeys, stepForRun } from "./ToolBindings.js";
+import {
+	configuredOutputBindings,
+	configuredOutputKeys,
+	stepForRun,
+} from "./ToolBindings.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 /** Stable view names refer to accepted roles/actions, never authored step IDs. */
@@ -22,6 +26,19 @@ export function presentationOutputKeys(
 			return key ? [[name, key]] : [];
 		}),
 	);
+}
+
+/** Old shared output leaves keep the revision of their exact executed producer. */
+export function presentationRoleRevisions(run: FactoryRun) {
+	const binding = configuredOutputBindings(run, {
+		check: "requirement-coverage",
+	})[0];
+	if (!binding?.stepKey || binding.key === binding.stepKey)
+		return run.roleRevisions;
+	const revision = run.roleRevisions?.[binding.stepKey];
+	return revision
+		? { ...run.roleRevisions, [binding.key]: revision }
+		: run.roleRevisions;
 }
 
 const presentationNames = new Set([

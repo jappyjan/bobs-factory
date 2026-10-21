@@ -5,7 +5,10 @@ export function chapterColor(index: number) {
 }
 export function chaptersFor(guide: Guide): GuideChapter[] {
 	return guide.chapters?.length
-		? guide.chapters
+		? guide.chapters.map((chapter) => ({
+				...chapter,
+				screenshots: chapter.screenshots ?? [],
+			}))
 		: guide.behavior.map((b, i) => ({
 				id: `legacy-${i}`,
 				title: b.scenario,
