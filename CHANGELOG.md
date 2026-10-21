@@ -28,6 +28,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Reduce pauses before Factory agents start by reusing context lengths already calculated during capture, while preserving complete scoped evidence and integrity checks.
+
 - Recheck waiting questions after an update or access repair without inventing an answer or losing the original conversation. Let correction roles return genuine design changes through proposal review, and keep supervised concurrency checks within the run's capacity allowance. ([#171](https://github.com/jappyjan/bobs-factory/pull/171))
 
 - Stop repeated review loops caused by stale pull-request target commits. Let correction roles use retained findings when review is unfinished, and give selected checks the normal twenty-minute command budget while keeping independent review and human approval required. ([#169](https://github.com/jappyjan/bobs-factory/pull/169))

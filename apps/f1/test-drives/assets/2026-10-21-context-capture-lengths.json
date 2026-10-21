@@ -1,0 +1,82 @@
+{
+	"recordedAt": "2026-10-21T15:48:34.322Z",
+	"mode": "controlled/no-inference",
+	"candidateSha256": "c5b6763dc7a112fbf769feb37efea534160380b6f8c37fa7f7510cbaa58edd25",
+	"results": [
+		{
+			"mode": "baseline",
+			"rows": 32,
+			"characters": 1155363,
+			"captureMs": 4976,
+			"nodeLookups": 65665,
+			"nodeFileReads": 49687,
+			"exact": true,
+			"coldReopenExact": true
+		},
+		{
+			"mode": "candidate",
+			"rows": 32,
+			"characters": 1155363,
+			"captureMs": 1337,
+			"nodeLookups": 0,
+			"nodeFileReads": 0,
+			"exact": true,
+			"coldReopenExact": true
+		}
+	],
+	"publicBenchmark": [
+		{
+			"mode": "baseline",
+			"rows": 32,
+			"characters": 1155363,
+			"captureMs": 5479,
+			"exact": true,
+			"coldReopenExact": true
+		},
+		{
+			"mode": "candidate",
+			"rows": 32,
+			"characters": 1155363,
+			"captureMs": 2000,
+			"exact": true,
+			"coldReopenExact": true
+		}
+	],
+	"f1": {
+		"result": "PASS",
+		"mode": "mocked/no-inference",
+		"rows": 32,
+		"claimsPerRow": 256,
+		"turns": ["entry", "entry", "inspect"],
+		"coldRestartRetained": true,
+		"selectedCompleteEvidenceExact": true,
+		"undeclaredOutputDenied": true,
+		"humanDecisionStillRequired": true,
+		"activitiesVisible": true
+	},
+	"memory": {
+		"mode": "controlled/no-inference",
+		"logicalCharacters": 1133497580,
+		"diskBytes": 996217,
+		"heartbeats": 75,
+		"maxHeartbeatGapMs": 10.943874999999963,
+		"peakRssMiB": 117,
+		"heapSizeLimitMiB": 256,
+		"execArgv": ["--max-old-space-size=64"],
+		"selectedCompleteReceiptsAndNativeIdsPreserved": true,
+		"limitations": "Repeated shared strings; logical-history scaling, not unique-disk throughput or live provider execution."
+	},
+	"baseCommit": "a4990127173a9135b331bbe7956559321a0087e2",
+	"sources": {
+		"packages/mcp-tools/src/factoryContextSnapshot.ts": "c5b6763dc7a112fbf769feb37efea534160380b6f8c37fa7f7510cbaa58edd25",
+		"apps/f1/test-drives/assets/context-capture-lengths.mjs": "e84b58526721034749292ed6395c4f8e8a7843f7811bb7dbd3dc6c55f0fcd6ef",
+		"apps/f1/test-drives/assets/context-capture-benchmark.mjs": "798d9a32dd9d4e3f7beb2e7ee1aca0cc1b1a3d6408cf2af7c6904f916911cb6b"
+	},
+	"validation": {
+		"mcpToolsUniqueTestsPassed": 82,
+		"operatorRerunPassed": 15,
+		"build": "F1 and all workspace dependencies, plus compiled CLI",
+		"lint": "changed JavaScript/TypeScript files",
+		"installedRuntimeChanged": false
+	}
+}
