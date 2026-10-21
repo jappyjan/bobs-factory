@@ -1,5 +1,7 @@
 import { factoryContextView } from "bobs-factory-mcp-tools";
+import { repositoryMetadata } from "./RepositoryScope.js";
 import { evaluateCondition } from "./Rules.js";
+import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
 import { pointerValue, resolveStepConfig } from "./StepConfig.js";
 import { stepContextSources } from "./StepContextSources.js";
 import type { WorkflowStep } from "./Workflow.js";
@@ -26,10 +28,14 @@ export function stepBindings(
 			).contextMemory.reviewLedger;
 		},
 		reviewRounds: run.reviewRounds ?? [],
-		repository: run.outputs.repository ??
-			run.repositories ?? [{ id: run.repositoryId, workspace: run.workspace }],
-		source: run.outputs.source,
-		ticket: run.outputs.ticket,
+		repository:
+			(run.repositories?.length ?? 0) > 1
+				? run.repositories
+				: (repositoryMetadata(run, step) ?? [
+						{ id: run.repositoryId, workspace: run.workspace },
+					]),
+		source: takeoverSource(run),
+		ticket: ticketSnapshot(run),
 		history: snapshotHistory(history),
 		launchInputs: run.launchInputs ?? {},
 		mergeReadiness: run.mergeReadiness,

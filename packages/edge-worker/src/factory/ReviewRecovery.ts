@@ -11,8 +11,8 @@ import {
 	type ReviewerReceipt,
 	reviewBaselineForContext,
 } from "./SpecialistReview.js";
-import { readStep } from "./StepConfig.js";
-import { boundOutput, boundStepKey } from "./ToolBindings.js";
+import { readStep, resolveStepConfig } from "./StepConfig.js";
+import { boundOutput, boundStepKey, stepForRun } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 interface Finding {
@@ -129,9 +129,20 @@ function codeReviewForFix(context: ExecutionContext): {
 		const output = context.run.history[index]!.output;
 		if (matches(output, expected)) receipts.set(expected.id, output);
 	}
-	const fanout = (context.outputs ?? context.run.outputs)[
-		baseline.key.split("/").at(-1)!
-	] as Record<string, unknown>[] | undefined;
+	// Modern receipts need an executed exact producer. A data output cannot
+	// authenticate itself by copying a specialist's baseline stamp.
+	const fanoutStep = stepForRun(context.run, baseline.key);
+	const fanout = (
+		!resolveStepConfig(context.step).explicit
+			? (context.outputs ?? context.run.outputs)[
+					baseline.key.split("/").at(-1)!
+				]
+			: fanoutStep?.type === "fanout"
+				? [...context.run.history]
+						.reverse()
+						.find((entry) => entry.step === baseline.key)?.output
+				: undefined
+	) as Record<string, unknown>[] | undefined;
 	const currentIds = new Set<string>();
 	const dispositions: ReviewerReceipt["inheritedDispositions"] = [];
 	for (const expected of baseline.reviewers) {

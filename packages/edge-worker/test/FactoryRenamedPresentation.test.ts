@@ -130,9 +130,9 @@ it("keeps renamed Factory review cards, lazy guide artifacts and media bound to 
 		});
 		expect(
 			guideRevision({
-				outputRoles: { guide: guideId },
+				outputRoles: { guide: guideKey },
 				roleRevisions: {
-					[`called-frame/${guideId}`]: { headSha: "accepted-revision" },
+					[guideKey]: { headSha: "accepted-revision" },
 				},
 			}),
 		).toEqual({ headSha: "accepted-revision" });

@@ -10,6 +10,7 @@ import {
 	runRepositories,
 } from "./RepositoryScope.js";
 import { deliveryTargetLabel } from "./RunAttention.js";
+import { takeoverSource } from "./RunContextSources.js";
 import {
 	accessMode,
 	consumesImpact,
@@ -68,7 +69,7 @@ export function deliveryScopes(run: FactoryRun): string[] {
 					const projected = repositoryRun(run, repository);
 					if (
 						[
-							projected.outputs.source,
+							takeoverSource(projected),
 							outputForTool(projected, "draft-pr"),
 							outputForTool(projected, "merge"),
 						].some(
@@ -94,8 +95,11 @@ export function deliveryScopes(run: FactoryRun): string[] {
 					try {
 						if (git("status", "--porcelain")) return true;
 						const base =
-							(projected.outputs.source as { baseRefName?: string } | undefined)
-								?.baseRefName ?? repository.baseBranch;
+							(
+								takeoverSource(projected) as
+									| { baseRefName?: string }
+									| undefined
+							)?.baseRefName ?? repository.baseBranch;
 						let ref = `refs/remotes/origin/${base}`;
 						try {
 							git("rev-parse", "--verify", ref);
@@ -121,7 +125,7 @@ export function deliveryScopes(run: FactoryRun): string[] {
 						: localRepository(repository.repositoryPath);
 					const base =
 						(
-							repositoryRun(run, repository).outputs.source as
+							takeoverSource(repositoryRun(run, repository)) as
 								| { baseRefName?: string }
 								| undefined
 						)?.baseRefName ?? repository.baseBranch;

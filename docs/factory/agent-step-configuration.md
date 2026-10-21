@@ -88,6 +88,8 @@ its original key set and history retains its original cutoff on dependency refre
 the producer's own newly appended result is excluded. This prevents a consumer's
 bookkeeping from recursively invalidating its producer. Explicit named reads remain
 live, including `@history` with only that producer's appended receipts excluded.
+Self-result aliases, their derived delivery-candidate digest and the tracking
+outbox are also bookkeeping exclusions; they cannot create new task evidence.
 Native feedback, review-fix and QA-reuse sources also bind their inspected inputs.
 Dependency refresh returns to the suspended consumer without replaying completed
 intervening actions, retains native conversation identity and uses the visit budget.

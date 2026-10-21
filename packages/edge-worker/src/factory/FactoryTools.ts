@@ -63,6 +63,7 @@ import {
 } from "./QaReuse.js";
 import { runRepositories } from "./RepositoryScope.js";
 import { reviewRecoveryQuestions } from "./ReviewRecovery.js";
+import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
 import {
 	aggregateForContext,
 	assertAggregateRevision,
@@ -736,7 +737,7 @@ export class FactoryTools {
 		switch (context.step.tool) {
 			case "inspect-existing": {
 				const branch = await command("git", ["branch", "--show-current"]);
-				let pr = run.outputs.source as
+				let pr = takeoverSource(run) as
 					| Awaited<ReturnType<typeof inspectPullRequest>>
 					| undefined;
 				if (!pr?.url) {
@@ -759,6 +760,7 @@ export class FactoryTools {
 						);
 					if (!pr.isDraft) await (await provider(pr.url)).draft(pr.url, true);
 					run.outputs.source = { ...pr, isDraft: true };
+					run.takeoverSource = run.outputs.source;
 					run.outputs.repository = {
 						...(run.outputs.repository as Record<string, unknown>),
 						baseBranch: pr.baseRefName,
@@ -766,6 +768,7 @@ export class FactoryTools {
 					const repository = run.repositories?.find(
 						(item) => item.id === run.repositoryId,
 					);
+					if (repository) repository.takeoverSource = run.takeoverSource;
 					if (repository?.baseBranch === pr.headRefName) {
 						repository.baseBranch = pr.baseRefName;
 						context.log(
@@ -775,19 +778,19 @@ export class FactoryTools {
 				}
 				return {
 					branch,
-					pr: run.outputs.source,
-					ticket: run.outputs.ticket,
+					pr: takeoverSource(run),
+					ticket: ticketSnapshot(run),
 					status: await command("git", ["status", "--porcelain"]),
 					diff: await command("git", ["diff", "HEAD"]),
 					commits: await command("git", [
 						"log",
 						"--oneline",
-						`${pr?.baseRefName ?? readPath(run.outputs, "repository.baseBranch")}..HEAD`,
+						`${pr?.baseRefName ?? runRepositories(run)[0]!.baseBranch}..HEAD`,
 					]),
 					diffSummary: await command("git", [
 						"diff",
 						"--stat",
-						`${pr?.baseRefName ?? readPath(run.outputs, "repository.baseBranch")}...HEAD`,
+						`${pr?.baseRefName ?? runRepositories(run)[0]!.baseBranch}...HEAD`,
 					]),
 				};
 			}
@@ -926,6 +929,9 @@ export class FactoryTools {
 				return decisions;
 			}
 			case "draft-pr": {
+				const source = takeoverSource(run) as
+					| { url?: string; headRefName?: string; baseRefName?: string }
+					| undefined;
 				if (boundOutput(context, "implementation", "status") === "blocked")
 					throw new Error(
 						`Implementation is blocked: ${String(boundOutput(context, "implementation", "summary"))}. Answer the implementation questions before publishing.`,
@@ -935,10 +941,10 @@ export class FactoryTools {
 				// Keep provider validation ahead of mutations for a delivery candidate.
 				// A grouped context-only repository needs no publication provider.
 				if (!context.allowUnchangedRepository) await provider();
-				if (readPath(run.outputs, "source.url")) {
-					if (readPath(run.outputs, "source.headRefName") !== branch)
+				if (source?.url) {
+					if (source.headRefName !== branch)
 						throw new Error("Takeover must publish to the original PR branch");
-					const url = String(readPath(run.outputs, "source.url"));
+					const url = source.url;
 					const pr = await (await provider(url)).view(url, "state,isDraft");
 					if (pr.state !== "OPEN" || !pr.isDraft)
 						throw new Error("Takeover PR must remain open and draft");
@@ -967,9 +973,7 @@ export class FactoryTools {
 					]);
 				}
 				const baseBranch = String(
-					readPath(run.outputs, "source.baseRefName") ??
-						readPath(run.outputs, "repository.baseBranch") ??
-						"main",
+					source?.baseRefName ?? runRepositories(run)[0]!.baseBranch,
 				);
 				await command("git", ["fetch", "origin", baseBranch]);
 				const baseRef = `refs/remotes/origin/${baseBranch}`;
@@ -996,14 +1000,9 @@ export class FactoryTools {
 					throw new Error(
 						"Multiple pull/merge requests for this branch; supply an explicit takeover source",
 					);
-				let url =
-					String(readPath(run.outputs, "source.url") ?? "") || existing[0]?.url;
+				let url = source?.url || existing[0]?.url;
 
-				if (
-					url &&
-					!readPath(run.outputs, "source.url") &&
-					!existing[0]?.isDraft
-				)
+				if (url && !source?.url && !existing[0]?.isDraft)
 					throw new Error(
 						"Existing PR is not draft; refusing to change its state automatically",
 					);
@@ -1974,10 +1973,7 @@ export function captureEvidence(
 				old.imageSha256 !== imageSha256 ||
 				(boundOutput(context, "qaGate", "approved") !== true &&
 					!(
-						readPath(
-							context.run.outputs,
-							"visual-review.acceptedScreenshots",
-						) as
+						boundOutput(context, "qaReview", "acceptedScreenshots") as
 							| { area: string; state: string; imageSha256: string }[]
 							| undefined
 					)?.some(

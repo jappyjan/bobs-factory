@@ -14,6 +14,8 @@ import {
 	type ReviewerReceipt,
 	validateInventory,
 } from "../src/factory/SpecialistReview.js";
+import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
+import { StepSchema } from "../src/factory/Workflow.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 
 const finding = {
@@ -319,6 +321,46 @@ const specialistFinding = {
 	requirementIds: ["R1"],
 };
 
+it("does not trust a modern raw fanout slot merely because its receipts claim the baseline stamps", () => {
+	const { context, receipt } = specialistFixture();
+	context.run.outputs["specialist-review"] = [
+		{ security: receipt("security", [specialistFinding]) },
+		{ requirements: receipt("requirements") },
+	];
+	expect(factoryReviewFixContext(context)).toMatchObject({
+		findings: [],
+		review: {
+			status: "incomplete",
+			blockers: [
+				expect.stringContaining("no complete aggregate"),
+				expect.stringContaining("security: missing, incomplete or stale"),
+				expect.stringContaining("requirements: missing, incomplete or stale"),
+			],
+		},
+	});
+});
+
+it("preserves raw fanout recovery only for a deterministically registered old correction step", () => {
+	const { context, receipt } = specialistFixture();
+	context.step = StepSchema.parse({
+		id: "code-fix",
+		name: "Fix",
+		type: "agent",
+		prompt: "Fix findings",
+	});
+	registerWorkflowConfig(
+		{ id: "factory-pipeline", steps: [context.step] },
+		"factory",
+	);
+	context.run.outputs["specialist-review"] = [
+		{ security: receipt("security", [specialistFinding]) },
+		{ requirements: receipt("requirements") },
+	];
+	expect(
+		factoryReviewFixContext(context).findings.map((item) => item.id),
+	).toEqual(["security:external-validation"]);
+});
+
 it("recovers raw specialist findings before an aggregate exists without granting approval", () => {
 	const { context, baseline, receipt } = specialistFixture();
 	const duplicate = {
@@ -330,6 +372,19 @@ it("recovers raw specialist findings before an aggregate exists without granting
 		{ security: receipt("security", [specialistFinding, duplicate]) },
 		{ requirements: receipt("requirements") },
 	];
+	// Runtime retains each completed specialist before its fanout aggregate exists.
+	context.run.history = (
+		context.run.outputs["specialist-review"] as Record<
+			string,
+			ReviewerReceipt
+		>[]
+	).flatMap((group) =>
+		Object.values(group).map((output) => ({
+			step: output.stamp.stepKey,
+			output,
+			at: "",
+		})),
+	);
 	const before = structuredClone(context.run);
 	const recovered = factoryReviewFixContext(context);
 	expect(recovered.findings.map((item) => item.id)).toEqual([

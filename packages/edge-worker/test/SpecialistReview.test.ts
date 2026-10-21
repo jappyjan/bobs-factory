@@ -878,6 +878,17 @@ it("uses a renamed aggregate for unchanged-revision readiness after a fix", asyn
 		currentScope: () => ({}),
 		run: {
 			answers: [],
+			repositoryId: "repo",
+			repositories: [
+				{
+					id: "repo",
+					name: "Selected",
+					repositoryPath: "/tmp",
+					workspace: "/tmp",
+					baseBranch: "main",
+					githubUrl: "https://github.com/test/repo",
+				},
+			],
 			reviewRounds: [b],
 			history: [{ step: "child/aggregate-review", output: aggregate }],
 			outputs: {
@@ -929,6 +940,17 @@ it.each([
 		currentScope: () => ({}),
 		run: {
 			answers: [],
+			repositoryId: "repo",
+			repositories: [
+				{
+					id: "repo",
+					name: "Selected",
+					repositoryPath: "/tmp",
+					workspace: "/tmp",
+					baseBranch: "main",
+					githubUrl: "https://github.com/test/repo",
+				},
+			],
 			reviewRounds: state === "missing" ? [b] : [b, { ...b, round: 2 }],
 			history:
 				state === "missing"
@@ -946,6 +968,7 @@ it.each([
 		log: vi.fn(),
 	} as unknown as ExecutionContext;
 	let conflicting = true;
+	context.outputs = { ...context.run.outputs };
 	const tools = new FactoryTools({
 		postComment: vi.fn(),
 		command: async (_context, exe, args) =>

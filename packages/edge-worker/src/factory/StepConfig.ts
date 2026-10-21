@@ -1311,6 +1311,8 @@ export function legacyToolOutputKey(
 		"merge-readiness": "merge-readiness",
 		"human-review": "human-review",
 		takeover: "source",
+		"repository-context": "repository",
+		"ticket-context": "ticket",
 		"external-final": "external-final",
 		"external-verify": "external-verify",
 	};

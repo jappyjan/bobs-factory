@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
+import { digest } from "../src/factory/Delivery.js";
 import {
 	outputRevisionBinding,
 	pinReadOnlyAccess,
@@ -194,6 +195,35 @@ it("does not stale a history binding merely by persisting its own result", async
 	});
 	expect(
 		sameOutputBinding(binding, await outputRevisionBinding(context, binding)),
+	).toBe(false);
+});
+
+it("excludes self-result bindings and publication bookkeeping while retaining real input freshness", async () => {
+	const { context } = fixture();
+	context.step.reads = { previous: context.step.id, plan: context.step.id };
+	context.run.outputs[context.step.id] = { old: true };
+	context.input = {
+		previous: { old: true },
+		plan: { old: true },
+		answers: [],
+		ticketSync: { receipts: [] },
+		deliveryCandidateDigest: "before",
+	};
+	const original = await outputRevisionBinding(context);
+	context.run.outputs[context.step.id] = { completed: true };
+	context.input = {
+		previous: { completed: true },
+		plan: { completed: true },
+		answers: [],
+		ticketSync: { receipts: [{ delivered: true }] },
+		deliveryCandidateDigest: "after",
+	};
+	expect(
+		sameOutputBinding(original, await outputRevisionBinding(context, original)),
+	).toBe(true);
+	context.input = { ...(context.input as object), answers: ["New task input"] };
+	expect(
+		sameOutputBinding(original, await outputRevisionBinding(context, original)),
 	).toBe(false);
 });
 
@@ -585,6 +615,122 @@ it("bounds repeated stale native-session retries with the accepted visit budget"
 		expect(calls).toBe(2);
 		expect(run.history).toHaveLength(0);
 		expect(run.outputs.inspect).toBeUndefined();
+	} finally {
+		await runtime.shutdown();
+	}
+});
+
+it("validates a called delivery candidate in its producing frame without replaying the author", async () => {
+	const { home, git } = fixture();
+	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-delivery-frame-"));
+	homes.push(runtimeHome);
+	const visits: string[] = [];
+	const runtime = new WorkflowRuntime(runtimeHome, {
+		agent: async (context) => {
+			const key = context.stepKey!;
+			visits.push(key);
+			if (key === "author") return { unrelated: true };
+			if (context.step.id === "reviewer") return { approved: true };
+			context.run.roleRevisions ??= {};
+			context.run.roleRevisions[key] = {
+				headSha: git("rev-parse", "HEAD"),
+				dirty: false,
+				historyLength: context.run.history.length,
+				at: new Date().toISOString(),
+			};
+			return {
+				deliveryContract: {
+					format: "delivery-v1",
+					version: 1,
+					mode: "repository",
+					authorization: {
+						status: "authorized",
+						reference: "Accepted request",
+					},
+					executionReference: digest({
+						runner: context.run.runner,
+						repositoryId: context.run.repositoryId,
+					}),
+					targets: [],
+				},
+			};
+		},
+		script: async () => ({}),
+		tool: async (context) => {
+			expect(
+				(context.input as { plan: { deliveryContract: { mode: string } } }).plan
+					.deliveryContract.mode,
+			).toBe("repository");
+			return {};
+		},
+	});
+	try {
+		const child = WorkflowSchema.parse({
+			id: "delivery-child",
+			name: "Delivery",
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					id: "author",
+					name: "Author",
+					type: "agent",
+					prompt: "Plan",
+					next: "reviewer",
+				},
+				{
+					id: "reviewer",
+					name: "Reviewer",
+					type: "agent",
+					prompt: "Review",
+					next: "route",
+				},
+				{
+					id: "route",
+					name: "Route",
+					type: "tool",
+					tool: "delivery-route",
+					reads: { plan: "author", review: "reviewer" },
+					next: "end",
+				},
+			],
+		});
+		runtime.updateWorkflows([...runtime.listWorkflows(), child]);
+		const workflow = WorkflowSchema.parse({
+			id: "delivery-parent",
+			name: "Parent",
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					id: "author",
+					name: "Unrelated root author",
+					type: "agent",
+					prompt: "Generic",
+					next: "pipeline",
+				},
+				{
+					id: "pipeline",
+					name: "Call delivery",
+					type: "workflow",
+					workflow: child.id,
+					next: "end",
+				},
+			],
+		});
+		const run = runtime.create({
+			repositoryId: "fixture",
+			workspace: home,
+			input: "Plan",
+			workflow,
+			triggerOrigin: { type: "manual", workflowId: workflow.id },
+		});
+		await runtime.launch(run);
+		expect(run.status, run.error).toBe("completed");
+		expect(visits).toEqual(["author", "pipeline/author", "pipeline/reviewer"]);
+		expect(run.outputs.author).toEqual({ unrelated: true });
+		expect(run.outputs["pipeline/author"]).toHaveProperty(
+			"deliveryContract.mode",
+			"repository",
+		);
 	} finally {
 		await runtime.shutdown();
 	}

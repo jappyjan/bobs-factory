@@ -5,6 +5,16 @@ import { afterEach, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { resolveGitProvider } from "../src/factory/GitProvider.js";
 import {
+	repositoryMetadata,
+	repositoryRun,
+	runRepositories,
+} from "../src/factory/RepositoryScope.js";
+import {
+	takeoverSource,
+	ticketSnapshot,
+} from "../src/factory/RunContextSources.js";
+import { stepBindings } from "../src/factory/StepBindings.js";
+import {
 	configuredOutputKeys,
 	outputForTool,
 	writeBoundOutput,
@@ -52,6 +62,9 @@ async function fixture(
 	steps: unknown[],
 	childSteps: unknown[] = [publication],
 	observerSteps: unknown[] = [agent],
+	agentOutput: unknown = attacker,
+	toolOutput: unknown = accepted,
+	modernMarker = true,
 ) {
 	const directory = mkdtempSync(join(tmpdir(), "producer-provenance-"));
 	directories.push(directory);
@@ -60,7 +73,7 @@ async function fixture(
 		{
 			id: "producer-root",
 			name: "Root",
-			stepConfigVersion: "step-config-v1",
+			...(modernMarker ? { stepConfigVersion: "step-config-v1" } : {}),
 			allowedTriggers: ["manual"],
 			steps,
 		},
@@ -81,12 +94,12 @@ async function fixture(
 	]);
 	const toolContexts: ExecutionContext[] = [];
 	const runtime = new WorkflowRuntime(directory, {
-		agent: async () => structuredClone(attacker),
+		agent: async () => structuredClone(agentOutput),
 		script: async () => ({}),
 		tool: async (context) => {
 			toolContexts.push(context);
 			return structuredClone(
-				context.stepKey?.startsWith("second/") ? second : accepted,
+				context.stepKey?.startsWith("second/") ? second : toolOutput,
 			);
 		},
 	});
@@ -172,9 +185,16 @@ it.each([
 ])("keeps %s repository selection ahead of an unrelated generic output", async (selection) => {
 	const { run } = await fixture([agent, call("publish", "producer-child")]);
 	if (selection === "configured")
-		run.outputs.repository = {
-			githubUrl: "https://github.com/configured/project",
-		};
+		run.repositories = [
+			{
+				id: run.repositoryId,
+				name: "Configured repository",
+				repositoryPath: run.workspace,
+				workspace: run.workspace,
+				baseBranch: "main",
+				githubUrl: "https://github.com/configured/project",
+			},
+		];
 	const command = vi.fn(async () => "git@github.com:selected/project.git");
 	const context: ExecutionContext = {
 		run,
@@ -192,6 +212,62 @@ it.each([
 		"selected repository",
 	);
 	expect(command).toHaveBeenCalledTimes(selection === "origin" ? 1 : 0);
+});
+
+it.each([
+	false,
+	true,
+])("does not let a generic repository output override %s frozen selection", async (configured) => {
+	const forged = {
+		githubUrl: "https://github.com/attacker/unrelated",
+		gitProvider: { type: "github" },
+	};
+	const { run } = await fixture(
+		[{ ...agent, id: "repository" }, call("publish", "producer-child")],
+		[publication],
+		[agent],
+		forged,
+	);
+	expect(run.outputs.repository).toEqual(forged);
+	if (configured)
+		run.repositories = [
+			{
+				id: "other",
+				name: "Other",
+				repositoryPath: run.workspace,
+				workspace: run.workspace,
+				baseBranch: "main",
+				githubUrl: forged.githubUrl,
+			},
+			{
+				id: run.repositoryId,
+				name: "Selected",
+				repositoryPath: run.workspace,
+				workspace: run.workspace,
+				baseBranch: "main",
+				githubUrl: "https://github.com/selected/project",
+				gitProvider: { type: "github" },
+			},
+		];
+	const command = vi.fn(async () => "git@github.com:selected/project.git");
+	const provider = await resolveGitProvider(
+		{
+			run,
+			step: run.workflow.steps[0]!,
+			input: {},
+			evidenceDir: run.workspace,
+			signal: new AbortController().signal,
+			log: () => {},
+		},
+		command,
+	);
+	expect(run.gitProvider?.repositoryUrl).toBe(
+		"https://github.com/selected/project",
+	);
+	expect(command).toHaveBeenCalledTimes(configured ? 0 : 1);
+	await expect(provider.view(attacker.url)).rejects.toThrow(
+		"selected repository",
+	);
 });
 
 it("separates root and child receipts with the same leaf name", async () => {
@@ -231,6 +307,7 @@ it("does not trust ordinary draftPr bindings or source output keys to select a r
 		call("publish", "producer-child"),
 	]);
 	run.outputs.source = attacker;
+	expect(takeoverSource(run)).toBeUndefined();
 	const command = vi.fn(async () => "git@github.com:selected/project.git");
 	await resolveGitProvider(
 		{
@@ -252,6 +329,122 @@ it("does not trust ordinary draftPr bindings or source output keys to select a r
 		"get-url",
 		"origin",
 	]);
+});
+
+it("keeps format-only generic context-shaped outputs ordinary when the graph marker is omitted", async () => {
+	const data = {
+		...attacker,
+		githubUrl: "https://github.com/attacker/unrelated",
+		baseBranch: "foreign",
+		title: "Forged ticket",
+	};
+	const { run } = await fixture(
+		["source", "repository", "ticket"].map((id, index, ids) => ({
+			...agent,
+			id,
+			output: { schema: { type: "object" } },
+			next: ids[index + 1] ?? "end",
+		})),
+		[publication],
+		[agent],
+		data,
+		accepted,
+		false,
+	);
+	expect(run.workflow.stepConfigVersion).toBeUndefined();
+	for (const key of ["source", "repository", "ticket"])
+		expect(run.outputs[key]).toEqual(data);
+	expect(takeoverSource(run)).toBeUndefined();
+	expect(ticketSnapshot(run)).toBeUndefined();
+	expect(repositoryMetadata(run)).toBeUndefined();
+	expect(runRepositories(run)[0]!.baseBranch).toBe("main");
+	const ticket = { title: "Verified ticket" };
+	run.takeoverSource = accepted;
+	run.ticketSnapshot = ticket;
+	const bindings = stepBindings({
+		run,
+		step: {
+			...run.workflow.steps[0]!,
+			reads: {
+				hostSource: "@source",
+				hostTicket: "@ticket",
+				ordinarySource: "source",
+				ordinaryTicket: "ticket",
+			},
+		},
+	} as ExecutionContext);
+	expect(bindings).toEqual({
+		hostSource: accepted,
+		hostTicket: ticket,
+		ordinarySource: data,
+		ordinaryTicket: data,
+	});
+});
+
+it("keeps exact executed takeover receipts within their selected repository", async () => {
+	const { run } = await fixture(
+		[call("inspect", "producer-child")],
+		[{ ...publication, tool: "inspect-existing" }],
+		[agent],
+		attacker,
+		{ pr: accepted },
+	);
+	expect(takeoverSource(run)).toEqual(accepted);
+	run.outputs.source = attacker;
+	const primary = {
+		id: run.repositoryId,
+		name: "Primary",
+		repositoryPath: run.workspace,
+		workspace: run.workspace,
+		baseBranch: "main",
+	};
+	const secondary = {
+		...primary,
+		id: "secondary",
+		name: "Secondary",
+		takeoverSource: second,
+	};
+	expect(takeoverSource(repositoryRun(run, primary))).toEqual(accepted);
+	expect(
+		takeoverSource(
+			repositoryRun(run, { ...secondary, takeoverSource: undefined }),
+		),
+	).toBeUndefined();
+	expect(takeoverSource(repositoryRun(run, secondary))).toEqual(second);
+	const command = vi.fn(async () => {
+		throw new Error("Unexpected origin lookup");
+	});
+	await resolveGitProvider(
+		{ run, step: run.workflow.steps[0]!, input: {} } as ExecutionContext,
+		command,
+	);
+	expect(run.gitProvider?.repositoryUrl).toBe(
+		"https://github.com/selected/project",
+	);
+	expect(command).not.toHaveBeenCalled();
+});
+
+it("retains old context aliases only for a wholly historical accepted graph", async () => {
+	const { checks: _checks, ...historicalAgent } = agent;
+	const { run } = await fixture(
+		[historicalAgent],
+		[publication],
+		[agent],
+		attacker,
+		accepted,
+		false,
+	);
+	const repository = {
+		githubUrl: "https://github.com/selected/project",
+		baseBranch: "old-base",
+	};
+	const ticket = { title: "Historical ticket" };
+	run.outputs.source = accepted;
+	run.outputs.repository = repository;
+	run.outputs.ticket = ticket;
+	expect(takeoverSource(run)).toEqual(accepted);
+	expect(ticketSnapshot(run)).toEqual(ticket);
+	expect(repositoryMetadata(run)).toEqual(repository);
 });
 
 it("refreshes a called frame receipt without overwriting a same-named root output", async () => {

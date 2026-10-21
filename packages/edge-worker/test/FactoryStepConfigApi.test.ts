@@ -68,8 +68,12 @@ it("validates custom output schemas without allowing external references or unkn
 			expect(rejected.issues.join(";")).toContain(message);
 		}
 		// A real expensive compile must not delay unrelated HTTP work.
+		const compileStarted = Date.now();
+		let compileFinished = false;
 		const compiling = validate({
 			enum: Array.from({ length: 4400 }, (_, id) => ({ id })),
+		}).finally(() => {
+			compileFinished = true;
 		});
 		await new Promise((resolve) => setTimeout(resolve, 20));
 		const responsiveAt = Date.now();
@@ -78,11 +82,16 @@ it("validates custom output schemas without allowing external references or unkn
 		});
 		expect(stillResponsive.statusCode).toBe(200);
 		expect(Date.now() - responsiveAt).toBeLessThan(1000);
+		expect(compileFinished).toBe(false);
 		const exhausted = await compiling;
-		expect(exhausted.valid).toBe(false);
-		expect(exhausted.issues.join(";")).toMatch(
-			/execution limit|wall limit|resource limits/,
-		);
+		expect(Date.now() - compileStarted).toBeLessThan(3000);
+		// This schema is valid: Node 22 can compile it within the CPU budget.
+		// Both successful completion and an enforced resource limit are correct.
+		if (exhausted.valid) expect(exhausted.issues).toEqual([]);
+		else
+			expect(exhausted.issues.join(";")).toMatch(
+				/execution limit|wall limit|resource limits/,
+			);
 		const config = (
 			await server.app.inject({ url: "/api/config?view=recipes" })
 		).json();
@@ -171,6 +180,47 @@ it("validates custom output schemas without allowing external references or unkn
 			id: "qa-capture-v1",
 			version: 1,
 		});
+		// Saving crosses asynchronous compilation into synchronous catalogue
+		// validation. A new schema must be cached before that validation runs.
+		const savedSchema = {
+			type: "object",
+			properties: { result: { type: "integer", minimum: 1 } },
+			required: ["result"],
+			additionalProperties: false,
+		};
+		const saved = await server.app.inject({
+			method: "PATCH",
+			url: "/api/workflows",
+			headers: {
+				"x-factory-request": "1",
+				"x-factory-config": config.configRevision,
+			},
+			payload: {
+				workflows: [
+					{
+						id: "saved-inline",
+						name: "Saved inline schema",
+						stepConfigVersion: "step-config-v1",
+						steps: [
+							{
+								id: "work",
+								type: "agent",
+								name: "Work",
+								prompt: "Task",
+								output: { schema: savedSchema },
+							},
+						],
+					},
+				],
+			},
+		});
+		expect({ status: saved.statusCode, body: saved.json() }).toMatchObject({
+			status: 200,
+		});
+		expect(
+			runtime.listWorkflows().find((workflow) => workflow.id === "saved-inline")
+				?.steps[0],
+		).toMatchObject({ output: { schema: savedSchema } });
 	} finally {
 		await server.app.close();
 		await runtime.shutdown();

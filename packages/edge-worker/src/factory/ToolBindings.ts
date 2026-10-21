@@ -98,7 +98,7 @@ export function writeBoundOutput(
 
 /** Qualified provenance/history key for a declared partner in the same frame. */
 export function boundStepKey(
-	context: ExecutionContext,
+	context: Pick<ExecutionContext, "run" | "step" | "stepKey">,
 	name: string,
 ): string | undefined {
 	const target = readStep(context.step, name);
@@ -266,7 +266,7 @@ export function outputForTool(
 
 /** A partner read cannot impersonate an action merely by using its semantic name. */
 export function boundToolOutput(
-	context: ExecutionContext,
+	context: Pick<ExecutionContext, "run" | "step" | "stepKey">,
 	name: string,
 	tool: string,
 ): unknown {

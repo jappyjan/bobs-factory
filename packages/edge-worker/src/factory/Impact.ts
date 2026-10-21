@@ -20,7 +20,7 @@ import {
 	readStep,
 	resolveStepConfig,
 } from "./StepConfig.js";
-import { outputForTool } from "./ToolBindings.js";
+import { outputForTool, stepForRun } from "./ToolBindings.js";
 import type { WorkflowStep } from "./Workflow.js";
 import type {
 	ExecutionContext,
@@ -846,30 +846,23 @@ export function impactFanout(
 	context: ExecutionContext,
 	decision: ImpactDecision,
 ) {
-	const collect = (steps: WorkflowStep[]): WorkflowStep[] =>
-		steps.flatMap((s) => [s, ...(s.groups ?? []).flatMap(collect)]);
-	const candidates = [
-		context.run.workflow,
-		...(context.run.workflowDefinitions ?? []),
-	].flatMap((w) => collect(w.steps));
-	const fanout = candidates.find(
-		(s) =>
-			s.type === "fanout" &&
-			s.id === decision.snapshot.key.split("/").at(-1) &&
-			qaDigest(
-				(s.groups ?? []).flat().map((r) => ({
-					id: r.id,
-					name: r.name,
-					contract: formatOf(r)!,
-					promptDigest: qaDigest({
-						prompt: r.prompt,
-						runner: r.runner,
-						model: r.model,
-					}),
-				})),
-			) === qaDigest(decision.snapshot.reviewers),
-	);
-	if (!fanout)
+	const fanout = stepForRun(context.run, decision.snapshot.key);
+	if (
+		!fanout ||
+		fanout.type !== "fanout" ||
+		qaDigest(
+			(fanout.groups ?? []).flat().map((r) => ({
+				id: r.id,
+				name: r.name,
+				contract: formatOf(r)!,
+				promptDigest: qaDigest({
+					prompt: r.prompt,
+					runner: r.runner,
+					model: r.model,
+				}),
+			})),
+		) !== qaDigest(decision.snapshot.reviewers)
+	)
 		throw new Error("Accepted impact reviewer configuration is unavailable");
 	return fanout;
 }

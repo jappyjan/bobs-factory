@@ -11,6 +11,7 @@ import { EvidenceBoundarySchema } from "./ImpactContracts.js";
 import { qaDigest } from "./Qa.js";
 import { QuestionFieldsSchema } from "./Questions.js";
 import { runRepositories, scopeRevision } from "./RepositoryScope.js";
+import { takeoverSource } from "./RunContextSources.js";
 import {
 	consumesImpact,
 	consumesReview,
@@ -572,7 +573,7 @@ export async function reviewedRunRevision(
 	options: { requireClean?: boolean } = {},
 ) {
 	const scope = runRepositories(run);
-	const source = run.outputs.source as { baseRefName?: string } | undefined;
+	const source = takeoverSource(run) as { baseRefName?: string } | undefined;
 	const primaryBase = source?.baseRefName ?? scope[0]!.baseBranch;
 	if (scope.length === 1)
 		return reviewedRevision(

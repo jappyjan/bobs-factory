@@ -325,6 +325,7 @@ import {
 	factoryNativePrompt,
 	factoryRoleInstruction,
 } from "./factory/RolePrompt.js";
+import { takeoverSource, ticketSnapshot } from "./factory/RunContextSources.js";
 import {
 	buildTitleContext,
 	RunTitleGenerator,
@@ -6535,6 +6536,7 @@ ${taskSection}`;
 				};
 				run.titleGeneration = session.titleGeneration;
 				run.outputs.ticket = ticket;
+				run.ticketSnapshot = structuredClone(ticket);
 				const tracker = this.issueTrackers.get(linearWorkspaceId)!;
 				run.ticketReference = {
 					provider: "native",
@@ -8954,10 +8956,12 @@ ${taskSection}`;
 			}
 		}
 		signal.throwIfAborted();
-		if (!run.outputs.ticket)
+		if (!ticketSnapshot(run)) {
 			run.outputs.ticket = await (
 				await this.factoryTicketAdapter(run, signal)
 			).read();
+			run.ticketSnapshot = structuredClone(run.outputs.ticket);
+		}
 		this.getFactoryRuntime().save(run);
 	}
 
@@ -10349,6 +10353,7 @@ ${taskSection}`;
 					fullIssue = { ...fullIssue, branchName: takeoverPr.headRefName };
 					baseBranchOverrides = new Map([[repository.id, ref]]);
 					run.outputs.source = takeoverPr;
+					run.takeoverSource = structuredClone(takeoverPr);
 				} else {
 					const existingTracker = this.issueTrackers.get(
 						(run.ticketReference?.provider === "native"
@@ -10382,6 +10387,7 @@ ${taskSection}`;
 						await this.fetchIssueLabels(fullIssue),
 						existingTracker,
 					);
+					run.ticketSnapshot = structuredClone(run.outputs.ticket);
 					if (workflow.id === "takeover")
 						baseBranchOverrides = new Map([
 							[repository.id, fullIssue.branchName ?? repository.baseBranch],
@@ -10448,6 +10454,7 @@ ${taskSection}`;
 						fullIssue = { ...fullIssue, branchName: takeoverPr.headRefName };
 						baseBranchOverrides = new Map([[repository.id, ref]]);
 						run.outputs.source = takeoverPr;
+						run.takeoverSource = structuredClone(takeoverPr);
 					}
 				}
 			}
@@ -10760,8 +10767,8 @@ ${taskSection}`;
 				run.titleGeneration?.context,
 			inputs: run.launchInputs,
 			source: run.source,
-			ticket: (run.outputs.ticket ??
-				run.outputs.source ??
+			ticket: (ticketSnapshot(run) ??
+				takeoverSource(run) ??
 				session.issue) as TitleContext["ticket"],
 			followup: run.triggerOrigin?.manual?.sourceRunId
 				? {

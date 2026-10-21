@@ -22,12 +22,14 @@ export function ticketTrackingPending(run: any): boolean {
 
 export function guideRevision(run: any) {
 	const key = roleOutputKey(run, "guide");
-	return key
-		? (run.roleRevisions?.[key] ??
-				Object.entries<any>(run.roleRevisions ?? {}).find(
-					([candidate]) => candidate.split("/").at(-1) === key,
-				)?.[1])
-		: undefined;
+	if (!key) return undefined;
+	const exact = run.roleRevisions?.[key];
+	if (exact || Object.hasOwn(run, "outputRoles")) return exact;
+	// Historical cached views predate role bindings. Modern projections always
+	// declare outputRoles and can only use their exact accepted output slot.
+	return Object.entries<any>(run.roleRevisions ?? {}).find(
+		([candidate]) => candidate.split("/").at(-1) === key,
+	)?.[1];
 }
 
 export function reviewRevision(run: any) {

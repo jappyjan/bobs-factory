@@ -11,6 +11,7 @@ import {
 	runRepositories,
 	scopeRevision,
 } from "./RepositoryScope.js";
+import { takeoverSource } from "./RunContextSources.js";
 import { aggregateForContext, scopeContextDigest } from "./SpecialistReview.js";
 import { consumesImpact, readStep, resolveStepConfig } from "./StepConfig.js";
 import { boundOutput, boundStepKey, writeBoundOutput } from "./ToolBindings.js";
@@ -165,7 +166,7 @@ export async function groupedTool(
 				if (
 					!dirty &&
 					!changed &&
-					!child.run.outputs.source &&
+					!takeoverSource(child.run) &&
 					!boundOutput(child, "draftPr")
 				)
 					continue;
@@ -437,11 +438,13 @@ export async function groupedTool(
 						unknown
 					>,
 				});
-			const source = projected.outputs.source as
+			const source = takeoverSource(projected) as
 				| { baseRefName?: string }
 				| undefined;
 			if (context.step.tool === "inspect-existing" && source?.baseRefName)
 				repository.baseBranch = source.baseRefName;
+			if (projected.takeoverSource !== undefined)
+				repository.takeoverSource = projected.takeoverSource;
 			run.repositoryOutputs ??= {};
 			run.repositoryOutputs[repository.id] ??= {};
 			const retained = run.repositoryOutputs[repository.id]!;

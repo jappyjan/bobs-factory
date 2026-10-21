@@ -165,7 +165,11 @@ import {
 	reviewEvidenceContract,
 } from "./StepConfig.js";
 import { recordTicketMilestone } from "./TicketTracking.js";
-import { registerOutputHistory, stepForRun } from "./ToolBindings.js";
+import {
+	outputForTool,
+	registerOutputHistory,
+	stepForRun,
+} from "./ToolBindings.js";
 import {
 	isComputeIntensive,
 	readPath,
@@ -283,7 +287,7 @@ export interface GraphCheckpoint {
 		reviewBaseline?: ReviewBaseline;
 		impactSnapshot?: ImpactSnapshot;
 	};
-	// Only fanout branches own separate outputs; nested workflows share their parent's.
+	// Fanouts and modern calls own output frames; old calls retain their shared scope.
 	outputs?: Record<string, unknown>;
 }
 export interface HumanDecision {
@@ -436,6 +440,10 @@ export interface FactoryRun {
 	roleRevisions?: Record<string, RoleRevision>;
 	boundOutputs?: Record<string, OutputRevisionBinding>;
 	mergeReadiness?: import("./MergeReadiness.js").MergeReadiness;
+	/** Provider-verified takeover snapshot; ordinary output slots cannot replace it. */
+	takeoverSource?: unknown;
+	/** Tracker input captured by the host, independently of authored output IDs. */
+	ticketSnapshot?: unknown;
 	reviewRounds?: ReviewBaseline[];
 	outputs: Record<string, unknown>;
 	history: {
@@ -1333,13 +1341,13 @@ export class WorkflowRuntime {
 				);
 			if (
 				run.delivery?.contract.mode === "mixed" &&
-				readPath(run.outputs, "merge.merged") !== true
+				readPath(outputForTool(run, "merge"), "merged") !== true
 			)
 				throw new Error(
 					"Mixed delivery requires all provider-confirmed repository merges",
 				);
 			run.status = "completed";
-			if (readPath(run.outputs, "merge.merged") === true)
+			if (readPath(outputForTool(run, "merge"), "merged") === true)
 				this.updateViewState(run.id, { settledAt: new Date().toISOString() });
 			this.log(run, "run", "Workflow complete.");
 		} catch (error) {
@@ -1784,7 +1792,7 @@ export class WorkflowRuntime {
 			if (
 				step.tool === "delivery-route" &&
 				!parallel &&
-				this.reopenInvalidDeliveryPlan(run, checkpoint, steps, prefix)
+				this.reopenInvalidDeliveryPlan(run, checkpoint, steps, prefix, outputs)
 			) {
 				await this.save(run);
 				continue;
@@ -3330,7 +3338,9 @@ export class WorkflowRuntime {
 							proposalId: proposal.id,
 							source,
 							stepKey: key,
-							planOutput,
+							planOutput: config.explicit
+								? `${prefix}${planOutput}`
+								: planOutput,
 						};
 						await this.save(run);
 						signal.throwIfAborted();
@@ -3929,7 +3939,12 @@ export class WorkflowRuntime {
 			frame?.active?.children?.forEach(answered);
 		};
 		answered(run.checkpoint);
-		run.outputs["human-review"] = run.humanDecisions.at(-1)!;
+		const reviewStep = stepForRun(run, run.step);
+		run.outputs[
+			reviewStep && resolveStepConfig(reviewStep).explicit
+				? run.step!
+				: "human-review"
+		] = run.humanDecisions.at(-1)!;
 		run.status = "running";
 		this.log(
 			run,
@@ -4021,7 +4036,8 @@ export class WorkflowRuntime {
 		const { frame, step, key } = found;
 		const state = frame.active!;
 		const pending = this.pendingAnswers.get(id)!;
-		const previous = run.outputs[step.id];
+		const previous =
+			run.outputs[resolveStepConfig(step).explicit ? key : step.id];
 		const decision = hasCheck(step, "impact-reuse")
 			? [...(run.impactDecisions ?? [])]
 					.reverse()
@@ -4212,9 +4228,11 @@ export class WorkflowRuntime {
 		const find = (
 			frame: GraphCheckpoint | undefined,
 			steps: WorkflowStep[],
+			prefix = "",
 		):
 			| {
 					frame: GraphCheckpoint;
+					prefix: string;
 					steps: WorkflowStep[];
 					guide: WorkflowStep;
 					handoff: WorkflowStep;
@@ -4237,12 +4255,17 @@ export class WorkflowRuntime {
 				guide &&
 				handoff?.next === step.id
 			)
-				return { frame, steps, guide, handoff, review: step };
+				return { frame, prefix, steps, guide, handoff, review: step };
 			if (step?.type === "workflow") {
 				const child = run.workflowDefinitions?.find(
 					(w) => w.id === step.workflow,
 				);
-				if (child) return find(frame.active?.children?.[0], child.steps);
+				if (child)
+					return find(
+						frame.active?.children?.[0],
+						child.steps,
+						`${prefix}${step.id}/`,
+					);
 			}
 			return undefined;
 		};
@@ -4263,14 +4286,18 @@ export class WorkflowRuntime {
 		const found = this.guideRefreshTarget(run);
 		if (!found)
 			throw new Error("This workflow has no regeneratable guide checkpoint");
-		const { frame, steps, guide, handoff, review } = found;
+		const { frame, prefix, steps, guide, handoff, review } = found;
 		delete run.reviewGate;
 		this.controllers.get(id)?.abort();
 		await this.executions.get(id);
 		frame.current = guide.id;
 		delete frame.active;
-		delete run.outputs[handoff.id];
-		delete run.outputs[review.id];
+		for (const step of [handoff, review]) {
+			delete run.outputs[
+				resolveStepConfig(step).explicit ? `${prefix}${step.id}` : step.id
+			];
+			if (frame.outputs) delete frame.outputs[step.id];
+		}
 		const index = steps.indexOf(guide);
 		const upgraded = upgradedGuideStep(guide);
 		if (upgraded) steps[index] = upgraded;
@@ -4467,9 +4494,10 @@ export class WorkflowRuntime {
 		frame: GraphCheckpoint,
 		steps: WorkflowStep[],
 		prefix: string,
+		outputs: Record<string, unknown>,
 	): boolean {
 		const router = steps.find((s) => s.id === frame.current)!;
-		const candidate = readOutput(router, "plan", run.outputs);
+		const candidate = readOutput(router, "plan", outputs);
 		try {
 			validateDeliveryContract(run, readPath(candidate, "deliveryContract"));
 			return false;
@@ -4490,7 +4518,7 @@ export class WorkflowRuntime {
 				!revision ||
 				revision.dirty ||
 				this.nextStep(steps, plan, candidate) !== review.id ||
-				this.nextStep(steps, review, run.outputs[review.id]) !== frame.current
+				this.nextStep(steps, review, outputs[review.id]) !== frame.current
 			)
 				return false;
 			frame.current = plan.id;

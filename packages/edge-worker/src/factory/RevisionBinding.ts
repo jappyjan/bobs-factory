@@ -70,6 +70,16 @@ export async function outputRevisionBinding(
 	const normalized = Object.fromEntries(
 		Object.keys(baseRecord).map((name) => [name, record[name]]),
 	);
+	// Publication of this result updates its own slot and tracking outbox. Neither
+	// is new task evidence; hashing them would recursively invalidate the producer.
+	delete normalized.ticketSync;
+	const selfReads = new Set(
+		Object.entries(config.reads)
+			.filter(([, read]) => read.from.split("/")[0] === context.step.id)
+			.map(([name]) => name),
+	);
+	for (const name of selfReads) delete normalized[name];
+	if (selfReads.has("plan")) delete normalized.deliveryCandidateDigest;
 	if (record.outputs && typeof record.outputs === "object")
 		normalized.outputs = Object.fromEntries(
 			scope.outputKeys
@@ -99,12 +109,15 @@ export async function outputRevisionBinding(
 		input: normalized,
 		inputExtrasDigest,
 		contextSourcesDigest,
-		reads:
-			fromInput && context.step.reads
-				? Object.fromEntries(
-						Object.keys(config.reads).map((name) => [name, record[name]]),
-					)
-				: stepBindings(context, history),
+		reads: Object.fromEntries(
+			Object.entries(
+				fromInput && context.step.reads
+					? Object.fromEntries(
+							Object.keys(config.reads).map((name) => [name, record[name]]),
+						)
+					: stepBindings(context, history),
+			).filter(([name]) => !selfReads.has(name)),
+		),
 	});
 	const repositories = await Promise.all(
 		runRepositories(context.run).map(async (repo) => {

@@ -3,6 +3,7 @@ import {
 	compileInlineSchema,
 	inlineSchemaPreflight,
 } from "../src/factory/InlineSchema.js";
+import { executeInlineSchemaJob } from "../src/factory/InlineSchemaEngine.js";
 import { parseStepOutputAsync } from "../src/factory/OutputFormats.js";
 import { OutputValidationError } from "../src/factory/OutputValidation.js";
 
@@ -74,15 +75,29 @@ it("terminates expensive residual regex validation while the main event loop rem
 }, 10_000);
 it("bounds schema compilation itself without stopping the server event loop", async () => {
 	// Draft-07 meta-validation compares object enum values for uniqueness.
-	const schema = { enum: Array.from({ length: 4400 }, (_, id) => ({ id })) };
+	const schema = { enum: Array.from({ length: 4990 }, (_, i) => ({ i })) };
 	expect(inlineSchemaPreflight(schema)).toEqual([]);
+	// A fixed small engine budget proves actual compilation interruption without
+	// requiring a valid schema to be slower than the production 250 ms allowance.
+	const limited = executeInlineSchemaJob(
+		{ schema, validate: false },
+		undefined,
+		undefined,
+		1,
+	);
+	expect(limited.resourceFailure).toBe(true);
+	expect(limited.schemaIssues).toEqual([
+		"Inline JSON Schema compilation exceeded the 1 ms execution limit",
+	]);
 	let ticks = 0;
 	const heartbeat = setInterval(() => ticks++, 10);
 	try {
 		const issues = await compileInlineSchema(schema);
-		expect(issues.join(";")).toMatch(
-			/compilation.*execution limit|wall limit|resource limits/,
-		);
+		if (issues.length)
+			expect(issues.join(";")).toMatch(
+				/compilation.*execution limit|wall limit|resource limits/,
+			);
+		else expect(issues).toEqual([]);
 		expect(ticks).toBeGreaterThan(2);
 	} finally {
 		clearInterval(heartbeat);

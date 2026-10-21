@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { Guide } from "../src/factory/FactoryResults.js";
 import {
 	guideMatchesGate,
+	guideRevision,
 	readProgress,
 	readReviewProgress,
 	readStored,
@@ -110,6 +111,27 @@ it("blocks decisions on a guide from a different revision, including custom nest
 	);
 	// Historical guides predate role-revision receipts; their pending gate is still server-validated.
 	expect(guideMatchesGate({ reviewGate: { headSha: "legacy" } })).toBe(true);
+});
+
+it.each([
+	"guide",
+	"renamed-guide",
+])("uses only the exact modern guide revision for output role %s", (key) => {
+	const child = { headSha: "child-head" };
+	const sibling = { headSha: "sibling-head" };
+	const run = {
+		outputRoles: { guide: key },
+		roleRevisions: { [`child/${key}`]: child, [`sibling/${key}`]: sibling },
+	};
+	expect(guideRevision(run)).toBeUndefined();
+	const exact = { headSha: "root-head" };
+	expect(
+		guideRevision({
+			...run,
+			roleRevisions: { ...run.roleRevisions, [key]: exact },
+		}),
+	).toBe(exact);
+	expect(guideRevision({ ...run, outputRoles: {} })).toBeUndefined();
 });
 
 it("carries the reviewed run into Today through direct links and run-story navigation", () => {
