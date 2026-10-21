@@ -297,6 +297,16 @@ definitions/outputs are asserted. No compatibility registration enables these
 cases. Modern/mixed graphs, root/sibling collisions, unexecuted producers, missing
 history and unrelated revisions remain denied. Existing producer/provider and
 media-security assertions are unchanged.
+The final browser also exercised effects after the initial render and reproduced
+a missing `requirementIndexes` array in historical chapter progress. The added
+`FactoryReviewState.test.ts` case calls the actual write/read progress handlers
+with that sparse guide, verifies restored progress and unchanged guide bytes.
+All optional chapter collections consumed by rendering/progress receive derived
+empty defaults. No existing progress/approval assertion is changed.
+The same persisted fixture renders all four reader pages. Missing historical
+decision/criteria/check/instruction data gets neutral absence text, retaining raw
+guide hashes/progress keys. A full schema-valid modern guide verifies its original
+decision, supported count and authored empty-check label are unchanged.
 
 `RulesBudget.test.ts` and its standalone Bun fixture reproduce the accepted
 5,000/20,000-item nested-lookup configurations. They check bounded failure,
@@ -316,3 +326,9 @@ pause: an ordinary null schema completes within the one-second allowance, while
 a longer pause still triggers the engine cutoff. The existing schema test changes
 only its stale allowance comment; its one-millisecond interruption assertion and
 all original outcomes remain unchanged.
+The added CLI `app-bootstrap.test.ts` executes private/normal dispatch with module
+side-effect probes: the isolated schema command avoids unrelated application
+initialization, while packaged and checkout credential helpers preserve decorator
+ordering and executable ownership. Canonical actual-binary schema/startup/install
+checks separately verify the real integration; mock dispatch is not binary timing
+evidence. No existing CLI test assertion is changed.

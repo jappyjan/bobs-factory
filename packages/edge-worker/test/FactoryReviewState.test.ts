@@ -469,3 +469,25 @@ it("ignores corrupt chapter carryover without blocking the reader", () => {
 		});
 	}
 });
+
+it("saves and restores sparse historical chapter progress without changing the retained guide", () => {
+	const storage = new Map<string, string>();
+	vi.stubGlobal("localStorage", {
+		getItem: (key: string) => storage.get(key) ?? null,
+		setItem: (key: string, value: string) => storage.set(key, value),
+	});
+	const run = { id: "sparse-historical", reviewGate: { headSha: "accepted" } };
+	const guide = {
+		summary: "Accepted historical guide",
+		chapters: [{ id: "chapter", title: "Retained guide", summary: "Read me" }],
+	} as Guide;
+	const original = JSON.stringify(guide);
+	writeReviewProgress(run, guide, { page: 1, reviewed: { chapter: true } });
+	expect(readReviewProgress(run, guide, 4)).toMatchObject({
+		page: 1,
+		reviewed: { chapter: true },
+	});
+	expect(storage.has(reviewKey(run, guide))).toBe(true);
+	expect(storage.has(`factory-review/${run.id}/chapter-progress`)).toBe(true);
+	expect(JSON.stringify(guide)).toBe(original);
+});

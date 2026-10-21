@@ -7,7 +7,15 @@ export function chaptersFor(guide: Guide): GuideChapter[] {
 	return guide.chapters?.length
 		? guide.chapters.map((chapter) => ({
 				...chapter,
+				// Retained chapter guides can predate these collection fields.
+				// Render/progress views use empty lists without rewriting the artifact.
+				requirementIndexes: chapter.requirementIndexes ?? [],
+				files: chapter.files ?? [],
 				screenshots: chapter.screenshots ?? [],
+				diagrams: chapter.diagrams ?? [],
+				reviewChecks: chapter.reviewChecks ?? [],
+				risks: chapter.risks ?? [],
+				evidence: chapter.evidence ?? [],
 			}))
 		: guide.behavior.map((b, i) => ({
 				id: `legacy-${i}`,

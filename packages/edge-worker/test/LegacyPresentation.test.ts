@@ -12,7 +12,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { GuideSchema } from "../src/factory/FactoryResults.js";
 import {
 	presentationOutputKeys,
 	presentationRoleRevisions,
@@ -60,11 +61,24 @@ vi.mock("../src/factory/web/pwa.js", async (importOriginal) => {
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
 const servers: FactoryServer[] = [];
+beforeEach(() => {
+	vi.stubGlobal("matchMedia", (media: string) => ({
+		media,
+		matches: false,
+		onchange: null,
+		addEventListener: () => {},
+		removeEventListener: () => {},
+		addListener: () => {},
+		removeListener: () => {},
+		dispatchEvent: () => false,
+	}));
+});
 afterEach(async () => {
 	for (const server of servers.splice(0)) await server.stop();
 	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
+	vi.unstubAllGlobals();
 });
 
 function fixture(
@@ -237,28 +251,43 @@ it.each([
 					reviewGate: { ...projected.reviewGate, headSha: "changed" },
 				}),
 			).toBe(false);
-			const client = new QueryClient({
-				defaultOptions: { queries: { retry: false } },
-			});
-			try {
-				const html = renderToStaticMarkup(
-					createElement(
-						QueryClientProvider,
-						{ client },
+			for (const page of ["overview", "chapter:chapter", "files", "decide"]) {
+				const client = new QueryClient({
+					defaultOptions: { queries: { retry: false } },
+				});
+				try {
+					const html = renderToStaticMarkup(
 						createElement(
-							MemoryRouter,
-							{},
-							createElement(FullReview, {
-								run: projected,
-								onSettled: () => {},
-							}),
+							QueryClientProvider,
+							{ client },
+							createElement(
+								MemoryRouter,
+								{ initialEntries: [`/runs/${run.id}/review?page=${page}`] },
+								createElement(FullReview, {
+									run: projected,
+									onSettled: () => {},
+								}),
+							),
 						),
-					),
-				);
-				expect(html).toContain(guide.summary);
-				expect(html).toContain("Retained guide");
-			} finally {
-				client.clear();
+					);
+					if (page === "overview") expect(html).toContain(guide.summary);
+					if (page === "chapter:chapter") expect(html).toContain("Read me");
+					if (page === "files") expect(html).toContain("Every changed file");
+					if (page === "decide") {
+						expect(html).toContain(
+							"No decision was recorded in this saved guide.",
+						);
+						expect(html).toContain(
+							"No acceptance criteria were recorded in this saved guide.",
+						);
+						expect(html).toContain(
+							"No verification evidence was recorded in this saved guide.",
+						);
+						expect(html).not.toContain("supported");
+					}
+				} finally {
+					client.clear();
+				}
 			}
 		}
 	}
@@ -381,4 +410,71 @@ it("does not infer a producer from legacy-looking output and history without an 
 			{ check: "requirement-coverage" },
 		),
 	).toEqual([]);
+});
+
+it("keeps a complete modern chapter guide's authored empty verification list readable", () => {
+	const guide = GuideSchema.parse({
+		goal: "Review the authored change",
+		summary: "Complete modern guide",
+		decision: { status: "ready", summary: "Review the tested change" },
+		requirements: [
+			{
+				criterion: "Preserve behavior",
+				status: "supported",
+				evidence: ["Verified"],
+			},
+		],
+		behavior: [],
+		checks: [],
+		risks: [],
+		reviewInstructions: ["Inspect the change"],
+		chapters: [
+			{
+				id: "chapter",
+				title: "Authored step",
+				summary: "Updated behavior",
+				before: "Earlier behavior",
+				after: "Current behavior",
+				requirementIndexes: [0],
+				files: [],
+				screenshots: [],
+				diagrams: [],
+				reviewChecks: ["Inspect the step"],
+				risks: [],
+				evidence: [],
+			},
+		],
+	});
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	try {
+		const html = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client },
+				createElement(
+					MemoryRouter,
+					{ initialEntries: ["/runs/modern/review?page=decide"] },
+					createElement(FullReview, {
+						run: {
+							id: "modern",
+							status: "completed",
+							outputs: { "authored/result": guide },
+							outputRoles: { guide: "authored/result" },
+							roleRevisions: { "authored/result": { headSha: "accepted" } },
+						},
+						onSettled: () => {},
+					}),
+				),
+			),
+		);
+		const text = html.replace(/<[^>]*>/g, "");
+		expect(text).toContain("Verification evidence (0)");
+		expect(text).toContain("1 / 1 supported");
+		expect(text).toContain("Review the tested change");
+		expect(text).not.toContain("No verification evidence was recorded");
+	} finally {
+		client.clear();
+	}
 });
