@@ -634,7 +634,10 @@ export function phase(step: any) {
 	return step?.presentation?.phase ?? "red";
 }
 export function stepIcon(step: any) {
-	return step?.presentation?.icon ?? (step?.type === "agent" ? "✦" : "⚙️");
+	return (
+		step?.presentation?.icon ??
+		(step?.type === "agent" ? "✦" : step?.type === "foreach" ? "↻" : "⚙️")
+	);
 }
 export function stepFixing(step: any): boolean {
 	return step?.presentation?.fixing === true;
@@ -672,7 +675,31 @@ export function stepsOf(
 					config?.workflows ??
 					[]
 				).find((item: any) => item.id === step.workflow);
-				return walk(target?.steps ?? [], `${key}/`, [...seen, step.workflow]);
+				const children = walk(target?.steps ?? [], `${key}/`, [
+					...seen,
+					step.workflow,
+				]);
+				return step.inputMapping ? [{ ...step, key }, ...children] : children;
+			}
+			if (step.type === "foreach") {
+				const progress = run.foreach?.[key];
+				return [
+					{
+						...step,
+						key,
+						iterationStatus: progress
+							? `${progress.completed}/${progress.total} completed`
+							: undefined,
+					},
+					...(progress?.items ?? []).flatMap((item: { id: string }) =>
+						walk(step.body ?? [], `${key}/${item.id}/`, seen).map(
+							(child: any) => ({
+								...child,
+								name: `${child.name} · ${item.id}`,
+							}),
+						),
+					),
+				];
 			}
 			return [
 				{ ...step, key },

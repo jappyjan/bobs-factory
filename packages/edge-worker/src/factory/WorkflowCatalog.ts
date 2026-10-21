@@ -133,6 +133,7 @@ export function workflowRoles(
 			...(step.groups ?? []).flatMap((group) =>
 				workflowRoles(group, `${role}/`),
 			),
+			...workflowRoles(step.body ?? [], `${role}/`),
 		];
 	});
 }
@@ -151,6 +152,7 @@ function behavior(workflow: Workflow): Workflow {
 		for (const step of steps) {
 			if (step.tool === "handoff") delete step.computeIntensive;
 			for (const group of step.groups ?? []) passive(group);
+			if (step.body) passive(step.body);
 		}
 	};
 	passive(result.steps);
@@ -186,6 +188,7 @@ function normalizeLegacy(workflow: Workflow): Workflow {
 			)
 				step.computeIntensive = false;
 			for (const group of step.groups ?? []) visit(group);
+			if (step.body) visit(step.body);
 		}
 	};
 	visit(result.steps);
@@ -243,6 +246,7 @@ function closure(root: Workflow, definitions: Workflow[]): Workflow[] {
 					visit(child);
 				}
 				for (const group of step.groups ?? []) walk(group);
+				if (step.body) walk(step.body);
 			}
 		};
 		walk(w.steps);
@@ -255,6 +259,7 @@ function rewrite(steps: WorkflowStep[], mappings: Record<string, string>) {
 		if (step.workflow && mappings[step.workflow])
 			step.workflow = mappings[step.workflow];
 		for (const group of step.groups ?? []) rewrite(group, mappings);
+		if (step.body) rewrite(step.body, mappings);
 	}
 }
 function empty(): WorkflowConfiguration {
@@ -399,7 +404,8 @@ export class WorkflowCatalog {
 					steps.some(
 						(step) =>
 							(!!step.workflow && !!mappings[step.workflow]) ||
-							(step.groups ?? []).some(calls),
+							(step.groups ?? []).some(calls) ||
+							(step.body ? calls(step.body) : false),
 					);
 				if (calls(w.steps)) {
 					const target = `legacy-${w.id}-${hash.slice(0, 10)}`;
@@ -716,7 +722,8 @@ export class WorkflowCatalog {
 				!workflow.steps.some(function legacy(step): boolean {
 					return (
 						hasLegacyFlags(step) ||
-						(step.groups ?? []).some((group) => group.some(legacy))
+						(step.groups ?? []).some((group) => group.some(legacy)) ||
+						(step.body ?? []).some(legacy)
 					);
 				})
 			)
@@ -732,6 +739,7 @@ export class WorkflowCatalog {
 						if (!old) step.configVersion = STEP_CONFIG_VERSION;
 						for (const [index, group] of (step.groups ?? []).entries())
 							stampNew(group, old?.groups?.[index] ?? []);
+						if (step.body) stampNew(step.body, old?.body ?? []);
 					}
 				};
 				stampNew(workflow.steps, previous.steps);

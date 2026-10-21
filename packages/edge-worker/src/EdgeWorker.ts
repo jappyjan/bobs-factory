@@ -7682,6 +7682,7 @@ ${taskSection}`;
 							if (nested) scan(nested);
 						}
 						for (const group of step.groups ?? []) steps(group);
+						if (step.body) steps(step.body);
 					}
 				};
 				steps(workflow.steps);

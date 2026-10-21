@@ -173,6 +173,9 @@ export const CONTEXT_SOURCES = [
 	"feedback",
 	"reviewFix",
 	"qaReuse",
+	"item",
+	"index",
+	"callInputs",
 ] as const;
 export type ContextSource = (typeof CONTEXT_SOURCES)[number];
 
@@ -390,7 +393,11 @@ export function hasLegacyFlags(step: object): boolean {
 }
 
 export function isExplicitStep(step: object): boolean {
-	return CONFIG_KEYS.some((key) => Object.hasOwn(step, key));
+	return (
+		(step as { type?: string }).type === "foreach" ||
+		Object.hasOwn(step, "inputMapping") ||
+		CONFIG_KEYS.some((key) => Object.hasOwn(step, key))
+	);
 }
 
 /** Stock rule presets. Messages match the historical validators exactly. */
@@ -952,7 +959,7 @@ export function registerWorkflowConfig(
 	workflow: { id: string; stepConfigVersion?: string; steps: object[] },
 	rootWorkflowId = workflow.id,
 ): void {
-	const visit = (steps: object[]) => {
+	const visit = (steps: object[], modern = false) => {
 		const architectureRevision = steps.some(
 			(step) => (step as LegacyStep).tool === "architecture-decision",
 		);
@@ -960,11 +967,13 @@ export function registerWorkflowConfig(
 			registeredScopes.set(step, {
 				workflowId: workflow.id,
 				rootWorkflowId,
-				legacy: !workflow.stepConfigVersion && !isExplicitStep(step),
+				legacy: !modern && !workflow.stepConfigVersion && !isExplicitStep(step),
 				architectureRevision,
 			});
 			for (const group of (step as { groups?: object[][] }).groups ?? [])
-				visit(group);
+				visit(group, modern);
+			const body = (step as { body?: object[] }).body;
+			if (body) visit(body, true);
 		}
 	};
 	visit(workflow.steps);
@@ -977,7 +986,10 @@ export function materializeWorkflowConfig<
 	const copy = structuredClone(workflow);
 	const visit = (originals: object[], copies: object[]) => {
 		for (const [index, original] of originals.entries()) {
-			const step = copies[index]! as LegacyStep & { groups?: object[][] };
+			const step = copies[index]! as LegacyStep & {
+				groups?: object[][];
+				body?: object[];
+			};
 			const config = resolveStepConfig(original);
 			Object.assign(step, {
 				configVersion: STEP_CONFIG_VERSION,
@@ -1000,6 +1012,8 @@ export function materializeWorkflowConfig<
 				(original as { groups?: object[][] }).groups ?? []
 			).entries())
 				visit(group, step.groups![groupIndex]!);
+			const body = (original as { body?: object[] }).body;
+			if (body) visit(body, step.body!);
 		}
 	};
 	visit(workflow.steps, copy.steps);
@@ -1211,9 +1225,10 @@ export function checkStepEvidenceIssues(step: LegacyStep): string[] {
 export function stepConfigIssues(
 	step: LegacyStep & { prompt?: string },
 	siblings: { id: string }[],
+	inherited: string[] = [],
 ): string[] {
 	const issues: string[] = checkStepEvidenceIssues(step);
-	const ids = new Set(siblings.map((s) => s.id));
+	const ids = new Set([...siblings.map((s) => s.id), ...inherited]);
 	for (const [name, binding] of Object.entries(step.reads ?? {})) {
 		const from = normalizeRead(binding).from;
 		const head = from.split("/")[0]!;
@@ -1424,6 +1439,8 @@ export function usesLegacyOutputAliases(run: LegacyOutputRun): boolean {
 				if (isExplicitStep(step)) return false;
 				const value = step as {
 					type?: string;
+					body?: object[];
+					inputMapping?: unknown;
 					workflow?: string;
 					groups?: object[][];
 				};
@@ -1431,7 +1448,11 @@ export function usesLegacyOutputAliases(run: LegacyOutputRun): boolean {
 					const child = definitions.get(value.workflow);
 					if (!child || !old(child)) return false;
 				}
-				return (value.groups ?? []).every(steps);
+				return (
+					value.type !== "foreach" &&
+					!value.inputMapping &&
+					(value.groups ?? []).every(steps)
+				);
 			});
 		return steps(workflow.steps);
 	};

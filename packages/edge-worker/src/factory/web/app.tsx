@@ -47,6 +47,7 @@ import {
 	RunTitleStatus,
 	WorkingRow,
 } from "./focus";
+import { ForeachRunProgress } from "./foreach-progress";
 import { ImprovementPanel, useImprovementResearch } from "./improvements";
 import { Composer } from "./launcher";
 import { NotificationsProvider } from "./notifications-ui";
@@ -1034,6 +1035,7 @@ function RunPage({
 						</small>
 					</h2>
 				</div>
+				<ForeachRunProgress progress={run.foreach} />
 				<ol className="step-accordion">
 					{rows.map((step, i) => {
 						const count = (run.history ?? []).filter(
@@ -1042,6 +1044,7 @@ function RunPage({
 							started =
 								visited.has(step.key) ||
 								Boolean(step.researchStatus) ||
+								Boolean(step.iterationStatus) ||
 								Boolean(run.capacityLeaves?.[step.key]) ||
 								current === step.key ||
 								!steps.length,
@@ -1073,6 +1076,9 @@ function RunPage({
 									)}
 									{step.researchStatus && !run.capacityLeaves?.[step.key] && (
 										<span className="chip">{step.researchStatus}</span>
+									)}
+									{step.iterationStatus && (
+										<span className="chip">{step.iterationStatus}</span>
 									)}
 									{count > 1 && <span className="chip">↺ {count}</span>}
 									{artifact && (

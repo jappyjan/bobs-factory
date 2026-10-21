@@ -141,7 +141,7 @@ export function deliveryStep(run: FactoryRun, step: WorkflowStep): boolean {
 	if (step.tool === "draft-pr") return true;
 	// Merge owns short inspect/mutation reservations internally, releasing between provider polls.
 	if (step.tool === "merge") return false;
-	if (["fanout", "workflow"].includes(step.type)) return false;
+	if (["fanout", "workflow", "foreach"].includes(step.type)) return false;
 	// New recipes opt into the mutation lease through access; graph inference is legacy-only.
 	if (resolveStepConfig(step).explicit) return false;
 	const definitions = [run.workflow, ...(run.workflowDefinitions ?? [])];
@@ -165,7 +165,8 @@ export function deliveryStep(run: FactoryRun, step: WorkflowStep): boolean {
 								(branch.when.path === "decision" &&
 									branch.when.equals === "reject")),
 					)) ||
-				(item.groups ?? []).some(correction),
+				(item.groups ?? []).some(correction) ||
+				(item.body ? correction(item.body) : false),
 		);
 	return definitions.some((definition) => correction(definition.steps));
 }
@@ -280,6 +281,14 @@ export function restoreDelivery(run: FactoryRun): void {
 			);
 			if (definition)
 				visit(frame.active.children?.[0], definition.steps, `${key}/`);
+		} else if (step.type === "foreach" && frame.active.foreach) {
+			frame.active.foreach.snapshot.items.forEach((item, index) => {
+				visit(
+					frame.active?.children?.[index],
+					frame.active!.foreach!.body,
+					`${key}/${item.id}/`,
+				);
+			});
 		} else if (step.type === "fanout") {
 			step.groups?.forEach((group, index) => {
 				visit(frame.active?.children?.[index], group, `${key}/${index}/`);

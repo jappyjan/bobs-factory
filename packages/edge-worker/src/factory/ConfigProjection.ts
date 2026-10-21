@@ -14,6 +14,11 @@ export interface WorkflowStepSummary {
 	presentation: StepPresentation;
 	workflow?: string;
 	groups?: WorkflowStepSummary[][];
+	body?: WorkflowStepSummary[];
+	items?: WorkflowStep["items"];
+	concurrency?: number;
+	maxItems?: number;
+	failure?: WorkflowStep["failure"];
 }
 
 function stepSummary(step: WorkflowStep): WorkflowStepSummary {
@@ -24,6 +29,15 @@ function stepSummary(step: WorkflowStep): WorkflowStepSummary {
 		presentation: stepPresentation(step),
 		...(step.tool ? { tool: step.tool } : {}),
 		...(step.workflow ? { workflow: step.workflow } : {}),
+		...(step.type === "foreach"
+			? {
+					body: step.body!.map(stepSummary),
+					items: step.items,
+					concurrency: step.concurrency,
+					maxItems: step.maxItems,
+					failure: step.failure,
+				}
+			: {}),
 		...(step.groups
 			? { groups: step.groups.map((group) => group.map(stepSummary)) }
 			: {}),

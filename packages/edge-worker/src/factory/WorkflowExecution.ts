@@ -10,13 +10,19 @@ type ExecutionStep = Pick<
 	| "next"
 	| "branches"
 	| "workflow"
+	| "items"
+	| "itemId"
+	| "concurrency"
+	| "maxItems"
+	| "failure"
+	| "inputMapping"
 	| "tool"
 	| "args"
 	| "arguments"
 	| "architectureContract"
 	| "architectureBrief"
 	| "architectureSource"
-> & { groups?: ExecutionStep[][] };
+> & { groups?: ExecutionStep[][]; body?: ExecutionStep[] };
 
 /** Describe only the accepted graph. Current recipes and repository code are not run policy. */
 export function workflowExecutionContext(context: ExecutionContext) {
@@ -38,6 +44,19 @@ export function workflowExecutionContext(context: ExecutionContext) {
 				next: item.next,
 				branches: structuredClone(item.branches),
 				workflow: item.workflow,
+				...(item.type === "foreach"
+					? {
+							items: structuredClone(item.items),
+							itemId: item.itemId,
+							concurrency: item.concurrency,
+							maxItems: item.maxItems,
+							failure: item.failure,
+							body: describe(item.body!),
+						}
+					: {}),
+				...(item.inputMapping
+					? { inputMapping: structuredClone(item.inputMapping) }
+					: {}),
 				tool: item.tool,
 				args: structuredClone(item.args),
 				arguments: structuredClone(item.arguments),

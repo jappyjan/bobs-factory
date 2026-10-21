@@ -551,6 +551,7 @@ export function validateReviewConfiguration(
 		}
 		for (const group of step.groups ?? [])
 			validateReviewConfiguration(group, Boolean(reviewGraph));
+		if (step.body) validateReviewConfiguration(step.body, Boolean(reviewGraph));
 	}
 }
 

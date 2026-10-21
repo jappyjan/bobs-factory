@@ -35,6 +35,7 @@ export interface StepAttempt {
 	kind: "step" | "agent-turn";
 	step: string;
 	type: string;
+	iteration?: { frame: string; id: string; index: number; itemDigest: string };
 	startedAt: string;
 	endedAt?: string;
 	reason: AttemptReason;
@@ -148,6 +149,16 @@ export function beginStepAttempt(
 		kind: options.kind ?? "step",
 		step: context.stepKey ?? run.step ?? step.id,
 		type: step.type,
+		...(context.iteration
+			? {
+					iteration: {
+						frame: context.iteration.frame,
+						id: context.iteration.id,
+						index: context.iteration.index,
+						itemDigest: digest(canonical(context.iteration.value)),
+					},
+				}
+			: {}),
 		startedAt: new Date().toISOString(),
 		reason:
 			options.reason ??

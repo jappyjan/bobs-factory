@@ -132,6 +132,17 @@ function stepsForRun(run: ExecutionContext["run"]) {
 			entries.push({ key, step });
 			for (const [index, group] of (step.groups ?? []).entries())
 				visit(group, `${key}/${index}/`, active);
+			if (step.type === "foreach") {
+				const ids = new Set([
+					...(run.foreach?.[key]?.items ?? []).map((item) => item.id),
+					...(run.foreachIterations ?? [])
+						.filter((iteration) => iteration.key === key)
+						.flatMap((iteration) =>
+							iteration.snapshot.items.map((item) => item.id),
+						),
+				]);
+				for (const id of ids) visit(step.body ?? [], `${key}/${id}/`, active);
+			}
 			if (
 				step.type === "workflow" &&
 				step.workflow &&

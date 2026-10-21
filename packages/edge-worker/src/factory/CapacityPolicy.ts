@@ -15,6 +15,7 @@ export function isComputeIntensive(step: WorkflowStep): boolean {
 	if (
 		step.type === "workflow" ||
 		step.type === "fanout" ||
+		step.type === "foreach" ||
 		passiveTools.includes(step.tool ?? "")
 	)
 		return false;

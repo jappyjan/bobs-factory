@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Recipes can run a durable For each over saved items or earlier results, with bounded concurrency, nested recipe calls, per-item progress and explicit failure summaries ([Taskbot #138](https://taskbot.apps.janjaap.de/p/bobs-factory/t/138)).
+
 - Build recipes with a Check step: edit named rules, aggregate result collections and simulate the same decisions used during a run. Factory and Takeover show their review, QA and delivery decisions as Check nodes with explicit routes, while preserving frozen recipes and approval safeguards. Incomplete reviews retain their original evidence through reassessment and restart, and assistance preserves the selected destination's native session. ([Taskbot #137](https://taskbot.apps.janjaap.de/p/bobs-factory/t/137), [#174](https://github.com/jappyjan/bobs-factory/pull/174))
 
 - Configure agent steps with named inputs, library or bounded custom output schemas, declarative rules, evidence checks, revision binding, access and shared instructions in Recipes. Renaming Factory steps preserves behavior and review controls; live CI blockers remain visible, and frozen legacy definitions retain their original contracts, guides and media. Custom question and architecture fields remain ordinary data unless their protocol is configured. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136), [#173](https://github.com/jappyjan/bobs-factory/pull/173))

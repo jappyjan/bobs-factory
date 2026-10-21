@@ -13,6 +13,7 @@ import {
 import { useEffect, useMemo } from "react";
 import {
 	agentSummary,
+	itemSourceSummary,
 	kindOf,
 	layoutSteps,
 	mainPath,
@@ -52,7 +53,11 @@ const stepHandles = (height: number) => [
 	),
 ];
 const heightOf = (step: Step) =>
-	step.type === "fanout" ? H + 8 + (step.groups?.length ?? 0) * 22 : H;
+	step.type === "fanout"
+		? H + 8 + (step.groups?.length ?? 0) * 22
+		: step.type === "foreach"
+			? H + 50 + (step.body?.length ?? 0) * 24
+			: H;
 
 export type Simulation = {
 	trail: string[];
@@ -120,6 +125,27 @@ function StepNode({ data }: NodeProps<Node<StepData>>) {
 						</li>
 					))}
 				</ul>
+			)}
+			{step.type === "foreach" && (
+				<div className="recipe-node-foreach">
+					<small title={itemSourceSummary(step)}>
+						{itemSourceSummary(step)}
+					</small>
+					<small>
+						↔ {step.concurrency ?? 4} at once · max {step.maxItems ?? 100}
+					</small>
+					<ul className="recipe-node-groups">
+						{step.body?.map((child) => (
+							<li
+								key={child.id}
+								data-selected={data.selectedChild?.split("/")[0] === child.id}
+							>
+								{kindOf(child).icon} {child.name}
+								{child.type === "foreach" ? " ↻" : ""}
+							</li>
+						))}
+					</ul>
+				</div>
 			)}
 			{!!data.visits && (
 				<span className="recipe-node-visits">×{data.visits}</span>
@@ -189,7 +215,7 @@ export function RecipeCanvas({
 	onDropKind: (kind: string, after?: string) => void;
 }) {
 	const flow = useReactFlow();
-	const structure = JSON.stringify(routesOf(steps));
+	const structure = JSON.stringify([routesOf(steps), steps.map(heightOf)]);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: layout follows routes and sizes, not text edits
 	const layout = useMemo(() => {
 		const positions = layoutSteps(steps, {

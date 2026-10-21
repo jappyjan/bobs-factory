@@ -26,6 +26,7 @@ export function stepPresentation(step: WorkflowStep): StepPresentation {
 		icon: string,
 		fixing = false,
 	): StepPresentation => ({ phase, icon, fixing });
+	if (step.type === "foreach") return view("yellow", "↻");
 	if (step.type === "tool") {
 		switch (step.tool) {
 			case "record-decisions":

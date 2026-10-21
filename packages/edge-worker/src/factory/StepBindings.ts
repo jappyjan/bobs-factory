@@ -42,6 +42,9 @@ export function stepBindings(
 	const { run, step } = context;
 	const outputs = context.outputs ?? run.outputs;
 	const sources: Record<string, unknown> = {
+		callInputs: context.callInputs ?? {},
+		item: context.iteration?.value,
+		index: context.iteration?.index,
 		answers: run.answers,
 		decisions: run.humanDecisions ?? [],
 		architectureProposals: run.architectureProposals ?? [],
@@ -112,7 +115,11 @@ export function stepBindings(
 
 export function allRunSteps(run: FactoryRun): WorkflowStep[] {
 	const flatten = (steps: WorkflowStep[]): WorkflowStep[] =>
-		steps.flatMap((step) => [step, ...(step.groups ?? []).flatMap(flatten)]);
+		steps.flatMap((step) => [
+			step,
+			...(step.groups ?? []).flatMap(flatten),
+			...flatten(step.body ?? []),
+		]);
 	return [
 		run.recoveryWorkflow ?? run.workflow,
 		...(run.workflowDefinitions ?? []),

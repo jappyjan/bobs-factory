@@ -429,6 +429,10 @@ function compactCiActivity(run, activities) {
 				);
 				visit(definition?.steps, `${key}/`, [...ancestors, step.workflow]);
 			}
+			if (step.type === "foreach") {
+				for (const item of run.foreach?.[key]?.items ?? [])
+					visit(step.body, `${key}/${item.id}/`, ancestors);
+			}
 			(step.groups ?? []).forEach((group, index) => {
 				visit(group, `${key}/${index}/`, ancestors);
 			});
