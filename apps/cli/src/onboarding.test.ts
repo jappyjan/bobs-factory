@@ -319,3 +319,34 @@ it("offers Cursor after its SDK and compatible Node runtime are prepared", () =>
 			.agents.find((agent) => agent.id === "cursor"),
 	).toMatchObject({ installed: true });
 });
+
+it.each([
+	"v22.13.0",
+	"v23.11.0",
+	"v25.0.0",
+])("refuses Cursor setup with unsupported prepared Node %s", async (version) => {
+	const f = fixture();
+	const bin = (process.env.PATH ?? "").split(":")[0]!;
+	writeFileSync(join(bin, "agent"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+	const node = join(bin, "prepared-node");
+	writeFileSync(node, `#!/bin/sh\nprintf '%s\\n' '${version}'\n`, {
+		mode: 0o755,
+	});
+	vi.mocked(resolveCursorInstallation).mockReturnValue({
+		sdk: "/prepared/sdk",
+		node,
+		version: "1.0.19",
+	});
+	const setup = new LocalOnboarding(f.home, f.apply);
+	expect(
+		setup.status().agents.find((agent) => agent.id === "cursor"),
+	).toMatchObject({
+		installed: false,
+		note: expect.stringContaining("Node 24.x"),
+	});
+	await expect(
+		setup.configure({ repositoryPath: f.repo, runner: "cursor" }),
+	).rejects.toThrow("Install the selected coding agent");
+	expect(f.apply).not.toHaveBeenCalled();
+	expect(existsSync(join(f.home, "config.json"))).toBe(false);
+});

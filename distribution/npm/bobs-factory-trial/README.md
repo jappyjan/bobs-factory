@@ -1,7 +1,7 @@
 # bobs-factory-trial
 
 This package is a small `npx` launcher for Bob’s Factory’s unsigned native release
-bootstrap. The launcher requires Node.js 20 or newer; the downloaded Factory
+bootstrap. The launcher requires Node.js 24.x; the downloaded Factory
 runtime does not require Node, npm or Bun. Git, a coding agent and any agent-owned
 runtime/login remain separate host prerequisites.
 

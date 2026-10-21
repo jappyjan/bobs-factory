@@ -37,6 +37,15 @@ including when a frozen run resumes after an upgrade.
 Supported target names: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`.
 Bun 1.4.2 bundles the runtime; immutable dashboard/prompts/skills are embedded and
 verified before extraction into a content-addressed private resource directory.
+The installed Factory executable and its internal helpers require no separate
+Node, npm, pnpm or Bun installation. Git and prepared coding agents remain external
+prerequisites; their executables, SDKs, native sidecars and credentials are not all
+bundled.
+
+Source development, builds, tests and the optional trial npm launcher support
+**Node 24 only**. `.node-version`, CI and frozen release tooling pin 24.18.0; the
+workspace requires the 24.x major, pnpm 10.33.1 and Bun 1.4.2. Node 22 support is
+removed. These source tools are not binary-runtime prerequisites.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -59,7 +68,7 @@ duplicate entries and special files.
 
 For binary installations, prepare `@cursor/sdk@1.0.19` and
 `@connectrpc/connect-node@1.7.0` together in a directory owned by the service account.
-Use Node >=22.13 as required by that SDK. This is an agent prerequisite; the
+Use Node 24 for the prepared SDK host. This is an agent prerequisite; the
 factory and its internal MCP helper still run without Node/npm/Bun. For example,
 using your existing npm setup:
 

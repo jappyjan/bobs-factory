@@ -10,6 +10,9 @@ export const PACKAGE_JSON_TEMPLATE = `{
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "build": "tsc",
     "test": "echo \\"Error: no tests yet\\" && exit 1",
@@ -25,7 +28,7 @@ export const PACKAGE_JSON_TEMPLATE = `{
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.0",
     "typescript": "^5.7.0"
   }
 }`;

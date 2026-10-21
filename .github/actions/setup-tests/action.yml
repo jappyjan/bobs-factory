@@ -1,15 +1,11 @@
 name: Set up workspace tests
 description: Install Node, Bun, locked workspace dependencies and Linux test tools
-inputs:
-  node-version:
-    description: Node version to validate
-    default: '24.18.0'
 runs:
   using: composite
   steps:
     - uses: actions/setup-node@v7
       with:
-        node-version: ${{ inputs.node-version }}
+        node-version: '24.18.0'
         package-manager-cache: false
     - uses: oven-sh/setup-bun@v2
       with:

@@ -6,7 +6,7 @@ order; reusable builders sit beside them. Keep workflow names and their
 
 | Workflow | File | When it runs | Responsibility |
 | --- | --- | --- | --- |
-| CI / Validate | [ci.yml](workflows/ci.yml) | Main pushes and pull requests targeting main | Lint once; build and test on Node 22 and 24; verify installation and release safeguards. |
+| CI / Validate | [ci.yml](workflows/ci.yml) | Main pushes and pull requests targeting main | Lint once; build and test on Node 24; verify installation and release safeguards. |
 | Release / 1. Build candidates | [release-channel.yml](workflows/release-channel.yml) | Hourly eligibility poll or manual dispatch | Freeze a candidate, build four native targets and desktop installers, and collect current test receipts. |
 | Release / 2. Collect evidence | [release-evidence.yml](workflows/release-evidence.yml) | Successful candidate workflow or manual evidence import | Validate and retain candidate-bound source and evidence. |
 | Release / 3. Publish | [binary-release.yml](workflows/binary-release.yml) | Successful evidence workflow or manual dispatch | Prepare immutable assets; publish only when the existing channel and approval gates permit it. |
@@ -18,12 +18,13 @@ order; reusable builders sit beside them. Keep workflow names and their
 ## CI and shared setup
 
 `Lint` checks Biome formatting/code quality and validates workflows with pinned
-actionlint, including shellcheck and pyflakes. `Build and test (Node 22.x)` and
-`Build and test (Node 24.x)` each build the workspace and run its tests plus the
+actionlint, including shellcheck and pyflakes. `Build and test (Node 24.x)`
+builds the workspace and runs its tests plus the
 installation/publication safeguard suite. TypeScript builds already type-check
 before emitting, including the dashboard's separate TypeScript project; a second
 identical type-check pass adds no coverage. Superseded CI runs are canceled per
-PR or branch, with bounded job durations and independent Node compatibility jobs.
+PR or branch, with bounded job durations. Node 24 is the only supported source
+runtime; setup is pinned to 24.18.0, matching `.node-version` and release tooling.
 
 The `setup-tests` composite action shares Node/Bun, locked dependency installation,
 and Linux video/release tools between CI and the candidate validation job. The
@@ -35,10 +36,9 @@ for that upload. Website build jobs have Pages read access; only deployment gets
 Pages write and OIDC permissions. Release publication retains its separate write
 permissions and repository-wide mutation lock.
 
-The previous CI matrix contexts were `test (22.x)` and `test (24.x)`. Any external
-branch rules requiring those names must switch to `Lint`,
-`Build and test (Node 22.x)`, and `Build and test (Node 24.x)`. At the time of this
-refactor, main had no branch protection and the repository had no rulesets.
+The maintained check contexts are `Lint` and `Build and test (Node 24.x)`.
+Node 22 support and its matrix job are removed. Workspace engines and the trial
+launcher accept only Node 24; no compatibility path is maintained.
 
 ## Release boundaries and compatibility
 

@@ -40,7 +40,7 @@
 		"vitest": "^4.1.12"
 	},
 	"engines": {
-		"node": ">=18.0.0"
+		"node": "24.x"
 	},
 	"private": true,
 	"license": "Apache-2.0"

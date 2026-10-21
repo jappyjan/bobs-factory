@@ -1,6 +1,6 @@
-# Contributing to Cyrus
+# Contributing to Bob’s Factory
 
-We love your input! We want to make contributing to Cyrus as easy and transparent as possible, whether it's:
+We love your input! We want to make contributing to Bob’s Factory as easy and transparent as possible, whether it's:
 
 - Reporting a bug
 - Discussing the current state of the code
@@ -9,8 +9,15 @@ We love your input! We want to make contributing to Cyrus as easy and transparen
 
 ## Prerequisites
 
-- **Node.js** >= 22
-- **pnpm** >= 10 (this is a pnpm monorepo — do not use npm or yarn)
+- **Node.js** 24 only (`.node-version` pins 24.18.0)
+- **pnpm** 10.33.1 (this is a pnpm monorepo — do not use npm or yarn)
+- **Bun** 1.4.2 for the development launcher and binary builds
+
+The maintained delivery is the `bobs-factory` binary with its embedded Bun runtime;
+end users do not need Node or Bun for Factory itself. Prepared coding agents may
+require external runtimes, Git and their own credentials. See the
+[distribution guide](docs/distribution/README.md). Upstream source attribution is
+retained; workspace npm publication is retired.
 
 ## Development Process
 
@@ -38,12 +45,12 @@ We use GitHub for issue tracking, code hosting and pull requests. We also track 
 
 ### Project Structure
 
-Cyrus is a pnpm monorepo with the following layout:
+Bob’s Factory is a pnpm monorepo with the following layout:
 
 ```
 cyrus/
 ├── apps/
-│   ├── cli/        # Main CLI application (the `bobs-factory-ai` npm package)
+│   ├── cli/        # Main CLI application (private binary build input)
 │   └── f1/         # F1 testing framework for end-to-end test drives
 └── packages/
     ├── core/                     # Shared types and session management

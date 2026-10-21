@@ -7,7 +7,7 @@
 		"bobs-factory-trial": "./bin/bobs-factory-trial.mjs"
 	},
 	"engines": {
-		"node": ">=20"
+		"node": "24.x"
 	},
 	"license": "Apache-2.0",
 	"repository": {

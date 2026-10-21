@@ -35,20 +35,14 @@ jobs:
           args: -color
 
   test:
-    name: Build and test (Node ${{ matrix.node-version }})
+    name: Build and test (Node 24.x)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [22.x, 24.x]
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-tests
-        with:
-          node-version: ${{ matrix.node-version }}
       - name: Create test environment
         run: |
           cat > .env << EOF
@@ -58,7 +52,7 @@ jobs:
           PROMPT_TEMPLATE_PATH=./examples/prompt-template.txt
           ANTHROPIC_API_KEY=test
           EOF
-      # Each TypeScript build checks its types before emitting; keep both Node versions.
+      # Each TypeScript build checks its types before emitting on the supported Node 24 runtime.
       - name: Build workspace packages and dashboard
         run: pnpm build
       - name: Run workspace tests
