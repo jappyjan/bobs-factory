@@ -20,13 +20,16 @@ import {
 import { canonicalPath } from "./paths.js";
 import { nativeSessions, PreservationPlanSchema } from "./preservation.js";
 
-vi.mock("node:child_process", () => ({ execFileSync: vi.fn(() => "") }));
+vi.mock("node:child_process", async (importOriginal) => ({
+	...(await importOriginal<typeof import("node:child_process")>()),
+	execFileSync: vi.fn(() => ""),
+}));
 const roots: string[] = [];
 afterEach(() => {
 	for (const path of roots.splice(0))
 		rmSync(path, { recursive: true, force: true });
 });
-it("discovers native checkpoints without interpreting completed or rejected output as sessions", () => {
+it("discovers native checkpoints without interpreting completed or rejected output as sessions", async () => {
 	const payload = {
 		runner: "codex",
 		sessionId: "data-only",
@@ -147,7 +150,7 @@ function fixture() {
 		evidencePath,
 	};
 }
-it("requires verified matching continuation records for worker and factory checkpoints", () => {
+it("requires verified matching continuation records for worker and factory checkpoints", async () => {
 	const f = fixture();
 	expect(inspectMigration(f.source, f.destination).blockers).toContain(
 		"Native agent conversation relocation needs an agent-verified continuation mapping before apply",
@@ -157,11 +160,11 @@ it("requires verified matching continuation records for worker and factory check
 		"Native continuation evidence changed",
 	);
 });
-it("preserves native transcripts, waiting gates and ticket receipts, and restores backed-up service definitions", () => {
+it("preserves native transcripts, waiting gates and ticket receipts, and restores backed-up service definitions", async () => {
 	const f = fixture();
 	const manifest = inspectMigration(f.source, f.destination, f.plan);
 	expect(manifest.blockers).toEqual([]);
-	expect(applyMigration(manifest, f.backup).status).toBe("applied");
+	expect((await applyMigration(manifest, f.backup)).status).toBe("applied");
 	expect(readFileSync(join(f.nativeDestination, "conversation.jsonl"))).toEqual(
 		readFileSync(join(f.native, "conversation.jsonl")),
 	);
@@ -185,7 +188,7 @@ it("preserves native transcripts, waiting gates and ticket receipts, and restore
 		join(f.nativeDestination, "new.jsonl"),
 		"keep new conversation",
 	);
-	expect(restoreMigration(f.backup).status).toBe("restored");
+	expect((await restoreMigration(f.backup)).status).toBe("restored");
 	expect(readFileSync(f.service, "utf8")).toBe("old service");
 	expect(
 		readFileSync(join(f.backup, "native-recovery/0/new.jsonl"), "utf8"),
@@ -194,7 +197,7 @@ it("preserves native transcripts, waiting gates and ticket receipts, and restore
 		"remember this",
 	);
 });
-it("refuses credential copies and native destination collisions before mutation", () => {
+it("refuses credential copies and native destination collisions before mutation", async () => {
 	const f = fixture();
 	writeFileSync(join(f.native, "auth.json"), "private credential");
 	const manifest = inspectMigration(f.source, f.destination, f.plan);
@@ -202,14 +205,14 @@ it("refuses credential copies and native destination collisions before mutation"
 		"Native transcript copy includes host credentials; select conversation data only",
 	);
 	expect(JSON.stringify(manifest)).not.toContain("private credential");
-	expect(() => applyMigration(manifest, f.backup)).toThrow();
+	await expect(applyMigration(manifest, f.backup)).rejects.toThrow();
 	rmSync(join(f.native, "auth.json"));
 	mkdirSync(f.nativeDestination);
 	expect(inspectMigration(f.source, f.destination, f.plan).blockers).toContain(
 		"Native transcript destination already exists",
 	);
 });
-it("preserves queued coordinator order and refuses executing leases before mutation", () => {
+it("preserves queued coordinator order and refuses executing leases before mutation", async () => {
 	const f = fixture();
 	mkdirSync(join(f.source, "machine-capacity"));
 	const path = join(f.source, "machine-capacity/state.json");
@@ -249,7 +252,7 @@ it("preserves queued coordinator order and refuses executing leases before mutat
 	);
 	const manifest = inspectMigration(f.source, f.destination, f.plan);
 	expect(manifest.blockers).toEqual([]);
-	applyMigration(manifest, f.backup);
+	await applyMigration(manifest, f.backup);
 	expect(
 		JSON.parse(
 			readFileSync(join(f.destination, "machine-capacity/state.json"), "utf8"),
@@ -263,7 +266,7 @@ it("preserves queued coordinator order and refuses executing leases before mutat
 					: `${f.destination}:session:second`,
 		})),
 	);
-	restoreMigration(f.backup);
+	await restoreMigration(f.backup);
 	writeFileSync(
 		path,
 		JSON.stringify({
@@ -279,7 +282,7 @@ it("preserves queued coordinator order and refuses executing leases before mutat
 	);
 });
 
-it("rejects incomplete coordinator state before creating a destination or backup", () => {
+it("rejects incomplete coordinator state before creating a destination or backup", async () => {
 	const f = fixture();
 	mkdirSync(join(f.source, "machine-capacity"));
 	const path = join(f.source, "machine-capacity/state.json");
@@ -287,13 +290,13 @@ it("rejects incomplete coordinator state before creating a destination or backup
 	writeFileSync(path, bytes);
 	const manifest = inspectMigration(f.source, f.destination, f.plan);
 	expect(manifest.blockers).toContain("Unknown coordinator state format");
-	expect(() => applyMigration(manifest, f.backup)).toThrow();
+	await expect(applyMigration(manifest, f.backup)).rejects.toThrow();
 	expect(readFileSync(path, "utf8")).toBe(bytes);
 	expect(existsSync(f.destination)).toBe(false);
 	expect(existsSync(f.backup)).toBe(false);
 });
 
-it("keeps an unapproved human review at its original revision and waiting checkpoint", () => {
+it("keeps an unapproved human review at its original revision and waiting checkpoint", async () => {
 	const f = fixture();
 	const run = {
 		id: "review-run",
@@ -342,7 +345,10 @@ it("keeps an unapproved human review at its original revision and waiting checkp
 		join(f.source, "factory/runs/review.json"),
 		JSON.stringify(run),
 	);
-	applyMigration(inspectMigration(f.source, f.destination, f.plan), f.backup);
+	await applyMigration(
+		inspectMigration(f.source, f.destination, f.plan),
+		f.backup,
+	);
 	expect(
 		JSON.parse(
 			readFileSync(join(f.destination, "factory/runs/review.json"), "utf8"),

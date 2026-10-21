@@ -14,7 +14,19 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { CapacityStateSchema, resolvePath } from "bobs-factory-core";
+import {
+	CapacityStateSchema,
+	OwnedResourceClaim,
+	readStorageJson,
+	reconcileStorageCopy,
+	resolvePath,
+	StorageRetentionStore,
+	sameStorageIdentity,
+	storageDigest,
+	storageIdentity,
+	verifyStorageIntegrity,
+	writeStorageIntegrity,
+} from "bobs-factory-core";
 import { parse } from "dotenv";
 import { canonicalPath } from "./paths.js";
 import {
@@ -522,11 +534,188 @@ function verifyCopy(home: string, expected: Entry[]) {
 	if (hash(JSON.stringify(inventory(home))) !== hash(JSON.stringify(expected)))
 		throw new Error("Backup integrity verification failed");
 }
-/** Mutation never starts/stops services. A journal and verified backup precede staging. */
-export function applyMigration(
+function authoritativeDigest(destination: string) {
+	return hash(
+		JSON.stringify(
+			inventory(destination).filter(
+				(entry) =>
+					entry.path !== "storage-retention" &&
+					!entry.path.startsWith("storage-retention/"),
+			),
+		),
+	);
+}
+/** Migration and recovery share a process-aware owner outside the homes being copied.
+ * Cleanup separately claims each enrolled preparation directory. */
+export async function applyMigration(
 	manifest: MigrationManifest,
 	backupPath: string,
 ) {
+	const backup = canonicalPath(backupPath);
+	if (manifest.version !== 1) throw new Error("Unknown manifest version");
+	if (
+		contained(manifest.source, backup) ||
+		contained(manifest.destination, backup)
+	)
+		throw new Error("Backup must be outside both homes");
+	mkdirSync(dirname(backup), { recursive: true, mode: 0o700 });
+	return new OwnedResourceClaim(`${backup}.migration.lock`, "migration").run(
+		async () => {
+			const result = applyMigrationCopy(manifest, backup);
+			// Enrollment is a separate resumable phase after the destination commits.
+			// Its own writes must not invalidate the authoritative-data replay check.
+			const journalPath = join(backup, "journal.json");
+			const journal = readJson(journalPath);
+			if (
+				result.status === "already-applied" &&
+				journal.enrollment === "completed"
+			)
+				return result;
+			save(journalPath, {
+				...journal,
+				enrollment: "pending",
+				authoritativeDigest: authoritativeDigest(manifest.destination),
+			});
+			const store = new StorageRetentionStore(manifest.destination);
+			await store.recoverPublication();
+			let enrollmentComplete = true;
+			for (const name of ["state", "factory"]) {
+				const path = join(backup, "staged", name);
+				if (
+					!existsSync(path) ||
+					!lstatSync(path).isDirectory() ||
+					lstatSync(path).isSymbolicLink()
+				)
+					continue;
+				await store.workspaceClaim(path).run(async () => {
+					const existing = (await readStorageJson(
+						join(
+							store.directory,
+							"path-records",
+							`${storageDigest(path)}.json`,
+						),
+					)) as { id: string } | undefined;
+					const record = existing
+						? await store.record(existing.id)
+						: await store.register({
+								path,
+								root: join(backup, "staged"),
+								category: "migration",
+								producer: "applyMigration",
+								operation: manifest.sourceDigest,
+								dependencies: ["migration reconciliation incomplete"],
+								evidence: [],
+								completedAt: new Date().toISOString(),
+							});
+					if (
+						record.producer !== "applyMigration" ||
+						record.operation !== manifest.sourceDigest ||
+						record.category !== "migration" ||
+						record.path !== path ||
+						!sameStorageIdentity(
+							record.identity,
+							await storageIdentity(path, join(backup, "staged")),
+						)
+					)
+						throw new Error(
+							"Migration preparation ownership changed; refusing enrollment replay",
+						);
+					const proof = join(store.directory, "proofs", `${record.id}.ndjson`);
+					const previous = record.evidence
+						.find((item) => item.startsWith("integrity:"))
+						?.slice(10);
+					if (previous) await verifyStorageIntegrity(path, proof, previous);
+					else {
+						const integrity = await writeStorageIntegrity(path, proof);
+						await store.revise(record.id, (value) => {
+							value.evidence = [`integrity:${integrity}`];
+						});
+					}
+					try {
+						await reconcileStorageCopy(
+							store,
+							record.id,
+							join(manifest.destination, name),
+							true,
+						);
+					} catch {
+						enrollmentComplete = false;
+						// Mixed, native, linked or uncertain content stays enrolled but protected.
+						// Source, external and native backups are never enrolled.
+					}
+				}, true);
+			}
+			save(journalPath, {
+				...readJson(journalPath),
+				enrollment: enrollmentComplete ? "completed" : "pending",
+				destinationDigest: hash(
+					JSON.stringify(inventory(manifest.destination)),
+				),
+			});
+			return result;
+		},
+		true,
+	);
+}
+export async function restoreMigration(backupPath: string) {
+	const backup = canonicalPath(backupPath);
+	const manifest: MigrationManifest = readJson(join(backup, "manifest.json"));
+	return new OwnedResourceClaim(`${backup}.migration.lock`, "migration").run(
+		async () => {
+			const store = new StorageRetentionStore(manifest.destination);
+			const paths = ["state", "factory"].map((name) =>
+				join(backup, "staged", name),
+			);
+			let expected: Entry[] | undefined;
+			let destinationIdentity: ReturnType<typeof lstatSync> | undefined;
+			const claimPaths = new Set(
+				paths.map(
+					(path) => `storage-retention/workspace-${storageDigest(path)}.lock`,
+				),
+			);
+			const restore = async (
+				index: number,
+			): Promise<ReturnType<typeof restoreMigrationCopy>> => {
+				if (index === paths.length) {
+					const result = restoreMigrationCopy(backup);
+					if (existsSync(manifest.destination)) {
+						destinationIdentity = lstatSync(manifest.destination);
+						expected = inventory(manifest.destination).filter(
+							(entry) => !claimPaths.has(entry.path),
+						);
+					}
+					return result;
+				}
+				const path = paths[index]!;
+				const enrolled = await readStorageJson(
+					join(store.directory, "path-records", `${storageDigest(path)}.json`),
+				);
+				return enrolled
+					? store.workspaceClaim(path).run(() => restore(index + 1), true)
+					: restore(index + 1);
+			};
+			const result = await restore(0);
+			// Release preparation claims before removing their lock directory. Recovery
+			// no longer reads preparation once the verified destination backup is saved.
+			if (destinationIdentity && expected) {
+				const current = lstatSync(manifest.destination);
+				if (
+					current.ino !== destinationIdentity.ino ||
+					current.dev !== destinationIdentity.dev ||
+					current.birthtimeMs !== destinationIdentity.birthtimeMs
+				)
+					throw new Error(
+						"Destination identity changed during recovery; both copies retained",
+					);
+				verifyCopy(manifest.destination, expected);
+				rmSync(manifest.destination, { recursive: true });
+			}
+			return result;
+		},
+		true,
+	);
+}
+function applyMigrationCopy(manifest: MigrationManifest, backupPath: string) {
 	if (manifest.version !== 1) throw new Error("Unknown manifest version");
 	const backup = resolve(backupPath);
 	if (
@@ -543,8 +732,11 @@ export function applyMigration(
 			existsSync(manifest.destination)
 		) {
 			if (
-				hash(JSON.stringify(inventory(manifest.destination))) !==
-				journal.destinationDigest
+				journal.enrollment === "pending"
+					? authoritativeDigest(manifest.destination) !==
+						journal.authoritativeDigest
+					: hash(JSON.stringify(inventory(manifest.destination))) !==
+						journal.destinationDigest
 			)
 				throw new Error("Committed destination changed; refusing replay");
 			return { backup, status: "already-applied" };
@@ -730,6 +922,26 @@ export function applyMigration(
 				stdio: "ignore",
 			});
 		}
+	// Observational ownership only. This never enrolls the source/native/external
+	// backup or its preparation into automatic deletion authority.
+	const retention = join(
+		manifest.destination,
+		"storage-retention",
+		"migration-observations",
+	);
+	mkdirSync(retention, { recursive: true, mode: 0o700 });
+	save(join(retention, `${manifest.sourceDigest}.json`), {
+		version: 1,
+		producer: "applyMigration",
+		operation: manifest.sourceDigest,
+		preparation: join(backup, "staged"),
+		backup,
+		source: manifest.source,
+		reconciledAt: new Date().toISOString(),
+		protected: true,
+		reason:
+			"Source, native and external backups require verified explicit cleanup election",
+	});
 	const destinationDigest = hash(
 		JSON.stringify(inventory(manifest.destination)),
 	);
@@ -746,7 +958,7 @@ export function applyMigration(
 		source: "retained",
 	};
 }
-export function restoreMigration(backupPath: string) {
+function restoreMigrationCopy(backupPath: string) {
 	const backup = resolve(backupPath),
 		manifest: MigrationManifest = readJson(join(backup, "manifest.json"));
 	const journal = readJson(join(backup, "journal.json"));
@@ -780,7 +992,6 @@ export function restoreMigration(backupPath: string) {
 		copyTree(manifest.destination, recovery, entries);
 		verifyCopy(recovery, entries);
 		verifyCopy(manifest.destination, entries);
-		rmSync(manifest.destination, { recursive: true });
 	}
 	for (const [index, copy] of (
 		manifest.preservationPlan?.nativeCopies ?? []

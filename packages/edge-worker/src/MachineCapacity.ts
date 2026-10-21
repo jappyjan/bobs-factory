@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import {
+	lstat,
 	mkdir,
 	open,
 	readFile,
@@ -139,6 +140,25 @@ export async function assertLegacyCapacityDrained(
 			);
 	}
 }
+/** Darwin may report EINVAL when a symlink is concurrently removed/replaced.
+ * Retry only an absent or still-symbolic lock; foreign regular files fail closed. */
+async function readLockOwner(lock: string): Promise<string | undefined> {
+	try {
+		return await readlink(lock);
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+		if ((error as NodeJS.ErrnoException).code === "EINVAL") {
+			try {
+				if ((await lstat(lock)).isSymbolicLink()) return undefined;
+			} catch (statError) {
+				if ((statError as NodeJS.ErrnoException).code === "ENOENT")
+					return undefined;
+				throw statError;
+			}
+		}
+		throw error;
+	}
+}
 /** One durable pool per factory instance, shared by workers using the same home. */
 export class MachineCapacity implements ExecutionCapacity {
 	/** Reuse active role ownership; otherwise retain a durable lease through cleanup. */
@@ -222,18 +242,20 @@ export class MachineCapacity implements ExecutionCapacity {
 		deadline: number,
 	): Promise<void> {
 		while (true) {
+			if (Date.now() > deadline)
+				throw new Error(
+					"Instance capacity coordinator lock unavailable; no workload was started",
+				);
 			try {
 				await symlink(lockOwner, lock);
 				return;
 			} catch (error) {
 				if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
 			}
-			let holderText: string;
-			try {
-				holderText = await readlink(lock);
-			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
-				throw error;
+			const holderText = await readLockOwner(lock);
+			if (holderText === undefined) {
+				await delay(25);
+				continue;
 			}
 			const holder = Owner.parse(JSON.parse(holderText));
 			if (!(await living(holder))) {
@@ -243,17 +265,13 @@ export class MachineCapacity implements ExecutionCapacity {
 						: `${lock}.reclaim`;
 				await this.acquireLock(guard, lockOwner, deadline);
 				try {
-					if ((await readlink(lock)) === holderText) await unlink(lock);
+					if ((await readLockOwner(lock)) === holderText) await unlink(lock);
 				} catch (error) {
 					if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
 				} finally {
 					await unlink(guard);
 				}
 			}
-			if (Date.now() > deadline)
-				throw new Error(
-					"Instance capacity coordinator lock unavailable; no workload was started",
-				);
 			await delay(25);
 		}
 	}

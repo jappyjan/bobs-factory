@@ -13,6 +13,11 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import {
+	publishStorageJson,
+	StorageRetentionStore,
+	storageDigest,
+} from "./StorageRetention.js";
 
 interface Artifact {
 	path: string;
@@ -45,11 +50,45 @@ export class ProjectArtifactLease {
 		resource: string,
 		privateDirectory = ProjectArtifactLease.sharedDirectory,
 		signal?: AbortSignal,
+		factoryHome?: string,
 	): Promise<ProjectArtifactLease> {
 		for (;;) {
 			signal?.throwIfAborted();
 			try {
-				return new ProjectArtifactLease(workspace, resource, privateDirectory);
+				if (!factoryHome)
+					return new ProjectArtifactLease(
+						workspace,
+						resource,
+						privateDirectory,
+					);
+				const storage = new StorageRetentionStore(factoryHome);
+				await storage.initialize();
+				return await storage.workspaceClaim(workspace).run(async () => {
+					signal?.throwIfAborted();
+					const lease = new ProjectArtifactLease(
+						workspace,
+						resource,
+						privateDirectory,
+					);
+					const root = await storage.workspaceResource(workspace);
+					const value = {
+						version: 1,
+						workspace,
+						owner: `artifact:${lease.journal.owner}`,
+						state: "reserved",
+						updatedAt: new Date().toISOString(),
+						reason: "Runner artifacts require restoration",
+					};
+					const file = join(
+						storage.directory,
+						"workspace-use",
+						storageDigest(root),
+						`${storageDigest(value.owner)}.json`,
+					);
+					lease.retentionUse = { file, value };
+					await publishStorageJson(file, value);
+					return lease;
+				}, true);
 			} catch (error) {
 				if (!(error instanceof ArtifactLeaseBusyError)) throw error;
 			}
@@ -104,6 +143,7 @@ export class ProjectArtifactLease {
 				.map((artifact) => artifact.path),
 		);
 	}
+	private retentionUse?: { file: string; value: Record<string, unknown> };
 	private journal: Journal;
 	private file: string;
 	constructor(
@@ -278,5 +318,20 @@ export class ProjectArtifactLease {
 			throw new Error("Runner artifact lease was lost");
 		this.restore(current);
 		rmSync(this.file);
+		if (this.retentionUse) {
+			const { file, value } = this.retentionUse;
+			const temporary = `${file}.${randomUUID()}.tmp`;
+			writeFileSync(
+				temporary,
+				JSON.stringify({
+					...value,
+					state: "released",
+					reason: "Runner artifacts restored",
+					updatedAt: new Date().toISOString(),
+				}),
+				{ flag: "wx", mode: 0o600, flush: true },
+			);
+			renameSync(temporary, file);
+		}
 	}
 }

@@ -195,7 +195,12 @@ describe("Codex configuration cancellation", () => {
 				codexPath: launcher,
 			}).build(cancellation.signal);
 			const outcome = build.catch(() => "cancelled");
-			await vi.waitFor(() => expect(existsSync(pidFile)).toBe(true));
+			// Readiness can take longer than Vitest's one-second polling default
+			// when the workspace suite is loading runners concurrently. Keep the
+			// cancellation assertions unchanged once the scripted child is ready.
+			await vi.waitFor(() => expect(existsSync(pidFile)).toBe(true), {
+				timeout: 5_000,
+			});
 			const pid = Number(readFileSync(pidFile, "utf8"));
 			cancellation.abort(new Error("stopped"));
 			expect(await outcome).toBe("cancelled");

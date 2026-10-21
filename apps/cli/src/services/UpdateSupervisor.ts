@@ -40,7 +40,7 @@ export async function runUpdateSupervisor(
 				),
 			);
 			const source = new PublishedUpdateSource(
-				join(home, "updates", "staged"),
+				join(home, "updates"),
 				realpathSync(executable),
 				identity.target,
 			);
