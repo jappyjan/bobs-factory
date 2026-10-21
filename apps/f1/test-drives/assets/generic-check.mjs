@@ -468,36 +468,29 @@ function guide() {
 		hygiene: [],
 	};
 }
+function blockedCoverage() {
+	return {
+		status: "blocked",
+		blockers: ["Fixture specialist access is temporarily unavailable"],
+		summary: "Final acceptance coverage review could not finish",
+		findings: [],
+		disagreements: [],
+		// Match the retained legacy blocked-coverage fixture: blocked status
+		// prevents acceptance while preserving prerequisite reviewers' work.
+		coverage: [
+			{
+				requirementId: "R1",
+				status: "met",
+				reason:
+					"Completed prerequisite reviewers cover the saved-record implementation; final independent fixture inspection remains blocked by access.",
+				evidence: [
+					"Completed specialist receipts at the frozen baseline; final acceptance fixture inspection is not completed",
+				],
+			},
+		],
+	};
+}
 function reply(format, run, snapshot, workingDirectory) {
-	if (
-		recovery?.kind === "specialist" &&
-		format === "coverage-v1" &&
-		fork.original(snapshot.workflowExecution.currentStep.id) ===
-			"requirements-review" &&
-		!recovery.released
-	) {
-		recovery.blockedTurns++;
-		return {
-			status: "blocked",
-			blockers: ["Fixture specialist access is temporarily unavailable"],
-			summary: "Final acceptance coverage review could not finish",
-			findings: [],
-			disagreements: [],
-			// Like the retained legacy blocked-coverage fixture, the blocked status
-			// prevents acceptance while preserving the prerequisite reviewers' work.
-			coverage: [
-				{
-					requirementId: "R1",
-					status: "met",
-					reason:
-						"Completed prerequisite reviewers cover the saved-record implementation; final independent fixture inspection remains blocked by access.",
-					evidence: [
-						"Completed specialist receipts at the frozen baseline; final acceptance fixture inspection is not completed",
-					],
-				},
-			],
-		};
-	}
 	const request =
 		scenario === "external"
 			? "Update the fixture ticket description and blocker while preserving its existing relationship"
@@ -793,6 +786,44 @@ const worker = new EdgeWorker({
 // It must use the same fixture adapter as actions; failed reads still invalidate proof.
 worker.factoryDeliveryAdapter = resolveExternalAdapter;
 runtime = worker.getFactoryRuntime();
+const workerAgent = runtime.hooks.agent.bind(runtime.hooks);
+runtime.hooks.agent = async (context) => {
+	if (
+		recovery?.kind === "specialist" &&
+		!recovery.released &&
+		formatOf(context.step) === "coverage-v1" &&
+		fork.original(context.step.id) === "requirements-review"
+	) {
+		assert.equal(recovery.blockedTurns, 0);
+		assert(
+			context.reviewBaseline,
+			"Controlled incomplete result needs the runtime review baseline",
+		);
+		recovery.blockedTurns++;
+		// EdgeWorker intentionally treats blocked SDK specialists as infrastructure
+		// failures. Exercise retained incomplete receipts at the generic runtime's
+		// canonical controlled-agent boundary; runtime validation/stamping remains live.
+		turns.push({
+			run: context.run.id,
+			key: context.stepKey,
+			role: fork.original(context.step.id),
+			format: formatOf(context.step),
+			boundary: "generic-runtime-agent-hook",
+			attemptId: context.attemptId,
+			baseline: {
+				key: context.reviewBaseline.key,
+				round: context.reviewBaseline.round,
+				inventoryDigest: context.reviewBaseline.inventory.digest,
+				sourceContextDigest:
+					context.reviewBaseline.inventory.sourceContextDigest,
+				headSha: context.reviewBaseline.headSha,
+				baseSha: context.reviewBaseline.baseSha,
+			},
+		});
+		return blockedCoverage();
+	}
+	return workerAgent(context);
+};
 const tools = new FactoryTools({
 	postComment: async () => {},
 	ticketDelivery,
@@ -1098,6 +1129,42 @@ async function specialistRecovery(renamed) {
 		true,
 		"Specialist incompleteness must remain projected into Check output",
 	);
+	const controlledTurn = turns.find(
+		(turn) =>
+			turn.run === run.id && turn.boundary === "generic-runtime-agent-hook",
+	);
+	assert(controlledTurn);
+	assert.equal(
+		controlledTurn.sessionId,
+		undefined,
+		"Controlled incomplete output makes no native-session claim",
+	);
+	const controlledReceipt = blocked.reviewers.find(
+		(reviewer) => reviewer.stamp.stepKey === controlledTurn.key,
+	);
+	assert(
+		controlledReceipt,
+		"Runtime must stamp the controlled incomplete receipt in the exact frame",
+	);
+	assert.equal(controlledReceipt.status, "blocked");
+	assert(controlledReceipt.blockers.length > 0);
+	assert.equal(
+		controlledReceipt.stamp.reviewer,
+		controlledTurn.key.split("/").at(-1),
+	);
+	assert.equal(controlledReceipt.stamp.round, controlledTurn.baseline.round);
+	assert.equal(
+		controlledReceipt.stamp.inventoryDigest,
+		controlledTurn.baseline.inventoryDigest,
+	);
+	assert.equal(
+		controlledReceipt.stamp.headSha,
+		controlledTurn.baseline.headSha,
+	);
+	assert.equal(
+		controlledReceipt.stamp.baseSha,
+		controlledTurn.baseline.baseSha,
+	);
 	const route = gate.branches.find(
 		(branch) =>
 			JSON.stringify(readPath(blocked, branch.when.path)) ===
@@ -1173,6 +1240,18 @@ async function specialistRecovery(renamed) {
 				role === "requirements-review" ? 2 : 1,
 				`${role}: completed independent reviewers must not replay`,
 			);
+			const native = actual.filter(
+				(turn) =>
+					["specialist-v1", "coverage-v1"].includes(turn.format) &&
+					turn.role === role &&
+					turn.boundary !== "generic-runtime-agent-hook",
+			);
+			assert.equal(
+				native.length,
+				1,
+				`${role}: exactly one completed Worker SDK reviewer turn`,
+			);
+			assert.equal(typeof native[0].sessionId, "string");
 			return [role, count];
 		}),
 	);
@@ -1208,6 +1287,15 @@ async function specialistRecovery(renamed) {
 		sessionId: run.id,
 		status: run.status,
 		assistance,
+		controlledIncompleteBoundary: {
+			turn: structuredClone(controlledTurn),
+			receipt: structuredClone(controlledReceipt),
+			stepAttempt: structuredClone(
+				run.stepAttempts.find(({ id }) => id === controlledTurn.attemptId),
+			),
+			limitation:
+				"One blocked coverage result uses the generic runtime agent hook. All other roles, including fresh coverage after assistance, use actual EdgeWorker mock SDK execution. Blocked SDK specialist output remains an infrastructure failure, as separately retained rejected drives show.",
+		},
 		retention: {
 			inventoryExecutions: 1,
 			inventoryDigest: rounds[0].inventory.digest,
