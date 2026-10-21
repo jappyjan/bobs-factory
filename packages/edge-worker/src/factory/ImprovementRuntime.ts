@@ -21,6 +21,8 @@ import {
 	validatePackages,
 } from "./Improvement.js";
 import { runRepositories } from "./RepositoryScope.js";
+import { legacyImprovementTemplate } from "./StepConfig.js";
+import { outputForTool } from "./ToolBindings.js";
 import type {
 	ExecutionContext,
 	FactoryRun,
@@ -35,7 +37,11 @@ export interface ImprovementHost {
 		issue: ImprovementState["issues"][string],
 		signal: AbortSignal,
 	): Promise<{ id: string; url: string }>;
-	wait(run: FactoryRun, signal: AbortSignal): Promise<void>;
+	wait(
+		run: FactoryRun,
+		signal: AbortSignal,
+		phase: ImprovementState["phase"],
+	): Promise<void>;
 }
 export function improvementState(run: FactoryRun): ImprovementState {
 	run.improvementState ??= {
@@ -197,9 +203,7 @@ export async function runImprovement(
 	): Promise<T> => {
 		const saved = state.jobs[key];
 		if (saved?.status === "completed") return schema.parse(saved.output);
-		const template = run.workflow.steps.find(
-			(s) => s.id === roleId && s.type === "agent",
-		);
+		const template = legacyImprovementTemplate(run.workflow, roleId);
 		if (!template) throw new Error(`Missing accepted research role: ${roleId}`);
 		return slots.run(signal, async () => {
 			if (state.attempts >= state.settings.maxAgentAttempts)
@@ -385,8 +389,9 @@ export async function runImprovement(
 	while (state.phase !== "finished") {
 		signal.throwIfAborted();
 		if (state.phase === "research") {
-			const worker = run.workflow.steps.find(
-				(s) => s.id === "research-worker",
+			const worker = legacyImprovementTemplate(
+				run.workflow,
+				"research-worker",
 			)!;
 			if (!worker.model && state.settings.workerFallback === "block")
 				throw new Error(
@@ -751,7 +756,9 @@ export async function runImprovement(
 				state.children[pkg.id] = {
 					runId,
 					status: child.status,
-					url: (child.outputs["draft-pr"] as { url?: string } | undefined)?.url,
+					url: (
+						outputForTool(child, "draft-pr") as { url?: string } | undefined
+					)?.url,
 				};
 				if (!deliveredImprovement(child)) allDone = false;
 			}
@@ -768,15 +775,16 @@ export async function runImprovement(
 			run.step = "track-improvements";
 			run.status = "waiting";
 			await save();
-			await host.wait(run, signal);
+			await host.wait(run, signal, "dispatch");
 		} else {
+			const waitingPhase = state.phase;
 			run.step =
 				state.phase === "ready"
 					? "accept-improvements"
 					: "discuss-improvements";
 			run.status = "waiting";
 			await save();
-			await host.wait(run, signal);
+			await host.wait(run, signal, waitingPhase);
 		}
 	}
 	run.outputs.improvements = {

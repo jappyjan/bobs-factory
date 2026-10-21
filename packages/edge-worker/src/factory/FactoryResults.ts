@@ -1,24 +1,15 @@
+export { reviewCompletionInstructions } from "./InstructionText.js";
+
 import { z } from "zod";
-import {
-	ArchitectureReviewSchema,
-	ArchitectureSchema,
-} from "./Architecture.js";
 import { DeliveryContractSchema } from "./Delivery.js";
 import { ExternalGuideFields } from "./ExternalGuide.js";
-import {
-	CaptureSchema,
-	filterReview,
-	QaCaptureSchema,
-} from "./FactoryTools.js";
 import { FeedbackPolicySchema } from "./FeedbackPolicy.js";
-import { ImpactSchema } from "./Impact.js";
+import { validateLegacyResult } from "./OutputFormats.js";
 import { QaScopeFieldsSchema, scopeIssues } from "./Qa.js";
 import {
-	normalizeQuestionResult,
 	QuestionChoicesSchema,
 	QuestionRecommendationSchema,
 } from "./Questions.js";
-import { isReviewBrief, ReviewBriefSchema } from "./ReviewBrief.js";
 import { FlowSchema, SystemSchema } from "./VisualContracts.js";
 
 const text = z.string().min(1);
@@ -28,21 +19,7 @@ const architectureRevisionFields = {
 	status: z.string().optional(),
 	architectureRevision: z.boolean().optional(),
 };
-function validArchitectureHandback(result: {
-	status?: string;
-	architectureRevision?: boolean;
-	questions?: string[];
-}): boolean {
-	return (
-		result.architectureRevision !== true ||
-		(result.status === "blocked" &&
-			Array.isArray(result.questions) &&
-			result.questions.length === 0)
-	);
-}
-const architectureHandbackMessage =
-	"Architecture revision requires status=blocked and questions=[]; the configured proposal route owns review and any required acceptance";
-export const reviewCompletionInstructions = `Every code, visual or specialist reviewer must return status:"completed"|"blocked"|"failed" and blockers:[concrete missing-input/tooling reasons]. Status describes execution of your review, not whether the product passed QA. Use completed after the actual required review was performed, including when it found defects or failed QA criteria; report those failures as open findings with blockers:[]. Reserve failed for a failure to execute the review itself. An empty findings list never establishes review completion. If input or tools are unavailable, return blocked with a precise summary/recovery reason; do not manufacture a clean review.`;
+
 export const VisualScopeSchema = z
 	.object({
 		changed: z.boolean(),
@@ -358,156 +335,75 @@ export const GeneratedGuideSchema = GuideSchema.extend({
 });
 export type Guide = z.infer<typeof GuideSchema>;
 export type GuideChapter = NonNullable<Guide["chapters"]>[number];
-function parseFactoryResult(
-	step: string,
-	output: unknown,
-	qaContract?: "qa-v1",
-	videoContract?: "video-v1",
-): unknown {
-	if (videoContract && ["visual-scope", "capture"].includes(step))
-		z.object({ videoContract: z.literal(videoContract) }).parse(output);
-	switch (step) {
-		case "clarify":
-			return z
-				.object({
-					questions: z.array(text),
-					questionChoices: z.array(QuestionChoicesSchema).optional(),
-					questionRecommendations: z
-						.array(QuestionRecommendationSchema)
-						.optional(),
-					decisions: z.array(
-						z.object({ question: text, answer: text, reason: text }),
-					),
-					deliveryMode: z.enum(["repository", "external", "mixed"]).optional(),
-					requirements: z.array(text).min(1),
-				})
-				.parse(output);
-		case "plan":
-			return z
-				.object({
-					plan: text,
-					deliveryContract: DeliveryContractSchema.optional(),
-					assets: z.array(z.object({ path: text, purpose: text })),
-				})
-				.parse(output);
-		case "plan-review":
-			return z
-				.object({
-					approved: z.boolean(),
-					feedback: z.array(text),
-					deliveryContractDigest: text.optional(),
-				})
-				.parse(output);
-		case "implement":
-			return z
-				.object({
-					status: z.enum(["completed", "blocked"]),
-					architectureRevision: z.boolean().optional(),
-					summary: text,
-					checks: z.array(text),
-					questions: z.array(text),
-					questionChoices: z.array(QuestionChoicesSchema).optional(),
-					questionRecommendations: z
-						.array(QuestionRecommendationSchema)
-						.optional(),
-				})
-				.refine(
-					(result) =>
-						result.status === "blocked"
-							? result.questions.length > 0 ||
-								result.architectureRevision === true
-							: result.questions.length === 0 &&
-								result.architectureRevision !== true,
-					"Blocked implementation requires a question to resolve the blocker; completed implementation must have no questions",
-				)
-				.parse(output);
-		case "code-review":
-		case "visual-review": {
-			z.object({ status: z.enum(["completed", "blocked", "failed"]) }).parse(
-				output,
-			);
-			const review = filterReview(output);
-			if (
-				review.status !== "completed" &&
-				!review.blockers.length &&
-				!review.summary.trim()
+export const ClarifyResultSchema = z.object({
+	questions: z.array(text),
+	questionChoices: z.array(QuestionChoicesSchema).optional(),
+	questionRecommendations: z.array(QuestionRecommendationSchema).optional(),
+	decisions: z.array(z.object({ question: text, answer: text, reason: text })),
+	deliveryMode: z.enum(["repository", "external", "mixed"]).optional(),
+	requirements: z.array(text).min(1),
+});
+export const PlanResultSchema = z.object({
+	plan: text,
+	deliveryContract: DeliveryContractSchema.optional(),
+	assets: z.array(z.object({ path: text, purpose: text })),
+});
+export const PlanReviewResultSchema = z.object({
+	approved: z.boolean(),
+	feedback: z.array(text),
+	deliveryContractDigest: text.optional(),
+});
+/** Completion semantics are the step's `completion` rule, not part of the shape. */
+export const ImplementResultSchema = z.object({
+	status: z.enum(["completed", "blocked"]),
+	architectureRevision: z.boolean().optional(),
+	summary: text,
+	checks: z.array(text),
+	questions: z.array(text),
+	questionChoices: z.array(QuestionChoicesSchema).optional(),
+	questionRecommendations: z.array(QuestionRecommendationSchema).optional(),
+});
+export const CiFixResultSchema = z
+	.object({
+		...architectureRevisionFields,
+		questions: z.array(text).optional(),
+		addressedCommentIds: z.array(text).optional(),
+		addressedReviewIds: z.array(text).optional(),
+		reviewRequired: z.boolean().optional(),
+		feedbackPolicies: z.array(FeedbackPolicySchema).optional(),
+		commentAssessments: z
+			.array(
+				z.object({
+					id: text,
+					repositoryId: text.optional(),
+					bodySha256: z.string().regex(/^[a-f0-9]{64}$/),
+				}),
 			)
-				throw new Error(
-					"Blocked or failed review requires a concrete recovery reason",
-				);
-			if (review.status === "completed" && review.blockers.length)
-				throw new Error(
-					"Completed review cannot retain missing-input/tooling blockers",
-				);
-			if (step === "visual-review" && qaContract) {
-				z.object({ qaContract: z.literal(qaContract) }).parse(output);
-				return { ...review, qaContract };
-			}
-			// Only the frozen step definition can opt a run into QA.
-			delete review.qaContract;
-			delete review.qaReviewStamp;
-			return review;
-		}
-		case "visual-scope":
-			return qaContract
-				? QaScopeSchema.parse(output)
-				: VisualScopeSchema.parse(output);
-		case "capture":
-			return qaContract
-				? QaCaptureSchema.parse(output)
-				: CaptureSchema.parse(output);
-		case "guide":
-			return isReviewBrief(output)
-				? ReviewBriefSchema.parse(output)
-				: GuideSchema.parse(output);
-		case "ci-fix":
-			return z
-				.object({
-					...architectureRevisionFields,
-					questions: z.array(text).optional(),
-					addressedCommentIds: z.array(text).optional(),
-					addressedReviewIds: z.array(text).optional(),
-					reviewRequired: z.boolean().optional(),
-					feedbackPolicies: z.array(FeedbackPolicySchema).optional(),
-					commentAssessments: z
-						.array(
-							z.object({
-								id: text,
-								repositoryId: text.optional(),
-								bodySha256: z.string().regex(/^[a-f0-9]{64}$/),
-							}),
-						)
-						.optional(),
-				})
-				.passthrough()
-				.refine(validArchitectureHandback, architectureHandbackMessage)
-				.parse(output);
-		case "code-fix":
-		case "visual-fix":
-			return z
-				.object({
-					...architectureRevisionFields,
-					summary: text,
-					questions: z.array(text).optional(),
-					questionChoices: z.array(QuestionChoicesSchema).optional(),
-					questionRecommendations: z
-						.array(QuestionRecommendationSchema)
-						.optional(),
-					dispositions: z.array(
-						z.object({
-							id: text,
-							status: z.enum(["fixed", "rejected"]),
-							reason: text,
-						}),
-					),
-				})
-				.refine(validArchitectureHandback, architectureHandbackMessage)
-				.parse(output);
-		default:
-			return output;
-	}
-}
+			.optional(),
+	})
+	.passthrough();
+export const ReviewFixResultSchema = z.object({
+	...architectureRevisionFields,
+	summary: text,
+	questions: z.array(text).optional(),
+	questionChoices: z.array(QuestionChoicesSchema).optional(),
+	questionRecommendations: z.array(QuestionRecommendationSchema).optional(),
+	dispositions: z.array(
+		z.object({
+			id: text,
+			status: z.enum(["fixed", "rejected"]),
+			reason: text,
+		}),
+	),
+});
+export const ReviewStatusSchema = z.object({
+	status: z.enum(["completed", "blocked", "failed"]),
+});
 
+/**
+ * Historical entry point: validates a result as the bundled role with this ID
+ * would have been validated, through the format library and rule presets.
+ */
 export function validateFactoryResult(
 	step: string,
 	output: unknown,
@@ -516,17 +412,15 @@ export function validateFactoryResult(
 	architectureContract?: "architecture-v1" | "architecture-review-v1",
 	impactContract?: "impact-v1",
 ): unknown {
-	if (impactContract) return ImpactSchema.parse(output);
-	if (architectureContract === "architecture-v1")
-		return ArchitectureSchema.parse(output);
-	if (architectureContract === "architecture-review-v1")
-		return ArchitectureReviewSchema.parse(output);
-	const result = parseFactoryResult(step, output, qaContract, videoContract);
-	return result &&
-		typeof result === "object" &&
-		("questions" in result ||
-			"questionChoices" in result ||
-			"questionRecommendations" in result)
-		? normalizeQuestionResult(result)
-		: result;
+	return validateLegacyResult(
+		{
+			id: step,
+			type: "agent",
+			qaContract,
+			videoContract,
+			architectureContract,
+			impactContract,
+		},
+		output,
+	);
 }

@@ -1,0 +1,67 @@
+{"identity": {"source": "50e020294b8b414b2920af8952fd1467ae521180", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["pnpm", "--filter", "./apps/cli", "--filter", "./apps/f1", "test:run", "--maxWorkers=1"], "started": "2026-10-21T17:59:56.136790+00:00"}
+Scope: 2 of 20 workspace projects
+apps/cli test:run$ vitest run --passWithNoTests --maxWorkers=1
+apps/f1 test:run$ vitest run --passWithNoTests --maxWorkers=1
+apps/f1 test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/f1
+apps/cli test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/cli
+apps/cli test:run:  Test Files  21 passed (21)
+apps/cli test:run:       Tests  251 passed (251)
+apps/cli test:run:    Start at  20:59:57
+apps/cli test:run:    Duration  47.64s (transform 4.04s, setup 0ms, import 16.87s, tests 26.71s, environment 2ms)
+apps/cli test:run: Done
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:46.368Z [INFO ] [GitService] Creating multi-repo workspace at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-LBsX24/custom-root/delivered for 2 repositories
+apps/f1 test:run: 2026-10-21T18:00:46.368Z [INFO ] [GitService] Creating worktree for repo 'Fixture' at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-LBsX24/custom-root/delivered/Fixture
+apps/f1 test:run: 2026-10-21T18:00:46.368Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:46.424Z [INFO ] [GitService] Issue delivered has parent: undefined
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:46.549Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:46.817Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-LBsX24/custom-root/delivered/Fixture from origin/main (tracking main)
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:46.914Z [INFO ] [GitService] Creating worktree for repo 'Second' at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-LBsX24/custom-root/delivered/Second
+apps/f1 test:run: 2026-10-21T18:00:46.914Z [INFO ] [GitService] createSingleRepoWorktree for Second (id=second): baseBranchOverride=undefined
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:46.974Z [INFO ] [GitService] Issue delivered has parent: undefined
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:47.102Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:47.373Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-LBsX24/custom-root/delivered/Second from origin/main (tracking main)
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:47.577Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+apps/f1 test:run: 2026-10-21T18:00:47.577Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:47.628Z [INFO ] [GitService] Issue resumable has parent: undefined
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:47.759Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+apps/f1 test:run: stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: 2026-10-21T18:00:48.076Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-LBsX24/custom-root/resumable from origin/main (tracking main)
+apps/f1 test:run: {"storageRetentionCycles":[{"cycle":1,"snapshotBytes":143,"preparationBytes":120},{"cycle":2,"snapshotBytes":286,"preparationBytes":240},{"cycle":3,"snapshotBytes":286,"preparationBytes":360},{"cycle":4,"snapshotBytes":286,"preparationBytes":480},{"cycle":5,"snapshotBytes":286,"preparationBytes":600}],"maximumSimulatedWorkers":1}
+apps/f1 test:run:  ❯ test/storage-retention.test.ts (8 tests | 1 failed) 92226ms
+apps/f1 test:run:    × releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence 30028ms
+apps/f1 test:run: ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+apps/f1 test:run:  FAIL  test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: Error: Test timed out in 30000ms.
+apps/f1 test:run: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+apps/f1 test:run:  ❯ test/storage-retention.test.ts:195:3
+apps/f1 test:run:     193|  "grouped",
+apps/f1 test:run:     194|  "takeover",
+apps/f1 test:run:     195| ])("releases reviewed delivered %s work through startup reconciliation…
+apps/f1 test:run:        |   ^
+apps/f1 test:run:     196|  const { GitService } = await import(
+apps/f1 test:run:     197|   "../../../packages/edge-worker/src/GitService.js"
+apps/f1 test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+apps/f1 test:run:  FAIL  test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+apps/f1 test:run: Error: ENOTEMPTY: directory not empty, rmdir '/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-LBsX24/storage-retention'
+apps/f1 test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+apps/f1 test:run:  Test Files  1 failed | 1 passed (2)
+apps/f1 test:run:       Tests  1 failed | 16 passed (17)
+apps/f1 test:run:    Start at  20:59:57
+apps/f1 test:run:    Duration  99.13s (transform 3.80s, setup 0ms, import 6.48s, tests 92.23s, environment 0ms)
+apps/f1 test:run: Failed
+/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/f1:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-f1@0.1.0 test:run: `vitest run --passWithNoTests --maxWorkers=1`
+Exit status 1
+
+{"exitCode": 1, "ended": "2026-10-21T18:01:36.555898+00:00"}

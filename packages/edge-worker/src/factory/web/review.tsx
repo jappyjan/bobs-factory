@@ -40,6 +40,7 @@ import {
 	writeReviewProgress,
 } from "./review-state";
 import { ChapterVisual, Screens, SystemMap } from "./review-visuals";
+import { roleOutput, roleOutputKey } from "./run-output";
 import { Button, Markdown } from "./ui";
 
 export type Annotate = (
@@ -100,9 +101,12 @@ export function GuidedReview({
 			queryKey: ["guide", run.id, version],
 			enabled: Boolean(value?.__artifactPreview),
 			queryFn: async ({ signal }) => {
-				const guide = await api(`/api/runs/${run.id}/artifacts/guide`, {
-					signal,
-				});
+				const guide = await api(
+					`/api/runs/${run.id}/artifacts/${encodeURIComponent(roleOutputKey(run, "guide") ?? "guide")}`,
+					{
+						signal,
+					},
+				);
 				// An artifact endpoint returns the latest value. Refuse to label a
 				// replacement guide with the revision from an older dashboard response.
 				const bytes = await crypto.subtle.digest(
@@ -233,6 +237,15 @@ function ReviewReader({
 		navigate = useNavigate(),
 		revision = signature(storageKey),
 		params = new URLSearchParams(location.search);
+	// Sparse retained guides remain readable; absence never becomes a readiness
+	// or verification claim, and the original guide still owns hashes/progress.
+	const decisionSummary =
+			guide.decision?.summaryShort ?? guide.decision?.summary,
+		requirements = guide.requirements ?? [],
+		risks = guide.risks ?? [],
+		checks = guide.checks ?? [],
+		hasRecordedChecks = Array.isArray(guide.checks),
+		instructions = guide.reviewInstructions ?? [];
 	const [progress, setProgress] = useRestorableState<
 			ReturnType<typeof readProgress>
 		>(`review/progress/${storageKey}`, () => {
@@ -274,8 +287,8 @@ function ReviewReader({
 			queryKey: [
 				"guide-evidence",
 				run.id,
-				run.outputs.capture?.__artifactHash ??
-					signature(run.outputs.capture ?? {}),
+				roleOutput(run, "capture")?.__artifactHash ??
+					signature(roleOutput(run, "capture") ?? {}),
 			],
 			queryFn: ({ signal }) => api(`/api/runs/${run.id}/evidence`, { signal }),
 			staleTime: Infinity,
@@ -572,7 +585,7 @@ function ReviewReader({
 					[0],
 					<h2 ref={heading} tabIndex={-1}>
 						{page === 0
-							? (guide.tldr ?? guide.goal)
+							? (guide.tldr ?? guide.goal ?? guide.summary)
 							: files
 								? "What each step touched"
 								: final
@@ -758,17 +771,21 @@ function ReviewReader({
 					</>
 				) : final ? (
 					<>
-						{annotate(
-							guide.decision.summaryShort
-								? "/decision/summaryShort"
-								: "/decision/summary",
-							guide.decision.summaryShort ?? guide.decision.summary,
-							"Text block",
-							guide.decision.summaryShort ?? guide.decision.summary,
-							[1],
-							<Markdown>
-								{guide.decision.summaryShort ?? guide.decision.summary}
-							</Markdown>,
+						{decisionSummary ? (
+							annotate(
+								guide.decision?.summaryShort
+									? "/decision/summaryShort"
+									: "/decision/summary",
+								decisionSummary,
+								"Text block",
+								decisionSummary,
+								[1],
+								<Markdown>{decisionSummary}</Markdown>,
+							)
+						) : (
+							<p className="muted">
+								No decision was recorded in this saved guide.
+							</p>
 						)}
 						<ol className="guide-route decision-route">
 							{chapters.map((c, i) => (
@@ -804,22 +821,33 @@ function ReviewReader({
 								</li>
 							))}
 						</ol>
-						{guide.risks.length > 0 && (
+						{risks.length > 0 && (
 							<details {...disclosure("risks")}>
-								<summary>Overall risks ({guide.risks.length})</summary>
-								{lines(guide.risks, "/risks", [2])}
+								<summary>Overall risks ({risks.length})</summary>
+								{lines(risks, "/risks", [2])}
 							</details>
 						)}
 						<details {...disclosure("criteria")}>
 							<summary>
-								Acceptance criteria ·{" "}
-								{
-									guide.requirements.filter((r) => r.status === "supported")
-										.length
-								}{" "}
-								/ {guide.requirements.length} supported
+								Acceptance criteria
+								{requirements.length > 0 && (
+									<>
+										{" "}
+										·{" "}
+										{
+											requirements.filter((r) => r.status === "supported")
+												.length
+										}{" "}
+										/ {requirements.length} supported
+									</>
+								)}
 							</summary>
-							{guide.requirements.map((r, i) => (
+							{!requirements.length && (
+								<p className="muted">
+									No acceptance criteria were recorded in this saved guide.
+								</p>
+							)}
+							{requirements.map((r, i) => (
 								<section key={i}>
 									{annotate(
 										`/requirements/${i}/criterion`,
@@ -898,12 +926,28 @@ function ReviewReader({
 							</details>
 						)}
 						<details {...disclosure("verification")}>
-							<summary>Verification evidence ({guide.checks.length})</summary>
-							{lines(guide.checks, "/checks", [3])}
+							<summary>
+								Verification evidence
+								{hasRecordedChecks && ` (${checks.length})`}
+							</summary>
+							{hasRecordedChecks ? (
+								lines(checks, "/checks", [3])
+							) : (
+								<p className="muted">
+									No verification evidence was recorded in this saved guide.
+								</p>
+							)}
 						</details>
 						<details {...disclosure("instructions")}>
 							<summary>Final review instructions</summary>
-							{lines(guide.reviewInstructions, "/reviewInstructions", [5])}
+							{instructions.length ? (
+								lines(instructions, "/reviewInstructions", [5])
+							) : (
+								<p className="muted">
+									No final review instructions were recorded in this saved
+									guide.
+								</p>
+							)}
 						</details>
 						<p className="muted">
 							Review markers record reading progress. Approval is a separate
@@ -1123,14 +1167,14 @@ function ReviewReader({
 								<section key={i}>
 									{annotate(
 										`/requirements/${i}/criterion`,
-										guide.requirements[i]?.criterion ?? "",
+										requirements[i]?.criterion ?? "",
 										"Acceptance criterion",
-										guide.requirements[i]?.criterion ?? "",
+										requirements[i]?.criterion ?? "",
 										[10, i, 0],
-										<strong>{guide.requirements[i]?.criterion}</strong>,
+										<strong>{requirements[i]?.criterion}</strong>,
 									)}
 									{lines(
-										guide.requirements[i]?.evidence ?? [],
+										requirements[i]?.evidence ?? [],
 										`/requirements/${i}/evidence`,
 										[10, i, 1],
 									)}

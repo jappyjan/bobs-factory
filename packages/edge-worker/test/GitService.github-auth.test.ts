@@ -22,9 +22,11 @@ import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { executeCommand } from "../src/factory/FactoryTools.js";
 import {
+	githubGitEnvironment,
 	managedGithubAgentEnvironment,
 	managedGithubGitEnvironment,
 } from "../src/factory/GithubApi.js";
+import { WorkflowSchema } from "../src/factory/Workflow.js";
 import type {
 	ExecutionContext,
 	FactoryRun,
@@ -192,6 +194,70 @@ function issueRunnerInput(f: ReturnType<typeof fixture>, workspace = f.repo) {
 		requireLinearWorkspaceId: () => "cli-workspace",
 	};
 }
+
+it.each([
+	false,
+	true,
+])("keeps generic repository data out of managed credentials (frozen selection=%s)", async (frozen) => {
+	const f = fixture();
+	hostEnvironment(f.managedEnvironment);
+	const workflow = WorkflowSchema.parse({
+		id: "metadata-owner",
+		name: "Owner",
+		stepConfigVersion: "step-config-v1",
+		steps: [
+			{
+				id: "repository",
+				name: "Data",
+				type: "agent",
+				prompt: "Return data",
+				checks: [],
+			},
+		],
+	});
+	const context = {
+		factoryHome: f.root,
+		step: workflow.steps[0],
+		run: {
+			repositoryId: f.repository.id,
+			workspace: f.repo,
+			workflow,
+			outputs: {
+				repository: { githubUrl: "https://github.com/attacker/unrelated" },
+			},
+			...(frozen
+				? {
+						repositories: [
+							{
+								id: f.repository.id,
+								name: "Selected",
+								workspace: f.repo,
+								repositoryPath: f.repo,
+								baseBranch: "main",
+								githubUrl: f.repository.githubUrl,
+							},
+						],
+					}
+				: {}),
+		},
+	} as ExecutionContext;
+	if (frozen) {
+		f.git([
+			"remote",
+			"set-url",
+			"origin",
+			"git@github.com:attacker/unrelated.git",
+		]);
+		await expect(githubGitEnvironment(context)).rejects.toThrow(
+			"origin differs from the selected",
+		);
+	} else {
+		const environment = await githubGitEnvironment(context);
+		expect(JSON.parse(environment.BOBS_FACTORY_GITHUB_REPOSITORIES!)).toEqual([
+			{ host: "github.com", project: "test/repo" },
+		]);
+	}
+});
 
 it("fetches an SSH-origin project with browser credentials and pushes its worktree through canonical HTTPS without changing stored config", async () => {
 	const f = fixture();

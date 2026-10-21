@@ -16,6 +16,7 @@ import {
 } from "../src/factory/MergeReadiness.js";
 import { questionInstructions } from "../src/factory/Questions.js";
 import { validateInventory } from "../src/factory/SpecialistReview.js";
+import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import { SessionSemaphore } from "../src/RunnerConcurrency.js";
@@ -72,7 +73,12 @@ async function fixture() {
 				"visual-gate": { approved: true },
 			},
 		},
-		step: { id: "capture", name: "Capture", prompt: "Capture screenshots" },
+		step: {
+			id: "capture",
+			name: "Capture",
+			type: "agent",
+			prompt: "Capture screenshots",
+		},
 		evidenceDir,
 		log: vi.fn(),
 		signal: new AbortController().signal,
@@ -153,6 +159,21 @@ async function fixture() {
 			return runner;
 		}),
 	});
+	// This fixture deliberately exercises the old frozen role shapes. Interpret
+	// them at the same explicit load boundary used by persisted runtime graphs.
+	const execute = worker.executeFactoryAgent.bind(worker);
+	worker.executeFactoryAgent = (context: ExecutionContext) => {
+		context.step.type ??= "agent";
+		registerWorkflowConfig({
+			id: context.run.workflow.id,
+			steps: [context.step],
+		});
+		context.run.mergeReadiness ??= context.run.outputs[
+			"merge-readiness"
+		] as typeof context.run.mergeReadiness;
+		return execute(context);
+	};
+	registerWorkflowConfig({ id: ctx.run.workflow.id, steps: [ctx.step] });
 	return {
 		ctx,
 		saved,
@@ -259,6 +280,69 @@ it.each([
 	expect(f.runner.start).toHaveBeenCalledTimes(saved ? 1 : 2);
 });
 
+it("corrects a resource-limited inline result in the saved native conversation", async () => {
+	const f = await fixture();
+	f.ctx.step = {
+		id: "custom-inline-role",
+		name: "Return a label",
+		type: "agent",
+		prompt: "Return a label",
+		configVersion: "step-config-v1",
+		json: true,
+		output: {
+			schema: {
+				type: "object",
+				properties: { label: { type: "string", pattern: "^a+a+$" } },
+				required: ["label"],
+				additionalProperties: false,
+			},
+		},
+	} as typeof f.ctx.step;
+	f.ctx.run.step = "pipeline/custom-inline-role";
+	f.ctx.resumeAgent!.result!.output = { label: `${"a".repeat(100_000)}!` };
+	f.runner.getMessages = () => [
+		{ type: "result", result: JSON.stringify({ label: "aa" }) },
+	];
+	const corrected = await f.worker.executeFactoryAgent(f.ctx);
+	expect(corrected).toEqual({ label: "aa" });
+	expect(f.getInput().outputCorrection.issues).toEqual([
+		expect.objectContaining({
+			path: "/",
+			message: expect.stringMatching(
+				/execution limit|wall limit|resource limits/,
+			),
+		}),
+	]);
+	expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
+	expect(f.runner.start).toHaveBeenCalledTimes(1);
+});
+
+it("cancels inline validation without consuming native correction attempts", async () => {
+	const f = await fixture();
+	f.ctx.step = {
+		id: "custom-inline-role",
+		name: "Return a label",
+		type: "agent",
+		prompt: "Return a label",
+		configVersion: "step-config-v1",
+		json: true,
+		output: { schema: { type: "string", pattern: "^a+a+$" } },
+	} as typeof f.ctx.step;
+	f.ctx.run.step = "pipeline/custom-inline-role";
+	f.ctx.resumeAgent!.result!.output = `${"a".repeat(100_000)}!`;
+	const controller = new AbortController();
+	f.ctx.signal = controller.signal;
+	setTimeout(
+		() => controller.abort(new DOMException("Run stopped", "AbortError")),
+		30,
+	);
+	await expect(f.worker.executeFactoryAgent(f.ctx)).rejects.toMatchObject({
+		name: "AbortError",
+	});
+	expect(f.ctx.resumeAgent!.rejected?.attempts ?? 0).toBe(0);
+	expect(f.runner.start).not.toHaveBeenCalled();
+});
+
 it("corrects a revised delivery version in its saved planner conversation before independent review", async () => {
 	const f = await fixture();
 	f.ctx.step = { ...f.ctx.step, id: "plan" };
@@ -363,12 +447,21 @@ it("supplies accepted workflow gates and original operator receipts to a restric
 	expect(f.getInput().workflowExecution).toEqual({
 		contract: "workflow-execution-v1",
 		rootWorkflowId: "legacy",
-		currentStep: { key: "implement", id: "implement", type: "agent" },
+		currentStep: {
+			key: "implement",
+			id: "implement",
+			type: "agent",
+		},
 		workflows: [
 			{
 				id: "legacy",
 				steps: [
-					{ id: "implement", name: "Implement", type: "agent", branches: [] },
+					{
+						id: "implement",
+						name: "Implement",
+						type: "agent",
+						branches: [],
+					},
 				],
 			},
 		],
@@ -1317,4 +1410,56 @@ it("corrects a missing nonvisual map through the same guide-only conversation", 
 	);
 	expect(f.ctx.checkpointAgent).toHaveBeenCalled();
 	expect(f.runner.start).toHaveBeenCalledTimes(1);
+});
+
+it("corrects a renamed generic schema and rule in the existing bounded native conversation", async () => {
+	const f = await fixture();
+	f.ctx.step = {
+		id: "independent-step",
+		name: "Validate report",
+		type: "agent",
+		prompt: "Return the configured report",
+		branches: [],
+		maxVisits: 16,
+		output: {
+			schema: {
+				type: "object",
+				required: ["status", "blockers"],
+				properties: {
+					status: { enum: ["completed", "blocked"] },
+					blockers: { type: "array", items: { type: "string" } },
+				},
+				additionalProperties: false,
+			},
+		},
+		rules: [
+			{
+				message: "Completed reports have no blockers",
+				when: { path: "/status", equals: "completed" },
+				require: { path: "/blockers", empty: true },
+			},
+		],
+	};
+	f.ctx.stepKey = f.ctx.run.step = "independent-step";
+	f.ctx.resumeAgent = undefined;
+	const replies = [
+		{ status: "invalid", blockers: [] },
+		{ status: "completed", blockers: ["unresolved"] },
+		{ status: "completed", blockers: [] },
+	];
+	let index = 0;
+	f.runner.getMessages = () => [
+		{
+			type: "result",
+			result: JSON.stringify(replies[Math.min(index++, replies.length - 1)]),
+		},
+	];
+	const result = await f.worker.executeFactoryAgent(f.ctx);
+	expect(result).toEqual(replies[2]);
+	expect(f.runner.start).toHaveBeenCalledTimes(3);
+	expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
+	expect(f.getInput().outputCorrection.issues).toEqual([
+		{ path: "/", message: "Completed reports have no blockers" },
+	]);
+	expect(f.getInput().stepConfiguration.output).toEqual(f.ctx.step.output);
 });

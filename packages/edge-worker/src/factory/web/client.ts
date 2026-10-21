@@ -36,6 +36,7 @@ import {
 	usePwa,
 	versionMismatch,
 } from "./pwa";
+import { roleOutput } from "./run-output";
 
 export {
 	active,
@@ -629,41 +630,16 @@ export function ago(at?: string) {
 export function elapsed(at: string) {
 	return ago(at).replace(" ago", "");
 }
-export const icons: Record<string, string> = {
-	"existing-work": "🔎",
-	"assess-existing": "🧭",
-	clarify: "💬",
-	decisions: "📌",
-	plan: "🗺️",
-	"plan-review": "🧐",
-	implement: "🔨",
-	"draft-pr": "🚀",
-	"code-review": "👀",
-	"review-gate": "🚦",
-	"code-fix": "🔧",
-	ci: "🧪",
-	"ci-fix": "🧪",
-	"visual-scope": "🎯",
-	capture: "🧪",
-	"visual-review": "👀",
-	"visual-gate": "✅",
-	"visual-fix": "🔧",
-	guide: "📖",
-	handoff: "🎁",
-	"human-review": "🙋",
-	"human-fix": "🔧",
-	merge: "🎉",
-	simple: "⚡",
-};
-export function phase(id: string) {
-	if (/visual|capture/.test(id)) return "indigo";
-	if (/ci|merge-readiness/.test(id)) return "blue";
-	if (/guide|handoff|human|merge/.test(id)) return "violet";
-	if (/review|code-fix/.test(id)) return "green";
-	if (/plan/.test(id)) return "orange";
-	if (/implement|draft|simple/.test(id)) return "yellow";
-	return "red";
+export function phase(step: any) {
+	return step?.presentation?.phase ?? "red";
 }
+export function stepIcon(step: any) {
+	return step?.presentation?.icon ?? (step?.type === "agent" ? "✦" : "⚙️");
+}
+export function stepFixing(step: any): boolean {
+	return step?.presentation?.fixing === true;
+}
+
 export function stepsOf(
 	run: any,
 	config: any,
@@ -707,6 +683,12 @@ export function stepsOf(
 		});
 	return walk(workflowOf(run, config)?.steps ?? []);
 }
+export function currentStepOf(run: any, config: any) {
+	return run.currentStep?.key === run.step
+		? run.currentStep
+		: stepsOf(run, config).find((step) => step.key === run.step);
+}
+
 export function workflowOf(run: any, config: any) {
 	return typeof run.workflow === "object"
 		? run.workflow
@@ -773,7 +755,10 @@ export function artifactsOf(
 		}));
 }
 export function screenshotUrl(run: any, index: number, artifact = "capture") {
-	const value = run.outputs?.[artifact];
+	const value =
+		artifact === "capture"
+			? roleOutput(run, "capture")
+			: run.outputs?.[artifact];
 	const shot = value?.screenshots?.[index];
 	const version =
 		shot?.imageSha256 ??

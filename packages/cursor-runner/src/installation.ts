@@ -16,7 +16,7 @@ export function resolvePreparedCursorInstallation(): {
 	const configured = process.env.BOBS_FACTORY_CURSOR_SDK_PATH;
 	if (!configured)
 		throw new Error(
-			"Cursor requires a user-prepared @cursor/sdk 1.0.19 installation. Set BOBS_FACTORY_CURSOR_SDK_PATH to its package directory and BOBS_FACTORY_CURSOR_NODE to Node >=22.13 (or put Node on PATH). See docs/distribution/README.md. Bob’s Factory does not install or authenticate Cursor.",
+			"Cursor requires a user-prepared @cursor/sdk 1.0.19 installation. Set BOBS_FACTORY_CURSOR_SDK_PATH to its package directory and BOBS_FACTORY_CURSOR_NODE to Node 24.x (or put Node 24 on PATH). See docs/distribution/README.md. Bob’s Factory does not install or authenticate Cursor.",
 		);
 	const sdk = realpathSync(resolvePath(configured));
 	const version = sdkVersion(sdk);

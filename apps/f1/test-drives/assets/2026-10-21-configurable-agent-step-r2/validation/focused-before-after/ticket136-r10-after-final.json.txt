@@ -1,0 +1,18 @@
+[
+  {
+    "name": "node24",
+    "exitCode": 0,
+    "wallMs": 600.24,
+    "stdout": "{\"runtime\":\"Node 24.21.0\",\"acceptedWorkflow\":true,\"limits\":{\"conditions\":100000,\"work\":1000000,\"slice\":2048,\"collection\":20000,\"dataDepth\":48,\"canonicalCharacters\":1000000},\"results\":[{\"items\":5000,\"inputBytes\":58901,\"limited\":true,\"ticks\":71,\"maxDelayMs\":12.330583999999988,\"elapsedMs\":91.79249999999996},{\"items\":20000,\"inputBytes\":248901,\"limited\":true,\"ticks\":59,\"maxDelayMs\":1.6307499999999777,\"elapsedMs\":58.908582999999965}],\"cancelled\":true,\"cancelElapsedMs\":6.851625000000013,\"usefulRulePassed\":true}\n",
+    "stderr": "(node:56437) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.\n(Use `node --trace-deprecation ...` to show where the warning was created)\n",
+    "artifactSha256": "ecffdca20f7868f4a144ce765b0771cd10faef8720e00f71b0c7a969f30e6942"
+  },
+  {
+    "name": "compiled-bun",
+    "exitCode": 0,
+    "wallMs": 1426.22,
+    "stdout": "{\"runtime\":\"Bun 1.4.2\",\"acceptedWorkflow\":true,\"limits\":{\"conditions\":100000,\"work\":1000000,\"slice\":2048,\"collection\":20000,\"dataDepth\":48,\"canonicalCharacters\":1000000},\"results\":[{\"items\":5000,\"inputBytes\":58901,\"limited\":true,\"ticks\":33,\"maxDelayMs\":9.079999999999984,\"elapsedMs\":57.33683300000001},{\"items\":20000,\"inputBytes\":248901,\"limited\":true,\"ticks\":32,\"maxDelayMs\":6.880667000000017,\"elapsedMs\":45.43545800000004}],\"cancelled\":true,\"cancelElapsedMs\":6.872000000000014,\"usefulRulePassed\":true}\n",
+    "stderr": "",
+    "artifactSha256": "0e98de0f5b2cbc5e85cf818a25ccb000f710d1a07d200caa2de2dc8e2078aa52"
+  }
+]

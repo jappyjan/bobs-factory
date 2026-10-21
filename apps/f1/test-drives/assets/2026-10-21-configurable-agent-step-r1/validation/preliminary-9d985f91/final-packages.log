@@ -1,0 +1,121 @@
+{"identity": {"source": "9d985f91bf5accedac2c64949ff2731aeb8a1e70", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["pnpm", "test:packages:run", "--maxWorkers=2"], "started": "2026-10-21T17:34:24.708290+00:00"}
+
+> bobs-factory-monorepo@1.0.1 test:packages:run /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery
+> pnpm --filter './packages/*' test:run --maxWorkers=2
+
+Scope: 16 of 20 workspace projects
+packages/cloudflare-tunnel-client test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/core test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/mcp-tools test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/cloudflare-tunnel-client test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/cloudflare-tunnel-client
+packages/mcp-tools test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/mcp-tools
+packages/core test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/core
+packages/cloudflare-tunnel-client test:run:  Test Files  2 passed (2)
+packages/cloudflare-tunnel-client test:run:       Tests  26 passed (26)
+packages/cloudflare-tunnel-client test:run:    Start at  20:34:26
+packages/cloudflare-tunnel-client test:run:    Duration  506ms (transform 177ms, setup 0ms, import 232ms, tests 79ms, environment 0ms)
+packages/cloudflare-tunnel-client test:run: Done
+packages/core test:run:  ❯ test/OwnedResourceClaim.test.ts (1 test | 1 failed) 5012ms
+packages/core test:run:    × serializes member reservations and artifact acquisition with the whole workspace group 5012ms
+packages/core test:run:  ❯ test/StorageRetention.test.ts (15 tests | 5 failed) 30029ms
+packages/core test:run:    × recovers interrupted registration at finish without duplicating inventory 5230ms
+packages/core test:run:    × preserves the unfinished marker when interrupted publication has conflicting identity 5098ms
+packages/core test:run:    × preserves the unfinished marker when interrupted publication has conflicting record 5018ms
+packages/core test:run:    × preserves the unfinished marker when interrupted publication has conflicting index 315ms
+packages/core test:run:    × recovers an interrupted record revision while preserving its index and count 5139ms
+packages/core test:run: ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+packages/core test:run:  FAIL  test/OwnedResourceClaim.test.ts > serializes member reservations and artifact acquisition with the whole workspace group
+packages/core test:run: Error: Test timed out in 5000ms.
+packages/core test:run: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+packages/core test:run:  ❯ test/OwnedResourceClaim.test.ts:19:1
+packages/core test:run:      17| } from "../src/StorageRetention.js";
+packages/core test:run:      18|
+packages/core test:run:      19| it("serializes member reservations and artifact acquisition with the w…
+packages/core test:run:        | ^
+packages/core test:run:      20|  const home = await realpath(
+packages/core test:run:      21|   await mkdtemp(join(tmpdir(), "storage-claim-race-")),
+packages/core test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+packages/core test:run:  FAIL  test/StorageRetention.test.ts > recovers interrupted registration at finish without duplicating inventory
+packages/core test:run: Error: Test timed out in 5000ms.
+packages/core test:run: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+packages/core test:run:  ❯ test/StorageRetention.test.ts:149:2
+packages/core test:run:     147|  "finish",
+packages/core test:run:     148| ] as const) {
+packages/core test:run:     149|  it(`recovers interrupted registration at ${boundary} without duplicat…
+packages/core test:run:        |  ^
+packages/core test:run:     150|   const { store, home, path, root } = await fixture();
+packages/core test:run:     151|   const rename = filesystem.rename;
+packages/core test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+packages/core test:run:  FAIL  test/StorageRetention.test.ts > recovers interrupted registration at finish without duplicating inventory
+packages/core test:run: Error: ENOTEMPTY: directory not empty, rmdir '/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/storage-records-3WytzI/storage-retention'
+packages/core test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+packages/core test:run:  FAIL  test/StorageRetention.test.ts > preserves the unfinished marker when interrupted publication has conflicting identity
+packages/core test:run:  FAIL  test/StorageRetention.test.ts > preserves the unfinished marker when interrupted publication has conflicting record
+packages/core test:run: Error: Test timed out in 5000ms.
+packages/core test:run: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+packages/core test:run:  ❯ test/StorageRetention.test.ts:212:3
+packages/core test:run:     210|  "page",
+packages/core test:run:     211|  "count",
+packages/core test:run:     212| ])("preserves the unfinished marker when interrupted publication has c…
+packages/core test:run:        |   ^
+packages/core test:run:     213|  const { store, path, root } = await fixture();
+packages/core test:run:     214|  const rename = filesystem.rename;
+packages/core test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+packages/core test:run:  FAIL  test/StorageRetention.test.ts > preserves the unfinished marker when interrupted publication has conflicting index
+packages/core test:run: AssertionError: promise resolved "{ version: 1, …(10) }" instead of rejecting
+packages/core test:run: - Expected
+packages/core test:run: + Received
+packages/core test:run: - Error {
+packages/core test:run: -   "message": "rejected promise",
+packages/core test:run: + {
+packages/core test:run: +   "category": "migration",
+packages/core test:run: +   "dependencies": [
+packages/core test:run: +     "unreconciled",
+packages/core test:run: +   ],
+packages/core test:run: +   "evidence": [],
+packages/core test:run: +   "id": "724f69cb-9f0e-4874-9778-e5aa6466b370",
+packages/core test:run: +   "identity": {
+packages/core test:run: +     "birthtime": 1792604088677.2393,
+packages/core test:run: +     "device": "16777233",
+packages/core test:run: +     "inode": "133198738",
+packages/core test:run: +   },
+packages/core test:run: +   "operation": "one",
+packages/core test:run: +   "path": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/storage-records-JKeQEg/updates/snapshots/one",
+packages/core test:run: +   "producer": "test",
+packages/core test:run: +   "registeredAt": "2026-10-21T17:34:48.678Z",
+packages/core test:run: +   "root": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/storage-records-JKeQEg/updates/snapshots",
+packages/core test:run: +   "version": 1,
+packages/core test:run:   }
+packages/core test:run:  ❯ test/StorageRetention.test.ts:235:3
+packages/core test:run:     233|    evidence: [],
+packages/core test:run:     234|   }),
+packages/core test:run:     235|  ).rejects.toThrow("injected");
+packages/core test:run:        |   ^
+packages/core test:run:     236|  spy.mockRestore();
+packages/core test:run:     237|  const { publishStorageJson, storageDigest } = await import(
+packages/core test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯
+packages/core test:run:  FAIL  test/StorageRetention.test.ts > recovers an interrupted record revision while preserving its index and count
+packages/core test:run: Error: Test timed out in 5000ms.
+packages/core test:run: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+packages/core test:run:  ❯ test/StorageRetention.test.ts:269:1
+packages/core test:run:     267| });
+packages/core test:run:     268|
+packages/core test:run:     269| it("recovers an interrupted record revision while preserving its index…
+packages/core test:run:        | ^
+packages/core test:run:     270|  const { store, home, path, root } = await fixture();
+packages/core test:run:     271|  const record = await store.register({
+packages/core test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯
+packages/core test:run:  FAIL  test/StorageRetention.test.ts > recovers an interrupted record revision while preserving its index and count
+packages/core test:run: Error: ENOTEMPTY: directory not empty, rmdir '/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/storage-records-LPmwA4/storage-retention'
+packages/core test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯
+packages/core test:run:  Test Files  2 failed | 17 passed (19)
+packages/core test:run:       Tests  6 failed | 257 passed (263)
+packages/core test:run:    Start at  20:34:26
+packages/core test:run:    Duration  30.79s (transform 14.09s, setup 0ms, import 16.17s, tests 41.93s, environment 1ms)
+packages/core test:run: Failed
+/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/core:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-core@0.2.73 test:run: `vitest run --passWithNoTests --maxWorkers=2`
+Exit status 1
+ ELIFECYCLE  Command failed with exit code 1.
+
+{"exitCode": 1, "ended": "2026-10-21T17:34:57.943495+00:00"}

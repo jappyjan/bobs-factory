@@ -102,6 +102,29 @@ function child(command, args, env) {
 	return { process, exited, output: () => output };
 }
 
+for (const major of [20, 22, 23, 25])
+	test(`rejects unsupported Node ${major} before downloads or trial state`, async () => {
+		const f = fixture();
+		try {
+			const version = join(f.work, "unsupported-node.mjs");
+			writeFileSync(
+				version,
+				`Object.defineProperty(process.versions, 'node', {value: '${major}.0.0'});globalThis.fetch=async()=>{throw Error('Unexpected download on unsupported Node');};`,
+			);
+			const current = child(
+				process.execPath,
+				["--import", version, launcher],
+				f.env,
+			);
+			assert.notEqual(await current.exited, 0);
+			assert.match(current.output(), /Node\.js 24\.x is required/);
+			assert.equal(existsSync(f.trialHome), false);
+			assert.deepEqual(readdirSync(f.temp), []);
+		} finally {
+			f.cleanup();
+		}
+	});
+
 for (const noOpen of [false, true])
 	test(`packed npm trial usable dashboard, ${noOpen ? "no-browser" : "browser"}, exclusivity and retained state${binary ? " (native)" : " (controlled protocol)"}`, {
 		timeout: 30000,

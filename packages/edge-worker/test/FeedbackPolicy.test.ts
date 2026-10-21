@@ -26,16 +26,37 @@ const policy = (action = "ignore", index = 0, instruction = quote) => ({
 	reason: "Explicit user direction",
 	source: { path: `answers/${index}/answer`, quote: instruction },
 });
-const context = () =>
-	({
+const context = () => {
+	const step = {
+		id: "ci-fix",
+		type: "agent",
+		checks: ["feedback-assessment"],
+		reads: { ci: "ci", handoff: "handoff", guide: "guide" },
+	};
+	const workflow = {
+		id: "outer",
+		steps: [{ id: "nested", type: "workflow", workflow: "nested" }],
+	};
+	return {
+		step,
 		run: {
+			workflow,
+			workflowDefinitions: [
+				workflow,
+				{
+					id: "nested",
+					steps: [{ id: "pipeline", type: "workflow", workflow: "leaf" }],
+				},
+				{ id: "leaf", steps: [step, { id: "ci", type: "tool", tool: "ci" }] },
+			],
 			input: "Implement the change",
 			createdAt: "2026-10-07T01:00:00Z",
 			answers: [{ answer: quote, questions: [], at: "2026-10-07T02:00:00Z" }],
 			history: [],
 			outputs: {},
 		},
-	}) as unknown as ExecutionContext;
+	} as unknown as ExecutionContext;
+};
 const snapshot = async (comments = [comment], extra = {}) => {
 	const receipt = await inspectMergeReadiness(
 		async (_exe, args) =>
@@ -261,13 +282,20 @@ it("binds grouped feedback to repositories, retains it after restart and detects
 	ctx.run.repositories = repositories;
 	const receipts = await Promise.all([snapshot(), snapshot()]);
 	for (const receipt of receipts) assessFeedback(ctx, receipt);
-	ctx.run.outputs.ci = aggregateDeliveries(
+	const deliveries = aggregateDeliveries(
 		receipts.map((output, i) => ({
 			repositoryId: repositories[i]!.id,
 			name: repositories[i]!.name,
 			output,
 		})),
 	);
+	ctx.outputs = { ci: deliveries };
+	ctx.run.outputs["nested/pipeline/ci"] = deliveries;
+	ctx.run.history.push({
+		step: "nested/pipeline/ci",
+		output: deliveries,
+		at: "2026-10-07T02:30:00Z",
+	});
 	const original = feedbackDigest(ctx.run);
 	const assessment = (repositoryId: string) => ({
 		repositoryId,
@@ -283,7 +311,7 @@ it("binds grouped feedback to repositories, retains it after restart and detects
 		recordFeedbackAssessment(ctx, { commentAssessments: [assessment("a")] }),
 	).toThrow("b:42");
 	const supplied = (
-		ctx.run.outputs.ci as {
+		deliveries as {
 			unassessedComments: {
 				id: string;
 				repositoryId: string;
@@ -337,10 +365,10 @@ it("binds grouped feedback to repositories, retains it after restart and detects
 		edited,
 	);
 	expect(edited.unassessedComments).toHaveLength(1);
-	(ctx.run.outputs.ci as any).deliveries[1].output = edited;
+	(deliveries as any).deliveries[1].output = edited;
 	expect(feedbackDigest(ctx.run)).not.toBe(original);
 	const bodyDigest = feedbackDigest(ctx.run);
-	(ctx.run.outputs.ci as any).deliveries[1].output.threads = [
+	(deliveries as any).deliveries[1].output.threads = [
 		{
 			id: "t1",
 			isResolved: false,
@@ -349,11 +377,11 @@ it("binds grouped feedback to repositories, retains it after restart and detects
 	];
 	expect(feedbackDigest(ctx.run)).not.toBe(bodyDigest);
 	const threadDigest = feedbackDigest(ctx.run);
-	(ctx.run.outputs.ci as any).deliveries[1].output.reviews = [
+	(deliveries as any).deliveries[1].output.reviews = [
 		{ id: "r1", state: "CHANGES_REQUESTED" },
 	];
 	expect(feedbackDigest(ctx.run)).not.toBe(threadDigest);
 	const reviewDigest = feedbackDigest(ctx.run);
-	(ctx.run.outputs.ci as any).deliveries.reverse();
+	(deliveries as any).deliveries.reverse();
 	expect(feedbackDigest(ctx.run)).toBe(reviewDigest);
 });

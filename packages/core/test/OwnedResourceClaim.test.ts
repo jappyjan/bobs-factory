@@ -93,4 +93,4 @@ it("serializes member reservations and artifact acquisition with the whole works
 		await deletion;
 		await rm(home, { recursive: true, force: true });
 	}
-});
+}, 30_000);

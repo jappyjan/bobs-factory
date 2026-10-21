@@ -269,13 +269,13 @@ it("waits for a provider-confirmed running retry and refreshes failed-check evid
 	run.outputs["draft-pr"] = { url };
 	try {
 		const execution = runtime.launch(run);
-		await waitFor(() => expect(retries).toBe(1));
+		await waitFor(() => expect(retries, run.error).toBe(1));
 		await poll();
 		expect(run.status).toBe("running");
 		expect(agent).not.toHaveBeenCalled();
-		expect(retries).toBe(1);
+		expect(retries, run.error).toBe(1);
 		await waitFor(() =>
-			expect(run.outputs["merge-readiness"]).toMatchObject({
+			expect(run.mergeReadiness).toMatchObject({
 				checks: [
 					{ bucket: "fail", retry: { attempt: 2, status: "in_progress" } },
 				],
@@ -289,8 +289,8 @@ it("waits for a provider-confirmed running retry and refreshes failed-check evid
 		evidence = "Assertion failed: checkout must reject unauthorized users";
 		await poll();
 		await execution;
-		expect(agent).toHaveBeenCalledTimes(1);
-		expect(retries).toBe(1);
+		expect(agent, run.error).toHaveBeenCalledTimes(1);
+		expect(retries, run.error).toBe(1);
 		expect(detailReads).toBe(3);
 		expect(run.outputs.ci).toMatchObject({
 			checks: [{ failure: { kind: "unknown", evidence } }],
@@ -452,7 +452,9 @@ it.each([
 	const retained = structuredClone(fixture.run.ciSupervision?.retries ?? []);
 	const execution = fixture.runtime.launch(fixture.run);
 	try {
-		await waitFor(() => expect(fixture.agent).toHaveBeenCalledTimes(1));
+		await waitFor(() =>
+			expect(fixture.agent, fixture.run.error).toHaveBeenCalledTimes(1),
+		);
 		await execution;
 		expect(fixture.run.outputs.ci).toMatchObject({
 			fix: true,
@@ -619,7 +621,7 @@ it("retries a provider-proven runner failure in runtime without launching an age
 	};
 	run.outputs["draft-pr"] = { url };
 	const finished = runtime.launch(run);
-	await waitFor(() => expect(retries).toBe(1));
+	await waitFor(() => expect(retries, run.error).toBe(1));
 	expect(agent).not.toHaveBeenCalled();
 	expect(run.capacityLeaves?.ci?.phase).toBe("waiting-ci");
 	await poll();
@@ -677,7 +679,7 @@ it("keeps an ambiguous retry durable across restart instead of sending it twice"
 it("starts diagnosis for a consequential failed test and does not classify it as infrastructure", async () => {
 	const scenario = failingCI();
 	await scenario.runtime.launch(scenario.run);
-	expect(scenario.agent).toHaveBeenCalledOnce();
+	expect(scenario.agent, scenario.run.error).toHaveBeenCalledOnce();
 	expect(scenario.agent.mock.calls[0]![0].step.id).toBe("ci-fix");
 	expect(scenario.retries()).toBe(0);
 	expect(scenario.run.outputs.ci).toMatchObject({
@@ -803,7 +805,7 @@ it("rechecks corrected PR metadata at the same SHA when its workflow reads the l
 	};
 	run.outputs["draft-pr"] = { url };
 	const finished = runtime.launch(run);
-	await waitFor(() => expect(retries).toBe(1));
+	await waitFor(() => expect(retries, run.error).toBe(1));
 	await poll();
 	await finished;
 	expect(agent).toHaveBeenCalledOnce();

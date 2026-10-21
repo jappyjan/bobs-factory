@@ -1,0 +1,30 @@
+{"identity": {"source": "f926f6c18be3ccdf1acd1593648719ae9523d247", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["pnpm", "--filter", "./apps/cli", "--filter", "./apps/f1", "test:run", "--maxWorkers=1"], "started": "2026-10-21T18:24:56.697385+00:00"}
+Scope: 2 of 20 workspace projects
+apps/cli test:run$ vitest run --passWithNoTests --maxWorkers=1
+apps/f1 test:run$ vitest run --passWithNoTests --maxWorkers=1
+apps/f1 test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/f1
+apps/cli test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/cli
+apps/cli test:run:  ❯ src/services/OwnedUpdateLifecycle.test.ts (4 tests | 1 failed) 13127ms
+apps/cli test:run:    × checks preservation contracts factory-preservation-v2 → undefined before replacing the worker 5016ms
+apps/cli test:run: ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+apps/cli test:run:  FAIL  src/services/OwnedUpdateLifecycle.test.ts > checks preservation contracts factory-preservation-v2 → undefined before replacing the worker
+apps/cli test:run: Error: Test timed out in 5000ms.
+apps/cli test:run: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+apps/cli test:run:  ❯ src/services/OwnedUpdateLifecycle.test.ts:21:3
+apps/cli test:run:      19|  ["factory-preservation-v2", "factory-preservation-v2"],
+apps/cli test:run:      20|  ["factory-preservation-v2", "future-contract"],
+apps/cli test:run:      21| ])("checks preservation contracts %s → %s before replacing the worker"…
+apps/cli test:run:        |   ^
+apps/cli test:run:      22|  const home = realpathSync(mkdtempSync(join(tmpdir(), "update-contract…
+apps/cli test:run:      23|  const installed = {
+apps/cli test:run: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+apps/cli test:run:  Test Files  1 failed | 20 passed (21)
+apps/cli test:run:       Tests  1 failed | 250 passed (251)
+apps/cli test:run:    Start at  21:24:57
+apps/cli test:run:    Duration  54.07s (transform 6.00s, setup 0ms, import 17.52s, tests 32.87s, environment 2ms)
+apps/cli test:run: Failed
+/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/cli:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory@1.0.0-beta test:run: `vitest run --passWithNoTests --maxWorkers=1`
+Exit status 1
+
+{"exitCode": 1, "ended": "2026-10-21T18:25:51.687463+00:00"}

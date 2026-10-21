@@ -11,7 +11,10 @@ import {
 	runRepositories,
 	scopeRevision,
 } from "./RepositoryScope.js";
+import { takeoverSource } from "./RunContextSources.js";
 import { aggregateForContext, scopeContextDigest } from "./SpecialistReview.js";
+import { consumesImpact, readStep, resolveStepConfig } from "./StepConfig.js";
+import { boundOutput, boundStepKey, writeBoundOutput } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 export type RepositoryCommand = (
@@ -27,7 +30,7 @@ export async function confirmedGroupedMerge(
 	command: RepositoryCommand,
 ) {
 	const { run } = context;
-	const published = deliveryRevisions(run.outputs["draft-pr"]);
+	const published = deliveryRevisions(boundOutput(context, "draftPr"));
 	const decision = await effectiveApproval(context);
 	if (
 		decision?.decision !== "approve" ||
@@ -134,14 +137,14 @@ export async function groupedTool(
 	const { run } = context;
 	if (!deliveryTools.has(context.step.tool ?? "")) return tool(context);
 	const scope = runRepositories(run);
-	let published = deliveryRevisions(run.outputs["draft-pr"]);
+	let published = deliveryRevisions(boundOutput(context, "draftPr"));
 	if (
 		["ci", "ci-fix-readiness", "review-after-fix"].includes(
 			context.step.tool ?? "",
 		)
 	) {
 		const deliveries = [
-			...(groupedOutput(run.outputs["draft-pr"])?.deliveries ?? []),
+			...(groupedOutput(boundOutput(context, "draftPr"))?.deliveries ?? []),
 		];
 		const candidates: typeof scope = [];
 		for (const repository of scope.filter(
@@ -163,8 +166,8 @@ export async function groupedTool(
 				if (
 					!dirty &&
 					!changed &&
-					!child.run.outputs.source &&
-					!child.run.outputs["draft-pr"]
+					!takeoverSource(child.run) &&
+					!boundOutput(child, "draftPr")
 				)
 					continue;
 			} catch {
@@ -178,7 +181,13 @@ export async function groupedTool(
 				const child = {
 					...context,
 					run: projected,
-					step: { ...context.step, id: "draft-pr", tool: "draft-pr" },
+					outputs: projected.outputs,
+					step: {
+						...context.step,
+						reads: resolveStepConfig(context.step).reads,
+						id: readStep(context.step, "draftPr")!,
+						tool: "draft-pr",
+					},
 					allowUnchangedRepository: true,
 				};
 				let output: Record<string, unknown>;
@@ -203,8 +212,10 @@ export async function groupedTool(
 				repository.providerSnapshot = projected.gitProvider;
 				run.repositoryOutputs ??= {};
 				run.repositoryOutputs[repository.id] ??= {};
-				run.repositoryOutputs[repository.id]!["draft-pr"] = output;
-				run.outputs["draft-pr"] = aggregateDeliveries(deliveries);
+				run.repositoryOutputs[repository.id]![
+					readStep(context.step, "draftPr")!
+				] = output;
+				writeBoundOutput(context, "draftPr", aggregateDeliveries(deliveries));
 				await context.save?.();
 			}
 		};
@@ -212,7 +223,7 @@ export async function groupedTool(
 			if (context.coordinateDelivery) await context.coordinateDelivery(publish);
 			else await publish();
 		}
-		published = deliveryRevisions(run.outputs["draft-pr"]);
+		published = deliveryRevisions(boundOutput(context, "draftPr"));
 	}
 	const repositories =
 		context.step.tool === "draft-pr" || context.step.tool === "inspect-existing"
@@ -290,7 +301,9 @@ export async function groupedTool(
 					repositoryId: delivery.repositoryId,
 					name: delivery.name,
 					output: {
-						...(run.repositoryOutputs?.[delivery.repositoryId]?.ci as object),
+						...(run.repositoryOutputs?.[delivery.repositoryId]?.[
+							readStep(context.step, "ci")!
+						] as object),
 						...delivery,
 						fix: true,
 						approved: false,
@@ -300,7 +313,7 @@ export async function groupedTool(
 					},
 				})),
 			);
-			run.outputs.ci = output;
+			writeBoundOutput(context, "ci", output);
 			await context.save?.();
 			return output;
 		}
@@ -311,6 +324,7 @@ export async function groupedTool(
 		if (invalid) return invalid;
 	}
 	const deliveries: DeliveryResult[] = [];
+	const readinessSnapshots: DeliveryResult[] = [];
 	for (const repository of repositories) {
 		const projected = repositoryRun(run, repository);
 		const child: ExecutionContext = {
@@ -326,7 +340,7 @@ export async function groupedTool(
 							)?.headSha ?? context.executionApproval.headSha,
 					}
 				: undefined,
-			groupedImpactValidated: Boolean(context.step.impactSource),
+			groupedImpactValidated: Boolean(consumesImpact(context.step)),
 			allowUnchangedRepository: true,
 			validateDelivery:
 				context.step.tool === "merge"
@@ -342,15 +356,15 @@ export async function groupedTool(
 		};
 		try {
 			// A confirmed partial merge survives later publication/review retries.
-			const receipt = projected.outputs.merge as
+			const receipt = boundOutput(child, "merge") as
 				| { merged?: boolean }
 				| undefined;
 			let output =
 				receipt?.merged && context.step.tool !== "inspect-existing"
 					? {
-							...(projected.outputs.ci as object),
+							...(boundOutput(child, "ci") as object),
 							...(projected.outputs[context.step.id] as object),
-							...(projected.outputs["draft-pr"] as object),
+							...(boundOutput(child, "draftPr") as object),
 							...receipt,
 							approved: true,
 							reviewReady: true,
@@ -361,14 +375,16 @@ export async function groupedTool(
 				throw new Error("Repository tool must return a structured result");
 			if (context.step.tool === "ci") {
 				const receipt = output as Record<string, unknown>;
-				const draft = projected.outputs["draft-pr"] as Record<string, unknown>;
+				const draft = boundOutput(child, "draftPr") as Record<string, unknown>;
 				if (typeof receipt.headSha === "string")
-					projected.outputs["draft-pr"] = {
+					writeBoundOutput(child, "draftPr", {
 						...draft,
 						headSha: receipt.headSha,
-					};
-				const prefix = (run.step ?? context.step.id).replace(/[^/]+$/, "");
-				const reviewed = projected.roleRevisions?.[`${prefix}code-review`];
+					});
+				const reviewKey = boundStepKey(context, "review");
+				const reviewed = reviewKey
+					? projected.roleRevisions?.[reviewKey]
+					: undefined;
 				if (
 					reviewed &&
 					(reviewed.dirty || reviewed.headSha !== receipt.headSha)
@@ -413,18 +429,34 @@ export async function groupedTool(
 			);
 		} finally {
 			repository.providerSnapshot = projected.gitProvider;
-			const source = projected.outputs.source as
+			if (projected.mergeReadiness)
+				readinessSnapshots.push({
+					repositoryId: repository.id,
+					name: repository.name,
+					output: projected.mergeReadiness as unknown as Record<
+						string,
+						unknown
+					>,
+				});
+			const source = takeoverSource(projected) as
 				| { baseRefName?: string }
 				| undefined;
 			if (context.step.tool === "inspect-existing" && source?.baseRefName)
 				repository.baseBranch = source.baseRefName;
+			if (projected.takeoverSource !== undefined)
+				repository.takeoverSource = projected.takeoverSource;
 			run.repositoryOutputs ??= {};
 			run.repositoryOutputs[repository.id] ??= {};
 			const retained = run.repositoryOutputs[repository.id]!;
 			for (const [key, value] of Object.entries(projected.outputs)) {
 				if (
 					value !== run.outputs[key] &&
-					(deliveryTools.has(key) ||
+					(Object.values(resolveStepConfig(context.step).reads).some(
+						(binding) =>
+							(typeof binding === "string" ? binding : binding.from).split(
+								"/",
+							)[0] === key,
+					) ||
 						key === context.step.id ||
 						key === "source" ||
 						groupedOutput(run.outputs[key]))
@@ -435,22 +467,30 @@ export async function groupedTool(
 		}
 	}
 	if (context.step.tool === "ci") {
-		const draft = groupedOutput(run.outputs["draft-pr"]);
+		const draft = groupedOutput(boundOutput(context, "draftPr"));
 		if (draft)
-			run.outputs["draft-pr"] = aggregateDeliveries(
-				draft.deliveries.map((delivery) => ({
-					...delivery,
-					output:
-						(run.repositoryOutputs?.[delivery.repositoryId]?.["draft-pr"] as
-							| Record<string, unknown>
-							| undefined) ?? delivery.output,
-				})),
+			writeBoundOutput(
+				context,
+				"draftPr",
+				aggregateDeliveries(
+					draft.deliveries.map((delivery) => ({
+						...delivery,
+						output:
+							(run.repositoryOutputs?.[delivery.repositoryId]?.[
+								readStep(context.step, "draftPr")!
+							] as Record<string, unknown> | undefined) ?? delivery.output,
+					})),
+				),
 			);
 		await context.save?.();
 	}
+	if (readinessSnapshots.length)
+		run.mergeReadiness = aggregateDeliveries(
+			readinessSnapshots,
+		) as unknown as typeof run.mergeReadiness;
 	const result = aggregateDeliveries(deliveries);
 	if (
-		context.step.impactSource &&
+		consumesImpact(context.step) &&
 		!result.impactRequired &&
 		!result.rework &&
 		["handoff", "human-review"].includes(context.step.tool ?? "")

@@ -3,6 +3,8 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { GitProviderConfig, RepositoryConfig } from "bobs-factory-core";
 import type { GitProviderSnapshot } from "./GitProvider.js";
+import { takeoverSource } from "./RunContextSources.js";
+import { legacyToolOutput, resolveStepConfig } from "./StepConfig.js";
 import { snapshotHistory } from "./WorkflowInput.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
@@ -17,6 +19,8 @@ export interface RunRepository {
 	gitlabUrl?: string;
 	gitProvider?: GitProviderConfig;
 	providerSnapshot?: GitProviderSnapshot;
+	/** Verified takeover context for this exact selected repository. */
+	takeoverSource?: unknown;
 }
 export interface RepositoryRevision {
 	repositoryId: string;
@@ -38,6 +42,24 @@ export interface ApprovedRepository {
 	name: string;
 	url: string;
 	headSha: string;
+}
+
+/** Repository authority is runtime-owned; ordinary outputs cannot configure a provider. */
+export function repositoryMetadata(
+	run: FactoryRun,
+	step?: object,
+): Partial<RunRepository> | undefined {
+	const selected = run.repositories?.find(
+		(repository) => repository.id === run.repositoryId,
+	);
+	if (selected) return selected;
+	// Historical definitions stored host-authored repository metadata in outputs.
+	// Only their deterministic compatibility path may continue reading that slot.
+	return step && resolveStepConfig(step).explicit
+		? undefined
+		: (legacyToolOutput(run, "repository-context") as
+				| Partial<RunRepository>
+				| undefined);
 }
 
 /** Equal, nonempty routing-label sets define a scope without another config format. */
@@ -111,7 +133,7 @@ export function snapshotRepositories(
 
 export function runRepositories(run: FactoryRun): RunRepository[] {
 	if (run.repositories?.length) return run.repositories;
-	const metadata = (run.outputs.repository ?? {}) as Partial<RunRepository>;
+	const metadata = repositoryMetadata(run) ?? {};
 	return [
 		{
 			id: run.repositoryId,
@@ -250,9 +272,15 @@ export function repositoryRun(
 		...run,
 		repositoryId: repository.id,
 		workspace: repository.workspace,
-		repositories: undefined,
+		repositories: [repository],
 		gitProvider: repository.providerSnapshot,
+		takeoverSource:
+			repository.takeoverSource ??
+			(repository.id === run.repositoryId ? takeoverSource(run) : undefined),
 		outputs,
+		mergeReadiness: run.mergeReadiness
+			? (project(run.mergeReadiness) as FactoryRun["mergeReadiness"])
+			: undefined,
 		history: snapshotHistory(run.history, 0, run.history.length, (item) => ({
 			...item,
 			output: project(item.output),

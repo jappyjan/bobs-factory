@@ -16,6 +16,7 @@ export {
 	prepareFactoryContext,
 	prepareFactoryContextAsync,
 } from "./factoryContext.js";
+export { factoryContextView } from "./factoryContextMemory.js";
 export {
 	FactoryContextInfrastructureError,
 	verifyFactoryContext,

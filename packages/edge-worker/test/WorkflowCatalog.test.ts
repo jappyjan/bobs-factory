@@ -14,6 +14,7 @@ import {
 	legacyReviewSteps,
 } from "../src/factory/defaultWorkflows.js";
 import { getLaunchFields } from "../src/factory/LaunchFields.js";
+import { checkArgs, formatOf } from "../src/factory/StepConfig.js";
 import { StepSchema, WorkflowSchema } from "../src/factory/Workflow.js";
 import {
 	WorkflowCatalog,
@@ -48,7 +49,14 @@ function fixture(hooks: Partial<RuntimeHooks> = {}) {
 const legacy = () =>
 	structuredClone(defaultWorkflows).map((w) =>
 		w.id === "factory-pipeline"
-			? { ...w, steps: legacyReviewSteps.map((s) => StepSchema.parse(s)) }
+			? (() => {
+					const legacy = {
+						...w,
+						steps: legacyReviewSteps.map((s) => StepSchema.parse(s)),
+					};
+					delete legacy.stepConfigVersion;
+					return legacy;
+				})()
 			: w,
 	);
 function local(
@@ -122,13 +130,10 @@ it.each([
 			reasoningEffort: "high",
 			serviceTier: "fast",
 		});
-	expect(pipeline.steps.some((s) => s.reviewContract === "inventory-v1")).toBe(
-		true,
-	);
-	expect(pipeline.steps.find((s) => s.id === "guide")).toMatchObject({
-		videoContract: "video-v1",
-		guideContract: "brief-v3",
-	});
+	expect(pipeline.steps.some((s) => formatOf(s) === "inventory-v1")).toBe(true);
+	const guide = pipeline.steps.find((s) => s.id === "guide")!;
+	expect(formatOf(guide)).toBe("review-brief-v3");
+	expect(checkArgs(guide, "media-valid")).toMatchObject({ video: true });
 	expect(migrated.selectWorkflow(["my-factory"], "manual").id).toBe("factory");
 	const saved = readFileSync(path, "utf8");
 	new WorkflowRuntime(home, (runtime as any).hooks);

@@ -1,0 +1,22 @@
+lazy-minify true []
+26 |     await runInlineSchemaChild();
+               ^
+error: "await" can only be used inside an "async" function
+    at /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/InlineSchemaChild.js:26:11
+
+26 |     await runInlineSchemaChild();
+                                     ^
+error: Expected "=>" but found ";"
+    at /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/InlineSchemaChild.js:26:33
+
+466 | 			JSON.stringify(await readArchive(JSON.parse(readFileSync(0, "utf8")))),
+                              ^
+error: "await" can only be used inside an "async" function
+    at /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/scripts/lib/bounded-archive.mjs:466:25
+
+467 | 		);
+        ^
+error: Unexpected )
+    at /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/scripts/lib/bounded-archive.mjs:467:3
+
+Bun v1.4.2 (macOS arm64)

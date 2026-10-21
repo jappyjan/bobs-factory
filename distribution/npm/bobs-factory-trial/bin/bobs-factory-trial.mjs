@@ -211,6 +211,9 @@ async function checkPort(port) {
 }
 
 export async function main(args = process.argv.slice(2)) {
+	if (Number(process.versions.node.split(".")[0]) !== 24) {
+		throw new Error("Node.js 24.x is required for this npx launcher.");
+	}
 	const selection = parseArgs(args);
 	if (selection.help) {
 		usage();
@@ -218,9 +221,6 @@ export async function main(args = process.argv.slice(2)) {
 	}
 	if (process.platform !== "darwin" && process.platform !== "linux") {
 		throw new Error("The trial currently supports macOS and Linux only.");
-	}
-	if (process.versions.node.split(".")[0] < 20) {
-		throw new Error("Node.js 20 or newer is required for this npx launcher.");
 	}
 
 	const home = join(homedir(), ".bobs-factory-trial");

@@ -1,6 +1,9 @@
+export { ciFixRuntimeInstructions } from "./InstructionText.js";
+
 import { releaseDelivery } from "./DeliveryCoordination.js";
 import type { GitProvider } from "./GitProvider.js";
 import type { MergeReadiness, ProviderCheck } from "./MergeReadiness.js";
+import { boundOutput } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 export interface CIRetryReceipt {
@@ -24,7 +27,6 @@ export interface CISupervision {
 		}
 	>;
 }
-export const ciFixRuntimeInstructions = `Runtime supervises queued checks and proven recoverable infrastructure failures. Diagnose unknown failures from their concrete receipts, and correct actionable source, merge conflict or PR metadata problems. When /assessedCorrection is supplied, the independent impact assessor also requires correction: read its summary, rationale, uncertainty and the original findings/evidence in context. Address that source or verification work within the accepted scope even if provider checks now pass; green CI does not resolve independent findings. If necessary access or a decision is missing, return a concrete assistance question. Retain findings for independent reassessment through the existing workflow; never waive them or infer human approval. Do not stay running to poll CI or retry unavailable runners. After a bounded corrective action, return promptly; runtime rechecks provider readiness. Separate PR title/description validation from source commits. Inspect the repository workflow before requesting a metadata recheck: a rerun may replay the old event payload, while edited events or workflows reading live PR metadata can recheck the current title. Prefer their supported current-SHA recheck. Do not create an empty commit solely to refresh checks. Commit/push only actual source changes, retain honest revision/base evidence, and do not bypass any review or approval requirement.`;
 
 /** Provider failure evidence stays factual; only the routing decision becomes a wait. */
 export async function superviseCI(
@@ -96,8 +98,9 @@ export async function superviseCI(
 			check.retry!.id,
 			check.retry!.attempt,
 		]);
-	const previous = (context.run.outputs["merge-readiness"] ??
-		context.run.outputs.ci) as MergeReadiness | undefined;
+	const previous = (context.run.mergeReadiness ?? boundOutput(context, "ci")) as
+		| MergeReadiness
+		| undefined;
 	if (
 		failed.length &&
 		failed.every((check) => check.failure?.kind === "infrastructure") &&

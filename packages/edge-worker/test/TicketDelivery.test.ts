@@ -42,6 +42,16 @@ import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
+/** Model provider-completed actions in the accepted called Factory frame. */
+function retainRepositoryReceipts(run: FactoryRun) {
+	for (const action of ["draft-pr", "merge"]) {
+		if (!Object.hasOwn(run.outputs, action)) continue;
+		const output = structuredClone(run.outputs[action]);
+		const step = `pipeline/${action}`;
+		run.outputs[step] = output;
+		run.history.push({ step, output, at: new Date().toISOString() });
+	}
+}
 afterEach(() => {
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
@@ -714,12 +724,14 @@ it("requires both accepted ticket state and the exact confirmed repository revis
 		url: "https://github.com/example/repo/pull/1",
 		headSha: "other-head",
 	};
+	retainRepositoryReceipts(f.run);
 	expect(externalCompletionProven(f.run)).toBe(false);
 	f.run.outputs.merge = {
 		merged: true,
 		url: "https://github.com/example/repo/pull/1",
 		headSha: "approved-head",
 	};
+	retainRepositoryReceipts(f.run);
 	expect(externalCompletionProven(f.run)).toBe(true);
 	f.state().fields.description = "edited after acceptance";
 	expect(await f.service.finalCheck(f.run)).toBe(false);
@@ -821,6 +833,7 @@ it("corrects mixed external feedback after merge without repeating repository im
 	};
 	f.run.outputs.guide = { summary: "Repository already merged" };
 	f.run.outputs.clarify = { deliveryMode: "mixed" };
+	retainRepositoryReceipts(f.run);
 	f.run.humanDecisions!.push({
 		...f.run.humanDecisions![0]!,
 		reviewId: "external-rejected",
@@ -1164,6 +1177,7 @@ it("renews mixed acceptance once for the full grouped scope after confirmed merg
 	}));
 	f.run.outputs["draft-pr"] = aggregateDeliveries(deliveries);
 	f.run.outputs.merge = aggregateDeliveries(deliveries);
+	retainRepositoryReceipts(f.run);
 	accept(f.run);
 	f.run.humanDecisions![0]!.mode = "mixed";
 	f.run.humanDecisions![0]!.repositories = deliveryRevisions(

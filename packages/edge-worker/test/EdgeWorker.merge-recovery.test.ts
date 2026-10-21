@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "bobs-factory-core";
@@ -7,7 +7,12 @@ import { EdgeWorker } from "../src/EdgeWorker.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import * as tools from "../src/factory/FactoryTools.js";
 import { pendingMergeConfirmation } from "../src/factory/MergeRecovery.js";
+import { resolveStepConfig } from "../src/factory/StepConfig.js";
+import { validateWorkflows } from "../src/factory/Workflow.js";
 import type { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import legacyWorkflows from "./fixtures/legacy-workflows-a4990127.json" with {
+	type: "json",
+};
 
 const directories: string[] = [];
 afterEach(() => {
@@ -16,9 +21,44 @@ afterEach(() => {
 		rmSync(directory, { recursive: true, force: true });
 });
 
-async function fixture() {
+async function fixture(modern = false) {
 	const home = mkdtempSync(join(tmpdir(), "merge-recovery-"));
 	directories.push(home);
+	const definitions = modern
+		? defaultWorkflows
+		: validateWorkflows(structuredClone(legacyWorkflows.default));
+	const workflow = definitions.find((item) => item.id === "factory")!;
+	const accepted = {
+		id: "recover-merge",
+		title: "Recover accepted merge",
+		repositoryId: "repo",
+		workflow,
+		workflowDefinitions: definitions,
+		workspace: join(home, "deleted-worktree"),
+		input: "Task",
+		triggerOrigin: {
+			type: "manual" as const,
+			workflowId: "factory",
+			at: "2026-10-06T00:00:00Z",
+		},
+	};
+	if (!modern) {
+		mkdirSync(join(home, "factory", "runs"), { recursive: true });
+		writeFileSync(
+			join(home, "factory", "runs", `${accepted.id}.json`),
+			JSON.stringify({
+				...accepted,
+				status: "failed",
+				createdAt: accepted.triggerOrigin.at,
+				updatedAt: accepted.triggerOrigin.at,
+				outputs: {},
+				history: [],
+				answers: [],
+				questions: [],
+				events: [],
+			}),
+		);
+	}
 	const worker = new EdgeWorker({
 		issueTrackerFactory: createCLIIssueTracker,
 		factoryHome: home,
@@ -35,24 +75,25 @@ async function fixture() {
 	});
 	await (worker as any).runnerSlots.ready();
 	const runtime: WorkflowRuntime = (worker as any).getFactoryRuntime();
-	const workflow = defaultWorkflows.find((item) => item.id === "factory")!;
-	const run = runtime.create({
-		id: "recover-merge",
-		repositoryId: "repo",
-		workflow,
-		workspace: join(home, "deleted-worktree"),
-		input: "Task",
-		triggerOrigin: {
-			type: "manual",
-			workflowId: "factory",
-			at: "2026-10-06T00:00:00Z",
-		},
-	});
+	const run = modern ? runtime.create(accepted) : runtime.get(accepted.id);
+	if (!modern) {
+		expect(run.workflow.stepConfigVersion).toBeUndefined();
+		const accepted = run.workflowDefinitions!.find(
+			(item) => item.id === "factory-pipeline",
+		)!;
+		expect(accepted.stepConfigVersion).toBeUndefined();
+		expect(
+			resolveStepConfig(accepted.steps.find((step) => step.id === "merge")!)
+				.explicit,
+		).toBe(false);
+	}
 	run.titleGeneration = undefined;
 	run.status = "failed";
 	run.step = "pipeline/merge";
-	run.outputs["draft-pr"] = { url: "https://github.com/test/repo/pull/1" };
+	const publication = { url: "https://github.com/test/repo/pull/1" };
+	run.outputs[modern ? "pipeline/draft-pr" : "draft-pr"] = publication;
 	run.history = [
+		{ step: "pipeline/draft-pr", output: publication, at: "" },
 		{ step: "pipeline/guide", output: { summary: "Retained guide" }, at: "" },
 	];
 	run.humanDecisions = [
@@ -72,6 +113,10 @@ async function fixture() {
 			],
 		},
 	};
+	if (modern)
+		run.checkpoint.active!.children![0]!.outputs = {
+			"draft-pr": publication,
+		};
 	return { runtime, run, home };
 }
 
@@ -200,6 +245,7 @@ it.each([
 	run.outputs["draft-pr"] = {
 		url: "https://gitlab.example/team/repo/-/merge_requests/7",
 	};
+	run.history[0]!.output = run.outputs["draft-pr"];
 	const command = vi
 		.spyOn(tools, "executeCommand")
 		.mockImplementation(async (_ctx, exe, args) => {
@@ -450,5 +496,102 @@ it.each([
 	expect(command).not.toHaveBeenCalled();
 	expect(run.status).toBe("failed");
 	expect(run.error).toContain("Saved worktree is unavailable");
+	await runtime.shutdown();
+});
+
+it("recovers a confirmed merge after every accepted step and partner has been renamed", async () => {
+	const { runtime, run } = await fixture(true);
+	const pipeline = run.workflowDefinitions!.find(
+		(workflow) => workflow.id === "factory-pipeline",
+	)!;
+	const names = new Map(
+		pipeline.steps.map((step, index) => [step.id, `recovery_${index}`]),
+	);
+	names.set("pipeline", "invocation");
+	const reference = (value: string) =>
+		value
+			.split("/")
+			.map((part) => names.get(part) ?? part)
+			.join("/");
+	for (const step of [...run.workflow.steps, ...pipeline.steps]) {
+		step.id = names.get(step.id)!;
+		if (step.next && step.next !== "end") step.next = names.get(step.next)!;
+		for (const branch of step.branches)
+			if (branch.next !== "end") branch.next = names.get(branch.next)!;
+		for (const [name, binding] of Object.entries(step.reads ?? {}))
+			step.reads![name] =
+				typeof binding === "string"
+					? reference(binding)
+					: { ...binding, from: reference(binding.from) };
+	}
+	run.step = reference(run.step!);
+	run.checkpoint!.current = names.get(run.checkpoint!.current)!;
+	run.checkpoint!.active!.children![0]!.current = names.get("merge")!;
+	const frame = run.checkpoint!.active!.children![0]!;
+	frame.outputs = Object.fromEntries(
+		Object.entries(frame.outputs ?? {}).map(([key, value]) => [
+			reference(key),
+			value,
+		]),
+	);
+	run.outputs = Object.fromEntries(
+		Object.entries(run.outputs).map(([key, value]) => [reference(key), value]),
+	);
+	run.history = run.history.map((entry) => ({
+		...entry,
+		step: reference(entry.step),
+	}));
+	const mergeId = names.get("merge")!;
+	const rootOutput = { summary: "Independent root agent output" };
+	run.workflow.steps.unshift({
+		id: mergeId,
+		name: "Root output sharing the called merge's leaf name",
+		type: "agent",
+		prompt: "Independent root role",
+		output: { format: "json-v1" },
+		branches: [],
+		next: "end",
+	});
+	run.outputs[mergeId] = rootOutput;
+	run.history.unshift({ step: mergeId, output: rootOutput, at: "" });
+	run.checkpoint!.visits[mergeId] = 1;
+	const tool = vi
+		.spyOn(tools.FactoryTools.prototype, "tool")
+		.mockRejectedValue(new Error("No new delivery mutation"));
+	vi.spyOn(tools, "executeCommand").mockImplementation(
+		async (_context, exe, args) => {
+			expect(exe).toBe("bobs-factory:github-api");
+			expect(JSON.parse(args[0]!).method).toBe("GET");
+			return JSON.stringify({
+				html_url: "https://github.com/test/repo/pull/1",
+				number: 1,
+				title: "Fixture",
+				body: "",
+				draft: false,
+				state: "closed",
+				merged: true,
+				head: {
+					ref: "feature",
+					sha: "approved",
+					repo: { full_name: "test/repo" },
+				},
+				base: { ref: "main", repo: { full_name: "test/repo" } },
+			});
+		},
+	);
+	await runtime.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	const mergeKey = `${names.get("pipeline")!}/${mergeId}`;
+	expect(run.outputs[mergeKey]).toMatchObject({
+		merged: true,
+		headSha: "approved",
+	});
+	expect(frame.outputs![mergeId]).toEqual(run.outputs[mergeKey]);
+	expect(run.outputs[mergeId]).toEqual(rootOutput);
+	expect(run.history.filter((entry) => entry.step === mergeKey)).toHaveLength(
+		1,
+	);
+	expect(run.outputs.merge).toBeUndefined();
+	expect(tool).not.toHaveBeenCalled();
 	await runtime.shutdown();
 });

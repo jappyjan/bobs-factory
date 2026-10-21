@@ -1,0 +1,15 @@
+{
+  "source": "f926f6c18be3ccdf1acd1593648719ae9523d247",
+  "productionInputsChecked": 1136,
+  "artifactFilesChecked": 1740,
+  "mismatches": [],
+  "gitStatus": [],
+  "dirty": false,
+  "productionInputsDigest": "7b4cfc626b70a41b6e0317938676a6119bd42ad8035ae156ca8202a8c0622639",
+  "artifactFilesDigest": "773c896829c5bb92961c5b7b67184e5a9c5ea434ee00ee98763f29457184b247",
+  "manifestSha256": "b51fcb5bda50c226e3aa6648101362fda1dd3f4c08e6e948312f4d1542c5a168",
+  "binarySha256": "7f761a6fe467294b6aef670aefc6d18f72dd8750a16a5046f81dca38ffb6782f",
+  "target": "darwin-arm64",
+  "paidAgentCalls": 0,
+  "published": false
+}

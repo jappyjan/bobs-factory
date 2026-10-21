@@ -1,0 +1,67 @@
+{"identity": {"source": "50e020294b8b414b2920af8952fd1467ae521180", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["pnpm", "--filter", "./apps/desktop", "test:run"], "started": "2026-10-21T18:01:36.557510+00:00"}
+
+> bobs-factory-desktop@1.0.0-beta test:run /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/desktop
+> bun build src/update-services.ts --target node --format esm --outfile src/update-services.mjs && node --test test/*.test.mjs
+
+Bundled 156 modules in 102ms
+
+  update-services.mjs  2.97 MB  (entry point)
+
+✔ TERM-ignoring child escalates; PASS appears only after all child close events (1089.232792ms)
+✔ existing PASS and FAIL receipts are rejected before work and preserved byte-for-byte (13.978ms)
+✔ partial final receipt write keeps the reserved pending FAIL and removes temp file (547.696041ms)
+✔ cleanup failure plus final rename failure leaves only the current pending receipt (20.659209ms)
+✔ leader exits first; its TERM-ignoring descendant is still drained (1270.212917ms)
+✔ failed owned lock removal fails receipt while unrelated foreground process survives (1509.3005ms)
+✔ overwritten lock cannot authorize signaling or removal of unrelated PID (846.719125ms)
+✔ actual controller SIGTERM creates FAIL after cleanup, receipt outside fixture HOME (1118.821667ms)
+✔ stale PID stamp never signals a reused unrelated process (708.773792ms)
+✔ cleanup exception produces a failed receipt and nonzero controller exit (167.025958ms)
+✔ replacement fixture home cannot authorize removing a copied lock (1004.433125ms)
+﹣ pinned Electron Node helper inventories and archives the physical ASAR bytes, mode and symlinks (0.678625ms) # Electron binary is not materialized
+✔ retained standalone helper resolves its full module closure and runs recovery without repository modules (2746.718167ms)
+✔ actual Install action's retained helper exits exact UI, activates bytes and validates launched candidate health (3921.335625ms)
+✔ packaging requires exact pinned vendor notices; recovery retains bytes and missing/tampered notices fail closed (17.962625ms)
+(node:74869) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ macOS complete-app staging preserves actual quarantine without changing byte identity (1047.73325ms)
+✔ macOS complete-app replacement and rollback preserves actual quarantine without changing byte identity (1662.993833ms)
+✔ macOS complete-app interrupted recovery preserves actual quarantine without changing byte identity (1627.365584ms)
+(node:74870) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ first nightly shell subscribes to nightly idle-auto; saved stable/manual choices survive reopening a nightly app (100.951625ms)
+✔ complete app archive preserves framework symlinks and modes; traversal/special ancestry fails before extraction (6.711667ms)
+✔ intermediate directory symlinks resolve before ..; actual outside sentinel cannot be packed or extracted (2.5125ms)
+✔ unsigned app source binds exact payload, channel, target and full inventory; publisher tamper never stages (1376.764ms)
+✔ user-owned DMG app accepts candidate-bound unsigned integrity receipts; external symlink handoff remains (531.298125ms)
+✔ nightly app replacement keeps runtime state, old app and policy; failed health rolls back and suppresses candidate (2792.355708ms)
+✔ app final authorization rejects raced policy {"paused":true} (862.220917ms)
+✔ app final authorization rejects raced policy {"pin":"2.0.0"} (1487.831ms)
+✔ app final authorization rejects raced policy {"channel":"stable"} (867.032792ms)
+✔ app final authorization rejects raced policy {"policy":"manual"} (612.616416ms)
+✔ stable requires exact candidate Install; Quit is never consent, stale receipt rejects (662.318583ms)
+✔ forged staged fingerprint/receipt never executes, including self-consistent local tampering (648.67825ms)
+✔ interrupted recovery preserves foreign-bytes on repeated attempts; authenticated missing/restored installs still recover (889.051417ms)
+✔ interrupted recovery preserves foreign-symlink on repeated attempts; authenticated missing/restored installs still recover (664.179584ms)
+✔ interrupted recovery preserves foreign-dangling-symlink on repeated attempts; authenticated missing/restored installs still recover (881.036ms)
+✔ remote origins cannot become local filesystem or insecure bridge targets (1.16075ms)
+✔ macOS desktop children find prepared CLIs from a noisy login shell (546.879ms)
+✔ missing or slow macOS shells retain PATH and find user-local CLIs (465.725459ms)
+✔ Linux desktop retains its supplied environment (0.353667ms)
+✔ open launcher refreshes automatic candidates/results without discarding edits or changing captured consent (12.557208ms)
+✔ native receipt survives noisy Electron streams and immediate exit (157.523333ms)
+✔ native receipt refuses relative paths and existing files or links (1.24375ms)
+(node:74887) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ nightly native shell lane preserves input identity, selects an eligible supported update and binds its receipt truthfully (2657.300458ms)
+✔ beta native shell lane preserves input identity, selects an eligible supported update and binds its receipt truthfully (2310.135333ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 41
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 12843.275334
+
+{"exitCode": 0, "ended": "2026-10-21T18:01:50.073592+00:00"}

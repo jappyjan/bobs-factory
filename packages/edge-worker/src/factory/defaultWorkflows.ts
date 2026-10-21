@@ -11,6 +11,7 @@ import {
 	divePrompt,
 } from "./GuideAuthoring.js";
 import { impactInstructions } from "./Impact.js";
+import { instructionTemplate } from "./InstructionLibrary.js";
 import { improvementWorkflow } from "./improvementWorkflow.js";
 import {
 	attachmentLaunchField,
@@ -19,13 +20,18 @@ import {
 } from "./LaunchFields.js";
 import { QA_CONTRACT } from "./Qa.js";
 import { reviewFixInstructions } from "./ReviewRecovery.js";
+import { hasCheck, legacyStepPreset, readStep } from "./StepConfig.js";
 import {
 	inventoryGuideInstructions,
 	inventoryQaInstructions,
-	specialistSteps,
+	legacySpecialistSteps,
 } from "./specialistSteps.js";
 import { videoPrompts } from "./videoPrompts.js";
-import { validateWorkflows, type WorkflowStep } from "./Workflow.js";
+import {
+	validateWorkflows,
+	WorkflowSchema,
+	type WorkflowStep,
+} from "./Workflow.js";
 import { MAX_STEP_VISITS } from "./WorkflowLimits.js";
 
 const agent = (id: string, name: string, prompt: string, extra = {}) => ({
@@ -248,7 +254,13 @@ const stockGuideOpenings = [
 export function upgradedGuideStep(
 	step: WorkflowStep,
 ): WorkflowStep | undefined {
-	if (step.id !== "guide" || step.type !== "agent" || !step.prompt) return;
+	if (step.configVersion === "step-config-v1") return;
+	if (
+		step.type !== "agent" ||
+		!step.prompt ||
+		!hasCheck(step, "requirement-coverage")
+	)
+		return;
 	if (!stockGuideOpenings.some((opening) => step.prompt!.startsWith(opening)))
 		return;
 	// Keep the run's accepted contracts: video and impact follow-up instructions.
@@ -266,7 +278,7 @@ export function upgradedGuideStep(
 export const legacyReviewSteps = structuredClone(pipeline.steps);
 function installSpecialists(steps: Record<string, any>[]) {
 	const index = steps.findIndex((s) => s.id === "code-review");
-	steps.splice(index, 1, ...structuredClone(specialistSteps));
+	steps.splice(index, 1, ...structuredClone(legacySpecialistSteps));
 	for (const step of steps) {
 		if (step.next === "code-review") step.next = "extract-requirements";
 		for (const branch of step.branches ?? [])
@@ -665,28 +677,126 @@ export const conservativeWorkflows = validateWorkflows([
 // New launches opt in; saved/custom graphs upgrade through conservative definitions.
 const impactDefaults = structuredClone(conservativeWorkflows);
 installImpact(impactDefaults.find((w) => w.id === "factory-pipeline")!.steps);
+/** Author stock configurations once; accepted historical definitions stay untouched. */
+function configuredStock(value: unknown) {
+	const workflow = WorkflowSchema.parse(value);
+	const result = structuredClone(workflow);
+	result.stepConfigVersion = "step-config-v1";
+	const walk = (steps: WorkflowStep[]) => {
+		const ids = new Set(steps.map((step) => step.id));
+		const architectureRevision = steps.some(
+			(step) => step.tool === "architecture-decision",
+		);
+		for (const step of steps) {
+			const preset = legacyStepPreset(step, {
+				workflowId: workflow.id,
+				rootWorkflowId: workflow.id,
+				architectureRevision,
+			});
+			const template = instructionTemplate(step.prompt ?? "");
+			Object.assign(step, {
+				configVersion: "step-config-v1",
+				reads: Object.fromEntries(
+					Object.entries(preset.reads).map(([name, read]) => [
+						name,
+						read.when ? read : read.from,
+					]),
+				),
+				rules: preset.rules,
+				checks: preset.checks.map(({ check, args }) =>
+					Object.keys(args).length ? { check, ...args } : check,
+				),
+				access: preset.access,
+				instructions: [
+					...new Set([...preset.instructions, ...template.instructions]),
+				],
+				...(preset.output ? { output: preset.output } : {}),
+				...(preset.revision ? { revision: preset.revision } : {}),
+				...(step.prompt !== undefined ? { prompt: template.prompt } : {}),
+			});
+			if (step.type === "agent" && !step.output)
+				step.output = { format: "json-v1" };
+			if (step.type === "agent" && preset.access.mode === "push")
+				step.reads!.publication = "draft-pr";
+			if (step.type === "tool") {
+				Object.assign(step.reads!, {
+					draftPr: "draft-pr",
+					ci: "ci",
+					guide: "guide",
+					reviewGate: "review-gate",
+					handoff: "handoff",
+					merge: "merge",
+				});
+				if (
+					["ci", "review-after-fix", "merge-readiness"].includes(
+						step.tool ?? "",
+					)
+				)
+					step.reads!.review ??= "code-review";
+				if (step.tool === "delivery-route")
+					Object.assign(step.reads!, {
+						plan: "plan",
+						planReview: "plan-review",
+						review: "plan-review",
+						clarify: "clarify",
+					});
+				if (step.id === "external-human-review")
+					step.arguments = { ...step.arguments, externalReview: true };
+			}
+			for (const [name, binding] of Object.entries(step.reads ?? {})) {
+				const from = typeof binding === "string" ? binding : binding.from;
+				if (!from.startsWith("@") && !ids.has(from.split("/")[0]!))
+					delete step.reads![name];
+			}
+			// Binding aliases remain available for old frozen definitions only.
+			for (const key of [
+				"qaContract",
+				"videoContract",
+				"guideContract",
+				"architectureContract",
+				"architectureBrief",
+				"reviewContract",
+				"impactContract",
+				"impactSource",
+				"architectureSource",
+				"review",
+				"impact",
+				"delivery",
+			] as const)
+				delete step[key];
+			for (const group of step.groups ?? []) walk(group);
+		}
+	};
+	walk(result.steps);
+	return result;
+}
 export const defaultWorkflows = validateWorkflows([
-	...impactDefaults,
-	improvementWorkflow,
+	...impactDefaults.map(configuredStock),
+	configuredStock(improvementWorkflow),
 ]);
 
 /** Extend only the stock handoff route to reuse its already-authorized CI fixer. */
 export function upgradeHandoffReadiness(steps: WorkflowStep[]): boolean {
 	const handoff = steps.find((step) => step.tool === "handoff");
 	const ci = steps.find((step) => step.tool === "ci");
+	const fix =
+		ci?.branches.find(
+			(branch) => branch.when.path === "fix" && branch.when.equals === true,
+		)?.next ?? readStep(handoff ?? {}, "fix");
 	if (
 		!handoff ||
 		handoff.branches?.length ||
 		(handoff.next && !["end", "human-review"].includes(handoff.next)) ||
-		!steps.some((step) => step.id === "ci-fix") ||
+		!fix ||
+		!steps.some((step) => step.id === fix) ||
 		!ci?.branches.some(
 			(branch) =>
-				branch.next === "ci-fix" &&
+				branch.next === fix &&
 				branch.when.path === "fix" &&
 				branch.when.equals === true,
 		)
 	)
 		return false;
-	handoff.branches = [{ when: { path: "fix", equals: true }, next: "ci-fix" }];
+	handoff.branches = [{ when: { path: "fix", equals: true }, next: fix }];
 	return true;
 }

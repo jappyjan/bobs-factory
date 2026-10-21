@@ -26,6 +26,9 @@ import type {
 	ProviderCheck,
 	ProviderCommand,
 } from "./MergeReadiness.js";
+import { repositoryMetadata } from "./RepositoryScope.js";
+import { takeoverSource } from "./RunContextSources.js";
+import { boundToolOutput, outputForTool } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 export type GitProviderSnapshot = GitProviderConfig & { repositoryUrl: string };
@@ -88,9 +91,7 @@ export async function resolveGitProvider(
 ): Promise<GitProvider> {
 	const { run } = context;
 	if (!run.gitProvider) {
-		const metadata = run.outputs.repository as
-			| { gitProvider?: unknown; githubUrl?: unknown; gitlabUrl?: unknown }
-			| undefined;
+		const metadata = repositoryMetadata(run, context.step);
 		const configured = metadata?.gitProvider;
 		const config = configured
 			? GitProviderConfigSchema.parse(configured)
@@ -108,8 +109,13 @@ export async function resolveGitProvider(
 					? gitlabUrl
 					: (gitlabUrl ?? githubUrl);
 		const retainedUrl =
-			(run.outputs.source as { url?: string } | undefined)?.url ??
-			(run.outputs["draft-pr"] as { url?: string } | undefined)?.url;
+			(takeoverSource(run) as { url?: string } | undefined)?.url ??
+			(
+				boundToolOutput(context, "draftPr", "draft-pr") as
+					| { url?: string }
+					| undefined
+			)?.url ??
+			(outputForTool(run, "draft-pr") as { url?: string } | undefined)?.url;
 		const existingUrl = retainedUrl ?? requestUrl;
 		const existing =
 			typeof existingUrl === "string"

@@ -1,3 +1,14 @@
+import {
+	architectureContinuationInstructions,
+	implementationScopeInstructions,
+} from "./InstructionText.js";
+
+export {
+	architectureContinuationInstructions,
+	architectureQuestionInstructions,
+	implementationScopeInstructions,
+} from "./InstructionText.js";
+
 import { createHash, randomUUID } from "node:crypto";
 import {
 	existsSync,
@@ -420,7 +431,7 @@ export const ArchitectureReviewSchema = z
 		(r) => !r.continuation || r.approved,
 		"Rejected reviews cannot continue approval",
 	);
-export const architectureQuestionInstructions = `When a genuine product, privacy or architecture choice requires human input that the accepted answers and repository do not settle, return approved:false and questions:["the concrete unresolved choice and its consequences"], with feedback describing any candidate changes needed. The runtime asks these questions before another drafting pass, then follows the accepted rejection route to revise and independently review the candidate using the saved answer. Do not repeat unchanged drafting to obtain an answer or invent a policy. Questions and answers never accept an architecture proposal; exact-candidate review and any required human architecture acceptance still follow.`;
+
 export type Architecture = z.infer<typeof ArchitectureSchema>;
 export interface ArchitectureProposal {
 	id: string;
@@ -634,9 +645,6 @@ export async function snapshotProposal(
 	proposal.digest = proposalDigest(proposal);
 	return proposal;
 }
-export const implementationScopeInstructions = `Treat planned file paths as an estimate of implementation work. During implementation, completing the accepted requirements with the accepted architecture includes necessary edits to newly discovered callers, imports, fixtures, tests, configuration and documentation. The implementer inspects those dependencies, makes the required edits and records added paths with their concrete purpose in implementation checks. Do not request permission solely because a necessary path was omitted, and do not add file-by-file approval requirements to the plan. Preserve explicit user/repository restrictions and accepted non-goals. New requirements, materially changed architecture, additional repository or external delivery targets, and unresolved human-dependent decisions still require their applicable authorization or revision route. Self-contained plans must include this implementation policy.`;
-
-export const architectureContinuationInstructions = `For a follow-up proposal, compare the COMPLETE current candidate cumulatively with the latest explicitly human-accepted architecture in architectureProposals and architectureDecisions, not just the preceding generated version. Retain settled decisions and exclusions. The original design's complexity does not itself require another approval. Necessary caller/test wiring, file discoveries and implementation details within the accepted requirements and boundaries do not create a new human decision. Do not turn Bob-authored file manifests into user restrictions. Material changes to requirements, responsibilities, interfaces, security/operating limits, delivery targets, explicit human/repository restrictions or non-goals, and unresolved human-dependent choices still need their applicable authorization. Explain the actual change and its evidence; uncertainty must remain visible.`;
 
 /** The review-v1 proposer prompt. Frozen runs keep it until a human asks for a new version. */
 export const architectureInstructions = `Inspect the selected repositories, actual module boundaries and conventions, all requirements, comments, answers and decisions, the draft plan and prior candidate-review feedback. Preserve Takeover's completed work, PR URL and branch. Propose the smallest adequate design; do not implement or invent human acceptance. Routine unsplit changes using established patterns may bypass architecture approval with a concrete rationale; meaningful responsibilities, boundaries, interfaces or trade-offs require human acceptance.

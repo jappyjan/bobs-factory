@@ -5,6 +5,7 @@ import { type AgentRunnerConfig, GitHubTokenStore } from "bobs-factory-core";
 import { z } from "zod";
 import { repositoryReference } from "./GitProviderReference.js";
 import type { ProviderCommand } from "./MergeReadiness.js";
+import { repositoryMetadata } from "./RepositoryScope.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 /** An in-process provider operation, never a child executable or shell command. */
@@ -763,8 +764,7 @@ export async function githubGitEnvironment(
 			directory: context.run.workspace,
 			repositoryUrl:
 				context.run.gitProvider?.repositoryUrl ??
-				(context.run.outputs.repository as { githubUrl?: string } | undefined)
-					?.githubUrl,
+				repositoryMetadata(context.run, context.step)?.githubUrl,
 		}) ?? {}
 	);
 }

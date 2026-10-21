@@ -10,6 +10,7 @@ import {
 import {
 	StepSchema,
 	type Workflow,
+	WorkflowSchema,
 	type WorkflowStep,
 } from "../src/factory/Workflow.js";
 import {
@@ -17,6 +18,9 @@ import {
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import { newStep } from "../src/factory/web/recipe-graph.js";
+import legacyWorkflows from "./fixtures/legacy-workflows-a4990127.json" with {
+	type: "json",
+};
 
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
@@ -27,7 +31,9 @@ afterEach(async () => {
 });
 
 function oldStock(): Workflow[] {
-	const definitions = structuredClone(defaultWorkflows);
+	const definitions = legacyWorkflows.default.map((workflow) =>
+		WorkflowSchema.parse(workflow),
+	);
 	const restore = (steps: WorkflowStep[]) => {
 		for (const step of steps) {
 			step.maxVisits /= 2;

@@ -1,0 +1,57 @@
+{
+  "mode": "packaged-binary",
+  "bun": "1.4.2",
+  "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/factory-schema-stress-IrObJV",
+  "compileRequests": 100,
+  "evaluations": 100,
+  "cancellations": 10,
+  "postCancelCompiles": 10,
+  "postCancelEvaluations": 10,
+  "binary": "/tmp/ticket136-binary-r2-7106f734/artifacts/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+  "binarySha256": "b233c7ef8edac8cc8037b2fa8f5de8c59459a5476e9341d1adbed8d36a528d85",
+  "build": {
+    "schemaVersion": 1,
+    "product": "bobs-factory",
+    "version": "1.0.0-beta",
+    "commit": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+    "dirty": false,
+    "target": "darwin-arm64",
+    "tooling": {
+      "bun": "1.4.2"
+    },
+    "executable": {
+      "file": "bobs-factory",
+      "size": 111663858,
+      "sha256": "b233c7ef8edac8cc8037b2fa8f5de8c59459a5476e9341d1adbed8d36a528d85"
+    },
+    "resourceDigest": "1b598f36d75c938f267023e07cf052ef43ff114e96af4a162532d10bb951e5ed",
+    "validation": "pending runtime smoke",
+    "requirements": "macOS; native target smoke required"
+  },
+  "identity": {
+    "build": "8d8dd7cd2aaf5584cdb1b564",
+    "protocol": 1,
+    "runtime": {
+      "version": "1.0.0-beta",
+      "commit": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+      "dirty": false,
+      "target": "darwin-arm64",
+      "resourceDigest": "1b598f36d75c938f267023e07cf052ef43ff114e96af4a162532d10bb951e5ed",
+      "packaged": true
+    },
+    "capabilities": [
+      "desktop-app-maintenance-v1"
+    ]
+  },
+  "invalidOutputRemainsCorrection": true,
+  "wall": {
+    "elapsedMs": 2095,
+    "ticks": 163,
+    "child": {
+      "pid": 7282,
+      "command": "/private/tmp/ticket136-binary-r2-7106f734/artifacts/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory internal-schema-validator"
+    }
+  },
+  "childrenAfter": [],
+  "result": "PASS"
+}

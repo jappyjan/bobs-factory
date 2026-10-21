@@ -1,0 +1,1433 @@
+{"identity": {"source": "9d985f91bf5accedac2c64949ff2731aeb8a1e70", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["pnpm", "lint", "--max-diagnostics=100"], "started": "2026-10-21T17:34:20.468349+00:00"}
+
+> bobs-factory-monorepo@1.0.1 lint /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery
+> biome check --max-diagnostics=100
+
+packages/core/src/security/WebhookIpValidator.ts:2:9 lint/complexity/noStaticOnlyClass ━━━━━━━━━━━━━
+
+  ! Avoid classes that contain only static members.
+  
+    1 │ // Node 18+ globals — available at runtime but not in ES2022 lib typings
+  > 2 │ declare class AbortSignal {
+      │         ^^^^^^^^^^^^^^^^^^^
+  > 3 │ 	static timeout(ms: number): AbortSignal;
+  > 4 │ }
+      │ ^
+    5 │ declare function fetch(
+    6 │ 	url: string,
+  
+  i Prefer using simple functions instead of classes with only static members.
+  
+
+packages/edge-worker/src/factory/web/styles.css:2385:25 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    2383 │ 		animation: none !important;
+    2384 │ 		transition: none !important;
+  > 2385 │ 		scroll-behavior: auto !important;
+         │ 		                      ^^^^^^^^^^
+    2386 │ 	}
+    2387 │ }
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    2385 │ → → scroll-behavior:·auto·!important;
+         │                          ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:9716:12 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    9714 │ }
+    9715 │ .imp-package {
+  > 9716 │ 	margin: 0 !important;
+         │ 	          ^^^^^^^^^^
+    9717 │ 	display: grid;
+    9718 │ 	gap: 8px;
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    9716 │ → margin:·0·!important;
+         │            ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:421:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    419 │ 	margin-left: auto;
+    420 │ }
+  > 421 │ .toggle {
+        │ ^^^^^^^
+    422 │ 	display: inline-flex;
+    423 │ 	border-radius: 999px;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    416 │ 	font-weight: 700;
+    417 │ }
+  > 418 │ .section-heading .toggle {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    419 │ 	margin-left: auto;
+    420 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1479:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1477 │ 	transform: translateX(-50%);
+    1478 │ }
+  > 1479 │ .markdown {
+         │ ^^^^^^^^^
+    1480 │ 	min-width: 0;
+    1481 │ 	max-width: 100%;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    818 │ 	color: var(--muted);
+    819 │ }
+  > 820 │ .stuck-panel .markdown {
+        │ ^^^^^^^^^^^^^^^^^^^^^^
+    821 │ 	margin: 8px 0;
+    822 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1778:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    1776 │ 	gap: 16px;
+    1777 │ }
+  > 1778 │ .assessment section {
+         │ ^^^^^^^^^^^^^^^^^^^
+    1779 │ 	background: var(--quiet);
+    1780 │ 	padding: 16px;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    839 │ 	object-fit: cover;
+    840 │ }
+  > 841 │ .pairs section + section {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    842 │ 	margin-top: 12px;
+    843 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1858:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    1856 │ 	border-radius: 12px;
+    1857 │ }
+  > 1858 │ .diff span {
+         │ ^^^^^^^^^^
+    1859 │ 	display: block;
+    1860 │ 	white-space: pre;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1911:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1909 │ 	font-weight: 800;
+    1910 │ }
+  > 1911 │ .error,
+         │ ^^^^^^
+    1912 │ .connection-error {
+    1913 │ 	background: var(--red);
+  
+  i This selector specificity is (0, 2, 0)
+  
+    603 │ 	margin: 0;
+    604 │ }
+  > 605 │ .run-title-status .error {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    606 │ 	flex-basis: 100%;
+    607 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1929:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1927 │ 	color: var(--muted);
+    1928 │ }
+  > 1929 │ .bob {
+         │ ^^^^
+    1930 │ 	overflow: visible;
+    1931 │ 	animation: bob-bounce 3s ease-in-out infinite;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    707 │ 	font-weight: 700;
+    708 │ }
+  > 709 │ .question-heading .bob {
+        │ ^^^^^^^^^^^^^^^^^^^^^^
+    710 │ 	flex-shrink: 0;
+    711 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1945:18 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    1943 │ }
+    1944 │ .bob-sleepy {
+  > 1945 │ 	animation: none !important;
+         │ 	                ^^^^^^^^^^
+    1946 │ }
+    1947 │ /* Factory is unreachable: Bob slows down and looks around for it. */
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    1945 │ → animation:·none·!important;
+         │                  ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:2383:19 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    2381 │ 	*:before,
+    2382 │ 	*:after {
+  > 2383 │ 		animation: none !important;
+         │ 		                ^^^^^^^^^^
+    2384 │ 		transition: none !important;
+    2385 │ 		scroll-behavior: auto !important;
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    2383 │ → → animation:·none·!important;
+         │                    ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:2384:20 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    2382 │ 	*:after {
+    2383 │ 		animation: none !important;
+  > 2384 │ 		transition: none !important;
+         │ 		                 ^^^^^^^^^^
+    2385 │ 		scroll-behavior: auto !important;
+    2386 │ 	}
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    2384 │ → → transition:·none·!important;
+         │                     ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:2452:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    2450 │ 	gap: 12px;
+    2451 │ }
+  > 2452 │ .guide-topline > span {
+         │ ^^^^^^^^^^^^^^^^^^^^^
+    2453 │ 	font-size: 11px;
+    2454 │ 	letter-spacing: 0.1em;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:3011:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    3009 │ 	justify-self: end;
+    3010 │ }
+  > 3011 │ .guide-navigation > span {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    3012 │ 	flex: 1;
+    3013 │ 	text-align: center;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:3025:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    3023 │ 	margin: 20px 0;
+    3024 │ }
+  > 3025 │ .compact-comparison section {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    3026 │ 	background: var(--quiet);
+    3027 │ 	padding: 12px;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    839 │ 	object-fit: cover;
+    840 │ }
+  > 841 │ .pairs section + section {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    842 │ 	margin-top: 12px;
+    843 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:3361:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    3359 │ 	min-width: 0;
+    3360 │ }
+  > 3361 │ .group-title > span {
+         │ ^^^^^^^^^^^^^^^^^^^
+    3362 │ 	display: block;
+    3363 │ 	font-size: 0.8rem;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:3427:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    3425 │ 	overflow-wrap: anywhere;
+    3426 │ }
+  > 3427 │ .folder-row > span {
+         │ ^^^^^^^^^^^^^^^^^^
+    3428 │ 	color: var(--muted);
+    3429 │ 	white-space: nowrap;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:4254:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    4252 │ 	width: 100%;
+    4253 │ }
+  > 4254 │ .settings-actions {
+         │ ^^^^^^^^^^^^^^^^^
+    4255 │ 	display: flex;
+    4256 │ 	flex-wrap: wrap;
+  
+  i This selector specificity is (0, 2, 1)
+  
+    4219 │ 	gap: 0.25rem;
+    4220 │ }
+  > 4221 │ .api-key-list li > .settings-actions {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    4222 │ 	flex-shrink: 0;
+    4223 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:4334:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    4332 │ 	gap: 14px;
+    4333 │ }
+  > 4334 │ .map-legend > span {
+         │ ^^^^^^^^^^^^^^^^^^
+    4335 │ 	display: inline-flex;
+    4336 │ 	gap: 5px;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:4632:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 2, 1)
+  
+    4630 │ 	margin: 12px 0 4px;
+    4631 │ }
+  > 4632 │ .ci-head h1:focus {
+         │ ^^^^^^^^^^^^^^^^^
+    4633 │ 	outline: none;
+    4634 │ }
+  
+  i This selector specificity is (0, 4, 1)
+  
+    4311 │ 	background: color-mix(in srgb, var(--chapter) 55%, #000);
+    4312 │ }
+  > 4313 │ :root[data-review-input="pointer"] .review-document h1:focus,
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    4314 │ :root[data-review-input="pointer"] .guide-page h2:focus {
+    4315 │ 	outline: none;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:4828:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    4826 │ 	padding: 8px 12px;
+    4827 │ }
+  > 4828 │ .ci-instead span,
+         │ ^^^^^^^^^^^^^^^^
+    4829 │ .ci-tag,
+    4830 │ .ci-sub {
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:5112:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    5110 │ 	outline: 3px solid #7b61ff55;
+    5111 │ }
+  > 5112 │ .ci-part b,
+         │ ^^^^^^^^^^
+    5113 │ .ci-part small,
+    5114 │ .ci-link {
+  
+  i This selector specificity is (0, 2, 1)
+  
+    5026 │ 	overflow-wrap: anywhere;
+    5027 │ }
+  > 5028 │ .ci-criterion.partial b,
+         │ ^^^^^^^^^^^^^^^^^^^^^^^
+    5029 │ .ci-criterion.deferred b {
+    5030 │ 	color: var(--question-text);
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:6106:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    6104 │ 	color: var(--muted);
+    6105 │ }
+  > 6106 │ .story-byline span {
+         │ ^^^^^^^^^^^^^^^^^^
+    6107 │ 	display: grid;
+    6108 │ 	place-items: center;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:6345:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    6343 │ 	padding-left: 10px;
+    6344 │ }
+  > 6345 │ .story-bob span {
+         │ ^^^^^^^^^^^^^^^
+    6346 │ 	font-weight: 700;
+    6347 │ 	color: var(--text);
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:6633:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    6631 │ 	border: 1.5px dashed var(--line);
+    6632 │ }
+  > 6633 │ .dive-actor span {
+         │ ^^^^^^^^^^^^^^^^
+    6634 │ 	font-size: 22px;
+    6635 │ 	line-height: 1;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:6718:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    6716 │ 	border-radius: 0 10px 10px 0;
+    6717 │ }
+  > 6718 │ .dive-arrow b {
+         │ ^^^^^^^^^^^^^
+    6719 │ 	position: absolute;
+    6720 │ 	left: 50%;
+  
+  i This selector specificity is (0, 2, 1)
+  
+    5026 │ 	overflow-wrap: anywhere;
+    5027 │ }
+  > 5028 │ .ci-criterion.partial b,
+         │ ^^^^^^^^^^^^^^^^^^^^^^^
+    5029 │ .ci-criterion.deferred b {
+    5030 │ 	color: var(--question-text);
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:6737:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    6735 │ 	top: -1px;
+    6736 │ }
+  > 6737 │ .dive-step-text {
+         │ ^^^^^^^^^^^^^^^
+    6738 │ 	position: relative;
+    6739 │ 	padding: 6px 10px 10px;
+  
+  i This selector specificity is (0, 3, 0)
+  
+    6655 │ 	opacity: 0.55;
+    6656 │ }
+  > 6657 │ .dive-step.current .dive-step-text {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    6658 │ 	background: var(--indigo);
+    6659 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:7046:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    7044 │ 	background: var(--orange);
+    7045 │ }
+  > 7046 │ .dive-pin > span {
+         │ ^^^^^^^^^^^^^^^^
+    7047 │ 	display: grid;
+    7048 │ 	flex: none;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:8448:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    8446 │ 	font-size: 13px;
+    8447 │ }
+  > 8448 │ .recipe-node-text b {
+         │ ^^^^^^^^^^^^^^^^^^^
+    8449 │ 	display: -webkit-box;
+    8450 │ 	-webkit-line-clamp: 2;
+  
+  i This selector specificity is (0, 2, 1)
+  
+    5026 │ 	overflow-wrap: anywhere;
+    5027 │ }
+  > 5028 │ .ci-criterion.partial b,
+         │ ^^^^^^^^^^^^^^^^^^^^^^^
+    5029 │ .ci-criterion.deferred b {
+    5030 │ 	color: var(--question-text);
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:9127:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    9125 │ 	overflow: hidden;
+    9126 │ }
+  > 9127 │ .imp-progress span {
+         │ ^^^^^^^^^^^^^^^^^^
+    9128 │ 	display: block;
+    9129 │ 	height: 100%;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    793 │ 	min-height: 32px;
+    794 │ }
+  > 795 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    796 │ 	margin-right: 6px;
+    797 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:9149:12 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    9147 │ }
+    9148 │ .imp-group {
+  > 9149 │ 	margin: 0 !important;
+         │ 	          ^^^^^^^^^^
+    9150 │ 	display: flex;
+    9151 │ 	gap: 10px;
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    9149 │ → margin:·0·!important;
+         │            ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:9335:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    9333 │ 	font-weight: 900;
+    9334 │ }
+  > 9335 │ .imp-item-body {
+         │ ^^^^^^^^^^^^^^
+    9336 │ 	display: grid;
+    9337 │ 	gap: 14px;
+  
+  i This selector specificity is (0, 3, 0)
+  
+    9306 │ 	border-top-color: #ff9f43;
+    9307 │ }
+  > 9308 │ .imp-item.choice-ignore .imp-item-body {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    9309 │ 	opacity: 0.6;
+    9310 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:2529:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    2527 │ 	margin: 24px 0;
+    2528 │ }
+  > 2529 │ .guide-comparison section {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^
+    2530 │ 	padding: 18px;
+    2531 │ 	border: 1px solid var(--line);
+  
+  i This selector specificity is (0, 1, 2)
+  
+    839 │ 	object-fit: cover;
+    840 │ }
+  > 841 │ .pairs section + section {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    842 │ 	margin-top: 12px;
+    843 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+website/src/styles.css:55:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    53 │ 	scroll-behavior: auto !important;
+    54 │ }
+  > 55 │ body {
+       │ ^^^^
+    56 │ 	overflow-x: clip;
+    57 │ }
+  
+  i This selector specificity is (0, 1, 2)
+  
+    46 │ }
+    47 │ html.lenis,
+  > 48 │ html.lenis body {
+       │ ^^^^^^^^^^^^^^^
+    49 │ 	height: auto;
+    50 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+apps/f1/test-drives/assets/2026-10-21-configurable-agent-step-r1/validation/final-build-manifest.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+       1    1 │   {
+       2      │ - ··"source":·"9d985f91bf5accedac2c64949ff2731aeb8a1e70",
+       3      │ - ··"node":·"v24.21.0",
+       4      │ - ··"bun":·"1.4.2",
+       5      │ - ··"lockfileSha256":·"4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72",
+       6      │ - ··"productionInputs":·{
+       7      │ - ····".github/README.md":·"80eb13415fd9134dbf76d1a18599af0bd2f46a6d7b0f13d831621e2b641e16a9",
+       8      │ - ····".github/actions/install-dependencies/action.yml":·"1c2dc763eaa04cef7d4f2ab4c77cf86408e029f19dc6530c593fa37ef76c80f5",
+       9      │ - ····".github/actions/setup-tests/action.yml":·"59069b2fb51d41425bbbf7f4b2d954a5096e0e43c44ca62d220288784f732169",
+      10      │ - ····".github/copilot-instructions.md":·"0d312378483bcc40650f9f0394e458c5d69297f38b927dd8b6061383935bc86e",
+      11      │ - ····".github/workflows/binary-build.yml":·"c9d47379729aedafe7cfcb4256c73ada60c671deff4bcf90b9a3710ebfc7ed06",
+      12      │ - ····".github/workflows/binary-release.yml":·"76a3553e8172ef5bfdfc1d823b186eeabcbc913744f7a5c292b20cf83976d642",
+      13      │ - ····".github/workflows/ci.yml":·"1ff66817cd8089d334bd7c693168367dfe669a555b965ed4dee3bbaac361f2bb",
+      14      │ - ····".github/workflows/desktop-build.yml":·"b8e7deae04b774ecf1dd1afcb93a547c55c33cc8ae40f8b3e34680bad95b482d",
+      15      │ - ····".github/workflows/release-channel.yml":·"34be025d729888d7699048c4547efa135d27bf48e84a064f55a64b52695ccafa",
+      16      │ - ····".github/workflows/release-evidence.yml":·"c7f69f4cda01749c083428c78d942ae44d69f7c8d7ea96a42a6d8c21776c87ff",
+      17      │ - ····".github/workflows/source-relink-diagnostic.yml":·"a267c6d7c6bdfbe42cc3c36e2b8e4026931775010ba0652681ed7a808109bd1d",
+      18      │ - ····".github/workflows/website.yml":·"76fb3aaf1a1d53663d6be8a6e02ca60e4f98314aa4b8d10f5ef208ca82eed2c5",
+      19      │ - ····".node-version":·"55075b5ec4e8b31936cbbc282b8829116d1fd48f2f2f1856dee592a6650700ce",
+      20      │ - ····".npmrc":·"cbfed7197099cffc531c86ff3aaa44b1540319ba63bf75649195248b62856dfc",
+      21      │ - ····"apps/cli/.gitignore":·"4477145e6156505eb8a131a207d28142e6c424d19f63fc2d0b919a0582567dc4",
+      22      │ - ····"apps/cli/.npmignore":·"1c83e4dad3aaa513037e001417eac1079885a935b76f4ed5bebe02452f2fac16",
+      23      │ - ····"apps/cli/README.md":·"5944fbfb08e06bc258f1e182e289b9aa36246b21fa65576997dab2119bf32a31",
+      24      │ - ····"apps/cli/RELEASING.md":·"0f95c44b2e999f14fcac5a749829b87572e3101f5a17cc204c9aae5d8da62539",
+      25      │ - ····"apps/cli/agent-prompt-template.md":·"86fd539ebbde046dedb7183d9438881ad63c048949c0275646df9d710ab7e74a",
+      26      │ - ····"apps/cli/app.test.ts":·"107ab6b05beab64c5a134b57760ca26a01497e5cd608473501d2a0c260a1ddef",
+      27      │ - ····"apps/cli/package.json":·"5ac1e84a6f2c407b324b2ef142f6bd5ef7ea804d47dc70e9e9aead882265281b",
+      28      │ - ····"apps/cli/repositories.example.json":·"2b8306b4beaca0485f1e3e58d09abc71f7103b91968c4f2fa0c23da6ed993375",
+      29      │ - ····"apps/cli/src/Application.ts":·"a7e8734f864c33f3fae6f1e27e839dea2ef28133aef977ae57dff0b23fc11990",
+      30      │ - ····"apps/cli/src/app.ts":·"4da69683c4b03262a6822b076e695f56a0da220e1a408a35e9173bd69b8ec263",
+      31      │ - ····"apps/cli/src/bootstrap.ts":·"8d5f5ec3b5a879e071de96d9b89f0b12fc9fee0ca0c946c2be9d9f2308596fac",
+      32      │ - ····"apps/cli/src/cli.ts":·"fb8e454c865ba06e308d03652e2f38ee63f3132a123c16082298531468524b2b",
+      33      │ - ····"apps/cli/src/commands/CheckTokensCommand.ts":·"bba24547cafb7e64aa63acbbd96eaa8a670b940d30834c0b600f3e8bf71ecd24",
+      34      │ - ····"apps/cli/src/commands/ICommand.ts":·"b99f0ec975e523480d4ee52129fad632b113145037a5488e21f1fe914c643788",
+      35      │ - ····"apps/cli/src/commands/RefreshTokenCommand.ts":·"46868d864e6d30e283c3677cd1e8718df14010531616b5eeabee828c6aefb1f5",
+      36      │ - ····"apps/cli/src/commands/SelfAddRepoCommand.test.ts":·"b90f12698ed5d2356626808f0a5325036e3403a492cc965eb1f644253f53161e",
+      37      │ - ····"apps/cli/src/commands/SelfAddRepoCommand.ts":·"b2976cd992557672c9df476c42ad85966a7a4415d3a3d47c3fccd8ebc5d97eaf",
+      38      │ - ····"apps/cli/src/commands/SelfAuthCommand.test.ts":·"f0b8b593c3607338f54898af3b19e851fbe8f4e1769f0ed90430b97cc8352350",
+      39      │ - ····"apps/cli/src/commands/SelfAuthCommand.ts":·"d4d2d9e3047618b2d295c9cd51f8b1f47bd2f2e83d50b229da2bb6d8c7055b90",
+      40      │ - ····"apps/cli/src/commands/StartCommand.ts":·"c3cabd9df24b53ba0d821bc4aa3bb661bd651e8b512c071d888388c0b9ce6728",
+      41      │ - ····"apps/cli/src/commands/service.ts":·"e4c330b9be615f0448bbcc7d54f7bdd6734d5832da61ef1ceddf2ce1e0f11f93",
+      42      │ - ····"apps/cli/src/commands/storage.test.ts":·"a801f908838a5ceef6dc9f6deab42c93b13f55b0b2ddd3b129f1eeca8a913467",
+      43      │ - ····"apps/cli/src/commands/storage.ts":·"7e25a6319ebf7092880fac170af5f902e3e4db61e8e4136b9364290802990607",
+      44      │ - ····"apps/cli/src/commands/update.ts":·"78b8dc27bcfbb3bee0b445cc1f774eb1e49135e7db14e4ed8bb2a4d03aa4f605",
+      45      │ - ····"apps/cli/src/config/constants.ts":·"d39855825282214220f0b14e15d30b02b05d10ba90bc28794c63c1e8504458c1",
+      46      │ - ····"apps/cli/src/config/types.ts":·"1ce549f17ae36a77d80288c4e474779a5ec7f9b444fa84143ff17c0ec290d0fb",
+      47      │ - ····"apps/cli/src/envFile.test.ts":·"8342765e04201a7c26b00f69a199ee6ffcfcd1c05562c94ca603e67b04c4ff3e",
+      48      │ - ····"apps/cli/src/envFile.ts":·"cb7dbf9d2dbf17a6cb936dcd5db5e242c8a8d3d0e7006f7a9764e5876b2b3729",
+      49      │ - ····"apps/cli/src/github.test.ts":·"be52c4e9296cb4733811c18ecd7f0e69d1c9aef7aa519434aa49dc0feb4b5a81",
+      50      │ - ····"apps/cli/src/github.ts":·"3304b95ba2470926da8a6eafd64e311c9df758ac7c74ecd620f341e72c612c98",
+      51      │ - ····"apps/cli/src/internal.ts":·"e30b36d5e3c9eb917d4e24ca2af1008ebeded4de2ab4ee64f1fa0f52b47c4a27",
+      52      │ - ····"apps/cli/src/local.test.ts":·"1f9cfe3ae564d7894c40c7089bad0270a27b2f5662f5f6f46fa9e64cd1dae79e",
+      53      │ - ····"apps/cli/src/local.ts":·"8a157678885a39e1c31305f201472c82543e07904a4d3a5db049112ee19ee49c",
+      54      │ - ····"apps/cli/src/migration/command.ts":·"78f055911912b96a86910c15e61625bd1542d3a75f9a7bfbd8f92f39718f106c",
+      55      │ - ····"apps/cli/src/migration/migration.test.ts":·"a36b45113969b8f9a6cb56ed5980c203f350504ed60404ba855c9fb7bb7d2be3",
+      56      │ - ····"apps/cli/src/migration/migration.ts":·"313cbb2a855269a766a07981179fccf45aa4993f8a1204fafa5453078b9b01c9",
+      57      │ - ····"apps/cli/src/migration/paths.ts":·"2caa5ec7c8eb2f308e6e2916ea9585d9600fbfe97e9f27761b087ff4428738b9",
+      58      │ - ····"apps/cli/src/migration/preservation.test.ts":·"b929e41a07e82f2bdfbc0be85cd6a6d9616f63df882fa90ad74159bcea77908b",
+      59      │ - ····"apps/cli/src/migration/preservation.ts":·"6124832b6b00cf1d487bd442e22ea4ea1c7e2aca7d14cc889795ef3fabd58230",
+      60      │ - ····"apps/cli/src/migration/transform.ts":·"65dccb5e9b40a168c5073466c6c96afc874871f029554cbd2569fb34ba82ac7f",
+      61      │ - ····"apps/cli/src/migration/worktrees.test.ts":·"4456cb0d068178053b063c23a110a03d4b74cb3e48f261650caf1e9404f3b539",
+      62      │ - ····"apps/cli/src/migration/worktrees.ts":·"4cb520a2f41d5ff61dcebf6dbc50a010e6bf8215bac521f2e012bdce2b520414",
+      63      │ - ····"apps/cli/src/onboarding.test.ts":·"fad0babbd5c485771142ea3e3eebd51264367c93c26dac62be19f53ba4c11723",
+      64      │ - ····"apps/cli/src/onboarding.ts":·"1cd6b3233b6d468af5a42e1bf4651fd770cef5bdd930cef56ead444800a6f41b",
+      65      │ - ····"apps/cli/src/runtime-settings.ts":·"5bf553d74046eaba6dbac69b28f1e951c2d9f8d1344bc02c64b7592a180c77e5",
+      66      │ - ····"apps/cli/src/runtime.ts":·"c235a54ed435ee3f2b87f0c1d86ac40eff9eb39baecb306d806d5e870335cb56",
+      67      │ - ····"apps/cli/src/services/ConfigService.ts":·"c9485fdd6472feb255487ab86992872b830a25be25faab3cac38e041b5ba7c0f",
+      68      │ - ····"apps/cli/src/services/DesktopLifecycle.test.ts":·"e74f5891d80588899803d6ece385edee005b0161b03bc91ceb6e2e41d659fd9b",
+      69      │ - ····"apps/cli/src/services/DesktopLifecycle.ts":·"dd05f4d71c8244eb917202d93b2527474e6040cc30706e0282c76b511d8872ff",
+      70      │ - ····"apps/cli/src/services/InstallationOwnership.test.ts":·"6b4c5d285c31b556e0e36c080a1d7d85a85d99c67273d501fd5dc3b12c9eab5a",
+      71      │ - ····"apps/cli/src/services/InstallationOwnership.ts":·"67f247f5817cc47dd2de3dfd637a6776b12acd7bd93c547019cb43bb72dbd782",
+      72      │ - ····"apps/cli/src/services/InstanceLock.test.ts":·"87b1e98092a8db8665b1aaa1020567db9922ef252c0bf4bb73ffce94f4a2ef84",
+      73      │ - ····"apps/cli/src/services/InstanceLock.ts":·"1a0d1c29f0c1b11d39ce8635d0b04189a10fe4284c5a06c71ab9d9f49be7b4d1",
+      74      │ - ····"apps/cli/src/services/Logger.ts":·"ddeafbf04f39ea4cf239e161e89c74007613718bec9114d10ab613ac381eac2c",
+      75      │ - ····"apps/cli/src/services/OwnedUpdateLifecycle.test.ts":·"5c7e70013ab659cba28ad3c6159ea513da9e63ffe6b5c54a12b324e77e1a357c",
+      76      │ - ····"apps/cli/src/services/OwnedUpdateLifecycle.ts":·"8d841bc4849e33d383d6cf5435e38f9015262b78b54864f098ca3565fa1b88f3",
+      77      │ - ····"apps/cli/src/services/SentryErrorReporter.ts":·"6abb499122968143235efc73e464c7dafe0283a0250127169f3b474b976b2d0a",
+      78      │ - ····"apps/cli/src/services/ServiceLifecycle.test.ts":·"d31769f91b04bb09b574c78cebcbac8a2ee236855c2864860ff3ccfb8ab5b9ea",
+      79      │ - ····"apps/cli/src/services/ServiceLifecycle.ts":·"78822a8a0cb528f2074499ac089288c3a6b84756f5d679a5cf25cef34f9afbf1",
+      80      │ - ····"apps/cli/src/services/UpdateStateSnapshot.test.ts":·"c41480df2b62697038e261c5b4797c80aafed4ef3d6e1119c9fcbd164dfc4e2c",
+      81      │ - ····"apps/cli/src/services/UpdateStateSnapshot.ts":·"9faf7af0d1a5d73bfd3ab0df3eff9b62d01703633a8d7a233bcddf2cba2cbf5d",
+      82      │ - ····"apps/cli/src/services/UpdateSupervisor.ts":·"590017f1611416fe7fef55dca03d8fb832f915767b448a83fc69707016bcc99e",
+      83      │ - ····"apps/cli/src/services/WorkerService.test.ts":·"6ee9ffa444514cef98641db3944c2845d771151454279fc2b95cdd0ac99ae56a",
+      84      │ - ····"apps/cli/src/services/WorkerService.ts":·"f1f5e1a48769e20d05ee65b20f5129edb262e43a545d231e140e023715339321",
+      85      │ - ····"apps/cli/src/services/createErrorReporter.test.ts":·"a8e91e023eeeef3d24c6e0ac3f7e2569844d329c10d93d8879fcf0853e0fc3b9",
+      86      │ - ····"apps/cli/src/services/createErrorReporter.ts":·"97d62e16650201e533328cb45d1af855543dcc4b3e63b4c5f02769c4cf856c17",
+      87      │ - ····"apps/cli/src/services/sentryScrubber.test.ts":·"7add6df7974faee0042cf8dc2e08af401b37c967d3d02a614f432fdbe7dbced2",
+      88      │ - ····"apps/cli/src/services/sentryScrubber.ts":·"c0131b64fa4283246ac81e9c53b1230b89008d838109180c61b525fac12b66bc",
+      89      │ - ····"apps/cli/src/tui/app.ts":·"6e5e34540b370e85f69b6a52501ea637fc299e765360b15f0e5889eb6e9dd1c7",
+      90      │ - ····"apps/cli/src/tui/client.ts":·"805ada09e9cc844e33a647ef883948bc814922d7bcea86ed3d3bb8539c1e8cb7",
+      91      │ - ····"apps/cli/src/tui/forms.ts":·"c718b38aa9793c9499fa16db159fd511289571a8ea4169d50a9b814e93a3aa52",
+      92      │ - ····"apps/cli/src/tui/index.ts":·"32af8d6f569202250293d4a3b1ef6fb1223d2c91948882bf9b9acbb9adfebcb9",
+      93      │ - ····"apps/cli/src/tui/model.ts":·"c935cabe8a9121976709ce03e523b3a1c3e0ddff3686f170fb2df3051ef1c057",
+      94      │ - ····"apps/cli/src/tui/terminal.ts":·"93b31243161ddc30c0964b8d51434e3d56270448da8a156493466466cd888d29",
+      95      │ - ····"apps/cli/src/tui/theme.ts":·"b758d2a39aba559399bf07c7745d11bf1e8e3bb919736354c5fd143fd0597d74",
+      96      │ - ····"apps/cli/src/tui/tui.test.ts":·"7d5eb54a993644e098f9841a0fc1d82b80aca47424c77f88ff97f078cc86688f",
+      97      │ - ····"apps/cli/src/ui/CLIPrompts.ts":·"1f39086f12af233b27afe2ddc24040cadd7a1715a8f51792d1c278175088e0d5",
+      98      │ - ····"apps/cli/src/utils/getDefaultReposDir.ts":·"f4b14beae2ea80fca7fe3ffaa4350d5b4a65af3e972ec95965c7ef80d6104fb2",
+      99      │ - ····"apps/cli/src/utils/getDefaultWorktreesDir.ts":·"ac816f4577170265e2827765c7e0f63f4f16313e13711b07c68d4b1f22245534",
+     100      │ - ····"apps/cli/test/fixtures/release/clock.mjs":·"dc6ae38ba22a5e0ce635045129d7c5fcbcacd7f9cc56ccb25c5030fab2d68362",
+     101      │ - ····"apps/cli/test/fixtures/release/command.mjs":·"a802fb5bec62b1ee1047dbba0a1c9a0135b1a0dc7d063cc69f080b0b5d80b02c",
+     102      │ - ····"apps/cli/tsconfig.json":·"36aef716ce58caf04dca75d0652febc92b1fb656d5b6ee70dcb01cd8b25586cf",
+     103      │ - ····"apps/cli/vitest.config.ts":·"7afd81abcf755914c433818bf7cabc6128d941de2f266c5345c4acdb581aeb3b",
+     104      │ - ····"apps/desktop/LICENSE":·"c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+     105      │ - ····"apps/desktop/NOTICE":·"acff42efa272fe95675d914d1a1a8ebca9003f0eef5d176731d8a9d75c11107c",
+     106      │ - ····"apps/desktop/package.json":·"33c9dd31de9dd4ed2869ebf92d006ddfd029dc40e5cff86183a2f2d93fe356e6",
+     107      │ - ····"apps/desktop/src/app-archive.mjs":·"3916f821aabc7ef186894188b75406116889caaf1e14d882f0194bb83f5bcd57",
+     108      │ - ····"apps/desktop/src/app-filesystem.mjs":·"eb4755942be215468d0d1bf2cb2d274f7f5b0478f9053b908419a40a8996d452",
+     109      │ - ····"apps/desktop/src/app-helper-files.mjs":·"bcdbc5de711102c9a839f69a71e7b37a13d9a2a1cee90ce19c72412612ea8dde",
+     110      │ - ····"apps/desktop/src/app-helper.mjs":·"0ccce4feb4c9782eb2da7f6eff933a7303b4d5937ec8e19452c43eb36fdf095b",
+     111      │ - ····"apps/desktop/src/app-licenses.mjs":·"89cc61d76bc003df77cbd995ac16efe1087fc5f646c1e425ef02aeef8f8e3b06",
+     112      │ - ····"apps/desktop/src/app-lifecycle.mjs":·"cec61e1246d1b8b172890f3d2fc509103a65e67d9229ea4ae865e09b8ab974e1",
+     113      │ - ····"apps/desktop/src/app-quarantine.mjs":·"c8af4ef973084693496446fb14b77737905ee4d34bd2f21a7ba75314de051725",
+     114      │ - ····"apps/desktop/src/app-source.mjs":·"e305913aabfebe0e94cb58241a72a6dbaac78dae17694d57aa7d7e0caf7e24b1",
+     115      │ - ····"apps/desktop/src/app-updates.mjs":·"15ee5c6ded153b1f772754873e7b54301e422800bfcb2a290214b319ab57aec0",
+     116      │ - ····"apps/desktop/src/contracts.mjs":·"4903fe6152b4410ffbd37bbdf3ac8cfaaa0e63fb7f194837168978c40baa1838",
+     117      │ - ····"apps/desktop/src/dashboard-preload.cjs":·"5c7debd283f98892b26786c822d648c14cff1ed7ab636e50b7fd285424db8334",
+     118      │ - ····"apps/desktop/src/desktop-path.mjs":·"60df0fcae927ea7e3bb3c7b3307151fce26029d321bc04453206471ede4f7e16",
+     119      │ - ····"apps/desktop/src/launcher.css":·"4dbabe5adec8129dac97b5e1b6c006ad8941f2f052b464e066a5d1ffb93cf761",
+     120      │ - ····"apps/desktop/src/launcher.html":·"56505ca838710f6e5fe4d875dbb3718d8aa73c2fb6b13da9018e68247cd13a73",
+     121      │ - ····"apps/desktop/src/launcher.js":·"71bbf58e9acd2d6868367803c2643b3a8ad900e9ea52f467feb8f95a5e588e27",
+     122      │ - ····"apps/desktop/src/local-runtime.mjs":·"e13eb7f08c423a29a222c5fda49f67aa2ba5765c965b226a3638ee823a4c25d5",
+     123      │ - ····"apps/desktop/src/main.mjs":·"80b72f440a19ffd9efa8aa855441d563c862188bf5b6d0102938062a6b339b29",
+     124      │ - ····"apps/desktop/src/preload.cjs":·"225672f9b161938ad64c727035626be7b009d44f159954fbde08084438042a7e",
+     125      │ - ····"apps/desktop/src/update-services.ts":·"df4961e815c90ab31f59319793fedd0c951c75821a6b2251db090ce66aecd75d",
+     126      │ - ····"apps/desktop/test/acceptance-cleanup.mjs":·"41216e307650ebdf26328b91948f90353617780ae2daa3d5475d2e3bd661d128",
+     127      │ - ····"apps/desktop/test/acceptance-cleanup.test.mjs":·"02c28ed39b2e937a5aba8350695f76bf106808fe5f3b3c1cf12faf6d447142c6",
+     128      │ - ····"apps/desktop/test/acceptance-fixture.mjs":·"6bec9fa036ef0e44aac3898da101c2f89909904839a6f63e89b587cd8aa48e23",
+     129      │ - ····"apps/desktop/test/app-asar-fixture.mjs":·"ec3e3919d01362b19bf3993460041ab8e79acf34a731f83bf39c9c7721fbc786",
+     130      │ - ····"apps/desktop/test/app-asar.test.mjs":·"87884ff108d6bb70a109e8d3a4d0e731442e9f97f905f2846d0c1150074a295a",
+     131      │ - ····"apps/desktop/test/app-helper.test.mjs":·"3fc41db78c7588f25ac6e09f4dab5867447c130407abd82d9fa778626f64b33f",
+     132      │ - ····"apps/desktop/test/app-licenses.test.mjs":·"78c806afbee5f3a585a421d7102aa8c2f91234f25db763912d5199542ee1932e",
+     133      │ - ····"apps/desktop/test/app-quarantine.test.mjs":·"65dbf339ce6898755ce24b69cffb80c25aca64909288da6648d834d194f64615",
+     134      │ - ····"apps/desktop/test/app-updates.test.mjs":·"0ed27bffc55e333eebd9d1047542c073d483538d7fe10b18130a0ad7b41b75cf",
+     135      │ - ····"apps/desktop/test/contracts.test.mjs":·"6f771af550b6b595b1602e2e69eebfe16562e7116975abdbd2a4cd05d04c2a00",
+     136      │ - ····"apps/desktop/test/dashboard-access.mjs":·"d704ea7a880981347097f4c21cb0f399f801184291b59812279fbe94e6fa03e3",
+     137      │ - ····"apps/desktop/test/desktop-path.test.mjs":·"0ac0b1d108cdbd45ccdafd9b8299e530aaf07c4ffe9a96618cfbc16bc0b031b6",
+     138      │ - ····"apps/desktop/test/helper-ui-fixture.mjs":·"331d1a3b036d3c72a9b7a74a4a8e97b503983aa67b20113f017f073c9daa36fd",
+     139      │ - ····"apps/desktop/test/launcher.test.mjs":·"be9cc4239a17461fed42f55c41a5fd966d51ff3d377727294f4a2d32e44dadde",
+     140      │ - ····"apps/desktop/test/native-acceptance.mjs":·"da01db115d5903c18f1dcdc8d3d2ae6a7fb68f5623fb18836ce6fbdb6c8a50ba",
+     141      │ - ····"apps/desktop/test/native-receipt-output.mjs":·"5037f1e168fcf4f2ba2c65d98cf04367840f89fb367f0fcf5751fdf6cd83a235",
+     142      │ - ····"apps/desktop/test/native-receipt-output.test.mjs":·"4029dca2e63294c04c75da19ae53d8d544676719cbf2b88f52136261298516f6",
+     143      │ - ····"apps/desktop/test/native-shell-fixture.mjs":·"a9a990e32f2717a95847a24e3f4a690f652479339285fbde7c89b53666767b2c",
+     144      │ - ····"apps/desktop/test/native-shell-fixture.test.mjs":·"c8a2dabf862802ce4ffa66cc5e0001e122dae16ba5b2caa69e3ae9d5c5306efd",
+     145      │ - ····"apps/desktop/test/native-shell-update.mjs":·"9a66481880b0154aa41b8bc3003ced6ad789af96a39509fd57e20aa9a9fdb26c",
+     146      │ - ····"apps/desktop/test/native-smoke.mjs":·"dce0619e0b300b664db1823f144ea7eb951ad261905297dee77ad7e90d56c491",
+     147      │ - ····"apps/desktop/test/native-update-adapter.mjs":·"06ec2392147b2483115083a85fb39a8374eb2f60c95d940d60adfc17c7022316",
+     148      │ - ····"apps/desktop/test/run-native-acceptance.mjs":·"e4749c640827a0b38dca708a38de9bd5b2fadd23d15fa398a11c1329d38413a6",
+     149      │ - ····"apps/desktop/test/shell-fixture.mjs":·"cb0a6a7238f3f1ef6d80dc1ec4edd31f9674cdc1c914fc937fa53ad05bc4026c",
+     150      │ - ····"apps/f1/src/MockAgentRunner.ts":·"2206b0b1c96a90a9a2eb1b2742a49251e44b75202a228858340b6a56c9c22d56",
+  5695 more lines truncated
+  
+
+apps/f1/test-drives/assets/2026-10-21-configurable-agent-step-r1/validation/final-gates.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"identity":·{
+     3    │ - ····"source":·"9d985f91bf5accedac2c64949ff2731aeb8a1e70",
+     4    │ - ····"node":·"v24.21.0",
+     5    │ - ····"pnpm":·"10.33.1",
+     6    │ - ····"bun":·"1.4.2",
+     7    │ - ····"lockfileSha256":·"4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"
+     8    │ - ··},
+     9    │ - ··"checks":·[
+    10    │ - ····{
+    11    │ - ······"name":·"typecheck",
+    12    │ - ······"command":·[
+    13    │ - ········"pnpm",
+    14    │ - ········"typecheck"
+    15    │ - ······],
+    16    │ - ······"exitCode":·0,
+    17    │ - ······"started":·"2026-10-21T17:34:12.699722+00:00",
+    18    │ - ······"ended":·"2026-10-21T17:34:20.456018+00:00"
+    19    │ - ····}
+    20    │ - ··]
+        2 │ + → "identity":·{
+        3 │ + → → "source":·"9d985f91bf5accedac2c64949ff2731aeb8a1e70",
+        4 │ + → → "node":·"v24.21.0",
+        5 │ + → → "pnpm":·"10.33.1",
+        6 │ + → → "bun":·"1.4.2",
+        7 │ + → → "lockfileSha256":·"4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"
+        8 │ + → },
+        9 │ + → "checks":·[
+       10 │ + → → {
+       11 │ + → → → "name":·"typecheck",
+       12 │ + → → → "command":·["pnpm",·"typecheck"],
+       13 │ + → → → "exitCode":·0,
+       14 │ + → → → "started":·"2026-10-21T17:34:12.699722+00:00",
+       15 │ + → → → "ended":·"2026-10-21T17:34:20.456018+00:00"
+       16 │ + → → }
+       17 │ + → ]
+    21 18 │   }
+    22 19 │   
+  
+
+apps/f1/test-drives/assets/2026-10-21-configurable-agent-step-r1/validation/pre-clean-artifacts.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+       1    1 │   [
+       2      │ - ··{
+       3      │ - ····"directory":·"apps/cli/dist",
+       4      │ - ····"files":·{
+       5      │ - ······"package.json":·"82fdd554a3043a4ca8edd757a72ec445fabb8923e45c41dbeb496dacc1f5ce7a",
+       6      │ - ······"src/Application.d.ts":·"ea2e4eacca7f0c41801cff5bccb58f88e29b64525816059ef9f58236b5337a29",
+       7      │ - ······"src/Application.d.ts.map":·"9beeca4d95b367e5d09939b339c3dcd97efefa8a15644e6c810464eb4896d419",
+       8      │ - ······"src/Application.js":·"ae8a2f8d964153e3d9d0666aa7d2a0eec191c4ef0c66eec2da6a56d219a0f31c",
+       9      │ - ······"src/Application.js.map":·"268197bab14087c239ee7d8725dbdfc67d69db7190a883dd0d21bc90f048e45a",
+      10      │ - ······"src/app.d.ts":·"02d14a8cf0b382d9248e85267e0371ba3a1215390e32926c784f3b6ad8ce817f",
+      11      │ - ······"src/app.d.ts.map":·"b278ba16cb7bb3acddb2d272e4407e20b4f6e83a381803fde5f8f7f52731ccc2",
+      12      │ - ······"src/app.js":·"17536486570768412118c2707b088d213f1617f38bc3f807e200bb457ae2937f",
+      13      │ - ······"src/app.js.map":·"560d9beb03e3f8c65f4b1984305fd73583d1157f61326b0c26c5d17d7247a6f4",
+      14      │ - ······"src/bootstrap.d.ts":·"e270ee1310db1e10705966a51749c17085bfe7de06cad256fb69571d2a81a50b",
+      15      │ - ······"src/bootstrap.d.ts.map":·"5fd2d8de6a9f91b0e890cd89756965f36c887f115742c496d04d126aab1eb9a0",
+      16      │ - ······"src/bootstrap.js":·"4bd35149587eb0662625fd0d8243e6659e6c4ae08eae4c40d6d394efb549a585",
+      17      │ - ······"src/bootstrap.js.map":·"a684c3c246cf82a4f3976dc996ed329d0c8867fae2a6615309e886e6fa8750c4",
+      18      │ - ······"src/cli.d.ts":·"c0fef74d51eb25953f6d50d509cb5ee0b1da8978e3e7b0df69b821373248f92c",
+      19      │ - ······"src/cli.d.ts.map":·"001efc564f87633954c4c4f86c3a24e8c02393f77ca70f8f1e0fb47976fd5d54",
+      20      │ - ······"src/cli.js":·"0c81381ef3e0562860b97f18687de7a0b2358f2abf53a754d1bd9dcd8ce25dea",
+      21      │ - ······"src/cli.js.map":·"39b036df174b1cd3ddae803b1afdccc72bf5a3c695d364f0f457fca59653df23",
+      22      │ - ······"src/commands/CheckTokensCommand.d.ts":·"9f2e1dff2395154624a2d623be63e397940160b0b05631da75ab23b376462c82",
+      23      │ - ······"src/commands/CheckTokensCommand.d.ts.map":·"6632d45f327756a954722f600e6c81685e95524b4dacc4616b29dd26eada3ddd",
+      24      │ - ······"src/commands/CheckTokensCommand.js":·"2c045b7c545dcf95144888bb98c37b4b7f7b8d991bfe415c03131932cf63e75e",
+      25      │ - ······"src/commands/CheckTokensCommand.js.map":·"7dee754ca3abc41408ac6010ba1a53b5fd86a48bdf7fbe37328a5a255141c714",
+      26      │ - ······"src/commands/ICommand.d.ts":·"af1134f1386b6e788e821a580e72151b64dd1ce80e9fa895e07dd407763d69a4",
+      27      │ - ······"src/commands/ICommand.d.ts.map":·"4e3adf65221b86c3decb695e79ee3216f74812cf77797abccc5c64d06ad3bd0f",
+      28      │ - ······"src/commands/ICommand.js":·"ef86ca7923efff6fe08bc97835d2026fe23b36a1ffe7d7f56e1224cd79b62a89",
+      29      │ - ······"src/commands/ICommand.js.map":·"13b138c6d2dd811a4bb107a3913ca9de2f1ef2c5a34b8f67ba2b1d454870c184",
+      30      │ - ······"src/commands/RefreshTokenCommand.d.ts":·"1d891a2e73a60bec0ce3c90feba817ff423b0515a930f17c654ac2a492f9ed24",
+      31      │ - ······"src/commands/RefreshTokenCommand.d.ts.map":·"7938236093278358a0626f84417a1f961b18a5c5f4cc53eaef16f69dc9fa23de",
+      32      │ - ······"src/commands/RefreshTokenCommand.js":·"dab3a5768d082d4e8ffeb36f918f25f50d3107a52965f4a3c340c07466080aa1",
+      33      │ - ······"src/commands/RefreshTokenCommand.js.map":·"44cb6fa6f55a87f0f1969c94f3bbc4a8d52593031ab0a7c2b6dcd9f9458dac68",
+      34      │ - ······"src/commands/SelfAddRepoCommand.d.ts":·"80e4570510f1637cb35b76e6302378e8ba630009077c9b3ff27bd42209e356cc",
+      35      │ - ······"src/commands/SelfAddRepoCommand.d.ts.map":·"68b2a3d28fad023927354dfaac91da506a244c21032e15fb6585d2c6dfa3f3e7",
+      36      │ - ······"src/commands/SelfAddRepoCommand.js":·"71d7f68ef4c1e41c17dfcc88099df83b9070ea313bb9fc116c43800558546517",
+      37      │ - ······"src/commands/SelfAddRepoCommand.js.map":·"d16e4071443b293cb859a31bda592ec72367658fcccf20925e1292f17f1ed9a8",
+      38      │ - ······"src/commands/SelfAuthCommand.d.ts":·"0755551fbba1230d0cd6efa0de2aa883d4365a7890a54b6d6c5c683ec9d94044",
+      39      │ - ······"src/commands/SelfAuthCommand.d.ts.map":·"9bb3d70569736d4a03552c324096e3869da62eca63a347c4d8ceff01e9e6e8ad",
+      40      │ - ······"src/commands/SelfAuthCommand.js":·"c38ba8a4450c85f5bdc295fe9dbae03e0856ff64267887830c9df903dd3439fc",
+      41      │ - ······"src/commands/SelfAuthCommand.js.map":·"4c827444c0e6a3fdbfd4a630c21d8faaa53cb857e9a33464a757488b5b75c0ad",
+      42      │ - ······"src/commands/StartCommand.d.ts":·"e6b500b8feb4db10e5a115f59e7e6dbfaf1564c0d9e0bcae8bd886d767ff172b",
+      43      │ - ······"src/commands/StartCommand.d.ts.map":·"9f44c83415c3106face70ffa00652ce902082106e19705578786f04506c9d074",
+      44      │ - ······"src/commands/StartCommand.js":·"d4609752a3b694d315c9ea12e49fa7693ee96594640a33deec8d59fa0df3bedd",
+      45      │ - ······"src/commands/StartCommand.js.map":·"978545cc19ae55685e44976af75c798b194c45a87267188b4d5e299e46622f56",
+      46      │ - ······"src/commands/service.d.ts":·"75cd4fa278442f08e32878b7e10695ce5d58ef5849f31acf01a159939324ccc9",
+      47      │ - ······"src/commands/service.d.ts.map":·"7b1a0957ed9d1ed9f9e9c631de41008900367a0cbbc20a426fe760ba51ec181c",
+      48      │ - ······"src/commands/service.js":·"2d108a53f994de819a8ac92a615a4eb4501260451550ab6140e9e99736c1f881",
+      49      │ - ······"src/commands/service.js.map":·"c00e3e7caf1d416135ed250a10035033cb5ad4cc3e13ea7de8121cd717dbb2ce",
+      50      │ - ······"src/commands/storage.d.ts":·"5021ff9672596790fdcfcde6e9201ef8b171db62fbe47811e66e6f79c77ff3c1",
+      51      │ - ······"src/commands/storage.d.ts.map":·"daeb5a33ac7a9054b5d2075f1893418df54551d112aa1aefc6d27f647cdce92d",
+      52      │ - ······"src/commands/storage.js":·"81d4a249af1c0a05dd46bea87f3098778c0e685d51100ad5c12a83bf08e2583e",
+      53      │ - ······"src/commands/storage.js.map":·"4794a234d17dfee2c1791140d23542c22f9d016e345c1ddff2baeb60d47c38ab",
+      54      │ - ······"src/commands/update.d.ts":·"d4cb74ad06446c43f85b65fe3a703e88b7dba6e8129c48e3aa93c53c0a90db8d",
+      55      │ - ······"src/commands/update.d.ts.map":·"a3d00a141b43ff7dc703d5980c909f25a07b521f5188516f71370c3ac924e907",
+      56      │ - ······"src/commands/update.js":·"2ce8cae879594525a065cbf93e2ef734f3518e82044301cc9cfb5f14d0cbaa88",
+      57      │ - ······"src/commands/update.js.map":·"5be2f6b2cf163f1044fdb840bb03080c1d763fae53f8322384fe67c813ae1b19",
+      58      │ - ······"src/config/constants.d.ts":·"7b849b217e20dbc8bb2bd4280ac768060ac3a27e946174f8a893cb80e4cda236",
+      59      │ - ······"src/config/constants.d.ts.map":·"1de87ff41eb8589f7c85631104097d62edc81720501f0db4756ed29cd5fc7763",
+      60      │ - ······"src/config/constants.js":·"2f0b252d43be24259124aa4207c3d8cc8db1d173961091b19393dc13b56923d5",
+      61      │ - ······"src/config/constants.js.map":·"9abf3cbf68f4dbdc4be4a2d536747434622ae2ca74ac49fe294660a0e2566012",
+      62      │ - ······"src/config/types.d.ts":·"de0e9612ea2b492ea432c1f46991d0c4919d31be22d1ab391d2689c8f393175b",
+      63      │ - ······"src/config/types.d.ts.map":·"4d0f42d412e7ff42fa6738a393c6c909609609e07339e9133182f3ffdf696ef3",
+      64      │ - ······"src/config/types.js":·"01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+      65      │ - ······"src/config/types.js.map":·"3bb6a868a7fba126947d368f8a45fbaca73f763023ef99cec71ae3cb80d13b28",
+      66      │ - ······"src/envFile.d.ts":·"1020518fbaf4b5fbc959c7c7c27eb19a669b4c5371f8e52570c51aa9c8ec0c7a",
+      67      │ - ······"src/envFile.d.ts.map":·"ee4627f5d2046b6fda2869964f67877df2a34c0e22e8942eda08da9caa1e7c6c",
+      68      │ - ······"src/envFile.js":·"a5353273f56ba58c94a2ed21df229a84bcb17e086beae40b9acf714a8fee71b9",
+      69      │ - ······"src/envFile.js.map":·"33d6c0b2660894903b6fbb128f969df8f9956d5de30a6daa3e8c04b0eca02a91",
+      70      │ - ······"src/github.d.ts":·"5cc619318b14d61a8bbce533fb2e073c40454387f352ff78f1775a96d54eaa38",
+      71      │ - ······"src/github.d.ts.map":·"1f389003512fb3822d0b0e14ec33168e1de3eaf9a52a1d74f7e22f0781259853",
+      72      │ - ······"src/github.js":·"e7b624ed78611f597dcaa0a24f18454d38dca023c54a49a1dd93dcd5f4881f2c",
+      73      │ - ······"src/github.js.map":·"3fd1ea1c1a667d01e205486990756c1576a8f843197e2d7eef1811921d098b4f",
+      74      │ - ······"src/internal.d.ts":·"4669ad500d2fdcc5539fdba6d1365ac907519034fd1e951ba2ca52fdaac4e003",
+      75      │ - ······"src/internal.d.ts.map":·"bb0885fd5403b29a33da3a54ed66401e913f974ce7466cdc62c324a23db7c54b",
+      76      │ - ······"src/internal.js":·"221dc95a735bbde9c414601306500d47a647532d62c842bcb29ba3c568de50a4",
+      77      │ - ······"src/internal.js.map":·"316792830c4a799f9f7c7b96c3a097cb41fc931ad9663bfb5dd52431e3f9a424",
+      78      │ - ······"src/local.d.ts":·"b502932b65eb16de7f8184e5e29be2de00245b76d064229dd5ddb12dc7f7c6a9",
+      79      │ - ······"src/local.d.ts.map":·"077d145c4d04268a482739913061927fed647bf85e8700c91ad852059d3f7de9",
+      80      │ - ······"src/local.js":·"26915f10acff722e9f31e071703c0f8583c0183aafb6b4242290c410ab895920",
+      81      │ - ······"src/local.js.map":·"d5c3d82e65fe1b620c618b2881aad449cf104f758fa397abe6bb23b7924f0e2f",
+      82      │ - ······"src/migration/command.d.ts":·"cb23db42835c26442dc8780f6e86c38fb9d7999befd8b240c829199bcf9210f7",
+      83      │ - ······"src/migration/command.d.ts.map":·"6f2e96170c4c4889c14ccfdac712c718ea3df36cfa0fc6760993430cf81e38b1",
+      84      │ - ······"src/migration/command.js":·"07929edef9a91f118006457d57928db36cf3bd178ca5b04393f36f31079ef470",
+      85      │ - ······"src/migration/command.js.map":·"fd8d53a2cab5c95f6acd3da3fb7b052c2b245dae76f4919601f0e13f7f64923f",
+      86      │ - ······"src/migration/migration.d.ts":·"61499691fff227ba6c1aa0ffd683684399cedb632a411367170af887b5153f00",
+      87      │ - ······"src/migration/migration.d.ts.map":·"fb97af75a32be8825963a38d9f8f2bf6afbc870c9e2b66dbd817a0cbadf96ce5",
+      88      │ - ······"src/migration/migration.js":·"201d1dfcbcee9e1481cf8c1e0366d324a3145c1fb964e1bc537639eeedff0e5a",
+      89      │ - ······"src/migration/migration.js.map":·"59db0ed23a45c5541171c2774d86b38e49d8cc9eb19b4c1678a12c8546b917a7",
+      90      │ - ······"src/migration/paths.d.ts":·"0e649987c3aa34b6a1201eb0e3959bac411eb7c26f364bf87a5955d057f1b3f0",
+      91      │ - ······"src/migration/paths.d.ts.map":·"d38626ca240073c5fbe5bf2b196500e76329fe87229602fd9a0007327d9f8157",
+      92      │ - ······"src/migration/paths.js":·"d1b12e72a6165051e8cb646628a429fcb677738bb108bf21149da1182b4fa897",
+      93      │ - ······"src/migration/paths.js.map":·"72aa44a82aee81045c97520b46db37902707f5e00faf66141eae0e21005ef37f",
+      94      │ - ······"src/migration/preservation.d.ts":·"6273fec3c5f152a47ec981bb65232586e8d8e3eb5e19fa2e34252ad107c34808",
+      95      │ - ······"src/migration/preservation.d.ts.map":·"c56e61a3d80fc16b463e487697e7bc06c6f7f04f683bedcc66fe4b67685b4767",
+      96      │ - ······"src/migration/preservation.js":·"22942bb8ea6822c4950fafce11c5ab6451dd15522210eaf59196395df63057f3",
+      97      │ - ······"src/migration/preservation.js.map":·"7ce6a58e9961f3e1d89974779c21b775f5569058c3e772633aa1319134cba4e3",
+      98      │ - ······"src/migration/transform.d.ts":·"ad0f1758b7f23b1d05494a146741e293745df2808f207a2f21464cffbb53e76a",
+      99      │ - ······"src/migration/transform.d.ts.map":·"d24a321c1af7334707a1ebbab4ded8ae45adccc739c76a684f4f727ea46c8355",
+     100      │ - ······"src/migration/transform.js":·"217dd3abfee40fe98b05ae14d5c3d2155870189cdfe5af3180ddf518bc672a5b",
+     101      │ - ······"src/migration/transform.js.map":·"e8e9f8a0b4453b08e53e4e571a7c37d73089fee348533390f481e80b7e2b82bc",
+     102      │ - ······"src/migration/worktrees.d.ts":·"53ee1dae3bd4724fe4b44086fbfee02a80d671f77e80c78ea7b2cab95908a83a",
+     103      │ - ······"src/migration/worktrees.d.ts.map":·"a0d7147afebdac0445e75561e7a1f43fa46459a9bbb67d52aace039c16bfbd0e",
+     104      │ - ······"src/migration/worktrees.js":·"4f825d4aaa539a2ed062707cf04aa2fac0d4076ecb51e1f7bddf1671025a3dec",
+     105      │ - ······"src/migration/worktrees.js.map":·"55f2dd1bf86d4ce91752a3d2dd333a461bbebfcd7252c34354231b34c39f9ecb",
+     106      │ - ······"src/onboarding.d.ts":·"186e14b165679f0d843587a8a041d383a149d52f812f622211daf6744e217ad2",
+     107      │ - ······"src/onboarding.d.ts.map":·"f38a771292c1d1ccf47ae416802a8fb4922c0058bb3419a76b37882e74a0def4",
+     108      │ - ······"src/onboarding.js":·"0575da79dfa50ec26c2e0385b73c31f7805b3fa8d4d8e67eff735b51fa060b32",
+     109      │ - ······"src/onboarding.js.map":·"178e19594d18bdc0469df7c343d4f95094b09bb136421628af24b42a71066a7c",
+     110      │ - ······"src/runtime-settings.d.ts":·"a80a7d98330fc6cbbd118cfd5200dc038b3c7d682b8aa57d224bb1fcd7e6edc0",
+     111      │ - ······"src/runtime-settings.d.ts.map":·"150731a0406c06118bd44f0f5f17fb9130bac63dc06e062cbe55ae0982f28e50",
+     112      │ - ······"src/runtime-settings.js":·"0907edac6ff0600b6cbc2623f41fbf30852fc9ef91d5ae494bc1ae57a0a375f2",
+     113      │ - ······"src/runtime-settings.js.map":·"d8ce319c58318754f9137e0e4c21dddf5333ea16e078d37908611f8e70d4474a",
+     114      │ - ······"src/runtime.d.ts":·"cec98c6566ae6c02048a2927cd8ca2d705c729fbdda3531df2c65de14f3449d4",
+     115      │ - ······"src/runtime.d.ts.map":·"a3c4f483fc71bfb45b5ecc94fc3cfbfbe0f58a10f10561fe2555d899ad43f439",
+     116      │ - ······"src/runtime.js":·"358a445ca49b6ce10c76ad31b8b3aa3e606047cc799a4c42597ca8f00bd54e3d",
+     117      │ - ······"src/runtime.js.map":·"3580281a408e6350e2d71348eb93a5aad00279e6024e524ff7853d513661bc93",
+     118      │ - ······"src/services/ConfigService.d.ts":·"e729b87fbdcba15a6277adbaf07086a8bc31b060abc04ba13a4707563082ee51",
+     119      │ - ······"src/services/ConfigService.d.ts.map":·"848d52da98a3cff8559fb2e4c87892c5e19d29ff72e34bb071ec8ae2697f9a84",
+     120      │ - ······"src/services/ConfigService.js":·"94491fa2afe0ecb691d597577dfb6c1aba3b904ae8ede6a18080932ca9cd539a",
+     121      │ - ······"src/services/ConfigService.js.map":·"23afbd7bc194b7a97ae7bbca3e85cb3841de8a9f4d97908eb884985a9860f672",
+     122      │ - ······"src/services/DesktopLifecycle.d.ts":·"75c5be1191993066bedbd58f1cc730e93d51016e38277eea2529b1b2c8a9aaa4",
+     123      │ - ······"src/services/DesktopLifecycle.d.ts.map":·"a32f08f80e32d28db1b11b30028a68c7102cb50f5709f8ff9ae1af5ff9c4e8d2",
+     124      │ - ······"src/services/DesktopLifecycle.js":·"a174555dbed8b5774e281ffb2068d3290852db02538820f8fae47f9c89347dfc",
+     125      │ - ······"src/services/DesktopLifecycle.js.map":·"ebc5befd8c1c84cb9690a8d2ab17d2565c18115e3d16654a15f18ff3973b95b7",
+     126      │ - ······"src/services/InstallationOwnership.d.ts":·"e7f3fe26dd1363633203c69f5c5eba9ab8354815577ee1f656c4ee6da5baa0a5",
+     127      │ - ······"src/services/InstallationOwnership.d.ts.map":·"8d8d2c476024c8dd7703ff7ea0ea24c87eb8a535808949e969226990a117accd",
+     128      │ - ······"src/services/InstallationOwnership.js":·"0017ee1b32821c2f325ee18eae6770e6ad904bbe643c5800c91da79fe2c212d7",
+     129      │ - ······"src/services/InstallationOwnership.js.map":·"4db008aaf37baf1b4777cb141da0e26aa8a1dae54b7a46a73b0dde4fb48eb4ab",
+     130      │ - ······"src/services/InstanceLock.d.ts":·"f9f2fcb9664bc5b425ecc87b3f03873f1b68964f7a59d420c90ff9f2b98fd38c",
+     131      │ - ······"src/services/InstanceLock.d.ts.map":·"e799ba85991f61b63e0130c9f7e90283fc43ca808580e6739a21df508cfcc061",
+     132      │ - ······"src/services/InstanceLock.js":·"c5b4685e8cb6155a3445ef5cafa5472dd602d85430e745506f198b8f7f6a75ec",
+     133      │ - ······"src/services/InstanceLock.js.map":·"b47cb16a36502a2bd961654ee413ad84ca66da20cd442f626aa657800e5f55d8",
+     134      │ - ······"src/services/Logger.d.ts":·"64d8b34dfd12479f3fe76d548e83450d7df8f15a72bd0381ad74f02b668a6f53",
+     135      │ - ······"src/services/Logger.d.ts.map":·"9ca394ea680c55bbb59a2272cc31a2d4bd8ca70586e04980bc791c325e65a234",
+     136      │ - ······"src/services/Logger.js":·"044bd2366cca322f0c834548344e25627c89f7bd9a08c92420dd3e68b5762f10",
+     137      │ - ······"src/services/Logger.js.map":·"b1990e7f3a8cadbaacd2fc38c0bbddda6a4f15a01e22525a5a550034b79e4793",
+     138      │ - ······"src/services/OwnedUpdateLifecycle.d.ts":·"efb375682efb90771dc1f9273c17fd9be0676430fd0872d0f9fb8c588e20b465",
+     139      │ - ······"src/services/OwnedUpdateLifecycle.d.ts.map":·"ac93ccbdfec3fcd7881a063869114c460169dfdda2e24388254738d61e0d6f4f",
+     140      │ - ······"src/services/OwnedUpdateLifecycle.js":·"35205539a78157d2fe6d482173a96139e76bbc9a1aea7901f7d15232a24cefcb",
+     141      │ - ······"src/services/OwnedUpdateLifecycle.js.map":·"b8280ddfba0295e51f6b98aa96a47a1c379a45b46b5a185ac4eeba21939265fa",
+     142      │ - ······"src/services/SentryErrorReporter.d.ts":·"6ef82e8111fd901f2b4275a57d5db11405d060922df817d5e054229485c49db4",
+     143      │ - ······"src/services/SentryErrorReporter.d.ts.map":·"d4a87270b282c176586a80cbee8242192e13ad00199382b94e488d583a96086a",
+     144      │ - ······"src/services/SentryErrorReporter.js":·"a6091e4349a0d0dff5839beea1635d089f198868dd00bf1b32bf83be53aee04a",
+     145      │ - ······"src/services/SentryErrorReporter.js.map":·"544e70b9b839b9d59ce1e8457205c789f2d796d3caf42bc150e267c5a20ef9f2",
+     146      │ - ······"src/services/ServiceLifecycle.d.ts":·"6555e06a7cfedd563cc67450c837484607f434c04f28acbcc1ba5b3960078ab9",
+     147      │ - ······"src/services/ServiceLifecycle.d.ts.map":·"46dacb0b5da654c7c1516789f639854680bad634184acd581ff7647d1476f354",
+     148      │ - ······"src/services/ServiceLifecycle.js":·"e3278e1d1cac0a5f33e7b81594e31f8639b50051bbb5900aaa4a12fb364d10a2",
+     149      │ - ······"src/services/ServiceLifecycle.js.map":·"f73d865c21d7d60410ba14338dab372c95c775a5758fd6a4e18e5a205c705b29",
+     150      │ - ······"src/services/UpdateStateSnapshot.d.ts":·"9903986588e7cdf016f6b92bf9762a4c7913bd006ff37f18f817245362d4745c",
+  3639 more lines truncated
+  
+
+apps/f1/test-drives/assets/2026-10-21-configurable-agent-step-r1/validation/pre-final-clean-artifacts.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+       1    1 │   {
+       2      │ - ··"source":·"09b15d903b366041a90c6e42e0068339754ff71b",
+       3      │ - ··"directories":·[
+       4      │ - ····{
+       5      │ - ······"directory":·"apps/cli/dist",
+       6      │ - ······"files":·{
+       7      │ - ········"package.json":·"82fdd554a3043a4ca8edd757a72ec445fabb8923e45c41dbeb496dacc1f5ce7a",
+       8      │ - ········"src/Application.d.ts":·"ea2e4eacca7f0c41801cff5bccb58f88e29b64525816059ef9f58236b5337a29",
+       9      │ - ········"src/Application.d.ts.map":·"9beeca4d95b367e5d09939b339c3dcd97efefa8a15644e6c810464eb4896d419",
+      10      │ - ········"src/Application.js":·"ae8a2f8d964153e3d9d0666aa7d2a0eec191c4ef0c66eec2da6a56d219a0f31c",
+      11      │ - ········"src/Application.js.map":·"268197bab14087c239ee7d8725dbdfc67d69db7190a883dd0d21bc90f048e45a",
+      12      │ - ········"src/app.d.ts":·"02d14a8cf0b382d9248e85267e0371ba3a1215390e32926c784f3b6ad8ce817f",
+      13      │ - ········"src/app.d.ts.map":·"b278ba16cb7bb3acddb2d272e4407e20b4f6e83a381803fde5f8f7f52731ccc2",
+      14      │ - ········"src/app.js":·"17536486570768412118c2707b088d213f1617f38bc3f807e200bb457ae2937f",
+      15      │ - ········"src/app.js.map":·"560d9beb03e3f8c65f4b1984305fd73583d1157f61326b0c26c5d17d7247a6f4",
+      16      │ - ········"src/bootstrap.d.ts":·"e270ee1310db1e10705966a51749c17085bfe7de06cad256fb69571d2a81a50b",
+      17      │ - ········"src/bootstrap.d.ts.map":·"5fd2d8de6a9f91b0e890cd89756965f36c887f115742c496d04d126aab1eb9a0",
+      18      │ - ········"src/bootstrap.js":·"4bd35149587eb0662625fd0d8243e6659e6c4ae08eae4c40d6d394efb549a585",
+      19      │ - ········"src/bootstrap.js.map":·"a684c3c246cf82a4f3976dc996ed329d0c8867fae2a6615309e886e6fa8750c4",
+      20      │ - ········"src/cli.d.ts":·"c0fef74d51eb25953f6d50d509cb5ee0b1da8978e3e7b0df69b821373248f92c",
+      21      │ - ········"src/cli.d.ts.map":·"001efc564f87633954c4c4f86c3a24e8c02393f77ca70f8f1e0fb47976fd5d54",
+      22      │ - ········"src/cli.js":·"0c81381ef3e0562860b97f18687de7a0b2358f2abf53a754d1bd9dcd8ce25dea",
+      23      │ - ········"src/cli.js.map":·"39b036df174b1cd3ddae803b1afdccc72bf5a3c695d364f0f457fca59653df23",
+      24      │ - ········"src/commands/CheckTokensCommand.d.ts":·"9f2e1dff2395154624a2d623be63e397940160b0b05631da75ab23b376462c82",
+      25      │ - ········"src/commands/CheckTokensCommand.d.ts.map":·"6632d45f327756a954722f600e6c81685e95524b4dacc4616b29dd26eada3ddd",
+      26      │ - ········"src/commands/CheckTokensCommand.js":·"2c045b7c545dcf95144888bb98c37b4b7f7b8d991bfe415c03131932cf63e75e",
+      27      │ - ········"src/commands/CheckTokensCommand.js.map":·"7dee754ca3abc41408ac6010ba1a53b5fd86a48bdf7fbe37328a5a255141c714",
+      28      │ - ········"src/commands/ICommand.d.ts":·"af1134f1386b6e788e821a580e72151b64dd1ce80e9fa895e07dd407763d69a4",
+      29      │ - ········"src/commands/ICommand.d.ts.map":·"4e3adf65221b86c3decb695e79ee3216f74812cf77797abccc5c64d06ad3bd0f",
+      30      │ - ········"src/commands/ICommand.js":·"ef86ca7923efff6fe08bc97835d2026fe23b36a1ffe7d7f56e1224cd79b62a89",
+      31      │ - ········"src/commands/ICommand.js.map":·"13b138c6d2dd811a4bb107a3913ca9de2f1ef2c5a34b8f67ba2b1d454870c184",
+      32      │ - ········"src/commands/RefreshTokenCommand.d.ts":·"1d891a2e73a60bec0ce3c90feba817ff423b0515a930f17c654ac2a492f9ed24",
+      33      │ - ········"src/commands/RefreshTokenCommand.d.ts.map":·"7938236093278358a0626f84417a1f961b18a5c5f4cc53eaef16f69dc9fa23de",
+      34      │ - ········"src/commands/RefreshTokenCommand.js":·"dab3a5768d082d4e8ffeb36f918f25f50d3107a52965f4a3c340c07466080aa1",
+      35      │ - ········"src/commands/RefreshTokenCommand.js.map":·"44cb6fa6f55a87f0f1969c94f3bbc4a8d52593031ab0a7c2b6dcd9f9458dac68",
+      36      │ - ········"src/commands/SelfAddRepoCommand.d.ts":·"80e4570510f1637cb35b76e6302378e8ba630009077c9b3ff27bd42209e356cc",
+      37      │ - ········"src/commands/SelfAddRepoCommand.d.ts.map":·"68b2a3d28fad023927354dfaac91da506a244c21032e15fb6585d2c6dfa3f3e7",
+      38      │ - ········"src/commands/SelfAddRepoCommand.js":·"71d7f68ef4c1e41c17dfcc88099df83b9070ea313bb9fc116c43800558546517",
+      39      │ - ········"src/commands/SelfAddRepoCommand.js.map":·"d16e4071443b293cb859a31bda592ec72367658fcccf20925e1292f17f1ed9a8",
+      40      │ - ········"src/commands/SelfAuthCommand.d.ts":·"0755551fbba1230d0cd6efa0de2aa883d4365a7890a54b6d6c5c683ec9d94044",
+      41      │ - ········"src/commands/SelfAuthCommand.d.ts.map":·"9bb3d70569736d4a03552c324096e3869da62eca63a347c4d8ceff01e9e6e8ad",
+      42      │ - ········"src/commands/SelfAuthCommand.js":·"c38ba8a4450c85f5bdc295fe9dbae03e0856ff64267887830c9df903dd3439fc",
+      43      │ - ········"src/commands/SelfAuthCommand.js.map":·"4c827444c0e6a3fdbfd4a630c21d8faaa53cb857e9a33464a757488b5b75c0ad",
+      44      │ - ········"src/commands/StartCommand.d.ts":·"e6b500b8feb4db10e5a115f59e7e6dbfaf1564c0d9e0bcae8bd886d767ff172b",
+      45      │ - ········"src/commands/StartCommand.d.ts.map":·"9f44c83415c3106face70ffa00652ce902082106e19705578786f04506c9d074",
+      46      │ - ········"src/commands/StartCommand.js":·"d4609752a3b694d315c9ea12e49fa7693ee96594640a33deec8d59fa0df3bedd",
+      47      │ - ········"src/commands/StartCommand.js.map":·"978545cc19ae55685e44976af75c798b194c45a87267188b4d5e299e46622f56",
+      48      │ - ········"src/commands/service.d.ts":·"75cd4fa278442f08e32878b7e10695ce5d58ef5849f31acf01a159939324ccc9",
+      49      │ - ········"src/commands/service.d.ts.map":·"7b1a0957ed9d1ed9f9e9c631de41008900367a0cbbc20a426fe760ba51ec181c",
+      50      │ - ········"src/commands/service.js":·"2d108a53f994de819a8ac92a615a4eb4501260451550ab6140e9e99736c1f881",
+      51      │ - ········"src/commands/service.js.map":·"c00e3e7caf1d416135ed250a10035033cb5ad4cc3e13ea7de8121cd717dbb2ce",
+      52      │ - ········"src/commands/storage.d.ts":·"5021ff9672596790fdcfcde6e9201ef8b171db62fbe47811e66e6f79c77ff3c1",
+      53      │ - ········"src/commands/storage.d.ts.map":·"daeb5a33ac7a9054b5d2075f1893418df54551d112aa1aefc6d27f647cdce92d",
+      54      │ - ········"src/commands/storage.js":·"81d4a249af1c0a05dd46bea87f3098778c0e685d51100ad5c12a83bf08e2583e",
+      55      │ - ········"src/commands/storage.js.map":·"4794a234d17dfee2c1791140d23542c22f9d016e345c1ddff2baeb60d47c38ab",
+      56      │ - ········"src/commands/update.d.ts":·"d4cb74ad06446c43f85b65fe3a703e88b7dba6e8129c48e3aa93c53c0a90db8d",
+      57      │ - ········"src/commands/update.d.ts.map":·"a3d00a141b43ff7dc703d5980c909f25a07b521f5188516f71370c3ac924e907",
+      58      │ - ········"src/commands/update.js":·"2ce8cae879594525a065cbf93e2ef734f3518e82044301cc9cfb5f14d0cbaa88",
+      59      │ - ········"src/commands/update.js.map":·"5be2f6b2cf163f1044fdb840bb03080c1d763fae53f8322384fe67c813ae1b19",
+      60      │ - ········"src/config/constants.d.ts":·"7b849b217e20dbc8bb2bd4280ac768060ac3a27e946174f8a893cb80e4cda236",
+      61      │ - ········"src/config/constants.d.ts.map":·"1de87ff41eb8589f7c85631104097d62edc81720501f0db4756ed29cd5fc7763",
+      62      │ - ········"src/config/constants.js":·"2f0b252d43be24259124aa4207c3d8cc8db1d173961091b19393dc13b56923d5",
+      63      │ - ········"src/config/constants.js.map":·"9abf3cbf68f4dbdc4be4a2d536747434622ae2ca74ac49fe294660a0e2566012",
+      64      │ - ········"src/config/types.d.ts":·"de0e9612ea2b492ea432c1f46991d0c4919d31be22d1ab391d2689c8f393175b",
+      65      │ - ········"src/config/types.d.ts.map":·"4d0f42d412e7ff42fa6738a393c6c909609609e07339e9133182f3ffdf696ef3",
+      66      │ - ········"src/config/types.js":·"01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+      67      │ - ········"src/config/types.js.map":·"3bb6a868a7fba126947d368f8a45fbaca73f763023ef99cec71ae3cb80d13b28",
+      68      │ - ········"src/envFile.d.ts":·"1020518fbaf4b5fbc959c7c7c27eb19a669b4c5371f8e52570c51aa9c8ec0c7a",
+      69      │ - ········"src/envFile.d.ts.map":·"ee4627f5d2046b6fda2869964f67877df2a34c0e22e8942eda08da9caa1e7c6c",
+      70      │ - ········"src/envFile.js":·"a5353273f56ba58c94a2ed21df229a84bcb17e086beae40b9acf714a8fee71b9",
+      71      │ - ········"src/envFile.js.map":·"33d6c0b2660894903b6fbb128f969df8f9956d5de30a6daa3e8c04b0eca02a91",
+      72      │ - ········"src/github.d.ts":·"5cc619318b14d61a8bbce533fb2e073c40454387f352ff78f1775a96d54eaa38",
+      73      │ - ········"src/github.d.ts.map":·"1f389003512fb3822d0b0e14ec33168e1de3eaf9a52a1d74f7e22f0781259853",
+      74      │ - ········"src/github.js":·"e7b624ed78611f597dcaa0a24f18454d38dca023c54a49a1dd93dcd5f4881f2c",
+      75      │ - ········"src/github.js.map":·"3fd1ea1c1a667d01e205486990756c1576a8f843197e2d7eef1811921d098b4f",
+      76      │ - ········"src/internal.d.ts":·"4669ad500d2fdcc5539fdba6d1365ac907519034fd1e951ba2ca52fdaac4e003",
+      77      │ - ········"src/internal.d.ts.map":·"bb0885fd5403b29a33da3a54ed66401e913f974ce7466cdc62c324a23db7c54b",
+      78      │ - ········"src/internal.js":·"221dc95a735bbde9c414601306500d47a647532d62c842bcb29ba3c568de50a4",
+      79      │ - ········"src/internal.js.map":·"316792830c4a799f9f7c7b96c3a097cb41fc931ad9663bfb5dd52431e3f9a424",
+      80      │ - ········"src/local.d.ts":·"b502932b65eb16de7f8184e5e29be2de00245b76d064229dd5ddb12dc7f7c6a9",
+      81      │ - ········"src/local.d.ts.map":·"077d145c4d04268a482739913061927fed647bf85e8700c91ad852059d3f7de9",
+      82      │ - ········"src/local.js":·"26915f10acff722e9f31e071703c0f8583c0183aafb6b4242290c410ab895920",
+      83      │ - ········"src/local.js.map":·"d5c3d82e65fe1b620c618b2881aad449cf104f758fa397abe6bb23b7924f0e2f",
+      84      │ - ········"src/migration/command.d.ts":·"cb23db42835c26442dc8780f6e86c38fb9d7999befd8b240c829199bcf9210f7",
+      85      │ - ········"src/migration/command.d.ts.map":·"6f2e96170c4c4889c14ccfdac712c718ea3df36cfa0fc6760993430cf81e38b1",
+      86      │ - ········"src/migration/command.js":·"07929edef9a91f118006457d57928db36cf3bd178ca5b04393f36f31079ef470",
+      87      │ - ········"src/migration/command.js.map":·"fd8d53a2cab5c95f6acd3da3fb7b052c2b245dae76f4919601f0e13f7f64923f",
+      88      │ - ········"src/migration/migration.d.ts":·"61499691fff227ba6c1aa0ffd683684399cedb632a411367170af887b5153f00",
+      89      │ - ········"src/migration/migration.d.ts.map":·"fb97af75a32be8825963a38d9f8f2bf6afbc870c9e2b66dbd817a0cbadf96ce5",
+      90      │ - ········"src/migration/migration.js":·"201d1dfcbcee9e1481cf8c1e0366d324a3145c1fb964e1bc537639eeedff0e5a",
+      91      │ - ········"src/migration/migration.js.map":·"59db0ed23a45c5541171c2774d86b38e49d8cc9eb19b4c1678a12c8546b917a7",
+      92      │ - ········"src/migration/paths.d.ts":·"0e649987c3aa34b6a1201eb0e3959bac411eb7c26f364bf87a5955d057f1b3f0",
+      93      │ - ········"src/migration/paths.d.ts.map":·"d38626ca240073c5fbe5bf2b196500e76329fe87229602fd9a0007327d9f8157",
+      94      │ - ········"src/migration/paths.js":·"d1b12e72a6165051e8cb646628a429fcb677738bb108bf21149da1182b4fa897",
+      95      │ - ········"src/migration/paths.js.map":·"72aa44a82aee81045c97520b46db37902707f5e00faf66141eae0e21005ef37f",
+      96      │ - ········"src/migration/preservation.d.ts":·"6273fec3c5f152a47ec981bb65232586e8d8e3eb5e19fa2e34252ad107c34808",
+      97      │ - ········"src/migration/preservation.d.ts.map":·"c56e61a3d80fc16b463e487697e7bc06c6f7f04f683bedcc66fe4b67685b4767",
+      98      │ - ········"src/migration/preservation.js":·"22942bb8ea6822c4950fafce11c5ab6451dd15522210eaf59196395df63057f3",
+      99      │ - ········"src/migration/preservation.js.map":·"7ce6a58e9961f3e1d89974779c21b775f5569058c3e772633aa1319134cba4e3",
+     100      │ - ········"src/migration/transform.d.ts":·"ad0f1758b7f23b1d05494a146741e293745df2808f207a2f21464cffbb53e76a",
+     101      │ - ········"src/migration/transform.d.ts.map":·"d24a321c1af7334707a1ebbab4ded8ae45adccc739c76a684f4f727ea46c8355",
+     102      │ - ········"src/migration/transform.js":·"217dd3abfee40fe98b05ae14d5c3d2155870189cdfe5af3180ddf518bc672a5b",
+     103      │ - ········"src/migration/transform.js.map":·"e8e9f8a0b4453b08e53e4e571a7c37d73089fee348533390f481e80b7e2b82bc",
+     104      │ - ········"src/migration/worktrees.d.ts":·"53ee1dae3bd4724fe4b44086fbfee02a80d671f77e80c78ea7b2cab95908a83a",
+     105      │ - ········"src/migration/worktrees.d.ts.map":·"a0d7147afebdac0445e75561e7a1f43fa46459a9bbb67d52aace039c16bfbd0e",
+     106      │ - ········"src/migration/worktrees.js":·"4f825d4aaa539a2ed062707cf04aa2fac0d4076ecb51e1f7bddf1671025a3dec",
+     107      │ - ········"src/migration/worktrees.js.map":·"55f2dd1bf86d4ce91752a3d2dd333a461bbebfcd7252c34354231b34c39f9ecb",
+     108      │ - ········"src/onboarding.d.ts":·"186e14b165679f0d843587a8a041d383a149d52f812f622211daf6744e217ad2",
+     109      │ - ········"src/onboarding.d.ts.map":·"f38a771292c1d1ccf47ae416802a8fb4922c0058bb3419a76b37882e74a0def4",
+     110      │ - ········"src/onboarding.js":·"0575da79dfa50ec26c2e0385b73c31f7805b3fa8d4d8e67eff735b51fa060b32",
+     111      │ - ········"src/onboarding.js.map":·"178e19594d18bdc0469df7c343d4f95094b09bb136421628af24b42a71066a7c",
+     112      │ - ········"src/runtime-settings.d.ts":·"a80a7d98330fc6cbbd118cfd5200dc038b3c7d682b8aa57d224bb1fcd7e6edc0",
+     113      │ - ········"src/runtime-settings.d.ts.map":·"150731a0406c06118bd44f0f5f17fb9130bac63dc06e062cbe55ae0982f28e50",
+     114      │ - ········"src/runtime-settings.js":·"0907edac6ff0600b6cbc2623f41fbf30852fc9ef91d5ae494bc1ae57a0a375f2",
+     115      │ - ········"src/runtime-settings.js.map":·"d8ce319c58318754f9137e0e4c21dddf5333ea16e078d37908611f8e70d4474a",
+     116      │ - ········"src/runtime.d.ts":·"cec98c6566ae6c02048a2927cd8ca2d705c729fbdda3531df2c65de14f3449d4",
+     117      │ - ········"src/runtime.d.ts.map":·"a3c4f483fc71bfb45b5ecc94fc3cfbfbe0f58a10f10561fe2555d899ad43f439",
+     118      │ - ········"src/runtime.js":·"358a445ca49b6ce10c76ad31b8b3aa3e606047cc799a4c42597ca8f00bd54e3d",
+     119      │ - ········"src/runtime.js.map":·"3580281a408e6350e2d71348eb93a5aad00279e6024e524ff7853d513661bc93",
+     120      │ - ········"src/services/ConfigService.d.ts":·"e729b87fbdcba15a6277adbaf07086a8bc31b060abc04ba13a4707563082ee51",
+     121      │ - ········"src/services/ConfigService.d.ts.map":·"848d52da98a3cff8559fb2e4c87892c5e19d29ff72e34bb071ec8ae2697f9a84",
+     122      │ - ········"src/services/ConfigService.js":·"94491fa2afe0ecb691d597577dfb6c1aba3b904ae8ede6a18080932ca9cd539a",
+     123      │ - ········"src/services/ConfigService.js.map":·"23afbd7bc194b7a97ae7bbca3e85cb3841de8a9f4d97908eb884985a9860f672",
+     124      │ - ········"src/services/DesktopLifecycle.d.ts":·"75c5be1191993066bedbd58f1cc730e93d51016e38277eea2529b1b2c8a9aaa4",
+     125      │ - ········"src/services/DesktopLifecycle.d.ts.map":·"a32f08f80e32d28db1b11b30028a68c7102cb50f5709f8ff9ae1af5ff9c4e8d2",
+     126      │ - ········"src/services/DesktopLifecycle.js":·"a174555dbed8b5774e281ffb2068d3290852db02538820f8fae47f9c89347dfc",
+     127      │ - ········"src/services/DesktopLifecycle.js.map":·"ebc5befd8c1c84cb9690a8d2ab17d2565c18115e3d16654a15f18ff3973b95b7",
+     128      │ - ········"src/services/InstallationOwnership.d.ts":·"e7f3fe26dd1363633203c69f5c5eba9ab8354815577ee1f656c4ee6da5baa0a5",
+     129      │ - ········"src/services/InstallationOwnership.d.ts.map":·"8d8d2c476024c8dd7703ff7ea0ea24c87eb8a535808949e969226990a117accd",
+     130      │ - ········"src/services/InstallationOwnership.js":·"0017ee1b32821c2f325ee18eae6770e6ad904bbe643c5800c91da79fe2c212d7",
+     131      │ - ········"src/services/InstallationOwnership.js.map":·"4db008aaf37baf1b4777cb141da0e26aa8a1dae54b7a46a73b0dde4fb48eb4ab",
+     132      │ - ········"src/services/InstanceLock.d.ts":·"f9f2fcb9664bc5b425ecc87b3f03873f1b68964f7a59d420c90ff9f2b98fd38c",
+     133      │ - ········"src/services/InstanceLock.d.ts.map":·"e799ba85991f61b63e0130c9f7e90283fc43ca808580e6739a21df508cfcc061",
+     134      │ - ········"src/services/InstanceLock.js":·"c5b4685e8cb6155a3445ef5cafa5472dd602d85430e745506f198b8f7f6a75ec",
+     135      │ - ········"src/services/InstanceLock.js.map":·"b47cb16a36502a2bd961654ee413ad84ca66da20cd442f626aa657800e5f55d8",
+     136      │ - ········"src/services/Logger.d.ts":·"64d8b34dfd12479f3fe76d548e83450d7df8f15a72bd0381ad74f02b668a6f53",
+     137      │ - ········"src/services/Logger.d.ts.map":·"9ca394ea680c55bbb59a2272cc31a2d4bd8ca70586e04980bc791c325e65a234",
+     138      │ - ········"src/services/Logger.js":·"044bd2366cca322f0c834548344e25627c89f7bd9a08c92420dd3e68b5762f10",
+     139      │ - ········"src/services/Logger.js.map":·"b1990e7f3a8cadbaacd2fc38c0bbddda6a4f15a01e22525a5a550034b79e4793",
+     140      │ - ········"src/services/OwnedUpdateLifecycle.d.ts":·"efb375682efb90771dc1f9273c17fd9be0676430fd0872d0f9fb8c588e20b465",
+     141      │ - ········"src/services/OwnedUpdateLifecycle.d.ts.map":·"ac93ccbdfec3fcd7881a063869114c460169dfdda2e24388254738d61e0d6f4f",
+     142      │ - ········"src/services/OwnedUpdateLifecycle.js":·"35205539a78157d2fe6d482173a96139e76bbc9a1aea7901f7d15232a24cefcb",
+     143      │ - ········"src/services/OwnedUpdateLifecycle.js.map":·"b8280ddfba0295e51f6b98aa96a47a1c379a45b46b5a185ac4eeba21939265fa",
+     144      │ - ········"src/services/SentryErrorReporter.d.ts":·"6ef82e8111fd901f2b4275a57d5db11405d060922df817d5e054229485c49db4",
+     145      │ - ········"src/services/SentryErrorReporter.d.ts.map":·"d4a87270b282c176586a80cbee8242192e13ad00199382b94e488d583a96086a",
+     146      │ - ········"src/services/SentryErrorReporter.js":·"a6091e4349a0d0dff5839beea1635d089f198868dd00bf1b32bf83be53aee04a",
+     147      │ - ········"src/services/SentryErrorReporter.js.map":·"544e70b9b839b9d59ce1e8457205c789f2d796d3caf42bc150e267c5a20ef9f2",
+     148      │ - ········"src/services/ServiceLifecycle.d.ts":·"6555e06a7cfedd563cc67450c837484607f434c04f28acbcc1ba5b3960078ab9",
+     149      │ - ········"src/services/ServiceLifecycle.d.ts.map":·"46dacb0b5da654c7c1516789f639854680bad634184acd581ff7647d1476f354",
+     150      │ - ········"src/services/ServiceLifecycle.js":·"e3278e1d1cac0a5f33e7b81594e31f8639b50051bbb5900aaa4a12fb364d10a2",
+  3543 more lines truncated
+  
+
+apps/f1/test-drives/assets/2026-10-21-configurable-agent-step-r1/validation/pre-node24-clean-artifacts.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+       1    1 │   {
+       2      │ - ··"source":·"9d985f91bf5accedac2c64949ff2731aeb8a1e70",
+       3      │ - ··"directories":·[
+       4      │ - ····{
+       5      │ - ······"directory":·"apps/cli/dist",
+       6      │ - ······"files":·{
+       7      │ - ········"package.json":·"82fdd554a3043a4ca8edd757a72ec445fabb8923e45c41dbeb496dacc1f5ce7a",
+       8      │ - ········"src/Application.d.ts":·"ea2e4eacca7f0c41801cff5bccb58f88e29b64525816059ef9f58236b5337a29",
+       9      │ - ········"src/Application.d.ts.map":·"9beeca4d95b367e5d09939b339c3dcd97efefa8a15644e6c810464eb4896d419",
+      10      │ - ········"src/Application.js":·"ae8a2f8d964153e3d9d0666aa7d2a0eec191c4ef0c66eec2da6a56d219a0f31c",
+      11      │ - ········"src/Application.js.map":·"268197bab14087c239ee7d8725dbdfc67d69db7190a883dd0d21bc90f048e45a",
+      12      │ - ········"src/app.d.ts":·"02d14a8cf0b382d9248e85267e0371ba3a1215390e32926c784f3b6ad8ce817f",
+      13      │ - ········"src/app.d.ts.map":·"b278ba16cb7bb3acddb2d272e4407e20b4f6e83a381803fde5f8f7f52731ccc2",
+      14      │ - ········"src/app.js":·"17536486570768412118c2707b088d213f1617f38bc3f807e200bb457ae2937f",
+      15      │ - ········"src/app.js.map":·"560d9beb03e3f8c65f4b1984305fd73583d1157f61326b0c26c5d17d7247a6f4",
+      16      │ - ········"src/bootstrap.d.ts":·"e270ee1310db1e10705966a51749c17085bfe7de06cad256fb69571d2a81a50b",
+      17      │ - ········"src/bootstrap.d.ts.map":·"5fd2d8de6a9f91b0e890cd89756965f36c887f115742c496d04d126aab1eb9a0",
+      18      │ - ········"src/bootstrap.js":·"4bd35149587eb0662625fd0d8243e6659e6c4ae08eae4c40d6d394efb549a585",
+      19      │ - ········"src/bootstrap.js.map":·"a684c3c246cf82a4f3976dc996ed329d0c8867fae2a6615309e886e6fa8750c4",
+      20      │ - ········"src/cli.d.ts":·"c0fef74d51eb25953f6d50d509cb5ee0b1da8978e3e7b0df69b821373248f92c",
+      21      │ - ········"src/cli.d.ts.map":·"001efc564f87633954c4c4f86c3a24e8c02393f77ca70f8f1e0fb47976fd5d54",
+      22      │ - ········"src/cli.js":·"0c81381ef3e0562860b97f18687de7a0b2358f2abf53a754d1bd9dcd8ce25dea",
+      23      │ - ········"src/cli.js.map":·"39b036df174b1cd3ddae803b1afdccc72bf5a3c695d364f0f457fca59653df23",
+      24      │ - ········"src/commands/CheckTokensCommand.d.ts":·"9f2e1dff2395154624a2d623be63e397940160b0b05631da75ab23b376462c82",
+      25      │ - ········"src/commands/CheckTokensCommand.d.ts.map":·"6632d45f327756a954722f600e6c81685e95524b4dacc4616b29dd26eada3ddd",
+      26      │ - ········"src/commands/CheckTokensCommand.js":·"2c045b7c545dcf95144888bb98c37b4b7f7b8d991bfe415c03131932cf63e75e",
+      27      │ - ········"src/commands/CheckTokensCommand.js.map":·"7dee754ca3abc41408ac6010ba1a53b5fd86a48bdf7fbe37328a5a255141c714",
+      28      │ - ········"src/commands/ICommand.d.ts":·"af1134f1386b6e788e821a580e72151b64dd1ce80e9fa895e07dd407763d69a4",
+      29      │ - ········"src/commands/ICommand.d.ts.map":·"4e3adf65221b86c3decb695e79ee3216f74812cf77797abccc5c64d06ad3bd0f",
+      30      │ - ········"src/commands/ICommand.js":·"ef86ca7923efff6fe08bc97835d2026fe23b36a1ffe7d7f56e1224cd79b62a89",
+      31      │ - ········"src/commands/ICommand.js.map":·"13b138c6d2dd811a4bb107a3913ca9de2f1ef2c5a34b8f67ba2b1d454870c184",
+      32      │ - ········"src/commands/RefreshTokenCommand.d.ts":·"1d891a2e73a60bec0ce3c90feba817ff423b0515a930f17c654ac2a492f9ed24",
+      33      │ - ········"src/commands/RefreshTokenCommand.d.ts.map":·"7938236093278358a0626f84417a1f961b18a5c5f4cc53eaef16f69dc9fa23de",
+      34      │ - ········"src/commands/RefreshTokenCommand.js":·"dab3a5768d082d4e8ffeb36f918f25f50d3107a52965f4a3c340c07466080aa1",
+      35      │ - ········"src/commands/RefreshTokenCommand.js.map":·"44cb6fa6f55a87f0f1969c94f3bbc4a8d52593031ab0a7c2b6dcd9f9458dac68",
+      36      │ - ········"src/commands/SelfAddRepoCommand.d.ts":·"80e4570510f1637cb35b76e6302378e8ba630009077c9b3ff27bd42209e356cc",
+      37      │ - ········"src/commands/SelfAddRepoCommand.d.ts.map":·"68b2a3d28fad023927354dfaac91da506a244c21032e15fb6585d2c6dfa3f3e7",
+      38      │ - ········"src/commands/SelfAddRepoCommand.js":·"71d7f68ef4c1e41c17dfcc88099df83b9070ea313bb9fc116c43800558546517",
+      39      │ - ········"src/commands/SelfAddRepoCommand.js.map":·"d16e4071443b293cb859a31bda592ec72367658fcccf20925e1292f17f1ed9a8",
+      40      │ - ········"src/commands/SelfAuthCommand.d.ts":·"0755551fbba1230d0cd6efa0de2aa883d4365a7890a54b6d6c5c683ec9d94044",
+      41      │ - ········"src/commands/SelfAuthCommand.d.ts.map":·"9bb3d70569736d4a03552c324096e3869da62eca63a347c4d8ceff01e9e6e8ad",
+      42      │ - ········"src/commands/SelfAuthCommand.js":·"c38ba8a4450c85f5bdc295fe9dbae03e0856ff64267887830c9df903dd3439fc",
+      43      │ - ········"src/commands/SelfAuthCommand.js.map":·"4c827444c0e6a3fdbfd4a630c21d8faaa53cb857e9a33464a757488b5b75c0ad",
+      44      │ - ········"src/commands/StartCommand.d.ts":·"e6b500b8feb4db10e5a115f59e7e6dbfaf1564c0d9e0bcae8bd886d767ff172b",
+      45      │ - ········"src/commands/StartCommand.d.ts.map":·"9f44c83415c3106face70ffa00652ce902082106e19705578786f04506c9d074",
+      46      │ - ········"src/commands/StartCommand.js":·"d4609752a3b694d315c9ea12e49fa7693ee96594640a33deec8d59fa0df3bedd",
+      47      │ - ········"src/commands/StartCommand.js.map":·"978545cc19ae55685e44976af75c798b194c45a87267188b4d5e299e46622f56",
+      48      │ - ········"src/commands/service.d.ts":·"75cd4fa278442f08e32878b7e10695ce5d58ef5849f31acf01a159939324ccc9",
+      49      │ - ········"src/commands/service.d.ts.map":·"7b1a0957ed9d1ed9f9e9c631de41008900367a0cbbc20a426fe760ba51ec181c",
+      50      │ - ········"src/commands/service.js":·"2d108a53f994de819a8ac92a615a4eb4501260451550ab6140e9e99736c1f881",
+      51      │ - ········"src/commands/service.js.map":·"c00e3e7caf1d416135ed250a10035033cb5ad4cc3e13ea7de8121cd717dbb2ce",
+      52      │ - ········"src/commands/storage.d.ts":·"5021ff9672596790fdcfcde6e9201ef8b171db62fbe47811e66e6f79c77ff3c1",
+      53      │ - ········"src/commands/storage.d.ts.map":·"daeb5a33ac7a9054b5d2075f1893418df54551d112aa1aefc6d27f647cdce92d",
+      54      │ - ········"src/commands/storage.js":·"81d4a249af1c0a05dd46bea87f3098778c0e685d51100ad5c12a83bf08e2583e",
+      55      │ - ········"src/commands/storage.js.map":·"4794a234d17dfee2c1791140d23542c22f9d016e345c1ddff2baeb60d47c38ab",
+      56      │ - ········"src/commands/update.d.ts":·"d4cb74ad06446c43f85b65fe3a703e88b7dba6e8129c48e3aa93c53c0a90db8d",
+      57      │ - ········"src/commands/update.d.ts.map":·"a3d00a141b43ff7dc703d5980c909f25a07b521f5188516f71370c3ac924e907",
+      58      │ - ········"src/commands/update.js":·"2ce8cae879594525a065cbf93e2ef734f3518e82044301cc9cfb5f14d0cbaa88",
+      59      │ - ········"src/commands/update.js.map":·"5be2f6b2cf163f1044fdb840bb03080c1d763fae53f8322384fe67c813ae1b19",
+      60      │ - ········"src/config/constants.d.ts":·"7b849b217e20dbc8bb2bd4280ac768060ac3a27e946174f8a893cb80e4cda236",
+      61      │ - ········"src/config/constants.d.ts.map":·"1de87ff41eb8589f7c85631104097d62edc81720501f0db4756ed29cd5fc7763",
+      62      │ - ········"src/config/constants.js":·"2f0b252d43be24259124aa4207c3d8cc8db1d173961091b19393dc13b56923d5",
+      63      │ - ········"src/config/constants.js.map":·"9abf3cbf68f4dbdc4be4a2d536747434622ae2ca74ac49fe294660a0e2566012",
+      64      │ - ········"src/config/types.d.ts":·"de0e9612ea2b492ea432c1f46991d0c4919d31be22d1ab391d2689c8f393175b",
+      65      │ - ········"src/config/types.d.ts.map":·"4d0f42d412e7ff42fa6738a393c6c909609609e07339e9133182f3ffdf696ef3",
+      66      │ - ········"src/config/types.js":·"01ae2a5b120382f9a648ced7ee8507493a134f216d100fc61600c6c9738235d2",
+      67      │ - ········"src/config/types.js.map":·"3bb6a868a7fba126947d368f8a45fbaca73f763023ef99cec71ae3cb80d13b28",
+      68      │ - ········"src/envFile.d.ts":·"1020518fbaf4b5fbc959c7c7c27eb19a669b4c5371f8e52570c51aa9c8ec0c7a",
+      69      │ - ········"src/envFile.d.ts.map":·"ee4627f5d2046b6fda2869964f67877df2a34c0e22e8942eda08da9caa1e7c6c",
+      70      │ - ········"src/envFile.js":·"a5353273f56ba58c94a2ed21df229a84bcb17e086beae40b9acf714a8fee71b9",
+      71      │ - ········"src/envFile.js.map":·"33d6c0b2660894903b6fbb128f969df8f9956d5de30a6daa3e8c04b0eca02a91",
+      72      │ - ········"src/github.d.ts":·"5cc619318b14d61a8bbce533fb2e073c40454387f352ff78f1775a96d54eaa38",
+      73      │ - ········"src/github.d.ts.map":·"1f389003512fb3822d0b0e14ec33168e1de3eaf9a52a1d74f7e22f0781259853",
+      74      │ - ········"src/github.js":·"e7b624ed78611f597dcaa0a24f18454d38dca023c54a49a1dd93dcd5f4881f2c",
+      75      │ - ········"src/github.js.map":·"3fd1ea1c1a667d01e205486990756c1576a8f843197e2d7eef1811921d098b4f",
+      76      │ - ········"src/internal.d.ts":·"4669ad500d2fdcc5539fdba6d1365ac907519034fd1e951ba2ca52fdaac4e003",
+      77      │ - ········"src/internal.d.ts.map":·"bb0885fd5403b29a33da3a54ed66401e913f974ce7466cdc62c324a23db7c54b",
+      78      │ - ········"src/internal.js":·"221dc95a735bbde9c414601306500d47a647532d62c842bcb29ba3c568de50a4",
+      79      │ - ········"src/internal.js.map":·"316792830c4a799f9f7c7b96c3a097cb41fc931ad9663bfb5dd52431e3f9a424",
+      80      │ - ········"src/local.d.ts":·"b502932b65eb16de7f8184e5e29be2de00245b76d064229dd5ddb12dc7f7c6a9",
+      81      │ - ········"src/local.d.ts.map":·"077d145c4d04268a482739913061927fed647bf85e8700c91ad852059d3f7de9",
+      82      │ - ········"src/local.js":·"26915f10acff722e9f31e071703c0f8583c0183aafb6b4242290c410ab895920",
+      83      │ - ········"src/local.js.map":·"d5c3d82e65fe1b620c618b2881aad449cf104f758fa397abe6bb23b7924f0e2f",
+      84      │ - ········"src/migration/command.d.ts":·"cb23db42835c26442dc8780f6e86c38fb9d7999befd8b240c829199bcf9210f7",
+      85      │ - ········"src/migration/command.d.ts.map":·"6f2e96170c4c4889c14ccfdac712c718ea3df36cfa0fc6760993430cf81e38b1",
+      86      │ - ········"src/migration/command.js":·"07929edef9a91f118006457d57928db36cf3bd178ca5b04393f36f31079ef470",
+      87      │ - ········"src/migration/command.js.map":·"fd8d53a2cab5c95f6acd3da3fb7b052c2b245dae76f4919601f0e13f7f64923f",
+      88      │ - ········"src/migration/migration.d.ts":·"61499691fff227ba6c1aa0ffd683684399cedb632a411367170af887b5153f00",
+      89      │ - ········"src/migration/migration.d.ts.map":·"fb97af75a32be8825963a38d9f8f2bf6afbc870c9e2b66dbd817a0cbadf96ce5",
+      90      │ - ········"src/migration/migration.js":·"201d1dfcbcee9e1481cf8c1e0366d324a3145c1fb964e1bc537639eeedff0e5a",
+      91      │ - ········"src/migration/migration.js.map":·"59db0ed23a45c5541171c2774d86b38e49d8cc9eb19b4c1678a12c8546b917a7",
+      92      │ - ········"src/migration/paths.d.ts":·"0e649987c3aa34b6a1201eb0e3959bac411eb7c26f364bf87a5955d057f1b3f0",
+      93      │ - ········"src/migration/paths.d.ts.map":·"d38626ca240073c5fbe5bf2b196500e76329fe87229602fd9a0007327d9f8157",
+      94      │ - ········"src/migration/paths.js":·"d1b12e72a6165051e8cb646628a429fcb677738bb108bf21149da1182b4fa897",
+      95      │ - ········"src/migration/paths.js.map":·"72aa44a82aee81045c97520b46db37902707f5e00faf66141eae0e21005ef37f",
+      96      │ - ········"src/migration/preservation.d.ts":·"6273fec3c5f152a47ec981bb65232586e8d8e3eb5e19fa2e34252ad107c34808",
+      97      │ - ········"src/migration/preservation.d.ts.map":·"c56e61a3d80fc16b463e487697e7bc06c6f7f04f683bedcc66fe4b67685b4767",
+      98      │ - ········"src/migration/preservation.js":·"22942bb8ea6822c4950fafce11c5ab6451dd15522210eaf59196395df63057f3",
+      99      │ - ········"src/migration/preservation.js.map":·"7ce6a58e9961f3e1d89974779c21b775f5569058c3e772633aa1319134cba4e3",
+     100      │ - ········"src/migration/transform.d.ts":·"ad0f1758b7f23b1d05494a146741e293745df2808f207a2f21464cffbb53e76a",
+     101      │ - ········"src/migration/transform.d.ts.map":·"d24a321c1af7334707a1ebbab4ded8ae45adccc739c76a684f4f727ea46c8355",
+     102      │ - ········"src/migration/transform.js":·"217dd3abfee40fe98b05ae14d5c3d2155870189cdfe5af3180ddf518bc672a5b",
+     103      │ - ········"src/migration/transform.js.map":·"e8e9f8a0b4453b08e53e4e571a7c37d73089fee348533390f481e80b7e2b82bc",
+     104      │ - ········"src/migration/worktrees.d.ts":·"53ee1dae3bd4724fe4b44086fbfee02a80d671f77e80c78ea7b2cab95908a83a",
+     105      │ - ········"src/migration/worktrees.d.ts.map":·"a0d7147afebdac0445e75561e7a1f43fa46459a9bbb67d52aace039c16bfbd0e",
+     106      │ - ········"src/migration/worktrees.js":·"4f825d4aaa539a2ed062707cf04aa2fac0d4076ecb51e1f7bddf1671025a3dec",
+     107      │ - ········"src/migration/worktrees.js.map":·"55f2dd1bf86d4ce91752a3d2dd333a461bbebfcd7252c34354231b34c39f9ecb",
+     108      │ - ········"src/onboarding.d.ts":·"186e14b165679f0d843587a8a041d383a149d52f812f622211daf6744e217ad2",
+     109      │ - ········"src/onboarding.d.ts.map":·"f38a771292c1d1ccf47ae416802a8fb4922c0058bb3419a76b37882e74a0def4",
+     110      │ - ········"src/onboarding.js":·"d5711f88760a1b359733d69870bb4061398f42e2d4e5206fd65afa96b79d626b",
+     111      │ - ········"src/onboarding.js.map":·"563eff2787f00f27dec004efcb94b9d4c24c6ae0b9be85ed14d900269ba270db",
+     112      │ - ········"src/runtime-settings.d.ts":·"a80a7d98330fc6cbbd118cfd5200dc038b3c7d682b8aa57d224bb1fcd7e6edc0",
+     113      │ - ········"src/runtime-settings.d.ts.map":·"150731a0406c06118bd44f0f5f17fb9130bac63dc06e062cbe55ae0982f28e50",
+     114      │ - ········"src/runtime-settings.js":·"0907edac6ff0600b6cbc2623f41fbf30852fc9ef91d5ae494bc1ae57a0a375f2",
+     115      │ - ········"src/runtime-settings.js.map":·"d8ce319c58318754f9137e0e4c21dddf5333ea16e078d37908611f8e70d4474a",
+     116      │ - ········"src/runtime.d.ts":·"cec98c6566ae6c02048a2927cd8ca2d705c729fbdda3531df2c65de14f3449d4",
+     117      │ - ········"src/runtime.d.ts.map":·"a3c4f483fc71bfb45b5ecc94fc3cfbfbe0f58a10f10561fe2555d899ad43f439",
+     118      │ - ········"src/runtime.js":·"358a445ca49b6ce10c76ad31b8b3aa3e606047cc799a4c42597ca8f00bd54e3d",
+     119      │ - ········"src/runtime.js.map":·"3580281a408e6350e2d71348eb93a5aad00279e6024e524ff7853d513661bc93",
+     120      │ - ········"src/services/ConfigService.d.ts":·"e729b87fbdcba15a6277adbaf07086a8bc31b060abc04ba13a4707563082ee51",
+     121      │ - ········"src/services/ConfigService.d.ts.map":·"848d52da98a3cff8559fb2e4c87892c5e19d29ff72e34bb071ec8ae2697f9a84",
+     122      │ - ········"src/services/ConfigService.js":·"94491fa2afe0ecb691d597577dfb6c1aba3b904ae8ede6a18080932ca9cd539a",
+     123      │ - ········"src/services/ConfigService.js.map":·"23afbd7bc194b7a97ae7bbca3e85cb3841de8a9f4d97908eb884985a9860f672",
+     124      │ - ········"src/services/DesktopLifecycle.d.ts":·"75c5be1191993066bedbd58f1cc730e93d51016e38277eea2529b1b2c8a9aaa4",
+     125      │ - ········"src/services/DesktopLifecycle.d.ts.map":·"a32f08f80e32d28db1b11b30028a68c7102cb50f5709f8ff9ae1af5ff9c4e8d2",
+     126      │ - ········"src/services/DesktopLifecycle.js":·"a174555dbed8b5774e281ffb2068d3290852db02538820f8fae47f9c89347dfc",
+     127      │ - ········"src/services/DesktopLifecycle.js.map":·"ebc5befd8c1c84cb9690a8d2ab17d2565c18115e3d16654a15f18ff3973b95b7",
+     128      │ - ········"src/services/InstallationOwnership.d.ts":·"e7f3fe26dd1363633203c69f5c5eba9ab8354815577ee1f656c4ee6da5baa0a5",
+     129      │ - ········"src/services/InstallationOwnership.d.ts.map":·"8d8d2c476024c8dd7703ff7ea0ea24c87eb8a535808949e969226990a117accd",
+     130      │ - ········"src/services/InstallationOwnership.js":·"0017ee1b32821c2f325ee18eae6770e6ad904bbe643c5800c91da79fe2c212d7",
+     131      │ - ········"src/services/InstallationOwnership.js.map":·"4db008aaf37baf1b4777cb141da0e26aa8a1dae54b7a46a73b0dde4fb48eb4ab",
+     132      │ - ········"src/services/InstanceLock.d.ts":·"f9f2fcb9664bc5b425ecc87b3f03873f1b68964f7a59d420c90ff9f2b98fd38c",
+     133      │ - ········"src/services/InstanceLock.d.ts.map":·"e799ba85991f61b63e0130c9f7e90283fc43ca808580e6739a21df508cfcc061",
+     134      │ - ········"src/services/InstanceLock.js":·"c5b4685e8cb6155a3445ef5cafa5472dd602d85430e745506f198b8f7f6a75ec",
+     135      │ - ········"src/services/InstanceLock.js.map":·"b47cb16a36502a2bd961654ee413ad84ca66da20cd442f626aa657800e5f55d8",
+     136      │ - ········"src/services/Logger.d.ts":·"64d8b34dfd12479f3fe76d548e83450d7df8f15a72bd0381ad74f02b668a6f53",
+     137      │ - ········"src/services/Logger.d.ts.map":·"9ca394ea680c55bbb59a2272cc31a2d4bd8ca70586e04980bc791c325e65a234",
+     138      │ - ········"src/services/Logger.js":·"044bd2366cca322f0c834548344e25627c89f7bd9a08c92420dd3e68b5762f10",
+     139      │ - ········"src/services/Logger.js.map":·"b1990e7f3a8cadbaacd2fc38c0bbddda6a4f15a01e22525a5a550034b79e4793",
+     140      │ - ········"src/services/OwnedUpdateLifecycle.d.ts":·"efb375682efb90771dc1f9273c17fd9be0676430fd0872d0f9fb8c588e20b465",
+     141      │ - ········"src/services/OwnedUpdateLifecycle.d.ts.map":·"ac93ccbdfec3fcd7881a063869114c460169dfdda2e24388254738d61e0d6f4f",
+     142      │ - ········"src/services/OwnedUpdateLifecycle.js":·"35205539a78157d2fe6d482173a96139e76bbc9a1aea7901f7d15232a24cefcb",
+     143      │ - ········"src/services/OwnedUpdateLifecycle.js.map":·"b8280ddfba0295e51f6b98aa96a47a1c379a45b46b5a185ac4eeba21939265fa",
+     144      │ - ········"src/services/SentryErrorReporter.d.ts":·"6ef82e8111fd901f2b4275a57d5db11405d060922df817d5e054229485c49db4",
+     145      │ - ········"src/services/SentryErrorReporter.d.ts.map":·"d4a87270b282c176586a80cbee8242192e13ad00199382b94e488d583a96086a",
+     146      │ - ········"src/services/SentryErrorReporter.js":·"a6091e4349a0d0dff5839beea1635d089f198868dd00bf1b32bf83be53aee04a",
+     147      │ - ········"src/services/SentryErrorReporter.js.map":·"544e70b9b839b9d59ce1e8457205c789f2d796d3caf42bc150e267c5a20ef9f2",
+     148      │ - ········"src/services/ServiceLifecycle.d.ts":·"6555e06a7cfedd563cc67450c837484607f434c04f28acbcc1ba5b3960078ab9",
+     149      │ - ········"src/services/ServiceLifecycle.d.ts.map":·"46dacb0b5da654c7c1516789f639854680bad634184acd581ff7647d1476f354",
+     150      │ - ········"src/services/ServiceLifecycle.js":·"e3278e1d1cac0a5f33e7b81594e31f8639b50051bbb5900aaa4a12fb364d10a2",
+  3521 more lines truncated
+  
+
+Checked 1363 files in 2s. No fixes applied.
+Found 5 errors.
+Found 34 warnings.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+ ELIFECYCLE  Command failed with exit code 1.
+
+{"exitCode": 1, "ended": "2026-10-21T17:34:24.707582+00:00"}

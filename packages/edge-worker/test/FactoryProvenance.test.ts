@@ -2,10 +2,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { factoryRuntimeIdentity } from "bobs-factory-core";
-import { expect, it, vi } from "vitest";
+import { expect, it } from "vitest";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
+import { waitForRuntime } from "./fixtures/runtime-wait.js";
 
 it("closes crashed native turns when restoring their graph attempt, retaining unrelated and completed receipts", async () => {
 	const home = mkdtempSync(join(tmpdir(), "factory-provenance-crash-"));
@@ -154,7 +155,7 @@ it("preserves an older build receipt while a frozen run resumes on the current r
 			},
 		});
 		const execution = original.launch(run);
-		await vi.waitFor(() => expect(run.status).toBe("waiting"));
+		await waitForRuntime(() => expect(run.status).toBe("waiting"));
 		// Model a verified receipt persisted by an older executable, rather than infer its identity from today's checkout.
 		const old = run.stepAttempts![0]!;
 		old.runtime = {
@@ -178,7 +179,7 @@ it("preserves an older build receipt while a frozen run resumes on the current r
 		restored = new WorkflowRuntime(home, hooks);
 		const saved = restored.get(run.id);
 		const recovery = restored.launch(saved);
-		await vi.waitFor(() => expect(saved.status).toBe("waiting"));
+		await waitForRuntime(() => expect(saved.status).toBe("waiting"));
 		restored.answer(
 			saved.id,
 			"Continue with the accepted instructions",

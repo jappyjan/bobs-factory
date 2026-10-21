@@ -281,7 +281,7 @@ export function qaCoverage(scope: QaScope, capture: QaExecution) {
 /** References identify the actual accepted record, rather than invented requirements. */
 export function qaRequirementIssues(
 	scope: QaScope,
-	outputs: Record<string, unknown>,
+	clarify: { requirements?: string[]; decisions?: unknown[] } | undefined,
 	answers: unknown[],
 	inventory?: Inventory,
 ) {
@@ -302,9 +302,6 @@ export function qaRequirementIssues(
 				issues.push(`${id}: no QA story or explicit justified exclusion`);
 		return issues;
 	}
-	const clarify = (outputs.clarify ?? outputs.decisions) as
-		| { requirements?: string[]; decisions?: unknown[] }
-		| undefined;
 	const requirements = clarify?.requirements ?? [];
 	const refs = new Set([
 		...requirements,

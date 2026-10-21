@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/core
+
+
+ Test Files  2 passed (2)
+      Tests  16 passed (16)
+   Start at  20:35:31
+   Duration  3.51s (transform 205ms, setup 0ms, import 364ms, tests 3.46s, environment 0ms)
+

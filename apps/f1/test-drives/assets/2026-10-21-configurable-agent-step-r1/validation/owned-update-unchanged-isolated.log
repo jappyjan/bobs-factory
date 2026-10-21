@@ -1,0 +1,13 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/cli
+
+ ✓ src/services/OwnedUpdateLifecycle.test.ts > checks preservation contracts undefined → factory-preservation-v2 before replacing the worker 447ms
+ ✓ src/services/OwnedUpdateLifecycle.test.ts > checks preservation contracts factory-preservation-v2 → undefined before replacing the worker 629ms
+ ✓ src/services/OwnedUpdateLifecycle.test.ts > checks preservation contracts factory-preservation-v2 → factory-preservation-v2 before replacing the worker 647ms
+ ✓ src/services/OwnedUpdateLifecycle.test.ts > checks preservation contracts factory-preservation-v2 → future-contract before replacing the worker 320ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  21:26:37
+   Duration  6.82s (transform 2.95s, setup 0ms, import 4.58s, tests 2.04s, environment 0ms)
+

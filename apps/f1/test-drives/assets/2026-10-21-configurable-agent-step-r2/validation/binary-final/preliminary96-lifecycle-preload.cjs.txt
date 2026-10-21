@@ -1,0 +1,21 @@
+const fs=require('node:fs'), cp=require('node:child_process');
+const file='/tmp/ticket136-r11-96b-lifecycle.jsonl';
+const log=(event,detail={})=>fs.appendFileSync(file,JSON.stringify({at:Date.now(),hr:process.hrtime.bigint().toString(),pid:process.pid,ppid:process.ppid,event,cpu:process.cpuUsage(),...detail})+'\n');
+log('preload',{validator:process.argv.includes('internal-schema-validator')});
+const originalSpawn=cp.spawn;
+cp.spawn=function(...args){const child=originalSpawn.apply(this,args);if(Array.isArray(args[1])&&args[1].includes('internal-schema-validator')){
+ log('spawn-return',{child:child.pid});const end=child.stdin.end;child.stdin.end=function(...a){log('stdin-end-call',{child:child.pid,bytes:Buffer.byteLength(a[0]||'')});return end.apply(this,a)};
+ child.once('spawn',()=>log('spawn-event',{child:child.pid}));child.once('exit',(code,signal)=>log('child-exit',{child:child.pid,code,signal}));child.once('close',(code,signal)=>log('child-close',{child:child.pid,code,signal}));
+ child.stdin.on('finish',()=>log('stdin-finish',{child:child.pid}));child.stdout.on('data',b=>log('child-stdout',{child:child.pid,bytes:b.length}));
+ }return child};
+const originalExec=cp.execFile;
+cp.execFile=function(...args){if(args[0]==='ps'&&args[1]?.[1]==='rss='){
+ const call=Date.now();const cb=args[3];args[3]=function(error,out,err){log('rss-result',{child:Number(args[1][3]),elapsed:Date.now()-call,error:error?.code??null,rss:out.trim()});return cb(error,out,err)};
+ }return originalExec.apply(this,args)};
+for(const key of Object.getOwnPropertySymbols(originalExec))Object.defineProperty(cp.execFile,key,Object.getOwnPropertyDescriptor(originalExec,key));
+try{require('node:module').syncBuiltinESMExports()}catch{}
+if(process.argv.includes('internal-schema-validator')){
+ const iterator=process.stdin[Symbol.asyncIterator];process.stdin[Symbol.asyncIterator]=function(...args){log('stdin-iterator');const it=iterator.apply(this,args);return {async next(){const r=await it.next();log('stdin-next',{done:r.done,bytes:r.value?.length??0});return r},return(v){return it.return?it.return(v):Promise.resolve({done:true,value:v})},[Symbol.asyncIterator](){return this}}};
+ const write=process.stdout.write;process.stdout.write=function(...args){log('stdout-write',{bytes:Buffer.byteLength(args[0]||'')});return write.apply(this,args)};
+ process.once('exit',code=>log('self-exit',{code,uptime:process.uptime()}));
+}

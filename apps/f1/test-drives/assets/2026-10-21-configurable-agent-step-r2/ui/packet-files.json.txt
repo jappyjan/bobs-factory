@@ -1,0 +1,235 @@
+{
+  "source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 8493,
+      "sha256": "ef056b893f5d61e98fc0003e7e39b9b85ba365ddf1795096cf7e58a2097070cc"
+    },
+    {
+      "path": "api-runs.json.txt",
+      "bytes": 2774,
+      "sha256": "57fcc9048f01ce1fb509322a819b9fe4b43c12498d0b5995423fd8bb037581f9"
+    },
+    {
+      "path": "browser-proof.json.txt",
+      "bytes": 14100,
+      "sha256": "7e473ebf70c6601efb2c82e7f2de0c284596779d42b3bf68e8547ce40626c516"
+    },
+    {
+      "path": "final-build-manifest.json.txt",
+      "bytes": 322468,
+      "sha256": "f3a043329b5cb13558efea150bfe81fe42c2b6dfd6dcd8548c10b5f1b5c475f3"
+    },
+    {
+      "path": "immutable-state-proof.json.txt",
+      "bytes": 2030,
+      "sha256": "cd4824b32d4dbd62104b346c33d135e880d1cecaf12cbd05a8b670e0841cac55"
+    },
+    {
+      "path": "legacy-ui-fixture.mjs",
+      "bytes": 4858,
+      "sha256": "b5653446668d35613a67f37fde1a46debf5e6c24d86244fc0544c3ac289b643f"
+    },
+    {
+      "path": "logs/legacy-navigation-green.log",
+      "bytes": 590,
+      "sha256": "75697064b1f6cad002aae3c34798b1c7206d1838e761f7849f51739da615d43b"
+    },
+    {
+      "path": "logs/legacy-navigation-types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "manifest-original26.json.txt",
+      "bytes": 29672,
+      "sha256": "e2e9b4bb0bb877a671aa1d8a4d0dbdaf87b6069deeff791be18a90f0f8165e2c"
+    },
+    {
+      "path": "manifest.json.txt",
+      "bytes": 35928,
+      "sha256": "641f64213014a8953d54ec3e6396d51b9a4327bb703953be9462f82f60302433"
+    },
+    {
+      "path": "mobile-settings-followup.json.txt",
+      "bytes": 4640,
+      "sha256": "afeea042b600445b709f6d94a09df2bbf299312d5eeca5b309ac0f208c1373e5"
+    },
+    {
+      "path": "modern-ui-fixture.mjs",
+      "bytes": 6550,
+      "sha256": "477184e422cc00911b007823a3e67852dd9462e805d3d42cda2241044bd8e680"
+    },
+    {
+      "path": "progress-reload-proof.json.txt",
+      "bytes": 715,
+      "sha256": "d9844e982b62eb04b247fe5be282bf4547be89c638ff1c3fb564ef5f5f55221b"
+    },
+    {
+      "path": "screenshot-inputs.json.txt",
+      "bytes": 11398,
+      "sha256": "dfff87931c087a976f8ae994dcff32763e067fb719800fdddcf3268e63f3ce23"
+    },
+    {
+      "path": "screenshots/builder-desktop-dark-evidence.png",
+      "bytes": 169862,
+      "sha256": "5eae24b50cd0bfccb52932c3e0790b8de0a56ac9048e944a26d59af3bb876e71"
+    },
+    {
+      "path": "screenshots/builder-desktop-dark-schema.png",
+      "bytes": 163264,
+      "sha256": "0805f645f65757c04f834d0a9d5341f10418d507c6022ff2ea28fede657f1913"
+    },
+    {
+      "path": "screenshots/builder-desktop-light-evidence.png",
+      "bytes": 162542,
+      "sha256": "7825eee67b1d48b7f088939d416f7f8946f16453784d610d769cee3cf1635f7a"
+    },
+    {
+      "path": "screenshots/builder-desktop-light-schema.png",
+      "bytes": 155289,
+      "sha256": "d47a8a43b88cea3fcd9b8ed7d1a8217dd91ecbdf2b2cb1d4da51ef3386633ac4"
+    },
+    {
+      "path": "screenshots/builder-mobile-dark-evidence.png",
+      "bytes": 165659,
+      "sha256": "6b39c29e3af1935acf255ce779c93dd4a3d39aef7dd37eb60317cccfcbd7052b"
+    },
+    {
+      "path": "screenshots/builder-mobile-dark-instructions.png",
+      "bytes": 172173,
+      "sha256": "9ea442cc9837c41426781714bf476bb6f57f4dbf9b57593401b83e9bb13a8e60"
+    },
+    {
+      "path": "screenshots/builder-mobile-dark-reads.png",
+      "bytes": 179418,
+      "sha256": "f3cbde4041a3c407487dd7e5f78e31f0d03f22ba13251148bd31510fd0eba69f"
+    },
+    {
+      "path": "screenshots/builder-mobile-dark-rules.png",
+      "bytes": 138456,
+      "sha256": "5c2ad10b40c51a39b06f8677c8789cf95642f7e81fafdc1f536cd6905e9b1562"
+    },
+    {
+      "path": "screenshots/builder-mobile-dark-schema.png",
+      "bytes": 145465,
+      "sha256": "b8e99d8f9e18a7d02f5525dc7b70c0124bd71635e981833432b80788feb59072"
+    },
+    {
+      "path": "screenshots/builder-mobile-light-evidence.png",
+      "bytes": 154528,
+      "sha256": "abf6fa6d74b33a729eb21f9ad2427b1d44069fce13287493d432ce530060d77c"
+    },
+    {
+      "path": "screenshots/builder-mobile-light-instructions.png",
+      "bytes": 159869,
+      "sha256": "8f0ccc7a3c79505880f9a5f04b3bdac63faa09267f5841f9bf7e9c25d131769f"
+    },
+    {
+      "path": "screenshots/builder-mobile-light-reads.png",
+      "bytes": 167726,
+      "sha256": "26a978636f42e00d01683719daefa96e60afd1ad53836854d426f2f5c653193b"
+    },
+    {
+      "path": "screenshots/builder-mobile-light-rules.png",
+      "bytes": 129390,
+      "sha256": "57caa66cf0e5791d4265827d6c21e051e6fab4c2d10e138866a1d25f6743dfc4"
+    },
+    {
+      "path": "screenshots/builder-mobile-light-schema.png",
+      "bytes": 135589,
+      "sha256": "cdf7b9d529abf4bad9d788fe24029f5fc1f7736ba199f675e380a05b0f768c2b"
+    },
+    {
+      "path": "screenshots/historical-completed-desktop-dark.png",
+      "bytes": 245099,
+      "sha256": "713ed6f7ac7c32b5bfb938b3acd48351ff6f3eb5109fae5de91c13f495a2cf29"
+    },
+    {
+      "path": "screenshots/historical-completed-desktop-light.png",
+      "bytes": 197247,
+      "sha256": "fcc0a2db953f246315e9eb32a5d04440ae7488000a391534fadd404c8f3fcbc2"
+    },
+    {
+      "path": "screenshots/historical-completed-mobile-dark.png",
+      "bytes": 366497,
+      "sha256": "62c5914fb5da03d28cc824d147b7981878fec98fb1af8150581856a9f6790b2e"
+    },
+    {
+      "path": "screenshots/historical-completed-mobile-light.png",
+      "bytes": 310306,
+      "sha256": "645406d478ea389679cd2c5840238a064409d55fb7261d8d81dc42060d20c149"
+    },
+    {
+      "path": "screenshots/historical-pending-desktop-dark.png",
+      "bytes": 265175,
+      "sha256": "bd31f0a54cbf465e09a8cbdafb78a4d2125d1310911bd23583521e9e7a95b8f0"
+    },
+    {
+      "path": "screenshots/historical-pending-desktop-light.png",
+      "bytes": 210459,
+      "sha256": "4e5b8cf2a9e939db2b6e761482446ac6c8cdefd101b880739031f7bd71c5f781"
+    },
+    {
+      "path": "screenshots/historical-pending-mobile-dark.png",
+      "bytes": 326001,
+      "sha256": "701b474d267c24713ac64b9dd6a64bea43eb25cd9b1d5abc87f1744313297d3c"
+    },
+    {
+      "path": "screenshots/historical-pending-mobile-light.png",
+      "bytes": 275180,
+      "sha256": "69f3f8b89c38af0ba56de9482ff852b213d9ee9b2439c60a1fbeaf348a307f21"
+    },
+    {
+      "path": "screenshots/historical-screenshot-expanded-desktop-light.png",
+      "bytes": 61019,
+      "sha256": "04a0996703f9085529ff7a8480ed42030b58170a874c6df0ade797e3725bdd52"
+    },
+    {
+      "path": "screenshots/historical-screenshot-preview-desktop-light.png",
+      "bytes": 78249,
+      "sha256": "e7e92c4fc26d4d9753ccd2b5d4b8f2a9122d95e4d1ada8d9d0ff8d844521017b"
+    },
+    {
+      "path": "screenshots/modern-review-desktop-dark.png",
+      "bytes": 238029,
+      "sha256": "63f38c8d6d33387bd2977ae7753d290306e79acc1aa46910d4bd5f9a47246c13"
+    },
+    {
+      "path": "screenshots/modern-review-desktop-light.png",
+      "bytes": 192011,
+      "sha256": "1375f4757b859ed6d93a2d0936693c396fb04d680a0edc42476f05acaf2c0952"
+    },
+    {
+      "path": "screenshots/modern-review-mobile-dark.png",
+      "bytes": 339227,
+      "sha256": "88682e871015572f063f97cd94d9699110c0ca7d7d41efca5c243ef1700aaeb4"
+    },
+    {
+      "path": "screenshots/modern-review-mobile-light.png",
+      "bytes": 291654,
+      "sha256": "08dbfc999af4029fd7bf54dfd4b5af9eba1261f87e6785f58a93ed17d816f747"
+    },
+    {
+      "path": "screenshots/modern-working-desktop-dark.png",
+      "bytes": 235544,
+      "sha256": "6c9fa400d833ec9a717ed622c36f69913e832c7e6a2924ca2bca071131d49c45"
+    },
+    {
+      "path": "screenshots/modern-working-desktop-light.png",
+      "bytes": 193234,
+      "sha256": "e16a035fcdb028d86b70f8a487b6ee061529edbbd23ef8dd5880150b9e9045e8"
+    },
+    {
+      "path": "screenshots/modern-working-mobile-dark.png",
+      "bytes": 271850,
+      "sha256": "c0f91df7bb48edf90312cf24e384df0a6537c092220038dc4fcdad9311659f41"
+    },
+    {
+      "path": "screenshots/modern-working-mobile-light.png",
+      "bytes": 235992,
+      "sha256": "8310360451a00b11d61dac518239b26255f641909736360917d17498be043e88"
+    }
+  ]
+}

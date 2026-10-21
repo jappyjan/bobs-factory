@@ -154,7 +154,6 @@ import {
 	createFetchFailureModesClient,
 	FactoryContextInfrastructureError,
 	type FailureModesHttpClient,
-	factoryContextInstructions,
 	listConfiguredTools,
 	prepareFactoryContextAsync,
 	type ResolvedSession,
@@ -191,15 +190,16 @@ import {
 	type Architecture,
 	ArchitectureReviewSchema,
 	ArchitectureSchema,
-	architectureQuestionInstructions,
 	assertReviewBrief,
 	assertRevisionChanges,
 } from "./factory/Architecture.js";
 import {
+	digest,
 	TicketDelivery,
 	type TicketTarget,
 	validateDeliveryContract,
 } from "./factory/Delivery.js";
+import { runEvidenceChecks } from "./factory/EvidenceChecks.js";
 import {
 	executionCapabilities,
 	validateProfileRunner,
@@ -215,10 +215,6 @@ import {
 import { atomicPrivateFile, privateFile } from "./factory/FactoryAuthStore.js";
 import type { FactoryOnboarding } from "./factory/FactoryOnboarding.js";
 import { FactoryPush } from "./factory/FactoryPush.js";
-import {
-	reviewCompletionInstructions,
-	validateFactoryResult,
-} from "./factory/FactoryResults.js";
 import { FactoryServer } from "./factory/FactoryServer.js";
 import {
 	CaptureReuseError,
@@ -228,7 +224,6 @@ import {
 	parseAgentOutput,
 	toolArguments,
 } from "./factory/FactoryTools.js";
-import { factoryFeedbackContext } from "./factory/FeedbackPolicy.js";
 import { applyManagedGithubAgentEnvironment } from "./factory/GithubApi.js";
 import {
 	normalizeGitProviderConfig,
@@ -251,12 +246,7 @@ import {
 	fileLinearImprovement,
 	fileTaskbotImprovement,
 } from "./factory/ImprovementIssues.js";
-import {
-	completedAgentResult,
-	incrementalInstructions,
-	roleInstructions,
-	roleProgress,
-} from "./factory/Incremental.js";
+import { completedAgentResult, roleProgress } from "./factory/Incremental.js";
 import { issueSnapshot } from "./factory/issueSnapshot.js";
 import {
 	LaunchAdmission,
@@ -287,6 +277,7 @@ import {
 	inspectOperatorTransport,
 	operatorSanitize,
 } from "./factory/OperatorTransport.js";
+import { parseStepOutputAsync } from "./factory/OutputFormats.js";
 import {
 	OutputValidationError,
 	outputValidationError,
@@ -320,10 +311,21 @@ import {
 } from "./factory/ResultArtifacts.js";
 import { finalizeGuideFiles } from "./factory/ReviewFiles.js";
 import {
-	factoryReviewFixContext,
 	recordReviewFix,
 	validateReviewFix,
 } from "./factory/ReviewRecovery.js";
+import {
+	assertBoundInspectionFresh,
+	bindingHistory,
+	outputRevisionBinding,
+	pinReadOnlyAccess,
+	StaleBoundInspectionError,
+} from "./factory/RevisionBinding.js";
+import {
+	factoryNativePrompt,
+	factoryRoleInstruction,
+} from "./factory/RolePrompt.js";
+import { takeoverSource, ticketSnapshot } from "./factory/RunContextSources.js";
 import {
 	buildTitleContext,
 	RunTitleGenerator,
@@ -339,6 +341,21 @@ import {
 	aggregateForContext,
 	validateContractOutput,
 } from "./factory/SpecialistReview.js";
+import { stepBindings } from "./factory/StepBindings.js";
+import {
+	accessMode,
+	checkArgs,
+	formatOf,
+	hasCheck,
+	hasInstruction,
+	legacyImprovementTemplate,
+	readOutput,
+	resolveStepConfig,
+} from "./factory/StepConfig.js";
+import {
+	stepContextBindingSources,
+	stepContextSources,
+} from "./factory/StepContextSources.js";
 import {
 	inspectPullRequest,
 	type TakeoverPullRequest,
@@ -362,18 +379,15 @@ import {
 	taskbotSource,
 } from "./factory/TicketTracking.js";
 import { titleMcpConfig } from "./factory/TitleMcpConfig.js";
+import { outputForTool, toolForStep } from "./factory/ToolBindings.js";
 import { finalizeVideoEvidence, videoGateIssues } from "./factory/Video.js";
 import {
 	capacityInstructions,
 	readPath as readFactoryPath,
 	type Workflow,
 	type WorkflowStep,
-	workflowTriggerInstructions,
 } from "./factory/Workflow.js";
-import {
-	workflowExecutionContext,
-	workflowExecutionInstructions,
-} from "./factory/WorkflowExecution.js";
+import { workflowExecutionContext } from "./factory/WorkflowExecution.js";
 import {
 	type ExecutionContext,
 	type FactoryRun,
@@ -6522,6 +6536,7 @@ ${taskSection}`;
 				};
 				run.titleGeneration = session.titleGeneration;
 				run.outputs.ticket = ticket;
+				run.ticketSnapshot = structuredClone(ticket);
 				const tracker = this.issueTrackers.get(linearWorkspaceId)!;
 				run.ticketReference = {
 					provider: "native",
@@ -7811,7 +7826,7 @@ ${taskSection}`;
 	): Promise<void> {
 		if (
 			workflow.improvement?.workerFallback === "block" &&
-			!workflow.steps.find((s) => s.id === "research-worker")?.model
+			!legacyImprovementTemplate(workflow, "research-worker")?.model
 		)
 			throw new Error(
 				"Configure a cheaper research-worker model in Recipes → Improve codebase before launching this workflow",
@@ -8941,10 +8956,12 @@ ${taskSection}`;
 			}
 		}
 		signal.throwIfAborted();
-		if (!run.outputs.ticket)
+		if (!ticketSnapshot(run)) {
 			run.outputs.ticket = await (
 				await this.factoryTicketAdapter(run, signal)
 			).read();
+			run.ticketSnapshot = structuredClone(run.outputs.ticket);
+		}
 		this.getFactoryRuntime().save(run);
 	}
 
@@ -9152,7 +9169,7 @@ ${taskSection}`;
 		const saved = context.resumeAgent;
 		const rejected = saved?.rejected;
 		if (
-			context.step.architectureContract !== "architecture-v1" ||
+			!hasCheck(context.step, "architecture-proposal") ||
 			!saved ||
 			!rejected?.revision ||
 			!(rejected.retryGeneration && rejected.retryGeneration > 0)
@@ -9168,7 +9185,7 @@ ${taskSection}`;
 			return;
 		let output: unknown;
 		try {
-			output = this.validateFactoryAgentOutput(context, rejected.output);
+			output = await this.validateFactoryAgentOutput(context, rejected.output);
 		} catch (error) {
 			if (error instanceof OutputValidationError) return;
 			throw error;
@@ -9195,6 +9212,20 @@ ${taskSection}`;
 	private async executeFactoryAgent(
 		context: ExecutionContext,
 	): Promise<unknown> {
+		this.refreshFactoryFeedbackContext(context);
+		if (context.step.reads)
+			context.input = {
+				...(context.input as Record<string, unknown>),
+				...stepBindings(context),
+			};
+		context.inspectionBinding ??=
+			context.resumeAgent?.inspection ??
+			(await outputRevisionBinding(context, undefined, true));
+		await assertBoundInspectionFresh(context);
+		if (accessMode(context.step) === "read-only" && !context.readOnlyResearch) {
+			context.readOnlyResearch = true;
+			context.researchAccess = await pinReadOnlyAccess(context);
+		}
 		await this.revalidateRetriedArchitecture(context);
 		if (
 			context.resumeAgent?.rejected?.exhausted &&
@@ -9334,7 +9365,26 @@ ${taskSection}`;
 
 		// Review fixers and QA roles can request assistance without askQuestions;
 		// saved recipes must receive the same question guidance as new ones.
-		const instruction = `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${step.prompt}\n${repositoryScopeInstructions(run)}\nGit provider: ${JSON.stringify(run.gitProvider ?? { gitProvider: repository.gitProvider, githubUrl: repository.githubUrl, gitlabUrl: repository.gitlabUrl })}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${run.gitProvider?.type === "custom" ? (run.gitProvider.instructions ?? "") : repository.gitProvider?.type === "custom" ? (repository.gitProvider.instructions ?? "") : ""}\nOriginating ticket: ${run.ticketReference ? JSON.stringify(run.ticketReference) : "none"}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${questionInstructions(run.id)}\n${step.architectureContract === "architecture-review-v1" ? architectureQuestionInstructions : ""}\n${workflowTriggerInstructions}\n${workflowExecutionInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${["code-review", "visual-review"].includes(step.id) || ["specialist-v1", "coverage-v1"].includes(step.reviewContract ?? "") ? reviewCompletionInstructions : ""}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
+		const instruction = factoryRoleInstruction(step, {
+			repositoryScope: repositoryScopeInstructions(run),
+			gitProvider: JSON.stringify(
+				run.gitProvider ?? {
+					gitProvider: repository.gitProvider,
+					githubUrl: repository.githubUrl,
+					gitlabUrl: repository.gitlabUrl,
+				},
+			),
+			customProviderInstructions:
+				run.gitProvider?.type === "custom"
+					? (run.gitProvider.instructions ?? "")
+					: repository.gitProvider?.type === "custom"
+						? (repository.gitProvider.instructions ?? "")
+						: "",
+			ticket: run.ticketReference
+				? JSON.stringify(run.ticketReference)
+				: "none",
+			questions: questionInstructions(run.id),
+		});
 		const built = await this.buildAgentRunnerConfig(
 			session,
 			repository,
@@ -9409,6 +9459,9 @@ ${taskSection}`;
 				agentCheckpoint = {
 					runner: runnerType,
 					sessionId: message.session_id,
+					...(context.inspectionBinding
+						? { inspection: context.inspectionBinding }
+						: {}),
 					idleRetries: context.resumeAgent?.idleRetries,
 					...(context.resumeAgent?.infrastructureFailure
 						? {
@@ -9465,9 +9518,7 @@ ${taskSection}`;
 		}
 		built.config.allowedTools = [
 			...(context.readOnlyResearch ? researchTools : []),
-			...(step.id === "question-explanation"
-				? []
-				: (built.config.allowedTools ?? [])),
+			...(built.config.allowedTools ?? []),
 			"mcp__factory-context__list_context",
 			"mcp__factory-context__read_context",
 			...(artifactBinding
@@ -9476,21 +9527,40 @@ ${taskSection}`;
 		];
 		if (artifactBinding)
 			await mkdir(artifactBinding.directory, { recursive: true });
-		if (step.id === "capture") await verifyQaEnvironment(context);
+		const access = resolveStepConfig(step).access;
+		if (access.tools)
+			built.config.allowedTools = context.readOnlyResearch
+				? built.config.allowedTools?.filter((tool) =>
+						access.tools!.includes(tool),
+					)
+				: [
+						...access.tools,
+						"mcp__factory-context__list_context",
+						"mcp__factory-context__read_context",
+						...(artifactBinding
+							? ["mcp__factory-context__submit_result_artifact"]
+							: []),
+					];
+		if (hasCheck(step, "qa-environment")) await verifyQaEnvironment(context);
+		const liveSources = stepContextSources(context);
+		context.inspectionSources = structuredClone(
+			stepContextBindingSources(
+				context,
+				bindingHistory(context, context.inspectionBinding),
+			),
+		);
 		const factoryContext = await prepareFactoryContextAsync(
 			{
 				...(context.input && typeof context.input === "object"
 					? context.input
 					: { input: context.input }),
 				workflowExecution: workflowExecutionContext(context),
+				stepConfiguration: resolveStepConfig(step),
 				progress: context.progress,
-				...(step.id === "capture" ? { qaReuse: qaReuseContext(context) } : {}),
-				...(step.id === "ci-fix" || step.impactContract
-					? { feedback: factoryFeedbackContext(context) }
+				...(hasCheck(step, "capture-evidence")
+					? { qaReuse: qaReuseContext(context) }
 					: {}),
-				...(["code-fix", "visual-fix"].includes(step.id)
-					? { reviewFix: factoryReviewFixContext(context) }
-					: {}),
+				...liveSources,
 				...(captureCorrection ? { captureCorrection } : {}),
 				...(outputCorrection ? { outputCorrection } : {}),
 				provenance: runProvenance(run),
@@ -9546,6 +9616,29 @@ ${taskSection}`;
 				this.runnerSlots,
 				context.signal,
 				{ ...context.capacity, remote: runnerType === "cursor" },
+				undefined,
+				async () => {
+					await assertBoundInspectionFresh(context);
+					if (context.inspectionBinding) {
+						const admitted = (await outputRevisionBinding(
+							context,
+							context.inspectionBinding,
+							true,
+						))!;
+						if (
+							context.readOnlyResearch &&
+							digest(admitted.repositories) !==
+								digest(context.inspectionBinding.repositories)
+						)
+							throw new StaleBoundInspectionError();
+						context.inspectionBinding = admitted;
+						agentCheckpoint = {
+							...(context.resumeAgent ?? { runner: runnerType }),
+							inspection: admitted,
+						};
+						await context.checkpointAgent?.(agentCheckpoint);
+					}
+				},
 			);
 			this.agentSessionManager.addAgentRunner(run.id, runner);
 			this.factoryChat ??= new SessionChat();
@@ -9563,7 +9656,12 @@ ${taskSection}`;
 					context.chat && runner.supportsStreamingInput && runner.startStreaming
 						? runner.startStreaming.bind(runner)
 						: runner.start.bind(runner);
-				const nativePrompt = `${outputCorrection && !captureCorrection ? "Your previous output failed validation. Read /outputCorrection from the NEW factory-context connection: it contains the rejected candidate, precise issues, and revision. Correct those issues and return the COMPLETE result for this role. Preserve accepted evidence and completed work; correct only this role output and, for capture, invalid states. Do not replay other pipeline roles. This is an output correction, not a process restart.\n\n" : captureCorrection ? "Your completed capture failed screenshot-reuse validation. Read /captureCorrection through the new factory-context tools: rejectedOutput contains your complete saved inventory, and screenshots lists every rejected state. Replace those images with fresh filenames; preserve the other valid captures and return the COMPLETE corrected inventory. Do not repeat completed setup or unrelated captures. The old factory-context connection is gone.\n\n" : context.resumeAgent?.sessionId ? "Continue this role from your existing conversation and worktree. Read the latest answers through the new factory-context connection and inspect current files and past tool results before repeating actions. The old factory-context connection is gone; use the new factory-context tools below.\n\n" : ""}${factoryContextInstructions}\n${step.architectureContract === "architecture-review-v1" ? architectureQuestionInstructions : ""}\n\nEvidence directory: ${context.evidenceDir}`;
+				const nativePrompt = factoryNativePrompt(step, {
+					outputCorrection: !!outputCorrection,
+					captureCorrection: !!captureCorrection,
+					resumed: !!context.resumeAgent?.sessionId,
+					evidenceDir: context.evidenceDir,
+				});
 				// Include the managed capacity addendum applied by buildRunnerForType.
 				// Provider implicit defaults are outside this Factory-supplied identity.
 				const nativeConfig = this.managedRunnerConfig(built.config);
@@ -9618,7 +9716,8 @@ ${taskSection}`;
 				}
 				const authoredScope = context.progress?.reviewScope;
 				context.progress = await roleProgress(context);
-				if (step.id === "guide") context.progress.reviewScope = authoredScope;
+				if (hasCheck(step, "requirement-coverage"))
+					context.progress.reviewScope = authoredScope;
 				output = await resolveRoleResult(context, output);
 				if (
 					output &&
@@ -9636,9 +9735,7 @@ ${taskSection}`;
 					throw new FactoryContextInfrastructureError(failure.reason, output);
 				}
 				if (
-					["specialist-v1", "coverage-v1"].includes(
-						step.reviewContract ?? "",
-					) &&
+					hasCheck(step, "specialist-evidence") &&
 					output &&
 					typeof output === "object" &&
 					"status" in output &&
@@ -9648,17 +9745,21 @@ ${taskSection}`;
 						`Required reviewer ${step.id} did not complete: ${String((output as { summary?: unknown }).summary ?? "Missing required review input")}`,
 						output,
 					);
-				output = this.validateFactoryAgentOutput(context, output);
-				if (["code-review", "visual-review"].includes(step.id)) {
+				output = await this.validateFactoryAgentOutput(context, output);
+				if (hasInstruction(step, "review-completion")) {
 					const status = (output as { status?: string }).status;
 					if (status === "blocked" || status === "failed")
 						reviewOutcome = status;
 				}
 				const completed = (await roleProgress(context)).currentRevision;
+				const binding = await assertBoundInspectionFresh(context);
 				if (agentCheckpoint && completed)
 					await context.checkpointAgent?.({
 						runner: agentCheckpoint.runner,
 						sessionId: agentCheckpoint.sessionId,
+						...(context.inspectionBinding
+							? { inspection: context.inspectionBinding }
+							: {}),
 						idleRetries: context.resumeAgent?.idleRetries,
 						...(context.resumeAgent?.rejected
 							? { rejected: context.resumeAgent.rejected }
@@ -9666,6 +9767,7 @@ ${taskSection}`;
 						result: {
 							output,
 							revision: completed,
+							binding,
 							finalizing: true,
 							reviewScope: context.progress?.reviewScope,
 						},
@@ -9674,6 +9776,7 @@ ${taskSection}`;
 					context,
 					output,
 				);
+				await assertBoundInspectionFresh(context);
 				turnCompleted = true;
 				return finalized;
 			} finally {
@@ -9737,14 +9840,13 @@ ${taskSection}`;
 		}
 	}
 
-	private validateFactoryAgentOutput(
+	private async validateFactoryAgentOutput(
 		context: ExecutionContext,
 		value: unknown,
-	): unknown {
+	): Promise<unknown> {
 		const { run, step } = context;
 		try {
-			if (context.readOnlyResearch)
-				return context.validateRoleOutput?.(value) ?? value;
+			if (context.validateRoleOutput) return context.validateRoleOutput(value);
 			let output = validateContractOutput(
 				context,
 				stampGuideContract(
@@ -9752,19 +9854,28 @@ ${taskSection}`;
 					step.askQuestions ? normalizeQuestionResult(value) : value,
 				),
 			);
-			if (step.architectureContract === "architecture-v1") {
+			if (hasCheck(step, "architecture-proposal")) {
 				output = ArchitectureSchema.parse(output);
-				if (step.architectureBrief)
-					assertReviewBrief(output as Architecture, step.architectureBrief);
+				if (
+					["architecture-brief-v1", "architecture-checkin-v1"].includes(
+						formatOf(step) ?? "",
+					)
+				)
+					assertReviewBrief(
+						output as Architecture,
+						formatOf(step) === "architecture-checkin-v1"
+							? "checkin-v1"
+							: "review-v1",
+					);
 				assertRevisionChanges(
 					output as Architecture,
 					run.architectureProposals?.length ?? 0,
 				);
 			}
-			if (step.architectureContract === "architecture-review-v1")
+			if (hasCheck(step, "architecture-candidate"))
 				output = ArchitectureReviewSchema.parse(output);
 			if (
-				step.id === "plan" &&
+				hasCheck(step, "delivery-contract") &&
 				output &&
 				typeof output === "object" &&
 				"deliveryContract" in output
@@ -9780,24 +9891,13 @@ ${taskSection}`;
 					]);
 				}
 			}
-			if (
-				step.impactContract ||
-				step.architectureContract ||
-				step.qaContract ||
-				["factory", "takeover"].includes(run.workflow.id) ||
-				run.workflowDefinitions
-					?.find((item) => item.id === "factory-pipeline")
-					?.steps.includes(step)
-			)
-				output = validateFactoryResult(
-					step.id,
-					output,
-					step.qaContract,
-					step.videoContract,
-					step.architectureContract,
-					step.impactContract,
-				);
-			if (step.impactContract) {
+			output = await parseStepOutputAsync(
+				step,
+				output,
+				undefined,
+				context.signal,
+			);
+			if (hasCheck(step, "impact-reuse")) {
 				output = validateImpact(
 					output,
 					(context.input as { impactSnapshot: ImpactSnapshot }).impactSnapshot,
@@ -9812,24 +9912,30 @@ ${taskSection}`;
 				)
 					output = recordFeedbackAssessment(context, output);
 			}
-			if (step.id === "visual-scope" && step.qaContract) {
+			if (checkArgs(step, "ids-resolve")?.adapter === "qa-scope") {
 				const issues = qaRequirementIssues(
 					output as QaScope,
-					context.outputs ?? run.outputs,
+					(readOutput(step, "scopeClarify", context.outputs ?? run.outputs) ??
+						readOutput(
+							step,
+							"scopeDecisions",
+							context.outputs ?? run.outputs,
+						)) as
+						| { requirements?: string[]; decisions?: unknown[] }
+						| undefined,
 					run.answers,
 					aggregateForContext(context)?.baseline.inventory,
 				);
 				if (issues.length) throw new Error(issues.join("; "));
 			}
-			if (step.id === "guide") validateGuide(context, output);
-			if (step.id === "ci-fix") {
+			if (hasCheck(step, "requirement-coverage"))
+				validateGuide(context, output);
+			if (hasCheck(step, "feedback-assessment")) {
 				this.refreshFactoryFeedbackContext(context);
-				output = validateFactoryResult(step.id, output);
 				output = recordFeedbackAssessment(context, output);
 			}
-			if (["code-fix", "visual-fix"].includes(step.id)) {
+			if (hasCheck(step, "review-dispositions")) {
 				this.refreshFactoryFeedbackContext(context);
-				output = validateFactoryResult(step.id, output);
 				validateReviewFix(context, output);
 			}
 			return output;
@@ -9840,8 +9946,9 @@ ${taskSection}`;
 
 	private refreshFactoryFeedbackContext(context: ExecutionContext): void {
 		if (
-			!["ci-fix", "code-fix", "visual-fix"].includes(context.step.id) &&
-			!context.step.impactContract
+			!hasCheck(context.step, "feedback-assessment") &&
+			!hasCheck(context.step, "impact-reuse") &&
+			!hasCheck(context.step, "review-dispositions")
 		)
 			return;
 		if (this.factoryRuntime) {
@@ -9851,9 +9958,16 @@ ${taskSection}`;
 				chatMessages: context.chatMessages,
 			};
 		}
-		if (context.step.id === "ci-fix" || context.step.impactContract) {
-			const receipt = (context.run.outputs["merge-readiness"] ??
-				context.run.outputs.ci) as MergeReadiness | undefined;
+		if (
+			hasCheck(context.step, "feedback-assessment") ||
+			hasCheck(context.step, "impact-reuse")
+		) {
+			const receipt = (context.run.mergeReadiness ??
+				readOutput(
+					context.step,
+					"ci",
+					context.outputs ?? context.run.outputs,
+				)) as MergeReadiness | undefined;
 			// Runs paused before feedback recovery was installed retain legacy
 			// receipts. Derive the exact pending versions before exposing context
 			// or validating a recovered result, without inventing assessments.
@@ -9873,9 +9987,10 @@ ${taskSection}`;
 	): Promise<unknown> {
 		const { run, step } = context;
 		value = await resolveRoleResult(context, value);
-		let output = this.validateFactoryAgentOutput(context, value);
-		if (step.id === "guide") {
-			if (step.videoContract) {
+		let output = await this.validateFactoryAgentOutput(context, value);
+		output = await runEvidenceChecks(context, output, "correction");
+		if (hasCheck(step, "requirement-coverage")) {
+			if (checkArgs(step, "media-valid")?.video) {
 				const issues = await videoGateIssues(
 					context,
 					context.progress?.currentRevision?.headSha ?? "",
@@ -9891,21 +10006,25 @@ ${taskSection}`;
 				attachRequirementCoverage(context, output),
 			);
 		}
-		if (step.id === "capture") {
+		if (hasCheck(step, "capture-evidence")) {
 			output = captureEvidence(context, output);
 			output = await finalizeVideoEvidence(context, output);
 		}
 		const completed = (await roleProgress(context)).currentRevision;
-		if (["code-fix", "visual-fix"].includes(step.id))
+		if (hasCheck(step, "review-dispositions"))
 			output = recordReviewFix(context, output, completed);
-		if (completed && step.id === "visual-review" && step.qaContract) {
+		if (completed && hasCheck(step, "qa-review-evidence")) {
 			output = {
 				...(output as Record<string, unknown>),
 				qaReviewStamp: {
 					headSha: completed.headSha,
 					dirty: completed.dirty,
-					captureHash: qaDigest(run.outputs.capture),
-					scopeHash: qaDigest(run.outputs["visual-scope"]),
+					captureHash: qaDigest(
+						readOutput(step, "capture", context.outputs ?? run.outputs),
+					),
+					scopeHash: qaDigest(
+						readOutput(step, "scope", context.outputs ?? run.outputs),
+					),
 				},
 			};
 		}
@@ -9923,7 +10042,7 @@ ${taskSection}`;
 		});
 		if (
 			presented.destination === "transcript" &&
-			!["plan", "implement"].includes(step.id)
+			!hasCheck(step, "ticket-milestone")
 		) {
 			const key = `role-outcome:${context.stepKey ?? step.id}:${createHash("sha256").update(presented.markdown).digest("hex")}`;
 			if (run.ticketReference)
@@ -9984,7 +10103,9 @@ ${taskSection}`;
 		if (typeof repositoryId !== "string")
 			throw new Error("Run repository unavailable");
 		const source =
-			readFactoryPath(run?.outputs, "draft-pr.url") ??
+			(run
+				? readFactoryPath(outputForTool(run, "draft-pr"), "url")
+				: undefined) ??
 			run?.source ??
 			session?.issue?.identifier;
 		const workflow = runtime.selectWorkflow(
@@ -10232,6 +10353,7 @@ ${taskSection}`;
 					fullIssue = { ...fullIssue, branchName: takeoverPr.headRefName };
 					baseBranchOverrides = new Map([[repository.id, ref]]);
 					run.outputs.source = takeoverPr;
+					run.takeoverSource = structuredClone(takeoverPr);
 				} else {
 					const existingTracker = this.issueTrackers.get(
 						(run.ticketReference?.provider === "native"
@@ -10265,6 +10387,7 @@ ${taskSection}`;
 						await this.fetchIssueLabels(fullIssue),
 						existingTracker,
 					);
+					run.ticketSnapshot = structuredClone(run.outputs.ticket);
 					if (workflow.id === "takeover")
 						baseBranchOverrides = new Map([
 							[repository.id, fullIssue.branchName ?? repository.baseBranch],
@@ -10331,6 +10454,7 @@ ${taskSection}`;
 						fullIssue = { ...fullIssue, branchName: takeoverPr.headRefName };
 						baseBranchOverrides = new Map([[repository.id, ref]]);
 						run.outputs.source = takeoverPr;
+						run.takeoverSource = structuredClone(takeoverPr);
 					}
 				}
 			}
@@ -10462,7 +10586,7 @@ ${taskSection}`;
 		signal.throwIfAborted();
 		{
 			const pending = pendingMergeConfirmation(run);
-			const url = readFactoryPath(run.outputs, "draft-pr.url");
+			const url = readFactoryPath(outputForTool(run, "draft-pr"), "url");
 			if (
 				pending &&
 				((run.repositories?.length ?? 0) <= 1 || !existsSync(run.workspace)) &&
@@ -10643,8 +10767,8 @@ ${taskSection}`;
 				run.titleGeneration?.context,
 			inputs: run.launchInputs,
 			source: run.source,
-			ticket: (run.outputs.ticket ??
-				run.outputs.source ??
+			ticket: (ticketSnapshot(run) ??
+				takeoverSource(run) ??
 				session.issue) as TitleContext["ticket"],
 			followup: run.triggerOrigin?.manual?.sourceRunId
 				? {
@@ -10830,13 +10954,14 @@ ${taskSection}`;
 			await this.getTicketTracking().flush(run, reassess);
 			return;
 		}
-		const merged = readFactoryPath(run.outputs, "merge.merged") === true;
+		const merged =
+			readFactoryPath(outputForTool(run, "merge"), "merged") === true;
 		const pr =
-			readFactoryPath(run.outputs, "merge.url") ??
-			readFactoryPath(run.outputs, "draft-pr.url");
+			readFactoryPath(outputForTool(run, "merge"), "url") ??
+			readFactoryPath(outputForTool(run, "draft-pr"), "url");
 		const review =
 			run.reviewGate?.status === "pending" ||
-			(/(?:human-review|merge)$/.test(run.step ?? "") &&
+			(["human-review", "merge"].includes(toolForStep(run, run.step) ?? "") &&
 				!["failed", "stopped"].includes(run.status));
 		const active = ["running", "waiting", "failed", "interrupted"].includes(
 			run.status,
@@ -10869,7 +10994,7 @@ ${taskSection}`;
 				return;
 		} else if (
 			!["running", "waiting"].includes(run.status) &&
-			readFactoryPath(run.outputs, "merge.merged") !== true
+			readFactoryPath(outputForTool(run, "merge"), "merged") !== true
 		) {
 			// Historical attempts are not new work. Only recover active legacy runs
 			// or confirmed merges; explicit tracking retry can reconcile older runs.

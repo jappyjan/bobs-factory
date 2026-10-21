@@ -84,7 +84,7 @@ run.checkpoint = {
 	agent: { runner: "codex", sessionId: "mock-native-retained" },
 };
 run.outputs = { prior: { receipt: "accepted" } };
-runtime.save(run);
+await runtime.save(run);
 writeFileSync(
 	join(home, "config.json"),
 	JSON.stringify({ repositories: [], fixture: "preserved" }),

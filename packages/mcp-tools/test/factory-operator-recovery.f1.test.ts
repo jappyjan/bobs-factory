@@ -65,6 +65,7 @@ it("F1: repairs missing Taskbot transport entirely through compiled stdio MCP, p
 	execFileSync("git", ["-C", repo, "remote", "add", "origin", remote]);
 	execFileSync("git", ["-C", repo, "push", "-u", "origin", "main"]);
 	const configPath = join(home, "config.json");
+	// Allocate an explicit free fixture port; zero selects EdgeWorker's default.
 	const listener = createServer();
 	await new Promise<void>((resolve) =>
 		listener.listen(0, "127.0.0.1", resolve),

@@ -1,0 +1,93 @@
+2026-10-21T18:10:16.119Z [INFO ] [EdgeWorker] Deployed default skills to /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-VZoVxI/home/bobs-factory-skills-plugin (5 skills)
+2026-10-21T18:10:16.124Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-VZoVxI/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-21T18:10:16.126Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-21T18:10:16.126Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-21T18:10:16.203Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:53633
+2026-10-21T18:10:16.219Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-21T18:10:16.221Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-21T18:10:16.222Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-21T18:10:16.222Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-21T18:10:16.222Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-21T18:10:16.222Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-21T18:10:16.222Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-21T18:10:16.222Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-21T18:10:16.222Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-21T18:10:16.222Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-21T18:10:16.223Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-21T18:10:16.225Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-21T18:10:16.225Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-21T18:10:16.244Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-21T18:10:16.244Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-21T18:10:16.244Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-21T18:10:16.244Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-21T18:10:16.246Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:53632
+2026-10-21T18:10:16.335Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-21T18:10:16.347Z [INFO ] [RepositoryRouter] Repository selected: Configurable Factory F1 (workspace catch-all)
+2026-10-21T18:10:16.347Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-21T18:10:16.347Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-1} Handling agent session created
+2026-10-21T18:10:16.355Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-21T18:10:16.381Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=app, overrideValue=undefined
+2026-10-21T18:10:16.382Z [INFO ] [GitService] createSingleRepoWorktree for Configurable Factory F1 (id=app): baseBranchOverride=undefined
+2026-10-21T18:10:16.784Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-VZoVxI/worktrees/DEF-1 from origin/main (tracking main)
+2026-10-21T18:10:16.925Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Tracking session for issue issue-1
+2026-10-21T18:10:17.025Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Starting agent session for issue DEF-1
+2026-10-21T18:10:17.028Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Building initial prompt for issue DEF-1
+2026-10-21T18:10:18.256Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:20.853Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:22.771Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:24.918Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:26.265Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:27.520Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:30.689Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:33.626Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:38.765Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:48.961Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:49.036Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:49.092Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:49.195Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:49.753Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:49.829Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:10:59.849Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:11:04.111Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:11:06.318Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:11:09.183Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:11:12.536Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:11:17.484Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-21T18:11:31.605Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-21T18:11:31.616Z [INFO ] [RepositoryRouter] Repository selected: Configurable Factory F1 (workspace catch-all)
+2026-10-21T18:11:31.616Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-21T18:11:31.616Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-2} Handling agent session created
+2026-10-21T18:11:31.623Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-21T18:11:31.637Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=app, overrideValue=undefined
+2026-10-21T18:11:31.637Z [INFO ] [GitService] createSingleRepoWorktree for Configurable Factory F1 (id=app): baseBranchOverride=undefined
+2026-10-21T18:11:32.052Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-VZoVxI/worktrees/DEF-2 from origin/main (tracking main)
+2026-10-21T18:11:32.191Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Tracking session for issue issue-2
+2026-10-21T18:11:32.261Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-2} Starting agent session for issue DEF-2
+2026-10-21T18:11:32.263Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-2} Building initial prompt for issue DEF-2
+2026-10-21T18:11:32.803Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:33.917Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:34.851Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:35.873Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:36.714Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:37.817Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:40.194Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:42.123Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:45.957Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:52.366Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:52.434Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:52.487Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:52.588Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:53.495Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:53.581Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:11:58.395Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:12:02.389Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:12:04.339Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:12:06.223Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:12:09.003Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+2026-10-21T18:12:13.199Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+{"result":"PASS","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-VZoVxI","revision":"807b963cfd2879ae466add6e041a8907eecffd22","deltaSha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","buildSha256":"dab740bb1d19d40c8abe7746d892d40c94ba6dbc712f80715bdd581b88fd17c5","startedAt":"2026-10-21T18:10:13.522Z","finishedAt":"2026-10-21T18:12:25.678Z","results":[{"workflowId":"factory","sessionId":"session-1","status":"completed","sequence":["clarify-v1","plan-v1","plan-review-v1","architecture-checkin-v1","architecture-review-v1","implement-v1","impact-v1","inventory-v1","inventory-v1","specialist-v1","specialist-v1","specialist-v1","specialist-v1","specialist-v1","coverage-v1","inventory-v1","qa-scope-v1","qa-capture-v1","qa-review-v1","review-brief-v3","qa-review-v1"],"activityCount":23,"activityTypes":["thought"],"commentCount":24,"worktree":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-VZoVxI/worktrees/DEF-1","head":"0cc0b6d1f575dd4aaacd2e6914ed4e62f04bd78c","approval":"approve"},{"workflowId":"renamed-factory","sessionId":"session-2","status":"completed","sequence":["clarify-v1","plan-v1","plan-review-v1","architecture-checkin-v1","architecture-review-v1","implement-v1","impact-v1","inventory-v1","inventory-v1","specialist-v1","specialist-v1","specialist-v1","specialist-v1","specialist-v1","coverage-v1","inventory-v1","qa-scope-v1","qa-capture-v1","qa-review-v1","review-brief-v3","qa-review-v1"],"activityCount":23,"activityTypes":["thought"],"commentCount":24,"worktree":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-VZoVxI/worktrees/DEF-2","head":"2ef9ebb259472c58b416eaa69972da9dd05d6724","approval":"approve"}],"paidCalls":0}
+2026-10-21T18:12:25.681Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"prompted","type":"AgentSessionEvent","repoCount":1}
+2026-10-21T18:12:25.687Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"prompted","type":"AgentSessionEvent","repoCount":1}
+2026-10-21T18:12:25.699Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-21T18:12:25.699Z [INFO ] [SharedApplicationServer] Shared application server stopped

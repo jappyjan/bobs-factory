@@ -2305,6 +2305,7 @@ it("regenerates only the pending guide in a nested pipeline without approval or 
 			name: "Human review",
 			type: "tool",
 			tool: "human-review",
+			reads: { guide: "guide" },
 			next: "merge",
 		},
 		{ id: "merge", name: "Merge", type: "tool", tool: "merge", next: "end" },
@@ -2385,6 +2386,7 @@ it("regenerates a pending stock guide in the current show & tell format with Dig
 			name: "Human review",
 			type: "tool",
 			tool: "human-review",
+			reads: { guide: "guide" },
 			next: "end",
 		},
 	]);
@@ -3359,7 +3361,7 @@ it.each([
 		...workflow([
 			agent("completed"),
 			agent(fixer, {
-				askQuestions: fixer === "custom-assistance",
+				askQuestions: true,
 				maxVisits: 3,
 			}),
 			{
@@ -3942,11 +3944,14 @@ it.each([
 				uncertainty: decision.uncertainty,
 			},
 		});
-		expect(run.outputs["ci-fix"]).toMatchObject({ reviewRequired: true });
-		expect((run.outputs["ci-fix"] as { skipped?: boolean }).skipped).not.toBe(
-			true,
-		);
-	} else expect(run.outputs["ci-fix"]).toMatchObject({ skipped: true });
+		expect(run.outputs["pipeline/ci-fix"]).toMatchObject({
+			reviewRequired: true,
+		});
+		expect(
+			(run.outputs["pipeline/ci-fix"] as { skipped?: boolean }).skipped,
+		).not.toBe(true);
+	} else
+		expect(run.outputs["pipeline/ci-fix"]).toMatchObject({ skipped: true });
 	expect(run.workflowDefinitions).toEqual(frozen);
 	expect(run.humanDecisions ?? []).toEqual([]);
 });

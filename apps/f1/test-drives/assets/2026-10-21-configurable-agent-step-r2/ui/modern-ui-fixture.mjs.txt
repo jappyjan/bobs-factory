@@ -1,0 +1,80 @@
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { WorkflowRuntime } from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/WorkflowRuntime.js';
+import { FactoryServer } from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/FactoryServer.js';
+import { WorkflowSchema } from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/Workflow.js';
+import { createReviewSnapshot } from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/ReviewFiles.js';
+const port = 3558;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(port);
+const home = mkdtempSync(join(tmpdir(), 'ticket136-review-ui-'));
+const origin = `http://localhost:${port}`;
+const git = (...args) => execFileSync('git', ['-C', home, ...args], {encoding:'utf8'}).trim();
+git('init','-q');
+writeFileSync(join(home,'state.txt'),'Earlier Build receipt\n');
+git('add','state.txt');
+git('-c','user.name=UI fixture','-c','user.email=fixture@example.test','commit','-qm','Initial fixture');
+const baseSha=git('rev-parse','HEAD');
+writeFileSync(join(home,'state.txt'),'Current provider Build is pending\n');
+git('add','state.txt');
+git('-c','user.name=UI fixture','-c','user.email=fixture@example.test','commit','-qm','Current fixture');
+const headSha=git('rev-parse','HEAD');
+const runtime = new WorkflowRuntime(home, {
+  agent: (context) => new Promise((_, reject) => context.signal.addEventListener('abort', () => reject(new Error('Preview stopped')), {once:true})),
+  tool: async () => ({}), script: async () => ({}),
+});
+const workflow = WorkflowSchema.parse({
+  id:'ticket136-configured-review',name:'Configured review',stepConfigVersion:'step-config-v1',
+  steps:[
+    {id:'recap',name:'Review guide',type:'agent',prompt:'Preview fixture',output:{format:'review-brief-v1'},checks:['requirement-coverage'],next:'ready'},
+    {id:'ready',name:'Verify handoff',type:'tool',tool:'handoff',reads:{guide:'recap'},next:'external-human-review'},
+    {id:'external-human-review',name:'Review changes',type:'tool',tool:'human-review',reads:{guide:'recap'},next:'end'},
+    {id:'provider-poll',name:'Watch Build',type:'tool',tool:'ci',next:'end'},
+  ],
+});
+const at = new Date().toISOString();
+const receipt = pending => ({
+  headSha,baseSha,url:'https://example.com/factory/pull/136',state:'OPEN',isDraft:false,
+  approved:false,reviewReady:!pending,fix:false,queued:false,mergeMethod:'squash',
+  checks:[{name:'Build',state:pending?'PENDING':'SUCCESS',bucket:pending?'pending':'pass'}],
+  blockers:pending?[{kind:'checks',message:'Build pending',action:'wait'}]:[],threads:[],comments:[],reviews:[],
+});
+function create(id,title) { return runtime.create({id,title,repositoryId:'preview-repo',workspace:home,input:'Verify configured review and current Build status.',workflow,triggerOrigin:{type:'manual',workflowId:workflow.id,at}}); }
+const working = create('ticket136-build-pending','Keep the current Build status visible');
+working.status='running';working.step='provider-poll';working.checkpoint={current:'provider-poll',visits:{},active:{phase:'executing'}};
+working.outputs['provider-poll']={...receipt(false),headSha:'old-head'};
+working.history.push({step:'provider-poll',at,output:working.outputs['provider-poll']});
+working.mergeReadiness=receipt(true);
+const review=create('ticket136-renamed-review','A renamed gate keeps Refresh guide available');
+review.status='waiting';review.step='external-human-review';review.checkpoint={current:'external-human-review',visits:{},active:{phase:'waiting'}};
+review.reviewGate={id:'current-review',headSha,url:'https://example.com/factory/pull/136',status:'pending'};
+review.mergeReadiness=receipt(true);
+const brief={
+  contract:'brief-v1',verdict:{headline:'Current Build checks remain visible.',readiness:'ready-with-caveats',why:'The current provider poll is pending, while the retained CI receipt is from an earlier revision.'},
+  ask:{source:'Taskbot #136',quote:'Renaming a step must preserve its behavior and review controls.'},
+  interpretation:[{topic:'Review controls',chosen:'Use the accepted graph capability.',decidedBy:'ticket'}],
+  requirements:[{id:'renamed-review',text:'Refresh guide remains available for this renamed review gate.',origin:'ask',status:'tested',proof:{kind:'command',command:'Focused HTTP and rendered UI regression',output:'Stock and renamed review capabilities match; stale and unsupported requests remain rejected.'},files:['state.txt']}],
+  yourCall:[],beyondAsk:[],notVerified:[],hygiene:[],
+};
+brief.reviewFiles=await createReviewSnapshot(join(runtime.directory,'evidence',review.id),review.id,home,baseSha,headSha);
+review.roleRevisions={recap:{headSha,dirty:false}};
+review.outputs.recap=brief;review.history.push({step:'recap',at,output:brief});
+review.outputs['provider-poll']={...receipt(false),headSha:'old-head'};review.history.push({step:'provider-poll',at,output:review.outputs['provider-poll']});
+await runtime.save(working); await runtime.save(review);
+const fork=runtime.forkWorkflow('factory','Configurable Factory · #136');
+const server=new FactoryServer(runtime,{
+  repositories:()=>[{id:'preview-repo',name:'Factory preview',path:home}],sessions:()=>[],entries:()=>[],
+  start:async()=>{throw new Error('Preview does not launch runs')},stop:id=>runtime.stop(id),defaultRunner:()=> 'codex',
+},{origins:[origin,`http://127.0.0.1:${port}`]});
+const hash=value=>createHash('sha256').update(value).digest('hex');
+server.auth.store.update(state=>{
+  state.keys.push({id:'review-ui-fixture',digest:hash('review-ui-fixture-key'),label:'UI fixture',createdAt:Date.now(),lastUsedAt:Date.now()});
+  state.sessions.push({hash:hash('ticket136-review-ui-session'),credential:'review-ui-fixture',origin,expires:Date.now()+3600000,verifiedAt:Date.now()});
+});
+await server.start(port);
+const info={node:process.version,origin,home,fork:fork.id,review:review.id,working:working.id,cookie:'factory-local-session=ticket136-review-ui-session; Path=/; SameSite=Strict'};
+writeFileSync('/tmp/ticket136-r2-modern-ui-fixture.json',JSON.stringify(info,null,2));
+console.log(JSON.stringify({...info,cookie:'fixture session prepared'}));
+process.on('SIGTERM',async()=>{await runtime.shutdown();await server.stop();process.exit(0)});

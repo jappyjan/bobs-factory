@@ -1,3 +1,9 @@
+export {
+	briefRuntimeInstructions,
+	briefVideoInstructions,
+	guideArtifactInstructions,
+	guideMapInstructions,
+} from "./InstructionText.js";
 /** Review-brief contract declared by guide steps; absent keeps the chapter guide. */
 export const BRIEF_CONTRACT = "brief-v1";
 /** The review brief plus a colleague-style show & tell walkthrough read first. */
@@ -11,8 +17,6 @@ export const BRIEF_CONTRACTS = [
 ] as const;
 export type BriefContract = (typeof BRIEF_CONTRACTS)[number];
 /** Appended at runtime even to frozen/custom guide definitions. */
-export const guideArtifactInstructions = `For large results, save the COMPLETE guide JSON under /resultSubmission/directory, call submit_result_artifact with a relative path, and return the bounded factoryArtifact envelope as your entire final response. Runtime applies the identical schema/coverage/revision/evidence checks to inline and artifact results. The complete file inventory is runtime-owned at /progress/reviewScope/files. To avoid duplicating path strings, scope.files may be "runtime", and each chapter may use fileIndexes:[zero-based indexes into that inventory] instead of files. Map every changed file to a feature-oriented chapter; missing, duplicate or unknown indexes still block publication. Never mix files and fileIndexes in one chapter. The saved/published guide retains all exact file paths and normal review-file bindings.`;
-export const guideMapInstructions = `Every newly authored guide requires scope:{kind:"purely-visual"|"nonvisual",rationale,files:[every exact /progress/reviewScope/files path once]}. Classify the COMPLETE PR against its accepted requirements and actual diff. Explain why every file is purely visual to use that exemption; screenshots alone never establish it. Technical, logic, structural, supporting nonvisual and mixed changes use nonvisual. Nonvisual guides MUST contain a meaningful system:{lanes:[{id,name}],parts:[{id,label,laneId,status:"new"|"changed"|"unchanged"|"legacy"}],before:[{source,target,label?,weak?}],after:[{source,target,label?,weak?}]} with 3–6 meaningful lanes and stable unique part IDs. Connections are directed, truthful and may be empty. Every changed chapter and every logic/structural chapter requires nonempty systemPartIds referencing the parts it touches. Link supporting material where relevant; do not invent parts or relationships. Missing maps/links require bounded guide-only output correction, retaining implementation, reviews, captures and snapshots. Older saved guides remain readable without rewriting their artifacts.`;
 
 const briefCore = `Write the human review brief for the WHOLE PR at the current revision, including inherited takeover work and every accepted iteration. The reader decides one thing: does this PR deliver what was asked? Answer in this order: was the right thing built (the ask and every interpretation of it), does it work (one decisive, human-checkable proof per requirement), what only a human can judge, and what else changed or remains unproven.
 First read through factory-context: the original input/ticket and all comments, clarification decisions and answers, the frozen requirement inventory and review-gate coverage, the accepted plan, /progress/reviewScope (every whole-PR file), executed QA stories with observed values, and the accepted capture inventory. Inspect the actual base-to-head diff yourself.
@@ -95,12 +99,9 @@ Write the evidence plainly too, as Dig deeper shows it:
 - interpretation chosen and alternatives use words a product owner would use; note says why when it is not obvious. Keep at most 10 interpretation entries (the most consequential) and every hygiene text within 200 characters.`;
 
 /** Appended at runtime to every review-brief step, including frozen and custom ones. */
-export const briefRuntimeInstructions = `For large results save the COMPLETE brief JSON under /resultSubmission/directory, call submit_result_artifact with a relative path, and return the bounded factoryArtifact envelope as your entire final response. The runtime stamps the contract, binds the exact whole-PR file snapshot and attaches review coverage; never author contract, reviewFiles or requirementCoverage. To avoid repeating long paths, requirement lines, beyondAsk items and sinceLastReview changes may use fileIndexes:[zero-based indexes into /progress/reviewScope/files] instead of files, never both on one item. The brief describes the COMPLETE cumulative PR, never only the latest repair. On repeats keep unchanged lines and update affected proof. Files come only from /progress/reviewScope/files; base-only integration changes since a previous approval (/progress/approvalDelta) belong in sinceLastReview.summary, not in files. Validation rejects unknown or uncovered inventory IDs, unexplained files, statuses contradicting review coverage, screenshots outside the accepted capture inventory, stale or unaccepted videos, broken flow references, and local paths or SHAs in prose. A rejection returns to you for brief-only correction; implementation, reviews, captures and snapshots are retained.`;
 
 /** Stock show & tell guide prompt for brief-v2 steps. */
 export const storyPrompt = `${briefPrompt}\n${storyInstructions}`;
 
 /** Stock guide prompt for brief-v3 steps: show & tell, then Dig deeper. */
 export const divePrompt = `${briefCore}${diveSystem}${briefTail}\n${storyInstructions}\n${diveInstructions}`;
-
-export const briefVideoInstructions = `\nFor video-v1 a requirement may use a video proof {"kind":"video","taskId","sha256","label"} from the current accepted video inventory, when motion or sequence is the point. Watching a clip never approves anything; keep explicit current-revision approval.`;

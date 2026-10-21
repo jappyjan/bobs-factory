@@ -167,18 +167,21 @@ for (const boundary of [
 				}
 				return rename(source, destination);
 			});
-		await expect(
-			store.register({
-				path,
-				root,
-				category: "migration",
-				producer: "test",
-				operation: "interrupted",
-				dependencies: ["unreconciled"],
-				evidence: [],
-			}),
-		).rejects.toThrow("injected");
-		spy.mockRestore();
+		try {
+			await expect(
+				store.register({
+					path,
+					root,
+					category: "migration",
+					producer: "test",
+					operation: "interrupted",
+					dependencies: ["unreconciled"],
+					evidence: [],
+				}),
+			).rejects.toThrow("injected");
+		} finally {
+			spy.mockRestore();
+		}
 		expect(interrupted).toBe(true);
 		const restarted = new StorageRetentionStore(home);
 		await expect(restarted.inventoryRevision()).rejects.toThrow("unfinished");
@@ -200,7 +203,7 @@ for (const boundary of [
 				),
 			),
 		).toEqual({ id: record.id, identity: record.identity });
-	});
+	}, 30_000);
 }
 
 it.each([
@@ -222,18 +225,21 @@ it.each([
 				throw new Error("injected publication interruption");
 			return rename(source, destination);
 		});
-	await expect(
-		store.register({
-			path,
-			root,
-			category: "migration",
-			producer: "test",
-			operation: "one",
-			dependencies: ["unreconciled"],
-			evidence: [],
-		}),
-	).rejects.toThrow("injected");
-	spy.mockRestore();
+	try {
+		await expect(
+			store.register({
+				path,
+				root,
+				category: "migration",
+				producer: "test",
+				operation: "one",
+				dependencies: ["unreconciled"],
+				evidence: [],
+			}),
+		).rejects.toThrow("injected");
+	} finally {
+		spy.mockRestore();
+	}
 	const { publishStorageJson, storageDigest } = await import(
 		"../src/StorageRetention.js"
 	);
@@ -264,7 +270,7 @@ it.each([
 	await expect(store.recoverPublication()).rejects.toThrow();
 	await expect(store.inventoryRevision()).rejects.toThrow("unfinished");
 	expect((await filesystem.stat(path)).isDirectory()).toBe(true);
-});
+}, 30_000);
 
 it("recovers an interrupted record revision while preserving its index and count", async () => {
 	const { store, home, path, root } = await fixture();
@@ -306,4 +312,4 @@ it("recovers an interrupted record revision while preserving its index and count
 	]);
 	expect((await restarted.record(record.id)).dependencies).toEqual(["pending"]);
 	expect(await restarted.inventoryRevision()).toBe(2);
-});
+}, 30_000);

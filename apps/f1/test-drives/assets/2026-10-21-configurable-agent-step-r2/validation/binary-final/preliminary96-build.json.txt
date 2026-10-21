@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "product": "bobs-factory",
+  "version": "1.0.0-beta",
+  "commit": "96b7cb0306b4ec526e702e3becb935432d40087f",
+  "dirty": false,
+  "target": "darwin-arm64",
+  "tooling": {
+    "bun": "1.4.2"
+  },
+  "executable": {
+    "file": "bobs-factory",
+    "size": 111663858,
+    "sha256": "3b496abb6135ffb8740ef09b90994f9ae2509cbe3660e40fde73ff38b44e1fe5"
+  },
+  "resourceDigest": "f16257b4735e503d370fc2bd01c11433b12e6c654e47c56a877b657ed341c024",
+  "validation": "pending runtime smoke",
+  "requirements": "macOS; native target smoke required"
+}

@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import type { RepositoryConfig } from "bobs-factory-core";
+import { stepForRun } from "./ToolBindings.js";
 import type { WorkflowStep } from "./Workflow.js";
 import type { FactoryRun, GraphCheckpoint } from "./WorkflowRuntime.js";
 
@@ -41,16 +42,9 @@ export function committedRecoveryRevision(run: FactoryRun): string | undefined {
 		revision.historyLength > run.history.length
 	)
 		return;
-	const definitions = [run.workflow, ...(run.workflowDefinitions ?? [])];
 	for (const item of run.history.slice(revision.historyLength)) {
-		const id = item.step.split("/").at(-1);
-		const saved = definitions
-			.flatMap((w) => w.steps)
-			.filter((s) => s.id === id);
-		if (
-			!saved.length ||
-			saved.some((s) => s.type !== "tool" || !passive.has(s.tool ?? ""))
-		)
+		const saved = stepForRun(run, item.step);
+		if (!saved || saved.type !== "tool" || !passive.has(saved.tool ?? ""))
 			return;
 	}
 	return revision.headSha;

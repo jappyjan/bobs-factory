@@ -1,0 +1,31 @@
+{
+  "source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+  "productionInputsChecked": 1145,
+  "artifactFilesChecked": 1740,
+  "mismatches": [],
+  "gitStatus": [],
+  "productionInputsDigest": "f92022cd6f7880be4eb531d027bb3df7ca947ac8ac237a6165f3ab9ea882adfb",
+  "artifactFilesDigest": "f19164f64fa9050e49b04f4a5bb56b9cceea8c40a8115e57c5a584f110796ad1",
+  "manifestSha256": "f3a043329b5cb13558efea150bfe81fe42c2b6dfd6dcd8548c10b5f1b5c475f3",
+  "binarySha256": "b233c7ef8edac8cc8037b2fa8f5de8c59459a5476e9341d1adbed8d36a528d85",
+  "binarySize": 111663858,
+  "buildIdentity": {
+    "schemaVersion": 1,
+    "product": "bobs-factory",
+    "version": "1.0.0-beta",
+    "commit": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+    "dirty": false,
+    "target": "darwin-arm64",
+    "tooling": {
+      "bun": "1.4.2"
+    },
+    "executable": {
+      "file": "bobs-factory",
+      "size": 111663858,
+      "sha256": "b233c7ef8edac8cc8037b2fa8f5de8c59459a5476e9341d1adbed8d36a528d85"
+    },
+    "resourceDigest": "1b598f36d75c938f267023e07cf052ef43ff114e96af4a162532d10bb951e5ed",
+    "validation": "pending runtime smoke",
+    "requirements": "macOS; native target smoke required"
+  }
+}

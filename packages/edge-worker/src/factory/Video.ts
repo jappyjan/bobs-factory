@@ -17,6 +17,7 @@ import { qaDigest } from "./EvidenceDigest.js";
 import { dependencyCovers, dependencyHashes } from "./Incremental.js";
 import { OutputValidationError } from "./OutputValidation.js";
 import { runRepositories } from "./RepositoryScope.js";
+import { checkArgs, readOutput } from "./StepConfig.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
 export const VIDEO_CONTRACT = "video-v1" as const;
@@ -335,9 +336,13 @@ export async function finalizeVideoEvidence(
 	context: ExecutionContext,
 	output: unknown,
 ): Promise<unknown> {
-	if (!context.step.videoContract) return output;
+	if (!checkArgs(context.step, "media-valid")?.video) return output;
 	const capture = output as VideoCapture,
-		scope = context.run.outputs["visual-scope"] as VideoScope;
+		scope = readOutput(
+			context.step,
+			"scope",
+			context.outputs ?? context.run.outputs,
+		) as VideoScope;
 	const current = context.progress?.currentRevision;
 	if (!current)
 		throw new Error("Video capture requires runtime revision provenance");
@@ -434,7 +439,11 @@ export async function finalizeVideoEvidence(
 			);
 			if (old || video.reused) {
 				const accepted = (
-					context.run.outputs["visual-review"] as
+					readOutput(
+						context.step,
+						"qaReview",
+						context.outputs ?? context.run.outputs,
+					) as
 						| { acceptedVideos?: z.infer<typeof VideoReceiptSchema>[] }
 						| undefined
 				)?.acceptedVideos;
@@ -544,12 +553,25 @@ export async function videoGateIssues(
 			summary: string;
 			evidence: string;
 		}[] = [];
-	if (!context.step.videoContract) return { blocked, failures };
-	const scope = context.run.outputs["visual-scope"] as VideoScope,
-		capture = context.run.outputs.capture as VideoCapture;
+	if (!checkArgs(context.step, "media-valid")?.video)
+		return { blocked, failures };
+	const scope = readOutput(
+			context.step,
+			"scope",
+			context.outputs ?? context.run.outputs,
+		) as VideoScope,
+		capture = readOutput(
+			context.step,
+			"capture",
+			context.outputs ?? context.run.outputs,
+		) as VideoCapture;
 	const receipts =
 		(
-			context.run.outputs["visual-review"] as {
+			readOutput(
+				context.step,
+				"qaReview",
+				context.outputs ?? context.run.outputs,
+			) as {
 				acceptedVideos?: z.infer<typeof VideoReceiptSchema>[];
 			}
 		)?.acceptedVideos ?? [];
@@ -671,7 +693,7 @@ export function cleanupVideoEvidence(
 			now - Date.parse(run.updatedAt) > videoLimits.terminalMs;
 		const referenced = new Set(
 			assetsFor?.(run) ?? [
-				...videoAssetPaths(run.outputs.capture),
+				...Object.values(run.outputs).flatMap(videoAssetPaths),
 				...run.history.flatMap((entry) => videoAssetPaths(entry.output)),
 			],
 		);

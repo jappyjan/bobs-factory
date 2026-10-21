@@ -21,11 +21,9 @@ import type {
 } from "@cursor/sdk";
 // `@cursor/sdk` is loaded lazily inside `start()` rather than at module top
 // level. Its transitive deps (`@connectrpc/connect-node` -> `undici@7.x`,
-// `sqlite3@5.x`) crash at import time on Node 18 (no global `File`) and on
-// Node versions without prebuilt sqlite3 bindings. Lazy-loading lets edge-
-// worker tests that mock the cursor runner load on every supported Node
-// version, and only pays the import cost when a Cursor session actually
-// starts.
+// `sqlite3@5.x`) may need platform-specific native bindings. Lazy-loading lets
+// edge-worker tests mock Cursor without preparing those native dependencies,
+// and only pays the import cost when a Cursor session actually starts.
 import type {
 	IAgentRunner,
 	IMessageFormatter,

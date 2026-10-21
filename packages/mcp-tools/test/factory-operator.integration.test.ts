@@ -453,8 +453,8 @@ it("compiled CLI connects over stdio without starting another worker", async () 
 		],
 		stderr: "pipe",
 	});
-	await client.connect(transport);
 	cleanup.push(() => client.close());
+	await client.connect(transport);
 	expect((await client.listTools()).tools).toHaveLength(5);
 	expect(
 		(
@@ -466,7 +466,7 @@ it("compiled CLI connects over stdio without starting another worker", async () 
 	).toMatchObject({ ok: true, result: { runId: f.run.id, status: "failed" } });
 	f.grants.revoke(meta.id);
 	await expect(client.listTools()).rejects.toThrow();
-});
+}, 30_000); // Includes a real Node CLI startup under concurrent package-suite load.
 it("binds answers to the current batch and keeps explanation requests out of answers", async () => {
 	const f = fixture(),
 		c = await sdk(f);

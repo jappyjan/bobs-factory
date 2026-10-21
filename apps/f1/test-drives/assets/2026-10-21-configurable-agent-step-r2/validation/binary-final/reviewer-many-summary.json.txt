@@ -1,0 +1,29 @@
+{
+  "source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+  "ordinaryRequests": 100,
+  "ordinaryInvalidResponses": 0,
+  "postCancelResult": "{\"status\":200,\"valid\":true,\"issues\":[]}",
+  "abortReclaimed": true,
+  "expensiveCompile": {
+    "result": {
+      "status": 200,
+      "valid": false,
+      "issues": [
+        "Inline JSON Schema worker exceeded the 2000 ms wall limit"
+      ]
+    },
+    "elapsedMs": 2147,
+    "probes": 19,
+    "maxPingMs": 18,
+    "faultInjection": "SIGSTOP own validator child to simulate a nonresponsive engine; production parent deadline must SIGKILL",
+    "observedChildren": [
+      {
+        "pid": 97097,
+        "command": "/private/tmp/ticket136-binary-r2-7106f734/artifacts/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory internal-schema-validator"
+      }
+    ],
+    "childrenAfterResponse": []
+  },
+  "result": "PASS",
+  "copyDiff": "Only expected source SHA differs from original reviewer script"
+}

@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import webPush from "web-push";
 import { FactoryPush } from "../src/factory/FactoryPush.js";
+import type { MergeReadiness } from "../src/factory/MergeReadiness.js";
 import {
 	type PushEvent,
 	type PushSession,
@@ -509,14 +510,26 @@ it("classifies explicit attention and completion, excluding ordinary activity an
 	expect(runPushEvent({ ...base, status: "completed" })?.category).toBe(
 		"completion",
 	);
-	const readiness = {
+	const readiness: MergeReadiness = {
 		headSha: "abc",
+		baseSha: "base",
+		url: "https://github.com/example/project/pull/1",
+		state: "OPEN",
+		isDraft: false,
+		approved: false,
+		reviewReady: false,
+		fix: false,
 		blockers: [{ kind: "rules", action: "human", message: "approval" }],
+		checks: [],
+		threads: [],
+		comments: [],
+		reviews: [],
+		queued: false,
+		mergeMethod: "squash",
 	};
-	expect(
-		runPushEvent({ ...base, outputs: { "merge-readiness": readiness } })
-			?.category,
-	).toBe("blocker");
+	expect(runPushEvent({ ...base, mergeReadiness: readiness })?.category).toBe(
+		"blocker",
+	);
 	expect(
 		runPushEvent({
 			...base,
@@ -526,13 +539,11 @@ it("classifies explicit attention and completion, excluding ordinary activity an
 				status: "approve",
 				url: "private",
 			},
-			outputs: {
-				"merge-readiness": {
-					...readiness,
-					blockers: [
-						{ kind: "draft", action: "human", message: "approve guide" },
-					],
-				},
+			mergeReadiness: {
+				...readiness,
+				blockers: [
+					{ kind: "draft", action: "human", message: "approve guide" },
+				],
 			},
 		}),
 	).toBeUndefined();
@@ -540,11 +551,12 @@ it("classifies explicit attention and completion, excluding ordinary activity an
 	expect(
 		runPushEvent({
 			...base,
-			outputs: {
-				"merge-readiness": {
-					...readiness,
-					blockers: [...readiness.blockers, { action: "wait" }],
-				},
+			mergeReadiness: {
+				...readiness,
+				blockers: [
+					...readiness.blockers,
+					{ kind: "ci", action: "wait", message: "checks running" },
+				],
 			},
 		}),
 	).toBeUndefined();

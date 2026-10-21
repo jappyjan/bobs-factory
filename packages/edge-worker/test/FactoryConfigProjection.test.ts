@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { FactoryServer } from "../src/factory/FactoryServer.js";
+import { materializeWorkflowConfig } from "../src/factory/StepConfig.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { MachineCapacity } from "../src/MachineCapacity.js";
@@ -212,19 +213,37 @@ it("preserves launch fields and nested step names without sending executable def
 	);
 	expect(summary.launchFields).toEqual(workflow.launchFields);
 	expect(summary.steps).toEqual([
-		{ id: "prepare", name: "Prepare", type: "agent" },
-		{ id: "check", name: "Check", type: "script" },
-		{ id: "ci", name: "CI", type: "tool", tool: "ci" },
+		{
+			id: "prepare",
+			name: "Prepare",
+			type: "agent",
+			presentation: { phase: "red", icon: "✦", fixing: false },
+		},
+		{
+			id: "check",
+			name: "Check",
+			type: "script",
+			presentation: { phase: "red", icon: "›_", fixing: false },
+		},
+		{
+			id: "ci",
+			name: "CI",
+			type: "tool",
+			tool: "ci",
+			presentation: { phase: "blue", icon: "🧪", fixing: false },
+		},
 		{
 			id: "parallel",
 			name: "Parallel",
 			type: "fanout",
+			presentation: { phase: "red", icon: "⫘", fixing: false },
 			groups: [
 				[
 					{
 						id: "child",
 						name: "Child",
 						type: "workflow",
+						presentation: { phase: "red", icon: "🧩", fixing: false },
 						workflow: "local-child",
 					},
 				],
@@ -246,7 +265,12 @@ it("preserves launch fields and nested step names without sending executable def
 	const editable = recipes
 		.json()
 		.workflows.find((item: { id: string }) => item.id === workflow.id);
-	expect(editable.steps).toEqual(workflow.steps);
+	expect(editable.steps).toEqual(
+		materializeWorkflowConfig({
+			...workflow,
+			stepConfigVersion: "step-config-v1",
+		}).steps,
+	);
 	expect(recipes.json()).not.toHaveProperty("executionProfiles");
 	expect(recipes.json()).not.toHaveProperty("gitSettings");
 	expect(recipes.json()).not.toHaveProperty("executionConsumers");
@@ -371,7 +395,10 @@ it("upserts only changed recipes atomically, rejecting invalid dependencies and 
 	).toEqual([recipe.id]);
 	expect(response.json().updatedWorkflows[0].steps).toEqual(recipe.steps);
 	expect(response.json()).not.toHaveProperty("workflows");
-	expect(f.runtime.listWorkflows()).toEqual([...initial, recipe]);
+	expect(f.runtime.listWorkflows()).toEqual([
+		...initial,
+		{ ...recipe, stepConfigVersion: "step-config-v1" },
+	]);
 	expect(f.runtime.getDefaultWorkflow()).toBe("simple");
 	const saved = f.runtime.listWorkflows();
 	const invalid = await patch([

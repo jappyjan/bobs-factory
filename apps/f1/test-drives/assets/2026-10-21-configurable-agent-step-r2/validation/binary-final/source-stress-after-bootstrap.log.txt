@@ -1,0 +1,63 @@
+{
+  "mode": "Bun-source",
+  "bun": "1.4.2",
+  "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/factory-schema-stress-w29fVa",
+  "compileRequests": 100,
+  "evaluations": 100,
+  "cancellations": 10,
+  "postCancelCompiles": 10,
+  "postCancelEvaluations": 10,
+  "vmAllowance": [
+    {
+      "result": {
+        "schemaIssues": [],
+        "issues": []
+      },
+      "pauseMs": 500,
+      "elapsedMs": 539.022792,
+      "cpu": {
+        "user": 41486,
+        "system": 9924
+      },
+      "executionMs": 1000,
+      "bun": "1.4.2"
+    },
+    {
+      "result": {
+        "schemaIssues": [
+          "Inline JSON Schema compilation exceeded the 1000 ms execution limit"
+        ],
+        "issues": [],
+        "resourceFailure": true
+      },
+      "pauseMs": 1500,
+      "elapsedMs": 1010.342167,
+      "cpu": {
+        "user": 968,
+        "system": 1217
+      },
+      "executionMs": 1000,
+      "bun": "1.4.2"
+    }
+  ],
+  "invalidOutputRemainsCorrection": true,
+  "wall": {
+    "elapsedMs": 2063,
+    "ticks": 170,
+    "child": {
+      "pid": 74558,
+      "command": "/opt/homebrew/Cellar/bun/1.4.2/bin/bun /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/src/factory/InlineSchemaChild.ts --inline-schema-child"
+    }
+  },
+  "unavailableWatchdog": [
+    "Inline JSON Schema child memory watchdog unavailable; validation stopped"
+  ],
+  "rssLimit": [
+    "Inline JSON Schema child exceeded the 256 MiB RSS limit"
+  ],
+  "lostLiveWatchdog": [
+    "Inline JSON Schema child memory watchdog unavailable; validation stopped"
+  ],
+  "childrenAfter": [],
+  "result": "PASS"
+}

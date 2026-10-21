@@ -1,0 +1,192 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/f1
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:06.986Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:06.986Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:07.004Z [INFO ] [GitService] Issue delivered has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:07.041Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:07.133Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-lDards/custom-root/delivered from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:07.233Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:07.233Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:07.251Z [INFO ] [GitService] Issue resumable has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:07.309Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:07.423Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-lDards/custom-root/resumable from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:13.423Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:13.423Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:13.440Z [INFO ] [GitService] Issue delivered has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:13.478Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:13.566Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-Co69PC/custom-root/delivered from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:13.670Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:13.670Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:13.685Z [INFO ] [GitService] Issue resumable has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:13.722Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:13.812Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-Co69PC/custom-root/resumable from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:17.650Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:17.650Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:17.666Z [INFO ] [GitService] Issue delivered has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:17.703Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:17.798Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-h9nkTk/custom-root/delivered from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:17.918Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:17.918Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:17.934Z [INFO ] [GitService] Issue resumable has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:17.970Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:18.067Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-h9nkTk/custom-root/resumable from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:21.802Z [INFO ] [GitService] Creating multi-repo workspace at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-B156bC/custom-root/delivered for 2 repositories
+2026-10-21T17:39:21.802Z [INFO ] [GitService] Creating worktree for repo 'Fixture' at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-B156bC/custom-root/delivered/Fixture
+2026-10-21T17:39:21.802Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:21.818Z [INFO ] [GitService] Issue delivered has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:21.856Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:21.944Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-B156bC/custom-root/delivered/Fixture from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:21.974Z [INFO ] [GitService] Creating worktree for repo 'Second' at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-B156bC/custom-root/delivered/Second
+2026-10-21T17:39:21.974Z [INFO ] [GitService] createSingleRepoWorktree for Second (id=second): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:21.990Z [INFO ] [GitService] Issue delivered has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:22.028Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:22.117Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-B156bC/custom-root/delivered/Second from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:22.250Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:22.250Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:22.265Z [INFO ] [GitService] Issue resumable has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:22.302Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:22.386Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-B156bC/custom-root/resumable from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:28.215Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:28.215Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:28.233Z [INFO ] [GitService] Issue delivered has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:28.273Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:28.362Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-TJQJRJ/custom-root/delivered from origin/main (tracking main)
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:28.467Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-21T17:39:28.467Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:28.484Z [INFO ] [GitService] Issue resumable has parent: undefined
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:28.523Z [INFO ] [GitService] Parent branch 'undefined-undefined' not found, using default base branch 'main'
+
+stdout | test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+2026-10-21T17:39:28.612Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-delivered-storage-TJQJRJ/custom-root/resumable from origin/main (tracking main)
+
+{"storageRetentionCycles":[{"cycle":1,"snapshotBytes":143,"preparationBytes":120},{"cycle":2,"snapshotBytes":286,"preparationBytes":240},{"cycle":3,"snapshotBytes":286,"preparationBytes":360},{"cycle":4,"snapshotBytes":286,"preparationBytes":480},{"cycle":5,"snapshotBytes":286,"preparationBytes":600}],"maximumSimulatedWorkers":1}
+ ❯ test/storage-retention.test.ts (8 tests | 5 failed) 35687ms
+   × releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence 6428ms
+   × releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence 4217ms
+   × releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence 4126ms
+   × releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence 6446ms
+   × releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence 4162ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/storage-retention.test.ts > releases reviewed delivered manual work through startup reconciliation while retaining Resume work and cross-run evidence
+ FAIL  test/storage-retention.test.ts > releases reviewed delivered ticket work through startup reconciliation while retaining Resume work and cross-run evidence
+ FAIL  test/storage-retention.test.ts > releases reviewed delivered nested work through startup reconciliation while retaining Resume work and cross-run evidence
+ FAIL  test/storage-retention.test.ts > releases reviewed delivered grouped work through startup reconciliation while retaining Resume work and cross-run evidence
+ FAIL  test/storage-retention.test.ts > releases reviewed delivered takeover work through startup reconciliation while retaining Resume work and cross-run evidence
+AssertionError: expected [ …(2) ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "Retained input, output or evidence references this workspace",
++   "Durable completion and exact provider-confirmed delivery are required",
++ ]
+
+ ❯ test/storage-retention.test.ts:740:40
+    738|   expect((await observe()).protection.join(" ")).toContain("evidence l…
+    739|   await unlink(evidenceLink);
+    740|   expect((await observe()).protection).toEqual([]);
+       |                                        ^
+    741|   await retention.store.workspaceClaim(delivered.path).run(async () =>…
+    742|    await expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 3 passed (8)
+   Start at  20:39:04
+   Duration  37.56s (transform 1.05s, setup 0ms, import 1.78s, tests 35.69s, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/f1:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/storage-retention.test.ts --maxWorkers=1

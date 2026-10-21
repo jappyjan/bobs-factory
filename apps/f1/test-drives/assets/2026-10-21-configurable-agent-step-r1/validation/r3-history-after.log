@@ -1,0 +1,61 @@
+{
+  "status": "completed",
+  "calls": 2,
+  "history": [
+    "inspect",
+    "mutate",
+    "inspect",
+    "consume"
+  ],
+  "events": [
+    {
+      "source": "workflow",
+      "sequence": 4,
+      "at": "2026-10-21T16:56:57.184Z",
+      "step": "consume",
+      "message": "Starting Consume (pass 1)"
+    },
+    {
+      "source": "workflow",
+      "sequence": 5,
+      "at": "2026-10-21T16:56:57.307Z",
+      "step": "consume",
+      "message": "Bound input Inspect is stale; rerunning its configured producer before consuming it."
+    },
+    {
+      "source": "workflow",
+      "sequence": 6,
+      "at": "2026-10-21T16:56:57.320Z",
+      "step": "inspect",
+      "message": "Starting Inspect (pass 2)"
+    },
+    {
+      "source": "workflow",
+      "sequence": 7,
+      "at": "2026-10-21T16:56:57.927Z",
+      "step": "inspect",
+      "message": "Finished Inspect"
+    },
+    {
+      "source": "workflow",
+      "sequence": 8,
+      "at": "2026-10-21T16:56:57.928Z",
+      "step": "consume",
+      "message": "Starting Consume (pass 1)"
+    },
+    {
+      "source": "workflow",
+      "sequence": 9,
+      "at": "2026-10-21T16:56:58.102Z",
+      "step": "consume",
+      "message": "Finished Consume"
+    },
+    {
+      "source": "workflow",
+      "sequence": 10,
+      "at": "2026-10-21T16:56:58.102Z",
+      "step": "run",
+      "message": "Workflow complete."
+    }
+  ]
+}
