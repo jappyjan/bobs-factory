@@ -1,5 +1,10 @@
 # Taskbot #137 implementation and acceptance evidence
 
+> Independent round 1 requested changes R1–R3 on `2fbc21a3` (Taskbot comment
+> 2082). The [point response and fresh validation](review-r1-fixes.md) supersede
+> the final-source claims below for the recovery fixes. The original report
+> remains intact as historical evidence; a new independent review is required.
+
 Task: [bobs-factory #137](https://taskbot.apps.janjaap.de/p/bobs-factory/t/137),
 epic [#135](https://taskbot.apps.janjaap.de/p/bobs-factory/t/135). These are Taskbot
 numbers, not GitHub issue numbers. Work is isolated in

@@ -1,0 +1,1202 @@
+{
+	"runtimeSource": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+	"harnessHead": "783919c7baa062970134c35fd19cb0c64bae1c81",
+	"harnessEquivalence": {
+		"runtimeSource": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+		"harnessHead": "783919c7baa062970134c35fd19cb0c64bae1c81",
+		"changedPaths": ["apps/f1/test-drives/assets/generic-check.mjs"],
+		"allRuntimeInputTreesMatch": true,
+		"commands": [
+			{
+				"stage": "syntax",
+				"command": [
+					"node",
+					"--check",
+					"apps/f1/test-drives/assets/generic-check.mjs"
+				],
+				"environment": {},
+				"startedAt": "2026-10-21T22:32:45.093532+00:00",
+				"elapsedSeconds": 0.038,
+				"exitCode": 0,
+				"log": "/tmp/taskbot137-r1-safe-json-v2-syntax.log",
+				"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+			},
+			{
+				"stage": "lint",
+				"command": ["pnpm", "lint"],
+				"environment": {},
+				"startedAt": "2026-10-21T22:32:45.155699+00:00",
+				"elapsedSeconds": 1.206,
+				"exitCode": 0,
+				"log": "/tmp/taskbot137-r1-safe-json-v2-lint.log",
+				"sha256": "8caaa8d3cd9e39cf275c4e839712d74cb7718dbbed46a1929eb6ec499ba7247e"
+			},
+			{
+				"stage": "alternate",
+				"command": ["node", "apps/f1/test-drives/assets/generic-check.mjs"],
+				"environment": {
+					"F1_AGENT_MODE": "mock",
+					"F1_CHECK_RECOVERY": "1",
+					"F1_CHECK_RECOVERY_ONLY": "native-recovery-alternate"
+				},
+				"startedAt": "2026-10-21T22:32:46.387846+00:00",
+				"elapsedSeconds": 4.07,
+				"exitCode": 0,
+				"log": "/tmp/taskbot137-r1-safe-json-v2-alternate.log",
+				"sha256": "c3bcba244d89fc4f9fc29498c3ebcf33b477eb20385afac927688df8becdd515",
+				"setup": {
+					"phase": "setup",
+					"diagnosticScenario": "native-recovery-alternate",
+					"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-iJ0SW9",
+					"revision": "783919c7baa062970134c35fd19cb0c64bae1c81",
+					"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+					"buildSha256": "4d38a7e7b34c7192c0b0df5c56f1b168dc6db795f8553becf09ab4705d441bea",
+					"node": "v24.21.0",
+					"startedAt": "2026-10-21T22:32:47.001Z",
+					"paidCalls": 0
+				}
+			},
+			{
+				"stage": "inspect",
+				"command": ["node", "apps/f1/test-drives/assets/generic-check.mjs"],
+				"environment": {
+					"F1_AGENT_MODE": "mock",
+					"F1_CHECK_RECOVERY": "1",
+					"F1_CHECK_RECOVERY_ONLY": "native-recovery-inspect"
+				},
+				"startedAt": "2026-10-21T22:32:50.484948+00:00",
+				"elapsedSeconds": 4.324,
+				"exitCode": 0,
+				"log": "/tmp/taskbot137-r1-safe-json-v2-inspect.log",
+				"sha256": "29f0f2a432546b6b80ae83381150fe0d8cab1ed38a5edb1a94392d973b1d7978",
+				"setup": {
+					"phase": "setup",
+					"diagnosticScenario": "native-recovery-inspect",
+					"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-rztdmu",
+					"revision": "783919c7baa062970134c35fd19cb0c64bae1c81",
+					"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+					"buildSha256": "4d38a7e7b34c7192c0b0df5c56f1b168dc6db795f8553becf09ab4705d441bea",
+					"node": "v24.21.0",
+					"startedAt": "2026-10-21T22:32:50.969Z",
+					"paidCalls": 0
+				}
+			}
+		]
+	},
+	"rejectedSdkGuardAttempts": [
+		{
+			"source": "52fb8fd3395df32c592bc78f5d3e606d2dc70783",
+			"command": ["node", "apps/f1/test-drives/assets/generic-check.mjs"],
+			"environment": {
+				"F1_AGENT_MODE": "mock",
+				"F1_CHECK_RECOVERY": "1"
+			},
+			"startedAt": "2026-10-21T21:50:22.608272+00:00",
+			"finishedAt": "2026-10-21T21:51:57.007381+00:00",
+			"exitCode": 1,
+			"elapsedSeconds": 94.397,
+			"log": "/tmp/taskbot137-r1-final-f1.log",
+			"sha256": "e69cfa92560774a83423897393dcbc701bc5c36f55d61c71c09b192d3505f0ab",
+			"setup": {
+				"phase": "setup",
+				"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-trztGX",
+				"revision": "52fb8fd3395df32c592bc78f5d3e606d2dc70783",
+				"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"buildSha256": "48491a6e68dbcef1b4b62eacd7df45f6092d4b2a635434310b6ada5162e57c86",
+				"node": "v24.21.0",
+				"startedAt": "2026-10-21T21:50:23.159Z",
+				"paidCalls": 0
+			},
+			"statusAfter": ""
+		},
+		{
+			"source": "66ce512ca0c176156aeffce5910d00dee88be9e8",
+			"command": ["node", "apps/f1/test-drives/assets/generic-check.mjs"],
+			"environment": {
+				"F1_AGENT_MODE": "mock",
+				"F1_CHECK_RECOVERY": "1"
+			},
+			"startedAt": "2026-10-21T21:53:25.989629+00:00",
+			"finishedAt": "2026-10-21T21:55:00.728488+00:00",
+			"exitCode": 1,
+			"elapsedSeconds": 94.756,
+			"log": "/tmp/taskbot137-r1-final-f1-v2.log",
+			"sha256": "a19cfe5d2139972ae6dc23ccae774ad9b156b3491599ac8c1072456705736b8d",
+			"setup": {
+				"phase": "setup",
+				"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-XaqRHU",
+				"revision": "66ce512ca0c176156aeffce5910d00dee88be9e8",
+				"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"buildSha256": "48491a6e68dbcef1b4b62eacd7df45f6092d4b2a635434310b6ada5162e57c86",
+				"node": "v24.21.0",
+				"startedAt": "2026-10-21T21:53:26.792Z",
+				"paidCalls": 0
+			},
+			"statusAfter": ""
+		}
+	],
+	"preliminaryRecoveryAttempts": [
+		{
+			"source": "bb5e0ebdc6926a22b6c3369bd62669f62b24903f",
+			"command": ["node", "apps/f1/test-drives/assets/generic-check.mjs"],
+			"environment": {
+				"F1_AGENT_MODE": "mock",
+				"F1_CHECK_RECOVERY": "1"
+			},
+			"startedAt": "2026-10-21T21:58:36.219022+00:00",
+			"finishedAt": "2026-10-21T22:00:19.460128+00:00",
+			"exitCode": 1,
+			"elapsedSeconds": 103.239,
+			"log": "/tmp/taskbot137-r1-final-f1-v4.log",
+			"sha256": "228c4de84538e13f1c792bf01f634622047030d18cb6baadb0c5c96cbb5dd5f3",
+			"setup": {
+				"phase": "setup",
+				"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-ADPvdt",
+				"revision": "bb5e0ebdc6926a22b6c3369bd62669f62b24903f",
+				"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"buildSha256": "48491a6e68dbcef1b4b62eacd7df45f6092d4b2a635434310b6ada5162e57c86",
+				"node": "v24.21.0",
+				"startedAt": "2026-10-21T21:58:36.999Z",
+				"paidCalls": 0
+			},
+			"statusAfter": ""
+		}
+	],
+	"reviewedHead": "2fbc21a3c6668551ff89605293dfbb237b41a671",
+	"base": "95f79ef3be57bd8aa83d53b68c8130c28ef19dc9",
+	"branch": "taskbot/137-generic-check",
+	"worktree": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-137-check",
+	"runtimeTrees": {
+		"packages": "445e5fd3df57346a7e0d57e145fda2a6879b7771",
+		"apps/cli": "9ef31cd445f49cbbebf74a109cd87e8007e74786",
+		"apps/f1/src": "8d1a1ba1ad8bf803952e1d7729b7c980582483e8",
+		"apps/desktop/src": "614fed2161f9afaf305fbbf8326e56073509122d",
+		"scripts": "fd0f05d2d3051707014b9508b1909a972a048268",
+		"skills": "82f91707cfd66b46d1b8730e08456c3e55e31c0c",
+		"package.json": "df60621fe4337a5712e88db17d6d976d4fa831db",
+		"pnpm-lock.yaml": "41b0834af8eb5ccf8218728b7d1d49f76a6b2e67",
+		"pnpm-workspace.yaml": "f7ff6344ccc3e093e94d10d461d7a7a55d772324"
+	},
+	"node": "v24.21.0",
+	"sourceGates": {
+		"source": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+		"base": "95f79ef3be57bd8aa83d53b68c8130c28ef19dc9",
+		"runtimeTrees": {
+			"packages": "445e5fd3df57346a7e0d57e145fda2a6879b7771",
+			"apps/cli": "9ef31cd445f49cbbebf74a109cd87e8007e74786",
+			"apps/f1/src": "8d1a1ba1ad8bf803952e1d7729b7c980582483e8",
+			"apps/desktop/src": "614fed2161f9afaf305fbbf8326e56073509122d",
+			"scripts": "fd0f05d2d3051707014b9508b1909a972a048268",
+			"skills": "82f91707cfd66b46d1b8730e08456c3e55e31c0c",
+			"package.json": "df60621fe4337a5712e88db17d6d976d4fa831db",
+			"pnpm-lock.yaml": "41b0834af8eb5ccf8218728b7d1d49f76a6b2e67",
+			"pnpm-workspace.yaml": "f7ff6344ccc3e093e94d10d461d7a7a55d772324"
+		},
+		"startedAt": "2026-10-21T22:17:36.500265+00:00",
+		"node": "v24.21.0",
+		"commands": [
+			{
+				"stage": "build",
+				"command": ["pnpm", "build"],
+				"startedAt": "2026-10-21T22:17:36.526022+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 4.781,
+				"log": "/tmp/taskbot137-r1-retention-final-source-build.log",
+				"sha256": "2c2401d0d211af24a1820547208b98f0e881a95be3b090a27047eadebd28b17a",
+				"statusAfter": ""
+			},
+			{
+				"stage": "typecheck",
+				"command": ["pnpm", "typecheck"],
+				"startedAt": "2026-10-21T22:17:41.337660+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 3.798,
+				"log": "/tmp/taskbot137-r1-retention-final-source-typecheck.log",
+				"sha256": "cecdf425f0c79c535f9b6598b0f38e131f405833fb05b9982eb2876555aab4c5",
+				"statusAfter": ""
+			},
+			{
+				"stage": "lint",
+				"command": ["pnpm", "lint"],
+				"startedAt": "2026-10-21T22:17:45.161172+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 1.257,
+				"log": "/tmp/taskbot137-r1-retention-final-source-lint.log",
+				"sha256": "a628c1669cf37320dc44a40bfd24084559f61c67491a6e1141dae966d5d2997c",
+				"statusAfter": ""
+			},
+			{
+				"stage": "packages",
+				"command": ["pnpm", "test:packages:run", "--maxWorkers=2"],
+				"startedAt": "2026-10-21T22:17:46.443733+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 476.859,
+				"log": "/tmp/taskbot137-r1-retention-final-source-packages.log",
+				"sha256": "d65ce46bac0dbea901abb58ff5e6e7021d3b61db61dba5fa2e8b8c5112c535d9",
+				"statusAfter": ""
+			},
+			{
+				"stage": "apps",
+				"command": ["pnpm", "--filter", "./apps/*", "test:run"],
+				"startedAt": "2026-10-21T22:25:43.378691+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 51.013,
+				"log": "/tmp/taskbot137-r1-retention-final-source-apps.log",
+				"sha256": "102dfba6e2e8fe91bfde77d19f67aeada5dabee91f1fd79b69d52e7c78db32d0",
+				"statusAfter": ""
+			},
+			{
+				"stage": "scripts",
+				"command": [
+					"node",
+					"--test",
+					"scripts/tests/archive-path.test.mjs",
+					"scripts/tests/artifact-handoff.test.mjs",
+					"scripts/tests/beta-attestation.test.mjs",
+					"scripts/tests/bounded-archive.test.mjs",
+					"scripts/tests/desktop-runtime.test.mjs",
+					"scripts/tests/desktop-shell-drive.test.mjs",
+					"scripts/tests/native-receipts.test.mjs",
+					"scripts/tests/nightly-artifacts.test.mjs",
+					"scripts/tests/nightly-baseline.test.mjs",
+					"scripts/tests/nightly-source.test.mjs",
+					"scripts/tests/nix-beta-attestation.test.mjs",
+					"scripts/tests/prepared-evidence-intake.test.mjs",
+					"scripts/tests/public-install.test.mjs",
+					"scripts/tests/release-candidate.test.mjs",
+					"scripts/tests/release-discovery.test.mjs",
+					"scripts/tests/release-extensions.test.mjs",
+					"scripts/tests/release-material.test.mjs",
+					"scripts/tests/release-publication.test.mjs",
+					"scripts/tests/reviewed-javascript-sources.test.mjs",
+					"scripts/tests/source-transport.test.mjs",
+					"scripts/tests/trial-launcher-bootstrap.test.mjs",
+					"scripts/tests/trial-launcher.test.mjs",
+					"scripts/tests/unsigned-release-flow.test.mjs",
+					"scripts/tests/website-downloads.test.mjs"
+				],
+				"startedAt": "2026-10-21T22:26:34.463859+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 48.707,
+				"log": "/tmp/taskbot137-r1-retention-final-source-scripts.log",
+				"sha256": "99051afece8f2a3b675f5a531f767ca59b3c4aa5133e6e220f04f8eac5a02032",
+				"statusAfter": ""
+			},
+			{
+				"stage": "audit",
+				"command": ["pnpm", "audit"],
+				"startedAt": "2026-10-21T22:27:23.203292+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 0.903,
+				"log": "/tmp/taskbot137-r1-retention-final-source-audit.log",
+				"sha256": "9d12e3cd633c2bd62adc087776eb33965b21451b02fd01b18909e8645c6dbb99",
+				"statusAfter": ""
+			}
+		],
+		"finishedAt": "2026-10-21T22:27:24.143513+00:00"
+	},
+	"counts": {
+		"packages": {
+			"files": 315,
+			"passed": 3951,
+			"skipped": 2
+		},
+		"apps": {
+			"cliPassed": 254,
+			"f1Passed": 17,
+			"desktopPassed": 41,
+			"desktopSkipped": 1
+		},
+		"scriptsPassed": 179,
+		"auditAdvisories": 0,
+		"lintExistingWarnings": 34
+	},
+	"native": {
+		"source": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+		"target": "darwin-arm64",
+		"bun": "1.4.2",
+		"smokePort": 58415,
+		"commands": [
+			{
+				"stage": "build",
+				"command": [
+					"bun",
+					"run",
+					"scripts/build-binary.ts",
+					"--target",
+					"darwin-arm64",
+					"--output",
+					"/tmp/taskbot137-native-r1-retention-1ff4b5c4"
+				],
+				"startedAt": "2026-10-21T22:27:24.238543+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 4.691,
+				"log": "/tmp/taskbot137-r1-retention-native-build.log",
+				"sha256": "90125bf59808bd59d5af2e1f96cff56812a6b6761fc57636d651111a79260679"
+			},
+			{
+				"stage": "smoke",
+				"command": [
+					"./scripts/smoke-binary.sh",
+					"/tmp/taskbot137-native-r1-retention-1ff4b5c4/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory"
+				],
+				"startedAt": "2026-10-21T22:27:28.955644+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 6.092,
+				"log": "/tmp/taskbot137-r1-retention-native-smoke.log",
+				"sha256": "6e056cf02d9da77b94fbeb9d8ce04e01d4aaee960c6638bf3a79d039500c5d34"
+			},
+			{
+				"stage": "check-api",
+				"command": [
+					"python3",
+					"/tmp/taskbot137-native-check-smoke.py",
+					"/tmp/taskbot137-native-r1-retention-1ff4b5c4/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory"
+				],
+				"startedAt": "2026-10-21T22:27:35.079511+00:00",
+				"exitCode": 0,
+				"elapsedSeconds": 0.655,
+				"log": "/tmp/taskbot137-r1-retention-native-check-api.log",
+				"sha256": "50f66b5ff00f0b7b8ebcf1211c5666f518140cea62493a84e7a1fe1d26a42e6e"
+			}
+		],
+		"binary": "/tmp/taskbot137-native-r1-retention-1ff4b5c4/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+		"binarySha256": "07e232f30151d1b4266e6316379003dfb0768cc1036b3db749ccc35d5cc42005",
+		"buildIdentity": {
+			"schemaVersion": 1,
+			"product": "bobs-factory",
+			"version": "1.0.0-beta",
+			"commit": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+			"dirty": false,
+			"target": "darwin-arm64",
+			"tooling": {
+				"bun": "1.4.2"
+			},
+			"executable": {
+				"file": "bobs-factory",
+				"size": 112027122,
+				"sha256": "07e232f30151d1b4266e6316379003dfb0768cc1036b3db749ccc35d5cc42005"
+			},
+			"resourceDigest": "cd8af2b5060c4de2bab1980d86ef872b3d7081df760b1b8bdae1fef172f0635c",
+			"validation": "pending runtime smoke",
+			"requirements": "macOS; native target smoke required"
+		},
+		"finishedAt": "2026-10-21T22:27:35.817602+00:00",
+		"result": "PASS"
+	},
+	"nativeCheckApi": {
+		"rawReceipt": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot137-native-check-si0iflxa/results.json",
+		"sha256": "9737a704ad1d8da9f3bf56bae0c9efb60ad41ec392eb164fc1195e69cabe6283",
+		"receipt": {
+			"startedAt": "2026-10-21T22:27:35.141433+00:00",
+			"command": [
+				"/private/tmp/taskbot137-native-r1-retention-1ff4b5c4/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+				"--home",
+				"/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot137-native-check-si0iflxa/state",
+				"--port",
+				"58455",
+				"--no-open"
+			],
+			"restrictedPath": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot137-native-check-si0iflxa/path:/usr/bin:/bin",
+			"directory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot137-native-check-si0iflxa",
+			"cases": [
+				{
+					"name": "pass",
+					"status": 200,
+					"result": {
+						"output": {
+							"passed": true,
+							"allApproved": true,
+							"openFindings": 0
+						},
+						"next": "approved"
+					}
+				},
+				{
+					"name": "fail",
+					"status": 200,
+					"result": {
+						"output": {
+							"passed": false,
+							"allApproved": false,
+							"openFindings": 1
+						},
+						"next": "changes"
+					}
+				},
+				{
+					"name": "missing collection",
+					"status": 409,
+					"result": {
+						"error": "Rule aggregate path /inputs/reviews is missing reviews"
+					}
+				},
+				{
+					"name": "declared fixed evidence cannot be silently skipped",
+					"status": 409,
+					"result": {
+						"error": "Simulation requires successful synthetic files-exist evidence ({verified:true}); it does not verify live files or receipts"
+					}
+				},
+				{
+					"name": "explicit synthetic evidence",
+					"status": 200,
+					"result": {
+						"output": {
+							"passed": true,
+							"allApproved": true,
+							"openFindings": 0
+						},
+						"next": "approved"
+					}
+				}
+			],
+			"runtime": {
+				"build": "0317923a2f79a813228a55be",
+				"protocol": 1,
+				"runtime": {
+					"version": "1.0.0-beta",
+					"commit": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+					"dirty": false,
+					"target": "darwin-arm64",
+					"resourceDigest": "cd8af2b5060c4de2bab1980d86ef872b3d7081df760b1b8bdae1fef172f0635c",
+					"packaged": true
+				},
+				"capabilities": ["desktop-app-maintenance-v1"]
+			},
+			"result": "PASS",
+			"workerExit": 0,
+			"finishedAt": "2026-10-21T22:27:35.726929+00:00"
+		}
+	},
+	"f1": {
+		"source": "783919c7baa062970134c35fd19cb0c64bae1c81",
+		"command": ["node", "apps/f1/test-drives/assets/generic-check.mjs"],
+		"environment": {
+			"F1_AGENT_MODE": "mock",
+			"F1_CHECK_RECOVERY": "1"
+		},
+		"startedAt": "2026-10-21T22:32:54.903939+00:00",
+		"finishedAt": "2026-10-21T22:35:32.838483+00:00",
+		"exitCode": 0,
+		"elapsedSeconds": 157.932,
+		"log": "/tmp/taskbot137-r1-retention-final-f1-v3.log",
+		"sha256": "997b13fa122638817fb50546b93e321525f66f205efd629ef0c5ac3a517ae28b",
+		"setup": {
+			"phase": "setup",
+			"diagnosticScenario": "",
+			"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-OElZrI",
+			"revision": "783919c7baa062970134c35fd19cb0c64bae1c81",
+			"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"buildSha256": "4d38a7e7b34c7192c0b0df5c56f1b168dc6db795f8553becf09ab4705d441bea",
+			"node": "v24.21.0",
+			"startedAt": "2026-10-21T22:32:55.384Z",
+			"paidCalls": 0
+		},
+		"statusAfter": ""
+	},
+	"ui": {
+		"receipt": "review-r1-ui-equivalence.json",
+		"rawReceipt": "/tmp/taskbot137-r1-retention-ui/equivalence.json",
+		"rawSha256": "25c9b84b1243ef8391e068b0cd9e56b4323bd08349997cdf2ea972616d37dfbe",
+		"screenshotsReused": 17,
+		"newCaptures": 0,
+		"scope": "Unchanged renderer/example recipe/pure simulation inputs only; Impact, SpecialistReview, recovery runtime and stock graph excluded"
+	},
+	"preservation": "Original complete logs, failed trials, reports and screenshot files retained; no full history/log bundle recopied. Prior ff5e2b20 gates are historical, not substitutes for this changed runtime.",
+	"focused": {
+		"source": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+		"command": [
+			"pnpm",
+			"--filter",
+			"bobs-factory-edge-worker",
+			"exec",
+			"vitest",
+			"run",
+			"test/CheckRecoveryRouting.test.ts",
+			"test/CheckImpactRetention.test.ts",
+			"test/CheckReviewLifecycle.test.ts",
+			"test/StockCheckEquivalence.test.ts",
+			"test/FactoryReviewOutcome.test.ts",
+			"test/ReviewSessionContinuity.test.ts",
+			"test/Impact.test.ts",
+			"test/RevisionBinding.test.ts",
+			"test/RevisionBinding.input-history.test.ts",
+			"test/ImpactFanoutOwnership.test.ts",
+			"--maxWorkers=2"
+		],
+		"startedAt": "2026-10-21T22:15:07.315392+00:00",
+		"finishedAt": "2026-10-21T22:17:36.276311+00:00",
+		"elapsedSeconds": 148.96,
+		"exitCode": 0,
+		"log": "/tmp/taskbot137-r1-retention-combined-focused.log",
+		"sha256": "ebc70cda0d944a57a110e4dca3bf1a13134f965c71b890b40a71e38c3c87f14b",
+		"counts": {
+			"files": 10,
+			"passed": 98
+		}
+	},
+	"rejectedNativeFixtureDiagnostic": {
+		"runtimeSource": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+		"harnessHead": "bdf699af9b9b6af6ae74390fa0efa1eafc9c48f0",
+		"changedPaths": ["apps/f1/test-drives/assets/generic-check.mjs"],
+		"allRuntimeInputTreesMatch": true,
+		"commands": [
+			{
+				"stage": "syntax",
+				"command": [
+					"node",
+					"--check",
+					"apps/f1/test-drives/assets/generic-check.mjs"
+				],
+				"environment": {},
+				"startedAt": "2026-10-21T22:31:19.345690+00:00",
+				"elapsedSeconds": 0.059,
+				"exitCode": 0,
+				"log": "/tmp/taskbot137-r1-safe-json-syntax.log",
+				"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+			},
+			{
+				"stage": "lint",
+				"command": ["pnpm", "lint"],
+				"environment": {},
+				"startedAt": "2026-10-21T22:31:19.430131+00:00",
+				"elapsedSeconds": 1.222,
+				"exitCode": 0,
+				"log": "/tmp/taskbot137-r1-safe-json-lint.log",
+				"sha256": "f50feb46f79053d8c82f24d8e27352de130b3c2cf916ae068398cbb6f2bdbb33"
+			},
+			{
+				"stage": "alternate",
+				"command": ["node", "apps/f1/test-drives/assets/generic-check.mjs"],
+				"environment": {
+					"F1_AGENT_MODE": "mock",
+					"F1_CHECK_RECOVERY": "1",
+					"F1_CHECK_RECOVERY_ONLY": "native-recovery-alternate"
+				},
+				"startedAt": "2026-10-21T22:31:20.677369+00:00",
+				"elapsedSeconds": 3.989,
+				"exitCode": 1,
+				"log": "/tmp/taskbot137-r1-safe-json-alternate.log",
+				"sha256": "253bc5eb7104f8afb61ec856dd0cab72552c95e5339c883d521086cf0233d3a9",
+				"setup": {
+					"phase": "setup",
+					"diagnosticScenario": "native-recovery-alternate",
+					"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-cCPNJB",
+					"revision": "bdf699af9b9b6af6ae74390fa0efa1eafc9c48f0",
+					"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+					"buildSha256": "4d38a7e7b34c7192c0b0df5c56f1b168dc6db795f8553becf09ab4705d441bea",
+					"node": "v24.21.0",
+					"startedAt": "2026-10-21T22:31:21.306Z",
+					"paidCalls": 0
+				}
+			}
+		]
+	},
+	"rejectedFinal8Fixture": {
+		"source": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+		"command": ["node", "apps/f1/test-drives/assets/generic-check.mjs"],
+		"environment": {
+			"F1_AGENT_MODE": "mock",
+			"F1_CHECK_RECOVERY": "1"
+		},
+		"startedAt": "2026-10-21T22:27:35.881901+00:00",
+		"finishedAt": "2026-10-21T22:30:08.631449+00:00",
+		"exitCode": 1,
+		"elapsedSeconds": 152.736,
+		"log": "/tmp/taskbot137-r1-retention-final-f1.log",
+		"sha256": "ca4714b61fd4e4e26c038bbfa632f04ca4ca5463032328ae15bf329dd2172acb",
+		"setup": {
+			"phase": "setup",
+			"diagnosticScenario": "",
+			"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-bgXlA1",
+			"revision": "1ff4b5c40c1970ec6a7b9b7542ec1901bb3c5532",
+			"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"buildSha256": "4d38a7e7b34c7192c0b0df5c56f1b168dc6db795f8553becf09ab4705d441bea",
+			"node": "v24.21.0",
+			"startedAt": "2026-10-21T22:27:36.370Z",
+			"paidCalls": 0
+		},
+		"statusAfter": ""
+	},
+	"historicalRuntime52": {
+		"source": "52fb8fd3395df32c592bc78f5d3e606d2dc70783",
+		"note": "Completed passes before the consequential retained-evidence repair; historical and not final validation",
+		"receipts": [
+			{
+				"path": "/tmp/taskbot137-r1-final-source-validation.json",
+				"sha256": "45d44e1c86eb2e9f61463ad5fdf0a7df27c911801e6ea4cbdaa35e8aaaba6909"
+			},
+			{
+				"path": "/tmp/taskbot137-r1-native-validation.json",
+				"sha256": "2c34b42a97dcfb6c654589d99f8b2e5461eb7fd607087e8f6c26313027578641"
+			}
+		]
+	},
+	"retentionDiagnosis": {
+		"summary": {
+			"source": "Implementation F1 helper /root/check_f1; read-only diagnosis; no runtime/fixture mutation or run launch",
+			"harnessRevision": "bb5e0ebdc6926a22b6c3369bd62669f62b24903f",
+			"runtimeSourceRevision": "52fb8fd3395df32c592bc78f5d3e606d2dc70783",
+			"retainedDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-ADPvdt",
+			"failingRun": "session-4",
+			"failure": "Error: Specialist recovery unexpectedly needs further assistance at pipeline/assess-impact: How should we resolve the repeated review blocker? The same correction state has returned 3 times without substantive progress. No new source or valid evidence resolves the outstanding validation or target coordination. Provide a specific investigation or coordination action. Required review, checks and approval remain in place; an answer cannot waive them.\n    at file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-137-check/apps/f1/test-drives/assets/generic-check.mjs:1198:10\n    at until (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-137-check/apps/f1/test-drives/assets/generic-check.mjs:929:7)\n    at async specialistRecovery (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-137-check/apps/f1/test-drives/assets/generic-check.mjs:1196:2)\n    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-137-check/apps/f1/test-drives/assets/generic-check.mjs:1614:3",
+			"scope": {
+				"beforeAnswer": "d54c1f4e3483ad3050b29fd59bb5257fb346ded716fc2d90fc454c24ec430ae6",
+				"afterAnswer": "55f945c6492737d39703860bb0b6ec5760577e061c9df467d36f62e105f343b3",
+				"inventoryDigest": "24b4277de9ef9410b916f331091fa8fe21aa7a445a67c424292980f506413ba2",
+				"inventoryVersion": 1
+			},
+			"firstBoundInputDivergence": {
+				"event": {
+					"sequence": 57,
+					"at": "2026-10-21T22:00:02.324Z",
+					"consumer": "pipeline/specialist-review",
+					"producer": "pipeline/extract-requirements",
+					"message": "Bound input Extract requirements is stale; rerunning its configured producer before consuming it."
+				},
+				"mechanism": "WorkflowRuntime.ts1982 -> outputRevisionBinding -> normalized.outputs includes full accepted assess-impact slot; impact-checks mutates aliased operational decision.snapshot at2082-2089",
+				"comparison": {
+					"acceptedStored": {
+						"version": 1,
+						"repositories": [
+							{
+								"id": "app",
+								"headSha": "e25c55183b10f5dd75498f8461750fcb6c93ae68",
+								"treeSha": "f864e4f88d5579189fac59b46c046cd922f714e6",
+								"workspaceDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+							}
+						],
+						"historyLength": 12,
+						"inputScope": {
+							"outputKeys": [
+								"repository",
+								"ticket",
+								"clarify",
+								"decisions",
+								"plan",
+								"plan-review",
+								"delivery-route-accept",
+								"delivery-route",
+								"architecture",
+								"architecture-review",
+								"architecture-decision",
+								"implement",
+								"draft-pr",
+								"assess-impact"
+							],
+							"historyLength": 12
+						},
+						"inputExtrasDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"contextSourcesDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"inputDigest": "612d6e7d78f606903167e6a46df0034c21248fc37e159c12f241b4d1303d3bfc"
+					},
+					"currentStored": {
+						"version": 1,
+						"repositories": [
+							{
+								"id": "app",
+								"headSha": "e25c55183b10f5dd75498f8461750fcb6c93ae68",
+								"treeSha": "f864e4f88d5579189fac59b46c046cd922f714e6",
+								"workspaceDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+							}
+						],
+						"historyLength": 12,
+						"inputScope": {
+							"outputKeys": [
+								"repository",
+								"ticket",
+								"clarify",
+								"decisions",
+								"plan",
+								"plan-review",
+								"delivery-route-accept",
+								"delivery-route",
+								"architecture",
+								"architecture-review",
+								"architecture-decision",
+								"implement",
+								"draft-pr",
+								"assess-impact"
+							],
+							"historyLength": 12
+						},
+						"inputExtrasDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"contextSourcesDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"inputDigest": "8f9ac6f9cf04de54e493f55ab507a2404fc45e219064dcbe1a665009d38b9e16"
+					},
+					"acceptedReconstructed": {
+						"version": 1,
+						"repositories": [
+							{
+								"id": "app",
+								"headSha": "e25c55183b10f5dd75498f8461750fcb6c93ae68",
+								"treeSha": "f864e4f88d5579189fac59b46c046cd922f714e6",
+								"workspaceDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+							}
+						],
+						"historyLength": 12,
+						"inputScope": {
+							"outputKeys": [
+								"repository",
+								"ticket",
+								"clarify",
+								"decisions",
+								"plan",
+								"plan-review",
+								"delivery-route-accept",
+								"delivery-route",
+								"architecture",
+								"architecture-review",
+								"architecture-decision",
+								"implement",
+								"draft-pr",
+								"assess-impact"
+							],
+							"historyLength": 12
+						},
+						"inputExtrasDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"contextSourcesDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"inputDigest": "612d6e7d78f606903167e6a46df0034c21248fc37e159c12f241b4d1303d3bfc"
+					},
+					"currentReconstructed": {
+						"version": 1,
+						"repositories": [
+							{
+								"id": "app",
+								"headSha": "e25c55183b10f5dd75498f8461750fcb6c93ae68",
+								"treeSha": "f864e4f88d5579189fac59b46c046cd922f714e6",
+								"workspaceDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+							}
+						],
+						"historyLength": 12,
+						"inputScope": {
+							"outputKeys": [
+								"repository",
+								"ticket",
+								"clarify",
+								"decisions",
+								"plan",
+								"plan-review",
+								"delivery-route-accept",
+								"delivery-route",
+								"architecture",
+								"architecture-review",
+								"architecture-decision",
+								"implement",
+								"draft-pr",
+								"assess-impact"
+							],
+							"historyLength": 12
+						},
+						"inputExtrasDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"contextSourcesDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"inputDigest": "8f9ac6f9cf04de54e493f55ab507a2404fc45e219064dcbe1a665009d38b9e16"
+					},
+					"reconstructedHashesMatch": true,
+					"differences": [
+						{
+							"path": "/outputs/assess-impact/snapshot/trigger",
+							"accepted": "pipeline/draft-pr",
+							"current": "pipeline/extract-requirements"
+						},
+						{
+							"path": "/outputs/assess-impact/snapshot/digest",
+							"accepted": "c08a4e74cb31892da1976bd128c035c0fcd3c095c1cbc33b463b281b27f4fe9a",
+							"current": "a6b1378445f935c156fc2b4733ee32bc2749e7ea95d4e7367f683706390891db"
+						},
+						{
+							"path": "/outputs/assess-impact/snapshot/inventoryDigest",
+							"current": "24b4277de9ef9410b916f331091fa8fe21aa7a445a67c424292980f506413ba2"
+						}
+					]
+				},
+				"chunks": {
+					"firstAccepted": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-ADPvdt/home/factory/run-chunks/adee926940ee790453360526be5b8f18975d833d7261b033b287ac7029e32b4c.json",
+					"postImpactChecks": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-ADPvdt/home/factory/run-chunks/067bc912ad76b9c58dc8eaca086c324064b1de520618105ff694ffa52cee206b.json"
+				}
+			},
+			"secondBoundInputDivergence": {
+				"event": {
+					"sequence": 95,
+					"at": "2026-10-21T22:00:08.654Z",
+					"consumer": "pipeline/review-gate",
+					"producer": "pipeline/extract-requirements"
+				},
+				"oldInputDigest": "8f9ac6f9cf04de54e493f55ab507a2404fc45e219064dcbe1a665009d38b9e16",
+				"newInputDigest": "697bf9c0c8a407e9947185e260691f15477fe6af542f65ac356494291486f3d8",
+				"differences": [
+					{
+						"path": "/pending/specialists",
+						"before": [
+							"security-review",
+							"architecture-review",
+							"integration-review",
+							"simplicity-review",
+							"correctness-review",
+							"requirements-review"
+						],
+						"after": ["requirements-review"]
+					}
+				]
+			},
+			"fatalCheckHistoricalCollectorDivergence": {
+				"firstRenewalEvent": {
+					"sequence": 118,
+					"at": "2026-10-21T22:00:13.216Z",
+					"consumer": "pipeline/impact-checks"
+				},
+				"mechanism": "Impact.ts retained branch213-224 scans only history.output; Check aggregate is authorized history.evidence[review-evidence]; assertImpactFresh then loses exact prior round",
+				"comparison": {
+					"assessed": {
+						"schemaVersion": 1,
+						"contractDigest": "6e07e0e1524d534a190a11ad2342fc1373fef29971e38af2a794bc067a053bd2",
+						"deliveryMode": "repository",
+						"key": "pipeline/specialist-review",
+						"trigger": "pipeline/extract-requirements",
+						"sourceDigest": "55f945c6492737d39703860bb0b6ec5760577e061c9df467d36f62e105f343b3",
+						"environmentDigest": "d26b02606fd3aa1fa5fa40d8880cfac9a0585124bcb407ff7a35f2fd87938442",
+						"feedbackDigest": "6eb05459965f1964195ca481b4c8f90738e00a87fe5e0767c897c86441315a4d",
+						"findingsDigest": "663ab9f8aca40f92e0e1a8e66180149dfffd4b8571ba75efb106f787e431f990",
+						"progressFindingsDigest": "663ab9f8aca40f92e0e1a8e66180149dfffd4b8571ba75efb106f787e431f990",
+						"inventoryDigest": "24b4277de9ef9410b916f331091fa8fe21aa7a445a67c424292980f506413ba2",
+						"reviewRound": 1,
+						"reviewSourceDigest": "d54c1f4e3483ad3050b29fd59bb5257fb346ded716fc2d90fc454c24ec430ae6",
+						"reviewers": [
+							{
+								"id": "security-review",
+								"name": "Security and data protection",
+								"contract": "specialist-v1",
+								"promptDigest": "dceb33f6b5f45fb8e87258ea25426c95e786f9b772f5d84bb5983af8c4e82f59"
+							},
+							{
+								"id": "architecture-review",
+								"name": "Architecture and module boundaries",
+								"contract": "specialist-v1",
+								"promptDigest": "3977a71f7e8a8fe2a5621b78b0d61d231f96710269d804dfd016637b066c4fcd"
+							},
+							{
+								"id": "integration-review",
+								"name": "Repository fit and integration",
+								"contract": "specialist-v1",
+								"promptDigest": "38033947d67dd6e5a5a4687cf2f2dab4e6381a3c1d1710d4227066977c939284"
+							},
+							{
+								"id": "simplicity-review",
+								"name": "Simplicity and maintainability",
+								"contract": "specialist-v1",
+								"promptDigest": "a27e4a513b64d85aa80347e613d90acab8aaac21b29c46f389ed079b1a609f87"
+							},
+							{
+								"id": "correctness-review",
+								"name": "Correctness and verification",
+								"contract": "specialist-v1",
+								"promptDigest": "cdbf311617183dd8a357a60f80ed69ee8f44f1ec0a1fb4c64f94496663f1c2e0"
+							},
+							{
+								"id": "requirements-review",
+								"name": "Business requirements and acceptance",
+								"contract": "coverage-v1",
+								"promptDigest": "0f5ac9da371f7b82af0b63881bb8e92bf754fdc052353590289ee8dea19ac3b1"
+							}
+						],
+						"repositories": [
+							{
+								"repositoryId": "app",
+								"workspace": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-ADPvdt/worktrees/DEF-4",
+								"url": "https://github.com/fixture/app/pull/1",
+								"taskBase": "08979ea2b938baabb0e8fff35aafaf75bff60788",
+								"reviewHead": "e25c55183b10f5dd75498f8461750fcb6c93ae68",
+								"reviewBase": "08979ea2b938baabb0e8fff35aafaf75bff60788",
+								"headSha": "e25c55183b10f5dd75498f8461750fcb6c93ae68",
+								"treeSha": "f864e4f88d5579189fac59b46c046cd922f714e6",
+								"targetSha": "08979ea2b938baabb0e8fff35aafaf75bff60788",
+								"targetIncluded": true,
+								"combinedTree": "f864e4f88d5579189fac59b46c046cd922f714e6",
+								"files": [],
+								"targetFiles": [],
+								"targetDiff": "",
+								"combinedDiff": "",
+								"diff": "",
+								"uncertainty": []
+							}
+						],
+						"digest": "0f2d0ac523e20ccec6acaa646fba6c394cb3c88501d5f7c0f147580da74013cf"
+					},
+					"retainedRebuild": {
+						"schemaVersion": 1,
+						"contractDigest": "6e07e0e1524d534a190a11ad2342fc1373fef29971e38af2a794bc067a053bd2",
+						"deliveryMode": "repository",
+						"key": "pipeline/specialist-review",
+						"trigger": "pipeline/assess-impact",
+						"sourceDigest": "55f945c6492737d39703860bb0b6ec5760577e061c9df467d36f62e105f343b3",
+						"environmentDigest": "d26b02606fd3aa1fa5fa40d8880cfac9a0585124bcb407ff7a35f2fd87938442",
+						"feedbackDigest": "6eb05459965f1964195ca481b4c8f90738e00a87fe5e0767c897c86441315a4d",
+						"findingsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"progressFindingsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+						"inventoryDigest": "24b4277de9ef9410b916f331091fa8fe21aa7a445a67c424292980f506413ba2",
+						"reviewers": [
+							{
+								"id": "security-review",
+								"name": "Security and data protection",
+								"contract": "specialist-v1",
+								"promptDigest": "dceb33f6b5f45fb8e87258ea25426c95e786f9b772f5d84bb5983af8c4e82f59"
+							},
+							{
+								"id": "architecture-review",
+								"name": "Architecture and module boundaries",
+								"contract": "specialist-v1",
+								"promptDigest": "3977a71f7e8a8fe2a5621b78b0d61d231f96710269d804dfd016637b066c4fcd"
+							},
+							{
+								"id": "integration-review",
+								"name": "Repository fit and integration",
+								"contract": "specialist-v1",
+								"promptDigest": "38033947d67dd6e5a5a4687cf2f2dab4e6381a3c1d1710d4227066977c939284"
+							},
+							{
+								"id": "simplicity-review",
+								"name": "Simplicity and maintainability",
+								"contract": "specialist-v1",
+								"promptDigest": "a27e4a513b64d85aa80347e613d90acab8aaac21b29c46f389ed079b1a609f87"
+							},
+							{
+								"id": "correctness-review",
+								"name": "Correctness and verification",
+								"contract": "specialist-v1",
+								"promptDigest": "cdbf311617183dd8a357a60f80ed69ee8f44f1ec0a1fb4c64f94496663f1c2e0"
+							},
+							{
+								"id": "requirements-review",
+								"name": "Business requirements and acceptance",
+								"contract": "coverage-v1",
+								"promptDigest": "0f5ac9da371f7b82af0b63881bb8e92bf754fdc052353590289ee8dea19ac3b1"
+							}
+						],
+						"repositories": [
+							{
+								"repositoryId": "app",
+								"workspace": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-generic-check-ADPvdt/worktrees/DEF-4",
+								"url": "https://github.com/fixture/app/pull/1",
+								"taskBase": "08979ea2b938baabb0e8fff35aafaf75bff60788",
+								"headSha": "e25c55183b10f5dd75498f8461750fcb6c93ae68",
+								"treeSha": "f864e4f88d5579189fac59b46c046cd922f714e6",
+								"targetSha": "08979ea2b938baabb0e8fff35aafaf75bff60788",
+								"targetIncluded": true,
+								"combinedTree": "f864e4f88d5579189fac59b46c046cd922f714e6",
+								"files": ["shared.txt"],
+								"targetFiles": [],
+								"targetDiff": "",
+								"combinedDiff": "",
+								"diff": "diff --git a/shared.txt b/shared.txt\nindex 395b1aa..af243c3 100644\n--- a/shared.txt\n+++ b/shared.txt\n@@ -1 +1 @@\n-app base\n+app changed",
+								"uncertainty": []
+							}
+						],
+						"digest": "d6d8ac85087cb0e084905f4c0b94d194a659e5bc987c1909a6937f4884af91bb"
+					},
+					"differences": [
+						{
+							"path": "/trigger",
+							"assessed": "pipeline/extract-requirements",
+							"reconstructed": "pipeline/assess-impact"
+						},
+						{
+							"path": "/findingsDigest",
+							"assessed": "663ab9f8aca40f92e0e1a8e66180149dfffd4b8571ba75efb106f787e431f990",
+							"reconstructed": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+						},
+						{
+							"path": "/progressFindingsDigest",
+							"assessed": "663ab9f8aca40f92e0e1a8e66180149dfffd4b8571ba75efb106f787e431f990",
+							"reconstructed": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+						},
+						{
+							"path": "/reviewRound",
+							"assessed": 1
+						},
+						{
+							"path": "/reviewSourceDigest",
+							"assessed": "d54c1f4e3483ad3050b29fd59bb5257fb346ded716fc2d90fc454c24ec430ae6"
+						},
+						{
+							"path": "/repositories/0/reviewHead",
+							"assessed": "e25c55183b10f5dd75498f8461750fcb6c93ae68"
+						},
+						{
+							"path": "/repositories/0/reviewBase",
+							"assessed": "08979ea2b938baabb0e8fff35aafaf75bff60788"
+						},
+						{
+							"path": "/repositories/0/files/0",
+							"reconstructed": "shared.txt"
+						},
+						{
+							"path": "/repositories/0/diff",
+							"assessed": "",
+							"reconstructed": "diff --git a/shared.txt b/shared.txt\nindex 395b1aa..af243c3 100644\n--- a/shared.txt\n+++ b/shared.txt\n@@ -1 +1 @@\n-app base\n+app changed"
+						},
+						{
+							"path": "/digest",
+							"assessed": "0f2d0ac523e20ccec6acaa646fba6c394cb3c88501d5f7c0f147580da74013cf",
+							"reconstructed": "d6d8ac85087cb0e084905f4c0b94d194a659e5bc987c1909a6937f4884af91bb"
+						}
+					],
+					"producer": {
+						"step": "pipeline/review-gate",
+						"outputKeys": [
+							"passed",
+							"approved",
+							"findings",
+							"reviewIncomplete",
+							"reviewBlocked",
+							"questions",
+							"rawFindings",
+							"coverage",
+							"reviewers",
+							"disagreements"
+						],
+						"sidecar": "review-evidence",
+						"baseline": {
+							"key": "pipeline/specialist-review",
+							"round": 1,
+							"headSha": "e25c55183b10f5dd75498f8461750fcb6c93ae68",
+							"baseSha": "08979ea2b938baabb0e8fff35aafaf75bff60788",
+							"inventoryDigest": "24b4277de9ef9410b916f331091fa8fe21aa7a445a67c424292980f506413ba2",
+							"sourceContextDigest": "d54c1f4e3483ad3050b29fd59bb5257fb346ded716fc2d90fc454c24ec430ae6"
+						}
+					},
+					"reusedReceiptDigests": [
+						"bc7d5028b23ca155abcc09d0c1ab2a124e5c109dd22827e960e5e02e6efe433a",
+						"10b189448c6ebefc352bc63bb778b34a6af427dfaab6a7049d839c09282bc31d",
+						"e3f6b3bc7f547dbf0a3c20c7dc213a4cae5b440e804c6ce6cd6ac7cdbc6326f1",
+						"ec647b64316f82ff1d44e29927119a1e928796f9cc7211b4f9f5a2d9e24ae5c1",
+						"cddf2f0170075e57698bac2d9af685652be8e35266d2f1ac77e2deec5de0433e"
+					]
+				}
+			},
+			"normalModernBoundaryComparison": {
+				"scenario": "stock-repository",
+				"sessionId": "session-1",
+				"inventoryExecutions": 3,
+				"outcome": "completed",
+				"source": "Original unchanged stock F1 before new R1; successful guarded delivery despite pre-existing input refreshes"
+			},
+			"legacyComparison": {
+				"fixture": "packages/edge-worker/test/Impact.test.ts2041",
+				"assertions": {
+					"scope": 1,
+					"repair": 1,
+					"security": 1,
+					"business": 3,
+					"approved": true
+				},
+				"mechanism": "Legacy inventory config has explicit=false (though preset revision=bound); RevisionBinding.ts48 skips generic bound bindings for implicit legacy config. Legacy gate keeps baseline/full reviewer receipts in output, so retained collector finds its exact historical round. Parent reported unchanged test passing."
+			},
+			"recommendations": [
+				"Resolve historical retained aggregate through existing authenticated latestAggregate with optional exact round selector. Preserve producer, frame, approved projection and sidecar authority checks; no raw sidecar trust.",
+				"Do not bypass effective-input freshness: first binding hashes accurately reflect in-place mutation. Separate immutable accepted authored assessment output from mutable runtime snapshot/pending/check bookkeeping, keeping original native inspected evidence intact and auditing all consumers.",
+				"A restoration answer also truly changes the bound inventory input before reassessment. To retain one extraction, an assessor must consume the exact prior immutable inventory as historical evidence, independently authorize scopeReuse, then record that rebinding. Current generic forward-read freshness automatically reruns before assessor. No honest fixture-only cache, suppression or accepted receipt rewrite preserves stock1 under current inputs.",
+				"Keep original3 assertions and retained failed evidence. Do not relax inventory1/five original receipts/native sessions/security/approval checks to hide this distinction."
+			]
+		},
+		"comparisons": [
+			{
+				"path": "/tmp/taskbot137-r1-first-binding-comparison.json",
+				"sha256": "9a3ea992c3bb6edc24aebb225f7f561e55781aed99295397303c3253b1005d75"
+			},
+			{
+				"path": "/tmp/taskbot137-r1-retained-snapshot-comparison.json",
+				"sha256": "4a6125b5ab68609a52a5c1db619c59e8b2d78b30320369bbc2247fe79639a82d"
+			}
+		]
+	},
+	"implementationSeamReview": {
+		"receipt": {
+			"reviewer": "/root/check_f1 (disjoint F1 helper; read-only seam review)",
+			"at": "2026-10-21T22:11:39.406260+00:00",
+			"head": "bb5e0ebdc6926a22b6c3369bd62669f62b24903f",
+			"workingFileSha256": {
+				"packages/edge-worker/src/factory/Impact.ts": "c882cb92362de3d102ade964af5a8781b970ceb82f70ccd41090d76cf40735c4",
+				"packages/edge-worker/src/factory/SpecialistReview.ts": "c8bcf9674d249dc311248dbd74373b5c1f535c0b953fa95205fdf701d23f123e",
+				"packages/edge-worker/src/factory/WorkflowRuntime.ts": "8830a57ecd5671863440651a34d40b426bd23a10a809839672a7a7acb4cb4260",
+				"packages/edge-worker/test/CheckImpactRetention.test.ts": "2978a71da42fd84bbb503eba1dace014f9f1cb39b7017d8e6356410003e6e015",
+				"apps/f1/test-drives/assets/generic-check.mjs": "f008e6aa3ac97a175ed2be46c72af89fa94faf45b6bee9e9b543628299de4484"
+			},
+			"scope": "Exact Taskbot2090 historical inventory authority seam and retained Check snapshot resolver; no full-suite or acceptance clearance",
+			"findings": [],
+			"previousReviewFindingsResolved": [
+				"Assessor now compares complete original inventory including sourceContextDigest/scopeReuse; forged/missing markers cannot be normalized into authority",
+				"All roles require explicit configuration; fanout impact backedge, declared consumer fanout and actual lexical fanout frame must match",
+				"Consumers resolve authenticated aggregate by the current independent decision exact retained round, while assessors resolve latest authenticated aggregate",
+				"Dedicated missing derivative-marker negative exposed qaDigest(undefined) throwing; explicit !inventory.scopeReuse guard now fails closed before digest comparison"
+			],
+			"conditions": [
+				{
+					"case": "ordinary reads/results/names",
+					"sourceResult": "Denied unless explicit inventory-evidence source and impact-reuse assessor or explicit impact-boundary consumer with declared role edges"
+				},
+				{
+					"case": "missing/altered semantic inventory",
+					"sourceResult": "Full semantic inventory comparison against authenticated original; only consumer derivative source/proof fields may differ, and those match exact decision"
+				},
+				{
+					"case": "missing/altered/stale/cross-frame scope proof",
+					"sourceResult": "Exact declared assessor/fanout/inventory/frame, completed decision, retained round, original source/inventory digest and derivative snapshot marker; existing authorized aggregate resolver"
+				},
+				{
+					"case": "changed repository/revision/working tree",
+					"sourceResult": "Original/current binding repository arrays must match; consumer assertImpactFresh additionally recomputes target, environment, source and receipt dependencies"
+				},
+				{
+					"case": "new answer or changed actual scope",
+					"sourceResult": "Historical assessor may inspect exact old evidence without freshness claim; consumer inventory source must match current input scope and independent current assertImpactFresh. New answers cannot inherit old proof"
+				},
+				{
+					"case": "original preservation",
+					"sourceResult": "Helper reads/returns boolean only; original run.boundOutputs untouched; accepted assessment structuredClone breaks operational alias; scopeReuse replaces only current derivative inventory, immutable historical original retained"
+				},
+				{
+					"case": "retained Check resolver",
+					"sourceResult": "Optional round filters existing authenticated latestAggregate; sidecar still requires configured producer, review-boundary/evidence, expected frame and approved projection. Missing/ordinary/cross-frame receipts remain unavailable"
+				}
+			],
+			"limitations": [
+				"Read-only review; no tests, heavy runs or new launches performed by this helper in this review turn",
+				"Root reported focused stock R1 passed, including original binding/assessment byte assertions; report not independently rerun here",
+				"Final combined full gates, final8 scenario drive, and parent independent acceptance remain outstanding",
+				"Root added missing-marker guard after dedicated negative exposed a thrown qaDigest(undefined); engine rerun remains owner evidence and was not executed by this reviewer"
+			],
+			"recommendedNegatives": [
+				"ordinary and implicit-only consumer/source/assessor/fanout",
+				"missing/altered semantic inventory and same-digest altered requirement/sourceReceipt",
+				"missing/stale/altered derivative scope proof, wrong original source/digest/snapshot marker",
+				"cross-frame and mismatched fanout/assessor backedge; wrong/nonexistent retained round; missing sidecar/ordinary producer",
+				"changed HEAD/tree/dirty workspace; target-only advancement; new answer and actual scope mutation",
+				"positive newer round coexistence resolves original exact retained inventory and keeps original binding/receipt bytes; durable recovery executes only outstanding work"
+			],
+			"updatedAt": "2026-10-21T22:14:10.009104+00:00"
+		},
+		"rawReceipt": "/tmp/taskbot137-r1-authority-seam-review.json",
+		"rawSha256": "9ce57ab8e8a7f2d052c57c54e4258436c5db426b08b45df3f6a31d79b5e3b227",
+		"scope": "Disjoint source seam review; the three production source hashes match the frozen candidate. Its test-file hash records an earlier work-in-progress, not negative-test execution; final test bytes/results are recorded separately. Not independent acceptance",
+		"finalTestSourceSha256": "fcb77d6526d96df180f9b95322bc245b372fe147836eaf03a1523b96bc0c2c55"
+	},
+	"priorFocusedEvidence": [
+		{
+			"path": "/tmp/taskbot137-r1-retention-red.log",
+			"sha256": "e87c12cfe53ef1512a12695aa8f5a22e99f4d24dc9f5ec2d342a91cd7cff42a2"
+		},
+		{
+			"path": "/tmp/taskbot137-r1-red-identity.txt",
+			"sha256": "5a730eda39d8f7fed0edab64be3166ea6b7b89f392aff64f9d9ca360bc6e06a7"
+		},
+		{
+			"path": "/tmp/taskbot137-r1-retention-final-v2.log",
+			"sha256": "28c9eed9a4681cb59e51bce21efbd7acdbaf17231063e0ce8fee51771f6a9fb2"
+		},
+		{
+			"path": "/tmp/taskbot137-r1-focused-stock-f1-v1.json",
+			"sha256": "70225268481b3ebab277392813b3828219ff5d17fe751f56f5db6e99f8298a9b"
+		}
+	]
+}
