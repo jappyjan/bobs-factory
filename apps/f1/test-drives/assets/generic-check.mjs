@@ -471,18 +471,31 @@ function guide() {
 function reply(format, run, snapshot, workingDirectory) {
 	if (
 		recovery?.kind === "specialist" &&
-		format === "specialist-v1" &&
+		format === "coverage-v1" &&
 		fork.original(snapshot.workflowExecution.currentStep.id) ===
-			"correctness-review" &&
+			"requirements-review" &&
 		!recovery.released
 	) {
 		recovery.blockedTurns++;
 		return {
 			status: "blocked",
 			blockers: ["Fixture specialist access is temporarily unavailable"],
-			summary: "Correctness review could not finish",
+			summary: "Final acceptance coverage review could not finish",
 			findings: [],
 			disagreements: [],
+			// Like the retained legacy blocked-coverage fixture, the blocked status
+			// prevents acceptance while preserving the prerequisite reviewers' work.
+			coverage: [
+				{
+					requirementId: "R1",
+					status: "met",
+					reason:
+						"Completed prerequisite reviewers cover the saved-record implementation; final independent fixture inspection remains blocked by access.",
+					evidence: [
+						"Completed specialist receipts at the frozen baseline; final acceptance fixture inspection is not completed",
+					],
+				},
+			],
 		};
 	}
 	const request =
@@ -977,7 +990,7 @@ function specialistRecoveryAssessment(run, snapshot) {
 		assert(
 			prior.every(
 				({ receipt }) =>
-					fork.original(receipt.stamp.reviewer) !== "correctness-review",
+					fork.original(receipt.stamp.reviewer) !== "requirements-review",
 			),
 			"The blocked reviewer cannot supply retained completed evidence",
 		);
@@ -1009,7 +1022,7 @@ function specialistRecoveryAssessment(run, snapshot) {
 		impactContract: "impact-v1",
 		status: "completed",
 		summary: current.reviewRound
-			? "Retain completed independent evidence; retry only the blocked correctness reviewer"
+			? "Retain completed independent evidence; retry only the blocked coverage reviewer"
 			: "Review the complete implementation",
 		classification: current.reviewRound ? "none" : "full",
 		rationale: current.reviewRound
@@ -1120,7 +1133,7 @@ async function specialistRecovery(renamed) {
 		(turn) => turn.role === "assess-impact",
 	);
 	const reviewed = continuation.findIndex(
-		(turn) => turn.role === "correctness-review",
+		(turn) => turn.role === "requirements-review",
 	);
 	assert(
 		assessment >= 0 && reviewed > assessment,
@@ -1144,7 +1157,7 @@ async function specialistRecovery(renamed) {
 	const reassessment = recovery.assessments.at(-1);
 	assert.deepEqual(
 		reassessment.specialists.map(fork.original),
-		["correctness-review"],
+		["requirements-review"],
 		"Only the blocked reviewer remains outstanding after reassessment",
 	);
 	const specialistCounts = Object.fromEntries(
@@ -1157,7 +1170,7 @@ async function specialistRecovery(renamed) {
 			).length;
 			assert.equal(
 				count,
-				role === "correctness-review" ? 2 : 1,
+				role === "requirements-review" ? 2 : 1,
 				`${role}: completed independent reviewers must not replay`,
 			);
 			return [role, count];
