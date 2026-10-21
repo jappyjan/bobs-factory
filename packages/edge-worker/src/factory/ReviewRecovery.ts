@@ -25,7 +25,7 @@ interface FixAssessment {
 	instructionsSha256: string;
 }
 
-export const reviewFixInstructions = `Read /reviewFix/findings for ALL unresolved consequential findings, even when customized recipe inputs hide the gate. If /reviewFix/review is incomplete, its retained findings are correction inputs, never completed review or approval. Repair concrete findings and preserve the declared independent reassessment; report missing access or evidence in questions. When no usable findings exist, identify the configured review work that must run again instead of claiming review passed. Return a fixed or evidence-backed rejected disposition for each finding you can address. If missing deployment, access, fixtures, evidence or a necessary decision prevents progress, return questions:["specific assistance needed"] alongside summary and dispositions; asking only in summary does not pause the workflow. Never mark blocked findings fixed or rejected merely to advance. Return questions:[] when assistance is unnecessary. Read /reviewFix/answers before retrying. An answer does not waive findings, required QA or approval. A rejected complaint still receives reviewer reassessment.`;
+export const reviewFixInstructions = `Read /reviewFix/findings for ALL unresolved consequential findings, even when customized recipe inputs hide the gate. If /reviewFix/review is incomplete, its retained findings are correction inputs, never completed review or approval. Repair concrete findings and preserve the declared independent reassessment; report missing access or evidence in questions. When no usable findings exist, identify the configured review work that must run again instead of claiming review passed. Return a fixed or evidence-backed rejected disposition for each finding you can address. If the correction needs a materially changed architecture or a genuine scope revision, preserve work and use the existing configured proposal route: return status:"blocked", architectureRevision:true, a concrete summary, dispositions only for findings already addressed, and questions:[]. The runtime redrafts and independently reviews the proposal before any required exact-candidate acceptance. This handback leaves unresolved findings open and never authorizes implementation or delivery. Do not ask the human to schedule proposal drafting. If no applicable route exists, report that specific limitation. If missing deployment, access, fixtures, evidence or a necessary human decision prevents progress, return questions:["specific assistance needed"] alongside summary and dispositions; asking only in summary does not pause the workflow. Never mark blocked findings fixed or rejected merely to advance. Return questions:[] when assistance is unnecessary. Read /reviewFix/answers before retrying. An answer does not waive findings, required QA or approval. A rejected complaint still receives reviewer reassessment.`;
 
 function openFindings(value: unknown): Finding[] {
 	const findings = (value as { findings?: Finding[] } | undefined)?.findings;
@@ -203,7 +203,16 @@ export function validateReviewFix(
 	const value = output as {
 		dispositions: { id: string }[];
 		questions?: string[];
+		status?: string;
+		architectureRevision?: boolean;
 	};
+	if (
+		value.architectureRevision === true &&
+		value.status === "blocked" &&
+		Array.isArray(value.questions) &&
+		value.questions.length === 0
+	)
+		return;
 	const missing = factoryReviewFixContext(context).findings.filter(
 		(finding) => !value.dispositions.some((item) => item.id === finding.id),
 	);

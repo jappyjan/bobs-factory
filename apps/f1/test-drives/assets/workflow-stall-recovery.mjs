@@ -14,6 +14,7 @@ import {
 	validateInventory,
 } from "../../../../packages/edge-worker/dist/factory/SpecialistReview.js";
 import { stepVisitLimit } from "../../../../packages/edge-worker/dist/factory/StepVisitBudget.js";
+import { checkin } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
@@ -113,6 +114,79 @@ const providerWorkflow = {
 		agent("hold", { askQuestions: true, next: "end" }),
 	],
 };
+const stockPipeline = defaultWorkflows.find(
+	(workflow) => workflow.id === "factory-pipeline",
+);
+const proposalStep = structuredClone(
+	stockPipeline.steps.find((step) => step.id === "architecture"),
+);
+const proposalReview = structuredClone(
+	stockPipeline.steps.find((step) => step.id === "architecture-review"),
+);
+const proposalDecision = structuredClone(
+	stockPipeline.steps.find((step) => step.id === "architecture-decision"),
+);
+const architectureWorkflow = {
+	id: "fixer-architecture-fixture",
+	name: "Fixer architecture handback fixture",
+	allowedTriggers: ["manual"],
+	steps: [
+		{ ...proposalStep, id: "draft-boundary", next: "inspect-boundary" },
+		{
+			...proposalReview,
+			id: "inspect-boundary",
+			architectureSource: "draft-boundary",
+			next: "accept-boundary",
+			branches: [
+				{ when: { path: "approved", equals: false }, next: "draft-boundary" },
+			],
+		},
+		{
+			...proposalDecision,
+			id: "accept-boundary",
+			arguments: {
+				...proposalDecision.arguments,
+				proposal: "draft-boundary",
+				review: "inspect-boundary",
+				revise: "draft-boundary",
+			},
+			next: "code-fix",
+			branches: [
+				{
+					when: { path: "decision", equals: "revise" },
+					next: "draft-boundary",
+				},
+			],
+		},
+		...structuredClone(
+			fixtureWorkflow.steps.filter((step) => step.id !== "entry"),
+		),
+	],
+};
+function boundaryProposal(version) {
+	const value = checkin();
+	value.title = "Approve the necessary correction before changing its boundary";
+	value.summary =
+		"Keep unresolved review findings while reviewing the correction.";
+	value.candidate.plan =
+		version === 1
+			? "Correct the fixture within the existing boundary."
+			: "Change the accepted boundary before correcting the fixture; retain independent review and final approval.";
+	value.changes =
+		version === 1
+			? []
+			: [
+					{
+						text: "The correction changes the accepted boundary.",
+						from: "bob",
+					},
+				];
+	value.evidence[0].paths = ["source.txt"];
+	value.problem[0].paths = ["source.txt"];
+	value.candidate.steps[0].files = [{ path: "source.txt", change: "edit" }];
+	value.map.parts[0].file = "source.txt";
+	return value;
+}
 const turns = [],
 	providerRequests = [],
 	contexts = [];
@@ -170,6 +244,7 @@ const config = {
 					["business:F1"],
 				);
 				contexts.push({
+					run: run.id,
 					role,
 					review: context.reviewFix.review,
 					findingIds: context.reviewFix.findings.map((finding) => finding.id),
@@ -182,6 +257,22 @@ const config = {
 						"Provide the controlled fixture needed to resolve the finding",
 					],
 				};
+				if (run.workflow.id === architectureWorkflow.id)
+					output = {
+						status: "blocked",
+						architectureRevision: true,
+						summary:
+							"The correction changes the accepted boundary; review a fresh proposal before implementation.",
+						dispositions: [],
+						questions: [],
+					};
+			}
+			if (role === "draft-boundary")
+				output = boundaryProposal((run.architectureProposals?.length ?? 0) + 1);
+			if (role === "inspect-boundary") {
+				assert.equal(run.architectureProposals.at(-1).source, "draft-boundary");
+				assert.equal(context.workflowExecution.currentStep.id, role);
+				output = { approved: true, feedback: [] };
 			}
 			if (role === "clarify")
 				output = {
@@ -287,7 +378,12 @@ function waiting(id, step) {
 try {
 	construct();
 	runtime.updateWorkflows(
-		[...runtime.listWorkflows(), fixtureWorkflow, providerWorkflow],
+		[
+			...runtime.listWorkflows(),
+			fixtureWorkflow,
+			providerWorkflow,
+			architectureWorkflow,
+		],
 		fixtureWorkflow.id,
 	);
 	await worker.start();
@@ -548,6 +644,188 @@ try {
 		JSON.stringify(runtime.get(budget.id).workflowDefinitions),
 		acceptedWorkflow,
 	);
+	await until(
+		() =>
+			waiting(retained.id, "code-fix") &&
+			runtime.canRecheckQuestions(retained.id),
+		"Saved assistance did not restore its bounded recheck action",
+	);
+	const beforeRecheck = runtime.get(retained.id);
+	const questionContext = {
+		step: beforeRecheck.step,
+		questionBatchId: beforeRecheck.questionBatchId,
+		questions: [...beforeRecheck.questions],
+	};
+	const retainedAnswers = JSON.stringify(beforeRecheck.answers);
+	const retainedWorkflow = JSON.stringify([
+		beforeRecheck.workflow,
+		beforeRecheck.workflowDefinitions,
+	]);
+	const retainedHistory = beforeRecheck.history.length;
+	const priorTurns = turns.filter(
+		(turn) => turn.run === retained.id && turn.role === "code-fix",
+	).length;
+	const postRecheck = (context) =>
+		fetch(`${factoryOrigin}/api/runs/${retained.id}/recheck`, {
+			method: "POST",
+			headers: {
+				Origin: factoryOrigin,
+				"X-Factory-Request": "1",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ context }),
+		});
+	const stale = await postRecheck({
+		...questionContext,
+		questionBatchId: "obsolete-batch",
+	});
+	assert.equal(stale.status, 409, await stale.text());
+	assert.equal(
+		turns.filter((turn) => turn.run === retained.id && turn.role === "code-fix")
+			.length,
+		priorTurns,
+	);
+	const rechecked = await postRecheck(questionContext);
+	assert.equal(rechecked.status, 202, await rechecked.text());
+	await until(
+		() =>
+			waiting(retained.id, "code-fix") &&
+			runtime.get(retained.id).questionBatchId !==
+				questionContext.questionBatchId,
+		"Recheck did not re-enter the retained role and publish a fresh question batch",
+	);
+	const afterRecheck = runtime.get(retained.id);
+	assert.equal(
+		turns.filter((turn) => turn.run === retained.id && turn.role === "code-fix")
+			.length,
+		priorTurns + 1,
+	);
+	assert.equal(
+		turns
+			.filter((turn) => turn.run === retained.id && turn.role === "code-fix")
+			.at(-1).nativeSessionId,
+		"retained-code-fix",
+	);
+	assert.equal(JSON.stringify(afterRecheck.answers), retainedAnswers);
+	assert.equal(
+		JSON.stringify([afterRecheck.workflow, afterRecheck.workflowDefinitions]),
+		retainedWorkflow,
+	);
+	assert.equal(afterRecheck.history.length, retainedHistory + 1);
+	assert.equal(afterRecheck.humanDecisions?.length ?? 0, 0);
+	assert.equal((await postRecheck(questionContext)).status, 409);
+	const architectureRun = runtime.create({
+		id: "fixer-architecture-handback",
+		repositoryId: "fixture",
+		workspace,
+		input: "Review a changed correction boundary before implementing it.",
+		workflow: runtime
+			.listWorkflows()
+			.find((w) => w.id === architectureWorkflow.id),
+		workflowDefinitions: runtime.listWorkflows(),
+		triggerOrigin: { type: "manual", workflowId: architectureWorkflow.id, at },
+	});
+	architectureRun.outputs = {
+		inventory: structuredClone(inventory),
+		"specialist-review": [{ business: structuredClone(specialist) }],
+	};
+	architectureRun.reviewRounds = [structuredClone(baseline)];
+	architectureRun.history = [
+		{
+			step: "specialist-review/0/business",
+			output: structuredClone(specialist),
+			at,
+		},
+	];
+	const originalFindingReceipt = JSON.stringify(architectureRun.history[0]);
+	const frozenArchitectureWorkflow = JSON.stringify(architectureRun.workflow);
+	void runtime.launch(architectureRun);
+	await until(
+		() => waiting(architectureRun.id, "accept-boundary"),
+		"Initial architecture did not reach explicit acceptance",
+	);
+	assert.equal(
+		turns.filter(
+			(turn) => turn.run === architectureRun.id && turn.role === "code-fix",
+		).length,
+		0,
+	);
+	const firstProposal = architectureRun.architectureProposals[0];
+	const acceptProposal = (proposal) =>
+		fetch(
+			`${factoryOrigin}/api/runs/${architectureRun.id}/architecture-decision`,
+			{
+				method: "POST",
+				headers: {
+					Origin: factoryOrigin,
+					"X-Factory-Request": "1",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					proposalId: proposal.id,
+					version: proposal.version,
+					digest: proposal.digest,
+					decision: "accept",
+				}),
+			},
+		);
+	const firstAcceptance = await acceptProposal(firstProposal);
+	assert.equal(firstAcceptance.status, 202, await firstAcceptance.text());
+	await until(
+		() =>
+			waiting(architectureRun.id, "accept-boundary") &&
+			architectureRun.architectureProposals.length === 2,
+		"Fixer handback did not redraft and independently review the changed architecture",
+	);
+	assert.deepEqual(
+		turns
+			.filter((turn) => turn.run === architectureRun.id)
+			.map((turn) => turn.role),
+		[
+			"draft-boundary",
+			"inspect-boundary",
+			"code-fix",
+			"draft-boundary",
+			"inspect-boundary",
+		],
+	);
+	assert.equal(architectureRun.outputs["code-fix"].status, "blocked");
+	assert.equal(architectureRun.outputs["code-fix"].architectureRevision, true);
+	assert.deepEqual(architectureRun.outputs["code-fix"].dispositions, []);
+	assert.deepEqual(architectureRun.outputs["code-fix"].questions, []);
+	assert.equal(architectureRun.architectureProposals[1].status, "pending");
+	assert.equal(architectureRun.architectureProposals[1].version, 2);
+	assert.equal(
+		architectureRun.architectureProposals[1].continuation,
+		undefined,
+	);
+	assert.equal(
+		architectureRun.architectureGate.proposalId,
+		architectureRun.architectureProposals[1].id,
+	);
+	assert.equal(architectureRun.architectureDecisions.length, 1);
+	assert.equal(
+		architectureRun.architectureDecisions[0].proposalId,
+		firstProposal.id,
+	);
+	assert.equal(architectureRun.outputs["review-gate"], undefined);
+	assert.equal(
+		JSON.stringify(architectureRun.history[0]),
+		originalFindingReceipt,
+	);
+	assert.equal(
+		JSON.stringify(architectureRun.workflow),
+		frozenArchitectureWorkflow,
+	);
+	assert.equal(
+		architectureRun.outputs["specialist-review"][0].business.findings[0].status,
+		"open",
+	);
+	assert.deepEqual(architectureRun.answers, []);
+	assert.equal(architectureRun.humanDecisions?.length ?? 0, 0);
+	assert.equal((await acceptProposal(firstProposal)).status, 409);
+	assert.equal(architectureRun.architectureDecisions.length, 1);
+	assert.equal(runtime.canRecheckQuestions(architectureRun.id), false);
 	const activities = await rpc("viewSession", {
 		sessionId: session.sessionId,
 		limit: 200,
@@ -568,6 +846,12 @@ try {
 					existingStockBudgetDoubledWithoutGraphChanges: true,
 					priorAdditionalPassesPreserved: true,
 					restartDoesNotDoubleAgain: true,
+					explicitQuestionRecheckRetainsNativeConversation: true,
+					staleQuestionRecheckRejected: true,
+					questionRecheckDoesNotSubmitAnswersOrApproval: true,
+					fixerArchitectureHandbackReachesRenamedProposalRoute: true,
+					fixerArchitectureHandbackRequiresFreshAcceptance: true,
+					fixerArchitectureHandbackPreservesUnresolvedFindings: true,
 					ciUsesLiveTarget: true,
 					localTargetRemainsStable: true,
 				},

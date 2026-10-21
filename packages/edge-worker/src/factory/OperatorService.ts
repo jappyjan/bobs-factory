@@ -260,6 +260,10 @@ export class OperatorService {
 						!pendingReview,
 					"Run must be waiting for workflow questions, outside human review",
 				),
+				recheck_run: action(
+					executionAllowed && this.runtime.canRecheckQuestions(id),
+					"Recheck requires a waiting agent question outside approval gates",
+				),
 				steer_run: action(
 					executionAllowed &&
 						!!chat?.enabled &&
@@ -463,7 +467,7 @@ export class OperatorService {
 				else this.retry(run.id);
 			} else if (name === "retry_ticket_sync") await this.retryTracking(run.id);
 			else if (name === "stop_run") this.stop(run.id);
-			else if (name === "answer_run") {
+			else if (name === "answer_run" || name === "recheck_run") {
 				const displayed = this.inspect(run.id).questionContext;
 				if (
 					args.context.step !== displayed.step ||
@@ -472,13 +476,20 @@ export class OperatorService {
 				)
 					throw new OperatorError(
 						"stale_state",
-						"The question batch changed. Inspect again before answering.",
+						"The question batch changed. Inspect again before acting.",
 					);
-				await this.answer(run.id, args.answer, args.kind, {
-					step: run.step,
-					questionBatchId: run.questionBatchId,
-					questions: run.questions,
-				});
+				if (name === "recheck_run")
+					await this.recheck(run.id, {
+						step: run.step!,
+						questionBatchId: run.questionBatchId!,
+						questions: [...run.questions],
+					});
+				else
+					await this.answer(run.id, args.answer, args.kind, {
+						step: run.step,
+						questionBatchId: run.questionBatchId,
+						questions: run.questions,
+					});
 			} else if (name === "steer_run") await this.steer(run.id, args.text);
 			this.epochs.set(run.id, (this.epochs.get(run.id) ?? 0) + 1);
 			return {
@@ -504,6 +515,12 @@ export class OperatorService {
 	}
 	retryTracking(id: string) {
 		return this.runtime.retryTracking(id);
+	}
+	recheck(
+		id: string,
+		context: { step: string; questionBatchId: string; questions: string[] },
+	) {
+		return this.runtime.recheckQuestions(id, context);
 	}
 	async answer(
 		id: string,

@@ -99,6 +99,24 @@ export const operatorTools = [
 		schema: z.object(mutation).strict(),
 	},
 	{
+		name: "recheck_run",
+		scope: "operate",
+		description:
+			"Ask the waiting role to reassess its current questions after conditions change, retaining its conversation. Does not submit answers, grant iterations or approve work. Requires fresh inspection and the exact question context.",
+		schema: z
+			.object({
+				...mutation,
+				context: z
+					.object({
+						step: id,
+						questionBatchId: id,
+						questions: z.array(z.string()).min(1),
+					})
+					.strict(),
+			})
+			.strict(),
+	},
+	{
 		name: "answer_run",
 		scope: "operate",
 		description:
