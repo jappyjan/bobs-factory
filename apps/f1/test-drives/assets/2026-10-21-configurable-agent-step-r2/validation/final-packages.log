@@ -1,0 +1,138 @@
+{"identity": {"source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["pnpm", "test:packages:run", "--maxWorkers=2"], "started": "2026-10-21T19:30:18.389209+00:00"}
+
+> bobs-factory-monorepo@1.0.1 test:packages:run /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery
+> pnpm --filter './packages/*' test:run --maxWorkers=2
+
+Scope: 16 of 20 workspace projects
+packages/cloudflare-tunnel-client test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/core test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/mcp-tools test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/mcp-tools test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/mcp-tools
+packages/cloudflare-tunnel-client test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/cloudflare-tunnel-client
+packages/core test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/core
+packages/cloudflare-tunnel-client test:run:  Test Files  2 passed (2)
+packages/cloudflare-tunnel-client test:run:       Tests  26 passed (26)
+packages/cloudflare-tunnel-client test:run:    Start at  22:30:22
+packages/cloudflare-tunnel-client test:run:    Duration  1.46s (transform 247ms, setup 0ms, import 511ms, tests 641ms, environment 0ms)
+packages/cloudflare-tunnel-client test:run: Done
+packages/core test:run:  Test Files  19 passed (19)
+packages/core test:run:       Tests  263 passed (263)
+packages/core test:run:    Start at  22:30:23
+packages/core test:run:    Duration  21.94s (transform 2.24s, setup 0ms, import 6.81s, tests 24.03s, environment 11ms)
+packages/core test:run: Done
+packages/mcp-tools test:run: To /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-operator-7fpBO5/upstream.git
+packages/mcp-tools test:run:  * [new branch]      main -> main
+packages/mcp-tools test:run:  Test Files  14 passed (14)
+packages/mcp-tools test:run:       Tests  82 passed (82)
+packages/mcp-tools test:run:    Start at  22:30:22
+packages/mcp-tools test:run:    Duration  58.52s (transform 26.99s, setup 0ms, import 46.80s, tests 62.04s, environment 2ms)
+packages/mcp-tools test:run: Done
+packages/claude-runner test:run$ vitest run --maxWorkers=2
+packages/config-updater test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/github-event-transport test:run$ vitest run --maxWorkers=2
+packages/gitlab-event-transport test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/gitlab-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/gitlab-event-transport
+packages/github-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/github-event-transport
+packages/config-updater test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/config-updater
+packages/claude-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/claude-runner
+packages/gitlab-event-transport test:run:  Test Files  1 passed (1)
+packages/gitlab-event-transport test:run:       Tests  11 passed (11)
+packages/gitlab-event-transport test:run:    Start at  22:31:22
+packages/gitlab-event-transport test:run:    Duration  1.32s (transform 124ms, setup 0ms, import 273ms, tests 6ms, environment 0ms)
+packages/gitlab-event-transport test:run: Done
+packages/linear-event-transport test:run$ vitest run --maxWorkers=2
+packages/linear-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/linear-event-transport
+packages/github-event-transport test:run:  Test Files  5 passed (5)
+packages/github-event-transport test:run:       Tests  117 passed (117)
+packages/github-event-transport test:run:    Start at  22:31:22
+packages/github-event-transport test:run:    Duration  5.83s (transform 2.79s, setup 0ms, import 4.97s, tests 671ms, environment 1ms)
+packages/github-event-transport test:run: Done
+packages/slack-event-transport test:run$ vitest run --maxWorkers=2
+packages/slack-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/slack-event-transport
+packages/slack-event-transport test:run:  Test Files  3 passed (3)
+packages/slack-event-transport test:run:       Tests  82 passed (82)
+packages/slack-event-transport test:run:    Start at  22:31:30
+packages/slack-event-transport test:run:    Duration  3.97s (transform 2.38s, setup 0ms, import 3.61s, tests 161ms, environment 0ms)
+packages/slack-event-transport test:run: Done
+packages/zulip-event-transport test:run$ vitest run --maxWorkers=2
+packages/claude-runner test:run:  Test Files  12 passed (12)
+packages/claude-runner test:run:       Tests  137 passed (137)
+packages/claude-runner test:run:    Start at  22:31:22
+packages/claude-runner test:run:    Duration  12.32s (transform 3.46s, setup 0ms, import 12.41s, tests 1.31s, environment 2ms)
+packages/claude-runner test:run: Done
+packages/linear-event-transport test:run:  Test Files  6 passed (6)
+packages/linear-event-transport test:run:       Tests  75 passed (75)
+packages/linear-event-transport test:run:    Start at  22:31:25
+packages/linear-event-transport test:run:    Duration  9.59s (transform 3.47s, setup 0ms, import 11.43s, tests 1.67s, environment 1ms)
+packages/linear-event-transport test:run: Done
+packages/zulip-event-transport test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/zulip-event-transport
+packages/zulip-event-transport test:run:  Test Files  3 passed (3)
+packages/zulip-event-transport test:run:       Tests  25 passed (25)
+packages/zulip-event-transport test:run:    Start at  22:31:35
+packages/zulip-event-transport test:run:    Duration  1.37s (transform 678ms, setup 0ms, import 1.10s, tests 105ms, environment 0ms)
+packages/zulip-event-transport test:run: Done
+packages/config-updater test:run:  Test Files  8 passed (8)
+packages/config-updater test:run:       Tests  52 passed (52)
+packages/config-updater test:run:    Start at  22:31:22
+packages/config-updater test:run:    Duration  15.97s (transform 1.98s, setup 0ms, import 6.07s, tests 17.51s, environment 1ms)
+packages/config-updater test:run: Done
+packages/simple-agent-runner test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/simple-agent-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/simple-agent-runner
+packages/simple-agent-runner test:run:  Test Files  2 passed (2)
+packages/simple-agent-runner test:run:       Tests  24 passed (24)
+packages/simple-agent-runner test:run:    Start at  22:31:38
+packages/simple-agent-runner test:run:    Duration  506ms (transform 66ms, setup 0ms, import 125ms, tests 223ms, environment 0ms)
+packages/simple-agent-runner test:run: Done
+packages/codex-runner test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/gemini-runner test:run$ vitest run --maxWorkers=2
+packages/cursor-runner test:run$ node ../../node_modules/.pnpm/node_modules/vitest/vitest.mjs run --passWithNoTests --maxWorkers=2
+packages/opencode-runner test:run$ vitest run --passWithNoTests --maxWorkers=2
+packages/cursor-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/cursor-runner
+packages/codex-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/codex-runner
+packages/gemini-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/gemini-runner
+packages/opencode-runner test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/opencode-runner
+packages/gemini-runner test:run:  Test Files  4 passed (4)
+packages/gemini-runner test:run:       Tests  200 passed | 1 skipped (201)
+packages/gemini-runner test:run:    Start at  22:31:39
+packages/gemini-runner test:run:    Duration  3.87s (transform 2.10s, setup 0ms, import 4.70s, tests 653ms, environment 0ms)
+packages/gemini-runner test:run: Done
+packages/cursor-runner test:run:  Test Files  8 passed (8)
+packages/cursor-runner test:run:       Tests  56 passed (56)
+packages/cursor-runner test:run:    Start at  22:31:39
+packages/cursor-runner test:run:    Duration  7.81s (transform 1.32s, setup 0ms, import 2.58s, tests 9.45s, environment 1ms)
+packages/cursor-runner test:run: Done
+packages/codex-runner test:run:  Test Files  17 passed (17)
+packages/codex-runner test:run:       Tests  140 passed (140)
+packages/codex-runner test:run:    Start at  22:31:39
+packages/codex-runner test:run:    Duration  8.34s (transform 1.86s, setup 0ms, import 5.96s, tests 4.35s, environment 6ms)
+packages/codex-runner test:run: Done
+packages/opencode-runner test:run:  Test Files  4 passed (4)
+packages/opencode-runner test:run:       Tests  34 passed (34)
+packages/opencode-runner test:run:    Start at  22:31:39
+packages/opencode-runner test:run:    Duration  10.97s (transform 2.26s, setup 0ms, import 4.92s, tests 8.85s, environment 0ms)
+packages/opencode-runner test:run: Done
+packages/edge-worker test:run$ vitest run --maxWorkers=2
+packages/edge-worker test:run: (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+packages/edge-worker test:run:   - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+packages/edge-worker test:run: Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+packages/edge-worker test:run:  RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker
+packages/edge-worker test:run: {"layout":"js","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1043612}}}
+packages/edge-worker test:run: {"layout":"python","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1045868}}}
+packages/edge-worker test:run: Note: switching to 'HEAD~1'.
+packages/edge-worker test:run: You are in 'detached HEAD' state. You can look around, make experimental
+packages/edge-worker test:run: changes and commit them, and you can discard any commits you make in this
+packages/edge-worker test:run: state without impacting any branches by switching back to a branch.
+packages/edge-worker test:run: If you want to create a new branch to retain commits you create, you may
+packages/edge-worker test:run: do so (now or later) by using -c with the switch command. Example:
+packages/edge-worker test:run:   git switch -c <new-branch-name>
+packages/edge-worker test:run: Or undo this operation with:
+packages/edge-worker test:run:   git switch -
+packages/edge-worker test:run: Turn off this advice by setting config variable advice.detachedHead to false
+packages/edge-worker test:run: HEAD is now at 9833169 fixture
+packages/edge-worker test:run:  Test Files  198 passed (198)
+packages/edge-worker test:run:       Tests  2519 passed | 1 skipped (2520)
+packages/edge-worker test:run:    Start at  22:31:51
+packages/edge-worker test:run:    Duration  809.44s (transform 10.89s, setup 2.04s, import 136.83s, tests 1446.74s, environment 17ms)
+packages/edge-worker test:run: Done
+
+{"exitCode": 0, "ended": "2026-10-21T19:45:21.172821+00:00"}

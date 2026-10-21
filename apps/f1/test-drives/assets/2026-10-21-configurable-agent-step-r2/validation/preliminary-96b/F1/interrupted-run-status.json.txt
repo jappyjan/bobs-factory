@@ -1,0 +1,16 @@
+[
+  {
+    "id": "session-1",
+    "status": "completed",
+    "step": "pipeline/merge",
+    "error": null,
+    "resultSummary": null
+  },
+  {
+    "id": "session-2",
+    "status": "running",
+    "step": "node_0/node_15",
+    "error": null,
+    "resultSummary": null
+  }
+]

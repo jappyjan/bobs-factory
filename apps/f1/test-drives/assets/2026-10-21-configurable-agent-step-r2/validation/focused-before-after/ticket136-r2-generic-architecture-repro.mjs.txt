@@ -1,0 +1,10 @@
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {parseStepOutputAsync} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/OutputFormats.js';
+import {WorkflowRuntime} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/WorkflowRuntime.js';
+import {WorkflowSchema} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/Workflow.js';
+const directory=mkdtempSync(join(tmpdir(),'review-136-generic-architecture-'));
+const workflow=WorkflowSchema.parse({id:'plain-data',name:'Plain',stepConfigVersion:'step-config-v1',allowedTriggers:['manual'],steps:[{id:'data',name:'Data',type:'agent',prompt:'Return ordinary JSON data',output:{schema:{type:'object',properties:{architectureRevision:{type:'boolean'}},required:['architectureRevision'],additionalProperties:false}},checks:[],rules:[],instructions:[],next:'end'}]});
+const runtime=new WorkflowRuntime(directory,{agent:async(context)=>parseStepOutputAsync(context.step,{architectureRevision:true}),script:async()=>({}),tool:async()=>({})});
+try {const run=runtime.create({repositoryId:'review',workspace:directory,workflow,input:'Return data',triggerOrigin:{type:'manual',workflowId:workflow.id}});await runtime.launch(run);console.log(JSON.stringify({status:run.status,error:run.error,output:run.outputs.data,history:run.history.map(x=>x.step)}));}finally{await runtime.shutdown();rmSync(directory,{recursive:true,force:true});}

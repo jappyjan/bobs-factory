@@ -1,0 +1,900 @@
+{
+  "source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+  "node": "v24.21.0",
+  "bun": "1.4.2",
+  "productionInputsDigest": "f92022cd6f7880be4eb531d027bb3df7ca947ac8ac237a6165f3ab9ea882adfb",
+  "artifactFilesDigest": "f19164f64fa9050e49b04f4a5bb56b9cceea8c40a8115e57c5a584f110796ad1",
+  "build": "8d8dd7cd2aaf5584cdb1b564",
+  "screenshotCount": 32,
+  "screenshots": [
+    {
+      "name": "historical-pending-desktop-light.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "light",
+      "heading": "Historical pending review",
+      "bundle": "http://localhost:4070/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:4070/#/runs/legacy-review/review",
+      "screenshotPath": "screenshots/historical-pending-desktop-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviia0zk-f9145776.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 210459,
+      "sha256": "4e5b8cf2a9e939db2b6e761482446ac6c8cdefd101b880739031f7bd71c5f781"
+    },
+    {
+      "name": "historical-pending-desktop-dark.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "dark",
+      "heading": "Historical pending review",
+      "bundle": "http://localhost:4070/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:4070/#/runs/legacy-review/review",
+      "screenshotPath": "screenshots/historical-pending-desktop-dark.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviia1me-436acc38.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 265175,
+      "sha256": "bd31f0a54cbf465e09a8cbdafb78a4d2125d1310911bd23583521e9e7a95b8f0"
+    },
+    {
+      "name": "historical-pending-mobile-light.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "heading": "Historical pending review",
+      "bundle": "http://localhost:4070/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:4070/#/runs/legacy-review/review",
+      "screenshotPath": "screenshots/historical-pending-mobile-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviia24o-0df28732.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 275180,
+      "sha256": "69f3f8b89c38af0ba56de9482ff852b213d9ee9b2439c60a1fbeaf348a307f21"
+    },
+    {
+      "name": "historical-pending-mobile-dark.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "heading": "Historical pending review",
+      "bundle": "http://localhost:4070/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:4070/#/runs/legacy-review/review",
+      "screenshotPath": "screenshots/historical-pending-mobile-dark.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviia2m0-80e481ad.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 326001,
+      "sha256": "701b474d267c24713ac64b9dd6a64bea43eb25cd9b1d5abc87f1744313297d3c"
+    },
+    {
+      "name": "historical-completed-desktop-light.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "light",
+      "heading": "Historical completed review",
+      "bundle": "http://localhost:4070/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:4070/#/runs/legacy-completed/review",
+      "screenshotPath": "screenshots/historical-completed-desktop-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviia3ar-c22d7ec9.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 197247,
+      "sha256": "fcc0a2db953f246315e9eb32a5d04440ae7488000a391534fadd404c8f3fcbc2"
+    },
+    {
+      "name": "historical-completed-desktop-dark.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "dark",
+      "heading": "Historical completed review",
+      "bundle": "http://localhost:4070/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:4070/#/runs/legacy-completed/review",
+      "screenshotPath": "screenshots/historical-completed-desktop-dark.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviia3ry-21d7d3b3.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 245099,
+      "sha256": "713ed6f7ac7c32b5bfb938b3acd48351ff6f3eb5109fae5de91c13f495a2cf29"
+    },
+    {
+      "name": "historical-completed-mobile-light.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "heading": "Historical completed review",
+      "bundle": "http://localhost:4070/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:4070/#/runs/legacy-completed/review",
+      "screenshotPath": "screenshots/historical-completed-mobile-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviia4fd-94e565d2.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 310306,
+      "sha256": "645406d478ea389679cd2c5840238a064409d55fb7261d8d81dc42060d20c149"
+    },
+    {
+      "name": "historical-completed-mobile-dark.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "heading": "Historical completed review",
+      "bundle": "http://localhost:4070/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:4070/#/runs/legacy-completed/review",
+      "screenshotPath": "screenshots/historical-completed-mobile-dark.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviia4up-99c27d14.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 366497,
+      "sha256": "62c5914fb5da03d28cc824d147b7981878fec98fb1af8150581856a9f6790b2e"
+    },
+    {
+      "name": "modern-working-desktop-light.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "light",
+      "text": true,
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/",
+      "screenshotPath": "screenshots/modern-working-desktop-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviib836-817cc9ce.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 193234,
+      "sha256": "e16a035fcdb028d86b70f8a487b6ee061529edbbd23ef8dd5880150b9e9045e8"
+    },
+    {
+      "name": "modern-working-desktop-dark.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "dark",
+      "text": true,
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/",
+      "screenshotPath": "screenshots/modern-working-desktop-dark.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviib978-e0bbc144.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 235544,
+      "sha256": "6c9fa400d833ec9a717ed622c36f69913e832c7e6a2924ca2bca071131d49c45"
+    },
+    {
+      "name": "modern-working-mobile-light.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "text": true,
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/",
+      "screenshotPath": "screenshots/modern-working-mobile-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviib9v7-dfb8c795.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 235992,
+      "sha256": "8310360451a00b11d61dac518239b26255f641909736360917d17498be043e88"
+    },
+    {
+      "name": "modern-working-mobile-dark.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "text": true,
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/",
+      "screenshotPath": "screenshots/modern-working-mobile-dark.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiba6u-613693cb.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 271850,
+      "sha256": "c0f91df7bb48edf90312cf24e384df0a6537c092220038dc4fcdad9311659f41"
+    },
+    {
+      "name": "modern-review-desktop-light.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "light",
+      "refresh": true,
+      "pending": true,
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/runs/ticket136-renamed-review/review",
+      "screenshotPath": "screenshots/modern-review-desktop-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviibpzn-0f2c787e.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 192011,
+      "sha256": "1375f4757b859ed6d93a2d0936693c396fb04d680a0edc42476f05acaf2c0952"
+    },
+    {
+      "name": "modern-review-desktop-dark.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "dark",
+      "refresh": true,
+      "pending": true,
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/runs/ticket136-renamed-review/review",
+      "screenshotPath": "screenshots/modern-review-desktop-dark.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviibqxt-93f2ddba.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 238029,
+      "sha256": "63f38c8d6d33387bd2977ae7753d290306e79acc1aa46910d4bd5f9a47246c13"
+    },
+    {
+      "name": "modern-review-mobile-light.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "refresh": true,
+      "pending": true,
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/runs/ticket136-renamed-review/review",
+      "screenshotPath": "screenshots/modern-review-mobile-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviibsj7-1f7563cf.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 291654,
+      "sha256": "08dbfc999af4029fd7bf54dfd4b5af9eba1261f87e6785f58a93ed17d816f747"
+    },
+    {
+      "name": "modern-review-mobile-dark.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "refresh": true,
+      "pending": true,
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/runs/ticket136-renamed-review/review",
+      "screenshotPath": "screenshots/modern-review-mobile-dark.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviibu1x-64855837.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 339227,
+      "sha256": "88682e871015572f063f97cd94d9699110c0ca7d7d41efca5c243ef1700aaeb4"
+    },
+    {
+      "name": "builder-desktop-light-schema.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "light",
+      "valid": true,
+      "outputFormat": "custom",
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-desktop-light-schema.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiefjf-cf1eff54.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 155289,
+      "sha256": "d47a8a43b88cea3fcd9b8ed7d1a8217dd91ecbdf2b2cb1d4da51ef3386633ac4"
+    },
+    {
+      "name": "builder-desktop-light-evidence.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "light",
+      "valid": true,
+      "outputFormat": "custom",
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-desktop-light-evidence.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviieg0b-72b794a0.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 162542,
+      "sha256": "7825eee67b1d48b7f088939d416f7f8946f16453784d610d769cee3cf1635f7a"
+    },
+    {
+      "name": "builder-desktop-dark-schema.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "dark",
+      "valid": true,
+      "outputFormat": "custom",
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-desktop-dark-schema.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiegx1-7b81fbbd.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 163264,
+      "sha256": "0805f645f65757c04f834d0a9d5341f10418d507c6022ff2ea28fede657f1913"
+    },
+    {
+      "name": "builder-desktop-dark-evidence.png",
+      "width": 1440,
+      "height": 1000,
+      "scrollWidth": 1440,
+      "theme": "dark",
+      "valid": true,
+      "outputFormat": "custom",
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-desktop-dark-evidence.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiehc2-650ebe3c.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 169862,
+      "sha256": "5eae24b50cd0bfccb52932c3e0790b8de0a56ac9048e944a26d59af3bb876e71"
+    },
+    {
+      "name": "builder-mobile-light-schema.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "valid": true,
+      "outputFormat": "custom",
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-light-schema.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiehvu-3e1404df.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 135589,
+      "sha256": "cdf7b9d529abf4bad9d788fe24029f5fc1f7736ba199f675e380a05b0f768c2b"
+    },
+    {
+      "name": "builder-mobile-light-evidence.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "valid": true,
+      "outputFormat": "custom",
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-light-evidence.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiei45-95bfbbf6.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 154528,
+      "sha256": "abf6fa6d74b33a729eb21f9ad2427b1d44069fce13287493d432ce530060d77c"
+    },
+    {
+      "name": "builder-mobile-dark-schema.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "valid": true,
+      "outputFormat": "custom",
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-dark-schema.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviieils-14be83d5.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 145465,
+      "sha256": "b8e99d8f9e18a7d02f5525dc7b70c0124bd71635e981833432b80788feb59072"
+    },
+    {
+      "name": "builder-mobile-dark-evidence.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "valid": true,
+      "outputFormat": "custom",
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-dark-evidence.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviieixh-c2d7a43b.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 165659,
+      "sha256": "6b39c29e3af1935acf255ce779c93dd4a3d39aef7dd37eb60317cccfcbd7052b"
+    },
+    {
+      "name": "historical-screenshot-preview-desktop-light.png",
+      "width": 1440,
+      "height": 1000,
+      "theme": "light",
+      "url": "http://localhost:4070/#/runs/legacy-review",
+      "screenshotPath": "screenshots/historical-screenshot-preview-desktop-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviifp8l-84c455dd.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 78249,
+      "sha256": "e7e92c4fc26d4d9753ccd2b5d4b8f2a9122d95e4d1ada8d9d0ff8d844521017b"
+    },
+    {
+      "name": "historical-screenshot-expanded-desktop-light.png",
+      "width": 1440,
+      "height": 1000,
+      "theme": "light",
+      "url": "http://localhost:4070/#/runs/legacy-review",
+      "screenshotPath": "screenshots/historical-screenshot-expanded-desktop-light.png",
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviii59d-fdaf5869.png",
+      "pngWidth": 1280,
+      "pngHeight": 889,
+      "bytes": 61019,
+      "sha256": "04a0996703f9085529ff7a8480ed42030b58170a874c6df0ade797e3725bdd52"
+    },
+    {
+      "name": "builder-mobile-light-reads.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "label": "Reads",
+      "labelTop": 394.8515625,
+      "labelHeight": 318.5,
+      "value": "{\n  \"scopeClarify\": \"clarify\",\n  \"scopeDecisions\": \"decisions\",\n  \"scopePlan\": \"plan\",\n  \"scopeSource\": \"@source\",\n  \"scopeTicket\": \"@ticket\"\n}",
+      "selected": [],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-light-reads.png",
+      "catalogFirstOptions": [],
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiprex-6dd4227c.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 167726,
+      "sha256": "26a978636f42e00d01683719daefa96e60afd1ad53836854d426f2f5c653193b"
+    },
+    {
+      "name": "builder-mobile-light-rules.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "label": "Rules",
+      "labelTop": 394.8515625,
+      "labelHeight": 204.5,
+      "value": "[]",
+      "selected": [],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-light-rules.png",
+      "catalogFirstOptions": [],
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiprrn-53eb3ea0.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 129390,
+      "sha256": "57caa66cf0e5791d4265827d6c21e051e6fab4c2d10e138866a1d25f6743dfc4"
+    },
+    {
+      "name": "builder-mobile-light-instructions.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "light",
+      "label": "Shared instructions",
+      "labelTop": 394.8515625,
+      "labelHeight": 207.9765625,
+      "selected": [
+        "implementation-scope",
+        "ticket-plan",
+        "delivery",
+        "delivery-plan"
+      ],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-light-instructions.png",
+      "catalogFirstOptions": [
+        "implementation-scope",
+        "architecture-continuation",
+        "architecture-questions-brief",
+        "feedback-policy",
+        "ci-assessment"
+      ],
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviips1j-80e78adc.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 159869,
+      "sha256": "8f0ccc7a3c79505880f9a5f04b3bdac63faa09267f5841f9bf7e9c25d131769f"
+    },
+    {
+      "name": "builder-mobile-dark-reads.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "label": "Reads",
+      "labelTop": 394.8515625,
+      "labelHeight": 318.5,
+      "value": "{\n  \"scopeClarify\": \"clarify\",\n  \"scopeDecisions\": \"decisions\",\n  \"scopePlan\": \"plan\",\n  \"scopeSource\": \"@source\",\n  \"scopeTicket\": \"@ticket\"\n}",
+      "selected": [],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-dark-reads.png",
+      "catalogFirstOptions": [],
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviipspt-30c39beb.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 179418,
+      "sha256": "f3cbde4041a3c407487dd7e5f78e31f0d03f22ba13251148bd31510fd0eba69f"
+    },
+    {
+      "name": "builder-mobile-dark-rules.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "label": "Rules",
+      "labelTop": 394.8515625,
+      "labelHeight": 204.5,
+      "value": "[]",
+      "selected": [],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-dark-rules.png",
+      "catalogFirstOptions": [],
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviipt1t-d4f709e3.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 138456,
+      "sha256": "5c2ad10b40c51a39b06f8677c8789cf95642f7e81fafdc1f536cd6905e9b1562"
+    },
+    {
+      "name": "builder-mobile-dark-instructions.png",
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "theme": "dark",
+      "label": "Shared instructions",
+      "labelTop": 394.8515625,
+      "labelHeight": 207.9765625,
+      "selected": [
+        "implementation-scope",
+        "ticket-plan",
+        "delivery",
+        "delivery-plan"
+      ],
+      "bundle": "http://localhost:3558/app.82c170ddbb6d24d1a701f7fb.js",
+      "url": "http://localhost:3558/#/recipes?recipe=fork-4b02451d-9ee6-408d-be1f-286555c27cb4&step=plan",
+      "screenshotPath": "screenshots/builder-mobile-dark-instructions.png",
+      "catalogFirstOptions": [
+        "implementation-scope",
+        "architecture-continuation",
+        "architecture-questions-brief",
+        "feedback-policy",
+        "ci-assessment"
+      ],
+      "sourceScreenshot": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviiptdh-54543cb2.png",
+      "pngWidth": 780,
+      "pngHeight": 1688,
+      "bytes": 172173,
+      "sha256": "9ea442cc9837c41426781714bf476bb6f57f4dbf9b57593401b83e9bb13a8e60"
+    }
+  ],
+  "ui": [
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/app.82c170ddbb6d24d1a701f7fb.js",
+      "expectedSha256": "82c170ddbb6d24d1a701f7fb3e066806a170bdd64531b46746fde32ca13b9802",
+      "actualSha256": "82c170ddbb6d24d1a701f7fb3e066806a170bdd64531b46746fde32ca13b9802",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 1599496,
+          "sha256": "82c170ddbb6d24d1a701f7fb3e066806a170bdd64531b46746fde32ca13b9802",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 1599496,
+          "sha256": "82c170ddbb6d24d1a701f7fb3e066806a170bdd64531b46746fde32ca13b9802",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/app.82c170ddbb6d24d1a701f7fb.js"
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/frontend-packages.json",
+      "expectedSha256": "b18207c72fc344f4cf30d9c7319a5e511e14a1177a7f8c1ef5e1e88e1cf7c8a4",
+      "actualSha256": "b18207c72fc344f4cf30d9c7319a5e511e14a1177a7f8c1ef5e1e88e1cf7c8a4",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 404,
+          "bytes": 94,
+          "sha256": "37b77a8fe25482f8803485cd25be7177fdaa0c90c9e494c523a6ff7e06434e6e",
+          "matchesBuild": false
+        },
+        "http://localhost:3558": {
+          "status": 404,
+          "bytes": 94,
+          "sha256": "37b77a8fe25482f8803485cd25be7177fdaa0c90c9e494c523a6ff7e06434e6e",
+          "matchesBuild": false
+        }
+      },
+      "publicPath": null,
+      "note": "Build metadata is not exposed as a public route; expected404. File hash matches the clean-build manifest."
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/icons/apple-touch-icon.png",
+      "expectedSha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4",
+      "actualSha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 17677,
+          "sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 17677,
+          "sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/icons/apple-touch-icon.png"
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/icons/icon-192.png",
+      "expectedSha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961",
+      "actualSha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 19060,
+          "sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 19060,
+          "sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/icons/icon-192.png"
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/icons/icon-512.png",
+      "expectedSha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86",
+      "actualSha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 88229,
+          "sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 88229,
+          "sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/icons/icon-512.png"
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/icons/maskable-512.png",
+      "expectedSha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9",
+      "actualSha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 62383,
+          "sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 62383,
+          "sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/icons/maskable-512.png"
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/index.html",
+      "expectedSha256": "98f421f9382f6dd480a55eed0a900605fcc68d540e73c227df876614b5b9e80e",
+      "actualSha256": "98f421f9382f6dd480a55eed0a900605fcc68d540e73c227df876614b5b9e80e",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 1307,
+          "sha256": "98f421f9382f6dd480a55eed0a900605fcc68d540e73c227df876614b5b9e80e",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 1307,
+          "sha256": "98f421f9382f6dd480a55eed0a900605fcc68d540e73c227df876614b5b9e80e",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/"
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/manifest.webmanifest",
+      "expectedSha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004",
+      "actualSha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 647,
+          "sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 647,
+          "sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/manifest.webmanifest"
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/shell.json",
+      "expectedSha256": "fb335fafd4fa1e5820686290d6b138ddbfdf5ef14a1207c9e0de7325a628af30",
+      "actualSha256": "fb335fafd4fa1e5820686290d6b138ddbfdf5ef14a1207c9e0de7325a628af30",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 404,
+          "bytes": 82,
+          "sha256": "6382ef464cbbf7219054ec8f8ff5f9649713af03402d8ee1f720106efa26db1c",
+          "matchesBuild": false
+        },
+        "http://localhost:3558": {
+          "status": 404,
+          "bytes": 82,
+          "sha256": "6382ef464cbbf7219054ec8f8ff5f9649713af03402d8ee1f720106efa26db1c",
+          "matchesBuild": false
+        }
+      },
+      "publicPath": null,
+      "note": "Build metadata is not exposed as a public route; expected404. File hash matches the clean-build manifest."
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/styles.3851b389f00b72b0e33ea75e.css",
+      "expectedSha256": "3851b389f00b72b0e33ea75e8383b659fefc20caf08a522a1b8e157055d286d2",
+      "actualSha256": "3851b389f00b72b0e33ea75e8383b659fefc20caf08a522a1b8e157055d286d2",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 173854,
+          "sha256": "3851b389f00b72b0e33ea75e8383b659fefc20caf08a522a1b8e157055d286d2",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 173854,
+          "sha256": "3851b389f00b72b0e33ea75e8383b659fefc20caf08a522a1b8e157055d286d2",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/styles.3851b389f00b72b0e33ea75e.css"
+    },
+    {
+      "path": "factory/web/build-8d8dd7cd2aaf5584cdb1b564/sw.js",
+      "expectedSha256": "8da45e92f7d7dbb233030477ec26dae237719885eae1c57e0081cdc1e161f245",
+      "actualSha256": "8da45e92f7d7dbb233030477ec26dae237719885eae1c57e0081cdc1e161f245",
+      "matchesBuild": true,
+      "served": {
+        "http://localhost:4070": {
+          "status": 200,
+          "bytes": 20178,
+          "sha256": "8da45e92f7d7dbb233030477ec26dae237719885eae1c57e0081cdc1e161f245",
+          "matchesBuild": true
+        },
+        "http://localhost:3558": {
+          "status": 200,
+          "bytes": 20178,
+          "sha256": "8da45e92f7d7dbb233030477ec26dae237719885eae1c57e0081cdc1e161f245",
+          "matchesBuild": true
+        }
+      },
+      "publicPath": "/sw.js"
+    }
+  ],
+  "immutable": {
+    "legacy-review": {
+      "originalSha256": "de2bc1c77760cc3149362f7c95c824b54ab1f4956f65898c55e47bde212d5c0d",
+      "preservedLegacySha256": "de2bc1c77760cc3149362f7c95c824b54ab1f4956f65898c55e47bde212d5c0d",
+      "originalBytesPreserved": true,
+      "storedOutputKeys": [
+        "guide",
+        "capture",
+        "draft-pr"
+      ],
+      "apiOutputKeys": [
+        "guide",
+        "capture",
+        "draft-pr"
+      ],
+      "unchangedApiFields": {
+        "workflow": true,
+        "workflowDefinitions": true,
+        "outputs": true
+      },
+      "rawRoleRevisionKeys": [
+        "pipeline/guide"
+      ],
+      "projectedRoleRevisionKeys": [
+        "pipeline/guide",
+        "guide"
+      ],
+      "currentStorageKind": "bobs-factory-json-snapshot-1",
+      "hashes": {
+        "workflow": "05890b7756d05e1d7d7c236395df0b9d70532f9025ac7f15a80970d255ec8cba",
+        "workflowDefinitions": "66dea00e8bf17e527ed5cd181592236e886d66181ba127060b0f19cb2af58f1f",
+        "outputs": "044d7b4467055d6ab11e773ba0429967e12115138284775a0fd4c9a584f3a3c3"
+      }
+    },
+    "legacy-completed": {
+      "originalSha256": "4f9dadf23c08d6279792f9fe34f1f65a84b06e689f6d676995ed21dfe5ea8423",
+      "preservedLegacySha256": "4f9dadf23c08d6279792f9fe34f1f65a84b06e689f6d676995ed21dfe5ea8423",
+      "originalBytesPreserved": true,
+      "storedOutputKeys": [
+        "guide",
+        "capture",
+        "draft-pr"
+      ],
+      "apiOutputKeys": [
+        "guide",
+        "capture",
+        "draft-pr"
+      ],
+      "unchangedApiFields": {
+        "workflow": true,
+        "workflowDefinitions": true,
+        "outputs": true
+      },
+      "rawRoleRevisionKeys": [
+        "pipeline/guide"
+      ],
+      "projectedRoleRevisionKeys": [
+        "pipeline/guide",
+        "guide"
+      ],
+      "currentStorageKind": "bobs-factory-json-snapshot-1",
+      "hashes": {
+        "workflow": "05890b7756d05e1d7d7c236395df0b9d70532f9025ac7f15a80970d255ec8cba",
+        "workflowDefinitions": "66dea00e8bf17e527ed5cd181592236e886d66181ba127060b0f19cb2af58f1f",
+        "outputs": "91a4f721957389d40560463d3118c3510863389bbdd5cf69b998e29d091fccff"
+      }
+    }
+  },
+  "uiFileHashesMatch": true,
+  "publicAssetHashesMatch": true,
+  "followup": {
+    "addedScreenshots": 6,
+    "originalScreenshotCount": 26,
+    "originalScreenshotsByteIdentical": true,
+    "sourceUnchanged": true,
+    "configurationUnchanged": true,
+    "panels": [
+      "Reads",
+      "Rules",
+      "Shared instructions"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ]
+  }
+}

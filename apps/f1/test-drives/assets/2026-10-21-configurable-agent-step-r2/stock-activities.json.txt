@@ -1,0 +1,151 @@
+{
+  "session": {
+    "sessionId": "session-1",
+    "issueId": "issue-1",
+    "status": "active",
+    "createdAt": 1792611017677,
+    "updatedAt": 1792611017677
+  },
+  "activities": [
+    {
+      "id": "activity-1",
+      "type": "thought",
+      "content": "I've received your request and I'm starting to work on it. Let me analyze the issue and prepare my approach.",
+      "createdAt": 1792611017682
+    },
+    {
+      "id": "activity-2",
+      "type": "thought",
+      "content": "**Routing** (Catch-all)\n- **Configurable Factory F1** → `main` (default)",
+      "createdAt": 1792611018430
+    },
+    {
+      "id": "activity-3",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611020251
+    },
+    {
+      "id": "activity-4",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611024447
+    },
+    {
+      "id": "activity-5",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611027425
+    },
+    {
+      "id": "activity-6",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611031594
+    },
+    {
+      "id": "activity-7",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611035894
+    },
+    {
+      "id": "activity-8",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611039720
+    },
+    {
+      "id": "activity-9",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611045107
+    },
+    {
+      "id": "activity-10",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611049473
+    },
+    {
+      "id": "activity-11",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611059220
+    },
+    {
+      "id": "activity-12",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611077387
+    },
+    {
+      "id": "activity-13",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611077676
+    },
+    {
+      "id": "activity-14",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611077758
+    },
+    {
+      "id": "activity-15",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611078048
+    },
+    {
+      "id": "activity-16",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611079577
+    },
+    {
+      "id": "activity-17",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611079666
+    },
+    {
+      "id": "activity-18",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611093230
+    },
+    {
+      "id": "activity-19",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611097753
+    },
+    {
+      "id": "activity-20",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611099778
+    },
+    {
+      "id": "activity-21",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611105021
+    },
+    {
+      "id": "activity-22",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611109309
+    },
+    {
+      "id": "activity-23",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792611115658
+    }
+  ],
+  "totalCount": 23,
+  "hasMore": false
+}

@@ -1,0 +1,32 @@
+{
+  "identity": {
+    "source": "96b7cb0306b4ec526e702e3becb935432d40087f",
+    "node": "v24.21.0",
+    "pnpm": "10.33.1",
+    "bun": "1.4.2",
+    "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"
+  },
+  "checks": [
+    {
+      "name": "typecheck",
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "started": "2026-10-21T19:12:37.629620+00:00",
+      "ended": "2026-10-21T19:12:56.449272+00:00"
+    },
+    {
+      "name": "lint",
+      "command": [
+        "pnpm",
+        "lint",
+        "--max-diagnostics=100"
+      ],
+      "exitCode": 0,
+      "started": "2026-10-21T19:12:56.450929+00:00",
+      "ended": "2026-10-21T19:13:01.642283+00:00"
+    }
+  ]
+}

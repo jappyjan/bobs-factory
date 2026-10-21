@@ -1,0 +1,9 @@
+{
+  "originalPacket": "/tmp/ticket136-r2-ui-7106f734",
+  "reason": "Raw fixture source preserved as .mjs.txt so evidence is not a new linted runtime script.",
+  "renamedFiles": {
+    "legacy-ui-fixture.mjs": "legacy-ui-fixture.mjs.txt",
+    "modern-ui-fixture.mjs": "modern-ui-fixture.mjs.txt"
+  },
+  "documentationChange": "Copied UI README links receive these two filename suffixes; original source packet hashes remain in ui-assembly-identity.json.txt."
+}

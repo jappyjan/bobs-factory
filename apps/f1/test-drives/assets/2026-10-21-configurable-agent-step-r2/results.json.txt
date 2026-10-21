@@ -1,0 +1,356 @@
+{
+  "mode": "mock/scripted",
+  "revision": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+  "deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "buildSha256": "c1e05ac9bebdf8cef645a3cdf14fe8af820867aa403b2c3d74834da7e9c4f4cd",
+  "startedAt": "2026-10-21T19:30:14.099Z",
+  "finishedAt": "2026-10-21T19:33:40.762Z",
+  "paidCalls": 0,
+  "comparison": {
+    "kind": "exact-serial-and-contiguous-independent-specialists",
+    "parallelMembers": [
+      "pipeline/specialist-review/0/security-review",
+      "pipeline/specialist-review/1/architecture-review",
+      "pipeline/specialist-review/2/integration-review",
+      "pipeline/specialist-review/3/simplicity-review",
+      "pipeline/specialist-review/4/correctness-review",
+      "pipeline/specialist-review/5/requirements-review"
+    ]
+  },
+  "results": [
+    {
+      "workflowId": "factory",
+      "sessionId": "session-1",
+      "status": "completed",
+      "sequence": [
+        "clarify-v1",
+        "plan-v1",
+        "plan-review-v1",
+        "architecture-checkin-v1",
+        "architecture-review-v1",
+        "implement-v1",
+        "impact-v1",
+        "inventory-v1",
+        "inventory-v1",
+        "specialist-v1",
+        "specialist-v1",
+        "specialist-v1",
+        "specialist-v1",
+        "specialist-v1",
+        "coverage-v1",
+        "inventory-v1",
+        "qa-scope-v1",
+        "qa-capture-v1",
+        "qa-review-v1",
+        "review-brief-v3",
+        "qa-review-v1"
+      ],
+      "activityCount": 23,
+      "activityTypes": [
+        "thought"
+      ],
+      "commentCount": 24,
+      "worktree": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-oQWusr/worktrees/DEF-1",
+      "head": "664e2b59abb380c26f425a2ccb129483d34a666c",
+      "approval": "approve"
+    },
+    {
+      "workflowId": "renamed-factory",
+      "sessionId": "session-2",
+      "status": "completed",
+      "sequence": [
+        "clarify-v1",
+        "plan-v1",
+        "plan-review-v1",
+        "architecture-checkin-v1",
+        "architecture-review-v1",
+        "implement-v1",
+        "impact-v1",
+        "inventory-v1",
+        "inventory-v1",
+        "specialist-v1",
+        "specialist-v1",
+        "specialist-v1",
+        "specialist-v1",
+        "specialist-v1",
+        "coverage-v1",
+        "inventory-v1",
+        "qa-scope-v1",
+        "qa-capture-v1",
+        "qa-review-v1",
+        "review-brief-v3",
+        "qa-review-v1"
+      ],
+      "activityCount": 23,
+      "activityTypes": [
+        "thought"
+      ],
+      "commentCount": 24,
+      "worktree": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-configurable-agent-oQWusr/worktrees/DEF-2",
+      "head": "4a9544ab73cbdcad9c37752d0ba0b167e47bcc1b",
+      "approval": "approve"
+    }
+  ],
+  "turns": [
+    {
+      "run": "session-1",
+      "key": "pipeline/clarify",
+      "role": "clarify",
+      "format": "clarify-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/plan",
+      "role": "plan",
+      "format": "plan-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/plan-review",
+      "role": "plan-review",
+      "format": "plan-review-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/architecture",
+      "role": "architecture",
+      "format": "architecture-checkin-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/architecture-review",
+      "role": "architecture-review",
+      "format": "architecture-review-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/implement",
+      "role": "implement",
+      "format": "implement-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/assess-impact",
+      "role": "assess-impact",
+      "format": "impact-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/extract-requirements",
+      "role": "extract-requirements",
+      "format": "inventory-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/extract-requirements",
+      "role": "extract-requirements",
+      "format": "inventory-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/specialist-review/0/security-review",
+      "role": "security-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/specialist-review/2/integration-review",
+      "role": "integration-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/specialist-review/1/architecture-review",
+      "role": "architecture-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/specialist-review/3/simplicity-review",
+      "role": "simplicity-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/specialist-review/4/correctness-review",
+      "role": "correctness-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/specialist-review/5/requirements-review",
+      "role": "requirements-review",
+      "format": "coverage-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/extract-requirements",
+      "role": "extract-requirements",
+      "format": "inventory-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/visual-scope",
+      "role": "visual-scope",
+      "format": "qa-scope-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/capture",
+      "role": "capture",
+      "format": "qa-capture-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/visual-review",
+      "role": "visual-review",
+      "format": "qa-review-v1"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/guide",
+      "role": "guide",
+      "format": "review-brief-v3"
+    },
+    {
+      "run": "session-1",
+      "key": "pipeline/visual-review",
+      "role": "visual-review",
+      "format": "qa-review-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_3",
+      "role": "clarify",
+      "format": "clarify-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_5",
+      "role": "plan",
+      "format": "plan-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_6",
+      "role": "plan-review",
+      "format": "plan-review-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_7",
+      "role": "architecture",
+      "format": "architecture-checkin-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_8",
+      "role": "architecture-review",
+      "format": "architecture-review-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_10",
+      "role": "implement",
+      "format": "implement-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_12",
+      "role": "assess-impact",
+      "format": "impact-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_13",
+      "role": "extract-requirements",
+      "format": "inventory-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_13",
+      "role": "extract-requirements",
+      "format": "inventory-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_15/0/node_16",
+      "role": "security-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_15/1/node_8",
+      "role": "architecture-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_15/2/node_17",
+      "role": "integration-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_15/4/node_19",
+      "role": "correctness-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_15/3/node_18",
+      "role": "simplicity-review",
+      "format": "specialist-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_15/5/node_20",
+      "role": "requirements-review",
+      "format": "coverage-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_13",
+      "role": "extract-requirements",
+      "format": "inventory-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_23",
+      "role": "visual-scope",
+      "format": "qa-scope-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_24",
+      "role": "capture",
+      "format": "qa-capture-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_25",
+      "role": "visual-review",
+      "format": "qa-review-v1"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_31",
+      "role": "guide",
+      "format": "review-brief-v3"
+    },
+    {
+      "run": "session-2",
+      "key": "node_0/node_25",
+      "role": "visual-review",
+      "format": "qa-review-v1"
+    }
+  ],
+  "publications": [
+    "app",
+    "app"
+  ],
+  "merges": [
+    "app",
+    "app"
+  ]
+}

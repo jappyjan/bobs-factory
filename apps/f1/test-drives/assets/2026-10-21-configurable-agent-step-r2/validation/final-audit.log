@@ -1,0 +1,4 @@
+{"identity": {"source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["pnpm", "audit"], "started": "2026-10-21T19:48:41.876517+00:00"}
+No known vulnerabilities found
+
+{"exitCode": 0, "ended": "2026-10-21T19:48:42.812908+00:00"}

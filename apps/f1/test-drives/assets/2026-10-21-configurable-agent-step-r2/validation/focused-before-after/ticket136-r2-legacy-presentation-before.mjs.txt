@@ -1,0 +1,26 @@
+import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createHash} from 'node:crypto';
+import {WorkflowRuntime} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/WorkflowRuntime.js';
+import {FactoryServer} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/FactoryServer.js';
+import {presentationOutputKeys} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/RunOutputRoles.js';
+const home=mkdtempSync(join(tmpdir(),'136-r2-legacy-presentation-'));
+const defs=JSON.parse(readFileSync('/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/test/fixtures/legacy-workflows-a4990127.json','utf8')).default;
+const workflow=defs.find(w=>w.id==='factory');
+const guide={summary:'Accepted historical guide',chapters:[{id:'chapter',title:'Retained guide',summary:'Read me',files:[]}]};
+const evidence=join(home,'factory','evidence','legacy-review');mkdirSync(evidence,{recursive:true});const image=join(evidence,'screen.png');const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aNNsAAAAASUVORK5CYII=','base64');writeFileSync(image,png);const imageSha256=createHash('sha256').update(png).digest('hex');const capture={screenshots:[{path:image,area:'Retained',state:'saved',caption:'Saved screenshot',imageSha256}],unavailable:[]};
+const draft={url:'https://github.com/selected/repo/pull/136',headSha:'accepted'};
+const run={id:'legacy-review',title:'Historical pending review',workflow,workflowDefinitions:defs,repositoryId:'repo',workspace:home,input:'Task',status:'waiting',createdAt:'2026-10-01T00:00:00Z',updatedAt:'2026-10-01T00:00:00Z',step:'pipeline/human-review',answers:[],questions:[],events:[],outputs:{guide,capture,'draft-pr':draft},history:[{step:'pipeline/capture',output:capture,at:'2026-10-01T00:00:00Z'},{step:'pipeline/draft-pr',output:draft,at:'2026-10-01T00:00:00Z'},{step:'pipeline/guide',output:guide,at:'2026-10-01T00:00:00Z'}],roleRevisions:{'pipeline/guide':{headSha:'accepted',dirty:false,historyLength:0,at:'2026-10-01T00:00:00Z'}},reviewGate:{id:'review',headSha:'accepted',url:draft.url,status:'pending'},checkpoint:{current:'pipeline',visits:{},active:{phase:'result',children:[{current:'human-review',visits:{},active:{phase:'waiting'}}]}}};
+mkdirSync(join(home,'factory','runs'),{recursive:true});
+writeFileSync(join(home,'factory','runs',run.id+'.json'),JSON.stringify(run));
+const runtime=new WorkflowRuntime(home,{});
+const loaded=runtime.get(run.id);
+const server=new FactoryServer(runtime,{repositories:()=>[],sessions:()=>[],entries:()=>[],start:async()=>loaded,stop:()=>{}},{origins:['http://localhost']});
+const hash=s=>createHash('sha256').update(s).digest('hex');
+server.auth.store.update(state=>{state.keys.push({id:'repro',digest:hash('key'),label:'Repro',createdAt:Date.now(),lastUsedAt:Date.now()});state.sessions.push({hash:hash('session'),credential:'repro',origin:'http://localhost',expires:Date.now()+3600000,verifiedAt:Date.now()});});
+try{
+const report={loadedKeys:Object.keys(loaded.outputs),roles:presentationOutputKeys(loaded),loadedGuideSummary:loaded.outputs.guide?.summary,responses:{}};
+for(const view of ['raw','dashboard','focus']){const response=await server.app.inject({url:'/api/runs/'+run.id+(view==='raw'?'':'?view='+view),headers:{host:'localhost',origin:'http://localhost',cookie:'factory-local-session=session'}});const value=response.json();report.responses[view]={status:response.statusCode,outputs:value.outputs,outputRoles:value.outputRoles,hasGuide:value.hasGuide,reviewCapabilities:value.reviewCapabilities};}
+for(const path of ['/evidence','/screenshots/0','/screenshots/0?artifact=capture']){const response=await server.app.inject({url:'/api/runs/'+run.id+path,headers:{host:'localhost',origin:'http://localhost',cookie:'factory-local-session=session'}});report.responses[path]={status:response.statusCode,...(response.headers['content-type']?.includes('json')?{body:response.json()}:{bytes:response.rawPayload.length})};}console.log(JSON.stringify(report,null,2));
+}finally{await server.stop();await runtime.shutdown();rmSync(home,{recursive:true,force:true});}

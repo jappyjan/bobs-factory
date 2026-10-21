@@ -1,0 +1,459 @@
+{
+  "source": "7106f734ca6fc4066448e2766495f5bacb4fa0d9",
+  "scope": "Terminal summaries of complete final gate commands only; manual F1/binary and focused repeats excluded.",
+  "gatesSha256": "d04aa44fc6bddf7aba543aca45186600ea8da9ab23f05851423ba95644e974cf",
+  "logs": {
+    "final-packages.log": "5c88da5089f394801ea2dc420364bb8177101b002666682dba4a521ce43690c5",
+    "final-apps-vitest.log": "c858761d2d5b528cb5bee2ef59a44bba0616eb16166b26d47d057a17e251c656",
+    "final-desktop.log": "fd3c6e41d607b90278c8908f38b432a35671c6f193d0171b25a801d7907e2162",
+    "final-scripts.log": "10789325eccdb031a63a901a0b178c6a57318cf202ca6a12448d7451120bf91e"
+  },
+  "packages": {
+    "packages/cloudflare-tunnel-client": {
+      "workspace": "packages/cloudflare-tunnel-client",
+      "rawTerminalLines": [
+        "packages/cloudflare-tunnel-client test:run:  Test Files  2 passed (2)",
+        "packages/cloudflare-tunnel-client test:run:       Tests  26 passed (26)"
+      ],
+      "files": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 2
+      },
+      "tests": {
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 26
+      }
+    },
+    "packages/core": {
+      "workspace": "packages/core",
+      "rawTerminalLines": [
+        "packages/core test:run:  Test Files  19 passed (19)",
+        "packages/core test:run:       Tests  263 passed (263)"
+      ],
+      "files": {
+        "passed": 19,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 19
+      },
+      "tests": {
+        "passed": 263,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 263
+      }
+    },
+    "packages/mcp-tools": {
+      "workspace": "packages/mcp-tools",
+      "rawTerminalLines": [
+        "packages/mcp-tools test:run:  Test Files  14 passed (14)",
+        "packages/mcp-tools test:run:       Tests  82 passed (82)"
+      ],
+      "files": {
+        "passed": 14,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 14
+      },
+      "tests": {
+        "passed": 82,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 82
+      }
+    },
+    "packages/gitlab-event-transport": {
+      "workspace": "packages/gitlab-event-transport",
+      "rawTerminalLines": [
+        "packages/gitlab-event-transport test:run:  Test Files  1 passed (1)",
+        "packages/gitlab-event-transport test:run:       Tests  11 passed (11)"
+      ],
+      "files": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 1
+      },
+      "tests": {
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 11
+      }
+    },
+    "packages/github-event-transport": {
+      "workspace": "packages/github-event-transport",
+      "rawTerminalLines": [
+        "packages/github-event-transport test:run:  Test Files  5 passed (5)",
+        "packages/github-event-transport test:run:       Tests  117 passed (117)"
+      ],
+      "files": {
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 5
+      },
+      "tests": {
+        "passed": 117,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 117
+      }
+    },
+    "packages/slack-event-transport": {
+      "workspace": "packages/slack-event-transport",
+      "rawTerminalLines": [
+        "packages/slack-event-transport test:run:  Test Files  3 passed (3)",
+        "packages/slack-event-transport test:run:       Tests  82 passed (82)"
+      ],
+      "files": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 3
+      },
+      "tests": {
+        "passed": 82,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 82
+      }
+    },
+    "packages/claude-runner": {
+      "workspace": "packages/claude-runner",
+      "rawTerminalLines": [
+        "packages/claude-runner test:run:  Test Files  12 passed (12)",
+        "packages/claude-runner test:run:       Tests  137 passed (137)"
+      ],
+      "files": {
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 12
+      },
+      "tests": {
+        "passed": 137,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 137
+      }
+    },
+    "packages/linear-event-transport": {
+      "workspace": "packages/linear-event-transport",
+      "rawTerminalLines": [
+        "packages/linear-event-transport test:run:  Test Files  6 passed (6)",
+        "packages/linear-event-transport test:run:       Tests  75 passed (75)"
+      ],
+      "files": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 6
+      },
+      "tests": {
+        "passed": 75,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 75
+      }
+    },
+    "packages/zulip-event-transport": {
+      "workspace": "packages/zulip-event-transport",
+      "rawTerminalLines": [
+        "packages/zulip-event-transport test:run:  Test Files  3 passed (3)",
+        "packages/zulip-event-transport test:run:       Tests  25 passed (25)"
+      ],
+      "files": {
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 3
+      },
+      "tests": {
+        "passed": 25,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 25
+      }
+    },
+    "packages/config-updater": {
+      "workspace": "packages/config-updater",
+      "rawTerminalLines": [
+        "packages/config-updater test:run:  Test Files  8 passed (8)",
+        "packages/config-updater test:run:       Tests  52 passed (52)"
+      ],
+      "files": {
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 8
+      },
+      "tests": {
+        "passed": 52,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 52
+      }
+    },
+    "packages/simple-agent-runner": {
+      "workspace": "packages/simple-agent-runner",
+      "rawTerminalLines": [
+        "packages/simple-agent-runner test:run:  Test Files  2 passed (2)",
+        "packages/simple-agent-runner test:run:       Tests  24 passed (24)"
+      ],
+      "files": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 2
+      },
+      "tests": {
+        "passed": 24,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 24
+      }
+    },
+    "packages/gemini-runner": {
+      "workspace": "packages/gemini-runner",
+      "rawTerminalLines": [
+        "packages/gemini-runner test:run:  Test Files  4 passed (4)",
+        "packages/gemini-runner test:run:       Tests  200 passed | 1 skipped (201)"
+      ],
+      "files": {
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 4
+      },
+      "tests": {
+        "passed": 200,
+        "failed": 0,
+        "skipped": 1,
+        "todo": 0,
+        "total": 201
+      }
+    },
+    "packages/cursor-runner": {
+      "workspace": "packages/cursor-runner",
+      "rawTerminalLines": [
+        "packages/cursor-runner test:run:  Test Files  8 passed (8)",
+        "packages/cursor-runner test:run:       Tests  56 passed (56)"
+      ],
+      "files": {
+        "passed": 8,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 8
+      },
+      "tests": {
+        "passed": 56,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 56
+      }
+    },
+    "packages/codex-runner": {
+      "workspace": "packages/codex-runner",
+      "rawTerminalLines": [
+        "packages/codex-runner test:run:  Test Files  17 passed (17)",
+        "packages/codex-runner test:run:       Tests  140 passed (140)"
+      ],
+      "files": {
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 17
+      },
+      "tests": {
+        "passed": 140,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 140
+      }
+    },
+    "packages/opencode-runner": {
+      "workspace": "packages/opencode-runner",
+      "rawTerminalLines": [
+        "packages/opencode-runner test:run:  Test Files  4 passed (4)",
+        "packages/opencode-runner test:run:       Tests  34 passed (34)"
+      ],
+      "files": {
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 4
+      },
+      "tests": {
+        "passed": 34,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 34
+      }
+    },
+    "packages/edge-worker": {
+      "workspace": "packages/edge-worker",
+      "rawTerminalLines": [
+        "packages/edge-worker test:run:  Test Files  198 passed (198)",
+        "packages/edge-worker test:run:       Tests  2519 passed | 1 skipped (2520)"
+      ],
+      "files": {
+        "passed": 198,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 198
+      },
+      "tests": {
+        "passed": 2519,
+        "failed": 0,
+        "skipped": 1,
+        "todo": 0,
+        "total": 2520
+      }
+    }
+  },
+  "apps": {
+    "apps/cli": {
+      "workspace": "apps/cli",
+      "rawTerminalLines": [
+        " Test Files  22 passed (22)",
+        "      Tests  254 passed (254)"
+      ],
+      "files": {
+        "passed": 22,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 22
+      },
+      "tests": {
+        "passed": 254,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 254
+      }
+    },
+    "apps/f1": {
+      "workspace": "apps/f1",
+      "rawTerminalLines": [
+        " Test Files  2 passed (2)",
+        "      Tests  17 passed (17)"
+      ],
+      "files": {
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 2
+      },
+      "tests": {
+        "passed": 17,
+        "failed": 0,
+        "skipped": 0,
+        "todo": 0,
+        "total": 17
+      }
+    }
+  },
+  "desktop": {
+    "workspace": "apps/desktop",
+    "tests": {
+      "passed": 41,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 1,
+      "todo": 0,
+      "total": 42
+    },
+    "nodeSuites": 0,
+    "rawTerminalLines": [
+      "\u2139 tests 42",
+      "\u2139 suites 0",
+      "\u2139 pass 41",
+      "\u2139 fail 0",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 1",
+      "\u2139 todo 0"
+    ]
+  },
+  "scripts": {
+    "workspace": "scripts/tests",
+    "tests": {
+      "passed": 179,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "total": 179
+    },
+    "nodeSuites": 0,
+    "rawTerminalLines": [
+      "\u2139 tests 179",
+      "\u2139 suites 0",
+      "\u2139 pass 179",
+      "\u2139 fail 0",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 0",
+      "\u2139 todo 0"
+    ]
+  },
+  "packageAggregate": {
+    "passed": 3843,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 2,
+    "todo": 0,
+    "total": 3845
+  },
+  "appAggregate": {
+    "passed": 271,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "total": 271
+  },
+  "aggregate": {
+    "passed": 4334,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 3,
+    "todo": 0,
+    "total": 4337
+  }
+}

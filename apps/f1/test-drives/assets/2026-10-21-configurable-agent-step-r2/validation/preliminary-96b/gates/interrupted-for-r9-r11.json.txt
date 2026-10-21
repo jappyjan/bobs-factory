@@ -1,0 +1,7 @@
+{
+  "source": "96b7cb0306b4ec526e702e3becb935432d40087f",
+  "at": "2026-10-21T19:14:55.331583+00:00",
+  "processGroup": 47281,
+  "signal": "SIGINT",
+  "reason": "Final browser found missing historical chapter effect arrays; actual binary ordinary-schema2s failures under diagnosis. Stop gate before any source mutation. Typecheck/lint passed; complete package/app/audit gates not yet complete."
+}

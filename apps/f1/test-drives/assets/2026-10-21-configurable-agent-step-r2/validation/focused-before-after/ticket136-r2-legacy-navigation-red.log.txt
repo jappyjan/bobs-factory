@@ -1,0 +1,43 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker
+
+ ❯ test/LegacyPresentation.test.ts (11 tests | 2 failed | 9 skipped) 301ms
+   × loads a499 waiting review leaf outputs without rewriting their accepted data 208ms
+   × loads a499 completed review leaf outputs without rewriting their accepted data 92ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/LegacyPresentation.test.ts > loads a499 waiting review leaf outputs without rewriting their accepted data
+ FAIL  test/LegacyPresentation.test.ts > loads a499 completed review leaf outputs without rewriting their accepted data
+ReferenceError: matchMedia is not defined
+ ❯ src/factory/web/review-files.tsx:350:42
+    348|  const [split, setSplit] = useState(true),
+    349|   [narrow, setNarrow] = useState(
+    350|    () => matchMedia("(max-width: 650px)").matches,
+       |                                          ^
+    351|   );
+    352|  useEffect(() => {
+ ❯ useReducer ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:4086:15
+ ❯ Object.useState ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:10277:18
+ ❯ process.env.NODE_ENV.exports.useState ../../node_modules/.pnpm/react@19.3.0/node_modules/react/cjs/react.development.js:1309:34
+ ❯ ChangedFiles src/factory/web/review-files.tsx:349:25
+ ❯ Object.react_stack_bottom_frame ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:10371:18
+ ❯ renderWithHooks ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:5361:19
+ ❯ renderElement ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:5796:23
+ ❯ retryNode ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6783:21
+ ❯ renderNodeDestructive ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6717:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 skipped (11)
+   Start at  22:19:53
+   Duration  3.72s (transform 1.88s, setup 43ms, import 3.13s, tests 301ms, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/LegacyPresentation.test.ts -t loads a499

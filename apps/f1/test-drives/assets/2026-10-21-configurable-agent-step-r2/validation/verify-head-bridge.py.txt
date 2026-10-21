@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""Verify a later evidence-only HEAD without relabeling tested source/CI."""
+import argparse, hashlib, json, pathlib, subprocess
+ROOT = pathlib.Path('/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery')
+SOURCE = '7106f734ca6fc4066448e2766495f5bacb4fa0d9'
+PREFIX = 'apps/f1/test-drives/assets/2026-10-21-configurable-agent-step-r2/'
+ALLOWED = {'apps/f1/test-drives/2026-10-21-configurable-agent-step-r2.md', 'CHANGELOG.md', 'CHANGELOG.internal.md', 'docs/factory/agent-step-review-round2.md', 'docs/factory/agent-step-test-changes.md'}
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--head', required=True)
+parser.add_argument('--manifest', default='/tmp/ticket136-r2-validation-7106f734/final-build-manifest.json.txt')
+parser.add_argument('--out', required=True)
+parser.add_argument('--fresh-manifest', required=True)
+args = parser.parse_args()
+output = pathlib.Path(args.out).resolve()
+assert not output.is_relative_to(ROOT.resolve()), 'Bridge output must remain outside checkout'
+head = subprocess.check_output(['git', 'rev-parse', args.head + '^{commit}'], cwd=ROOT, text=True).strip()
+assert head == subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(), 'Inspect the checked-out final HEAD'
+subprocess.run(['git', 'merge-base', '--is-ancestor', SOURCE, head], cwd=ROOT, check=True)
+status = subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip()
+assert not status, 'Commit the declared evidence paths before making the HEAD bridge'
+changes = subprocess.check_output(['git', 'diff', '--name-only', '--no-renames', SOURCE, head], cwd=ROOT, text=True).splitlines()
+assert all(p in ALLOWED or p.startswith(PREFIX) for p in changes), 'A non-evidence/source path changed: ' + str(changes)
+manifest = json.loads(pathlib.Path(args.manifest).read_text()); assert manifest['source'] == SOURCE
+fresh = json.loads(pathlib.Path(args.fresh_manifest).read_text())
+assert fresh['source'] == head, 'Fresh clean-build manifest must identify the exact evidence HEAD'
+assert fresh['artifacts'] == manifest['artifacts'], 'Fresh artifact file maps differ from validated7106'
+assert fresh['artifactFilesDigest'] == manifest['artifactFilesDigest'], 'Fresh artifact digest differs'
+assert fresh['node'] == manifest['node'] and fresh['bun'] == manifest['bun'], 'Fresh build toolchain changed'
+assert fresh['lockfileSha256'] == manifest['lockfileSha256'], 'Dependency lock changed'
+def runtime_inputs(document):
+ return {name: value for name, value in document['productionInputs'].items() if name not in ALLOWED and not name.startswith(PREFIX)}
+assert runtime_inputs(fresh) == runtime_inputs(manifest), 'Fresh production/build/test input set or bytes changed'
+checked = 0
+for name, expected in manifest['productionInputs'].items():
+ if name in ALLOWED or name.startswith(PREFIX): continue
+ assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest() == expected, 'Source/build/test input drift: ' + name
+ checked += 1
+actual_roots = {p.relative_to(ROOT).as_posix() for prefix in ['apps', 'packages'] for p in (ROOT/prefix).glob('*/dist') if p.exists()}
+assert actual_roots == set(manifest['artifacts']), 'Generated artifact root set changed: ' + str(sorted(actual_roots ^ set(manifest['artifacts'])))
+artifacts = 0
+for directory, files in manifest['artifacts'].items():
+ artifact_root = ROOT / directory
+ assert artifact_root.is_dir() and not artifact_root.is_symlink(), 'Artifact root must be a real directory: ' + directory
+ actual_files = set()
+ actual_directories = set()
+ for path in artifact_root.rglob('*'):
+  assert not path.is_symlink(), 'Artifact symlink: ' + str(path)
+  relative = path.relative_to(artifact_root).as_posix()
+  if path.is_file(): actual_files.add(relative)
+  elif path.is_dir(): actual_directories.add(relative)
+  else: raise AssertionError('Unexpected artifact type: ' + str(path))
+ expected_directories = {parent.as_posix() for name in files for parent in pathlib.PurePosixPath(name).parents if parent.as_posix() != '.'}
+ assert actual_files == set(files), 'Artifact file set changed in ' + directory + ': ' + str(sorted(actual_files ^ set(files)))
+ assert actual_directories == expected_directories, 'Artifact directory set changed in ' + directory + ': ' + str(sorted(actual_directories ^ expected_directories))
+ for name, expected in files.items():
+  assert hashlib.sha256((ROOT/directory/name).read_bytes()).hexdigest() == expected, 'Built artifact drift: ' + directory + '/' + name
+  artifacts += 1
+record = {'validatedProductionSource': SOURCE, 'evidenceOnlyHead': head, 'docsOnly': True, 'changedPaths': changes, 'unchangedSourceInputsChecked': checked, 'unchangedArtifactFilesChecked': artifacts, 'artifactFilesDigest': manifest['artifactFilesDigest'], 'exactArtifactFileAndDirectorySets': True, 'freshCleanBuildManifest': str(pathlib.Path(args.fresh_manifest)), 'gitStatus': status, 'ciClaim': 'No result inferred for this evidence-only HEAD; parent owns exact-head CI notifications.'}
+output.write_text(json.dumps(record, indent=2)+'\n'); print(json.dumps(record, indent=2))

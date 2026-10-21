@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","result":{"success":true,"message":"Session stopped successfully"},"id":1}

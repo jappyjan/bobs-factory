@@ -1,0 +1,10 @@
+{
+  "startedAt": "2026-10-21T19:05:52.637Z",
+  "finishedAt": "2026-10-21T19:07:07.796Z",
+  "jobs": 1300,
+  "ordinaryFailures": [],
+  "maxElapsedMs": 180.044332999998,
+  "maxVmMs": 85.957833,
+  "maxCpuMs": 56.599,
+  "engineFailures": []
+}
