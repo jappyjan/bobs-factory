@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -64,12 +65,22 @@ it("F1: repairs missing Taskbot transport entirely through compiled stdio MCP, p
 	execFileSync("git", ["-C", repo, "remote", "add", "origin", remote]);
 	execFileSync("git", ["-C", repo, "push", "-u", "origin", "main"]);
 	const configPath = join(home, "config.json");
+	// EdgeWorker's historical zero-port option selects its default port. Allocate
+	// an explicit fixture port so this drive can coexist with another local run.
+	const listener = createServer();
+	await new Promise<void>((resolve) =>
+		listener.listen(0, "127.0.0.1", resolve),
+	);
+	const port = (listener.address() as { port: number }).port;
+	await new Promise<void>((resolve, reject) =>
+		listener.close((error) => (error ? reject(error) : resolve())),
+	);
 	const config = {
 		platform: "cli" as const,
 		factoryHome: home,
 		defaultRunner: "opencode" as const,
 		serverHost: "127.0.0.1",
-		serverPort: 0,
+		serverPort: port,
 		repositories: [
 			{
 				id: "repo",

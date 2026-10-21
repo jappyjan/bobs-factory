@@ -5,6 +5,7 @@ import { afterEach, expect, it } from "vitest";
 import { parseStepOutput } from "../src/factory/OutputFormats.js";
 import { OutputValidationError } from "../src/factory/OutputValidation.js";
 import { resolveStepConfig } from "../src/factory/StepConfig.js";
+import { WorkflowSchema } from "../src/factory/Workflow.js";
 import {
 	type ExecutionContext,
 	WorkflowRuntime,
@@ -158,4 +159,82 @@ it("loads raw frozen Factory definitions and resumes their output validation and
 	// Publication is intentionally held: this regression proves resume through the next accepted action without creating a PR.
 	await resumed.shutdown();
 	await resumedExecution;
+});
+
+it.each([
+	{ modern: false, gate: {}, includeAnswers: false },
+	{ modern: false, gate: { captureBlocked: true }, includeAnswers: true },
+	{ modern: false, gate: { qaBlocked: true }, includeAnswers: true },
+	{ modern: true, gate: {}, includeAnswers: false },
+	{ modern: true, gate: { captureBlocked: true }, includeAnswers: true },
+])("retains conditional answers in restricted capture inputs (%j)", async ({
+	modern,
+	gate,
+	includeAnswers,
+}) => {
+	const home = mkdtempSync(join(tmpdir(), "conditional-capture-inputs-"));
+	homes.push(home);
+	const workflow = WorkflowSchema.parse({
+		id: "frozen-capture-fork",
+		name: "Capture fork",
+		...(modern ? { stepConfigVersion: "step-config-v1" } : {}),
+		steps: [
+			{
+				id: "capture",
+				name: "Record evidence",
+				type: "agent",
+				prompt: "Record",
+				inputs: ["visual-scope"],
+				...(modern
+					? {
+							reads: {
+								answers: {
+									from: "@answers",
+									when: { path: "/visual-gate/captureBlocked", equals: true },
+								},
+							},
+						}
+					: {}),
+			},
+		],
+	});
+	let capturedInput: unknown;
+	const runtime = new WorkflowRuntime(home, {
+		agent: async (context) => {
+			capturedInput = context.input;
+			return {};
+		},
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	runtimes.push(runtime);
+	const run = runtime.create({
+		title: "Capture",
+		repositoryId: "fixture",
+		workspace: home,
+		input: "Record evidence",
+		workflow,
+		triggerOrigin: {
+			type: "manual",
+			workflowId: workflow.id,
+			at: "2026-10-20T10:00:00.000Z",
+		},
+	});
+	run.outputs["visual-scope"] = { changed: false, areas: [] };
+	run.outputs["visual-gate"] = gate;
+	run.answers.push({
+		questions: ["Restore fixture?"],
+		answer: "Restored",
+		at: "2026-10-20T10:00:00.000Z",
+	});
+	await runtime.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.status).toBe("completed");
+	expect(Object.hasOwn(capturedInput as object, "answers")).toBe(
+		includeAnswers,
+	);
+	if (includeAnswers)
+		expect((capturedInput as { answers: unknown }).answers).toEqual(
+			run.answers,
+		);
 });

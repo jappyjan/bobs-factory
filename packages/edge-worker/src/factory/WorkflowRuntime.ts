@@ -156,7 +156,6 @@ import {
 	legacyToolOutput,
 	readOutput,
 	readStep,
-	readsSource,
 	registerWorkflowConfig,
 	resolveStepConfig,
 	reviewEvidenceContract,
@@ -1682,9 +1681,7 @@ export class WorkflowRuntime {
 									Object.hasOwn(outputs, name) ? outputs[name] : undefined,
 								]),
 							),
-							...(step.askQuestions ||
-							step.tool === "impact-checks" ||
-							readsSource(step, "answers")
+							...(step.askQuestions || step.tool === "impact-checks"
 								? { answers: structuredClone(run.answers) }
 								: {}),
 						}
@@ -1809,6 +1806,10 @@ export class WorkflowRuntime {
 			if (step.reads) {
 				const bindings = stepBindings(context);
 				Object.assign(input, bindings);
+			} else if (config.inputs && config.reads.answers) {
+				const bindings = stepBindings(context);
+				if (Object.hasOwn(bindings, "answers"))
+					Object.assign(input, { answers: bindings.answers });
 			}
 			const scopeSources = checkArgs(step, "scope-inputs")?.sources;
 			const sourceValues = () => {

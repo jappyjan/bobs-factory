@@ -245,6 +245,33 @@ it("expresses implication, unique IDs, references, bounded counts and filtered n
 });
 it("publishes stable versioned formats for all contract families", () => {
 	const catalog = outputFormatCatalog();
+	for (const [format, value] of [
+		["improvement-settings-v1", {}],
+		[
+			"improvement-issue-destination-v1",
+			{ provider: "linear", workspaceId: "workspace", teamId: "team" },
+		],
+		["improvement-item-choice-v1", { action: "ignore" }],
+		[
+			"improvement-action-v1",
+			{
+				expectedRevision: 0,
+				version: 1,
+				digest: "a".repeat(64),
+				action: "finish",
+			},
+		],
+	] as const) {
+		const step = AgentStepSchema.parse({
+			id: "data",
+			name: "Data",
+			type: "agent",
+			prompt: "Return data",
+			output: { format },
+		});
+		expect(() => parseStepOutput(step, value)).not.toThrow();
+		expect(resolveStepConfig(step).checks).toEqual([]);
+	}
 	expect(new Set(catalog.map((format) => format.id)).size).toBe(catalog.length);
 	for (const family of [
 		"architecture-checkin-v1",

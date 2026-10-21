@@ -723,7 +723,7 @@ it.each([
 			},
 		})}\n`,
 	);
-});
+}, 120_000);
 it("rejects stale source, weakened tests, blocked receipts, unknown reviewers and absent approvals", async () => {
 	const fixture = await drive(true);
 	const impact = fixture.run.impactDecisions!.at(-1)!;
@@ -1045,57 +1045,61 @@ it.each([
 	[true, false],
 	[false, true],
 	[true, true],
-])("renews stale impact through its accepted assessor (nested=%s, legacy Retry=%s)", async (nested, legacyRetry) => {
-	const options = { fail: true, nested };
-	const fixture = await drive(true, "js", options);
-	const { run } = fixture;
-	expect(run.status).toBe("failed");
-	options.fail = false;
-	const frame = nested
-		? run.checkpoint!.active!.children![0]!
-		: run.checkpoint!;
-	frame.current = "gate";
-	frame.active = undefined;
-	const history = structuredClone(run.history);
-	const previousDigest =
-		run.impactDecisions!.at(-1)!.snapshot.environmentDigest;
-	const repairs = fixture.calls.filter((id) => id === "repair").length;
-	const assessments = fixture.calls.filter((id) => id === "assessor").length;
-	const agent = fixture.hooks.agent;
-	fixture.hooks.agent = async (context) => {
-		if (!context.step.impactContract) return agent(context);
-		fixture.calls.push(context.step.id);
-		const snapshot = (context.input as { impactSnapshot: ImpactSnapshot })
-			.impactSnapshot;
-		return { ...assessment(snapshot), classification: "full" as const };
-	};
-	run.model = "changed-runtime-binding";
-	let recovered = run;
-	if (legacyRetry) {
-		run.status = "failed";
-		run.error = STALE_IMPACT_MESSAGE;
-		await fixture.runtime.save(run);
-		await fixture.runtime.shutdown();
-		const restored = new WorkflowRuntime(fixture.home, fixture.hooks);
-		runtimes.push(restored);
-		restored.retry(run.id);
-		recovered = restored.get(run.id);
-		await waitFor(
-			() => expect(recovered.status, recovered.error).toBe("completed"),
-			{ timeout: 10000 },
+])(
+	"renews stale impact through its accepted assessor (nested=%s, legacy Retry=%s)",
+	async (nested, legacyRetry) => {
+		const options = { fail: true, nested };
+		const fixture = await drive(true, "js", options);
+		const { run } = fixture;
+		expect(run.status).toBe("failed");
+		options.fail = false;
+		const frame = nested
+			? run.checkpoint!.active!.children![0]!
+			: run.checkpoint!;
+		frame.current = "gate";
+		frame.active = undefined;
+		const history = structuredClone(run.history);
+		const previousDigest =
+			run.impactDecisions!.at(-1)!.snapshot.environmentDigest;
+		const repairs = fixture.calls.filter((id) => id === "repair").length;
+		const assessments = fixture.calls.filter((id) => id === "assessor").length;
+		const agent = fixture.hooks.agent;
+		fixture.hooks.agent = async (context) => {
+			if (!context.step.impactContract) return agent(context);
+			fixture.calls.push(context.step.id);
+			const snapshot = (context.input as { impactSnapshot: ImpactSnapshot })
+				.impactSnapshot;
+			return { ...assessment(snapshot), classification: "full" as const };
+		};
+		run.model = "changed-runtime-binding";
+		let recovered = run;
+		if (legacyRetry) {
+			run.status = "failed";
+			run.error = STALE_IMPACT_MESSAGE;
+			await fixture.runtime.save(run);
+			await fixture.runtime.shutdown();
+			const restored = new WorkflowRuntime(fixture.home, fixture.hooks);
+			runtimes.push(restored);
+			restored.retry(run.id);
+			recovered = restored.get(run.id);
+			await waitFor(
+				() => expect(recovered.status, recovered.error).toBe("completed"),
+				{ timeout: 30000 },
+			);
+		} else await fixture.runtime.launch(run);
+		expect(recovered.status, recovered.error).toBe("completed");
+		expect(recovered.history.slice(0, history.length)).toEqual(history);
+		expect(fixture.calls.filter((id) => id === "repair")).toHaveLength(repairs);
+		expect(fixture.calls.filter((id) => id === "assessor")).toHaveLength(
+			assessments + 1,
 		);
-	} else await fixture.runtime.launch(run);
-	expect(recovered.status, recovered.error).toBe("completed");
-	expect(recovered.history.slice(0, history.length)).toEqual(history);
-	expect(fixture.calls.filter((id) => id === "repair")).toHaveLength(repairs);
-	expect(fixture.calls.filter((id) => id === "assessor")).toHaveLength(
-		assessments + 1,
-	);
-	expect(
-		recovered.impactDecisions!.at(-1)!.snapshot.environmentDigest,
-	).not.toBe(previousDigest);
-	expect(recovered.humanDecisions).toBeUndefined();
-});
+		expect(
+			recovered.impactDecisions!.at(-1)!.snapshot.environmentDigest,
+		).not.toBe(previousDigest);
+		expect(recovered.humanDecisions).toBeUndefined();
+	},
+	120_000,
+);
 
 it("recovers selected work in a nested graph without replaying completed agents or assessment", async () => {
 	const options = { fail: true, nested: true };

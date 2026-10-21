@@ -32,7 +32,7 @@ resumes them through `WorkflowRuntime`, without a test-side registration call.
 | `FactoryRolePrompts.test.ts` | Expand declared snippets before full prompt comparison; retain the immutable base-captured role fixture and add full-string generic snippet order/slot assertions. The separately tested capability reference is intentionally updated for the new settings. |
 | `FeedbackPolicy.test.ts` | Supply the explicit feedback check, reads and accepted nested graph corresponding to its historical receipts. Policy authenticity and recovery outcomes remain. |
 | `Guide.test.ts` | Build old upgrade fixtures from the real frozen definitions instead of current modern presets. The full expected old/upgraded guide prompts remain. |
-| `Impact.test.ts` | Direct QA probe/reuse helpers declare capture output and scope/capture/gate bindings instead of borrowing an unrelated inventory role. Original provenance, changed-fixture and failed-reuse assertions remain. |
+| `Impact.test.ts` | Direct QA probe/reuse helpers declare capture output and scope/capture/gate bindings instead of borrowing an unrelated inventory role; post-run direct tools use the accepted loaded definition. Original provenance, changed-fixture and failed-reuse assertions remain. Real Git comparison/restart scenarios receive 120 seconds per case and 30 seconds for retry completion: isolated retry cases took 9.9/13.7 seconds, while concurrent checks exceeded the former 10/30-second fixture allowances. No runtime budget or outcome assertion changes. |
 | `Incremental.test.ts` | Model the direct historical capture role and supply the base revision through the declared CI read; preserve complete PR-file and incremental revision assertions. |
 | `MergeReadiness.test.ts` | Direct tool contexts model a loaded historical graph, and readiness assertions use the operational field. All discussion pagination, feedback, retry, CI, approval and repetition assertions remain. |
 | `ResultArtifacts.test.ts` | The direct guide role declares its format, guide checks and capture/scope/review reads. Large artifact and validation assertions remain. |
@@ -45,6 +45,7 @@ resumes them through `WorkflowRuntime`, without a test-side registration call.
 | `WorkflowRuntime.test.ts` | Custom human-review fixtures declare their guide read; generic assistance fixtures declare `askQuestions` instead of receiving it implicitly from a fixer-like ID. Original question/recheck and guide-only regeneration outcomes remain. |
 | `fixtures/legacy-review.ts` | Remove the modern marker when constructing an intentionally historical graph. |
 | `prompt-assembly.routing-context.test.ts` | Update the entire expected capability-reference paragraph for reads, formats, rules, checks, revisions, access and shared instructions. All full-prompt assertions remain. |
+| `packages/mcp-tools/test/factory-operator-recovery.f1.test.ts` | Allocate an explicit free loopback port: the historical zero-port option selected port 3456, which collided with an unrelated running F1 server. Retain the entire compiled-stdio recovery scenario and its assertions. |
 
 New focused regressions cover safe schema/rule validation and unknown IDs,
 format-only modern roles, stock-versus-every-step-renamed Factory, raw frozen-run

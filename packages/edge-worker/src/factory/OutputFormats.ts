@@ -25,6 +25,10 @@ import {
 } from "./FactoryTools.js";
 import { ImpactSchema } from "./Impact.js";
 import {
+	ImprovementActionSchema,
+	ImprovementSettingsSchema,
+	IssueDestinationSchema,
+	ItemChoiceSchema,
 	OpportunitySchema,
 	PackageSchema,
 	PackagesSchema,
@@ -125,6 +129,11 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"improvement-proposals-v1": (value) => ProposalOutputSchema.parse(value),
 	"improvement-packages-v1": (value) => PackagesSchema.parse(value),
 	"improvement-plan-check-v1": (value) => PlanCheckSchema.parse(value),
+	"improvement-settings-v1": (value) => ImprovementSettingsSchema.parse(value),
+	"improvement-issue-destination-v1": (value) =>
+		IssueDestinationSchema.parse(value),
+	"improvement-item-choice-v1": (value) => ItemChoiceSchema.parse(value),
+	"improvement-action-v1": (value) => ImprovementActionSchema.parse(value),
 	"improvement-opportunity-v1": (value) => OpportunitySchema.parse(value),
 	"improvement-package-v1": (value) => PackageSchema.parse(value),
 };
