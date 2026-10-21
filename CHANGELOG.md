@@ -32,6 +32,15 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Collect complete impact-review patches up to 64 MiB so large base integrations retain their file inventory and combined-tree evidence; larger output still blocks review reuse. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
+- Reject retained architecture approval actions after proposal navigation, replacement or gate changes, and update vulnerable MCP and test-tool dependencies. Let run recovery wait for a brief storage inspection without stealing its workspace lock, and preserve configurable workflow steps when integrating the updated base. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
+- Allocate dynamic listener ports for guide, architecture, review and recovery test drives so unrelated local runs can keep their servers running. Align the architecture continuation fixture with the stock check-in format. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
+- Show launch-time agent, model and reasoning settings only for Simple, and clear hidden overrides when switching recipes. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
+
+- Isolate GitHub token test fixtures from an inherited Factory credential helper so required integration checks preserve exact credential assertions in managed runs. ([#138](https://github.com/jappyjan/bobs-factory/pull/138))
 - Recheck waiting questions after an update or access repair without inventing an answer or losing the original conversation. Let correction roles return genuine design changes through proposal review, and keep supervised concurrency checks within the run's capacity allowance. ([#171](https://github.com/jappyjan/bobs-factory/pull/171))
 
 - Stop repeated review loops caused by stale pull-request target commits. Let correction roles use retained findings when review is unfinished, and give selected checks the normal twenty-minute command budget while keeping independent review and human approval required. ([#169](https://github.com/jappyjan/bobs-factory/pull/169))

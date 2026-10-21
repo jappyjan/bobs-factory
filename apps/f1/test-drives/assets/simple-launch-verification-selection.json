@@ -1,0 +1,1262 @@
+{
+	"schema": "simple-launch-verification-reconciliation-v1",
+	"requirement": "R11",
+	"assessedHead": "a38f182bc2e745464314c83557d4596a70fd5ec3",
+	"includedTarget": "4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7",
+	"historicalHead": "eda52f3a699fef280136f549e17ed476e8f90274",
+	"historicalTarget": "a4990127173a9135b331bbe7956559321a0087e2",
+	"historicalSelection": "/history/300/output/checks",
+	"currentSelection": "/history/345/output/checks",
+	"nextAssessment": {
+		"extractRequirements": true,
+		"reason": "R11 still names the historical head/target and exact 65-command batch. Freeze the 75-command union for the new revision through requirement extraction; retain original executions at original revisions.",
+		"reuse": [],
+		"note": "Fresh local fixer executions support correction only. The independent assessor must explicitly select runtime checks or justify original-evidence reuse; do not treat this document as gate approval.",
+		"requirementAmendment": "Refresh inventory version 19 R11 through extract-requirements. Preserve every obligation from /history/300/output/checks through the 65 retained mappings and all 10 additional storage/runner selections below. Freeze the full 75-command union at the newly assessed head/target. Only the three documented target/overlap replacements change commands; all behavioral assertions remain. Account for current evidence through fresh runtime receipts or independently justified reuse with original revision stamps. Include the workspace-reservation correction and retain all configured downstream gates. The earlier 26-command batch does not alone satisfy this requirement."
+	},
+	"checks": [
+		{
+			"id": "combined-target",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "git merge-tree --write-tree HEAD 4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7",
+			"reason": "Retain combined-target coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "frozen-install",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "pnpm install --frozen-lockfile",
+			"reason": "Retain frozen-install coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "dependency-audit",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "pnpm audit",
+			"reason": "Retain dependency-audit coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "workspace-build",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "pnpm build",
+			"reason": "Retain workspace-build coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "workspace-types",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "pnpm typecheck",
+			"reason": "Retain workspace-types coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "launcher-and-integration-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/FactoryLauncher.test.ts test/FactoryWebClient.test.ts test/FactoryAgentSettings.test.ts test/FactoryExecution.test.ts test/ExecutionProfiles.test.ts test/WorkflowRuntime.test.ts test/FactoryPwa.test.ts test/GitSettings.test.ts test/GitService.test.ts test/RunnerConfigBuilder.github-token-env.test.ts test/prompt-assembly.routing-context.test.ts",
+			"reason": "Retain launcher-and-integration-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "review-contract-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/SpecialistReview.test.ts --maxWorkers=1",
+			"reason": "Retain review-contract-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "review-recovery-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/ReviewRecovery.test.ts test/ReviewBrief.test.ts test/ReviewSessionContinuity.test.ts --maxWorkers=1",
+			"reason": "Retain review-recovery-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-recovery-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Architecture.test.ts test/ArchitectureFootprint.test.ts test/EdgeWorker.architecture-recovery.test.ts test/EdgeWorker.decision-documentation.test.ts test/EdgeWorker.ticket-recovery.test.ts test/Takeover.test.ts test/TicketTracking.test.ts",
+			"reason": "Retain target-recovery-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-update-maintenance-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/UpdateMaintenance.test.ts test/MergeReadiness.test.ts test/DeliveryCoordination.test.ts",
+			"reason": "Retain target-update-maintenance-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'measures actual|rejects stale'",
+			"reason": "Retain target-impact-1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-2a",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'bounds unchanged|preserves grouped'",
+			"reason": "Retain target-impact-2a coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-2b",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'renews stale.*nested=false'",
+			"reason": "Retain target-impact-2b coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-2c",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'renews stale.*nested=true'",
+			"reason": "Retain target-impact-2c coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-3",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'recovers selected|inspects a non-mutating|keeps optional'",
+			"reason": "Retain target-impact-3 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-4",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'accepts shell|preserves original|assesses informational'",
+			"reason": "Retain target-impact-4 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-5",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'continues explicit|selects and checks|reuses an unchanged'",
+			"reason": "Retain target-impact-5 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-6",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern '^(?!.*(?:measures actual|rejects stale|bounds unchanged|preserves grouped|renews stale|recovers selected|inspects a non-mutating|keeps optional|accepts shell|preserves original|assesses informational|continues explicit|selects and checks|reuses an unchanged|binds assessment sources))'",
+			"reason": "Retain target-impact-6 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-source-regression",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'binds assessment sources to the inventory history through reassessment and restart'",
+			"reason": "Retain target-impact-source-regression coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-guide-feedback-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Guide.test.ts test/WorkflowCatalog.test.ts test/FeedbackPolicy.test.ts test/ReviewDive.test.ts",
+			"reason": "Retain target-guide-feedback-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-capture-recovery-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/EdgeWorker.capture-recovery.test.ts",
+			"reason": "Retain target-capture-recovery-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-auth-and-recipes",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/FactoryAuth.test.ts test/FactoryAccess.test.ts test/FactoryRecipeGraph.test.ts",
+			"reason": "Retain target-auth-and-recipes coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-linear-delivery",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-linear-event-transport test:run test/LinearDelivery.test.ts",
+			"reason": "Retain target-linear-delivery coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "managed-credential-coverage",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "env -u BOBS_FACTORY_HOME -u BOBS_FACTORY_GITHUB_CREDENTIAL_COMMAND -u BOBS_FACTORY_GITHUB_CREDENTIAL_SOCKET -u BOBS_FACTORY_GITHUB_TOKEN -u BOBS_FACTORY_GITHUB_MANAGED_CREDENTIALS -u BOBS_FACTORY_GITHUB_REPOSITORIES -u BOBS_FACTORY_GITHUB_TOKENS -u BOBS_FACTORY_GITHUB_EXPLICIT_CREDENTIALS F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/GithubApi.test.ts test/GitService.github-auth.test.ts",
+			"reason": "Retain managed-credential-coverage coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-browser-source-coverage",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "node --test scripts/tests/reviewed-javascript-sources.test.mjs",
+			"reason": "Retain target-browser-source-coverage coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-recovery-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/fix-r20-role-recovery.mjs",
+			"reason": "Retain target-recovery-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-review-stage-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock node /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/fix-r13-review-stage.mjs",
+			"reason": "Retain target-review-stage-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "shared",
+				"resources": ["loopback:127.0.0.1:3670", "loopback:127.0.0.1:3671"]
+			}
+		},
+		{
+			"id": "target-update-maintenance-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "env -u BOBS_FACTORY_INTERNAL_EXECUTABLE -u BOBS_FACTORY_FACTORY_PORT -u BOBS_FACTORY_FACTORY_ORIGIN -u BOBS_FACTORY_FACTORY_PUBLIC_ORIGIN F1_AGENT_MODE=mock node apps/f1/test-drives/assets/update-maintenance.mjs",
+			"reason": "Retain target-update-maintenance-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "launcher-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/media/2026-10-15-simple-launch-settings/f1-drive.ts",
+			"reason": "Retain launcher-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-impact-feedback-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/impact-feedback-recovery.mjs",
+			"reason": "Retain target-impact-feedback-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-guide-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "env -u BOBS_FACTORY_INTERNAL_EXECUTABLE F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/review-story.ts",
+			"reason": "Retain target-guide-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-architecture-continuation-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/architecture-approval-continuation.mjs",
+			"reason": "Retain target-architecture-continuation-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "nightly-evidence-syntax",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "node --check scripts/prepare-nightly-evidence.mjs",
+			"reason": "Retain nightly-evidence-syntax coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "changed-code-lint",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "pnpm lint",
+			"reason": "Retain changed-code-lint coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "diff-whitespace",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "git diff --check 4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7 HEAD",
+			"reason": "Retain diff-whitespace coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-config-projection-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/FactoryServer.test.ts test/FactoryConfigProjection.test.ts test/FactoryRepositoryScope.test.ts --maxWorkers=1",
+			"reason": "Retain target-config-projection-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-activity-projection-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/ActivityPage.test.ts test/FactoryActivity.test.ts --maxWorkers=1",
+			"reason": "Retain target-activity-projection-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-message-persistence-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/EdgeWorker.message-persistence.test.ts --maxWorkers=1",
+			"reason": "Retain target-message-persistence-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-context-execution-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/WorkflowExecution.test.ts test/Incremental.test.ts test/EdgeWorker.workflow-triggers.test.ts --maxWorkers=1",
+			"reason": "Retain target-context-execution-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-core-snapshot-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-core test:run test/JsonSnapshotStore.test.ts",
+			"reason": "Retain target-core-snapshot-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-context-transport-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-mcp-tools test:run src/factoryContext.test.ts",
+			"reason": "Retain target-context-transport-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-cli-config-consumers",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory test:run src/onboarding.test.ts src/tui/tui.test.ts",
+			"reason": "Retain target-cli-config-consumers coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-api-responsiveness-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "env -u BOBS_FACTORY_INTERNAL_EXECUTABLE F1_AGENT_MODE=mock F1_API_PORT=3686 bun run apps/f1/test-drives/assets/api-responsiveness.ts",
+			"reason": "Retain target-api-responsiveness-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "shared",
+				"resources": ["loopback:localhost:3686", "loopback:localhost:3687"]
+			}
+		},
+		{
+			"id": "target-context-memory-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock node --max-old-space-size=64 apps/f1/test-drives/assets/context-handoff-memory.mjs",
+			"reason": "Retain target-context-memory-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-operator-context-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock node apps/f1/test-drives/assets/frozen-workflow-approval-context.mjs",
+			"reason": "Retain target-operator-context-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-incomplete-review-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/ci-fix-incomplete-review.mjs",
+			"reason": "Retain target-incomplete-review-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-linear-background-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/linear-busy-budget.ts",
+			"reason": "Retain target-linear-background-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-linear-early-ack-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/linear-early-ack.ts",
+			"reason": "Retain target-linear-early-ack-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-nightly-evidence-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "node --test scripts/tests/nightly-baseline.test.mjs scripts/tests/prepared-evidence-intake.test.mjs",
+			"reason": "Retain target-nightly-evidence-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-device-pairing-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "env -u F1_DEVICE_HOLD F1_AGENT_MODE=mock F1_DEVICE_PORT=3690 bun run apps/f1/test-drives/assets/device-pairing-approval.ts",
+			"reason": "Retain target-device-pairing-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "shared",
+				"resources": [
+					"loopback:localhost:3690",
+					"loopback:127.0.0.1:3691",
+					"loopback:127.0.0.1:3692"
+				]
+			}
+		},
+		{
+			"id": "target-stuck-recovery-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/WorktreeRecovery.test.ts test/EdgeWorker.merge-recovery.test.ts test/CISupervision.test.ts --maxWorkers=1",
+			"reason": "Retain target-stuck-recovery-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-delivery-contract-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/TicketDelivery.test.ts --maxWorkers=1",
+			"reason": "Retain target-delivery-contract-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-stuck-recovery-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/stuck-run-recovery.mjs",
+			"reason": "Retain target-stuck-recovery-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-cli-launch-lifecycle-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory test:run src/local.test.ts src/services/OwnedUpdateLifecycle.test.ts",
+			"reason": "Retain target-cli-launch-lifecycle-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-desktop-lifecycle-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-desktop test:run",
+			"reason": "Retain target-desktop-lifecycle-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-workflow-lint",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "actionlint",
+			"reason": "Retain target-workflow-lint coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-release-workflow-safeguards",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "node --test scripts/tests/nightly-source.test.mjs scripts/tests/release-candidate.test.mjs scripts/tests/artifact-handoff.test.mjs",
+			"reason": "Retain target-release-workflow-safeguards coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "f1-dynamic-port-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-f1 test:run src/ports.test.ts",
+			"reason": "Retain f1-dynamic-port-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-checkin-and-reader-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/ArchitecturePage.test.tsx test/Checkin.test.ts test/ReviewModel.test.ts test/FactoryReviewState.test.ts --maxWorkers=1",
+			"reason": "Retain target-checkin-and-reader-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "owning-config-updater-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-config-updater test:run",
+			"reason": "Retain owning-config-updater-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "owning-mcp-tools-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-mcp-tools test:run",
+			"reason": "Retain owning-mcp-tools-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "concurrent-complete-drive-isolation",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/ci-fix-r22-scheduled-overlap.mjs",
+			"reason": "Retain concurrent-complete-drive-isolation coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "shared",
+				"resources": [
+					"loopback:127.0.0.1:3542,3543,3600,3601",
+					"loopback:[::1]:3542,3543,3600,3601"
+				]
+			}
+		},
+		{
+			"id": "target-workflow-budget-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/StepVisitBudget.test.ts test/FactoryProvenance.test.ts --maxWorkers=1",
+			"reason": "Retain target-workflow-budget-tests coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-improvement-launch-integration",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Improvement.test.ts test/ResearchPermissions.test.ts --maxWorkers=1",
+			"reason": "Retain target-improvement-launch-integration coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-stall-recovery-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/workflow-stall-recovery.mjs",
+			"reason": "Retain target-stall-recovery-f1 coverage from /history/300/output/checks on the assessed combined revision; preserve existing assertions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "approval-and-recovery-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/ArchitecturePage.test.tsx test/Architecture.test.ts test/WorkflowNativeRecovery.test.ts test/EdgeWorker.ticket-recovery.test.ts test/MachineCapacity.test.ts --maxWorkers=1",
+			"reason": "Validate retained approval guards and target changes to continuation and capacity ownership.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-storage-integration-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/FactoryServer.test.ts test/StorageApi.test.ts test/StorageRetention.test.ts test/WorktreeArtifacts.test.ts test/UpdateArtifacts.test.ts --maxWorkers=1",
+			"reason": "Validate target-only storage integration with the shared server and workspace lifecycle.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-core-storage-tests",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-core test:run test/OwnedResourceClaim.test.ts test/StorageRetention.test.ts test/ProjectArtifactLease.test.ts",
+			"reason": "Validate the ownership and retention primitives now used during workflow execution.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-storage-f1",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-f1 test:run test/storage-retention.test.ts",
+			"reason": "Exercise target lifecycle ownership, terminal events and restart with simulated agents.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-git-environment",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/GitService.environment.test.ts",
+			"reason": "Exercise real worktree setup, scoped credentials and capacity beyond virtual command fixtures.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-update-integration",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/UpdateManager.test.ts test/UpdateOperationLock.test.ts test/PublishedUpdateSource.test.ts test/UpdateMaintenance.test.ts --maxWorkers=1",
+			"reason": "Validate target update retention and ownership integration separately from launcher regressions.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-cli-storage-migration",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory test:run src/commands/storage.test.ts src/migration/migration.test.ts src/migration/preservation.test.ts src/migration/worktrees.test.ts src/services/OwnedUpdateLifecycle.test.ts src/services/UpdateStateSnapshot.test.ts --maxWorkers=1",
+			"reason": "Validate changed storage commands, migration preservation and update ownership.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-cursor-artifact-lease",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-cursor-runner test:run",
+			"reason": "Validate changed artifact lease acquisition and cleanup with scripted fixtures.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-gemini-artifact-lease",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-gemini-runner test:run",
+			"reason": "Validate Gemini artifact ownership with deterministic fixtures.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		},
+		{
+			"id": "target-codex-cancellation",
+			"repositoryId": "d82e8095-a12a-456a-a2d7-dc5c21ce2814",
+			"command": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-codex-runner test:run test/CodexRunner.streaming.test.ts",
+			"reason": "Validate cancellation and child exit after the readiness-wait change.",
+			"environment": {
+				"isolation": "worktree"
+			}
+		}
+	],
+	"retainedMapping": [
+		{
+			"historicalIndex": 0,
+			"id": "combined-target",
+			"selectedId": "combined-target",
+			"originalCommand": "git merge-tree --write-tree HEAD a4990127173a9135b331bbe7956559321a0087e2",
+			"amendment": "Refresh frozen target from a4990127 to 4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7; retain original command in historical selection.",
+			"currentRuntimeReceipt": "/history/346/output/checks/0"
+		},
+		{
+			"historicalIndex": 1,
+			"id": "frozen-install",
+			"selectedId": "frozen-install",
+			"originalCommand": "pnpm install --frozen-lockfile",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/1"
+		},
+		{
+			"historicalIndex": 2,
+			"id": "dependency-audit",
+			"selectedId": "dependency-audit",
+			"originalCommand": "pnpm audit",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/2"
+		},
+		{
+			"historicalIndex": 3,
+			"id": "workspace-build",
+			"selectedId": "workspace-build",
+			"originalCommand": "pnpm build",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/3"
+		},
+		{
+			"historicalIndex": 4,
+			"id": "workspace-types",
+			"selectedId": "workspace-types",
+			"originalCommand": "pnpm typecheck",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/4"
+		},
+		{
+			"historicalIndex": 5,
+			"id": "launcher-and-integration-tests",
+			"selectedId": "launcher-and-integration-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/FactoryLauncher.test.ts test/FactoryWebClient.test.ts test/FactoryAgentSettings.test.ts test/FactoryExecution.test.ts test/ExecutionProfiles.test.ts test/WorkflowRuntime.test.ts test/FactoryPwa.test.ts test/GitSettings.test.ts test/GitService.test.ts test/RunnerConfigBuilder.github-token-env.test.ts test/prompt-assembly.routing-context.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/5"
+		},
+		{
+			"historicalIndex": 6,
+			"id": "review-contract-tests",
+			"selectedId": "review-contract-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/SpecialistReview.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/24"
+		},
+		{
+			"historicalIndex": 7,
+			"id": "review-recovery-tests",
+			"selectedId": "review-recovery-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/ReviewRecovery.test.ts test/ReviewBrief.test.ts test/ReviewSessionContinuity.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 8,
+			"id": "target-recovery-tests",
+			"selectedId": "target-recovery-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Architecture.test.ts test/ArchitectureFootprint.test.ts test/EdgeWorker.architecture-recovery.test.ts test/EdgeWorker.decision-documentation.test.ts test/EdgeWorker.ticket-recovery.test.ts test/Takeover.test.ts test/TicketTracking.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 9,
+			"id": "target-update-maintenance-tests",
+			"selectedId": "target-update-maintenance-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/UpdateMaintenance.test.ts test/MergeReadiness.test.ts test/DeliveryCoordination.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 10,
+			"id": "target-impact-1",
+			"selectedId": "target-impact-1",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'measures actual|rejects stale'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 11,
+			"id": "target-impact-2a",
+			"selectedId": "target-impact-2a",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'bounds unchanged|preserves grouped'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 12,
+			"id": "target-impact-2b",
+			"selectedId": "target-impact-2b",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'renews stale.*nested=false'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 13,
+			"id": "target-impact-2c",
+			"selectedId": "target-impact-2c",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'renews stale.*nested=true'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 14,
+			"id": "target-impact-3",
+			"selectedId": "target-impact-3",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'recovers selected|inspects a non-mutating|keeps optional'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 15,
+			"id": "target-impact-4",
+			"selectedId": "target-impact-4",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'accepts shell|preserves original|assesses informational'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 16,
+			"id": "target-impact-5",
+			"selectedId": "target-impact-5",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'continues explicit|selects and checks|reuses an unchanged'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 17,
+			"id": "target-impact-6",
+			"selectedId": "target-impact-6",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern '^(?!.*(?:measures actual|rejects stale|bounds unchanged|preserves grouped|renews stale|recovers selected|inspects a non-mutating|keeps optional|accepts shell|preserves original|assesses informational|continues explicit|selects and checks|reuses an unchanged|binds assessment sources))'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 18,
+			"id": "target-impact-source-regression",
+			"selectedId": "target-impact-source-regression",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Impact.test.ts --reporter=verbose --testNamePattern 'binds assessment sources to the inventory history through reassessment and restart'",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 19,
+			"id": "target-guide-feedback-tests",
+			"selectedId": "target-guide-feedback-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Guide.test.ts test/WorkflowCatalog.test.ts test/FeedbackPolicy.test.ts test/ReviewDive.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 20,
+			"id": "target-capture-recovery-tests",
+			"selectedId": "target-capture-recovery-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/EdgeWorker.capture-recovery.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 21,
+			"id": "target-auth-and-recipes",
+			"selectedId": "target-auth-and-recipes",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/FactoryAuth.test.ts test/FactoryAccess.test.ts test/FactoryRecipeGraph.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 22,
+			"id": "target-linear-delivery",
+			"selectedId": "target-linear-delivery",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-linear-event-transport test:run test/LinearDelivery.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 23,
+			"id": "managed-credential-coverage",
+			"selectedId": "managed-credential-coverage",
+			"originalCommand": "env -u BOBS_FACTORY_HOME -u BOBS_FACTORY_GITHUB_CREDENTIAL_COMMAND -u BOBS_FACTORY_GITHUB_CREDENTIAL_SOCKET -u BOBS_FACTORY_GITHUB_TOKEN -u BOBS_FACTORY_GITHUB_MANAGED_CREDENTIALS -u BOBS_FACTORY_GITHUB_REPOSITORIES -u BOBS_FACTORY_GITHUB_TOKENS -u BOBS_FACTORY_GITHUB_EXPLICIT_CREDENTIALS F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/GithubApi.test.ts test/GitService.github-auth.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/25"
+		},
+		{
+			"historicalIndex": 24,
+			"id": "target-browser-source-coverage",
+			"selectedId": "target-browser-source-coverage",
+			"originalCommand": "node --test scripts/tests/reviewed-javascript-sources.test.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 25,
+			"id": "target-recovery-f1",
+			"selectedId": "target-recovery-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/fix-r20-role-recovery.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 26,
+			"id": "target-review-stage-f1",
+			"selectedId": "target-review-stage-f1",
+			"originalCommand": "F1_AGENT_MODE=mock node /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/fix-r13-review-stage.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 27,
+			"id": "target-update-maintenance-f1",
+			"selectedId": "target-update-maintenance-f1",
+			"originalCommand": "env -u BOBS_FACTORY_INTERNAL_EXECUTABLE -u BOBS_FACTORY_FACTORY_PORT -u BOBS_FACTORY_FACTORY_ORIGIN -u BOBS_FACTORY_FACTORY_PUBLIC_ORIGIN F1_AGENT_MODE=mock node apps/f1/test-drives/assets/update-maintenance.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 28,
+			"id": "launcher-f1",
+			"selectedId": "launcher-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/media/2026-10-15-simple-launch-settings/f1-drive.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/9"
+		},
+		{
+			"historicalIndex": 29,
+			"id": "target-impact-feedback-f1",
+			"selectedId": "target-impact-feedback-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/impact-feedback-recovery.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 30,
+			"id": "target-guide-f1",
+			"selectedId": "target-guide-f1",
+			"originalCommand": "env -u BOBS_FACTORY_INTERNAL_EXECUTABLE F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/review-story.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 31,
+			"id": "target-architecture-continuation-f1",
+			"selectedId": "target-architecture-continuation-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/architecture-approval-continuation.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 32,
+			"id": "nightly-evidence-syntax",
+			"selectedId": "nightly-evidence-syntax",
+			"originalCommand": "node --check scripts/prepare-nightly-evidence.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 33,
+			"id": "changed-code-lint",
+			"selectedId": "changed-code-lint",
+			"originalCommand": "pnpm lint",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/12"
+		},
+		{
+			"historicalIndex": 34,
+			"id": "diff-whitespace",
+			"selectedId": "diff-whitespace",
+			"originalCommand": "git diff --check a4990127173a9135b331bbe7956559321a0087e2 HEAD",
+			"amendment": "Refresh frozen target from a4990127 to 4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7; retain original command in historical selection.",
+			"currentRuntimeReceipt": "/history/346/output/checks/13"
+		},
+		{
+			"historicalIndex": 35,
+			"id": "target-config-projection-tests",
+			"selectedId": "target-config-projection-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/FactoryServer.test.ts test/FactoryConfigProjection.test.ts test/FactoryRepositoryScope.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 36,
+			"id": "target-activity-projection-tests",
+			"selectedId": "target-activity-projection-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/ActivityPage.test.ts test/FactoryActivity.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 37,
+			"id": "target-message-persistence-tests",
+			"selectedId": "target-message-persistence-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/EdgeWorker.message-persistence.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 38,
+			"id": "target-context-execution-tests",
+			"selectedId": "target-context-execution-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/WorkflowExecution.test.ts test/Incremental.test.ts test/EdgeWorker.workflow-triggers.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 39,
+			"id": "target-core-snapshot-tests",
+			"selectedId": "target-core-snapshot-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-core test:run test/JsonSnapshotStore.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 40,
+			"id": "target-context-transport-tests",
+			"selectedId": "target-context-transport-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-mcp-tools test:run src/factoryContext.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 41,
+			"id": "target-cli-config-consumers",
+			"selectedId": "target-cli-config-consumers",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory test:run src/onboarding.test.ts src/tui/tui.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 42,
+			"id": "target-api-responsiveness-f1",
+			"selectedId": "target-api-responsiveness-f1",
+			"originalCommand": "env -u BOBS_FACTORY_INTERNAL_EXECUTABLE F1_AGENT_MODE=mock F1_API_PORT=3686 bun run apps/f1/test-drives/assets/api-responsiveness.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 43,
+			"id": "target-context-memory-f1",
+			"selectedId": "target-context-memory-f1",
+			"originalCommand": "F1_AGENT_MODE=mock node --max-old-space-size=64 apps/f1/test-drives/assets/context-handoff-memory.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 44,
+			"id": "target-operator-context-f1",
+			"selectedId": "target-operator-context-f1",
+			"originalCommand": "F1_AGENT_MODE=mock node apps/f1/test-drives/assets/frozen-workflow-approval-context.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 45,
+			"id": "target-incomplete-review-f1",
+			"selectedId": "target-incomplete-review-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/ci-fix-incomplete-review.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 46,
+			"id": "target-linear-background-f1",
+			"selectedId": "target-linear-background-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/linear-busy-budget.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 47,
+			"id": "target-linear-early-ack-f1",
+			"selectedId": "target-linear-early-ack-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun run apps/f1/test-drives/assets/linear-early-ack.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 48,
+			"id": "target-nightly-evidence-tests",
+			"selectedId": "target-nightly-evidence-tests",
+			"originalCommand": "node --test scripts/tests/nightly-baseline.test.mjs scripts/tests/prepared-evidence-intake.test.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 49,
+			"id": "target-device-pairing-f1",
+			"selectedId": "target-device-pairing-f1",
+			"originalCommand": "env -u F1_DEVICE_HOLD F1_AGENT_MODE=mock F1_DEVICE_PORT=3690 bun run apps/f1/test-drives/assets/device-pairing-approval.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 50,
+			"id": "target-stuck-recovery-tests",
+			"selectedId": "target-stuck-recovery-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/WorktreeRecovery.test.ts test/EdgeWorker.merge-recovery.test.ts test/CISupervision.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 51,
+			"id": "target-delivery-contract-tests",
+			"selectedId": "target-delivery-contract-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/TicketDelivery.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 52,
+			"id": "target-stuck-recovery-f1",
+			"selectedId": "target-stuck-recovery-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/stuck-run-recovery.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 53,
+			"id": "target-cli-launch-lifecycle-tests",
+			"selectedId": "target-cli-launch-lifecycle-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory test:run src/local.test.ts src/services/OwnedUpdateLifecycle.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 54,
+			"id": "target-desktop-lifecycle-tests",
+			"selectedId": "target-desktop-lifecycle-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-desktop test:run",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/17"
+		},
+		{
+			"historicalIndex": 55,
+			"id": "target-workflow-lint",
+			"selectedId": "target-workflow-lint",
+			"originalCommand": "actionlint",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 56,
+			"id": "target-release-workflow-safeguards",
+			"selectedId": "target-release-workflow-safeguards",
+			"originalCommand": "node --test scripts/tests/nightly-source.test.mjs scripts/tests/release-candidate.test.mjs scripts/tests/artifact-handoff.test.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 57,
+			"id": "f1-dynamic-port-tests",
+			"selectedId": "f1-dynamic-port-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-f1 test:run src/ports.test.ts",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/21"
+		},
+		{
+			"historicalIndex": 58,
+			"id": "target-checkin-and-reader-tests",
+			"selectedId": "target-checkin-and-reader-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/ArchitecturePage.test.tsx test/Checkin.test.ts test/ReviewModel.test.ts test/FactoryReviewState.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 59,
+			"id": "owning-config-updater-tests",
+			"selectedId": "owning-config-updater-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-config-updater test:run",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/22"
+		},
+		{
+			"historicalIndex": 60,
+			"id": "owning-mcp-tools-tests",
+			"selectedId": "owning-mcp-tools-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-mcp-tools test:run",
+			"amendment": null,
+			"currentRuntimeReceipt": "/history/346/output/checks/23"
+		},
+		{
+			"historicalIndex": 61,
+			"id": "concurrent-complete-drive-isolation",
+			"selectedId": "concurrent-complete-drive-isolation",
+			"originalCommand": "F1_AGENT_MODE=mock bun /Users/jappy/.bobs-factory/factory/evidence/manual-05131462-c641-4a6d-b5ba-859819a6f741/ci-fix-r21-scheduled-overlap.mjs",
+			"amendment": "Use storage-integrated r22 driver; retains complete startup/restart/sentinel/cleanup assertions and current base metadata.",
+			"currentRuntimeReceipt": "/history/346/output/checks/11"
+		},
+		{
+			"historicalIndex": 62,
+			"id": "target-workflow-budget-tests",
+			"selectedId": "target-workflow-budget-tests",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/StepVisitBudget.test.ts test/FactoryProvenance.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 63,
+			"id": "target-improvement-launch-integration",
+			"selectedId": "target-improvement-launch-integration",
+			"originalCommand": "F1_AGENT_MODE=mock pnpm --filter bobs-factory-edge-worker test:run test/Improvement.test.ts test/ResearchPermissions.test.ts --maxWorkers=1",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		},
+		{
+			"historicalIndex": 64,
+			"id": "target-stall-recovery-f1",
+			"selectedId": "target-stall-recovery-f1",
+			"originalCommand": "F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/workflow-stall-recovery.mjs",
+			"amendment": null,
+			"currentRuntimeReceipt": null
+		}
+	],
+	"downstream": "Fresh QA, visual review, guide, human acceptance and provider-confirmed delivery remain at configured gates; no real-provider evidence is claimed.",
+	"currentReceiptSource": "/history/346/output/checks",
+	"correction": {
+		"kind": "workspace-reservation-retry",
+		"scope": [
+			"packages/core/src/OwnedResourceClaim.ts",
+			"packages/core/src/StorageRetention.ts",
+			"packages/core/test/OwnedResourceClaim.test.ts",
+			"apps/f1/test/storage-retention.test.ts"
+		],
+		"reason": "Restoring R11 verification exposed live workspace-claim contention during restart in impact-feedback, incomplete-review and workflow-stall drives. Only known busy-claim errors retry briefly before reservation; low-level exclusion, owner identity and other errors remain unchanged. Claim release also waits for a concurrent inspection guard before removing its original owner record, preventing a finished operation from stranding a live-process claim.",
+		"evidence": "Local initial failures and corrected executions use fix-r23- prefixes in the run evidence directory.",
+		"revisionBinding": "The assessedHead field preserves the starting revision. The next independent assessment must bind the delivered revision, including this source correction, and invalidate affected earlier receipts.",
+		"fixtureAlignment": "The held-deletion negative case retains its failed-state, no-provider-entry and native-file assertions. Its poll waits ten seconds for the new bounded five-second admission retry; no other deadline is changed."
+	},
+	"integrationRefresh": {
+		"source": "/history/359/output/checks",
+		"previousSuccessfulBatch": "/history/358/output/checks",
+		"priorHead": "1d6ebaac8ef93597c9384d6bf31005750b29ccb8",
+		"priorTarget": "4e32ed07947ca1cec5e5a514b6e0b941e73d6bd7",
+		"target": "95f79ef3be57bd8aa83d53b68c8130c28ef19dc9",
+		"retainedCheckCount": 75,
+		"addedCheckIds": [
+			"advanced-step-config-tests",
+			"advanced-revision-provenance-tests",
+			"advanced-schema-tests",
+			"advanced-presentation-tests",
+			"advanced-configurable-workflow-f1",
+			"advanced-schema-source-isolation"
+		],
+		"nextSelectionCount": 81,
+		"overlapWrapper": "ci-fix-r24-scheduled-overlap.mjs",
+		"requirementRefresh": ["R11", "R13", "R24", "R29"],
+		"note": "Historical records above retain original revisions and commands. All 75 retained obligations plus six discovered selections remain pending independent reassessment of the corrected head and target, including requirement extraction and fresh specialist/QA gates. Local correction checks are not independent gate receipts."
+	}
+}

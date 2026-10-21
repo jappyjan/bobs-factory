@@ -6,10 +6,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
+import { reserveLoopbackPorts } from "../../src/ports.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 delete process.env.BOBS_FACTORY_INTERNAL_EXECUTABLE;
-process.env.BOBS_FACTORY_FACTORY_PORT = "3601";
+const portLease = await reserveLoopbackPorts(2);
+const [factoryPort, rpcPort] = portLease.ports;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 const root = process.cwd();
 const home = mkdtempSync(join(tmpdir(), "frozen-workflow-context-"));
@@ -309,7 +313,7 @@ const config = {
 	issueTrackerFactory: () => tracker,
 	factoryHome: home,
 	serverHost: "127.0.0.1",
-	serverPort: 3604,
+	serverPort: rpcPort,
 	defaultRunner: "codex",
 	handlers: { createAgentRunner: scriptedRunner },
 	repositories: [
@@ -327,7 +331,7 @@ const config = {
 		"cli-workspace": { linearToken: "cli-mode-no-token-needed" },
 	},
 };
-const ui = "http://127.0.0.1:3601";
+const ui = `http://127.0.0.1:${factoryPort}`;
 const api = async (path, method = "GET", body) => {
 	const response = await fetch(ui + path, {
 		method,
@@ -356,7 +360,7 @@ const exec = promisify(execFile);
 const f1 = async (...args) =>
 	(
 		await exec(join(root, "apps/f1/f1"), args, {
-			env: { ...process.env, BOBS_FACTORY_PORT: "3604" },
+			env: { ...process.env, BOBS_FACTORY_PORT: String(rpcPort) },
 			timeout: 20000,
 		})
 	).stdout.replace(
@@ -366,6 +370,7 @@ const f1 = async (...args) =>
 let worker;
 try {
 	worker = new EdgeWorker(config);
+	await portLease.release();
 	await worker.start();
 	await f1("ping");
 	const created = await f1(
@@ -511,5 +516,6 @@ try {
 		}),
 	);
 } finally {
+	await portLease.release();
 	await worker?.stop();
 }

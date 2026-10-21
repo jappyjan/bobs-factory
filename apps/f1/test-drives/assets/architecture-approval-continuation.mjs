@@ -8,7 +8,6 @@ import {
 	realpathSync,
 	writeFileSync,
 } from "node:fs";
-import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
@@ -17,6 +16,7 @@ import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/
 import { checkin } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
+import { reserveLoopbackPorts } from "../../src/ports.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 for (const key of Object.keys(process.env))
@@ -42,18 +42,12 @@ writeFileSync(
 git("add", ".");
 git("commit", "-qm", "Initial fixture");
 git("remote", "add", "origin", repo);
-async function freePort() {
-	const server = createServer();
-	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-	const port = server.address().port;
-	await new Promise((resolve) => server.close(resolve));
-	return port;
-}
-const rpcPort = await freePort(),
-	factoryPort = await freePort();
+const portLease = await reserveLoopbackPorts(2);
+const [factoryPort, rpcPort] = portLease.ports;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
 const rpcOrigin = `http://127.0.0.1:${rpcPort}`;
 const factoryOrigin = `http://localhost:${factoryPort}`;
-process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
@@ -303,6 +297,7 @@ try {
 		[...runtime.listWorkflows(), pipeline, workflow],
 		workflow.id,
 	);
+	await portLease.release();
 	await worker.start();
 	const { issue } = await rpc("createIssue", {
 		teamId: "team-default",
@@ -388,5 +383,6 @@ try {
 	);
 	console.log(JSON.stringify(result, null, 2));
 } finally {
+	await portLease.release();
 	await worker?.stop();
 }

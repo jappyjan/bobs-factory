@@ -2,13 +2,13 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
-import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
+import { reserveLoopbackPorts } from "../../src/ports.mjs";
 
 assert.equal(process.env.F1_AGENT_MODE, "mock");
 for (const key of Object.keys(process.env))
@@ -34,18 +34,12 @@ writeFileSync(
 git("add", ".");
 git("commit", "-qm", "Initial fixture");
 git("remote", "add", "origin", repo);
-async function freePort() {
-	const server = createServer();
-	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-	const port = server.address().port;
-	await new Promise((resolve) => server.close(resolve));
-	return port;
-}
-const rpcPort = await freePort(),
-	factoryPort = await freePort();
+const portLease = await reserveLoopbackPorts(2);
+const [factoryPort, rpcPort] = portLease.ports;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+console.log("F1_PORTS", JSON.stringify({ factoryPort, rpcPort }));
 const rpcOrigin = `http://127.0.0.1:${rpcPort}`;
 const factoryOrigin = `http://localhost:${factoryPort}`;
-process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
 process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
 process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
@@ -135,7 +129,9 @@ const invalidComment = {
 	reason: "Originating tracker session notice",
 };
 function assessment(run, correction) {
-	const inventory = run.outputs.gate?.baseline.inventory;
+	const inventory = run.history.findLast(
+		(entry) => entry.step === "pipeline/gate",
+	)?.output.baseline.inventory;
 	return {
 		impactContract: "impact-v1",
 		status: "completed",
@@ -320,6 +316,7 @@ try {
 		[...runtime.listWorkflows(), pipeline, workflow],
 		workflow.id,
 	);
+	await portLease.release();
 	await worker.start();
 	const { issue } = await rpc("createIssue", {
 		teamId: "team-default",
@@ -340,7 +337,14 @@ try {
 	assert(freshTurns[1].resumeSessionId);
 	assert.equal(fresh.impactDecisions.length, 1);
 	assert.equal(fresh.impactDecisions[0].checkResults[0].exitCode, 0);
-	assert.deepEqual(fresh.outputs["assess-impact"].commentAssessments, []);
+	const freshAssessment = fresh.history.findLast(
+		(entry) => entry.step === "pipeline/assess-impact",
+	)?.output;
+	assert(
+		freshAssessment,
+		"The nested assessor must retain its accepted output",
+	);
+	assert.deepEqual(freshAssessment.commentAssessments, []);
 	assert(
 		fresh.events.some((e) =>
 			e.message.includes("Output validation rejected assess-impact"),
@@ -375,6 +379,7 @@ try {
 				{
 					current: "assess-impact",
 					visits: { "assess-impact": 1 },
+					outputs: structuredClone(fresh.checkpoint.active.children[0].outputs),
 					active: {
 						phase: "executing",
 						agent: {
@@ -382,7 +387,7 @@ try {
 							sessionId: "retained-impact-conversation",
 							result: {
 								output: {
-									...fresh.outputs["assess-impact"],
+									...freshAssessment,
 									commentAssessments: [invalidComment],
 								},
 								revision: {
@@ -480,5 +485,6 @@ try {
 	);
 	console.log(`PASS ${directory}`);
 } finally {
+	await portLease.release();
 	await worker?.stop();
 }

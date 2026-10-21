@@ -325,7 +325,9 @@ a five-GiB warning threshold. Preservation overrides age, count and disk pressur
 
 Cleanup uses process-start-aware exclusion, durable use before provider execution,
 fresh accepted-provider delivery checks, complete owner/reference checks and safe
-Git removal. Symlinked owned roots, changed identity, unique ignored files, native
+Git removal. Launch and continuation wait briefly for a busy workspace claim,
+without stealing ownership; unrelated storage errors still stop execution.
+Symlinked owned roots, changed identity, unique ignored files, native
 continuation uncertainty and protected group members retain data. Ticket closure
 only requests reconciliation; the legacy deletion API defers to Storage. Artifact
 manifest verification and usage scans yield with continuation. Cleanup verifies

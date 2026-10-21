@@ -16,7 +16,7 @@ import {
 	sinceLastSeen,
 } from "./checkin-model";
 import { useAction, useRun } from "./client";
-import { useFormState } from "./form-state";
+import { useCurrentForm, useFormState } from "./form-state";
 import { Button, Markdown } from "./ui";
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -376,7 +376,7 @@ export function ArchitecturePage() {
 	}, [hasRun]);
 	const state = run ? architectureState(run) : undefined;
 	const latest = state?.latest;
-	const context = `${run?.id}/${latest?.id}/${latest?.digest}/${latest?.status}/${run?.status}`;
+	const context = `${run?.id}/${latest?.id}/${latest?.version}/${latest?.digest}/${latest?.status}/${run?.status}/${run?.architectureGate?.proposalId}`;
 	const [draft, setDraft] = useFormState(context, "");
 	const [picks, setPicks] = useFormState<Pick[]>(context, []);
 	const [reactions, setReactions] = useFormState<Record<string, Reaction>>(
@@ -388,6 +388,9 @@ export function ArchitecturePage() {
 		undefined,
 	);
 	const [viewing, setViewing] = useState<number>();
+	const isCurrent = useCurrentForm(
+		`${context}/${viewing}/${query.isLoading}/${Boolean(run?.pendingContext)}`,
+	);
 	const action = useAction(`architecture:${run?.id}`, context);
 	const cache = useQueryClient();
 	const listen = useListen(thread);
@@ -429,6 +432,8 @@ export function ArchitecturePage() {
 	const emptyNote = notes.find((n) => !n.text.trim());
 	const sending = notes.length > 0 || draft.trim().length > 0 || openCount > 0;
 	const submit = async (decision: "accept" | "revise" | "explain") => {
+		// A retained action must still belong to the proposal being displayed.
+		if (!interactive || !isCurrent()) return;
 		try {
 			await action.mutateAsync({
 				path: `/api/runs/${run.id}/architecture-decision`,

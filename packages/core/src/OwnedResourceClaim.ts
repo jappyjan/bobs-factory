@@ -16,6 +16,7 @@ const Owner = z.object({
 	start: z.string().min(1),
 	startedAt: z.string(),
 });
+export class OwnedResourceBusyError extends Error {}
 async function processStart(pid: number) {
 	try {
 		const { stdout } = await promisify(execFile)(
@@ -82,7 +83,7 @@ async function guard(
 			}
 		}
 		if (Date.now() >= deadline)
-			throw new Error(
+			throw new OwnedResourceBusyError(
 				"Update ownership reclaim is busy; retry after the current operation",
 			);
 		await new Promise((resolve) => setTimeout(resolve, 10));
@@ -124,7 +125,7 @@ export class OwnedResourceClaim {
 					.parse(JSON.parse(text));
 				const liveStart = await processStart(holder.pid);
 				if (liveStart && (!holder.start || liveStart === holder.start))
-					throw new Error(
+					throw new OwnedResourceBusyError(
 						`Recorded ${this.label} owner is still running or its legacy identity is unverifiable; recovery cannot steal its operation.`,
 					);
 				if (read(this.file) !== text)
@@ -140,7 +141,10 @@ export class OwnedResourceClaim {
 		try {
 			return await work();
 		} finally {
-			await guard(reclaim, owner, Date.now() + this.waitMs);
+			// Acquiring a workspace may fail fast, but releasing one must allow
+			// an in-flight owner inspection to leave the reclaim guard. Otherwise
+			// a finished operation can leave its primary claim owned by a live PID.
+			await guard(reclaim, owner, Date.now() + Math.max(this.waitMs, 5000));
 			try {
 				if (read(this.file) === owner) unlinkSync(this.file);
 			} finally {
