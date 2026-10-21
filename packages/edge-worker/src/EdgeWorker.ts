@@ -239,6 +239,14 @@ import {
 	validateGuide,
 } from "./factory/Guide.js";
 import { type ImpactSnapshot, validateImpact } from "./factory/Impact.js";
+import type {
+	ImprovementState,
+	IssueDestination,
+} from "./factory/Improvement.js";
+import {
+	fileLinearImprovement,
+	fileTaskbotImprovement,
+} from "./factory/ImprovementIssues.js";
 import {
 	completedAgentResult,
 	incrementalInstructions,
@@ -298,6 +306,10 @@ import {
 	snapshotRepositories,
 } from "./factory/RepositoryScope.js";
 import {
+	researchTools,
+	restrictResearchRunner,
+} from "./factory/ResearchPermissions.js";
+import {
 	resolveRoleResult,
 	roleResultArtifactBinding,
 } from "./factory/ResultArtifacts.js";
@@ -334,6 +346,7 @@ import {
 import { linearConnection, TicketManagers } from "./factory/TicketManagers.js";
 import {
 	ensureTicketTranscript,
+	mcpValue,
 	nativeAdapter,
 	originatingTicket,
 	type TicketAdapter,
@@ -7799,6 +7812,13 @@ ${taskSection}`;
 		workflow: Workflow,
 		definitions: Workflow[],
 	): Promise<void> {
+		if (
+			workflow.improvement?.workerFallback === "block" &&
+			!workflow.steps.find((s) => s.id === "research-worker")?.model
+		)
+			throw new Error(
+				"Configure a cheaper research-worker model in Recipes → Improve codebase before launching this workflow",
+			);
 		const fallback = (run.runner ??
 			this.runnerSelectionService.getDefaultRunner()) as RunnerType;
 		resolveAgentSettings(fallback, run);
@@ -7809,6 +7829,10 @@ ${taskSection}`;
 		const scan = (steps: WorkflowStep[]) => {
 			for (const step of steps) {
 				if (step.type === "agent") {
+					if (workflow.improvement && (step.runner ?? fallback) === "gemini")
+						throw new Error(
+							"Improve codebase research requires Claude, Codex, Cursor or OpenCode; Gemini read-only research is not supported yet",
+						);
 					resolveAgentSettings(step.runner ?? fallback, step, {
 						runner: fallback,
 						reasoningEffort: run.reasoningEffort,
@@ -7950,6 +7974,10 @@ ${taskSection}`;
 					this.executeFactoryMcpTool(context, server, tool),
 			});
 			this.factoryRuntime = new WorkflowRuntime(this.factoryHome, {
+				improvementDestinations: (run, signal) =>
+					this.improvementIssueDestinations(run, signal),
+				improvementIssue: (run, issue, signal) =>
+					this.fileImprovementIssue(run, issue, signal),
 				availabilityChanged: (_id, enabled) => {
 					if (!enabled) this.interruptDisabledSessions();
 				},
@@ -8508,6 +8536,127 @@ ${taskSection}`;
 				await request(server, undefined, {}, signal);
 			},
 		};
+	}
+	private async improvementIssueDestinations(
+		run: FactoryRun,
+		signal: AbortSignal,
+	) {
+		const options: { name: string; destination: IssueDestination }[] = [],
+			limitations: string[] = [];
+		if (
+			!run.executionSnapshot?.identity &&
+			!run.executionSnapshot?.tools &&
+			this.config.ticketManagers?.linear?.enabled !== false
+		) {
+			for (const [workspaceId, tracker] of this.issueTrackers) {
+				const client = (
+					tracker as IIssueTrackerService & { getClient?: () => LinearClient }
+				).getClient?.();
+				if (!client) continue;
+				try {
+					let after: string | undefined;
+					do {
+						signal.throwIfAborted();
+						const teams = await client.teams({ first: 100, after });
+						for (const team of teams.nodes)
+							options.push({
+								name: `Linear · ${team.name}`,
+								destination: {
+									provider: "linear",
+									workspaceId,
+									teamId: team.id,
+								},
+							});
+						after = teams.pageInfo.hasNextPage
+							? teams.pageInfo.endCursor
+							: undefined;
+					} while (after);
+				} catch {
+					limitations.push(
+						"Some Linear destinations could not be read; restore workspace access",
+					);
+				}
+			}
+		}
+		try {
+			const config = await this.factoryMcpConfig(run);
+			for (const [server, entry] of Object.entries(config.servers)) {
+				if (!("url" in entry) || !entry.url) continue;
+				const instance = new URL(entry.url).origin;
+				try {
+					if (taskbotServer(instance, config.servers) !== server) continue;
+					const data = mcpValue(
+						await config.callTool(server, "list_projects", {}, signal, 30000),
+					);
+					const rows = Array.isArray(data)
+						? data
+						: (data as { projects?: unknown })?.projects;
+					if (!Array.isArray(rows)) continue;
+					for (const row of rows) {
+						const project =
+							typeof row === "string"
+								? row
+								: ((row as { slug?: string; name?: string }).slug ??
+									(row as { name?: string }).name);
+						if (typeof project === "string" && /^[a-z0-9-]+$/.test(project))
+							options.push({
+								name: `Taskbot · ${project}`,
+								destination: { provider: "taskbot", server, instance, project },
+							});
+					}
+				} catch {
+					/* Other configured MCP servers are not necessarily ticket managers. */
+				}
+			}
+		} catch {
+			limitations.push("Configured tracker discovery is unavailable");
+		}
+		return { options, limitations };
+	}
+	private async fileImprovementIssue(
+		run: FactoryRun,
+		issue: ImprovementState["issues"][string],
+		signal: AbortSignal,
+	) {
+		const destination = issue.destination;
+		this.assertTicketManagerEnabled(destination.provider);
+		const config = await this.factoryMcpConfig(run);
+		const save = () => this.getFactoryRuntime().save(run);
+		signal.throwIfAborted();
+		if (destination.provider === "linear") {
+			if (run.executionSnapshot?.identity || run.executionSnapshot?.tools)
+				throw new Error(
+					"Native Linear issue filing requires a retained Legacy workspace binding; explicit profiles cannot silently use native tracker credentials",
+				);
+			for (const tool of ["get_issue", "save_issue"])
+				assertFactoryToolAllowed(
+					`mcp__linear__${tool}`,
+					config.built.config.allowedTools,
+					config.built.config.disallowedTools,
+				);
+			await this.ensureLinearTokenFresh(destination.workspaceId);
+			const tracker = this.issueTrackers.get(destination.workspaceId) as
+				| (IIssueTrackerService & { getClient?: () => LinearClient })
+				| undefined;
+			const client = tracker?.getClient?.();
+			if (!client)
+				throw new Error(
+					"Selected Linear workspace lacks an issue-creation client",
+				);
+			return fileLinearImprovement(client, issue, save);
+		}
+		if (
+			taskbotServer(destination.instance, config.servers) !== destination.server
+		)
+			throw new Error(
+				"Selected Taskbot server does not match the configured instance",
+			);
+		return fileTaskbotImprovement(
+			issue,
+			(tool, args) =>
+				config.callTool(destination.server, tool, args, signal, 60000),
+			save,
+		);
 	}
 	private async factoryDeliveryAdapter(run: FactoryRun, target: TicketTarget) {
 		this.assertTicketManagerEnabled(target.provider);
@@ -9199,6 +9348,7 @@ ${taskSection}`;
 		context.progress = await roleProgress(context);
 		this.refreshFactoryFeedbackContext(context);
 		const artifactBinding =
+			!context.readOnlyResearch &&
 			context.progress.currentRevision &&
 			!context.progress.currentRevision.dirty
 				? roleResultArtifactBinding(context)
@@ -9206,7 +9356,13 @@ ${taskSection}`;
 		// Required-server readiness checks every requested tool. Artifact submission
 		// exists only when the scoped server has a clean-revision binding, including
 		// on resume with uncommitted work from the previous turn.
+		if (context.readOnlyResearch) {
+			await mkdir(context.evidenceDir, { recursive: true });
+			built.config.workingDirectory = context.evidenceDir;
+			restrictResearchRunner(built.config, runnerType);
+		}
 		built.config.allowedTools = [
+			...(context.readOnlyResearch ? researchTools : []),
 			...(step.id === "question-explanation"
 				? []
 				: (built.config.allowedTools ?? [])),
@@ -9246,6 +9402,7 @@ ${taskSection}`;
 					: {}),
 			},
 			artifactBinding,
+			context.researchAccess,
 		);
 		const graphAttemptId = context.attemptId;
 		let turnCompleted = false;
@@ -9484,6 +9641,8 @@ ${taskSection}`;
 	): unknown {
 		const { run, step } = context;
 		try {
+			if (context.readOnlyResearch)
+				return context.validateRoleOutput?.(value) ?? value;
 			let output = validateContractOutput(
 				context,
 				stampGuideContract(

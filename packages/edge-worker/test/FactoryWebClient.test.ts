@@ -1245,3 +1245,49 @@ it("accepts no-expiry remote sessions without a deadline while current-session d
 	expect(accessState().status).toBe("required");
 	expect(client.getQueryData(["run", "private"])).toBeUndefined();
 });
+
+it("uses actual improvement research jobs as activity rows, retaining completed and failed worker transcripts", async () => {
+	const { stepsOf } = await import("../src/factory/web/client.js");
+	const run = {
+		improvement: { phase: "research" },
+		workflow: {
+			steps: [
+				{ id: "lead", name: "Prepare shared context" },
+				{
+					id: "research-worker",
+					name: "Research worker",
+					model: "cheaper-model",
+				},
+			],
+		},
+	};
+	const rows = stepsOf(
+		run,
+		{},
+		{
+			lead: { role: "lead", status: "completed" },
+			"worker-architecture-architecture-lifecycle": {
+				role: "research-worker",
+				status: "completed",
+			},
+			"worker-security-boundaries": {
+				role: "research-worker",
+				status: "failed",
+			},
+		},
+	);
+	expect(rows.map((r) => ({ key: r.key, status: r.researchStatus }))).toEqual([
+		{ key: "lead", status: "completed" },
+		{ key: "worker-architecture-architecture-lifecycle", status: "completed" },
+		{ key: "worker-security-boundaries", status: "failed" },
+	]);
+	expect(rows[1].model).toBe("cheaper-model");
+	expect(rows[1].name).toBe("Research worker · architecture · lifecycle");
+	expect(
+		stepsOf(
+			{ workflow: run.workflow },
+			{},
+			{ lead: { role: "lead", status: "completed" } },
+		),
+	).toHaveLength(2);
+});

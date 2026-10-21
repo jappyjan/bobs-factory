@@ -77,6 +77,10 @@ export function focusRun(
 	return {
 		...Object.fromEntries(focusFields.map((key) => [key, run[key]])),
 		workflow: workflowDisplay(run.workflow),
+		improvement: run.workflow.improvement
+			? { phase: run.improvementState?.phase ?? "preparing" }
+			: undefined,
+		improvementParent: run.improvementParent,
 		workflowDefinitions: run.workflowDefinitions?.map(workflowDisplay),
 		error: run.error?.slice(0, 4000),
 		deliveryRecovery,

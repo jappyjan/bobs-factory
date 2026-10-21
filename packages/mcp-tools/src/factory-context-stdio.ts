@@ -12,12 +12,16 @@ export async function serveFactoryContext(
 ): Promise<void> {
 	if (!path) throw new Error("A factory step input snapshot is required");
 	const artifactConfig = join(dirname(path), "artifacts.json");
+	const researchConfig = join(dirname(path), "research.json");
+	const research = existsSync(researchConfig)
+		? JSON.parse(readFileSync(researchConfig, "utf8"))
+		: undefined;
 	const artifacts = existsSync(artifactConfig)
 		? JSON.parse(readFileSync(artifactConfig, "utf8"))
 		: undefined;
 	// The flag is an explicit transport choice, never inferred from role JSON.
 	const server = options.snapshot
-		? createFactoryContextServerFromSnapshot(path, artifacts)
+		? createFactoryContextServerFromSnapshot(path, artifacts, research)
 		: createFactoryContextServer(
 				JSON.parse(readFileSync(path, "utf8")),
 				artifacts,

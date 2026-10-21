@@ -11,6 +11,10 @@ import {
 } from "./factoryArtifacts.js";
 import { factoryContextView } from "./factoryContextMemory.js";
 import { FactoryContextSnapshot } from "./factoryContextSnapshot.js";
+import {
+	type ResearchAccess,
+	registerResearchTools,
+} from "./factoryResearch.js";
 
 export const factoryContextInstructions = `Your step input is served by the factory-context MCP server, not embedded in this prompt. First call list_context at path "" to discover it. Browse objects/arrays with list_context and read values with read_context using JSON Pointer paths (escape ~ as ~0 and / as ~1). read_context defaults to 12000 characters and caps positive requests at 16000; list_context defaults to 25 entries and caps positive requests at 50. Responses report the applied limit. Both tools paginate: follow nextOffset until null for every relevant collection/value. Read all ticket comments, answers, decisions and assets required by your role. When /contextMemory is present with format factory-context-memory-v1, reviewers/fixers must read /contextMemory/reviewLedger and /contextMemory/reviewRounds: the ledger contains every distinct past finding, disposition and observation verbatim, with first/latest source paths and chronological round indexes. Repeated identical claims are deduplicated. reviewRounds retains chronological review summaries, gate outcomes, feedback and questions; read these alongside the claims so acceptance/rejection reasoning is preserved. A fixer disposition is a claim, not reviewer acceptance; use the current gate and new evidence to assess unresolved findings, disagreements and reopenings. This ledger satisfies the historical review reading requirement; do not reread every old review output. /contextMemory/latestSteps, /history and /progress/newHistory are compact indexes with fullPath/outputPath references, not complete outputs. On repeated visits, start with /progress, current role inputs and the ledger; inspect the delta and read referenced original evidence only when needed. Current requirements, decisions, answers and outputs remain complete. Read small records/arrays with one read_context call rather than field by field; listings include short metadata previews so never read every /history/<n>/step to identify roles. For large values, browse relevant sections instead of downloading the entire root or duplicate outputs/history. read_context and list_context accept view="full" to access original records at the same paths; indexed outputPath references also work directly. Full history remains available on demand, including when compact memory is absent. originalInput may itself contain JSON: read it in pages and parse it. Never infer missing pages or claim unread original evidence was inspected. Screenshot source fingerprints are compact runtime provenance summaries; do not request or reconstruct full hash maps. Only this role's declared step inputs are available. If these tools are unavailable, return {"infrastructureFailure":{"reason":"precise unavailable tool/connection diagnosis"}} as the complete result. Infrastructure failures preserve output-correction budgets; never invent a result without the input. When /resultSubmission is present, large JSON results may be saved in its directory and submitted with submit_result_artifact; return that tool’s bounded factoryArtifact envelope as the complete final response. /provenance exposes runtime/workflow/contract identity for this run; do not copy it into role output.`;
 
@@ -80,12 +84,13 @@ export function prepareFactoryContext(
 export async function prepareFactoryContextAsync(
 	input: unknown,
 	artifacts?: FactoryArtifactBinding,
+	research?: ResearchAccess,
 ) {
 	const directory = mkdtempSync(join(tmpdir(), "bobs-factory-context-"));
 	const path = join(directory, "input.json");
 	try {
 		await new FactoryContextSnapshot(path).writeAsync(input, true);
-		return preparedContext(directory, path, artifacts);
+		return preparedContext(directory, path, artifacts, research);
 	} catch (error) {
 		rmSync(directory, { recursive: true, force: true });
 		throw error;
@@ -96,7 +101,12 @@ function preparedContext(
 	directory: string,
 	path: string,
 	artifacts?: FactoryArtifactBinding,
+	research?: ResearchAccess,
 ) {
+	if (research)
+		writeFileSync(join(directory, "research.json"), JSON.stringify(research), {
+			mode: 0o600,
+		});
 	if (artifacts)
 		writeFileSync(
 			join(directory, "artifacts.json"),
@@ -165,13 +175,15 @@ export function createFactoryContextServer(
 export function createFactoryContextServerFromSnapshot(
 	path: string,
 	artifacts?: FactoryArtifactBinding,
+	research?: ResearchAccess,
 ): McpServer {
-	return contextServer(FactoryContextSnapshot.open(path), artifacts);
+	return contextServer(FactoryContextSnapshot.open(path), artifacts, research);
 }
 
 function contextServer(
 	snapshot: FactoryContextSnapshot,
 	artifacts?: FactoryArtifactBinding,
+	research?: ResearchAccess,
 ): McpServer {
 	const compact = snapshot.append(
 		factoryContextView(snapshot.root, snapshot.access),
@@ -186,6 +198,7 @@ function contextServer(
 		}
 	};
 	const server = new McpServer({ name: "factory-context", version: "1.0.0" });
+	if (research) registerResearchTools(server, research);
 	if (artifacts)
 		server.registerTool(
 			"submit_result_artifact",

@@ -1020,6 +1020,14 @@ are ignored, and title editing is deferred to future work.
 
 ## Workflow definition
 
+[Improve codebase](factory/improve-codebase.md) is a bundled manual workflow with
+optional focus and no task prompt. Parallel perspective coordinators delegate
+bounded research to a configured cheaper worker model. Review the biggest
+architectural opportunities, then choose **Fix**, **File issue**, **Ignore** or
+**Ask follow-up** per item. Prepare and explicitly apply the batch: only Fix
+launches independent normal Factory runs; issue items become deferred backlog
+work. Configure the research-worker model in Recipes before first launch.
+
 ### Launch fields
 
 Fork Factory or Takeover first, then edit the local workflow's `launchFields` in **Recipes → Edit as JSON** to customize

@@ -47,6 +47,7 @@ import {
 	RunTitleStatus,
 	WorkingRow,
 } from "./focus";
+import { ImprovementPanel, useImprovementResearch } from "./improvements";
 import { Composer } from "./launcher";
 import { NotificationsProvider } from "./notifications-ui";
 import { SetupBoundary } from "./onboarding";
@@ -780,6 +781,7 @@ function RunPage({
 	const { id } = useParams(),
 		query = useRun(id),
 		run = query.data,
+		research = useImprovementResearch(run),
 		action = useAction(),
 		toast = useToast(),
 		settle = useSettle(),
@@ -845,8 +847,13 @@ function RunPage({
 	const reason = settleReason(run, runs),
 		kind = attention(run),
 		artifacts = artifactsOf(run),
-		steps = stepsOf(run, config),
-		visited = new Set(run.history?.map((h: any) => h.step));
+		steps = stepsOf(run, config, research.data?.jobs),
+		visited = new Set([
+			...(run.history?.map((h: any) => h.step) ?? []),
+			...steps
+				.filter((s) => s.researchStatus === "completed")
+				.map((s) => s.key),
+		]);
 	const graphRows = steps.length
 			? steps
 			: [{ id: "simple", key: "simple", name: "Bob’s Factory session" }],
@@ -877,7 +884,11 @@ function RunPage({
 								(run.workflowBlock
 									? "Workflow disabled · Resume required"
 									: kind === "question"
-										? `${run.questions?.length ?? 0} question(s) for you`
+										? run.improvement
+											? run.improvement.phase === "dispatch"
+												? "Tracking improvement runs"
+												: "Review improvement choices"
+											: `${run.questions?.length ?? 0} question(s) for you`
 										: kind === "stuck"
 											? run.status === "stopped"
 												? "Stopped — resume?"
@@ -933,6 +944,15 @@ function RunPage({
 				<ArchitectureEntry run={run} />
 			)}
 			<ExecutionDetails run={run} />
+			{run.improvement && <ImprovementPanel run={run} />}
+			{run.improvementParent && (
+				<p className="imp-parent">
+					<span aria-hidden="true">🌱</span> Part of an improvement batch ·{" "}
+					<Link to={`/runs/${run.improvementParent.runId}`}>
+						See the whole batch →
+					</Link>
+				</p>
+			)}
 			{run.deliveryCoordination?.phase === "queued" && (
 				<p role="status">
 					{workingLabel(run)}.{" "}
@@ -967,7 +987,7 @@ function RunPage({
 						"Saved updates are being delivered in the background."}
 				</p>
 			)}
-			{kind && !reason && (
+			{kind && !reason && !(kind === "question" && run.improvement) && (
 				<FocusCard
 					summary={run}
 					config={config}
@@ -1005,7 +1025,7 @@ function RunPage({
 			<section className="steps-section">
 				<div className="section-heading">
 					<h2>
-						Steps{" "}
+						{run.improvement ? "Research activity" : "Steps"}{" "}
 						<small>
 							{steps.length
 								? `${rows.filter((step) => visited.has(step.key)).length} of ${steps.length} done`
@@ -1020,6 +1040,7 @@ function RunPage({
 							).length,
 							started =
 								visited.has(step.key) ||
+								Boolean(step.researchStatus) ||
 								Boolean(run.capacityLeaves?.[step.key]) ||
 								current === step.key ||
 								!steps.length,
@@ -1048,6 +1069,9 @@ function RunPage({
 										<span className="chip">
 											{capacityPhaseLabel(run.capacityLeaves[step.key].phase)}
 										</span>
+									)}
+									{step.researchStatus && !run.capacityLeaves?.[step.key] && (
+										<span className="chip">{step.researchStatus}</span>
 									)}
 									{count > 1 && <span className="chip">↺ {count}</span>}
 									{artifact && (

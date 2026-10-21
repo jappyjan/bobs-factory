@@ -93,6 +93,16 @@ import {
 	STALE_IMPACT_MESSAGE,
 	validateImpact,
 } from "./Impact.js";
+import {
+	type ImprovementAction,
+	ImprovementActionSchema,
+	type ImprovementState,
+	type IssueDestination,
+} from "./Improvement.js";
+import {
+	applyImprovementAction,
+	runImprovement,
+} from "./ImprovementRuntime.js";
 import type { RoleProgress, RoleRevision } from "./Incremental.js";
 import {
 	attachmentDirectories,
@@ -277,6 +287,12 @@ import {
 import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
+	improvementState?: ImprovementState;
+	improvementParent?: {
+		runId: string;
+		manifestDigest: string;
+		packageId: string;
+	};
 	stepVisitBudget?: StepVisitBudgetUpgrade;
 	workflowBlock?: WorkflowBlock;
 	delivery?: DeliveryState;
@@ -412,6 +428,12 @@ export interface ChatMessage {
 	step: string;
 }
 export interface ExecutionContext {
+	validateRoleOutput?: (value: unknown) => unknown;
+	readOnlyResearch?: boolean;
+	researchAccess?: {
+		repositories: { id: string; root: string; revision: string }[];
+		maxCalls: number;
+	};
 	/** Yield passive waits at saved checkpoints when update admission closes. */
 	assertSchedulingOpen?: () => void;
 	/** Revalidate the complete grouped approval under the operation reservation. */
@@ -450,6 +472,18 @@ export interface ExecutionContext {
 	allowUnchangedRepository?: boolean;
 }
 export interface RuntimeHooks {
+	improvementDestinations?(
+		run: FactoryRun,
+		signal: AbortSignal,
+	): Promise<{
+		options: { name: string; destination: IssueDestination }[];
+		limitations: string[];
+	}>;
+	improvementIssue?(
+		run: FactoryRun,
+		issue: ImprovementState["issues"][string],
+		signal: AbortSignal,
+	): Promise<{ id: string; url: string }>;
 	availabilityChanged?(id: string, enabled: boolean): void;
 	execution?(
 		run: FactoryRun,
@@ -515,6 +549,7 @@ export class WorkflowRuntime {
 		ReturnType<typeof setTimeout>
 	>();
 	private shuttingDown = false;
+	private improvementWaiters = new Map<string, () => void>();
 	private defaultWorkflow = "simple";
 	private titleSettings: AgentSettings = {};
 	private viewStates: Record<string, RunViewState> = {};
@@ -946,6 +981,9 @@ export class WorkflowRuntime {
 	}
 	create(
 		options: {
+			launchRequest?: FactoryRun["launchRequest"];
+			setupComplete?: boolean;
+			improvementParent?: FactoryRun["improvementParent"];
 			repositories?: import("./RepositoryScope.js").RunRepository[];
 			executionSnapshot?: ExecutionSnapshot;
 			executionSelection?: ExecutionSelection;
@@ -1179,7 +1217,18 @@ export class WorkflowRuntime {
 					body: `Factory work started: ${run.workflow.name}. ${String(readPath(run.outputs, "ticket.title") ?? run.title)}. Follow progress in Factory.`,
 				});
 			if (task) await task(controller.signal);
-			else if (run.workflow.id === "simple") {
+			else if (run.workflow.improvement) {
+				await runImprovement(
+					{
+						runtime: this,
+						agent: (context) => this.hooks.agent(context),
+						issue: this.hooks.improvementIssue,
+						wait: (parent, signal) => this.waitForImprovement(parent, signal),
+					},
+					run,
+					controller.signal,
+				);
+			} else if (run.workflow.id === "simple") {
 				if (!this.hooks.simple)
 					throw new Error("Simple recovery handler unavailable");
 				await this.hooks.simple(run, controller.signal);
@@ -1277,6 +1326,102 @@ export class WorkflowRuntime {
 				}
 			this.controllers.delete(run.id);
 		}
+	}
+	async decideImprovement(
+		id: string,
+		value: ImprovementAction,
+		actor: string,
+	): Promise<void> {
+		const run = this.get(id);
+		const action = ImprovementActionSchema.parse(value);
+		if (
+			!run.workflow.improvement ||
+			(run.status !== "waiting" && action.action !== "stop-batch")
+		)
+			throw new Error(
+				"Improvement decisions require a waiting improvement run",
+			);
+		if (action.action === "stop-batch") {
+			const state = run.improvementState,
+				proposal = state?.proposals.at(-1);
+			if (
+				!state?.acceptance ||
+				state.revision !== action.expectedRevision ||
+				proposal?.digest !== action.digest ||
+				proposal.version !== action.version
+			)
+				throw new Error("Batch changed; refresh before stopping");
+			this.stop(id);
+			for (const child of Object.values(run.improvementState?.children ?? {}))
+				if (
+					["created", "running", "waiting", "interrupted"].includes(
+						this.runs.get(child.runId)?.status ?? "",
+					)
+				)
+					this.stop(child.runId);
+			await this.flush();
+			return;
+		}
+		this.requireRunAvailable(run);
+		if (
+			action.action === "apply" &&
+			run.improvementState?.manifest?.packages.length
+		) {
+			const definitions = run.workflowDefinitions ?? [],
+				factory = definitions.find((w) => w.id === "factory");
+			if (!factory)
+				throw new Error("Accepted Factory definition is unavailable");
+			this.requireAvailable(factory, definitions);
+		}
+		applyImprovementAction(run, action, actor);
+		await this.save(run);
+		this.improvementWaiters.get(id)?.();
+		if (!this.isExecuting(id)) void this.launch(run);
+	}
+	async improvementDestinations(id: string, signal: AbortSignal) {
+		return (
+			this.hooks.improvementDestinations?.(this.get(id), signal) ?? {
+				options: [],
+				limitations: ["No configured issue destination is available"],
+			}
+		);
+	}
+	private waitForImprovement(
+		run: FactoryRun,
+		signal: AbortSignal,
+	): Promise<void> {
+		return new Promise((resolve, reject) => {
+			const finish = () => {
+				unsubscribe();
+				signal.removeEventListener("abort", abort);
+				this.improvementWaiters.delete(run.id);
+				resolve();
+			};
+			const abort = () => {
+				unsubscribe();
+				this.improvementWaiters.delete(run.id);
+				reject(signal.reason ?? new Error("Stopped"));
+			};
+			const unsubscribe = this.subscribe((change) => {
+				const ref = Object.values(run.improvementState?.children ?? {}).find(
+					(c) => c.runId === change.id,
+				);
+				if (ref && this.runs.get(ref.runId)?.status !== ref.status) finish();
+			});
+			this.improvementWaiters.set(run.id, finish);
+			signal.addEventListener("abort", abort, { once: true });
+			if (signal.aborted) abort();
+			else if (
+				(run.step === "discuss-improvements" &&
+					run.improvementState?.phase !== "discussion") ||
+				(run.step === "accept-improvements" &&
+					run.improvementState?.phase !== "ready") ||
+				Object.values(run.improvementState?.children ?? {}).some(
+					(c) => this.runs.get(c.runId)?.status !== c.status,
+				)
+			)
+				finish();
+		});
 	}
 	capacityOptions(run: FactoryRun, key: string, visit = 1): CapacityOptions {
 		return {
@@ -3935,6 +4080,10 @@ export class WorkflowRuntime {
 				this.snapshots.hasValue(
 					run as unknown as Record<string, unknown>,
 					"simpleExecution",
+				) ||
+				this.snapshots.hasValue(
+					run as unknown as Record<string, unknown>,
+					"improvementState",
 				))
 		);
 	}
@@ -4511,6 +4660,14 @@ export class WorkflowRuntime {
 		return {
 			id: run.id,
 			videoAssets,
+			improvementParent: run.improvementParent,
+			improvement: run.improvementState && {
+				phase: run.improvementState.phase,
+				children: run.improvementState.children,
+				issueCount: Object.values(run.improvementState.issues).filter(
+					(i) => i.phase === "confirmed",
+				).length,
+			},
 			title: run.title,
 			status: capacityRunStatus(run),
 			capacityLeaves: run.capacityLeaves,

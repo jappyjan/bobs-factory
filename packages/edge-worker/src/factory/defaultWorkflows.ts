@@ -11,6 +11,7 @@ import {
 	divePrompt,
 } from "./GuideAuthoring.js";
 import { impactInstructions } from "./Impact.js";
+import { improvementWorkflow } from "./improvementWorkflow.js";
 import {
 	attachmentLaunchField,
 	standardLaunchFields,
@@ -664,7 +665,10 @@ export const conservativeWorkflows = validateWorkflows([
 // New launches opt in; saved/custom graphs upgrade through conservative definitions.
 const impactDefaults = structuredClone(conservativeWorkflows);
 installImpact(impactDefaults.find((w) => w.id === "factory-pipeline")!.steps);
-export const defaultWorkflows = validateWorkflows(impactDefaults);
+export const defaultWorkflows = validateWorkflows([
+	...impactDefaults,
+	improvementWorkflow,
+]);
 
 /** Extend only the stock handoff route to reuse its already-authorized CI fixer. */
 export function upgradeHandoffReadiness(steps: WorkflowStep[]): boolean {
