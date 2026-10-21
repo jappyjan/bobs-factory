@@ -14,6 +14,7 @@ import type { AggregateReview, ReviewerReceipt } from "./SpecialistReview.js";
 import { latestAggregate, scopeContextDigest } from "./SpecialistReview.js";
 import {
 	checkArgs,
+	consumesImpact,
 	formatOf,
 	readOutput,
 	readStep,
@@ -873,7 +874,7 @@ export function impactFanout(
 	return fanout;
 }
 export async function assertCurrentImpact(context: ExecutionContext) {
-	if (!readStep(context.step, "impact")) return;
+	if (!consumesImpact(context.step)) return;
 	const key =
 		context.impactKey ??
 		context.reviewKey ??
@@ -889,6 +890,7 @@ export async function selectedChecks(
 	context: ExecutionContext,
 	execute: (context: ExecutionContext, command: string) => Promise<string>,
 ) {
+	if (!consumesImpact(context.step)) return { questions: [], checks: [] };
 	const prefix = (context.stepKey ?? context.step.id).replace(/[^/]+$/, "");
 	const candidates = context.run.impactDecisions ?? [];
 	const decision = context.impactKey
@@ -948,7 +950,7 @@ export async function selectedChecks(
 export async function effectiveApproval(context: ExecutionContext) {
 	const original = context.run.humanDecisions?.at(-1);
 	const continued = context.run.approvalContinuations?.at(-1);
-	if (!readStep(context.step, "impact") || !continued) return original;
+	if (!consumesImpact(context.step) || !continued) return original;
 	const impact = await assertCurrentImpact(context);
 	const aggregate = impact
 		? latestAggregate(context.run, impact.snapshot.key)

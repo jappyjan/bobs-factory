@@ -127,12 +127,15 @@ import { deliveryRevisions, runRepositories } from "./RepositoryScope.js";
 import { guideHeadline } from "./ReviewBrief.js";
 import { reviewRecoveryQuestions } from "./ReviewRecovery.js";
 import {
+	assertBoundInspectionFresh,
+	bindingHistory,
 	type OutputRevisionBinding,
 	outputRevisionBinding,
+	StaleBoundInspectionError,
 	sameOutputBinding,
 } from "./RevisionBinding.js";
 import { withRuntimeRolePrompt } from "./RolePrompt.js";
-import { presentationOutputKeys } from "./RunOutputRoles.js";
+import { currentStepView, presentationOutputKeys } from "./RunOutputRoles.js";
 import { buildTitleContext } from "./RunTitleGenerator.js";
 import {
 	aggregateReview,
@@ -145,7 +148,7 @@ import {
 	stampSpecialist,
 	validateContractOutput,
 } from "./SpecialistReview.js";
-import { allRunSteps, stepBindings } from "./StepBindings.js";
+import { stepBindings } from "./StepBindings.js";
 import {
 	checkArgs,
 	consumesImpact,
@@ -162,6 +165,7 @@ import {
 	reviewEvidenceContract,
 } from "./StepConfig.js";
 import { recordTicketMilestone } from "./TicketTracking.js";
+import { registerOutputHistory, stepForRun } from "./ToolBindings.js";
 import {
 	isComputeIntensive,
 	readPath,
@@ -197,6 +201,8 @@ export interface WorkflowCall {
 	workflowId: string;
 }
 export interface AgentCheckpoint {
+	/** Original bound input/repository snapshot, retained across native turn restart. */
+	inspection?: OutputRevisionBinding;
 	infrastructureFailure?: { reason: string; at: string; output?: unknown };
 	/** Persisted per-role budget for resuming a silent provider turn. */
 	idleRetries?: number;
@@ -242,6 +248,11 @@ export interface GraphCheckpoint {
 	/** Exact native identities for the configured roles in this frame; never completed results. */
 	agentSessions?: Record<string, Pick<AgentCheckpoint, "runner" | "sessionId">>;
 	additionalVisits?: Record<string, number>;
+	refreshes?: {
+		source: string;
+		target: string;
+		active?: GraphCheckpoint["active"];
+	}[];
 	active?: {
 		attemptId?: string;
 		phase: "executing" | "result" | "waiting" | "answered";
@@ -484,6 +495,12 @@ export interface ExecutionContext {
 	run: FactoryRun;
 	step: WorkflowStep;
 	input: unknown;
+	bindingInput?: (
+		step: WorkflowStep,
+		previous?: OutputRevisionBinding,
+	) => unknown;
+	inspectionBinding?: OutputRevisionBinding;
+	inspectionSources?: Record<string, unknown>;
 	outputs?: Record<string, unknown>;
 	signal: AbortSignal;
 	log: (message: string, source?: RunEvent["source"]) => void;
@@ -667,6 +684,7 @@ export class WorkflowRuntime {
 			immutableTranscript(run.history);
 			if (run.reviewRounds) immutableTranscript(run.reviewRounds);
 			this.runs.set(run.id, run);
+			registerOutputHistory(run, () => this.historyPreviews(run));
 			if (this.catalog.getBlock(run.id)) {
 				run.workflowBlock = this.catalog.getBlock(run.id);
 				run.status = "blocked";
@@ -1139,6 +1157,7 @@ export class WorkflowRuntime {
 			events: [],
 		};
 		this.runs.set(run.id, run);
+		registerOutputHistory(run, () => this.historyPreviews(run));
 		this.save(run);
 		return run;
 	}
@@ -1591,6 +1610,119 @@ export class WorkflowRuntime {
 		await this.hooks.retryTracking?.(this.get(id));
 	}
 
+	private stepInput(
+		run: FactoryRun,
+		step: WorkflowStep,
+		outputs: Record<string, unknown>,
+		reviewBaseline?: ReviewBaseline,
+		deliveryAware = !!run.delivery,
+		binding?: OutputRevisionBinding,
+	) {
+		if (binding?.inputScope)
+			outputs = Object.fromEntries(
+				binding.inputScope.outputKeys
+					.filter((key) => Object.hasOwn(outputs, key))
+					.map((key) => [key, outputs[key]]),
+			);
+		const config = resolveStepConfig(step);
+		const input = reviewBaseline
+			? snapshotWorkflowInput({
+					...(reviewBaseline.context as Record<string, unknown>),
+					reviewBaseline,
+				})
+			: config.inputs
+				? {
+						...(run.ticketReference
+							? {
+									ticketReference: structuredClone(run.ticketReference),
+									ticketSync: structuredClone(run.ticketSync),
+								}
+							: {}),
+						...(deliveryAware
+							? {
+									delivery: structuredClone(run.delivery),
+									deliveryExecutionReference: digest(
+										run.executionSnapshot ?? {
+											runner: run.runner,
+											repositoryId: run.repositoryId,
+										},
+									),
+									deliveryCandidateDigest: digest(
+										readPath(
+											readOutput(step, "plan", outputs),
+											"deliveryContract",
+										),
+									),
+								}
+							: {}),
+						...Object.fromEntries(
+							config.inputs.map((name) => [
+								name,
+								Object.hasOwn(outputs, name) ? outputs[name] : undefined,
+							]),
+						),
+						...(step.askQuestions || step.tool === "impact-checks"
+							? { answers: structuredClone(run.answers) }
+							: {}),
+					}
+				: {
+						originalInput: run.input,
+						...(deliveryAware
+							? {
+									delivery: structuredClone(run.delivery),
+									deliveryExecutionReference: digest(
+										run.executionSnapshot ?? {
+											runner: run.runner,
+											repositoryId: run.repositoryId,
+										},
+									),
+									deliveryCandidateDigest: digest(
+										readPath(
+											readOutput(step, "plan", outputs),
+											"deliveryContract",
+										),
+									),
+								}
+							: {}),
+						...(run.ticketReference
+							? {
+									ticketReference: structuredClone(run.ticketReference),
+									ticketSync: structuredClone(run.ticketSync),
+								}
+							: {}),
+						launchInputs: structuredClone(run.launchInputs ?? {}),
+						outputs: snapshotWorkflowInput(outputs),
+						answers: structuredClone(run.answers),
+						chatMessages: structuredClone(this.chatMessages(run.id)),
+						history: snapshotHistory(
+							run.history,
+							0,
+							binding?.inputScope?.historyLength ?? run.history.length,
+						),
+						humanDecisions: structuredClone(run.humanDecisions ?? []),
+						architectureProposals: structuredClone(
+							run.architectureProposals ?? [],
+						),
+						architectureDecisions: structuredClone(
+							run.architectureDecisions ?? [],
+						),
+					};
+		if (run.launchAttachments && Object.keys(run.launchAttachments).length) {
+			Object.assign(input, {
+				launchAttachments: structuredClone(run.launchAttachments),
+			});
+			for (const name of config.inputs ?? [])
+				if (
+					name !== "launchAttachments" &&
+					Object.hasOwn(run.launchAttachments, name) &&
+					!Object.hasOwn(outputs, name)
+				)
+					Object.assign(input, {
+						[name]: structuredClone(run.launchAttachments[name]),
+					});
+		}
+		return input;
+	}
 	private async graph(
 		run: FactoryRun,
 		steps: WorkflowStep[],
@@ -1660,100 +1792,21 @@ export class WorkflowRuntime {
 			this.log(run, key, `Starting ${step.name} (pass ${count})`);
 			const deliveryAware =
 				!!run.delivery || steps.some((s) => s.tool === "delivery-route");
-			const input = reviewBaseline
-				? snapshotWorkflowInput({
-						...(reviewBaseline.context as Record<string, unknown>),
-						reviewBaseline,
-					})
-				: config.inputs
-					? {
-							...(run.ticketReference
-								? {
-										ticketReference: structuredClone(run.ticketReference),
-										ticketSync: structuredClone(run.ticketSync),
-									}
-								: {}),
-							...(deliveryAware
-								? {
-										delivery: structuredClone(run.delivery),
-										deliveryExecutionReference: digest(
-											run.executionSnapshot ?? {
-												runner: run.runner,
-												repositoryId: run.repositoryId,
-											},
-										),
-										deliveryCandidateDigest: digest(
-											readPath(
-												readOutput(step, "plan", outputs),
-												"deliveryContract",
-											),
-										),
-									}
-								: {}),
-							...Object.fromEntries(
-								config.inputs.map((name) => [
-									name,
-									Object.hasOwn(outputs, name) ? outputs[name] : undefined,
-								]),
-							),
-							...(step.askQuestions || step.tool === "impact-checks"
-								? { answers: structuredClone(run.answers) }
-								: {}),
-						}
-					: {
-							originalInput: run.input,
-							...(deliveryAware
-								? {
-										delivery: structuredClone(run.delivery),
-										deliveryExecutionReference: digest(
-											run.executionSnapshot ?? {
-												runner: run.runner,
-												repositoryId: run.repositoryId,
-											},
-										),
-										deliveryCandidateDigest: digest(
-											readPath(
-												readOutput(step, "plan", outputs),
-												"deliveryContract",
-											),
-										),
-									}
-								: {}),
-							...(run.ticketReference
-								? {
-										ticketReference: structuredClone(run.ticketReference),
-										ticketSync: structuredClone(run.ticketSync),
-									}
-								: {}),
-							launchInputs: structuredClone(run.launchInputs ?? {}),
-							outputs: snapshotWorkflowInput(outputs),
-							answers: structuredClone(run.answers),
-							chatMessages: structuredClone(this.chatMessages(run.id)),
-							history: snapshotHistory(run.history),
-							humanDecisions: structuredClone(run.humanDecisions ?? []),
-							architectureProposals: structuredClone(
-								run.architectureProposals ?? [],
-							),
-							architectureDecisions: structuredClone(
-								run.architectureDecisions ?? [],
-							),
-						};
+			const boundScope =
+				checkpoint.refreshes?.at(-1)?.source === step.id ||
+				state.phase !== "executing"
+					? run.boundOutputs?.[key]
+					: undefined;
+			const input = this.stepInput(
+				run,
+				step,
+				outputs,
+				reviewBaseline,
+				deliveryAware,
+				boundScope,
+			);
 			this.requireRunAvailable(run);
 			this.launchAssets.verify(run.id, run.launchAttachments);
-			if (run.launchAttachments && Object.keys(run.launchAttachments).length) {
-				Object.assign(input, {
-					launchAttachments: structuredClone(run.launchAttachments),
-				});
-				for (const name of config.inputs ?? [])
-					if (
-						name !== "launchAttachments" &&
-						Object.hasOwn(run.launchAttachments, name) &&
-						!Object.hasOwn(outputs, name)
-					)
-						Object.assign(input, {
-							[name]: structuredClone(run.launchAttachments[name]),
-						});
-			}
 			const execution = this.hooks.execution
 				? await this.hooks.execution(run, step.runner ?? run.runner)
 				: undefined;
@@ -1797,6 +1850,48 @@ export class WorkflowRuntime {
 				chat: reviewBaseline ? false : (step.chat ?? chat),
 				chatMessages: structuredClone(this.chatMessages(run.id)),
 				input,
+				bindingInput: (source, previous) => {
+					const sourceInput = this.stepInput(
+						run,
+						source,
+						outputs,
+						reviewBaseline,
+						deliveryAware,
+						previous,
+					);
+					const sourceContext = {
+						...context,
+						step: source,
+						stepKey: `${prefix}${source.id}`,
+						input: sourceInput,
+					};
+					const sourceConfig = resolveStepConfig(source);
+					const bindings = stepBindings(
+						sourceContext,
+						bindingHistory(sourceContext, previous),
+					);
+					if (source.reads) Object.assign(sourceInput, bindings);
+					else if (
+						sourceConfig.inputs &&
+						sourceConfig.reads.answers &&
+						Object.hasOwn(bindings, "answers")
+					)
+						Object.assign(sourceInput, { answers: bindings.answers });
+					const sources = checkArgs(source, "scope-inputs")?.sources;
+					if (!sourceConfig.inputs && (sources || sourceConfig.explicit))
+						Object.assign(sourceInput, {
+							scopeSources:
+								sources && typeof sources === "object"
+									? Object.fromEntries(
+											Object.entries(sources).map(([label, name]) => [
+												label,
+												bindings[String(name)],
+											]),
+										)
+									: {},
+						});
+					return sourceInput;
+				},
 				outputs,
 				signal,
 				log: (message, source) =>
@@ -1819,7 +1914,10 @@ export class WorkflowRuntime {
 				save: () => this.save(run),
 			};
 			if (step.reads) {
-				const bindings = stepBindings(context);
+				const bindings = stepBindings(
+					context,
+					bindingHistory(context, boundScope),
+				);
 				Object.assign(input, bindings);
 			} else if (config.inputs && config.reads.answers) {
 				const bindings = stepBindings(context);
@@ -1871,8 +1969,17 @@ export class WorkflowRuntime {
 					key,
 					`Bound input ${staleSource.name} is stale; rerunning its configured producer before consuming it.`,
 				);
+				checkpoint.refreshes ??= [];
+				checkpoint.refreshes.push({
+					source: staleSource.id,
+					target: step.id,
+					active: state,
+				});
 				checkpoint.current = staleSource.id;
 				const session = checkpoint.agentSessions?.[staleSource.id];
+				if (session)
+					checkpoint.visits[staleSource.id] =
+						(checkpoint.visits[staleSource.id] ?? 0) + 1;
 				checkpoint.active = session
 					? { phase: "executing", agent: { ...session } }
 					: undefined;
@@ -1934,7 +2041,11 @@ export class WorkflowRuntime {
 				calibratedReview: !!reviewBaseline?.impact,
 			});
 			mkdirSync(context.evidenceDir, { recursive: true });
-			if (step.tool === "impact-checks" && state.phase === "executing") {
+			if (
+				impactSourceId &&
+				step.tool === "impact-checks" &&
+				state.phase === "executing"
+			) {
 				const source = steps.find((s) => s.id === impactSourceId)!;
 				const fanout = steps.find((s) => s.id === readStep(source, "fanout")!)!;
 				const decision = decisionFor(run, `${prefix}${fanout.id}`);
@@ -2316,12 +2427,14 @@ export class WorkflowRuntime {
 						}
 						state.children ??= [this.newCheckpoint(definition.steps)];
 						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
+						if (config.explicit)
+							state.children[0]!.outputs ??= snapshotWorkflowInput(outputs);
 						await this.save(run);
 						signal.throwIfAborted();
 						await this.graph(
 							run,
 							definition.steps,
-							outputs,
+							config.explicit ? state.children[0]!.outputs! : outputs,
 							signal,
 							`${key}/`,
 							state.children[0]!,
@@ -2351,6 +2464,12 @@ export class WorkflowRuntime {
 							const execute = async () => {
 								this.requireRunAvailable(run);
 								signal.throwIfAborted();
+								if (config.revision === "bound") {
+									context.inspectionBinding =
+										state.agent?.inspection ??
+										(await outputRevisionBinding(context, boundScope, true));
+									await assertBoundInspectionFresh(context);
+								}
 								const readiness = steps.find(
 									(item) =>
 										["ci", "handoff", "merge"].includes(item.tool ?? "") &&
@@ -2441,6 +2560,7 @@ export class WorkflowRuntime {
 											mutation,
 										)
 									: await execute();
+							await assertBoundInspectionFresh(context);
 							if (reviewEvidenceContract(step)) {
 								output = validateContractOutput(context, output);
 								if (reviewEvidenceContract(step) === "inventory-v1")
@@ -2467,7 +2587,12 @@ export class WorkflowRuntime {
 								}
 							}
 						} catch (error) {
-							if (!execution || isUpdatePaused(error)) throw error;
+							if (
+								!execution ||
+								isUpdatePaused(error) ||
+								error instanceof StaleBoundInspectionError
+							)
+								throw error;
 							throw new Error(
 								execution.redact(
 									error instanceof Error ? error.message : String(error),
@@ -2607,12 +2732,19 @@ export class WorkflowRuntime {
 							proposalDigest: proposal.digest,
 						};
 					}
+					const acceptedBinding = await assertBoundInspectionFresh(context);
 					outputs[step.id] = output;
 					if (config.revision === "bound") {
 						run.boundOutputs ??= {};
-						run.boundOutputs[key] = (await outputRevisionBinding(context))!;
+						run.boundOutputs[key] =
+							acceptedBinding ??
+							(await outputRevisionBinding(context, boundScope, true))!;
 					}
-					if (hasCheck(step, "specialist-evidence")) run.outputs[key] = output;
+					if (
+						(config.explicit && key !== step.id) ||
+						hasCheck(step, "specialist-evidence")
+					)
+						run.outputs[key] = output;
 					run.history.push(
 						immutableJson({
 							step: key,
@@ -2641,6 +2773,21 @@ export class WorkflowRuntime {
 					await this.save(run);
 					signal.throwIfAborted();
 				} catch (error) {
+					if (!signal.aborted && error instanceof StaleBoundInspectionError) {
+						finishStepAttempt(context, "interrupted");
+						this.log(run, key, error.message);
+						const session = state.agent?.sessionId
+							? { runner: state.agent.runner, sessionId: state.agent.sessionId }
+							: undefined;
+						if (session)
+							checkpoint.visits[step.id] =
+								(checkpoint.visits[step.id] ?? 0) + 1;
+						checkpoint.active = session
+							? { phase: "executing", agent: session }
+							: undefined;
+						await this.save(run);
+						continue;
+					}
 					finishStepAttempt(
 						context,
 						signal.aborted || isUpdatePaused(error)
@@ -3385,8 +3532,15 @@ export class WorkflowRuntime {
 						immutableJson({ step: key, output, at: new Date().toISOString() }),
 					);
 			}
-			checkpoint.current = this.nextStep(steps, step, output);
-			checkpoint.active = undefined;
+			const refreshing = checkpoint.refreshes?.at(-1);
+			if (refreshing?.source === step.id) {
+				checkpoint.refreshes!.pop();
+				checkpoint.current = refreshing.target;
+				checkpoint.active = refreshing.active;
+			} else {
+				checkpoint.current = this.nextStep(steps, step, output);
+				checkpoint.active = undefined;
+			}
 			this.log(run, key, `Finished ${step.name}`);
 		}
 		return outputs;
@@ -4038,18 +4192,23 @@ export class WorkflowRuntime {
 				body: `Workflow stopped by user. Run ${run.id} retains its work and remains open; resume or start a follow-up when ready.`,
 			});
 	}
-	async refreshGuide(id: string, reviewId: string): Promise<FactoryRun> {
+	/** The same graph capability drives the API action and its presentation. */
+	canRefreshGuide(id: string): boolean {
 		const run = this.get(id);
-		this.requireRunAvailable(run);
 		if (
 			this.shuttingDown ||
 			run.status !== "waiting" ||
-			run.reviewGate?.status !== "pending" ||
-			run.reviewGate.id !== reviewId
+			run.reviewGate?.status !== "pending"
 		)
-			throw new Error(
-				"Only the current pending human guide can be regenerated",
-			);
+			return false;
+		try {
+			this.requireRunAvailable(run);
+		} catch {
+			return false;
+		}
+		return !!this.guideRefreshTarget(run);
+	}
+	private guideRefreshTarget(run: FactoryRun) {
 		const find = (
 			frame: GraphCheckpoint | undefined,
 			steps: WorkflowStep[],
@@ -4087,7 +4246,21 @@ export class WorkflowRuntime {
 			}
 			return undefined;
 		};
-		const found = find(run.checkpoint, run.workflow.steps);
+		return find(run.checkpoint, run.workflow.steps);
+	}
+	async refreshGuide(id: string, reviewId: string): Promise<FactoryRun> {
+		const run = this.get(id);
+		this.requireRunAvailable(run);
+		if (
+			this.shuttingDown ||
+			run.status !== "waiting" ||
+			run.reviewGate?.status !== "pending" ||
+			run.reviewGate.id !== reviewId
+		)
+			throw new Error(
+				"Only the current pending human guide can be regenerated",
+			);
+		const found = this.guideRefreshTarget(run);
 		if (!found)
 			throw new Error("This workflow has no regeneratable guide checkpoint");
 		const { frame, steps, guide, handoff, review } = found;
@@ -4201,9 +4374,7 @@ export class WorkflowRuntime {
 			this.shuttingDown ||
 			this.isExecuting(id) ||
 			run.status !== "failed" ||
-			!allRunSteps(run).some(
-				(s) => s.tool === "draft-pr" && s.id === run.step?.split("/").at(-1),
-			) ||
+			stepForRun(run, run.step)?.tool !== "draft-pr" ||
 			run.deliveryRecovery
 		)
 			throw new Error(
@@ -4398,7 +4569,10 @@ export class WorkflowRuntime {
 		prefix: string,
 	): boolean {
 		const current = steps.find((s) => s.id === frame.current);
-		const source = current ? readStep(current, "impact") : undefined;
+		const source =
+			current && consumesImpact(current)
+				? readStep(current, "impact")
+				: undefined;
 		const assessor = steps.find(
 			(s) => s.id === source && hasCheck(s, "impact-reuse"),
 		);
@@ -4883,6 +5057,7 @@ export class WorkflowRuntime {
 			updatedAt: run.updatedAt,
 			repositoryId: run.repositoryId,
 			step: run.step,
+			currentStep: currentStepView(run),
 			workflow: run.workflow.id,
 			workflowBlock: run.workflowBlock,
 			triggerOrigin: run.triggerOrigin,
@@ -4897,11 +5072,7 @@ export class WorkflowRuntime {
 			reviewGate: run.reviewGate,
 			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
 				? this.summaries.get(run.id)?.hasGuide
-				: allRunSteps(run).some(
-						(step) =>
-							hasCheck(step, "requirement-coverage") &&
-							Object.hasOwn(run.outputs, step.id),
-					),
+				: !!presentationOutputKeys(run).guide,
 			history: this.historyPreviews(run),
 		};
 	}
@@ -4931,14 +5102,8 @@ export class WorkflowRuntime {
 		const index = this.historyPreviews(run);
 		for (let position = index.length - 1; position >= 0; position--) {
 			const step = index[position]!.step;
-			if (
-				!allRunSteps(run).some(
-					(role) =>
-						role.id === step.split("/").at(-1) &&
-						hasCheck(role, "requirement-coverage"),
-				)
-			)
-				continue;
+			const role = stepForRun(run, step);
+			if (!role || !hasCheck(role, "requirement-coverage")) continue;
 			const guide = run.history[position]?.output as
 				| { reviewFiles?: { headSha?: string }; chapters?: unknown }
 				| undefined;

@@ -37,6 +37,10 @@ it("keeps renamed Factory review cards, lazy guide artifacts and media bound to 
 	const publicationId = pipeline.steps.find(
 		(step) => step.tool === "draft-pr",
 	)!.id;
+	const prefix = `${workflow.steps[0]!.id}/`;
+	const guideKey = `${prefix}${guideId}`,
+		captureKey = `${prefix}${captureId}`,
+		publicationKey = `${prefix}${publicationId}`;
 	let runtime = new WorkflowRuntime(home, {});
 	let run = runtime.create({
 		id: "renamed-presentation",
@@ -65,9 +69,9 @@ it("keeps renamed Factory review cards, lazy guide artifacts and media bound to 
 		summary: "Configured guide",
 		notes: "guide body".repeat(10000),
 	};
-	run.outputs[guideId] = guide;
-	run.outputs[publicationId] = { url: "https://example.com/repo/pull/136" };
-	run.outputs[captureId] = {
+	run.outputs[guideKey] = guide;
+	run.outputs[publicationKey] = { url: "https://example.com/repo/pull/136" };
+	run.outputs[captureKey] = {
 		screenshots: [
 			{
 				path: image,
@@ -79,6 +83,12 @@ it("keeps renamed Factory review cards, lazy guide artifacts and media bound to 
 		],
 		unavailable: [],
 	};
+	for (const key of [guideKey, captureKey, publicationKey])
+		run.history.push({
+			step: key,
+			at: new Date().toISOString(),
+			output: run.outputs[key],
+		});
 	run.history.push({
 		step: "irrelevant",
 		at: new Date().toISOString(),
@@ -92,7 +102,7 @@ it("keeps renamed Factory review cards, lazy guide artifacts and media bound to 
 	);
 	const chunks = [
 		...new Set<string>([
-			...manifest.fields.outputs.record[guideId].reference.chunks,
+			...manifest.fields.outputs.record[guideKey].reference.chunks,
 			...manifest.fields.history.pages.flatMap(
 				(page: { chunks: string[] }) => page.chunks,
 			),
@@ -114,9 +124,9 @@ it("keeps renamed Factory review cards, lazy guide artifacts and media bound to 
 	});
 	try {
 		expect(presentationOutputKeys(run)).toMatchObject({
-			guide: guideId,
-			capture: captureId,
-			"draft-pr": publicationId,
+			guide: guideKey,
+			capture: captureKey,
+			"draft-pr": publicationKey,
 		});
 		expect(
 			guideRevision({
@@ -169,7 +179,7 @@ it("keeps renamed Factory review cards, lazy guide artifacts and media bound to 
 				index: 0,
 			},
 		]);
-		for (const artifactName of [undefined, "capture", captureId]) {
+		for (const artifactName of [undefined, "capture", captureKey]) {
 			const shot = await server.app.inject({
 				url: `/api/runs/${run.id}/screenshots/0?v=${imageSha256}${artifactName ? `&artifact=${artifactName}` : ""}`,
 			});

@@ -33,8 +33,43 @@ import {
 import { fileTotals } from "./review-model";
 import { readStored, signature, writeStored } from "./review-state";
 import { StoryDeck } from "./review-story";
-import { roleOutput } from "./run-output";
+import { mergeReadinessFor, roleOutput } from "./run-output";
 import { Button, External, Modal } from "./ui";
+
+/** The current provider poll outranks completed CI-step receipts. */
+export function ProviderChecks({ run }: { run: any }) {
+	const receipt = mergeReadinessFor(run);
+	const checks = Array.isArray(receipt?.checks)
+		? receipt.checks.filter(
+				(check: unknown) => check && typeof check === "object",
+			)
+		: [];
+	const passed = checks.filter(
+		(check: { bucket?: string }) => check.bucket === "pass",
+	).length;
+	const skipped = checks.filter(
+		(check: { bucket?: string }) => check.bucket === "skipping",
+	).length;
+	const blockers = Array.isArray(receipt?.blockers) ? receipt.blockers : [];
+	return (
+		<>
+			{checks.length > 0 && (
+				<span>
+					CI {passed + skipped === checks.length ? "✓ " : ""}
+					{passed}/{checks.length}
+					{skipped ? ` (${skipped} skipped)` : ""}
+				</span>
+			)}
+			{blockers.length > 0 && (
+				<ul aria-label="Merge blockers">
+					{blockers.map((blocker: { message: string }, index: number) => (
+						<li key={index}>{blocker.message}</li>
+					))}
+				</ul>
+			)}
+		</>
+	);
+}
 
 type Inventory = {
 	area: string;
@@ -323,15 +358,6 @@ export function BriefReview({
 	};
 	const files = fileQuery.data?.manifest.files;
 	const totals = files ? fileTotals(files) : undefined;
-	const receipt = roleOutput(run, "merge-readiness") ?? roleOutput(run, "ci");
-	// Older and scripted receipts may not carry provider checks; never let them break reading.
-	const checks: { bucket?: string }[] | undefined = Array.isArray(
-		receipt?.checks,
-	)
-		? receipt.checks.filter((c: unknown) => c && typeof c === "object")
-		: undefined;
-	const passed = checks?.filter((c) => c.bucket === "pass").length ?? 0;
-	const skipped = checks?.filter((c) => c.bucket === "skipping").length ?? 0;
 	const external = brief.externalResources && (
 		<section className="brief-section" aria-label="Verified ticket changes">
 			<h3>Verified ticket changes</h3>
@@ -388,12 +414,7 @@ export function BriefReview({
 	);
 	const delivery = (
 		<section className="brief-delivery" aria-label="Delivery facts">
-			{checks?.length ? (
-				<span>
-					CI ✓ {passed}/{checks.length}
-					{skipped ? ` (${skipped} skipped)` : ""}
-				</span>
-			) : null}
+			<ProviderChecks run={run} />
 			{brief.hygiene.length > 0 && (
 				<ul>
 					{brief.hygiene.map((h) => (

@@ -8,10 +8,12 @@ import {
 	ago,
 	api,
 	attention,
+	currentStepOf,
 	elapsed,
 	finished,
-	icons,
 	phase,
+	stepFixing,
+	stepIcon,
 	stepsOf,
 	useAction,
 	useRun,
@@ -51,7 +53,7 @@ import {
 	signature,
 	ticketTrackingPending,
 } from "./review-state";
-import { roleOutput } from "./run-output";
+import { mergeReadinessFor, roleOutput } from "./run-output";
 import { Bob, Button, ConfirmStop, External, Markdown, useToast } from "./ui";
 export const labels: Record<string, string> = {
 	question: "💬 Question",
@@ -592,6 +594,24 @@ export function FinalMessage({ run }: { run: any }) {
 		</div>
 	);
 }
+export function GuideRefreshAction({
+	run,
+	busy,
+	onRefresh,
+}: {
+	run: any;
+	busy: boolean;
+	onRefresh: () => void;
+}) {
+	if (run.status !== "waiting" || run.reviewCapabilities?.refreshGuide !== true)
+		return null;
+	return (
+		<Button variant="ghost" requiresConnection busy={busy} onClick={onRefresh}>
+			Refresh guide
+		</Button>
+	);
+}
+
 function ReviewDecisions({
 	run,
 	identity = `factory-review/${run.id}/finished`,
@@ -803,32 +823,26 @@ function ReviewDecisions({
 								Reverify ticket changes
 							</Button>
 						)}
-					{waiting &&
-						gate?.mode !== "external" &&
-						!run.step?.endsWith("external-human-review") && (
-							<Button
-								variant="ghost"
-								requiresConnection
-								busy={busy || action.isPending}
-								onClick={() => {
-									if (!controller.lock()) return;
-									void action
-										.mutateAsync({
-											path: `/api/runs/${run.id}/guide/refresh`,
-											body: { reviewId: gate.id },
-										})
-										.then(() =>
-											toast({
-												text: "Refreshing the guide — existing reviews and images are retained",
-											}),
-										)
-										.catch(() => {})
-										.finally(() => controller.unlock());
-								}}
-							>
-								Refresh guide
-							</Button>
-						)}
+					<GuideRefreshAction
+						run={run}
+						busy={busy || action.isPending}
+						onRefresh={() => {
+							if (!controller.lock()) return;
+							void action
+								.mutateAsync({
+									path: `/api/runs/${run.id}/guide/refresh`,
+									body: { reviewId: gate.id },
+								})
+								.then(() =>
+									toast({
+										text: "Refreshing the guide — existing reviews and images are retained",
+									}),
+								)
+								.catch(() => {})
+								.finally(() => controller.unlock());
+						}}
+					/>
+
 					{url && (
 						<External className="button secondary" href={reviewDiffUrl(url)}>
 							Open diff ↗
@@ -955,8 +969,8 @@ export function FocusCard({
 									: run.status === "interrupted"
 										? "Interrupted"
 										: "Stuck"}{" "}
-								at {icons[run.step?.split("/").at(-1)] ?? "⚙️"}{" "}
-								{stepsOf(run, config).find((s) => s.key === run.step)?.name ??
+								at {stepIcon(currentStepOf(run, config))}{" "}
+								{currentStepOf(run, config)?.name ??
 									run.step ??
 									"Bob’s Factory session"}
 							</strong>
@@ -1090,8 +1104,8 @@ export function WorkingRow({
 		data = detail.data ?? run,
 		action = useAction(),
 		toast = useToast(),
-		step = stepsOf(data, config).find((s) => s.key === data.step),
-		stepId = run.step?.split("/").at(-1) ?? "simple",
+		step = currentStepOf(data, config),
+		readiness = mergeReadinessFor(data),
 		latest = expanded ? activitiesOf(data).at(-1) : undefined;
 	const visits =
 		(data.history ?? []).filter((h: any) => h.step === data.step).length + 1;
@@ -1105,10 +1119,10 @@ export function WorkingRow({
 			>
 				<span className="repo-dot" />
 				<strong>{run.title}</strong>
-				<span className={`step-chip ${phase(stepId)}`}>
-					{workingLabel(data)} · {icons[stepId] ?? "⚙️"}{" "}
+				<span className={`step-chip ${phase(step)}`}>
+					{workingLabel(data)} · {stepIcon(step)}{" "}
 					{step?.name ?? run.step ?? "Bob’s Factory session"}
-					{/fix/.test(stepId) && " · fixing"}
+					{stepFixing(step) && " · fixing"}
 					{visits > 1 && ` · ↺${visits}`}
 				</span>
 				<Progress run={data} config={config} />
@@ -1121,13 +1135,11 @@ export function WorkingRow({
 						{latest?.body ??
 							`${latest?.title ?? "Bob is working"} ${latest?.parameter ?? ""}`}
 					</Markdown>
-					{roleOutput(data, "merge-readiness")?.blockers?.length > 0 && (
+					{readiness?.blockers?.length > 0 && (
 						<ul>
-							{roleOutput(data, "merge-readiness").blockers.map(
-								(b: any, i: number) => (
-									<li key={i}>{b.message}</li>
-								),
-							)}
+							{readiness.blockers.map((b: any, i: number) => (
+								<li key={i}>{b.message}</li>
+							))}
 						</ul>
 					)}
 					<div className="actions">

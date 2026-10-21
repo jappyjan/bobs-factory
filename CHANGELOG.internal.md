@@ -6,7 +6,7 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Changed
 
-- Replace runtime step-ID dispatch with explicit agent configuration and named tool bindings; preserve stock role prompts and historical frozen-run loading. Add raw legacy resume, fully renamed Factory, revision/evidence and builder coverage. Own Ajv directly, refresh MCP SDK and test dependencies to their patched releases, and remove redundant security overrides. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136), [#173](https://github.com/jappyjan/bobs-factory/pull/173))
+- Replace runtime step-ID dispatch with explicit agent configuration and named tool bindings; preserve stock role prompts and historical frozen-run loading. Require exact executed frame receipts for publication authority, explicit impact checks, and original pinned snapshots with effective-input freshness across admission/restart. Isolate inline schema work with resource limits. Add raw legacy resume, fully renamed Factory, revision/evidence and builder coverage. Own Ajv directly, refresh MCP SDK and test dependencies to their patched releases, and remove redundant security overrides. ([Taskbot #136](https://taskbot.apps.janjaap.de/p/bobs-factory/t/136), [#173](https://github.com/jappyjan/bobs-factory/pull/173))
 
 - Retry transient macOS symlink-read races during capacity lock acquisition within the existing deadline. Replacement owners still block admission, and foreign regular files remain untouched. ([#164](https://github.com/jappyjan/bobs-factory/pull/164))
 

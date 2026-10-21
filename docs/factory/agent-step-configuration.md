@@ -45,14 +45,59 @@ Reads add named inputs and do not implicitly remove the existing run context.
 `OutputFormats.ts` lists every supported format, including historical Factory,
 QA, guide/review-brief versions, Architecture/check-in, Impact, specialist,
 inventory/coverage, delivery and improvement formats. Inline schemas use strict
-Ajv draft-07 validation at save, with no remote `$ref`, at most 64 KiB, bounded
-nesting and pattern sizes. Schema validation never fetches references or executes
-user scripts. Invalid schema or rule output enters the existing bounded output
-correction loop. The builder validates against the same server implementation.
-Unknown format, check, instruction and rule-format IDs are rejected at save.
+Ajv draft-07 validation at save. Both compilation and output validation execute
+in a separate disposable Node worker or Bun subprocess, never as generated code
+on the HTTP/native execution thread. Normal schema failures and validation resource failures retain
+the existing output-correction retry. Stopping a run or closing a schema request
+cancels its queued/active worker instead of spending a correction attempt.
 
-`revision: "bound"` records repository revisions and a digest of the declared
-inputs. A changed revision or input invalidates reuse and reruns the step. Access
+Inline schemas are restricted to 64 KiB, 512 schema nodes, 40 JSON nesting levels
+and acyclic local JSON Pointer references. Remote references, custom/nested `$id`,
+`$async`, recursive references, backreferences, lookarounds, nested repetitions and
+repeated alternation groups are rejected at save. The same 512-character pattern
+limit and unsafe-pattern checks apply to `patternProperties`. Ordinary types,
+properties, required fields, enums, compositions, useful bounded patterns and
+shared acyclic definitions remain available.
+
+Pattern screening is only a preflight: remaining expensive regular expressions
+and meta-schema checks are still isolated. Node applies a 250 ms execution guard
+for compile plus validation. Every worker has a 2-second wall deadline including
+startup, enforced outside the validator. Node terminates the worker; Bun uses a
+separate process killed with SIGKILL because Bun thread termination cannot
+reliably interrupt native regular expressions. The
+service allows two asynchronous workers and at most 16 queued jobs, with a
+2-second queue-wait limit. Native output is limited to 256 KiB, 20,000 JSON values
+and 64 nesting levels. Workflow HTTP saves accept at most 64 distinct inline
+schemas and precompile them asynchronously; a missing/evicted compile result
+fails closed. Synchronous compatibility callers use a worker bridge with the
+same deadline; HTTP handlers never fall back to that blocking bridge.
+
+Node additionally enforces a 96 MiB old-generation heap, 16 MiB young generation
+and 2 MiB worker stack. Async Bun validation checks child RSS from the parent with
+`ps` every 50 ms, kills above 256 MiB, and fails closed if the watchdog is
+unavailable. This is a sampled process-memory limit, not an engine heap cap;
+synchronous Bun compatibility calls retain the input/graph caps and OS-enforced
+wall deadline. Normal HTTP/native paths always use the asynchronous backend.
+The compiled executable launches its private `internal-schema-validator` JSON
+helper; it does not require a user-installed Ajv module or Node installation.
+
+`revision: "bound"` records repository revisions and the effective supplied inputs,
+including ordinary context when `reads` is omitted. Answer, decision and previously
+supplied output changes invalidate reuse. The implicit output collection retains
+its original key set and history retains its original cutoff on dependency refresh;
+the producer's own newly appended result is excluded. This prevents a consumer's
+bookkeeping from recursively invalidating its producer. Explicit named reads remain
+live, including `@history` with only that producer's appended receipts excluded.
+Native feedback, review-fix and QA-reuse sources also bind their inspected inputs.
+Dependency refresh returns to the suspended consumer without replaying completed
+intervening actions, retains native conversation identity and uses the visit budget.
+
+Read-only inspection stamps retain the original repository snapshot through queued
+admission, correction and native restart. Drift rejects the result and reruns the
+step; completion never relabels an inspection with a later HEAD. Workspace agents
+may change their repository, while concurrent effective-input changes still require
+re-execution. Frozen legacy provenance and retry behavior keep their prior adapter.
+Access
 is `read-only`, `workspace` or `push`, optionally `{mode, tools}`. Read-only agents
 use the runtime's pinned list/read context and repository tools. `instructions`
 contains library IDs. Selected prompt snippets are appended automatically in the

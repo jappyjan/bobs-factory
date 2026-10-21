@@ -280,6 +280,69 @@ it.each([
 	expect(f.runner.start).toHaveBeenCalledTimes(saved ? 1 : 2);
 });
 
+it("corrects a resource-limited inline result in the saved native conversation", async () => {
+	const f = await fixture();
+	f.ctx.step = {
+		id: "custom-inline-role",
+		name: "Return a label",
+		type: "agent",
+		prompt: "Return a label",
+		configVersion: "step-config-v1",
+		json: true,
+		output: {
+			schema: {
+				type: "object",
+				properties: { label: { type: "string", pattern: "^a+a+$" } },
+				required: ["label"],
+				additionalProperties: false,
+			},
+		},
+	} as typeof f.ctx.step;
+	f.ctx.run.step = "pipeline/custom-inline-role";
+	f.ctx.resumeAgent!.result!.output = { label: `${"a".repeat(100_000)}!` };
+	f.runner.getMessages = () => [
+		{ type: "result", result: JSON.stringify({ label: "aa" }) },
+	];
+	const corrected = await f.worker.executeFactoryAgent(f.ctx);
+	expect(corrected).toEqual({ label: "aa" });
+	expect(f.getInput().outputCorrection.issues).toEqual([
+		expect.objectContaining({
+			path: "/",
+			message: expect.stringMatching(
+				/execution limit|wall limit|resource limits/,
+			),
+		}),
+	]);
+	expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
+	expect(f.runner.start).toHaveBeenCalledTimes(1);
+});
+
+it("cancels inline validation without consuming native correction attempts", async () => {
+	const f = await fixture();
+	f.ctx.step = {
+		id: "custom-inline-role",
+		name: "Return a label",
+		type: "agent",
+		prompt: "Return a label",
+		configVersion: "step-config-v1",
+		json: true,
+		output: { schema: { type: "string", pattern: "^a+a+$" } },
+	} as typeof f.ctx.step;
+	f.ctx.run.step = "pipeline/custom-inline-role";
+	f.ctx.resumeAgent!.result!.output = `${"a".repeat(100_000)}!`;
+	const controller = new AbortController();
+	f.ctx.signal = controller.signal;
+	setTimeout(
+		() => controller.abort(new DOMException("Run stopped", "AbortError")),
+		30,
+	);
+	await expect(f.worker.executeFactoryAgent(f.ctx)).rejects.toMatchObject({
+		name: "AbortError",
+	});
+	expect(f.ctx.resumeAgent!.rejected?.attempts ?? 0).toBe(0);
+	expect(f.runner.start).not.toHaveBeenCalled();
+});
+
 it("corrects a revised delivery version in its saved planner conversation before independent review", async () => {
 	const f = await fixture();
 	f.ctx.step = { ...f.ctx.step, id: "plan" };

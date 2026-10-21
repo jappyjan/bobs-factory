@@ -52,6 +52,37 @@ it("validates custom output schemas without allowing external references or unkn
 		});
 		expect(typo.valid).toBe(false);
 		expect(typo.issues).toEqual(['strict mode: unknown keyword: "propertiez"']);
+		for (const [schema, message] of [
+			[{ type: "string", pattern: "^(a+)+$" }, "unsafe pattern"],
+			[
+				{
+					type: "object",
+					patternProperties: { "^(a+)+$": { type: "string" } },
+				},
+				"unsafe pattern",
+			],
+			[{ $ref: "#" }, "reference cycles"],
+		] as const) {
+			const rejected = await validate(schema);
+			expect(rejected.valid).toBe(false);
+			expect(rejected.issues.join(";")).toContain(message);
+		}
+		// A real expensive compile must not delay unrelated HTTP work.
+		const compiling = validate({
+			enum: Array.from({ length: 4400 }, (_, id) => ({ id })),
+		});
+		await new Promise((resolve) => setTimeout(resolve, 20));
+		const responsiveAt = Date.now();
+		const stillResponsive = await server.app.inject({
+			url: "/api/workflows/step-config/catalog",
+		});
+		expect(stillResponsive.statusCode).toBe(200);
+		expect(Date.now() - responsiveAt).toBeLessThan(1000);
+		const exhausted = await compiling;
+		expect(exhausted.valid).toBe(false);
+		expect(exhausted.issues.join(";")).toMatch(
+			/execution limit|wall limit|resource limits/,
+		);
 		const config = (
 			await server.app.inject({ url: "/api/config?view=recipes" })
 		).json();
@@ -96,6 +127,42 @@ it("validates custom output schemas without allowing external references or unkn
 			expect(response.json()).toEqual({ error: message });
 		}
 
+		for (const schema of [
+			{ type: "string", pattern: "^(a+)+$" },
+			{ $ref: "#" },
+		]) {
+			const response = await server.app.inject({
+				method: "PATCH",
+				url: "/api/workflows",
+				headers: {
+					"x-factory-request": "1",
+					"x-factory-config": config.configRevision,
+				},
+				payload: {
+					workflows: [
+						{
+							id: "unsafe-inline",
+							name: "Unsafe inline",
+							stepConfigVersion: "step-config-v1",
+							steps: [
+								{
+									id: "work",
+									type: "agent",
+									name: "Work",
+									prompt: "Task",
+									output: { schema },
+								},
+							],
+						},
+					],
+				},
+			});
+			expect({
+				status: response.statusCode,
+				body: response.json(),
+			}).toMatchObject({ status: 400 });
+			expect(response.json().error).toMatch(/unsafe pattern|reference cycles/);
+		}
 		const catalog = await server.app.inject({
 			url: "/api/workflows/step-config/catalog",
 		});

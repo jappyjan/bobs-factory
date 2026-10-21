@@ -69,6 +69,7 @@ import {
 	scopeContextDigest,
 } from "./SpecialistReview.js";
 import {
+	consumesImpact,
 	formatOf,
 	hasCheck,
 	readStep,
@@ -465,7 +466,7 @@ export class FactoryTools {
 		await verifyQaEnvironment(context);
 		const capture = QaCaptureSchema.parse(boundOutput(context, "capture"));
 		// Validate original behavioral provenance again at the consuming gate.
-		if (readStep(context.step, "impact")) {
+		if (consumesImpact(context.step)) {
 			const cloned = structuredClone(capture);
 			stampQaCriteria(context, cloned, true);
 			if (qaDigest(cloned.results) !== qaDigest(capture.results))
@@ -476,7 +477,7 @@ export class FactoryTools {
 		const dirty = Boolean(
 			(await command("git", ["status", "--porcelain"])).trim(),
 		);
-		if (readStep(context.step, "impact")) await assertCurrentImpact(context);
+		if (consumesImpact(context.step)) await assertCurrentImpact(context);
 		const scopeHash = qaDigest(scope),
 			captureHash = qaDigest(capture),
 			reviewHash = qaDigest(review);
@@ -1302,7 +1303,7 @@ export class FactoryTools {
 					reportReadiness(context, snapshot);
 					const aggregate = aggregateForContext(context);
 					if (
-						readStep(context.step, "impact") &&
+						consumesImpact(context.step) &&
 						snapshot.unassessedComments?.length &&
 						!snapshot.ciAssistance?.length &&
 						!snapshot.queued
@@ -1311,7 +1312,7 @@ export class FactoryTools {
 						return { ...snapshot, impactRequired: true };
 					}
 					if (
-						readStep(context.step, "impact") &&
+						consumesImpact(context.step) &&
 						aggregate &&
 						aggregate.baseline.baseSha !== snapshot.baseSha &&
 						!snapshot.ciAssistance?.length &&
@@ -1336,7 +1337,7 @@ export class FactoryTools {
 							| { approved?: boolean; headSha?: string }
 							| undefined;
 						if (
-							readStep(context.step, "impact") &&
+							consumesImpact(context.step) &&
 							snapshot.reviewReady &&
 							priorQa?.approved &&
 							priorQa.headSha === headSha &&
@@ -1672,7 +1673,7 @@ export class FactoryTools {
 					)
 						throw new Error("Worktree changed after review; handoff blocked");
 					if (
-						readStep(context.step, "impact") &&
+						consumesImpact(context.step) &&
 						readiness.unassessedComments?.length
 					) {
 						writeBoundOutput(context, "ci", readiness);
@@ -1710,7 +1711,7 @@ export class FactoryTools {
 									...readiness,
 									fix: true,
 									scopeReviewRequired: true,
-									impactRequired: Boolean(readStep(context.step, "impact")),
+									impactRequired: Boolean(consumesImpact(context.step)),
 									reason:
 										"Accepted context changed after review; extract a new requirement baseline",
 								};

@@ -24,10 +24,10 @@ import {
 	capacityPhaseLabel,
 	client,
 	finished,
-	icons,
 	phase,
 	refreshFactory,
 	settleReason,
+	stepIcon,
 	stepsOf,
 	useAction,
 	useConfig,
@@ -1052,7 +1052,7 @@ function RunPage({
 						return (
 							<li
 								key={step.key}
-								className={`step phase-${phase(step.id)} ${current === step.key ? (run.status === "waiting" ? "waiting" : ["failed", "error"].includes(run.status) ? "failed" : "current") : ""} ${!started ? "not-started" : ""}`}
+								className={`step phase-${phase(step)} ${current === step.key ? (run.status === "waiting" ? "waiting" : ["failed", "error"].includes(run.status) ? "failed" : "current") : ""} ${!started ? "not-started" : ""}`}
 							>
 								<button
 									type="button"
@@ -1064,7 +1064,7 @@ function RunPage({
 										setOpen({ ...open, [step.key]: !isOpen });
 									}}
 								>
-									<span className="step-dot">{icons[step.id] ?? "⚙️"}</span>
+									<span className="step-dot">{stepIcon(step)}</span>
 									<strong>{step.name}</strong>
 									{run.capacityLeaves?.[step.key] && (
 										<span className="chip">

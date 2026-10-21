@@ -378,7 +378,41 @@ it("runs a Factory fork with every step renamed through the same checked graph, 
 	try {
 		const stock = await drive(false),
 			fork = await drive(true);
-		expect(fork).toEqual(stock);
+		const entry = defaultWorkflows
+			.find((workflow) => workflow.id === "factory")!
+			.steps.find((step) => step.type === "workflow")!;
+		const fanout = defaultWorkflows
+			.find((workflow) => workflow.id === entry.workflow)!
+			.steps.find((step) => step.type === "fanout")!;
+		// Each group is one independent specialist. Keep serial groups ordered if
+		// the stock graph ever grows additional steps within a group.
+		expect(fanout.groups!.every((group) => group.length === 1)).toBe(true);
+		const siblings = new Set(
+			fanout.groups!.map(
+				(group, index) => `${entry.id}/${fanout.id}/${index}/${group[0]!.id}`,
+			),
+		);
+		const canonicalVisits = (visits: string[]) => {
+			const ordered: string[] = [];
+			for (let index = 0; index < visits.length; ) {
+				if (!siblings.has(visits[index]!)) {
+					ordered.push(visits[index++]!);
+					continue;
+				}
+				const start = index;
+				while (index < visits.length && siblings.has(visits[index]!)) index++;
+				ordered.push(...visits.slice(start, index).sort());
+			}
+			return ordered;
+		};
+		for (const run of [stock, fork])
+			expect(run.visits.filter((key) => siblings.has(key)).sort()).toEqual(
+				[...siblings].sort(),
+			);
+		expect({ ...fork, visits: canonicalVisits(fork.visits) }).toEqual({
+			...stock,
+			visits: canonicalVisits(stock.visits),
+		});
 		expect(stock.visits).toContain("pipeline/capture");
 		expect(stock.visits).toContain("pipeline/handoff");
 		expect(stock.visits.at(-1)).toBe("pipeline/merge");

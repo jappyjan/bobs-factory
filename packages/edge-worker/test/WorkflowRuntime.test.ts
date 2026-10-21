@@ -3944,11 +3944,14 @@ it.each([
 				uncertainty: decision.uncertainty,
 			},
 		});
-		expect(run.outputs["ci-fix"]).toMatchObject({ reviewRequired: true });
-		expect((run.outputs["ci-fix"] as { skipped?: boolean }).skipped).not.toBe(
-			true,
-		);
-	} else expect(run.outputs["ci-fix"]).toMatchObject({ skipped: true });
+		expect(run.outputs["pipeline/ci-fix"]).toMatchObject({
+			reviewRequired: true,
+		});
+		expect(
+			(run.outputs["pipeline/ci-fix"] as { skipped?: boolean }).skipped,
+		).not.toBe(true);
+	} else
+		expect(run.outputs["pipeline/ci-fix"]).toMatchObject({ skipped: true });
 	expect(run.workflowDefinitions).toEqual(frozen);
 	expect(run.humanDecisions ?? []).toEqual([]);
 });

@@ -38,6 +38,10 @@ import {
 	ResearchResultSchema,
 } from "./Improvement.js";
 import {
+	validateInlineSchema,
+	validateInlineSchemaSync,
+} from "./InlineSchema.js";
+import {
 	OutputValidationError,
 	outputValidationError,
 } from "./OutputValidation.js";
@@ -60,8 +64,6 @@ import {
 import {
 	FORMAT_IDS,
 	type FormatId,
-	inlineSchemaIssues,
-	jsonSchemaValidator,
 	resolveStepConfig,
 	type StepScope,
 } from "./StepConfig.js";
@@ -183,18 +185,13 @@ export function parseStepOutput(
 			if ("format" in config.output)
 				output = parseOutputFormat(config.output.format, value);
 			else {
-				const problems = inlineSchemaIssues(config.output.schema);
-				if (problems.length)
-					throw new Error(`Invalid output schema: ${problems.join("; ")}`);
-				const validate = jsonSchemaValidator().compile(config.output.schema);
-				if (!validate(value))
-					throw new OutputValidationError(
-						value,
-						(validate.errors ?? []).map((error) => ({
-							path: error.instancePath || "/",
-							message: error.message ?? "Invalid output",
-						})),
+				const result = validateInlineSchemaSync(config.output.schema, value);
+				if (result.schemaIssues.length)
+					throw new Error(
+						`Invalid output schema: ${result.schemaIssues.join("; ")}`,
 					);
+				if (result.issues.length)
+					throw new OutputValidationError(value, result.issues);
 			}
 		}
 		const issues = evaluateRules(config.rules, output, (format, value) => {
@@ -214,6 +211,45 @@ export function parseStepOutput(
 			? normalizeQuestionResult(output)
 			: output;
 	} catch (error) {
+		throw outputValidationError(value, error);
+	}
+}
+/** Native execution keeps inline compilation and validation off the event loop. */
+export async function parseStepOutputAsync(
+	step: object,
+	value: unknown,
+	scope?: StepScope,
+	signal?: AbortSignal,
+): Promise<unknown> {
+	const config = resolveStepConfig(step, scope);
+	if (!config.output || "format" in config.output)
+		return parseStepOutput(step, value, scope);
+	try {
+		signal?.throwIfAborted();
+		const result = await validateInlineSchema(
+			config.output.schema,
+			value,
+			signal,
+		);
+		signal?.throwIfAborted();
+		if (result.schemaIssues.length)
+			throw new Error(
+				`Invalid output schema: ${result.schemaIssues.join("; ")}`,
+			);
+		if (result.issues.length)
+			throw new OutputValidationError(value, result.issues);
+		// Reuse the normal post-schema rule/question stage without re-running an inline schema.
+		return parseStepOutput(
+			{
+				...step,
+				configVersion: "step-config-v1",
+				output: { format: "json-v1" },
+				rules: config.rules,
+			},
+			value,
+		);
+	} catch (error) {
+		if (signal?.aborted) throw error;
 		throw outputValidationError(value, error);
 	}
 }

@@ -35,6 +35,7 @@ import {
 	qaDigest,
 } from "../src/factory/Qa.js";
 import {
+	qaReuseBindingInputs,
 	qaReuseContext,
 	stampQaCriteria,
 	verifyQaEnvironment,
@@ -1407,8 +1408,9 @@ it("preserves original behavioral execution and rejects changed definitions, fix
 				scope: "visual-scope",
 				capture: "capture",
 				qaGate: "visual-gate",
+				impact: "assessor",
 			},
-			checks: ["capture-evidence", "qa-environment"],
+			checks: ["capture-evidence", "qa-environment", "impact-boundary"],
 		}),
 		outputs: run.outputs,
 		input: {},
@@ -1498,12 +1500,38 @@ it("preserves original behavioral execution and rejects changed definitions, fix
 				"Only unrelated teardown changed; guard definitions, fixtures and sources are identical",
 		},
 	];
+	const reuseInputsDigest = qaDigest(qaReuseBindingInputs(context));
+	current.pending.qaCriteria.push("transient-progress");
+	expect(qaDigest(qaReuseBindingInputs(context))).toBe(reuseInputsDigest);
+	current.pending.qaCriteria.pop();
+	const originalReason = current.qaReuse[0]!.reason;
+	current.qaReuse[0]!.reason = "A new independent rationale";
+	expect(qaDigest(qaReuseBindingInputs(context))).not.toBe(reuseInputsDigest);
+	current.qaReuse[0]!.reason = originalReason;
+	expect(qaDigest(qaReuseBindingInputs(context))).toBe(reuseInputsDigest);
 	const retained = qaReuseContext(context).criteria[0]!.criterion;
 	expect(retained.origin).toEqual(original.origin);
 	const composed = structuredClone(execution);
 	composed.results[0]!.criteria[0] = retained;
 	stampQaCriteria(context, composed);
 	expect(current.pending.qaCriteria).toEqual([]);
+	const owningHistory = run.history;
+	for (const producer of ["capture", "visual-gate"]) {
+		run.history = owningHistory.map((entry) =>
+			entry.step === producer
+				? { ...entry, step: `sibling/${producer}` }
+				: entry,
+		);
+		expect(() => qaReuseContext(context)).toThrow(
+			producer === "capture"
+				? "passed original evidence"
+				: "prior independent QA acceptance",
+		);
+	}
+	run.history = owningHistory;
+	expect(qaReuseContext(context).criteria[0]!.criterion.origin).toEqual(
+		original.origin,
+	);
 	scope.environmentFingerprint = "fixture-v2";
 	expect(() => qaReuseContext(context)).toThrow("unchanged definitions");
 	scope.environmentFingerprint = "fixture-v1";
@@ -1603,6 +1631,7 @@ it("continues explicit approval for a safe cumulative production correction only
 			type: "tool" as const,
 			tool: "merge",
 			impactSource: "assessor",
+			checks: ["impact-boundary"],
 			branches: [],
 			maxVisits: 8,
 		},
@@ -1704,7 +1733,12 @@ it("allows selected repository checks the normal workflow command budget", async
 				},
 			],
 		},
-		step: { id: "checks", tool: "impact-checks" },
+		step: {
+			id: "checks",
+			tool: "impact-checks",
+			impactSource: "assessor",
+			checks: ["impact-boundary"],
+		},
 		impactKey: "experts",
 		stepKey: "checks",
 		signal: new AbortController().signal,

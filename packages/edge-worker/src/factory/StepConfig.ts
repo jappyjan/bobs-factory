@@ -1,5 +1,8 @@
-import { Ajv } from "ajv";
 import { z } from "zod";
+import {
+	compileInlineSchema,
+	compileInlineSchemaSync,
+} from "./InlineSchema.js";
 import {
 	type Rule,
 	type RuleCondition,
@@ -1090,71 +1093,9 @@ export function accessMode(step: object): ResolvedStepConfig["access"]["mode"] {
 	return resolveStepConfig(step).access.mode;
 }
 
-let ajv: Ajv | undefined;
-/** Strict Ajv without remote references; schemas are data, never code. */
-export function jsonSchemaValidator(): Ajv {
-	ajv ??= new Ajv({
-		strict: true,
-		allErrors: true,
-		validateSchema: true,
-		loadSchema: undefined,
-		addUsedSchema: false,
-		code: { optimize: false },
-	});
-	return ajv;
-}
-const MAX_PATTERN = 512;
-/** Validate an inline output schema when a recipe is saved. */
-export function inlineSchemaIssues(schema: Record<string, unknown>): string[] {
-	const issues: string[] = [];
-	const walk = (value: unknown, path: string, depth = 0) => {
-		if (depth > 40) {
-			issues.push("Inline JSON Schema nesting is limited to 40 levels");
-			return;
-		}
-		if (Array.isArray(value))
-			value.forEach((v, i) => {
-				walk(v, `${path}/${i}`, depth + 1);
-			});
-		else if (value && typeof value === "object")
-			for (const [key, item] of Object.entries(value)) {
-				if (key === "$async" && item !== false)
-					issues.push(`${path}/$async: asynchronous schemas are not supported`);
-				if (key === "$ref" && typeof item === "string" && !item.startsWith("#"))
-					issues.push(
-						`${path}/$ref: only local references (#/...) are allowed`,
-					);
-				if (
-					(key === "pattern" &&
-						typeof item === "string" &&
-						item.length > MAX_PATTERN) ||
-					(key === "patternProperties" &&
-						item &&
-						typeof item === "object" &&
-						Object.keys(item).some((p) => p.length > MAX_PATTERN))
-				)
-					issues.push(
-						`${path}/${key}: patterns are limited to ${MAX_PATTERN} characters`,
-					);
-				walk(item, `${path}/${key}`, depth + 1);
-			}
-	};
-	walk(schema, "");
-	if (JSON.stringify(schema).length > MAX_SCHEMA_BYTES)
-		issues.push("Inline JSON Schemas are limited to 64 KiB");
-	if (issues.length) return issues;
-	const validator = jsonSchemaValidator();
-	try {
-		if (!validator.validateSchema(schema))
-			return (validator.errors ?? []).map(
-				(e) => `${e.instancePath || "/"}: ${e.message ?? "invalid schema"}`,
-			);
-		validator.compile(schema);
-	} catch (error) {
-		return [error instanceof Error ? error.message : String(error)];
-	}
-	return [];
-}
+/** Validate inline schemas in an isolated, resource-limited validator. */
+export const inlineSchemaIssues = compileInlineSchemaSync;
+export const inlineSchemaIssuesAsync = compileInlineSchema;
 
 /** Save-time validation of one step's configuration and references. */
 export function stepConfigIssues(

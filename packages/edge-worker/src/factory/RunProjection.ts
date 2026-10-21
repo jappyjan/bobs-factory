@@ -1,6 +1,7 @@
 import { activityPreview } from "./ActivityPage.js";
 import { workflowDisplay } from "./ConfigProjection.js";
 import {
+	currentStepView,
 	presentationOutputKeys,
 	presentationOutputs,
 } from "./RunOutputRoles.js";
@@ -69,6 +70,37 @@ export function ticketSyncSummary(run: FactoryRun) {
 	);
 }
 
+/** Operational provider state is separate from authored step receipts. */
+export function operationalReadiness(run: FactoryRun) {
+	const receipt = run.mergeReadiness;
+	if (!receipt) return undefined;
+	return {
+		headSha: receipt.headSha,
+		baseSha: receipt.baseSha,
+		url: receipt.url,
+		state: receipt.state,
+		isDraft: receipt.isDraft,
+		approved: receipt.approved,
+		reviewReady: receipt.reviewReady,
+		fix: receipt.fix,
+		queued: receipt.queued,
+		mergeMethod: receipt.mergeMethod,
+		blockers: (receipt.blockers ?? []).map(({ kind, message, action }) => ({
+			kind,
+			message,
+			action,
+		})),
+		checks: (receipt.checks ?? [])
+			.filter((check) => check && typeof check === "object")
+			.map(({ name, state, bucket, link }) => ({
+				name,
+				state,
+				bucket,
+				...(link ? { link } : {}),
+			})),
+	};
+}
+
 /** Today needs the current decision, not the run's execution and review history. */
 export function focusRun(
 	run: FactoryRun,
@@ -82,6 +114,7 @@ export function focusRun(
 	return {
 		...Object.fromEntries(focusFields.map((key) => [key, run[key]])),
 		workflow: workflowDisplay(run.workflow),
+		currentStep: currentStepView(run),
 		improvement: run.workflow.improvement
 			? { phase: run.improvementState?.phase ?? "preparing" }
 			: undefined,
@@ -89,6 +122,7 @@ export function focusRun(
 		workflowDefinitions: run.workflowDefinitions?.map(workflowDisplay),
 		error: run.error?.slice(0, 4000),
 		deliveryRecovery,
+		mergeReadiness: operationalReadiness(run),
 		ticketSync: ticketSyncSummary(run),
 		architectureProposals: architectureSummary(run),
 		outputs: {

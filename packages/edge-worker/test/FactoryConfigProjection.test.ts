@@ -213,19 +213,37 @@ it("preserves launch fields and nested step names without sending executable def
 	);
 	expect(summary.launchFields).toEqual(workflow.launchFields);
 	expect(summary.steps).toEqual([
-		{ id: "prepare", name: "Prepare", type: "agent" },
-		{ id: "check", name: "Check", type: "script" },
-		{ id: "ci", name: "CI", type: "tool", tool: "ci" },
+		{
+			id: "prepare",
+			name: "Prepare",
+			type: "agent",
+			presentation: { phase: "red", icon: "✦", fixing: false },
+		},
+		{
+			id: "check",
+			name: "Check",
+			type: "script",
+			presentation: { phase: "red", icon: "›_", fixing: false },
+		},
+		{
+			id: "ci",
+			name: "CI",
+			type: "tool",
+			tool: "ci",
+			presentation: { phase: "blue", icon: "🧪", fixing: false },
+		},
 		{
 			id: "parallel",
 			name: "Parallel",
 			type: "fanout",
+			presentation: { phase: "red", icon: "⫘", fixing: false },
 			groups: [
 				[
 					{
 						id: "child",
 						name: "Child",
 						type: "workflow",
+						presentation: { phase: "red", icon: "🧩", fixing: false },
 						workflow: "local-child",
 					},
 				],

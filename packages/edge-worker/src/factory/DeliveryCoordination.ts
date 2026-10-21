@@ -12,6 +12,7 @@ import {
 import { deliveryTargetLabel } from "./RunAttention.js";
 import {
 	accessMode,
+	consumesImpact,
 	hasCheck,
 	readOutput,
 	resolveStepConfig,
@@ -171,7 +172,7 @@ export function resourceScopes(context: ExecutionContext): string[] {
 		return context.step.resources
 			.map((resource) => JSON.stringify(["resource", resource]))
 			.sort();
-	if (context.step.tool === "impact-checks") {
+	if (context.step.tool === "impact-checks" && consumesImpact(context.step)) {
 		const decision = context.impactKey
 			? decisionFor(context.run, context.impactKey)
 			: undefined;

@@ -39,13 +39,14 @@ export function writeBoundOutput(
 	name: string,
 	value: unknown,
 ): void {
-	const from = resolveStepConfig(context.step).reads[name]?.from;
+	const config = resolveStepConfig(context.step);
+	const from = config.reads[name]?.from;
 	if (!from || from.startsWith("@"))
 		throw new Error(
 			`Tool ${context.step.tool} requires a reads.${name} step binding`,
 		);
 	const [target, ...parts] = from.split("/") as [string, ...string[]];
-	const update = (outputs: Record<string, unknown>) => {
+	const update = (outputs: Record<string, unknown>, target: string) => {
 		if (!parts.length) {
 			Object.defineProperty(outputs, target, {
 				value,
@@ -89,9 +90,10 @@ export function writeBoundOutput(
 			configurable: true,
 		});
 	};
-	update(context.run.outputs);
+	const rootTarget = config.explicit ? boundStepKey(context, name)! : target;
+	update(context.run.outputs, rootTarget);
 	if (context.outputs && context.outputs !== context.run.outputs)
-		update(context.outputs);
+		update(context.outputs, target);
 }
 
 /** Qualified provenance/history key for a declared partner in the same frame. */
@@ -144,6 +146,26 @@ function stepsForRun(run: ExecutionContext["run"]) {
 	return entries;
 }
 
+type Run = ExecutionContext["run"];
+type OutputHistory = readonly { step: string }[];
+const outputHistories = new WeakMap<Run, () => OutputHistory>();
+
+/** Runtime supplies retained receipt identities without loading their output bodies. */
+export function registerOutputHistory(
+	run: Run,
+	history: () => OutputHistory,
+): void {
+	outputHistories.set(run, history);
+}
+function outputHistory(run: Run): OutputHistory {
+	const retained = outputHistories.get(run);
+	if (retained) return retained();
+	// An unregistered cold run has no inexpensive execution proof. Do not hydrate it
+	// merely to guess an alias from the accepted graph.
+	if (Object.getOwnPropertyDescriptor(run, "history")?.get) return [];
+	return run.history ?? [];
+}
+
 /** Accepted output slots, without reading artifact getters or cold history bodies. */
 export function configuredOutputKeys(
 	run: ExecutionContext["run"],
@@ -159,14 +181,19 @@ export function configuredOutputKeys(
 			? selector.tool
 			: [selector.tool]
 		: [];
-	const keys = stepsForRun(run)
-		.filter(
-			({ step }) =>
-				checks.some((check) => hasCheck(step, check)) ||
-				(step.type === "tool" && tools.includes(step.tool ?? "")),
-		)
-		.flatMap(({ key }) => [key, key.split("/").at(-1)!])
-		.filter((key) => Object.hasOwn(run.outputs, key));
+	const producers = new Set(
+		stepsForRun(run)
+			.filter(
+				({ step }) =>
+					checks.some((check) => hasCheck(step, check)) ||
+					(step.type === "tool" && tools.includes(step.tool ?? "")),
+			)
+			.map(({ key }) => key),
+	);
+	const keys = [...outputHistory(run)]
+		.reverse()
+		.map(({ step }) => step)
+		.filter((key) => producers.has(key) && Object.hasOwn(run.outputs, key));
 	if (!keys.length && typeof selector.tool === "string") {
 		const legacy = legacyToolOutputKey(run, selector.tool);
 		if (legacy) keys.push(legacy);
@@ -174,12 +201,20 @@ export function configuredOutputKeys(
 	return [...new Set(keys)];
 }
 
+/** Resolve an accepted step identity without reading execution artifacts. */
+export function stepForRun(
+	run: Run,
+	key: string | undefined,
+): ExecutionContext["step"] | undefined {
+	return stepsForRun(run).find((entry) => entry.key === key)?.step;
+}
+
 /** Resolve an active action through the accepted graph, including called frames. */
 export function toolForStep(
 	run: ExecutionContext["run"],
 	key: string | undefined,
 ): string | undefined {
-	const step = stepsForRun(run).find((entry) => entry.key === key)?.step;
+	const step = stepForRun(run, key);
 	return step?.type === "tool" ? step.tool : undefined;
 }
 
@@ -226,7 +261,18 @@ export function outputForTool(
 			.filter(({ step }) => step.type === "tool" && step.tool === tool)
 			.map(({ key }) => key),
 	);
-	return keys.size ? outputForKeys(run, keys) : legacyToolOutput(run, tool);
+	return outputForKeys(run, keys) ?? legacyToolOutput(run, tool);
+}
+
+/** A partner read cannot impersonate an action merely by using its semantic name. */
+export function boundToolOutput(
+	context: ExecutionContext,
+	name: string,
+	tool: string,
+): unknown {
+	const key = boundStepKey(context, name);
+	if (!key || toolForStep(context.run, key) !== tool) return undefined;
+	return outputForKeys(context.run, new Set([key]));
 }
 
 /** Resolve a configured evidence-producing role without an active workflow frame. */
@@ -250,21 +296,6 @@ function outputForKeys(
 	for (let index = (run.history ?? []).length - 1; index >= 0; index--) {
 		const entry = run.history[index]!;
 		if (keys.has(entry.step)) return entry.output;
-	}
-	for (const key of keys) {
-		const leaf = key.split("/").at(-1)!;
-		if (Object.hasOwn(run.outputs, key)) return run.outputs[key];
-		if (Object.hasOwn(run.outputs, leaf)) return run.outputs[leaf];
-		const value = key
-			.split("/")
-			.reduce<unknown>(
-				(value, part) =>
-					value && typeof value === "object"
-						? (value as Record<string, unknown>)[part]
-						: undefined,
-				run.outputs,
-			);
-		if (value !== undefined) return value;
 	}
 	return undefined;
 }

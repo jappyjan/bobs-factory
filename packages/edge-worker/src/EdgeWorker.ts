@@ -194,6 +194,7 @@ import {
 	assertRevisionChanges,
 } from "./factory/Architecture.js";
 import {
+	digest,
 	TicketDelivery,
 	type TicketTarget,
 	validateDeliveryContract,
@@ -223,7 +224,6 @@ import {
 	parseAgentOutput,
 	toolArguments,
 } from "./factory/FactoryTools.js";
-import { factoryFeedbackContext } from "./factory/FeedbackPolicy.js";
 import { applyManagedGithubAgentEnvironment } from "./factory/GithubApi.js";
 import {
 	normalizeGitProviderConfig,
@@ -277,7 +277,7 @@ import {
 	inspectOperatorTransport,
 	operatorSanitize,
 } from "./factory/OperatorTransport.js";
-import { parseStepOutput } from "./factory/OutputFormats.js";
+import { parseStepOutputAsync } from "./factory/OutputFormats.js";
 import {
 	OutputValidationError,
 	outputValidationError,
@@ -311,13 +311,15 @@ import {
 } from "./factory/ResultArtifacts.js";
 import { finalizeGuideFiles } from "./factory/ReviewFiles.js";
 import {
-	factoryReviewFixContext,
 	recordReviewFix,
 	validateReviewFix,
 } from "./factory/ReviewRecovery.js";
 import {
+	assertBoundInspectionFresh,
+	bindingHistory,
 	outputRevisionBinding,
 	pinReadOnlyAccess,
+	StaleBoundInspectionError,
 } from "./factory/RevisionBinding.js";
 import {
 	factoryNativePrompt,
@@ -338,6 +340,7 @@ import {
 	aggregateForContext,
 	validateContractOutput,
 } from "./factory/SpecialistReview.js";
+import { stepBindings } from "./factory/StepBindings.js";
 import {
 	accessMode,
 	checkArgs,
@@ -348,6 +351,10 @@ import {
 	readOutput,
 	resolveStepConfig,
 } from "./factory/StepConfig.js";
+import {
+	stepContextBindingSources,
+	stepContextSources,
+} from "./factory/StepContextSources.js";
 import {
 	inspectPullRequest,
 	type TakeoverPullRequest,
@@ -9174,7 +9181,7 @@ ${taskSection}`;
 			return;
 		let output: unknown;
 		try {
-			output = this.validateFactoryAgentOutput(context, rejected.output);
+			output = await this.validateFactoryAgentOutput(context, rejected.output);
 		} catch (error) {
 			if (error instanceof OutputValidationError) return;
 			throw error;
@@ -9201,6 +9208,16 @@ ${taskSection}`;
 	private async executeFactoryAgent(
 		context: ExecutionContext,
 	): Promise<unknown> {
+		this.refreshFactoryFeedbackContext(context);
+		if (context.step.reads)
+			context.input = {
+				...(context.input as Record<string, unknown>),
+				...stepBindings(context),
+			};
+		context.inspectionBinding ??=
+			context.resumeAgent?.inspection ??
+			(await outputRevisionBinding(context, undefined, true));
+		await assertBoundInspectionFresh(context);
 		if (accessMode(context.step) === "read-only" && !context.readOnlyResearch) {
 			context.readOnlyResearch = true;
 			context.researchAccess = await pinReadOnlyAccess(context);
@@ -9438,6 +9455,9 @@ ${taskSection}`;
 				agentCheckpoint = {
 					runner: runnerType,
 					sessionId: message.session_id,
+					...(context.inspectionBinding
+						? { inspection: context.inspectionBinding }
+						: {}),
 					idleRetries: context.resumeAgent?.idleRetries,
 					...(context.resumeAgent?.infrastructureFailure
 						? {
@@ -9518,6 +9538,13 @@ ${taskSection}`;
 							: []),
 					];
 		if (hasCheck(step, "qa-environment")) await verifyQaEnvironment(context);
+		const liveSources = stepContextSources(context);
+		context.inspectionSources = structuredClone(
+			stepContextBindingSources(
+				context,
+				bindingHistory(context, context.inspectionBinding),
+			),
+		);
 		const factoryContext = await prepareFactoryContextAsync(
 			{
 				...(context.input && typeof context.input === "object"
@@ -9529,13 +9556,7 @@ ${taskSection}`;
 				...(hasCheck(step, "capture-evidence")
 					? { qaReuse: qaReuseContext(context) }
 					: {}),
-				...(hasCheck(step, "feedback-assessment") ||
-				hasCheck(step, "impact-reuse")
-					? { feedback: factoryFeedbackContext(context) }
-					: {}),
-				...(hasCheck(step, "review-dispositions")
-					? { reviewFix: factoryReviewFixContext(context) }
-					: {}),
+				...liveSources,
 				...(captureCorrection ? { captureCorrection } : {}),
 				...(outputCorrection ? { outputCorrection } : {}),
 				provenance: runProvenance(run),
@@ -9591,6 +9612,29 @@ ${taskSection}`;
 				this.runnerSlots,
 				context.signal,
 				{ ...context.capacity, remote: runnerType === "cursor" },
+				undefined,
+				async () => {
+					await assertBoundInspectionFresh(context);
+					if (context.inspectionBinding) {
+						const admitted = (await outputRevisionBinding(
+							context,
+							context.inspectionBinding,
+							true,
+						))!;
+						if (
+							context.readOnlyResearch &&
+							digest(admitted.repositories) !==
+								digest(context.inspectionBinding.repositories)
+						)
+							throw new StaleBoundInspectionError();
+						context.inspectionBinding = admitted;
+						agentCheckpoint = {
+							...(context.resumeAgent ?? { runner: runnerType }),
+							inspection: admitted,
+						};
+						await context.checkpointAgent?.(agentCheckpoint);
+					}
+				},
 			);
 			this.agentSessionManager.addAgentRunner(run.id, runner);
 			this.factoryChat ??= new SessionChat();
@@ -9697,17 +9741,21 @@ ${taskSection}`;
 						`Required reviewer ${step.id} did not complete: ${String((output as { summary?: unknown }).summary ?? "Missing required review input")}`,
 						output,
 					);
-				output = this.validateFactoryAgentOutput(context, output);
+				output = await this.validateFactoryAgentOutput(context, output);
 				if (hasInstruction(step, "review-completion")) {
 					const status = (output as { status?: string }).status;
 					if (status === "blocked" || status === "failed")
 						reviewOutcome = status;
 				}
 				const completed = (await roleProgress(context)).currentRevision;
+				const binding = await assertBoundInspectionFresh(context);
 				if (agentCheckpoint && completed)
 					await context.checkpointAgent?.({
 						runner: agentCheckpoint.runner,
 						sessionId: agentCheckpoint.sessionId,
+						...(context.inspectionBinding
+							? { inspection: context.inspectionBinding }
+							: {}),
 						idleRetries: context.resumeAgent?.idleRetries,
 						...(context.resumeAgent?.rejected
 							? { rejected: context.resumeAgent.rejected }
@@ -9715,7 +9763,7 @@ ${taskSection}`;
 						result: {
 							output,
 							revision: completed,
-							binding: await outputRevisionBinding(context),
+							binding,
 							finalizing: true,
 							reviewScope: context.progress?.reviewScope,
 						},
@@ -9724,6 +9772,7 @@ ${taskSection}`;
 					context,
 					output,
 				);
+				await assertBoundInspectionFresh(context);
 				turnCompleted = true;
 				return finalized;
 			} finally {
@@ -9787,10 +9836,10 @@ ${taskSection}`;
 		}
 	}
 
-	private validateFactoryAgentOutput(
+	private async validateFactoryAgentOutput(
 		context: ExecutionContext,
 		value: unknown,
-	): unknown {
+	): Promise<unknown> {
 		const { run, step } = context;
 		try {
 			if (context.validateRoleOutput) return context.validateRoleOutput(value);
@@ -9838,7 +9887,12 @@ ${taskSection}`;
 					]);
 				}
 			}
-			output = parseStepOutput(step, output);
+			output = await parseStepOutputAsync(
+				step,
+				output,
+				undefined,
+				context.signal,
+			);
 			if (hasCheck(step, "impact-reuse")) {
 				output = validateImpact(
 					output,
@@ -9929,7 +9983,7 @@ ${taskSection}`;
 	): Promise<unknown> {
 		const { run, step } = context;
 		value = await resolveRoleResult(context, value);
-		let output = this.validateFactoryAgentOutput(context, value);
+		let output = await this.validateFactoryAgentOutput(context, value);
 		output = await runEvidenceChecks(context, output, "correction");
 		if (hasCheck(step, "requirement-coverage")) {
 			if (checkArgs(step, "media-valid")?.video) {

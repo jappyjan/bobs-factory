@@ -262,7 +262,329 @@ it("refreshes a stale producer before consuming its named binding", async () => 
 		await runtime.launch(run);
 		expect(run.status, run.error).toBe("completed");
 		expect(calls).toBe(2);
+		expect(mutations).toBe(1);
 		expect(run.outputs.consume).toEqual({ received: 2 });
+	} finally {
+		await runtime.shutdown();
+	}
+});
+
+it.each([
+	"answers",
+	"prior-output",
+	"called-frame",
+])("binds effective optional-read inputs (%s), refreshing only the producer", async (change) => {
+	const { home } = fixture();
+	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-effective-"));
+	homes.push(runtimeHome);
+	let calls = 0,
+		mutations = 0;
+	const seen: unknown[] = [];
+	const runtime = new WorkflowRuntime(runtimeHome, {
+		agent: async (context) => {
+			calls++;
+			const input = context.input as {
+				answers: string[];
+				outputs: { seed: { value: number } };
+			};
+			return { answers: input.answers.length, seed: input.outputs.seed.value };
+		},
+		script: async () => ({}),
+		tool: async (context) => {
+			if (context.step.tool === "seed") return { value: 0 };
+			if (context.step.tool === "mutate") {
+				mutations++;
+				if (change === "prior-output") context.outputs!.seed = { value: 1 };
+				else context.run.answers.push("New answer");
+			}
+			if (context.step.tool === "consume")
+				seen.push((context.input as { source: unknown }).source);
+			return {};
+		},
+	});
+	try {
+		const child = WorkflowSchema.parse({
+			id: "effective-child",
+			name: "Effective child",
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					id: "seed",
+					name: "Seed",
+					type: "tool",
+					tool: "seed",
+					next: "inspect",
+				},
+				{
+					id: "inspect",
+					name: "Inspect",
+					type: "agent",
+					prompt: "Inspect all supplied context",
+					revision: "bound",
+					next: "mutate",
+				},
+				{
+					id: "mutate",
+					name: "Mutate",
+					type: "tool",
+					tool: "mutate",
+					next: "consume",
+				},
+				{
+					id: "consume",
+					name: "Consume",
+					type: "tool",
+					tool: "consume",
+					reads: { source: "inspect" },
+					next: "end",
+				},
+			],
+		});
+		if (change === "called-frame")
+			runtime.updateWorkflows([...runtime.listWorkflows(), child]);
+		const workflow =
+			change === "called-frame"
+				? WorkflowSchema.parse({
+						id: "effective-parent",
+						name: "Parent",
+						stepConfigVersion: "step-config-v1",
+						steps: [
+							{
+								id: "nested",
+								name: "Nested",
+								type: "workflow",
+								workflow: child.id,
+								next: "end",
+							},
+						],
+					})
+				: child;
+		const run = runtime.create({
+			repositoryId: "fixture",
+			workspace: home,
+			input: "Inspect",
+			workflow,
+			triggerOrigin: { type: "manual", workflowId: workflow.id },
+		});
+		const definition = JSON.stringify(run.workflow);
+		await runtime.launch(run);
+		expect(run.status, run.error).toBe("completed");
+		expect(calls).toBe(2);
+		expect(mutations).toBe(1);
+		expect(seen).toEqual([
+			{
+				answers: change === "prior-output" ? 0 : 1,
+				seed: change === "prior-output" ? 1 : 0,
+			},
+		]);
+		expect(JSON.stringify(run.workflow)).toBe(definition);
+	} finally {
+		await runtime.shutdown();
+	}
+});
+
+it("refreshes implicit answers after production persistence/restart without replaying completed work", async () => {
+	const { home } = fixture();
+	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-restart-"));
+	homes.push(runtimeHome);
+	let calls = 0,
+		consumers = 0;
+	const hooks = {
+		agent: async (context: ExecutionContext) => ({
+			answers: (context.input as { answers: string[] }).answers.length,
+			call: ++calls,
+		}),
+		script: async () => ({}),
+		tool: async (context: ExecutionContext) => {
+			if (!consumers++) {
+				context.run.answers.push("Persisted answer");
+				throw new Error("Simulated interrupted consumer");
+			}
+			return { received: (context.input as { source: unknown }).source };
+		},
+	};
+	let runtime = new WorkflowRuntime(runtimeHome, hooks);
+	try {
+		const workflow = WorkflowSchema.parse({
+			id: "effective-restart",
+			name: "Restart",
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					id: "inspect",
+					name: "Inspect",
+					type: "agent",
+					prompt: "Inspect",
+					revision: "bound",
+					next: "consume",
+				},
+				{
+					id: "consume",
+					name: "Consume",
+					type: "tool",
+					tool: "consume",
+					reads: { source: "inspect" },
+					next: "end",
+				},
+			],
+		});
+		const run = runtime.create({
+			repositoryId: "fixture",
+			workspace: home,
+			input: "Inspect",
+			workflow,
+			triggerOrigin: { type: "manual", workflowId: workflow.id },
+		});
+		await runtime.launch(run);
+		expect(run.status).toBe("failed");
+		await runtime.shutdown();
+		runtime = new WorkflowRuntime(runtimeHome, hooks);
+		const restored = runtime.get(run.id);
+		expect(restored.answers).toEqual(["Persisted answer"]);
+		runtime.retry(run.id);
+		await expect
+			.poll(() => restored.status, { timeout: 15000 })
+			.toBe("completed");
+		expect(restored.status, restored.error).toBe("completed");
+		expect(restored.outputs.consume).toEqual({
+			received: { answers: 1, call: 2 },
+		});
+		expect(calls).toBe(2);
+	} finally {
+		await runtime.shutdown();
+	}
+});
+
+it.each([
+	"answers",
+	"repository",
+])("rejects an in-flight inspection after concurrent %s drift and reruns against fresh context", async (change) => {
+	const { home, git } = fixture();
+	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-concurrent-"));
+	homes.push(runtimeHome);
+	let calls = 0;
+	const runtime = new WorkflowRuntime(runtimeHome, {
+		execution: async () => ({
+			environment: {},
+			mcp: {},
+			root: runtimeHome,
+			settings: {},
+			runner: "codex",
+			disabledMcp: [],
+			accounts: [],
+			redact: (value) => value,
+		}),
+		agent: async (context) => {
+			const answers = (context.input as { answers: string[] }).answers.length;
+			if (!calls++) {
+				if (change === "answers") context.run.answers.push("Concurrent answer");
+				else {
+					writeFileSync(join(home, "record.txt"), "concurrent\n");
+					git("add", ".");
+					git("commit", "-m", "Concurrent");
+				}
+			}
+			return { answers, call: calls };
+		},
+		script: async () => ({}),
+		tool: async (context) => ({
+			received: (context.input as { source: unknown }).source,
+		}),
+	});
+	try {
+		const workflow = WorkflowSchema.parse({
+			id: "effective-concurrent",
+			name: "Concurrent",
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					id: "inspect",
+					name: "Inspect",
+					type: "agent",
+					prompt: "Inspect",
+					revision: "bound",
+					access: "read-only",
+					next: "consume",
+				},
+				{
+					id: "consume",
+					name: "Consume",
+					type: "tool",
+					tool: "consume",
+					reads: { source: "inspect" },
+					next: "end",
+				},
+			],
+		});
+		const run = runtime.create({
+			repositoryId: "fixture",
+			workspace: home,
+			input: "Inspect",
+			workflow,
+			triggerOrigin: { type: "manual", workflowId: workflow.id },
+		});
+		await runtime.launch(run);
+		expect(run.status, run.error).toBe("completed");
+		expect(calls).toBe(2);
+		expect(run.outputs.consume).toEqual({
+			received: { answers: change === "answers" ? 1 : 0, call: 2 },
+		});
+		expect(run.boundOutputs!.inspect!.repositories[0]!.headSha).toBe(
+			git("rev-parse", "HEAD"),
+		);
+	} finally {
+		await runtime.shutdown();
+	}
+});
+
+it("bounds repeated stale native-session retries with the accepted visit budget", async () => {
+	const { home } = fixture();
+	const runtimeHome = mkdtempSync(join(tmpdir(), "bound-visit-budget-"));
+	homes.push(runtimeHome);
+	let calls = 0;
+	const runtime = new WorkflowRuntime(runtimeHome, {
+		agent: async (context) => {
+			await context.checkpointAgent!({
+				runner: "codex",
+				sessionId: "retained-session",
+				inspection: context.inspectionBinding,
+			});
+			context.run.answers.push(`Change ${++calls}`);
+			return { call: calls };
+		},
+		script: async () => ({}),
+		tool: async () => ({}),
+	});
+	try {
+		const workflow = WorkflowSchema.parse({
+			id: "effective-budget",
+			name: "Bound retries",
+			stepConfigVersion: "step-config-v1",
+			steps: [
+				{
+					id: "inspect",
+					name: "Inspect",
+					type: "agent",
+					prompt: "Inspect",
+					revision: "bound",
+					maxVisits: 2,
+					next: "end",
+				},
+			],
+		});
+		const run = runtime.create({
+			repositoryId: "fixture",
+			workspace: home,
+			input: "Inspect",
+			workflow,
+			triggerOrigin: { type: "manual", workflowId: workflow.id },
+		});
+		await runtime.launch(run);
+		expect(run.status).toBe("failed");
+		expect(run.error).toMatch(/Iteration limit reached/);
+		expect(calls).toBe(2);
+		expect(run.history).toHaveLength(0);
+		expect(run.outputs.inspect).toBeUndefined();
 	} finally {
 		await runtime.shutdown();
 	}

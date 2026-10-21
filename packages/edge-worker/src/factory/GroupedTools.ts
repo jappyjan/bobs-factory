@@ -12,7 +12,7 @@ import {
 	scopeRevision,
 } from "./RepositoryScope.js";
 import { aggregateForContext, scopeContextDigest } from "./SpecialistReview.js";
-import { readStep, resolveStepConfig } from "./StepConfig.js";
+import { consumesImpact, readStep, resolveStepConfig } from "./StepConfig.js";
 import { boundOutput, boundStepKey, writeBoundOutput } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
@@ -339,7 +339,7 @@ export async function groupedTool(
 							)?.headSha ?? context.executionApproval.headSha,
 					}
 				: undefined,
-			groupedImpactValidated: Boolean(readStep(context.step, "impact")),
+			groupedImpactValidated: Boolean(consumesImpact(context.step)),
 			allowUnchangedRepository: true,
 			validateDelivery:
 				context.step.tool === "merge"
@@ -487,7 +487,7 @@ export async function groupedTool(
 		) as unknown as typeof run.mergeReadiness;
 	const result = aggregateDeliveries(deliveries);
 	if (
-		readStep(context.step, "impact") &&
+		consumesImpact(context.step) &&
 		!result.impactRequired &&
 		!result.rework &&
 		["handoff", "human-review"].includes(context.step.tool ?? "")

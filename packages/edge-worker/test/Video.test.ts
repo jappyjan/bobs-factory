@@ -183,6 +183,16 @@ function setup() {
 	};
 }
 
+/** Media fixtures retain the same exact producer receipt as runtime execution. */
+function recordCapture(
+	fixture: ReturnType<typeof setup>,
+	output: unknown,
+	key = "pipeline/capture",
+) {
+	fixture.run.outputs[key] = output;
+	fixture.run.history.push({ step: key, output, at: fixture.run.updatedAt });
+}
+
 it("bounds tasks, links scenarios and supports nonvisual/no-video selection", () => {
 	const t = VideoTaskSchema.parse({
 		id: "demo",
@@ -456,6 +466,7 @@ it("reports optional missing tools without blocking fresh QA; required video or 
 it("streams full/HEAD/open/suffix ranges and rejects stale, malformed, replaced and expired media", async () => {
 	const f = setup();
 	f.run.outputs.capture = await finalizeVideoEvidence(f.ctx, f.output);
+	recordCapture(f, f.run.outputs.capture);
 	const video = (f.run.outputs.capture as VideoCapture).videos![0];
 	const server = new ProtectedFactoryServer(
 		f.runtime,
@@ -554,7 +565,12 @@ it("serves renamed capture receipts and rejects unrelated historical output keys
 	const captureStep = definitions
 		.find((workflow) => workflow.id === "renamed-factory-pipeline")!
 		.steps.find((step) => hasCheck(step, "capture-evidence"))!;
-	f.run.outputs = { [captureStep.id]: capture, capture };
+	const call = f.run.workflow.steps.find(
+		(step) => step.workflow === "renamed-factory-pipeline",
+	)!;
+	const captureKey = `${call.id}/${captureStep.id}`;
+	f.run.outputs = { capture };
+	recordCapture(f, capture, captureKey);
 	const video = capture.videos![0]!;
 	const server = new FactoryServer(f.runtime, {
 		repositories: () => [],
@@ -573,7 +589,8 @@ it("serves renamed capture receipts and rejects unrelated historical output keys
 		const response = await request();
 		expect(response.statusCode).toBe(200);
 		expect(response.rawPayload).toEqual(readFileSync(f.path));
-		delete f.run.outputs[captureStep.id];
+		delete f.run.outputs[captureKey];
+		f.run.history = [];
 		expect((await request()).statusCode).toBe(404);
 	} finally {
 		await server.stop();
@@ -610,6 +627,7 @@ it("serves grouped assets from retained worktrees and rejects any stale, dirty o
 	writeFileSync(captions, "WEBVTT\n\n00:00.000 --> 00:01.000\nSaved\n");
 	f.output.videos![0]!.captionsPath = captions;
 	f.run.outputs.capture = await finalizeVideoEvidence(f.ctx, f.output);
+	recordCapture(f, f.run.outputs.capture);
 	const video = (f.run.outputs.capture as VideoCapture).videos![0]!;
 	const server = new FactoryServer(f.runtime, {
 		repositories: () => [],

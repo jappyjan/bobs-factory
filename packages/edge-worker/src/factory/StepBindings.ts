@@ -1,6 +1,7 @@
 import { factoryContextView } from "bobs-factory-mcp-tools";
 import { evaluateCondition } from "./Rules.js";
 import { pointerValue, resolveStepConfig } from "./StepConfig.js";
+import { stepContextSources } from "./StepContextSources.js";
 import type { WorkflowStep } from "./Workflow.js";
 import { snapshotHistory } from "./WorkflowInput.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
@@ -32,14 +33,18 @@ export function stepBindings(
 		history: snapshotHistory(history),
 		launchInputs: run.launchInputs ?? {},
 		mergeReadiness: run.mergeReadiness,
-		feedback:
-			context.input && typeof context.input === "object"
-				? (context.input as Record<string, unknown>).feedback
-				: undefined,
-		reviewFix:
-			context.input && typeof context.input === "object"
-				? (context.input as Record<string, unknown>).reviewFix
-				: undefined,
+		get feedback() {
+			return (
+				stepContextSources(context).feedback ??
+				(context.input as Record<string, unknown> | undefined)?.feedback
+			);
+		},
+		get reviewFix() {
+			return (
+				stepContextSources(context).reviewFix ??
+				(context.input as Record<string, unknown> | undefined)?.reviewFix
+			);
+		},
 		qaReuse:
 			context.input && typeof context.input === "object"
 				? (context.input as Record<string, unknown>).qaReuse

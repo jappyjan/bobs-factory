@@ -26,7 +26,8 @@ import type {
 	ProviderCheck,
 	ProviderCommand,
 } from "./MergeReadiness.js";
-import { boundOutput, outputForTool } from "./ToolBindings.js";
+import { legacyToolOutput } from "./StepConfig.js";
+import { boundToolOutput, outputForTool } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 export type GitProviderSnapshot = GitProviderConfig & { repositoryUrl: string };
@@ -109,8 +110,15 @@ export async function resolveGitProvider(
 					? gitlabUrl
 					: (gitlabUrl ?? githubUrl);
 		const retainedUrl =
-			(run.outputs.source as { url?: string } | undefined)?.url ??
-			(boundOutput(context, "draftPr") as { url?: string } | undefined)?.url ??
+			(outputForTool(run, "inspect-existing") as { url?: string } | undefined)
+				?.url ??
+			(legacyToolOutput(run, "takeover") as { url?: string } | undefined)
+				?.url ??
+			(
+				boundToolOutput(context, "draftPr", "draft-pr") as
+					| { url?: string }
+					| undefined
+			)?.url ??
 			(outputForTool(run, "draft-pr") as { url?: string } | undefined)?.url;
 		const existingUrl = retainedUrl ?? requestUrl;
 		const existing =

@@ -1,4 +1,5 @@
-import { configuredOutputKeys } from "./ToolBindings.js";
+import { stepPresentation } from "./StepPresentation.js";
+import { configuredOutputKeys, stepForRun } from "./ToolBindings.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 /** Stable view names refer to accepted roles/actions, never authored step IDs. */
@@ -59,4 +60,19 @@ export function artifactOutputKey(
 ): string | undefined {
 	const alias = presentationOutputKeys(run)[name];
 	return Object.hasOwn(run.outputs, name) ? name : alias;
+}
+
+/** Current activity keeps the accepted graph's meaning even when the catalog changes. */
+export function currentStepView(run: FactoryRun) {
+	const step = stepForRun(run, run.step);
+	return step
+		? {
+				key: run.step,
+				name: step.name,
+				presentation:
+					run.workflow.id === "simple"
+						? { phase: "yellow", icon: "⚡", fixing: false }
+						: stepPresentation(step),
+			}
+		: undefined;
 }

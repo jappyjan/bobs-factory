@@ -37,6 +37,7 @@ import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
 import { factoryWebAssets } from "./FactoryWebAssets.js";
 import { ImprovementActionSchema } from "./Improvement.js";
+import { withAsyncInlineSchemas } from "./InlineSchema.js";
 import {
 	launchAssetFingerprint,
 	launchAssetLimits,
@@ -77,7 +78,7 @@ import {
 	CONTEXT_SOURCES,
 	FORMAT_IDS,
 	INSTRUCTION_IDS,
-	inlineSchemaIssues,
+	inlineSchemaIssuesAsync,
 	materializeWorkflowConfig,
 } from "./StepConfig.js";
 import type { TicketManagers } from "./TicketManagers.js";
@@ -1101,6 +1102,93 @@ export class FactoryServer {
 				configRevision: configRevision(),
 			};
 		};
+		const schemaRequests = new WeakMap<object, AbortController>();
+		this.app.addHook("onRequest", (request, reply, done) => {
+			if ((request.routeOptions.url ?? "").startsWith("/api/workflows")) {
+				const controller = new AbortController();
+				schemaRequests.set(request, controller);
+				reply.raw.once("close", () =>
+					controller.abort(
+						new DOMException("Schema request closed", "AbortError"),
+					),
+				);
+				withAsyncInlineSchemas(done);
+			} else done();
+		});
+		// Precompile custom schemas asynchronously before synchronous catalogue
+		// validation. Successful results are cached; revision checks still run in
+		// the write handler after this await, so concurrent edits cannot be lost.
+		this.app.addHook("preHandler", async (request) => {
+			const route = request.routeOptions.url ?? "";
+			if (
+				!route.startsWith("/api/workflows") ||
+				route.endsWith("/step-config/validate") ||
+				!["POST", "PUT", "PATCH"].includes(request.method)
+			)
+				return;
+			const body = request.body as
+				| { workflows?: unknown[] }
+				| unknown[]
+				| undefined;
+			const replacements = Array.isArray(body) ? body : body?.workflows;
+			const replacingIds = new Set(
+				(Array.isArray(replacements) ? replacements : []).flatMap((workflow) =>
+					workflow && typeof workflow === "object" && "id" in workflow
+						? [workflow.id]
+						: [],
+				),
+			);
+			const retained = route.startsWith("/api/workflows/import")
+				? []
+				: runtime
+						.listWorkflows()
+						.filter((workflow) => !replacingIds.has(workflow.id));
+			const pending: { value: unknown; depth: number }[] = [
+				{ value: request.body, depth: 0 },
+				{ value: retained, depth: 0 },
+			];
+			const schemas = new Set<string>();
+			let nodes = 0;
+			while (pending.length) {
+				const { value, depth } = pending.pop()!;
+				if (++nodes > 50_000 || depth > 80)
+					throw new Error(
+						"Recipe configuration exceeds the validation complexity limit",
+					);
+				if (!value || typeof value !== "object") continue;
+				if (!Array.isArray(value) && Object.hasOwn(value, "output")) {
+					const output = (value as { output?: { schema?: unknown } }).output;
+					if (
+						output?.schema &&
+						typeof output.schema === "object" &&
+						!Array.isArray(output.schema)
+					) {
+						const key = JSON.stringify(output.schema);
+						if (schemas.has(key)) continue;
+						schemas.add(key);
+						if (schemas.size > 64)
+							throw new Error(
+								"Recipe configuration supports at most 64 distinct inline JSON Schemas",
+							);
+						const issues = await inlineSchemaIssuesAsync(
+							output.schema as Record<string, unknown>,
+							{ signal: schemaRequests.get(request)?.signal },
+						);
+						if (issues.length)
+							throw new z.ZodError([
+								{
+									code: "custom",
+									path: [],
+									message: `Invalid output schema: ${issues.join("; ")}`,
+								},
+							]);
+					}
+				}
+				for (const [key, child] of Object.entries(value))
+					if (key !== "output")
+						pending.push({ value: child, depth: depth + 1 });
+			}
+		});
 		this.app.get("/api/workflows/step-config/catalog", () => ({
 			formats: FORMAT_IDS.map((id) => ({
 				id,
@@ -1114,11 +1202,13 @@ export class FactoryServer {
 		this.app.post(
 			"/api/workflows/step-config/validate",
 			{ bodyLimit: 70 * 1024 },
-			(request) => {
+			async (request) => {
 				const { schema } = z
 					.object({ schema: z.record(z.string(), z.unknown()) })
 					.parse(request.body);
-				const issues = inlineSchemaIssues(schema);
+				const issues = await inlineSchemaIssuesAsync(schema, {
+					signal: schemaRequests.get(request)?.signal,
+				});
 				return { valid: issues.length === 0, issues };
 			},
 		);
@@ -1582,6 +1672,9 @@ export class FactoryServer {
 					...(run && !focus
 						? { outputRoles: presentationOutputKeys(run) }
 						: {}),
+					reviewCapabilities: {
+						refreshGuide: !!run && runtime.canRefreshGuide(run.id),
+					},
 					workflowBlock: runtime.catalog.getBlock(request.params.id),
 					recheckAvailable: !!run && runtime.canRecheckQuestions(run.id),
 					resumeEligible:
