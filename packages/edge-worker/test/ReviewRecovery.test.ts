@@ -93,6 +93,58 @@ it.each([
 it.each([
 	false,
 	true,
+])("retains unresolved findings when a validated fixer hands back architecture revision (visual=%s)", (visual) => {
+	const context = fixture(visual);
+	const output = validateFactoryResult(context.step.id, {
+		status: "blocked",
+		architectureRevision: true,
+		summary: "The required correction changes an accepted security boundary.",
+		dispositions: [],
+		questions: [],
+	});
+	expect(output).toMatchObject({
+		status: "blocked",
+		architectureRevision: true,
+		questions: [],
+	});
+	expect(() => validateReviewFix(context, output)).not.toThrow();
+	const recorded = recordReviewFix(context, output, revision);
+	expect(recorded).toMatchObject({
+		architectureRevision: true,
+		dispositions: [],
+		reviewAssessment: { unchangedCode: true },
+	});
+	expect(factoryReviewFixContext(context).findings).toEqual([finding]);
+	expect(
+		context.run.outputs[visual ? "visual-gate" : "review-gate"],
+	).toMatchObject({ approved: false, findings: [finding] });
+});
+
+it.each([
+	"code-fix",
+	"visual-fix",
+	"ci-fix",
+])("requires an unambiguous blocked revision handback from %s", (step) => {
+	const output = {
+		status: "blocked",
+		architectureRevision: true,
+		summary: "Revise the accepted boundary before implementation.",
+		dispositions: [],
+		questions: [],
+	};
+	expect(validateFactoryResult(step, output)).toMatchObject(output);
+	for (const invalid of [
+		{ ...output, status: "completed" },
+		{ ...output, status: undefined },
+		{ ...output, architectureRevision: "true" },
+		{ ...output, questions: ["Approve this correction in this answer?"] },
+	])
+		expect(() => validateFactoryResult(step, invalid)).toThrow();
+});
+
+it.each([
+	false,
+	true,
 ])("pauses a rejected unchanged fix even when the blocker wording and probe change (visual=%s)", (visual) => {
 	const context = gateContext(fixture(visual), visual);
 	const gate = {

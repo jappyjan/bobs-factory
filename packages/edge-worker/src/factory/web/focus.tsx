@@ -403,6 +403,43 @@ export function QuestionForm({ run }: { run: any }) {
 			>
 				Send answers <kbd>⌘⏎</kbd>
 			</Button>
+			{run.recheckAvailable && (
+				<Button
+					type="button"
+					requiresConnection
+					busy={action.isPending}
+					onClick={async () => {
+						if (submitting.current || action.isPending || action.isBlocked)
+							return;
+						submitting.current = true;
+						try {
+							await action.mutateAsync({
+								path: `/api/runs/${run.id}/recheck`,
+								body: {
+									context: {
+										step: run.step,
+										questionBatchId: run.questionBatchId,
+										questions,
+									},
+								},
+							});
+							toast({ text: "Bob is checking the blocker again" });
+						} catch {
+							/* error stays visible; answer draft is retained */
+						} finally {
+							submitting.current = false;
+						}
+					}}
+				>
+					Check again
+				</Button>
+			)}
+			{run.recheckAvailable && (
+				<p className="muted">
+					After an update or access change, Bob can reassess the blocker. This
+					sends no answers or approval.
+				</p>
+			)}
 		</form>
 	);
 }

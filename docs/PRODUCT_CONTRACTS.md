@@ -63,6 +63,16 @@ still applies. Runtime attribution instructions also apply to frozen workflows
 without rewriting their graphs, historical decisions, digests or native sessions.
 Discussion, automated review and rejection never become human acceptance.
 
+Unanswered agent questions retain their original batch across a runtime update.
+An explicit, exact-batch **Check again** request re-enters the waiting role in its
+saved native conversation, retaining accepted definitions, evidence and decisions.
+It is recorded separately from human answers and consumes the existing visit
+budget. A request bound to the current repeated-impact blocker permits one fresh
+assessment and its declared correction route; an unchanged subsequent cycle still
+pauses, and missing-input questions, independent reviews and human gates remain
+required. Fixers can hand a genuine architecture change back to their configured
+proposal route while retaining unresolved findings for fresh review and acceptance.
+
 Architecture candidate reviewers may return `approved: false` with concrete
 `questions` when an unresolved product, privacy or architecture choice needs human
 input. The saved question survives restart. An answer follows the accepted rejection

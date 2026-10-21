@@ -660,6 +660,19 @@ export class TodayApp {
 	}
 
 	private retry(run: RunItem) {
+		const question = this.details.get(run.id);
+		if (attention(run) === "question" && question?.recheckAvailable) {
+			void this.perform("Bob is checking the blocker again", () =>
+				this.options.client.post(this.path(run, "recheck"), {
+					context: {
+						step: question.step,
+						questionBatchId: question.questionBatchId,
+						questions: question.questions,
+					},
+				}),
+			).catch(() => {});
+			return;
+		}
 		if (attention(run) !== "stuck")
 			return this.notify("Only stuck runs can be retried", true);
 		const detail = this.details.get(run.id);
@@ -1134,7 +1147,7 @@ export class TodayApp {
 			const all = detail?.questions?.every((_, i) =>
 				detail.questionRecommendations?.some((r) => r.questionIndex === i),
 			);
-			return `a answer${all ? " · y accept recommendations" : ""} · enter open · x stop`;
+			return `a answer${all ? " · y accept recommendations" : ""}${detail?.recheckAvailable ? " · c check again" : ""} · enter open · x stop`;
 		}
 		if (kind === "stuck" && (run.workflowBlock || run.status === "blocked"))
 			return detail?.resumeEligible

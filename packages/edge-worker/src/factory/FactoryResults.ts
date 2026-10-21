@@ -23,7 +23,25 @@ import { FlowSchema, SystemSchema } from "./VisualContracts.js";
 
 const text = z.string().min(1);
 /** Bump when runtime result interpretation or validation changes. Frozen flags remain separate. */
-export const FACTORY_RESULT_CONTRACT_VERSION = "factory-results-v5";
+export const FACTORY_RESULT_CONTRACT_VERSION = "factory-results-v6";
+const architectureRevisionFields = {
+	status: z.string().optional(),
+	architectureRevision: z.boolean().optional(),
+};
+function validArchitectureHandback(result: {
+	status?: string;
+	architectureRevision?: boolean;
+	questions?: string[];
+}): boolean {
+	return (
+		result.architectureRevision !== true ||
+		(result.status === "blocked" &&
+			Array.isArray(result.questions) &&
+			result.questions.length === 0)
+	);
+}
+const architectureHandbackMessage =
+	"Architecture revision requires status=blocked and questions=[]; the configured proposal route owns review and any required acceptance";
 export const reviewCompletionInstructions = `Every code, visual or specialist reviewer must return status:"completed"|"blocked"|"failed" and blockers:[concrete missing-input/tooling reasons]. Status describes execution of your review, not whether the product passed QA. Use completed after the actual required review was performed, including when it found defects or failed QA criteria; report those failures as open findings with blockers:[]. Reserve failed for a failure to execute the review itself. An empty findings list never establishes review completion. If input or tools are unavailable, return blocked with a precise summary/recovery reason; do not manufacture a clean review.`;
 export const VisualScopeSchema = z
 	.object({
@@ -445,6 +463,7 @@ function parseFactoryResult(
 		case "ci-fix":
 			return z
 				.object({
+					...architectureRevisionFields,
 					questions: z.array(text).optional(),
 					addressedCommentIds: z.array(text).optional(),
 					addressedReviewIds: z.array(text).optional(),
@@ -461,11 +480,13 @@ function parseFactoryResult(
 						.optional(),
 				})
 				.passthrough()
+				.refine(validArchitectureHandback, architectureHandbackMessage)
 				.parse(output);
 		case "code-fix":
 		case "visual-fix":
 			return z
 				.object({
+					...architectureRevisionFields,
 					summary: text,
 					questions: z.array(text).optional(),
 					questionChoices: z.array(QuestionChoicesSchema).optional(),
@@ -480,6 +501,7 @@ function parseFactoryResult(
 						}),
 					),
 				})
+				.refine(validArchitectureHandback, architectureHandbackMessage)
 				.parse(output);
 		default:
 			return output;
