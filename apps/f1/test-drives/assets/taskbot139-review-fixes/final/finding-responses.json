@@ -1,0 +1,67 @@
+{
+  "review": "Taskbot139 comment2153 / immutable fd16",
+  "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+  "state": "all required combined clean local gates,6mockeddrivers,and fresh native checks PASS",
+  "findings": [
+    {
+      "id": "B1",
+      "origin": "pre139 baseline136 regression /2143",
+      "resolution": "All three runtime candidate projections resolve accepted scope-inputs.sources.plan named read; explicit reads.plan partner retained. FactoryTools exact gate untouched.",
+      "tests": [
+        "DeliveryCandidateDigest9",
+        "FactoryRenamedSteps reviewer echoes supplied digest",
+        "TicketDelivery22",
+        "StepConfig12"
+      ],
+      "preserved": [
+        "accepted declared sources",
+        "wrong/stale rejection",
+        "frozen graph/history/native session identity"
+      ],
+      "rejectedAlternatives": [
+        "outputs.plan fallback",
+        "format activation",
+        "mock-manufactured digest",
+        "gate weakening"
+      ]
+    },
+    {
+      "id": "R1",
+      "origin": "fd16 action review P2",
+      "resolution": "Observe original child identities/progress/proof while paused; tick admission guard remains. Already-admitted children resume ordinary work on parent-first restart.",
+      "tests": [
+        "ActionRuntime21 including paused merged/failed/cancelled/uncertain and parent-first restart",
+        "enhanced real EdgeWorker action F1 paused merged projection and worker reconstruction"
+      ],
+      "preserved": [
+        "stopped parent status",
+        "queued dependent",
+        "no creation/admission",
+        "immutable accepted output/receipt",
+        "original identity"
+      ]
+    },
+    {
+      "id": "R2",
+      "origin": "fd16 action review P2",
+      "resolution": "Private persisted graph-frame producer/mapping provenance carries whole Snapshot through declared Call inputs and real Call/ForEach result receipts. Actual saved callee reads @callInputs/baseline without caller-name coupling.",
+      "tests": [
+        "SnapshotCallMapping14",
+        "RepositorySnapshot4 unchanged",
+        "enhanced actual EdgeWorker mapped pinned MCP",
+        "compiled reusable Snapshot Call catalogue persistence/restart smoke PASS"
+      ],
+      "preserved": [
+        "original run/producer/lexical/item/scope/repo/revision/digest",
+        "frozen mapped inputs",
+        "copied/literal/foreign/sibling/altered/stale denial"
+      ],
+      "rejectedAlternatives": [
+        "public equal JSON authority",
+        "caller-name exception",
+        "named ancestor workaround"
+      ]
+    }
+  ],
+  "additionalProductFindings": []
+}

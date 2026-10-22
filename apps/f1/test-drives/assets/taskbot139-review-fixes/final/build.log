@@ -1,0 +1,93 @@
+
+> bobs-factory-monorepo@1.0.1 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions
+> pnpm -r --filter='!bobs-factory-electron' build
+
+No projects matched the filters "bobs-factory-electron" in "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions"
+Scope: all 20 workspace projects
+
+> bobs-factory-desktop@1.0.0-beta build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/desktop
+> node --check src/main.mjs
+
+
+> bobs-factory-cloudflare-tunnel-client@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/cloudflare-tunnel-client
+> tsgo
+
+
+> bobs-factory-core@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/core
+> tsgo
+
+
+> bobs-factory-mcp-tools@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/mcp-tools
+> tsgo
+
+
+> bobs-factory-claude-runner@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/claude-runner
+> tsgo
+
+
+> bobs-factory-config-updater@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/config-updater
+> tsgo
+
+
+> bobs-factory-github-event-transport@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/github-event-transport
+> tsgo
+
+
+> bobs-factory-gitlab-event-transport@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/gitlab-event-transport
+> tsgo
+
+
+> bobs-factory-linear-event-transport@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/linear-event-transport
+> tsgo
+
+
+> bobs-factory-slack-event-transport@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/slack-event-transport
+> tsgo
+
+
+> bobs-factory-zulip-event-transport@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/zulip-event-transport
+> tsgo
+
+
+> bobs-factory-simple-agent-runner@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/simple-agent-runner
+> tsgo
+
+
+> bobs-factory-codex-runner@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/codex-runner
+> tsgo
+
+
+> bobs-factory-cursor-runner@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/cursor-runner
+> tsgo && node -e "for(const f of ['permission-check.mjs','sdk-host.mjs']) require('node:fs').copyFileSync('src/'+f, 'dist/'+f)"
+
+
+> bobs-factory-gemini-runner@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/gemini-runner
+> tsgo && cp -r src/prompts dist/prompts
+
+
+> bobs-factory-opencode-runner@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/opencode-runner
+> tsgo
+
+
+> bobs-factory-edge-worker@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker
+> tsgo && tsgo -p tsconfig.web.json && npm run copy-prompts
+
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "workspace-concurrency". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> bobs-factory-edge-worker@0.2.73 copy-prompts
+> cp label-prompt-template.md dist/ && cp -r prompts dist/ && rm -rf dist/bobs-factory-skills-plugin && cp -rL bobs-factory-skills-plugin dist/bobs-factory-skills-plugin && node scripts/build-factory-web.mjs
+
+Factory web build: 0a27c450bb0326b3340d8a68
+
+> bobs-factory@1.0.0-beta build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/cli
+> tsgo
+
+
+> bobs-factory-f1@0.1.0 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1
+> tsgo
+

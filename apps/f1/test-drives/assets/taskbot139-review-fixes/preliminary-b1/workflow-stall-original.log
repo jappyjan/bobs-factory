@@ -1,0 +1,16 @@
+2026-10-22T02:59:20.033Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+333 |             if (names.size !== steps.length)
+334 |                 throw new Error("Duplicate step IDs");
+335 |             for (const step of steps) {
+336 |                 const configIssues = stepConfigIssues(step, steps, inherited);
+337 |                 if (configIssues.length)
+338 |                     throw new Error(configIssues.join("; "));
+                                    ^
+error: draft-boundary: read "scopeClarify" names unknown step clarify; draft-boundary: read "scopeDecisions" names unknown step decisions; draft-boundary: read "scopePlan" names unknown step plan; draft-boundary: architecture-revision requires a local architecture decision with its proposal revision route; use reads.architectureDecision to select among multiple decisions
+      at check (/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/dist/factory/Workflow.js:338:31)
+      at validateWorkflows (/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/dist/factory/Workflow.js:386:9)
+      at save (/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/dist/factory/WorkflowCatalog.js:677:26)
+      at updateWorkflows (/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/dist/factory/WorkflowRuntime.js:240:39)
+      at /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1/test-drives/assets/workflow-stall-recovery.mjs:380:10
+
+Bun v1.4.2 (macOS arm64)

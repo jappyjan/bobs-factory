@@ -1,0 +1,40 @@
+{
+  "result": "PASS",
+  "binaryBuild": {
+    "schemaVersion": 1,
+    "product": "bobs-factory",
+    "version": "1.0.0-beta",
+    "commit": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "dirty": false,
+    "target": "darwin-arm64",
+    "tooling": {
+      "bun": "1.4.2"
+    },
+    "executable": {
+      "file": "bobs-factory",
+      "size": 112588530,
+      "sha256": "2ca94d36d8c8a38b34c8712d47d8316450ff73a0e31efc28a0199f65d37bbf96"
+    },
+    "resourceDigest": "1948f0e56bfa01f415ba50537a2373d9acf7a2c4e18682ffe746418c25ebc832",
+    "validation": "pending runtime smoke",
+    "requirements": "macOS; native target smoke required"
+  },
+  "directory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-native-actions-t2wOay",
+  "runtime": {
+    "version": "1.0.0-beta",
+    "commit": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "dirty": false,
+    "target": "darwin-arm64",
+    "resourceDigest": "1948f0e56bfa01f415ba50537a2373d9acf7a2c4e18682ffe746418c25ebc832",
+    "packaged": true
+  },
+  "checks": [
+    "compiled action catalogue and reusable Snapshot Call mapping persist across restart",
+    "workflow-only launch authorization rejects manual-only target",
+    "no runs created/no model calls",
+    "compiled scoped MCP registers maxCalls200",
+    "immutable tracked blob excludes mutable worktree",
+    "private/foreign repository denied"
+  ],
+  "limits": "macOS arm64. Catalogue and pinned-tool smoke; full action execution is the separate mocked EdgeWorker drive. No prepared native agent execution or release publication."
+}

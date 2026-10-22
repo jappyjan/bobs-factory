@@ -1,0 +1,222 @@
+2026-10-22T03:45:39.166Z [WARN ] [EdgeWorker] Bundled skills not found at /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/bobs-factory-skills-plugin/skills — cannot deploy defaults
+2026-10-22T03:45:39.167Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T03:45:39.167Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:45:39.167Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:45:39.183Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:3687
+2026-10-22T03:45:39.187Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:45:39.187Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:45:39.187Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:45:39.187Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:45:39.187Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:45:39.187Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:45:39.187Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:45:39.187Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:45:39.187Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:45:39.187Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:45:39.188Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:45:39.188Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:45:39.188Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:45:39.194Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:45:39.194Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:45:39.194Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:45:39.194Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:45:39.194Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:3686
+2026-10-22T03:45:39.202Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-22T03:45:39.205Z [INFO ] [RepositoryRouter] Repository selected: Fixture (workspace catch-all)
+2026-10-22T03:45:39.205Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-22T03:45:39.205Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-1} Handling agent session created
+2026-10-22T03:45:39.209Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-22T03:45:39.213Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T03:45:39.213Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+2026-10-22T03:45:39.325Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/worktrees/DEF-1 from origin/main (tracking main)
+2026-10-22T03:45:39.356Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Tracking session for issue issue-1
+2026-10-22T03:45:39.381Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Starting agent session for issue DEF-1
+2026-10-22T03:45:39.381Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Building initial prompt for issue DEF-1
+2026-10-22T03:45:39.383Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/home/bobs-factory-skills-plugin
+2026-10-22T03:45:39.384Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/home/bobs-factory-skills-plugin
+2026-10-22T03:45:39.390Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Result message emitted to Linear (activity activity-4)
+2026-10-22T03:45:39.390Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:45:39.493Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T03:45:39.493Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+2026-10-22T03:45:39.607Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/worktrees/MANUAL-4a9c4524 from origin/main (tracking main)
+2026-10-22T03:45:39.643Z [INFO ] [AgentSessionManager] {session=manual-6, platform=manual} Creating chat session
+2026-10-22T03:45:39.682Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/home/bobs-factory-skills-plugin
+2026-10-22T03:45:41.823Z [INFO ] [AgentSessionManager] {session=manual-6} Session completed (subtype: success)
+2026-10-22T03:45:42.096Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:45:42.096Z [INFO ] [SharedApplicationServer] Shared application server stopped
+2026-10-22T03:45:42.122Z [WARN ] [EdgeWorker] Bundled skills not found at /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/bobs-factory-skills-plugin/skills — cannot deploy defaults
+2026-10-22T03:45:42.122Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:45:42.122Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:45:42.131Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:3687
+2026-10-22T03:45:42.133Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:45:42.133Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:45:42.133Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:45:42.133Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:45:42.133Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:45:42.133Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:45:42.133Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:45:42.133Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:45:42.133Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:45:42.133Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:45:42.134Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:45:42.134Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:45:42.134Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:45:42.138Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:45:42.138Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:45:42.138Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:45:42.138Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:45:42.139Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:3686
+2026-10-22T03:45:42.393Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/home/bobs-factory-skills-plugin
+2026-10-22T03:45:45.229Z [INFO ] [AgentSessionManager] {session=manual-6} Session completed (subtype: success)
+2026-10-22T03:45:45.597Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/home/bobs-factory-skills-plugin
+2026-10-22T03:45:50.376Z [INFO ] [AgentSessionManager] {session=manual-6} Session completed (subtype: success)
+2026-10-22T03:45:51.066Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T03:45:51.066Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+2026-10-22T03:45:51.203Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-api-responsiveness-hcJ8We/worktrees/MANUAL-4395fa2d from origin/main (tracking main)
+2026-10-22T03:45:51.235Z [INFO ] [AgentSessionManager] {session=manual-0, platform=manual} Creating chat session
+{
+  "mode": "mock",
+  "source": {
+    "commit": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "workingTree": false
+  },
+  "checks": [
+    "ticket response visible",
+    "compact launch/retry acknowledgements",
+    "cold saved question context",
+    "lean dashboard configuration",
+    "compact inbox history",
+    "bounded focus and detail",
+    "explicit full artifact",
+    "durable answer continuation",
+    "responsive resumed role preparation with large saved history",
+    "stdio full-history reads preserve original baseline context and Unicode",
+    "retry preserves evidence",
+    "dedicated capacity counts",
+    "guarded partial recipe edit and default choice"
+  ],
+  "measurements": [
+    {
+      "path": "/api/runs",
+      "status": 202,
+      "requestBytes": 92,
+      "bytes": 141,
+      "ms": 25.260334000000057
+    },
+    {
+      "path": "/api/config",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 164769,
+      "ms": 4.196416000000227
+    },
+    {
+      "path": "/api/config?view=dashboard",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 14557,
+      "ms": 2.1260409999999865
+    },
+    {
+      "path": "/api/runs",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 1871,
+      "ms": 0.5673340000003009
+    },
+    {
+      "path": "/api/runs/manual-60335f75-bc9a-4a00-9598-1c4e4a9c4524?view=focus",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 12219,
+      "ms": 1.0569170000003396
+    },
+    {
+      "path": "/api/runs/manual-60335f75-bc9a-4a00-9598-1c4e4a9c4524?view=dashboard",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 18211,
+      "ms": 15.428875000000062
+    },
+    {
+      "path": "/api/runs/manual-60335f75-bc9a-4a00-9598-1c4e4a9c4524/artifacts/large",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 2400130,
+      "ms": 6.74474999999984
+    },
+    {
+      "path": "/api/runs/manual-60335f75-bc9a-4a00-9598-1c4e4a9c4524/answer",
+      "status": 200,
+      "requestBytes": 154,
+      "bytes": 109,
+      "ms": 11.785459000000174
+    },
+    {
+      "path": "/api/runs",
+      "status": 202,
+      "requestBytes": 81,
+      "bytes": 141,
+      "ms": 15.711208000000624
+    },
+    {
+      "path": "/api/runs/manual-09b81402-bee0-411d-a926-cd964395fa2d/retry",
+      "status": 202,
+      "requestBytes": 2,
+      "bytes": 109,
+      "ms": 3.6957079999992857
+    },
+    {
+      "path": "/api/runs/session-1/activity?limit=8",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 616,
+      "ms": 3.722791000000143
+    },
+    {
+      "path": "/api/version",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 206,
+      "ms": 0.5434590000004391
+    },
+    {
+      "path": "/api/capacity",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 76,
+      "ms": 1.3441250000014406
+    },
+    {
+      "path": "/api/config?view=recipes",
+      "status": 200,
+      "requestBytes": 0,
+      "bytes": 164945,
+      "ms": 3.1669999999994616
+    },
+    {
+      "path": "/api/workflows",
+      "status": 200,
+      "requestBytes": 588,
+      "bytes": 885,
+      "ms": 65.91300000000047
+    },
+    {
+      "path": "/api/workflows/default",
+      "status": 200,
+      "requestBytes": 28,
+      "bytes": 170,
+      "ms": 57.764084000000366
+    }
+  ],
+  "memory": {
+    "logicalHistoryBytes": 57603120,
+    "fullContextReads": 1,
+    "versionRequests": 609,
+    "maxVersionMs": 32.348625000000084
+  }
+}
+2026-10-22T03:45:51.913Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:45:51.913Z [INFO ] [SharedApplicationServer] Shared application server stopped

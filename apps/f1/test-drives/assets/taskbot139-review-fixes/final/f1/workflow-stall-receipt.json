@@ -1,0 +1,133 @@
+{
+  "mode": "mock/scripted",
+  "issueId": "issue-1",
+  "assertions": {
+    "issueSessionAndActivities": true,
+    "incompleteCorrectionNativeSessionResumed": true,
+    "correctionProvenanceRecorded": true,
+    "approvalRemainsBlocked": true,
+    "existingStockBudgetDoubledWithoutGraphChanges": true,
+    "priorAdditionalPassesPreserved": true,
+    "restartDoesNotDoubleAgain": true,
+    "explicitQuestionRecheckRetainsNativeConversation": true,
+    "staleQuestionRecheckRejected": true,
+    "questionRecheckDoesNotSubmitAnswersOrApproval": true,
+    "fixerArchitectureHandbackReachesRenamedProposalRoute": true,
+    "fixerArchitectureHandbackRequiresFreshAcceptance": true,
+    "fixerArchitectureHandbackPreservesUnresolvedFindings": true,
+    "ciUsesLiveTarget": true,
+    "localTargetRemainsStable": true
+  },
+  "turns": [
+    {
+      "run": "session-1",
+      "role": "entry"
+    },
+    {
+      "run": "session-1",
+      "role": "code-fix",
+      "nativeSessionId": "retained-code-fix"
+    },
+    {
+      "run": "saved-stock-budget",
+      "role": "clarify",
+      "nativeSessionId": "retained-clarification"
+    },
+    {
+      "run": "live-target",
+      "role": "hold"
+    },
+    {
+      "run": "session-1",
+      "role": "code-fix",
+      "nativeSessionId": "retained-code-fix"
+    },
+    {
+      "run": "fixer-architecture-handback",
+      "role": "draft-boundary"
+    },
+    {
+      "run": "fixer-architecture-handback",
+      "role": "inspect-boundary"
+    },
+    {
+      "run": "fixer-architecture-handback",
+      "role": "code-fix"
+    },
+    {
+      "run": "fixer-architecture-handback",
+      "role": "draft-boundary"
+    },
+    {
+      "run": "fixer-architecture-handback",
+      "role": "inspect-boundary"
+    }
+  ],
+  "providerRequests": [
+    {
+      "method": "POST",
+      "path": "graphql"
+    },
+    {
+      "method": "GET",
+      "path": "repos/fixture/repository/issues/1/comments?per_page=100&page=1"
+    },
+    {
+      "method": "GET",
+      "path": "repos/fixture/repository/pulls/1/reviews?per_page=100&page=1"
+    }
+  ],
+  "contexts": [
+    {
+      "run": "session-1",
+      "role": "code-fix",
+      "review": {
+        "key": "specialist-review",
+        "round": 1,
+        "headSha": "3c5fc24286c880963ab397fa63db4e332dbdb76c",
+        "baseSha": "3c5fc24286c880963ab397fa63db4e332dbdb76c",
+        "status": "incomplete",
+        "blockers": [
+          "Specialist round 1 has no complete aggregate. Run its configured review gate after correction; required independent review remains pending."
+        ]
+      },
+      "findingIds": [
+        "business:F1"
+      ]
+    },
+    {
+      "run": "session-1",
+      "role": "code-fix",
+      "review": {
+        "key": "specialist-review",
+        "round": 1,
+        "headSha": "3c5fc24286c880963ab397fa63db4e332dbdb76c",
+        "baseSha": "3c5fc24286c880963ab397fa63db4e332dbdb76c",
+        "status": "incomplete",
+        "blockers": [
+          "Specialist round 1 has no complete aggregate. Run its configured review gate after correction; required independent review remains pending."
+        ]
+      },
+      "findingIds": [
+        "business:F1"
+      ]
+    },
+    {
+      "run": "fixer-architecture-handback",
+      "role": "code-fix",
+      "review": {
+        "key": "specialist-review",
+        "round": 1,
+        "headSha": "3c5fc24286c880963ab397fa63db4e332dbdb76c",
+        "baseSha": "3c5fc24286c880963ab397fa63db4e332dbdb76c",
+        "status": "incomplete",
+        "blockers": [
+          "Specialist round 1 has no complete aggregate. Run its configured review gate after correction; required independent review remains pending."
+        ]
+      },
+      "findingIds": [
+        "business:F1"
+      ]
+    }
+  ]
+}

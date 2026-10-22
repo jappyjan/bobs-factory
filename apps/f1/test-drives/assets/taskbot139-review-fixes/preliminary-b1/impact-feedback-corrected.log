@@ -1,0 +1,53 @@
+2026-10-22T03:11:03.790Z [INFO ] [EdgeWorker] Deployed default skills to /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-impact-feedback-7knnVr/home/bobs-factory-skills-plugin (5 skills)
+2026-10-22T03:11:03.791Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-impact-feedback-7knnVr/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T03:11:03.791Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:11:03.791Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:11:03.808Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:59178
+2026-10-22T03:11:03.812Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:11:03.812Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:11:03.812Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:11:03.812Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:11:03.812Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:11:03.812Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:11:03.812Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:11:03.812Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:11:03.812Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:11:03.812Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:11:03.813Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:11:03.813Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:11:03.813Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:11:03.820Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:11:03.820Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:11:03.820Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:11:03.820Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:11:03.821Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:59177
+2026-10-22T03:11:03.827Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-22T03:11:03.832Z [INFO ] [RepositoryRouter] Repository selected: Fixture (workspace catch-all)
+2026-10-22T03:11:03.832Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-22T03:11:03.832Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-1} Handling agent session created
+2026-10-22T03:11:03.835Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-22T03:11:03.840Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T03:11:03.840Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+2026-10-22T03:11:03.976Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-impact-feedback-7knnVr/worktrees/DEF-1 from origin/main (tracking main)
+2026-10-22T03:11:04.015Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Tracking session for issue issue-1
+2026-10-22T03:11:04.045Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Starting agent session for issue DEF-1
+2026-10-22T03:11:04.045Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Building initial prompt for issue DEF-1
+2026-10-22T03:11:04.398Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:11:04.618Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:11:05.037Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:11:05.814Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:11:06.415Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:11:06.624Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:11:06.624Z [INFO ] [SharedApplicationServer] Shared application server stopped
+339 | 	assert.equal(freshTurns.length, 2);
+340 | 	assert(freshTurns[1].resumeSessionId);
+341 | 	assert.equal(fresh.impactDecisions.length, 1);
+342 | 	assert.equal(fresh.impactDecisions[0].checkResults[0].exitCode, 0);
+343 | 	assert.deepEqual(
+344 | 		fresh.outputs["pipeline/assess-impact"].commentAssessments,
+                      ^
+TypeError: undefined is not an object (evaluating 'fresh.outputs["pipeline/assess-impact"].commentAssessments')
+      at /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1/test-drives/assets/impact-feedback-recovery.mjs:344:17
+
+Bun v1.4.2 (macOS arm64)

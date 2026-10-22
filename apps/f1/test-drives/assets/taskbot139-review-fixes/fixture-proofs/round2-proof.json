@@ -1,0 +1,18 @@
+{
+  "impact-feedback-recovery.mjs": {
+    "sha256": "6146f65ef394168fde3ae622c0fcb5e23525ef9596e428c3738bf49798dc4aaf",
+    "assertionCalls": 17,
+    "originalOutcomesRetained": true,
+    "detail": "All post-persistence restart/retry/native conversation/reuse/check/human-decision assertions remain byte-identical; fresh comment outcome is unchanged through an exact history receipt."
+  },
+  "workflow-stall-recovery.mjs": {
+    "sha256": "61bc88b8bd575f5c877cc616b044a0be18431d000636ab84518735cff6eeaa08",
+    "assertionCalls": 64,
+    "originalOutcomesRetained": true,
+    "detail": "All budget/approval/recovery assertions and values from budget admission onward remain byte-identical; frozen fixture source only changed."
+  },
+  "architecture-approval-continuation.mjs": {
+    "unchangedSinceRound1": true,
+    "sha256": "7a5e981c99369295075544ceed4b20971943b68bca822560907e6ee0013b41b3"
+  }
+}

@@ -1,0 +1,17 @@
+
+> bobs-factory-edge-worker@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker
+> tsgo && tsgo -p tsconfig.web.json && npm run copy-prompts
+
+src/factory/RepositorySnapshot.ts(15,8): error TS1149: File name '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/factory/ForEach.ts' differs from already included file name '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/factory/Foreach.ts' only in casing.
+  The file is in the program because:
+    Imported via "./Foreach.js" from file '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/factory/ActionSteps.ts'
+    Imported via "./Foreach.js" from file '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/factory/Workflow.ts'
+    Imported via "./Foreach.js" from file '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/factory/FileIssues.ts'
+    Imported via "./Foreach.js" from file '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/factory/WorkflowRuntime.ts'
+    Imported via "./ForEach.js" from file '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/factory/RepositorySnapshot.ts'
+    Imported via "./Foreach.js" from file '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/factory/LaunchRuns.ts'
+    Matched by include pattern 'src/**/*' in '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/tsconfig.json'
+  File is ECMAScript module because '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/package.json' has field "type" with value "module"
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 build: `tsgo && tsgo -p tsconfig.web.json && npm run copy-prompts`
+Exit status 2

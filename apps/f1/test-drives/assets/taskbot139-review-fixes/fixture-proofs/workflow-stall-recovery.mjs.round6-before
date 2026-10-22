@@ -1,0 +1,943 @@
+// F1_AGENT_MODE=mock bun apps/f1/test-drives/assets/workflow-stall-recovery.mjs
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
+import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
+import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
+import { FactoryTools } from "../../../../packages/edge-worker/dist/factory/FactoryTools.js";
+import {
+	aggregateForContext,
+	validateInventory,
+} from "../../../../packages/edge-worker/dist/factory/SpecialistReview.js";
+import { stepVisitLimit } from "../../../../packages/edge-worker/dist/factory/StepVisitBudget.js";
+import { WorkflowSchema } from "../../../../packages/edge-worker/dist/factory/Workflow.js";
+import { checkin } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
+import legacyWorkflows from "../../../../packages/edge-worker/test/fixtures/legacy-workflows-a4990127.json" with {
+	type: "json",
+};
+import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
+import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
+
+assert.equal(process.env.F1_AGENT_MODE, "mock");
+for (const key of Object.keys(process.env))
+	if (key.startsWith("BOBS_FACTORY_")) delete process.env[key];
+const directory = realpathSync(
+	mkdtempSync(join(tmpdir(), "f1-workflow-stalls-")),
+);
+const home = join(directory, "home"),
+	repo = join(directory, "repo");
+mkdirSync(home);
+mkdirSync(repo);
+const git = (cwd, ...args) =>
+	execFileSync("git", args, {
+		cwd,
+		encoding: "utf8",
+		stdio: ["ignore", "pipe", "pipe"],
+	}).trim();
+git(repo, "init", "-q", "-b", "main");
+git(repo, "config", "user.name", "F1 fixture");
+git(repo, "config", "user.email", "fixture@example.invalid");
+git(repo, "config", "commit.gpgsign", "false");
+writeFileSync(
+	join(repo, ".gitignore"),
+	".claude/\n.codex/\n.opencode/\nAGENTS.md\nCLAUDE.md\n",
+);
+writeFileSync(join(repo, "source.txt"), "Committed source\n");
+git(repo, "add", ".");
+git(repo, "commit", "-qm", "Historical target");
+const historicalTarget = git(repo, "rev-parse", "HEAD");
+writeFileSync(join(repo, "target.txt"), "Advanced live target\n");
+git(repo, "add", ".");
+git(repo, "commit", "-qm", "Advance live target");
+const liveTarget = git(repo, "rev-parse", "HEAD");
+git(repo, "remote", "add", "origin", repo);
+async function freePort() {
+	const server = createServer();
+	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const port = server.address().port;
+	await new Promise((resolve) => server.close(resolve));
+	return port;
+}
+const rpcPort = await freePort(),
+	factoryPort = await freePort();
+const rpcOrigin = `http://127.0.0.1:${rpcPort}`;
+const factoryOrigin = `http://localhost:${factoryPort}`;
+process.env.BOBS_FACTORY_FACTORY_PORT = String(factoryPort);
+process.env.BOBS_FACTORY_DISABLE_REMOTE_SESSION_STORE = "1";
+process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
+	directory,
+	"unused-capacity",
+);
+const agent = (id, extra = {}) => ({
+	id,
+	name: id,
+	type: "agent",
+	runner: "codex",
+	prompt: "Return the deterministic fixture reply.",
+	...extra,
+});
+const fixtureWorkflow = {
+	id: "stall-fixture",
+	name: "Stall recovery fixture",
+	allowedTriggers: ["ticket-assignment", "manual"],
+	steps: [
+		agent("entry", { askQuestions: true, next: "end" }),
+		agent("inventory", { reviewContract: "inventory-v1", askQuestions: true }),
+		{
+			id: "specialist-review",
+			name: "Specialist review",
+			type: "fanout",
+			review: { inventory: "inventory" },
+			groups: [[agent("business", { reviewContract: "coverage-v1" })]],
+		},
+		{
+			id: "review-gate",
+			name: "Required independent review",
+			type: "tool",
+			tool: "review-gate",
+			review: { inventory: "inventory", fanout: "specialist-review" },
+			next: "end",
+		},
+		agent("code-fix", {
+			askQuestions: true,
+			inputs: ["input"],
+			next: "review-gate",
+		}),
+	],
+};
+const providerWorkflow = {
+	id: "provider-fixture",
+	name: "Provider target fixture",
+	allowedTriggers: ["manual"],
+	steps: [
+		{
+			id: "provider-target",
+			name: "Read the scripted provider target",
+			type: "script",
+			script: `cat <<'BOBS_FACTORY_FIXTURE_JSON'
+{"url":"https://github.com/fixture/repository/pull/1"}
+BOBS_FACTORY_FIXTURE_JSON`,
+		},
+		{
+			id: "ci",
+			name: "Inspect provider CI",
+			type: "tool",
+			tool: "ci",
+			reads: { draftPr: "provider-target", ci: "ci" },
+		},
+		agent("hold", { askQuestions: true, next: "end" }),
+	],
+};
+const stockPipeline = defaultWorkflows.find(
+	(workflow) => workflow.id === "factory-pipeline",
+);
+const proposalStep = structuredClone(
+	stockPipeline.steps.find((step) => step.id === "architecture"),
+);
+const proposalReview = structuredClone(
+	stockPipeline.steps.find((step) => step.id === "architecture-review"),
+);
+const proposalDecision = structuredClone(
+	stockPipeline.steps.find((step) => step.id === "architecture-decision"),
+);
+// Reduced fixtures provide real scope and plan outputs before proposal execution.
+// Keeping plan separate lets the decision action update its declared owned target.
+const fixtureValue = (id, value) => ({
+	id,
+	name: id,
+	type: "script",
+	configVersion: "step-config-v1",
+	reads: {},
+	checks: [],
+	access: "workspace",
+	script: `cat <<'BOBS_FACTORY_FIXTURE_JSON'
+${JSON.stringify(value)}
+BOBS_FACTORY_FIXTURE_JSON`,
+});
+const scopeReads = {
+	scopeClarify: "fixture-context/clarify",
+	scopeDecisions: "fixture-context/decisions",
+	scopePlan: "plan",
+	scopeSource: "@source",
+	scopeTicket: "@ticket",
+};
+const architectureWorkflow = {
+	id: "fixer-architecture-fixture",
+	name: "Fixer architecture handback fixture",
+	allowedTriggers: ["manual"],
+	steps: [
+		fixtureValue("fixture-context", {
+			clarify: {
+				requirements: [
+					"Review a changed correction boundary before implementing it.",
+					"Retain unresolved findings and require exact human acceptance.",
+				],
+				questions: [],
+				decisions: [],
+			},
+			decisions: { decisions: [] },
+		}),
+		fixtureValue("plan", boundaryProposal(1).candidate),
+		{
+			...proposalStep,
+			id: "draft-boundary",
+			reads: { ...scopeReads, architectureDecision: "accept-boundary" },
+			next: "inspect-boundary",
+		},
+		{
+			...proposalReview,
+			id: "inspect-boundary",
+			architectureSource: "draft-boundary",
+			reads: {
+				...scopeReads,
+				proposal: "draft-boundary",
+				architectureDecision: "accept-boundary",
+			},
+			next: "accept-boundary",
+			branches: [
+				{ when: { path: "approved", equals: false }, next: "draft-boundary" },
+			],
+		},
+		{
+			...proposalDecision,
+			id: "accept-boundary",
+			reads: {
+				...scopeReads,
+				proposal: "draft-boundary",
+				review: "inspect-boundary",
+				plan: "plan",
+				revise: "draft-boundary",
+			},
+			arguments: {
+				...proposalDecision.arguments,
+				proposal: "draft-boundary",
+				review: "inspect-boundary",
+				planOutput: "plan",
+				revise: "draft-boundary",
+			},
+			next: "code-fix",
+			branches: [
+				{
+					when: { path: "decision", equals: "revise" },
+					next: "draft-boundary",
+				},
+			],
+		},
+		...structuredClone(
+			fixtureWorkflow.steps.filter((step) => step.id !== "entry"),
+		),
+	],
+};
+function boundaryProposal(version) {
+	const value = checkin();
+	value.title = "Approve the necessary correction before changing its boundary";
+	value.summary =
+		"Keep unresolved review findings while reviewing the correction.";
+	value.candidate.plan =
+		version === 1
+			? "Correct the fixture within the existing boundary."
+			: "Change the accepted boundary before correcting the fixture; retain independent review and final approval.";
+	value.changes =
+		version === 1
+			? []
+			: [
+					{
+						text: "The correction changes the accepted boundary.",
+						from: "bob",
+					},
+				];
+	value.evidence[0].paths = ["source.txt"];
+	value.problem[0].paths = ["source.txt"];
+	value.candidate.steps[0].files = [{ path: "source.txt", change: "edit" }];
+	value.map.parts[0].file = "source.txt";
+	return value;
+}
+const turns = [],
+	providerRequests = [],
+	contexts = [];
+let worker, runtime;
+const tracker = createCLIIssueTracker();
+const config = {
+	factoryHome: home,
+	serverPort: rpcPort,
+	serverHost: "127.0.0.1",
+	defaultRunner: "codex",
+	issueTrackerFactory: () => tracker,
+	linearWorkspaces: {
+		"cli-workspace": { linearToken: "fixture-no-provider-token" },
+	},
+	repositories: [
+		{
+			id: "fixture",
+			name: "Fixture",
+			repositoryPath: repo,
+			workspaceBaseDir: join(directory, "worktrees"),
+			baseBranch: "main",
+			// Provider reads are scripted separately from the real disposable Git origin.
+			githubUrl: "https://github.com/fixture/repository",
+			gitProvider: { type: "github" },
+			linearWorkspaceId: "cli-workspace",
+			isActive: true,
+		},
+	],
+	handlers: {
+		createAgentRunner: (_type, runnerConfig) => {
+			const run = [...runtime.runs.values()].find(
+				(candidate) =>
+					candidate.status === "running" &&
+					candidate.workspace === runnerConfig.workingDirectory,
+			);
+			if (!run)
+				return new MockAgentRunner(
+					runnerConfig,
+					JSON.stringify({ title: "F1 workflow recovery" }),
+				);
+			const role = run.step.split("/").at(-1);
+			const context = loadFactoryContextSnapshot(
+				runnerConfig.mcpConfig["factory-context"].args.at(-1),
+			);
+			turns.push({
+				run: run.id,
+				role,
+				nativeSessionId: runnerConfig.resumeSessionId,
+			});
+			let output = {
+				summary: "Controlled workflow checkpoint",
+				questions: ["Inspect fixture evidence before proceeding"],
+			};
+			if (role === "code-fix") {
+				assert.equal(context.reviewFix.review.status, "incomplete");
+				assert.deepEqual(
+					context.reviewFix.findings.map((finding) => finding.id),
+					["business:F1"],
+				);
+				contexts.push({
+					run: run.id,
+					role,
+					review: context.reviewFix.review,
+					findingIds: context.reviewFix.findings.map((finding) => finding.id),
+				});
+				output = {
+					summary:
+						"Correction received retained findings; verification remains pending",
+					dispositions: [],
+					questions: [
+						"Provide the controlled fixture needed to resolve the finding",
+					],
+				};
+				if (run.workflow.id === architectureWorkflow.id)
+					output = {
+						status: "blocked",
+						architectureRevision: true,
+						summary:
+							"The correction changes the accepted boundary; review a fresh proposal before implementation.",
+						dispositions: [],
+						questions: [],
+					};
+			}
+			if (role === "draft-boundary")
+				output = boundaryProposal((run.architectureProposals?.length ?? 0) + 1);
+			if (role === "inspect-boundary") {
+				assert.equal(run.architectureProposals.at(-1).source, "draft-boundary");
+				assert.equal(context.workflowExecution.currentStep.id, role);
+				output = { approved: true, feedback: [] };
+			}
+			if (role === "clarify")
+				output = {
+					questions: ["Inspect fixture evidence before proceeding"],
+					decisions: [],
+					requirements: ["Preserve the controlled fixture behavior"],
+				};
+			return new MockAgentRunner(runnerConfig, JSON.stringify(output));
+		},
+	},
+};
+function construct() {
+	worker = new EdgeWorker(config);
+	runtime = worker.getFactoryRuntime();
+	const tools = new FactoryTools({
+		command: async (context, executable, args) => {
+			if (executable === "git") {
+				assert(
+					["rev-parse", "status", "fetch", "update-ref"].includes(args[0]),
+					`Unexpected Git operation ${args[0]}`,
+				);
+				return git(context.run.workspace, ...args);
+			}
+			assert.equal(executable, "bobs-factory:github-api");
+			const request = JSON.parse(args[0]);
+			providerRequests.push({ method: request.method, path: request.path });
+			if (request.path !== "graphql") {
+				assert.equal(request.method, "GET");
+				return "[]";
+			}
+			assert.match(request.body.query, /^query/);
+			return JSON.stringify({
+				data: {
+					repository: {
+						squashMergeAllowed: true,
+						mergeCommitAllowed: true,
+						rebaseMergeAllowed: false,
+						pullRequest: {
+							url: "https://github.com/fixture/repository/pull/1",
+							title: "Fixture",
+							headRefOid: git(context.run.workspace, "rev-parse", "HEAD"),
+							baseRefOid: historicalTarget,
+							baseRefName: "main",
+							baseRef: { name: "main", target: { oid: liveTarget } },
+							state: "OPEN",
+							isDraft: true,
+							mergeable: "MERGEABLE",
+							mergeStateStatus: "BLOCKED",
+							reviewDecision: "REVIEW_REQUIRED",
+							reviewThreads: { nodes: [], pageInfo: { hasNextPage: false } },
+							statusCheckRollup: {
+								contexts: {
+									nodes: [{ name: "fixture-check", conclusion: "SUCCESS" }],
+									pageInfo: { hasNextPage: false },
+								},
+							},
+						},
+					},
+				},
+			});
+		},
+	});
+	// Keep EdgeWorker's native agent/finalizer and real runtime graph; script only
+	// provider I/O while the CI tool executes its production implementation.
+	runtime.hooks.tool = (context) => tools.tool(context);
+}
+async function until(check, message) {
+	const deadline = Date.now() + 30000;
+	while (Date.now() < deadline) {
+		if (check()) return;
+		await new Promise((resolve) => setTimeout(resolve, 20));
+	}
+	throw new Error(message);
+}
+async function rpc(method, params = {}) {
+	const response = await fetch(`${rpcOrigin}/cli/rpc`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
+	});
+	const result = await response.json();
+	assert(!result.error, JSON.stringify(result));
+	return result.result;
+}
+async function retry(id) {
+	const response = await fetch(`${factoryOrigin}/api/runs/${id}/retry`, {
+		method: "POST",
+		headers: {
+			Origin: factoryOrigin,
+			"X-Factory-Request": "1",
+			"Content-Type": "application/json",
+		},
+		body: "{}",
+	});
+	assert.equal(response.status, 202, await response.text());
+}
+function waiting(id, step) {
+	const run = runtime.runs.get(id);
+	if (!run) return false;
+	assert.notEqual(run.status, "failed", run.error);
+	return run.status === "waiting" && run.step === step;
+}
+try {
+	construct();
+	runtime.updateWorkflows(
+		[
+			...runtime.listWorkflows(),
+			fixtureWorkflow,
+			providerWorkflow,
+			architectureWorkflow,
+		],
+		fixtureWorkflow.id,
+	);
+	await worker.start();
+	assert(await rpc("ping"));
+	const { issue } = await rpc("createIssue", {
+		teamId: "team-default",
+		title: "Recover retained workflow state",
+		description: "Deterministic workflow recovery and approval boundaries",
+	});
+	const { session } = await rpc("startSession", { issueId: issue.id });
+	await until(
+		() => waiting(session.sessionId, "entry"),
+		"Issue session did not reach its fixture checkpoint",
+	);
+	const retained = runtime.get(session.sessionId),
+		workspace = retained.workspace;
+	const at = retained.updatedAt,
+		headSha = git(workspace, "rev-parse", "HEAD");
+	const source = { source: "originalInput", reference: "/input" };
+	const inventory = validateInventory({
+		schemaVersion: 1,
+		requirements: [
+			{
+				id: "R1",
+				criterion: "Preserve the required fixture behavior",
+				classification: "active",
+				sources: [source],
+			},
+		],
+		decisions: [],
+		conflicts: [],
+		sourceReceipt: { considered: [source], unavailable: [] },
+		questions: [],
+	});
+	const baseline = {
+		schemaVersion: 1,
+		round: 1,
+		key: "specialist-review",
+		inventory,
+		headSha,
+		baseSha: liveTarget,
+		historyLength: 0,
+		reviewers: [
+			{
+				id: "business",
+				key: "specialist-review/0/business",
+				group: 0,
+				contract: "coverage-v1",
+			},
+		],
+		context: {},
+		at,
+	};
+	const specialist = {
+		status: "completed",
+		blockers: [],
+		summary: "Controlled unresolved fixture finding",
+		findings: [
+			{
+				id: "F1",
+				rating: 2,
+				status: "open",
+				summary: "Required fixture result is absent",
+				evidence: "source.txt omits the fixture result",
+				requirementIds: ["R1"],
+			},
+		],
+		coverage: [
+			{
+				requirementId: "R1",
+				status: "not_met",
+				evidence: ["source.txt"],
+				reason: "Fixture result is absent",
+			},
+		],
+		stamp: {
+			reviewer: "business",
+			stepKey: "specialist-review/0/business",
+			round: 1,
+			inventoryDigest: inventory.digest,
+			inventoryVersion: inventory.version,
+			headSha,
+			baseSha: liveTarget,
+		},
+	};
+	retained.outputs = {
+		inventory,
+		"specialist-review": [{ business: specialist }],
+	};
+	retained.reviewRounds = [baseline];
+	retained.history = [
+		{ step: "specialist-review/0/business", output: specialist, at },
+	];
+	retained.questions = [];
+	retained.status = "failed";
+	retained.step = "code-fix";
+	retained.error =
+		"Latest configured specialist round has no complete aggregate; approval is blocked";
+	retained.checkpoint = {
+		current: "code-fix",
+		visits: { "code-fix": 1 },
+		active: {
+			phase: "executing",
+			agent: { runner: "codex", sessionId: "retained-code-fix" },
+		},
+	};
+	await runtime.save(retained);
+	// Use the archived accepted graph whose behavior fingerprints qualify for
+	// the historical allowance; halved modern stock is a different custom graph.
+	const oldStock = legacyWorkflows.default.map((workflow) =>
+		WorkflowSchema.parse(workflow),
+	);
+	const halve = (steps) => {
+		for (const step of steps) {
+			if ([16, 200].includes(step.maxVisits)) step.maxVisits /= 2;
+			for (const group of step.groups ?? []) halve(group);
+		}
+	};
+	for (const workflow of oldStock) halve(workflow.steps);
+	const budget = runtime.create({
+		id: "saved-stock-budget",
+		repositoryId: "fixture",
+		workspace,
+		workflow: oldStock.find((workflow) => workflow.id === "factory"),
+		workflowDefinitions: oldStock,
+		input: "Clarify the controlled fixture",
+		triggerOrigin: { type: "manual", workflowId: "factory", at },
+	});
+	// New admissions intentionally resolve installed stock. Seed the historical
+	// accepted snapshot directly to model an existing run loaded after an update.
+	budget.workflow = structuredClone(
+		oldStock.find((workflow) => workflow.id === "factory"),
+	);
+	budget.workflowDefinitions = oldStock;
+	budget.status = "failed";
+	budget.step = "pipeline/clarify";
+	budget.error = "Iteration limit reached at pipeline/clarify (8 passes)";
+	budget.iterationLimit = { step: budget.step, visits: 9, limit: 8 };
+	budget.checkpoint = {
+		current: "pipeline",
+		visits: { pipeline: 1 },
+		active: {
+			phase: "executing",
+			children: [
+				{
+					current: "clarify",
+					visits: { clarify: 9 },
+					additionalVisits: { clarify: 4 },
+					active: {
+						phase: "executing",
+						agent: { runner: "codex", sessionId: "retained-clarification" },
+					},
+				},
+			],
+		},
+	};
+	const acceptedWorkflow = JSON.stringify(budget.workflowDefinitions);
+	const savedCheckpoint = JSON.stringify(budget.checkpoint);
+	await runtime.save(budget);
+	await runtime.flush();
+	await worker.stop();
+	construct();
+	await worker.start();
+	const restoredBudget = runtime.get(budget.id);
+	assert.equal(
+		JSON.stringify(restoredBudget.workflowDefinitions),
+		acceptedWorkflow,
+	);
+	assert.equal(JSON.stringify(restoredBudget.checkpoint), savedCheckpoint);
+	assert.equal(
+		restoredBudget.stepVisitBudget.additionalVisits["pipeline/clarify"],
+		8,
+	);
+	const savedAllowance = structuredClone(restoredBudget.stepVisitBudget);
+	const clarify = restoredBudget.workflowDefinitions
+		.find((workflow) => workflow.id === "factory-pipeline")
+		.steps.find((step) => step.id === "clarify");
+	assert.equal(
+		stepVisitLimit(restoredBudget, "pipeline/clarify", clarify, 4),
+		20,
+	);
+	await retry(retained.id);
+	await until(
+		() => waiting(retained.id, "code-fix"),
+		"Retained correction did not reach the native mocked role",
+	);
+	const corrected = runtime.get(retained.id);
+	assert.equal(
+		turns.filter((turn) => turn.run === retained.id && turn.role === "code-fix")
+			.length,
+		1,
+	);
+	assert.equal(
+		turns.find((turn) => turn.run === retained.id && turn.role === "code-fix")
+			.nativeSessionId,
+		"retained-code-fix",
+	);
+	assert.equal(
+		corrected.history.at(-1).output.reviewAssessment.unchangedCode,
+		true,
+	);
+	assert.throws(
+		() =>
+			aggregateForContext({
+				run: corrected,
+				step: corrected.workflow.steps.find(
+					(step) => step.id === "review-gate",
+				),
+				stepKey: "review-gate",
+			}),
+		/no complete aggregate/,
+	);
+	assert.equal(corrected.humanDecisions?.length ?? 0, 0);
+	await retry(budget.id);
+	await until(
+		() => waiting(budget.id, "pipeline/clarify"),
+		"Saved stock budget did not resume its original clarification role",
+	);
+	assert.equal(
+		turns.find((turn) => turn.run === budget.id && turn.role === "clarify")
+			.nativeSessionId,
+		"retained-clarification",
+	);
+	assert.equal(
+		runtime.get(budget.id).checkpoint.active.children[0].additionalVisits
+			.clarify,
+		4,
+	);
+	const provider = runtime.create({
+		id: "live-target",
+		repositoryId: "fixture",
+		repositories: structuredClone(runtime.get(retained.id).repositories),
+		workspace,
+		input: "Inspect the scripted provider target",
+		workflow: runtime
+			.listWorkflows()
+			.find((workflow) => workflow.id === providerWorkflow.id),
+		workflowDefinitions: runtime.listWorkflows(),
+		triggerOrigin: { type: "manual", workflowId: providerWorkflow.id, at },
+	});
+	void runtime.launch(provider);
+	await until(
+		() => waiting(provider.id, "hold"),
+		"Provider workflow did not retain its human review checkpoint",
+	);
+	assert.equal(provider.outputs.ci.baseSha, liveTarget);
+	assert.notEqual(provider.outputs.ci.baseSha, historicalTarget);
+	assert.equal(provider.outputs.ci.approved, false);
+	assert.equal(
+		git(workspace, "rev-parse", "refs/remotes/origin/main"),
+		liveTarget,
+	);
+	assert(providerRequests.length >= 3);
+	await runtime.flush();
+	await worker.stop();
+	construct();
+	await worker.start();
+	assert.deepEqual(runtime.get(budget.id).stepVisitBudget, savedAllowance);
+	assert.equal(
+		JSON.stringify(runtime.get(budget.id).workflowDefinitions),
+		acceptedWorkflow,
+	);
+	await until(
+		() =>
+			waiting(retained.id, "code-fix") &&
+			runtime.canRecheckQuestions(retained.id),
+		"Saved assistance did not restore its bounded recheck action",
+	);
+	const beforeRecheck = runtime.get(retained.id);
+	const questionContext = {
+		step: beforeRecheck.step,
+		questionBatchId: beforeRecheck.questionBatchId,
+		questions: [...beforeRecheck.questions],
+	};
+	const retainedAnswers = JSON.stringify(beforeRecheck.answers);
+	const retainedWorkflow = JSON.stringify([
+		beforeRecheck.workflow,
+		beforeRecheck.workflowDefinitions,
+	]);
+	const retainedHistory = beforeRecheck.history.length;
+	const priorTurns = turns.filter(
+		(turn) => turn.run === retained.id && turn.role === "code-fix",
+	).length;
+	const postRecheck = (context) =>
+		fetch(`${factoryOrigin}/api/runs/${retained.id}/recheck`, {
+			method: "POST",
+			headers: {
+				Origin: factoryOrigin,
+				"X-Factory-Request": "1",
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ context }),
+		});
+	const stale = await postRecheck({
+		...questionContext,
+		questionBatchId: "obsolete-batch",
+	});
+	assert.equal(stale.status, 409, await stale.text());
+	assert.equal(
+		turns.filter((turn) => turn.run === retained.id && turn.role === "code-fix")
+			.length,
+		priorTurns,
+	);
+	const rechecked = await postRecheck(questionContext);
+	assert.equal(rechecked.status, 202, await rechecked.text());
+	await until(
+		() =>
+			waiting(retained.id, "code-fix") &&
+			runtime.get(retained.id).questionBatchId !==
+				questionContext.questionBatchId,
+		"Recheck did not re-enter the retained role and publish a fresh question batch",
+	);
+	const afterRecheck = runtime.get(retained.id);
+	assert.equal(
+		turns.filter((turn) => turn.run === retained.id && turn.role === "code-fix")
+			.length,
+		priorTurns + 1,
+	);
+	assert.equal(
+		turns
+			.filter((turn) => turn.run === retained.id && turn.role === "code-fix")
+			.at(-1).nativeSessionId,
+		"retained-code-fix",
+	);
+	assert.equal(JSON.stringify(afterRecheck.answers), retainedAnswers);
+	assert.equal(
+		JSON.stringify([afterRecheck.workflow, afterRecheck.workflowDefinitions]),
+		retainedWorkflow,
+	);
+	assert.equal(afterRecheck.history.length, retainedHistory + 1);
+	assert.equal(afterRecheck.humanDecisions?.length ?? 0, 0);
+	assert.equal((await postRecheck(questionContext)).status, 409);
+	const architectureRun = runtime.create({
+		id: "fixer-architecture-handback",
+		repositoryId: "fixture",
+		workspace,
+		input: "Review a changed correction boundary before implementing it.",
+		workflow: runtime
+			.listWorkflows()
+			.find((w) => w.id === architectureWorkflow.id),
+		workflowDefinitions: runtime.listWorkflows(),
+		triggerOrigin: { type: "manual", workflowId: architectureWorkflow.id, at },
+	});
+	architectureRun.outputs = {
+		inventory: structuredClone(inventory),
+		"specialist-review": [{ business: structuredClone(specialist) }],
+	};
+	architectureRun.reviewRounds = [structuredClone(baseline)];
+	architectureRun.history = [
+		{
+			step: "specialist-review/0/business",
+			output: structuredClone(specialist),
+			at,
+		},
+	];
+	const originalFindingReceipt = JSON.stringify(architectureRun.history[0]);
+	const frozenArchitectureWorkflow = JSON.stringify(architectureRun.workflow);
+	void runtime.launch(architectureRun);
+	await until(
+		() => waiting(architectureRun.id, "accept-boundary"),
+		"Initial architecture did not reach explicit acceptance",
+	);
+	assert.equal(
+		turns.filter(
+			(turn) => turn.run === architectureRun.id && turn.role === "code-fix",
+		).length,
+		0,
+	);
+	const firstProposal = architectureRun.architectureProposals[0];
+	const acceptProposal = (proposal) =>
+		fetch(
+			`${factoryOrigin}/api/runs/${architectureRun.id}/architecture-decision`,
+			{
+				method: "POST",
+				headers: {
+					Origin: factoryOrigin,
+					"X-Factory-Request": "1",
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					proposalId: proposal.id,
+					version: proposal.version,
+					digest: proposal.digest,
+					decision: "accept",
+				}),
+			},
+		);
+	const firstAcceptance = await acceptProposal(firstProposal);
+	assert.equal(firstAcceptance.status, 202, await firstAcceptance.text());
+	await until(
+		() =>
+			waiting(architectureRun.id, "accept-boundary") &&
+			architectureRun.architectureProposals.length === 2,
+		"Fixer handback did not redraft and independently review the changed architecture",
+	);
+	assert.deepEqual(
+		turns
+			.filter((turn) => turn.run === architectureRun.id)
+			.map((turn) => turn.role),
+		[
+			"draft-boundary",
+			"inspect-boundary",
+			"code-fix",
+			"draft-boundary",
+			"inspect-boundary",
+		],
+	);
+	assert.equal(architectureRun.outputs["code-fix"].status, "blocked");
+	assert.equal(architectureRun.outputs["code-fix"].architectureRevision, true);
+	assert.deepEqual(architectureRun.outputs["code-fix"].dispositions, []);
+	assert.deepEqual(architectureRun.outputs["code-fix"].questions, []);
+	assert.equal(architectureRun.architectureProposals[1].status, "pending");
+	assert.equal(architectureRun.architectureProposals[1].version, 2);
+	assert.equal(
+		architectureRun.architectureProposals[1].continuation,
+		undefined,
+	);
+	assert.equal(
+		architectureRun.architectureGate.proposalId,
+		architectureRun.architectureProposals[1].id,
+	);
+	assert.equal(architectureRun.architectureDecisions.length, 1);
+	assert.equal(
+		architectureRun.architectureDecisions[0].proposalId,
+		firstProposal.id,
+	);
+	assert.equal(architectureRun.outputs["review-gate"], undefined);
+	assert.equal(
+		JSON.stringify(architectureRun.history[0]),
+		originalFindingReceipt,
+	);
+	assert.equal(
+		JSON.stringify(architectureRun.workflow),
+		frozenArchitectureWorkflow,
+	);
+	assert.equal(
+		architectureRun.outputs["specialist-review"][0].business.findings[0].status,
+		"open",
+	);
+	assert.deepEqual(architectureRun.answers, []);
+	assert.equal(architectureRun.humanDecisions?.length ?? 0, 0);
+	assert.equal((await acceptProposal(firstProposal)).status, 409);
+	assert.equal(architectureRun.architectureDecisions.length, 1);
+	assert.equal(runtime.canRecheckQuestions(architectureRun.id), false);
+	const activities = await rpc("viewSession", {
+		sessionId: session.sessionId,
+		limit: 200,
+		offset: 0,
+	});
+	assert(JSON.stringify(activities).includes("Provide the controlled fixture"));
+	writeFileSync(
+		join(directory, "receipt.json"),
+		JSON.stringify(
+			{
+				mode: "mock/scripted",
+				issueId: issue.id,
+				assertions: {
+					issueSessionAndActivities: true,
+					incompleteCorrectionNativeSessionResumed: true,
+					correctionProvenanceRecorded: true,
+					approvalRemainsBlocked: true,
+					existingStockBudgetDoubledWithoutGraphChanges: true,
+					priorAdditionalPassesPreserved: true,
+					restartDoesNotDoubleAgain: true,
+					explicitQuestionRecheckRetainsNativeConversation: true,
+					staleQuestionRecheckRejected: true,
+					questionRecheckDoesNotSubmitAnswersOrApproval: true,
+					fixerArchitectureHandbackReachesRenamedProposalRoute: true,
+					fixerArchitectureHandbackRequiresFreshAcceptance: true,
+					fixerArchitectureHandbackPreservesUnresolvedFindings: true,
+					ciUsesLiveTarget: true,
+					localTargetRemainsStable: true,
+				},
+				turns,
+				providerRequests,
+				contexts,
+			},
+			null,
+			2,
+		),
+	);
+	console.log(`PASS ${directory}`);
+} finally {
+	await worker?.stop();
+}

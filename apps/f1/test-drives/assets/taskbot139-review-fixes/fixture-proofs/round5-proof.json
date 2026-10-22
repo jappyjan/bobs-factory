@@ -1,0 +1,7 @@
+{
+  "file": "workflow-stall-recovery.mjs",
+  "sha256": "b573367771f7ff30b24f4c08ea99be0c4b973358abf8827794b017abf35515e9",
+  "assertionCalls": 64,
+  "allOtherBytesUnchanged": true,
+  "detail": "Direct provider fixture admission copies the actual runtime-owned repository scope from the original retained run; no ordinary output alias used as repository authority."
+}

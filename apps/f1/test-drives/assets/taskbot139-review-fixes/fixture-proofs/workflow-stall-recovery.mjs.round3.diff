@@ -1,0 +1,35 @@
+--- workflow-stall-recovery.mjs.round2
++++ workflow-stall-recovery.mjs.round3
+@@ -114,7 +114,21 @@
+ 	name: "Provider target fixture",
+ 	allowedTriggers: ["manual"],
+ 	steps: [
+-		{ id: "ci", name: "Inspect provider CI", type: "tool", tool: "ci" },
++		{
++			id: "provider-target",
++			name: "Read the scripted provider target",
++			type: "script",
++			script: `cat <<'BOBS_FACTORY_FIXTURE_JSON'
++{"url":"https://github.com/fixture/repository/pull/1"}
++BOBS_FACTORY_FIXTURE_JSON`,
++		},
++		{
++			id: "ci",
++			name: "Inspect provider CI",
++			type: "tool",
++			tool: "ci",
++			reads: { draftPr: "provider-target", ci: "ci" },
++		},
+ 		agent("hold", { askQuestions: true, next: "end" }),
+ 	],
+ };
+@@ -678,9 +692,6 @@
+ 		workflowDefinitions: runtime.listWorkflows(),
+ 		triggerOrigin: { type: "manual", workflowId: providerWorkflow.id, at },
+ 	});
+-	provider.outputs["draft-pr"] = {
+-		url: "https://github.com/fixture/repository/pull/1",
+-	};
+ 	void runtime.launch(provider);
+ 	await until(
+ 		() => waiting(provider.id, "hold"),

@@ -1,0 +1,37 @@
+--- workflow-stall-recovery.mjs.round5
++++ workflow-stall-recovery.mjs.round6
+@@ -684,6 +684,10 @@
+ 			.clarify,
+ 		4,
+ 	);
++	// This phase has proved native clarification and its retained allowance.
++	// Stop it durably before later startup reuses the same disposable workspace.
++	runtime.stop(budget.id);
++	await runtime.save(runtime.get(budget.id));
+ 	const provider = runtime.create({
+ 		id: "live-target",
+ 		repositoryId: "fixture",
+@@ -709,6 +713,9 @@
+ 		liveTarget,
+ 	);
+ 	assert(providerRequests.length >= 3);
++	// Keep only the correction run auto-resumable for the question-recheck phase.
++	runtime.stop(provider.id);
++	await runtime.save(runtime.get(provider.id));
+ 	await runtime.flush();
+ 	await worker.stop();
+ 	construct();
+@@ -788,9 +795,13 @@
+ 	assert.equal(afterRecheck.history.length, retainedHistory + 1);
+ 	assert.equal(afterRecheck.humanDecisions?.length ?? 0, 0);
+ 	assert.equal((await postRecheck(questionContext)).status, 409);
++	// Recheck is verified; hand this shared fixture workspace to the next scenario.
++	runtime.stop(retained.id);
++	await runtime.save(runtime.get(retained.id));
+ 	const architectureRun = runtime.create({
+ 		id: "fixer-architecture-handback",
+ 		repositoryId: "fixture",
++		repositories: structuredClone(runtime.get(retained.id).repositories),
+ 		workspace,
+ 		input: "Review a changed correction boundary before implementing it.",
+ 		workflow: runtime

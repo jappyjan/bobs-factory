@@ -1,0 +1,134 @@
+2026-10-22T02:55:46.443Z [WARN ] [EdgeWorker] Bundled skills not found at /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker/src/bobs-factory-skills-plugin/skills — cannot deploy defaults
+2026-10-22T02:55:46.444Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T02:55:46.444Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T02:55:46.444Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T02:55:46.466Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T02:55:46.466Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T02:55:46.467Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T02:55:46.467Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T02:55:46.467Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T02:55:46.467Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T02:55:46.467Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T02:55:46.467Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T02:55:46.467Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T02:55:46.467Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T02:55:46.468Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T02:55:46.468Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T02:55:46.468Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T02:55:46.475Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T02:55:46.475Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T02:55:46.475Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T02:55:46.475Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T02:55:46.477Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:56859
+2026-10-22T02:55:46.854Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=f1, overrideValue=undefined
+2026-10-22T02:55:46.855Z [INFO ] [GitService] createSingleRepoWorktree for F1 (id=f1): baseBranchOverride=undefined
+2026-10-22T02:55:46.977Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/worktrees/MANUAL-87e89180 from origin/main (tracking main)
+2026-10-22T02:55:47.017Z [INFO ] [AgentSessionManager] {session=manual-d, platform=manual} Creating chat session
+2026-10-22T02:55:47.164Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:55:49.435Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:55:49.745Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:55:51.976Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:55:52.202Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:55:54.436Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:55:54.790Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:55:57.012Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:55:57.298Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:55:59.615Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:55:59.909Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:02.162Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:56:02.667Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:04.985Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:56:05.285Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:07.568Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:56:07.992Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:10.289Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:56:10.599Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:12.914Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:56:13.406Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:15.669Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:56:15.931Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=f1, overrideValue=undefined
+2026-10-22T02:56:15.931Z [INFO ] [GitService] createSingleRepoWorktree for F1 (id=f1): baseBranchOverride=undefined
+2026-10-22T02:56:16.049Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/worktrees/MANUAL-21c04332 from origin/main (tracking main)
+2026-10-22T02:56:16.092Z [INFO ] [AgentSessionManager] {session=manual-7, platform=manual} Creating chat session
+2026-10-22T02:56:16.205Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:18.388Z [INFO ] [AgentSessionManager] {session=manual-7} Session completed (subtype: success)
+2026-10-22T02:56:18.718Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:20.929Z [INFO ] [AgentSessionManager] {session=manual-7} Session completed (subtype: success)
+2026-10-22T02:56:21.163Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:23.439Z [INFO ] [AgentSessionManager] {session=manual-7} Session completed (subtype: success)
+2026-10-22T02:56:23.882Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:26.121Z [INFO ] [AgentSessionManager] {session=manual-7} Session completed (subtype: success)
+2026-10-22T02:56:26.481Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:28.839Z [INFO ] [AgentSessionManager] {session=manual-7} Session completed (subtype: success)
+2026-10-22T02:56:29.228Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:31.457Z [INFO ] [AgentSessionManager] {session=manual-7} Session completed (subtype: success)
+2026-10-22T02:56:31.718Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=f1, overrideValue=undefined
+2026-10-22T02:56:31.718Z [INFO ] [GitService] createSingleRepoWorktree for F1 (id=f1): baseBranchOverride=undefined
+2026-10-22T02:56:31.829Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/worktrees/DEF-1 with existing branch def-1-existing-architecture-fixture
+2026-10-22T02:56:31.862Z [INFO ] [AgentSessionManager] {session=manual-4, platform=manual} Creating chat session
+2026-10-22T02:56:32.068Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:34.280Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:34.591Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:36.798Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:37.122Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:39.348Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:39.620Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:41.859Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:42.267Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:44.489Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:44.754Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:47.044Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:47.417Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:49.677Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:50.315Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:52.669Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:53.037Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:55.348Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:55.891Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:56:58.233Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:56:58.554Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:00.893Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:57:01.401Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:03.660Z [INFO ] [AgentSessionManager] {session=manual-4} Session completed (subtype: success)
+2026-10-22T02:57:03.951Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=f1, overrideValue=undefined
+2026-10-22T02:57:03.951Z [INFO ] [GitService] createSingleRepoWorktree for F1 (id=f1): baseBranchOverride=undefined
+2026-10-22T02:57:04.035Z [INFO ] [GitService] Branch "def-1-existing-architecture-fixture" is already checked out in worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/worktrees/DEF-1, reusing existing worktree
+2026-10-22T02:57:04.038Z [INFO ] [AgentSessionManager] {session=manual-8, platform=manual} Creating chat session
+2026-10-22T02:57:04.325Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:06.552Z [INFO ] [AgentSessionManager] {session=manual-8} Session completed (subtype: success)
+2026-10-22T02:57:06.868Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:09.086Z [INFO ] [AgentSessionManager] {session=manual-8} Session completed (subtype: success)
+2026-10-22T02:57:09.440Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:11.667Z [INFO ] [AgentSessionManager] {session=manual-8} Session completed (subtype: success)
+2026-10-22T02:57:11.931Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:14.184Z [INFO ] [AgentSessionManager] {session=manual-8} Session completed (subtype: success)
+2026-10-22T02:57:14.631Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:16.878Z [INFO ] [AgentSessionManager] {session=manual-8} Session completed (subtype: success)
+2026-10-22T02:57:17.307Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:19.677Z [INFO ] [AgentSessionManager] {session=manual-8} Session completed (subtype: success)
+2026-10-22T02:57:20.072Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:22.323Z [INFO ] [AgentSessionManager] {session=manual-8} Session completed (subtype: success)
+2026-10-22T02:57:22.589Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=f1, overrideValue=undefined
+2026-10-22T02:57:22.589Z [INFO ] [GitService] createSingleRepoWorktree for F1 (id=f1): baseBranchOverride=undefined
+2026-10-22T02:57:22.736Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/worktrees/MANUAL-197ecd6c from origin/main (tracking main)
+2026-10-22T02:57:22.784Z [INFO ] [AgentSessionManager] {session=manual-d, platform=manual} Creating chat session
+2026-10-22T02:57:22.911Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:25.117Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:57:25.411Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:27.610Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:57:27.817Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:30.032Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:57:30.456Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:32.690Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:57:32.961Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:35.208Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:57:35.568Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:37.846Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:57:38.014Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:40.316Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+2026-10-22T02:57:40.487Z [WARN ] [EdgeWorker] No internal skills plugin found at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bf90-f1-kw91Oe/bobs-factory-skills-plugin
+2026-10-22T02:57:42.784Z [INFO ] [AgentSessionManager] {session=manual-d} Session completed (subtype: success)
+PASS [{"workflow":"factory","status":"completed","versions":3,"implemented":1,"openDecisionBlockedAcceptance":true,"id":"manual-d20bf4c7-9ac2-41a1-8e4d-3a5987e89180"},{"workflow":"factory","classification":"routine","status":"completed","id":"manual-74cf8e67-1ac9-447b-a77c-3b5121c04332"},{"workflow":"takeover","status":"completed","versions":3,"implemented":1,"openDecisionBlockedAcceptance":true,"id":"manual-400ef7af-0e9e-4aef-8b19-c695f6ccc369"},{"workflow":"takeover","classification":"routine","status":"completed","id":"manual-8f854c8a-159a-48cf-b9dc-52439825f026"},{"probe":"revision without changes","status":"failed","versions":1,"error":"Output correction exhausted after 2 attempts at architecture. Inspect the persisted rejected output/issues before retrying."}]
+2026-10-22T02:57:43.040Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T02:57:43.041Z [INFO ] [SharedApplicationServer] Shared application server stopped

@@ -1,0 +1,48 @@
+{
+  "mode": "mock/scripted",
+  "directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-impact-feedback-M1DHrf",
+  "fresh": "session-1",
+  "saved": "saved-impact-result",
+  "turns": [
+    {
+      "run": "session-1",
+      "role": "assess-impact"
+    },
+    {
+      "run": "session-1",
+      "role": "assess-impact",
+      "resumeSessionId": "f1-mock-f8c3835c-5057-49af-9c78-8e0b0e111639"
+    },
+    {
+      "run": "session-1",
+      "role": "scope"
+    },
+    {
+      "run": "session-1",
+      "role": "security"
+    },
+    {
+      "run": "session-1",
+      "role": "hold"
+    },
+    {
+      "run": "saved-impact-result",
+      "role": "assess-impact",
+      "resumeSessionId": "retained-impact-conversation"
+    },
+    {
+      "run": "saved-impact-result",
+      "role": "security"
+    },
+    {
+      "run": "saved-impact-result",
+      "role": "hold"
+    }
+  ],
+  "assertions": [
+    "fresh comment corrected in original conversation",
+    "saved result corrected after worker restart and Retry",
+    "both self-referencing inventories pass selected checks",
+    "human acceptance remains required"
+  ]
+}
