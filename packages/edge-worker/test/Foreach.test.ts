@@ -2,10 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import {
 	aggregateForeach,
+	ForeachSettingsSchema,
 	foreachPointer,
 	prepareForeach,
 } from "../src/factory/Foreach.js";
-import { validateWorkflows } from "../src/factory/Workflow.js";
+import {
+	StepSchema,
+	validateWorkflows,
+	WorkflowSchema,
+} from "../src/factory/Workflow.js";
 
 const settings = (values: unknown[], extra: Record<string, unknown> = {}) => ({
 	items: { values },
@@ -201,6 +206,300 @@ describe("For each accepted collections", () => {
 				outputs: {},
 			}),
 		).toThrow(/limit|1 MiB/);
+	});
+
+	it.each([
+		"hidden getter",
+		"hidden function",
+		"symbol getter",
+		"hidden data",
+	] as const)("rejects %s hooks before any inline, output, direct-schema or workflow read", (kind) => {
+		for (const parse of [
+			(values: unknown[]) => prepareForeach(settings(values), { outputs: {} }),
+			(values: unknown[]) =>
+				prepareForeach(
+					{ items: { from: "/source/items" } },
+					{ outputs: { source: { items: values } } },
+				),
+			(values: unknown[]) => ForeachSettingsSchema.parse(settings(values)),
+			(values: unknown[]) => definition({ items: { values } }),
+		]) {
+			const hook = vi.fn(() => ({ id: "changed" }));
+			const item = { id: "original" };
+			if (kind === "hidden getter")
+				Object.defineProperty(item, "toJSON", { get: hook });
+			if (kind === "hidden function")
+				Object.defineProperty(item, "toJSON", { value: hook });
+			if (kind === "symbol getter")
+				Object.defineProperty(item, Symbol.toPrimitive, {
+					enumerable: true,
+					get: hook,
+				});
+			if (kind === "hidden data")
+				Object.defineProperty(item, "brief", { value: "hidden" });
+			expect(() => parse([item])).toThrow(
+				/JSON data|accessors|non-enumerable|symbol/,
+			);
+			expect(hook).not.toHaveBeenCalled();
+		}
+	});
+
+	it("rejects inherited settings and source getters before direct or workflow schema parsing", () => {
+		for (const parse of [
+			(value: unknown) => prepareForeach(value, { outputs: {} }),
+			(value: unknown) => ForeachSettingsSchema.parse(value),
+		]) {
+			const get = vi.fn(() => ({ values: [{ id: "untrusted" }] }));
+			expect(() =>
+				parse(
+					Object.create({
+						get items() {
+							return get();
+						},
+					}),
+				),
+			).toThrow(/plain JSON/);
+			expect(get).not.toHaveBeenCalled();
+		}
+		for (const parse of [
+			(items: unknown) => prepareForeach({ items }, { outputs: {} }),
+			(items: unknown) => ForeachSettingsSchema.parse({ items }),
+			(items: unknown) => definition({ items }),
+		]) {
+			const get = vi.fn(() => [{ id: "untrusted" }]);
+			const inherited = Object.create({
+				get values() {
+					return get();
+				},
+			});
+			expect(() => parse(inherited)).toThrow(/plain JSON/);
+			expect(get).not.toHaveBeenCalled();
+		}
+	});
+
+	it("checks every relevant top-level setting descriptor without reading getters or unrelated config", () => {
+		for (const field of [
+			"items",
+			"itemId",
+			"concurrency",
+			"maxItems",
+			"failure",
+		]) {
+			for (const parse of [
+				(value: unknown) => prepareForeach(value, { outputs: {} }),
+				(value: unknown) => ForeachSettingsSchema.parse(value),
+			]) {
+				const get = vi.fn(() => (field === "items" ? { values: [] } : 1));
+				const config = Object.defineProperty(settings([]), field, {
+					enumerable: true,
+					get,
+				});
+				expect(() => parse(config)).toThrow(/without accessors/);
+				expect(get).not.toHaveBeenCalled();
+			}
+		}
+		expect(
+			prepareForeach(
+				{
+					...settings(["first"]),
+					itemId: "",
+					model: undefined,
+					body: [{ optionalConfig: undefined }],
+				},
+				{ outputs: {} },
+			).items,
+		).toEqual([{ id: "first", index: 0, value: "first" }]);
+	});
+
+	it.each([
+		"own hidden items",
+		"own enumerable items",
+		"inherited items",
+		"type getter",
+	] as const)("rejects raw workflow step %s before the union parser reads it", (location) => {
+		for (const parse of [
+			(step: unknown) => StepSchema.parse(step),
+			(step: unknown) =>
+				WorkflowSchema.parse({
+					id: "raw-fixture",
+					name: "Raw fixture",
+					steps: [step],
+				}),
+		]) {
+			const get = vi.fn(() =>
+				location === "type getter"
+					? "foreach"
+					: { values: [{ id: "untrusted" }] },
+			);
+			const raw = { id: "each", name: "Each", type: "foreach", body: [leaf] };
+			if (location === "inherited items")
+				Object.setPrototypeOf(raw, Object.defineProperty({}, "items", { get }));
+			else
+				Object.defineProperty(
+					raw,
+					location === "type getter" ? "type" : "items",
+					{ enumerable: location !== "own hidden items", get },
+				);
+			expect(() => parse(raw)).toThrow(/Workflow steps/);
+			expect(get).not.toHaveBeenCalled();
+		}
+	});
+
+	it("preserves null-prototype step data and ordinary undefined generic configuration", () => {
+		const raw = Object.assign(Object.create(null), {
+			id: "each",
+			name: "Each",
+			type: "foreach",
+			items: { values: [] },
+			body: [leaf],
+			model: undefined,
+			reads: undefined,
+			concurrency: undefined,
+		});
+		expect(StepSchema.parse(raw)).toMatchObject({
+			id: "each",
+			type: "foreach",
+			concurrency: 4,
+			maxItems: 100,
+			maxVisits: 16,
+			failure: "all-must-succeed",
+		});
+		expect(
+			StepSchema.parse({ ...leaf, model: undefined, reads: undefined }),
+		).toMatchObject({ id: "inspect", type: "agent", maxVisits: 16 });
+	});
+
+	it("rejects inherited item and array prototypes without invoking their hooks", () => {
+		for (const parse of [
+			(values: unknown[]) => prepareForeach(settings(values), { outputs: {} }),
+			(values: unknown[]) =>
+				prepareForeach(
+					{ items: { from: "/source" } },
+					{ outputs: { source: values } },
+				),
+			(values: unknown[]) => ForeachSettingsSchema.parse(settings(values)),
+			(values: unknown[]) => definition({ items: { values } }),
+		]) {
+			const get = vi.fn(() => () => ({ id: "changed" }));
+			const inheritedItem = Object.assign(
+				Object.create(Object.defineProperty({}, "toJSON", { get })),
+				{ id: "first" },
+			);
+			expect(() => parse([inheritedItem])).toThrow(/plain JSON/);
+			const inheritedArray = [{ id: "first" }];
+			Object.setPrototypeOf(
+				inheritedArray,
+				Object.create(Array.prototype, { toJSON: { get } }),
+			);
+			expect(() => parse(inheritedArray)).toThrow(/plain JSON/);
+			expect(get).not.toHaveBeenCalled();
+		}
+	});
+
+	it("rejects holes balanced by extra properties, dense arrays with extras and hidden indices", () => {
+		for (const make of [
+			() => Object.assign(new Array(1), { foo: { id: "first" } }),
+			() => Object.assign([{ id: "first" }], { foo: { id: "extra" } }),
+			() => Object.assign([{ id: "first" }], { "01": { id: "extra" } }),
+			() =>
+				Object.defineProperty([{ id: "first" }], "0", {
+					value: { id: "first" },
+					enumerable: false,
+				}),
+		]) {
+			for (const parse of [
+				(values: unknown[]) =>
+					prepareForeach(settings(values), { outputs: {} }),
+				(values: unknown[]) => ForeachSettingsSchema.parse(settings(values)),
+				(values: unknown[]) => definition({ items: { values } }),
+			])
+				expect(() => parse(make())).toThrow(
+					/sparse|extra properties|non-enumerable/,
+				);
+		}
+		const get = vi.fn(() => "not JSON");
+		const values = Object.defineProperty([{ id: "first" }], "extra", { get });
+		expect(() => prepareForeach(settings(values), { outputs: {} })).toThrow(
+			/without accessors/,
+		);
+		expect(get).not.toHaveBeenCalled();
+	});
+
+	it("reads output and lexical pointers through own data descriptors before any spread or property read", () => {
+		const get = vi.fn(() => [{ id: "first" }]);
+		const outputs = Object.defineProperty({}, "source", {
+			enumerable: true,
+			get,
+		});
+		expect(() =>
+			prepareForeach({ items: { from: "/source" } }, { outputs }),
+		).toThrow(/without accessors/);
+		const source = Object.create(Object.defineProperty({}, "items", { get }));
+		expect(() =>
+			prepareForeach(
+				{ items: { from: "/source/items" } },
+				{ outputs: { source } },
+			),
+		).toThrow(/plain JSON|does not resolve/);
+		const scope = Object.defineProperty({}, "outputs", {
+			enumerable: true,
+			get,
+		});
+		expect(() =>
+			prepareForeach(
+				{ items: { from: "/source" } },
+				scope as { outputs: Record<string, unknown> },
+			),
+		).toThrow(/without accessors/);
+		expect(get).not.toHaveBeenCalled();
+	});
+
+	it("preserves plain and null-prototype JSON data, dense arrays and scalar string identities", () => {
+		const item = Object.assign(Object.create(null), {
+			id: "first",
+			nested: Object.assign(Object.create(null), { note: "kept" }),
+		});
+		const values = [item];
+		Object.setPrototypeOf(values, null);
+		const config = Object.assign(Object.create(null), {
+			items: Object.assign(Object.create(null), { values }),
+		});
+		expect(prepareForeach(config, { outputs: {} }).items).toEqual([
+			{
+				id: "first",
+				index: 0,
+				value: { id: "first", nested: { note: "kept" } },
+			},
+		]);
+		const parsed = ForeachSettingsSchema.parse(config);
+		if (!("values" in parsed.items)) throw new Error("Expected inline items");
+		expect(parsed.items.values.map((value) => value)).toEqual([
+			{ id: "first", nested: { note: "kept" } },
+		]);
+		expect(Object.getPrototypeOf(parsed.items.values)).toBe(Array.prototype);
+		expect(
+			ForeachSettingsSchema.parse(
+				settings([], {
+					itemId: undefined,
+					concurrency: undefined,
+					maxItems: undefined,
+					failure: undefined,
+				}),
+			),
+		).toMatchObject({
+			itemId: "/id",
+			concurrency: 4,
+			maxItems: 100,
+			failure: "all-must-succeed",
+		});
+		expect(
+			prepareForeach(settings(["first", "second"], { itemId: "" }), {
+				outputs: {},
+			}).items,
+		).toEqual([
+			{ id: "first", index: 0, value: "first" },
+			{ id: "second", index: 1, value: "second" },
+		]);
 	});
 
 	it("aggregates in accepted order with separate explicit failures and retained receipts", () => {

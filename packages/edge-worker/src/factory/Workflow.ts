@@ -136,77 +136,118 @@ export interface WorkflowStep extends StepConfigFields {
 	maxItems?: number;
 	failure?: "all-must-succeed" | "keep-successful";
 }
+/** Reject executable step surfaces before Zod reads even the type discriminator. */
+function ownStepData(value: unknown, context: z.RefinementCtx): unknown {
+	if (
+		!value ||
+		typeof value !== "object" ||
+		Array.isArray(value) ||
+		(Object.getPrototypeOf(value) !== null &&
+			Object.getPrototypeOf(value) !== Object.prototype)
+	) {
+		context.addIssue({
+			code: "custom",
+			message: "Workflow steps must be plain data objects",
+		});
+		return z.NEVER;
+	}
+	const descriptors = Object.getOwnPropertyDescriptors(value);
+	const result: Record<string, unknown> = Object.create(null);
+	for (const key of Reflect.ownKeys(descriptors)) {
+		const descriptor = typeof key === "string" ? descriptors[key] : undefined;
+		if (
+			typeof key !== "string" ||
+			!descriptor ||
+			!("value" in descriptor) ||
+			!descriptor.enumerable
+		) {
+			context.addIssue({
+				code: "custom",
+				message:
+					"Workflow steps must use enumerable own data properties without accessors or symbols",
+			});
+			return z.NEVER;
+		}
+		// Keep values untouched: each existing field schema owns its configuration,
+		// and ordinary optional undefined fields must retain their default behavior.
+		result[key] = descriptor.value;
+	}
+	return result;
+}
 export const StepSchema: z.ZodType<WorkflowStep> = z.lazy(() =>
-	z.discriminatedUnion("type", [
-		AgentStepSchema,
-		z.object({
-			...base,
-			type: z.literal("check"),
-			check: CheckSchema,
-			delivery: z.never().optional(),
-			resources: z.never().optional(),
-			computeIntensive: z.never().optional(),
-		}),
-		z.object({
-			...base,
-			type: z.literal("workflow"),
-			delivery: z.never().optional(),
-			resources: z.never().optional(),
-			workflow: id,
-			inputMapping: z
-				.record(
-					z
-						.string()
-						.regex(/^[A-Za-z][A-Za-z0-9_-]{0,59}$/)
-						.refine(
-							(s) =>
-								![
-									"item",
-									"index",
-									"inputs",
-									"__proto__",
-									"constructor",
-									"prototype",
-								].includes(s),
-						),
-					foreachPointerSchema,
-				)
-				.refine((m) => Object.keys(m).length <= 30, "At most 30 call inputs")
-				.optional(),
-			computeIntensive: z.never().optional(),
-		}),
-		z.object({
-			...base,
-			type: z.literal("script"),
-			script: z.string().min(1),
-			computeIntensive: z.boolean().optional(),
-		}),
-		z.object({
-			...base,
-			type: z.literal("tool"),
-			tool: z.string().min(1),
-			computeIntensive: z.boolean().optional(),
-			args: z.array(z.string()).default([]),
-			arguments: z.record(z.string(), z.unknown()).optional(),
-		}),
-		z.object({
-			...base,
-			type: z.literal("foreach"),
-			...foreachFields,
-			body: z.array(StepSchema).min(1).max(100),
-			delivery: z.never().optional(),
-			resources: z.never().optional(),
-			computeIntensive: z.never().optional(),
-		}),
-		z.object({
-			...base,
-			type: z.literal("fanout"),
-			delivery: z.never().optional(),
-			resources: z.never().optional(),
-			computeIntensive: z.never().optional(),
-			groups: z.array(z.array(StepSchema).min(1)).min(1).max(8),
-		}),
-	]),
+	z.preprocess(
+		ownStepData,
+		z.discriminatedUnion("type", [
+			AgentStepSchema,
+			z.object({
+				...base,
+				type: z.literal("check"),
+				check: CheckSchema,
+				delivery: z.never().optional(),
+				resources: z.never().optional(),
+				computeIntensive: z.never().optional(),
+			}),
+			z.object({
+				...base,
+				type: z.literal("workflow"),
+				delivery: z.never().optional(),
+				resources: z.never().optional(),
+				workflow: id,
+				inputMapping: z
+					.record(
+						z
+							.string()
+							.regex(/^[A-Za-z][A-Za-z0-9_-]{0,59}$/)
+							.refine(
+								(s) =>
+									![
+										"item",
+										"index",
+										"inputs",
+										"__proto__",
+										"constructor",
+										"prototype",
+									].includes(s),
+							),
+						foreachPointerSchema,
+					)
+					.refine((m) => Object.keys(m).length <= 30, "At most 30 call inputs")
+					.optional(),
+				computeIntensive: z.never().optional(),
+			}),
+			z.object({
+				...base,
+				type: z.literal("script"),
+				script: z.string().min(1),
+				computeIntensive: z.boolean().optional(),
+			}),
+			z.object({
+				...base,
+				type: z.literal("tool"),
+				tool: z.string().min(1),
+				computeIntensive: z.boolean().optional(),
+				args: z.array(z.string()).default([]),
+				arguments: z.record(z.string(), z.unknown()).optional(),
+			}),
+			z.object({
+				...base,
+				type: z.literal("foreach"),
+				...foreachFields,
+				body: z.array(StepSchema).min(1).max(100),
+				delivery: z.never().optional(),
+				resources: z.never().optional(),
+				computeIntensive: z.never().optional(),
+			}),
+			z.object({
+				...base,
+				type: z.literal("fanout"),
+				delivery: z.never().optional(),
+				resources: z.never().optional(),
+				computeIntensive: z.never().optional(),
+				groups: z.array(z.array(StepSchema).min(1)).min(1).max(8),
+			}),
+		]),
+	),
 );
 export const WorkflowSchema = z
 	.object({

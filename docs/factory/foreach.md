@@ -94,7 +94,11 @@ segments and non-array sources fail clearly before any item is dispatched.
 Before dispatch, the runtime validates and durably snapshots the complete item
 list, its original order, IDs, body, input outputs and settings. It never truncates
 a collection to fit `maxItems`. The snapshot must be plain, acyclic JSON without
-accessors, sparse arrays, unsafe property names, or nonfinite numbers. It is
+accessors (including hidden ones), serialization hooks, symbol/non-enumerable
+properties, sparse arrays, extra array properties, unsafe property names, or
+nonfinite numbers. Complete own descriptors and exact plain/null prototypes are
+checked before parsing; size measurement uses a sanitized copy without input
+hooks. Every array position must be an own data property. The snapshot is
 bounded to 1 MiB of UTF-8 JSON, depth 32 and 100,000 visited values, with an
 additional one-million-character preflight bound. An empty list completes with
 empty results and zero counts.
@@ -148,9 +152,14 @@ remain rejected.
 
 ## Output and activity
 
-Each successful item contributes its body's ordinary outputs under the accepted
-item ID. Results and failure records follow accepted item order, independently of
-completion timing. For example:
+Each successful item contributes only outputs actually produced in its own body
+frame under the accepted item ID. Ancestor outputs remain available for declared
+reads, but an unexecuted child never publishes an inherited value merely because
+the names match. Persisted frame receipts establish result membership through
+restart; mapped Calls and generic Parallel inside these new scopes follow the
+same rule. Legacy shared Calls and Parallel outside these scopes keep their
+existing conventions. Results and failure records follow accepted item order,
+independently of completion timing. For example:
 
 ```json
 {

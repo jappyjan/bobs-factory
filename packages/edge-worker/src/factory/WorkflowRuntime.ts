@@ -281,6 +281,9 @@ export interface ForeachCheckpoint {
 export interface GraphCheckpoint {
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
+	/** New item/mapped-call scopes publish their own receipts, independently of inherited reads. */
+	projectResults?: true;
+	resultReceipts?: Record<string, { key: string; output: unknown }>;
 	// Inherited by called workflows and fanout branches; calls return it to their caller.
 	reviewKey?: string;
 	current: string;
@@ -1809,6 +1812,8 @@ export class WorkflowRuntime {
 		parallel = false,
 		reviewBaseline?: ReviewBaseline,
 	): Promise<Record<string, unknown>> {
+		if (checkpoint.projectResults)
+			this.restoreFrameReceipts(run, steps, checkpoint, prefix);
 		while (checkpoint.current !== "end") {
 			signal.throwIfAborted();
 			this.assertSchedulingOpen();
@@ -2380,6 +2385,7 @@ export class WorkflowRuntime {
 							child.reviewKey ??= checkpoint.reviewKey;
 							child.iteration ??= checkpoint.iteration;
 							child.callInputs ??= checkpoint.callInputs;
+							child.projectResults ??= checkpoint.projectResults;
 						}
 						await this.save(run);
 						signal.throwIfAborted();
@@ -2489,7 +2495,14 @@ export class WorkflowRuntime {
 												result.value[s.id],
 											]),
 										)
-									: result.value
+									: checkpoint.projectResults
+										? this.frameResults(
+												run,
+												step.groups?.[index] ?? [],
+												state.children![index]!,
+												`${key}/${index}/`,
+											)
+										: result.value
 								: undefined,
 						);
 						if (impactSourceId) {
@@ -2545,6 +2558,12 @@ export class WorkflowRuntime {
 						state.children ??= [this.newCheckpoint(definition.steps)];
 						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
 						state.children[0]!.iteration ??= checkpoint.iteration;
+						if (
+							checkpoint.projectResults ||
+							step.inputMapping ||
+							checkpoint.iteration
+						)
+							state.children[0]!.projectResults = true;
 						const isolated =
 							config.explicit || !!step.inputMapping || !!checkpoint.iteration;
 						if (isolated && !state.children[0]!.outputs) {
@@ -2590,12 +2609,11 @@ export class WorkflowRuntime {
 							completed: true,
 							...(step.inputMapping || checkpoint.iteration
 								? {
-										outputs: Object.fromEntries(
-											definition.steps
-												.filter((s) =>
-													Object.hasOwn(state.children![0]!.outputs!, s.id),
-												)
-												.map((s) => [s.id, state.children![0]!.outputs![s.id]]),
+										outputs: this.frameResults(
+											run,
+											definition.steps,
+											state.children[0]!,
+											`${key}/`,
 										),
 									}
 								: {}),
@@ -3734,6 +3752,13 @@ export class WorkflowRuntime {
 						immutableJson({ step: key, output, at: new Date().toISOString() }),
 					);
 			}
+			if (checkpoint.projectResults)
+				Object.defineProperty(checkpoint.resultReceipts!, step.id, {
+					value: immutableJson({ key, output: snapshotWorkflowInput(output) }),
+					enumerable: true,
+					configurable: true,
+					writable: true,
+				});
 			const refreshing = checkpoint.refreshes?.at(-1);
 			if (refreshing?.source === step.id) {
 				checkpoint.refreshes!.pop();
@@ -5048,6 +5073,67 @@ export class WorkflowRuntime {
 	private newCheckpoint(steps: WorkflowStep[]): GraphCheckpoint {
 		return { current: steps[0]?.id ?? "end", visits: {} };
 	}
+	private restoreFrameReceipts(
+		run: FactoryRun,
+		steps: WorkflowStep[],
+		frame: GraphCheckpoint,
+		prefix: string,
+	): void {
+		if (frame.resultReceipts) {
+			for (const id of Object.keys(frame.resultReceipts))
+				frame.resultReceipts[id] = immutableJson(frame.resultReceipts[id]!);
+			return;
+		}
+		frame.resultReceipts = {};
+		// Older unfinished frames have no ownership map. Only original qualified
+		// receipts of steps visited in this frame can restore it; inherited live
+		// output names never establish production or cause a completed role to replay.
+		for (const step of steps) {
+			if (!frame.visits[step.id]) continue;
+			const key = `${prefix}${step.id}`;
+			const receipt = [...run.history].reverse().find((entry) => {
+				if (entry.step !== key) return false;
+				if (!frame.iteration) return !entry.iteration;
+				return (
+					entry.iteration?.frame === frame.iteration.frame &&
+					entry.iteration.id === frame.iteration.id &&
+					entry.iteration.index === frame.iteration.index &&
+					entry.iteration.itemDigest === digest(frame.iteration.value)
+				);
+			});
+			if (receipt) {
+				if (["workflow", "fanout", "foreach"].includes(step.type))
+					throw new Error(
+						`Child result ownership is missing at ${key}; original receipts are retained and nested results cannot be verified`,
+					);
+				Object.defineProperty(frame.resultReceipts, step.id, {
+					value: immutableJson({ key, output: receipt.output }),
+					enumerable: true,
+					configurable: true,
+					writable: true,
+				});
+			}
+		}
+	}
+	private frameResults(
+		run: FactoryRun,
+		steps: WorkflowStep[],
+		frame: GraphCheckpoint,
+		prefix: string,
+	): Record<string, unknown> {
+		this.restoreFrameReceipts(run, steps, frame, prefix);
+		return Object.fromEntries(
+			steps.flatMap((step) => {
+				if (!Object.hasOwn(frame.resultReceipts!, step.id)) return [];
+				const receipt = frame.resultReceipts![step.id]!;
+				if (receipt.key !== `${prefix}${step.id}`)
+					throw new Error(
+						`Child output receipt belongs to another frame: ${step.id}`,
+					);
+				return [[step.id, snapshotWorkflowInput(receipt.output)]];
+			}),
+		);
+	}
 	private async executeForeach(
 		context: ExecutionContext,
 		checkpoint: GraphCheckpoint,
@@ -5086,6 +5172,8 @@ export class WorkflowRuntime {
 			);
 			active.children = snapshot.items.map((item) => ({
 				...this.newCheckpoint(step.body!),
+				projectResults: true,
+				resultReceipts: {},
 				iteration: { ...item, frame: key },
 				callInputs: checkpoint.callInputs,
 				reviewKey: checkpoint.reviewKey,
@@ -5112,6 +5200,7 @@ export class WorkflowRuntime {
 		)
 			throw new Error("For each checkpoint has inconsistent item frames");
 		for (const [index, item] of loop.snapshot.items.entries()) {
+			active.children[index]!.projectResults = true;
 			const frame = active.children[index]!.iteration;
 			if (
 				!frame ||
@@ -5123,6 +5212,20 @@ export class WorkflowRuntime {
 				throw new Error(
 					`For each checkpoint item ${item.id} does not match its accepted frame`,
 				);
+			if (loop.states[index]!.status === "completed") {
+				const produced = this.frameResults(
+					run,
+					loop.body,
+					active.children[index]!,
+					`${key}/${item.id}/`,
+				);
+				// The snapshot store can rehydrate JSON with null prototypes; compare
+				// canonical JSON authority rather than JavaScript object prototypes.
+				if (digest(produced) !== digest(loop.states[index]!.result))
+					throw new Error(
+						`Completed item ${item.id} has no matching exact-frame result receipts; original results are retained`,
+					);
+			}
 		}
 		const progress = () => {
 			run.foreach ??= {};
@@ -5188,10 +5291,11 @@ export class WorkflowRuntime {
 						reviewBaseline,
 					);
 					controller.signal.throwIfAborted();
-					state.result = Object.fromEntries(
-						loop.body
-							.filter((s) => Object.hasOwn(child.outputs!, s.id))
-							.map((s) => [s.id, snapshotWorkflowInput(child.outputs![s.id])]),
+					state.result = this.frameResults(
+						run,
+						loop.body,
+						child,
+						`${key}/${item.id}/`,
 					);
 					state.status = "completed";
 				} catch (error) {
