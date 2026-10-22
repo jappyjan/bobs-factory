@@ -693,22 +693,45 @@ try {
 	const completion = completedParent.ticketSync.receipts.find((receipt) =>
 		receipt.key.startsWith("outcome:completed:"),
 	);
+	assert(completion, "Durable terminal outcome intent is retained");
+	const trackerIssue = await tracker.fetchIssue(completedParent.issueId);
+	const trackerState = await trackerIssue.state;
+	if (completion.superseded) {
+		assert.equal(
+			trackerState.type,
+			"completed",
+			"Only an already terminal mock tracker ticket supersedes late progress",
+		);
+		assert.equal(
+			completion.limitation,
+			"Terminal ticket retained; stale progress omitted.",
+		);
+		assert.notEqual(
+			completion.delivered,
+			true,
+			"Superseded progress never fabricates delivery",
+		);
+	} else {
+		assert.equal(
+			completion.delivered,
+			true,
+			"Open-ticket terminal outcome is delivered",
+		);
+		const comments = await tracker.fetchComments(completedParent.issueId, {
+			first: 100,
+		});
+		assert(
+			comments.nodes.some((comment) => comment.body.includes(completion.body)),
+			"CLI completion reaches its configured comment receiver",
+		);
+	}
 	assert(
-		completion?.delivered,
-		"Durable terminal outcome receipt is delivered",
-	);
-	const transcript = await rpc("viewSession", {
-		sessionId: sessions[0],
-		limit: 1000,
-	});
-	assert(
-		transcript.activities.some(
-			(activity) =>
-				activity.type === "response" &&
-				activity.content.includes(completion.body),
+		completedParent.ticketSync.receipts.some(
+			(receipt) => receipt.key === "started" && receipt.delivered,
 		),
-		"Native completion reaches its session transcript",
+		"CLI start milestone reaches tracker",
 	);
+
 	assert.equal(
 		buildIdentity(),
 		identity.buildSha256,
@@ -730,6 +753,12 @@ try {
 		results,
 		pinnedMcp: pinned,
 		activityCount: activities.totalCount,
+		terminalTracking: {
+			retained: true,
+			delivered: completion.delivered === true,
+			superseded: completion.superseded === true,
+			trackerState: trackerState.type,
+		},
 		providerSends: sends.length,
 		mockTurns: turns.length,
 	};
