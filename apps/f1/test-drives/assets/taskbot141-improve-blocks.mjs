@@ -32,25 +32,28 @@ const repairOnly = process.argv.includes("--review-fixes");
 const round3Repair = process.argv.includes("--round3-fixes");
 const planCheckRepair = process.argv.includes("--plan-check-fixes");
 const researchRepair = process.argv.includes("--research-assignment-fixes");
+const parallelCallRepair = process.argv.includes("--parallel-call-fixes");
 const dependencyRepair = process.argv.includes("--dependency-fixes");
 const canvasOnly = process.argv.includes("--canvas-only");
 assert(!(repairOnly && dependencyRepair), "Choose one scoped repair scenario");
 const media = join(
 	root,
 	"apps/f1/test-drives/media/2026-10-22-improve-blocks",
-	...(researchRepair
-		? ["repair-research-assignments"]
-		: planCheckRepair
-			? ["repair-r2-checks"]
-			: round3Repair
-				? ["repair-r2-r3-r4"]
-				: canvasOnly
-					? ["repair-r2-r3/ui"]
-					: repairOnly
-						? ["repair-r1-r2"]
-						: dependencyRepair
-							? ["repair-r2-r3"]
-							: []),
+	...(parallelCallRepair
+		? ["repair-parallel-call"]
+		: researchRepair
+			? ["repair-research-assignments"]
+			: planCheckRepair
+				? ["repair-r2-checks"]
+				: round3Repair
+					? ["repair-r2-r3-r4"]
+					: canvasOnly
+						? ["repair-r2-r3/ui"]
+						: repairOnly
+							? ["repair-r1-r2"]
+							: dependencyRepair
+								? ["repair-r2-r3"]
+								: []),
 );
 mkdirSync(media, { recursive: true });
 const directory = realpathSync(
@@ -1001,6 +1004,129 @@ async function completeDrive() {
 		}),
 	);
 }
+async function parallelCallFixDrive() {
+	const stock = runtime
+		.listWorkflows()
+		.find((w) => w.id === "improve-codebase");
+	const child = {
+		id: "f1-reusable-map",
+		name: "F1 reusable read-only JSON agent",
+		stepConfigVersion: "step-config-v1",
+		allowedTriggers: ["workflow"],
+		steps: [
+			{
+				id: "map",
+				name: "Inspect pinned fixture",
+				type: "agent",
+				configVersion: "step-config-v1",
+				access: "read-only",
+				revision: "bound",
+				output: { format: "json-v1" },
+				reads: { baseline: "@callInputs/baseline" },
+				prompt:
+					"Inspect only the pinned disposable repository. Return JSON without effects.",
+				next: "end",
+			},
+		],
+	};
+	const parent = {
+		id: "f1-parallel-call",
+		name: "F1 modern Parallel Call",
+		stepConfigVersion: "step-config-v1",
+		allowedTriggers: ["manual"],
+		launchFields: stock.launchFields,
+		steps: [
+			{
+				...structuredClone(stock.steps.find((s) => s.id === "snapshot")),
+				next: "parallel",
+			},
+			{
+				id: "parallel",
+				name: "Parallel",
+				type: "fanout",
+				groups: [
+					[
+						{
+							id: "call",
+							name: "Call reusable recipe",
+							type: "workflow",
+							workflow: child.id,
+							inputMapping: { baseline: "/snapshot" },
+							next: "end",
+						},
+					],
+				],
+				next: "end",
+			},
+		],
+	};
+	await api(
+		"/api/workflows",
+		{
+			workflows: [...runtime.listWorkflows(), child, parent],
+			defaultWorkflow: parent.id,
+		},
+		200,
+		"PUT",
+	);
+	const id = await manual(parent.id);
+	await until(
+		() => current(id).status === "completed",
+		"Modern Parallel Call completes",
+	);
+	const run = current(id);
+	const history = run.history.filter((h) => h.step.startsWith("parallel/"));
+	assert.deepEqual(
+		history.map((h) => h.step),
+		["parallel/0/call/map", "parallel/0/call"],
+	);
+	const expected = {
+		workflow: child.id,
+		completed: true,
+		outputs: { map: history[0].output },
+	};
+	assert.equal(
+		JSON.stringify(run.outputs.parallel),
+		JSON.stringify([{ call: expected }]),
+	);
+	assert.equal(JSON.stringify(history[1].output), JSON.stringify(expected));
+	assert.equal(
+		turns.filter((t) => t.runId === id && t.role === "map").length,
+		1,
+	);
+	assert.equal((run.humanDecisions ?? []).length, 0);
+	assert.equal(filed.length, 0);
+	assert.equal(runtime.runs.size, 1);
+	await runtime.flush(run.id);
+	save("repair-proof.json", {
+		id,
+		status: run.status,
+		history,
+		projection: run.outputs.parallel,
+		inheritedSnapshotExcluded: !Object.hasOwn(
+			run.outputs.parallel[0],
+			"snapshot",
+		),
+		snapshotSha256: hash(JSON.stringify(run.outputs.snapshot)),
+		humanDecisions: run.humanDecisions ?? [],
+		filed,
+	});
+	const sourceAfter = sourceIdentity();
+	assert.deepEqual(sourceAfter, sourceBefore);
+	save("results.json", {
+		completedAt: stamp(),
+		sourceAfter,
+		sourceChangedDuringDrive: [],
+		paidCalls: 0,
+		nativeRuns: 0,
+		checks: [
+			"Modern Parallel completes an ordinary mapped Call via actual read-only provider hook exactly once; full child JSON retained and inherited Snapshot excluded.",
+			"Real HTTP catalog/manual launch, qualified history and durable completion; no human approval, issue or child Factory side effect.",
+		],
+		restartTested: false,
+	});
+	console.log(JSON.stringify({ phase: "parallel-call-repair-complete", id }));
+}
 async function researchAssignmentFixDrive() {
 	const fork = await api("/api/workflows/improve-codebase/fork", {
 		name: "F1 coordinator correction and two complete workers",
@@ -1834,7 +1960,8 @@ try {
 		};
 		save("preview.json", preview);
 		console.log(JSON.stringify({ phase: "canvas-preview-ready", ...preview }));
-	} else if (researchRepair) await researchAssignmentFixDrive();
+	} else if (parallelCallRepair) await parallelCallFixDrive();
+	else if (researchRepair) await researchAssignmentFixDrive();
 	else if (planCheckRepair) await planCheckFixDrive();
 	else if (round3Repair) await round3FixDrive();
 	else if (dependencyRepair) await dependencyFixDrive();

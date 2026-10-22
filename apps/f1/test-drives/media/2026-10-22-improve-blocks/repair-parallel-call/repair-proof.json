@@ -1,0 +1,65 @@
+{
+	"id": "manual-5c49a4bc-42f9-45a8-ba83-09f4504f02f1",
+	"status": "completed",
+	"history": [
+		{
+			"step": "parallel/0/call/map",
+			"output": {
+				"summary": "Fixture cache ownership map",
+				"focus": "",
+				"context": "cache.ts exports a Map; README describes the disposable fixture.",
+				"limitations": [
+					"Only the disposable repository was inspected by scripted fixture output."
+				]
+			},
+			"at": "2026-10-22T20:09:06.142Z"
+		},
+		{
+			"step": "parallel/0/call",
+			"output": {
+				"workflow": "f1-reusable-map",
+				"completed": true,
+				"outputs": {
+					"map": {
+						"summary": "Fixture cache ownership map",
+						"focus": "",
+						"context": "cache.ts exports a Map; README describes the disposable fixture.",
+						"limitations": [
+							"Only the disposable repository was inspected by scripted fixture output."
+						]
+					}
+				}
+			},
+			"at": "2026-10-22T20:09:06.159Z",
+			"call": {
+				"type": "workflow",
+				"callerWorkflowId": "f1-parallel-call",
+				"step": "call",
+				"key": "parallel/0/call",
+				"workflowId": "f1-reusable-map"
+			}
+		}
+	],
+	"projection": [
+		{
+			"call": {
+				"workflow": "f1-reusable-map",
+				"completed": true,
+				"outputs": {
+					"map": {
+						"summary": "Fixture cache ownership map",
+						"focus": "",
+						"context": "cache.ts exports a Map; README describes the disposable fixture.",
+						"limitations": [
+							"Only the disposable repository was inspected by scripted fixture output."
+						]
+					}
+				}
+			}
+		}
+	],
+	"inheritedSnapshotExcluded": true,
+	"snapshotSha256": "bf6b16f321155028d0bf49481043b0f624c974483e9fcf8e0e2c99cffb3a1e94",
+	"humanDecisions": [],
+	"filed": []
+}

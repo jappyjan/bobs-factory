@@ -2417,7 +2417,9 @@ export class WorkflowRuntime {
 							child.iteration ??= checkpoint.iteration;
 							child.callInputs ??= checkpoint.callInputs;
 							child.snapshotInputs ??= checkpoint.snapshotInputs;
-							child.projectResults ??= checkpoint.projectResults;
+							child.projectResults ??= config.explicit
+								? true
+								: checkpoint.projectResults;
 						}
 						await this.save(run);
 						signal.throwIfAborted();
