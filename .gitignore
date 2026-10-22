@@ -29,6 +29,9 @@ npm-debug.log*
 !/apps/f1/test-drives/assets/taskbot140-views/ui/attempt-*/driver.log
 !/apps/f1/test-drives/assets/taskbot140-views/ui/final/driver.log
 !/apps/f1/test-drives/assets/taskbot140-views/ui/final/verification*.log
+!/apps/f1/test-drives/assets/taskbot140-views/ui/repairs/*.log
+!/apps/f1/test-drives/assets/taskbot140-views/ui/repairs/**/*.log
+!/apps/f1/test-drives/assets/taskbot140-views/round2/**/*.log
 
 # Workspace directories
 workspaces/

@@ -387,3 +387,70 @@ it("delivers current bounded Ask text and its exact answer protocol through real
 	);
 	await waitForRuntime(() => expect(run.status).toBe("completed"));
 });
+
+it("round-trips real Recipes human definitions and explicit notification edits without manufacturing agent authority", async () => {
+	const { runtime, server, run, home } = await fixture();
+	const response = await server.app.inject({ url: "/api/config?view=recipes" });
+	expect(response.statusCode).toBe(200);
+	const editable = response
+		.json()
+		.workflows.find(
+			(workflow: { id: string }) => workflow.id === run.workflow.id,
+		);
+	const human = editable.steps[0];
+	for (const key of [
+		"rules",
+		"checks",
+		"access",
+		"instructions",
+		"output",
+		"revision",
+	])
+		expect(human).not.toHaveProperty(key);
+	const saved = await server.app.inject({
+		method: "PATCH",
+		headers: { "x-factory-request": "1" },
+		url: "/api/workflows",
+		payload: {
+			workflows: [
+				{
+					...editable,
+					steps: [{ ...human, notifications: { push: "view-text" } }],
+				},
+			],
+		},
+	});
+	expect(saved.statusCode, saved.body).toBe(200);
+	const workflow = runtime
+		.listWorkflows()
+		.find((workflow) => workflow.id === run.workflow.id)!;
+	expect(workflow.steps[0]!.notifications).toEqual({ push: "view-text" });
+	expect(run.workflow.steps[0]!.notifications).toBeUndefined();
+	expect(run.viewDecision!.notifications).toBeUndefined();
+	expect(runPushEvent(run)!.viewText).toBeUndefined();
+	const next = runtime.create({
+		repositoryId: "fixture",
+		workspace: home,
+		input: "",
+		workflow,
+		triggerOrigin: { type: "manual", workflowId: workflow.id },
+	});
+	void runtime.launch(next);
+	await waitForRuntime(() => expect(next.status).toBe("waiting"));
+	expect(next.viewDecision!.notifications).toEqual({ push: "view-text" });
+	expect(runPushEvent(next)!.viewText).toContain(next.viewDecision!.digest);
+	const invalid = await server.app.inject({
+		method: "PATCH",
+		headers: { "x-factory-request": "1" },
+		url: "/api/workflows",
+		payload: {
+			workflows: [
+				{
+					...editable,
+					steps: [{ ...human, rules: [], access: { mode: "workspace" } }],
+				},
+			],
+		},
+	});
+	expect(invalid.statusCode).toBe(400);
+});

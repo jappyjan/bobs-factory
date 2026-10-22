@@ -1,0 +1,221 @@
+{
+  "kind": "Unmodified focused and stopped first combined-source gate receipts; historical, not final candidate passes",
+  "files": [
+    {
+      "original": "/tmp/taskbot140-opencode-remote-metadata-final.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-final.log.txt",
+      "bytes": 271,
+      "sha256": "d7e4254dc7a9c1ce3147b2fb366c14b7d069ac4396f5fe7ce4e5d3cdca596cd4"
+    },
+    {
+      "original": "/tmp/taskbot140-opencode-remote-metadata-lint-final.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-lint-final.log.txt",
+      "bytes": 43,
+      "sha256": "aaa2c32cff9133d30b0810c00c503cbd112987cbf7144af284beb9d7ca436f0c"
+    },
+    {
+      "original": "/tmp/taskbot140-opencode-remote-metadata-lint.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-lint.log.txt",
+      "bytes": 39,
+      "sha256": "a8cc44e058e9da173fc79d77aa25b76353e261aaa9c40da323cce58ece0cba2e"
+    },
+    {
+      "original": "/tmp/taskbot140-opencode-remote-metadata-pass.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-pass.log.txt",
+      "bytes": 2322,
+      "sha256": "cb596e1d1d5d57c07e37b8f301ee8604932dea8eb8ee9b7a8471bb702456376f"
+    },
+    {
+      "original": "/tmp/taskbot140-opencode-remote-metadata-red.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-red.log.txt",
+      "bytes": 10837,
+      "sha256": "42923467f8d450afe360b895913ee53573165b181ab0bacce5a26db376958387"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-combined-lint.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-combined-lint.log.txt",
+      "bytes": 45,
+      "sha256": "879d44d02839815813e5e349cd2d711198c8b03e6183b75d68535b42c09af94a"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-combined-typecheck-final.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-combined-typecheck-final.log.txt",
+      "bytes": 170,
+      "sha256": "67b59d688d5bcc4cdfe7ddf3168746084f129e9b6e964f3b22bae7fdcfb0a885"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-combined-typecheck.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-combined-typecheck.log.txt",
+      "bytes": 477,
+      "sha256": "3b0d6e5b311ef9842ea0817bfc1ea7b96ed9b496af73050cdbcce43adc454c0e"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-final-seams-lint.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-final-seams-lint.log.txt",
+      "bytes": 43,
+      "sha256": "6c6cedf74dfaade43d67c38bfe4d2307157417daf689d6c2c758262f1967ef73"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-final-seams-typecheck.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-final-seams-typecheck.log.txt",
+      "bytes": 170,
+      "sha256": "67b59d688d5bcc4cdfe7ddf3168746084f129e9b6e964f3b22bae7fdcfb0a885"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-recipes-save.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-recipes-save.log.txt",
+      "bytes": 572,
+      "sha256": "b70153dbaad37ec03ac3e5c956fb1c672c641d3a81a89f649bfc7a80e5d540b7"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-source-freeze-commit.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-source-freeze-commit.log.txt",
+      "bytes": 28261,
+      "sha256": "c65a7af32bc1ace36f04ded121234cebe0b6c85a0ed1b69b73638fde4b1feb1a"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-stable-final-focused.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-stable-final-focused.log.txt",
+      "bytes": 574,
+      "sha256": "1903db43ec5b5eefe43755ac1548a5e3321df185e0c97e46c2e7e4e1b16edf42"
+    },
+    {
+      "original": "/tmp/taskbot140-review-r1-build.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-review-r1-build.log.txt",
+      "bytes": 1255,
+      "sha256": "c3e5a853842bf1cde904db0e4cdce423de332bfcd2196ed5623611b61eea35af"
+    },
+    {
+      "original": "/tmp/taskbot140-review-r1-dependency-build.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-review-r1-dependency-build.log.txt",
+      "bytes": 1339,
+      "sha256": "1450c7d4c315724fa3c4bf0075decb045dfd3dd2937414e177852751286cd341"
+    },
+    {
+      "original": "/tmp/taskbot140-review-r1-f1-setup-build.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-review-r1-f1-setup-build.log.txt",
+      "bytes": 109,
+      "sha256": "4f4d206cfd5927ad9ad5c7d336a560ac59200a27ccc09f254ec3bf9da4106065"
+    },
+    {
+      "original": "/tmp/taskbot140-review-r1-focused.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-review-r1-focused.log.txt",
+      "bytes": 580,
+      "sha256": "f16ff2be0cf3c9602ce6e44c715283a4032cc9e3ac856456c341d603cc856ecc"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-gates-runner.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-gates-runner.log.txt",
+      "bytes": 2724,
+      "sha256": "93c53efcff3000c12831b195859484012b999c7051002f3a16ca7eb4545d0ba6"
+    },
+    {
+      "original": "/tmp/taskbot140-views-ui-repairs.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-views-ui-repairs.log.txt",
+      "bytes": 1520,
+      "sha256": "1529931ac2a396c04d205aff033d480dc79a90deda7f33984810d58e9736c1fa"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation/build.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/build.log",
+      "bytes": 3166,
+      "sha256": "2c9c47721af8d95cda0ab27d0ee1351d639fcafd5f2267014224db400118018a"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation/f1.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/f1.log",
+      "bytes": 31633,
+      "sha256": "0862da2c1d3f5268b1390d5b1be8c411b7d20ab8e6fb11e2a3c89ec058dae328"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation/gates.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/gates.json",
+      "bytes": 2823,
+      "sha256": "f643ba1a0f08c67fb4ed09aacac5cfd4cd559da87be1f791be6c50a98386ce70"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation/lint.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/lint.log",
+      "bytes": 14696,
+      "sha256": "54e4d9fa1f1939571b0eba91d2501e9b8c1c5ccdc9ba142bfa2883f624bb50cc"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation/source-inputs.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/source-inputs.json",
+      "bytes": 283358,
+      "sha256": "66ad0d9e7591c63537fabc2fe1d3ec6c6d0a48012b38c923810f82b6e8cc09b5"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation/typecheck.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/typecheck.log",
+      "bytes": 1865,
+      "sha256": "141178ef6187f4a3deb221a32a84a5362b6fd0cd75bb2627acc696943e2768b4"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/format.stderr.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/format.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/format.stdout.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/format.stdout.txt",
+      "bytes": 38,
+      "sha256": "53faa17e19184f147f79f8b1fc06f9bddf892ff6325ff3feafafd3c05645088a"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/lint.stderr.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/lint.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/lint.stdout.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/lint.stdout.txt",
+      "bytes": 42,
+      "sha256": "eca03899430ba94edd9dc52b65db14f47bcfd382adc492afd58bc1b81e86df14"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/receipt-calibration.stderr.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/receipt-calibration.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/receipt-calibration.stdout.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/receipt-calibration.stdout.txt",
+      "bytes": 481,
+      "sha256": "9f888e89f0c072e98230d0efbb9b873278ea100b36dd08fa4aa6e23efea229b6"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/receipt.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/receipt.json",
+      "bytes": 3442,
+      "sha256": "8cd67b1b90fec706f4c780163a9c4db7b28302080a08746f0fe335ed88df244f"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/syntax.stderr.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/syntax.stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original": "/tmp/taskbot140-repairs-driver-fix-1/syntax.stdout.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/syntax.stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-gates-harness-attempt1.mjs",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-gates-harness-attempt1.mjs.txt",
+      "bytes": 3772,
+      "sha256": "17debaeaa0999e6f7492cbee8508eee2ed7c757f5f2548784dce021136167b01"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-gates.mjs",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-gates.mjs.txt",
+      "bytes": 3892,
+      "sha256": "3491199db0792c52190e8bfc9859175ecfedbf8bd2056b6683f9aecdde2cdca5"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "at": "2026-10-22T06:56:40.494556+00:00",
+  "sourceChange": "driver-only; no product, test, timeout or human/digest assertion edits",
+  "driverSha256": "afc73532bad8706e7fa303bf71eb810a294d1387e61a73985f7fb35f2e3d2834",
+  "originalFailureLog": "/tmp/taskbot140-round2-validation/f1.log",
+  "originalFailureLogSha256": "0862da2c1d3f5268b1390d5b1be8c411b7d20ab8e6fb11e2a3c89ec058dae328",
+  "originalFailureDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0",
+  "originalFailureFiles": {
+    "actions.jsonl": "c8e70ca582515f3b1d0e99d91878bb0ec0f6a122f60f59420e72fa31c6ed8551",
+    "driver-executed.mjs": "bab038b04e72efe259a0595dba95815247b399b90f84be3d3b17af5176b00598",
+    "failure.json": "e636795ec6fc89995f0764c4f8d1fb69f1f728a91cc051c16539deedd793ee31",
+    "http-receipts.json": "3f62bda9cc2621b343992986c5c6f4702c47602bd37c16bd268d02542bd56958",
+    "mock-invocations.json": "f3181560758624a90befdf3902cc7dcb125a7cc56acbf75b66441e1e3ed31888",
+    "native-config-captures.json": "9811af9e8a1b20d124617932b2e449d9d885134cff306a31b542fca22bf951cb",
+    "push-events.json": "2b6d0d6b68b3b37d100ebaac063ab4bcdc8f70bc73c2e3406d32f55ddfbef382",
+    "scenario-results.json": "ce430e4509060bf30b4e598513fe9402e6090f3731eba6b4bec91d64c0de4032",
+    "source-files.json": "c7f2f46282117c2bf8df5f36beb3a36fd2aaf65671b8b50bd130d9057b51d929",
+    "terminal-current-view.txt": "f622a514ab8bf93acc4c6052be0320d437738f45e573b0ecfc417b206cb36b76"
+  },
+  "rootCause": "Driver required a pending native checkpoint to equal its legitimately completed checkpoint. Completed result/revision is additive and JSON persistence drops optional undefined fields.",
+  "correction": "Preserve every original checkpoint JSON field apart from newly verified result; assert exact output and accepted display context plus actual clean Git/head/history revision; compare complete finished checkpoint across restart.",
+  "commands": [
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "biome",
+        "check",
+        "--write",
+        "apps/f1/test-drives/assets/taskbot140-views-repairs.mjs"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "53faa17e19184f147f79f8b1fc06f9bddf892ff6325ff3feafafd3c05645088a",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "node",
+        "--check",
+        "apps/f1/test-drives/assets/taskbot140-views-repairs.mjs"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "biome",
+        "check",
+        "apps/f1/test-drives/assets/taskbot140-views-repairs.mjs"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "eca03899430ba94edd9dc52b65db14f47bcfd382adc492afd58bc1b81e86df14",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "calibration": {
+    "mode": "read-only-original-persisted-evidence; no F1/service/provider run",
+    "exitCode": 0,
+    "stdoutSha256": "9f888e89f0c072e98230d0efbb9b873278ea100b36dd08fa4aa6e23efea229b6",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "rerun": "NOT RUN; awaiting root exact source identity/gate signal"
+}

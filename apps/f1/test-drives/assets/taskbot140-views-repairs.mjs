@@ -206,6 +206,8 @@ const items = [
 		impact: "Show truthful waiting state",
 	},
 ];
+const askResponse =
+	"UNIQUE_REPAIR_ASK_ANSWER <script>inertAsk()</script> Original context only; no research rerun.";
 const markdown = (id, text) => ({
 	id,
 	type: "markdown",
@@ -854,9 +856,7 @@ function newWorker() {
 				else if (role === "controlled-work") {
 					output = { done: true };
 					gate = held("race-child");
-				} else if (role === "view-follow-up")
-					output =
-						"UNIQUE_REPAIR_ASK_ANSWER <script>inertAsk()</script> Original context only; no research rerun.";
+				} else if (role === "view-follow-up") output = askResponse;
 				else
 					throw new Error(
 						`Unexpected role ${role}; no native provider fallback`,
@@ -1234,6 +1234,26 @@ async function repairsScenarios() {
 			(record) => record.snapshot.id === first.id,
 		).snapshot.threads.a[0].agent,
 	);
+	const expectedAskRevision = {
+		headSha: git(current(race.id).workspace, "rev-parse", "HEAD"),
+		dirty: false,
+		historyLength: current(race.id).history.length,
+	};
+	assert.equal(
+		expectedAskRevision.headSha,
+		git(repository, "rev-parse", "HEAD"),
+	);
+	assert.equal(git(current(race.id).workspace, "status", "--porcelain"), "");
+	assertJsonEqual(
+		configCaptures.find((capture) => capture.runId === race.id).context,
+		{
+			item: { id: "a", title: "Alpha" },
+			question: "ROTATE_ALPHA",
+			thread: [{ question: "ROTATE_ALPHA" }],
+			displayedView: original.view,
+		},
+		"The held Ask receives its original accepted display, not the later batch",
+	);
 	const privateEvent = runPushEvent(current(race.id));
 	assert.equal(
 		privateEvent.viewText,
@@ -1275,10 +1295,22 @@ async function repairsScenarios() {
 		(record) => record.snapshot.id === original.id,
 	);
 	assert.equal(historical.superseded, true);
-	assertJsonEqual(historical.snapshot.threads.a[0].agent, native);
-	assert(
-		historical.snapshot.threads.a[0].answer.includes("Original context only"),
+	const completedNative = JSON.parse(
+		JSON.stringify(historical.snapshot.threads.a[0].agent),
 	);
+	const { result: nativeResult, ...retainedNative } = completedNative;
+	assert.deepEqual(
+		retainedNative,
+		JSON.parse(JSON.stringify(native)),
+		"Completion retains the original runner, native session, model and tool profile",
+	);
+	assert.deepEqual(nativeResult.output, { text: askResponse });
+	const { at: revisionAt, ...revision } = nativeResult.revision;
+	assert.deepEqual(revision, expectedAskRevision);
+	assert(Number.isFinite(Date.parse(revisionAt)));
+	assert(Date.parse(revisionAt) >= Date.parse(original.createdAt));
+	assert(Date.parse(revisionAt) <= Date.now());
+	assert.equal(historical.snapshot.threads.a[0].answer, askResponse);
 	await restart();
 	const restored = await waitDecision(race.id, "decide", "choose");
 	assert.equal(restored.id, renewed.id);
@@ -1287,7 +1319,8 @@ async function repairsScenarios() {
 		current(race.id).viewRecords.find(
 			(record) => record.snapshot.id === original.id,
 		).snapshot.threads.a[0].agent,
-		native,
+		completedNative,
+		"Reconstruction retains the complete finished native checkpoint and result",
 	);
 	await api(`/api/runs/${race.id}/view-answer`, stale, 409);
 	const final = {
@@ -1309,6 +1342,8 @@ async function repairsScenarios() {
 		original,
 		renewed,
 		native,
+		completedNative,
+		expectedAskRevision,
 		stale,
 		final,
 		historical: structuredClone(

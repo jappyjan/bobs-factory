@@ -64,7 +64,7 @@ outside minimal native runtime/private empty cwd reads. Native `apply_patch` may
 remain named, but its filesystem effects are denied. Native configuration or
 cached tools that reopen access reject before a turn. OpenCode isolates config
 discovery while retaining its original native data/auth store, and verifies bounded
-read-only native permission metadata. Unattested or broader saved OpenCode
+read-only native permission and active-organization metadata. When a native auth store exists, a bounded provider-type listing rejects well-known configuration sources without reading or copying credential values. Unsafe or unverifiable remote organization/settings authority also refuses before a model turn. Unattested or broader saved OpenCode
 permissions remain preserved and refuse resume. Unsupported Gemini assistance
 fails clearly before provider work. Mocked transport/config tests do not claim
 live provider quality or other-platform native enforcement.

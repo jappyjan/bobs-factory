@@ -1228,7 +1228,7 @@ export class FactoryServer {
 						stepId: z.string().min(1).max(400),
 						view: ViewSourceSchema,
 						type: z.enum(["decide", "approve", "show"]).optional(),
-						name: z.string().min(1).max(120).optional(),
+						name: z.string().min(1).optional(),
 						decide: DecideConfigurationSchema.optional(),
 						reads: z.unknown().optional(),
 						notifications: ViewNotificationsSchema.optional(),

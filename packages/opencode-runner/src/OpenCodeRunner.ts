@@ -13,6 +13,7 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { cwd } from "node:process";
+import { stripVTControlCharacters } from "node:util";
 import type {
 	IAgentRunner,
 	IMessageFormatter,
@@ -38,6 +39,22 @@ import type {
 } from "./types.js";
 
 const FORCE_KILL_DELAY_MS = 5_000;
+const REMOTE_CONFIG_ERROR =
+	"Context-only OpenCode could not verify native provider and organization configuration authority. Native history is preserved; refusing a model turn.";
+
+function safeProviderMetadata(output: string): boolean {
+	const lines = stripVTControlCharacters(output).split(/\r?\n/);
+	if (lines.some((line) => /\bwellknown\b/i.test(line))) return false;
+	const totals = lines.flatMap((line) => {
+		const match = /^[\s│└─]*([0-9]+)\s+credentials?\s*$/.exec(line);
+		return match ? [Number(match[1])] : [];
+	});
+	if (totals.length !== 1 || !Number.isSafeInteger(totals[0])) return false;
+	const entries = lines.filter((line) =>
+		/^[\s│●•ℹi]*\S.*\s+(?:api|oauth)\s*$/i.test(line),
+	);
+	return entries.length === totals[0];
+}
 
 type SDKSystemInitMessage = Extract<
 	SDKMessage,
@@ -616,6 +633,28 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 			...runtimeEnv,
 		};
 		const data = join(dataHome, "opencode");
+		// Native well-known authentication can load remote plugins/config even
+		// before a database exists. Ask the native CLI for types only; do not read,
+		// copy, log or return auth.json or any credential value.
+		if (existsSync(join(data, "auth.json"))) {
+			const metadata = spawnSync(
+				this.config.openCodePath || "opencode",
+				["providers", "list"],
+				{
+					cwd: this.config.workingDirectory || cwd(),
+					env: { ...env, OPENCODE_DISABLE_MODELS_FETCH: "1" },
+					encoding: "utf8",
+					timeout: 5_000,
+					maxBuffer: 16_384,
+				},
+			);
+			if (
+				metadata.error ||
+				metadata.status !== 0 ||
+				!safeProviderMetadata(metadata.stdout)
+			)
+				return new Error(REMOTE_CONFIG_ERROR);
+		}
 		// A fresh native data store has no saved approvals. Existing stores must
 		// prove their permission metadata before any model turn. The CLI's db
 		// command uses a read-only connection and does not initialize a session.
@@ -628,7 +667,7 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 			return;
 		const session = this.config.resumeSessionId;
 		const quoted = `'${(session ?? "").replaceAll("'", "''")}'`;
-		const query = `SELECT EXISTS(SELECT 1 FROM permission WHERE data <> '[]'${session ? ` AND project_id = (SELECT project_id FROM session WHERE id = ${quoted})` : ""}) AS savedPermissions, ${session ? `(SELECT permission FROM session WHERE id = ${quoted})` : "'[]'"} AS sessionPermission`;
+		const query = `SELECT EXISTS(SELECT 1 FROM account_state WHERE id = 1 AND active_account_id IS NOT NULL AND active_org_id IS NOT NULL) AS remoteOrg, EXISTS(SELECT 1 FROM permission WHERE data <> '[]'${session ? ` AND project_id = (SELECT project_id FROM session WHERE id = ${quoted})` : ""}) AS savedPermissions, ${session ? `(SELECT permission FROM session WHERE id = ${quoted})` : "'[]'"} AS sessionPermission`;
 		const result = spawnSync(
 			this.config.openCodePath || "opencode",
 			["db", query, "--format", "json"],
@@ -645,6 +684,7 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 			const rows = JSON.parse(result.stdout);
 			if (!Array.isArray(rows) || rows.length !== 1) throw new Error("unknown");
 			const row = rows[0];
+			if (row.remoteOrg !== 0) return new Error(REMOTE_CONFIG_ERROR);
 			if (row.savedPermissions !== 0)
 				throw new Error("saved project approvals");
 			if (session && row.sessionPermission === null)

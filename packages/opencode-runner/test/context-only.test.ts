@@ -1,5 +1,6 @@
 import {
 	existsSync,
+	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	rmSync,
@@ -24,14 +25,24 @@ function fixture(sessionId = "ses_context_only") {
 	const capture = join(directory, "native-options.json");
 	const metadata = join(directory, "native-permission-metadata.json");
 	const preflight = join(directory, "native-preflight.json");
+	const providerMetadata = join(directory, "native-provider-metadata.json");
+	const providerProbe = join(directory, "native-provider-probe.json");
 	const executable = join(directory, "provider-transport.mjs");
 	writeFileSync(
 		executable,
 		`#!/usr/bin/env node
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+if(process.argv[2]==="providers") {
+ writeFileSync(${JSON.stringify(providerProbe)},JSON.stringify({argv:process.argv.slice(2),modelsFetch:process.env.OPENCODE_DISABLE_MODELS_FETCH}));
+ const output=JSON.parse(readFileSync(${JSON.stringify(providerMetadata)},"utf8"));
+ if(output.unsupported) process.exit(1);
+ if(output.timeout) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,6000);
+ process.stdout.write(typeof output==="string"?output:JSON.stringify(output));
+ process.exit(0);
+}
 if(process.argv[2]==="db") {
  writeFileSync(${JSON.stringify(preflight)},JSON.stringify(process.argv.slice(2)));
- const metadata = existsSync(${JSON.stringify(metadata)}) ? JSON.parse(readFileSync(${JSON.stringify(metadata)},"utf8")) : [{savedPermissions:0,sessionPermission:JSON.stringify([{permission:"question",action:"deny",pattern:"*"}])}];
+ const metadata = existsSync(${JSON.stringify(metadata)}) ? JSON.parse(readFileSync(${JSON.stringify(metadata)},"utf8")) : [{remoteOrg:0,savedPermissions:0,sessionPermission:JSON.stringify([{permission:"question",action:"deny",pattern:"*"}])}];
  if(metadata.unsupported) process.exit(1);
  process.stdout.write(JSON.stringify(metadata));
  process.exit(0);
@@ -87,10 +98,140 @@ process.stdout.write(JSON.stringify({type:"step_finish",reason:"stop"})+"\\n");
 		},
 		onError: vi.fn(),
 	};
-	return { directory, capture, config, metadata, preflight };
+	return {
+		directory,
+		capture,
+		config,
+		metadata,
+		preflight,
+		providerMetadata,
+		providerProbe,
+	};
 }
 
 describe("OpenCode context-only native process boundary", () => {
+	it.each([
+		{
+			label: "well-known remote config",
+			output:
+				"┌ Credentials /native/auth.json\n● Workspace wellknown\n└ 1 credentials\n",
+		},
+		{
+			label: "unknown auth mode",
+			output:
+				"┌ Credentials /native/auth.json\n● Workspace managed\n└ 1 credentials\n",
+		},
+		{ label: "unparseable metadata", output: "unrecognized output" },
+		{ label: "old CLI", output: { unsupported: true } },
+		{ label: "bounded oversized metadata", output: "x".repeat(20_000) },
+	])("refuses $label before a new model turn even without an existing database", async ({
+		output,
+	}) => {
+		const { directory, capture, config, providerMetadata, providerProbe } =
+			fixture();
+		const native = join(directory, "native-data/opencode");
+		mkdirSync(native, { recursive: true });
+		const auth = join(native, "auth.json");
+		const originalAuth =
+			"private fixture bytes: the runner must not read or copy this file";
+		writeFileSync(auth, originalAuth);
+		writeFileSync(providerMetadata, JSON.stringify(output));
+		const runner = new OpenCodeRunner(config);
+		await runner.start("No remote configuration or plugin may execute");
+		expect(existsSync(capture)).toBe(false);
+		expect(existsSync(join(native, "opencode.db"))).toBe(false);
+		expect(readFileSync(auth, "utf8")).toBe(originalAuth);
+		expect(JSON.parse(readFileSync(providerProbe, "utf8"))).toEqual({
+			argv: ["providers", "list"],
+			modelsFetch: "1",
+		});
+		expect(runner.getMessages().at(-1)).toMatchObject({ is_error: true });
+	});
+
+	// The production probe's 5s deadline needs its own test budget plus process
+	// startup/cleanup. This does not lengthen the production timeout.
+	it("terminates a silent metadata probe within its native deadline before a model turn", async () => {
+		const { directory, config, capture, providerMetadata } = fixture();
+		const native = join(directory, "native-data/opencode");
+		mkdirSync(native, { recursive: true });
+		writeFileSync(join(native, "auth.json"), "private fixture bytes untouched");
+		writeFileSync(providerMetadata, JSON.stringify({ timeout: true }));
+		const started = performance.now();
+		const runner = new OpenCodeRunner(config);
+		await runner.start("A hung metadata command cannot start a model turn");
+		expect(performance.now() - started).toBeLessThan(7_000);
+		expect(existsSync(capture)).toBe(false);
+		expect(runner.getMessages().at(-1)).toMatchObject({ is_error: true });
+	}, 8_000);
+
+	it.each([
+		"api",
+		"oauth",
+	])("retains native %s authentication and permits a new turn after metadata-only verification", async (mode) => {
+		const { directory, config, capture, providerMetadata } = fixture();
+		const native = join(directory, "native-data/opencode");
+		mkdirSync(native, { recursive: true });
+		writeFileSync(join(native, "auth.json"), "private fixture bytes untouched");
+		writeFileSync(
+			providerMetadata,
+			JSON.stringify(
+				`┌ Credentials /native/auth.json\n│\n● Fixture ${mode}\n└ 1 credentials\n`,
+			),
+		);
+		const runner = new OpenCodeRunner(config);
+		await runner.start("Accepted context only");
+		expect(runner.getMessages().at(-1)).toMatchObject({ is_error: false });
+		expect(JSON.parse(readFileSync(capture, "utf8")).env.XDG_DATA_HOME).toBe(
+			join(directory, "native-data"),
+		);
+	});
+
+	it.each([
+		1,
+		undefined,
+	])("refuses active or unverifiable remote organization metadata (%s) without replacing native history", async (remoteOrg) => {
+		const { capture, config, metadata } = fixture();
+		await new OpenCodeRunner(config).start(
+			"Create restricted original conversation",
+		);
+		const original = readFileSync(capture, "utf8");
+		writeFileSync(
+			metadata,
+			JSON.stringify([
+				{ remoteOrg, savedPermissions: 0, sessionPermission: "[]" },
+			]),
+		);
+		const runner = new OpenCodeRunner({
+			...config,
+			resumeSessionId: "ses_context_only",
+		});
+		const session = await runner.start("No remote org config turn");
+		expect(session.sessionId).toBe("ses_context_only");
+		expect(readFileSync(capture, "utf8")).toBe(original);
+		expect(runner.getMessages().at(-1)).toMatchObject({ is_error: true });
+	});
+
+	it("preserves an attested native identity when authentication later enables remote configuration", async () => {
+		const { directory, capture, config, providerMetadata } = fixture();
+		await new OpenCodeRunner(config).start("Original restricted native thread");
+		const original = readFileSync(capture, "utf8");
+		writeFileSync(
+			join(directory, "native-data/opencode/auth.json"),
+			"private auth fixture untouched",
+		);
+		writeFileSync(
+			providerMetadata,
+			JSON.stringify("● Workspace wellknown\n└ 1 credentials\n"),
+		);
+		const runner = new OpenCodeRunner({
+			...config,
+			resumeSessionId: "ses_context_only",
+		});
+		const session = await runner.start("Refuse changed remote authority");
+		expect(session.sessionId).toBe("ses_context_only");
+		expect(readFileSync(capture, "utf8")).toBe(original);
+		expect(runner.getMessages().at(-1)).toMatchObject({ is_error: true });
+	});
 	it("passes exact final permissions and isolated configuration discovery on a new and attested resumed conversation", async () => {
 		const { directory, capture, config, preflight } = fixture();
 		const expectedPermission = {
@@ -167,12 +308,13 @@ describe("OpenCode context-only native process boundary", () => {
 	it.each([
 		{
 			label: "saved project approvals",
-			value: [{ savedPermissions: 1, sessionPermission: "[]" }],
+			value: [{ remoteOrg: 0, savedPermissions: 1, sessionPermission: "[]" }],
 		},
 		{
 			label: "broader session approval",
 			value: [
 				{
+					remoteOrg: 0,
 					savedPermissions: 0,
 					sessionPermission: JSON.stringify([
 						{ permission: "bash", action: "allow", pattern: "*" },
@@ -182,12 +324,18 @@ describe("OpenCode context-only native process boundary", () => {
 		},
 		{
 			label: "missing session",
-			value: [{ savedPermissions: 0, sessionPermission: null }],
+			value: [{ remoteOrg: 0, savedPermissions: 0, sessionPermission: null }],
 		},
 		{ label: "unsupported CLI", value: { unsupported: true } },
 		{
 			label: "oversized metadata",
-			value: [{ savedPermissions: 0, sessionPermission: "x".repeat(20_000) }],
+			value: [
+				{
+					remoteOrg: 0,
+					savedPermissions: 0,
+					sessionPermission: "x".repeat(20_000),
+				},
+			],
 		},
 	])("refuses $label before a model turn", async ({
 		value: permissionMetadata,
@@ -228,13 +376,15 @@ describe("OpenCode context-only native process boundary", () => {
 		const original = readFileSync(capture, "utf8");
 		writeFileSync(
 			metadata,
-			JSON.stringify([{ savedPermissions: 1, sessionPermission: "[]" }]),
+			JSON.stringify([
+				{ remoteOrg: 0, savedPermissions: 1, sessionPermission: "[]" },
+			]),
 		);
 		const runner = new OpenCodeRunner(config);
 		await runner.start("New model turn must not start");
 		expect(readFileSync(capture, "utf8")).toBe(original);
 		expect(JSON.parse(readFileSync(preflight, "utf8"))[1]).not.toContain(
-			"WHERE id =",
+			"FROM session",
 		);
 		expect(runner.getMessages().at(-1)).toMatchObject({ is_error: true });
 	});

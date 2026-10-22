@@ -1,0 +1,441 @@
+{
+  "source": "2b6b8aed53e481a7a529f3d1d893ca621ea6b559",
+  "build": "b6c096735522dd1c43f9750f",
+  "tabId": "tab_k_0d852e7f-bc6c-4980-8d42-09f5a6608a99",
+  "receipts": [
+    {
+      "event": "initial-last-run-loaded-private-default",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":[\"Sample data edited below. No run is changed.\"],\"checkbox\":false,\"buttons\":[],\"alerts\":[\"Preview unavailable: Load a matching run to preview its declared inputs.\"]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": [
+              "Sample data edited below. No run is changed."
+            ],
+            "checkbox": false,
+            "buttons": [],
+            "alerts": [
+              "Preview unavailable: Load a matching run to preview its declared inputs."
+            ]
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "initial-last-run-settled",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · accepted step view configuration matches\",\"preview\":\"YOUR DECISIONS\\nChoose the next work\\n\\nReview the content below. Your answer applies to this displayed version.\\n\\nREVIEW BRIEF\\n\\nThree findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or a\",\"buttons\":[{\"text\":\"Last run\",\"aria\":null,\"disabled\":false},{\"text\":\"Refresh data\",\"aria\":null,\"disabled\":false},{\"text\":\"Save decisions\",\"aria\":null,\"disabled\":true}],\"alerts\":[]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · accepted step view configuration matches",
+            "preview": "YOUR DECISIONS\nChoose the next work\n\nReview the content below. Your answer applies to this displayed version.\n\nREVIEW BRIEF\n\nThree findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or a",
+            "buttons": [
+              {
+                "text": "Last run",
+                "aria": null,
+                "disabled": false
+              },
+              {
+                "text": "Refresh data",
+                "aria": null,
+                "disabled": false
+              },
+              {
+                "text": "Save decisions",
+                "aria": null,
+                "disabled": true
+              }
+            ],
+            "alerts": []
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "loaded-then-view-title-edited",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"heading\":\"YOUR DECISIONS\\nChoose the next work\\n\\nReview the content below. Your answer applies to this displayed version.\\n\\nEDITED REVIEW HEADING\\n\\nThree findings are ready f\",\"buttons\":[{\"text\":\"Discard\",\"aria\":null,\"disabled\":false},{\"text\":\"Save\",\"aria\":null,\"disabled\":false},{\"text\":\"Save decisions\",\"aria\":null,\"disabled\":true}]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "heading": "YOUR DECISIONS\nChoose the next work\n\nReview the content below. Your answer applies to this displayed version.\n\nEDITED REVIEW HEADING\n\nThree findings are ready f",
+            "buttons": [
+              {
+                "text": "Discard",
+                "aria": null,
+                "disabled": false
+              },
+              {
+                "text": "Save",
+                "aria": null,
+                "disabled": false
+              },
+              {
+                "text": "Save decisions",
+                "aria": null,
+                "disabled": true
+              }
+            ]
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "loaded-then-action-label-edited",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"actions\":[\"Repair carefully\\nFollow-up\",\"File issue\\nFollow-up\",\"Skip\"],\"asks\":0,\"previewPresent\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "actions": [
+              "Repair carefully\nFollow-up",
+              "File issue\nFollow-up",
+              "Skip"
+            ],
+            "asks": 0,
+            "previewPresent": true
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "loaded-then-follow-up-edited",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"actions\":[\"Fix\",\"File issue\\nFollow-up\",\"Skip\"],\"asks\":0,\"previewPresent\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "actions": [
+              "Fix",
+              "File issue\nFollow-up",
+              "Skip"
+            ],
+            "asks": 0,
+            "previewPresent": true
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "loaded-then-ask-edited",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"actions\":[\"Fix\\nFollow-up\",\"File issue\\nFollow-up\",\"Skip\"],\"asks\":0,\"previewPresent\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "actions": [
+              "Fix\nFollow-up",
+              "File issue\nFollow-up",
+              "Skip"
+            ],
+            "asks": 0,
+            "previewPresent": true
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "loaded-then-step-title-edited",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"previewTitle\":\"Edited decision title\",\"previewPresent\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "previewTitle": "Edited decision title",
+            "previewPresent": true
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "loaded-then-workflow-title-edited",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"previewTitle\":\"Choose the next work\",\"previewPresent\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "previewTitle": "Choose the next work",
+            "previewPresent": true
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "type-edit-remounted-preview-without-stale-match",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Sample data edited below. No run is changed.\",\"heading\":\"APPROVE DISPLAYED CONTENT\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Sample data edited below. No run is changed.",
+            "heading": "APPROVE DISPLAYED CONTENT"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "request3-held-then-edit-current-view",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"buttons\":[{\"text\":\"Sample data\",\"disabled\":false},{\"text\":\"Last run\",\"disabled\":false},{\"text\":\"Refresh data\",\"disabled\":false}],\"editedHeading\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "buttons": [
+              {
+                "text": "Sample data",
+                "disabled": false
+              },
+              {
+                "text": "Last run",
+                "disabled": false
+              },
+              {
+                "text": "Refresh data",
+                "disabled": false
+              }
+            ],
+            "editedHeading": true
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "newer-request4-released-before-older3",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"editedHeading\":true,\"alerts\":[]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "editedHeading": true,
+            "alerts": []
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "older-request3-released-late-no-current-replacement",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"editedHeading\":true,\"alerts\":[]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "editedHeading": true,
+            "alerts": []
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "explicit-push-text-consent-check",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"checked\":true,\"active\":\"_r_11_-push-text\",\"focused\":false,\"label\":\"Include bounded view text in push notifications\",\"help\":\"Private notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\",\"status\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"save\":[{\"class\":\"button primary \",\"parent\":\"recipe-topbar-actions\",\"disabled\":false}]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "checked": true,
+            "active": "_r_11_-push-text",
+            "focused": false,
+            "label": "Include bounded view text in push notifications",
+            "help": "Private notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.",
+            "status": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "save": [
+              {
+                "class": "button primary ",
+                "parent": "recipe-topbar-actions",
+                "disabled": false
+              }
+            ]
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "explicit-consent-saved-and-actual-recipes-api-confirmed",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":404,\"keys\":[\"message\",\"error\",\"statusCode\"],\"previewStatus\":\"Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs\",\"checkbox\":true,\"alerts\":[\"Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received object Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received object Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received object Invalid input: expected never, received array\"]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": 404,
+            "keys": [
+              "message",
+              "error",
+              "statusCode"
+            ],
+            "previewStatus": "Last run views-decide-ui-run · 2026-10-22T06:47:58.149Z · retained accepted input snapshot; draft configuration differs",
+            "checkbox": true,
+            "alerts": [
+              "Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received object Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received object Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received array Invalid input: expected never, received object Invalid input: expected never, received array"
+            ]
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "event": "failed-real-builder-save-payload-and-response",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":[{\"url\":\"/api/workflows\",\"method\":\"PATCH\",\"body\":\"{\\\"workflows\\\":[{\\\"id\\\":\\\"views-decide-ui\\\",\\\"stepConfigVersion\\\":\\\"step-config-v1\\\",\\\"name\\\":\\\"Review findings with generic views\\\",\\\"description\\\":\\\"Disposable #140 production UI validation\\\",\\\"labels\\\":[],\\\"steps\\\":[{\\\"id\\\":\\\"research\\\",\\\"name\\\":\\\"Gather findings\\\",\\\"branches\\\":[],\\\"maxVisits\\\":16,\\\"type\\\":\\\"agent\\\",\\\"prompt\\\":\\\"Return bounded findings and display data. This is a deterministic fixture.\\\",\\\"json\\\":true,\\\"askQuestions\\\":false,\\\"configVersion\\\":\\\"step-config-v1\\\",\\\"reads\\\":{},\\\"rules\\\":[],\\\"checks\\\":[],\\\"access\\\":{\\\"mode\\\":\\\"workspace\\\"},\\\"instructions\\\":[]},{\\\"id\\\":\\\"choose\\\",\\\"reads\\\":{\\\"research\\\":\\\"research\\\"},\\\"name\\\":\\\"Choose the next work\\\",\\\"next\\\":\\\"finished\\\",\\\"branches\\\":[{\\\"when\\\":{\\\"path\\\":\\\"hasFollowUps\\\",\\\"equals\\\":true},\\\"next\\\":\\\"followups\\\"}],\\\"maxVisits\\\":16,\\\"type\\\":\\\"decide\\\",\\\"view\\\":{\\\"version\\\":\\\"view-v1\\\",\\\"components\\\":[{\\\"id\\\":\\\"brief\\\",\\\"type\\\":\\\"markdown\\\",\\\"title\\\":\\\"Review brief\\\",\\\"data\\\":{\\\"path\\\":\\\"/inputs/research/summary\\\"}},{\\\"id\\\":\\\"checks\\\",\\\"type\\\":\\\"checklist\\\",\\\"title\\\":\\\"Before you decide\\\",\\\"data\\\":{\\\"literal\\\":{\\\"items\\\":[{\\\"label\\\":\\\"Original research retained\\\",\\\"state\\\":\\\"done\\\"},{\\\"label\\\":\\\"Choose an action for every item\\\",\\\"state\\\":\\\"open\\\"}]}}}]},\\\"decide\\\":{\\\"items\\\":{\\\"path\\\":\\\"/inputs/research/items\\\"},\\\"itemId\\\":\\\"/id\\\",\\\"title\\\":\\\"/title\\\",\\\"body\\\":\\\"/body\\\",\\\"details\\\":[{\\\"label\\\":\\\"Impact\\\",\\\"path\\\":\\\"/impact\\\"},{\\\"label\\\":\\\"Evidence\\\",\\\"path\\\":\\\"/evidence\\\"}],\\\"actions\\\":[{\\\"id\\\":\\\"fix\\\",\\\"label\\\":\\\"Fix\\\",\\\"comment\\\":true,\\\"followUp\\\":true},{\\\"id\\\":\\\"issue\\\",\\\"label\\\":\\\"File issue\\\",\\\"comment\\\":true,\\\"followUp\\\":true},{\\\"id\\\":\\\"skip\\\",\\\"label\\\":\\\"Skip\\\",\\\"comment\\\":true}],\\\"ask\\\":{\\\"prompt\\\":\\\"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\\\"}},\\\"configVersion\\\":\\\"step-config-v1\\\",\\\"rules\\\":[],\\\"checks\\\":[],\\\"access\\\":{\\\"mode\\\":\\\"workspace\\\"},\\\"instructions\\\":[],\\\"notifications\\\":{\\\"push\\\":\\\"view-text\\\"}},{\\\"id\\\":\\\"followups\\\",\\\"name\\\":\\\"Follow-up route selected\\\",\\\"next\\\":\\\"end\\\",\\\"branches\\\":[],\\\"maxVisits\\\":16,\\\"type\\\":\\\"show\\\",\\\"view\\\":{\\\"version\\\":\\\"view-v1\\\",\\\"components\\\":[{\\\"id\\\":\\\"summary\\\",\\\"type\\\":\\\"markdown\\\",\\\"data\\\":{\\\"literal\\\":{\\\"text\\\":\\\"Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged.\\\"}}}]},\\\"configVersion\\\":\\\"step-config-v1\\\",\\\"reads\\\":{},\\\"rules\\\":[],\\\"checks\\\":[],\\\"access\\\":{\\\"mode\\\":\\\"workspace\\\"},\\\"instructions\\\":[]},{\\\"id\\\":\\\"finished\\\",\\\"name\\\":\\\"No follow-up work\\\",\\\"next\\\":\\\"end\\\",\\\"branches\\\":[],\\\"maxVisits\\\":16,\\\"type\\\":\\\"show\\\",\\\"view\\\":{\\\"version\\\":\\\"view-v1\\\",\\\"components\\\":[{\\\"id\\\":\\\"summary\\\",\\\"type\\\":\\\"markdown\\\",\\\"data\\\":{\\\"literal\\\":{\\\"text\\\":\\\"Every item was decided without follow-up work.\\\"}}}]},\\\"configVersion\\\":\\\"step-config-v1\\\",\\\"reads\\\":{},\\\"rules\\\":[],\\\"checks\\\":[],\\\"access\\\":{\\\"mode\\\":\\\"workspace\\\"},\\\"instructions\\\":[]}],\\\"allowedTriggers\\\":[\\\"manual\\\",\\\"workflow\\\"],\\\"ownership\\\":\\\"local\\\",\\\"enabled\\\":true,\\\"unavailable\\\":[],\\\"launchFields\\\":[{\\\"name\\\":\\\"prompt\\\",\\\"label\\\":\\\"What should Bob build?\\\",\\\"type\\\":\\\"textarea\\\",\\\"required\\\":true,\\\"placeholder\\\":\\\"What should Bob build?\\\",\\\"options\\\":[]}]}]}\",\"status\":400,\"result\":{\"error\":\"Invalid input: expected never, received array\\nInvalid input: expected never, received array\\nInvalid input: expected never, received object\\nInvalid input: expected never, received array\\nInvalid input: expected never, received array\\nInvalid input: expected never, received array\\nInvalid input: expected never, received object\\nInvalid input: expected never, received array\\nInvalid input: expected never, received array\\nInvalid input: expected never, received array\\nInvalid input: expected never, received object\\nInvalid input: expected never, received array\"}}]}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": [
+            {
+              "url": "/api/workflows",
+              "method": "PATCH",
+              "body": "{\"workflows\":[{\"id\":\"views-decide-ui\",\"stepConfigVersion\":\"step-config-v1\",\"name\":\"Review findings with generic views\",\"description\":\"Disposable #140 production UI validation\",\"labels\":[],\"steps\":[{\"id\":\"research\",\"name\":\"Gather findings\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Return bounded findings and display data. This is a deterministic fixture.\",\"json\":true,\"askQuestions\":false,\"configVersion\":\"step-config-v1\",\"reads\":{},\"rules\":[],\"checks\":[],\"access\":{\"mode\":\"workspace\"},\"instructions\":[]},{\"id\":\"choose\",\"reads\":{\"research\":\"research\"},\"name\":\"Choose the next work\",\"next\":\"finished\",\"branches\":[{\"when\":{\"path\":\"hasFollowUps\",\"equals\":true},\"next\":\"followups\"}],\"maxVisits\":16,\"type\":\"decide\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"brief\",\"type\":\"markdown\",\"title\":\"Review brief\",\"data\":{\"path\":\"/inputs/research/summary\"}},{\"id\":\"checks\",\"type\":\"checklist\",\"title\":\"Before you decide\",\"data\":{\"literal\":{\"items\":[{\"label\":\"Original research retained\",\"state\":\"done\"},{\"label\":\"Choose an action for every item\",\"state\":\"open\"}]}}}]},\"decide\":{\"items\":{\"path\":\"/inputs/research/items\"},\"itemId\":\"/id\",\"title\":\"/title\",\"body\":\"/body\",\"details\":[{\"label\":\"Impact\",\"path\":\"/impact\"},{\"label\":\"Evidence\",\"path\":\"/evidence\"}],\"actions\":[{\"id\":\"fix\",\"label\":\"Fix\",\"comment\":true,\"followUp\":true},{\"id\":\"issue\",\"label\":\"File issue\",\"comment\":true,\"followUp\":true},{\"id\":\"skip\",\"label\":\"Skip\",\"comment\":true}],\"ask\":{\"prompt\":\"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\"}},\"configVersion\":\"step-config-v1\",\"rules\":[],\"checks\":[],\"access\":{\"mode\":\"workspace\"},\"instructions\":[],\"notifications\":{\"push\":\"view-text\"}},{\"id\":\"followups\",\"name\":\"Follow-up route selected\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged.\"}}}]},\"configVersion\":\"step-config-v1\",\"reads\":{},\"rules\":[],\"checks\":[],\"access\":{\"mode\":\"workspace\"},\"instructions\":[]},{\"id\":\"finished\",\"name\":\"No follow-up work\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Every item was decided without follow-up work.\"}}}]},\"configVersion\":\"step-config-v1\",\"reads\":{},\"rules\":[],\"checks\":[],\"access\":{\"mode\":\"workspace\"},\"instructions\":[]}],\"allowedTriggers\":[\"manual\",\"workflow\"],\"ownership\":\"local\",\"enabled\":true,\"unavailable\":[],\"launchFields\":[{\"name\":\"prompt\",\"label\":\"What should Bob build?\",\"type\":\"textarea\",\"required\":true,\"placeholder\":\"What should Bob build?\",\"options\":[]}]}]}",
+              "status": 400,
+              "result": {
+                "error": "Invalid input: expected never, received array\nInvalid input: expected never, received array\nInvalid input: expected never, received object\nInvalid input: expected never, received array\nInvalid input: expected never, received array\nInvalid input: expected never, received array\nInvalid input: expected never, received object\nInvalid input: expected never, received array\nInvalid input: expected never, received array\nInvalid input: expected never, received array\nInvalid input: expected never, received object\nInvalid input: expected never, received array"
+              }
+            }
+          ]
+        },
+        "isError": false
+      }
+    }
+  ]
+}

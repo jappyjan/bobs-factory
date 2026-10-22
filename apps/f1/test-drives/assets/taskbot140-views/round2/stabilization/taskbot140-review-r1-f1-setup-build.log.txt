@@ -1,0 +1,4 @@
+
+> bobs-factory-f1@0.1.0 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-review-r1/apps/f1
+> tsgo
+
