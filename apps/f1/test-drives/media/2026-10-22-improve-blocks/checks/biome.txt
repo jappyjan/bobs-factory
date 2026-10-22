@@ -1,0 +1,13 @@
+Command: pnpm exec biome check (39 changed source/test/fixture files)
+  > 4231 │ .api-key-list li > .settings-actions {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    4232 │ 	flex-shrink: 0;
+    4233 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 11.
+Checked 39 files in 180ms. No fixes applied.
+Found 31 warnings.

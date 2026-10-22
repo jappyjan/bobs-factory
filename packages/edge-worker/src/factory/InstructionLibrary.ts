@@ -17,6 +17,7 @@ import {
 	reviewStageInstructions,
 	videoPrompts,
 } from "./InstructionText.js";
+import { improvementFilter } from "./ResearchPrompts.js";
 import { type InstructionId, resolveStepConfig } from "./StepConfig.js";
 
 const ciAssessmentInstructions = ` Set reviewRequired=false ONLY when every newly assessed comment is informational, explicitly ignored by the user, or already accepted with unchanged requirements; otherwise true, including any rejected complaint, new requirement or unresolved disagreement. Return reviewRequired alongside the other fields. The runtime independently verifies code/base revisions before skipping review.\n${feedbackPolicyInstructions}`;
@@ -41,6 +42,7 @@ export const incrementalRoleInstructions: Record<string, string> = {
 
 /** Stable, versioned, code-backed text. Templates expand only declared IDs. */
 export const instructionLibrary: Record<InstructionId, string | undefined> = {
+	"architectural-survey": improvementFilter,
 	"inventory-qa": inventoryQaInstructions,
 	"inventory-guide": inventoryGuideInstructions,
 	"video-gate": videoPrompts["visual-review"],

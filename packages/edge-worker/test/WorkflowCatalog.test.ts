@@ -624,3 +624,21 @@ it("preserves original config and a genuinely conflicting migration backup", () 
 	expect(readFileSync(path, "utf8")).toBe(bytes);
 	expect(readFileSync(backup, "utf8")).toBe("unrelated configuration");
 });
+
+it("forks every bundled callable/root recipe except Simple with an independent reachable closure", () => {
+	for (const bundled of defaultWorkflows.filter((w) => w.id !== "simple")) {
+		const { runtime } = fixture();
+		const fork = runtime.forkWorkflow(bundled.id);
+		const mapping = runtime.catalog.read().provenance[fork.id]!.dependencies;
+		expect(mapping[bundled.id]).toBe(fork.id);
+		expect(Object.keys(mapping)).not.toContain("simple");
+		expect(
+			runtime.catalog
+				.read()
+				.locals.filter((w) => Object.values(mapping).includes(w.id)),
+		).toHaveLength(Object.keys(mapping).length);
+		expect(
+			runtime.listWorkflows().find((w) => w.id === fork.id)!.steps,
+		).not.toBe(bundled.steps);
+	}
+});

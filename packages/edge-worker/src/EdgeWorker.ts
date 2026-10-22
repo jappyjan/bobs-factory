@@ -227,6 +227,10 @@ import {
 	parseAgentOutput,
 	toolArguments,
 } from "./factory/FactoryTools.js";
+import {
+	fileLinearIssue,
+	fileTaskbotIssue,
+} from "./factory/FileIssueProviders.js";
 import type { FileIssueIntent } from "./factory/FileIssues.js";
 import { sanitizeJsonConfiguration } from "./factory/Foreach.js";
 import { applyManagedGithubAgentEnvironment } from "./factory/GithubApi.js";
@@ -243,17 +247,8 @@ import {
 	validateGuide,
 } from "./factory/Guide.js";
 import { type ImpactSnapshot, validateImpact } from "./factory/Impact.js";
-import type {
-	ImprovementState,
-	IssueDestination,
-} from "./factory/Improvement.js";
-import {
-	fileLinearImprovement,
-	fileLinearIssue,
-	fileTaskbotImprovement,
-	fileTaskbotIssue,
-} from "./factory/ImprovementIssues.js";
 import { completedAgentResult, roleProgress } from "./factory/Incremental.js";
+import type { IssueDestination } from "./factory/IssueDestination.js";
 import { issueSnapshot } from "./factory/issueSnapshot.js";
 import {
 	LaunchAdmission,
@@ -309,6 +304,7 @@ import {
 	snapshotRepositories,
 } from "./factory/RepositoryScope.js";
 import {
+	assertResearchRunner,
 	contextTools,
 	researchTools,
 	restrictContextRunner,
@@ -357,7 +353,6 @@ import {
 	formatOf,
 	hasCheck,
 	hasInstruction,
-	legacyImprovementTemplate,
 	readOutput,
 	resolveStepConfig,
 } from "./factory/StepConfig.js";
@@ -7895,13 +7890,6 @@ ${taskSection}`;
 		workflow: Workflow,
 		definitions: Workflow[],
 	): Promise<void> {
-		if (
-			workflow.improvement?.workerFallback === "block" &&
-			!legacyImprovementTemplate(workflow, "research-worker")?.model
-		)
-			throw new Error(
-				"Configure a cheaper research-worker model in Recipes → Improve codebase before launching this workflow",
-			);
 		const fallback = (run.runner ??
 			this.runnerSelectionService.getDefaultRunner()) as RunnerType;
 		resolveAgentSettings(fallback, run);
@@ -7912,10 +7900,8 @@ ${taskSection}`;
 		const scan = (steps: WorkflowStep[]) => {
 			for (const step of steps) {
 				if (step.type === "agent") {
-					if (workflow.improvement && (step.runner ?? fallback) === "gemini")
-						throw new Error(
-							"Improve codebase research requires Claude, Codex, Cursor or OpenCode; Gemini read-only research is not supported yet",
-						);
+					if (accessMode(step) === "read-only")
+						assertResearchRunner(step.runner ?? fallback);
 					resolveAgentSettings(step.runner ?? fallback, step, {
 						runner: fallback,
 						reasoningEffort: run.reasoningEffort,
@@ -8059,13 +8045,9 @@ ${taskSection}`;
 			});
 			this.factoryRuntime = new WorkflowRuntime(this.factoryHome, {
 				issueDestinations: (run, signal) =>
-					this.improvementIssueDestinations(run, signal),
+					this.fileIssueDestinations(run, signal),
 				fileIssue: (run, issue, signal) =>
-					this.fileImprovementIssue(run, issue, signal),
-				improvementDestinations: (run, signal) =>
-					this.improvementIssueDestinations(run, signal),
-				improvementIssue: (run, issue, signal) =>
-					this.fileImprovementIssue(run, issue, signal),
+					this.fileRecipeIssue(run, issue, signal),
 				availabilityChanged: (_id, enabled) => {
 					if (!enabled) this.interruptDisabledSessions();
 				},
@@ -8747,10 +8729,7 @@ ${taskSection}`;
 			},
 		};
 	}
-	private async improvementIssueDestinations(
-		run: FactoryRun,
-		signal: AbortSignal,
-	) {
+	private async fileIssueDestinations(run: FactoryRun, signal: AbortSignal) {
 		const options: { name: string; destination: IssueDestination }[] = [],
 			limitations: string[] = [];
 		if (
@@ -8823,9 +8802,9 @@ ${taskSection}`;
 		}
 		return { options, limitations };
 	}
-	private async fileImprovementIssue(
+	private async fileRecipeIssue(
 		run: FactoryRun,
-		issue: ImprovementState["issues"][string] | FileIssueIntent,
+		issue: FileIssueIntent,
 		signal: AbortSignal,
 	) {
 		const destination = issue.destination;
@@ -8853,9 +8832,7 @@ ${taskSection}`;
 				throw new Error(
 					"Selected Linear workspace lacks an issue-creation client",
 				);
-			return "marker" in issue
-				? fileLinearIssue(client, issue, save, signal)
-				: fileLinearImprovement(client, issue, save);
+			return fileLinearIssue(client, issue, save, signal);
 		}
 		if (
 			taskbotServer(destination.instance, config.servers) !== destination.server
@@ -8865,8 +8842,7 @@ ${taskSection}`;
 			);
 		const call = (tool: string, args: Record<string, unknown>) =>
 			config.callTool(destination.server, tool, args, signal, 60000);
-		if ("marker" in issue) return fileTaskbotIssue(issue, call, save, signal);
-		return fileTaskbotImprovement(issue, call, save);
+		return fileTaskbotIssue(issue, call, save, signal);
 	}
 	private async factoryDeliveryAdapter(run: FactoryRun, target: TicketTarget) {
 		this.assertTicketManagerEnabled(target.provider);

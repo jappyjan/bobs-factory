@@ -29,8 +29,8 @@ import {
 import { workflowExecutionInstructions } from "../src/factory/WorkflowExecution.js";
 
 /**
- * Full Factory role prompts for every stock role, captured from the unmodified
- * base assembly (a4990127). Regenerate only for an intentional prompt change:
+ * Complete current stock and frozen legacy role prompts. Regenerate only for an
+ * intentional prompt change; the frozen legacy prompts must remain identical:
  * UPDATE_ROLE_PROMPTS=1 pnpm vitest run test/FactoryRolePrompts.test.ts
  */
 const promptFixture = join(__dirname, "fixtures/stock-role-prompts.json");
@@ -75,6 +75,7 @@ function prompts(workflows: Workflow[], set: string) {
 				});
 			for (const [index, group] of (step.groups ?? []).entries())
 				walk(group, `${key}/${index}`);
+			if (step.body) walk(step.body, `${key}/body`);
 		}
 	};
 	for (const workflow of workflows) {
@@ -113,7 +114,7 @@ function legacyDefinitions(): Record<string, Workflow[]> {
 	};
 }
 
-it("keeps every stock and legacy Factory role prompt byte-identical", () => {
+it("asserts complete stock and frozen legacy Factory role prompts", () => {
 	const legacy = legacyDefinitions();
 	const sets: Record<string, Workflow[]> = {
 		stock: defaultWorkflows,

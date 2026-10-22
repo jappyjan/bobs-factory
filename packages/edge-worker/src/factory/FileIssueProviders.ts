@@ -1,14 +1,10 @@
 import type { LinearClient } from "@linear/sdk";
 import { z } from "zod";
 import type { FileIssueIntent } from "./FileIssues.js";
-import type { ImprovementState } from "./Improvement.js";
 import { mcpValue } from "./TicketTracking.js";
 
-type LegacyIntent = ImprovementState["issues"][string];
-type Intent = LegacyIntent &
-	Partial<Pick<FileIssueIntent, "marker" | "labels">>;
-const markerFor = (issue: Intent) =>
-	issue.marker ?? `<!-- factory-improvement:${issue.key} -->`;
+type Intent = FileIssueIntent;
+const markerFor = (issue: Intent) => issue.marker;
 const unassigned = (value: Record<string, unknown>) =>
 	[
 		"assignee",
@@ -27,7 +23,6 @@ export async function fileLinearIssue(
 	issue: Intent,
 	save: () => Promise<void>,
 	signal?: AbortSignal,
-	strict = true,
 ) {
 	if (issue.destination.provider !== "linear")
 		throw new Error("Linear destination required");
@@ -57,7 +52,7 @@ export async function fileLinearIssue(
 			throw new Error(
 				"Existing Linear issue does not match the accepted creation identity",
 			);
-		if (strict) {
+		{
 			const [state, assignee, delegate, project] = await Promise.all([
 				value.state,
 				value.assignee,
@@ -83,7 +78,7 @@ export async function fileLinearIssue(
 					throw new Error("Linear issue does not confirm all accepted labels");
 			}
 		}
-		if (strict) {
+		{
 			const url = new URL(value.url);
 			if (
 				url.protocol !== "https:" ||
@@ -169,17 +164,16 @@ export async function fileTaskbotIssue(
 	call: (tool: string, args: Record<string, unknown>) => Promise<unknown>,
 	save: () => Promise<void>,
 	signal?: AbortSignal,
-	strict = true,
 ) {
 	if (issue.destination.provider !== "taskbot")
 		throw new Error("Taskbot destination required");
 	const project = issue.destination.project;
-	const label = `${issue.marker ? "factory-file-issue" : "factory-improvement"}-${issue.key}`;
+	const label = `factory-file-issue-${issue.key}`;
 	signal?.throwIfAborted();
 	const data = mcpValue(
 		await call("list_tickets", { project, label, limit: 2 }),
 	);
-	if (strict && data && typeof data === "object" && !Array.isArray(data)) {
+	if (data && typeof data === "object" && !Array.isArray(data)) {
 		const page = data as Record<string, unknown>;
 		if (
 			page.nextOffset != null ||
@@ -215,11 +209,11 @@ export async function fileTaskbotIssue(
 			throw new Error(
 				"Taskbot issue marker does not match the accepted creation intent",
 			);
-		if (strict && (item.status !== "backlog" || !unassigned(item)))
+		if (item.status !== "backlog" || !unassigned(item))
 			throw new Error(
 				"Taskbot deferred issue is not confirmed backlog-only and unassigned; reconcile the original issue before retrying",
 			);
-		if (strict && issue.labels?.length) {
+		if (issue.labels?.length) {
 			const labels = z.array(z.string()).parse(item.labels);
 			if (issue.labels.some((name) => !labels.includes(name)))
 				throw new Error("Taskbot issue does not confirm all accepted labels");
@@ -254,15 +248,3 @@ export async function fileTaskbotIssue(
 		);
 	return verify(created.id);
 }
-
-/** Frozen improvement runs retain their original marker and legacy receipt shape. */
-export const fileLinearImprovement = (
-	client: LinearClient,
-	issue: LegacyIntent,
-	save: () => Promise<void>,
-) => fileLinearIssue(client, issue, save, undefined, false);
-export const fileTaskbotImprovement = (
-	issue: LegacyIntent,
-	call: (tool: string, args: Record<string, unknown>) => Promise<unknown>,
-	save: () => Promise<void>,
-) => fileTaskbotIssue(issue, call, save, undefined, false);

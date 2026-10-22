@@ -43,6 +43,24 @@ export function stepBindings(
 	const { run, step } = context;
 	const outputs = context.outputs ?? run.outputs;
 	const sources: Record<string, unknown> = {
+		agentSettings: {
+			runner: step.runner ?? run.runner,
+			model:
+				step.model ??
+				(!step.runner || step.runner === run.runner ? run.model : undefined),
+			modelSource: step.model
+				? "step"
+				: !step.runner || step.runner === run.runner
+					? "run"
+					: "provider-default",
+			limitations: step.model
+				? []
+				: [
+						!step.runner || step.runner === run.runner
+							? "No step model is configured; this agent inherits the accepted run model."
+							: "No step model is configured for this provider; its accepted provider default is used.",
+					],
+		},
 		callInputs: context.callInputs ?? {},
 		get childRuns() {
 			return childRunsView(run);

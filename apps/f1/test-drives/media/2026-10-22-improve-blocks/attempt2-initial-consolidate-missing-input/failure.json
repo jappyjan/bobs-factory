@@ -1,0 +1,13 @@
+{
+	"at": "2026-10-22T15:25:30.366Z",
+	"error": "Error: Wait decide: manual-0575bfd3-8832-4c9a-bc94-d57827d9958f: For each path \"/consolidate/outputs/proposals\" does not resolve (missing \"consolidate\")\n    at until (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:240:22)\n    at async decision (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:247:2)\n    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:265:16",
+	"runs": [
+		{
+			"id": "manual-0575bfd3-8832-4c9a-bc94-d57827d9958f",
+			"status": "failed",
+			"step": "consolidate",
+			"error": "For each path \"/consolidate/outputs/proposals\" does not resolve (missing \"consolidate\")"
+		}
+	],
+	"checks": []
+}

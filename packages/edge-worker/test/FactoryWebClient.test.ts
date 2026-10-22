@@ -1246,48 +1246,93 @@ it("accepts no-expiry remote sessions without a deadline while current-session d
 	expect(client.getQueryData(["run", "private"])).toBeUndefined();
 });
 
-it("uses actual improvement research jobs as activity rows, retaining completed and failed worker transcripts", async () => {
+it("projects accepted recipe calls inside generic foreach activity rows", async () => {
 	const { stepsOf } = await import("../src/factory/web/client.js");
 	const run = {
-		improvement: { phase: "research" },
 		workflow: {
 			steps: [
-				{ id: "lead", name: "Prepare shared context" },
 				{
-					id: "research-worker",
-					name: "Research worker",
-					model: "cheaper-model",
+					id: "research",
+					name: "Research perspectives",
+					type: "foreach",
+					body: [
+						{
+							id: "worker",
+							name: "Research assignment",
+							type: "workflow",
+							workflow: "shared-research",
+							inputMapping: { topic: "/item/topic" },
+						},
+					],
 				},
 			],
 		},
-	};
-	const rows = stepsOf(
-		run,
-		{},
-		{
-			lead: { role: "lead", status: "completed" },
-			"worker-architecture-architecture-lifecycle": {
-				role: "research-worker",
-				status: "completed",
+		workflowDefinitions: [
+			{
+				id: "shared-research",
+				steps: [
+					{
+						id: "read",
+						name: "Inspect scope",
+						type: "agent",
+						model: "accepted-model",
+					},
+				],
 			},
-			"worker-security-boundaries": {
-				role: "research-worker",
-				status: "failed",
+		],
+		foreach: {
+			research: {
+				completed: 1,
+				total: 2,
+				items: [{ id: "security" }, { id: "architecture" }],
 			},
 		},
-	);
-	expect(rows.map((r) => ({ key: r.key, status: r.researchStatus }))).toEqual([
-		{ key: "lead", status: "completed" },
-		{ key: "worker-architecture-architecture-lifecycle", status: "completed" },
-		{ key: "worker-security-boundaries", status: "failed" },
-	]);
-	expect(rows[1].model).toBe("cheaper-model");
-	expect(rows[1].name).toBe("Research worker · architecture · lifecycle");
+	};
+	const rows = stepsOf(run, {
+		workflows: [
+			{
+				id: "shared-research",
+				steps: [{ id: "changed", name: "Changed catalog" }],
+			},
+		],
+	});
 	expect(
-		stepsOf(
-			{ workflow: run.workflow },
-			{},
-			{ lead: { role: "lead", status: "completed" } },
-		),
-	).toHaveLength(2);
+		rows.map(({ key, name, iterationStatus, model }) => ({
+			key,
+			name,
+			iterationStatus,
+			model,
+		})),
+	).toEqual([
+		{
+			key: "research",
+			name: "Research perspectives",
+			iterationStatus: "1/2 completed",
+			model: undefined,
+		},
+		{
+			key: "research/security/worker",
+			name: "Research assignment · security",
+			iterationStatus: undefined,
+			model: undefined,
+		},
+		{
+			key: "research/security/worker/read",
+			name: "Inspect scope · security",
+			iterationStatus: undefined,
+			model: "accepted-model",
+		},
+		{
+			key: "research/architecture/worker",
+			name: "Research assignment · architecture",
+			iterationStatus: undefined,
+			model: undefined,
+		},
+		{
+			key: "research/architecture/worker/read",
+			name: "Inspect scope · architecture",
+			iterationStatus: undefined,
+			model: "accepted-model",
+		},
+	]);
 });

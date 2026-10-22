@@ -290,6 +290,370 @@ describe("declarative views and declared read bindings", () => {
 	});
 });
 
+describe("component field bindings and collection projections", () => {
+	it.each([
+		0, 1, 2, 3, 4, 5,
+	])("displays exactly %i accepted plans and the three Check results without duplicate display data", (count) => {
+		const plans = Array.from({ length: count }, (_, index) => ({
+			id: `plan-${index}`,
+			title: `Actual plan ${index}`,
+			plan: `Exact implementation plan ${index}\nKeep the accepted scope.`,
+			privateNote: "Not projected",
+		}));
+		const checks = [
+			{ id: "scope", title: "Scope check", result: "Matches accepted scope" },
+			{ id: "safety", title: "Safety check", result: "No unsafe effects" },
+			{ id: "proof", title: "Proof check", result: "Evidence is present" },
+		];
+		const source = ViewSourceSchema.parse(
+			view([
+				markdown({ bindings: { text: { path: "/inputs/proposals/summary" } } }),
+				{
+					id: "plans",
+					type: "itemCards",
+					data: {
+						bindings: {
+							items: {
+								from: "/inputs/batch/plans",
+								map: { id: "/id", title: "/title", body: "/plan" },
+							},
+						},
+					},
+				},
+				{
+					id: "checks",
+					type: "itemCards",
+					data: {
+						bindings: {
+							items: {
+								from: "/inputs/checks",
+								map: { id: "/id", title: "/title", body: "/result" },
+							},
+						},
+					},
+				},
+				{
+					id: "limitations",
+					type: "points",
+					data: {
+						bindings: {
+							items: {
+								from: "/inputs/proposals/limitations",
+								map: { label: "" },
+							},
+						},
+					},
+				},
+			]),
+		);
+		const resolved = resolveView(source, {
+			inputs: {
+				proposals: {
+					summary: "Actual summary",
+					limitations: ["Known limitation"],
+				},
+				batch: { plans },
+				checks,
+			},
+		});
+		expect(resolved).toEqual({
+			version: "view-v1",
+			components: [
+				{ id: "intro", type: "markdown", data: { text: "Actual summary" } },
+				{
+					id: "plans",
+					type: "itemCards",
+					data: {
+						items: plans.map(({ id, title, plan }) => ({
+							id,
+							title,
+							body: plan,
+						})),
+					},
+				},
+				{
+					id: "checks",
+					type: "itemCards",
+					data: {
+						items: checks.map(({ id, title, result }) => ({
+							id,
+							title,
+							body: result,
+						})),
+					},
+				},
+				{
+					id: "limitations",
+					type: "points",
+					data: { items: [{ label: "Known limitation" }] },
+				},
+			],
+		});
+		checks[0]!.result = "Changed after display";
+		expect(resolved.components[2]!.data).toEqual({
+			items: [
+				{ id: "scope", title: "Scope check", body: "Matches accepted scope" },
+				{ id: "safety", title: "Safety check", body: "No unsafe effects" },
+				{ id: "proof", title: "Proof check", body: "Evidence is present" },
+			],
+		});
+	});
+
+	it("combines literal fields, escaped item pointers and public lexical bindings", () => {
+		const source = ViewSourceSchema.parse(
+			view([
+				{
+					id: "chart",
+					type: "chart",
+					data: {
+						bindings: {
+							kind: { literal: "bar" },
+							unit: { path: "/item/unit" },
+							series: {
+								from: "/item/rows",
+								map: { label: "/a~1b/~0key", value: "/value" },
+							},
+						},
+					},
+				},
+				{
+					id: "code",
+					type: "code",
+					data: {
+						bindings: {
+							file: { literal: "src/view.ts" },
+							startLine: { path: "/index" },
+						},
+					},
+				},
+			]),
+		);
+		const scope = {
+			item: {
+				unit: "seconds",
+				rows: [{ "a/b": { "~key": "Exact label" }, value: 3 }],
+			},
+			index: 2,
+		};
+		expect(resolveView(source, scope)).toEqual({
+			version: "view-v1",
+			components: [
+				{
+					id: "chart",
+					type: "chart",
+					data: {
+						kind: "bar",
+						unit: "seconds",
+						series: [{ label: "Exact label", value: 3 }],
+					},
+				},
+				{
+					id: "code",
+					type: "code",
+					data: { file: "src/view.ts", startLine: 2 },
+				},
+			],
+		});
+	});
+
+	const pointsProjection = (
+		from = "/inputs/rows",
+		map: unknown = { label: "" },
+	) =>
+		view([
+			{
+				id: "points",
+				type: "points",
+				data: { bindings: { items: { from, map } } },
+			},
+		]);
+
+	it("bounds collections at 100 items and maps at 20 fields", () => {
+		const source = ViewSourceSchema.parse(pointsProjection());
+		const rows = Array.from({ length: 100 }, (_, index) => `Row ${index}`);
+		expect(
+			resolveView(source, { inputs: { rows } }).components[0]!.data,
+		).toEqual({
+			items: rows.map((label) => ({ label })),
+		});
+		expect(() =>
+			resolveView(source, { inputs: { rows: [...rows, "Overflow"] } }),
+		).toThrow(/at most 100/);
+		const map = Object.fromEntries(
+			Array.from({ length: 20 }, (_, index) => [`field${index}`, ""]),
+		);
+		expect(
+			ViewSchema.safeParse(pointsProjection("/inputs/rows", map)).success,
+		).toBe(true);
+		expect(
+			ViewSchema.safeParse(
+				pointsProjection("/inputs/rows", { ...map, overflow: "" }),
+			).success,
+		).toBe(false);
+		expect(
+			ViewSchema.safeParse(pointsProjection("/inputs/rows", {})).success,
+		).toBe(false);
+	});
+
+	it.each([
+		{ bindings: { html: { literal: "<script>run()</script>" } } },
+		{ bindings: { id: { literal: "replace-component-id" } } },
+		{ bindings: { text: { path: "/runtime/secret" } } },
+		{ bindings: { text: { path: "/outputs/private" } } },
+		{ bindings: { text: { literal: "x", path: "/inputs/text" } } },
+		{ bindings: { text: { literal: "x", script: "return approve()" } } },
+		{ bindings: { text: { bindings: { text: { literal: "recursive" } } } } },
+		{ bindings: { text: { literal: "x" } }, path: "/inputs/data" },
+	])("rejects non-schema fields, private roots and expression syntax", (data) => {
+		expect(ViewSchema.safeParse(view([markdown(data)])).success).toBe(false);
+	});
+
+	it.each([
+		{ label: { path: "/title" } },
+		{ label: { from: "/children", map: { label: "/title" } } },
+		{ label: "/constructor" },
+		{ label: "/prototype" },
+		{ label: "/__proto__/secret" },
+		{ label: "/title~2" },
+		{ label: "/title\n" },
+		{ label: "/*" },
+		{ label: "return item.title" },
+		{ constructor: "/title" },
+		{ prototype: "/title" },
+		JSON.parse('{"__proto__":"/title"}'),
+	])("rejects unsafe keys, pointers and recursive maps", (map) => {
+		expect(
+			ViewSchema.safeParse(pointsProjection("/inputs/rows", map)).success,
+		).toBe(false);
+	});
+
+	it("cannot reach host scope or resolve item pointers against the outer scope", () => {
+		for (const from of [
+			"/runtime/rows",
+			"/outputs/rows",
+			"/inputs/__proto__",
+			"/inputs/*",
+		])
+			expect(ViewSchema.safeParse(pointsProjection(from)).success).toBe(false);
+		const privateRead = vi.fn(() => {
+			throw new Error("private host data");
+		});
+		const scope = Object.defineProperty(
+			{ inputs: { rows: ["Declared"] } },
+			"runtime",
+			{ get: privateRead },
+		);
+		expect(
+			resolveView(ViewSourceSchema.parse(pointsProjection()), scope)
+				.components[0]!.data,
+		).toEqual({ items: [{ label: "Declared" }] });
+		expect(privateRead).not.toHaveBeenCalled();
+		const source = ViewSourceSchema.parse(
+			pointsProjection("/inputs/rows", { label: "/inputs/secret" }),
+		);
+		expect(() =>
+			resolveView(source, { inputs: { secret: "outer", rows: [{}] } }),
+		).toThrow(/does not resolve/);
+	});
+
+	it("rejects missing or non-array sources and missing item fields without coercion", () => {
+		const source = ViewSourceSchema.parse(pointsProjection());
+		for (const rows of [null, "text", 3, { label: "not an array" }])
+			expect(() => resolveView(source, { inputs: { rows } })).toThrow(
+				/must be an array/,
+			);
+		expect(() => resolveView(source, {})).toThrow(/does not resolve/);
+		expect(() =>
+			resolveView(
+				ViewSourceSchema.parse(
+					pointsProjection("/inputs/rows", { label: "/title" }),
+				),
+				{ inputs: { rows: [{}] } },
+			),
+		).toThrow(/does not resolve/);
+	});
+
+	it("never executes getters or toJSON in definitions or source items", () => {
+		const getter = vi.fn(() => "/title");
+		const toJSON = vi.fn(() => ({ title: "forged" }));
+		const map = Object.defineProperty({}, "label", {
+			enumerable: true,
+			get: getter,
+		});
+		expect(
+			ViewSchema.safeParse(pointsProjection("/inputs/rows", map)).success,
+		).toBe(false);
+		const source = ViewSourceSchema.parse(
+			pointsProjection("/inputs/rows", { label: "/title" }),
+		);
+		for (const item of [
+			Object.defineProperty({}, "title", { enumerable: true, get: getter }),
+			{ title: "x", toJSON },
+			Object.create({ title: "inherited" }),
+		])
+			expect(() => resolveView(source, { inputs: { rows: [item] } })).toThrow();
+		expect(getter).not.toHaveBeenCalled();
+		expect(toJSON).not.toHaveBeenCalled();
+	});
+
+	it("applies the unchanged resolved schemas to projected and literal field values", () => {
+		for (const data of [
+			{ bindings: { text: { literal: 42 } } },
+			{ bindings: { text: { literal: "x".repeat(16_001) } } },
+			{ bindings: {} },
+		]) {
+			const source = ViewSourceSchema.parse(view([markdown(data)]));
+			expect(() => resolveView(source, {})).toThrow();
+		}
+		const source = ViewSourceSchema.parse(
+			pointsProjection("/inputs/rows", { label: "/label", url: "/url" }),
+		);
+		expect(() =>
+			resolveView(source, {
+				inputs: { rows: [{ label: "Unsafe", url: "javascript:alert(1)" }] },
+			}),
+		).toThrow(/HTTP/);
+		const extra = ViewSourceSchema.parse(
+			pointsProjection("/inputs/rows", { label: "/label", action: "/action" }),
+		);
+		expect(() =>
+			resolveView(extra, {
+				inputs: { rows: [{ label: "Authority", action: "approve" }] },
+			}),
+		).toThrow();
+		const scalar = ViewSourceSchema.parse(
+			view([markdown({ bindings: { text: { path: "/inputs/value" } } })]),
+		);
+		expect(() => resolveView(scalar, { inputs: { value: true } })).toThrow();
+		const cards = ViewSourceSchema.parse(
+			view([
+				{
+					id: "cards",
+					type: "itemCards",
+					data: {
+						bindings: {
+							items: {
+								from: "/inputs/rows",
+								map: { id: "/id", title: "/title" },
+							},
+						},
+					},
+				},
+			]),
+		);
+		expect(() =>
+			resolveView(cards, {
+				inputs: {
+					rows: [
+						{ id: "same", title: "First" },
+						{ id: "same", title: "Second" },
+					],
+				},
+			}),
+		).toThrow(/unique/);
+	});
+});
+
 describe("view JSON boundary and safe references", () => {
 	it("never executes accessors, toJSON or inherited hooks", () => {
 		const getter = vi.fn(() => "never");
@@ -660,14 +1024,23 @@ describe("plain-text component fallbacks", () => {
 		);
 	});
 
-	it("leaves HTML, script, Markdown and terminal escape strings inert", () => {
+	it.each([
+		"literal",
+		"bindings",
+	])("leaves %s HTML, script, Markdown and terminal escape strings inert", (source) => {
 		const dangerous =
 			"<script>alert(1)</script> [open](javascript:alert(1))\u001b]8;;https://evil.test\u0007**approve**";
 		const rendered = resolveView(
 			ViewSourceSchema.parse(
-				view([markdown({ literal: { text: dangerous } })]),
+				view([
+					markdown(
+						source === "literal"
+							? { literal: { text: dangerous } }
+							: { bindings: { text: { path: "/inputs/text" } } },
+					),
+				]),
 			),
-			{},
+			{ inputs: { text: dangerous } },
 		);
 		expect(rendered.components[0]!.data).toEqual({ text: dangerous });
 		expect(viewText(rendered)).toBe(

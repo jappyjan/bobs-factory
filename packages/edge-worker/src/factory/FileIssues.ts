@@ -72,11 +72,7 @@ export function prepareFileIssues(
 					.max(50)
 					.parse(foreachPointer(item.value, config.fields.labels))
 			: [];
-		if (
-			labels.some((label) =>
-				/^factory-(?:file-issue|improvement)-[a-f0-9]{64}$/.test(label),
-			)
-		)
+		if (labels.some((label) => /^factory-file-issue-[a-f0-9]{64}$/.test(label)))
 			throw new Error(
 				"Issue labels cannot supply reserved Factory creation identities",
 			);

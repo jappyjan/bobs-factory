@@ -129,8 +129,7 @@ cancellation intent before stopping the parent/children and covers pending or
 uncertain creation identities after restart. It permanently cancels that batch;
 resuming the parent does not relaunch it. Completed children/receipts remain.
 The run page exposes waves and queued/launched/running/waiting/merged/completed/
-blocked/cancelled/uncertain states. Legacy `improvementParent` links retain a
-deterministic compatibility fallback; replacing Improve belongs to a later task.
+blocked/cancelled/uncertain states.
 
 ## Delivery plan binding compatibility
 

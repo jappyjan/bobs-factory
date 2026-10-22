@@ -978,19 +978,6 @@ export function FocusCard({
 				run.viewDecision &&
 				!run.viewDecision.answer ? (
 				<GenericHumanDecision run={run} />
-			) : kind === "question" && run.improvement ? (
-				<div className="imp-focus">
-					<p>
-						{run.improvement.phase === "ready"
-							? "The plans passed their checks. Review the batch and launch the fixes."
-							: "Bob finished researching. Decide which improvements to fix, file as issues or skip."}
-					</p>
-					<Link className="button primary" to={`/runs/${run.id}`}>
-						{run.improvement.phase === "ready"
-							? "Review and launch →"
-							: "Review improvements →"}
-					</Link>
-				</div>
 			) : kind === "question" && run.architectureGate ? (
 				<ArchitectureEntry run={run} />
 			) : kind === "question" ? (

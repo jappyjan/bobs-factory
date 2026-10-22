@@ -1085,3 +1085,37 @@ describe("generic side-effect runtime integration", () => {
 		for (const child of children(f.runtime, parent)) f.runtime.stop(child.id);
 	});
 });
+
+it("completes an empty File issues action without discovering or invoking a tracker", async () => {
+	const discover = vi.fn(async () => {
+		throw new Error("No tracker should be needed");
+	});
+	const send = vi.fn(async () => {
+		throw new Error("No issue should be sent");
+	});
+	const f = fixture(
+		[
+			{
+				id: "empty",
+				name: "File selected issues",
+				type: "file-issues",
+				fileIssues: {
+					items: { values: [] },
+					fields: { title: "/title", body: "/body" },
+				},
+				next: "end",
+			},
+		],
+		{ issueDestinations: discover, fileIssue: send },
+	);
+	const run = f.create();
+	await f.runtime.launch(run);
+	expect(run.status).toBe("completed");
+	expect(run.outputs.empty).toEqual({
+		tickets: {},
+		summary: { total: 0, confirmed: 0, uncertain: 0 },
+	});
+	expect(discover).not.toHaveBeenCalled();
+	expect(send).not.toHaveBeenCalled();
+	expect(Object.values(run.issueActions!)[0]!.accepted).toEqual([]);
+});

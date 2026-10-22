@@ -25,22 +25,10 @@ import {
 } from "./FactoryTools.js";
 import { ImpactSchema } from "./Impact.js";
 import {
-	ImprovementActionSchema,
-	ImprovementSettingsSchema,
-	IssueDestinationSchema,
-	ItemChoiceSchema,
-	OpportunitySchema,
-	PackageSchema,
-	PackagesSchema,
-	PlanCheckSchema,
-	ProposalOutputSchema,
-	ResearchPlanSchema,
-	ResearchResultSchema,
-} from "./Improvement.js";
-import {
 	validateInlineSchema,
 	validateInlineSchemaSync,
 } from "./InlineSchema.js";
+import { IssueDestinationSchema } from "./IssueDestination.js";
 import {
 	OutputValidationError,
 	outputValidationError,
@@ -50,6 +38,18 @@ import {
 	QuestionChoicesSchema,
 	QuestionFieldsSchema,
 } from "./Questions.js";
+import {
+	FollowUpSchema,
+	OpportunitySchema,
+	PackageSchema,
+	PackagesSchema,
+	PlanCheckSchema,
+	ProposalOutputSchema,
+	ProposalsSchema,
+	ResearchContextSchema,
+	ResearchPlanSchema,
+	ResearchResultSchema,
+} from "./ResearchFormats.js";
 import {
 	GeneratedBriefSchema,
 	isReviewBrief,
@@ -73,6 +73,29 @@ import { ViewSchema } from "./View.js";
 /** Versioned schema library. Parsers are lazy to avoid coupling module initialization order. */
 const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"json-v1": (value) => value,
+	"research-context-v1": (value) => ResearchContextSchema.parse(value),
+	"research-plan-v1": (value) => ResearchPlanSchema.parse(value),
+	"research-result-v1": (value) => ResearchResultSchema.parse(value),
+	"proposals-v1": (value) => ProposalsSchema.parse(value),
+	"plan-package-v1": (value) => {
+		const plan = PackageSchema.parse(value);
+		return {
+			...plan,
+			reviewText: `${plan.plan}\n\nAcceptance criteria:\n${plan.criteria.map((c) => `- ${c}`).join("\n")}\n\nDependencies: ${plan.dependencies.join(", ") || "None"}\nPaths: ${plan.paths.join(", ") || "Not specified"}`,
+		};
+	},
+	"plan-check-v1": (value) => {
+		const review = PlanCheckSchema.parse(value);
+		return {
+			...review,
+			display: {
+				text: review.approved
+					? "Approved. No unresolved corrections."
+					: review.feedback.join("\n\n"),
+			},
+		};
+	},
+	"follow-up-v1": (value) => FollowUpSchema.parse(value),
 	"view-v1": (value) => ViewSchema.parse(value),
 	"generated-guide-v1": (value) => GeneratedGuideSchema.parse(value),
 	"generated-review-brief-v1": (value) =>
@@ -134,11 +157,8 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"improvement-proposals-v1": (value) => ProposalOutputSchema.parse(value),
 	"improvement-packages-v1": (value) => PackagesSchema.parse(value),
 	"improvement-plan-check-v1": (value) => PlanCheckSchema.parse(value),
-	"improvement-settings-v1": (value) => ImprovementSettingsSchema.parse(value),
 	"improvement-issue-destination-v1": (value) =>
 		IssueDestinationSchema.parse(value),
-	"improvement-item-choice-v1": (value) => ItemChoiceSchema.parse(value),
-	"improvement-action-v1": (value) => ImprovementActionSchema.parse(value),
 	"improvement-opportunity-v1": (value) => OpportunitySchema.parse(value),
 	"improvement-package-v1": (value) => PackageSchema.parse(value),
 };

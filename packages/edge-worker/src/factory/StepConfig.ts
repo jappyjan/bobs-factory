@@ -25,6 +25,13 @@ import {
 /** Stable output format IDs. Implementations live in OutputFormats.ts. */
 export const FORMAT_IDS = [
 	"json-v1",
+	"research-context-v1",
+	"research-plan-v1",
+	"research-result-v1",
+	"proposals-v1",
+	"plan-package-v1",
+	"plan-check-v1",
+	"follow-up-v1",
 	"view-v1",
 	"clarify-v1",
 	"plan-v1",
@@ -59,10 +66,7 @@ export const FORMAT_IDS = [
 	"specialist-v1",
 	"coverage-v1",
 	"delivery-contract-v1",
-	"improvement-settings-v1",
 	"improvement-issue-destination-v1",
-	"improvement-item-choice-v1",
-	"improvement-action-v1",
 	"improvement-opportunity-v1",
 	"improvement-package-v1",
 	"improvement-context-v1",
@@ -115,6 +119,7 @@ export const CHECK_SELECTOR_IDS = [
 
 /** Shared instruction snippets. Texts live in InstructionLibrary.ts. */
 export const INSTRUCTION_IDS = [
+	"architectural-survey",
 	// Composed into stock prompts with {{instruction:<id>}} placeholders.
 	"implementation-scope",
 	"architecture-continuation",
@@ -159,6 +164,7 @@ export type InstructionId = (typeof INSTRUCTION_IDS)[number];
 
 /** Named context sources a step can read in addition to earlier outputs. */
 export const CONTEXT_SOURCES = [
+	"agentSettings",
 	"answers",
 	"decisions",
 	"architectureProposals",
@@ -1497,17 +1503,4 @@ export function legacyToolOutput(
 ): unknown {
 	const key = legacyToolOutputKey(run, tool);
 	return key ? run.outputs[key] : undefined;
-}
-
-/** The explicitly flagged old improvement routine is retained until its block rebuild. */
-export function legacyImprovementTemplate<
-	T extends { id: string; type: string },
->(
-	workflow: { improvement?: unknown; steps: T[] },
-	role: string,
-): T | undefined {
-	if (!workflow.improvement) return;
-	return workflow.steps.find(
-		(step) => step.type === "agent" && step.id === role,
-	);
 }
