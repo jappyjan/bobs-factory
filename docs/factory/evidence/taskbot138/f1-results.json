@@ -1,0 +1,2164 @@
+{
+	"result": "PASS",
+	"revision": "9b79a19f7b672a8a759400cc9f715aec3f140635",
+	"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	"driverSha256": "345d449b373692f8ba2e1cff666be71e2756858843d572c61fa40bc2635f4ccd",
+	"buildSha256": "a478c07dca61146cf7eb263071a7a56a4bd1cceae21628edd11ea5a6d62721be",
+	"node": "v24.21.0",
+	"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-1jaJsh",
+	"startedAt": "2026-10-21T23:28:39.068Z",
+	"endedAt": "2026-10-21T23:28:57.780Z",
+	"paidCalls": 0,
+	"maxActive": 2,
+	"results": [
+		{
+			"workflow": "f1-foreach-output",
+			"run": "session-1",
+			"status": "completed",
+			"outputs": {
+				"repository": {
+					"baseBranch": "main",
+					"name": "For each F1 fixture",
+					"githubUrl": "https://github.com/fixture/foreach"
+				},
+				"ticket": {
+					"attachments": [],
+					"id": "issue-1",
+					"identifier": "DEF-1",
+					"title": "F1 f1-foreach-output",
+					"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+					"url": "https://linear.app/test/issue/DEF-1",
+					"priority": 0,
+					"createdAt": "2026-10-21T23:28:40.460Z",
+					"updatedAt": "2026-10-21T23:28:40.460Z",
+					"labels": [],
+					"team": {
+						"id": "team-default",
+						"name": "Default Team",
+						"key": "DEF"
+					},
+					"comments": []
+				},
+				"source": {
+					"items": [
+						{
+							"id": "alpha",
+							"name": "Alpha"
+						},
+						{
+							"id": "beta",
+							"name": "Beta"
+						},
+						{
+							"id": "gamma",
+							"name": "Gamma"
+						}
+					]
+				},
+				"batch/alpha/inspect": {
+					"id": "alpha",
+					"index": 0,
+					"name": "Alpha"
+				},
+				"batch/beta/inspect": {
+					"id": "beta",
+					"index": 1,
+					"name": "Beta"
+				},
+				"batch/gamma/inspect": {
+					"id": "gamma",
+					"index": 2,
+					"name": "Gamma"
+				},
+				"batch": {
+					"results": {
+						"alpha": {
+							"inspect": {
+								"id": "alpha",
+								"index": 0,
+								"name": "Alpha"
+							}
+						},
+						"beta": {
+							"inspect": {
+								"id": "beta",
+								"index": 1,
+								"name": "Beta"
+							}
+						},
+						"gamma": {
+							"inspect": {
+								"id": "gamma",
+								"index": 2,
+								"name": "Gamma"
+							}
+						}
+					},
+					"summary": {
+						"total": 3,
+						"completed": 3,
+						"failed": 0,
+						"cancelled": 0,
+						"failures": [],
+						"limitations": []
+					}
+				},
+				"verify": {
+					"passed": true,
+					"completed": true,
+					"failed": true,
+					"results": {
+						"alpha": {
+							"inspect": {
+								"id": "alpha",
+								"index": 0,
+								"name": "Alpha"
+							}
+						},
+						"beta": {
+							"inspect": {
+								"id": "beta",
+								"index": 1,
+								"name": "Beta"
+							}
+						},
+						"gamma": {
+							"inspect": {
+								"id": "gamma",
+								"index": 2,
+								"name": "Gamma"
+							}
+						}
+					}
+				}
+			},
+			"foreach": {
+				"batch": {
+					"key": "batch",
+					"visit": 1,
+					"concurrency": 2,
+					"maxItems": 10,
+					"failure": "all-must-succeed",
+					"items": [
+						{
+							"id": "alpha",
+							"index": 0,
+							"status": "completed"
+						},
+						{
+							"id": "beta",
+							"index": 1,
+							"status": "completed"
+						},
+						{
+							"id": "gamma",
+							"index": 2,
+							"status": "completed"
+						}
+					],
+					"completed": 3,
+					"failed": 0,
+					"total": 3
+				}
+			},
+			"turns": [
+				{
+					"run": "session-1",
+					"workflow": "f1-foreach-output",
+					"key": "source",
+					"id": "source",
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-453ce054-f79c-4fee-b52c-564c93c3be2b"
+				},
+				{
+					"run": "session-1",
+					"workflow": "f1-foreach-output",
+					"key": "batch/alpha/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "alpha",
+						"name": "Alpha"
+					},
+					"index": 0,
+					"current": {
+						"id": "alpha",
+						"name": "Alpha"
+					},
+					"position": 0,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-d20674f3-3096-4349-9f33-7496f8102cf6"
+				},
+				{
+					"run": "session-1",
+					"workflow": "f1-foreach-output",
+					"key": "batch/beta/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "beta",
+						"name": "Beta"
+					},
+					"index": 1,
+					"current": {
+						"id": "beta",
+						"name": "Beta"
+					},
+					"position": 1,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-f9990322-4507-4a84-852a-416736bb0e9c"
+				},
+				{
+					"run": "session-1",
+					"workflow": "f1-foreach-output",
+					"key": "batch/gamma/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "gamma",
+						"name": "Gamma"
+					},
+					"index": 2,
+					"current": {
+						"id": "gamma",
+						"name": "Gamma"
+					},
+					"position": 2,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-c7835732-5a63-40b1-a844-cd346b7991cb"
+				}
+			],
+			"history": [
+				{
+					"step": "source",
+					"output": {
+						"items": [
+							{
+								"id": "alpha",
+								"name": "Alpha"
+							},
+							{
+								"id": "beta",
+								"name": "Beta"
+							},
+							{
+								"id": "gamma",
+								"name": "Gamma"
+							}
+						]
+					},
+					"at": "2026-10-21T23:28:41.930Z"
+				},
+				{
+					"step": "batch/alpha/inspect",
+					"output": {
+						"id": "alpha",
+						"index": 0,
+						"name": "Alpha"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "alpha",
+						"index": 0,
+						"itemDigest": "92593e1208b66047bd5600afb4b48a32e25a5dc4222b72dab7db8e58d6beec98"
+					},
+					"at": "2026-10-21T23:28:43.054Z"
+				},
+				{
+					"step": "batch/beta/inspect",
+					"output": {
+						"id": "beta",
+						"index": 1,
+						"name": "Beta"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "beta",
+						"index": 1,
+						"itemDigest": "04f3ee38acfc6e8a6ccdbef4a0e6da831c656b5a13b0c102c38c73ad0505877a"
+					},
+					"at": "2026-10-21T23:28:43.161Z"
+				},
+				{
+					"step": "batch/gamma/inspect",
+					"output": {
+						"id": "gamma",
+						"index": 2,
+						"name": "Gamma"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "gamma",
+						"index": 2,
+						"itemDigest": "3fa7de21874788e105ec2c80e3e8d87539f07c988f28bf78f1050c77d30f4165"
+					},
+					"at": "2026-10-21T23:28:43.810Z"
+				},
+				{
+					"step": "batch",
+					"output": {
+						"results": {
+							"alpha": {
+								"inspect": {
+									"id": "alpha",
+									"index": 0,
+									"name": "Alpha"
+								}
+							},
+							"beta": {
+								"inspect": {
+									"id": "beta",
+									"index": 1,
+									"name": "Beta"
+								}
+							},
+							"gamma": {
+								"inspect": {
+									"id": "gamma",
+									"index": 2,
+									"name": "Gamma"
+								}
+							}
+						},
+						"summary": {
+							"total": 3,
+							"completed": 3,
+							"failed": 0,
+							"cancelled": 0,
+							"failures": [],
+							"limitations": []
+						}
+					},
+					"at": "2026-10-21T23:28:43.925Z"
+				},
+				{
+					"step": "verify",
+					"output": {
+						"passed": true,
+						"completed": true,
+						"failed": true,
+						"results": {
+							"alpha": {
+								"inspect": {
+									"id": "alpha",
+									"index": 0,
+									"name": "Alpha"
+								}
+							},
+							"beta": {
+								"inspect": {
+									"id": "beta",
+									"index": 1,
+									"name": "Beta"
+								}
+							},
+							"gamma": {
+								"inspect": {
+									"id": "gamma",
+									"index": 2,
+									"name": "Gamma"
+								}
+							}
+						}
+					},
+					"evidence": {},
+					"at": "2026-10-21T23:28:44.043Z"
+				}
+			],
+			"activityCount": 6,
+			"activityTypes": ["thought"],
+			"commentCount": 5
+		},
+		{
+			"workflow": "f1-foreach-inline",
+			"run": "session-2",
+			"status": "completed",
+			"outputs": {
+				"repository": {
+					"baseBranch": "main",
+					"name": "For each F1 fixture",
+					"githubUrl": "https://github.com/fixture/foreach"
+				},
+				"ticket": {
+					"attachments": [],
+					"id": "issue-2",
+					"identifier": "DEF-2",
+					"title": "F1 f1-foreach-inline",
+					"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+					"url": "https://linear.app/test/issue/DEF-2",
+					"priority": 0,
+					"createdAt": "2026-10-21T23:28:44.268Z",
+					"updatedAt": "2026-10-21T23:28:44.268Z",
+					"labels": [],
+					"team": {
+						"id": "team-default",
+						"name": "Default Team",
+						"key": "DEF"
+					},
+					"comments": []
+				},
+				"batch/alpha/inspect": {
+					"id": "alpha",
+					"index": 0,
+					"name": "Alpha"
+				},
+				"batch/beta/inspect": {
+					"id": "beta",
+					"index": 1,
+					"name": "Beta"
+				},
+				"batch/gamma/inspect": {
+					"id": "gamma",
+					"index": 2,
+					"name": "Gamma"
+				},
+				"batch": {
+					"results": {
+						"alpha": {
+							"inspect": {
+								"id": "alpha",
+								"index": 0,
+								"name": "Alpha"
+							}
+						},
+						"beta": {
+							"inspect": {
+								"id": "beta",
+								"index": 1,
+								"name": "Beta"
+							}
+						},
+						"gamma": {
+							"inspect": {
+								"id": "gamma",
+								"index": 2,
+								"name": "Gamma"
+							}
+						}
+					},
+					"summary": {
+						"total": 3,
+						"completed": 3,
+						"failed": 0,
+						"cancelled": 0,
+						"failures": [],
+						"limitations": []
+					}
+				},
+				"verify": {
+					"passed": true,
+					"completed": true,
+					"failed": true,
+					"results": {
+						"alpha": {
+							"inspect": {
+								"id": "alpha",
+								"index": 0,
+								"name": "Alpha"
+							}
+						},
+						"beta": {
+							"inspect": {
+								"id": "beta",
+								"index": 1,
+								"name": "Beta"
+							}
+						},
+						"gamma": {
+							"inspect": {
+								"id": "gamma",
+								"index": 2,
+								"name": "Gamma"
+							}
+						}
+					}
+				}
+			},
+			"foreach": {
+				"batch": {
+					"key": "batch",
+					"visit": 1,
+					"concurrency": 2,
+					"maxItems": 10,
+					"failure": "all-must-succeed",
+					"items": [
+						{
+							"id": "alpha",
+							"index": 0,
+							"status": "completed"
+						},
+						{
+							"id": "beta",
+							"index": 1,
+							"status": "completed"
+						},
+						{
+							"id": "gamma",
+							"index": 2,
+							"status": "completed"
+						}
+					],
+					"completed": 3,
+					"failed": 0,
+					"total": 3
+				}
+			},
+			"turns": [
+				{
+					"run": "session-2",
+					"workflow": "f1-foreach-inline",
+					"key": "batch/alpha/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "alpha",
+						"name": "Alpha"
+					},
+					"index": 0,
+					"current": {
+						"id": "alpha",
+						"name": "Alpha"
+					},
+					"position": 0,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-23cda00c-037c-421f-adbb-f683d7cb2694"
+				},
+				{
+					"run": "session-2",
+					"workflow": "f1-foreach-inline",
+					"key": "batch/beta/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "beta",
+						"name": "Beta"
+					},
+					"index": 1,
+					"current": {
+						"id": "beta",
+						"name": "Beta"
+					},
+					"position": 1,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-c8997ec7-044d-4ec0-8359-beff16eae65a"
+				},
+				{
+					"run": "session-2",
+					"workflow": "f1-foreach-inline",
+					"key": "batch/gamma/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "gamma",
+						"name": "Gamma"
+					},
+					"index": 2,
+					"current": {
+						"id": "gamma",
+						"name": "Gamma"
+					},
+					"position": 2,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-5f3da137-0bae-4eef-847d-fd641595b0cd"
+				}
+			],
+			"history": [
+				{
+					"step": "batch/alpha/inspect",
+					"output": {
+						"id": "alpha",
+						"index": 0,
+						"name": "Alpha"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "alpha",
+						"index": 0,
+						"itemDigest": "92593e1208b66047bd5600afb4b48a32e25a5dc4222b72dab7db8e58d6beec98"
+					},
+					"at": "2026-10-21T23:28:46.056Z"
+				},
+				{
+					"step": "batch/beta/inspect",
+					"output": {
+						"id": "beta",
+						"index": 1,
+						"name": "Beta"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "beta",
+						"index": 1,
+						"itemDigest": "04f3ee38acfc6e8a6ccdbef4a0e6da831c656b5a13b0c102c38c73ad0505877a"
+					},
+					"at": "2026-10-21T23:28:46.262Z"
+				},
+				{
+					"step": "batch/gamma/inspect",
+					"output": {
+						"id": "gamma",
+						"index": 2,
+						"name": "Gamma"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "gamma",
+						"index": 2,
+						"itemDigest": "3fa7de21874788e105ec2c80e3e8d87539f07c988f28bf78f1050c77d30f4165"
+					},
+					"at": "2026-10-21T23:28:47.060Z"
+				},
+				{
+					"step": "batch",
+					"output": {
+						"results": {
+							"alpha": {
+								"inspect": {
+									"id": "alpha",
+									"index": 0,
+									"name": "Alpha"
+								}
+							},
+							"beta": {
+								"inspect": {
+									"id": "beta",
+									"index": 1,
+									"name": "Beta"
+								}
+							},
+							"gamma": {
+								"inspect": {
+									"id": "gamma",
+									"index": 2,
+									"name": "Gamma"
+								}
+							}
+						},
+						"summary": {
+							"total": 3,
+							"completed": 3,
+							"failed": 0,
+							"cancelled": 0,
+							"failures": [],
+							"limitations": []
+						}
+					},
+					"at": "2026-10-21T23:28:47.183Z"
+				},
+				{
+					"step": "verify",
+					"output": {
+						"passed": true,
+						"completed": true,
+						"failed": true,
+						"results": {
+							"alpha": {
+								"inspect": {
+									"id": "alpha",
+									"index": 0,
+									"name": "Alpha"
+								}
+							},
+							"beta": {
+								"inspect": {
+									"id": "beta",
+									"index": 1,
+									"name": "Beta"
+								}
+							},
+							"gamma": {
+								"inspect": {
+									"id": "gamma",
+									"index": 2,
+									"name": "Gamma"
+								}
+							}
+						}
+					},
+					"evidence": {},
+					"at": "2026-10-21T23:28:47.333Z"
+				}
+			],
+			"activityCount": 5,
+			"activityTypes": ["thought"],
+			"commentCount": 4
+		},
+		{
+			"workflow": "f1-foreach-call-nested",
+			"run": "session-3",
+			"status": "completed",
+			"outputs": {
+				"repository": {
+					"baseBranch": "main",
+					"name": "For each F1 fixture",
+					"githubUrl": "https://github.com/fixture/foreach"
+				},
+				"ticket": {
+					"attachments": [],
+					"id": "issue-3",
+					"identifier": "DEF-3",
+					"title": "F1 f1-foreach-call-nested",
+					"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+					"url": "https://linear.app/test/issue/DEF-3",
+					"priority": 0,
+					"createdAt": "2026-10-21T23:28:47.573Z",
+					"updatedAt": "2026-10-21T23:28:47.573Z",
+					"labels": [],
+					"team": {
+						"id": "team-default",
+						"name": "Default Team",
+						"key": "DEF"
+					},
+					"comments": []
+				},
+				"batch/north/call/owner": {
+					"id": "north",
+					"index": 0,
+					"name": "North",
+					"owner": "north",
+					"topic": "North"
+				},
+				"batch/south/call/owner": {
+					"id": "south",
+					"index": 1,
+					"name": "South",
+					"owner": "south",
+					"topic": "South"
+				},
+				"batch/north/call/assignments/a1/inspect": {
+					"id": "a1",
+					"index": 0,
+					"name": "North first",
+					"owner": "north"
+				},
+				"batch/north/call/assignments/a2/inspect": {
+					"id": "a2",
+					"index": 1,
+					"name": "North second",
+					"owner": "north"
+				},
+				"batch/south/call/assignments/b1/inspect": {
+					"id": "b1",
+					"index": 0,
+					"name": "South only",
+					"owner": "south"
+				},
+				"batch/north/call/assignments": {
+					"results": {
+						"a1": {
+							"inspect": {
+								"id": "a1",
+								"index": 0,
+								"name": "North first",
+								"owner": "north"
+							}
+						},
+						"a2": {
+							"inspect": {
+								"id": "a2",
+								"index": 1,
+								"name": "North second",
+								"owner": "north"
+							}
+						}
+					},
+					"summary": {
+						"total": 2,
+						"completed": 2,
+						"failed": 0,
+						"cancelled": 0,
+						"failures": [],
+						"limitations": []
+					}
+				},
+				"batch/north/call": {
+					"workflow": "f1-assignment-child",
+					"completed": true,
+					"outputs": {
+						"owner": {
+							"id": "north",
+							"index": 0,
+							"name": "North",
+							"owner": "north",
+							"topic": "North"
+						},
+						"assignments": {
+							"results": {
+								"a1": {
+									"inspect": {
+										"id": "a1",
+										"index": 0,
+										"name": "North first",
+										"owner": "north"
+									}
+								},
+								"a2": {
+									"inspect": {
+										"id": "a2",
+										"index": 1,
+										"name": "North second",
+										"owner": "north"
+									}
+								}
+							},
+							"summary": {
+								"total": 2,
+								"completed": 2,
+								"failed": 0,
+								"cancelled": 0,
+								"failures": [],
+								"limitations": []
+							}
+						}
+					}
+				},
+				"batch/south/call/assignments": {
+					"results": {
+						"b1": {
+							"inspect": {
+								"id": "b1",
+								"index": 0,
+								"name": "South only",
+								"owner": "south"
+							}
+						}
+					},
+					"summary": {
+						"total": 1,
+						"completed": 1,
+						"failed": 0,
+						"cancelled": 0,
+						"failures": [],
+						"limitations": []
+					}
+				},
+				"batch/south/call": {
+					"workflow": "f1-assignment-child",
+					"completed": true,
+					"outputs": {
+						"owner": {
+							"id": "south",
+							"index": 1,
+							"name": "South",
+							"owner": "south",
+							"topic": "South"
+						},
+						"assignments": {
+							"results": {
+								"b1": {
+									"inspect": {
+										"id": "b1",
+										"index": 0,
+										"name": "South only",
+										"owner": "south"
+									}
+								}
+							},
+							"summary": {
+								"total": 1,
+								"completed": 1,
+								"failed": 0,
+								"cancelled": 0,
+								"failures": [],
+								"limitations": []
+							}
+						}
+					}
+				},
+				"batch": {
+					"results": {
+						"north": {
+							"call": {
+								"workflow": "f1-assignment-child",
+								"completed": true,
+								"outputs": {
+									"owner": {
+										"id": "north",
+										"index": 0,
+										"name": "North",
+										"owner": "north",
+										"topic": "North"
+									},
+									"assignments": {
+										"results": {
+											"a1": {
+												"inspect": {
+													"id": "a1",
+													"index": 0,
+													"name": "North first",
+													"owner": "north"
+												}
+											},
+											"a2": {
+												"inspect": {
+													"id": "a2",
+													"index": 1,
+													"name": "North second",
+													"owner": "north"
+												}
+											}
+										},
+										"summary": {
+											"total": 2,
+											"completed": 2,
+											"failed": 0,
+											"cancelled": 0,
+											"failures": [],
+											"limitations": []
+										}
+									}
+								}
+							}
+						},
+						"south": {
+							"call": {
+								"workflow": "f1-assignment-child",
+								"completed": true,
+								"outputs": {
+									"owner": {
+										"id": "south",
+										"index": 1,
+										"name": "South",
+										"owner": "south",
+										"topic": "South"
+									},
+									"assignments": {
+										"results": {
+											"b1": {
+												"inspect": {
+													"id": "b1",
+													"index": 0,
+													"name": "South only",
+													"owner": "south"
+												}
+											}
+										},
+										"summary": {
+											"total": 1,
+											"completed": 1,
+											"failed": 0,
+											"cancelled": 0,
+											"failures": [],
+											"limitations": []
+										}
+									}
+								}
+							}
+						}
+					},
+					"summary": {
+						"total": 2,
+						"completed": 2,
+						"failed": 0,
+						"cancelled": 0,
+						"failures": [],
+						"limitations": []
+					}
+				},
+				"verify": {
+					"passed": true,
+					"completed": true,
+					"failed": true,
+					"results": {
+						"north": {
+							"call": {
+								"completed": true,
+								"outputs": {
+									"assignments": {
+										"results": {
+											"a1": {
+												"inspect": {
+													"id": "a1",
+													"index": 0,
+													"name": "North first",
+													"owner": "north"
+												}
+											},
+											"a2": {
+												"inspect": {
+													"id": "a2",
+													"index": 1,
+													"name": "North second",
+													"owner": "north"
+												}
+											}
+										},
+										"summary": {
+											"cancelled": 0,
+											"completed": 2,
+											"failed": 0,
+											"failures": [],
+											"limitations": [],
+											"total": 2
+										}
+									},
+									"owner": {
+										"id": "north",
+										"index": 0,
+										"name": "North",
+										"owner": "north",
+										"topic": "North"
+									}
+								},
+								"workflow": "f1-assignment-child"
+							}
+						},
+						"south": {
+							"call": {
+								"completed": true,
+								"outputs": {
+									"assignments": {
+										"results": {
+											"b1": {
+												"inspect": {
+													"id": "b1",
+													"index": 0,
+													"name": "South only",
+													"owner": "south"
+												}
+											}
+										},
+										"summary": {
+											"cancelled": 0,
+											"completed": 1,
+											"failed": 0,
+											"failures": [],
+											"limitations": [],
+											"total": 1
+										}
+									},
+									"owner": {
+										"id": "south",
+										"index": 1,
+										"name": "South",
+										"owner": "south",
+										"topic": "South"
+									}
+								},
+								"workflow": "f1-assignment-child"
+							}
+						}
+					}
+				}
+			},
+			"foreach": {
+				"batch": {
+					"key": "batch",
+					"visit": 1,
+					"concurrency": 2,
+					"maxItems": 10,
+					"failure": "all-must-succeed",
+					"items": [
+						{
+							"id": "north",
+							"index": 0,
+							"status": "completed"
+						},
+						{
+							"id": "south",
+							"index": 1,
+							"status": "completed"
+						}
+					],
+					"completed": 2,
+					"failed": 0,
+					"total": 2
+				},
+				"batch/north/call/assignments": {
+					"key": "batch/north/call/assignments",
+					"visit": 1,
+					"concurrency": 2,
+					"maxItems": 10,
+					"failure": "all-must-succeed",
+					"items": [
+						{
+							"id": "a1",
+							"index": 0,
+							"status": "completed"
+						},
+						{
+							"id": "a2",
+							"index": 1,
+							"status": "completed"
+						}
+					],
+					"completed": 2,
+					"failed": 0,
+					"total": 2
+				},
+				"batch/south/call/assignments": {
+					"key": "batch/south/call/assignments",
+					"visit": 1,
+					"concurrency": 2,
+					"maxItems": 10,
+					"failure": "all-must-succeed",
+					"items": [
+						{
+							"id": "b1",
+							"index": 0,
+							"status": "completed"
+						}
+					],
+					"completed": 1,
+					"failed": 0,
+					"total": 1
+				}
+			},
+			"turns": [
+				{
+					"run": "session-3",
+					"workflow": "f1-foreach-call-nested",
+					"key": "batch/north/call/owner",
+					"id": "owner",
+					"item": {
+						"id": "north",
+						"name": "North",
+						"assignments": [
+							{
+								"id": "a1",
+								"name": "North first"
+							},
+							{
+								"id": "a2",
+								"name": "North second"
+							}
+						]
+					},
+					"index": 0,
+					"current": {
+						"id": "north",
+						"name": "North",
+						"assignments": [
+							{
+								"id": "a1",
+								"name": "North first"
+							},
+							{
+								"id": "a2",
+								"name": "North second"
+							}
+						]
+					},
+					"position": 0,
+					"owner": "north",
+					"topic": "North",
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-a67ee52c-dd68-4220-84f1-d554fd903782"
+				},
+				{
+					"run": "session-3",
+					"workflow": "f1-foreach-call-nested",
+					"key": "batch/south/call/owner",
+					"id": "owner",
+					"item": {
+						"id": "south",
+						"name": "South",
+						"assignments": [
+							{
+								"id": "b1",
+								"name": "South only"
+							}
+						]
+					},
+					"index": 1,
+					"current": {
+						"id": "south",
+						"name": "South",
+						"assignments": [
+							{
+								"id": "b1",
+								"name": "South only"
+							}
+						]
+					},
+					"position": 1,
+					"owner": "south",
+					"topic": "South",
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-14ff69fc-37da-450f-8a56-53cb3ee6b311"
+				},
+				{
+					"run": "session-3",
+					"workflow": "f1-foreach-call-nested",
+					"key": "batch/north/call/assignments/a1/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "a1",
+						"name": "North first"
+					},
+					"index": 0,
+					"current": {
+						"id": "a1",
+						"name": "North first"
+					},
+					"position": 0,
+					"owner": "north",
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-41afe1ea-93bf-4265-8362-12b865b29522"
+				},
+				{
+					"run": "session-3",
+					"workflow": "f1-foreach-call-nested",
+					"key": "batch/north/call/assignments/a2/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "a2",
+						"name": "North second"
+					},
+					"index": 1,
+					"current": {
+						"id": "a2",
+						"name": "North second"
+					},
+					"position": 1,
+					"owner": "north",
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-c11da899-4bf7-48dd-8eeb-0b87bf2d4497"
+				},
+				{
+					"run": "session-3",
+					"workflow": "f1-foreach-call-nested",
+					"key": "batch/south/call/assignments/b1/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "b1",
+						"name": "South only"
+					},
+					"index": 0,
+					"current": {
+						"id": "b1",
+						"name": "South only"
+					},
+					"position": 0,
+					"owner": "south",
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-0225ae54-238f-46e0-8d13-7d00a0bf9c57"
+				}
+			],
+			"history": [
+				{
+					"step": "batch/north/call/owner",
+					"output": {
+						"id": "north",
+						"index": 0,
+						"name": "North",
+						"owner": "north",
+						"topic": "North"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "north",
+						"index": 0,
+						"itemDigest": "45b678ade73f71789b9e3b71cb95b0d1c93018d829ab9f0daf61737a6447eb07"
+					},
+					"at": "2026-10-21T23:28:49.836Z"
+				},
+				{
+					"step": "batch/south/call/owner",
+					"output": {
+						"id": "south",
+						"index": 1,
+						"name": "South",
+						"owner": "south",
+						"topic": "South"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "south",
+						"index": 1,
+						"itemDigest": "ec38806ad8289d67c6a8c76586db2fbcedd2d6b886df98a50aa63a9d5287a182"
+					},
+					"at": "2026-10-21T23:28:49.964Z"
+				},
+				{
+					"step": "batch/north/call/assignments/a1/inspect",
+					"output": {
+						"id": "a1",
+						"index": 0,
+						"name": "North first",
+						"owner": "north"
+					},
+					"iteration": {
+						"frame": "batch/north/call/assignments",
+						"id": "a1",
+						"index": 0,
+						"itemDigest": "18e812b169b55d5bf51146f5f98c65b33adb2fa711841536d5cfcf18facc4910"
+					},
+					"at": "2026-10-21T23:28:51.553Z"
+				},
+				{
+					"step": "batch/north/call/assignments/a2/inspect",
+					"output": {
+						"id": "a2",
+						"index": 1,
+						"name": "North second",
+						"owner": "north"
+					},
+					"iteration": {
+						"frame": "batch/north/call/assignments",
+						"id": "a2",
+						"index": 1,
+						"itemDigest": "1e2c004753b4cc85f9027ba163241782065fea11fbed1ed81f3a61831a63fa6e"
+					},
+					"at": "2026-10-21T23:28:51.572Z"
+				},
+				{
+					"step": "batch/south/call/assignments/b1/inspect",
+					"output": {
+						"id": "b1",
+						"index": 0,
+						"name": "South only",
+						"owner": "south"
+					},
+					"iteration": {
+						"frame": "batch/south/call/assignments",
+						"id": "b1",
+						"index": 0,
+						"itemDigest": "38e20c25942beb3ff18f27bd8d6a320f723429a0961acd78575c2af96af8f4b7"
+					},
+					"at": "2026-10-21T23:28:51.821Z"
+				},
+				{
+					"step": "batch/north/call/assignments",
+					"output": {
+						"results": {
+							"a1": {
+								"inspect": {
+									"id": "a1",
+									"index": 0,
+									"name": "North first",
+									"owner": "north"
+								}
+							},
+							"a2": {
+								"inspect": {
+									"id": "a2",
+									"index": 1,
+									"name": "North second",
+									"owner": "north"
+								}
+							}
+						},
+						"summary": {
+							"total": 2,
+							"completed": 2,
+							"failed": 0,
+							"cancelled": 0,
+							"failures": [],
+							"limitations": []
+						}
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "north",
+						"index": 0,
+						"itemDigest": "45b678ade73f71789b9e3b71cb95b0d1c93018d829ab9f0daf61737a6447eb07"
+					},
+					"at": "2026-10-21T23:28:51.836Z"
+				},
+				{
+					"step": "batch/north/call",
+					"output": {
+						"workflow": "f1-assignment-child",
+						"completed": true,
+						"outputs": {
+							"owner": {
+								"id": "north",
+								"index": 0,
+								"name": "North",
+								"owner": "north",
+								"topic": "North"
+							},
+							"assignments": {
+								"results": {
+									"a1": {
+										"inspect": {
+											"id": "a1",
+											"index": 0,
+											"name": "North first",
+											"owner": "north"
+										}
+									},
+									"a2": {
+										"inspect": {
+											"id": "a2",
+											"index": 1,
+											"name": "North second",
+											"owner": "north"
+										}
+									}
+								},
+								"summary": {
+									"total": 2,
+									"completed": 2,
+									"failed": 0,
+									"cancelled": 0,
+									"failures": [],
+									"limitations": []
+								}
+							}
+						}
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "north",
+						"index": 0,
+						"itemDigest": "45b678ade73f71789b9e3b71cb95b0d1c93018d829ab9f0daf61737a6447eb07"
+					},
+					"at": "2026-10-21T23:28:51.907Z",
+					"call": {
+						"type": "workflow",
+						"callerWorkflowId": "f1-foreach-call-nested",
+						"step": "call",
+						"key": "batch/north/call",
+						"workflowId": "f1-assignment-child"
+					}
+				},
+				{
+					"step": "batch/south/call/assignments",
+					"output": {
+						"results": {
+							"b1": {
+								"inspect": {
+									"id": "b1",
+									"index": 0,
+									"name": "South only",
+									"owner": "south"
+								}
+							}
+						},
+						"summary": {
+							"total": 1,
+							"completed": 1,
+							"failed": 0,
+							"cancelled": 0,
+							"failures": [],
+							"limitations": []
+						}
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "south",
+						"index": 1,
+						"itemDigest": "ec38806ad8289d67c6a8c76586db2fbcedd2d6b886df98a50aa63a9d5287a182"
+					},
+					"at": "2026-10-21T23:28:52.009Z"
+				},
+				{
+					"step": "batch/south/call",
+					"output": {
+						"workflow": "f1-assignment-child",
+						"completed": true,
+						"outputs": {
+							"owner": {
+								"id": "south",
+								"index": 1,
+								"name": "South",
+								"owner": "south",
+								"topic": "South"
+							},
+							"assignments": {
+								"results": {
+									"b1": {
+										"inspect": {
+											"id": "b1",
+											"index": 0,
+											"name": "South only",
+											"owner": "south"
+										}
+									}
+								},
+								"summary": {
+									"total": 1,
+									"completed": 1,
+									"failed": 0,
+									"cancelled": 0,
+									"failures": [],
+									"limitations": []
+								}
+							}
+						}
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "south",
+						"index": 1,
+						"itemDigest": "ec38806ad8289d67c6a8c76586db2fbcedd2d6b886df98a50aa63a9d5287a182"
+					},
+					"at": "2026-10-21T23:28:52.081Z",
+					"call": {
+						"type": "workflow",
+						"callerWorkflowId": "f1-foreach-call-nested",
+						"step": "call",
+						"key": "batch/south/call",
+						"workflowId": "f1-assignment-child"
+					}
+				},
+				{
+					"step": "batch",
+					"output": {
+						"results": {
+							"north": {
+								"call": {
+									"workflow": "f1-assignment-child",
+									"completed": true,
+									"outputs": {
+										"owner": {
+											"id": "north",
+											"index": 0,
+											"name": "North",
+											"owner": "north",
+											"topic": "North"
+										},
+										"assignments": {
+											"results": {
+												"a1": {
+													"inspect": {
+														"id": "a1",
+														"index": 0,
+														"name": "North first",
+														"owner": "north"
+													}
+												},
+												"a2": {
+													"inspect": {
+														"id": "a2",
+														"index": 1,
+														"name": "North second",
+														"owner": "north"
+													}
+												}
+											},
+											"summary": {
+												"total": 2,
+												"completed": 2,
+												"failed": 0,
+												"cancelled": 0,
+												"failures": [],
+												"limitations": []
+											}
+										}
+									}
+								}
+							},
+							"south": {
+								"call": {
+									"workflow": "f1-assignment-child",
+									"completed": true,
+									"outputs": {
+										"owner": {
+											"id": "south",
+											"index": 1,
+											"name": "South",
+											"owner": "south",
+											"topic": "South"
+										},
+										"assignments": {
+											"results": {
+												"b1": {
+													"inspect": {
+														"id": "b1",
+														"index": 0,
+														"name": "South only",
+														"owner": "south"
+													}
+												}
+											},
+											"summary": {
+												"total": 1,
+												"completed": 1,
+												"failed": 0,
+												"cancelled": 0,
+												"failures": [],
+												"limitations": []
+											}
+										}
+									}
+								}
+							}
+						},
+						"summary": {
+							"total": 2,
+							"completed": 2,
+							"failed": 0,
+							"cancelled": 0,
+							"failures": [],
+							"limitations": []
+						}
+					},
+					"at": "2026-10-21T23:28:52.180Z"
+				},
+				{
+					"step": "verify",
+					"output": {
+						"passed": true,
+						"completed": true,
+						"failed": true,
+						"results": {
+							"north": {
+								"call": {
+									"completed": true,
+									"outputs": {
+										"assignments": {
+											"results": {
+												"a1": {
+													"inspect": {
+														"id": "a1",
+														"index": 0,
+														"name": "North first",
+														"owner": "north"
+													}
+												},
+												"a2": {
+													"inspect": {
+														"id": "a2",
+														"index": 1,
+														"name": "North second",
+														"owner": "north"
+													}
+												}
+											},
+											"summary": {
+												"cancelled": 0,
+												"completed": 2,
+												"failed": 0,
+												"failures": [],
+												"limitations": [],
+												"total": 2
+											}
+										},
+										"owner": {
+											"id": "north",
+											"index": 0,
+											"name": "North",
+											"owner": "north",
+											"topic": "North"
+										}
+									},
+									"workflow": "f1-assignment-child"
+								}
+							},
+							"south": {
+								"call": {
+									"completed": true,
+									"outputs": {
+										"assignments": {
+											"results": {
+												"b1": {
+													"inspect": {
+														"id": "b1",
+														"index": 0,
+														"name": "South only",
+														"owner": "south"
+													}
+												}
+											},
+											"summary": {
+												"cancelled": 0,
+												"completed": 1,
+												"failed": 0,
+												"failures": [],
+												"limitations": [],
+												"total": 1
+											}
+										},
+										"owner": {
+											"id": "south",
+											"index": 1,
+											"name": "South",
+											"owner": "south",
+											"topic": "South"
+										}
+									},
+									"workflow": "f1-assignment-child"
+								}
+							}
+						}
+					},
+					"evidence": {},
+					"at": "2026-10-21T23:28:52.266Z"
+				}
+			],
+			"activityCount": 7,
+			"activityTypes": ["thought"],
+			"commentCount": 6
+		},
+		{
+			"workflow": "f1-foreach-all-must-succeed",
+			"run": "session-4",
+			"status": "failed",
+			"error": "For each batch failed: bad: Controlled F1 provider failure for bad; later: Not dispatched: sibling failed",
+			"outputs": {
+				"repository": {
+					"baseBranch": "main",
+					"name": "For each F1 fixture",
+					"githubUrl": "https://github.com/fixture/foreach"
+				},
+				"ticket": {
+					"attachments": [],
+					"id": "issue-4",
+					"identifier": "DEF-4",
+					"title": "F1 f1-foreach-all-must-succeed",
+					"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+					"url": "https://linear.app/test/issue/DEF-4",
+					"priority": 0,
+					"createdAt": "2026-10-21T23:28:52.455Z",
+					"updatedAt": "2026-10-21T23:28:52.455Z",
+					"labels": [],
+					"team": {
+						"id": "team-default",
+						"name": "Default Team",
+						"key": "DEF"
+					},
+					"comments": []
+				},
+				"batch/good/inspect": {
+					"id": "good",
+					"index": 0,
+					"name": "Good"
+				}
+			},
+			"foreach": {
+				"batch": {
+					"key": "batch",
+					"visit": 1,
+					"concurrency": 1,
+					"maxItems": 10,
+					"failure": "all-must-succeed",
+					"items": [
+						{
+							"id": "good",
+							"index": 0,
+							"status": "completed"
+						},
+						{
+							"id": "bad",
+							"index": 1,
+							"status": "failed",
+							"error": "Controlled F1 provider failure for bad"
+						},
+						{
+							"id": "later",
+							"index": 2,
+							"status": "cancelled",
+							"error": "Not dispatched: sibling failed"
+						}
+					],
+					"completed": 1,
+					"failed": 1,
+					"total": 3
+				}
+			},
+			"turns": [
+				{
+					"run": "session-4",
+					"workflow": "f1-foreach-all-must-succeed",
+					"key": "batch/good/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "good",
+						"name": "Good"
+					},
+					"index": 0,
+					"current": {
+						"id": "good",
+						"name": "Good"
+					},
+					"position": 0,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-f9871ade-22fb-4df4-ba7c-b318ec5468a2"
+				},
+				{
+					"run": "session-4",
+					"workflow": "f1-foreach-all-must-succeed",
+					"key": "batch/bad/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "bad",
+						"name": "Bad"
+					},
+					"index": 1,
+					"current": {
+						"id": "bad",
+						"name": "Bad"
+					},
+					"position": 1,
+					"resumeSessionId": null
+				}
+			],
+			"history": [
+				{
+					"step": "batch/good/inspect",
+					"output": {
+						"id": "good",
+						"index": 0,
+						"name": "Good"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "good",
+						"index": 0,
+						"itemDigest": "b91782bd0f99f0681ea2a5b907830aceaca6672979dc47f5ee9f2c3554f896c9"
+					},
+					"at": "2026-10-21T23:28:53.508Z"
+				}
+			],
+			"activityCount": 3,
+			"activityTypes": ["thought"],
+			"commentCount": 2
+		},
+		{
+			"workflow": "f1-foreach-keep-successful",
+			"run": "session-5",
+			"status": "completed",
+			"outputs": {
+				"repository": {
+					"baseBranch": "main",
+					"name": "For each F1 fixture",
+					"githubUrl": "https://github.com/fixture/foreach"
+				},
+				"ticket": {
+					"attachments": [],
+					"id": "issue-5",
+					"identifier": "DEF-5",
+					"title": "F1 f1-foreach-keep-successful",
+					"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+					"url": "https://linear.app/test/issue/DEF-5",
+					"priority": 0,
+					"createdAt": "2026-10-21T23:28:54.189Z",
+					"updatedAt": "2026-10-21T23:28:54.189Z",
+					"labels": [],
+					"team": {
+						"id": "team-default",
+						"name": "Default Team",
+						"key": "DEF"
+					},
+					"comments": []
+				},
+				"batch/good/inspect": {
+					"id": "good",
+					"index": 0,
+					"name": "Good"
+				},
+				"batch/later/inspect": {
+					"id": "later",
+					"index": 2,
+					"name": "Later"
+				},
+				"batch": {
+					"results": {
+						"good": {
+							"inspect": {
+								"id": "good",
+								"index": 0,
+								"name": "Good"
+							}
+						},
+						"later": {
+							"inspect": {
+								"id": "later",
+								"index": 2,
+								"name": "Later"
+							}
+						}
+					},
+					"summary": {
+						"total": 3,
+						"completed": 2,
+						"failed": 1,
+						"cancelled": 0,
+						"failures": [
+							{
+								"id": "bad",
+								"index": 1,
+								"status": "failed",
+								"error": "Controlled F1 provider failure for bad"
+							}
+						],
+						"limitations": ["bad: Controlled F1 provider failure for bad"]
+					}
+				},
+				"verify": {
+					"passed": true,
+					"completed": true,
+					"failed": true,
+					"results": {
+						"good": {
+							"inspect": {
+								"id": "good",
+								"index": 0,
+								"name": "Good"
+							}
+						},
+						"later": {
+							"inspect": {
+								"id": "later",
+								"index": 2,
+								"name": "Later"
+							}
+						}
+					}
+				}
+			},
+			"foreach": {
+				"batch": {
+					"key": "batch",
+					"visit": 1,
+					"concurrency": 1,
+					"maxItems": 10,
+					"failure": "keep-successful",
+					"items": [
+						{
+							"id": "good",
+							"index": 0,
+							"status": "completed"
+						},
+						{
+							"id": "bad",
+							"index": 1,
+							"status": "failed",
+							"error": "Controlled F1 provider failure for bad"
+						},
+						{
+							"id": "later",
+							"index": 2,
+							"status": "completed"
+						}
+					],
+					"completed": 2,
+					"failed": 1,
+					"total": 3
+				}
+			},
+			"turns": [
+				{
+					"run": "session-5",
+					"workflow": "f1-foreach-keep-successful",
+					"key": "batch/good/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "good",
+						"name": "Good"
+					},
+					"index": 0,
+					"current": {
+						"id": "good",
+						"name": "Good"
+					},
+					"position": 0,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-1937af05-1de3-451a-be42-a1d10a563015"
+				},
+				{
+					"run": "session-5",
+					"workflow": "f1-foreach-keep-successful",
+					"key": "batch/bad/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "bad",
+						"name": "Bad"
+					},
+					"index": 1,
+					"current": {
+						"id": "bad",
+						"name": "Bad"
+					},
+					"position": 1,
+					"resumeSessionId": null
+				},
+				{
+					"run": "session-5",
+					"workflow": "f1-foreach-keep-successful",
+					"key": "batch/later/inspect",
+					"id": "inspect",
+					"item": {
+						"id": "later",
+						"name": "Later"
+					},
+					"index": 2,
+					"current": {
+						"id": "later",
+						"name": "Later"
+					},
+					"position": 2,
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-ac7ceaf8-6065-46bf-8abd-78b066efdc95"
+				}
+			],
+			"history": [
+				{
+					"step": "batch/good/inspect",
+					"output": {
+						"id": "good",
+						"index": 0,
+						"name": "Good"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "good",
+						"index": 0,
+						"itemDigest": "b91782bd0f99f0681ea2a5b907830aceaca6672979dc47f5ee9f2c3554f896c9"
+					},
+					"at": "2026-10-21T23:28:55.310Z"
+				},
+				{
+					"step": "batch/later/inspect",
+					"output": {
+						"id": "later",
+						"index": 2,
+						"name": "Later"
+					},
+					"iteration": {
+						"frame": "batch",
+						"id": "later",
+						"index": 2,
+						"itemDigest": "3f704badfb34fbcc2f1a19d7dadb297a217dde28c5857355b4e95ff334c0e23f"
+					},
+					"at": "2026-10-21T23:28:56.204Z"
+				},
+				{
+					"step": "batch",
+					"output": {
+						"results": {
+							"good": {
+								"inspect": {
+									"id": "good",
+									"index": 0,
+									"name": "Good"
+								}
+							},
+							"later": {
+								"inspect": {
+									"id": "later",
+									"index": 2,
+									"name": "Later"
+								}
+							}
+						},
+						"summary": {
+							"total": 3,
+							"completed": 2,
+							"failed": 1,
+							"cancelled": 0,
+							"failures": [
+								{
+									"id": "bad",
+									"index": 1,
+									"status": "failed",
+									"error": "Controlled F1 provider failure for bad"
+								}
+							],
+							"limitations": ["bad: Controlled F1 provider failure for bad"]
+						}
+					},
+					"at": "2026-10-21T23:28:56.279Z"
+				},
+				{
+					"step": "verify",
+					"output": {
+						"passed": true,
+						"completed": true,
+						"failed": true,
+						"results": {
+							"good": {
+								"inspect": {
+									"id": "good",
+									"index": 0,
+									"name": "Good"
+								}
+							},
+							"later": {
+								"inspect": {
+									"id": "later",
+									"index": 2,
+									"name": "Later"
+								}
+							}
+						}
+					},
+					"evidence": {},
+					"at": "2026-10-21T23:28:56.358Z"
+				}
+			],
+			"activityCount": 4,
+			"activityTypes": ["thought"],
+			"commentCount": 3
+		},
+		{
+			"workflow": "f1-foreach-missing-path",
+			"run": "session-6",
+			"status": "failed",
+			"error": "For each path \"/source/missing\" does not resolve (missing \"missing\")",
+			"outputs": {
+				"repository": {
+					"baseBranch": "main",
+					"name": "For each F1 fixture",
+					"githubUrl": "https://github.com/fixture/foreach"
+				},
+				"ticket": {
+					"attachments": [],
+					"id": "issue-6",
+					"identifier": "DEF-6",
+					"title": "F1 f1-foreach-missing-path",
+					"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+					"url": "https://linear.app/test/issue/DEF-6",
+					"priority": 0,
+					"createdAt": "2026-10-21T23:28:56.554Z",
+					"updatedAt": "2026-10-21T23:28:56.554Z",
+					"labels": [],
+					"team": {
+						"id": "team-default",
+						"name": "Default Team",
+						"key": "DEF"
+					},
+					"comments": []
+				},
+				"source": {
+					"items": [
+						{
+							"id": "alpha",
+							"name": "Alpha"
+						},
+						{
+							"id": "beta",
+							"name": "Beta"
+						},
+						{
+							"id": "gamma",
+							"name": "Gamma"
+						}
+					]
+				}
+			},
+			"turns": [
+				{
+					"run": "session-6",
+					"workflow": "f1-foreach-missing-path",
+					"key": "source",
+					"id": "source",
+					"resumeSessionId": null,
+					"sessionId": "f1-mock-c45d8569-19c9-4ccf-a2f6-1aed54daf49e"
+				}
+			],
+			"history": [
+				{
+					"step": "source",
+					"output": {
+						"items": [
+							{
+								"id": "alpha",
+								"name": "Alpha"
+							},
+							{
+								"id": "beta",
+								"name": "Beta"
+							},
+							{
+								"id": "gamma",
+								"name": "Gamma"
+							}
+						]
+					},
+					"at": "2026-10-21T23:28:57.564Z"
+				}
+			],
+			"activityCount": 3,
+			"activityTypes": ["thought"],
+			"commentCount": 2
+		}
+	]
+}

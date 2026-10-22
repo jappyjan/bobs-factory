@@ -1,0 +1,583 @@
+{
+	"recordedAt": "2026-10-22T00:03:12.832566+00:00",
+	"base": "fdf52677be7ef22f8e31001031a26da61f4efdb3",
+	"testedSource": "f4fe779d15feda6050c0e6b560efe0b060e94f2b",
+	"testedTree": "d3e77e459995f9c097e057b2c4201592b57a3b9f",
+	"productionSource": "9b79a19f7b672a8a759400cc9f715aec3f140635",
+	"productionTree": "6a2381c20aee641f7af2578a2ccbf3cab4a3434b",
+	"webBuild": "37aae3292ed089cb18e738f1",
+	"worktree": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-138-foreach",
+	"branch": "taskbot/138-foreach",
+	"statusAtCollection": "",
+	"deltaAfterProductionFreeze": [
+		"apps/f1/test-drives/assets/taskbot138-foreach-ui.mjs",
+		"packages/edge-worker/test/EdgeWorker.workflow-triggers.test.ts"
+	],
+	"node": "v24.21.0",
+	"pnpm": "10.33.1",
+	"buildGates": "gates-a.json",
+	"finalGates": "gates-final.json",
+	"firstCompletePackagesFailure": "gates-first-packages-failed.json",
+	"f1Receipt": "f1-results.json",
+	"nativeReceipt": "native-results.json",
+	"uiIdentity": "ui-identity.json",
+	"uiInteractions": "ui-interactions.json",
+	"screenshots": "screenshots.json",
+	"logEncoding": "gzip, original bytes recoverable; SHA256 is over uncompressed original",
+	"logs": [
+		{
+			"original": "/tmp/taskbot138-combined-focused.log",
+			"retained": "logs/taskbot138-combined-focused.log.gz",
+			"bytes": 3303,
+			"sha256": "4300257d3b87dd731a39bf3bb66bda4e8e055b6a3f90fe20fed4e4d142cf560e",
+			"gzipSha256": "8166e4409bd07df545afb175c009d8e2b41ca90901cf72a1220623533297a072",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-core-build.log",
+			"retained": "logs/taskbot138-core-build.log.gz",
+			"bytes": 116,
+			"sha256": "76261aef74ecd37592d12098f1d5b1c3b8432eedf9a598d5667f040be4de902e",
+			"gzipSha256": "e04652a5457d26fa3e68d767a7dd55c1ae7e9b0e48bc6e55ffe4ce66f59f5d4b",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-deps-build.log",
+			"retained": "logs/taskbot138-deps-build.log.gz",
+			"bytes": 1339,
+			"sha256": "267e9c2f996273ddb521105bc98bd9d7d9241d3174ad23d1b031454b88ba8e8f",
+			"gzipSha256": "9f5a82295e129a771dcd5289b7c85199a00cdb403b64831a45f157bf8df8a268",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-f1-final.log",
+			"retained": "logs/taskbot138-f1-final.log.gz",
+			"bytes": 16447,
+			"sha256": "84b3734f47f986138abfdd67e29f26190b1480f551a8d9e80e5ec163526bb09a",
+			"gzipSha256": "0dba38a8902d9f74e85a58e13823a9e1ef585c7fd3484039c0f6f789daa4df58",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-build.log",
+			"retained": "logs/taskbot138-final-build.log.gz",
+			"bytes": 3170,
+			"sha256": "553713e6b0145eba1066e68e96d5cc466cb04482204e83bd4fd6abeef0548241",
+			"gzipSha256": "83f16b398dee654f3c4649ded228392a4a49fea4e4bce8256288a719625e76ac",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-final-focused.log",
+			"retained": "logs/taskbot138-final-focused.log.gz",
+			"bytes": 576,
+			"sha256": "affe57ac7ea7c6097ec7cf72ec0f7b4519ff7a5120bbd4b529fd4d0ebb4d88b4",
+			"gzipSha256": "422064ed639ab427a9707dcc65750f6cbf0a115e8a271fe22c87ffb8a897f09d",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-lint.log",
+			"retained": "logs/taskbot138-final-lint.log.gz",
+			"bytes": 14945,
+			"sha256": "20192ad8ffddf9019dfe70ad6d04a4534275a8591a5c747624b538503fb02bbd",
+			"gzipSha256": "06f775abd4a4da98b9fc5498922e95aa90e03f771de4a87a594717ee3d7d14a2",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-final-scoped-format.log",
+			"retained": "logs/taskbot138-final-scoped-format.log.gz",
+			"bytes": 44,
+			"sha256": "df53b13f7b28906002c33ac7f5581a7ad7a0b1d886c9b751f09338e8a49137db",
+			"gzipSha256": "1585f6c0caa6206727a6e9fd64994220e4777479625414e162a48ae8e979b01e",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-build.log",
+			"retained": "logs/taskbot138-final-source-build.log.gz",
+			"bytes": 3170,
+			"sha256": "507665c76af2cf04e9d0f530b9643a04110fc99fc7059c43632b8649e556beb3",
+			"gzipSha256": "c87ca2ed0fb181af9755828b1f5cc17d8fd42e8235347f9988788c73fe20a641",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-lint.log",
+			"retained": "logs/taskbot138-final-source-lint.log.gz",
+			"bytes": 14945,
+			"sha256": "038133d1455db6666bf3025c4999ba14e9057989671b32f7b9478d27c54fea6e",
+			"gzipSha256": "5717a8d7a58b53cc069ac07d1d7d7f14ff8ba2be513611da8433a154eb080ede",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-packages.log",
+			"retained": "logs/taskbot138-final-source-packages.log.gz",
+			"bytes": 13085,
+			"sha256": "1c85bf9d7410743d2dc6ffd3ee8c814471e849e9f51a97ea9955a52a540107ae",
+			"gzipSha256": "cffb262c088cc490353cd8adbed40f8ea24467448a2a857093fa734caef5b71d",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-r2-apps.log",
+			"retained": "logs/taskbot138-final-source-r2-apps.log.gz",
+			"bytes": 8100,
+			"sha256": "2db007a123a6f73a188ec6a9b437d3452aedd5583a44cfeb458109c71b36c1c9",
+			"gzipSha256": "7655dc7c6282cdaadfa55bd15dfd6b3014b6ad84051ec448573667a86f669db6",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-r2-audit.log",
+			"retained": "logs/taskbot138-final-source-r2-audit.log.gz",
+			"bytes": 31,
+			"sha256": "15950a68a7ed99c59779717acefdceb3f69cfd31bde67d2c954f2a3cea4d7955",
+			"gzipSha256": "17b2c9bde5b04d25e0ce2ed9f5d62f9e6b4e8994adcaee918ea93db7a297027f",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-r2-lint.log",
+			"retained": "logs/taskbot138-final-source-r2-lint.log.gz",
+			"bytes": 14949,
+			"sha256": "7dedec35ca7ef71c4ca4f5c9660119cd5efe6b3358f58a964354c64bb93169d0",
+			"gzipSha256": "7a2e534c90b5993736f289b6ab65af01c5be0037b59212e7cdc1e64cc57e766b",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-r2-packages.log",
+			"retained": "logs/taskbot138-final-source-r2-packages.log.gz",
+			"bytes": 11425,
+			"sha256": "84ceff6496ee9455f27088fc6c2711d2314da559a28ef62a7539a44ad87449ff",
+			"gzipSha256": "45393078e02fe5d165cb7e12c7bd821822363fa525d927e030d5105bb6ca7424",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-r2-scripts.log",
+			"retained": "logs/taskbot138-final-source-r2-scripts.log.gz",
+			"bytes": 17610,
+			"sha256": "19f3387716f8d25e831e8d5c92296620aefdc1c816e3fcc544f4f23c634db1a5",
+			"gzipSha256": "2b7b177135c13723f081daacae57a7c4ee720c3c3b13bc45e201c64c665e10ec",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-r2-typecheck.log",
+			"retained": "logs/taskbot138-final-source-r2-typecheck.log.gz",
+			"bytes": 1867,
+			"sha256": "d54e5393d31a1a080b12729f25f6efc2464dce806e4a7cafb1e694af793342f3",
+			"gzipSha256": "a7a83f8a579495956a8da47a2261bfcef9f4c54bd1e30403ea242c763765fe1d",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-source-typecheck.log",
+			"retained": "logs/taskbot138-final-source-typecheck.log.gz",
+			"bytes": 1867,
+			"sha256": "90c3b89773f46bfa46398dc6d9738a979c21304e8eaa70a8ba98fe4e7a7fea51",
+			"gzipSha256": "893b48a45c91654b47208f77e4480d662a652023924b09d78a38e226ab25bd8d",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-final-typecheck.log",
+			"retained": "logs/taskbot138-final-typecheck.log.gz",
+			"bytes": 1867,
+			"sha256": "9e41e4e76fb1599ecf9e30312f335953a974b7a0daf8255bb8d91db5733bd7a9",
+			"gzipSha256": "d2d3920fd7ba24b8ac7e2f237a3219745dda963c445c493a95f8347d57664d96",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-focused-seam-final.log",
+			"retained": "logs/taskbot138-focused-seam-final.log.gz",
+			"bytes": 577,
+			"sha256": "437e96962d9423fd02ec855a8ff8ba48b06b39652ee9055920b610d5d936b32b",
+			"gzipSha256": "2e1b7d8a4dae5ba9b0683fa0cb02cba4a23e196e972f30f9d793f4159cd065bc",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-focused-seam.log",
+			"retained": "logs/taskbot138-focused-seam.log.gz",
+			"bytes": 1961,
+			"sha256": "16c41ee201c9da87b8d003240a121796c437fab1569db788e0837650055f16c3",
+			"gzipSha256": "e9b13f8f067ca35a3d6f6f6f2b7ffe0e8831b0fc403c1b23cc5b47244063e253",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-focused-typecheck.log",
+			"retained": "logs/taskbot138-focused-typecheck.log.gz",
+			"bytes": 172,
+			"sha256": "9f9d5df15e4c9e9bae4d51079fd3e6170eac23086d9150c328697fb580e4c616",
+			"gzipSha256": "878bef3f5d9343992a9007ec32fbcb5adc0f5813c9bd98d9746e18a05b327117",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-foreach-focused-r2.log",
+			"retained": "logs/taskbot138-foreach-focused-r2.log.gz",
+			"bytes": 576,
+			"sha256": "ab5834674e5b16252563665c49d546f415cc57f5072a92f1dea1721eb0a3f112",
+			"gzipSha256": "4bdf6cd4ee5a4cd4c22115fd65b8cf3415807efe8c3b7b35f7e967114caefe4a",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-foreach-focused.log",
+			"retained": "logs/taskbot138-foreach-focused.log.gz",
+			"bytes": 5748,
+			"sha256": "afbc1f057b8f919dbe67deb46e4db41d540a19dd51acb103c18cd37df64f94be",
+			"gzipSha256": "142705c8c3fd7ec54e8d91bfaa14049259454befe1b43b4e1799c01b449e1dbc",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-format-r2.log",
+			"retained": "logs/taskbot138-format-r2.log.gz",
+			"bytes": 42,
+			"sha256": "70a1c039c35ba7c034b0bce2e9c5eb0a2dd79edf57a5a94d3b4139987c7c6d1f",
+			"gzipSha256": "518455e39db62d2b1f5c59c9bd57def46b90a6ed9cdb72bc183ef0504e6d0998",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-format.log",
+			"retained": "logs/taskbot138-format.log.gz",
+			"bytes": 42,
+			"sha256": "d3ebb3920aa39c87f7224aec23c3e5bbb615da3fdcdf257139f320978caea785",
+			"gzipSha256": "3e69e3bb9398d7eb03fcd54bba4203d989cd5ee353ddd5d3c2d578c73b215ecb",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-install.log",
+			"retained": "logs/taskbot138-install.log.gz",
+			"bytes": 1802,
+			"sha256": "c5d5ab52c9d9b288f6acdc24a3399613302bc710c2b8e09fca8e80b5a2ada483",
+			"gzipSha256": "cab662c9b691e27365010a93f9758cc9798f4601e43e386cd52e517b92f6e439",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-last-scope-format.log",
+			"retained": "logs/taskbot138-last-scope-format.log.gz",
+			"bytes": 39,
+			"sha256": "cea0f7beb40fb19118a0ff02147f74669e0cc3a3597bd1d901addb5f6a03d0d8",
+			"gzipSha256": "5e2a5dd5b7f4d97b1e3c6c7eea9de02686729cf3e35d49f46f4980ae3148bba3",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-native-build.log",
+			"retained": "logs/taskbot138-native-build.log.gz",
+			"bytes": 76,
+			"sha256": "41fe15c9ab89fce1c77f06d5aca6a3ab27261762854439733c80a80eb7a0b3dc",
+			"gzipSha256": "b10117f5d2691610f7741ad5221ada11fb8144b6c52ecf845e04358452ebf7c3",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-native-foreach-final.log",
+			"retained": "logs/taskbot138-native-foreach-final.log.gz",
+			"bytes": 244,
+			"sha256": "2769e461ba944186d7a004253ece51c14a7b2cc9bc8ac04213f40394b3e51b56",
+			"gzipSha256": "fff27901d404261318c60ccd5d01a39f4eda4a746c30d3b9cd323b8154a035ac",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-native-foreach-preliminary.log",
+			"retained": "logs/taskbot138-native-foreach-preliminary.log.gz",
+			"bytes": 1049,
+			"sha256": "743c266390cfc0084b4d0eeaa8d9246426b295e915c970868dcf3000a5adffd2",
+			"gzipSha256": "79f9daa2a5ee9ed1e23fc550bb4029f8fa81d6376912f8335f0e730887f6dba4",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-native-smoke.log",
+			"retained": "logs/taskbot138-native-smoke.log.gz",
+			"bytes": 535,
+			"sha256": "148362ecca6d78cad497348a29838b271eea490b93a04a6430c4826f682e46cc",
+			"gzipSha256": "b61e7cad832660f697b823ed2e7cb30b29ad9497a41624b6f2e1f9ec34d37cbb",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-ownership-fixture-focused.log",
+			"retained": "logs/taskbot138-ownership-fixture-focused.log.gz",
+			"bytes": 771,
+			"sha256": "39694c48418f9d961e4b3f6ddf1ac1fa7cbf217e52f9cb68f5f624990a31bd8f",
+			"gzipSha256": "d7c8eb29f0b2db8e2d1a637127fb819afe5a025f8d12160c448cb3f995d1888d",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-pre-freeze-typecheck.log",
+			"retained": "logs/taskbot138-pre-freeze-typecheck.log.gz",
+			"bytes": 172,
+			"sha256": "9f9d5df15e4c9e9bae4d51079fd3e6170eac23086d9150c328697fb580e4c616",
+			"gzipSha256": "878bef3f5d9343992a9007ec32fbcb5adc0f5813c9bd98d9746e18a05b327117",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-seam-format-r2.log",
+			"retained": "logs/taskbot138-seam-format-r2.log.gz",
+			"bytes": 41,
+			"sha256": "d933642d6c585860e141541f065c6f8e1199a4fbe9b4f419169e120fb9bba4d2",
+			"gzipSha256": "ba8736838eba06c3d43f84a9fd9ec6280f622dcad58ce1134131a89956718032",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-seam-format-r3.log",
+			"retained": "logs/taskbot138-seam-format-r3.log.gz",
+			"bytes": 38,
+			"sha256": "a9a270b76125af84480a7d3765a4f9f92629635c922bec2911877e450d1fcf65",
+			"gzipSha256": "f884010103d563a35af32cc1065babeff9d22ac59c8601ff4045ce6a15e9abf5",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-seam-format.log",
+			"retained": "logs/taskbot138-seam-format.log.gz",
+			"bytes": 41,
+			"sha256": "d54359b68154c72fd0fca95530f6fda88d8f161def21171fe867d99703a44110",
+			"gzipSha256": "f6408970ac3051195e9d89b0501fe14433a35f09d882af4361fee9554f653465",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-traversal-lint.log",
+			"retained": "logs/taskbot138-traversal-lint.log.gz",
+			"bytes": 44,
+			"sha256": "d190b6d42701894300b4207668f9c8ba79a077703e3ae26f5791eb6ab55c5249",
+			"gzipSha256": "6f4d748d6aaa839e8b47a0218e165586026b5d34cd73b5dd454d56a566cb2369",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-ui-lint.log",
+			"retained": "logs/taskbot138-ui-lint.log.gz",
+			"bytes": 41,
+			"sha256": "c122ed963798ddd8474f080db9937a3cdd3d43f4dc74b3733a3618cfa978fa1f",
+			"gzipSha256": "2c07eac20e77c59e8b6a68a2e8c805a0e89c3aa84b38e9bf501aead105007437",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-ui-r2-driver.log",
+			"retained": "logs/taskbot138-ui-r2-driver.log.gz",
+			"bytes": 434,
+			"sha256": "6548a005c7265d2f0bba373c1c46fa40596298c2418ac77f45b182c682f0d57e",
+			"gzipSha256": "46d0c609738e0658e37c088ef1fe8ca3eabac6a0f68048fe3859ba81afbd64e7",
+			"classification": "final"
+		},
+		{
+			"original": "/tmp/taskbot138-ui-server.log",
+			"retained": "logs/taskbot138-ui-server.log.gz",
+			"bytes": 320,
+			"sha256": "56dca9ecf49966139d9e9f08f2b711a665212b96eab7783fa747afaf1d43d5d1",
+			"gzipSha256": "705aa5f828e7bb7ba34e0090c5391918cc00bf2786b0eb929a2c59e565824986",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-ui-tests.log",
+			"retained": "logs/taskbot138-ui-tests.log.gz",
+			"bytes": 573,
+			"sha256": "dcee1f0e2d1f57dc118141b9f27244593eee2533afe80922a1dd949b0b21c5d0",
+			"gzipSha256": "55866058426e8ac72054665fc7a4fd33a93bdb57e1aab6fe73189d4ebb0964c9",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-ui-typecheck-final.log",
+			"retained": "logs/taskbot138-ui-typecheck-final.log.gz",
+			"bytes": 0,
+			"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"gzipSha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/tmp/taskbot138-ui-typecheck.log",
+			"retained": "logs/taskbot138-ui-typecheck.log.gz",
+			"bytes": 198,
+			"sha256": "724ac5f53c6f153add985c74867219ba6064c7794c3fc64488950ad95711c574",
+			"gzipSha256": "644900579594aa15fcfcada94e9056b01c1e70243bd4eb1aa3dbb9440d6bfb77",
+			"classification": "failed-or-superseded"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-31_evsfx/native-foreach-all-must-succeed.json",
+			"retained": "logs/native-native-foreach-all-must-succeed.json.gz",
+			"bytes": 293675,
+			"sha256": "46f22231b60ba024d7231b3e5c8c1649284e20561dcc87b68a6e9ca9234c777c",
+			"gzipSha256": "441b7b6f385123453d1d02f366e81ce94e350db0664eb6d1f5648f4f116a0b34",
+			"classification": "final"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-31_evsfx/native-foreach-keep-successful.json",
+			"retained": "logs/native-native-foreach-keep-successful.json.gz",
+			"bytes": 296205,
+			"sha256": "70b31e9f3c134716a3a46ce2b029936be5e8988dd5b481374c20ec9b0a91ddea",
+			"gzipSha256": "698b57d2ae126ad4f1140228c282a77036fb7ee54c4d6a70ad4b5a39f87aecd6",
+			"classification": "final"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-31_evsfx/native-foreach-nested.json",
+			"retained": "logs/native-native-foreach-nested.json.gz",
+			"bytes": 337458,
+			"sha256": "2aad8b83d83f2a02b022ee839d027c3eee44f76df32195159c46fee4ea0d2a7a",
+			"gzipSha256": "b0b77a390de5b194e53c0edf8a869c4b7cd6780dd6caec025ebd1afe4edda225",
+			"classification": "final"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-31_evsfx/rejected-provider-starts.log",
+			"retained": "logs/native-rejected-provider-starts.log.gz",
+			"bytes": 174,
+			"sha256": "6797efd7aae0b726251d4595c1dec61a699c7ad040ead6e00853ba215c0d724c",
+			"gzipSha256": "b29d8764d86b044c146ca44ce3e489248f099bc458070a57bcd3cd8138382f88",
+			"classification": "final"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-31_evsfx/restart.log",
+			"retained": "logs/native-restart.log.gz",
+			"bytes": 3001,
+			"sha256": "936f521380837cd054b5c901133459fc033031553c57599c4557a991dd4f890e",
+			"gzipSha256": "5283734b4a309f7397d6367a1f9d5769e20ca28aa99625413e6b012e819b2aae",
+			"classification": "final"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-31_evsfx/startup.log",
+			"retained": "logs/native-startup.log.gz",
+			"bytes": 16995,
+			"sha256": "d6afcd4788c8ff2ad31a430d599a6fb35b64494b9390e1feaa6724306a225db4",
+			"gzipSha256": "80951a5a53266e2847de4bd9a3380e62b04476dfd0860c14e6a2671f30d29f58",
+			"classification": "final"
+		}
+	],
+	"scopedProof": "All changes after9b79 are the UI driver readiness wait and test fixture lifecycle cleanup. Production sources, prompts, skills, package/dependency manifests, lockfile, binary tooling and web assets are unchanged. Later evidence/changelog commits do not relabel the executed9b79 F1/native/browser build. No rerun of unchanged runtime F1/native/browser inputs is claimed.",
+	"counts": {
+		"packages": [
+			{
+				"workspace": "packages/cloudflare-tunnel-client",
+				"summary": "26 passed (26)"
+			},
+			{
+				"workspace": "packages/core",
+				"summary": "263 passed (263)"
+			},
+			{
+				"workspace": "packages/mcp-tools",
+				"summary": "82 passed (82)"
+			},
+			{
+				"workspace": "packages/gitlab-event-transport",
+				"summary": "11 passed (11)"
+			},
+			{
+				"workspace": "packages/github-event-transport",
+				"summary": "117 passed (117)"
+			},
+			{
+				"workspace": "packages/slack-event-transport",
+				"summary": "82 passed (82)"
+			},
+			{
+				"workspace": "packages/claude-runner",
+				"summary": "137 passed (137)"
+			},
+			{
+				"workspace": "packages/linear-event-transport",
+				"summary": "75 passed (75)"
+			},
+			{
+				"workspace": "packages/zulip-event-transport",
+				"summary": "25 passed (25)"
+			},
+			{
+				"workspace": "packages/config-updater",
+				"summary": "52 passed (52)"
+			},
+			{
+				"workspace": "packages/simple-agent-runner",
+				"summary": "24 passed (24)"
+			},
+			{
+				"workspace": "packages/gemini-runner",
+				"summary": "200 passed | 1 skipped (201)"
+			},
+			{
+				"workspace": "packages/cursor-runner",
+				"summary": "56 passed (56)"
+			},
+			{
+				"workspace": "packages/codex-runner",
+				"summary": "140 passed (140)"
+			},
+			{
+				"workspace": "packages/opencode-runner",
+				"summary": "34 passed (34)"
+			},
+			{
+				"workspace": "packages/edge-worker",
+				"summary": "2689 passed | 1 skipped (2690)"
+			}
+		],
+		"apps": [
+			{
+				"workspace": "apps/cli",
+				"summary": "254 passed (254)"
+			},
+			{
+				"workspace": "apps/f1",
+				"summary": "17 passed (17)"
+			}
+		]
+	},
+	"testTotals": {
+		"packages": {
+			"passed": 4013,
+			"skipped": 2
+		},
+		"apps": {
+			"passed": 312,
+			"skipped": 1,
+			"desktop": {
+				"passed": 41,
+				"skipped": 1
+			}
+		},
+		"scripts": {
+			"files": 24,
+			"passed": 179,
+			"skipped": 0
+		},
+		"focusedForeach": {
+			"files": 6,
+			"passed": 81
+		},
+		"focusedOwnershipFixture": {
+			"files": 1,
+			"passed": 59
+		}
+	},
+	"baseFreshness": {
+		"fetchCompletedAt": "2026-10-22T00:00:29Z",
+		"originMain": "fdf52677be7ef22f8e31001031a26da61f4efdb3",
+		"unchangedSinceInitialRequiredGreenCheck": true,
+		"requiredBaseCI": "39689410541",
+		"website": "path-filtered; not claimed current-SHA green"
+	},
+	"unchangedExecutedInputs": {
+		"uiSourceMatches": {
+			"apps/f1/test-drives/assets/taskbot138-foreach-ui.mjs": true,
+			"packages/edge-worker/src/factory/Foreach.ts": true,
+			"packages/edge-worker/src/factory/Check.ts": true,
+			"packages/edge-worker/src/factory/Rules.ts": true,
+			"packages/edge-worker/src/factory/Workflow.ts": true,
+			"packages/edge-worker/src/factory/WorkflowRuntime.ts": true,
+			"packages/edge-worker/src/factory/StepBindings.ts": true,
+			"packages/edge-worker/src/factory/StepConfig.ts": true,
+			"packages/edge-worker/src/factory/ConfigProjection.ts": true,
+			"packages/edge-worker/src/factory/RunProjection.ts": true,
+			"packages/edge-worker/src/factory/FactoryServer.ts": true,
+			"packages/edge-worker/src/factory/web/recipe-builder.tsx": true,
+			"packages/edge-worker/src/factory/web/recipe-graph.ts": true,
+			"packages/edge-worker/src/factory/web/recipe-canvas.tsx": true,
+			"packages/edge-worker/src/factory/web/foreach-step-settings.tsx": true,
+			"packages/edge-worker/src/factory/web/foreach-simulation.tsx": true,
+			"packages/edge-worker/src/factory/web/foreach-progress.tsx": true,
+			"packages/edge-worker/src/factory/web/client.ts": true,
+			"packages/edge-worker/src/factory/web/app.tsx": true,
+			"packages/edge-worker/src/factory/web/styles.css": true
+		},
+		"uiBackendMatches": {
+			"Foreach.js": true,
+			"Check.js": true,
+			"Rules.js": true,
+			"Workflow.js": true,
+			"WorkflowRuntime.js": true,
+			"StepBindings.js": true,
+			"StepConfig.js": true,
+			"ConfigProjection.js": true,
+			"RunProjection.js": true,
+			"FactoryServer.js": true
+		},
+		"f1BuiltJavaScriptSha256": "a478c07dca61146cf7eb263071a7a56a4bd1cceae21628edd11ea5a6d62721be",
+		"f1DriverSha256": "345d449b373692f8ba2e1cff666be71e2756858843d572c61fa40bc2635f4ccd",
+		"binarySha256": "066ac9cb51b513628c989a85b0b15fe70a47240862186e434b8a7b8d9a8c615e",
+		"nativeDriverSha256": "0aecbcb1b9a3541ffc90f0819a26336615460367a6bbca302eb65745a958b513",
+		"webBuild": "build-37aae3292ed089cb18e738f1"
+	}
+}

@@ -1,0 +1,44 @@
+{
+	"source": "9b79a19f7b672a8a759400cc9f715aec3f140635",
+	"tree": "6a2381c20aee641f7af2578a2ccbf3cab4a3434b",
+	"node": "v24.21.0",
+	"pnpm": "10.33.1",
+	"gates": [
+		{
+			"name": "build",
+			"command": ["corepack", "pnpm", "build"],
+			"startedAt": "2026-10-21T23:27:53.283021+00:00",
+			"finishedAt": "2026-10-21T23:28:03.093820+00:00",
+			"elapsedSeconds": 9.811,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-build.log",
+			"sha256": "507665c76af2cf04e9d0f530b9643a04110fc99fc7059c43632b8649e556beb3",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "typecheck",
+			"command": ["corepack", "pnpm", "typecheck"],
+			"startedAt": "2026-10-21T23:28:03.146994+00:00",
+			"finishedAt": "2026-10-21T23:28:10.784035+00:00",
+			"elapsedSeconds": 7.637,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-typecheck.log",
+			"sha256": "90c3b89773f46bfa46398dc6d9738a979c21304e8eaa70a8ba98fe4e7a7fea51",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "lint",
+			"command": ["corepack", "pnpm", "lint"],
+			"startedAt": "2026-10-21T23:28:10.829468+00:00",
+			"finishedAt": "2026-10-21T23:28:13.421093+00:00",
+			"elapsedSeconds": 2.592,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-lint.log",
+			"sha256": "038133d1455db6666bf3025c4999ba14e9057989671b32f7b9478d27c54fea6e",
+			"statusBefore": "",
+			"statusAfter": ""
+		}
+	]
+}
