@@ -1,0 +1,71 @@
+2026-10-22T03:45:23.623Z [INFO ] [EdgeWorker] Deployed default skills to /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-impact-feedback-M1DHrf/home/bobs-factory-skills-plugin (5 skills)
+2026-10-22T03:45:23.624Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-impact-feedback-M1DHrf/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T03:45:23.624Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:45:23.624Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:45:23.639Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:63181
+2026-10-22T03:45:23.642Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:45:23.642Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:45:23.642Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:45:23.642Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:45:23.642Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:45:23.643Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:45:23.643Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:45:23.643Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:45:23.643Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:45:23.643Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:45:23.643Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:45:23.643Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:45:23.643Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:45:23.649Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:45:23.649Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:45:23.649Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:45:23.649Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:45:23.651Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:63180
+2026-10-22T03:45:23.657Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-22T03:45:23.660Z [INFO ] [RepositoryRouter] Repository selected: Fixture (workspace catch-all)
+2026-10-22T03:45:23.660Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-22T03:45:23.660Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-1} Handling agent session created
+2026-10-22T03:45:23.663Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-22T03:45:23.668Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T03:45:23.668Z [INFO ] [GitService] createSingleRepoWorktree for Fixture (id=fixture): baseBranchOverride=undefined
+2026-10-22T03:45:23.784Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-impact-feedback-M1DHrf/worktrees/DEF-1 from origin/main (tracking main)
+2026-10-22T03:45:23.814Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Tracking session for issue issue-1
+2026-10-22T03:45:23.840Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Starting agent session for issue DEF-1
+2026-10-22T03:45:23.840Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Building initial prompt for issue DEF-1
+2026-10-22T03:45:24.135Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:45:24.309Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:45:24.660Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:45:25.367Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:45:25.863Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+2026-10-22T03:45:26.099Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:45:26.099Z [INFO ] [SharedApplicationServer] Shared application server stopped
+2026-10-22T03:45:26.135Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:45:26.135Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:45:26.143Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:63181
+2026-10-22T03:45:26.145Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:45:26.145Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:45:26.146Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:45:26.146Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:45:26.146Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:45:26.146Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:45:26.146Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:45:26.146Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:45:26.146Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:45:26.146Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:45:26.146Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:45:26.146Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:45:26.146Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:45:26.150Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:45:26.150Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:45:26.150Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:45:26.150Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:45:26.150Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:63180
+2026-10-22T03:45:26.171Z [INFO ] [AgentSessionManager] {session=saved-im, platform=manual} Creating chat session
+2026-10-22T03:45:26.501Z [INFO ] [AgentSessionManager] {session=saved-im} Session completed (subtype: success)
+2026-10-22T03:45:27.213Z [INFO ] [AgentSessionManager] {session=saved-im} Session completed (subtype: success)
+2026-10-22T03:45:27.718Z [INFO ] [AgentSessionManager] {session=saved-im} Session completed (subtype: success)
+PASS /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-impact-feedback-M1DHrf
+2026-10-22T03:45:27.872Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:45:27.872Z [INFO ] [SharedApplicationServer] Shared application server stopped

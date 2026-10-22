@@ -51,6 +51,7 @@ import {
 	type ResolvedLaunchRequest,
 	resolveLaunchRequest,
 } from "./LaunchFields.js";
+import { launchBatchProjection } from "./LaunchRuns.js";
 import {
 	directLocalFactoryRequest,
 	factoryRequestOrigins,
@@ -1728,6 +1729,17 @@ export class FactoryServer {
 						questions: [],
 						outputs: {},
 					}),
+					...(run
+						? {
+								recipeParent: run.recipeParent,
+								launchActions: Object.fromEntries(
+									Object.entries(run.launchActions ?? {}).map(([id, batch]) => [
+										id,
+										launchBatchProjection(batch),
+									]),
+								),
+							}
+						: {}),
 					...(run && !focus
 						? {
 								outputRoles: presentationOutputKeys(run),
@@ -2147,6 +2159,16 @@ export class FactoryServer {
 					.send(
 						runActionResult(await hooks.followup(request.params.id, feedback)),
 					);
+			},
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/stop-batch",
+			async (request) => {
+				const { actionId } = z
+					.object({ actionId: z.string().min(1).max(500).optional() })
+					.parse(request.body ?? {});
+				await runtime.stopBatch(request.params.id, actionId);
+				return { ...actionResult(request.params.id), stopped: true };
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(

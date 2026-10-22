@@ -1,0 +1,23 @@
+{
+  "architecture-approval-continuation.mjs": {
+    "beforeSha256": "234aaa990a96a0f4097777eaaba844282db547d219840bd420d0781d07e5690e",
+    "afterSha256": "7a5e981c99369295075544ceed4b20971943b68bca822560907e6ee0013b41b3",
+    "assertionCalls": 25,
+    "originalOutcomesRetained": true,
+    "detail": "Outcome/approval/restart assertion block is byte-identical."
+  },
+  "impact-feedback-recovery.mjs": {
+    "beforeSha256": "7f1509c7d39fd715309eaab1b49ce193da16537e7c5e09cd6c6fd7a5fa4bd4a4",
+    "afterSha256": "29a84d534bc0d510ce1d4404c632a456a299f378ab5d6821141e4bd1b2ed55a6",
+    "assertionCalls": 17,
+    "originalOutcomesRetained": true,
+    "detail": "Only three exact qualified-output lookups changed, plus Biome formatting of the same assertion."
+  },
+  "workflow-stall-recovery.mjs": {
+    "beforeSha256": "775dde37cf21411b527948a6acd2cb152154f0b6ea7a4db9065d038690d4d232",
+    "afterSha256": "6082f670256c4e8c3f95fb6c165ff517ca4a506196ae4c7f9c2f2d4807dcac7b",
+    "assertionCalls": 64,
+    "originalOutcomesRetained": true,
+    "detail": "Outcome/approval/restart assertion block is byte-identical."
+  }
+}

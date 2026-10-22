@@ -1,0 +1,60 @@
+{
+  "source": "196d2f6d3fdd12e51e3fd96cc7881feeaffb5ee5",
+  "node": "v24.21.0",
+  "pnpm": "10.33.1",
+  "workers": 2,
+  "workspaceConcurrency": 1,
+  "reason": "8 logical CPUs /16GiB host; bounded Vitest workers and serial workspace packages avoid aggregate process/memory contention",
+  "checks": [
+    {
+      "name": "build",
+      "command": "pnpm build",
+      "result": "PASS",
+      "source": "196d2f6d3fdd12e51e3fd96cc7881feeaffb5ee5",
+      "execution": "successful source-freeze pre-commit hook after lint-staged; exit0 commit196d2f6d"
+    },
+    {
+      "name": "typecheck",
+      "command": "pnpm typecheck",
+      "result": "PASS",
+      "source": "196d2f6d3fdd12e51e3fd96cc7881feeaffb5ee5",
+      "execution": "same source-freeze pre-commit hook; exit0"
+    },
+    {
+      "name": "lint",
+      "command": [
+        "pnpm",
+        "lint"
+      ],
+      "exitCode": 0,
+      "seconds": 1.45,
+      "source": "196d2f6d3fdd12e51e3fd96cc7881feeaffb5ee5",
+      "log": "lint.log"
+    },
+    {
+      "name": "ci-lint",
+      "command": [
+        "pnpm",
+        "exec",
+        "biome",
+        "ci"
+      ],
+      "exitCode": 0,
+      "seconds": 1.43,
+      "source": "196d2f6d3fdd12e51e3fd96cc7881feeaffb5ee5",
+      "log": "ci-lint.log"
+    },
+    {
+      "name": "packages",
+      "command": [
+        "pnpm",
+        "test:packages:run",
+        "--maxWorkers=2"
+      ],
+      "exitCode": 130,
+      "seconds": 776.76,
+      "source": "196d2f6d3fdd12e51e3fd96cc7881feeaffb5ee5",
+      "log": "packages.log"
+    }
+  ]
+}

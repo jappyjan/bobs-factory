@@ -15,6 +15,7 @@ import { deliveryTargetLabel } from "../RunAttention";
 import { ArchitectureEntry, ArchitecturePage } from "./architecture";
 import { ArtifactCard, Inspector } from "./artifacts";
 import { AccessBoundary } from "./auth";
+import { RecipeParentLink, RunChildren } from "./child-runs";
 import {
 	active,
 	ago,
@@ -947,14 +948,8 @@ function RunPage({
 			)}
 			<ExecutionDetails run={run} />
 			{run.improvement && <ImprovementPanel run={run} />}
-			{run.improvementParent && (
-				<p className="imp-parent">
-					<span aria-hidden="true">🌱</span> Part of an improvement batch ·{" "}
-					<Link to={`/runs/${run.improvementParent.runId}`}>
-						See the whole batch →
-					</Link>
-				</p>
-			)}
+			<RecipeParentLink run={run} />
+			<RunChildren run={run} />
 			{run.deliveryCoordination?.phase === "queued" && (
 				<p role="status">
 					{workingLabel(run)}.{" "}

@@ -1,0 +1,15 @@
+{
+  "sourceFreeze": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+  "sourceTree": "cb7d62d9c8ee427b338790c35b43bae704c2a7a2",
+  "scope": "Only review-fix report and its raw evidence added after clean combined-source validation",
+  "allowedEvidencePaths": [
+    "apps/f1/test-drives/2026-10-22-generic-actions-review-fixes.md",
+    "apps/f1/test-drives/assets/taskbot139-review-fixes/"
+  ],
+  "sourceInputsVerified": 1170,
+  "sourceInventoryDigest": "5a9d0a6788e688891f956950892f1cec6ea2b65bc7ce40a6e4a5af2e2cd7379f",
+  "productionSourceChanged": false,
+  "originalEvidenceChanged": false,
+  "evidenceCiLint": "PASS; raw byte receipts excluded by local config identical to the existing raw-evidence policy",
+  "commitHook": "HUSKY=0 for evidence-only commit after complete frozen-source gates; no production/test/functional-driver input changes"
+}

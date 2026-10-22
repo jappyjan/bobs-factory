@@ -81,6 +81,12 @@ import {
 } from "./ExecutionProfiles.js";
 import { executeCommand, FactoryTools } from "./FactoryTools.js";
 import {
+	type FileIssueBatch,
+	type FileIssueIntent,
+	fileIssueBatch,
+	prepareFileIssues,
+} from "./FileIssues.js";
+import {
 	aggregateForeach,
 	type ForeachItemState,
 	type ForeachProgress,
@@ -122,6 +128,15 @@ import {
 	LaunchAssetStore,
 	type LaunchAttachments,
 } from "./LaunchAssets.js";
+import {
+	type LaunchRunBatch,
+	launchBatchProjection,
+	launchBatchSettled,
+	launchOutput,
+	prepareLaunchRuns,
+	stopLaunchRuns,
+	tickLaunchRuns,
+} from "./LaunchRuns.js";
 import { recordFeedbackAssessment } from "./MergeReadiness.js";
 import {
 	pendingMergeConfirmation,
@@ -138,6 +153,13 @@ import {
 	questionNotification,
 } from "./Questions.js";
 import { deliveryRevisions, runRepositories } from "./RepositoryScope.js";
+import {
+	captureRepositorySnapshot,
+	type SnapshotInputProvenance,
+	type SnapshotReceipt,
+	snapshotInputMappings,
+	snapshotOutput,
+} from "./RepositorySnapshot.js";
 import { guideHeadline } from "./ReviewBrief.js";
 import { reviewRecoveryQuestions } from "./ReviewRecovery.js";
 import {
@@ -281,6 +303,8 @@ export interface ForeachCheckpoint {
 export interface GraphCheckpoint {
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
+	/** Runtime-owned origin receipts; never part of public mapped JSON inputs. */
+	snapshotInputs?: Record<string, SnapshotInputProvenance>;
 	/** New item/mapped-call scopes publish their own receipts, independently of inherited reads. */
 	projectResults?: true;
 	resultReceipts?: Record<string, { key: string; output: unknown }>;
@@ -297,6 +321,7 @@ export interface GraphCheckpoint {
 		active?: GraphCheckpoint["active"];
 	}[];
 	active?: {
+		actionId?: string;
 		attemptId?: string;
 		phase: "executing" | "result" | "waiting" | "answered";
 		terminalFailure?: true;
@@ -373,6 +398,17 @@ export interface FactoryRun {
 		visit: number;
 		snapshot: ForeachSnapshot;
 	}[];
+	repositorySnapshots?: Record<string, SnapshotReceipt>;
+	issueActions?: Record<string, FileIssueBatch>;
+	launchActions?: Record<string, LaunchRunBatch>;
+	launchOutcomePublication?: { key: string; phase: "pending" | "confirmed" };
+	recipeParent?: {
+		runId: string;
+		actionId: string;
+		itemId: string;
+		workflowId: string;
+		ancestors: string[];
+	};
 	improvementState?: ImprovementState;
 	improvementParent?: {
 		runId: string;
@@ -530,6 +566,8 @@ export interface ChatMessage {
 export interface ExecutionContext {
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
+	/** Private persisted Call input origins, independently checked by pinned access. */
+	snapshotInputs?: Record<string, SnapshotInputProvenance>;
 	validateRoleOutput?: (value: unknown) => unknown;
 	readOnlyResearch?: boolean;
 	researchAccess?: {
@@ -581,6 +619,18 @@ export interface ExecutionContext {
 	checkEvidence?: Record<string, unknown>;
 }
 export interface RuntimeHooks {
+	issueDestinations?(
+		run: FactoryRun,
+		signal: AbortSignal,
+	): Promise<{
+		options: { name: string; destination: IssueDestination }[];
+		limitations: string[];
+	}>;
+	fileIssue?(
+		run: FactoryRun,
+		issue: FileIssueIntent,
+		signal: AbortSignal,
+	): Promise<{ id: string; url: string }>;
 	improvementDestinations?(
 		run: FactoryRun,
 		signal: AbortSignal,
@@ -644,7 +694,16 @@ export class WorkflowRuntime {
 	}
 	private changed(change: { id?: string; config?: boolean }): void {
 		for (const listener of this.listeners) listener(change);
+		if (change.id && !this.shuttingDown)
+			for (const parent of this.runs.values())
+				if (parent.id !== change.id)
+					for (const batch of Object.values(parent.launchActions ?? {}))
+						if (batch.accepted.items.some((item) => item.runId === change.id))
+							void this.reconcileLaunchBatch(parent, batch).catch(() => {});
 	}
+	private terminalPublications = new Map<string, Promise<void>>();
+	private launchReconciliations = new Map<string, Promise<void>>();
+	private launchReconciliationDirty = new Set<string>();
 	private controllers = new Map<string, AbortController>();
 	private pendingAnswers = new Map<
 		string,
@@ -892,9 +951,13 @@ export class WorkflowRuntime {
 			const walk = (steps: WorkflowStep[]): boolean =>
 				steps.some(
 					(step) =>
-						(step.type === "workflow" &&
+						(["workflow", "launch-runs"].includes(step.type) &&
 							!!run.workflowDefinitions?.some(
-								(child) => child.id === step.workflow && visit(child),
+								(child) =>
+									child.id ===
+										(step.type === "launch-runs"
+											? (step.launchRuns?.workflow ?? "factory")
+											: step.workflow) && visit(child),
 							)) ||
 						(step.groups ?? []).some(walk) ||
 						(step.body ? walk(step.body) : false),
@@ -913,9 +976,13 @@ export class WorkflowRuntime {
 			const walk = (steps: WorkflowStep[]): boolean =>
 				steps.some(
 					(s) =>
-						(s.type === "workflow" &&
+						(["workflow", "launch-runs"].includes(s.type) &&
 							policy.definitions.some(
-								(child) => child.id === s.workflow && check(child, seen),
+								(child) =>
+									child.id ===
+										(s.type === "launch-runs"
+											? (s.launchRuns?.workflow ?? "factory")
+											: s.workflow) && check(child, seen),
 							)) ||
 						(s.groups ?? []).some(walk) ||
 						(s.body ? walk(s.body) : false),
@@ -1102,6 +1169,7 @@ export class WorkflowRuntime {
 		options: {
 			launchRequest?: FactoryRun["launchRequest"];
 			setupComplete?: boolean;
+			recipeParent?: FactoryRun["recipeParent"];
 			improvementParent?: FactoryRun["improvementParent"];
 			repositories?: import("./RepositoryScope.js").RunRepository[];
 			executionSnapshot?: ExecutionSnapshot;
@@ -1126,6 +1194,8 @@ export class WorkflowRuntime {
 			serviceTier?: AgentSettings["serviceTier"];
 		},
 		acceptedLaunch?: {
+			/** Internal child admission only; callers cannot supply this through launch inputs. */
+			trigger?: WorkflowTrigger;
 			workflow: Workflow;
 			workflowDefinitions: Workflow[];
 			nativePreferences?: AgentSettings;
@@ -1176,7 +1246,10 @@ export class WorkflowRuntime {
 				),
 			};
 		}
-		requireTrigger(options.workflow, options.triggerOrigin.type);
+		requireTrigger(
+			options.workflow,
+			acceptedLaunch?.trigger ?? options.triggerOrigin.type,
+		);
 		this.requireAvailable(
 			options.workflow,
 			options.workflowDefinitions ?? this.listWorkflows(),
@@ -1279,6 +1352,8 @@ export class WorkflowRuntime {
 		if (this.controllers.has(run.id))
 			throw new Error("Run is already executing");
 		const controller = new AbortController();
+		for (const batch of Object.values(run.launchActions ?? {}))
+			if (!batch.cancelled) batch.paused = false;
 		if (run.status === "waiting") run.status = "running";
 		// Explicit Resume makes stopped stock work eligible without changing its
 		// frozen graph. Persist the one-time allowance before any resumed role.
@@ -1289,6 +1364,10 @@ export class WorkflowRuntime {
 		void execution.then(
 			() => {
 				this.executions.delete(run.id);
+				// The final child may settle while this executor saves its graph-end state.
+				// Reconcile after controller teardown so that wakeup cannot be lost.
+				for (const batch of Object.values(run.launchActions ?? {}))
+					void this.reconcileLaunchBatch(run, batch).catch(() => {});
 				// Cancellation can release maintenance while a paused execution is
 				// still persisting its final checkpoint. Resume after that save,
 				// even if the release's resumeAll saw the old controller.
@@ -1361,6 +1440,10 @@ export class WorkflowRuntime {
 					stage: "in_progress",
 					body: `Factory work started: ${run.workflow.name}. ${String(readPath(run.outputs, "ticket.title") ?? run.title)}. Follow progress in Factory.`,
 				});
+			// A resumed detached action may already have reached graph end. Reconcile its
+			// original batch explicitly; no further child event is guaranteed to wake it.
+			for (const batch of Object.values(run.launchActions ?? {}))
+				await this.reconcileLaunchBatch(run, batch, controller.signal);
 			if (task) await task(controller.signal);
 			else if (run.workflow.improvement) {
 				await runImprovement(
@@ -1409,10 +1492,21 @@ export class WorkflowRuntime {
 				throw new Error(
 					"Mixed delivery requires all provider-confirmed repository merges",
 				);
-			run.status = "completed";
+			run.status = this.launchOutcomeStatus(run);
+			if (run.status === "failed")
+				run.error =
+					"Child batch retains blocked or cancelled outcomes. Inspect the original children; Retry reconciles their retained identities and dependencies.";
 			if (readPath(outputForTool(run, "merge"), "merged") === true)
 				this.updateViewState(run.id, { settledAt: new Date().toISOString() });
-			this.log(run, "run", "Workflow complete.");
+			this.log(
+				run,
+				"run",
+				run.status === "waiting"
+					? "Recipe steps complete; child batches remain tracked."
+					: run.status === "failed"
+						? run.error!
+						: "Workflow complete.",
+			);
 		} catch (error) {
 			if (run.workflowBlock) {
 				run.status = "blocked";
@@ -1448,29 +1542,62 @@ export class WorkflowRuntime {
 					"Private auth-cache cleanup failed; retained state needs operator cleanup.",
 				);
 			}
-			await this.save(run);
-			if (
-				!this.shuttingDown &&
-				["completed", "failed", "stopped"].includes(run.status)
-			)
-				try {
-					if (run.ticketReference && this.hooks.track)
-						await this.track(run, {
-							key: `outcome:${run.status}:${run.history.length}`,
-							body:
-								run.status === "completed"
-									? `Workflow ${run.workflow.name} completed. Coding tickets become Done only after confirmed merge. Inspect run ${run.id} for results.`
-									: `Workflow ${run.status}: ${run.error ?? "stopped by user"}. Work is preserved in run ${run.id}; restore access or answer the blocker before retrying.`,
-						});
-					await this.hooks.finished?.(run);
-				} catch (error) {
-					this.log(
-						run,
-						"ticket-sync",
-						`Final tracking hook failed: ${String(error)}. Underlying run outcome retained.`,
-					);
-				}
-			this.controllers.delete(run.id);
+			try {
+				await this.save(run);
+				await this.publishTerminalOutcome(run);
+			} finally {
+				this.controllers.delete(run.id);
+			}
+		}
+	}
+	private publishTerminalOutcome(run: FactoryRun): Promise<void> {
+		const pending = this.terminalPublications.get(run.id);
+		if (pending) return pending;
+		const publication = this.publishTerminalOutcomeOnce(run);
+		this.terminalPublications.set(run.id, publication);
+		void publication.then(
+			() => this.terminalPublications.delete(run.id),
+			() => this.terminalPublications.delete(run.id),
+		);
+		return publication;
+	}
+	private async publishTerminalOutcomeOnce(run: FactoryRun): Promise<void> {
+		if (
+			this.shuttingDown ||
+			!["completed", "failed", "stopped"].includes(run.status)
+		)
+			return;
+		const key = `outcome:${run.status}:${run.history.length}`;
+		if (
+			run.launchActions &&
+			run.launchOutcomePublication?.key === key &&
+			run.launchOutcomePublication.phase === "confirmed"
+		)
+			return;
+		try {
+			if (run.launchActions) {
+				run.launchOutcomePublication = { key, phase: "pending" };
+				await this.save(run);
+			}
+			if (run.ticketReference && this.hooks.track)
+				await this.track(run, {
+					key,
+					body:
+						run.status === "completed"
+							? `Workflow ${run.workflow.name} completed. Coding tickets become Done only after confirmed merge. Inspect run ${run.id} for results.`
+							: `Workflow ${run.status}: ${run.error ?? "stopped by user"}. Work is preserved in run ${run.id}; restore access or answer the blocker before retrying.`,
+				});
+			await this.hooks.finished?.(run);
+			if (run.launchActions) {
+				run.launchOutcomePublication = { key, phase: "confirmed" };
+				await this.save(run);
+			}
+		} catch (error) {
+			this.log(
+				run,
+				"ticket-sync",
+				`Final tracking hook failed: ${String(error)}. Underlying run outcome retained.`,
+			);
 		}
 	}
 	async decideImprovement(
@@ -1681,6 +1808,22 @@ export class WorkflowRuntime {
 		await this.hooks.retryTracking?.(this.get(id));
 	}
 
+	/** Use the accepted semantic source, including frozen presets whose read is named scopePlan. */
+	private deliveryCandidateDigest(
+		step: WorkflowStep,
+		outputs: Record<string, unknown>,
+	): string {
+		const sources = checkArgs(step, "scope-inputs")?.sources;
+		const name =
+			sources && typeof sources === "object" && Object.hasOwn(sources, "plan")
+				? (sources as Record<string, unknown>).plan
+				: "plan";
+		// The fallback is a declared read name, never an output/step ID. An invalid
+		// explicit scope mapping must not borrow another plan or infer a protocol.
+		const plan =
+			typeof name === "string" ? readOutput(step, name, outputs) : undefined;
+		return digest(readPath(plan, "deliveryContract"));
+	}
 	private stepInput(
 		run: FactoryRun,
 		step: WorkflowStep,
@@ -1719,11 +1862,9 @@ export class WorkflowRuntime {
 											repositoryId: run.repositoryId,
 										},
 									),
-									deliveryCandidateDigest: digest(
-										readPath(
-											readOutput(step, "plan", outputs),
-											"deliveryContract",
-										),
+									deliveryCandidateDigest: this.deliveryCandidateDigest(
+										step,
+										outputs,
 									),
 								}
 							: {}),
@@ -1748,11 +1889,9 @@ export class WorkflowRuntime {
 											repositoryId: run.repositoryId,
 										},
 									),
-									deliveryCandidateDigest: digest(
-										readPath(
-											readOutput(step, "plan", outputs),
-											"deliveryContract",
-										),
+									deliveryCandidateDigest: this.deliveryCandidateDigest(
+										step,
+										outputs,
 									),
 								}
 							: {}),
@@ -1905,6 +2044,9 @@ export class WorkflowRuntime {
 				callInputs: checkpoint.callInputs
 					? immutableJson(checkpoint.callInputs)
 					: undefined,
+				snapshotInputs: checkpoint.snapshotInputs
+					? immutableJson(checkpoint.snapshotInputs)
+					: undefined,
 				run,
 				step,
 				stepKey: key,
@@ -1928,11 +2070,9 @@ export class WorkflowRuntime {
 										repositoryId: run.repositoryId,
 									},
 								),
-								deliveryCandidateDigest: digest(
-									readPath(
-										readOutput(step, "plan", outputs),
-										"deliveryContract",
-									),
+								deliveryCandidateDigest: this.deliveryCandidateDigest(
+									step,
+									outputs,
 								),
 							}
 						: {}),
@@ -2280,6 +2420,10 @@ export class WorkflowRuntime {
 							};
 						if (step.type === "check")
 							output = await this.executeCheck(context, output);
+					} else if (
+						["snapshot", "file-issues", "launch-runs"].includes(step.type)
+					) {
+						output = await this.executeAction(context, checkpoint, workflowId);
 					} else if (step.type === "check") {
 						output = await this.executeCheck(context);
 					} else if (step.type === "foreach") {
@@ -2385,6 +2529,7 @@ export class WorkflowRuntime {
 							child.reviewKey ??= checkpoint.reviewKey;
 							child.iteration ??= checkpoint.iteration;
 							child.callInputs ??= checkpoint.callInputs;
+							child.snapshotInputs ??= checkpoint.snapshotInputs;
 							child.projectResults ??= checkpoint.projectResults;
 						}
 						await this.save(run);
@@ -2591,6 +2736,17 @@ export class WorkflowRuntime {
 								? immutableJson(mappings)
 								: checkpoint.callInputs;
 						}
+						if (!state.children[0]!.snapshotInputs)
+							state.children[0]!.snapshotInputs = step.inputMapping
+								? immutableJson(
+										snapshotInputMappings(
+											context,
+											step.inputMapping,
+											state.children[0]!.callInputs ?? {},
+											key,
+										),
+									)
+								: checkpoint.snapshotInputs;
 						await this.save(run);
 						signal.throwIfAborted();
 						await this.graph(
@@ -4005,6 +4161,9 @@ export class WorkflowRuntime {
 		const waiting = new Promise<void>((resolve, reject) =>
 			this.pendingAnswers.set(run.id, { resolve, reject }),
 		);
+		// Stop/restart can abort while the waiting gate is still publishing its
+		// notification. Observe rejection now; the ordinary await still propagates it.
+		void waiting.catch(() => {});
 		const abort = () =>
 			this.pendingAnswers.get(run.id)?.reject(new Error("Run terminated"));
 		signal.addEventListener("abort", abort, { once: true });
@@ -4429,6 +4588,8 @@ export class WorkflowRuntime {
 	}
 	stop(id: string): void {
 		const run = this.get(id);
+		for (const batch of Object.values(run.launchActions ?? {}))
+			batch.paused = true;
 		this.hooks.stopTitle?.(id);
 		if (!["running", "waiting", "failed", "interrupted"].includes(run.status))
 			return;
@@ -4875,6 +5036,7 @@ export class WorkflowRuntime {
 			if (frame.active?.terminalFailure) {
 				const native = frame.active.agent;
 				frame.active = {
+					actionId: frame.active.actionId,
 					phase: "executing",
 					...(native?.sessionId
 						? { agent: { runner: native.runner, sessionId: native.sessionId } }
@@ -5045,16 +5207,42 @@ export class WorkflowRuntime {
 	async shutdown(): Promise<void> {
 		this.shuttingDown = true;
 		for (const controller of this.controllers.values()) controller.abort();
+		await Promise.allSettled(this.launchReconciliations.values());
 		await Promise.allSettled(this.executions.values());
+		await Promise.allSettled(this.terminalPublications.values());
 		for (const id of this.pendingActivitySaves.keys())
 			await this.save(this.get(id));
 		await this.flush();
 	}
 	resumeAll(): void {
 		for (const run of this.runs.values()) {
+			for (const batch of Object.values(run.launchActions ?? {}))
+				void this.reconcileLaunchBatch(run, batch).catch(() => {});
+			if (
+				run.launchActions &&
+				["completed", "failed", "stopped"].includes(run.status)
+			)
+				void this.publishTerminalOutcome(run).catch(() => {});
 			if (
 				!["running", "waiting"].includes(run.status) ||
 				this.controllers.has(run.id)
+			)
+				continue;
+			const owner = run.recipeParent && this.runs.get(run.recipeParent.runId);
+			const ownerBatch = owner?.launchActions?.[run.recipeParent!.actionId];
+			const childAdmission = ownerBatch?.progress[run.recipeParent!.itemId];
+			// A persisted child can precede dispatch admission. Only its original parent
+			// commits that admission; restart must not start paused pending work.
+			if (
+				ownerBatch?.cancelled ||
+				(owner &&
+					ownerBatch &&
+					!ownerBatch.paused &&
+					!["stopped", "failed", "blocked"].includes(owner.status) &&
+					this.launchReconciliations.has(
+						`${owner.id}:${ownerBatch.accepted.actionId}`,
+					)) ||
+				(owner && childAdmission && !childAdmission.launchCommitted)
 			)
 				continue;
 			const disabled = this.catalog.unavailable(
@@ -5134,6 +5322,267 @@ export class WorkflowRuntime {
 			}),
 		);
 	}
+	/** Each accepted execution owns an ID independent of retries, graph visits and lexical item IDs. */
+	private async executeAction(
+		context: ExecutionContext,
+		checkpoint: GraphCheckpoint,
+		workflowId: string,
+	): Promise<unknown> {
+		const { run, step, signal } = context;
+		const active = checkpoint.active!;
+		if (!active.actionId) {
+			active.actionId = randomUUID();
+			await this.save(run);
+		}
+		const actionId = active.actionId;
+		const scope = {
+			outputs: context.outputs ?? run.outputs,
+			inputs: stepBindings(context),
+			item: checkpoint.iteration?.value,
+			index: checkpoint.iteration?.index,
+		};
+		signal.throwIfAborted();
+		if (step.type === "snapshot") {
+			run.repositorySnapshots ??= {};
+			if (!run.repositorySnapshots[actionId]) {
+				run.repositorySnapshots[actionId] = await captureRepositorySnapshot(
+					run,
+					actionId,
+					step.snapshot ?? {},
+					this.runs.values(),
+					signal,
+					{
+						key: context.stepKey!,
+						iteration: context.iteration && {
+							frame: context.iteration.frame,
+							id: context.iteration.id,
+							index: context.iteration.index,
+							itemDigest: digest(context.iteration.value),
+						},
+					},
+				);
+				await this.save(run);
+			}
+			return snapshotOutput(run.repositorySnapshots[actionId]!);
+		}
+		if (step.type === "file-issues") {
+			if (!step.fileIssues)
+				throw new Error("File issues configuration is missing");
+			run.issueActions ??= {};
+			if (!run.issueActions[actionId]) {
+				const available = await (this.hooks.issueDestinations?.(run, signal) ??
+					this.improvementDestinations(run.id, signal));
+				const selected = step.fileIssues.destination;
+				const matches = available.options.filter(({ destination }) =>
+					selected
+						? destination.provider === selected.provider &&
+							(destination.provider === "linear" &&
+							selected.provider === "linear"
+								? destination.teamId === selected.teamId &&
+									destination.workspaceId === selected.workspaceId
+								: digest(destination) === digest(selected))
+						: true,
+				);
+				if (matches.length !== 1)
+					throw new Error(
+						"File issues needs one configured project destination. Select an accessible Linear team/project or Taskbot project in the recipe; no issues were sent.",
+					);
+				run.issueActions[actionId] = prepareFileIssues(
+					run.id,
+					actionId,
+					step.fileIssues,
+					scope,
+					selected ?? matches[0]!.destination,
+				);
+				await this.save(run);
+			}
+			const send = this.hooks.fileIssue ?? this.hooks.improvementIssue;
+			if (!send)
+				throw new Error("Configured issue creation adapter is unavailable");
+			return fileIssueBatch(
+				run.issueActions[actionId]!,
+				(intent, sendingSignal) => send(run, intent, sendingSignal),
+				() => this.save(run),
+				signal,
+			);
+		}
+		if (!step.launchRuns)
+			throw new Error("Launch runs configuration is missing");
+		run.launchActions ??= {};
+		if (!run.launchActions[actionId]) {
+			const ancestors = [
+				...(run.recipeParent?.ancestors ?? []),
+				run.workflow.id,
+			];
+			const visit = (frame: GraphCheckpoint | undefined) => {
+				const call = frame?.active?.call;
+				if (call && context.stepKey!.startsWith(`${call.key}/`))
+					ancestors.push(call.callerWorkflowId, call.workflowId);
+				for (const child of frame?.active?.children ?? []) visit(child);
+			};
+			visit(run.checkpoint);
+			run.launchActions[actionId] = prepareLaunchRuns(
+				run,
+				step.launchRuns,
+				scope,
+				{
+					key: context.stepKey!,
+					actionId,
+					workflowId,
+					ancestors: [...new Set(ancestors)],
+				},
+			);
+			await this.save(run);
+		}
+		const batch = run.launchActions[actionId]!;
+		if (!batch.accepted.wait) {
+			await this.reconcileLaunchBatch(run, batch, signal);
+			return launchOutput(batch);
+		}
+		while (true) {
+			let wake!: () => void;
+			const changed = new Promise<void>((resolve) => {
+				wake = resolve;
+			});
+			const unsubscribe = this.subscribe((change) => {
+				if (batch.accepted.items.some((item) => item.runId === change.id))
+					wake();
+			});
+			const abort = () => wake();
+			signal.addEventListener("abort", abort, { once: true });
+			try {
+				await this.reconcileLaunchBatch(run, batch, signal);
+				signal.throwIfAborted();
+				if (launchBatchSettled(batch)) return launchOutput(batch);
+				run.status = "waiting";
+				await this.save(run);
+				await changed;
+				signal.throwIfAborted();
+				run.status = "running";
+			} finally {
+				unsubscribe();
+				signal.removeEventListener("abort", abort);
+			}
+		}
+	}
+	private launchOutcomeStatus(run: FactoryRun): FactoryRun["status"] {
+		const batches = Object.values(run.launchActions ?? {});
+		if (batches.some((batch) => !launchBatchSettled(batch))) return "waiting";
+		return batches.some((batch) =>
+			Object.values(batch.progress).some((item) =>
+				["blocked", "cancelled"].includes(item.status),
+			),
+		)
+			? "failed"
+			: "completed";
+	}
+	private reconcileLaunchBatch(
+		run: FactoryRun,
+		batch: LaunchRunBatch,
+		signal?: AbortSignal,
+	): Promise<void> {
+		const identity = `${run.id}:${batch.accepted.actionId}`;
+		const pending = this.launchReconciliations.get(identity);
+		if (pending) {
+			this.launchReconciliationDirty.add(identity);
+			return pending;
+		}
+		if (this.shuttingDown) return Promise.resolve();
+		const observingOnly = () =>
+			batch.paused || ["stopped", "failed", "blocked"].includes(run.status);
+		// Pausing blocks admission, not observation of the original durable children.
+		// tickLaunchRuns reconciles known identities before its own dispatch guard.
+		const work = (async () => {
+			try {
+				await tickLaunchRuns(
+					run,
+					batch,
+					{
+						runtime: this,
+						save: () => this.save(run),
+						assertSchedulingOpen: () => {
+							if (this.shuttingDown)
+								throw new Error("Factory is shutting down");
+							this.assertSchedulingOpen();
+							this.requireRunAvailable(run);
+						},
+					},
+					signal,
+				);
+				const uncertain = Object.entries(batch.progress).filter(
+					([, item]) => item.status === "uncertain" && item.error,
+				);
+				if (uncertain.length && !observingOnly())
+					throw new Error(
+						`Child admission needs reconciliation. Retry retains original identities: ${uncertain.map(([id, item]) => `${id}: ${item.error}`).join("; ")}`,
+					);
+				if (
+					!this.isExecuting(run.id) &&
+					run.status === "waiting" &&
+					run.checkpoint?.current === "end" &&
+					Object.values(run.launchActions ?? {}).every(launchBatchSettled)
+				) {
+					run.status = this.launchOutcomeStatus(run);
+					if (run.status === "failed")
+						run.error =
+							"Child batch retains blocked or cancelled outcomes. Inspect the original children; Retry reconciles their retained identities and dependencies.";
+					this.log(
+						run,
+						"run",
+						run.status === "failed"
+							? run.error!
+							: "Recipe and tracked child batches complete.",
+					);
+					await this.save(run);
+					await this.publishTerminalOutcome(run);
+				}
+			} catch (error) {
+				if (!signal?.aborted && !this.shuttingDown && !observingOnly()) {
+					run.error =
+						error instanceof Error
+							? error.message
+							: "Child batch reconciliation failed";
+					if (
+						!this.isExecuting(run.id) &&
+						!["stopped", "blocked"].includes(run.status)
+					)
+						run.status = "failed";
+					await this.save(run);
+					await this.publishTerminalOutcome(run);
+				}
+				throw error;
+			} finally {
+				this.launchReconciliations.delete(identity);
+				if (
+					this.launchReconciliationDirty.delete(identity) &&
+					!this.shuttingDown
+				)
+					queueMicrotask(() => {
+						void this.reconcileLaunchBatch(run, batch).catch(() => {});
+					});
+			}
+		})();
+		this.launchReconciliations.set(identity, work);
+		return work;
+	}
+	async stopBatch(id: string, actionId?: string): Promise<void> {
+		const run = this.get(id);
+		const batches = Object.entries(run.launchActions ?? {})
+			.filter(([key]) => !actionId || key === actionId)
+			.map(([, batch]) => batch);
+		if (!batches.length) throw new Error("No matching child batch exists");
+		for (const batch of batches) {
+			batch.cancelled = true;
+			batch.paused = true;
+		}
+		await this.save(run); // Cancellation intent precedes stopping parent or any child.
+		this.stop(id);
+		for (const batch of batches)
+			await stopLaunchRuns(run, batch, {
+				runtime: this,
+				save: () => this.save(run),
+			});
+	}
 	private async executeForeach(
 		context: ExecutionContext,
 		checkpoint: GraphCheckpoint,
@@ -5176,6 +5625,7 @@ export class WorkflowRuntime {
 				resultReceipts: {},
 				iteration: { ...item, frame: key },
 				callInputs: checkpoint.callInputs,
+				snapshotInputs: checkpoint.snapshotInputs,
 				reviewKey: checkpoint.reviewKey,
 			}));
 		}
@@ -5201,6 +5651,7 @@ export class WorkflowRuntime {
 			throw new Error("For each checkpoint has inconsistent item frames");
 		for (const [index, item] of loop.snapshot.items.entries()) {
 			active.children[index]!.projectResults = true;
+			active.children[index]!.snapshotInputs ??= checkpoint.snapshotInputs;
 			const frame = active.children[index]!.iteration;
 			if (
 				!frame ||
@@ -5773,6 +6224,13 @@ export class WorkflowRuntime {
 		return {
 			id: run.id,
 			videoAssets,
+			recipeParent: run.recipeParent,
+			launchActions: Object.fromEntries(
+				Object.entries(run.launchActions ?? {}).map(([id, batch]) => [
+					id,
+					launchBatchProjection(batch),
+				]),
+			),
 			improvementParent: run.improvementParent,
 			improvement: run.improvementState && {
 				phase: run.improvementState.phase,
@@ -5803,6 +6261,8 @@ export class WorkflowRuntime {
 				})),
 			},
 			reviewGate: run.reviewGate,
+			questionCount: run.questions?.length ?? 0,
+			architectureGate: run.architectureGate ? { pending: true } : undefined,
 			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
 				? this.summaries.get(run.id)?.hasGuide
 				: !!presentationOutputKeys(run).guide,

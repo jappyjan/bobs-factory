@@ -1,5 +1,6 @@
 import { activityPreview } from "./ActivityPage.js";
 import { workflowDisplay } from "./ConfigProjection.js";
+import { launchBatchProjection } from "./LaunchRuns.js";
 import {
 	currentStepView,
 	presentationOutputKeys,
@@ -120,6 +121,13 @@ export function focusRun(
 		improvement: run.workflow.improvement
 			? { phase: run.improvementState?.phase ?? "preparing" }
 			: undefined,
+		recipeParent: run.recipeParent,
+		launchActions: Object.fromEntries(
+			Object.entries(run.launchActions ?? {}).map(([id, batch]) => [
+				id,
+				launchBatchProjection(batch),
+			]),
+		),
 		improvementParent: run.improvementParent,
 		workflowDefinitions: run.workflowDefinitions?.map(workflowDisplay),
 		error: run.error?.slice(0, 4000),

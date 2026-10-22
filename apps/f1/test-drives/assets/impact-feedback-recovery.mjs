@@ -134,8 +134,12 @@ const invalidComment = {
 	disposition: "informational",
 	reason: "Originating tracker session notice",
 };
+// Completed outputs belong to their exact producer receipt, not a root alias.
+function producedOutput(run, stepKey) {
+	return run.history.findLast((entry) => entry.step === stepKey)?.output;
+}
 function assessment(run, correction) {
-	const inventory = run.outputs.gate?.baseline.inventory;
+	const inventory = producedOutput(run, "pipeline/gate")?.baseline.inventory;
 	return {
 		impactContract: "impact-v1",
 		status: "completed",
@@ -333,6 +337,7 @@ try {
 		"Fresh issue did not pass impact checks",
 	);
 	const fresh = runtime.get(session.sessionId);
+	const freshImpact = producedOutput(fresh, "pipeline/assess-impact");
 	const freshTurns = turns.filter(
 		(t) => t.run === fresh.id && t.role === "assess-impact",
 	);
@@ -340,7 +345,7 @@ try {
 	assert(freshTurns[1].resumeSessionId);
 	assert.equal(fresh.impactDecisions.length, 1);
 	assert.equal(fresh.impactDecisions[0].checkResults[0].exitCode, 0);
-	assert.deepEqual(fresh.outputs["assess-impact"].commentAssessments, []);
+	assert.deepEqual(freshImpact.commentAssessments, []);
 	assert(
 		fresh.events.some((e) =>
 			e.message.includes("Output validation rejected assess-impact"),
@@ -366,6 +371,10 @@ try {
 	recovered.outputs.ticket = {
 		comments: [{ id: invalidComment.id, body: "Agent session notice" }],
 	};
+	// A pending result resumes in the same lexical output frame that produced it.
+	// Copy actual persisted outputs; do not recreate them as root-level aliases.
+	const originalFrame = structuredClone(fresh.checkpoint.active.children[0]);
+	originalFrame.outputs.ticket = structuredClone(recovered.outputs.ticket);
 	recovered.checkpoint = {
 		current: "pipeline",
 		visits: { pipeline: 1 },
@@ -373,6 +382,7 @@ try {
 			phase: "executing",
 			children: [
 				{
+					...originalFrame,
 					current: "assess-impact",
 					visits: { "assess-impact": 1 },
 					active: {
@@ -382,7 +392,7 @@ try {
 							sessionId: "retained-impact-conversation",
 							result: {
 								output: {
-									...fresh.outputs["assess-impact"],
+									...freshImpact,
 									commentAssessments: [invalidComment],
 								},
 								revision: {
@@ -402,6 +412,10 @@ try {
 	recovered.status = "failed";
 	recovered.error =
 		"Comment ticket-notice assessment must match the supplied content hash; assess the current unassessedComments entry";
+	// The recovery fixture reuses this exact workspace. Retain the original run
+	// explicitly stopped so startup cannot dispatch both owners concurrently.
+	runtime.stop(fresh.id);
+	await runtime.save(fresh);
 	await runtime.save(recovered);
 	await runtime.flush();
 	await worker.stop();

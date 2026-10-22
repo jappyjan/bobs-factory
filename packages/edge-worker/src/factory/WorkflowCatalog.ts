@@ -240,10 +240,13 @@ function closure(root: Workflow, definitions: Workflow[]): Workflow[] {
 		visited.set(w.id, w);
 		const walk = (steps: WorkflowStep[]) => {
 			for (const step of steps) {
-				if (step.type === "workflow") {
-					const child = byId.get(step.workflow!);
-					if (!child)
-						throw new Error(`Missing workflow dependency: ${step.workflow}`);
+				if (step.type === "workflow" || step.type === "launch-runs") {
+					const target =
+						step.type === "launch-runs"
+							? (step.launchRuns?.workflow ?? "factory")
+							: step.workflow!;
+					const child = byId.get(target);
+					if (!child) throw new Error(`Missing workflow dependency: ${target}`);
 					visit(child);
 				}
 				for (const group of step.groups ?? []) walk(group);
@@ -259,6 +262,8 @@ function rewrite(steps: WorkflowStep[], mappings: Record<string, string>) {
 	for (const step of steps) {
 		if (step.workflow && mappings[step.workflow])
 			step.workflow = mappings[step.workflow];
+		if (step.launchRuns && mappings[step.launchRuns.workflow])
+			step.launchRuns.workflow = mappings[step.launchRuns.workflow]!;
 		for (const group of step.groups ?? []) rewrite(group, mappings);
 		if (step.body) rewrite(step.body, mappings);
 	}
@@ -405,6 +410,7 @@ export class WorkflowCatalog {
 					steps.some(
 						(step) =>
 							(!!step.workflow && !!mappings[step.workflow]) ||
+							(!!step.launchRuns && !!mappings[step.launchRuns.workflow]) ||
 							(step.groups ?? []).some(calls) ||
 							(step.body ? calls(step.body) : false),
 					);

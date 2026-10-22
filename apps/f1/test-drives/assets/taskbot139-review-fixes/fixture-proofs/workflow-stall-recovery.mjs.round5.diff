@@ -1,0 +1,10 @@
+--- workflow-stall-recovery.mjs.round4
++++ workflow-stall-recovery.mjs.round5
+@@ -687,6 +687,7 @@
+ 	const provider = runtime.create({
+ 		id: "live-target",
+ 		repositoryId: "fixture",
++		repositories: structuredClone(runtime.get(retained.id).repositories),
+ 		workspace,
+ 		input: "Inspect the scripted provider target",
+ 		workflow: runtime

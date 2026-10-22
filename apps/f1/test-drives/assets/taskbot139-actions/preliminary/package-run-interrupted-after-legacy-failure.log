@@ -1,0 +1,238 @@
+
+> bobs-factory-monorepo@1.0.1 test:packages:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions
+> pnpm --filter './packages/*' test:run --maxWorkers=2
+
+Scope: 16 of 20 workspace projects
+
+> bobs-factory-cloudflare-tunnel-client@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/cloudflare-tunnel-client
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/cloudflare-tunnel-client
+
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  04:59:24
+   Duration  139ms (transform 32ms, setup 0ms, import 47ms, tests 31ms, environment 0ms)
+
+
+> bobs-factory-core@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/core
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/core
+
+
+ Test Files  19 passed (19)
+      Tests  263 passed (263)
+   Start at  04:59:25
+   Duration  2.34s (transform 208ms, setup 0ms, import 748ms, tests 2.20s, environment 1ms)
+
+
+> bobs-factory-mcp-tools@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/mcp-tools
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/mcp-tools
+
+To /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-operator-0Vg4B5/upstream.git
+ * [new branch]      main -> main
+
+ Test Files  14 passed (14)
+      Tests  82 passed (82)
+   Start at  04:59:27
+   Duration  14.18s (transform 1.68s, setup 0ms, import 4.02s, tests 23.00s, environment 1ms)
+
+
+> bobs-factory-claude-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/claude-runner
+> vitest run --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/claude-runner
+
+
+ Test Files  12 passed (12)
+      Tests  137 passed (137)
+   Start at  04:59:42
+   Duration  1.69s (transform 545ms, setup 0ms, import 1.59s, tests 173ms, environment 1ms)
+
+
+> bobs-factory-config-updater@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/config-updater
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/config-updater
+
+
+ Test Files  8 passed (8)
+      Tests  52 passed (52)
+   Start at  04:59:44
+   Duration  5.16s (transform 268ms, setup 0ms, import 899ms, tests 5.60s, environment 0ms)
+
+
+> bobs-factory-github-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/github-event-transport
+> vitest run --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/github-event-transport
+
+
+ Test Files  5 passed (5)
+      Tests  117 passed (117)
+   Start at  04:59:50
+   Duration  573ms (transform 254ms, setup 0ms, import 472ms, tests 59ms, environment 0ms)
+
+
+> bobs-factory-gitlab-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/gitlab-event-transport
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/gitlab-event-transport
+
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  04:59:51
+   Duration  115ms (transform 16ms, setup 0ms, import 23ms, tests 3ms, environment 0ms)
+
+
+> bobs-factory-linear-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/linear-event-transport
+> vitest run --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/linear-event-transport
+
+
+ Test Files  6 passed (6)
+      Tests  75 passed (75)
+   Start at  04:59:51
+   Duration  973ms (transform 320ms, setup 0ms, import 1.12s, tests 232ms, environment 0ms)
+
+
+> bobs-factory-slack-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/slack-event-transport
+> vitest run --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/slack-event-transport
+
+
+ Test Files  3 passed (3)
+      Tests  82 passed (82)
+   Start at  04:59:53
+   Duration  386ms (transform 191ms, setup 0ms, import 335ms, tests 27ms, environment 0ms)
+
+
+> bobs-factory-zulip-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/zulip-event-transport
+> vitest run --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/zulip-event-transport
+
+
+ Test Files  3 passed (3)
+      Tests  25 passed (25)
+   Start at  04:59:53
+   Duration  389ms (transform 190ms, setup 0ms, import 325ms, tests 13ms, environment 0ms)
+
+
+> bobs-factory-simple-agent-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/simple-agent-runner
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/simple-agent-runner
+
+
+ Test Files  2 passed (2)
+      Tests  24 passed (24)
+   Start at  04:59:54
+   Duration  336ms (transform 60ms, setup 0ms, import 75ms, tests 212ms, environment 0ms)
+
+
+> bobs-factory-codex-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/codex-runner
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/codex-runner
+
+
+ Test Files  17 passed (17)
+      Tests  140 passed (140)
+   Start at  04:59:55
+   Duration  2.34s (transform 416ms, setup 0ms, import 1.14s, tests 1.99s, environment 1ms)
+
+
+> bobs-factory-cursor-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/cursor-runner
+> node ../../node_modules/.pnpm/node_modules/vitest/vitest.mjs run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/cursor-runner
+
+
+ Test Files  8 passed (8)
+      Tests  56 passed (56)
+   Start at  04:59:57
+   Duration  2.59s (transform 374ms, setup 0ms, import 549ms, tests 3.41s, environment 0ms)
+
+
+> bobs-factory-gemini-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/gemini-runner
+> vitest run --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/gemini-runner
+
+
+ Test Files  4 passed (4)
+      Tests  200 passed | 1 skipped (201)
+   Start at  05:00:00
+   Duration  762ms (transform 361ms, setup 0ms, import 739ms, tests 276ms, environment 0ms)
+
+
+> bobs-factory-opencode-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/opencode-runner
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/opencode-runner
+
+
+ Test Files  4 passed (4)
+      Tests  34 passed (34)
+   Start at  05:00:01
+   Duration  5.99s (transform 480ms, setup 0ms, import 971ms, tests 6.31s, environment 0ms)
+
+
+> bobs-factory-edge-worker@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker
+> vitest run --maxWorkers=2
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker
+
+{"layout":"js","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1038052}}}
+{"layout":"python","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1040308}}}
+Note: switching to 'HEAD~1'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 760113d fixture
+ ❯ test/CheckIntegration.test.ts (7 tests | 1 failed) 6211ms
+     × loads and resumes an old saved decision tool through the ordinary runtime without rewriting accepted definitions 104ms
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 test:run: `vitest run --maxWorkers=2`
+Exit status 130
+ ELIFECYCLE  Command failed with exit code 130.

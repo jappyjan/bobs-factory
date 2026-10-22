@@ -1,0 +1,92 @@
+[
+  {
+    "name": "architecture-original",
+    "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "command": [
+      "bun",
+      "apps/f1/test-drives/media/2026-10-11-architecture-decision-brief/f1-drive.ts"
+    ],
+    "driverSha256": "a9bf6ed3360d772e6711eaad9e21d6d0e2f356ad8efb6466432af541cb0c9128",
+    "runtimeSourceSha256": "84ae4089c33bffa12e5b91fdb97fccb7d12e4f5764fadf496774555e1a3e4a53",
+    "runtimeBuildSha256": "e75773a9429093f392e6c2ada2f7b7a65032d4a5241e1a454a3c83de5dda13a2",
+    "startedAt": "2026-10-22T03:43:21.304734+00:00",
+    "exitCode": 0,
+    "seconds": 115.66,
+    "log": "architecture-original.log"
+  },
+  {
+    "name": "architecture-continuation",
+    "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "command": [
+      "bun",
+      "apps/f1/test-drives/assets/architecture-approval-continuation.mjs"
+    ],
+    "driverSha256": "7a5e981c99369295075544ceed4b20971943b68bca822560907e6ee0013b41b3",
+    "runtimeSourceSha256": "84ae4089c33bffa12e5b91fdb97fccb7d12e4f5764fadf496774555e1a3e4a53",
+    "runtimeBuildSha256": "e75773a9429093f392e6c2ada2f7b7a65032d4a5241e1a454a3c83de5dda13a2",
+    "startedAt": "2026-10-22T03:45:16.965497+00:00",
+    "exitCode": 0,
+    "seconds": 6.17,
+    "log": "architecture-continuation.log"
+  },
+  {
+    "name": "impact-feedback",
+    "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "command": [
+      "bun",
+      "apps/f1/test-drives/assets/impact-feedback-recovery.mjs"
+    ],
+    "driverSha256": "da684b4d75e8bd673d4b6865279914a8b6d1ad0ce00aebbc840b8bc7168e69e4",
+    "runtimeSourceSha256": "84ae4089c33bffa12e5b91fdb97fccb7d12e4f5764fadf496774555e1a3e4a53",
+    "runtimeBuildSha256": "e75773a9429093f392e6c2ada2f7b7a65032d4a5241e1a454a3c83de5dda13a2",
+    "startedAt": "2026-10-22T03:45:23.133980+00:00",
+    "exitCode": 0,
+    "seconds": 4.75,
+    "log": "impact-feedback.log"
+  },
+  {
+    "name": "workflow-stall",
+    "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "command": [
+      "bun",
+      "apps/f1/test-drives/assets/workflow-stall-recovery.mjs"
+    ],
+    "driverSha256": "416f7b0a29ea8322ea82557301fe16eb0d09de2b279ef6af09684a0ca36eca01",
+    "runtimeSourceSha256": "84ae4089c33bffa12e5b91fdb97fccb7d12e4f5764fadf496774555e1a3e4a53",
+    "runtimeBuildSha256": "e75773a9429093f392e6c2ada2f7b7a65032d4a5241e1a454a3c83de5dda13a2",
+    "startedAt": "2026-10-22T03:45:27.879786+00:00",
+    "exitCode": 0,
+    "seconds": 10.72,
+    "log": "workflow-stall.log"
+  },
+  {
+    "name": "api-responsiveness",
+    "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "command": [
+      "bun",
+      "apps/f1/test-drives/assets/api-responsiveness.ts"
+    ],
+    "driverSha256": "1f6d61f6b4c8b31999dc54528cde22de075a7f3347631c6050bde2b23b775614",
+    "runtimeSourceSha256": "84ae4089c33bffa12e5b91fdb97fccb7d12e4f5764fadf496774555e1a3e4a53",
+    "runtimeBuildSha256": "e75773a9429093f392e6c2ada2f7b7a65032d4a5241e1a454a3c83de5dda13a2",
+    "startedAt": "2026-10-22T03:45:38.596528+00:00",
+    "exitCode": 0,
+    "seconds": 13.36,
+    "log": "api-responsiveness.log"
+  },
+  {
+    "name": "actions",
+    "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+    "command": [
+      "node",
+      "apps/f1/test-drives/assets/taskbot139-actions.mjs"
+    ],
+    "driverSha256": "ccc1548280630385c542b5b472fd0063402299ae8dd218453bebe12b0ca25b3c",
+    "runtimeSourceSha256": "84ae4089c33bffa12e5b91fdb97fccb7d12e4f5764fadf496774555e1a3e4a53",
+    "runtimeBuildSha256": "e75773a9429093f392e6c2ada2f7b7a65032d4a5241e1a454a3c83de5dda13a2",
+    "startedAt": "2026-10-22T03:45:51.953789+00:00",
+    "exitCode": 0,
+    "seconds": 36.46,
+    "log": "actions.log"
+  }
+]

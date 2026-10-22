@@ -1,0 +1,13 @@
+
+> bobs-factory@1.0.0-beta test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/cli
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/cli
+
+
+ Test Files  22 passed (22)
+      Tests  254 passed (254)
+   Start at  05:35:54
+   Duration  14.67s (transform 2.49s, setup 0ms, import 10.11s, tests 16.52s, environment 1ms)
+

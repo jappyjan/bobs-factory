@@ -1,0 +1,16 @@
+{
+  "workflow-stall-recovery.mjs": {
+    "sha256": "8f240af7f8b3bcca6292153e89e959d40d1d8f7352f02a166b214b825523907b",
+    "assertionCalls": 64,
+    "originalOutcomesRetained": true,
+    "detail": "Only explicit synthetic GitHub provider metadata added to existing disposable repository config; Git allowlist, real local origin, provider I/O mocks, and every assertion remain unchanged."
+  },
+  "impact-feedback-recovery.mjs": {
+    "unchanged": true,
+    "sha256": "da684b4d75e8bd673d4b6865279914a8b6d1ad0ce00aebbc840b8bc7168e69e4"
+  },
+  "architecture-approval-continuation.mjs": {
+    "unchanged": true,
+    "sha256": "7a5e981c99369295075544ceed4b20971943b68bca822560907e6ee0013b41b3"
+  }
+}

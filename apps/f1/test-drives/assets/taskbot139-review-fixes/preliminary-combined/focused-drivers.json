@@ -1,0 +1,26 @@
+[
+  {
+    "name": "impact-feedback-corrected3",
+    "driver": "apps/f1/test-drives/assets/impact-feedback-recovery.mjs",
+    "driverSha256": "da684b4d75e8bd673d4b6865279914a8b6d1ad0ce00aebbc840b8bc7168e69e4",
+    "exitCode": 0,
+    "seconds": 5.02,
+    "boundary": "combined dirty source focused stabilization; not final frozen source"
+  },
+  {
+    "name": "workflow-stall-corrected3",
+    "driver": "apps/f1/test-drives/assets/workflow-stall-recovery.mjs",
+    "driverSha256": "eeb8706870c84efb8304dcfcd5e85363a538ca5ab4064a8e5654a8066c1ad45a",
+    "exitCode": 1,
+    "seconds": 1.9,
+    "boundary": "combined dirty source focused stabilization; not final frozen source"
+  },
+  {
+    "name": "actions-enhanced",
+    "driver": "apps/f1/test-drives/assets/taskbot139-actions.mjs",
+    "driverSha256": "6e0d9af773f39bb674448c4521106a34d2fddab868fb69e1fe5e7bb5f8e4c495",
+    "exitCode": 1,
+    "seconds": 41.14,
+    "boundary": "combined dirty source focused stabilization; not final frozen source"
+  }
+]

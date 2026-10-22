@@ -1,0 +1,233 @@
+{"phase":"setup","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3","startedAt":"2026-10-22T03:24:58.460Z","paidCalls":0,"revision":"fd16d1dd1f07a0cc667eadae3a78c8b93348b508","deltaSha256":"fb02a623e09ec4077b5a7f2fcab79811b79d65cea7850e2b0790efd7b6d218c4","driverSha256":"c463d68acfa1e321c81ea088d72460e45ad110f32c3cd41661215195ee56b988","buildSha256":"d3686b9f436f21377cb6fed5bd087b1f440c6f4cb69f4d642f8361c7e2677cf2","node":"v24.21.0"}
+2026-10-22T03:24:58.979Z [INFO ] [EdgeWorker] Deployed default skills to /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/home/bobs-factory-skills-plugin (5 skills)
+2026-10-22T03:24:58.979Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T03:24:58.980Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:24:58.980Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:24:58.995Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:60786
+2026-10-22T03:24:58.997Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:24:58.997Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:24:58.998Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:24:58.998Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:24:58.998Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:24:58.998Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:24:58.998Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:24:58.998Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:24:58.998Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:24:58.998Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:24:58.999Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:24:58.999Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:24:58.999Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:24:59.000Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:24:59.000Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:24:59.000Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:24:59.000Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:24:59.001Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:60785
+2026-10-22T03:24:59.152Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-22T03:24:59.156Z [INFO ] [RepositoryRouter] Repository selected: Action F1 fixture (workspace catch-all)
+2026-10-22T03:24:59.156Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-22T03:24:59.156Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-1} Handling agent session created
+2026-10-22T03:24:59.159Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-22T03:24:59.190Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T03:24:59.191Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T03:24:59.569Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/worktrees/DEF-1 from origin/main (tracking main)
+2026-10-22T03:24:59.694Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Tracking session for issue issue-1
+2026-10-22T03:24:59.744Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Starting agent session for issue DEF-1
+2026-10-22T03:24:59.744Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Building initial prompt for issue DEF-1
+2026-10-22T03:25:02.601Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+[EdgeWorker] bobs-factory-tools MCP session connected: a0fddb1e-d3ee-49a4-8c83-0fe655356861
+[EdgeWorker] bobs-factory-tools MCP session terminated: a0fddb1e-d3ee-49a4-8c83-0fe655356861
+[EdgeWorker] bobs-factory-tools MCP session terminated: a0fddb1e-d3ee-49a4-8c83-0fe655356861
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+2026-10-22T03:25:07.190Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T03:25:07.190Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T03:25:07.400Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/worktrees/MANUAL-ebce0326 from origin/main (tracking main)
+2026-10-22T03:25:07.582Z [INFO ] [AgentSessionManager] {session=child-d8, platform=manual} Creating chat session
+2026-10-22T03:25:08.183Z [INFO ] [AgentSessionManager] {session=child-d8} Session completed (subtype: success)
+2026-10-22T03:25:10.131Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T03:25:10.131Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T03:25:10.350Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/worktrees/MANUAL-89096a42 from origin/main (tracking main)
+2026-10-22T03:25:10.537Z [INFO ] [AgentSessionManager] {session=child-8b, platform=manual} Creating chat session
+2026-10-22T03:25:11.097Z [INFO ] [AgentSessionManager] {session=child-8b} Session completed (subtype: success)
+2026-10-22T03:25:13.391Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-22T03:25:13.396Z [INFO ] [RepositoryRouter] Repository selected: Action F1 fixture (workspace catch-all)
+2026-10-22T03:25:13.396Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-22T03:25:13.396Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-2} Handling agent session created
+2026-10-22T03:25:13.398Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-22T03:25:13.457Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T03:25:13.457Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T03:25:13.624Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/worktrees/DEF-2 from origin/main (tracking main)
+2026-10-22T03:25:13.711Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Tracking session for issue issue-2
+2026-10-22T03:25:13.739Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-2} Starting agent session for issue DEF-2
+2026-10-22T03:25:13.739Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-2} Building initial prompt for issue DEF-2
+2026-10-22T03:25:16.387Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-2} Session completed (subtype: success)
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+[EdgeWorker] bobs-factory-tools MCP session connected: cd5ef1bc-a850-42b8-9b42-8c4bc9351c91
+[EdgeWorker] bobs-factory-tools MCP session terminated: cd5ef1bc-a850-42b8-9b42-8c4bc9351c91
+[EdgeWorker] bobs-factory-tools MCP session terminated: cd5ef1bc-a850-42b8-9b42-8c4bc9351c91
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+2026-10-22T03:25:19.591Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T03:25:19.592Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T03:25:19.810Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/worktrees/MANUAL-b8fca15e from origin/main (tracking main)
+2026-10-22T03:25:20.006Z [INFO ] [AgentSessionManager] {session=child-c3, platform=manual} Creating chat session
+2026-10-22T03:25:20.537Z [INFO ] [AgentSessionManager] {session=child-c3} Session completed (subtype: success)
+2026-10-22T03:25:21.746Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:25:21.747Z [INFO ] [SharedApplicationServer] Shared application server stopped
+2026-10-22T03:25:21.811Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:25:21.811Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:25:21.822Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:60786
+2026-10-22T03:25:21.823Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:25:21.823Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:25:21.823Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:25:21.823Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:25:21.823Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:25:21.824Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:25:21.824Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:25:21.824Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:25:21.824Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:25:21.824Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:60785
+2026-10-22T03:25:22.950Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T03:25:22.950Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T03:25:23.178Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/worktrees/MANUAL-bd44a36f from origin/main (tracking main)
+2026-10-22T03:25:23.330Z [INFO ] [AgentSessionManager] {session=child-e1, platform=manual} Creating chat session
+2026-10-22T03:25:23.880Z [INFO ] [AgentSessionManager] {session=child-e1} Session completed (subtype: success)
+2026-10-22T03:25:25.797Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-22T03:25:25.802Z [INFO ] [RepositoryRouter] Repository selected: Action F1 fixture (workspace catch-all)
+2026-10-22T03:25:25.802Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-22T03:25:25.802Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-3} Handling agent session created
+2026-10-22T03:25:25.805Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-22T03:25:25.893Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T03:25:25.893Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T03:25:26.075Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/worktrees/DEF-3 from origin/main (tracking main)
+2026-10-22T03:25:26.158Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-3} Tracking session for issue issue-3
+2026-10-22T03:25:26.189Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-3} Starting agent session for issue DEF-3
+2026-10-22T03:25:26.189Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-3} Building initial prompt for issue DEF-3
+2026-10-22T03:25:28.965Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-3} Session completed (subtype: success)
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+[EdgeWorker] bobs-factory-tools MCP session connected: b18641cf-c151-4fb1-b140-fbde636eea04
+[EdgeWorker] bobs-factory-tools MCP session terminated: b18641cf-c151-4fb1-b140-fbde636eea04
+[EdgeWorker] bobs-factory-tools MCP session terminated: b18641cf-c151-4fb1-b140-fbde636eea04
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+2026-10-22T03:25:32.286Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:25:32.287Z [INFO ] [SharedApplicationServer] Shared application server stopped
+2026-10-22T03:25:32.367Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:25:32.367Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:25:32.375Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:60786
+2026-10-22T03:25:32.376Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:25:32.376Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:25:32.376Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:25:32.376Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:25:32.376Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:25:32.377Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:25:32.377Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:25:32.377Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:25:32.378Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:60785
+2026-10-22T03:25:32.860Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T03:25:32.860Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T03:25:33.053Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-v4rDD3/worktrees/MANUAL-89154b85 from origin/main (tracking main)
+2026-10-22T03:25:33.248Z [INFO ] [AgentSessionManager] {session=child-02, platform=manual} Creating chat session
+2026-10-22T03:25:33.799Z [INFO ] [AgentSessionManager] {session=child-02} Session completed (subtype: success)
+2026-10-22T03:25:35.634Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:25:35.634Z [INFO ] [SharedApplicationServer] Shared application server stopped
+2026-10-22T03:25:35.695Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T03:25:35.695Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T03:25:35.700Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:60786
+2026-10-22T03:25:35.701Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T03:25:35.701Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T03:25:35.701Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T03:25:35.701Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T03:25:35.701Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T03:25:35.702Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T03:25:35.702Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T03:25:35.702Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T03:25:35.702Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T03:25:35.702Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:60785
+2026-10-22T03:25:35.888Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T03:25:35.888Z [INFO ] [SharedApplicationServer] Shared application server stopped
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
++ {
++   children: {
++     base: {
++       dependencies: [],
++       runId: 'child-02f52cd10f08e673e295684f26c70f2289154b85',
++       url: '/runs/child-02f52cd10f08e673e295684f26c70f2289154b85',
++       wave: 0
++     },
++     dependent: {
++       dependencies: [
++         'base'
++       ],
++       runId: 'child-0ff9fe703e89b32b143efcce149fdd78cc7e5e9c',
++       url: '/runs/child-0ff9fe703e89b32b143efcce149fdd78cc7e5e9c',
++       wave: 1
++     }
++   },
++   wait: false
++ }
+- undefined
+
+    at file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1/test-drives/assets/taskbot139-actions.mjs:714:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: {
+    children: {
+      base: {
+        runId: 'child-02f52cd10f08e673e295684f26c70f2289154b85',
+        url: '/runs/child-02f52cd10f08e673e295684f26c70f2289154b85',
+        wave: 0,
+        dependencies: []
+      },
+      dependent: {
+        runId: 'child-0ff9fe703e89b32b143efcce149fdd78cc7e5e9c',
+        url: '/runs/child-0ff9fe703e89b32b143efcce149fdd78cc7e5e9c',
+        wave: 1,
+        dependencies: [ 'base' ]
+      }
+    },
+    wait: false
+  },
+  expected: undefined,
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

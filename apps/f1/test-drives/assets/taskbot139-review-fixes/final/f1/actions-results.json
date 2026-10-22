@@ -1,0 +1,147 @@
+{
+  "result": "PASS",
+  "startedAt": "2026-10-22T03:45:52.680Z",
+  "endedAt": "2026-10-22T03:46:28.386Z",
+  "directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-eGcsau",
+  "paidCalls": 0,
+  "revision": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+  "deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "driverSha256": "ccc1548280630385c542b5b472fd0063402299ae8dd218453bebe12b0ca25b3c",
+  "buildSha256": "d3686b9f436f21377cb6fed5bd087b1f440c6f4cb69f4d642f8361c7e2677cf2",
+  "node": "v24.21.0",
+  "results": [
+    {
+      "scenario": "f1-actions-wait",
+      "parentId": "session-1",
+      "wait": true,
+      "restart": false,
+      "children": [
+        {
+          "id": "base",
+          "runId": "child-4ba4da3972681cc5200a97180be584ccde0dd382",
+          "status": "merged",
+          "wave": 0
+        },
+        {
+          "id": "dependent",
+          "runId": "child-dbfd00dd133e82f3858d6d99582b196e48ab5d63",
+          "status": "merged",
+          "wave": 1
+        }
+      ],
+      "filed": {
+        "tickets": {
+          "base": {
+            "id": "ae3aab80-6c41-4605-8011-55caccdec9d9",
+            "url": "https://linear.app/fixture/issue/ae3aab80-6c41-4605-8011-55caccdec9d9"
+          },
+          "dependent": {
+            "id": "da3c8852-8b84-4963-876a-fbe61c872b6a",
+            "url": "https://linear.app/fixture/issue/da3c8852-8b84-4963-876a-fbe61c872b6a"
+          }
+        },
+        "summary": {
+          "total": 2,
+          "confirmed": 2,
+          "uncertain": 0
+        }
+      },
+      "scopeRetained": true,
+      "independentWorktrees": true
+    },
+    {
+      "scenario": "f1-actions-detached",
+      "parentId": "session-2",
+      "wait": false,
+      "restart": true,
+      "children": [
+        {
+          "id": "base",
+          "runId": "child-c1062e1a414c3f6c20786cd5a37c3e4e41fe76cc",
+          "status": "merged",
+          "wave": 0
+        },
+        {
+          "id": "dependent",
+          "runId": "child-b6097882aedca002a3c48cabefa36166e641d561",
+          "status": "merged",
+          "wave": 1
+        }
+      ],
+      "filed": {
+        "tickets": {
+          "base": {
+            "id": "6d1cf17e-ebc0-48f4-810e-d9ac7466b344",
+            "url": "https://linear.app/fixture/issue/6d1cf17e-ebc0-48f4-810e-d9ac7466b344"
+          },
+          "dependent": {
+            "id": "6ac8cee7-c901-4df6-88c7-42b4160a06a7",
+            "url": "https://linear.app/fixture/issue/6ac8cee7-c901-4df6-88c7-42b4160a06a7"
+          }
+        },
+        "summary": {
+          "total": 2,
+          "confirmed": 2,
+          "uncertain": 0
+        }
+      },
+      "scopeRetained": true,
+      "independentWorktrees": true
+    },
+    {
+      "scenario": "uncertain-stop-resume-stopbatch",
+      "parentId": "session-3",
+      "lostReplyReconciled": true,
+      "duplicateSends": 0,
+      "parentPausePreservedChild": true,
+      "pausedObservationAndReconstruction": true,
+      "mappedSnapshotPinnedMcp": true,
+      "resumeRetainedOriginalWave": true,
+      "batchStopPersisted": true
+    }
+  ],
+  "pinnedMcp": [
+    {
+      "revision": "fb8628cea9e48a3e37eb2ff3acd2ecff4ad24e2b",
+      "registeredTools": [
+        "list_repository",
+        "read_repository",
+        "list_context",
+        "read_context"
+      ],
+      "privateDenied": true,
+      "foreignDenied": true
+    },
+    {
+      "revision": "fb8628cea9e48a3e37eb2ff3acd2ecff4ad24e2b",
+      "registeredTools": [
+        "list_repository",
+        "read_repository",
+        "list_context",
+        "read_context"
+      ],
+      "privateDenied": true,
+      "foreignDenied": true
+    },
+    {
+      "revision": "fb8628cea9e48a3e37eb2ff3acd2ecff4ad24e2b",
+      "registeredTools": [
+        "list_repository",
+        "read_repository",
+        "list_context",
+        "read_context"
+      ],
+      "privateDenied": true,
+      "foreignDenied": true
+    }
+  ],
+  "activityCount": 3,
+  "terminalTracking": {
+    "retained": true,
+    "delivered": false,
+    "superseded": true,
+    "trackerState": "completed"
+  },
+  "providerSends": 6,
+  "mockTurns": 8
+}

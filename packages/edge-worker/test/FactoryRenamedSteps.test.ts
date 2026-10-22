@@ -138,7 +138,9 @@ async function drive(renamed: boolean) {
 					output = {
 						approved: true,
 						feedback: [],
-						deliveryContractDigest: digest(contract),
+						deliveryContractDigest: (
+							context.input as { deliveryCandidateDigest: string }
+						).deliveryCandidateDigest,
 					};
 					break;
 				case "architecture-checkin-v1": {

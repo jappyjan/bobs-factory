@@ -1,0 +1,47 @@
+{"phase":"setup","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-0LpZOA","startedAt":"2026-10-22T01:46:29.799Z","paidCalls":0,"revision":"791b7405f78c654c07e58c0395a4802e6229bf0a","deltaSha256":"7cf10b3c28ae7d8262aaf4440a395bd05a53c46134d6f5fc98e0c2beb5ebdd06","driverSha256":"f697435f3d3b40a33c40f659633dc504552feecb910afc6b3d70c073dd77af75","buildSha256":"12ad6dfe8bced834701aa9d737921b8c7738dba0af8a8a0795bff50b4ecab40c","node":"v24.21.0"}
+2026-10-22T01:46:31.672Z [INFO ] [EdgeWorker] Deployed default skills to /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-0LpZOA/home/bobs-factory-skills-plugin (5 skills)
+2026-10-22T01:46:31.681Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-0LpZOA/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T01:46:31.686Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T01:46:31.686Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T01:46:31.738Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:58929
+2026-10-22T01:46:31.746Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T01:46:31.747Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T01:46:31.747Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T01:46:31.747Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T01:46:31.747Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T01:46:31.748Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T01:46:31.748Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T01:46:31.748Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T01:46:31.749Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T01:46:31.749Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T01:46:31.751Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T01:46:31.751Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T01:46:31.751Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T01:46:31.756Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T01:46:31.756Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T01:46:31.756Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T01:46:31.756Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T01:46:31.757Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:58928
+2026-10-22T01:46:32.396Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-22T01:46:32.412Z [INFO ] [RepositoryRouter] Repository selected: Action F1 fixture (workspace catch-all)
+2026-10-22T01:46:32.412Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-22T01:46:32.412Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-1} Handling agent session created
+2026-10-22T01:46:32.425Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-22T01:46:32.546Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=actions-fixture, overrideValue=undefined
+2026-10-22T01:46:32.547Z [INFO ] [GitService] createSingleRepoWorktree for Action F1 fixture (id=actions-fixture): baseBranchOverride=undefined
+2026-10-22T01:46:32.952Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot139-actions-0LpZOA/worktrees/DEF-1 from origin/main (tracking main)
+2026-10-22T01:46:33.113Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Tracking session for issue issue-1
+2026-10-22T01:46:33.183Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Starting agent session for issue DEF-1
+2026-10-22T01:46:33.183Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Building initial prompt for issue DEF-1
+2026-10-22T01:47:33.241Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T01:47:33.242Z [INFO ] [SharedApplicationServer] Shared application server stopped
+file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1/test-drives/assets/taskbot139-actions.mjs:477
+	throw new Error(
+	      ^
+
+Error: Base child admission: [{"id":"session-1","status":"failed","step":"research","error":"Mock runner belongs to actual run workspace"}]
+    at until (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1/test-drives/assets/taskbot139-actions.mjs:477:8)
+    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1/test-drives/assets/taskbot139-actions.mjs:522:3
+
+Node.js v24.21.0

@@ -1,4 +1,14 @@
 import { createHash } from "node:crypto";
+import {
+	type IssueDestination,
+	IssueDestinationSchema,
+} from "./IssueDestination.js";
+
+export {
+	type IssueDestination,
+	IssueDestinationSchema,
+} from "./IssueDestination.js";
+
 import { z } from "zod";
 import type { AgentSettings } from "./AgentSettings.js";
 import { repositoryCompletionProven } from "./Delivery.js";
@@ -141,16 +151,6 @@ export const PlanCheckSchema = z
 		(v) => (v.approved ? v.feedback.length === 0 : v.feedback.length > 0),
 		"Rejected plans need actionable feedback; approved plans have no unresolved corrections",
 	);
-export const IssueDestinationSchema = z.discriminatedUnion("provider", [
-	z.object({ provider: z.literal("linear"), workspaceId: text, teamId: text }),
-	z.object({
-		provider: z.literal("taskbot"),
-		server: text,
-		instance: z.string().url(),
-		project: z.string().regex(/^[a-z0-9-]+$/),
-	}),
-]);
-export type IssueDestination = z.infer<typeof IssueDestinationSchema>;
 export const ItemChoiceSchema = z.object({
 	action: z.enum(["fix", "issue", "ignore", "follow-up"]),
 	comment: z.string().max(12000).default(""),

@@ -14,7 +14,11 @@ import {
 	validateInventory,
 } from "../../../../packages/edge-worker/dist/factory/SpecialistReview.js";
 import { stepVisitLimit } from "../../../../packages/edge-worker/dist/factory/StepVisitBudget.js";
+import { WorkflowSchema } from "../../../../packages/edge-worker/dist/factory/Workflow.js";
 import { checkin } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
+import legacyWorkflows from "../../../../packages/edge-worker/test/fixtures/legacy-workflows-a4990127.json" with {
+	type: "json",
+};
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
 
@@ -110,7 +114,21 @@ const providerWorkflow = {
 	name: "Provider target fixture",
 	allowedTriggers: ["manual"],
 	steps: [
-		{ id: "ci", name: "Inspect provider CI", type: "tool", tool: "ci" },
+		{
+			id: "provider-target",
+			name: "Read the scripted provider target",
+			type: "script",
+			script: `cat <<'BOBS_FACTORY_FIXTURE_JSON'
+{"url":"https://github.com/fixture/repository/pull/1"}
+BOBS_FACTORY_FIXTURE_JSON`,
+		},
+		{
+			id: "ci",
+			name: "Inspect provider CI",
+			type: "tool",
+			tool: "ci",
+			reads: { draftPr: "provider-target", ci: "ci" },
+		},
 		agent("hold", { askQuestions: true, next: "end" }),
 	],
 };
@@ -126,16 +144,59 @@ const proposalReview = structuredClone(
 const proposalDecision = structuredClone(
 	stockPipeline.steps.find((step) => step.id === "architecture-decision"),
 );
+// Reduced fixtures provide real scope and plan outputs before proposal execution.
+// Keeping plan separate lets the decision action update its declared owned target.
+const fixtureValue = (id, value) => ({
+	id,
+	name: id,
+	type: "script",
+	configVersion: "step-config-v1",
+	reads: {},
+	checks: [],
+	access: "workspace",
+	script: `cat <<'BOBS_FACTORY_FIXTURE_JSON'
+${JSON.stringify(value)}
+BOBS_FACTORY_FIXTURE_JSON`,
+});
+const scopeReads = {
+	scopeClarify: "fixture-context/clarify",
+	scopeDecisions: "fixture-context/decisions",
+	scopePlan: "plan",
+	scopeSource: "@source",
+	scopeTicket: "@ticket",
+};
 const architectureWorkflow = {
 	id: "fixer-architecture-fixture",
 	name: "Fixer architecture handback fixture",
 	allowedTriggers: ["manual"],
 	steps: [
-		{ ...proposalStep, id: "draft-boundary", next: "inspect-boundary" },
+		fixtureValue("fixture-context", {
+			clarify: {
+				requirements: [
+					"Review a changed correction boundary before implementing it.",
+					"Retain unresolved findings and require exact human acceptance.",
+				],
+				questions: [],
+				decisions: [],
+			},
+			decisions: { decisions: [] },
+		}),
+		fixtureValue("plan", boundaryProposal(1).candidate),
+		{
+			...proposalStep,
+			id: "draft-boundary",
+			reads: { ...scopeReads, architectureDecision: "accept-boundary" },
+			next: "inspect-boundary",
+		},
 		{
 			...proposalReview,
 			id: "inspect-boundary",
 			architectureSource: "draft-boundary",
+			reads: {
+				...scopeReads,
+				proposal: "draft-boundary",
+				architectureDecision: "accept-boundary",
+			},
 			next: "accept-boundary",
 			branches: [
 				{ when: { path: "approved", equals: false }, next: "draft-boundary" },
@@ -144,10 +205,18 @@ const architectureWorkflow = {
 		{
 			...proposalDecision,
 			id: "accept-boundary",
+			reads: {
+				...scopeReads,
+				proposal: "draft-boundary",
+				review: "inspect-boundary",
+				plan: "plan",
+				revise: "draft-boundary",
+			},
 			arguments: {
 				...proposalDecision.arguments,
 				proposal: "draft-boundary",
 				review: "inspect-boundary",
+				planOutput: "plan",
 				revise: "draft-boundary",
 			},
 			next: "code-fix",
@@ -208,6 +277,9 @@ const config = {
 			repositoryPath: repo,
 			workspaceBaseDir: join(directory, "worktrees"),
 			baseBranch: "main",
+			// Provider reads are scripted separately from the real disposable Git origin.
+			githubUrl: "https://github.com/fixture/repository",
+			gitProvider: { type: "github" },
 			linearWorkspaceId: "cli-workspace",
 			isActive: true,
 		},
@@ -491,7 +563,11 @@ try {
 		},
 	};
 	await runtime.save(retained);
-	const oldStock = structuredClone(defaultWorkflows);
+	// Use the archived accepted graph whose behavior fingerprints qualify for
+	// the historical allowance; halved modern stock is a different custom graph.
+	const oldStock = legacyWorkflows.default.map((workflow) =>
+		WorkflowSchema.parse(workflow),
+	);
 	const halve = (steps) => {
 		for (const step of steps) {
 			if ([16, 200].includes(step.maxVisits)) step.maxVisits /= 2;
@@ -608,9 +684,14 @@ try {
 			.clarify,
 		4,
 	);
+	// This phase has proved native clarification and its retained allowance.
+	// Stop it durably before later startup reuses the same disposable workspace.
+	runtime.stop(budget.id);
+	await runtime.save(runtime.get(budget.id));
 	const provider = runtime.create({
 		id: "live-target",
 		repositoryId: "fixture",
+		repositories: structuredClone(runtime.get(retained.id).repositories),
 		workspace,
 		input: "Inspect the scripted provider target",
 		workflow: runtime
@@ -619,9 +700,6 @@ try {
 		workflowDefinitions: runtime.listWorkflows(),
 		triggerOrigin: { type: "manual", workflowId: providerWorkflow.id, at },
 	});
-	provider.outputs["draft-pr"] = {
-		url: "https://github.com/fixture/repository/pull/1",
-	};
 	void runtime.launch(provider);
 	await until(
 		() => waiting(provider.id, "hold"),
@@ -635,6 +713,9 @@ try {
 		liveTarget,
 	);
 	assert(providerRequests.length >= 3);
+	// Keep only the correction run auto-resumable for the question-recheck phase.
+	runtime.stop(provider.id);
+	await runtime.save(runtime.get(provider.id));
 	await runtime.flush();
 	await worker.stop();
 	construct();
@@ -714,9 +795,13 @@ try {
 	assert.equal(afterRecheck.history.length, retainedHistory + 1);
 	assert.equal(afterRecheck.humanDecisions?.length ?? 0, 0);
 	assert.equal((await postRecheck(questionContext)).status, 409);
+	// Recheck is verified; hand this shared fixture workspace to the next scenario.
+	runtime.stop(retained.id);
+	await runtime.save(runtime.get(retained.id));
 	const architectureRun = runtime.create({
 		id: "fixer-architecture-handback",
 		repositoryId: "fixture",
+		repositories: structuredClone(runtime.get(retained.id).repositories),
 		workspace,
 		input: "Review a changed correction boundary before implementing it.",
 		workflow: runtime

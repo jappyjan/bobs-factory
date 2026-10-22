@@ -1,0 +1,157 @@
+{
+  "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+  "node": "v24.21.0",
+  "pnpm": "10.33.1",
+  "workers": 2,
+  "workspaceConcurrency": 1,
+  "reason": "8 logical CPUs /16GiB host; bounded Vitest workers and serial workspace packages avoid aggregate process/memory contention",
+  "checks": [
+    {
+      "name": "build",
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "exitCode": 0,
+      "seconds": 5.75,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "build.log"
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "seconds": 5.39,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "typecheck.log"
+    },
+    {
+      "name": "lint",
+      "command": [
+        "pnpm",
+        "lint"
+      ],
+      "exitCode": 0,
+      "seconds": 1.25,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "lint.log"
+    },
+    {
+      "name": "ci-lint",
+      "command": [
+        "pnpm",
+        "exec",
+        "biome",
+        "ci"
+      ],
+      "exitCode": 0,
+      "seconds": 1.22,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "ci-lint.log"
+    },
+    {
+      "name": "packages",
+      "command": [
+        "pnpm",
+        "test:packages:run",
+        "--maxWorkers=2"
+      ],
+      "exitCode": 0,
+      "seconds": 507.11,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "packages.log"
+    },
+    {
+      "name": "cli",
+      "command": [
+        "pnpm",
+        "--filter",
+        "bobs-factory",
+        "test:run",
+        "--maxWorkers=2"
+      ],
+      "exitCode": 0,
+      "seconds": 11.02,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "cli.log"
+    },
+    {
+      "name": "f1-app",
+      "command": [
+        "pnpm",
+        "--filter",
+        "bobs-factory-f1",
+        "test:run",
+        "--maxWorkers=2"
+      ],
+      "exitCode": 0,
+      "seconds": 38.3,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "f1-app.log"
+    },
+    {
+      "name": "desktop",
+      "command": [
+        "pnpm",
+        "--filter",
+        "bobs-factory-desktop",
+        "test:run"
+      ],
+      "exitCode": 0,
+      "seconds": 6.04,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "desktop.log"
+    },
+    {
+      "name": "scripts",
+      "command": [
+        "/bin/zsh",
+        "-c",
+        "node --test scripts/tests/*.test.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 47.96,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "scripts.log"
+    },
+    {
+      "name": "f1-driver-syntax",
+      "command": [
+        "node",
+        "--check",
+        "apps/f1/test-drives/assets/taskbot139-actions.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 0.04,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "f1-driver-syntax.log"
+    },
+    {
+      "name": "ui-driver-syntax",
+      "command": [
+        "node",
+        "--check",
+        "apps/f1/test-drives/assets/taskbot139-actions-ui.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 0.04,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "ui-driver-syntax.log"
+    },
+    {
+      "name": "audit",
+      "command": [
+        "pnpm",
+        "audit",
+        "--json"
+      ],
+      "exitCode": 0,
+      "seconds": 1.01,
+      "source": "dcbe5c3d1b2a837b9ae40f06e29b5b63c73cf639",
+      "log": "audit.log"
+    }
+  ]
+}

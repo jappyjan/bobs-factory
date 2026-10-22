@@ -1,0 +1,24 @@
+[
+  {
+    "name": "clean-head-build",
+    "command": [
+      "pnpm",
+      "build"
+    ],
+    "source": "ae847b3573157e0bfa6006ddbadbdb6f4d856481",
+    "exitCode": 0,
+    "seconds": 6.59,
+    "log": "clean-head-build.log"
+  },
+  {
+    "name": "clean-head-typecheck",
+    "command": [
+      "pnpm",
+      "typecheck"
+    ],
+    "source": "ae847b3573157e0bfa6006ddbadbdb6f4d856481",
+    "exitCode": 0,
+    "seconds": 6.27,
+    "log": "clean-head-typecheck.log"
+  }
+]

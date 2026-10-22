@@ -60,20 +60,73 @@ process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	"unused-legacy-capacity",
 );
 const stock = defaultWorkflows.find((w) => w.id === "factory-pipeline");
+// These are executed sources in the reduced fixture, not omitted stock nodes.
+// The separate plan producer is the owned target of the accepted candidate write.
+const fixtureValue = (id, value) => ({
+	id,
+	name: id,
+	type: "script",
+	configVersion: "step-config-v1",
+	reads: {},
+	checks: [],
+	access: "workspace",
+	script: `cat <<'BOBS_FACTORY_FIXTURE_JSON'
+${JSON.stringify(value)}
+BOBS_FACTORY_FIXTURE_JSON`,
+});
+const scopeReads = {
+	scopeClarify: "fixture-context/clarify",
+	scopeDecisions: "fixture-context/decisions",
+	scopePlan: "plan",
+	scopeSource: "@source",
+	scopeTicket: "@ticket",
+};
 const pipeline = {
 	id: "architecture-fixture-pipeline",
 	name: "Architecture fixture pipeline",
 	allowedTriggers: ["workflow"],
 	steps: [
-		"architecture",
-		"architecture-review",
-		"architecture-decision",
-		"implement",
-	].map((id) => {
-		const step = structuredClone(stock.steps.find((s) => s.id === id));
-		if (id === "implement") step.next = "end";
-		return step;
-	}),
+		fixtureValue("fixture-context", {
+			clarify: {
+				requirements: [
+					"Preserve behavior while adding necessary caller tests.",
+				],
+				questions: [],
+				decisions: [],
+			},
+			decisions: { decisions: [] },
+		}),
+		fixtureValue("plan", design(1).candidate),
+		...[
+			"architecture",
+			"architecture-review",
+			"architecture-decision",
+			"implement",
+		].map((id) => {
+			const step = structuredClone(stock.steps.find((s) => s.id === id));
+			if (id === "architecture-decision")
+				step.reads = {
+					...scopeReads,
+					proposal: "architecture",
+					review: "architecture-review",
+					plan: "plan",
+					revise: "architecture",
+				};
+			else if (id === "implement") {
+				step.reads = {
+					plan: "plan",
+					architectureDecision: "architecture-decision",
+				};
+				step.next = "end";
+			} else
+				step.reads = {
+					...scopeReads,
+					architectureDecision: "architecture-decision",
+					...(id === "architecture-review" ? { proposal: "architecture" } : {}),
+				};
+			return step;
+		}),
+	],
 };
 const workflow = {
 	id: "architecture-fixture",

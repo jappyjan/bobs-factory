@@ -1,0 +1,14 @@
+
+> bobs-factory-f1@0.1.0 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1
+> vitest run --passWithNoTests --maxWorkers=2
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/apps/f1
+
+{"storageRetentionCycles":[{"cycle":1,"snapshotBytes":143,"preparationBytes":120},{"cycle":2,"snapshotBytes":286,"preparationBytes":240},{"cycle":3,"snapshotBytes":286,"preparationBytes":360},{"cycle":4,"snapshotBytes":286,"preparationBytes":480},{"cycle":5,"snapshotBytes":286,"preparationBytes":600}],"maximumSimulatedWorkers":1}
+
+ Test Files  2 passed (2)
+      Tests  17 passed (17)
+   Start at  06:41:47
+   Duration  37.92s (transform 1.06s, setup 0ms, import 1.78s, tests 36.38s, environment 0ms)
+

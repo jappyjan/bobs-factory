@@ -5,6 +5,10 @@
 export interface RunSummary {
 	id?: string;
 	improvement?: { phase: string };
+	launchActions?: Record<string, { items: { status: string }[] }>;
+	questions?: unknown[];
+	questionCount?: number;
+	architectureGate?: unknown;
 	status: string;
 	createdAt: string;
 	updatedAt?: string;
@@ -60,7 +64,24 @@ export function deliveryTargetLabel(target: string): string {
 	}
 	return target;
 }
+function trackingChildren(run: RunSummary): boolean {
+	return Object.values(run.launchActions ?? {}).some((batch) =>
+		batch.items.some(
+			(item) =>
+				!["merged", "completed", "blocked", "cancelled"].includes(item.status),
+		),
+	);
+}
 export function workingLabel(run: RunSummary): string {
+	if (
+		run.status === "waiting" &&
+		trackingChildren(run) &&
+		!run.questions?.length &&
+		!run.questionCount &&
+		!run.architectureGate &&
+		run.reviewGate?.status !== "pending"
+	)
+		return "Tracking child runs";
 	if (run.improvement?.phase === "dispatch") return "Tracking improvement runs";
 	if (run.improvement?.phase === "research") return "Researching improvements";
 	if (run.improvement?.phase === "planning")
@@ -111,7 +132,13 @@ export function attention(run: RunSummary): Attention | undefined {
 	if (run.reviewGate?.status === "pending" && run.status === "waiting")
 		return "review";
 	if (run.status === "waiting")
-		return run.improvement?.phase === "dispatch" ? undefined : "question";
+		return run.improvement?.phase === "dispatch" ||
+			(trackingChildren(run) &&
+				!run.questions?.length &&
+				!run.questionCount &&
+				!run.architectureGate)
+			? undefined
+			: "question";
 	if (["failed", "error", "interrupted", "blocked"].includes(run.status))
 		return "stuck";
 	if (["stopped", "cancelled"].includes(run.status) && run.viewState?.keptOpen)

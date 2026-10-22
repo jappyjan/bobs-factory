@@ -48,7 +48,10 @@ function jsonDescriptors(value: object): PropertyDescriptorMap {
 }
 
 /** Build data with no inherited hooks before serialization or structured cloning. */
-function sanitizeItems(value: unknown): unknown {
+function sanitizeItems(
+	value: unknown,
+	omitUndefinedProperties = false,
+): unknown {
 	const active = new Set<object>();
 	let nodes = 0,
 		characters = 0;
@@ -102,6 +105,8 @@ function sanitizeItems(value: unknown): unknown {
 		} else {
 			const object: Record<string, unknown> = Object.create(null);
 			for (const key of Object.keys(descriptors)) {
+				if (omitUndefinedProperties && descriptors[key]!.value === undefined)
+					continue;
 				charge(key.length);
 				object[key] = visit(descriptors[key]!.value, depth + 1);
 			}
@@ -116,6 +121,11 @@ function sanitizeItems(value: unknown): unknown {
 	// Restore ordinary JSON collection interfaces only after the hook-free copy
 	// has passed validation and serialization. Never clone caller-owned objects.
 	return structuredClone(sanitized);
+}
+
+/** Schema settings may omit optional fields; their remaining data uses the item safeguards. */
+export function sanitizeJsonConfiguration(value: unknown): unknown {
+	return sanitizeItems(value, true);
 }
 
 function sanitizeSource(value: unknown): unknown {
