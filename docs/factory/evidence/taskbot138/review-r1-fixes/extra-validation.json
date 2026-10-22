@@ -1,0 +1,95 @@
+{
+	"source": "19258b1427711693a25dda416a9ac6f231f2f8cc",
+	"tree": "f70cd8035f212f90429507fe8006e63d74ac6fb4",
+	"runs": [
+		{
+			"name": "f1-original",
+			"command": ["node", "apps/f1/test-drives/assets/taskbot138-foreach.mjs"],
+			"environment": {
+				"F1_AGENT_MODE": "mock"
+			},
+			"startedAt": "2026-10-22T00:51:42.858191+00:00",
+			"finishedAt": "2026-10-22T00:52:08.160530+00:00",
+			"elapsedSeconds": 25.302,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-review-fix-final-f1-original.log",
+			"sha256": "3a0409e90de8a57d751a6bf5bf0e931a6ccea2f1137be0a64bead5d95f81e9e2",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "f1-ownership",
+			"command": [
+				"node",
+				"apps/f1/test-drives/assets/taskbot138-foreach-ownership.mjs"
+			],
+			"environment": {
+				"F1_AGENT_MODE": "mock"
+			},
+			"startedAt": "2026-10-22T00:52:08.243167+00:00",
+			"finishedAt": "2026-10-22T00:52:17.811987+00:00",
+			"elapsedSeconds": 9.569,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-review-fix-final-f1-ownership.log",
+			"sha256": "f44c67a812256be814cf6cfcb809f812bc45f58617e8584a4f585886194ee107",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "native-build",
+			"command": [
+				"bun",
+				"run",
+				"scripts/build-binary.ts",
+				"--target",
+				"darwin-arm64",
+				"--output",
+				"/tmp/taskbot138-r2-native-19258b14"
+			],
+			"environment": {},
+			"startedAt": "2026-10-22T00:52:17.880521+00:00",
+			"finishedAt": "2026-10-22T00:52:24.493967+00:00",
+			"elapsedSeconds": 6.613,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-review-fix-final-native-build.log",
+			"sha256": "4843ba6888dde5932117ecb3d46c842b3f8d70e9ca578084e350670d3b5b0857",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "native-standard-smoke",
+			"command": [
+				"./scripts/smoke-binary.sh",
+				"/tmp/taskbot138-r2-native-19258b14/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory"
+			],
+			"environment": {
+				"BOBS_FACTORY_SMOKE_PORT": "49450"
+			},
+			"startedAt": "2026-10-22T00:52:24.592944+00:00",
+			"finishedAt": "2026-10-22T00:52:32.381874+00:00",
+			"elapsedSeconds": 7.789,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-review-fix-final-native-standard-smoke.log",
+			"sha256": "148362ecca6d78cad497348a29838b271eea490b93a04a6430c4826f682e46cc",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "native-foreach",
+			"command": [
+				"python3",
+				"docs/factory/evidence/taskbot138/native-foreach-smoke.py",
+				"/tmp/taskbot138-r2-native-19258b14/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory"
+			],
+			"environment": {},
+			"startedAt": "2026-10-22T00:52:32.470937+00:00",
+			"finishedAt": "2026-10-22T00:52:38.534920+00:00",
+			"elapsedSeconds": 6.064,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-review-fix-final-native-foreach.log",
+			"sha256": "d7d1fad9b7bda71bc2025f719a101dcf24fb4c1ea4a1cb97fc2873dff9a0c0df",
+			"statusBefore": "",
+			"statusAfter": ""
+		}
+	]
+}

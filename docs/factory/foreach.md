@@ -158,8 +158,10 @@ reads, but an unexecuted child never publishes an inherited value merely because
 the names match. Persisted frame receipts establish result membership through
 restart; mapped Calls and generic Parallel inside these new scopes follow the
 same rule. Legacy shared Calls and Parallel outside these scopes keep their
-existing conventions. Results and failure records follow accepted item order,
-independently of completion timing. For example:
+existing conventions. If persisted child ownership cannot be verified, execution
+stops with an explicit error and retains the original evidence; it does not replay
+completed work to manufacture proof. Results and failure records follow accepted
+item order, independently of completion timing. For example:
 
 ```json
 {

@@ -1,0 +1,1000 @@
+{
+	"workflow": "f1-foreach-call-nested",
+	"run": "session-3",
+	"status": "completed",
+	"outputs": {
+		"repository": {
+			"baseBranch": "main",
+			"name": "For each F1 fixture",
+			"githubUrl": "https://github.com/fixture/foreach"
+		},
+		"ticket": {
+			"attachments": [],
+			"id": "issue-3",
+			"identifier": "DEF-3",
+			"title": "F1 f1-foreach-call-nested",
+			"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+			"url": "https://linear.app/test/issue/DEF-3",
+			"priority": 0,
+			"createdAt": "2026-10-22T00:51:55.001Z",
+			"updatedAt": "2026-10-22T00:51:55.001Z",
+			"labels": [],
+			"team": {
+				"id": "team-default",
+				"name": "Default Team",
+				"key": "DEF"
+			},
+			"comments": []
+		},
+		"batch/north/call/owner": {
+			"id": "north",
+			"index": 0,
+			"name": "North",
+			"owner": "north",
+			"topic": "North"
+		},
+		"batch/south/call/owner": {
+			"id": "south",
+			"index": 1,
+			"name": "South",
+			"owner": "south",
+			"topic": "South"
+		},
+		"batch/north/call/assignments/a1/inspect": {
+			"id": "a1",
+			"index": 0,
+			"name": "North first",
+			"owner": "north"
+		},
+		"batch/north/call/assignments/a2/inspect": {
+			"id": "a2",
+			"index": 1,
+			"name": "North second",
+			"owner": "north"
+		},
+		"batch/south/call/assignments/b1/inspect": {
+			"id": "b1",
+			"index": 0,
+			"name": "South only",
+			"owner": "south"
+		},
+		"batch/north/call/assignments": {
+			"results": {
+				"a1": {
+					"inspect": {
+						"id": "a1",
+						"index": 0,
+						"name": "North first",
+						"owner": "north"
+					}
+				},
+				"a2": {
+					"inspect": {
+						"id": "a2",
+						"index": 1,
+						"name": "North second",
+						"owner": "north"
+					}
+				}
+			},
+			"summary": {
+				"total": 2,
+				"completed": 2,
+				"failed": 0,
+				"cancelled": 0,
+				"failures": [],
+				"limitations": []
+			}
+		},
+		"batch/north/call": {
+			"workflow": "f1-assignment-child",
+			"completed": true,
+			"outputs": {
+				"owner": {
+					"id": "north",
+					"index": 0,
+					"name": "North",
+					"owner": "north",
+					"topic": "North"
+				},
+				"assignments": {
+					"results": {
+						"a1": {
+							"inspect": {
+								"id": "a1",
+								"index": 0,
+								"name": "North first",
+								"owner": "north"
+							}
+						},
+						"a2": {
+							"inspect": {
+								"id": "a2",
+								"index": 1,
+								"name": "North second",
+								"owner": "north"
+							}
+						}
+					},
+					"summary": {
+						"total": 2,
+						"completed": 2,
+						"failed": 0,
+						"cancelled": 0,
+						"failures": [],
+						"limitations": []
+					}
+				}
+			}
+		},
+		"batch/south/call/assignments": {
+			"results": {
+				"b1": {
+					"inspect": {
+						"id": "b1",
+						"index": 0,
+						"name": "South only",
+						"owner": "south"
+					}
+				}
+			},
+			"summary": {
+				"total": 1,
+				"completed": 1,
+				"failed": 0,
+				"cancelled": 0,
+				"failures": [],
+				"limitations": []
+			}
+		},
+		"batch/south/call": {
+			"workflow": "f1-assignment-child",
+			"completed": true,
+			"outputs": {
+				"owner": {
+					"id": "south",
+					"index": 1,
+					"name": "South",
+					"owner": "south",
+					"topic": "South"
+				},
+				"assignments": {
+					"results": {
+						"b1": {
+							"inspect": {
+								"id": "b1",
+								"index": 0,
+								"name": "South only",
+								"owner": "south"
+							}
+						}
+					},
+					"summary": {
+						"total": 1,
+						"completed": 1,
+						"failed": 0,
+						"cancelled": 0,
+						"failures": [],
+						"limitations": []
+					}
+				}
+			}
+		},
+		"batch": {
+			"results": {
+				"north": {
+					"call": {
+						"workflow": "f1-assignment-child",
+						"completed": true,
+						"outputs": {
+							"owner": {
+								"id": "north",
+								"index": 0,
+								"name": "North",
+								"owner": "north",
+								"topic": "North"
+							},
+							"assignments": {
+								"results": {
+									"a1": {
+										"inspect": {
+											"id": "a1",
+											"index": 0,
+											"name": "North first",
+											"owner": "north"
+										}
+									},
+									"a2": {
+										"inspect": {
+											"id": "a2",
+											"index": 1,
+											"name": "North second",
+											"owner": "north"
+										}
+									}
+								},
+								"summary": {
+									"total": 2,
+									"completed": 2,
+									"failed": 0,
+									"cancelled": 0,
+									"failures": [],
+									"limitations": []
+								}
+							}
+						}
+					}
+				},
+				"south": {
+					"call": {
+						"workflow": "f1-assignment-child",
+						"completed": true,
+						"outputs": {
+							"owner": {
+								"id": "south",
+								"index": 1,
+								"name": "South",
+								"owner": "south",
+								"topic": "South"
+							},
+							"assignments": {
+								"results": {
+									"b1": {
+										"inspect": {
+											"id": "b1",
+											"index": 0,
+											"name": "South only",
+											"owner": "south"
+										}
+									}
+								},
+								"summary": {
+									"total": 1,
+									"completed": 1,
+									"failed": 0,
+									"cancelled": 0,
+									"failures": [],
+									"limitations": []
+								}
+							}
+						}
+					}
+				}
+			},
+			"summary": {
+				"total": 2,
+				"completed": 2,
+				"failed": 0,
+				"cancelled": 0,
+				"failures": [],
+				"limitations": []
+			}
+		},
+		"verify": {
+			"passed": true,
+			"completed": true,
+			"failed": true,
+			"results": {
+				"north": {
+					"call": {
+						"completed": true,
+						"outputs": {
+							"assignments": {
+								"results": {
+									"a1": {
+										"inspect": {
+											"id": "a1",
+											"index": 0,
+											"name": "North first",
+											"owner": "north"
+										}
+									},
+									"a2": {
+										"inspect": {
+											"id": "a2",
+											"index": 1,
+											"name": "North second",
+											"owner": "north"
+										}
+									}
+								},
+								"summary": {
+									"cancelled": 0,
+									"completed": 2,
+									"failed": 0,
+									"failures": [],
+									"limitations": [],
+									"total": 2
+								}
+							},
+							"owner": {
+								"id": "north",
+								"index": 0,
+								"name": "North",
+								"owner": "north",
+								"topic": "North"
+							}
+						},
+						"workflow": "f1-assignment-child"
+					}
+				},
+				"south": {
+					"call": {
+						"completed": true,
+						"outputs": {
+							"assignments": {
+								"results": {
+									"b1": {
+										"inspect": {
+											"id": "b1",
+											"index": 0,
+											"name": "South only",
+											"owner": "south"
+										}
+									}
+								},
+								"summary": {
+									"cancelled": 0,
+									"completed": 1,
+									"failed": 0,
+									"failures": [],
+									"limitations": [],
+									"total": 1
+								}
+							},
+							"owner": {
+								"id": "south",
+								"index": 1,
+								"name": "South",
+								"owner": "south",
+								"topic": "South"
+							}
+						},
+						"workflow": "f1-assignment-child"
+					}
+				}
+			}
+		}
+	},
+	"foreach": {
+		"batch": {
+			"key": "batch",
+			"visit": 1,
+			"concurrency": 2,
+			"maxItems": 10,
+			"failure": "all-must-succeed",
+			"items": [
+				{
+					"id": "north",
+					"index": 0,
+					"status": "completed"
+				},
+				{
+					"id": "south",
+					"index": 1,
+					"status": "completed"
+				}
+			],
+			"completed": 2,
+			"failed": 0,
+			"total": 2
+		},
+		"batch/north/call/assignments": {
+			"key": "batch/north/call/assignments",
+			"visit": 1,
+			"concurrency": 2,
+			"maxItems": 10,
+			"failure": "all-must-succeed",
+			"items": [
+				{
+					"id": "a1",
+					"index": 0,
+					"status": "completed"
+				},
+				{
+					"id": "a2",
+					"index": 1,
+					"status": "completed"
+				}
+			],
+			"completed": 2,
+			"failed": 0,
+			"total": 2
+		},
+		"batch/south/call/assignments": {
+			"key": "batch/south/call/assignments",
+			"visit": 1,
+			"concurrency": 2,
+			"maxItems": 10,
+			"failure": "all-must-succeed",
+			"items": [
+				{
+					"id": "b1",
+					"index": 0,
+					"status": "completed"
+				}
+			],
+			"completed": 1,
+			"failed": 0,
+			"total": 1
+		}
+	},
+	"turns": [
+		{
+			"run": "session-3",
+			"workflow": "f1-foreach-call-nested",
+			"key": "batch/north/call/owner",
+			"id": "owner",
+			"item": {
+				"id": "north",
+				"name": "North",
+				"assignments": [
+					{
+						"id": "a1",
+						"name": "North first"
+					},
+					{
+						"id": "a2",
+						"name": "North second"
+					}
+				]
+			},
+			"index": 0,
+			"current": {
+				"id": "north",
+				"name": "North",
+				"assignments": [
+					{
+						"id": "a1",
+						"name": "North first"
+					},
+					{
+						"id": "a2",
+						"name": "North second"
+					}
+				]
+			},
+			"position": 0,
+			"owner": "north",
+			"topic": "North",
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-04931c21-bfd4-4440-8302-2ca9188f6d0d"
+		},
+		{
+			"run": "session-3",
+			"workflow": "f1-foreach-call-nested",
+			"key": "batch/south/call/owner",
+			"id": "owner",
+			"item": {
+				"id": "south",
+				"name": "South",
+				"assignments": [
+					{
+						"id": "b1",
+						"name": "South only"
+					}
+				]
+			},
+			"index": 1,
+			"current": {
+				"id": "south",
+				"name": "South",
+				"assignments": [
+					{
+						"id": "b1",
+						"name": "South only"
+					}
+				]
+			},
+			"position": 1,
+			"owner": "south",
+			"topic": "South",
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-6bfc2ffb-9011-4c36-a8a3-7ff4cc806393"
+		},
+		{
+			"run": "session-3",
+			"workflow": "f1-foreach-call-nested",
+			"key": "batch/north/call/assignments/a1/inspect",
+			"id": "inspect",
+			"item": {
+				"id": "a1",
+				"name": "North first"
+			},
+			"index": 0,
+			"current": {
+				"id": "a1",
+				"name": "North first"
+			},
+			"position": 0,
+			"owner": "north",
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-f3f9eade-2d79-42f4-bd88-69689938ddb2"
+		},
+		{
+			"run": "session-3",
+			"workflow": "f1-foreach-call-nested",
+			"key": "batch/north/call/assignments/a2/inspect",
+			"id": "inspect",
+			"item": {
+				"id": "a2",
+				"name": "North second"
+			},
+			"index": 1,
+			"current": {
+				"id": "a2",
+				"name": "North second"
+			},
+			"position": 1,
+			"owner": "north",
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-832e59fc-485a-4254-96cf-22d683986034"
+		},
+		{
+			"run": "session-3",
+			"workflow": "f1-foreach-call-nested",
+			"key": "batch/south/call/assignments/b1/inspect",
+			"id": "inspect",
+			"item": {
+				"id": "b1",
+				"name": "South only"
+			},
+			"index": 0,
+			"current": {
+				"id": "b1",
+				"name": "South only"
+			},
+			"position": 0,
+			"owner": "south",
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-ff3aedb0-48a3-4513-b0a7-dae21bb876ce"
+		}
+	],
+	"history": [
+		{
+			"step": "batch/north/call/owner",
+			"output": {
+				"id": "north",
+				"index": 0,
+				"name": "North",
+				"owner": "north",
+				"topic": "North"
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "north",
+				"index": 0,
+				"itemDigest": "45b678ade73f71789b9e3b71cb95b0d1c93018d829ab9f0daf61737a6447eb07"
+			},
+			"at": "2026-10-22T00:51:57.165Z"
+		},
+		{
+			"step": "batch/south/call/owner",
+			"output": {
+				"id": "south",
+				"index": 1,
+				"name": "South",
+				"owner": "south",
+				"topic": "South"
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "south",
+				"index": 1,
+				"itemDigest": "ec38806ad8289d67c6a8c76586db2fbcedd2d6b886df98a50aa63a9d5287a182"
+			},
+			"at": "2026-10-22T00:51:57.386Z"
+		},
+		{
+			"step": "batch/north/call/assignments/a1/inspect",
+			"output": {
+				"id": "a1",
+				"index": 0,
+				"name": "North first",
+				"owner": "north"
+			},
+			"iteration": {
+				"frame": "batch/north/call/assignments",
+				"id": "a1",
+				"index": 0,
+				"itemDigest": "18e812b169b55d5bf51146f5f98c65b33adb2fa711841536d5cfcf18facc4910"
+			},
+			"at": "2026-10-22T00:51:59.262Z"
+		},
+		{
+			"step": "batch/north/call/assignments/a2/inspect",
+			"output": {
+				"id": "a2",
+				"index": 1,
+				"name": "North second",
+				"owner": "north"
+			},
+			"iteration": {
+				"frame": "batch/north/call/assignments",
+				"id": "a2",
+				"index": 1,
+				"itemDigest": "1e2c004753b4cc85f9027ba163241782065fea11fbed1ed81f3a61831a63fa6e"
+			},
+			"at": "2026-10-22T00:51:59.341Z"
+		},
+		{
+			"step": "batch/south/call/assignments/b1/inspect",
+			"output": {
+				"id": "b1",
+				"index": 0,
+				"name": "South only",
+				"owner": "south"
+			},
+			"iteration": {
+				"frame": "batch/south/call/assignments",
+				"id": "b1",
+				"index": 0,
+				"itemDigest": "38e20c25942beb3ff18f27bd8d6a320f723429a0961acd78575c2af96af8f4b7"
+			},
+			"at": "2026-10-22T00:51:59.618Z"
+		},
+		{
+			"step": "batch/north/call/assignments",
+			"output": {
+				"results": {
+					"a1": {
+						"inspect": {
+							"id": "a1",
+							"index": 0,
+							"name": "North first",
+							"owner": "north"
+						}
+					},
+					"a2": {
+						"inspect": {
+							"id": "a2",
+							"index": 1,
+							"name": "North second",
+							"owner": "north"
+						}
+					}
+				},
+				"summary": {
+					"total": 2,
+					"completed": 2,
+					"failed": 0,
+					"cancelled": 0,
+					"failures": [],
+					"limitations": []
+				}
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "north",
+				"index": 0,
+				"itemDigest": "45b678ade73f71789b9e3b71cb95b0d1c93018d829ab9f0daf61737a6447eb07"
+			},
+			"at": "2026-10-22T00:51:59.768Z"
+		},
+		{
+			"step": "batch/north/call",
+			"output": {
+				"workflow": "f1-assignment-child",
+				"completed": true,
+				"outputs": {
+					"owner": {
+						"id": "north",
+						"index": 0,
+						"name": "North",
+						"owner": "north",
+						"topic": "North"
+					},
+					"assignments": {
+						"results": {
+							"a1": {
+								"inspect": {
+									"id": "a1",
+									"index": 0,
+									"name": "North first",
+									"owner": "north"
+								}
+							},
+							"a2": {
+								"inspect": {
+									"id": "a2",
+									"index": 1,
+									"name": "North second",
+									"owner": "north"
+								}
+							}
+						},
+						"summary": {
+							"total": 2,
+							"completed": 2,
+							"failed": 0,
+							"cancelled": 0,
+							"failures": [],
+							"limitations": []
+						}
+					}
+				}
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "north",
+				"index": 0,
+				"itemDigest": "45b678ade73f71789b9e3b71cb95b0d1c93018d829ab9f0daf61737a6447eb07"
+			},
+			"at": "2026-10-22T00:51:59.883Z",
+			"call": {
+				"type": "workflow",
+				"callerWorkflowId": "f1-foreach-call-nested",
+				"step": "call",
+				"key": "batch/north/call",
+				"workflowId": "f1-assignment-child"
+			}
+		},
+		{
+			"step": "batch/south/call/assignments",
+			"output": {
+				"results": {
+					"b1": {
+						"inspect": {
+							"id": "b1",
+							"index": 0,
+							"name": "South only",
+							"owner": "south"
+						}
+					}
+				},
+				"summary": {
+					"total": 1,
+					"completed": 1,
+					"failed": 0,
+					"cancelled": 0,
+					"failures": [],
+					"limitations": []
+				}
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "south",
+				"index": 1,
+				"itemDigest": "ec38806ad8289d67c6a8c76586db2fbcedd2d6b886df98a50aa63a9d5287a182"
+			},
+			"at": "2026-10-22T00:51:59.936Z"
+		},
+		{
+			"step": "batch/south/call",
+			"output": {
+				"workflow": "f1-assignment-child",
+				"completed": true,
+				"outputs": {
+					"owner": {
+						"id": "south",
+						"index": 1,
+						"name": "South",
+						"owner": "south",
+						"topic": "South"
+					},
+					"assignments": {
+						"results": {
+							"b1": {
+								"inspect": {
+									"id": "b1",
+									"index": 0,
+									"name": "South only",
+									"owner": "south"
+								}
+							}
+						},
+						"summary": {
+							"total": 1,
+							"completed": 1,
+							"failed": 0,
+							"cancelled": 0,
+							"failures": [],
+							"limitations": []
+						}
+					}
+				}
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "south",
+				"index": 1,
+				"itemDigest": "ec38806ad8289d67c6a8c76586db2fbcedd2d6b886df98a50aa63a9d5287a182"
+			},
+			"at": "2026-10-22T00:52:00.066Z",
+			"call": {
+				"type": "workflow",
+				"callerWorkflowId": "f1-foreach-call-nested",
+				"step": "call",
+				"key": "batch/south/call",
+				"workflowId": "f1-assignment-child"
+			}
+		},
+		{
+			"step": "batch",
+			"output": {
+				"results": {
+					"north": {
+						"call": {
+							"workflow": "f1-assignment-child",
+							"completed": true,
+							"outputs": {
+								"owner": {
+									"id": "north",
+									"index": 0,
+									"name": "North",
+									"owner": "north",
+									"topic": "North"
+								},
+								"assignments": {
+									"results": {
+										"a1": {
+											"inspect": {
+												"id": "a1",
+												"index": 0,
+												"name": "North first",
+												"owner": "north"
+											}
+										},
+										"a2": {
+											"inspect": {
+												"id": "a2",
+												"index": 1,
+												"name": "North second",
+												"owner": "north"
+											}
+										}
+									},
+									"summary": {
+										"total": 2,
+										"completed": 2,
+										"failed": 0,
+										"cancelled": 0,
+										"failures": [],
+										"limitations": []
+									}
+								}
+							}
+						}
+					},
+					"south": {
+						"call": {
+							"workflow": "f1-assignment-child",
+							"completed": true,
+							"outputs": {
+								"owner": {
+									"id": "south",
+									"index": 1,
+									"name": "South",
+									"owner": "south",
+									"topic": "South"
+								},
+								"assignments": {
+									"results": {
+										"b1": {
+											"inspect": {
+												"id": "b1",
+												"index": 0,
+												"name": "South only",
+												"owner": "south"
+											}
+										}
+									},
+									"summary": {
+										"total": 1,
+										"completed": 1,
+										"failed": 0,
+										"cancelled": 0,
+										"failures": [],
+										"limitations": []
+									}
+								}
+							}
+						}
+					}
+				},
+				"summary": {
+					"total": 2,
+					"completed": 2,
+					"failed": 0,
+					"cancelled": 0,
+					"failures": [],
+					"limitations": []
+				}
+			},
+			"at": "2026-10-22T00:52:00.279Z"
+		},
+		{
+			"step": "verify",
+			"output": {
+				"passed": true,
+				"completed": true,
+				"failed": true,
+				"results": {
+					"north": {
+						"call": {
+							"completed": true,
+							"outputs": {
+								"assignments": {
+									"results": {
+										"a1": {
+											"inspect": {
+												"id": "a1",
+												"index": 0,
+												"name": "North first",
+												"owner": "north"
+											}
+										},
+										"a2": {
+											"inspect": {
+												"id": "a2",
+												"index": 1,
+												"name": "North second",
+												"owner": "north"
+											}
+										}
+									},
+									"summary": {
+										"cancelled": 0,
+										"completed": 2,
+										"failed": 0,
+										"failures": [],
+										"limitations": [],
+										"total": 2
+									}
+								},
+								"owner": {
+									"id": "north",
+									"index": 0,
+									"name": "North",
+									"owner": "north",
+									"topic": "North"
+								}
+							},
+							"workflow": "f1-assignment-child"
+						}
+					},
+					"south": {
+						"call": {
+							"completed": true,
+							"outputs": {
+								"assignments": {
+									"results": {
+										"b1": {
+											"inspect": {
+												"id": "b1",
+												"index": 0,
+												"name": "South only",
+												"owner": "south"
+											}
+										}
+									},
+									"summary": {
+										"cancelled": 0,
+										"completed": 1,
+										"failed": 0,
+										"failures": [],
+										"limitations": [],
+										"total": 1
+									}
+								},
+								"owner": {
+									"id": "south",
+									"index": 1,
+									"name": "South",
+									"owner": "south",
+									"topic": "South"
+								}
+							},
+							"workflow": "f1-assignment-child"
+						}
+					}
+				}
+			},
+			"evidence": {},
+			"at": "2026-10-22T00:52:00.420Z"
+		}
+	],
+	"activityCount": 7,
+	"activityTypes": ["thought"],
+	"commentCount": 6
+}

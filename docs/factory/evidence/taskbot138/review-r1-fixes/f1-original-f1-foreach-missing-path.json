@@ -1,0 +1,82 @@
+{
+	"workflow": "f1-foreach-missing-path",
+	"run": "session-6",
+	"status": "failed",
+	"error": "For each path \"/source/missing\" does not resolve (missing \"missing\")",
+	"outputs": {
+		"repository": {
+			"baseBranch": "main",
+			"name": "For each F1 fixture",
+			"githubUrl": "https://github.com/fixture/foreach"
+		},
+		"ticket": {
+			"attachments": [],
+			"id": "issue-6",
+			"identifier": "DEF-6",
+			"title": "F1 f1-foreach-missing-path",
+			"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+			"url": "https://linear.app/test/issue/DEF-6",
+			"priority": 0,
+			"createdAt": "2026-10-22T00:52:06.102Z",
+			"updatedAt": "2026-10-22T00:52:06.102Z",
+			"labels": [],
+			"team": {
+				"id": "team-default",
+				"name": "Default Team",
+				"key": "DEF"
+			},
+			"comments": []
+		},
+		"source": {
+			"items": [
+				{
+					"id": "alpha",
+					"name": "Alpha"
+				},
+				{
+					"id": "beta",
+					"name": "Beta"
+				},
+				{
+					"id": "gamma",
+					"name": "Gamma"
+				}
+			]
+		}
+	},
+	"turns": [
+		{
+			"run": "session-6",
+			"workflow": "f1-foreach-missing-path",
+			"key": "source",
+			"id": "source",
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-e6ef1975-9725-488e-a0cb-94205e81ae22"
+		}
+	],
+	"history": [
+		{
+			"step": "source",
+			"output": {
+				"items": [
+					{
+						"id": "alpha",
+						"name": "Alpha"
+					},
+					{
+						"id": "beta",
+						"name": "Beta"
+					},
+					{
+						"id": "gamma",
+						"name": "Gamma"
+					}
+				]
+			},
+			"at": "2026-10-22T00:52:07.475Z"
+		}
+	],
+	"activityCount": 3,
+	"activityTypes": ["thought"],
+	"commentCount": 2
+}

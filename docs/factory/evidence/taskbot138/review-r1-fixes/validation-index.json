@@ -1,0 +1,806 @@
+{
+	"recordedAt": "2026-10-22T00:52:44.494389+00:00",
+	"source": "19258b1427711693a25dda416a9ac6f231f2f8cc",
+	"tree": "f70cd8035f212f90429507fe8006e63d74ac6fb4",
+	"base": "fdf52677be7ef22f8e31001031a26da61f4efdb3",
+	"worktree": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-138-foreach",
+	"branch": "taskbot/138-foreach",
+	"statusAtCollection": "",
+	"logs": [
+		{
+			"original": "/tmp/taskbot138-r2-f1-pilot.log",
+			"retained": "logs/taskbot138-r2-f1-pilot.log.gz",
+			"bytes": 10196,
+			"sha256": "07fca9dcb915397522ec417f3e383292d63c957b0d1512685c13d97b02003f38",
+			"gzipSha256": "935b8dd488a74c2cf94d611106888908f12586ad048a13bbdb82bfe1d5810543",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-focused-final.log",
+			"retained": "logs/taskbot138-r2-focused-final.log.gz",
+			"bytes": 5973,
+			"sha256": "9dd18d86447dbc7978d77c6ad05e02e5c7eb10789f59f7a53b46d1088c616cfd",
+			"gzipSha256": "7d12dc7fda48587433c6676f41d9e5fd3ab740263845e6834899074f43e5ef73",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-focused-r3.log",
+			"retained": "logs/taskbot138-r2-focused-r3.log.gz",
+			"bytes": 939,
+			"sha256": "9920cd9a19334dfce220c7097cb83ac09104498ddc7049f84501087d63a1a5ec",
+			"gzipSha256": "c88abda56b3bba2a76a3da69edacd64e28ed08deb18921830ad115047f201f1f",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-focused-r4.log",
+			"retained": "logs/taskbot138-r2-focused-r4.log.gz",
+			"bytes": 578,
+			"sha256": "0b774ee8e6f69b77111500743b833bbf66f55e7f6c49386c5be60084e23dbc08",
+			"gzipSha256": "a7e0e24e49efa1b76a2d0efa086c5617190b2b11b386be6fb307a93232f1be61",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-focused-typecheck.log",
+			"retained": "logs/taskbot138-r2-focused-typecheck.log.gz",
+			"bytes": 172,
+			"sha256": "9f9d5df15e4c9e9bae4d51079fd3e6170eac23086d9150c328697fb580e4c616",
+			"gzipSha256": "878bef3f5d9343992a9007ec32fbcb5adc0f5813c9bd98d9746e18a05b327117",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-focused.log",
+			"retained": "logs/taskbot138-r2-focused.log.gz",
+			"bytes": 939,
+			"sha256": "411ec8187372b8220c488d90d653d10ae60ae39085f76d2bef34b3bcb80e8dd0",
+			"gzipSha256": "dd2c0c4d9c08fbc06c8664bd531e636eaffca079e8526cec43bd706c79926809",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-ownership-probe.log",
+			"retained": "logs/taskbot138-r2-ownership-probe.log.gz",
+			"bytes": 774,
+			"sha256": "52900443c7a428b711097bca2afc167d33401b49fb771a6b1a14932320501af2",
+			"gzipSha256": "4cb9b84e6e4b96dcf3aa15468e037b17dd792f9e1b7d5bc7d376b9549d7012de",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-pilot-build.log",
+			"retained": "logs/taskbot138-r2-pilot-build.log.gz",
+			"bytes": 1253,
+			"sha256": "1cc8f1ee98ab914f8016d21ec56065d95faca56b5b017b10facdbc1c110a495e",
+			"gzipSha256": "c855b09f9e7d8ffd3dbf4db8a3f9ef74cbdec65ece9caa48ec669b5e8be52e9c",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-r1-focused.log",
+			"retained": "logs/taskbot138-r2-r1-focused.log.gz",
+			"bytes": 574,
+			"sha256": "aa6c0f980c3c968ff52ed247c2041c4d1a6b7f7bc59a6cf6e19ecdbbe54e5a65",
+			"gzipSha256": "7feaef323bc4ac591e9e1ba9332cf633a7a5a5a28f74401ac541f06a688b313e",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-reproduce-ownership.log",
+			"retained": "logs/taskbot138-r2-reproduce-ownership.log.gz",
+			"bytes": 876,
+			"sha256": "d0eae15355c5a696624fcaa3249fd5d52456a0ebaa30c712af8e1926658ff5a4",
+			"gzipSha256": "05edcaaafea05eae68119b910c19ff73ffb2ae34cfdeda3136bccee9a05a2af1",
+			"classification": "before-repair-reproduction"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-reproduce-safety.log",
+			"retained": "logs/taskbot138-r2-reproduce-safety.log.gz",
+			"bytes": 610,
+			"sha256": "530309912e36feaf620ac784eaf728c0f93ecd0fc0142154613850c417995a86",
+			"gzipSha256": "0981186f3074effe93c490cc700246dc0f80f46a8a4d40b419d17d736d8b5c6f",
+			"classification": "before-repair-reproduction"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-restart-diagnostic.log",
+			"retained": "logs/taskbot138-r2-restart-diagnostic.log.gz",
+			"bytes": 2232,
+			"sha256": "2b0b3f67d100b5e3ff0563ab573f36a24a98930c5fa1fcc703c88a2c4e3d09e0",
+			"gzipSha256": "40411e2719899bb3e5b4f100d5f7be6585ff19d0b3b3792bacebe33fb1afa9d3",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-root-vitest-not-run.log",
+			"retained": "logs/taskbot138-r2-root-vitest-not-run.log.gz",
+			"bytes": 652,
+			"sha256": "0abe228511187e5ecb885e95459fb804870cf1f7584d7ac27eea7dabe8881db8",
+			"gzipSha256": "905410416869255a6090dfb7158316fa8af3b2338f4c02cbfafaf4f41cf4c8d2",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-safe-data-assertions.log",
+			"retained": "logs/taskbot138-r2-safe-data-assertions.log.gz",
+			"bytes": 281,
+			"sha256": "6cdd699c2ff41ce9ced479b5fbaae533998e3ab8665d77d4339813340a84401c",
+			"gzipSha256": "ba30a8c0e5f393524c365af2c2ffd5f8eb36a93d1e2819e39ee0694d4caa6627",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-ui.log",
+			"retained": "logs/taskbot138-r2-ui.log.gz",
+			"bytes": 434,
+			"sha256": "797ad85154f02adee5a23ce3329ef5f435a89586c4c118f9797431088bba8bf5",
+			"gzipSha256": "d9b05accc2fd0dee27da148ba16220ba36d7f3db36fabe99e25a363999eb3839",
+			"classification": "preliminary-or-scoped"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-apps.log",
+			"retained": "logs/taskbot138-review-fix-final-apps.log.gz",
+			"bytes": 8121,
+			"sha256": "37494bc6eb06531d96816b209cff311985af409bbdf9abb8f145d664eac04c9f",
+			"gzipSha256": "9cd42aa3b9cbad573207dfd8db039188ae47f34f8193c1a490998b77bd137547",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-audit.log",
+			"retained": "logs/taskbot138-review-fix-final-audit.log.gz",
+			"bytes": 31,
+			"sha256": "15950a68a7ed99c59779717acefdceb3f69cfd31bde67d2c954f2a3cea4d7955",
+			"gzipSha256": "17b2c9bde5b04d25e0ce2ed9f5d62f9e6b4e8994adcaee918ea93db7a297027f",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-build.log",
+			"retained": "logs/taskbot138-review-fix-final-build.log.gz",
+			"bytes": 3170,
+			"sha256": "bb74c0849262d091eb7359a3f8c2fb692a027341c040a7b2d21f7fc71e7104c0",
+			"gzipSha256": "d4353b650460424eb119e71143e10b71998c6b9f4340c900e294db5a3a6b7f23",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-f1-original.log",
+			"retained": "logs/taskbot138-review-fix-final-f1-original.log.gz",
+			"bytes": 16447,
+			"sha256": "3a0409e90de8a57d751a6bf5bf0e931a6ccea2f1137be0a64bead5d95f81e9e2",
+			"gzipSha256": "7d0d6a3d2491923e14d0793cc48eb28a91db3429a69e7900048aaa140646a170",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-f1-ownership.log",
+			"retained": "logs/taskbot138-review-fix-final-f1-ownership.log.gz",
+			"bytes": 10196,
+			"sha256": "f44c67a812256be814cf6cfcb809f812bc45f58617e8584a4f585886194ee107",
+			"gzipSha256": "4ee346008f1e41ef489430b41edc8272710401605be212111250dd3eddeb543c",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-lint.log",
+			"retained": "logs/taskbot138-review-fix-final-lint.log.gz",
+			"bytes": 14949,
+			"sha256": "8a844b050d26ba06add498e96ea7a2039d0e7667ea3bddb13fe78dcfb2e486a8",
+			"gzipSha256": "98e94edad339534c271982ed2ad25aea1eca6dfdea8abb3a459405356dfc1b72",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-native-build.log",
+			"retained": "logs/taskbot138-review-fix-final-native-build.log.gz",
+			"bytes": 79,
+			"sha256": "4843ba6888dde5932117ecb3d46c842b3f8d70e9ca578084e350670d3b5b0857",
+			"gzipSha256": "ebd6b81e43e4db40cada6ac34dfce6e45792c71c1d6e1145c3432193e8fdcfaf",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-native-foreach.log",
+			"retained": "logs/taskbot138-review-fix-final-native-foreach.log.gz",
+			"bytes": 244,
+			"sha256": "d7d1fad9b7bda71bc2025f719a101dcf24fb4c1ea4a1cb97fc2873dff9a0c0df",
+			"gzipSha256": "a7bf6821061ccf4d3b33f1f90b4fb635e0a2e48d2ec6efab81daf072af80a439",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-native-standard-smoke.log",
+			"retained": "logs/taskbot138-review-fix-final-native-standard-smoke.log.gz",
+			"bytes": 535,
+			"sha256": "148362ecca6d78cad497348a29838b271eea490b93a04a6430c4826f682e46cc",
+			"gzipSha256": "b61e7cad832660f697b823ed2e7cb30b29ad9497a41624b6f2e1f9ec34d37cbb",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-packages.log",
+			"retained": "logs/taskbot138-review-fix-final-packages.log.gz",
+			"bytes": 11425,
+			"sha256": "eb18fb7df79165f8b7694b1d5f413f34de0bd872f5783c17ebefa8edbd0aed2f",
+			"gzipSha256": "4c273268c848f143ba1aefd3bf099afe81432648ab7b63da903f3cf30e2596f1",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-scripts.log",
+			"retained": "logs/taskbot138-review-fix-final-scripts.log.gz",
+			"bytes": 17652,
+			"sha256": "8fc52022113d0852292a86ff7a866c5a0ab86614cb4577722f2d8df9b655c36d",
+			"gzipSha256": "ee4acfb8596e08bf8e6a0d8a1f7fca7cbfd38ff4f4343533927307d0574f826e",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/tmp/taskbot138-review-fix-final-typecheck.log",
+			"retained": "logs/taskbot138-review-fix-final-typecheck.log.gz",
+			"bytes": 1867,
+			"sha256": "7953f8ccc3914f7fcd875bfed07ae0d63e90d5c63faa8795958c0f8ad3b439e4",
+			"gzipSha256": "97bf1b2fdd36be2ec293fe4bbfb941d568112888a3798ef3a3ad8f8167ce9ca0",
+			"classification": "final-clean-source"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt/rejected-provider-starts.log",
+			"retained": "logs/native-rejected-provider-starts.log.gz",
+			"bytes": 174,
+			"sha256": "6797efd7aae0b726251d4595c1dec61a699c7ad040ead6e00853ba215c0d724c",
+			"gzipSha256": "b29d8764d86b044c146ca44ce3e489248f099bc458070a57bcd3cd8138382f88"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt/restart.log",
+			"retained": "logs/native-restart.log.gz",
+			"bytes": 3001,
+			"sha256": "4b8cb4e44ce50ea15860954076d8cfa27086b21eb18737e0222d72aa881185e5",
+			"gzipSha256": "271bf0c60747261d47242e190e2bbbb5dcf04ff1956bc64b20a0f03e4ee6b0e3"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt/startup.log",
+			"retained": "logs/native-startup.log.gz",
+			"bytes": 16995,
+			"sha256": "fa199b50b5333ae3b7149259b6d7a725544f6958dfaa90942bbbe371abee26c7",
+			"gzipSha256": "ad26b65d2fe244edd8dace3dbae6957a9129c09e52bf83b1a98908f05965df7b"
+		}
+	],
+	"rawJson": [
+		{
+			"original": "/tmp/taskbot138-review-fix-gates.json",
+			"retained": "raw-json/gates.json.gz",
+			"bytes": 4899,
+			"sha256": "13514b5c1648dfa6b5cc8b43b87f0d9b2ec43608d44a81f9dce6b65467e952f8",
+			"gzipSha256": "0e4b7497765b498bdf25f899f71cfc72366d15bc2a4ac40f6ab737b7164cd9f6"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-extra-validation.json",
+			"retained": "raw-json/extra-validation.json.gz",
+			"bytes": 3223,
+			"sha256": "790efcc0e67ad43696cb7c0a484978bc16d00cdec73d915cb5d30d50d796c049",
+			"gzipSha256": "f04574fa1f37386fe2b5d4c29dc5903580658b748efb71c87f508eef0f19c97e"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-review-comments.json",
+			"retained": "raw-json/review-comments.json.gz",
+			"bytes": 21085,
+			"sha256": "5d69fc0fee74e1d9eb3bad8f30b1c002141dd34ecdb9313ecad1b0417a117f96",
+			"gzipSha256": "4d524f9c7962ffaceb1a64223979dda7217cd40565e3523a56c76eee6c3d4bfb"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-ui/identity.json",
+			"retained": "raw-json/ui-identity.json.gz",
+			"bytes": 9221,
+			"sha256": "0c18fd174ec275d67c804d2e7bfae04bbf363a7cd6d8c074973a4ab1d3cdde69",
+			"gzipSha256": "28798117f6145118c8b63c06f10084f232b46cba40ad3014c18b3e5ebe76aadb"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-ui-interactions.json",
+			"retained": "raw-json/ui-interactions.json.gz",
+			"bytes": 47003,
+			"sha256": "da7d7de03cff290594f5df68bdefdc302a8f76fd1e6d38e6daad0ee126316449",
+			"gzipSha256": "23a26e060c4b28db8f54c5e294c577b1540c283cd66d2e5c0fb00a04189fa409"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe/f1-foreach-all-must-succeed.json",
+			"retained": "raw-json/f1-original-f1-foreach-all-must-succeed.json.gz",
+			"bytes": 2968,
+			"sha256": "8afcc1f14a8f055b4f402f8493fc923190bbd55f429048cc0eed7fdec4642ac1",
+			"gzipSha256": "9ca797bd7d66f69bb4e762220ed3431aec3cd5d5dd507594628cedb266b73208"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe/f1-foreach-call-nested.json",
+			"retained": "raw-json/f1-original-f1-foreach-call-nested.json.gz",
+			"bytes": 25306,
+			"sha256": "108a1a838feab4379165159408d816cee266afde242a0613a86fb70cc727967d",
+			"gzipSha256": "11131049e8ef8564f924192254095224ee853509ba627b55c9d6979e9f31a75a"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe/f1-foreach-inline.json",
+			"retained": "raw-json/f1-original-f1-foreach-inline.json.gz",
+			"bytes": 6813,
+			"sha256": "991142a5ab036ad215b069153521913a9ef29219e805dab47c5a39fec073e009",
+			"gzipSha256": "d05e5387ae525537d448dd8a8adbf1d33a260169ffe91e791927709e32832175"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe/f1-foreach-keep-successful.json",
+			"retained": "raw-json/f1-original-f1-foreach-keep-successful.json.gz",
+			"bytes": 6264,
+			"sha256": "668da17187b30d5a092f4332e8404d6cee76058e4103d0a426565ad8638bbfc4",
+			"gzipSha256": "ebab1b8baa782b4f62d7bb829d4f1f599feca07b3979d7ff5897931117a5b224"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe/f1-foreach-missing-path.json",
+			"retained": "raw-json/f1-original-f1-foreach-missing-path.json.gz",
+			"bytes": 1889,
+			"sha256": "6bcd89e62c9ef54e06a620e5d8b64ba050ad74d91c202ae8738fd35c737ecbe1",
+			"gzipSha256": "f19de647689d6977673628efd75245e6115d4734377af366ed374476a6e1a303"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe/f1-foreach-output.json",
+			"retained": "raw-json/f1-original-f1-foreach-output.json.gz",
+			"bytes": 7663,
+			"sha256": "597716312da7be2639653fb6d0eabed8d034fa8bb82dccd9d440bd4da1a0d8db",
+			"gzipSha256": "76c950db210ff52d6c19a4799b55efc7b592cd7b9245f330dbdeb139f101f81a"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe/results-index.json",
+			"retained": "raw-json/f1-original-results-index.json.gz",
+			"bytes": 60176,
+			"sha256": "5e5311f9d846c9b328ff85f0534faaf538c269e266b362e60b84a53cf5e3ca5d",
+			"gzipSha256": "b73d336cd1e51200133128f4daf20300f1e2ab440c33f620a0490c8c73022a64"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-ownership-djnUcg/f1-ownership-call-nested.json",
+			"retained": "raw-json/f1-ownership-f1-ownership-call-nested.json.gz",
+			"bytes": 9174,
+			"sha256": "67cdef6654bd406cf8bfe61bcc57af55d3c54c14a2fc6b3e00b364116647e0e1",
+			"gzipSha256": "0373607c750b2a7cda80da1b49b3c79479c4468cfc34cae836d77654003e5ca5"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-ownership-djnUcg/f1-ownership-call.json",
+			"retained": "raw-json/f1-ownership-f1-ownership-call.json.gz",
+			"bytes": 3765,
+			"sha256": "2020220fa3537c6e48a86a3e83ac0068d373e2bba986a8ae74a8ea6efd6bfcc1",
+			"gzipSha256": "1eff705871624586e4f0583640bfd00f6648a8ecbed5019c7fea9dd3b859e053"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-ownership-djnUcg/f1-ownership-inline.json",
+			"retained": "raw-json/f1-ownership-f1-ownership-inline.json.gz",
+			"bytes": 6503,
+			"sha256": "524f9267a6b9f677938aa064d36f889f66deaf853b2b49d0043bda034f450794",
+			"gzipSha256": "44b9d122948134db016e2b87e91ef105b51a4a61df00ba35ad0b49b7eb5645ff"
+		},
+		{
+			"original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-ownership-djnUcg/results-index.json",
+			"retained": "raw-json/f1-ownership-results-index.json.gz",
+			"bytes": 23291,
+			"sha256": "24d1d9042e3d16579cd4de9254bc7a14f1df26db1815cdb38af2ab7dfbc2a2b3",
+			"gzipSha256": "92e9c7801bff48fcdd30133e790547ee52648db3d36f3e2b1c7c740c3359478f"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt/native-foreach-all-must-succeed.json",
+			"retained": "raw-json/native-native-foreach-all-must-succeed.json.gz",
+			"bytes": 294094,
+			"sha256": "302816e2d08a231844e3f3ba29c9eb9cad4567294aa262ec741b6e51a9265e2e",
+			"gzipSha256": "a2110db6ae4352c7ac64ce3ca0f00abf90110de31192604f862077e5817956c7"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt/native-foreach-keep-successful.json",
+			"retained": "raw-json/native-native-foreach-keep-successful.json.gz",
+			"bytes": 296205,
+			"sha256": "407b084db333b54bf8318f0dd6ad0daf62aa2041cefeb608866b1cbc155e9406",
+			"gzipSha256": "440e0ff950f72d8d18e9df7429e24e622b6c3c21877d214798ae72a3e4a29597"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt/native-foreach-nested.json",
+			"retained": "raw-json/native-native-foreach-nested.json.gz",
+			"bytes": 337458,
+			"sha256": "5aeabadf6bdad7a704c201e820e27338e3f8fc740911fdd77fb8559514fe737e",
+			"gzipSha256": "7878cbaa5605e9274ec91d44480fc04b6aabf8822d3a2c743c04710f4d286a32"
+		},
+		{
+			"original": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt/results.json",
+			"retained": "raw-json/native-results.json.gz",
+			"bytes": 45991,
+			"sha256": "27aed9af964f61cfd301bf95c7628583e6ba8c150b2bb5f258da5c2acbaeb788",
+			"gzipSha256": "1130d02811fd5756ff5e96e0589405574e0334fbf0e138c7d47e6d60a3147e96"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-native-19258b14/bobs-factory-1.0.0-beta-darwin-arm64/build.json",
+			"retained": "raw-json/native-build.json.gz",
+			"bytes": 563,
+			"sha256": "b3f5cf6937ad7a492c7d1baeff72c91006c45f358d246596706b6c9419ba27e1",
+			"gzipSha256": "0a788227c3395d2ffccfa2f783dd5c05ecfc103a4d069de04bd605e74e1b5a8e"
+		}
+	],
+	"probes": [
+		{
+			"original": "/tmp/taskbot138-review-r1-safe-data.mjs",
+			"retained": "probes/taskbot138-review-r1-safe-data.mjs.gz",
+			"bytes": 1026,
+			"sha256": "52d38fae0792164bdd0ff0df3f85d61c862ebace0d036b8209749a0d2188031e",
+			"gzipSha256": "6baa3bd0cdebd1bab9afe92c7cd61984566c79137de8dca2be7af9c8cb5c3c3b"
+		},
+		{
+			"original": "/tmp/taskbot138-review-r1-safe-data.log",
+			"retained": "probes/taskbot138-review-r1-safe-data.log.gz",
+			"bytes": 610,
+			"sha256": "530309912e36feaf620ac784eaf728c0f93ecd0fc0142154613850c417995a86",
+			"gzipSha256": "0981186f3074effe93c490cc700246dc0f80f46a8a4d40b419d17d736d8b5c6f"
+		},
+		{
+			"original": "/tmp/taskbot138-review-r1-probes.mjs",
+			"retained": "probes/taskbot138-review-r1-probes.mjs.gz",
+			"bytes": 2330,
+			"sha256": "81c8cfce3610134f091c1f9779d84d1956dc07d80e85cdddaa3f2126ecfcec63",
+			"gzipSha256": "ac4b4c5bfc47a24ec205e7650df5b357eeee5a39d9235871a8547ad8ee1c90dc"
+		},
+		{
+			"original": "/tmp/taskbot138-review-r1-probes-check.log",
+			"retained": "probes/taskbot138-review-r1-probes-check.log.gz",
+			"bytes": 876,
+			"sha256": "d0eae15355c5a696624fcaa3249fd5d52456a0ebaa30c712af8e1926658ff5a4",
+			"gzipSha256": "05edcaaafea05eae68119b910c19ff73ffb2ae34cfdeda3136bccee9a05a2af1"
+		},
+		{
+			"original": "/tmp/taskbot138-r2-safe-data-assertions.mjs",
+			"retained": "probes/taskbot138-r2-safe-data-assertions.mjs.gz",
+			"bytes": 1118,
+			"sha256": "f74847b345344100e83836bf04c8f2b2291d98a9a7746f278fef19972622934e",
+			"gzipSha256": "b4f55f82a7064ee4bda0b60f320f6ba7c1d32cb99c945298803648df344efa28"
+		}
+	],
+	"screenshots": [
+		{
+			"name": "desktop-light-builder-source",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvit993l-6bba7062.png",
+			"viewport": {
+				"width": 1440,
+				"height": 1000
+			},
+			"retained": "screenshots/desktop-light-builder-source.png",
+			"sha256": "fa9e8486e16f8e3ef344550aef597268f95572e47ff5d8642ace6e9bcb563e06",
+			"bytes": 141340,
+			"dimensions": {
+				"width": 1280,
+				"height": 889
+			},
+			"originalMtime": "2026-10-22T00:36:34.258264+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "desktop-light-builder-body",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvit9cav-6df05b04.png",
+			"viewport": {
+				"width": 1440,
+				"height": 1000
+			},
+			"retained": "screenshots/desktop-light-builder-body.png",
+			"sha256": "367d0380f2d220ddd0aa24f51c2cb63185e9aec9eb850213ebd0cb054dbe4fbe",
+			"bytes": 139908,
+			"dimensions": {
+				"width": 1280,
+				"height": 889
+			},
+			"originalMtime": "2026-10-22T00:36:38.408900+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "desktop-dark-builder-body",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvit9ju6-38faf87f.png",
+			"viewport": {
+				"width": 1440,
+				"height": 1000
+			},
+			"retained": "screenshots/desktop-dark-builder-body.png",
+			"sha256": "5aa4ff6e4217fcb99ff5e3af133b9da9743fca8ed5f2e8e35bde86c6705bad33",
+			"bytes": 148080,
+			"dimensions": {
+				"width": 1280,
+				"height": 889
+			},
+			"originalMtime": "2026-10-22T00:36:48.175097+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-dark-builder-source",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitcoeb-47f09aa2.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-dark-builder-source.png",
+			"sha256": "5cf4456a7a27828ffffa36bd348f73f02abbe25a760d5604dbfe63798aac1ee0",
+			"bytes": 141874,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:39:14.052091+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-light-builder-source",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvit9xer-babf9cfc.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-light-builder-source.png",
+			"sha256": "082595cccd2e915a1ba92573f6ebfdbf4545a04f3053c8201e12a9496409d2b0",
+			"bytes": 133054,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:37:05.774030+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-dark-builder-body",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvit9phv-d9b10e5b.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-dark-builder-body.png",
+			"sha256": "ef694bdf2d38a8fb23576c923fd9a5769098b1b896a058b5958a49a8657f01e3",
+			"bytes": 118522,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:36:55.508551+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-light-builder-body",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvit9xok-63637e38.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-light-builder-body.png",
+			"sha256": "0922ea6aa036735188fbb102364ada05064fba56e4e15e241ca7a9a496ebdaaf",
+			"bytes": 145686,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:37:06.116408+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-dark-builder-limits",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitd6r3-b3279385.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-dark-builder-limits.png",
+			"sha256": "15949852450387ce8fc93605f057a59ba26dd39850a35e81ee6195a42bf24bd9",
+			"bytes": 166335,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:39:37.842066+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-light-builder-limits",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitd7by-9f7c0377.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-light-builder-limits.png",
+			"sha256": "48f96fdc8964798aa533ba31af92f451fe7be73932c492ead5078fede8f63a2f",
+			"bytes": 132139,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:39:38.590893+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-dark-builder-canvas",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitd71p-f1005d89.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-dark-builder-canvas.png",
+			"sha256": "595199fa2af11b2be8f7c1b030a601b19cf9fcec669d4a075d74a0a841b72de0",
+			"bytes": 82945,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:39:38.221389+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-light-builder-canvas",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvita4u1-bf3d288a.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-light-builder-canvas.png",
+			"sha256": "a8de6e1734f35591cbae3aa837ca2c2774cdff773a44fb01538cedbf5a1a1681",
+			"bytes": 78098,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:37:15.385762+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-light-malformed",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvit9xun-08b96288.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-light-malformed.png",
+			"sha256": "da4de9a68058f209072dde862f5e9daa6daef8908a22453ab2830ca2a5dc8afb",
+			"bytes": 130185,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:37:06.335710+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-light-simulation",
+			"url": "http://localhost:3689/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitaptz-c5c61743.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-light-simulation.png",
+			"sha256": "8d44dea1d7eb7932183024d8eff212f5d1978626f1d5933b8ffeab15f0ef905c",
+			"bytes": 180019,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:37:42.600143+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "desktop-dark-run-progress",
+			"url": "http://localhost:3689/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitbp08-c9886c71.png",
+			"viewport": {
+				"width": 1440,
+				"height": 1000
+			},
+			"retained": "screenshots/desktop-dark-run-progress.png",
+			"sha256": "184b6f50eef8ad8ff89b9488384b2de1ab2db293405c9a78613cae4ede00ddb0",
+			"bytes": 222440,
+			"dimensions": {
+				"width": 1280,
+				"height": 889
+			},
+			"originalMtime": "2026-10-22T00:38:28.185288+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "desktop-light-run-progress",
+			"url": "http://localhost:3689/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitbo8s-48dc97b4.png",
+			"viewport": {
+				"width": 1440,
+				"height": 1000
+			},
+			"retained": "screenshots/desktop-light-run-progress.png",
+			"sha256": "af976918214c89e34c3c09a16af4eb13feaf16feaf61d01c994b91ce677c49ca",
+			"bytes": 178530,
+			"dimensions": {
+				"width": 1280,
+				"height": 889
+			},
+			"originalMtime": "2026-10-22T00:38:27.200976+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-dark-run-progress",
+			"url": "http://localhost:3689/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitbp8j-a01a96a7.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-dark-run-progress.png",
+			"sha256": "1f7b6023984bd421a857fe27f188b98c720f869e5b086fbb4195ed46830af743",
+			"bytes": 243100,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:38:28.484329+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-light-run-progress",
+			"url": "http://localhost:3689/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitc44y-efe20041.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-light-run-progress.png",
+			"sha256": "b64d8403a01054a40379b06064b86ac478ce625f8a68474aebca333b8dc92f37",
+			"bytes": 216770,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:38:47.794799+00:00",
+			"visuallyInspected": true
+		},
+		{
+			"name": "mobile-dark-run-pending",
+			"url": "http://localhost:3689/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvitc3wi-0646c3f8.png",
+			"viewport": {
+				"width": 390,
+				"height": 844
+			},
+			"retained": "screenshots/mobile-dark-run-pending.png",
+			"sha256": "d9fabbec418a453962aef330712e43ac8eac0f93e0253b673b341991915ccd35",
+			"bytes": 242009,
+			"dimensions": {
+				"width": 780,
+				"height": 1688
+			},
+			"originalMtime": "2026-10-22T00:38:47.490545+00:00",
+			"visuallyInspected": true
+		}
+	],
+	"f1-original": {
+		"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe",
+		"summary": {
+			"result": "PASS",
+			"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-foreach-xkJOGe",
+			"scenarios": 6,
+			"turns": 18,
+			"maxActive": 2,
+			"revision": "19258b1427711693a25dda416a9ac6f231f2f8cc",
+			"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"driverSha256": "345d449b373692f8ba2e1cff666be71e2756858843d572c61fa40bc2635f4ccd",
+			"buildSha256": "820d241291b15a7cbffedf2db109ac961f3dc7981d4fade341823b9c86c46667",
+			"node": "v24.21.0"
+		}
+	},
+	"f1-ownership": {
+		"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-ownership-djnUcg",
+		"summary": {
+			"result": "PASS",
+			"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot138-ownership-djnUcg",
+			"scenarios": 3,
+			"turns": 8,
+			"maxActive": 2,
+			"revision": "19258b1427711693a25dda416a9ac6f231f2f8cc",
+			"deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			"driverSha256": "19922214e2ceffc9577568e222f4249df95b0f033015627579576a724001d8f3",
+			"buildSha256": "820d241291b15a7cbffedf2db109ac961f3dc7981d4fade341823b9c86c46667",
+			"node": "v24.21.0"
+		}
+	},
+	"native": {
+		"directory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt",
+		"summary": {
+			"directory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot138-native-foreach-b55m5cvt",
+			"result": "PASS",
+			"cases": 3,
+			"binarySha256": "58d3dcb5e0a3b42db94e57ea3ab18cc230fb53767157ead880be1e4a02548125",
+			"rejectedProviderStarts": 3
+		}
+	},
+	"uiSourceAndBackendRechecked": true,
+	"webBuild": "6b824666272cfdac87925a8a",
+	"unchangedUiDriver": true,
+	"nativeDriverSha256": "0aecbcb1b9a3541ffc90f0819a26336615460367a6bbca302eb65745a958b513",
+	"nativeDriverUnchanged": true,
+	"uiOriginalBytesPreserved": true
+}
