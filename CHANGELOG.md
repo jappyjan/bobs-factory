@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Recipes can run a durable For each over saved items or earlier results, with bounded concurrency, nested recipe calls, per-item progress and explicit failure summaries ([Taskbot #138](https://taskbot.apps.janjaap.de/p/bobs-factory/t/138)).
+- Recipes can run a durable For each over saved items or earlier results, with bounded concurrency, nested recipe calls, per-item progress and explicit failure summaries ([Taskbot #138](https://taskbot.apps.janjaap.de/p/bobs-factory/t/138), [#175](https://github.com/jappyjan/bobs-factory/pull/175)).
 
 - Build recipes with a Check step: edit named rules, aggregate result collections and simulate the same decisions used during a run. Factory and Takeover show their review, QA and delivery decisions as Check nodes with explicit routes, while preserving frozen recipes and approval safeguards. Incomplete reviews retain their original evidence through reassessment and restart, and assistance preserves the selected destination's native session. ([Taskbot #137](https://taskbot.apps.janjaap.de/p/bobs-factory/t/137), [#174](https://github.com/jappyjan/bobs-factory/pull/174))
 
