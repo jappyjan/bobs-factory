@@ -2,6 +2,10 @@
 
 Date: 2026-10-23. Base: `6ebabd6fc8035fa851eb5415f4306bc358d0cd49`
 (`ed04d63cfd2cae5f13c2a1e492d2853b12cb590a`). Node 24.21.0; pnpm 10.33.1.
+Implementation: [PR #180](https://github.com/jappyjan/bobs-factory/pull/180), source
+commit `884bfc56ef2f4112afc5118c2206a63c937f75c2`. The final docs-only delta adds
+this PR link, the changelog entry and the hook qualification below; all 30 frozen
+source/test inputs remain unchanged.
 
 F1 is applicable: this changes native human presentation, protected decision APIs
 and ticket text. This drive uses the actual protected **FactoryServer and
@@ -130,6 +134,11 @@ fixture, without weakening production checks.
 Cleanup: both preview hosts shut down normally, the final preview tab closed, and
 listeners on 36143/36144 were absent afterward. Probe homes/logs remain local for
 inspection. No CI/release watchers were started. No production run was edited.
+
+Git used its configured normal hook path. This checkout had only untracked Git
+LFS post-commit/pre-push stubs, with no pre-commit wrapper; no broad build/type/test
+hook ran or is credited. No hook was bypassed and no manual broad rerun was added.
+The untracked local stubs are retained outside the checkout during final cleanup.
 
 Per epic135's current user policy: no CI/check-field/status-rollup/workflow query,
 trigger, watcher or main-health wait; every published commit includes `[skip ci]`.
