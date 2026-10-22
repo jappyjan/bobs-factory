@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Configurable Snapshot, File issues and Launch runs recipe actions, with pinned read-only research, durable tracker reconciliation, dependency waves and child-run controls ([Taskbot #139](https://taskbot.apps.janjaap.de/p/bobs-factory/t/139), [#176](https://github.com/jappyjan/bobs-factory/pull/176)).
+- Configurable Snapshot, File issues and Launch runs recipe actions, with pinned read-only research, durable tracker reconciliation, dependency waves and child-run controls. Snapshot receipts cross declared recipe calls, paused batches observe original child outcomes, and Factory plan review retains its accepted delivery contract binding ([Taskbot #139](https://taskbot.apps.janjaap.de/p/bobs-factory/t/139), [#176](https://github.com/jappyjan/bobs-factory/pull/176)).
 
 - Recipes can run a durable For each over saved items or earlier results, with bounded concurrency, nested recipe calls, per-item progress and explicit failure summaries. Inputs are checked without invoking accessors or serialization hooks; results contain only outputs actually produced in the item or mapped recipe frame, including after restart ([Taskbot #138](https://taskbot.apps.janjaap.de/p/bobs-factory/t/138), [#175](https://github.com/jappyjan/bobs-factory/pull/175)).
 

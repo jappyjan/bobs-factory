@@ -155,7 +155,9 @@ import {
 import { deliveryRevisions, runRepositories } from "./RepositoryScope.js";
 import {
 	captureRepositorySnapshot,
+	type SnapshotInputProvenance,
 	type SnapshotReceipt,
+	snapshotInputMappings,
 	snapshotOutput,
 } from "./RepositorySnapshot.js";
 import { guideHeadline } from "./ReviewBrief.js";
@@ -301,6 +303,8 @@ export interface ForeachCheckpoint {
 export interface GraphCheckpoint {
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
+	/** Runtime-owned origin receipts; never part of public mapped JSON inputs. */
+	snapshotInputs?: Record<string, SnapshotInputProvenance>;
 	/** New item/mapped-call scopes publish their own receipts, independently of inherited reads. */
 	projectResults?: true;
 	resultReceipts?: Record<string, { key: string; output: unknown }>;
@@ -562,6 +566,8 @@ export interface ChatMessage {
 export interface ExecutionContext {
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
+	/** Private persisted Call input origins, independently checked by pinned access. */
+	snapshotInputs?: Record<string, SnapshotInputProvenance>;
 	validateRoleOutput?: (value: unknown) => unknown;
 	readOnlyResearch?: boolean;
 	researchAccess?: {
@@ -1802,6 +1808,22 @@ export class WorkflowRuntime {
 		await this.hooks.retryTracking?.(this.get(id));
 	}
 
+	/** Use the accepted semantic source, including frozen presets whose read is named scopePlan. */
+	private deliveryCandidateDigest(
+		step: WorkflowStep,
+		outputs: Record<string, unknown>,
+	): string {
+		const sources = checkArgs(step, "scope-inputs")?.sources;
+		const name =
+			sources && typeof sources === "object" && Object.hasOwn(sources, "plan")
+				? (sources as Record<string, unknown>).plan
+				: "plan";
+		// The fallback is a declared read name, never an output/step ID. An invalid
+		// explicit scope mapping must not borrow another plan or infer a protocol.
+		const plan =
+			typeof name === "string" ? readOutput(step, name, outputs) : undefined;
+		return digest(readPath(plan, "deliveryContract"));
+	}
 	private stepInput(
 		run: FactoryRun,
 		step: WorkflowStep,
@@ -1840,11 +1862,9 @@ export class WorkflowRuntime {
 											repositoryId: run.repositoryId,
 										},
 									),
-									deliveryCandidateDigest: digest(
-										readPath(
-											readOutput(step, "plan", outputs),
-											"deliveryContract",
-										),
+									deliveryCandidateDigest: this.deliveryCandidateDigest(
+										step,
+										outputs,
 									),
 								}
 							: {}),
@@ -1869,11 +1889,9 @@ export class WorkflowRuntime {
 											repositoryId: run.repositoryId,
 										},
 									),
-									deliveryCandidateDigest: digest(
-										readPath(
-											readOutput(step, "plan", outputs),
-											"deliveryContract",
-										),
+									deliveryCandidateDigest: this.deliveryCandidateDigest(
+										step,
+										outputs,
 									),
 								}
 							: {}),
@@ -2026,6 +2044,9 @@ export class WorkflowRuntime {
 				callInputs: checkpoint.callInputs
 					? immutableJson(checkpoint.callInputs)
 					: undefined,
+				snapshotInputs: checkpoint.snapshotInputs
+					? immutableJson(checkpoint.snapshotInputs)
+					: undefined,
 				run,
 				step,
 				stepKey: key,
@@ -2049,11 +2070,9 @@ export class WorkflowRuntime {
 										repositoryId: run.repositoryId,
 									},
 								),
-								deliveryCandidateDigest: digest(
-									readPath(
-										readOutput(step, "plan", outputs),
-										"deliveryContract",
-									),
+								deliveryCandidateDigest: this.deliveryCandidateDigest(
+									step,
+									outputs,
 								),
 							}
 						: {}),
@@ -2510,6 +2529,7 @@ export class WorkflowRuntime {
 							child.reviewKey ??= checkpoint.reviewKey;
 							child.iteration ??= checkpoint.iteration;
 							child.callInputs ??= checkpoint.callInputs;
+							child.snapshotInputs ??= checkpoint.snapshotInputs;
 							child.projectResults ??= checkpoint.projectResults;
 						}
 						await this.save(run);
@@ -2716,6 +2736,17 @@ export class WorkflowRuntime {
 								? immutableJson(mappings)
 								: checkpoint.callInputs;
 						}
+						if (!state.children[0]!.snapshotInputs)
+							state.children[0]!.snapshotInputs = step.inputMapping
+								? immutableJson(
+										snapshotInputMappings(
+											context,
+											step.inputMapping,
+											state.children[0]!.callInputs ?? {},
+											key,
+										),
+									)
+								: checkpoint.snapshotInputs;
 						await this.save(run);
 						signal.throwIfAborted();
 						await this.graph(
@@ -5206,6 +5237,8 @@ export class WorkflowRuntime {
 				ownerBatch?.cancelled ||
 				(owner &&
 					ownerBatch &&
+					!ownerBatch.paused &&
+					!["stopped", "failed", "blocked"].includes(owner.status) &&
 					this.launchReconciliations.has(
 						`${owner.id}:${ownerBatch.accepted.actionId}`,
 					)) ||
@@ -5454,13 +5487,11 @@ export class WorkflowRuntime {
 			this.launchReconciliationDirty.add(identity);
 			return pending;
 		}
-		if (
-			this.shuttingDown ||
-			(batch.paused && !batch.cancelled) ||
-			(["stopped", "failed", "blocked"].includes(run.status) &&
-				!batch.cancelled)
-		)
-			return Promise.resolve();
+		if (this.shuttingDown) return Promise.resolve();
+		const observingOnly = () =>
+			batch.paused || ["stopped", "failed", "blocked"].includes(run.status);
+		// Pausing blocks admission, not observation of the original durable children.
+		// tickLaunchRuns reconciles known identities before its own dispatch guard.
 		const work = (async () => {
 			try {
 				await tickLaunchRuns(
@@ -5481,7 +5512,7 @@ export class WorkflowRuntime {
 				const uncertain = Object.entries(batch.progress).filter(
 					([, item]) => item.status === "uncertain" && item.error,
 				);
-				if (uncertain.length)
+				if (uncertain.length && !observingOnly())
 					throw new Error(
 						`Child admission needs reconciliation. Retry retains original identities: ${uncertain.map(([id, item]) => `${id}: ${item.error}`).join("; ")}`,
 					);
@@ -5506,7 +5537,7 @@ export class WorkflowRuntime {
 					await this.publishTerminalOutcome(run);
 				}
 			} catch (error) {
-				if (!signal?.aborted && !this.shuttingDown) {
+				if (!signal?.aborted && !this.shuttingDown && !observingOnly()) {
 					run.error =
 						error instanceof Error
 							? error.message
@@ -5594,6 +5625,7 @@ export class WorkflowRuntime {
 				resultReceipts: {},
 				iteration: { ...item, frame: key },
 				callInputs: checkpoint.callInputs,
+				snapshotInputs: checkpoint.snapshotInputs,
 				reviewKey: checkpoint.reviewKey,
 			}));
 		}
@@ -5619,6 +5651,7 @@ export class WorkflowRuntime {
 			throw new Error("For each checkpoint has inconsistent item frames");
 		for (const [index, item] of loop.snapshot.items.entries()) {
 			active.children[index]!.projectResults = true;
+			active.children[index]!.snapshotInputs ??= checkpoint.snapshotInputs;
 			const frame = active.children[index]!.iteration;
 			if (
 				!frame ||

@@ -178,8 +178,9 @@ function fixture(
 	// into every parent/child checkpoint. Keep the normal installed catalogue.
 	const definitions = [parent, child, ...dependencies];
 	runtime.updateWorkflows([...runtime.listWorkflows(), ...definitions]);
-	const create = (definition: Workflow = parent) =>
+	const create = (definition: Workflow = parent, id?: string) =>
 		runtime.create({
+			id,
 			repositoryId: "repo",
 			repositories: [
 				{
@@ -330,19 +331,216 @@ describe("generic side-effect runtime integration", () => {
 		const parent = f.create();
 		await f.runtime.launch(parent);
 		await waitForRuntime(() => expect(f.holds.has("one")).toBe(true));
+		const batch = Object.values(parent.launchActions!)[0]!;
+		const accepted = structuredClone(batch.accepted);
+		const originalOutput = structuredClone(parent.outputs.dispatch);
+		const originalHistory = structuredClone(parent.history);
+		const originalChild = children(f.runtime, parent)[0]!;
+		const create = vi.spyOn(f.runtime, "create");
+		const launch = vi.spyOn(f.runtime, "launch");
 		f.runtime.stop(parent.id);
 		f.release("one");
 		await waitForRuntime(() =>
 			expect(children(f.runtime, parent)[0]!.status).toBe("completed"),
 		);
+		await waitForRuntime(() =>
+			expect(batch.progress.one).toMatchObject({
+				status: "merged",
+				creation: "confirmed",
+			}),
+		);
 		expect(parent.status).toBe("stopped");
 		expect(children(f.runtime, parent)).toHaveLength(1);
 		expect(Object.values(parent.launchActions!)[0]!.paused).toBe(true);
-		f.runtime.resume(parent.id);
+		expect(batch.progress.two).toEqual({
+			status: "queued",
+			creation: "pending",
+		});
+		expect(create).not.toHaveBeenCalled();
+		expect(launch).not.toHaveBeenCalled();
+		expect(batch.accepted).toEqual(accepted);
+		expect(parent.outputs.dispatch).toEqual(originalOutput);
+		expect(parent.history).toEqual(originalHistory);
+		await f.runtime.shutdown();
+		const restored = f.load();
+		const reloaded = restored.get(parent.id);
+		const restoredCreate = vi.spyOn(restored, "create");
+		const restoredLaunch = vi.spyOn(restored, "launch");
+		restored.resumeAll();
+		await restored.flush();
+		const restoredBatch = Object.values(reloaded.launchActions!)[0]!;
+		await waitForRuntime(() =>
+			expect(restoredBatch.progress.one).toMatchObject({
+				status: "merged",
+				creation: "confirmed",
+			}),
+		);
+		expect(reloaded.status).toBe("stopped");
+		expect(restoredBatch.paused).toBe(true);
+		expect(restoredBatch.progress.two).toEqual({
+			status: "queued",
+			creation: "pending",
+		});
+		expect(children(restored, reloaded).map((child) => child.id)).toEqual([
+			originalChild.id,
+		]);
+		expect(restoredCreate).not.toHaveBeenCalled();
+		expect(restoredLaunch).not.toHaveBeenCalled();
+		expect(restoredBatch.accepted).toEqual(accepted);
+		expect(reloaded.outputs.dispatch).toEqual(originalOutput);
+		expect(reloaded.history).toEqual(originalHistory);
+		restored.resume(parent.id);
 		await waitForRuntime(() => expect(f.holds.has("two")).toBe(true));
 		f.release("two");
-		await waitForRuntime(() => expect(parent.status).toBe("completed"));
+		await waitForRuntime(() => expect(reloaded.status).toBe("completed"));
 		expect(f.visits.filter((visit) => visit === "one:merge")).toHaveLength(1);
+	});
+
+	it.each([
+		"failed",
+		"cancelled",
+	] as const)("stopped parents observe original child %s outcomes without dispatching a dependent or changing accepted receipts", async (outcome) => {
+		const finished = vi.fn(async (_run: FactoryRun) => {});
+		const f = fixture([dispatch(false)], { finished });
+		const tool = f.hooks.tool;
+		f.hooks.tool = async (context) => {
+			const result = await tool(context);
+			if (
+				outcome === "failed" &&
+				context.run.recipeParent?.itemId === "one" &&
+				context.step.tool === "fixture-hold"
+			)
+				throw new Error("Controlled failure after parent Stop");
+			return result;
+		};
+		const parent = f.create();
+		await f.runtime.launch(parent);
+		await waitForRuntime(() => expect(f.holds.has("one")).toBe(true));
+		const originalChild = children(f.runtime, parent)[0]!;
+		const batch = Object.values(parent.launchActions!)[0]!;
+		const accepted = structuredClone(batch.accepted);
+		const originalOutput = structuredClone(parent.outputs.dispatch);
+		const originalHistory = structuredClone(parent.history);
+		const create = vi.spyOn(f.runtime, "create");
+		const launch = vi.spyOn(f.runtime, "launch");
+		f.runtime.stop(parent.id);
+		if (outcome === "failed") f.release("one");
+		else f.runtime.stop(originalChild.id);
+		const expectedStatus = outcome === "failed" ? "blocked" : "cancelled";
+		await waitForRuntime(() =>
+			expect(batch.progress.one).toMatchObject({
+				status: expectedStatus,
+				creation: "confirmed",
+			}),
+		);
+		expect(parent.status).toBe("stopped");
+		expect(batch.paused).toBe(true);
+		expect(batch.progress.two).toEqual({
+			status: "queued",
+			creation: "pending",
+		});
+		expect(children(f.runtime, parent).map((child) => child.id)).toEqual([
+			originalChild.id,
+		]);
+		expect(create).not.toHaveBeenCalled();
+		expect(launch).not.toHaveBeenCalled();
+		expect(
+			finished.mock.calls.filter(([run]) => run.id === parent.id),
+		).toHaveLength(0);
+		expect(batch.accepted).toEqual(accepted);
+		expect(parent.outputs.dispatch).toEqual(originalOutput);
+		expect(parent.history).toEqual(originalHistory);
+		await f.runtime.shutdown();
+		const restored = f.load();
+		const reloaded = restored.get(parent.id);
+		const restoredCreate = vi.spyOn(restored, "create");
+		const restoredLaunch = vi.spyOn(restored, "launch");
+		restored.resumeAll();
+		await restored.flush();
+		const restoredBatch = Object.values(reloaded.launchActions!)[0]!;
+		await waitForRuntime(() =>
+			expect(restoredBatch.progress.one).toMatchObject({
+				status: expectedStatus,
+				creation: "confirmed",
+			}),
+		);
+		expect(reloaded.status).toBe("stopped");
+		expect(restoredBatch.paused).toBe(true);
+		expect(restoredBatch.progress.two).toEqual({
+			status: "queued",
+			creation: "pending",
+		});
+		expect(children(restored, reloaded).map((child) => child.id)).toEqual([
+			originalChild.id,
+		]);
+		expect(restoredCreate).not.toHaveBeenCalled();
+		expect(restoredLaunch).not.toHaveBeenCalled();
+		expect(restoredBatch.accepted).toEqual(accepted);
+		expect(reloaded.outputs.dispatch).toEqual(originalOutput);
+		expect(reloaded.history).toEqual(originalHistory);
+	});
+
+	it("a stopped parent retains ordinary continuation of its already-admitted active child across restart while observing the queued next wave", async () => {
+		const f = fixture([dispatch(false)]);
+		// Load the parent manifest before child-* so its observation turn is pending
+		// when resumeAll considers continuation of the already-admitted child.
+		const parent = f.create(undefined, "a-paused-active-parent");
+		await f.runtime.launch(parent);
+		await waitForRuntime(() => expect(f.holds.has("one")).toBe(true));
+		const batch = Object.values(parent.launchActions!)[0]!;
+		expect(batch.progress.one!.launchCommitted).toBe(true);
+		const accepted = structuredClone(batch.accepted);
+		const originalOutput = structuredClone(parent.outputs.dispatch);
+		const originalHistory = structuredClone(parent.history);
+		const originalChild = children(f.runtime, parent)[0]!;
+		f.runtime.stop(parent.id);
+		await f.runtime.shutdown();
+		const restored = f.load();
+		const reloaded = restored.get(parent.id);
+		const create = vi.spyOn(restored, "create");
+		const launch = vi.spyOn(restored, "launch");
+		restored.resumeAll();
+		await waitForRuntime(() => expect(f.holds.has("one")).toBe(true));
+		const restoredBatch = Object.values(reloaded.launchActions!)[0]!;
+		expect(reloaded.status).toBe("stopped");
+		expect(restoredBatch.paused).toBe(true);
+		expect(restoredBatch.progress.one!.launchCommitted).toBe(true);
+		expect(restoredBatch.progress.two).toEqual({
+			status: "queued",
+			creation: "pending",
+		});
+		expect(children(restored, reloaded).map((child) => child.id)).toEqual([
+			originalChild.id,
+		]);
+		expect(create).not.toHaveBeenCalled();
+		expect(launch).toHaveBeenCalledExactlyOnceWith(
+			restored.get(originalChild.id),
+		);
+		f.release("one");
+		await waitForRuntime(() =>
+			expect(restoredBatch.progress.one).toMatchObject({
+				status: "merged",
+				creation: "confirmed",
+			}),
+		);
+		expect(reloaded.status).toBe("stopped");
+		expect(restoredBatch.paused).toBe(true);
+		expect(restoredBatch.progress.two).toEqual({
+			status: "queued",
+			creation: "pending",
+		});
+		expect(children(restored, reloaded).map((child) => child.id)).toEqual([
+			originalChild.id,
+		]);
+		expect(create).not.toHaveBeenCalled();
+		expect(launch).toHaveBeenCalledTimes(1);
+		expect(f.visits.filter((visit) => visit === "one:draft-pr")).toHaveLength(
+			1,
+		);
+		expect(f.visits.filter((visit) => visit === "one:merge")).toHaveLength(1);
+		expect(restoredBatch.accepted).toEqual(accepted);
+		expect(reloaded.outputs.dispatch).toEqual(originalOutput);
+		expect(reloaded.history).toEqual(originalHistory);
 	});
 
 	it("Stop batch persists cancellation, stops active children and survives restart without dispatching dependants", async () => {
@@ -514,6 +712,109 @@ describe("generic side-effect runtime integration", () => {
 		]);
 		f.release("one");
 		await waitForRuntime(() => expect(reloaded.status).toBe("completed"));
+	});
+
+	it("stopped parents reconcile an uncertain original child without admitting it or changing the stopped outcome", async () => {
+		const f = fixture([dispatch(false)]);
+		const parent = f.create();
+		const save = f.runtime.save.bind(f.runtime);
+		let unavailable = false;
+		let rejectedWrites = 0;
+		vi.spyOn(f.runtime, "save").mockImplementation(async (run) => {
+			if (run.recipeParent && unavailable) {
+				rejectedWrites++;
+				throw new Error("Controlled child storage unavailable");
+			}
+			await save(run);
+		});
+		const create = f.runtime.create.bind(f.runtime);
+		let lostAcknowledgement = false;
+		vi.spyOn(f.runtime, "create").mockImplementation((options, accepted) => {
+			const child = create(options, accepted);
+			if (options.recipeParent && !lostAcknowledgement) {
+				lostAcknowledgement = true;
+				unavailable = true;
+				throw new Error("Controlled local admission acknowledgement loss");
+			}
+			return child;
+		});
+		await f.runtime.launch(parent);
+		expect(parent.status).toBe("failed");
+		const batch = Object.values(parent.launchActions!)[0]!;
+		const accepted = structuredClone(batch.accepted);
+		const originalOutput = structuredClone(parent.outputs.dispatch);
+		const originalHistory = structuredClone(parent.history);
+		const originalChild = children(f.runtime, parent)[0]!;
+		const error = parent.error;
+		f.runtime.stop(parent.id);
+		const launch = vi.spyOn(f.runtime, "launch");
+		const beforeObservation = rejectedWrites;
+		f.runtime.resumeAll();
+		await waitForRuntime(() =>
+			expect(rejectedWrites).toBeGreaterThan(beforeObservation),
+		);
+		expect(parent.status).toBe("stopped");
+		expect(parent.error).toBe(error);
+		expect(batch.paused).toBe(true);
+		expect(batch.progress.one).toMatchObject({
+			creation: "uncertain",
+			status: "uncertain",
+		});
+		expect(batch.progress.one!.error).toBe(
+			"Child persistence is uncertain; restore storage and reconcile the original child",
+		);
+		expect(batch.progress.two).toEqual({
+			status: "queued",
+			creation: "pending",
+		});
+		unavailable = false;
+		await f.runtime.save(originalChild);
+		await waitForRuntime(() =>
+			expect(batch.progress.one).toMatchObject({
+				creation: "confirmed",
+				status: "launched",
+			}),
+		);
+		expect(batch.progress.one!.launchCommitted).toBeUndefined();
+		expect(parent.status).toBe("stopped");
+		expect(parent.error).toBe(error);
+		expect(launch).not.toHaveBeenCalled();
+		expect(f.holds.has("one")).toBe(false);
+		expect(originalChild.setupComplete).toBe(false);
+		expect(children(f.runtime, parent).map((child) => child.id)).toEqual([
+			originalChild.id,
+		]);
+		expect(batch.accepted).toEqual(accepted);
+		expect(parent.outputs.dispatch).toEqual(originalOutput);
+		expect(parent.history).toEqual(originalHistory);
+		await f.runtime.shutdown();
+		const restored = f.load();
+		const reloaded = restored.get(parent.id);
+		const restoredCreate = vi.spyOn(restored, "create");
+		const restoredLaunch = vi.spyOn(restored, "launch");
+		restored.resumeAll();
+		await restored.flush();
+		const restoredBatch = Object.values(reloaded.launchActions!)[0]!;
+		expect(reloaded.status).toBe("stopped");
+		expect(reloaded.error).toBe(error);
+		expect(restoredBatch.paused).toBe(true);
+		expect(restoredBatch.progress.one).toMatchObject({
+			creation: "confirmed",
+			status: "launched",
+		});
+		expect(restoredBatch.progress.one!.launchCommitted).toBeUndefined();
+		expect(restoredBatch.progress.two).toEqual({
+			status: "queued",
+			creation: "pending",
+		});
+		expect(children(restored, reloaded).map((child) => child.id)).toEqual([
+			originalChild.id,
+		]);
+		expect(restoredCreate).not.toHaveBeenCalled();
+		expect(restoredLaunch).not.toHaveBeenCalled();
+		expect(restoredBatch.accepted).toEqual(accepted);
+		expect(reloaded.outputs.dispatch).toEqual(originalOutput);
+		expect(reloaded.history).toEqual(originalHistory);
 	});
 
 	it("concurrent resumeAll cannot launch a child before its admission intent is durable", async () => {

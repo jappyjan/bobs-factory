@@ -189,6 +189,29 @@ const childWorkflow = {
 		},
 	],
 };
+const mappedReader = {
+	id: "f1-actions-pinned-reader",
+	name: "Reusable pinned reader",
+	stepConfigVersion: "step-config-v1",
+	allowedTriggers: ["workflow"],
+	steps: [
+		{
+			id: "research",
+			name: "Read mapped pinned blobs",
+			type: "agent",
+			prompt: "Return the controlled mapped list",
+			reads: { baseline: "@callInputs/baseline" },
+			access: "read-only",
+			revision: "bound",
+			output: { format: "json-v1" },
+			next: "end",
+		},
+	],
+};
+const itemPath = (id) =>
+	id === "f1-actions-uncertain"
+		? "/research/outputs/research/items"
+		: "/research/items";
 const definition = (id, wait) => ({
 	id,
 	name: id,
@@ -202,23 +225,32 @@ const definition = (id, wait) => ({
 			snapshot: { history: { lookbackDays: 30, maxRuns: 20 } },
 			next: "research",
 		},
-		{
-			id: "research",
-			name: "Read pinned blobs",
-			type: "agent",
-			prompt: "Return the controlled mapped list",
-			reads: { baseline: "baseline" },
-			access: "read-only",
-			revision: "bound",
-			output: { format: "json-v1" },
-			next: "file",
-		},
+		id === "f1-actions-uncertain"
+			? {
+					id: "research",
+					name: "Call reusable pinned reader",
+					type: "workflow",
+					workflow: mappedReader.id,
+					inputMapping: { baseline: "/baseline" },
+					next: "file",
+				}
+			: {
+					id: "research",
+					name: "Read pinned blobs",
+					type: "agent",
+					prompt: "Return the controlled mapped list",
+					reads: { baseline: "baseline" },
+					access: "read-only",
+					revision: "bound",
+					output: { format: "json-v1" },
+					next: "file",
+				},
 		{
 			id: "file",
 			name: "File backlog issues",
 			type: "file-issues",
 			fileIssues: {
-				items: { from: "/research/items" },
+				items: { from: itemPath(id) },
 				fields: { title: "/title", body: "/body", labels: "/labels" },
 				destination: {
 					provider: "linear",
@@ -233,7 +265,7 @@ const definition = (id, wait) => ({
 			name: "Launch dependency waves",
 			type: "launch-runs",
 			launchRuns: {
-				items: { from: "/research/items" },
+				items: { from: itemPath(id) },
 				workflow: childWorkflow.id,
 				inputMapping: { prompt: "/prompt" },
 				dependencies: "/dependencies",
@@ -259,6 +291,7 @@ const definitions = [
 	definition("f1-actions-wait", true),
 	definition("f1-actions-detached", false),
 	definition("f1-actions-uncertain", false),
+	mappedReader,
 ];
 const tracker = createCLIIssueTracker();
 const providerIssues = new Map(),
@@ -632,8 +665,16 @@ try {
 		sendCount,
 		"Lost response lookup avoids duplicate creation",
 	);
-	const batch = batchOf(parent),
-		base = runtime.get(batch.accepted.items[0].runId);
+	let batch = batchOf(parent);
+	const base = runtime.get(batch.accepted.items[0].runId);
+	const originalChildIds = batch.accepted.items.map((item) => item.runId);
+	await until(
+		() => parent.checkpoint?.current === "end" && parent.outputs.dispatch,
+		"Detached action publishes its original receipt before pause",
+	);
+	// Compare the persisted JSON value; optional undefined fields do not survive JSON storage.
+	const originalAccepted = JSON.parse(JSON.stringify(batch.accepted));
+	const originalDispatchOutput = structuredClone(parent.outputs.dispatch);
 	await until(() => base.status === "waiting", "Base waiting before stop");
 	runtime.stop(parentId);
 	await runtime.flush(parentId);
@@ -647,10 +688,37 @@ try {
 		() => base.status === "completed",
 		"Existing child continues after parent stop",
 	);
+	await until(
+		() => batch.progress.base.status === "merged",
+		"Paused parent observes original provider-confirmed merge",
+	);
+	assert.equal(parent.status, "stopped");
+	assert.equal(batch.progress.dependent.status, "queued");
 	assert.equal(
 		runtime.runs.has(batch.accepted.items[1].runId),
 		false,
 		"Paused parent prevents next wave",
+	);
+	await worker.stop();
+	({ instance: worker, instanceRuntime: runtime } = newWorker());
+	await worker.start();
+	parent = runtime.get(parentId);
+	batch = batchOf(parent);
+	await until(
+		() => batch.progress.base.status === "merged",
+		"Paused child projection survives worker reconstruction",
+	);
+	assert.equal(parent.status, "stopped");
+	assert.equal(batch.progress.dependent.status, "queued");
+	assert.equal(runtime.runs.has(originalChildIds[1]), false);
+	assert.deepEqual(
+		JSON.parse(JSON.stringify(batch.accepted)),
+		originalAccepted,
+	);
+	assert.deepEqual(parent.outputs.dispatch, originalDispatchOutput);
+	assert.deepEqual(
+		batch.accepted.items.map((item) => item.runId),
+		originalChildIds,
 	);
 	runtime.resume(parentId);
 	await until(
@@ -672,6 +740,8 @@ try {
 		lostReplyReconciled: true,
 		duplicateSends: 0,
 		parentPausePreservedChild: true,
+		pausedObservationAndReconstruction: true,
+		mappedSnapshotPinnedMcp: true,
 		resumeRetainedOriginalWave: true,
 		batchStopPersisted: true,
 	});

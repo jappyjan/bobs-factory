@@ -27,9 +27,16 @@ The output also retains the original observation date, safe history and limits.
 Private roots remain runtime state. Uncommitted changes and untracked files are
 excluded. Snapshot roots must identify distinct exact Git roots.
 
-A read-only agent declares a named read of the whole Snapshot output. The runtime
-verifies that exact produced receipt in its lexical workflow frame, then exposes
-only committed regular blobs at those revisions. A copied agent result cannot
+A read-only agent declares a named read of the whole Snapshot output. A caller
+may pass it through an explicit Call recipe input mapping; the reusable callee
+reads that input with `@callInputs/<name>` without naming the caller's step.
+Private persisted runtime receipts carry the original run, producer, lexical/item
+frame, scope/revision/digest and accepted mapping hops. The runtime verifies those
+receipts and frozen mapped inputs, then exposes only committed regular blobs at
+those revisions. Nested calls and For each preserve the original authority. A whole Snapshot
+selected from a completed Call output or For each result retains its exact
+producer through the original runtime result receipts. Ordinary copied or literal
+equal JSON does not acquire that authority. A copied agent result cannot
 mint snapshot or publication authority. Pinned tools deny private-looking paths,
 symlinks, other repository IDs and arbitrary filesystem access. They allow at
 most 200 calls, list in pages and read at most 16,000 characters per response;
@@ -112,6 +119,10 @@ Mutable `launchActions` progress never rewrites original step outputs/receipts.
 Passive child/human/provider waits hold no execution or shared mutation lease.
 
 Normal **Stop** durably pauses future parent dispatch and leaves children working.
+Observation of original child identities, outcomes and provider proof continues,
+including after restart. It updates operational progress without creating or
+admitting queued children, changing the stopped parent, or rewriting accepted
+outputs. Already-admitted children may resume their ordinary work after restart.
 **Resume** reconciles unfinished original children and queued waves, including
 when the recipe graph already ended. **Stop batch and active runs** persists
 cancellation intent before stopping the parent/children and covers pending or
@@ -120,3 +131,14 @@ resuming the parent does not relaunch it. Completed children/receipts remain.
 The run page exposes waves and queued/launched/running/waiting/merged/completed/
 blocked/cancelled/uncertain states. Legacy `improvementParent` links retain a
 deterministic compatibility fallback; replacing Improve belongs to a later task.
+
+## Delivery plan binding compatibility
+
+Runtime-supplied `deliveryCandidateDigest` resolves the accepted declared plan
+read selected by `scope-inputs.sources.plan`, including stock and frozen presets
+whose read is named `scopePlan`. Existing declared `reads.plan` partners remain
+supported. This never falls back to a step named `plan` or activates delivery
+from an output format or ordinary data. The reviewer echoes the supplied digest;
+the acceptance action still requires the exact current contract digest. Wrong
+or stale reviews reject. Accepted definitions, original receipts and native
+conversation identities are retained without rewriting.
