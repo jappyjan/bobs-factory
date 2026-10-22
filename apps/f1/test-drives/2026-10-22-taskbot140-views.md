@@ -1,6 +1,6 @@
 # Taskbot #140: declarative views and human steps
 
-Date: 2026-10-22. [Ticket](https://taskbot.apps.janjaap.de/p/bobs-factory/t/140),
+Date: 2026-10-22. [PR #177](https://github.com/jappyjan/bobs-factory/pull/177). [Ticket](https://taskbot.apps.janjaap.de/p/bobs-factory/t/140),
 [epic #135](https://taskbot.apps.janjaap.de/p/bobs-factory/t/135), predecessor
 [#139 / PR #176](https://github.com/jappyjan/bobs-factory/pull/176).
 
@@ -113,6 +113,11 @@ driver bytes are beside these receipts. This proves controlled orchestration;
 it does not prove native model/authentication, live push delivery or forge quality.
 
 ## Local gates and native binary
+
+Evidence commit: `2e090de9198bbeba8e2e8127784a84301de80bfa`. The subsequent
+PR-link commit changes documentation/evidence metadata only;
+[exact input-equivalence proof](assets/taskbot140-views/gates/pr-link-equivalence.json)
+retains every validated production and embedded-resource input.
 
 [Complete command results and per-package counts](assets/taskbot140-views/gates/command-results.json),
 [original raw log inventory](assets/taskbot140-views/gates/raw-log-manifest.json),
