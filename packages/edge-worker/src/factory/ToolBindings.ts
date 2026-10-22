@@ -8,6 +8,7 @@ import {
 	resolveStepConfig,
 	usesLegacyOutputAliases,
 } from "./StepConfig.js";
+import { readPath, routeResult } from "./Workflow.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
 
 /** Read a tool's declared partner, using the current workflow frame's outputs. */
@@ -109,7 +110,90 @@ export function boundStepKey(
 		context.run.step ??
 		context.step.id
 	).replace(/[^/]+$/, "");
-	return `${prefix}${target}`;
+	return producerKey(context.run, prefix, target);
+}
+
+/** Resolve a declared port to its configured producer, never by comparing JSON. */
+export function producerKey(
+	run: ExecutionContext["run"],
+	prefix: string,
+	target: string,
+): string {
+	const local = `${prefix}${target}`;
+	let scope = prefix;
+	while (scope) {
+		const callKey = scope.replace(/\/$/, "");
+		const call = stepForRun(run, callKey);
+		const binding =
+			call?.type === "workflow" ? call.bindings?.[target] : undefined;
+		if (binding) {
+			const parentPrefix = callKey.replace(/[^/]+$/, "");
+			return binding.startsWith("@bindings/")
+				? producerKey(run, parentPrefix, binding.slice("@bindings/".length))
+				: `${parentPrefix}${binding}`;
+		}
+		if (scope === prefix && stepForRun(run, local)) return local;
+		scope = callKey.replace(/[^/]+$/, "");
+	}
+	return local;
+}
+
+/** Only a configured, executed source can supply a port's current value. */
+export function producerValue(
+	run: ExecutionContext["run"],
+	key: string,
+): unknown {
+	if (!stepForRun(run, key) || !run.history.some((entry) => entry.step === key))
+		return undefined;
+	return Object.hasOwn(run.outputs, key) ? run.outputs[key] : undefined;
+}
+
+/** Follow declared local/outcome routes to the next executed producer. */
+export function nextProducerKey(
+	run: ExecutionContext["run"],
+	key: string,
+	output: unknown,
+	depth = 0,
+): string | undefined {
+	if (depth > 10)
+		throw new Error("Call outcome route exceeds its nesting limit");
+	const entries = stepsForRun(run);
+	const step = entries.find((entry) => entry.key === key)?.step;
+	if (!step) return;
+	const prefix = key.replace(/[^/]+$/, "");
+	const siblings = entries.filter(
+		(entry) => entry.key.replace(/[^/]+$/, "") === prefix,
+	);
+	const index = siblings.findIndex((entry) => entry.key === key);
+	const next = routeResult(step, output, siblings[index + 1]?.step.id ?? "end");
+	if (next === "end") return;
+	const local = stepForRun(run, `${prefix}${next}`);
+	if (local) {
+		if (local.type !== "workflow") return `${prefix}${next}`;
+		const called = run.workflowDefinitions?.find(
+			(item) => item.id === local.workflow,
+		);
+		const branch = step.branches.find(
+			(branch) =>
+				JSON.stringify(readPath(output, branch.when.path)) ===
+				JSON.stringify(branch.when.equals),
+		);
+		const entry = branch?.entry ?? called?.steps[0]?.id;
+		return entry ? `${prefix}${next}/${entry}` : undefined;
+	}
+	const callerKey = prefix.replace(/\/$/, "");
+	const caller = stepForRun(run, callerKey);
+	const definition = run.workflowDefinitions?.find(
+		(item) => item.id === caller?.workflow,
+	);
+	return caller?.type === "workflow" && definition?.outcomes?.includes(next)
+		? nextProducerKey(
+				run,
+				callerKey,
+				{ workflow: definition.id, completed: true, outcome: next },
+				depth + 1,
+			)
+		: undefined;
 }
 
 /** Walk accepted graph identities once for background consumers without an active step. */

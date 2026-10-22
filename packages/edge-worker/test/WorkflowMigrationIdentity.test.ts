@@ -29,9 +29,9 @@ vi.mock("node:crypto", async (original) => {
 });
 
 import { createHash } from "node:crypto";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 const homes: string[] = [];
 afterEach(() => {

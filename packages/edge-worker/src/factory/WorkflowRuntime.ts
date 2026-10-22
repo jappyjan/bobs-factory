@@ -68,7 +68,6 @@ import {
 	restoreDelivery,
 } from "./DeliveryCoordination.js";
 import {
-	defaultWorkflows,
 	upgradedArchitectureSteps,
 	upgradedGuideStep,
 	upgradeHandoffReadiness,
@@ -177,7 +176,7 @@ import {
 	stampSpecialist,
 	validateContractOutput,
 } from "./SpecialistReview.js";
-import { stepBindings } from "./StepBindings.js";
+import { allRunSteps, stepBindings } from "./StepBindings.js";
 import {
 	architectureRevisionDecision,
 	CHECK_SELECTOR_IDS,
@@ -196,14 +195,22 @@ import {
 	resolveStepConfig,
 	reviewEvidenceContract,
 } from "./StepConfig.js";
+import {
+	stockFactorySteps,
+	stockWorkflowMetadata,
+} from "./stockFactorySteps.js";
 import { recordTicketMilestone } from "./TicketTracking.js";
 import {
 	boundOutput,
 	boundStepKey,
 	boundToolOutput,
+	nextProducerKey,
 	outputForTool,
+	producerKey,
+	producerValue,
 	registerOutputHistory,
 	stepForRun,
+	writeBoundOutput,
 } from "./ToolBindings.js";
 import { HumanViews } from "./ViewRuntime.js";
 import {
@@ -216,7 +223,11 @@ import {
 	WorkflowSchema,
 	type WorkflowStep,
 } from "./Workflow.js";
-import { type WorkflowBlock, WorkflowCatalog } from "./WorkflowCatalog.js";
+import {
+	type WorkflowBlock,
+	WorkflowCatalog,
+	workflowClosure,
+} from "./WorkflowCatalog.js";
 import { snapshotHistory, snapshotWorkflowInput } from "./WorkflowInput.js";
 
 export type RunStatus =
@@ -298,6 +309,21 @@ export interface ForeachCheckpoint {
 	states: ForeachItemState[];
 }
 export interface GraphCheckpoint {
+	/** Calls with declared outcomes retain one lexical frame across correction routes. */
+	calls?: Record<string, GraphCheckpoint>;
+	/** Completed Parallel scopes remain the owners of their qualified producers. */
+	branches?: Record<string, GraphCheckpoint[]>;
+	/** The exact accepted review context inherited by this lexical frame. */
+	baseline?: Pick<ReviewBaseline, "key" | "round">;
+	/** A producer refresh executes in its original frame and returns without following its route. */
+	producerRefresh?: {
+		source: string;
+		current: string;
+		active?: GraphCheckpoint["active"];
+		outcome?: string;
+	};
+	entry?: string;
+	outcome?: string;
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
 	/** Runtime-owned origin receipts; never part of public mapped JSON inputs. */
@@ -348,6 +374,7 @@ export interface GraphCheckpoint {
 		children?: GraphCheckpoint[];
 		foreach?: ForeachCheckpoint;
 		call?: WorkflowCall;
+		refreshProducer?: string;
 		reviewBaseline?: ReviewBaseline;
 		impactSnapshot?: ImpactSnapshot;
 	};
@@ -1454,7 +1481,36 @@ export class WorkflowRuntime {
 			}
 			controller.signal.throwIfAborted();
 			this.requireRunAvailable(run);
+			// Outcome recipes can be preparation-only blocks. They cannot claim delivery
+			// completion; every graph declaring delivery work or retaining effects keeps the guard.
+			const root = run.recoveryWorkflow ?? run.workflow;
+			const deliveryWork =
+				!root.outcomes?.length ||
+				allRunSteps({
+					...run,
+					workflowDefinitions: workflowClosure(
+						root,
+						run.workflowDefinitions ?? [],
+					),
+				}).some((step) =>
+					[
+						"external-apply",
+						"external-verify",
+						"external-human-review",
+						"external-final",
+						"external-reverify",
+						"merge",
+					].includes(step.tool ?? ""),
+				) ||
+				[run.delivery, ...(run.deliveryContracts ?? [])].some(
+					(delivery) =>
+						delivery &&
+						(delivery.receipts.length > 0 ||
+							delivery.verification ||
+							delivery.finalCheck),
+				);
 			if (
+				deliveryWork &&
 				run.delivery &&
 				run.delivery.contract.mode !== "repository" &&
 				!externalCompletionProven(run)
@@ -1463,6 +1519,7 @@ export class WorkflowRuntime {
 					"External delivery lacks verified acceptance and final state proof",
 				);
 			if (
+				deliveryWork &&
 				run.delivery?.contract.mode === "mixed" &&
 				readPath(outputForTool(run, "merge"), "merged") !== true
 			)
@@ -1820,6 +1877,310 @@ export class WorkflowRuntime {
 			});
 		return input;
 	}
+	/** Resolve only retained runtime-owned lexical frames, never an output-shaped checkpoint. */
+	private producerFrame(run: FactoryRun, key: string) {
+		const find = (
+			frame: GraphCheckpoint,
+			steps: WorkflowStep[],
+			workflow: Workflow,
+			prefix: string,
+			remaining: string[],
+			inherited: Record<string, unknown>,
+			chat: boolean,
+			parallel: boolean,
+		):
+			| {
+					frame: GraphCheckpoint;
+					steps: WorkflowStep[];
+					workflow: Workflow;
+					prefix: string;
+					step: WorkflowStep;
+					outputs: Record<string, unknown>;
+					chat: boolean;
+					parallel: boolean;
+			  }
+			| undefined => {
+			const [id, ...tail] = remaining;
+			const step = steps.find((item) => item.id === id);
+			if (!step) return;
+			const outputs = frame.outputs ?? inherited;
+			if (!tail.length)
+				return {
+					frame,
+					steps,
+					workflow,
+					prefix,
+					step,
+					outputs,
+					chat,
+					parallel,
+				};
+			const active = frame.current === step.id ? frame.active : undefined;
+			if (step.type === "workflow") {
+				const called = run.workflowDefinitions?.find(
+					(item) => item.id === step.workflow,
+				);
+				const child = active?.children?.[0] ?? frame.calls?.[step.id];
+				if (called && child)
+					return find(
+						child,
+						called.steps,
+						called,
+						`${prefix}${id}/`,
+						tail,
+						outputs,
+						called.chat ?? chat,
+						parallel,
+					);
+			} else if (step.type === "fanout") {
+				const index = Number(tail[0]);
+				const child = (active?.children ?? frame.branches?.[step.id])?.[index],
+					group = step.groups?.[index];
+				if (child && group)
+					return find(
+						child,
+						group,
+						workflow,
+						`${prefix}${id}/${index}/`,
+						tail.slice(1),
+						outputs,
+						chat,
+						true,
+					);
+			} else if (step.type === "foreach") {
+				const child = active?.children?.find(
+					(item) => item.iteration?.id === tail[0],
+				);
+				if (child && active?.foreach)
+					return find(
+						child,
+						active.foreach.body,
+						workflow,
+						`${prefix}${id}/${tail[0]}/`,
+						tail.slice(1),
+						active.foreach.outputs,
+						chat,
+						true,
+					);
+			}
+			return undefined;
+		};
+		const workflow = run.recoveryWorkflow ?? run.workflow;
+		const found =
+			run.checkpoint &&
+			find(
+				run.checkpoint,
+				workflow.steps,
+				workflow,
+				"",
+				key.split("/"),
+				run.outputs,
+				workflow.chat ?? false,
+				false,
+			);
+		if (!found)
+			throw new Error(`Bound producer has no retained owning frame: ${key}`);
+		if (found.frame.projectResults)
+			this.restoreFrameReceipts(run, found.steps, found.frame, found.prefix);
+		return found;
+	}
+	private frameBaseline(
+		run: FactoryRun,
+		frame: GraphCheckpoint,
+	): ReviewBaseline | undefined {
+		if (!frame.baseline) return undefined;
+		const original = run.reviewRounds?.find(
+			(record) =>
+				record.key === frame.baseline!.key &&
+				record.round === frame.baseline!.round,
+		);
+		if (!original)
+			throw new Error(
+				"Retained producer frame has no original review baseline",
+			);
+		return original;
+	}
+
+	private importedProducerContext(
+		consumer: ExecutionContext,
+		key: string,
+	): ExecutionContext {
+		const owner = this.producerFrame(consumer.run, key);
+		const outputs = { ...owner.outputs };
+		this.hydrateProducerInputs(consumer.run, owner.prefix, owner.step, outputs);
+		const context: ExecutionContext = {
+			...consumer,
+			step: owner.step,
+			stepKey: key,
+			outputs,
+			iteration: owner.frame.iteration,
+			callInputs: owner.frame.callInputs,
+			snapshotInputs: owner.frame.snapshotInputs,
+			reviewKey: owner.frame.reviewKey,
+			reviewBaseline: this.frameBaseline(consumer.run, owner.frame),
+			bindingInput: (source, previous) =>
+				this.producerInput(
+					context,
+					owner.frame,
+					owner.prefix,
+					source,
+					previous,
+				),
+		};
+		context.input = context.bindingInput!(
+			owner.step,
+			consumer.run.boundOutputs?.[key],
+		);
+		context.currentScope = () => ({
+			originalInput: consumer.run.input,
+			outputs,
+			answers: consumer.run.answers,
+			humanDecisions: consumer.run.humanDecisions ?? [],
+		});
+		return context;
+	}
+	/** Compare and execute with the same current lexical ports, including container frames. */
+	private hydrateProducerInputs(
+		run: FactoryRun,
+		prefix: string,
+		step: WorkflowStep,
+		outputs: Record<string, unknown>,
+	) {
+		const caller = stepForRun(run, prefix.replace(/\/$/, ""));
+		const names = new Set(Object.keys(caller?.bindings ?? {}));
+		for (const binding of Object.values(resolveStepConfig(step).reads)) {
+			if (!binding.from.startsWith("@")) names.add(binding.from.split("/")[0]!);
+		}
+		for (const name of names) {
+			const source = producerKey(run, prefix, name);
+			if (source === `${prefix}${name}`) continue;
+			const value = producerValue(run, source);
+			if (value === undefined) delete outputs[name];
+			else outputs[name] = snapshotWorkflowInput(value);
+		}
+	}
+	private producerRefreshes = new Map<string, Promise<void>>();
+	private async refreshImportedProducer(
+		consumer: ExecutionContext,
+		key: string,
+	) {
+		const ownerKey = `${consumer.run.id}:${key.replace(/[^/]+$/, "")}`;
+		const previous = this.producerRefreshes.get(ownerKey);
+		const refreshing = (previous ?? Promise.resolve()).then(() =>
+			this.refreshProducerInFrame(consumer, key),
+		);
+		this.producerRefreshes.set(ownerKey, refreshing);
+		try {
+			await refreshing;
+		} finally {
+			if (this.producerRefreshes.get(ownerKey) === refreshing)
+				this.producerRefreshes.delete(ownerKey);
+		}
+	}
+
+	private async refreshProducerInFrame(
+		consumer: ExecutionContext,
+		key: string,
+	) {
+		const { run, signal } = consumer;
+		const owner = this.producerFrame(run, key),
+			frame = owner.frame;
+		if (!frame.producerRefresh) {
+			const context = this.importedProducerContext(consumer, key),
+				receipt = run.boundOutputs?.[key];
+			if (
+				!receipt ||
+				sameOutputBinding(
+					receipt,
+					await outputRevisionBinding(context, receipt),
+				)
+			)
+				return;
+			frame.producerRefresh = {
+				source: owner.step.id,
+				current: frame.current,
+				active: frame.active,
+				outcome: frame.outcome,
+			};
+			frame.current = owner.step.id;
+			const session = frame.agentSessions?.[owner.step.id];
+			if (session)
+				frame.visits[owner.step.id] = (frame.visits[owner.step.id] ?? 0) + 1;
+			frame.active = session
+				? { phase: "executing", agent: { ...session } }
+				: undefined;
+			await this.save(run);
+		} else if (frame.producerRefresh.source !== owner.step.id)
+			throw new Error("Another producer refresh owns this frame");
+		await this.graph(
+			run,
+			owner.steps,
+			owner.outputs,
+			signal,
+			owner.prefix,
+			frame,
+			owner.workflow.id,
+			owner.chat,
+			owner.parallel,
+			this.frameBaseline(run, frame),
+		);
+	}
+
+	private producerInput(
+		context: ExecutionContext,
+		frame: GraphCheckpoint,
+		prefix: string,
+		source: WorkflowStep,
+		previous?: OutputRevisionBinding,
+	) {
+		const { run, reviewBaseline } = context;
+		const outputs = context.outputs ?? run.outputs;
+		const deliveryAware =
+			!!run.delivery ||
+			!!(context.input as Record<string, unknown>)?.deliveryExecutionReference;
+		const sourceInput = this.stepInput(
+			run,
+			source,
+			outputs,
+			reviewBaseline,
+			deliveryAware,
+			previous,
+			frame.iteration,
+		);
+		const sourceContext = {
+			...context,
+			step: source,
+			stepKey: `${prefix}${source.id}`,
+			input: sourceInput,
+		};
+		const sourceConfig = resolveStepConfig(source);
+		const bindings = stepBindings(
+			sourceContext,
+			bindingHistory(sourceContext, previous),
+		);
+		if (source.reads) Object.assign(sourceInput, bindings);
+		else if (
+			sourceConfig.inputs &&
+			sourceConfig.reads.answers &&
+			Object.hasOwn(bindings, "answers")
+		)
+			Object.assign(sourceInput, { answers: bindings.answers });
+		const sources = checkArgs(source, "scope-inputs")?.sources;
+		if (!sourceConfig.inputs && (sources || sourceConfig.explicit))
+			Object.assign(sourceInput, {
+				scopeSources:
+					sources && typeof sources === "object"
+						? Object.fromEntries(
+								Object.entries(sources).map(([label, name]) => [
+									label,
+									bindings[String(name)],
+								]),
+							)
+						: {},
+			});
+		return sourceInput;
+	}
+
 	private async graph(
 		run: FactoryRun,
 		steps: WorkflowStep[],
@@ -1832,6 +2193,33 @@ export class WorkflowRuntime {
 		parallel = false,
 		reviewBaseline?: ReviewBaseline,
 	): Promise<Record<string, unknown>> {
+		if (reviewBaseline)
+			checkpoint.baseline = {
+				key: reviewBaseline.key,
+				round: reviewBaseline.round,
+			};
+		else reviewBaseline = this.frameBaseline(run, checkpoint);
+		const definition = [
+			run.recoveryWorkflow ?? run.workflow,
+			...(run.workflowDefinitions ?? []),
+		].find((item) => item.id === workflowId);
+		const outcomes = definition?.outcomes ?? [];
+		if (!prefix && definition?.inputs) {
+			for (const name of definition.inputs) {
+				if (
+					Object.hasOwn(outputs, name) ||
+					!Object.hasOwn(run.launchInputs ?? {}, name)
+				)
+					continue;
+				const value = run.launchInputs![name];
+				if (typeof value !== "string") continue;
+				try {
+					outputs[name] = JSON.parse(value);
+				} catch {
+					outputs[name] = value;
+				}
+			}
+		}
 		if (checkpoint.projectResults)
 			this.restoreFrameReceipts(run, steps, checkpoint, prefix);
 		while (checkpoint.current !== "end") {
@@ -1840,6 +2228,7 @@ export class WorkflowRuntime {
 			const step = steps.find((item) => item.id === checkpoint.current)!;
 			const key = `${prefix}${step.id}`;
 			const config = resolveStepConfig(step);
+			this.hydrateProducerInputs(run, prefix, step, outputs);
 			const reviewConfig = consumesReview(step)
 				? {
 						inventory: readStep(step, "inventory")!,
@@ -1860,7 +2249,13 @@ export class WorkflowRuntime {
 				: undefined;
 			if (!checkpoint.active) {
 				checkpoint.visits[step.id] = (checkpoint.visits[step.id] ?? 0) + 1;
-				checkpoint.active = { phase: "executing" };
+				const session = definition?.outcomes?.length
+					? checkpoint.agentSessions?.[step.id]
+					: undefined;
+				checkpoint.active = {
+					phase: "executing",
+					...(session ? { agent: { ...session } } : {}),
+				};
 				await this.save(run);
 				signal.throwIfAborted();
 			}
@@ -1891,10 +2286,15 @@ export class WorkflowRuntime {
 			this.log(run, key, `Starting ${step.name} (pass ${count})`);
 			const deliveryAware =
 				!!run.delivery ||
+				steps.some(
+					(s) =>
+						resolveStepConfig(s).explicit && hasCheck(s, "delivery-contract"),
+				) ||
 				steps.some((s) =>
 					["delivery-route", "accept-delivery"].includes(s.tool ?? ""),
 				);
 			const boundScope =
+				checkpoint.producerRefresh?.source === step.id ||
 				checkpoint.refreshes?.at(-1)?.source === step.id ||
 				state.phase !== "executing"
 					? run.boundOutputs?.[key]
@@ -1966,49 +2366,8 @@ export class WorkflowRuntime {
 				chat: reviewBaseline ? false : (step.chat ?? chat),
 				chatMessages: structuredClone(this.chatMessages(run.id)),
 				input,
-				bindingInput: (source, previous) => {
-					const sourceInput = this.stepInput(
-						run,
-						source,
-						outputs,
-						reviewBaseline,
-						deliveryAware,
-						previous,
-						checkpoint.iteration,
-					);
-					const sourceContext = {
-						...context,
-						step: source,
-						stepKey: `${prefix}${source.id}`,
-						input: sourceInput,
-					};
-					const sourceConfig = resolveStepConfig(source);
-					const bindings = stepBindings(
-						sourceContext,
-						bindingHistory(sourceContext, previous),
-					);
-					if (source.reads) Object.assign(sourceInput, bindings);
-					else if (
-						sourceConfig.inputs &&
-						sourceConfig.reads.answers &&
-						Object.hasOwn(bindings, "answers")
-					)
-						Object.assign(sourceInput, { answers: bindings.answers });
-					const sources = checkArgs(source, "scope-inputs")?.sources;
-					if (!sourceConfig.inputs && (sources || sourceConfig.explicit))
-						Object.assign(sourceInput, {
-							scopeSources:
-								sources && typeof sources === "object"
-									? Object.fromEntries(
-											Object.entries(sources).map(([label, name]) => [
-												label,
-												bindings[String(name)],
-											]),
-										)
-									: {},
-						});
-					return sourceInput;
-				},
+				bindingInput: (source, previous) =>
+					this.producerInput(context, checkpoint, prefix, source, previous),
 				outputs,
 				signal,
 				log: (message, source) =>
@@ -2066,26 +2425,44 @@ export class WorkflowRuntime {
 					? { scopeSources: sourceValues() ?? {} }
 					: {}),
 			});
+			if (state.refreshProducer) {
+				await this.refreshImportedProducer(context, state.refreshProducer);
+				delete state.refreshProducer;
+				await this.save(run);
+				continue;
+			}
 			let staleSource: WorkflowStep | undefined;
-			for (const binding of Object.values(config.reads)) {
-				if (binding.from.startsWith("@")) continue;
-				const source = steps.find(
-					(candidate) => candidate.id === binding.from.split("/")[0],
-				);
-				if (!source || source.id === step.id) continue;
-				const sourceKey = `${prefix}${source.id}`;
+			let importedSource: string | undefined;
+			const sourceKeys = new Set([
+				...Object.values(config.reads)
+					.filter((binding) => !binding.from.startsWith("@"))
+					.map((binding) =>
+						producerKey(run, prefix, binding.from.split("/")[0]!),
+					),
+				...Object.keys(step.bindings ?? {}).map((name) =>
+					producerKey(run, `${key}/`, name),
+				),
+			]);
+			for (const sourceKey of sourceKeys) {
+				const source = stepForRun(run, sourceKey);
 				const receipt = run.boundOutputs?.[sourceKey];
-				if (!receipt) continue;
-				const current = await outputRevisionBinding(
-					{ ...context, step: source, stepKey: sourceKey },
-					receipt,
-				);
-				if (current && !sameOutputBinding(receipt, current)) {
-					if (await historicalInventoryRead(context, source, receipt, current))
-						continue;
-					staleSource = source;
-					break;
-				}
+				if (!source || !receipt || sourceKey === key) continue;
+				const local = sourceKey === `${prefix}${source.id}`;
+				const sourceContext = local
+					? { ...context, step: source, stepKey: sourceKey }
+					: this.importedProducerContext(context, sourceKey);
+				const current = await outputRevisionBinding(sourceContext, receipt);
+				if (!current || sameOutputBinding(receipt, current)) continue;
+				if (await historicalInventoryRead(context, source, receipt, current))
+					continue;
+				if (local) staleSource = source;
+				else importedSource = sourceKey;
+				break;
+			}
+			if (importedSource) {
+				state.refreshProducer = importedSource;
+				await this.save(run);
+				continue;
 			}
 			if (staleSource) {
 				this.log(
@@ -2130,10 +2507,15 @@ export class WorkflowRuntime {
 					continue;
 				}
 			}
-			const impactSource = steps.find((s) => s.id === impactSourceId);
+			const impactProducer = impactSourceId
+				? boundStepKey(context, "impact")
+				: undefined;
+			const impactSource = impactProducer
+				? stepForRun(run, impactProducer)
+				: undefined;
 			context.impactKey =
 				impactSource && readStep(impactSource, "fanout")
-					? `${prefix}${readStep(impactSource, "fanout")}`
+					? `${impactProducer!.slice(0, impactProducer!.lastIndexOf("/") + 1)}${readStep(impactSource, "fanout")}`
 					: checkpoint.reviewKey;
 			context.coordinateDelivery = (operation) =>
 				this.coordinate(context, operation);
@@ -2228,6 +2610,23 @@ export class WorkflowRuntime {
 				await this.save(run);
 			}
 			let output: unknown = outputs[step.id];
+			const advance = (next: string) => {
+				const route = step.branches.find(
+					(branch) =>
+						JSON.stringify(readPath(output, branch.when.path)) ===
+						JSON.stringify(branch.when.equals),
+				);
+				if (route?.entry) checkpoint.entry = route.entry;
+				if (outcomes.includes(next)) {
+					checkpoint.outcome = next;
+					checkpoint.current = "end";
+					if (checkpoint.projectResults)
+						checkpoint.resultReceipts![step.id] = immutableJson({
+							key,
+							output: snapshotWorkflowInput(output),
+						});
+				} else checkpoint.current = next;
+			};
 			if (state.phase === "executing") {
 				let completionMessage: string | undefined;
 				state.attemptId = beginStepAttempt(context);
@@ -2411,6 +2810,10 @@ export class WorkflowRuntime {
 							...this.newCheckpoint(group),
 							outputs: reviewConfig ? {} : structuredClone(outputs),
 						}));
+						if (config.explicit) {
+							checkpoint.branches ??= {};
+							checkpoint.branches[step.id] = state.children;
+						}
 						// Also fill older resumed branches, preserving reviews established within them.
 						for (const child of state.children) {
 							child.reviewKey ??= checkpoint.reviewKey;
@@ -2589,18 +2992,43 @@ export class WorkflowRuntime {
 								state.call,
 							);
 						}
-						state.children ??= [this.newCheckpoint(definition.steps)];
+						const newVisit = !state.children;
+						if (!state.children) {
+							const retained = definition.outcomes?.length
+								? checkpoint.calls?.[step.id]
+								: undefined;
+							const child = retained ?? this.newCheckpoint(definition.steps);
+							if (retained) {
+								child.current = checkpoint.entry ?? definition.steps[0]!.id;
+								child.active = undefined;
+								delete child.outcome;
+							}
+							if (checkpoint.entry) child.current = checkpoint.entry;
+							delete checkpoint.entry;
+							state.children = [child];
+						}
+						// Recovery can already supply an active child. Retain that exact frame,
+						// including visits and ownership, before its first resumed dispatch.
+						if (config.explicit || definition.outcomes?.length) {
+							checkpoint.calls ??= {};
+							checkpoint.calls[step.id] = state.children[0]!;
+						}
 						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
 						state.children[0]!.iteration ??= checkpoint.iteration;
 						if (
 							checkpoint.projectResults ||
+							step.bindings ||
+							definition.outcomes?.length ||
 							step.inputMapping ||
 							checkpoint.iteration
 						)
 							state.children[0]!.projectResults = true;
 						const isolated =
-							config.explicit || !!step.inputMapping || !!checkpoint.iteration;
-						if (isolated && !state.children[0]!.outputs) {
+							config.explicit ||
+							!!step.inputMapping ||
+							!!step.bindings ||
+							!!checkpoint.iteration;
+						if (isolated && (newVisit || !state.children[0]!.outputs)) {
 							const mappings = Object.fromEntries(
 								Object.entries(step.inputMapping ?? {}).map(([name, path]) => [
 									name,
@@ -2618,14 +3046,32 @@ export class WorkflowRuntime {
 								]),
 							);
 							state.children[0]!.outputs = {
-								...snapshotWorkflowInput(outputs),
+								...(step.bindings ? {} : snapshotWorkflowInput(outputs)),
 								...snapshotWorkflowInput(mappings),
+								...Object.fromEntries(
+									Object.entries(state.children[0]!.resultReceipts ?? {}).map(
+										([id, receipt]) => [
+											id,
+											snapshotWorkflowInput(receipt.output),
+										],
+									),
+								),
 							};
 							state.children[0]!.callInputs = step.inputMapping
 								? immutableJson(mappings)
 								: checkpoint.callInputs;
 						}
-						if (!state.children[0]!.snapshotInputs)
+						if (step.bindings) {
+							const child = state.children[0]!;
+							child.outputs ??= {};
+							for (const name of Object.keys(step.bindings)) {
+								const source = producerKey(run, `${key}/`, name);
+								const value = producerValue(run, source);
+								if (value === undefined) delete child.outputs[name];
+								else child.outputs[name] = snapshotWorkflowInput(value);
+							}
+						}
+						if (newVisit || !state.children[0]!.snapshotInputs)
 							state.children[0]!.snapshotInputs = step.inputMapping
 								? immutableJson(
 										snapshotInputMappings(
@@ -2648,11 +3094,18 @@ export class WorkflowRuntime {
 							definition.id,
 							definition.chat ?? chat,
 							parallel,
+							config.explicit ? reviewBaseline : undefined,
 						);
 						output = {
 							workflow: definition.id,
 							completed: true,
-							...(step.inputMapping || checkpoint.iteration
+							...(definition.outcomes?.length
+								? { outcome: state.children[0]!.outcome ?? "completed" }
+								: {}),
+							...(step.inputMapping ||
+							step.bindings ||
+							definition.outcomes?.length ||
+							checkpoint.iteration
 								? {
 										outputs: this.frameResults(
 											run,
@@ -3277,10 +3730,11 @@ export class WorkflowRuntime {
 						undefined,
 						context,
 					);
-				checkpoint.current =
+				advance(
 					step.type === "check"
 						? this.nextStep(steps, step, output)
-						: reviewer.id;
+						: reviewer.id,
+				);
 				const destination = steps.find(
 					(item) => item.id === checkpoint.current,
 				);
@@ -3363,10 +3817,11 @@ export class WorkflowRuntime {
 						"QA or visual evidence is incomplete and this recipe has no capture → visual-review → visual-gate recovery path. Configure that path for a new run; missing evidence cannot be approved.",
 					);
 				if (readPath(output, "qaRetry") === true) {
-					checkpoint.current =
+					advance(
 						step.type === "check"
 							? this.nextStep(steps, step, output)
-							: capture.id;
+							: capture.id,
+					);
 					checkpoint.active = undefined;
 					run.questions = [];
 					run.status = "running";
@@ -3395,10 +3850,11 @@ export class WorkflowRuntime {
 							| undefined,
 						context,
 					);
-				checkpoint.current =
+				advance(
 					step.type === "check"
 						? this.nextStep(steps, step, output)
-						: capture.id;
+						: capture.id,
+				);
 				checkpoint.active = undefined;
 				this.log(
 					run,
@@ -3426,10 +3882,11 @@ export class WorkflowRuntime {
 						undefined,
 						context,
 					);
-				checkpoint.current =
+				advance(
 					step.type === "check"
 						? this.nextStep(steps, step, output)
-						: readStep(step, "fix")!;
+						: readStep(step, "fix")!,
+				);
 				checkpoint.active = undefined;
 				continue;
 			}
@@ -3447,6 +3904,7 @@ export class WorkflowRuntime {
 						? impactSourceId
 						: this.nextStep(steps, step, output);
 				if (
+					!outcomes.includes(fixer) &&
 					!steps.some(
 						(item) =>
 							item.id === fixer && ["agent", "script"].includes(item.type),
@@ -3466,14 +3924,15 @@ export class WorkflowRuntime {
 							| undefined,
 						context,
 					);
-				checkpoint.current = fixer;
+				advance(fixer);
 				checkpoint.active = undefined;
 				continue;
 			}
 			if (
 				step.type === "agent" &&
 				hasCheck(step, "architecture-revision") &&
-				readPath(output, "architectureRevision") === true
+				readPath(output, "architectureRevision") === true &&
+				!outcomes.includes(this.nextStep(steps, step, output))
 			) {
 				const decisionStep = architectureRevisionDecision(step, steps);
 				const target = String(
@@ -3517,7 +3976,7 @@ export class WorkflowRuntime {
 					);
 				// Keep the accepted graph: a rejected review returns to its configured
 				// candidate route with the explicit answer, never an implicit acceptance.
-				checkpoint.current = this.nextStep(steps, step, output);
+				advance(this.nextStep(steps, step, output));
 				checkpoint.active = undefined;
 				await this.save(run);
 				continue;
@@ -3575,7 +4034,11 @@ export class WorkflowRuntime {
 							: policy === "never"
 								? "Operator configured approval=never"
 								: proposal.content.rationale;
-						outputs[planOutput] = structuredClone(proposal.content.candidate);
+						writeBoundOutput(
+							context,
+							"plan",
+							structuredClone(proposal.content.candidate),
+						);
 						outputs[step.id] = {
 							decision: "routine",
 							proposalId: proposal.id,
@@ -3594,7 +4057,7 @@ export class WorkflowRuntime {
 							source,
 							stepKey: key,
 							planOutput: config.explicit
-								? `${prefix}${planOutput}`
+								? boundStepKey(context, "plan")!
 								: planOutput,
 						};
 						await this.save(run);
@@ -3640,7 +4103,11 @@ export class WorkflowRuntime {
 						decision: proposal.status === "accepted" ? "accept" : "revise",
 					};
 					if (proposal.status === "accepted")
-						outputs[planOutput] = structuredClone(proposal.content.candidate);
+						writeBoundOutput(
+							context,
+							"plan",
+							structuredClone(proposal.content.candidate),
+						);
 					else {
 						const target = readStep(step, "revise");
 						if (
@@ -3720,7 +4187,7 @@ export class WorkflowRuntime {
 					throw new Error(
 						"Changed review scope needs an explicit rework route before human approval",
 					);
-				checkpoint.current = next;
+				advance(next);
 				checkpoint.active = undefined;
 				await this.save(run);
 				signal.throwIfAborted();
@@ -3809,6 +4276,14 @@ export class WorkflowRuntime {
 				checkpoint.refreshes!.pop();
 				checkpoint.current = refreshing.target;
 				checkpoint.active = refreshing.active;
+			} else if (checkpoint.producerRefresh?.source === step.id) {
+				const saved = checkpoint.producerRefresh;
+				checkpoint.current = saved.current;
+				checkpoint.active = saved.active;
+				checkpoint.outcome = saved.outcome;
+				delete checkpoint.producerRefresh;
+				await this.save(run);
+				return outputs;
 			} else {
 				const next = this.nextStep(steps, step, output);
 				if (
@@ -3826,7 +4301,7 @@ export class WorkflowRuntime {
 						`Item ended with ${String(readPath(output, "status") ?? "incomplete evidence")} at ${key}`,
 					);
 				}
-				checkpoint.current = next;
+				advance(next);
 				checkpoint.active = undefined;
 			}
 			this.log(run, key, `Finished ${step.name}`);
@@ -4672,6 +5147,69 @@ export class WorkflowRuntime {
 		return run;
 	}
 
+	/** Locate a real sequential action without flattening or changing its accepted Call closure. */
+	private actionPath(
+		run: FactoryRun,
+		root: Workflow,
+		tool: string,
+	): WorkflowStep[] | undefined {
+		const find = (
+			definition: Workflow,
+			seen: Set<string>,
+		): WorkflowStep[] | undefined => {
+			for (const step of definition.steps) {
+				if (step.tool === tool) return [step];
+				if (step.type !== "workflow" || seen.has(step.workflow!)) continue;
+				const child = run.workflowDefinitions?.find(
+					(w) => w.id === step.workflow,
+				);
+				const path = child && find(child, new Set([...seen, child.id]));
+				if (path) return [step, ...path];
+			}
+			return undefined;
+		};
+		return find(root, new Set([root.id]));
+	}
+	private outcomePath(run: FactoryRun, root: Workflow, path?: WorkflowStep[]) {
+		return Boolean(
+			root.outcomes?.length ||
+				path?.some(
+					(s) =>
+						s.type === "workflow" &&
+						run.workflowDefinitions?.find((w) => w.id === s.workflow)?.outcomes
+							?.length,
+				),
+		);
+	}
+	/** Explicit audited re-entry retains original children, native sessions, visits and output ownership. */
+	private reenterAction(run: FactoryRun, root: Workflow, path: WorkflowStep[]) {
+		const enter = (frame: GraphCheckpoint, remaining: WorkflowStep[]): void => {
+			const step = remaining[0]!;
+			const active = frame.current === step.id ? frame.active : undefined;
+			frame.current = step.id;
+			delete frame.outcome;
+			delete frame.entry;
+			if (remaining.length === 1) {
+				frame.active = undefined;
+				return;
+			}
+			const childDefinition = run.workflowDefinitions!.find(
+				(w) => w.id === step.workflow,
+			)!;
+			const child =
+				frame.calls?.[step.id] ??
+				active?.children?.[0] ??
+				this.newCheckpoint(childDefinition.steps);
+			enter(child, remaining.slice(1));
+			if (childDefinition.outcomes?.length) {
+				frame.calls ??= {};
+				frame.calls[step.id] = child;
+			}
+			frame.active = { phase: "executing", children: [child] };
+		};
+		run.checkpoint ??= this.newCheckpoint(root.steps);
+		enter(run.checkpoint, path);
+	}
 	reverifyExternal(id: string, actor: string): FactoryRun {
 		const run = this.get(id);
 		if (
@@ -4693,12 +5231,17 @@ export class WorkflowRuntime {
 				["running", "waiting", "interrupted"].includes(other.status)
 			)
 				throw new Error("Another run owns this ticket");
-		const definition = [
-			run.recoveryWorkflow,
-			run.workflow,
-			...(run.workflowDefinitions ?? []),
-		].find((w) => w?.steps.some((s) => s.tool === "external-verify"));
-		if (!definition)
+		const root = run.recoveryWorkflow ?? run.workflow;
+		const path = this.actionPath(run, root, "external-verify");
+		const composed = this.outcomePath(run, root, path);
+		const definition = composed
+			? root
+			: [
+					run.recoveryWorkflow,
+					run.workflow,
+					...(run.workflowDefinitions ?? []),
+				].find((w) => w?.steps.some((s) => s.tool === "external-verify"));
+		if (!definition || (composed && !path))
 			throw new Error("Accepted workflow has no external reverification path");
 		run.externalReverifications ??= [];
 		run.externalReverifications.push({
@@ -4712,18 +5255,26 @@ export class WorkflowRuntime {
 			id: "external-reverification",
 			name: "Renewed external verification",
 		};
-		const reverify = run.recoveryWorkflow.steps.find(
-			(s) => s.tool === "external-verify",
-		);
-		if (!reverify)
-			throw new Error("External recovery has no independent verifier");
-		run.checkpoint = { current: reverify.id, visits: {} };
+		if (composed) this.reenterAction(run, root, path!);
+		else
+			run.checkpoint = {
+				current: run.recoveryWorkflow.steps.find(
+					(s) => s.tool === "external-verify",
+				)!.id,
+				visits: {},
+			};
 		delete run.reviewGate;
 		delete run.delivery.finalCheck;
-		const final = run.recoveryWorkflow.steps.find(
-			(s) => s.tool === "external-final",
+		const finalPath = this.actionPath(
+			run,
+			run.recoveryWorkflow,
+			"external-final",
 		);
-		if (final) run.outputs[final.id] = { drift: true, complete: false };
+		if (finalPath)
+			run.outputs[finalPath.map((s) => s.id).join("/")] = {
+				drift: true,
+				complete: false,
+			};
 		for (const receipt of run.ticketSync.receipts)
 			if (receipt.completion && !receipt.delivered && !receipt.superseded) {
 				receipt.superseded = true;
@@ -4796,18 +5347,30 @@ export class WorkflowRuntime {
 			previousCheckpoint: structuredClone(run.checkpoint),
 			contractDigest: reviewedDigest,
 		};
-		const stock = defaultWorkflows.find((w) => w.id === "factory-pipeline")!;
-		run.recoveryWorkflow = {
-			...structuredClone(stock),
-			id: "external-recovery",
-			name: "Audited external recovery",
-		};
-		const reverify = run.recoveryWorkflow.steps.find(
-			(s) => s.tool === "external-verify",
-		);
-		if (!reverify)
-			throw new Error("External recovery has no independent verifier");
-		run.checkpoint = { current: reverify.id, visits: {} };
+		const root = run.recoveryWorkflow ?? run.workflow;
+		const path = this.actionPath(run, root, "external-verify");
+		if (path && this.outcomePath(run, root, path)) {
+			run.recoveryWorkflow = {
+				...structuredClone(root),
+				id: "external-recovery",
+				name: "Audited external recovery",
+			};
+			this.reenterAction(run, root, path);
+		} else {
+			// Bounded pre-142 recovery adapter: frozen runs keep the exact former destination.
+			run.recoveryWorkflow = {
+				...structuredClone(stockWorkflowMetadata["factory-pipeline"]!),
+				steps: structuredClone(Object.values(stockFactorySteps)),
+				id: "external-recovery",
+				name: "Audited external recovery",
+			};
+			run.checkpoint = {
+				current: run.recoveryWorkflow.steps.find(
+					(s) => s.tool === "external-verify",
+				)!.id,
+				visits: {},
+			};
+		}
 		delete run.reviewGate;
 		run.status = "running";
 		delete run.error;
@@ -4905,36 +5468,43 @@ export class WorkflowRuntime {
 		prefix: string,
 		fixer: string,
 	) {
-		for (const assessor of steps) {
+		const call = stepForRun(run, prefix.replace(/\/$/, ""));
+		const names = [
+			...steps.map((step) => step.id),
+			...Object.keys(call?.bindings ?? {}),
+		];
+		const candidates = [
+			...new Set(names.map((name) => producerKey(run, prefix, name))),
+		];
+		for (const sourceKey of candidates) {
+			const assessor = stepForRun(run, sourceKey);
 			if (
+				!assessor ||
 				!hasCheck(assessor, "impact-reuse") ||
-				!readStep(assessor, "fanout") ||
-				!assessor.branches.some(
-					(branch) =>
-						branch.when.path === "correctionRequired" &&
-						branch.when.equals === true &&
-						branch.next === fixer,
-				)
+				!readStep(assessor, "fanout")
 			)
 				continue;
-			// A blocked assessment can route here after its assistance answer. It is
-			// still an obligation, though it cannot authorize evidence reuse.
+			const fanoutKey = boundStepKey(
+				{ run, step: assessor, stepKey: sourceKey },
+				"fanout",
+			);
 			const decision = [...(run.impactDecisions ?? [])]
 				.reverse()
-				.find(
-					(item) =>
-						item.snapshot.key === `${prefix}${readStep(assessor, "fanout")}`,
-				);
+				.find((item) => item.snapshot.key === fanoutKey);
+			const original =
+				sourceKey.startsWith(prefix) &&
+				sourceKey.slice(prefix.length) === assessor.id
+					? outputs[assessor.id]
+					: producerValue(run, sourceKey);
 			if (
 				!decision?.correctionRequired ||
-				readPath(outputs[assessor.id], "snapshot.digest") !==
-					decision.snapshot.digest ||
-				readPath(outputs[assessor.id], "at") !== decision.at ||
-				this.nextStep(steps, assessor, decision) !== fixer
+				readPath(original, "snapshot.digest") !== decision.snapshot.digest ||
+				readPath(original, "at") !== decision.at ||
+				nextProducerKey(run, sourceKey, decision) !== `${prefix}${fixer}`
 			)
 				continue;
 			return {
-				source: `${prefix}${assessor.id}`,
+				source: sourceKey,
 				required: true,
 				snapshotDigest: decision.snapshot.digest,
 				summary: decision.summary,
@@ -4959,7 +5529,36 @@ export class WorkflowRuntime {
 		const assessor = steps.find(
 			(s) => s.id === source && hasCheck(s, "impact-reuse"),
 		);
-		if (!assessor) return false;
+		if (!assessor) {
+			const definition = run.workflowDefinitions?.find((item) =>
+				item.steps.some((step) => step === current),
+			);
+			const route = current?.branches.find(
+				(branch) =>
+					branch.when.path === "impactRequired" && branch.when.equals === true,
+			);
+			const key =
+				current &&
+				boundStepKey(
+					{ run, step: current, stepKey: `${prefix}${current.id}` },
+					"impact",
+				);
+			if (
+				!route ||
+				!definition?.outcomes?.includes(route.next) ||
+				!hasCheck(stepForRun(run, key) ?? {}, "impact-reuse")
+			)
+				return false;
+			frame.outcome = route.next;
+			frame.current = "end";
+			frame.active = undefined;
+			this.log(
+				run,
+				"run",
+				`Returning ${route.next} to renew its declared impact source; original frames, pass limits and evidence remain retained.`,
+			);
+			return true;
+		}
 		frame.current = assessor.id;
 		frame.active = undefined;
 		this.log(
@@ -4992,7 +5591,8 @@ export class WorkflowRuntime {
 				run.error === STALE_IMPACT_MESSAGE &&
 				this.renewStaleImpact(run, frame, steps, prefix)
 			)
-				step = steps.find((s) => s.id === frame.current)!;
+				step = steps.find((s) => s.id === frame.current);
+			if (!step) return;
 			const key = `${prefix}${step.id}`;
 			if (frame.active?.terminalFailure) {
 				const native = frame.active.agent;

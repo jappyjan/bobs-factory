@@ -9,7 +9,6 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { presentationOutputKeys } from "../src/factory/RunOutputRoles.js";
 import { hasCheck } from "../src/factory/StepConfig.js";
 import { validateWorkflows, WorkflowSchema } from "../src/factory/Workflow.js";
@@ -17,6 +16,7 @@ import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { guideRevision } from "../src/factory/web/review-state.js";
 import { roleOutput } from "../src/factory/web/run-output.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 import { renamedFactory } from "./fixtures/renamed-factory.js";
 
 it("keeps renamed Factory review cards, lazy guide artifacts and media bound to configured producers", async () => {

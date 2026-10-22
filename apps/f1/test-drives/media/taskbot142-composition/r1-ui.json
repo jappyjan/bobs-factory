@@ -1,0 +1,956 @@
+{
+  "build": "96ef50a950dac9b8f6869e54",
+  "runtime": "Node24.21.0",
+  "fork": {
+    "id": "fork-6c4995b2-79bb-411b-bdfc-a0aaecad43ab",
+    "stepConfigVersion": "step-config-v1",
+    "inputs": [
+      "clarify",
+      "decisions",
+      "plan",
+      "plan-review",
+      "architecture",
+      "architecture-review",
+      "architecture-decision",
+      "implement",
+      "draft-pr",
+      "assess-impact",
+      "extract-requirements",
+      "impact-checks",
+      "specialist-review",
+      "review-gate",
+      "ci",
+      "visual-scope",
+      "capture",
+      "visual-review",
+      "visual-gate",
+      "code-fix",
+      "ci-fix",
+      "after-ci-fix-observe",
+      "after-ci-fix",
+      "visual-fix",
+      "guide",
+      "handoff",
+      "human-review",
+      "human-fix",
+      "merge",
+      "delivery-feedback-route",
+      "delivery-route-accept",
+      "delivery-route",
+      "delivery-deferred",
+      "external-apply",
+      "external-verify",
+      "external-after-verify",
+      "external-guide",
+      "external-human-review",
+      "external-correction",
+      "external-final",
+      "external-reverify"
+    ],
+    "outcomes": [
+      "completed",
+      "to-ci-fix",
+      "to-ci",
+      "to-architecture"
+    ],
+    "name": "Review loop fork",
+    "description": "Reusable review loop with declared inputs and original delivery safeguards.",
+    "labels": [],
+    "steps": [
+      {
+        "id": "assess-impact",
+        "configVersion": "step-config-v1",
+        "reads": {
+          "inventory": "extract-requirements",
+          "fanout": "specialist-review",
+          "ci": "ci",
+          "feedback": "@feedback",
+          "scopeClarify": "clarify",
+          "scopeDecisions": "decisions",
+          "scopePlan": "plan",
+          "scopeSource": "@source",
+          "scopeTicket": "@ticket"
+        },
+        "output": {
+          "format": "impact-v1"
+        },
+        "rules": [],
+        "checks": [
+          "architecture-revision",
+          {
+            "check": "impact-reuse",
+            "maxUnchangedCycles": 3
+          },
+          {
+            "check": "scope-inputs",
+            "sources": {
+              "clarify": "scopeClarify",
+              "decisions": "scopeDecisions",
+              "plan": "scopePlan",
+              "existing-work": "scopeExistingWork",
+              "assess-existing": "scopeAssessment",
+              "source": "scopeSource",
+              "ticket": "scopeTicket"
+            }
+          }
+        ],
+        "access": {
+          "mode": "workspace"
+        },
+        "instructions": [],
+        "name": "Assess changed work and retained evidence",
+        "next": "impact-checks",
+        "branches": [
+          {
+            "when": {
+              "path": "architectureRevision",
+              "equals": true
+            },
+            "next": "to-architecture"
+          },
+          {
+            "when": {
+              "path": "correctionRequired",
+              "equals": true
+            },
+            "next": "to-ci-fix"
+          },
+          {
+            "when": {
+              "path": "readinessOnly",
+              "equals": true
+            },
+            "next": "to-ci"
+          },
+          {
+            "when": {
+              "path": "extractRequirements",
+              "equals": true
+            },
+            "next": "extract-requirements"
+          }
+        ],
+        "maxVisits": 200,
+        "type": "agent",
+        "prompt": "Independently assess /impactSnapshot, actual repository diffs (including cumulative changes since prior explicit approval), prior original receipts and unresolved findings. Fixer summaries never authorize reuse. Discover commands and conventions in ALL selected repositories; never infer safety from filenames, line count or unchanged head alone. Inspect whether test changes weaken assertions or coverage. Assess combined merge trees and target-only changes separately from task regressions. Unknown dependencies, conflicts, migrations, security boundaries, changed scope or unavailable evidence require broader inspection and relevant validation. Select only configured reviewer IDs from the snapshot. First review executes all roles. Reuse only completed resolved receipts with runtime dependency provenance; supply their exact receipt digest, boundary and a concrete independence reason. Unaffected areas retain original evidence, never claim a new review executed. Track future QA/guide/human/provider obligations at their own gates. Optional cleanup remains visible and nonblocking. Prior explicit approval can continue for an evidenced safe minor correction, including production code, only after all required evidence passes; uncertain or meaningful changes and human rejection require renewed approval. Assess the cumulative delta. Return impact-v1 with status, summary, correctionRequired:boolean, readinessOnly:boolean, commentAssessments:[{id,repositoryId (required for grouped deliveries unless id is repositoryId:commentId),bodySha256,disposition:\"informational|consequential|accepted-unchanged\",reason}], classification:\"none|affected|full\", rationale, uncertainty:[], extractRequirements:boolean, scopeReuse:{inventoryDigest,originalSourceDigest,reason} only when independently inspecting new feedback proves accepted requirements unchanged, specialists:[configured IDs], requirementIds:[], checks:[{id,repositoryId,command,reason,environment:{isolation:\"worktree\"} or {isolation:\"shared\",resources:[stable identities]}}], qaCriteria:[criterion IDs], qaReuse:[{criterionId,originalDigest,reason}], reuse:[{reviewer,receiptDigest,reason,boundary:{requirementIds,areas,dependencies,independence}}], invalidate:[{receiptDigest,reason}], targetCompatible:boolean, testAssertions:{inspected,weakened,evidence}, humanReview:\"no-prior-approval|continue-after-checks|renew\", approvalRationale and questions:[]. Missing inputs require blocked and a specific question. commentAssessments may identify ONLY supplied PR feedback from /feedback/readiness/unassessedComments, using its exact IDs and bodySha256 values. Originating ticket comments, assignment notices and chat messages are task inputs, never PR comment assessments. Return commentAssessments:[] when no PR feedback is supplied. Do not mutate files or run corrective agents. Every original configured role needs fresh execution or explicit valid reuse. Missing legacy provenance requires fresh review.",
+        "json": true,
+        "askQuestions": true
+      },
+      {
+        "id": "extract-requirements",
+        "configVersion": "step-config-v1",
+        "reads": {
+          "scopeClarify": "clarify",
+          "scopeDecisions": "decisions",
+          "scopePlan": "plan",
+          "scopeSource": "@source",
+          "scopeTicket": "@ticket"
+        },
+        "output": {
+          "format": "inventory-v1"
+        },
+        "rules": [],
+        "checks": [
+          "architecture-revision",
+          "inventory-evidence",
+          {
+            "check": "scope-inputs",
+            "sources": {
+              "clarify": "scopeClarify",
+              "decisions": "scopeDecisions",
+              "plan": "scopePlan",
+              "existing-work": "scopeExistingWork",
+              "assess-existing": "scopeAssessment",
+              "source": "scopeSource",
+              "ticket": "scopeTicket"
+            }
+          }
+        ],
+        "revision": "bound",
+        "access": {
+          "mode": "workspace"
+        },
+        "instructions": [
+          "review-stage-inventory",
+          "impact-inventory"
+        ],
+        "name": "Extract requirements",
+        "next": "impact-checks",
+        "branches": [
+          {
+            "when": {
+              "path": "architectureRevision",
+              "equals": true
+            },
+            "next": "to-architecture"
+          }
+        ],
+        "maxVisits": 16,
+        "type": "agent",
+        "prompt": "Extract scope independently of the implementation. Read complete originalInput (parse embedded JSON), ticket/acceptance criteria, ALL paginated comments, attachments/assets, clarification answers and accepted decisions/plan, later chat/human steering, takeover/PR discussions and past review rounds/dispositions through factory-context. Use /contextMemory/reviewLedger and /contextMemory/reviewRounds for historical claims and reasoning, following original outputPath records when scope or disagreement evidence is needed. Follow nextOffset to null. Missing source access requires a concrete questions entry; never omit unavailable scope. Read previous inventories, retain every historical ID and decision, and record amendments/supersessions with changeReason. Suggestions are not accepted scope. Contradictions stay in conflicts and questions until explicitly resolved outside fanout. Scope decisions require explicit human acceptance, rationale and source, not a reviewer preference. Follow the runtime decision-attribution rule: use a recorded name when available, otherwise identify the Factory operator with the name not recorded; do not ask for a name merely to complete attribution. Use kind:\"skip\" only for an explicit scope waiver, and list the precise requirementIds it authorizes skipping; other accepted scope decisions use kind:\"scope\". List considered sources and unavailable sources in sourceReceipt. Semantic extraction completeness needs source inspection; structural validation alone cannot prove it.\nReturn {\"schemaVersion\":1,\"requirements\":[{\"id\":\"R1\",\"criterion\":\"testable accepted outcome\",\"classification\":\"active or suggestion or superseded\",\"sources\":[{\"source\":\"originalInput or context record or source URL\",\"reference\":\"JSON Pointer/comment/attachment identifier\"}],\"changeReason\":\"required for an amendment\",\"supersedes\":[]}],\"decisions\":[{\"id\":\"D1\",\"acceptedBy\":\"recorded person or Factory operator (name not recorded)\",\"kind\":\"scope or skip\",\"requirementIds\":[\"R1\"],\"rationale\":\"accepted scope rationale\",\"source\":{\"source\":\"source\",\"reference\":\"record identifier\"}}],\"conflicts\":[{\"id\":\"C1\",\"description\":\"unresolved scope question\",\"sources\":[{\"source\":\"source\",\"reference\":\"record\"}]}],\"sourceReceipt\":{\"considered\":[{\"source\":\"source\",\"reference\":\"record\"}],\"unavailable\":[]},\"questions\":[]}. Runtime owns inventory version/digest. Do not change product files.{{instruction:impact-inventory}}",
+        "json": true,
+        "askQuestions": true
+      },
+      {
+        "id": "impact-checks",
+        "configVersion": "step-config-v1",
+        "reads": {
+          "impact": "assess-impact",
+          "scopeClarify": "clarify",
+          "scopeDecisions": "decisions",
+          "scopePlan": "plan",
+          "scopeSource": "@source",
+          "scopeTicket": "@ticket",
+          "draftPr": "draft-pr",
+          "ci": "ci",
+          "guide": "guide",
+          "reviewGate": "review-gate",
+          "handoff": "handoff",
+          "merge": "merge"
+        },
+        "rules": [],
+        "checks": [
+          "impact-boundary",
+          {
+            "check": "scope-inputs",
+            "sources": {
+              "clarify": "scopeClarify",
+              "decisions": "scopeDecisions",
+              "plan": "scopePlan",
+              "existing-work": "scopeExistingWork",
+              "assess-existing": "scopeAssessment",
+              "source": "scopeSource",
+              "ticket": "scopeTicket"
+            }
+          }
+        ],
+        "access": {
+          "mode": "workspace"
+        },
+        "instructions": [],
+        "name": "Run independently selected checks",
+        "next": "specialist-review",
+        "branches": [],
+        "maxVisits": 200,
+        "type": "tool",
+        "tool": "impact-checks",
+        "args": []
+      },
+      {
+        "id": "specialist-review",
+        "configVersion": "step-config-v1",
+        "reads": {
+          "inventory": "extract-requirements",
+          "impact": "assess-impact",
+          "scopeClarify": "clarify",
+          "scopeDecisions": "decisions",
+          "scopePlan": "plan",
+          "scopeSource": "@source",
+          "scopeTicket": "@ticket"
+        },
+        "rules": [],
+        "checks": [
+          "review-boundary",
+          "impact-boundary",
+          {
+            "check": "scope-inputs",
+            "sources": {
+              "clarify": "scopeClarify",
+              "decisions": "scopeDecisions",
+              "plan": "scopePlan",
+              "existing-work": "scopeExistingWork",
+              "assess-existing": "scopeAssessment",
+              "source": "scopeSource",
+              "ticket": "scopeTicket"
+            }
+          }
+        ],
+        "access": {
+          "mode": "workspace"
+        },
+        "instructions": [],
+        "name": "Parallel specialist review",
+        "next": "review-gate",
+        "branches": [],
+        "maxVisits": 16,
+        "type": "fanout",
+        "groups": [
+          [
+            {
+              "id": "security-review",
+              "configVersion": "step-config-v1",
+              "reads": {
+                "scopeSource": "@source",
+                "scopeTicket": "@ticket"
+              },
+              "output": {
+                "format": "specialist-v1"
+              },
+              "rules": [],
+              "checks": [
+                "specialist-evidence",
+                {
+                  "check": "scope-inputs",
+                  "sources": {
+                    "clarify": "scopeClarify",
+                    "decisions": "scopeDecisions",
+                    "plan": "scopePlan",
+                    "existing-work": "scopeExistingWork",
+                    "assess-existing": "scopeAssessment",
+                    "source": "scopeSource",
+                    "ticket": "scopeTicket"
+                  }
+                }
+              ],
+              "revision": "bound",
+              "access": {
+                "mode": "workspace"
+              },
+              "instructions": [
+                "review-stage-specialist",
+                "review-completion"
+              ],
+              "name": "Security and data protection",
+              "branches": [],
+              "maxVisits": 16,
+              "type": "agent",
+              "prompt": "Own authorization, trust boundaries, secrets, untrusted input and consequential data exposure. Avoid general style or business scope review.\nRead /reviewBaseline first. Review ONLY the frozen clean head/base and requirement inventory in that baseline. All reviewers receive the same immutable context and history cutoff. Read /contextMemory/reviewLedger and /contextMemory/reviewRounds when present; these preserve previous findings, fixer dispositions and review reasoning. Use original outputPath records for relevant disagreement or evidence details, rather than rereading every old review output. Without compact memory, read complete previous review rounds and fixer dispositions. Preserve stable local finding IDs. Reassess every prior open rating 2/3 finding. Settled findings may reopen only with freshEvidence describing new evidence or changed requirements. Resolved or accepted-rejection needs concrete evidence and reason. A fixer saying fixed is not proof. Preserve contradictory recommendations in disagreements until evidence resolves them. Removing a prior disagreement requires disputeResolutions:[{disagreement,reason,evidence}]. To reassess an inherited finding from a removed reviewer, use inheritedDispositions:[{id:\"reviewer:local-id\",status:\"resolved or accepted-rejection\",reason,evidence}]. Unmentioned inherited complaints remain open. Do not change product files, commit, publish, run hidden harness subagents or ask a question inside fanout. Report missing evidence instead of inventing a pass. Ratings: 1 nonblocking observation, 2 consequential should-fix, 3 must-fix.\nReturn {\"summary\":\"concrete result\",\"findings\":[{\"id\":\"stable-local-id\",\"rating\":2,\"summary\":\"concrete failure\",\"evidence\":\"file:line or actual check receipt\",\"status\":\"open or resolved or accepted-rejection\",\"requirementIds\":[\"stable inventory ID\"],\"reason\":\"required for settled dispositions\",\"freshEvidence\":\"required for reopening settled findings\"}],\"disagreements\":[\"unresolved conflicting recommendation and evidence\"]}. Runtime owns reviewer/revision/round stamps. Do not claim later QA executed; distinguish current code/local checks from future QA.",
+              "json": true,
+              "askQuestions": false
+            }
+          ],
+          [
+            {
+              "id": "architecture-review",
+              "configVersion": "step-config-v1",
+              "reads": {
+                "scopeSource": "@source",
+                "scopeTicket": "@ticket"
+              },
+              "output": {
+                "format": "specialist-v1"
+              },
+              "rules": [],
+              "checks": [
+                "specialist-evidence",
+                {
+                  "check": "scope-inputs",
+                  "sources": {
+                    "clarify": "scopeClarify",
+                    "decisions": "scopeDecisions",
+                    "plan": "scopePlan",
+                    "existing-work": "scopeExistingWork",
+                    "assess-existing": "scopeAssessment",
+                    "source": "scopeSource",
+                    "ticket": "scopeTicket"
+                  }
+                }
+              ],
+              "revision": "bound",
+              "access": {
+                "mode": "workspace"
+              },
+              "instructions": [
+                "review-stage-specialist",
+                "review-completion"
+              ],
+              "name": "Architecture and module boundaries",
+              "branches": [],
+              "maxVisits": 16,
+              "type": "agent",
+              "prompt": "Own responsibilities, dependency direction, domain/API seams and interface compatibility. Avoid speculative redesign and local style.\nRead /reviewBaseline first. Review ONLY the frozen clean head/base and requirement inventory in that baseline. All reviewers receive the same immutable context and history cutoff. Read /contextMemory/reviewLedger and /contextMemory/reviewRounds when present; these preserve previous findings, fixer dispositions and review reasoning. Use original outputPath records for relevant disagreement or evidence details, rather than rereading every old review output. Without compact memory, read complete previous review rounds and fixer dispositions. Preserve stable local finding IDs. Reassess every prior open rating 2/3 finding. Settled findings may reopen only with freshEvidence describing new evidence or changed requirements. Resolved or accepted-rejection needs concrete evidence and reason. A fixer saying fixed is not proof. Preserve contradictory recommendations in disagreements until evidence resolves them. Removing a prior disagreement requires disputeResolutions:[{disagreement,reason,evidence}]. To reassess an inherited finding from a removed reviewer, use inheritedDispositions:[{id:\"reviewer:local-id\",status:\"resolved or accepted-rejection\",reason,evidence}]. Unmentioned inherited complaints remain open. Do not change product files, commit, publish, run hidden harness subagents or ask a question inside fanout. Report missing evidence instead of inventing a pass. Ratings: 1 nonblocking observation, 2 consequential should-fix, 3 must-fix.\nReturn {\"summary\":\"concrete result\",\"findings\":[{\"id\":\"stable-local-id\",\"rating\":2,\"summary\":\"concrete failure\",\"evidence\":\"file:line or actual check receipt\",\"status\":\"open or resolved or accepted-rejection\",\"requirementIds\":[\"stable inventory ID\"],\"reason\":\"required for settled dispositions\",\"freshEvidence\":\"required for reopening settled findings\"}],\"disagreements\":[\"unresolved conflicting recommendation and evidence\"]}. Runtime owns reviewer/revision/round stamps. Do not claim later QA executed; distinguish current code/local checks from future QA.",
+              "json": true,
+              "askQuestions": false
+            }
+          ],
+          [
+            {
+              "id": "integration-review",
+              "configVersion": "step-config-v1",
+              "reads": {
+                "scopeSource": "@source",
+                "scopeTicket": "@ticket"
+              },
+              "output": {
+                "format": "specialist-v1"
+              },
+              "rules": [],
+              "checks": [
+                "specialist-evidence",
+                {
+                  "check": "scope-inputs",
+                  "sources": {
+                    "clarify": "scopeClarify",
+                    "decisions": "scopeDecisions",
+                    "plan": "scopePlan",
+                    "existing-work": "scopeExistingWork",
+                    "assess-existing": "scopeAssessment",
+                    "source": "scopeSource",
+                    "ticket": "scopeTicket"
+                  }
+                }
+              ],
+              "revision": "bound",
+              "access": {
+                "mode": "workspace"
+              },
+              "instructions": [
+                "review-stage-specialist",
+                "review-completion"
+              ],
+              "name": "Repository fit and integration",
+              "branches": [],
+              "maxVisits": 16,
+              "type": "agent",
+              "prompt": "Own repository conventions, established reuse, config/migration wiring and surrounding integrations. Identify concrete omitted integration sites.\nRead /reviewBaseline first. Review ONLY the frozen clean head/base and requirement inventory in that baseline. All reviewers receive the same immutable context and history cutoff. Read /contextMemory/reviewLedger and /contextMemory/reviewRounds when present; these preserve previous findings, fixer dispositions and review reasoning. Use original outputPath records for relevant disagreement or evidence details, rather than rereading every old review output. Without compact memory, read complete previous review rounds and fixer dispositions. Preserve stable local finding IDs. Reassess every prior open rating 2/3 finding. Settled findings may reopen only with freshEvidence describing new evidence or changed requirements. Resolved or accepted-rejection needs concrete evidence and reason. A fixer saying fixed is not proof. Preserve contradictory recommendations in disagreements until evidence resolves them. Removing a prior disagreement requires disputeResolutions:[{disagreement,reason,evidence}]. To reassess an inherited finding from a removed reviewer, use inheritedDispositions:[{id:\"reviewer:local-id\",status:\"resolved or accepted-rejection\",reason,evidence}]. Unmentioned inherited complaints remain open. Do not change product files, commit, publish, run hidden harness subagents or ask a question inside fanout. Report missing evidence instead of inventing a pass. Ratings: 1 nonblocking observation, 2 consequential should-fix, 3 must-fix.\nReturn {\"summary\":\"concrete result\",\"findings\":[{\"id\":\"stable-local-id\",\"rating\":2,\"summary\":\"concrete failure\",\"evidence\":\"file:line or actual check receipt\",\"status\":\"open or resolved or accepted-rejection\",\"requirementIds\":[\"stable inventory ID\"],\"reason\":\"required for settled dispositions\",\"freshEvidence\":\"required for reopening settled findings\"}],\"disagreements\":[\"unresolved conflicting recommendation and evidence\"]}. Runtime owns reviewer/revision/round stamps. Do not claim later QA executed; distinguish current code/local checks from future QA.",
+              "json": true,
+              "askQuestions": false
+            }
+          ],
+          [
+            {
+              "id": "simplicity-review",
+              "configVersion": "step-config-v1",
+              "reads": {
+                "scopeSource": "@source",
+                "scopeTicket": "@ticket"
+              },
+              "output": {
+                "format": "specialist-v1"
+              },
+              "rules": [],
+              "checks": [
+                "specialist-evidence",
+                {
+                  "check": "scope-inputs",
+                  "sources": {
+                    "clarify": "scopeClarify",
+                    "decisions": "scopeDecisions",
+                    "plan": "scopePlan",
+                    "existing-work": "scopeExistingWork",
+                    "assess-existing": "scopeAssessment",
+                    "source": "scopeSource",
+                    "ticket": "scopeTicket"
+                  }
+                }
+              ],
+              "revision": "bound",
+              "access": {
+                "mode": "workspace"
+              },
+              "instructions": [
+                "review-stage-specialist",
+                "review-completion"
+              ],
+              "name": "Simplicity and maintainability",
+              "branches": [],
+              "maxVisits": 16,
+              "type": "agent",
+              "prompt": "Own unnecessary abstraction, duplication, speculative extensibility and disproportionate complexity. Explain maintenance cost and a smaller sufficient alternative.\nRead /reviewBaseline first. Review ONLY the frozen clean head/base and requirement inventory in that baseline. All reviewers receive the same immutable context and history cutoff. Read /contextMemory/reviewLedger and /contextMemory/reviewRounds when present; these preserve previous findings, fixer dispositions and review reasoning. Use original outputPath records for relevant disagreement or evidence details, rather than rereading every old review output. Without compact memory, read complete previous review rounds and fixer dispositions. Preserve stable local finding IDs. Reassess every prior open rating 2/3 finding. Settled findings may reopen only with freshEvidence describing new evidence or changed requirements. Resolved or accepted-rejection needs concrete evidence and reason. A fixer saying fixed is not proof. Preserve contradictory recommendations in disagreements until evidence resolves them. Removing a prior disagreement requires disputeResolutions:[{disagreement,reason,evidence}]. To reassess an inherited finding from a removed reviewer, use inheritedDispositions:[{id:\"reviewer:local-id\",status:\"resolved or accepted-rejection\",reason,evidence}]. Unmentioned inherited complaints remain open. Do not change product files, commit, publish, run hidden harness subagents or ask a question inside fanout. Report missing evidence instead of inventing a pass. Ratings: 1 nonblocking observation, 2 consequential should-fix, 3 must-fix.\nReturn {\"summary\":\"concrete result\",\"findings\":[{\"id\":\"stable-local-id\",\"rating\":2,\"summary\":\"concrete failure\",\"evidence\":\"file:line or actual check receipt\",\"status\":\"open or resolved or accepted-rejection\",\"requirementIds\":[\"stable inventory ID\"],\"reason\":\"required for settled dispositions\",\"freshEvidence\":\"required for reopening settled findings\"}],\"disagreements\":[\"unresolved conflicting recommendation and evidence\"]}. Runtime owns reviewer/revision/round stamps. Do not claim later QA executed; distinguish current code/local checks from future QA.",
+              "json": true,
+              "askQuestions": false
+            }
+          ],
+          [
+            {
+              "id": "correctness-review",
+              "configVersion": "step-config-v1",
+              "reads": {
+                "scopeSource": "@source",
+                "scopeTicket": "@ticket"
+              },
+              "output": {
+                "format": "specialist-v1"
+              },
+              "rules": [],
+              "checks": [
+                "specialist-evidence",
+                {
+                  "check": "scope-inputs",
+                  "sources": {
+                    "clarify": "scopeClarify",
+                    "decisions": "scopeDecisions",
+                    "plan": "scopePlan",
+                    "existing-work": "scopeExistingWork",
+                    "assess-existing": "scopeAssessment",
+                    "source": "scopeSource",
+                    "ticket": "scopeTicket"
+                  }
+                }
+              ],
+              "revision": "bound",
+              "access": {
+                "mode": "workspace"
+              },
+              "instructions": [
+                "review-stage-specialist",
+                "review-completion"
+              ],
+              "name": "Correctness and verification",
+              "branches": [],
+              "maxVisits": 16,
+              "type": "agent",
+              "prompt": "Own behavioral failures, boundaries, state/concurrency, error handling and actual verification gaps. Ground complaints in reproduction or code evidence.\nRead /reviewBaseline first. Review ONLY the frozen clean head/base and requirement inventory in that baseline. All reviewers receive the same immutable context and history cutoff. Read /contextMemory/reviewLedger and /contextMemory/reviewRounds when present; these preserve previous findings, fixer dispositions and review reasoning. Use original outputPath records for relevant disagreement or evidence details, rather than rereading every old review output. Without compact memory, read complete previous review rounds and fixer dispositions. Preserve stable local finding IDs. Reassess every prior open rating 2/3 finding. Settled findings may reopen only with freshEvidence describing new evidence or changed requirements. Resolved or accepted-rejection needs concrete evidence and reason. A fixer saying fixed is not proof. Preserve contradictory recommendations in disagreements until evidence resolves them. Removing a prior disagreement requires disputeResolutions:[{disagreement,reason,evidence}]. To reassess an inherited finding from a removed reviewer, use inheritedDispositions:[{id:\"reviewer:local-id\",status:\"resolved or accepted-rejection\",reason,evidence}]. Unmentioned inherited complaints remain open. Do not change product files, commit, publish, run hidden harness subagents or ask a question inside fanout. Report missing evidence instead of inventing a pass. Ratings: 1 nonblocking observation, 2 consequential should-fix, 3 must-fix.\nReturn {\"summary\":\"concrete result\",\"findings\":[{\"id\":\"stable-local-id\",\"rating\":2,\"summary\":\"concrete failure\",\"evidence\":\"file:line or actual check receipt\",\"status\":\"open or resolved or accepted-rejection\",\"requirementIds\":[\"stable inventory ID\"],\"reason\":\"required for settled dispositions\",\"freshEvidence\":\"required for reopening settled findings\"}],\"disagreements\":[\"unresolved conflicting recommendation and evidence\"]}. Runtime owns reviewer/revision/round stamps. Do not claim later QA executed; distinguish current code/local checks from future QA.",
+              "json": true,
+              "askQuestions": false
+            }
+          ],
+          [
+            {
+              "id": "requirements-review",
+              "configVersion": "step-config-v1",
+              "reads": {
+                "scopeSource": "@source",
+                "scopeTicket": "@ticket"
+              },
+              "output": {
+                "format": "coverage-v1"
+              },
+              "rules": [],
+              "checks": [
+                {
+                  "check": "specialist-evidence",
+                  "coverage": true
+                },
+                {
+                  "check": "scope-inputs",
+                  "sources": {
+                    "clarify": "scopeClarify",
+                    "decisions": "scopeDecisions",
+                    "plan": "scopePlan",
+                    "existing-work": "scopeExistingWork",
+                    "assess-existing": "scopeAssessment",
+                    "source": "scopeSource",
+                    "ticket": "scopeTicket"
+                  }
+                }
+              ],
+              "revision": "bound",
+              "access": {
+                "mode": "workspace"
+              },
+              "instructions": [
+                "review-stage-coverage",
+                "review-completion"
+              ],
+              "name": "Business requirements and acceptance",
+              "branches": [],
+              "maxVisits": 16,
+              "type": "agent",
+              "prompt": "Own complete acceptance coverage. Assess EVERY active requirement exactly once; preserve superseded/suggestion records as context. Return coverage:[{requirementId,status:'met or not_met or deliberately_skipped',evidence:['concrete evidence at frozen revision'],reason:'why',decisionId:'accepted decision for deliberate skip'}] alongside review fields. Missing or inconclusive evidence is not_met, with an actionable open rating 2/3 finding referencing the ID. A skip needs an explicitly accepted decision, recorded person or unnamed Factory operator, rationale and source. Missing personal-name metadata alone cannot block coverage. Do not let reviewer/fixer preference waive scope.\nRead /reviewBaseline first. Review ONLY the frozen clean head/base and requirement inventory in that baseline. All reviewers receive the same immutable context and history cutoff. Read /contextMemory/reviewLedger and /contextMemory/reviewRounds when present; these preserve previous findings, fixer dispositions and review reasoning. Use original outputPath records for relevant disagreement or evidence details, rather than rereading every old review output. Without compact memory, read complete previous review rounds and fixer dispositions. Preserve stable local finding IDs. Reassess every prior open rating 2/3 finding. Settled findings may reopen only with freshEvidence describing new evidence or changed requirements. Resolved or accepted-rejection needs concrete evidence and reason. A fixer saying fixed is not proof. Preserve contradictory recommendations in disagreements until evidence resolves them. Removing a prior disagreement requires disputeResolutions:[{disagreement,reason,evidence}]. To reassess an inherited finding from a removed reviewer, use inheritedDispositions:[{id:\"reviewer:local-id\",status:\"resolved or accepted-rejection\",reason,evidence}]. Unmentioned inherited complaints remain open. Do not change product files, commit, publish, run hidden harness subagents or ask a question inside fanout. Report missing evidence instead of inventing a pass. Ratings: 1 nonblocking observation, 2 consequential should-fix, 3 must-fix.\nReturn {\"summary\":\"concrete result\",\"findings\":[{\"id\":\"stable-local-id\",\"rating\":2,\"summary\":\"concrete failure\",\"evidence\":\"file:line or actual check receipt\",\"status\":\"open or resolved or accepted-rejection\",\"requirementIds\":[\"stable inventory ID\"],\"reason\":\"required for settled dispositions\",\"freshEvidence\":\"required for reopening settled findings\"}],\"disagreements\":[\"unresolved conflicting recommendation and evidence\"]}. Runtime owns reviewer/revision/round stamps. Do not claim later QA executed; distinguish current code/local checks from future QA.",
+              "json": true,
+              "askQuestions": false
+            }
+          ]
+        ]
+      },
+      {
+        "id": "review-gate",
+        "configVersion": "step-config-v1",
+        "reads": {
+          "fix": "code-fix",
+          "inventory": "extract-requirements",
+          "fanout": "specialist-review",
+          "impact": "assess-impact",
+          "scopeClarify": "clarify",
+          "scopeDecisions": "decisions",
+          "scopePlan": "plan",
+          "scopeSource": "@source",
+          "scopeTicket": "@ticket",
+          "draftPr": "draft-pr",
+          "ci": "ci",
+          "guide": "guide",
+          "reviewGate": "review-gate",
+          "handoff": "handoff",
+          "merge": "merge"
+        },
+        "rules": [],
+        "checks": [
+          "review-boundary",
+          "impact-boundary",
+          {
+            "check": "scope-inputs",
+            "sources": {
+              "clarify": "scopeClarify",
+              "decisions": "scopeDecisions",
+              "plan": "scopePlan",
+              "existing-work": "scopeExistingWork",
+              "assess-existing": "scopeAssessment",
+              "source": "scopeSource",
+              "ticket": "scopeTicket"
+            }
+          },
+          "review-evidence",
+          "review-assistance"
+        ],
+        "access": {
+          "mode": "workspace"
+        },
+        "instructions": [],
+        "name": "Check review findings",
+        "next": "end",
+        "branches": [
+          {
+            "when": {
+              "path": "reviewIncomplete",
+              "equals": true
+            },
+            "next": "assess-impact"
+          },
+          {
+            "when": {
+              "path": "reviewBlocked",
+              "equals": true
+            },
+            "next": "code-fix"
+          },
+          {
+            "when": {
+              "path": "approved",
+              "equals": false
+            },
+            "next": "code-fix"
+          }
+        ],
+        "maxVisits": 200,
+        "type": "check",
+        "check": {
+          "results": {
+            "approved": {
+              "all": [
+                {
+                  "count": "/evidence/review-evidence/findings",
+                  "where": {
+                    "all": [
+                      {
+                        "path": "/status",
+                        "equals": "open"
+                      },
+                      {
+                        "path": "/rating",
+                        "min": 2
+                      }
+                    ]
+                  },
+                  "max": 0
+                },
+                {
+                  "path": "/evidence/review-evidence/disagreements",
+                  "empty": true
+                },
+                {
+                  "any": [
+                    {
+                      "all": [
+                        {
+                          "path": "/evidence/review-evidence/reviewers",
+                          "exists": true
+                        },
+                        {
+                          "each": "/evidence/review-evidence/reviewers",
+                          "require": {
+                            "all": [
+                              {
+                                "path": "/status",
+                                "equals": "completed"
+                              },
+                              {
+                                "path": "/blockers",
+                                "empty": true
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "count": "/evidence/review-evidence/coverage",
+                          "where": {
+                            "path": "/status",
+                            "equals": "not_met"
+                          },
+                          "max": 0
+                        }
+                      ]
+                    },
+                    {
+                      "all": [
+                        {
+                          "not": {
+                            "path": "/evidence/review-evidence/reviewers",
+                            "exists": true
+                          }
+                        },
+                        {
+                          "path": "/evidence/review-evidence/status",
+                          "equals": "completed"
+                        },
+                        {
+                          "path": "/evidence/review-evidence/blockers",
+                          "empty": true
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "findings": {
+              "aggregate": "filter",
+              "path": "/evidence/review-evidence/findings",
+              "where": {
+                "all": [
+                  {
+                    "path": "/status",
+                    "equals": "open"
+                  },
+                  {
+                    "path": "/rating",
+                    "min": 2
+                  }
+                ]
+              }
+            },
+            "reviewIncomplete": {
+              "path": "/evidence/review-evidence/reviewIncomplete",
+              "equals": true
+            },
+            "reviewBlocked": {
+              "path": "/evidence/review-evidence/reviewBlocked",
+              "equals": true
+            },
+            "questions": {
+              "select": "/evidence/review-evidence/questions"
+            },
+            "rawFindings": {
+              "select": "/evidence/review-evidence/rawFindings"
+            },
+            "coverage": {
+              "select": "/evidence/review-evidence/coverage"
+            },
+            "reviewers": {
+              "select": "/evidence/review-evidence/reviewers"
+            },
+            "disagreements": {
+              "select": "/evidence/review-evidence/disagreements"
+            }
+          },
+          "passed": {
+            "path": "/results/approved",
+            "equals": true
+          }
+        }
+      },
+      {
+        "id": "code-fix",
+        "configVersion": "step-config-v1",
+        "reads": {
+          "reviewFix": "@reviewFix",
+          "reviewGate": "review-gate",
+          "publication": "draft-pr",
+          "scopeClarify": "clarify",
+          "scopeDecisions": "decisions",
+          "scopePlan": "plan",
+          "scopeSource": "@source",
+          "scopeTicket": "@ticket"
+        },
+        "output": {
+          "format": "review-fix-v1"
+        },
+        "rules": [
+          {
+            "id": "architecture-handback",
+            "message": "Architecture revision requires status=blocked and questions=[]; the configured proposal route owns review and any required acceptance",
+            "when": {
+              "path": "/architectureRevision",
+              "equals": true
+            },
+            "require": {
+              "all": [
+                {
+                  "path": "/status",
+                  "equals": "blocked"
+                },
+                {
+                  "path": "/questions",
+                  "exists": true
+                },
+                {
+                  "path": "/questions",
+                  "maxLength": 0
+                }
+              ]
+            }
+          }
+        ],
+        "checks": [
+          "architecture-revision",
+          "optional-questions",
+          "review-dispositions",
+          {
+            "check": "scope-inputs",
+            "sources": {
+              "clarify": "scopeClarify",
+              "decisions": "scopeDecisions",
+              "plan": "scopePlan",
+              "existing-work": "scopeExistingWork",
+              "assess-existing": "scopeAssessment",
+              "source": "scopeSource",
+              "ticket": "scopeTicket"
+            }
+          }
+        ],
+        "access": {
+          "mode": "push"
+        },
+        "instructions": [
+          "incremental-review-fix",
+          "review-fix"
+        ],
+        "name": "Fix review findings",
+        "next": "assess-impact",
+        "branches": [
+          {
+            "when": {
+              "path": "architectureRevision",
+              "equals": true
+            },
+            "next": "to-architecture"
+          }
+        ],
+        "maxVisits": 16,
+        "type": "agent",
+        "prompt": "Fix all open rating 2/3 findings. Use /contextMemory/reviewLedger and /contextMemory/reviewRounds for ALL distinct past findings and fixer dispositions when available, reading original source references only when needed; avoid alternating fixes or reopening settled issues without evidence. You may reject a complaint with concrete evidence. Return {\"dispositions\":[{\"id\":\"finding-id\",\"status\":\"fixed or rejected\",\"reason\":\"...\"}],\"summary\":\"...\",\"questions\":[]}. Run relevant checks, commit and push changes to the same draft PR. Do not merge or mark the PR ready.\n{{instruction:review-fix}}",
+        "json": true,
+        "askQuestions": false
+      }
+    ],
+    "allowedTriggers": [
+      "workflow",
+      "manual",
+      "ticket-assignment"
+    ],
+    "launchFields": [
+      {
+        "name": "prompt",
+        "label": "What should this recipe do?",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "name": "plan",
+        "label": "Plan input (JSON or text)",
+        "type": "textarea",
+        "required": false,
+        "description": "Optional standalone input. Data does not grant executed evidence or approval authority.",
+        "options": []
+      },
+      {
+        "name": "clarify",
+        "label": "Clarify input (JSON or text)",
+        "type": "textarea",
+        "required": false,
+        "description": "Optional standalone input. Data does not grant executed evidence or approval authority.",
+        "options": []
+      },
+      {
+        "name": "decisions",
+        "label": "Decisions input (JSON or text)",
+        "type": "textarea",
+        "required": false,
+        "description": "Optional standalone input. Data does not grant executed evidence or approval authority.",
+        "options": []
+      },
+      {
+        "name": "draft-pr",
+        "label": "Draft pr input (JSON or text)",
+        "type": "textarea",
+        "required": false,
+        "description": "Optional standalone input. Data does not grant executed evidence or approval authority.",
+        "options": []
+      },
+      {
+        "name": "ci",
+        "label": "Ci input (JSON or text)",
+        "type": "textarea",
+        "required": false,
+        "description": "Optional standalone input. Data does not grant executed evidence or approval authority.",
+        "options": []
+      }
+    ]
+  },
+  "firstSavedRoute": {
+    "when": {
+      "path": "correctionRequired",
+      "equals": true
+    },
+    "next": "to-ci"
+  },
+  "finalSavedRoute": {
+    "when": {
+      "path": "correctionRequired",
+      "equals": true
+    },
+    "next": "to-ci-fix"
+  },
+  "onlyRouteChanged": true,
+  "reloaded": {
+    "value": "to-ci-fix",
+    "options": [
+      {
+        "value": "extract-requirements",
+        "label": "→ Extract requirements"
+      },
+      {
+        "value": "impact-checks",
+        "label": "→ Run independently selected checks"
+      },
+      {
+        "value": "specialist-review",
+        "label": "→ Parallel specialist review"
+      },
+      {
+        "value": "review-gate",
+        "label": "→ Check review findings"
+      },
+      {
+        "value": "code-fix",
+        "label": "→ Fix review findings"
+      },
+      {
+        "value": "completed",
+        "label": "→ Return: completed"
+      },
+      {
+        "value": "to-ci-fix",
+        "label": "→ Return: to-ci-fix"
+      },
+      {
+        "value": "to-ci",
+        "label": "→ Return: to-ci"
+      },
+      {
+        "value": "to-architecture",
+        "label": "→ Return: to-architecture"
+      },
+      {
+        "value": "end",
+        "label": "→ Finish"
+      }
+    ],
+    "width": 1280,
+    "overflow": 1280,
+    "save": 0
+  },
+  "screenshots": {
+    "desktop": {
+      "url": "http://localhost:36142/?reload=r1#/recipes?recipe=fork-6c4995b2-79bb-411b-bdfc-a0aaecad43ab&step=assess-impact",
+      "screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvk3dmma-9c8e661e.png"
+    },
+    "mobileLight": {
+      "url": "http://localhost:36142/?reload=r1#/recipes?recipe=fork-6c4995b2-79bb-411b-bdfc-a0aaecad43ab&step=assess-impact",
+      "screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvk3dyri-fb38b89b.png"
+    }
+  },
+  "keyboard": "Tab from route select focused Remove route; 390 CSS px / scrollWidth390.",
+  "limits": "Fresh route-editor captures are light theme. Historical collapsed/expanded desktop390 light/dark and360 canvas matrix retained at its original inputs. Initial Bun schema-save request stalled; Node24 compiled app saved/exported/reloaded normally. Failed theme locators produced light images and are not presented as dark proof."
+}

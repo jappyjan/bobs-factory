@@ -1,9 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import {
-	defaultWorkflows,
-	upgradedGuideStep,
-} from "../src/factory/defaultWorkflows.js";
+import { upgradedGuideStep } from "../src/factory/defaultWorkflows.js";
 import { GuideSchema } from "../src/factory/FactoryResults.js";
 import { reviewGuideMarkdown } from "../src/factory/FactoryTools.js";
 import { validateGuideCoverage } from "../src/factory/Guide.js";
@@ -20,6 +17,7 @@ import { legacyGuidePrompt } from "../src/factory/legacyGuidePrompt.js";
 import { inventoryGuideInstructions } from "../src/factory/specialistSteps.js";
 import { videoPrompts } from "../src/factory/videoPrompts.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 const stockBrief = defaultWorkflows
 	.find((w) => w.id === "factory-pipeline")!

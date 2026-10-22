@@ -77,7 +77,13 @@ import {
 	resolveStepConfig,
 } from "./StepConfig.js";
 import { inspectPullRequest } from "./Takeover.js";
-import { boundOutput, boundStepKey, writeBoundOutput } from "./ToolBindings.js";
+import {
+	boundOutput,
+	boundStepKey,
+	producerValue,
+	stepForRun,
+	writeBoundOutput,
+} from "./ToolBindings.js";
 import {
 	VideoCaptureFields,
 	VideoReceiptSchema,
@@ -909,6 +915,26 @@ export class FactoryTools {
 				};
 			case "accept-delivery":
 			case "delivery-route": {
+				if (resolveStepConfig(context.step).explicit) {
+					const keys = ["plan", "planReview", "clarify"].map((name) => {
+						const key = boundStepKey(context, name);
+						if (
+							!key ||
+							stepForRun(run, key)?.type !== "agent" ||
+							producerValue(run, key) === undefined ||
+							digest(producerValue(run, key)) !==
+								digest(boundOutput(context, name))
+						)
+							throw new Error(
+								"Delivery acceptance requires original executed plan, independent review and clarification producers",
+							);
+						return key;
+					});
+					if (new Set(keys).size !== keys.length)
+						throw new Error(
+							"Delivery plan review must be independent of its author",
+						);
+				}
 				const contract = DeliveryContractSchema.parse(
 					boundOutput(context, "plan", "deliveryContract"),
 				);
@@ -1001,7 +1027,13 @@ export class FactoryTools {
 								...externalEvidence,
 							}
 						: guide;
-				writeBoundOutput(context, "guide", updatedGuide);
+				// New recipes declare the action's own result slot. Frozen graphs keep
+				// their original shared guide destination.
+				writeBoundOutput(
+					context,
+					readStep(context.step, "result") ? "result" : "guide",
+					updatedGuide,
+				);
 				await context.save?.();
 				return updatedGuide;
 			}

@@ -31,6 +31,7 @@ import {
 import legacyWorkflows from "./fixtures/legacy-workflows-a4990127.json" with {
 	type: "json",
 };
+import { preCompositionWorkflows } from "./fixtures/pre-composition.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
@@ -319,15 +320,20 @@ describe("workflow trigger permissions", () => {
 		expect(
 			migrated.listWorkflows().map((w) => [w.id, w.allowedTriggers]),
 		).toEqual([
-			["simple", ["manual", "ticket-assignment"]],
-			["factory", ["workflow", "manual", "ticket-assignment"]],
-			["takeover", ["workflow", "manual", "ticket-assignment"]],
-			["factory-pipeline", ["workflow"]],
-			["improve-codebase", ["workflow", "manual", "ticket-assignment"]],
-			["map-codebase", ["workflow"]],
-			["research-perspective", ["workflow"]],
-			["consolidate-proposals", ["workflow"]],
-			["refine-plan", ["workflow"]],
+			...defaultWorkflows.map((w) => [
+				w.id,
+				w.id === "simple"
+					? ["manual", "ticket-assignment"]
+					: [
+								"factory-pipeline",
+								"map-codebase",
+								"research-perspective",
+								"consolidate-proposals",
+								"refine-plan",
+							].includes(w.id)
+						? ["workflow"]
+						: ["workflow", "manual", "ticket-assignment"],
+			]),
 			["custom", ["workflow", "manual", "ticket-assignment"]],
 		]);
 		expect(migrated.listWorkflows().at(-1)!.steps[0]!.model).toBe(
@@ -382,7 +388,13 @@ describe("workflow trigger permissions", () => {
 	it("permits deliberate top-level access to an internal recipe and an ineligible saved default", async () => {
 		const { runtime } = create();
 		const saved = runtime.listWorkflows();
-		const shared = saved.find((w) => w.internal)!;
+		const shared = {
+			...workflow([agent("work")]),
+			id: "internal-fixture",
+			internal: true,
+			allowedTriggers: ["workflow"],
+		};
+		saved.push(shared);
 		shared.allowedTriggers.push("manual");
 		runtime.updateWorkflows(saved, shared.id);
 		expect(runtime.selectWorkflow([], "manual").id).toBe(shared.id);
@@ -1236,10 +1248,10 @@ it("rejects missing/recursive workflow calls and hidden human checkpoints in fan
 it("upgrades a saved flat Factory without losing role settings or its selected default", async () => {
 	const { runtime, home } = create();
 	const shared = structuredClone(
-		defaultWorkflows.find((item) => item.id === "factory-pipeline")!,
+		preCompositionWorkflows.find((item) => item.id === "factory-pipeline")!,
 	);
 	shared.steps[0]!.model = "custom-model";
-	const oldFactory = { ...defaultWorkflows[1]!, steps: shared.steps };
+	const oldFactory = { ...preCompositionWorkflows[1]!, steps: shared.steps };
 	writeFileSync(
 		join(home, "factory", "workflows.json"),
 		JSON.stringify({
@@ -1255,15 +1267,15 @@ it("upgrades a saved flat Factory without losing role settings or its selected d
 	});
 	expect(restarted.selectWorkflow([], "manual").id).toBe("factory");
 	expect(
-		restarted.listWorkflows().find((item) => item.id === "factory-pipeline")!
+		restarted.listWorkflows().find((item) => item.id === "clarify-plan")!
 			.steps[0]!.model,
 	).toBe("custom-model");
 	expect(restarted.selectWorkflow(["workflow:takeover"], "manual").id).toBe(
 		"takeover",
 	);
-	expect(() =>
-		restarted.selectWorkflow([], "manual", "factory-pipeline"),
-	).toThrow("does not allow manual");
+	expect(restarted.selectWorkflow([], "manual", "factory-pipeline").id).toBe(
+		"factory-pipeline",
+	);
 	expect(runtime.getDefaultWorkflow()).toBe("simple");
 });
 
@@ -2650,7 +2662,7 @@ it.each([
 		},
 	]);
 	custom.steps[0]!.groups![0]![0]!.computeIntensive = true;
-	const saved = structuredClone([...defaultWorkflows, custom]);
+	const saved = structuredClone([...preCompositionWorkflows, custom]);
 	saved
 		.find((w) => w.id === "factory-pipeline")!
 		.steps.find((s) => s.tool === "handoff")!.computeIntensive = true;
@@ -2677,10 +2689,10 @@ it.each([
 	expect(
 		restored
 			.listWorkflows()
-			.find((w) => w.id === "factory-pipeline")!
+			.find((w) => w.id === "review-approval")!
 			.steps.find((s) => s.tool === "handoff")!.computeIntensive,
 	).toBe(
-		defaultWorkflows
+		preCompositionWorkflows
 			.find((w) => w.id === "factory-pipeline")!
 			.steps.find((s) => s.tool === "handoff")!.computeIntensive,
 	);
@@ -3891,7 +3903,7 @@ it.each([
 		"Fixture",
 	);
 	git("update-ref", "refs/remotes/origin/main", "HEAD");
-	const definitions = structuredClone(defaultWorkflows);
+	const definitions = structuredClone(preCompositionWorkflows);
 	const pipeline = definitions.find((w) => w.id === "factory-pipeline")!;
 	pipeline.steps.find((s) => s.id === "ci-fix")!.next = "end";
 	pipeline.steps.find((s) => s.id === "ci-fix")!.inputs = ["plan"];
@@ -3902,11 +3914,12 @@ it.each([
 		repositoryId: "repo",
 		workspace,
 		workflow: definitions.find((w) => w.id === "factory")!,
-		workflowDefinitions: definitions,
+		workflowDefinitions: defaultWorkflows,
 		input: "Repair accepted code findings",
 		triggerOrigin: { type: "manual", workflowId: "factory" },
 	});
 	// Model the already accepted snapshot, ending after the fixer under test.
+	run.workflow = structuredClone(definitions.find((w) => w.id === "factory")!);
 	run.workflowDefinitions = definitions;
 	const required = kind === "required" || kind === "blocked";
 	const decision = {

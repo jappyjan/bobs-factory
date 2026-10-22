@@ -14,6 +14,7 @@ import { HumanStepSettings } from "./human-step-settings";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
 import {
 	authorableTools,
+	changeRouteTarget,
 	childrenOf,
 	connect,
 	describeCondition,
@@ -508,6 +509,14 @@ export function RecipeBuilder({ id }: { id: string }) {
 				<ReactFlowProvider>
 					{steps.length ? (
 						<RecipeCanvas
+							recipes={draft.recipes}
+							recipeId={recipe.id}
+							onOpenRecipe={(recipeId, stepId) =>
+								setParams({
+									recipe: recipeId,
+									...(stepId ? { step: stepId } : {}),
+								})
+							}
 							steps={steps}
 							defaultRunner={config.defaultRunner}
 							selected={top}
@@ -807,6 +816,11 @@ function Inspector({
 	const [showPrompt, setShowPrompt] = useState(local);
 	const targets = [
 		...owner.steps.filter((s) => s.id !== step.id),
+		...(owner.outcomes ?? []).map((id) => ({
+			id,
+			name: `Return: ${id}`,
+			returned: true,
+		})),
 		{ id: "end", name: "Finish" },
 	];
 	const topLevel = !parent;
@@ -1205,7 +1219,9 @@ function Inspector({
 									onChange={(next) =>
 										onChange({
 											branches: step.branches.map((b, j) =>
-												j === index ? { ...b, next } : b,
+												j === index
+													? changeRouteTarget(b, next, owner.steps, recipes)
+													: b,
 											),
 										})
 									}
@@ -1326,7 +1342,7 @@ function RouteTarget({
 	onSelect,
 }: {
 	value: string;
-	targets: { id: string; name: string }[];
+	targets: { id: string; name: string; returned?: boolean }[];
 	editable: boolean;
 	onChange: (value: string) => void;
 	onSelect: (id: string) => void;
@@ -1348,7 +1364,9 @@ function RouteTarget({
 		<button
 			type="button"
 			className="recipe-route-target"
-			disabled={value === "end"}
+			disabled={
+				value === "end" || targets.find((t) => t.id === value)?.returned
+			}
 			onClick={() => onSelect(value)}
 		>
 			→{" "}
@@ -1720,8 +1738,13 @@ function SimulationPanel({
 			</ol>
 			{simulation.stopped ? (
 				<p>⛔ {simulation.stopped}</p>
-			) : current === "end" ? (
-				<p>🏁 Finished after {simulation.trail.length - 1} steps.</p>
+			) : current === "end" || !step ? (
+				<p>
+					🏁{" "}
+					{current === "end"
+						? `Finished after ${simulation.trail.length - 1} steps.`
+						: `Returned outcome: ${current}.`}
+				</p>
 			) : (
 				step && (
 					<>

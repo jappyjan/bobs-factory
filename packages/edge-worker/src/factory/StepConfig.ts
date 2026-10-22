@@ -184,7 +184,9 @@ export const CONTEXT_SOURCES = [
 	"item",
 	"index",
 	"callInputs",
+	"caller",
 	"childRuns",
+	"delivery",
 ] as const;
 export type ContextSource = (typeof CONTEXT_SOURCES)[number];
 
@@ -338,6 +340,7 @@ const CONFIG_KEYS = [
 interface LegacyStep extends StepConfigFields {
 	id: string;
 	type: string;
+	branches?: { when: { path: string; equals?: unknown }; next: string }[];
 	tool?: string;
 	json?: boolean;
 	inputs?: string[];
@@ -1284,15 +1287,22 @@ export function stepConfigIssues(
 	if (hasCheck(step, "capture-evidence") && !readStep(step, "scope"))
 		issues.push(`${step.id}: capture-evidence requires reads.scope`);
 	if (hasCheck(step, "architecture-revision")) {
+		const handback = step.branches?.some(
+			(branch: { when: { path: string; equals?: unknown }; next: string }) =>
+				branch.when.path === "architectureRevision" &&
+				branch.when.equals === true &&
+				inherited.includes(branch.next),
+		);
 		const decision = architectureRevisionDecision(step, siblings);
 		const target = decision && readStep(decision, "revise");
 		if (
-			step.type !== "agent" ||
-			!decision ||
-			!siblings.some(
-				(sibling) =>
-					sibling.id === target && hasCheck(sibling, "architecture-proposal"),
-			)
+			!handback &&
+			(step.type !== "agent" ||
+				!decision ||
+				!siblings.some(
+					(sibling) =>
+						sibling.id === target && hasCheck(sibling, "architecture-proposal"),
+				))
 		)
 			issues.push(
 				`${step.id}: architecture-revision requires a local architecture decision with its proposal revision route; use reads.architectureDecision to select among multiple decisions`,

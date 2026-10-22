@@ -435,6 +435,7 @@ export function validateSpecialist(
 export function validateReviewConfiguration(
 	steps: WorkflowStep[],
 	specialistBranch = false,
+	inputs: string[] = [],
 ): void {
 	const byId = new Map(steps.map((s) => [s.id, s]));
 	for (const step of steps) {
@@ -463,6 +464,7 @@ export function validateReviewConfiguration(
 		const impact = consumesImpact(step) ? readStep(step, "impact") : undefined;
 		if (
 			impact &&
+			!inputs.includes(impact) &&
 			(!byId.has(impact) || !hasCheck(byId.get(impact)!, "impact-reuse"))
 		)
 			throw new Error(`${step.id}: unknown impact source`);
@@ -550,8 +552,9 @@ export function validateReviewConfiguration(
 				);
 		}
 		for (const group of step.groups ?? [])
-			validateReviewConfiguration(group, Boolean(reviewGraph));
-		if (step.body) validateReviewConfiguration(step.body, Boolean(reviewGraph));
+			validateReviewConfiguration(group, Boolean(reviewGraph), inputs);
+		if (step.body)
+			validateReviewConfiguration(step.body, Boolean(reviewGraph), inputs);
 	}
 }
 

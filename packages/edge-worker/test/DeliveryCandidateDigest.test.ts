@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { digest } from "../src/factory/Delivery.js";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { checkArgs, resolveStepConfig } from "../src/factory/StepConfig.js";
 import {
@@ -19,6 +18,7 @@ import {
 import legacyWorkflows from "./fixtures/legacy-workflows-a4990127.json" with {
 	type: "json",
 };
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];

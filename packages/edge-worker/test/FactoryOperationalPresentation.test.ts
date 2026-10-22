@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import {
 	type MergeReadiness,
 	reportReadiness,
@@ -24,6 +23,7 @@ import { GuideRefreshAction } from "../src/factory/web/focus.js";
 import { ProviderChecks } from "../src/factory/web/review-brief.js";
 import { mergeReadinessFor } from "../src/factory/web/run-output.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 import { renamedFactory } from "./fixtures/renamed-factory.js";
 
 // The UI is rendered outside a browser; preserve its connection state without a subscription.
@@ -104,6 +104,9 @@ it.each([
 			at: new Date().toISOString(),
 		},
 	});
+	// Project the accepted pre-142 frame, independent of current admission.
+	run.workflow = structuredClone(workflow);
+	run.workflowDefinitions = structuredClone(accepted);
 	run.status = "running";
 	run.step = `${workflow.steps[0]!.id}/${ci.id}`;
 	run.outputs[ci.id] = { ...readiness(false), headSha: "old-head" };
@@ -210,6 +213,9 @@ it("presents configured roles consistently after rename without styling generic 
 					at: new Date().toISOString(),
 				},
 			});
+			// Project the accepted pre-142 frame, independent of current admission.
+			run.workflow = structuredClone(workflow);
+			run.workflowDefinitions = structuredClone(accepted);
 			const response = await server.app.inject({
 				url: `/api/runs/${run.id}?view=dashboard`,
 			});

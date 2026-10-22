@@ -26,6 +26,7 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { SessionSemaphore } from "../src/RunnerConcurrency.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
+import { preCompositionWorkflows } from "./fixtures/pre-composition.js";
 
 const roots: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
@@ -47,7 +48,7 @@ function fixture(hooks: Partial<RuntimeHooks> = {}) {
 	return { runtime, home, path: join(home, "factory", "workflows.json") };
 }
 const legacy = () =>
-	structuredClone(defaultWorkflows).map((w) =>
+	structuredClone(preCompositionWorkflows).map((w) =>
 		w.id === "factory-pipeline"
 			? (() => {
 					const legacy = {
@@ -118,7 +119,7 @@ it.each([
 	expect(readFileSync(configuration.migration!.backup, "utf8")).toBe(bytes);
 	const pipeline = migrated
 		.listWorkflows()
-		.find((w) => w.id === "factory-pipeline")!;
+		.find((w) => w.id === "review-loop")!;
 	const reviewers = workflowRoles(pipeline.steps).filter((r) =>
 		r.role.startsWith("specialist-review/"),
 	);
@@ -131,7 +132,10 @@ it.each([
 			serviceTier: "fast",
 		});
 	expect(pipeline.steps.some((s) => formatOf(s) === "inventory-v1")).toBe(true);
-	const guide = pipeline.steps.find((s) => s.id === "guide")!;
+	const guide = migrated
+		.listWorkflows()
+		.find((w) => w.id === "review-approval")!
+		.steps.find((s) => s.id === "guide")!;
 	expect(formatOf(guide)).toBe("review-brief-v3");
 	expect(checkArgs(guide, "media-valid")).toMatchObject({ video: true });
 	expect(migrated.selectWorkflow(["my-factory"], "manual").id).toBe("factory");
@@ -195,8 +199,7 @@ it("rejects stock behavior edits, internal identity collisions and native Simple
 	const { runtime, path } = fixture();
 	const bytes = readFileSync(path, "utf8");
 	const modified = runtime.listWorkflows();
-	modified.find((w) => w.id === "factory-pipeline")!.steps[0]!.prompt =
-		"Injected";
+	modified.find((w) => w.id === "clarify-plan")!.steps[0]!.prompt = "Injected";
 	expect(() => runtime.updateWorkflows(modified)).toThrow("read-only");
 	expect(readFileSync(path, "utf8")).toBe(bytes);
 	expect(() => runtime.forkWorkflow("simple")).toThrow("cannot be forked");
@@ -255,10 +258,10 @@ it("preserves unmatched preferences visibly across upgrades and validates compat
 		},
 	]);
 	expect(
-		migrated.listWorkflows().find((w) => w.id === "factory-pipeline")!.steps[0],
+		migrated.listWorkflows().find((w) => w.id === "clarify-plan")!.steps[0],
 	).toMatchObject({ runner: "opencode", modelVariant: "careful" });
 	expect(() =>
-		migrated.updatePreferences("factory-pipeline", {
+		migrated.updatePreferences("clarify-plan", {
 			clarify: { runner: "gemini", reasoningEffort: "high" },
 		}),
 	).toThrow("not supported");
@@ -270,11 +273,11 @@ it("preserves unmatched preferences visibly across upgrades and validates compat
 	).toThrow("current bundled");
 	expect(Object.hasOwn(Object.prototype, "polluted")).toBe(false);
 	migrated.catalog.updateInactive(0, {
-		workflow: "factory-pipeline",
+		workflow: "implement-work",
 		role: "implement",
 	});
 	expect(
-		migrated.catalog.read().preferences["factory-pipeline"]!.implement,
+		migrated.catalog.read().preferences["implement-work"]!.implement,
 	).toMatchObject({ runner: "codex", model: "old" });
 });
 it("leaves malformed legacy input recoverable and recovers interrupted atomic staging", () => {
@@ -298,12 +301,12 @@ it("blocks exact accepted dependencies, keeps private forks eligible, and preser
 		},
 	});
 	const fork = runtime.forkWorkflow("factory");
-	runtime.setWorkflowEnabled("factory-pipeline", false);
+	runtime.setWorkflowEnabled("review-loop", false);
 	expect(() => runtime.selectWorkflow([], "manual", "factory")).toThrow(
-		"factory-pipeline",
+		"review-loop",
 	);
 	expect(runtime.selectWorkflow([], "manual", fork.id).id).toBe(fork.id);
-	runtime.setWorkflowEnabled("factory-pipeline", true);
+	runtime.setWorkflowEnabled("review-loop", true);
 	const workflow = local(runtime, "wait", [
 		{
 			id: "work",
@@ -472,9 +475,7 @@ it("saves dashboard-resolved agent preferences without admitting launch-field ed
 	});
 	try {
 		const config = (await server.app.inject({ url: "/api/config" })).json();
-		const pipeline = config.workflows.find(
-			(w: any) => w.id === "factory-pipeline",
-		);
+		const pipeline = config.workflows.find((w: any) => w.id === "review-loop");
 		const role = workflowRoles(pipeline.steps).find(
 			(r) => r.role === "specialist-review/security-review",
 		)!;
@@ -490,7 +491,7 @@ it("saves dashboard-resolved agent preferences without admitting launch-field ed
 		});
 		expect(saved.statusCode, saved.body).toBe(200);
 		expect(
-			runtime.catalog.read().preferences["factory-pipeline"]![role.role]!.model,
+			runtime.catalog.read().preferences["review-loop"]![role.role]!.model,
 		).toBe("gpt-6-sol");
 		config.workflows.find((w: any) => w.id === "simple").launchFields[0].label =
 			"Changed bundled field";
@@ -545,7 +546,7 @@ it("retains accepted admission preferences through setup and later upgrades", as
 	expect(restored.get(run.id).workflow.chat).toBeUndefined();
 	expect(restored.get(run.id).model).toBe("accepted-model");
 	const factoryLaunch = runtime.selectLaunch([], "manual", "factory");
-	runtime.updatePreferences("factory-pipeline", {
+	runtime.updatePreferences("clarify-plan", {
 		clarify: { runner: "codex", model: "later" },
 	});
 	const frozen = runtime.create(

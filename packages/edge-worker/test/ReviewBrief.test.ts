@@ -1,5 +1,4 @@
 import { expect, it } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
 import {
 	attachRequirementCoverage,
@@ -29,6 +28,7 @@ import {
 	validateSpecialist,
 } from "../src/factory/SpecialistReview.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 const stockBrief = defaultWorkflows
 	.find((w) => w.id === "factory-pipeline")!

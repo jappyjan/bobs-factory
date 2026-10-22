@@ -1,0 +1,263 @@
+{
+  "base": "578bb28233fe699b6743bf84cb24895b25da3ed0",
+  "sourceFreeze": {
+    "path": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-142-composition/apps/f1/test-drives/media/taskbot142-composition/r1-inputs.json",
+    "sha256": "843c841267e4ea20cca682f2607206849fc2f27c99216ea0191dae207681ff7d",
+    "bytes": 1877
+  },
+  "allInputs": {
+    "path": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-142-composition/apps/f1/test-drives/media/taskbot142-composition/r1-all-inputs.json",
+    "sha256": "94a5255dda6cc75e8c266366c30097a5ccdb4c69e7fc5308da649f04fb476523",
+    "bytes": 5655
+  },
+  "allInputFiles": 45,
+  "finalTests": {
+    "passed": 27,
+    "skipped": 20,
+    "files": 8,
+    "durationSeconds": 97.34,
+    "exit": 0
+  },
+  "commands": [
+    {
+      "name": "initial-runtime",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-initial-runtime.log",
+      "sha256": "03386f9925733da97ce481e3cc9d40e06292b5bc2083c86d78c3f8a5a31c11e2",
+      "bytes": 576
+    },
+    {
+      "name": "extended-development",
+      "exit": 1,
+      "path": "/tmp/taskbot142-r1-combined-development.log",
+      "sha256": "ac8570297311d1bd782e52c67b1c52626a67c7d859281fab91e05b4ba777b37d",
+      "bytes": 3961
+    },
+    {
+      "name": "prompt-generation",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-prompt-update.log",
+      "sha256": "93ec13070bf29825d7655bc92c6e72d226bd79fc5924b4ebdf4b91fa1a9a9290",
+      "bytes": 575
+    },
+    {
+      "name": "first-owning-types",
+      "exit": 1,
+      "path": "/tmp/taskbot142-r1-owning-types.log",
+      "sha256": "b4b0b5a0e33820c55db834d4f742616c2bab0aea789a6946bb50c5d96e5a1261",
+      "bytes": 1701
+    },
+    {
+      "name": "pre-native-checks",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-focused-final.log",
+      "sha256": "4b425ec2ef730ac5ddbef40218cf150bdd0e03546c45e325b0368ce80b6a2dd4",
+      "bytes": 595
+    },
+    {
+      "name": "pre-Parallel-native-checks",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-final-candidate.log",
+      "sha256": "1246d702f5145c103df1481dfcc036d20b1f0307958158e703279e1195a4da50",
+      "bytes": 595
+    },
+    {
+      "name": "pre-Parallel-ports",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-final-ports-snapshots.log",
+      "sha256": "5e79c2ea7ec0bc2f08a53ccfdb6a0710a9fde8cc7e80ca249eeee6f4b485650a",
+      "bytes": 591
+    },
+    {
+      "name": "full-baseline-timeout",
+      "exit": 1,
+      "path": "/tmp/taskbot142-r1-combined-frozen-final.log",
+      "sha256": "452dee594f1b8418063ac005872909d2ba6d2aa63a36f37fb0308767d14d1ad6",
+      "bytes": 2282
+    },
+    {
+      "name": "final-focused27",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-final.log",
+      "sha256": "d3572d48dfabd36d3ef7778fd7d73a0c7ac87a27d32a1aca9716570474c9842a",
+      "bytes": 594
+    },
+    {
+      "name": "final-owner-types",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-owner-types-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "web-types",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-web-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "web-build",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-web-build.log",
+      "sha256": "7d853272fc01c9099a222f6fe33749814e971cc49d8b0072a844f499bb200288",
+      "bytes": 44
+    },
+    {
+      "name": "node-preview-emit",
+      "exit": 0,
+      "path": "/tmp/taskbot142-r1-owning-emit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "name": "node-preview",
+      "exit": null,
+      "path": "/tmp/taskbot142-r1-node-ui-server.log",
+      "sha256": "93025a1ce69747860767f36db46411ee6ed4667742121ea2cb4b3e091977ac4f",
+      "bytes": 131
+    },
+    {
+      "name": "bun-preview-limitation",
+      "exit": null,
+      "path": "/tmp/taskbot142-r1-ui-server.log",
+      "sha256": "c62ffa86003c70ac19a7ec30e31bc3a38e2003ef69acbdcfc15b34d0ce91e541",
+      "bytes": 124
+    }
+  ],
+  "flows": [
+    {
+      "path": "/tmp/taskbot142-repository-false-false-flow.json",
+      "sha256": "6cfd38f474e4d95dce0c8cd17ccdc52a205bf6fcf11d61f5fbce34a6e488d111",
+      "bytes": 1974925,
+      "name": "repository",
+      "status": "completed",
+      "historyReceipts": 136,
+      "roleCalls": 78,
+      "commandReceipts": 100
+    },
+    {
+      "path": "/tmp/taskbot142-r1-standalone-flow.json",
+      "sha256": "97284125ab854808340b47aaffef08a420b16c58d4d77161a5bc76416d298245",
+      "bytes": 22806,
+      "name": "standalone",
+      "status": "completed",
+      "historyReceipts": 16,
+      "roleCalls": 5,
+      "commandReceipts": 0
+    },
+    {
+      "path": "/tmp/taskbot142-r1-freshness-false.json",
+      "sha256": "c4ac32051e21b00c8bd62ea31e763b1eae7f3fb2839c6527d706e3038f2f5631",
+      "bytes": 2314,
+      "name": "revision-direct",
+      "status": "completed",
+      "historyReceipts": 6,
+      "roleCalls": 2,
+      "commandReceipts": 0
+    },
+    {
+      "path": "/tmp/taskbot142-r1-freshness-true.json",
+      "sha256": "26b7d9505a62a9c3ca5430fb9dd2aa32e7c22205866a9689eb796ca93cad4752",
+      "bytes": 2592,
+      "name": "revision-completed-Parallel",
+      "status": "completed",
+      "historyReceipts": 7,
+      "roleCalls": 2,
+      "commandReceipts": 0
+    },
+    {
+      "path": "/tmp/taskbot142-r1-input-freshness.json",
+      "sha256": "f9ca19fcb2f41663887693fb55cccffd0632dd17b0214cb1b1d6631329f5c73c",
+      "bytes": 4130,
+      "name": "accepted-input-native-restart",
+      "status": "completed",
+      "historyReceipts": 8,
+      "roleCalls": null,
+      "commandReceipts": 0
+    },
+    {
+      "path": "/tmp/taskbot142-r1-mapped.json",
+      "sha256": "5556840917ac7f2ede6380d9126b01d5bd396e1180a0afae76c794d26c0b51ea",
+      "bytes": 2810,
+      "name": "mapped-inputs",
+      "status": "completed",
+      "historyReceipts": 6,
+      "roleCalls": null,
+      "commandReceipts": 0
+    },
+    {
+      "path": "/tmp/taskbot142-r1-full-baseline-timeout.json",
+      "sha256": "461fb498ec0640530ce4db3fd78e0234131a68f2a641263d85514980cf827693",
+      "bytes": 1593148,
+      "name": "earlier-timeout",
+      "status": "running",
+      "historyReceipts": 0,
+      "roleCalls": 35,
+      "commandReceipts": 0
+    },
+    {
+      "path": "/tmp/taskbot142-r1-before-baseline-reference-flow.json",
+      "sha256": "5d142bc2d5bcafd0446cb50a225041d7e63ea5a0b0c9e03a8460ac1478117af9",
+      "bytes": 1958570,
+      "name": "earlier-current-flow",
+      "status": "completed",
+      "historyReceipts": 136,
+      "roleCalls": 78,
+      "commandReceipts": 100
+    }
+  ],
+  "retainedHistoricalFlows": [
+    {
+      "case": "repository; takeover=False; frozen=False",
+      "historicalSha256": "d486ffa8fd670ab79e5e182f2c381af62ae4b7b1c9a08e70a9f3fdd5f2195a3f",
+      "bytesCurrentlyEqual": false,
+      "qualification": "Original fixed repository path was overwritten by current drive; original hash/report2419 authentication remain historical, not byte-reused. Current repository proof replaces it."
+    },
+    {
+      "case": "external; takeover=False; frozen=False",
+      "historicalSha256": "8a5ec8b835ad1ee16f1070610042a5f9785b6177cf94045cbf894fcf43a441a0",
+      "bytesCurrentlyEqual": true,
+      "qualification": "Exact retained bytes; historical inputs, not a new candidate run"
+    },
+    {
+      "case": "mixed; takeover=False; frozen=False",
+      "historicalSha256": "b80a38cf5009466b78e9484a87748bb9887d907bd0b6b92d3c4ac5d09909d7b6",
+      "bytesCurrentlyEqual": true,
+      "qualification": "Exact retained bytes; historical inputs, not a new candidate run"
+    },
+    {
+      "case": "repository; takeover=True; frozen=False",
+      "historicalSha256": "710a4b243ccc3849a9460231c1508f9bf739e4e686075c6d16121d96973614da",
+      "bytesCurrentlyEqual": true,
+      "qualification": "Exact retained bytes; historical inputs, not a new candidate run"
+    },
+    {
+      "case": "external; takeover=False; frozen=True",
+      "historicalSha256": "590fc94f0a935743479dacb308d876cab9f5e995cf600403e0849aa1979a06cc",
+      "bytesCurrentlyEqual": true,
+      "qualification": "Exact retained bytes; historical inputs, not a new candidate run"
+    }
+  ],
+  "uiOwningInputs": {
+    "packages/edge-worker/src/factory/WorkflowCatalog.ts": "a220735c170a72e96ec579eb9bd2db6724d1be31779493bcd6dbf379b0f8a6a6",
+    "packages/edge-worker/src/factory/factoryRecipes.ts": "431017e64220cb968de075a269aab6389d42b4be52fca1a7af58332eccac1aac",
+    "packages/edge-worker/src/factory/web/recipe-builder.tsx": "b3bbe3acf0082c3fe40dee97decab563f7e85ad91332eefbcf8078503ae42e02",
+    "packages/edge-worker/src/factory/web/recipe-canvas.tsx": "8d31508e22d1cd504875ca598a414bf4089d78e3c22c9f2001b98ffc80180c60",
+    "packages/edge-worker/src/factory/web/recipe-graph.ts": "397e770312b31442b49d17256d14d4a385ccf49ed52b3415f2263d8518ef5dad",
+    "packages/edge-worker/src/factory/web/styles.css": "9f2c41bb1b0b29c04a7dd0404dd119ea2907463170d5e34256cc029883d4ddb8"
+  },
+  "uiBuild": "96ef50a950dac9b8f6869e54",
+  "prompts": {
+    "existingKeys": 639,
+    "newKeys": 24,
+    "allExistingFullTextsEqual": true,
+    "textsTableExactlyEqual": true
+  },
+  "limits": [
+    "No native/live-provider/real model/CI/release proof",
+    "Broad monorepo/native checks deferred post148",
+    "Fresh route editor screenshots are light; old dark/canvas matrix historical",
+    "Bun preview Save stalled; compiled Node24 preview passed normal save/export/reload"
+  ]
+}

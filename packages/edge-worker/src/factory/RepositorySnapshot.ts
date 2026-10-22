@@ -16,7 +16,7 @@ import {
 import { runRepositories, scopeRevision } from "./RepositoryScope.js";
 import { stepBindings } from "./StepBindings.js";
 import { resolveStepConfig } from "./StepConfig.js";
-import { stepForRun } from "./ToolBindings.js";
+import { producerKey, producerValue, stepForRun } from "./ToolBindings.js";
 import type {
 	ExecutionContext,
 	FactoryRun,
@@ -365,6 +365,21 @@ function directSnapshot(
 ) {
 	const receipt = receiptForValue(context, value);
 	if (!receipt) return undefined;
+	const configured = producerKey(context.run, prefixOf(key), source);
+	if (configured !== `${prefixOf(key)}${source}`) {
+		if (
+			configured !== receipt.producer.key ||
+			digest(producerValue(context.run, configured)) !== digest(value)
+		)
+			throw new Error(snapshotError);
+		if (
+			receipt.producer.iteration?.frame === context.iteration?.frame &&
+			digest(receipt.producer.iteration) !== digest(iterationOf(context))
+		)
+			throw new Error(snapshotError);
+		validateReceipt(receipt);
+		return receipt;
+	}
 	if (source !== receipt.producer.key.split("/").at(-1))
 		throw new Error(snapshotError);
 	if (!prefixOf(key).startsWith(prefixOf(receipt.producer.key)))

@@ -4,6 +4,7 @@ import { evaluateCondition, RULE_EVALUATION_LIMITS } from "./Rules.js";
 import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
 import { pointerValue, resolveStepConfig } from "./StepConfig.js";
 import { stepContextSources } from "./StepContextSources.js";
+import { stepForRun } from "./ToolBindings.js";
 import { childRunsView } from "./ViewRuntime.js";
 import type { WorkflowStep } from "./Workflow.js";
 import { snapshotHistory } from "./WorkflowInput.js";
@@ -43,6 +44,24 @@ export function stepBindings(
 	const { run, step } = context;
 	const outputs = context.outputs ?? run.outputs;
 	const sources: Record<string, unknown> = {
+		get caller() {
+			let prefix = (context.stepKey ?? run.step ?? step.id).replace(
+				/[^/]+$/,
+				"",
+			);
+			while (prefix) {
+				const key = prefix.replace(/\/$/, "");
+				const call = stepForRun(run, key);
+				if (call?.type === "workflow")
+					return {
+						stepKey: key,
+						workflowId: call.workflow,
+						bindings: call.bindings ?? {},
+					};
+				prefix = key.replace(/[^/]+$/, "");
+			}
+			return {};
+		},
 		agentSettings: {
 			runner: step.runner ?? run.runner,
 			model:
@@ -62,6 +81,7 @@ export function stepBindings(
 					],
 		},
 		callInputs: context.callInputs ?? {},
+		delivery: run.delivery,
 		get childRuns() {
 			return childRunsView(run);
 		},

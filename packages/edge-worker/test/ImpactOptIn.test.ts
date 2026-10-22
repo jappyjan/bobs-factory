@@ -86,9 +86,7 @@ it("does not demand an impact assessment for an ordinary named read, while expli
 	await expect(assertCurrentImpact(context)).resolves.toBeUndefined();
 	const stock = fixture();
 	stock.step = stock.run
-		.workflowDefinitions!.find(
-			(workflow) => workflow.id === "factory-pipeline",
-		)!
+		.workflowDefinitions!.find((workflow) => workflow.id === "merge-work")!
 		.steps.find((step) => step.tool === "merge")!;
 	expect(consumesImpact(stock.step)).toBe(true);
 	await expect(assertCurrentImpact(stock)).rejects.toThrow(

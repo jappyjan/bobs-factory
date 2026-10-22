@@ -1,0 +1,1754 @@
+{
+  "build": "b2755fc919b46c9bca8dba40",
+  "sourceManifest": "54ad3c665cb5c98d23a5ca543cccdc0d69f3844834a8033b3a4a4ff2124eb521",
+  "runtime": "Actual Node24 WorkflowRuntime + FactoryServer, ordinary local authentication; no agent/provider execution",
+  "finish": {
+    "original": {
+      "when": {
+        "path": "outcome",
+        "equals": "to-ci-fix"
+      },
+      "next": "ci",
+      "entry": "ci-fix"
+    },
+    "saved": {
+      "when": {
+        "path": "outcome",
+        "equals": "to-ci-fix"
+      },
+      "next": "end"
+    },
+    "onlyRouteChanged": false,
+    "reloaded": {
+      "selected": "end",
+      "theme": "light"
+    }
+  },
+  "qa": {
+    "original": {
+      "when": {
+        "path": "outcome",
+        "equals": "to-ci-fix"
+      },
+      "next": "ci",
+      "entry": "ci-fix"
+    },
+    "saved": {
+      "when": {
+        "path": "outcome",
+        "equals": "to-ci-fix"
+      },
+      "next": "qa"
+    },
+    "onlyRouteChanged": false,
+    "reloaded": {
+      "selected": "qa"
+    }
+  },
+  "accepted": {
+    "forks": [
+      {
+        "id": "fork-a4eb45df-5aff-43d3-938f-57b9d85372ba",
+        "stepConfigVersion": "step-config-v1",
+        "name": "Software factory fork",
+        "icon": "\ud83c\udfed",
+        "description": "Clarify and plan, then review architecture before coding and deliver repository, external ticket or mixed work with independent evidence and explicit human acceptance.",
+        "labels": [],
+        "steps": [
+          {
+            "id": "planning",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Clarify & plan",
+            "next": "delivery",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-fdcd2687-3c66-4253-a2d6-3fb7d6738638",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "delivery",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Route by delivery",
+            "next": "check-in",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-plan"
+                },
+                "next": "planning",
+                "entry": "plan"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-external-apply"
+                },
+                "next": "external",
+                "entry": "external-apply"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-1671d103-8ccf-44f3-ba7c-ef22077ba495",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "check-in",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Check in with you",
+            "next": "implementation",
+            "branches": [],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-ae9273aa-0d2a-42ed-acb6-476764877165",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "implementation",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Implement",
+            "next": "review",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-ca858cac-3d5b-4e75-b01b-0137209bc723",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "review",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Review loop",
+            "next": "ci",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-ci"
+                },
+                "next": "ci",
+                "entry": "ci"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-ci-fix"
+                },
+                "next": "end"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-edbf910f-180a-4253-9b31-4624ca6eecf4",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "qa",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "QA & screenshots",
+            "next": "approval",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-assess-impact"
+                },
+                "next": "review",
+                "entry": "assess-impact"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-803d2ad4-b18f-45a0-a087-aa3c314d153c",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "ci",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "CI watch & fix",
+            "next": "qa",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-assess-impact"
+                },
+                "next": "review",
+                "entry": "assess-impact"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-visual-scope"
+                },
+                "next": "qa",
+                "entry": "visual-scope"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-guide"
+                },
+                "next": "approval",
+                "entry": "guide"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-dea66800-eedc-446a-8439-9080e577571b",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "approval",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Review guide & your approval",
+            "next": "merge",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-assess-impact"
+                },
+                "next": "review",
+                "entry": "assess-impact"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-ci-fix"
+                },
+                "next": "ci",
+                "entry": "ci-fix"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-external-correction"
+                },
+                "next": "external",
+                "entry": "external-correction"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-e0e20c43-14ff-4fc6-b0cf-232b3a3b28e2",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "merge",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Merge",
+            "next": "end",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-assess-impact"
+                },
+                "next": "review",
+                "entry": "assess-impact"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-ci-fix"
+                },
+                "next": "ci",
+                "entry": "ci-fix"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-external-final"
+                },
+                "next": "external",
+                "entry": "external-final"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-560acf3f-8613-4dd7-88a2-eb30f9129533",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "external",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "External ticket delivery",
+            "next": "end",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-plan"
+                },
+                "next": "planning",
+                "entry": "plan"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-e0200bc3-c842-4042-b3ab-5cdf6aa207e3",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          }
+        ],
+        "allowedTriggers": [
+          "workflow",
+          "manual",
+          "ticket-assignment"
+        ],
+        "launchFields": [
+          {
+            "name": "prompt",
+            "label": "What should Bob build?",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "What should Bob build?",
+            "options": []
+          },
+          {
+            "name": "attachments",
+            "label": "Attachments",
+            "type": "files",
+            "required": false,
+            "description": "Attach reference material for this workflow.",
+            "options": []
+          }
+        ]
+      },
+      {
+        "id": "fork-ed0e1879-c2cc-410a-95eb-c566f9d00085",
+        "stepConfigVersion": "step-config-v1",
+        "name": "Software factory fork",
+        "icon": "\ud83c\udfed",
+        "description": "Clarify and plan, then review architecture before coding and deliver repository, external ticket or mixed work with independent evidence and explicit human acceptance.",
+        "labels": [],
+        "steps": [
+          {
+            "id": "planning",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Clarify & plan",
+            "next": "delivery",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-2adbc6b5-70f7-4348-aaab-5fd9918b456c",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "delivery",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Route by delivery",
+            "next": "check-in",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-plan"
+                },
+                "next": "planning",
+                "entry": "plan"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-external-apply"
+                },
+                "next": "external",
+                "entry": "external-apply"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-669b1c96-e930-4a23-b7d0-fe01891722df",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "check-in",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Check in with you",
+            "next": "implementation",
+            "branches": [],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-088b0c92-34f9-40c7-b8b2-03e42785900c",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "implementation",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Implement",
+            "next": "review",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-808be3cc-4c2e-40a7-b2bc-02c912ce5f40",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "review",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Review loop",
+            "next": "ci",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-ci"
+                },
+                "next": "ci",
+                "entry": "ci"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-ci-fix"
+                },
+                "next": "qa"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-f69c22ae-8724-4156-9d11-7481072c0bf4",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "qa",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "QA & screenshots",
+            "next": "approval",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-assess-impact"
+                },
+                "next": "review",
+                "entry": "assess-impact"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-72908fde-7330-4404-bd2a-f793843e0a10",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "ci",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "CI watch & fix",
+            "next": "qa",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-assess-impact"
+                },
+                "next": "review",
+                "entry": "assess-impact"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-visual-scope"
+                },
+                "next": "qa",
+                "entry": "visual-scope"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-guide"
+                },
+                "next": "approval",
+                "entry": "guide"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-62f126b8-a2a7-48f4-a2ea-b4b2bcf751f9",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "approval",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Review guide & your approval",
+            "next": "merge",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-assess-impact"
+                },
+                "next": "review",
+                "entry": "assess-impact"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-ci-fix"
+                },
+                "next": "ci",
+                "entry": "ci-fix"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-external-correction"
+                },
+                "next": "external",
+                "entry": "external-correction"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-9920092d-ce04-40e3-839d-dc28253d0a9c",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "merge",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "Merge",
+            "next": "end",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-assess-impact"
+                },
+                "next": "review",
+                "entry": "assess-impact"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-ci-fix"
+                },
+                "next": "ci",
+                "entry": "ci-fix"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-external-final"
+                },
+                "next": "external",
+                "entry": "external-final"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-7f824a88-69ba-4150-99ba-0aaf12d28e81",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          },
+          {
+            "id": "external",
+            "configVersion": "step-config-v1",
+            "reads": {},
+            "rules": [],
+            "checks": [],
+            "access": {
+              "mode": "workspace"
+            },
+            "instructions": [],
+            "name": "External ticket delivery",
+            "next": "end",
+            "branches": [
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-plan"
+                },
+                "next": "planning",
+                "entry": "plan"
+              },
+              {
+                "when": {
+                  "path": "outcome",
+                  "equals": "to-architecture"
+                },
+                "next": "check-in",
+                "entry": "architecture"
+              }
+            ],
+            "maxVisits": 100,
+            "type": "workflow",
+            "workflow": "fork-7a13f0bf-08da-455b-99be-2dd9b0106291",
+            "bindings": {
+              "clarify": "planning/clarify",
+              "decisions": "planning/decisions",
+              "plan": "planning/plan",
+              "plan-review": "planning/plan-review",
+              "architecture": "check-in/architecture",
+              "architecture-review": "check-in/architecture-review",
+              "architecture-decision": "check-in/architecture-decision",
+              "implement": "implementation/implement",
+              "draft-pr": "implementation/draft-pr",
+              "assess-impact": "review/assess-impact",
+              "extract-requirements": "review/extract-requirements",
+              "impact-checks": "review/impact-checks",
+              "specialist-review": "review/specialist-review",
+              "review-gate": "review/review-gate",
+              "ci": "ci/ci",
+              "visual-scope": "qa/visual-scope",
+              "capture": "qa/capture",
+              "visual-review": "qa/visual-review",
+              "visual-gate": "qa/visual-gate",
+              "code-fix": "review/code-fix",
+              "ci-fix": "ci/ci-fix",
+              "after-ci-fix-observe": "ci/after-ci-fix-observe",
+              "after-ci-fix": "ci/after-ci-fix",
+              "visual-fix": "qa/visual-fix",
+              "guide": "approval/guide",
+              "handoff": "approval/handoff",
+              "human-review": "approval/human-review",
+              "human-fix": "approval/human-fix",
+              "merge": "merge/merge",
+              "delivery-feedback-route": "approval/delivery-feedback-route",
+              "delivery-route-accept": "delivery/delivery-route-accept",
+              "delivery-route": "delivery/delivery-route",
+              "delivery-deferred": "delivery/delivery-deferred",
+              "external-apply": "external/external-apply",
+              "external-verify": "external/external-verify",
+              "external-after-verify": "external/external-after-verify",
+              "external-guide": "external/external-guide",
+              "external-human-review": "external/external-human-review",
+              "external-correction": "external/external-correction",
+              "external-final": "external/external-final",
+              "external-reverify": "external/external-reverify"
+            }
+          }
+        ],
+        "allowedTriggers": [
+          "workflow",
+          "manual",
+          "ticket-assignment"
+        ],
+        "launchFields": [
+          {
+            "name": "prompt",
+            "label": "What should Bob build?",
+            "type": "textarea",
+            "required": true,
+            "placeholder": "What should Bob build?",
+            "options": []
+          },
+          {
+            "name": "attachments",
+            "label": "Attachments",
+            "type": "files",
+            "required": false,
+            "description": "Attach reference material for this workflow.",
+            "options": []
+          }
+        ]
+      }
+    ],
+    "provenance": {
+      "fork-a4eb45df-5aff-43d3-938f-57b9d85372ba": {
+        "source": "factory",
+        "version": "0.2.73",
+        "digest": "71001866a04905fc794e5662a2cf9f886519345ecf15a744d675628455e45b7c",
+        "dependencies": {
+          "factory": "fork-a4eb45df-5aff-43d3-938f-57b9d85372ba",
+          "clarify-plan": "fork-fdcd2687-3c66-4253-a2d6-3fb7d6738638",
+          "route-delivery": "fork-1671d103-8ccf-44f3-ba7c-ef22077ba495",
+          "architecture-review": "fork-ae9273aa-0d2a-42ed-acb6-476764877165",
+          "implement-work": "fork-ca858cac-3d5b-4e75-b01b-0137209bc723",
+          "review-loop": "fork-edbf910f-180a-4253-9b31-4624ca6eecf4",
+          "qa-screenshots": "fork-803d2ad4-b18f-45a0-a087-aa3c314d153c",
+          "ci-watch-fix": "fork-dea66800-eedc-446a-8439-9080e577571b",
+          "review-approval": "fork-e0e20c43-14ff-4fc6-b0cf-232b3a3b28e2",
+          "merge-work": "fork-560acf3f-8613-4dd7-88a2-eb30f9129533",
+          "external-delivery": "fork-e0200bc3-c842-4042-b3ab-5cdf6aa207e3"
+        },
+        "kind": "fork"
+      },
+      "fork-ed0e1879-c2cc-410a-95eb-c566f9d00085": {
+        "source": "factory",
+        "version": "0.2.73",
+        "digest": "71001866a04905fc794e5662a2cf9f886519345ecf15a744d675628455e45b7c",
+        "dependencies": {
+          "factory": "fork-ed0e1879-c2cc-410a-95eb-c566f9d00085",
+          "clarify-plan": "fork-2adbc6b5-70f7-4348-aaab-5fd9918b456c",
+          "route-delivery": "fork-669b1c96-e930-4a23-b7d0-fe01891722df",
+          "architecture-review": "fork-088b0c92-34f9-40c7-b8b2-03e42785900c",
+          "implement-work": "fork-808be3cc-4c2e-40a7-b2bc-02c912ce5f40",
+          "review-loop": "fork-f69c22ae-8724-4156-9d11-7481072c0bf4",
+          "qa-screenshots": "fork-72908fde-7330-4404-bd2a-f793843e0a10",
+          "ci-watch-fix": "fork-62f126b8-a2a7-48f4-a2ea-b4b2bcf751f9",
+          "review-approval": "fork-9920092d-ce04-40e3-839d-dc28253d0a9c",
+          "merge-work": "fork-7f824a88-69ba-4150-99ba-0aaf12d28e81",
+          "external-delivery": "fork-7a13f0bf-08da-455b-99be-2dd9b0106291"
+        },
+        "kind": "fork"
+      }
+    }
+  },
+  "keyboard": {
+    "width": 360,
+    "documentWidth": 360,
+    "active": "Remove route",
+    "theme": "light"
+  },
+  "screenshots": [
+    "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvk4x377-1b1b5047.png",
+    "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvk4xzsy-43bfdb8b.png"
+  ],
+  "limits": "Light only changed editor proof. Historical canvas matrix remains historical; no new dark/device/native claim. Initial default-profile stale PWA shell and invalid exact locator attempts were not proof.",
+  "saveNormalization": "The existing editor save also materializes empty reads/rules/checks/instructions and workspace access defaults on Calls. Other route branches and input bindings are preserved; onlyRouteChanged is therefore false for the entire serialized graph."
+}

@@ -30,6 +30,7 @@ import {
 	registerWorkflowConfig,
 	STEP_CONFIG_VERSION,
 } from "./StepConfig.js";
+import { stockFactorySteps } from "./stockFactorySteps.js";
 import {
 	StepSchema,
 	validateWorkflows,
@@ -221,6 +222,8 @@ export function recognizedStock(workflow: Workflow): boolean {
 	if (["factory", "factory-pipeline"].includes(workflow.id)) {
 		const pipeline = reserved.get("factory-pipeline")!;
 		templates.push({ ...current, steps: pipeline.steps });
+		// Bounded #141 flat stock recognition; local forks and accepted runs are never rewritten.
+		templates.push({ ...current, steps: Object.values(stockFactorySteps) });
 		const legacyTemplate = {
 			...current,
 			steps: legacyReviewSteps.map((step) => StepSchema.parse(step)),
@@ -232,7 +235,10 @@ export function recognizedStock(workflow: Workflow): boolean {
 		isDeepStrictEqual(behavior(workflow), behavior(template)),
 	);
 }
-function closure(root: Workflow, definitions: Workflow[]): Workflow[] {
+export function workflowClosure(
+	root: Workflow,
+	definitions: Workflow[],
+): Workflow[] {
 	const byId = new Map(definitions.map((w) => [w.id, w]));
 	const visited = new Map<string, Workflow>();
 	const visit = (w: Workflow) => {
@@ -427,7 +433,7 @@ export class WorkflowCatalog {
 		// A customized root owns private copies of the entire dependency graph.
 		for (const w of sourceWorkflows.filter((w) => mappings[w.id])) {
 			const privateIds: Record<string, string> = { [w.id]: mappings[w.id]! };
-			const reachable = closure(w, [
+			const reachable = workflowClosure(w, [
 				...defaultWorkflows.filter(
 					(stock) => !sourceWorkflows.some((old) => old.id === stock.id),
 				),
@@ -490,30 +496,7 @@ export class WorkflowCatalog {
 				result.locals.push(copy);
 			}
 		}
-		const specialists = workflowRoles(
-			reserved.get("factory-pipeline")!.steps,
-		).filter(({ role }) => role.startsWith("specialist-review/"));
-		for (const [owner, prefs] of Object.entries(result.preferences)) {
-			const old = prefs["code-review"];
-			if (old && ["factory", "factory-pipeline"].includes(owner)) {
-				for (const { role } of specialists)
-					prefs[role] ??= structuredClone(old);
-				delete prefs["code-review"];
-			}
-			const roles = new Set(
-				workflowRoles(reserved.get(owner)!.steps).map((r) => r.role),
-			);
-			for (const [role, settings] of Object.entries(prefs))
-				if (!roles.has(role)) {
-					result.inactive.push({
-						workflow: owner,
-						role,
-						settings,
-						reason: "Role is absent from the installed standard",
-					});
-					delete prefs[role];
-				}
-		}
+		this.relocateLegacyPreferences(result);
 		const savedDefault = Array.isArray(document)
 			? "simple"
 			: (document.defaultWorkflow ?? "simple");
@@ -532,7 +515,52 @@ export class WorkflowCatalog {
 		this.reconcile(result);
 		return result;
 	}
+	/** Bounded pre-composition stock settings adapter; never rewrites local/frozen graphs. */
+	private relocateLegacyPreferences(state: WorkflowConfiguration) {
+		const owners = new Map<string, string[]>();
+		for (const workflow of defaultWorkflows.filter(
+			(w) => w.inputs && w.outcomes,
+		)) {
+			for (const { role } of workflowRoles(workflow.steps)) {
+				const current = owners.get(role) ?? [];
+				if (!current.includes(workflow.id)) current.push(workflow.id);
+				owners.set(role, current);
+			}
+		}
+		for (const owner of ["factory", "factory-pipeline"]) {
+			const prefs = state.preferences[owner];
+			if (!prefs) continue;
+			for (const [role, settings] of Object.entries(prefs)) {
+				const targets =
+					role === "code-review"
+						? [...owners]
+								.filter(([r]) => r.startsWith("specialist-review/"))
+								.flatMap(([r, workflows]) =>
+									workflows.map((id) => [r, id] as const),
+								)
+						: (owners.get(role) ?? []).map((id) => [role, id] as const);
+				if (!targets.length) continue;
+				for (const [targetRole, targetOwner] of targets) {
+					state.preferences[targetOwner!] ??= {};
+					const target = state.preferences[targetOwner!]!;
+					if (
+						target[targetRole!] &&
+						!isDeepStrictEqual(target[targetRole!], settings)
+					)
+						state.inactive.push({
+							workflow: owner,
+							role,
+							settings: structuredClone(settings),
+							reason: `Current callable role ${targetOwner}/${targetRole} already has explicit settings`,
+						});
+					else target[targetRole!] = structuredClone(settings);
+				}
+				delete prefs[role];
+			}
+		}
+	}
 	private reconcile(state: WorkflowConfiguration) {
+		this.relocateLegacyPreferences(state);
 		for (const [owner, prefs] of Object.entries(state.preferences)) {
 			const roles = new Map(
 				workflowRoles(reserved.get(owner)?.steps ?? []).map((item) => [
@@ -645,7 +673,7 @@ export class WorkflowCatalog {
 		const originals = (Array.isArray(source) ? source : source.workflows).map(
 			(w: unknown) => WorkflowSchema.parse(w),
 		) as Workflow[];
-		const accepted = closure(root, definitions);
+		const accepted = workflowClosure(root, definitions);
 		if (
 			!accepted.every((w) => {
 				const original = originals.find((old) => old.id === w.id);
@@ -666,7 +694,7 @@ export class WorkflowCatalog {
 	}
 	unavailable(root: Workflow, definitions: Workflow[]): string[] {
 		const policy = this.policyGraph(root, definitions);
-		return closure(policy.root, policy.definitions)
+		return workflowClosure(policy.root, policy.definitions)
 			.filter(
 				(w) =>
 					this.state.enabled[w.id] === false ||
@@ -850,7 +878,7 @@ export class WorkflowCatalog {
 		const root = this.list().find((w) => w.id === id);
 		if (!root || !reserved.has(id))
 			throw new Error("Fork a bundled recipe; Simple cannot be forked");
-		const reachable = closure(root, this.list());
+		const reachable = workflowClosure(root, this.list());
 		const mappings = Object.fromEntries(
 			reachable.map((w) => [w.id, `fork-${randomUUID()}`]),
 		);
