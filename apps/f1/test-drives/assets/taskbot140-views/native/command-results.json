@@ -1,0 +1,104 @@
+{
+  "source": {
+    "commit": "667cbffd00357b2d192239f89c33d300c70a0c8e",
+    "dirty": true,
+    "resourceDigest": "3107421db253d284c9749e79fd8d9e4cada0481153ba42a4069079df8ec68495",
+    "provenance": "Embedded adjacent build.json identity, checked against both running binary APIs; not inferred from the current checkout."
+  },
+  "runtime": {
+    "dashboard": {
+      "version": "1.0.0-beta",
+      "commit": "667cbffd00357b2d192239f89c33d300c70a0c8e",
+      "dirty": true,
+      "target": "darwin-arm64",
+      "resourceDigest": "3107421db253d284c9749e79fd8d9e4cada0481153ba42a4069079df8ec68495",
+      "packaged": true
+    },
+    "worker": {
+      "version": "1.0.0-beta",
+      "commit": "667cbffd00357b2d192239f89c33d300c70a0c8e",
+      "dirty": true,
+      "target": "darwin-arm64",
+      "resourceDigest": "3107421db253d284c9749e79fd8d9e4cada0481153ba42a4069079df8ec68495",
+      "packaged": true
+    }
+  },
+  "binary": {
+    "path": "/tmp/taskbot140-views-native-667cbffd/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+    "sha256": "f339509e52e4c4ddfee0ed4088f8fb4188dd0b00b9c83e88d85271d295a3fd82",
+    "size": 113265522
+  },
+  "attempts": [
+    {
+      "attempt": "attempt-2026-10-22T05-22-57-024Z-1db2b79d",
+      "command": [
+        "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+        "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views-native.mjs",
+        "--binary",
+        "/tmp/taskbot140-views-native-667cbffd/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+        "--output",
+        "apps/f1/test-drives/assets/taskbot140-views/native"
+      ],
+      "cwd": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views",
+      "exit": 1,
+      "result": "FAIL",
+      "stdoutStderr": "driver-attempt-1.log",
+      "driverSha256": "f0fe2dce9364dd823b2f20038bd1e692a669f595501b9130a5e6d491cead32c8",
+      "startedAt": "2026-10-22T05:22:57.030Z",
+      "finishedAt": "2026-10-22T05:22:57.545Z",
+      "error": "Cannot read properties of undefined (reading 'length')"
+    },
+    {
+      "attempt": "attempt-2026-10-22T05-23-31-567Z-b6ee4bf1",
+      "command": [
+        "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+        "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views-native.mjs",
+        "--binary",
+        "/tmp/taskbot140-views-native-667cbffd/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+        "--output",
+        "apps/f1/test-drives/assets/taskbot140-views/native"
+      ],
+      "cwd": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views",
+      "exit": 1,
+      "result": "FAIL",
+      "stdoutStderr": "driver-attempt-2.log",
+      "driverSha256": "cea25a97c5a41689dbc95ad7bb2ba2c880932b326116ce9811994e8a83cdce8f",
+      "startedAt": "2026-10-22T05:23:31.572Z",
+      "finishedAt": "2026-10-22T05:23:32.762Z",
+      "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n... Skipped lines\n\n  {\n    allowedTriggers: [\n      'manual'\n    ],\n    id: 'native-human-views',\n...\n      {\n+       access: {\n+         mode: 'workspace'\n+       },\n        branches: [\n          {\n            next: 'accept',\n            when: {\n              equals: true,\n...\n        ],\n+       checks: [],\n+       configVersion: 'step-config-v1',\n        decide: {\n          actions: [\n            {\n              comment: true,\n              followUp: true,\n...\n        id: 'pick',\n+       instructions: [],\n        maxVisits: 16,\n        name: 'Decide per item',\n        next: 'accept',\n        reads: {\n          document: '@launchInputs'\n        },\n+       rules: [],\n        type: 'decide',\n        view: {\n          components: [\n            {\n              data: {\n...\n      {\n+       access: {\n+         mode: 'workspace'\n+       },\n        branches: [],\n+       checks: [],\n+       configVersion: 'step-config-v1',\n        id: 'accept',\n+       instructions: [],\n        maxVisits: 16,\n        name: 'Approve exact artifact',\n        next: 'summary',\n        reads: {\n          document: '@launchInputs'\n        },\n+       rules: [],\n        type: 'approve',\n        view: {\n          components: [\n            {\n              data: {\n...\n      {\n+       access: {\n+         mode: 'workspace'\n+       },\n        branches: [],\n+       checks: [],\n+       configVersion: 'step-config-v1',\n        id: 'summary',\n+       instructions: [],\n        maxVisits: 16,\n        name: 'Nonblocking summary',\n        next: 'end',\n        reads: {\n          children: '@childRuns',\n          document: '@launchInputs'\n        },\n+       rules: [],\n        type: 'show',\n        view: {\n          components: [\n            {\n              data: {\n"
+    },
+    {
+      "attempt": "attempt-2026-10-22T05-24-06-431Z-9a5134f8",
+      "command": [
+        "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+        "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views-native.mjs",
+        "--binary",
+        "/tmp/taskbot140-views-native-667cbffd/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+        "--output",
+        "apps/f1/test-drives/assets/taskbot140-views/native"
+      ],
+      "cwd": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views",
+      "exit": 0,
+      "result": "PASS",
+      "stdoutStderr": "driver-attempt-3.log",
+      "driverSha256": "36591556ecf3d90cf8d1b6a770f8b0726cc22f5c81e341fbab9419b86c9fd7a3",
+      "startedAt": "2026-10-22T05:24:06.434Z",
+      "finishedAt": "2026-10-22T05:24:07.646Z",
+      "error": null
+    }
+  ],
+  "passingAttempt": "attempt-2026-10-22T05-24-06-431Z-9a5134f8",
+  "counts": {
+    "apiResponses": 26,
+    "clearClientRejections": 8,
+    "nativeStarts": 2,
+    "gracefulShutdowns": 2,
+    "runs": 0,
+    "providerExecutions": 0
+  },
+  "limits": [
+    "Native macOS ARM64 catalogue/schema/preview/persistence smoke, without a configured project or prepared coding agent.",
+    "Full Decide/Approve/Show execution and UI rendering are separate production-runtime mocked F1/browser evidence.",
+    "No native provider authentication, live model quality, remote forge operation, release publication or deployment is exercised."
+  ]
+}

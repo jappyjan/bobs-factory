@@ -1,0 +1,241 @@
+{
+  "build": "e529a733e0157054e256e935",
+  "original": {
+    "id": "df01d401-0fdd-477a-b706-43e1df6e8352",
+    "stepKey": "choose",
+    "kind": "decide",
+    "title": "Choose the next work",
+    "digest": "27a73c3ea0b46488328bbcd13dfc0f67607d40d2ea25fe901ccb8916dd904011",
+    "view": {
+      "version": "view-v1",
+      "components": [
+        {
+          "id": "brief",
+          "type": "markdown",
+          "title": "Review brief",
+          "data": {
+            "text": "Three findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or ask a focused follow-up.\n\n**No action is selected automatically.**"
+          }
+        },
+        {
+          "id": "checks",
+          "type": "checklist",
+          "title": "Before you decide",
+          "data": {
+            "items": [
+              {
+                "label": "Original research retained",
+                "state": "done"
+              },
+              {
+                "label": "Choose an action for every item",
+                "state": "open"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "items": [
+      {
+        "id": "cache",
+        "title": "Reuse validated cache entries",
+        "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+        "details": [
+          {
+            "label": "Impact",
+            "value": "Faster repeat runs"
+          },
+          {
+            "label": "Evidence",
+            "value": "Focused tests pass"
+          }
+        ]
+      },
+      {
+        "id": "labels",
+        "title": "Clarify run progress labels",
+        "body": "Show waiting and active execution with the same accessible vocabulary.",
+        "details": [
+          {
+            "label": "Impact",
+            "value": "Clearer progress"
+          },
+          {
+            "label": "Evidence",
+            "value": "Keyboard labels reviewed"
+          }
+        ]
+      },
+      {
+        "id": "unsafe",
+        "title": "Treat untrusted strings as text",
+        "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+        "details": [
+          {
+            "label": "Impact",
+            "value": "Safe rendering"
+          },
+          {
+            "label": "Evidence",
+            "value": "No raw HTML or remote image requests"
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "fix",
+        "label": "Fix",
+        "comment": true,
+        "followUp": true
+      },
+      {
+        "id": "issue",
+        "label": "File issue",
+        "comment": true,
+        "followUp": true
+      },
+      {
+        "id": "skip",
+        "label": "Skip",
+        "comment": true
+      }
+    ],
+    "askAvailable": true,
+    "threads": {},
+    "createdAt": "2026-10-22T04:58:05.119Z"
+  },
+  "afterAsk": {
+    "decision": {
+      "id": "df01d401-0fdd-477a-b706-43e1df6e8352",
+      "stepKey": "choose",
+      "kind": "decide",
+      "title": "Choose the next work",
+      "digest": "7104e195172ad1e89d047bce86bbe4e170d4d21c71560b6aa67474176e7857ab",
+      "view": {
+        "version": "view-v1",
+        "components": [
+          {
+            "id": "brief",
+            "type": "markdown",
+            "title": "Review brief",
+            "data": {
+              "text": "Three findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or ask a focused follow-up.\n\n**No action is selected automatically.**"
+            }
+          },
+          {
+            "id": "checks",
+            "type": "checklist",
+            "title": "Before you decide",
+            "data": {
+              "items": [
+                {
+                  "label": "Original research retained",
+                  "state": "done"
+                },
+                {
+                  "label": "Choose an action for every item",
+                  "state": "open"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "items": [
+        {
+          "id": "cache",
+          "title": "Reuse validated cache entries",
+          "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+          "details": [
+            {
+              "label": "Impact",
+              "value": "Faster repeat runs"
+            },
+            {
+              "label": "Evidence",
+              "value": "Focused tests pass"
+            }
+          ]
+        },
+        {
+          "id": "labels",
+          "title": "Clarify run progress labels",
+          "body": "Show waiting and active execution with the same accessible vocabulary.",
+          "details": [
+            {
+              "label": "Impact",
+              "value": "Clearer progress"
+            },
+            {
+              "label": "Evidence",
+              "value": "Keyboard labels reviewed"
+            }
+          ]
+        },
+        {
+          "id": "unsafe",
+          "title": "Treat untrusted strings as text",
+          "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+          "details": [
+            {
+              "label": "Impact",
+              "value": "Safe rendering"
+            },
+            {
+              "label": "Evidence",
+              "value": "No raw HTML or remote image requests"
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "id": "fix",
+          "label": "Fix",
+          "comment": true,
+          "followUp": true
+        },
+        {
+          "id": "issue",
+          "label": "File issue",
+          "comment": true,
+          "followUp": true
+        },
+        {
+          "id": "skip",
+          "label": "Skip",
+          "comment": true
+        }
+      ],
+      "askAvailable": true,
+      "threads": {
+        "cache": [
+          {
+            "id": "db2c3a4f-ca8e-429e-bfe9-c5d7d2a008af",
+            "question": "When can this cached result safely be reused?",
+            "status": "answered",
+            "at": "2026-10-22T05:00:39.640Z",
+            "answer": "The cached result can be reused only when its accepted inputs and evidence still match. This answer came from the dedicated item follow-up; the source research was not rerun."
+          }
+        ]
+      },
+      "createdAt": "2026-10-22T04:58:05.119Z"
+    },
+    "selected": false,
+    "comment": "",
+    "confirmed": false
+  },
+  "expected": {
+    "selected": true,
+    "comment": "Retain the original cache key and receipt.",
+    "confirmed": false
+  },
+  "rootCause": "focus.tsx GenericHumanDecision outer key includes snapshot.digest, remounting HumanStepPanel despite inner batch-only keys",
+  "toolingAttempts": [
+    "preview_click exact=true locator rejected",
+    "preview_click button:text-is locator rejected",
+    "snapshot aria-ref clicked Ask successfully; wait text timed out because remount closed details; API and later DOM confirmed actual dedicated answer"
+  ]
+}

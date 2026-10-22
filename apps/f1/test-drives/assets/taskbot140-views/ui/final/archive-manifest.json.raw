@@ -1,0 +1,80 @@
+{
+  "at": "2026-10-22T05:17:50.119Z",
+  "source": "667cbffd00357b2d192239f89c33d300c70a0c8e",
+  "tree": "5f7e9fe8b16a62da25d99a155965bac9a3fdaa44",
+  "build": "32c73ab9807a3c6248b0d42f",
+  "fixtureStoppedAt": "2026-10-22T05:16:52.794Z",
+  "immutableSourceArchives": [
+    {
+      "file": "driver-executed.mjs.txt",
+      "sha256": "526cba68f5a272b6dd562a9287e53fb3667342e807ce4817ac244b862389eb6f",
+      "bytes": 28212
+    },
+    {
+      "file": "verify-observed.mjs.txt",
+      "sha256": "a16b2d1af8a3b6cca602d39d8f47eafca918973491a48f5c363710e442b46d53",
+      "bytes": 8918
+    }
+  ],
+  "verificationAssertions": 12,
+  "noticesAfterRetries": 6,
+  "originalJsonByteHashes": [
+    {
+      "file": "verification.json.raw",
+      "sha256": "0b971889b3a95b52c0636a269d8e4eaa686edbe2518df04aeac2a336d7c1874b",
+      "bytes": 15414
+    },
+    {
+      "file": "identity.json",
+      "sha256": "325fadeae5e4cc71940b0b9728800c53392665cd5d18ac45033c632fe5ca52ec",
+      "bytes": 631267
+    },
+    {
+      "file": "evidence-manifest.json.raw",
+      "sha256": "27f1e2e048ea3588e7cb1c1dad0e01b32cd93bd950a28ef1d46ac1f006e0c921",
+      "bytes": 22834
+    }
+  ],
+  "items": [
+    {
+      "file": "driver-executed.mjs.txt",
+      "sha256": "526cba68f5a272b6dd562a9287e53fb3667342e807ce4817ac244b862389eb6f",
+      "bytes": 28212
+    },
+    {
+      "file": "verify-observed.mjs.txt",
+      "sha256": "a16b2d1af8a3b6cca602d39d8f47eafca918973491a48f5c363710e442b46d53",
+      "bytes": 8918
+    },
+    {
+      "file": "verification.log",
+      "sha256": "82e17e1cc77242bfedccb8334e205f2afca6553c53fc719b91e6c97071df9417",
+      "bytes": 1297
+    },
+    {
+      "file": "verification-attempt-1.log",
+      "sha256": "8f4a95cc4b73c2871cc9712d0ee3e77b07bc1e51708608e92b2f04158538e82c",
+      "bytes": 650
+    },
+    {
+      "file": "verification.json.raw",
+      "sha256": "0b971889b3a95b52c0636a269d8e4eaa686edbe2518df04aeac2a336d7c1874b",
+      "bytes": 15414
+    },
+    {
+      "file": "identity.json",
+      "sha256": "325fadeae5e4cc71940b0b9728800c53392665cd5d18ac45033c632fe5ca52ec",
+      "bytes": 631267
+    },
+    {
+      "file": "driver.log",
+      "sha256": "511d882873465396e853318aa1dd2c199cbb86afb224f5cf5eb0bbda83135dce",
+      "bytes": 65927
+    },
+    {
+      "file": "evidence-manifest.json.raw",
+      "sha256": "27f1e2e048ea3588e7cb1c1dad0e01b32cd93bd950a28ef1d46ac1f006e0c921",
+      "bytes": 22834
+    }
+  ]
+}

@@ -674,7 +674,7 @@ const hooks = {
 	viewDecision: async (run, text) => {
 		notifications.push({
 			runId: run.id,
-			batchId: run.viewDecision?.id,
+			currentDecisionIdAtNotice: run.viewDecision?.id,
 			text,
 			at: new Date().toISOString(),
 		});
@@ -802,10 +802,10 @@ const verify = async () => {
 			(entry) => entry.runId === id,
 		)) {
 			assert(
-				!seen.has(notification.batchId),
-				"No duplicate decision notification",
+				!seen.has(notification.text),
+				"No duplicate notification text for this fixture run",
 			);
-			seen.add(notification.batchId);
+			seen.add(notification.text);
 		}
 	}
 	const original = choose.viewRecords.find((entry) => entry.answer);

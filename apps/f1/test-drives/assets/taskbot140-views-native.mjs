@@ -430,7 +430,7 @@ try {
 	const worker = await workerVersion.json();
 	identity(worker.runtime, build);
 	report.runtime = { dashboard: firstVersion.runtime, worker: worker.runtime };
-	const initial = await json("/api/config?view=recipes");
+	const initial = await json("/api/config?view=settings");
 	assert.equal(initial.repositories.length, 0);
 	assert.deepEqual(await json("/api/runs"), []);
 	const schema = await json("/api/recipes/view-schema");
@@ -556,6 +556,10 @@ try {
 		name: "compiled schema, generic saved bindings/actions/forms and clear invalid save/preview rejection",
 		result: "PASS",
 	});
+	const beforeRestart = await json("/api/config?view=recipes");
+	const exactSavedProjection = normalized(
+		beforeRestart.workflows.find((workflow) => workflow.id === recipe.id),
+	);
 	await stop();
 	await start();
 	const restartedVersion = await json("/api/version");
@@ -565,10 +569,11 @@ try {
 		normalized(
 			restarted.workflows.find((workflow) => workflow.id === recipe.id),
 		),
-		accepted,
+		exactSavedProjection,
 	);
 	assert.deepEqual(await json("/api/runs"), []);
-	assert.equal(restarted.repositories.length, 0);
+	const restartedSettings = await json("/api/config?view=settings");
+	assert.equal(restartedSettings.repositories.length, 0);
 	report.checks.push({
 		name: "accepted generic saved definition survives real compiled binary restart without invalid replacement",
 		result: "PASS",

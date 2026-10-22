@@ -1,0 +1,514 @@
+{
+  "at": "2026-10-22T05:17:14.973Z",
+  "source": "667cbffd00357b2d192239f89c33d300c70a0c8e",
+  "tree": "5f7e9fe8b16a62da25d99a155965bac9a3fdaa44",
+  "build": "32c73ab9807a3c6248b0d42f",
+  "sourceFingerprint": "4c2b3a30a5b171f206af098d4448973ff6e365cdf4fed6adf0280bbed48d5134",
+  "backend": {
+    "View.js": "03b8ad73f6950a730a6c1e6f49653796d41b040807ab457a4bdf39923ce6bcbc",
+    "HumanStep.js": "4d675ca250d0c93eb7349941974a91b16892e6bf24c02b3eb6fca0e9ddb54b38",
+    "ViewRuntime.js": "ef0d6c0aa608ac4ebe7f2604766f2d2ee4d3d43b46b13b0e7bd9ecfadd017ad2",
+    "ViewAssets.js": "6a8ec1aa24c44ce2a2574d9b26f9934d022479d0e5db622afd329b4066fc574e",
+    "Workflow.js": "734788301f6eaac826330f41b8fd086c36e5843f20a1c119c3e6a92eea7a0caa",
+    "WorkflowRuntime.js": "f4621d27ea3a173796841a69e7b7b8e90283d555143482982a31ee76836ab82c",
+    "FactoryServer.js": "8623e02dae05f23d1ae69940f8b85d9563f5cda8327b73b567e6e5d49385efc8",
+    "RunProjection.js": "f4e846a3a2401b55fb6106c6796a8406f8f26a1db51aa5e77cf9c74c1c8941ae"
+  },
+  "assets": [
+    {
+      "path": "/app.75102817b91103d64b9f626f.js",
+      "sha256": "75102817b91103d64b9f626fbb00563e10a5b022481ce65a21cf3722cbfb189d"
+    },
+    {
+      "path": "/styles.6846ba8d2fed98aee259d76c.css",
+      "sha256": "6846ba8d2fed98aee259d76c0735455de84de134ceeab23f90062041f4bd511a"
+    },
+    {
+      "path": "/",
+      "sha256": "4d1d2859a1a6158a6e9c2d356bba0db4b70485ea72469f29655622402287c89c"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004"
+    },
+    {
+      "path": "/icons/icon-192.png",
+      "sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961"
+    },
+    {
+      "path": "/icons/icon-512.png",
+      "sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86"
+    },
+    {
+      "path": "/icons/maskable-512.png",
+      "sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9"
+    },
+    {
+      "path": "/icons/apple-touch-icon.png",
+      "sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4"
+    },
+    {
+      "path": "/sw.js",
+      "sha256": "dc20b2dacafa08551807f9a1046e7815e3e22f7e7067150fa718dc6da3abbb59"
+    }
+  ],
+  "node": "v24.21.0",
+  "platform": "darwin",
+  "arch": "arm64",
+  "stoppedAt": "2026-10-22T05:16:52.794Z",
+  "fixtureStopped": true,
+  "previewTabClosed": true,
+  "mandatoryScreenshots": 12,
+  "mandatoryImagesIndividuallyInspected": true,
+  "additionalInspectedImages": [
+    "ask-before.png",
+    "ask-after.png",
+    "builder-last-run-provenance.png",
+    "builder-invalid-save.png"
+  ],
+  "sourceInputComparison": {
+    "apps/f1/test-drives/assets/taskbot140-views-ui.mjs": {
+      "executedSha256": "526cba68f5a272b6dd562a9287e53fb3667342e807ce4817ac244b862389eb6f",
+      "currentSha256": "9bd302426996f64ea4aed760eafd30c713965aab63ccaa9610cb9d4b601784a6",
+      "matches": false
+    },
+    "packages/edge-worker/src/factory/View.ts": {
+      "executedSha256": "6dc508a3ef3ef16c597505d8f5731126e279d51e820147810879e0f30b637ec2",
+      "currentSha256": "6dc508a3ef3ef16c597505d8f5731126e279d51e820147810879e0f30b637ec2",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/HumanStep.ts": {
+      "executedSha256": "17b1cd266a2de67cd93ee1ce6c5e5c908f60b635356611c621884a848e016b99",
+      "currentSha256": "17b1cd266a2de67cd93ee1ce6c5e5c908f60b635356611c621884a848e016b99",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/ViewRuntime.ts": {
+      "executedSha256": "49f7a7faeadbf439dc60879bb1d9084d0b341328281c7c799f2fc3734d687bc5",
+      "currentSha256": "49f7a7faeadbf439dc60879bb1d9084d0b341328281c7c799f2fc3734d687bc5",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/ViewAssets.ts": {
+      "executedSha256": "83675e94b358813884d7059291874b7a50885521dace28e9afe3cfbc1d0e473e",
+      "currentSha256": "83675e94b358813884d7059291874b7a50885521dace28e9afe3cfbc1d0e473e",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/Workflow.ts": {
+      "executedSha256": "184bea951b6ed1cc887695f94f4ada61720438d46fc96f9cd715b058d80c8e1d",
+      "currentSha256": "184bea951b6ed1cc887695f94f4ada61720438d46fc96f9cd715b058d80c8e1d",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts": {
+      "executedSha256": "1617a007a9fd3ccb9c056fbeee0cd1d2337b0172b9607abe06164c6cadc6bf53",
+      "currentSha256": "1617a007a9fd3ccb9c056fbeee0cd1d2337b0172b9607abe06164c6cadc6bf53",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/StepBindings.ts": {
+      "executedSha256": "22f04a06a94741d3809b3e00dd64d8b747d8ca21d93746c7c48c2dec07025d90",
+      "currentSha256": "22f04a06a94741d3809b3e00dd64d8b747d8ca21d93746c7c48c2dec07025d90",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/FactoryServer.ts": {
+      "executedSha256": "530b9f905d13173e59a273e802cfcca57a6fd0d5985b2d2a0f53033b75f9cb0c",
+      "currentSha256": "530b9f905d13173e59a273e802cfcca57a6fd0d5985b2d2a0f53033b75f9cb0c",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/RunProjection.ts": {
+      "executedSha256": "1a36715bf6fdc37da7df40fce444eaeb43235cb9b84c75495669cc9a527bf97b",
+      "currentSha256": "1a36715bf6fdc37da7df40fce444eaeb43235cb9b84c75495669cc9a527bf97b",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/LaunchRuns.ts": {
+      "executedSha256": "b15aa84ee57b09330123edfb90dd9b52eb8903c4e88fd94724220c5c3acedda0",
+      "currentSha256": "b15aa84ee57b09330123edfb90dd9b52eb8903c4e88fd94724220c5c3acedda0",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/web/declarative-view.tsx": {
+      "executedSha256": "d66145a2456bec915ab4119816bb30e9188fdb38b0d898b14a7242a914773414",
+      "currentSha256": "d66145a2456bec915ab4119816bb30e9188fdb38b0d898b14a7242a914773414",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/web/declarative-view.css": {
+      "executedSha256": "053efc5c190575d08952246583d55880efcd15b016fe1a77a1e7b6124a97d333",
+      "currentSha256": "053efc5c190575d08952246583d55880efcd15b016fe1a77a1e7b6124a97d333",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/web/human-step-settings.tsx": {
+      "executedSha256": "49071c648ec866e117fe21191dae82231ee035047a88ab4cdd34cad304936169",
+      "currentSha256": "49071c648ec866e117fe21191dae82231ee035047a88ab4cdd34cad304936169",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/web/focus.tsx": {
+      "executedSha256": "ec133cb7ec67d4493ec8565541833e1011bc23404cd367e0b60562b786cd641a",
+      "currentSha256": "ec133cb7ec67d4493ec8565541833e1011bc23404cd367e0b60562b786cd641a",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/web/recipe-builder.tsx": {
+      "executedSha256": "e64b4934c9d1d741d86cabb80802016924a63a2b1b3d98ae633a527b3b2480ab",
+      "currentSha256": "e64b4934c9d1d741d86cabb80802016924a63a2b1b3d98ae633a527b3b2480ab",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/web/recipe-graph.ts": {
+      "executedSha256": "dc57b60e8879e4d1a3a4b8381ddc37e4487c6a415358b130da9d53ceb0bcb771",
+      "currentSha256": "dc57b60e8879e4d1a3a4b8381ddc37e4487c6a415358b130da9d53ceb0bcb771",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/web/styles.css": {
+      "executedSha256": "95a2df526be61ede4ff216696e49c7ac2cc2c753901cf2dccd53ab81fe158bb1",
+      "currentSha256": "95a2df526be61ede4ff216696e49c7ac2cc2c753901cf2dccd53ab81fe158bb1",
+      "matches": true
+    },
+    "packages/edge-worker/src/factory/web/app.tsx": {
+      "executedSha256": "a2188397d5723aa50c4065b8b5f1451b223ba4b05841b3cb043b0c8f25073d19",
+      "currentSha256": "a2188397d5723aa50c4065b8b5f1451b223ba4b05841b3cb043b0c8f25073d19",
+      "matches": true
+    }
+  },
+  "executedDriverCopySha256": "526cba68f5a272b6dd562a9287e53fb3667342e807ce4817ac244b862389eb6f",
+  "noticesAfterRetries": 6,
+  "distinctNoticesAfterRetries": 6,
+  "sourceResearchCalls": 1,
+  "dedicatedAskCalls": 1,
+  "reconstructions": 2,
+  "toolingQualifications": [
+    "The first final verification invocation preceded the driver status observation because an overlong PTY record line filled the input buffer. It failed before API checks; its raw failure log is retained. Ctrl+U then the short status command yielded the actual observation; unchanged verifier then passed12 assertions.",
+    "An initial360 theme audit sampled media changes before settling. The retained settled audit explicitly checks expected versus actual theme for all6 cases and supersedes that initial sampling.",
+    "The originally executed driver bytes are retained exactly. Only the reusable driver notification annotation/verification changed after owner authorization; no executing runtime was hotpatched. Standalone observed verifier checks actual notices by run+text and performs concurrent exact accepted API retries.",
+    "Attempt1 source318c93f/shelld913c screenshot exposed CSS spacing; attempt2 sourcee4e9fe2/shelle529a exposed outer wrapper draft reset. Both remain historical; final source667cbffd/shell32c73 contains fresh complete screenshots/interactions."
+  ],
+  "limitations": [
+    "Scripted agents exercise orchestration and rendering; no paid/native model, real tracker or delivery provider is invoked.",
+    "This driver does not establish EdgeWorker ticket intake, native authentication, real merge quality, release publication or production deployment.",
+    "Source Git identity and dirty source hashes are recorded separately from the actual loaded backend and dashboard asset inventory.",
+    "Screenshots and browser interaction observations are added only after actual production-renderer execution."
+  ],
+  "files": [
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-1/decide-desktop-light.png",
+      "bytes": 165635,
+      "sha256": "b9b9accdf7d733f8415e852611211619053d4d2e53880cbce894bebd92a0ccbd",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-1/driver.log",
+      "bytes": 1124,
+      "sha256": "a6b32beaf59364c93ba07c02b3fc4181d1112730657028c1d79843447e395c45"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-1/identity.json",
+      "bytes": 142259,
+      "sha256": "50a79a03c5c7ba38716963cebe3d507cad008763cedf991922d4d2cfdf4f7b25"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-1/initial-360-audit.json",
+      "bytes": 596,
+      "sha256": "aba6cc3c38f55c638cb0022f03b0562700a9cf8af2bf9d72cc913f67cec90580"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/360-accessibility-audit.json.raw",
+      "bytes": 7176,
+      "sha256": "b54af9104c4c991a47f6c7ac842db86b57620f697f70cf286219bd8204ce6540"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/approve-390px-dark.png",
+      "bytes": 226496,
+      "sha256": "54caf43cb05a0c1a83dd885cfd26016f282535a1270a00e501f95ea46d96c84e",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/approve-390px-light.png",
+      "bytes": 204944,
+      "sha256": "a3c431cb7a4a4772e7cf4a5074b6af3d563b28cb26573d990f2e78ad32dd0791",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/approve-desktop-dark.png",
+      "bytes": 197978,
+      "sha256": "c37d4663506d6ccc0e459e4c038847f961767344f7ab3d15154e0aaeccc2e926",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/approve-desktop-light.png",
+      "bytes": 163474,
+      "sha256": "7229c5068fddc4c453f4bfabc272e2cbef0dc561fcd50210deb21cc00fb6c4b1",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/ask-draft-reset-finding.json.raw",
+      "bytes": 7130,
+      "sha256": "1366ede0866f018ec7a09fdb9fc80375eaffb7843298cb9abb0710889f7dda01"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/decide-390px-dark.png",
+      "bytes": 230287,
+      "sha256": "4e260453cf0d358efc9afa3ba563f6927756081a0a0c62b8857ddd5349d6f397",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/decide-390px-light.png",
+      "bytes": 210445,
+      "sha256": "0abd5069d305de98f3f161ea20218ff3f90da4081310a0bc14747bb59840d215",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/decide-desktop-dark.png",
+      "bytes": 202202,
+      "sha256": "ecc27efd46f9e557218e5f857cab025df00075b6c1c6cf15bb043cb3252036c2",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/decide-desktop-light.png",
+      "bytes": 168622,
+      "sha256": "ca9fd804b62dd5792b2e2e7f945cc3ca29fdaf9631120a7db4cc21d4e9aab385",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/driver.log",
+      "bytes": 1120,
+      "sha256": "b8be0e7c61ee58e5db2e929e1f12644e2b67faee94403ce2a1a4a5889356080d"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/identity.json",
+      "bytes": 144156,
+      "sha256": "14897c3f56448be75c4abe85da8ef3950d46241ea9b45109fd6c0ced036f3fc2"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/run-list-390px-dark.png",
+      "bytes": 238531,
+      "sha256": "3166fa3ace42fd2140b7aad3a435ef1c8588469359884c01cd8aa71d7b97a543",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/run-list-390px-light.png",
+      "bytes": 215890,
+      "sha256": "1cbae706438629587f47f0fd133d8999225fa81e60e1cc856eb38a83b3f62885",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/run-list-desktop-dark.png",
+      "bytes": 222240,
+      "sha256": "3f4e829dbddbdc1fc0aba28f1c6d53b14478271e2dc9d2b9b8f6963aea78b34d",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/run-list-desktop-light.png",
+      "bytes": 180226,
+      "sha256": "789ba228d2e85e0ce9ea2d7a38e6e9a8f8fa683180a93f49e14c0f455ff20e6c",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/attempt-2/screenshots.json.raw",
+      "bytes": 5355,
+      "sha256": "b654a4a5cb5426b24f2dfa612715f475d1cdcab419fbc59430b73e440a777d19"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/360-accessibility-audit-settled.json.raw",
+      "bytes": 1682,
+      "sha256": "1e78ef8f6cc618a47ea698874b179032d0f5122f0320c5b076356d166326ab92"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/360-accessibility-audit.json.raw",
+      "bytes": 7176,
+      "sha256": "ca8ac434a047df34ce2fd9e9113869fd3285a09f0f656d450317414047864336"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/accepted-after-reconstruction.json.raw",
+      "bytes": 52404,
+      "sha256": "1ec644ec1c2352e91335089c71a3445fa662db98fbc19990f9ee786213f3fe2c"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-390px-dark.png",
+      "bytes": 227698,
+      "sha256": "62b520d125e91e8be3efd9d95c8987d65720480fdf89eaaaf8add0c53e72f16a",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-390px-light.png",
+      "bytes": 206718,
+      "sha256": "0f54814dd2ef220d0c3b5fe1973064264995ca91254e14b7aeb41e581ad89958",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-and-child-navigation.json.raw",
+      "bytes": 7800,
+      "sha256": "2bf90a658a32e3efbf9137d1f3c84ed58f1cf104821d01986d6d5052dbdf13ce"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-desktop-dark.png",
+      "bytes": 197216,
+      "sha256": "5b2e78a7b88e18ae013041a6472e3b140680e5bd93a44cf4494c2c18adaff26b",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-desktop-light.png",
+      "bytes": 205596,
+      "sha256": "dc1989abd41df48c381e70218a244de418a1c179727b7cdc8553313518679811",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/ask-after.png",
+      "bytes": 226978,
+      "sha256": "9c435f9f1037bd3af1692d3275313a6b00bc90d878c19343760b96f7e31cb154",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/ask-before.png",
+      "bytes": 215175,
+      "sha256": "a7bf44ce45bfaeaea310f3a7d398ea65c0fa71b5288acce5da42b2e4d92a331c",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/ask-keyboard-interaction.json.raw",
+      "bytes": 7877,
+      "sha256": "d14effd057e3022da8b1e0f534525addd4b983c177167ae3cdd431381a7781cb"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/builder-interaction.json.raw",
+      "bytes": 5538,
+      "sha256": "97bfb8cb443cc685de9b8b65db89e285da321e1211da742bbe987e78cd111c42"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/builder-invalid-save.png",
+      "bytes": 146765,
+      "sha256": "3c83a39715875ca4f3b32dc59dd46fcbf4e75cddee8f321d940df1740b3f74f1",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/builder-last-run-provenance.png",
+      "bytes": 164341,
+      "sha256": "85006acb39dad88d5be9626f96ae7aa913ca52824038d2bbf4bc03da1b67cb4e",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/builder-path-and-errors.json.raw",
+      "bytes": 606,
+      "sha256": "662c37b260e243ec0d965a4510775f117ed10abea00f74d24f9b43e968edd3db"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/decide-390px-dark.png",
+      "bytes": 236059,
+      "sha256": "c8ae815eee8e2376cb40a9cf8131cbe6b0a33864f02b4e12765edf768a9b74b5",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/decide-390px-light.png",
+      "bytes": 214907,
+      "sha256": "93834e4a3a8024ae0a00067f0111f21e7a99fa9b07b3928c0663c975947bdeae",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/decide-desktop-dark.png",
+      "bytes": 201430,
+      "sha256": "9465b225817cdcee3b485ad116fed1e3c5ccf63734c6bd20f1f889c4b81a0cc0",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/decide-desktop-light.png",
+      "bytes": 167893,
+      "sha256": "9472e570407850a340986bc2150a1952cd4a22d5cf7bd698a5fe4fbb1ab246af",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/driver-executed.mjs",
+      "bytes": 28212,
+      "sha256": "526cba68f5a272b6dd562a9287e53fb3667342e807ce4817ac244b862389eb6f"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/driver.log",
+      "bytes": 65927,
+      "sha256": "511d882873465396e853318aa1dd2c199cbb86afb224f5cf5eb0bbda83135dce"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/identity.json",
+      "bytes": 631267,
+      "sha256": "325fadeae5e4cc71940b0b9728800c53392665cd5d18ac45033c632fe5ca52ec"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/negative-api-interaction.json.raw",
+      "bytes": 9883,
+      "sha256": "35dcf6e9864f434e0255ae5a1f4750045dce9b039d3c2ae4327dbd16692b6346"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/request-changes-interaction.json.raw",
+      "bytes": 20301,
+      "sha256": "d2dc7458f21e9fb52a203dfa2ac3af5e02dfead52222710524da15248ff81b19"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/run-list-390px-dark.png",
+      "bytes": 246738,
+      "sha256": "7b9e5cbe8d494afacfc9de8d207d289a62dd1eae3be328230fdd1b43de46d4fb",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/run-list-390px-light.png",
+      "bytes": 224731,
+      "sha256": "78b34e814a36d43e2ebe8e56f823375884032cba6932d0e3172805634a0b537b",
+      "pixelWidth": 780,
+      "pixelHeight": 1960
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/run-list-desktop-dark.png",
+      "bytes": 222248,
+      "sha256": "f55ca669e44ce73109274ea413c3af454e398bd43431f62e7460da79d2afc51c",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/run-list-desktop-light.png",
+      "bytes": 180575,
+      "sha256": "535f674ef1d74e5b48365b128e7b640bc57f4aa473d9770d894107688637f65c",
+      "pixelWidth": 1280,
+      "pixelHeight": 889
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/screenshots.json.raw",
+      "bytes": 5077,
+      "sha256": "280a058ad359cbd45e5d06a42e17345983cd35deda7d674359f67b1033e784f4"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/verification-attempt-1.log",
+      "bytes": 650,
+      "sha256": "8f4a95cc4b73c2871cc9712d0ee3e77b07bc1e51708608e92b2f04158538e82c"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/verification.json.raw",
+      "bytes": 15414,
+      "sha256": "0b971889b3a95b52c0636a269d8e4eaa686edbe2518df04aeac2a336d7c1874b"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/verification.log",
+      "bytes": 1297,
+      "sha256": "82e17e1cc77242bfedccb8334e205f2afca6553c53fc719b91e6c97071df9417"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/verify-observed.mjs",
+      "bytes": 8918,
+      "sha256": "a16b2d1af8a3b6cca602d39d8f47eafca918973491a48f5c363710e442b46d53"
+    }
+  ]
+}

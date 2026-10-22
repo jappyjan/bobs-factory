@@ -1,0 +1,74 @@
+[
+  {
+    "runId": "session-1",
+    "role": "research",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:05.739Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "story",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:06.162Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "detail",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:06.813Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "detail",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:06.842Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:08.331Z"
+  },
+  {
+    "runId": "session-2",
+    "role": "research",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:12.706Z"
+  },
+  {
+    "runId": "session-2",
+    "role": "story",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:13.165Z"
+  },
+  {
+    "runId": "session-2",
+    "role": "detail",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:13.799Z"
+  },
+  {
+    "runId": "session-2",
+    "role": "detail",
+    "runner": "codex",
+    "model": "gpt-5.5",
+    "resume": null,
+    "at": "2026-10-22T04:57:13.833Z"
+  }
+]

@@ -185,6 +185,7 @@ const authoredView = {
 			"intro",
 			"Agent-authored view: <script>window.__f1Pwned=true</script> [bad](javascript:alert(1))",
 		),
+		{ id: "no-screens", type: "screenshots", data: { literal: { items: [] } } },
 		{
 			id: "notes",
 			type: "points",

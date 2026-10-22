@@ -1,0 +1,170 @@
+[
+  {
+    "name": "decide-desktop-light.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2yjzd-0261236a.png",
+    "url": "http://localhost:3690/#/runs/views-decide-ui-run",
+    "audit": {
+      "width": 1440,
+      "height": 1000,
+      "theme": "light",
+      "scrollWidth": 1440,
+      "scrollY": 341,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "decide-desktop-dark.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2yk5k-52c8212a.png",
+    "url": "http://localhost:3690/#/runs/views-decide-ui-run",
+    "audit": {
+      "width": 1440,
+      "height": 1000,
+      "theme": "dark",
+      "scrollWidth": 1440,
+      "scrollY": 341,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "decide-390px-light.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ykc3-b8f49ae7.png",
+    "url": "http://localhost:3690/#/runs/views-decide-ui-run",
+    "audit": {
+      "width": 390,
+      "height": 980,
+      "theme": "light",
+      "scrollWidth": 390,
+      "scrollY": 507,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "decide-390px-dark.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ykhf-f2c7e1c4.png",
+    "url": "http://localhost:3690/#/runs/views-decide-ui-run",
+    "audit": {
+      "width": 390,
+      "height": 980,
+      "theme": "dark",
+      "scrollWidth": 390,
+      "scrollY": 507,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "approve-desktop-light.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ykx5-0ab7e81a.png",
+    "url": "http://localhost:3690/#/runs/views-approve-ui-run",
+    "audit": {
+      "width": 1440,
+      "height": 1000,
+      "theme": "light",
+      "scrollWidth": 1440,
+      "scrollY": 345,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "approve-desktop-dark.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ylac-81556bb3.png",
+    "url": "http://localhost:3690/#/runs/views-approve-ui-run",
+    "audit": {
+      "width": 1440,
+      "height": 1000,
+      "theme": "dark",
+      "scrollWidth": 1440,
+      "scrollY": 341,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "approve-390px-light.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ylgs-c95649e1.png",
+    "url": "http://localhost:3690/#/runs/views-approve-ui-run",
+    "audit": {
+      "width": 390,
+      "height": 980,
+      "theme": "light",
+      "scrollWidth": 390,
+      "scrollY": 507,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "approve-390px-dark.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ylmg-8aca40ce.png",
+    "url": "http://localhost:3690/#/runs/views-approve-ui-run",
+    "audit": {
+      "width": 390,
+      "height": 980,
+      "theme": "dark",
+      "scrollWidth": 390,
+      "scrollY": 507,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "run-list-desktop-light.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ym2u-c03b54bc.png",
+    "url": "http://localhost:3690/#/runs/views-children-ui-run",
+    "audit": {
+      "width": 1440,
+      "height": 1000,
+      "theme": "light",
+      "scrollWidth": 1440,
+      "scrollY": 1088,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "run-list-desktop-dark.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ymby-47cbd216.png",
+    "url": "http://localhost:3690/#/runs/views-children-ui-run",
+    "audit": {
+      "width": 1440,
+      "height": 1000,
+      "theme": "dark",
+      "scrollWidth": 1440,
+      "scrollY": 1088,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "run-list-390px-light.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ymis-8eddc911.png",
+    "url": "http://localhost:3690/#/runs/views-children-ui-run",
+    "audit": {
+      "width": 390,
+      "height": 980,
+      "theme": "light",
+      "scrollWidth": 390,
+      "scrollY": 1411,
+      "attack": null,
+      "remoteResources": 0
+    }
+  },
+  {
+    "name": "run-list-390px-dark.png",
+    "sourceScreenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj2ymoh-ac9ba453.png",
+    "url": "http://localhost:3690/#/runs/views-children-ui-run",
+    "audit": {
+      "width": 390,
+      "height": 980,
+      "theme": "dark",
+      "scrollWidth": 390,
+      "scrollY": 1411,
+      "attack": null,
+      "remoteResources": 0
+    }
+  }
+]
