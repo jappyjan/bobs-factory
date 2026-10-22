@@ -1,29 +1,29 @@
 {
   "version": "taskbot140-round6-archive-v1",
-  "at": "2026-10-22T12:30:40.872Z",
-  "tree": "d41ba93aadc1c8c77dd84cd73535ce55543ae2d3",
+  "at": "2026-10-22T12:33:34.579Z",
+  "tree": "848b0db3ec1570dae9425466fa80ff3d374473bc",
   "selection": [
     "--index"
   ],
-  "exportSha256": "f5ee8e123b8652e56538b4ae4af2b7d65cdc38ece47b7ab3f243e78204336620",
+  "exportSha256": "46c40b580d2850c225846ad44f497a74de95ee95a7a1f7cc7f91430c8c2fa5ef",
   "nonRuntimeLfsPointers": 1,
-  "files": 973,
-  "originalCopies": 504,
+  "files": 977,
+  "originalCopies": 508,
   "sourceInputs": 2818,
   "driverInputs": 13,
   "reportLinks": 217,
   "failures": [],
   "originalVerifier": {
     "version": "taskbot140-archive-v1",
-    "at": "2026-10-22T12:30:42.150Z",
+    "at": "2026-10-22T12:33:36.503Z",
     "node": "v24.21.0",
     "verifierSha256": "2bb35f6fef75d6fa5fefe8f1427af7b656052361fc50f7e247654dea26eaf58f",
     "submitted": {
       "selection": "tree",
-      "reference": "d41ba93aadc1c8c77dd84cd73535ce55543ae2d3",
-      "tree": "d41ba93aadc1c8c77dd84cd73535ce55543ae2d3",
-      "head": "3ae23b333c70f11650e25f0f781448b8b2310fb2",
-      "archiveExportSha256": "c01f638299a3da45e0018e720c50564afbe6588ba8c6226f5d335aa96ce1dca4"
+      "reference": "848b0db3ec1570dae9425466fa80ff3d374473bc",
+      "tree": "848b0db3ec1570dae9425466fa80ff3d374473bc",
+      "head": "32e96a2b54d490031e24ff0b7dc9106529aed237",
+      "archiveExportSha256": "0c35ec59d1f280b4c8de2cc2ee2e0d5f2831bce5479cd0c16eac70eecaa11378"
     },
     "checks": {
       "originalInventory": 1,

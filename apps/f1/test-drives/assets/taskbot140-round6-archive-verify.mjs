@@ -96,16 +96,31 @@ try {
 	const equivalence = JSON.parse(
 		readFileSync(join(directory, root, "round6/input-equivalence.json")),
 	);
-	for(const [path,expected] of [
- ["archive-sha256.json",equivalence.pinnedOriginal186Inventory],
- ["round3/archive-sha256.json",equivalence.pinnedOriginal577Inventory],
- ["round4/archive-sha256.json",equivalence.pinnedOriginal707Inventory],
- ["round5/archive-sha256.json",equivalence.pinnedOriginal838Inventory],
- ]) assert.equal(sha(readFileSync(join(directory,root,path))),expected,"Pinned original inventory "+path);
+	for (const [path, expected] of [
+		["archive-sha256.json", equivalence.pinnedOriginal186Inventory],
+		["round3/archive-sha256.json", equivalence.pinnedOriginal577Inventory],
+		["round4/archive-sha256.json", equivalence.pinnedOriginal707Inventory],
+		["round5/archive-sha256.json", equivalence.pinnedOriginal838Inventory],
+	])
+		assert.equal(
+			sha(readFileSync(join(directory, root, path))),
+			expected,
+			`Pinned original inventory ${path}`,
+		);
 	assert.equal(source.head, equivalence.validatedHead);
 	assert.equal(source.fingerprint, equivalence.sourceFingerprint);
-	const currentInputs = [...modes.keys()].filter(path => !path.startsWith("apps/f1/test-drives/") && !path.startsWith("CHANGELOG")).sort();
-	assert.deepEqual(source.files.map(input => input.path).sort(), currentInputs, "Complete retained input-set coverage");
+	const currentInputs = [...modes.keys()]
+		.filter(
+			(path) =>
+				!path.startsWith("apps/f1/test-drives/") &&
+				!path.startsWith("CHANGELOG"),
+		)
+		.sort();
+	assert.deepEqual(
+		source.files.map((input) => input.path).sort(),
+		currentInputs,
+		"Complete retained input-set coverage",
+	);
 	for (const [family, inputs] of [
 		["sourceInputs", source.files],
 		["driverInputs", equivalence.drivers],

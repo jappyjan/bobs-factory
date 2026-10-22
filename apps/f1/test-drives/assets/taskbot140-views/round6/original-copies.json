@@ -123,5 +123,9 @@
   "apps/f1/test-drives/assets/taskbot140-views/round6/remote-before.json.raw": "/tmp/taskbot140-round6-remote-before.json",
   "apps/f1/test-drives/assets/taskbot140-views/round6/finalization-output.log": "/tmp/taskbot140-round6-finalize.log",
   "apps/f1/test-drives/assets/taskbot140-views/round6/historical/preliminary-index-proof.json.raw": "/tmp/taskbot140-round6-index-proof-preliminary.json",
-  "apps/f1/test-drives/assets/taskbot140-views/round6/final-main.txt": "/tmp/taskbot140-round6-final-main.txt"
+  "apps/f1/test-drives/assets/taskbot140-views/round6/final-main.txt": "/tmp/taskbot140-round6-final-main.txt",
+  "apps/f1/test-drives/assets/taskbot140-views/round6/focused/taskbot140-round6-verifier-lint.log": "/tmp/taskbot140-round6-verifier-lint.log",
+  "apps/f1/test-drives/assets/taskbot140-views/round6/focused/taskbot140-round6-verifier-check.log": "/tmp/taskbot140-round6-verifier-check.log",
+  "apps/f1/test-drives/assets/taskbot140-views/round6/focused/taskbot140-round6-verifier-format.log": "/tmp/taskbot140-round6-verifier-format.log",
+  "apps/f1/test-drives/assets/taskbot140-views/round6/focused/taskbot140-round6-verifier-final-check.log": "/tmp/taskbot140-round6-verifier-final-check.log"
 }
