@@ -688,13 +688,26 @@ try {
 	});
 	assert.equal(page.activities.length, 1);
 	assert.equal(page.totalCount, activities.totalCount);
-	const comments = await tracker.fetchComments(
-		runtime.get(sessions[0]).issueId,
-		{ first: 100 },
+	const completedParent = runtime.get(sessions[0]);
+	await worker.getTicketTracking().flush(completedParent);
+	const completion = completedParent.ticketSync.receipts.find((receipt) =>
+		receipt.key.startsWith("outcome:completed:"),
 	);
 	assert(
-		comments.nodes.some((comment) => comment.body.includes("completed")),
-		"Durable terminal tracking comment",
+		completion?.delivered,
+		"Durable terminal outcome receipt is delivered",
+	);
+	const transcript = await rpc("viewSession", {
+		sessionId: sessions[0],
+		limit: 1000,
+	});
+	assert(
+		transcript.activities.some(
+			(activity) =>
+				activity.type === "response" &&
+				activity.content.includes(completion.body),
+		),
+		"Native completion reaches its session transcript",
 	);
 	assert.equal(
 		buildIdentity(),
