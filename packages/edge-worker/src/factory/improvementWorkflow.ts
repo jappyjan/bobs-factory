@@ -386,7 +386,12 @@ export const improvementWorkflow = {
 			reads: { plans: "plans", selected: "decide/itemsByAction/fix" },
 			check: {
 				results: {
-					plans: { select: "/inputs/plans/results/*/refine/outputs/plan" },
+					// Carry complete packages from this owned read scope without
+					// canonicalizing prose that ID/prerequisite predicates do not use.
+					plans: {
+						aggregate: "filter",
+						path: "/inputs/plans/results/*/refine/outputs/plan",
+					},
 					exactCoverage: {
 						all: [
 							{
@@ -499,7 +504,7 @@ export const improvementWorkflow = {
 						equals: true,
 					},
 					feedback: { select: "/inputs/checks" },
-					plans: { select: "/inputs/plans" },
+					plans: { aggregate: "filter", path: "/inputs/plans" },
 				},
 			},
 			branches: [{ when: { path: "passed", equals: false }, next: "plans" }],

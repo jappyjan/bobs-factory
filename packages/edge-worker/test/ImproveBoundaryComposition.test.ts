@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { evaluateCheckAsync } from "../src/factory/Check.js";
 import { digest } from "../src/factory/Delivery.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { foreachPointer } from "../src/factory/Foreach.js";
 import {
 	decisionItems,
 	type ViewRecord,
 	viewAnswerOutput,
 } from "../src/factory/HumanStep.js";
 import {
+	conforms,
 	parseOutputFormat,
 	parseStepOutputAsync,
 } from "../src/factory/OutputFormats.js";
@@ -19,6 +22,11 @@ import type { FactoryRun } from "../src/factory/WorkflowRuntime.js";
 const stock = defaultWorkflows.find((w) => w.id === "improve-codebase")!;
 const approve = stock.steps.find((s) => s.type === "approve")!;
 const decide = stock.steps.find((s) => s.type === "decide")!;
+const planInputs = stock.steps.find((s) => s.id === "plan-inputs")!;
+const planDependencies = stock.steps.find((s) => s.id === "plan-dependencies")!;
+const planCheck = stock.steps.find((s) => s.id === "plan-check")!;
+const planStep = defaultWorkflows.find((w) => w.id === "refine-plan")!
+	.steps[0]!;
 const consolidate = defaultWorkflows.find(
 	(w) => w.id === "consolidate-proposals",
 )!.steps[0]!;
@@ -120,8 +128,6 @@ describe("stock approval composition", () => {
 				comment: "\u0001".repeat(12000),
 			})),
 		});
-		const planStep = defaultWorkflows.find((w) => w.id === "refine-plan")!
-			.steps[0]!;
 		const plans = await Promise.all(
 			raw.opportunities.map((item) =>
 				parseStepOutputAsync(planStep, {
@@ -137,19 +143,63 @@ describe("stock approval composition", () => {
 				}),
 			),
 		);
+		const checkedInputs = await evaluateCheckAsync(
+			planInputs.check!,
+			{
+				plans: {
+					results: Object.fromEntries(
+						plans.map((plan, i) => [
+							`p${i}`,
+							{ refine: { outputs: { plan } } },
+						]),
+					),
+				},
+				selected: foreachPointer(choices, "/itemsByAction/fix"),
+			},
+			{},
+			conforms,
+		);
+		expect(checkedInputs).toEqual({ passed: true, exactCoverage: true, plans });
+		const checkedGraph = await evaluateCheckAsync(
+			planDependencies.check!,
+			{ plans: checkedInputs.plans },
+			{},
+			conforms,
+		);
+		expect(checkedGraph.passed).toBe(true);
+		const actualChecks = await Promise.all(
+			stock.steps
+				.find((s) => s.id === "checks")!
+				.groups!.map(async (group) => ({
+					[group[0]!.id]: await parseStepOutputAsync(group[0]!, {
+						approved: true,
+						feedback: [],
+					}),
+				})),
+		);
+		const checkedPlans = await evaluateCheckAsync(
+			planCheck.check!,
+			{ checks: actualChecks, plans: checkedInputs.plans, decisions: choices },
+			{},
+			conforms,
+		);
+		expect(checkedPlans).toEqual({
+			passed: true,
+			architecture: true,
+			security: true,
+			dependencies: true,
+			feedback: actualChecks,
+			plans,
+		});
 		const full = viewScope({
 			run,
 			step: approve,
 			outputs: {
 				...outputs,
 				decide: choices,
-				"plan-check": { plans },
-				checks,
-				"plan-dependencies": {
-					passed: true,
-					ids: raw.opportunities.map((i) => i.id),
-					dependencies: raw.opportunities.map(() => []),
-				},
+				"plan-check": checkedPlans,
+				checks: actualChecks,
+				"plan-dependencies": checkedGraph,
 				// This unused, nondisplayed source must not be copied into the approval scope.
 				snapshot: { history: "h".repeat(1_048_577) },
 			},
@@ -170,6 +220,101 @@ describe("stock approval composition", () => {
 		expect(
 			new TextEncoder().encode(JSON.stringify(full)).length,
 		).toBeLessThanOrEqual(1_048_576);
+	});
+	it("returns full failed-review feedback and five complete large plans within the actual later Check budget", async () => {
+		const plans = await Promise.all(
+			Array.from({ length: 5 }, (_, i) =>
+				parseStepOutputAsync(planStep, {
+					id: `p${i}`,
+					itemIds: [`p${i}`],
+					title: `Plan p${i}`,
+					plan: "p".repeat(8000),
+					criteria: [proposal.criteria[0]!, "c".repeat(3900)],
+					paths: ["src/owner.ts", "s".repeat(3900)],
+					dependencies: [],
+				}),
+			),
+		);
+		const failedChecks = await Promise.all(
+			stock.steps
+				.find((s) => s.id === "checks")!
+				.groups!.map(async (group) => ({
+					[group[0]!.id]: await parseStepOutputAsync(group[0]!, {
+						approved: false,
+						feedback: [
+							"Restore the accepted ownership guarantee.",
+							"f".repeat(7400),
+						],
+					}),
+				})),
+		);
+		await expect(
+			evaluateCheckAsync(
+				planCheck.check!,
+				{ plans, checks: failedChecks, decisions: {} },
+				{},
+				conforms,
+			),
+		).resolves.toEqual({
+			passed: false,
+			architecture: false,
+			security: false,
+			dependencies: false,
+			plans,
+			feedback: failedChecks,
+		});
+		expect(planCheck.branches).toEqual([
+			{ when: { path: "passed", equals: false }, next: "plans" },
+		]);
+	});
+	it.each([
+		"duplicate ID",
+		"unknown ID",
+		"missing prerequisite",
+		"wrong item ID",
+	])("returns ordinary refinement for complete large packages with %s", async (failure) => {
+		const selected = Array.from({ length: 5 }, (_, i) => ({
+			id: `p${i}`,
+			dependencies: i === 1 ? ["p0"] : [],
+		}));
+		const plans = await Promise.all(
+			selected.map((item, i) =>
+				parseStepOutputAsync(planStep, {
+					id:
+						i === 1 && failure === "duplicate ID"
+							? "p0"
+							: i === 1 && failure === "unknown ID"
+								? "other"
+								: item.id,
+					itemIds: [i === 1 && failure === "wrong item ID" ? "p0" : item.id],
+					title: `Plan ${item.id}`,
+					plan: "p".repeat(8000),
+					criteria: [proposal.criteria[0]!, "c".repeat(3900)],
+					paths: ["src/owner.ts", "s".repeat(3900)],
+					dependencies:
+						i === 1 &&
+						failure !== "missing prerequisite" &&
+						failure !== "duplicate ID"
+							? ["p0"]
+							: [],
+				}),
+			),
+		);
+		const output = await evaluateCheckAsync(
+			planInputs.check!,
+			{
+				plans: {
+					results: plans.map((plan) => ({ refine: { outputs: { plan } } })),
+				},
+				selected,
+			},
+			{},
+			conforms,
+		);
+		expect(output).toEqual({ passed: false, exactCoverage: false, plans });
+		expect(planInputs.branches).toEqual([
+			{ when: { path: "passed", equals: false }, next: "plans" },
+		]);
 	});
 	it("displays and binds the actual graph result through production source/final digests", () => {
 		const accepted = approvalRecord(graph),

@@ -30,21 +30,24 @@ assert.match(process.version, /^v24\./);
 const root = resolve(import.meta.dirname, "../../../..");
 const repairOnly = process.argv.includes("--review-fixes");
 const round3Repair = process.argv.includes("--round3-fixes");
+const planCheckRepair = process.argv.includes("--plan-check-fixes");
 const dependencyRepair = process.argv.includes("--dependency-fixes");
 const canvasOnly = process.argv.includes("--canvas-only");
 assert(!(repairOnly && dependencyRepair), "Choose one scoped repair scenario");
 const media = join(
 	root,
 	"apps/f1/test-drives/media/2026-10-22-improve-blocks",
-	...(round3Repair
-		? ["repair-r2-r3-r4"]
-		: canvasOnly
-			? ["repair-r2-r3/ui"]
-			: repairOnly
-				? ["repair-r1-r2"]
-				: dependencyRepair
-					? ["repair-r2-r3"]
-					: []),
+	...(planCheckRepair
+		? ["repair-r2-checks"]
+		: round3Repair
+			? ["repair-r2-r3-r4"]
+			: canvasOnly
+				? ["repair-r2-r3/ui"]
+				: repairOnly
+					? ["repair-r1-r2"]
+					: dependencyRepair
+						? ["repair-r2-r3"]
+						: []),
 );
 mkdirSync(media, { recursive: true });
 const directory = realpathSync(
@@ -225,11 +228,15 @@ tracker.getClient = () => ({
 });
 const inheritance =
 	"No step model is configured; this agent inherits the accepted run model.";
-const opportunities = [
-	["cache", "Isolate cache ownership"],
-	["deferred", "Document cache lifecycle"],
-	["optional", "Inspect a future adapter"],
-].map(([id, title]) => ({
+const opportunities = (
+	planCheckRepair
+		? Array.from({ length: 5 }, (_, i) => [`p${i}`, `Plan p${i}`])
+		: [
+				["cache", "Isolate cache ownership"],
+				["deferred", "Document cache lifecycle"],
+				["optional", "Inspect a future adapter"],
+			]
+).map(([id, title]) => ({
 	id,
 	title,
 	problem: "The fixture exports mutable cache state without an owner.",
@@ -238,10 +245,14 @@ const opportunities = [
 	before: "Callers → exported Map",
 	after: "Callers → cache owner → private Map",
 	plan: "Wrap the fixture cache behind a narrow owner; verify read/write and explicit clear behavior.",
-	criteria: ["Callers use the owner and clear has an observable check."],
+	criteria: [
+		planCheckRepair
+			? "MUST retain pending obligations across restart."
+			: "Callers use the owner and clear has an observable check.",
+	],
 	nonGoals: ["No external services or new dependencies."],
 	risks: ["Check current callers before changing exports."],
-	paths: ["cache.ts"],
+	paths: [planCheckRepair ? "src/owner.ts" : "cache.ts"],
 	strength: "worth-exploring",
 	effort: "Small",
 	dependencies: [],
@@ -442,9 +453,11 @@ worker = new EdgeWorker({
 				case "proposals":
 					assert(context.reports.summary.completed >= 1);
 					output = {
-						summary: context.followUps
-							? "The targeted answer was folded into the same stable shortlist."
-							: "Three fixture opportunities",
+						summary: planCheckRepair
+							? "Five complete fixture opportunities"
+							: context.followUps
+								? "The targeted answer was folded into the same stable shortlist."
+								: "Three fixture opportunities",
 						opportunities: dependencyRepair
 							? opportunities.map((item) => ({
 									...item,
@@ -522,10 +535,26 @@ worker = new EdgeWorker({
 				case "security":
 				case "dependencies":
 					assert(Array.isArray(context.plans));
+					if (planCheckRepair) {
+						assert.equal(context.plans.length, 5);
+						for (const plan of context.plans) {
+							assert.equal(plan.plan, "p".repeat(8000));
+							assert.deepEqual(plan.criteria, [
+								opportunities[0].criteria[0],
+								"c".repeat(3900),
+							]);
+							assert.deepEqual(plan.paths, ["src/owner.ts", "s".repeat(3900)]);
+						}
+					}
 					output = { approved: true, feedback: [] };
 					break;
 				default:
 					throw new Error(`Unexpected ${role}; no native fallback permitted`);
+			}
+			if (planCheckRepair && role === "plan") {
+				output.plan = "p".repeat(8000);
+				output.criteria = [...context.item.criteria, "c".repeat(3900)];
+				output.paths = [...context.item.paths, "s".repeat(3900)];
 			}
 			if (round3Repair && role === "proposals" && run.id === repairTargetRun) {
 				const attempt = turns.filter(
@@ -918,6 +947,114 @@ async function completeDrive() {
 			checks: checks.length,
 			...preview,
 		}),
+	);
+}
+async function planCheckFixDrive() {
+	const fork = await api("/api/workflows/improve-codebase/fork", {
+		name: "F1 five complete plan Check handoffs",
+	});
+	const definitions = runtime.listWorkflows().map((w) => structuredClone(w));
+	const workflow = definitions.find((w) => w.id === fork.id);
+	workflow.steps.find((s) => s.id === "perspectives").items.values = [
+		{
+			id: "fixture-perspective",
+			name: "Fixture ownership",
+			brief: "Inspect only the disposable cache ownership seam.",
+		},
+	];
+	await api(
+		"/api/workflows",
+		{ workflows: definitions, defaultWorkflow: fork.id },
+		200,
+		"PUT",
+	);
+	const parentId = await manual(fork.id);
+	repairTargetRun = parentId;
+	await decision(parentId, "decide");
+	await choose(
+		parentId,
+		Object.fromEntries(opportunities.map((i) => [i.id, "fix"])),
+	);
+	const approval = await decision(parentId, "approve");
+	const parent = current(parentId);
+	const produced = Object.values(parent.outputs.plans.results).map(
+		(result) => result.refine.outputs.plan,
+	);
+	assert.equal(produced.length, 5);
+	for (const id of ["plan-inputs", "plan-check"]) {
+		assert.equal(parent.outputs[id].passed, true);
+		assert.equal(
+			JSON.stringify(parent.outputs[id].plans),
+			JSON.stringify(produced),
+		);
+		assert.equal(parent.history.filter((h) => h.step === id).length, 1);
+	}
+	assert.equal(parent.outputs["plan-dependencies"].passed, true);
+	const cards = approval.view.components.find((c) => c.type === "itemCards")
+		.data.items;
+	assert.equal(cards.length, 5);
+	for (const plan of produced) {
+		const card = cards.find((c) => c.id === plan.id);
+		assert.equal(card.body, plan.plan);
+		assert.equal(
+			JSON.stringify(card.details),
+			JSON.stringify(plan.reviewDetails),
+		);
+		assert.equal(
+			`${card.body}\n\nAcceptance criteria:\n${card.details[0].value}\n\nDependencies: ${card.details[1].value}\nPaths: ${card.details[2].value}`,
+			plan.reviewText,
+		);
+	}
+	for (const role of ["architecture", "security", "dependencies"])
+		assert.equal(
+			turns.filter((t) => t.runId === parentId && t.role === role).length,
+			1,
+		);
+	assert.equal(
+		turns.filter((t) => t.runId === parentId && t.role === "plan").length,
+		5,
+	);
+	assert.equal(corrections.length, 0);
+	assert(!turns.some((t) => t.runId === parentId && t.correction));
+	assert.equal(filed.length, 0);
+	assert(![...runtime.runs.values()].some((r) => r.recipeParent));
+	const sourceAfter = sourceIdentity();
+	assert.deepEqual(sourceAfter, sourceBefore);
+	save("repair-proof.json", {
+		parentId,
+		forkId: fork.id,
+		acceptedApproval: approval,
+		packages: produced.map((plan) => ({
+			id: plan.id,
+			characters: JSON.stringify(plan).length,
+			utf8Bytes: Buffer.byteLength(JSON.stringify(plan)),
+			sha256: hash(JSON.stringify(plan)),
+			canonicalTaskSha256: hash(plan.reviewText),
+		})),
+		checks: ["plan-inputs", "plan-dependencies", "plan-check"].map((id) => ({
+			id,
+			passed: parent.outputs[id].passed,
+			outputSha256: hash(JSON.stringify(parent.outputs[id])),
+			historyCount: parent.history.filter((h) => h.step === id).length,
+		})),
+		filed,
+		children: [],
+	});
+	save("results.json", {
+		completedAt: stamp(),
+		sourceAfter,
+		sourceChangedDuringDrive: [],
+		paidCalls: 0,
+		nativeRuns: 0,
+		restartTested: false,
+		checks: [
+			"Five actual Refine outputs preserve complete 8000-character prose, structured-only criterion, 3900-character criterion and path through both actual stock Check handoffs.",
+			"All three actual review hooks see the exact complete five packages; exact Approve presentation retains full canonical text and values; one history result per Check, no correction/retry.",
+			"Stopped before human approval: no tracker filing, child admission or downstream approval claim.",
+		],
+	});
+	console.log(
+		JSON.stringify({ phase: "plan-check-repair-complete", parentId }),
 	);
 }
 async function round3FixDrive() {
@@ -1542,7 +1679,8 @@ try {
 		};
 		save("preview.json", preview);
 		console.log(JSON.stringify({ phase: "canvas-preview-ready", ...preview }));
-	} else if (round3Repair) await round3FixDrive();
+	} else if (planCheckRepair) await planCheckFixDrive();
+	else if (round3Repair) await round3FixDrive();
 	else if (dependencyRepair) await dependencyFixDrive();
 	else if (repairOnly) await reviewFixDrive();
 	else await completeDrive();

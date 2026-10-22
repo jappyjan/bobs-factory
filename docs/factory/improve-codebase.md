@@ -105,3 +105,11 @@ no accepted requirements are truncated. Approval displays the full bounded graph
 check as inert JSON, binding its actual value into the display digest. Its unused
 raw Snapshot read is removed; pinned Map/research/refinement contexts and the
 baseline requirements in canonical reviewed plans remain unchanged.
+
+The coverage and review Checks carry complete plan collections using the existing
+bounded `filter` aggregate. They inspect IDs and prerequisites without canonicalizing
+unrelated plan prose for transport. Each Check receives an owned cloned read scope;
+all emitted package data still counts toward its shared result/work budget. Full
+criteria, paths, review details and canonical child tasks remain unchanged through
+both handoffs, including a five-plan batch. Failed coverage or reviews return the
+ordinary refinement route with the complete packages and feedback.
