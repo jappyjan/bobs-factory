@@ -10145,3 +10145,67 @@ select.recipe-route-target {
 .foreach-items li[data-status="running"] {
 	border-color: var(--muted);
 }
+.action-step-settings,
+.child-run-list,
+.child-run-batch,
+.child-run-wave {
+	display: grid;
+	gap: 12px;
+	min-width: 0;
+}
+.action-step-settings small,
+.recipe-parent,
+.child-run-list {
+	overflow-wrap: anywhere;
+}
+.child-run-list {
+	margin-block: 20px;
+}
+.child-run-list h2,
+.child-run-list h3,
+.child-run-list h4,
+.child-run-list p {
+	margin: 0;
+}
+.child-run-batch {
+	padding: 18px;
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	background: var(--surface);
+}
+.child-run-list .section-heading,
+.child-run-item {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.child-run-wave ol {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 8px;
+}
+.child-run-wave li {
+	display: grid;
+	gap: 6px;
+	padding: 12px;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	min-width: 0;
+}
+.child-run-wave li[data-status="uncertain"],
+.child-run-wave li[data-status="blocked"] {
+	border-color: var(--stuck-text);
+}
+.child-run-wave small {
+	color: var(--muted);
+}
+.child-run-batch > .button {
+	justify-self: start;
+	max-width: 100%;
+	white-space: normal;
+}

@@ -1,4 +1,9 @@
 import { layout as dagreLayout, graphlib } from "@dagrejs/dagre";
+import {
+	FileIssuesConfigurationSchema,
+	LaunchRunsConfigurationSchema,
+	SnapshotConfigurationSchema,
+} from "../ActionSteps.js";
 import { ForeachSettingsSchema, prepareForeach } from "../Foreach.js";
 import type { WorkflowStep } from "../Workflow.js";
 import { DEFAULT_STEP_MAX_VISITS } from "../WorkflowLimits.js";
@@ -101,10 +106,31 @@ export const kinds: Record<
 	| "script"
 	| "fanout"
 	| "foreach"
+	| "snapshot"
+	| "file-issues"
+	| "launch-runs"
 	| "workflow"
 	| "human",
 	Kind
 > = {
+	snapshot: {
+		icon: "◈",
+		label: "Snapshot repository",
+		tone: "blue",
+		hint: "Pins tracked repository revisions for read-only agents",
+	},
+	"file-issues": {
+		icon: "🎫",
+		label: "File issues",
+		tone: "blue",
+		hint: "Creates backlog-only, unassigned tickets with durable receipts",
+	},
+	"launch-runs": {
+		icon: "↗",
+		label: "Launch runs",
+		tone: "orange",
+		hint: "Starts independent runs with dependency waves and durable tracking",
+	},
 	agent: {
 		icon: "✦",
 		label: "Agent",
@@ -209,6 +235,12 @@ export const authorableTools = Object.keys(toolText).filter(
 	(tool) => !legacyDecisionTools.has(tool),
 );
 export function stepSummary(step: Step, recipes: Recipe[]): string {
+	if (step.type === "snapshot")
+		return `Pins every repository in scope.${step.snapshot?.history ? " Includes dated, repository-matched run history." : ""}`;
+	if (step.type === "file-issues")
+		return "Creates backlog-only, unassigned tickets. Retries reconcile accepted item identities before sending.";
+	if (step.type === "launch-runs")
+		return `Launches “${recipes.find((r) => r.id === (step.launchRuns?.workflow ?? "factory"))?.name ?? step.launchRuns?.workflow ?? "factory"}” in dependency waves. ${step.launchRuns?.wait === false ? "Returns child links; tracking continues." : "Waits for child outcomes."}`;
 	if (step.type === "check")
 		return `Evaluates ${Object.keys(step.check?.results ?? {}).length} named results. Routes on passed and those results.`;
 	if (step.type === "tool")
@@ -624,6 +656,9 @@ export function newStep(
 		| "script"
 		| "fanout"
 		| "foreach"
+		| "snapshot"
+		| "file-issues"
+		| "launch-runs"
 		| "workflow"
 		| "human",
 	id: string,
@@ -636,6 +671,39 @@ export function newStep(
 		maxVisits: DEFAULT_STEP_MAX_VISITS,
 	};
 	switch (kind) {
+		case "snapshot":
+			return {
+				...base,
+				name: "Snapshot repositories",
+				type: "snapshot",
+				snapshot: {},
+			};
+		case "file-issues":
+			return {
+				...base,
+				name: "File issues",
+				type: "file-issues",
+				fileIssues: {
+					items: { values: [] },
+					itemId: "/id",
+					maxItems: 100,
+					fields: { title: "/title", body: "/body" },
+				},
+			};
+		case "launch-runs":
+			return {
+				...base,
+				name: "Launch runs",
+				type: "launch-runs",
+				launchRuns: {
+					items: { values: [] },
+					itemId: "/id",
+					maxItems: 100,
+					workflow: callable ?? "factory",
+					inputMapping: { prompt: "/prompt" },
+					wait: true,
+				},
+			};
 		case "check":
 			return {
 				...base,
@@ -730,6 +798,27 @@ export function draftProblems(recipe: Recipe): string[] {
 	const walk = (steps: Step[]) => {
 		const ids = new Set<string>();
 		for (const s of steps) {
+			const actionSchema =
+				s.type === "snapshot"
+					? SnapshotConfigurationSchema
+					: s.type === "file-issues"
+						? FileIssuesConfigurationSchema
+						: s.type === "launch-runs"
+							? LaunchRunsConfigurationSchema
+							: undefined;
+			if (actionSchema) {
+				const value =
+					s.type === "snapshot"
+						? (s.snapshot ?? {})
+						: s.type === "file-issues"
+							? s.fileIssues
+							: s.launchRuns;
+				const parsed = actionSchema.safeParse(value);
+				if (!parsed.success)
+					problems.push(
+						`“${s.name}”: ${parsed.error.issues.map((issue) => `${issue.path.join("/")}: ${issue.message}`).join("; ")}`,
+					);
+			}
 			if (ids.has(s.id)) problems.push(`Two steps use the ID “${s.id}”.`);
 			ids.add(s.id);
 			if (!s.name.trim()) problems.push(`Step “${s.id}” needs a name.`);

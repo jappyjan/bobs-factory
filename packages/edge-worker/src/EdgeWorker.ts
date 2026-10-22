@@ -224,6 +224,7 @@ import {
 	parseAgentOutput,
 	toolArguments,
 } from "./factory/FactoryTools.js";
+import type { FileIssueIntent } from "./factory/FileIssues.js";
 import { applyManagedGithubAgentEnvironment } from "./factory/GithubApi.js";
 import {
 	normalizeGitProviderConfig,
@@ -244,7 +245,9 @@ import type {
 } from "./factory/Improvement.js";
 import {
 	fileLinearImprovement,
+	fileLinearIssue,
 	fileTaskbotImprovement,
+	fileTaskbotIssue,
 } from "./factory/ImprovementIssues.js";
 import { completedAgentResult, roleProgress } from "./factory/Incremental.js";
 import { issueSnapshot } from "./factory/issueSnapshot.js";
@@ -7988,6 +7991,10 @@ ${taskSection}`;
 					this.executeFactoryMcpTool(context, server, tool),
 			});
 			this.factoryRuntime = new WorkflowRuntime(this.factoryHome, {
+				issueDestinations: (run, signal) =>
+					this.improvementIssueDestinations(run, signal),
+				fileIssue: (run, issue, signal) =>
+					this.fileImprovementIssue(run, issue, signal),
 				improvementDestinations: (run, signal) =>
 					this.improvementIssueDestinations(run, signal),
 				improvementIssue: (run, issue, signal) =>
@@ -8735,7 +8742,7 @@ ${taskSection}`;
 	}
 	private async fileImprovementIssue(
 		run: FactoryRun,
-		issue: ImprovementState["issues"][string],
+		issue: ImprovementState["issues"][string] | FileIssueIntent,
 		signal: AbortSignal,
 	) {
 		const destination = issue.destination;
@@ -8763,7 +8770,9 @@ ${taskSection}`;
 				throw new Error(
 					"Selected Linear workspace lacks an issue-creation client",
 				);
-			return fileLinearImprovement(client, issue, save);
+			return "marker" in issue
+				? fileLinearIssue(client, issue, save, signal)
+				: fileLinearImprovement(client, issue, save);
 		}
 		if (
 			taskbotServer(destination.instance, config.servers) !== destination.server
@@ -8771,12 +8780,10 @@ ${taskSection}`;
 			throw new Error(
 				"Selected Taskbot server does not match the configured instance",
 			);
-		return fileTaskbotImprovement(
-			issue,
-			(tool, args) =>
-				config.callTool(destination.server, tool, args, signal, 60000),
-			save,
-		);
+		const call = (tool: string, args: Record<string, unknown>) =>
+			config.callTool(destination.server, tool, args, signal, 60000);
+		if ("marker" in issue) return fileTaskbotIssue(issue, call, save, signal);
+		return fileTaskbotImprovement(issue, call, save);
 	}
 	private async factoryDeliveryAdapter(run: FactoryRun, target: TicketTarget) {
 		this.assertTicketManagerEnabled(target.provider);

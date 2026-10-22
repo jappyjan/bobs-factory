@@ -45,7 +45,11 @@ export function artifactType(v: any) {
 	if (keys.has("areas")) return "scope";
 	if (keys.has("plan")) return "document";
 	if (keys.has("url") && keys.has("headSha")) return "pr";
-	if (keys.has("summary")) return "report";
+	if (
+		typeof v.summary === "string" ||
+		(v.__artifactPreview && keys.has("summary"))
+	)
+		return "report";
 	return "structure";
 }
 const typeIcons: Record<string, string> = {
@@ -105,6 +109,16 @@ export function artifactSummary(v: any): string {
 				?.replace(/^#+\s*/, "") ?? "Implementation plan"
 		);
 	if (v?.goal) return v.goal;
+	if (v?.summary && typeof v.summary === "object") {
+		const summary = Object.entries(v.summary)
+			.filter(([, value]) =>
+				["string", "number", "boolean"].includes(typeof value),
+			)
+			.slice(0, 4)
+			.map(([key, value]) => `${key}: ${String(value)}`)
+			.join(" · ");
+		return summary.slice(0, 180) || "Structured result";
+	}
 	return String(
 		v?.summary ??
 			v?.branch ??

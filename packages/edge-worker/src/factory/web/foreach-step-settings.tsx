@@ -60,6 +60,9 @@ export function bodyProblem(value: unknown): string | undefined {
 				"fanout",
 				"foreach",
 				"workflow",
+				"snapshot",
+				"file-issues",
+				"launch-runs",
 			].includes(step.type) ||
 			!Array.isArray(step.branches)
 		)

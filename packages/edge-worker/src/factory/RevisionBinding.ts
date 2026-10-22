@@ -1,11 +1,12 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { lstat, readlink } from "node:fs/promises";
+import { lstat, readlink, realpath } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { digest } from "./Delivery.js";
 import { runRepositories } from "./RepositoryScope.js";
+import { snapshotForRead } from "./RepositorySnapshot.js";
 import { stepBindings } from "./StepBindings.js";
 import { accessMode, resolveStepConfig } from "./StepConfig.js";
 import { stepContextBindingSources } from "./StepContextSources.js";
@@ -119,6 +120,10 @@ export async function outputRevisionBinding(
 			).filter(([name]) => !selfReads.has(name)),
 		),
 	});
+	const snapshot =
+		accessMode(context.step) === "read-only"
+			? snapshotForRead(context)
+			: undefined;
 	const repositories = await Promise.all(
 		runRepositories(context.run).map(async (repo) => {
 			const git = async (args: string[]) =>
@@ -129,8 +134,29 @@ export async function outputRevisionBinding(
 						timeout: 10000,
 					})
 				).stdout;
-			const headSha = (await git(["rev-parse", "HEAD"])).trim();
+			const pinned = snapshot?.repositories.find((item) => item.id === repo.id);
+			const headSha =
+				pinned?.revision ?? (await git(["rev-parse", "HEAD"])).trim();
 			const treeSha = (await git(["rev-parse", `${headSha}^{tree}`])).trim();
+			if (snapshot) {
+				if (
+					!pinned ||
+					snapshot.repositories.length !== runRepositories(context.run).length
+				)
+					throw new Error(
+						"Snapshot repository scope differs from this read-only role",
+					);
+				if ((await realpath(repo.workspace)) !== pinned.root)
+					throw new Error(
+						"Snapshot repository root differs from the retained run scope",
+					);
+				return {
+					id: repo.id,
+					headSha,
+					treeSha,
+					workspaceDigest: digest({ pinned: headSha, treeSha }),
+				};
+			}
 			const hash = createHash("sha256").update(
 				await git(["diff", "--no-ext-diff", "--binary", headSha]),
 			);
@@ -184,11 +210,37 @@ export function sameOutputBinding(
 export async function pinReadOnlyAccess(
 	context: ExecutionContext,
 ): Promise<NonNullable<ExecutionContext["researchAccess"]>> {
+	const snapshot = snapshotForRead(context);
+	const scope = runRepositories(context.run);
+	if (
+		snapshot &&
+		(snapshot.repositories.length !== scope.length ||
+			!scope.every((repo) =>
+				snapshot.repositories.some((item) => item.id === repo.id),
+			))
+	)
+		throw new Error(
+			"Snapshot repository scope differs from this read-only role",
+		);
+	if (snapshot)
+		for (const repo of scope) {
+			const pinned = snapshot.repositories.find((item) => item.id === repo.id)!;
+			if ((await realpath(repo.workspace)) !== pinned.root)
+				throw new Error(
+					"Snapshot repository root differs from the retained run scope",
+				);
+			await exec("git", ["cat-file", "-e", `${pinned.revision}^{commit}`], {
+				cwd: repo.workspace,
+				timeout: 10000,
+				maxBuffer: 1024,
+			});
+		}
 	const repositories = await Promise.all(
-		runRepositories(context.run).map(async (repo) => ({
+		scope.map(async (repo) => ({
 			id: repo.id,
 			root: repo.workspace,
 			revision:
+				snapshot?.repositories.find((item) => item.id === repo.id)?.revision ??
 				context.inspectionBinding?.repositories.find(
 					(item) => item.id === repo.id,
 				)?.headSha ??
@@ -201,7 +253,7 @@ export async function pinReadOnlyAccess(
 				).stdout.trim(),
 		})),
 	);
-	return { repositories, maxCalls: 1000 };
+	return { repositories, maxCalls: 200 };
 }
 
 export class StaleBoundInspectionError extends Error {

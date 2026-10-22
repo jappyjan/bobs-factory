@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { passiveTools } from "../CapacityPolicy";
 import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits";
+import { ActionStepSettings } from "./action-step-settings";
 import { AgentStepSettings } from "./agent-step-settings";
 import { CheckJsonField, CheckStepSettings } from "./check-step-settings";
 import { api, useAction, useConfig } from "./client";
@@ -56,6 +57,9 @@ const paletteKinds = [
 	"script",
 	"fanout",
 	"foreach",
+	"snapshot",
+	"file-issues",
+	"launch-runs",
 	"workflow",
 ] as const;
 const revision = (recipe?: Recipe) =>
@@ -981,6 +985,16 @@ function Inspector({
 					onSelect={onSelect}
 				/>
 			)}
+			{["snapshot", "file-issues", "launch-runs"].includes(step.type) && (
+				<ActionStepSettings
+					step={step}
+					readOnly={!local}
+					ownerId={owner.id}
+					recipes={recipes}
+					onChange={onChange}
+					onError={onConfigError}
+				/>
+			)}
 			{step.type === "fanout" && (
 				<section className="recipe-section">
 					<h3>Runs in parallel</h3>
@@ -1640,6 +1654,13 @@ function SimulationPanel({
 							<b>{step.name}</b> — {stepSummary(step, recipes)}
 							{!["check", "foreach"].includes(step.type) && " What happens?"}
 						</p>
+						{["snapshot", "file-issues", "launch-runs"].includes(step.type) && (
+							<p className="recipe-note">
+								This simulation follows routes using synthetic outcomes. Action
+								configuration is validated when saving; simulation performs no
+								repository or provider operations.
+							</p>
+						)}
 						{step.type === "check" ? (
 							<CheckSimulation
 								key={`${current}/${simulation.visits[current]}`}

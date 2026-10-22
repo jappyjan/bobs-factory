@@ -21,6 +21,7 @@ import {
 	validatePackages,
 } from "./Improvement.js";
 import { runRepositories } from "./RepositoryScope.js";
+import { classifyOperationalError } from "./RepositorySnapshot.js";
 import { legacyImprovementTemplate } from "./StepConfig.js";
 import { outputForTool } from "./ToolBindings.js";
 import type {
@@ -799,14 +800,4 @@ export async function runImprovement(
 function packageBrief(run: FactoryRun, pkg: ImprovementPackage) {
 	const state = run.improvementState!;
 	return `Implement the approved architectural improvement: ${pkg.title}\n\n${pkg.plan}\n\nAcceptance criteria:\n${pkg.criteria.map((c) => `- ${c}`).join("\n")}\n\nRepository/base: ${JSON.stringify(state.baseline?.repositories.map((r) => ({ id: r.id, revision: r.revision, baseBranch: r.baseBranch })))}\n\nSource opportunities:\n${JSON.stringify(state.proposals.at(-1)!.opportunities.filter((i) => pkg.itemIds.includes(i.id)))}\n\nPrerequisite deliveries:\n${JSON.stringify(pkg.dependencies.map((id) => state.children[id]))}\n\nAccepted by ${state.acceptance!.actor} at ${state.acceptance!.at}, manifest ${state.acceptance!.digest}. Preserve accepted requirements and non-goals. Parent acceptance does not approve a delivered PR revision; retain ordinary Factory architecture, review, QA and human delivery gates. Revalidate assumptions against the current base containing prerequisite merges; material drift requires normal renewed architecture acceptance.`;
-}
-
-function classifyOperationalError(error: string) {
-	if (/timeout|timed out/i.test(error)) return "timeout";
-	if (/auth|unauthori|forbidden|credential|401|403/i.test(error))
-		return "access";
-	if (/capacity|rate.limit|429/i.test(error)) return "capacity-or-rate-limit";
-	if (/output|schema|validation|json/i.test(error)) return "invalid-output";
-	if (/network|connect|econn|fetch/i.test(error)) return "connectivity";
-	return "other-failure (inspect the referenced run locally)";
 }
