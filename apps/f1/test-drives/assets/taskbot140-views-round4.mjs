@@ -1080,11 +1080,29 @@ async function refreshStaleApproval(id, stale) {
 		},
 		409,
 	);
+	// Outgoing pre-write validation can already have renewed the original batch
+	// during child preparation. Reject a deliberately invalid current digest too,
+	// so an intermediate running-child display gets the ordinary source refresh.
+	const displayed = current(id).viewDecision;
+	await api(
+		`/api/runs/${id}/view-answer`,
+		{
+			batchId: displayed.id,
+			digest: "z".repeat(64),
+			accepted: true,
+			approved: true,
+			fields: { understood: true },
+		},
+		409,
+	);
 	await until(
 		() =>
 			current(id).viewDecision?.id !== stale.id &&
-			current(id).status === "waiting",
-		"Changed displayed data creates a fresh decision batch",
+			current(id).status === "waiting" &&
+			current(id)
+				.viewDecision.view.components.find((c) => c.type === "runList")
+				.data.waves.every((w) => w.runs.every((r) => r.status === "completed")),
+		"Changed displayed data creates a fresh decision batch showing actual completed children",
 	);
 	const fresh = await waitDecision(id, "approve", "approval");
 	assert.notEqual(fresh.digest, stale.digest);
