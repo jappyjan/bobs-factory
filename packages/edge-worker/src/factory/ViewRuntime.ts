@@ -73,9 +73,15 @@ export function viewScope(
 	>,
 ) {
 	const inputs: Record<string, unknown> = {};
-	for (const [name, binding] of Object.entries(
-		resolveStepConfig(context.step).reads,
-	)) {
+	const source = context.step.view;
+	const localReads =
+		source && "components" in source ? source.reads : undefined;
+	const reads: Record<string, { from: string; when?: unknown }> = localReads
+		? Object.fromEntries(
+				Object.entries(localReads).map(([key, from]) => [key, { from }]),
+			)
+		: resolveStepConfig(context.step).reads;
+	for (const [name, binding] of Object.entries(reads)) {
 		if (binding.when)
 			throw new Error("View reads require unconditional explicit bindings");
 		const from = binding.from;

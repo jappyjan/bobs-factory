@@ -291,6 +291,7 @@ export function CheckIn({
 	picks = [],
 	onPick,
 	speaking,
+	section,
 }: {
 	content: Architecture;
 	footprint?: ArchitectureFootprint;
@@ -301,70 +302,78 @@ export function CheckIn({
 	onPick?: (pick: Pick) => void;
 	/** The point being read aloud. */
 	speaking?: string;
+	/** A declarative component chooses one existing point; no screen-name dispatch. */
+	section?: string;
 }) {
 	const talk = checkinTalk(content, footprint);
 	return (
 		<>
-			{beats(content, talk, picks, onPick, since).map((beat) => {
-				const reaction = reactions?.[beat.id];
-				return (
-					<section
-						key={beat.id}
-						className={`ci-beat${speaking === beat.id ? " speaking" : ""}`}
-						data-beat={beat.id}
-						aria-label={beat.head}
-					>
-						{beat.head && <h3>{beat.head}</h3>}
-						<div className="ci-bubble">
-							{beat.say && <p className="ci-say">{beat.say}</p>}
-							{beat.body}
-						</div>
-						{onReact && beat.answers && (
-							<>
-								<div className="ci-react">
-									{beat.answers.map((answer, i) => (
-										<button
-											key={answer.label}
-											type="button"
-											aria-pressed={reaction?.choice === i}
-											className={i === 0 ? "ok" : "flag"}
-											onClick={() =>
-												onReact(
-													beat.id,
-													reaction?.choice === i
-														? undefined
-														: {
-																ok: i === 0,
-																choice: i,
-																text:
-																	i === 0
-																		? ""
-																		: reaction && !reaction.ok && reaction.text
-																			? reaction.text
-																			: (answer.prefill ?? ""),
-															},
-												)
+			{beats(content, talk, picks, onPick, since)
+				.filter((beat) => !section || beat.id === section)
+				.map((beat) => {
+					const reaction = reactions?.[beat.id];
+					return (
+						<section
+							key={beat.id}
+							className={`ci-beat${speaking === beat.id ? " speaking" : ""}`}
+							data-beat={beat.id}
+							aria-label={beat.head}
+						>
+							{beat.head && <h3>{beat.head}</h3>}
+							<div className="ci-bubble">
+								{beat.say && <p className="ci-say">{beat.say}</p>}
+								{beat.body}
+							</div>
+							{onReact && beat.answers && (
+								<>
+									<div className="ci-react">
+										{beat.answers.map((answer, i) => (
+											<button
+												key={answer.label}
+												type="button"
+												aria-pressed={reaction?.choice === i}
+												className={i === 0 ? "ok" : "flag"}
+												onClick={() =>
+													onReact(
+														beat.id,
+														reaction?.choice === i
+															? undefined
+															: {
+																	ok: i === 0,
+																	choice: i,
+																	text:
+																		i === 0
+																			? ""
+																			: reaction &&
+																					!reaction.ok &&
+																					reaction.text
+																				? reaction.text
+																				: (answer.prefill ?? ""),
+																},
+													)
+												}
+											>
+												{i === 0 && "👍 "}
+												{answer.label}
+											</button>
+										))}
+									</div>
+									{reaction && !reaction.ok && (
+										<NoteField
+											value={reaction.text}
+											onChange={(text) =>
+												onReact(beat.id, { ...reaction, text })
 											}
-										>
-											{i === 0 && "👍 "}
-											{answer.label}
-										</button>
-									))}
-								</div>
-								{reaction && !reaction.ok && (
-									<NoteField
-										value={reaction.text}
-										onChange={(text) => onReact(beat.id, { ...reaction, text })}
-									/>
-								)}
-							</>
-						)}
-						{!onReact && reaction && !reaction.ok && reaction.text && (
-							<p className="ci-your-note">{reaction.text}</p>
-						)}
-					</section>
-				);
-			})}
+										/>
+									)}
+								</>
+							)}
+							{!onReact && reaction && !reaction.ok && reaction.text && (
+								<p className="ci-your-note">{reaction.text}</p>
+							)}
+						</section>
+					);
+				})}
 		</>
 	);
 }

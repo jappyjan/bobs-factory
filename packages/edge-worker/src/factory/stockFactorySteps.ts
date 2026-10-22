@@ -1,3 +1,4 @@
+import { nativeViewPreset } from "./ViewPresets.js";
 import type { Workflow, WorkflowStep } from "./Workflow.js";
 
 /** Configured stock roles. Composed recipes supply their own connections and ports. */
@@ -43,6 +44,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			'Read the input, all comments, metadata, assets and previous answers. Determine whether you fully understand the requirements. Ask only questions that materially affect implementation. If the input says backlog only, planning only, or do not implement yet, and no later user instruction explicitly authorizes implementation, ask whether to proceed with implementation now or retain that restriction before returning empty questions. Do not infer authorization from answers about feature scope. Do not assume answers or implement anything. Return {"questions":["..."],"questionRecommendations":[{"questionIndex":0,"answer":"recommended answer","reason":"evidence-based explanation"}],"decisions":[{"question":"...","answer":"...","reason":"..."}],"requirements":["..."]}. For selectable alternatives, use questionChoices with questionIndex, selection (single or multiple), options (unique id, answer, optional reason) and optional preselectedOptionIds. Do not use questionRecommendations for the same question. Custom text is always available and defaults require explicit submission. Empty questions means everything is understood. Preserve all answered decisions across rounds.{{instruction:delivery}}{{instruction:delivery-clarify}}',
 		json: true,
 		askQuestions: true,
+		view: nativeViewPreset("ask"),
 	},
 	decisions: {
 		id: "decisions",
@@ -349,6 +351,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		maxVisits: 200,
 		type: "tool",
 		tool: "architecture-decision",
+		view: nativeViewPreset("approve"),
 		args: [],
 		arguments: {
 			proposal: "architecture",
@@ -438,6 +441,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		inputs: ["plan"],
 		json: true,
 		askQuestions: true,
+		view: nativeViewPreset("ask"),
 	},
 	"draft-pr": {
 		id: "draft-pr",
@@ -560,6 +564,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			'Independently assess /impactSnapshot, actual repository diffs (including cumulative changes since prior explicit approval), prior original receipts and unresolved findings. Fixer summaries never authorize reuse. Discover commands and conventions in ALL selected repositories; never infer safety from filenames, line count or unchanged head alone. Inspect whether test changes weaken assertions or coverage. Assess combined merge trees and target-only changes separately from task regressions. Unknown dependencies, conflicts, migrations, security boundaries, changed scope or unavailable evidence require broader inspection and relevant validation. Select only configured reviewer IDs from the snapshot. First review executes all roles. Reuse only completed resolved receipts with runtime dependency provenance; supply their exact receipt digest, boundary and a concrete independence reason. Unaffected areas retain original evidence, never claim a new review executed. Track future QA/guide/human/provider obligations at their own gates. Optional cleanup remains visible and nonblocking. Prior explicit approval can continue for an evidenced safe minor correction, including production code, only after all required evidence passes; uncertain or meaningful changes and human rejection require renewed approval. Assess the cumulative delta. Return impact-v1 with status, summary, correctionRequired:boolean, readinessOnly:boolean, commentAssessments:[{id,repositoryId (required for grouped deliveries unless id is repositoryId:commentId),bodySha256,disposition:"informational|consequential|accepted-unchanged",reason}], classification:"none|affected|full", rationale, uncertainty:[], extractRequirements:boolean, scopeReuse:{inventoryDigest,originalSourceDigest,reason} only when independently inspecting new feedback proves accepted requirements unchanged, specialists:[configured IDs], requirementIds:[], checks:[{id,repositoryId,command,reason,environment:{isolation:"worktree"} or {isolation:"shared",resources:[stable identities]}}], qaCriteria:[criterion IDs], qaReuse:[{criterionId,originalDigest,reason}], reuse:[{reviewer,receiptDigest,reason,boundary:{requirementIds,areas,dependencies,independence}}], invalidate:[{receiptDigest,reason}], targetCompatible:boolean, testAssertions:{inspected,weakened,evidence}, humanReview:"no-prior-approval|continue-after-checks|renew", approvalRationale and questions:[]. Missing inputs require blocked and a specific question. commentAssessments may identify ONLY supplied PR feedback from /feedback/readiness/unassessedComments, using its exact IDs and bodySha256 values. Originating ticket comments, assignment notices and chat messages are task inputs, never PR comment assessments. Return commentAssessments:[] when no PR feedback is supplied. Do not mutate files or run corrective agents. Every original configured role needs fresh execution or explicit valid reuse. Missing legacy provenance requires fresh review.',
 		json: true,
 		askQuestions: true,
+		view: nativeViewPreset("ask"),
 	},
 	"extract-requirements": {
 		id: "extract-requirements",
@@ -605,6 +610,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			'Extract scope independently of the implementation. Read complete originalInput (parse embedded JSON), ticket/acceptance criteria, ALL paginated comments, attachments/assets, clarification answers and accepted decisions/plan, later chat/human steering, takeover/PR discussions and past review rounds/dispositions through factory-context. Use /contextMemory/reviewLedger and /contextMemory/reviewRounds for historical claims and reasoning, following original outputPath records when scope or disagreement evidence is needed. Follow nextOffset to null. Missing source access requires a concrete questions entry; never omit unavailable scope. Read previous inventories, retain every historical ID and decision, and record amendments/supersessions with changeReason. Suggestions are not accepted scope. Contradictions stay in conflicts and questions until explicitly resolved outside fanout. Scope decisions require explicit human acceptance, rationale and source, not a reviewer preference. Follow the runtime decision-attribution rule: use a recorded name when available, otherwise identify the Factory operator with the name not recorded; do not ask for a name merely to complete attribution. Use kind:"skip" only for an explicit scope waiver, and list the precise requirementIds it authorizes skipping; other accepted scope decisions use kind:"scope". List considered sources and unavailable sources in sourceReceipt. Semantic extraction completeness needs source inspection; structural validation alone cannot prove it.\nReturn {"schemaVersion":1,"requirements":[{"id":"R1","criterion":"testable accepted outcome","classification":"active or suggestion or superseded","sources":[{"source":"originalInput or context record or source URL","reference":"JSON Pointer/comment/attachment identifier"}],"changeReason":"required for an amendment","supersedes":[]}],"decisions":[{"id":"D1","acceptedBy":"recorded person or Factory operator (name not recorded)","kind":"scope or skip","requirementIds":["R1"],"rationale":"accepted scope rationale","source":{"source":"source","reference":"record identifier"}}],"conflicts":[{"id":"C1","description":"unresolved scope question","sources":[{"source":"source","reference":"record"}]}],"sourceReceipt":{"considered":[{"source":"source","reference":"record"}],"unavailable":[]},"questions":[]}. Runtime owns inventory version/digest. Do not change product files.{{instruction:impact-inventory}}',
 		json: true,
 		askQuestions: true,
+		view: nativeViewPreset("ask"),
 	},
 	"impact-checks": {
 		id: "impact-checks",
@@ -3533,6 +3539,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		maxVisits: 200,
 		type: "tool",
 		tool: "human-review",
+		view: nativeViewPreset("review"),
 		args: [],
 	},
 	"human-fix": {
@@ -3892,6 +3899,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			"The accepted delivery contract defers execution. Do not mutate tickets or files. Ask whether the named external/repository task should remain deferred or may proceed. Return questions while the deferral remains. Read answers; only explicit authorization may return questions:[], then the planner and plan reviewer renew the contract. Never infer execution permission from scope answers.",
 		json: true,
 		askQuestions: true,
+		view: nativeViewPreset("ask"),
 	},
 	"external-apply": {
 		id: "external-apply",
@@ -4170,6 +4178,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		maxVisits: 200,
 		type: "tool",
 		tool: "human-review",
+		view: nativeViewPreset("external-review"),
 		args: [],
 		arguments: {
 			externalReview: true,

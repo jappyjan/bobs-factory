@@ -3,6 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import { useRun } from "./client";
 import { FullReview, RunMeta } from "./focus";
 import { ReviewContextRow } from "./review-context-row";
+import {
+	type ReviewGuideViewComponent,
+	reviewGuideValue,
+} from "./review-guide-component";
 import { useReviewInput } from "./review-input";
 import { ticketTrackingPending, writeTextStored } from "./review-state";
 import { roleOutput } from "./run-output";
@@ -48,7 +52,14 @@ export function ReviewPage({
 			</>
 		);
 	const gate = run.reviewGate,
-		guide = roleOutput(run, "guide"),
+		nativeView = run.nativeView,
+		review =
+			nativeView?.preset === "review" ||
+			nativeView?.preset === "external-review",
+		guideComponent = nativeView?.view?.components.find(
+			(component: { type: string }) => component.type === "review-guide",
+		) as ReviewGuideViewComponent | undefined,
+		guide = reviewGuideValue(run, guideComponent),
 		complete = ["complete", "completed"].includes(run.status),
 		trackingPending = ticketTrackingPending(run);
 	return (
@@ -107,7 +118,7 @@ export function ReviewPage({
 						"Saved updates are being delivered in the background."}
 				</p>
 			)}
-			{guide && gate?.status !== "pending" && (
+			{review && gate?.status !== "pending" && (
 				<p className="notice" role="status">
 					{gate?.status === "approve"
 						? complete
@@ -129,7 +140,7 @@ export function ReviewPage({
 						: "Approval is available only while a matching review is pending."}
 				</p>
 			)}
-			{guide ? (
+			{review ? (
 				<div className="review-surface">
 					<FullReview
 						run={run}

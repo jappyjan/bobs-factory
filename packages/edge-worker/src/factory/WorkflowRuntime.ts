@@ -134,6 +134,7 @@ import {
 	pendingMergeConfirmation,
 	recordMergeConfirmation,
 } from "./MergeRecovery.js";
+import { nativeViewText } from "./NativeViews.js";
 import { conforms } from "./OutputFormats.js";
 import { beginStepAttempt, finishStepAttempt } from "./Provenance.js";
 import { qaDigest as importDigest } from "./Qa.js";
@@ -540,6 +541,8 @@ export interface FactoryRun {
 		planOutput: string;
 	};
 	reviewGate?: ReviewGate;
+	/** Presentation ownership only; never native approval authority. */
+	nativeViewOwners?: Record<string, string>;
 	viewDecision?: ViewSnapshot;
 	viewDisplays?: ViewSnapshot[];
 	viewRecords?: ViewRecord[];
@@ -4435,6 +4438,10 @@ export class WorkflowRuntime {
 		run.questionRecommendations = recommendations;
 		run.questionChoices = choices;
 		if (!restored || !run.questionBatchId) run.questionBatchId = randomUUID();
+		run.nativeViewOwners ??= {};
+		run.nativeViewOwners[
+			run.architectureGate?.proposalId ?? run.questionBatchId
+		] = context.stepKey ?? run.step!;
 		run.status = "waiting";
 		let notify = !restored;
 		while (true) {
@@ -4539,7 +4546,7 @@ export class WorkflowRuntime {
 			this.log(run, run.step ?? "clarify", questions.join("\n"));
 			try {
 				if (run.ticketReference && this.hooks.track) {
-					const body = `Factory needs assistance:\n\n${questionNotification(questions, run.questionRecommendations, run.questionChoices)}`;
+					const body = `Factory needs assistance:\n\n${context.step.view ? nativeViewText(run, 16000) : questionNotification(questions, run.questionRecommendations, run.questionChoices)}`;
 					const legacyKey = `questions:${run.step}:${run.answers.length}${state.questionDisplay ? `:explanation:${run.questionBatchId}` : ""}`;
 					const batchKey = `questions:${run.step}:${run.answers.length}:${run.questionBatchId}`;
 					// Reuse unchanged receipts from before all waits used batch identities.
@@ -4591,6 +4598,8 @@ export class WorkflowRuntime {
 				repositories: deliveryRevisions(result),
 				status: "pending",
 			};
+		run.nativeViewOwners ??= {};
+		run.nativeViewOwners[run.reviewGate!.id] = run.step!;
 		state.phase = "waiting";
 		run.status = "waiting";
 		releaseDelivery(run, "Awaiting human review");
@@ -4618,8 +4627,9 @@ export class WorkflowRuntime {
 					key: `review:${run.reviewGate!.id}`,
 					stage: "in_review",
 					pr: result.url || undefined,
-					body:
-						result.mode === "external"
+					body: stepForRun(run, run.step)?.view
+						? nativeViewText(run, 16000)!
+						: result.mode === "external"
 							? "External changes applied and independently verified. Review the guide and accept completed work or request changes. Applied work is retained after rejection."
 							: `Awaiting explicit human approval for ${result.url}. Review the guide, then approve this revision or request changes in Factory.`,
 				});

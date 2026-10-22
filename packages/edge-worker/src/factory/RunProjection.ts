@@ -1,6 +1,7 @@
 import { activityPreview } from "./ActivityPage.js";
 import { workflowDisplay } from "./ConfigProjection.js";
 import { launchBatchProjection } from "./LaunchRuns.js";
+import { nativeViewSnapshot } from "./NativeViews.js";
 import {
 	currentStepView,
 	presentationOutputKeys,
@@ -113,11 +114,21 @@ export function focusRun(
 	deliveryRecovery: boolean,
 ) {
 	outputs = presentationOutputs(run, outputs);
+	let nativeView: ReturnType<typeof nativeViewSnapshot>;
+	let nativeViewError: string | undefined;
+	try {
+		nativeView = nativeViewSnapshot(run);
+	} catch {
+		nativeViewError =
+			"The configured human view cannot be displayed. Correct its public bindings or data before continuing.";
+	}
 	const guide = outputs.guide as
 		| { verdict?: { headline?: string }; summary?: string; goal?: string }
 		| undefined;
 	return {
 		...Object.fromEntries(focusFields.map((key) => [key, run[key]])),
+		nativeView,
+		nativeViewError,
 		workflow: workflowDisplay(run.workflow),
 		currentStep: currentStepView(run),
 		recipeParent: run.recipeParent,

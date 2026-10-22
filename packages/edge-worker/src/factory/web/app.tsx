@@ -569,7 +569,9 @@ function Today({
 					if (current && finished(current.status)) {
 						if (!ticketTrackingPending(current))
 							void settle.change(current, "settle");
-					} else if (current?.reviewGate?.status === "pending")
+					} else if (
+						["review", "external-review"].includes(current?.nativeView?.preset)
+					)
 						document
 							.querySelector<HTMLButtonElement>(".focus-card .rainbow")
 							?.click();
@@ -892,7 +894,9 @@ function RunPage({
 												? "Stopped — resume?"
 												: "Stuck — retry?"
 											: kind === "review"
-												? roleOutput(run, "guide")
+												? ["review", "external-review"].includes(
+														run.nativeView?.preset,
+													)
 													? "Ready for your review"
 													: "Done — take a look"
 												: workingLabel(run))}
@@ -938,7 +942,7 @@ function RunPage({
 					)}
 				</div>
 			</header>
-			{!(run.status === "waiting" && run.architectureGate) && (
+			{!(run.status === "waiting" && run.nativeView?.preset === "approve") && (
 				<ArchitectureEntry run={run} />
 			)}
 			<ExecutionDetails run={run} />
@@ -997,11 +1001,12 @@ function RunPage({
 					settling={settle.busy}
 				/>
 			)}
-			{roleOutput(run, "guide") && (!kind || reason) && (
-				<section className="review-surface">
-					<ReviewEntry run={run} />
-				</section>
-			)}
+			{["review", "external-review"].includes(run.nativeView?.preset) &&
+				(!kind || reason) && (
+					<section className="review-surface">
+						<ReviewEntry run={run} />
+					</section>
+				)}
 			<section className="artifacts-section">
 				<div className="section-heading">
 					<h2>

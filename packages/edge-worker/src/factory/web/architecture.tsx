@@ -16,6 +16,7 @@ import {
 	sinceLastSeen,
 } from "./checkin-model";
 import { useAction, useRun } from "./client";
+import { DeclarativeView } from "./declarative-view";
 import { useFormState } from "./form-state";
 import { Button, Markdown } from "./ui";
 
@@ -376,7 +377,7 @@ export function ArchitecturePage() {
 	}, [hasRun]);
 	const state = run ? architectureState(run) : undefined;
 	const latest = state?.latest;
-	const context = `${run?.id}/${latest?.id}/${latest?.digest}/${latest?.status}/${run?.status}`;
+	const context = `${run?.id}/${latest?.id}/${latest?.digest}/${latest?.status}/${run?.status}${run?.nativeView ? `/${run.nativeView.digest}` : ""}`;
 	const [draft, setDraft] = useFormState(context, "");
 	const [picks, setPicks] = useFormState<Pick[]>(context, []);
 	const [reactions, setReactions] = useFormState<Record<string, Reaction>>(
@@ -436,6 +437,9 @@ export function ArchitecturePage() {
 					proposalId: latest.id,
 					version: latest.version,
 					digest: latest.digest,
+					...(run.nativeView
+						? { display: { digest: run.nativeView.digest } }
+						: {}),
 					decision,
 					...(decision === "accept"
 						? {}
@@ -479,6 +483,39 @@ export function ArchitecturePage() {
 			: shown.status === "routine"
 				? "Bob didn’t need to check in"
 				: "Bob wants to check his plan before building";
+	const renderCheckin = (section?: string) => (
+		<CheckIn
+			section={section}
+			key={`${shown.id}/${section ?? "all"}`}
+			content={content}
+			footprint={shown.footprint}
+			since={since}
+			reactions={interactive ? reactions : undefined}
+			onReact={
+				interactive
+					? (beat, reaction) =>
+							setReactions((current) => {
+								const next = { ...current };
+								if (reaction) next[beat] = reaction;
+								else delete next[beat];
+								return next;
+							})
+					: undefined
+			}
+			picks={isLatest ? picks : []}
+			onPick={
+				interactive
+					? (next) =>
+							setPicks((current) => [
+								...current.filter((p) => p.decision !== next.decision),
+								next,
+							])
+					: undefined
+			}
+			speaking={listen.speaking}
+		/>
+	);
+
 	return (
 		<div className="ci-page">
 			<nav className="review-links" aria-label="Check-in navigation">
@@ -555,35 +592,31 @@ export function ArchitecturePage() {
 				className={`ci-thread${revising ? " ci-faded" : ""}`}
 				aria-live="polite"
 			>
-				<CheckIn
-					key={shown.id}
-					content={content}
-					footprint={shown.footprint}
-					since={since}
-					reactions={interactive ? reactions : undefined}
-					onReact={
-						interactive
-							? (beat, reaction) =>
-									setReactions((current) => {
-										const next = { ...current };
-										if (reaction) next[beat] = reaction;
-										else delete next[beat];
-										return next;
-									})
-							: undefined
-					}
-					picks={isLatest ? picks : []}
-					onPick={
-						interactive
-							? (next) =>
-									setPicks((current) => [
-										...current.filter((p) => p.decision !== next.decision),
-										next,
-									])
-							: undefined
-					}
-					speaking={listen.speaking}
-				/>
+				{run.nativeView ? (
+					<DeclarativeView
+						view={run.nativeView.view}
+						runId={run.id}
+						renderComponent={(component) => {
+							if (component.type !== "checkin-section") return undefined;
+							if (
+								component.data.proposalId !== latest.id ||
+								component.data.digest !== latest.digest
+							)
+								return undefined;
+							if (component.data.section === "notes")
+								return (
+									<BobsNotes
+										content={content}
+										footprint={shown.footprint}
+										drafts={isLatest ? drafts : 0}
+									/>
+								);
+							return renderCheckin(component.data.section);
+						}}
+					/>
+				) : (
+					renderCheckin()
+				)}
 				{qa.map((f, i) =>
 					f.kind === "explain" ? (
 						<div key={i} className="ci-you">
@@ -680,11 +713,13 @@ export function ArchitecturePage() {
 					{error}
 				</p>
 			)}
-			<BobsNotes
-				content={content}
-				footprint={shown.footprint}
-				drafts={isLatest ? drafts : 0}
-			/>
+			{!run.nativeView && (
+				<BobsNotes
+					content={content}
+					footprint={shown.footprint}
+					drafts={isLatest ? drafts : 0}
+				/>
+			)}
 		</div>
 	);
 }

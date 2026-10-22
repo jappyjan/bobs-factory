@@ -2,6 +2,7 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { passiveTools } from "../CapacityPolicy";
+import { type NativeViewPreset, nativeViewPreset } from "../ViewPresets";
 import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits";
 import { ActionStepSettings } from "./action-step-settings";
 import { AgentStepSettings } from "./agent-step-settings";
@@ -10,7 +11,7 @@ import { api, useAction, useConfig } from "./client";
 import { ForeachSimulation } from "./foreach-simulation";
 import { CallInputMapping, ForeachStepSettings } from "./foreach-step-settings";
 import { AgentSettings } from "./forms";
-import { HumanStepSettings } from "./human-step-settings";
+import { HumanStepSettings, ViewEditor } from "./human-step-settings";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
 import {
 	authorableTools,
@@ -970,6 +971,53 @@ function Inspector({
 					onChange={onChange}
 					onError={onConfigError}
 				/>
+			)}
+			{["agent", "tool"].includes(step.type) && (
+				<section className="recipe-section">
+					<h3>Human view</h3>
+					<p>
+						Choose what people read. Changing this view keeps the run’s existing
+						approval requirements.
+					</p>
+					{step.view ? (
+						<ViewEditor
+							value={step.view}
+							readOnly={!local}
+							paths={[
+								"/inputs/human",
+								...("components" in step.view
+									? Object.keys(step.view.reads ?? {}).map(
+											(name) => `/inputs/${name}`,
+										)
+									: []),
+							]}
+							onChange={(view) => onChange({ view })}
+							onError={onConfigError}
+						/>
+					) : (
+						<label>
+							Stock view preset
+							<select
+								value=""
+								disabled={!local}
+								onChange={(event) => {
+									if (event.target.value)
+										onChange({
+											view: nativeViewPreset(
+												event.target.value as NativeViewPreset,
+											),
+										});
+								}}
+							>
+								<option value="">Add a view…</option>
+								<option value="ask">Ask</option>
+								<option value="approve">Approve</option>
+								<option value="review">Review</option>
+								<option value="external-review">External review</option>
+							</select>
+						</label>
+					)}
+				</section>
 			)}
 			{["decide", "approve", "show"].includes(step.type) && (
 				<HumanStepSettings

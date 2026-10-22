@@ -474,6 +474,54 @@ it("keeps a complete modern chapter guide's authored empty verification list rea
 		expect(text).toContain("1 / 1 supported");
 		expect(text).toContain("Review the tested change");
 		expect(text).not.toContain("No verification evidence was recorded");
+
+		// Hiding an optional rich component cannot remove the native guide's identity
+		// or crash the controller that retains the original approval obligations.
+		const customHtml = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client },
+				createElement(
+					MemoryRouter,
+					{ initialEntries: ["/runs/modern/review?page=decide"] },
+					createElement(FullReview, {
+						run: {
+							id: "modern",
+							status: "completed",
+							outputs: {},
+							nativeView: {
+								preset: "review",
+								authority: "review",
+								digest: "a".repeat(64),
+								guideSource: "authored/result",
+								resources: {
+									["b".repeat(64)]: {
+										source: "authored/result",
+										digest: "b".repeat(64),
+										value: guide,
+									},
+								},
+								view: {
+									version: "view-v1",
+									preset: "review",
+									components: [
+										{
+											id: "summary",
+											type: "markdown",
+											data: { text: "Custom review summary" },
+										},
+									],
+								},
+							},
+						},
+						onSettled: () => {},
+					}),
+				),
+			),
+		);
+		expect(customHtml).toContain("Custom review summary");
+		expect(customHtml).toContain("Settle");
+		expect(customHtml).not.toContain("Authored step");
 	} finally {
 		client.clear();
 	}

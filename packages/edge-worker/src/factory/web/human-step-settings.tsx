@@ -261,7 +261,7 @@ export class HumanPreviewSession {
 }
 
 /** An invalid JSON draft never replaces the last schema-valid definition. */
-function ViewEditor({
+export function ViewEditor({
 	value,
 	readOnly,
 	paths,
