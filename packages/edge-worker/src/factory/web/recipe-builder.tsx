@@ -14,6 +14,7 @@ import { HumanStepSettings } from "./human-step-settings";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
 import {
 	authorableTools,
+	changeRouteTarget,
 	childrenOf,
 	connect,
 	describeCondition,
@@ -1218,7 +1219,9 @@ function Inspector({
 									onChange={(next) =>
 										onChange({
 											branches: step.branches.map((b, j) =>
-												j === index ? { ...b, next } : b,
+												j === index
+													? changeRouteTarget(b, next, owner.steps, recipes)
+													: b,
 											),
 										})
 									}

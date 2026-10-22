@@ -184,6 +184,7 @@ export const CONTEXT_SOURCES = [
 	"item",
 	"index",
 	"callInputs",
+	"caller",
 	"childRuns",
 	"delivery",
 ] as const;

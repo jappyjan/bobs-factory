@@ -9,15 +9,16 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
-import { waitForRuntime } from "./fixtures/runtime-wait.js";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
-import { validateWorkflows } from "../src/factory/Workflow.js";
-import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
-import { FactoryTools } from "../src/factory/FactoryTools.js";
 import {
 	DeliveryContractSchema,
 	TicketDelivery,
 } from "../src/factory/Delivery.js";
+import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { FactoryTools } from "../src/factory/FactoryTools.js";
+import { validateWorkflows } from "../src/factory/Workflow.js";
+import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { waitForRuntime } from "./fixtures/runtime-wait.js";
+
 const instances: WorkflowRuntime[] = [],
 	homes: string[] = [];
 afterEach(async () => {
@@ -320,6 +321,175 @@ it("refreshes current human inputs through the original native session after a p
 				received,
 				sessions,
 				adjacent,
+			},
+			null,
+			2,
+		),
+	);
+});
+
+it("refreshes a completed Parallel producer after its enclosing declared seed port changes", async () => {
+	const h = mkdtempSync(join(tmpdir(), "enclosing-port-"));
+	homes.push(h);
+	const repo = join(h, "repo");
+	mkdirSync(repo);
+	const git = (...args: string[]) =>
+		execFileSync("git", args, {
+			cwd: repo,
+			encoding: "utf8",
+			stdio: "pipe",
+		}).trim();
+	git("init", "-b", "main");
+	git("config", "user.name", "Fixture");
+	git("config", "user.email", "fixture@example.invalid");
+	git("config", "commit.gpgsign", "false");
+	writeFileSync(join(repo, "record.txt"), "same");
+	git("add", ".");
+	git("commit", "-m", "fixture [skip ci]");
+	const revision = git("rev-parse", "HEAD");
+	const source = {
+		id: "source-recipe",
+		name: "Source",
+		stepConfigVersion: "step-config-v1",
+		allowedTriggers: ["workflow"],
+		inputs: ["seed"],
+		outcomes: ["completed"],
+		steps: [
+			{
+				id: "work",
+				name: "Work",
+				type: "fanout",
+				next: "end",
+				groups: [
+					[
+						role("original", {
+							revision: "bound",
+							reads: { seed: "seed" },
+							next: "adjacent",
+						}),
+						{
+							id: "adjacent",
+							name: "Adjacent",
+							type: "tool",
+							tool: "fixture",
+							next: "end",
+						},
+					],
+				],
+			},
+		],
+	};
+	const consumer = {
+		id: "consumer-recipe",
+		name: "Consumer",
+		stepConfigVersion: "step-config-v1",
+		allowedTriggers: ["workflow"],
+		inputs: ["source"],
+		outcomes: ["completed"],
+		steps: [role("consume", { reads: { source: "source" } })],
+	};
+	const sourceKey = "first/work/0/original";
+	const parent = {
+		id: "enclosing-port-parent",
+		name: "Parent",
+		stepConfigVersion: "step-config-v1",
+		steps: [
+			role("seed", {
+				next: "first",
+				branches: [{ when: { path: "version", equals: 2 }, next: "second" }],
+			}),
+			{
+				id: "first",
+				name: "Source",
+				type: "workflow",
+				workflow: source.id,
+				bindings: { seed: "seed" },
+				next: "seed",
+			},
+			{
+				id: "second",
+				name: "Consumer",
+				type: "workflow",
+				workflow: consumer.id,
+				bindings: { source: sourceKey },
+				next: "end",
+			},
+		],
+	};
+	const defs = validateWorkflows([
+		...defaultWorkflows,
+		source,
+		consumer,
+		parent,
+	]);
+	let seed = 0,
+		calls = 0,
+		adjacent = 0;
+	let received: unknown, originalHistory: unknown;
+	const sessions: (string | undefined)[] = [];
+	const r = new WorkflowRuntime(join(h, "state"), {
+		agent: async (c) => {
+			if (c.step.id === "seed") {
+				if (seed === 1) originalHistory = structuredClone(c.run.history);
+				return { version: ++seed };
+			}
+			if (c.step.id === "original") {
+				calls++;
+				sessions.push(c.resumeAgent?.sessionId);
+				await c.checkpointAgent?.({
+					runner: "codex",
+					sessionId: "controlled-enclosing-producer",
+				});
+				return { seed: (c.input as { seed: unknown }).seed };
+			}
+			received = (c.input as { source: unknown }).source;
+			return { received };
+		},
+		tool: async () => {
+			adjacent++;
+			return { executed: true };
+		},
+		script: async () => ({}),
+	});
+	instances.push(r);
+	r.updateWorkflows(defs, parent.id);
+	const run = r.create({
+		title: "Enclosing input drift",
+		repositoryId: "fixture",
+		workspace: repo,
+		input: "Use current seed",
+		workflow: defs.at(-1)!,
+		triggerOrigin: { type: "manual", workflowId: parent.id },
+	});
+	await r.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	expect(received).toEqual({ seed: { version: 2 } });
+	expect(calls).toBe(2);
+	expect(adjacent).toBe(1);
+	expect(sessions).toEqual([undefined, "controlled-enclosing-producer"]);
+	expect(git("rev-parse", "HEAD")).toBe(revision);
+	expect(run.history.slice(0, (originalHistory as unknown[]).length)).toEqual(
+		originalHistory,
+	);
+	expect(
+		run.checkpoint!.calls!.first!.branches!.work![0]!.visits.original,
+	).toBe(2);
+	expect(
+		run.history.filter((h) => h.step === sourceKey).map((h) => h.output),
+	).toEqual([{ seed: { version: 1 } }, { seed: { version: 2 } }]);
+	writeFileSync(
+		"/tmp/taskbot142-r2-enclosing-input.json",
+		JSON.stringify(
+			{
+				status: run.status,
+				calls,
+				received,
+				sessions,
+				adjacent,
+				revision,
+				binding: run.boundOutputs?.[sourceKey],
+				history: run.history,
+				checkpoint: run.checkpoint,
 			},
 			null,
 			2,

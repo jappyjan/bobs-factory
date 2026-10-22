@@ -216,10 +216,66 @@ const deliveryRecipe = {
 	stepConfigVersion: "step-config-v1",
 	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 	description:
-		"Reusable route by delivery with declared inputs and original delivery safeguards.",
+		"Route executed planning inputs, or clarify, plan and independently review a contract before standalone routing. Routing does not apply or complete delivery.",
 	inputs: ports,
 	outcomes: ["completed", "to-external-apply", "to-architecture", "to-plan"],
 	steps: [
+		{
+			id: "prepare-routing",
+			name: "Use configured planning producers or prepare them",
+			type: "check",
+			reads: { caller: "@caller" },
+			check: {
+				results: {
+					provided: {
+						all: [
+							{ path: "/inputs/caller/bindings/clarify", exists: true },
+							{ path: "/inputs/caller/bindings/plan", exists: true },
+							{ path: "/inputs/caller/bindings/plan-review", exists: true },
+						],
+					},
+				},
+			},
+			next: "clarify",
+			branches: [
+				{
+					when: { path: "provided", equals: true },
+					next: "delivery-route-accept",
+				},
+			],
+		},
+		{
+			...roles.clarify!,
+			next: "decisions",
+			branches: [
+				{
+					when: { path: "architectureRevision", equals: true },
+					next: "to-architecture",
+				},
+			],
+		},
+		{ ...roles.decisions!, next: "plan", branches: [] },
+		{
+			...roles.plan!,
+			next: "plan-review",
+			branches: [
+				{
+					when: { path: "architectureRevision", equals: true },
+					next: "to-architecture",
+				},
+			],
+		},
+		{
+			...roles["plan-review"]!,
+			next: "delivery-route-accept",
+			branches: [
+				{
+					when: { path: "architectureRevision", equals: true },
+					next: "to-architecture",
+				},
+				{ when: { path: "approved", equals: false }, next: "plan" },
+			],
+		},
 		{
 			...roles["delivery-route-accept"]!,
 			next: "delivery-route",
@@ -1087,7 +1143,7 @@ const externalRecipe = {
 			reads: { delivery: "@delivery" },
 			check: {
 				results: {
-					accepted: { path: "/delivery/contractDigest", exists: true },
+					accepted: { path: "/inputs/delivery/contractDigest", exists: true },
 				},
 			},
 			next: "clarify",
@@ -1202,7 +1258,7 @@ const externalRecipe = {
 		},
 		{
 			...roles["external-correction"]!,
-			next: "to-plan",
+			next: "route-correction",
 			branches: [
 				{
 					when: {
@@ -1212,6 +1268,15 @@ const externalRecipe = {
 					next: "to-architecture",
 				},
 			],
+		},
+		{
+			id: "route-correction",
+			name: "Return correction to caller or revise the standalone plan",
+			type: "check",
+			reads: { caller: "@caller" },
+			check: { results: { called: { path: "/inputs/caller/stepKey", exists: true } } },
+			next: "plan",
+			branches: [{ when: { path: "called", equals: true }, next: "to-plan" }],
 		},
 		{
 			...roles["external-final"]!,

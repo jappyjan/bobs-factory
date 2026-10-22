@@ -176,7 +176,7 @@ import {
 	stampSpecialist,
 	validateContractOutput,
 } from "./SpecialistReview.js";
-import { stepBindings } from "./StepBindings.js";
+import { allRunSteps, stepBindings } from "./StepBindings.js";
 import {
 	architectureRevisionDecision,
 	CHECK_SELECTOR_IDS,
@@ -223,7 +223,11 @@ import {
 	WorkflowSchema,
 	type WorkflowStep,
 } from "./Workflow.js";
-import { type WorkflowBlock, WorkflowCatalog } from "./WorkflowCatalog.js";
+import {
+	type WorkflowBlock,
+	WorkflowCatalog,
+	workflowClosure,
+} from "./WorkflowCatalog.js";
 import { snapshotHistory, snapshotWorkflowInput } from "./WorkflowInput.js";
 
 export type RunStatus =
@@ -1477,7 +1481,36 @@ export class WorkflowRuntime {
 			}
 			controller.signal.throwIfAborted();
 			this.requireRunAvailable(run);
+			// Outcome recipes can be preparation-only blocks. They cannot claim delivery
+			// completion; every graph declaring delivery work or retaining effects keeps the guard.
+			const root = run.recoveryWorkflow ?? run.workflow;
+			const deliveryWork =
+				!root.outcomes?.length ||
+				allRunSteps({
+					...run,
+					workflowDefinitions: workflowClosure(
+						root,
+						run.workflowDefinitions ?? [],
+					),
+				}).some((step) =>
+					[
+						"external-apply",
+						"external-verify",
+						"external-human-review",
+						"external-final",
+						"external-reverify",
+						"merge",
+					].includes(step.tool ?? ""),
+				) ||
+				[run.delivery, ...(run.deliveryContracts ?? [])].some(
+					(delivery) =>
+						delivery &&
+						(delivery.receipts.length > 0 ||
+							delivery.verification ||
+							delivery.finalCheck),
+				);
 			if (
+				deliveryWork &&
 				run.delivery &&
 				run.delivery.contract.mode !== "repository" &&
 				!externalCompletionProven(run)
@@ -1486,6 +1519,7 @@ export class WorkflowRuntime {
 					"External delivery lacks verified acceptance and final state proof",
 				);
 			if (
+				deliveryWork &&
 				run.delivery?.contract.mode === "mixed" &&
 				readPath(outputForTool(run, "merge"), "merged") !== true
 			)
@@ -1973,15 +2007,7 @@ export class WorkflowRuntime {
 	): ExecutionContext {
 		const owner = this.producerFrame(consumer.run, key);
 		const outputs = { ...owner.outputs };
-		const call = stepForRun(consumer.run, owner.prefix.replace(/\/$/, ""));
-		for (const name of Object.keys(call?.bindings ?? {})) {
-			const value = producerValue(
-				consumer.run,
-				producerKey(consumer.run, owner.prefix, name),
-			);
-			if (value === undefined) delete outputs[name];
-			else outputs[name] = snapshotWorkflowInput(value);
-		}
+		this.hydrateProducerInputs(consumer.run, owner.prefix, owner.step, outputs);
 		const context: ExecutionContext = {
 			...consumer,
 			step: owner.step,
@@ -2012,6 +2038,26 @@ export class WorkflowRuntime {
 			humanDecisions: consumer.run.humanDecisions ?? [],
 		});
 		return context;
+	}
+	/** Compare and execute with the same current lexical ports, including container frames. */
+	private hydrateProducerInputs(
+		run: FactoryRun,
+		prefix: string,
+		step: WorkflowStep,
+		outputs: Record<string, unknown>,
+	) {
+		const caller = stepForRun(run, prefix.replace(/\/$/, ""));
+		const names = new Set(Object.keys(caller?.bindings ?? {}));
+		for (const binding of Object.values(resolveStepConfig(step).reads)) {
+			if (!binding.from.startsWith("@")) names.add(binding.from.split("/")[0]!);
+		}
+		for (const name of names) {
+			const source = producerKey(run, prefix, name);
+			if (source === `${prefix}${name}`) continue;
+			const value = producerValue(run, source);
+			if (value === undefined) delete outputs[name];
+			else outputs[name] = snapshotWorkflowInput(value);
+		}
 	}
 	private producerRefreshes = new Map<string, Promise<void>>();
 	private async refreshImportedProducer(
@@ -2177,26 +2223,12 @@ export class WorkflowRuntime {
 		if (checkpoint.projectResults)
 			this.restoreFrameReceipts(run, steps, checkpoint, prefix);
 		while (checkpoint.current !== "end") {
-			const caller = stepForRun(run, prefix.replace(/\/$/, ""));
-			for (const name of Object.keys(caller?.bindings ?? {})) {
-				const value = producerValue(run, producerKey(run, prefix, name));
-				if (value === undefined) delete outputs[name];
-				else outputs[name] = snapshotWorkflowInput(value);
-			}
 			signal.throwIfAborted();
 			this.assertSchedulingOpen();
 			const step = steps.find((item) => item.id === checkpoint.current)!;
 			const key = `${prefix}${step.id}`;
 			const config = resolveStepConfig(step);
-			for (const binding of Object.values(config.reads)) {
-				if (binding.from.startsWith("@")) continue;
-				const name = binding.from.split("/")[0]!;
-				const source = producerKey(run, prefix, name);
-				if (source === `${prefix}${name}`) continue;
-				const value = producerValue(run, source);
-				if (value === undefined) delete outputs[name];
-				else outputs[name] = snapshotWorkflowInput(value);
-			}
+			this.hydrateProducerInputs(run, prefix, step, outputs);
 			const reviewConfig = consumesReview(step)
 				? {
 						inventory: readStep(step, "inventory")!,

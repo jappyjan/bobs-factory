@@ -36,6 +36,26 @@ export type Recipe = {
 	unavailable?: string[];
 };
 
+/** Keep a correction entry only when it is a real entry in the new destination. */
+export function changeRouteTarget(
+	branch: Step["branches"][number],
+	next: string,
+	steps: Step[],
+	recipes: Recipe[],
+): Step["branches"][number] {
+	const updated = { ...branch, next };
+	if (!updated.entry) return updated;
+	const call = steps.find((step) => step.id === next);
+	const callee = recipes.find((recipe) => recipe.id === call?.workflow);
+	if (
+		call?.type !== "workflow" ||
+		!callee?.outcomes?.length ||
+		!callee.steps.some((step) => step.id === updated.entry)
+	)
+		delete updated.entry;
+	return updated;
+}
+
 /** Fields a recipe owns; catalog metadata (enabled, provenance…) is not edited here. */
 const editableKeys = [
 	"stepConfigVersion",
