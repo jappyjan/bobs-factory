@@ -1,11 +1,13 @@
 import type { ViewSnapshot } from "./HumanStep.js";
 import { viewPlainText, viewText } from "./View.js";
+import { publicViewSnapshot } from "./ViewPresentation.js";
 
 /** The human protocol is reserved before bounded untrusted display content. */
 export function humanViewText(
 	snapshot: ViewSnapshot,
 	options: { maxLength?: number; includeProtocol?: boolean } = {},
 ): string {
+	snapshot = publicViewSnapshot(snapshot);
 	const limit = Math.max(1000, Math.min(100000, options.maxLength ?? 100000));
 	const header: string[] = [snapshot.kind];
 	if (snapshot.kind !== "show") {

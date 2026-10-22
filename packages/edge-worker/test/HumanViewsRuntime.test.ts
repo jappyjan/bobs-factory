@@ -1505,7 +1505,7 @@ describe("production declarative human steps", () => {
 		expect(getter).not.toHaveBeenCalled();
 	});
 
-	it("uses an explicit digest-bound ticket/terminal reply command and publishes one ticket milestone per batch", async () => {
+	it("uses an explicit digest-bound ticket/terminal reply command and publishes one ticket milestone per exact displayed digest", async () => {
 		const directory = home(),
 			track = vi.fn(async () => {});
 		const instance = runtime(directory, { track });
@@ -1518,7 +1518,8 @@ describe("production declarative human steps", () => {
 		await waitFor(() =>
 			expect(
 				track.mock.calls.filter(
-					([, milestone]) => milestone.key === `view:${snapshot.id}`,
+					([, milestone]) =>
+						milestone.key === `view:${snapshot.id}:${snapshot.digest}`,
 				),
 			).toHaveLength(1),
 		);
@@ -1531,7 +1532,8 @@ describe("production declarative human steps", () => {
 		await instance.replyView(run.id, command);
 		expect(
 			track.mock.calls.filter(
-				([, milestone]) => milestone.key === `view:${snapshot.id}`,
+				([, milestone]) =>
+					milestone.key === `view:${snapshot.id}:${snapshot.digest}`,
 			),
 		).toHaveLength(1);
 	});

@@ -3967,7 +3967,63 @@ export class WorkflowRuntime {
 		}
 		return outputs;
 	}
-	async publishViewDecision(run: FactoryRun, text: string, batchId: string) {
+	async publishViewDecision(
+		run: FactoryRun,
+		text: string,
+		batchId: string,
+		displayDigest?: string,
+	) {
+		if (displayDigest) {
+			const record = run.viewRecords?.find(
+				(record) => record.snapshot.id === batchId,
+			);
+			const current = () =>
+				record &&
+				!record.answer &&
+				!record.superseded &&
+				run.status === "waiting" &&
+				run.viewDecision?.id === batchId &&
+				run.viewDecision.digest === displayDigest &&
+				record.snapshot.digest === displayDigest;
+			if (!current() || !record || record.publicationDigest === displayDigest)
+				return;
+			// Original no-discussion waits were already published with their unchanged
+			// digest. Old waits with Ask need their first current-discussion intent.
+			const legacyIntent = run.ticketSync?.receipts.some(
+				(receipt) =>
+					receipt.key === `view:${batchId}` &&
+					!receipt.superseded &&
+					receipt.body.startsWith(
+						`${record.snapshot.kind}\nDecision batch: ${batchId}\nDisplayed digest: ${displayDigest}\n`,
+					),
+			);
+			const legacyPublished =
+				(!(run.ticketReference && this.hooks.track) || legacyIntent) &&
+				record.notified &&
+				!record.publicationDigest &&
+				!Object.values(record.snapshot.threads ?? {}).some(
+					(threads) => threads.length,
+				);
+			record.publicationDigest = displayDigest;
+			record.notified = true;
+			if (legacyPublished) {
+				await this.save(run);
+				return;
+			}
+			if (run.ticketReference && this.hooks.track) {
+				// track records the intent before its first save, atomically with the
+				// publication claim. Its outbox owns provider retries and deduplication.
+				await this.track(run, {
+					key: `view:${batchId}:${displayDigest}`,
+					body: text,
+					viewDecision: { batchId, digest: displayDigest },
+				});
+			} else {
+				await this.save(run);
+				await this.hooks.viewDecision?.(run, text);
+			}
+			return;
+		}
 		if (run.ticketReference && this.hooks.track)
 			await this.track(run, { key: `view:${batchId}`, body: text });
 		else await this.hooks.viewDecision?.(run, text);

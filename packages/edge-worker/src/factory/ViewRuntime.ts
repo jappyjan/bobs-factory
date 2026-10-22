@@ -17,6 +17,11 @@ import { launchBatchProjection } from "./LaunchRuns.js";
 import { resolveStepConfig } from "./StepConfig.js";
 import { availableViewPaths, resolveView, viewText } from "./View.js";
 import { verifyViewAssets } from "./ViewAssets.js";
+import {
+	publicViewDecision,
+	publicViewRecord,
+	viewRecordDigest,
+} from "./ViewPresentation.js";
 import { humanViewText } from "./ViewText.js";
 import { StepSchema, type WorkflowStep } from "./Workflow.js";
 import type {
@@ -117,21 +122,7 @@ function configuration(step: WorkflowStep) {
 		reads: step.reads ?? {},
 	});
 }
-function publicSnapshot(record: ViewRecord): ViewSnapshot {
-	const snapshot = record.snapshot;
-	return {
-		...structuredClone(snapshot),
-		threads: Object.fromEntries(
-			Object.entries(snapshot.threads ?? {}).map(([id, threads]) => [
-				id,
-				threads.map(
-					({ agent: _agent, executionKey: _executionKey, ...thread }) => thread,
-				),
-			]),
-		),
-		...(record.answer ? { answer: structuredClone(record.answer.output) } : {}),
-	};
-}
+
 function content(context: ExecutionContext) {
 	context = { ...context, step: StepSchema.parse(context.step) };
 	const config = configuration(context.step),
@@ -241,7 +232,7 @@ export class HumanViews {
 				delete current.found.frame.active!.viewId;
 				return true;
 			}
-			run.viewDecision = publicSnapshot(record);
+			run.viewDecision = publicViewRecord(run.id, record);
 			return false;
 		} catch {
 			/* Historical results never recover publication authority. */
@@ -269,29 +260,34 @@ export class HumanViews {
 		};
 	}
 	private updateDigest(run: FactoryRun, record: ViewRecord) {
-		const {
-			digest: _digest,
-			answer: _answer,
-			threads,
-			...display
-		} = record.snapshot;
-		record.snapshot.digest = digest({
-			protocol: "human-view-v1",
-			runId: run.id,
-			config: record.configDigest,
-			source: record.sourceDigest,
-			display,
-			threads: Object.fromEntries(
-				Object.entries(threads ?? {}).map(([id, threads]) => [
-					id,
-					threads.map(
-						({ agent: _agent, executionKey: _executionKey, ...thread }) =>
-							thread,
-					),
-				]),
-			),
-		});
+		record.snapshot.digest = viewRecordDigest(run.id, record);
 	}
+	private publicationQueues = new Map<string, Promise<void>>();
+	private publishDecision(run: FactoryRun, record: ViewRecord): Promise<void> {
+		const snapshot = publicViewRecord(run.id, record);
+		const previous = this.publicationQueues.get(run.id) ?? Promise.resolve();
+		const work = previous
+			.catch(() => {})
+			.then(() =>
+				this.runtime.publishViewDecision(
+					run,
+					humanViewText(snapshot),
+					snapshot.id,
+					snapshot.digest,
+				),
+			);
+		this.publicationQueues.set(run.id, work);
+		this.publications.add(work);
+		void work
+			.finally(() => {
+				this.publications.delete(work);
+				if (this.publicationQueues.get(run.id) === work)
+					this.publicationQueues.delete(run.id);
+			})
+			.catch(() => {});
+		return work;
+	}
+
 	private current(run: FactoryRun, record: ViewRecord) {
 		const found = locate(run, record.snapshot.id);
 		if (
@@ -373,7 +369,7 @@ export class HumanViews {
 		if (step.type === "show") {
 			run.viewDisplays ??= [];
 			if (!run.viewDisplays.some((s) => s.id === record.snapshot.id))
-				run.viewDisplays.push(publicSnapshot(record));
+				run.viewDisplays.push(publicViewRecord(run.id, record));
 			await this.runtime.save(run);
 			if (!record.notified) {
 				record.notified = true;
@@ -395,8 +391,9 @@ export class HumanViews {
 			return { shown: true, viewId: record.snapshot.id };
 		}
 		if (record.answer) return record.answer.output;
+		this.updateDigest(run, record);
 		this.contexts.set(record.snapshot.id, context);
-		run.viewDecision = publicSnapshot(record);
+		run.viewDecision = publicViewRecord(run.id, record);
 		releaseDelivery(run, "Awaiting view decision");
 		run.status = "waiting";
 		const waiting = new Promise<void>((resolve, reject) =>
@@ -410,15 +407,7 @@ export class HumanViews {
 		signal.addEventListener("abort", abort, { once: true });
 		try {
 			await this.runtime.save(run);
-			if (!record.notified) {
-				record.notified = true;
-				await this.runtime.save(run);
-				await this.runtime.publishViewDecision(
-					run,
-					this.text(record),
-					record.snapshot.id,
-				);
-			}
+			await this.publishDecision(run, record);
 			// Resume unfinished item threads through their own native checkpoint.
 			for (const [itemId, threads] of Object.entries(
 				record.snapshot.threads ?? {},
@@ -437,7 +426,7 @@ export class HumanViews {
 					frame,
 				);
 			if (!record.answer) throw new Error("Decision was not accepted");
-			run.viewDecision = publicSnapshot(record);
+			run.viewDecision = publicViewRecord(run.id, record);
 			run.status = "running";
 			return (record as ViewRecord).answer!.output;
 		} finally {
@@ -457,7 +446,7 @@ export class HumanViews {
 			"\n[Earlier Show displays omitted. Open the dashboard for retained history.]";
 		const chunks = current
 			? [
-					humanViewText(current.snapshot, {
+					humanViewText(publicViewRecord(run.id, current), {
 						maxLength: history.length
 							? 100000 - historyNotice.length - 2
 							: 100000,
@@ -483,7 +472,7 @@ export class HumanViews {
 	}
 
 	snapshot(run: FactoryRun) {
-		return run.viewDecision;
+		return publicViewDecision(run);
 	}
 	async answer(id: string, input: unknown): Promise<unknown> {
 		const request = ViewAnswerSchema.parse(input),
@@ -528,6 +517,9 @@ export class HumanViews {
 					"Displayed content changed. Refresh and review the new decision batch.",
 				);
 			}
+			this.updateDigest(run, record);
+			run.viewDecision = publicViewRecord(run.id, record);
+			await this.runtime.save(run);
 			if (request.digest !== record.snapshot.digest)
 				throw new Error(
 					"Displayed decision or Ask thread changed. Refresh and review again.",
@@ -556,7 +548,7 @@ export class HumanViews {
 				output,
 				at: new Date().toISOString(),
 			});
-			run.viewDecision = publicSnapshot(record);
+			run.viewDecision = publicViewRecord(run.id, record);
 			await this.runtime.save(run);
 			this.waiting.get(record.snapshot.id)?.resolve();
 			return record.answer.output;
@@ -595,10 +587,12 @@ export class HumanViews {
 			if (originalThread) {
 				if (originalThread.question !== request.question)
 					throw new Error("Ask request ID already belongs to another question");
-				return publicSnapshot(record);
+				return publicViewRecord(run.id, record);
 			}
 			const { context } = this.current(run, record),
 				source = content(context);
+			this.updateDigest(run, record);
+			run.viewDecision = publicViewRecord(run.id, record);
 			if (
 				!context.step.decide?.ask ||
 				request.digest !== record.snapshot.digest ||
@@ -619,7 +613,7 @@ export class HumanViews {
 			if (previous) {
 				if (previous.question !== request.question)
 					throw new Error("Ask request ID already belongs to another question");
-				return publicSnapshot(record);
+				return publicViewRecord(run.id, record);
 			}
 			if (entries.length >= 20 || this.asksFor(record).length >= 100)
 				throw new Error("Ask thread limit reached");
@@ -639,15 +633,16 @@ export class HumanViews {
 				at: new Date().toISOString(),
 			});
 			this.updateDigest(run, record);
-			run.viewDecision = publicSnapshot(record);
+			run.viewDecision = publicViewRecord(run.id, record);
 			await this.runtime.save(run);
+			void this.publishDecision(run, record).catch(() => {});
 			void this.runAsk(
 				context,
 				record,
 				request.itemId,
 				request.requestId,
 			).catch(() => {});
-			return publicSnapshot(record);
+			return publicViewRecord(run.id, record);
 		});
 	}
 	private async runAsk(
@@ -729,12 +724,9 @@ export class HumanViews {
 			} catch (error) {
 				if (context.signal.aborted) return;
 				const message = error instanceof Error ? error.message : "Ask failed";
-				result = {
-					error:
-						message.length <= 24000
-							? message
-							: `${message.slice(0, 23950)} [error text truncated]`,
-				};
+				// Private persisted diagnostic. Public projections classify the failure
+				// rather than exposing arbitrary provider/config/session messages.
+				result = { error: message };
 			}
 			await this.transition(context.run, async () => {
 				if (
@@ -754,6 +746,8 @@ export class HumanViews {
 				this.updateDigest(context.run, record);
 				const renew = this.publishCurrent(context.run, record);
 				await this.runtime.save(context.run);
+				if (!renew)
+					void this.publishDecision(context.run, record).catch(() => {});
 				if (renew) this.waiting.get(record.snapshot.id)?.resolve();
 			});
 		})();

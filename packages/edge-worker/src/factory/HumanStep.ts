@@ -113,6 +113,8 @@ export interface ViewRecord {
 	scope?: { inputs: Record<string, unknown>; item?: unknown; index?: number };
 	answer?: { request: ViewAnswer; output: Record<string, unknown>; at: string };
 	notified?: boolean;
+	/** Exact public display captured in the durable ticket intent (or hook attempt). */
+	publicationDigest?: string;
 }
 const itemKey = z
 	.string()

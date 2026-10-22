@@ -372,9 +372,13 @@ it("delivers current bounded Ask text and its exact answer protocol through real
 		bounded.json().viewDecision.threads.item1[0].error.length,
 	).toBeLessThanOrEqual(24000);
 	expect(bounded.json().viewDecision.threads.item1[0].error).toContain(
-		"error text truncated",
+		"Private agent diagnostics were retained",
 	);
 
+	expect(
+		run.viewRecords!.find((r) => r.snapshot.id === run.viewDecision!.id)!
+			.snapshot.threads!.item1![0]!.error,
+	).toBe("E".repeat(1_000_000));
 	await expect(
 		runtime.replyView(
 			run.id,

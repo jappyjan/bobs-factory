@@ -388,6 +388,7 @@ import {
 import { titleMcpConfig } from "./factory/TitleMcpConfig.js";
 import { outputForTool, toolForStep } from "./factory/ToolBindings.js";
 import { finalizeVideoEvidence, videoGateIssues } from "./factory/Video.js";
+import { askFailureText } from "./factory/ViewPresentation.js";
 import {
 	capacityInstructions,
 	readPath as readFactoryPath,
@@ -9547,12 +9548,23 @@ ${taskSection}`;
 				});
 			}
 			this.saveFactorySession(run);
-			this.agentSessionManager.markFactoryMessage(
-				message,
-				context.stepKey ?? step.id,
-			);
-			void originalMessage?.(message);
-			context.log(JSON.stringify(message), "agent");
+			if (
+				context.contextAssistance &&
+				message.type === "result" &&
+				message.is_error
+			) {
+				// Native diagnostics remain in the runner and the private Ask
+				// record. Do not send its arbitrary config/session paths into
+				// session activities, ticket text or public runtime events.
+				context.log(askFailureText, "agent");
+			} else {
+				this.agentSessionManager.markFactoryMessage(
+					message,
+					context.stepKey ?? step.id,
+				);
+				void originalMessage?.(message);
+				context.log(JSON.stringify(message), "agent");
+			}
 			return pendingMessageCheckpoint;
 		};
 		context.progress = await roleProgress(context);

@@ -5,6 +5,7 @@ import { externalCompletionProven } from "./Delivery.js";
 import { isPullRequestSource } from "./GitProviderReference.js";
 import { issueSnapshot } from "./issueSnapshot.js";
 import { outputForTool } from "./ToolBindings.js";
+import { publicViewRecord } from "./ViewPresentation.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 export const TicketReferenceSchema = z
@@ -54,6 +55,8 @@ export interface TicketMilestone {
 	error?: string;
 	conflict?: boolean;
 	limitation?: string;
+	/** Runtime-owned public human display, never an agent-provided action. */
+	viewDecision?: { batchId: string; digest: string };
 }
 export interface TicketSync {
 	receipts: TicketMilestone[];
@@ -592,6 +595,57 @@ export class TicketTracking {
 		}
 	}
 	private retries = new Map<string, ReturnType<typeof setTimeout>>();
+	private viewState(run: FactoryRun, receipt: TicketMilestone) {
+		if (!receipt.viewDecision) {
+			// Old saved waits used a batch-only outbox key. Associate only an
+			// exact runtime-owned human batch; Show and other receipts retain
+			// their existing behavior. Never relabel its original body/digest.
+			const legacy = run.viewRecords?.find(
+				(record) =>
+					record.snapshot.kind !== "show" &&
+					receipt.key === `view:${record.snapshot.id}`,
+			);
+			if (!legacy) return "current";
+			const prefix = `${legacy.snapshot.kind}\nDecision batch: ${legacy.snapshot.id}\nDisplayed digest: `;
+			const originalDigest = receipt.body.startsWith(prefix)
+				? receipt.body.slice(prefix.length).split("\n", 1)[0]
+				: undefined;
+			if (!originalDigest || !/^[a-f0-9]{64}$/.test(originalDigest)) {
+				receipt.superseded = true;
+				receipt.limitation =
+					"This legacy display has no verifiable current digest; use the renewed dashboard decision.";
+				delete receipt.error;
+				return "superseded";
+			}
+			receipt.viewDecision = {
+				batchId: legacy.snapshot.id,
+				digest: originalDigest,
+			};
+		}
+		const version = receipt.viewDecision;
+		const record = run.viewRecords?.find(
+			(record) => record.snapshot.id === version.batchId,
+		);
+		if (
+			!record ||
+			record.answer ||
+			record.superseded ||
+			["completed", "failed", "stopped"].includes(run.status) ||
+			publicViewRecord(run.id, record).digest !== version.digest ||
+			(run.viewDecision &&
+				(run.viewDecision.id !== version.batchId ||
+					run.viewDecision.digest !== version.digest))
+		) {
+			receipt.superseded = true;
+			receipt.limitation =
+				"A newer decision display or accepted answer replaced this unsent version.";
+			delete receipt.error;
+			return "superseded";
+		}
+		return run.status === "waiting" && run.viewDecision
+			? "current"
+			: "deferred";
+	}
 	stop(): void {
 		this.stopped = true;
 		for (const timer of this.retries.values()) clearTimeout(timer);
@@ -637,6 +691,13 @@ export class TicketTracking {
 						(receipt.conflict && !reassess)
 					)
 						continue;
+					if (this.viewState(run, receipt) !== "current") {
+						sync.error = sync.receipts.find(
+							(r) => !r.delivered && !r.superseded && r.error,
+						)?.error;
+						await this.save(run);
+						continue;
+					}
 					try {
 						if (receipt.stage === "done" && receipt.completion) {
 							if (
@@ -652,6 +713,7 @@ export class TicketTracking {
 						}
 						const adapter = await this.adapter(run);
 						let snapshot = await adapter.read("tracking");
+						if (this.viewState(run, receipt) !== "current") continue;
 						const statusOf = (snapshot: TicketSnapshot) =>
 							String(
 								snapshot.status ??
@@ -730,6 +792,7 @@ export class TicketTracking {
 						) {
 							receipt.deliveryId ??= randomUUID();
 							await this.save(run);
+							if (this.viewState(run, receipt) !== "current") continue;
 							const body = `${receipt.body}${receipt.limitation ? `\n\nTracking limitation: ${receipt.limitation}` : ""}\n\n${marker}`;
 							if (adapter.publish) await adapter.publish(receipt, body);
 							else await adapter.comment(body);

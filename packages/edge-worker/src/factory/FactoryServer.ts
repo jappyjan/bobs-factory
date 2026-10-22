@@ -103,6 +103,7 @@ import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
 import { VIEW_JSON_SCHEMA, ViewSourceSchema } from "./View.js";
 import { readViewScreenshot } from "./ViewAssets.js";
+import { publicViewSnapshot } from "./ViewPresentation.js";
 import { routeResult, StepSchema, WorkflowSchema } from "./Workflow.js";
 import type { FactoryRun, WorkflowRuntime } from "./WorkflowRuntime.js";
 import { capacityRunStatus } from "./WorkflowRuntime.js";
@@ -1763,8 +1764,9 @@ export class FactoryServer {
 					}),
 					...(run
 						? {
-								viewDecision: run.viewDecision,
-								viewDisplays: run.viewDisplays,
+								viewRecords: undefined,
+								viewDecision: runtime.humanViews.snapshot(run),
+								viewDisplays: run.viewDisplays?.map(publicViewSnapshot),
 								viewText: runtime.humanViews.displayText(run),
 								recipeParent: run.recipeParent,
 								launchActions: Object.fromEntries(

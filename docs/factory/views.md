@@ -63,8 +63,21 @@ disables shell/web/delegation/discovery and denies filesystem and network effect
 outside minimal native runtime/private empty cwd reads. Native `apply_patch` may
 remain named, but its filesystem effects are denied. Native configuration or
 cached tools that reopen access reject before a turn. OpenCode isolates config
-discovery while retaining its original native data/auth store, and verifies bounded
-read-only native permission and active-organization metadata. When a native auth store exists, a bounded provider-type listing rejects well-known configuration sources without reading or copying credential values. Unsafe or unverifiable remote organization/settings authority also refuses before a model turn. Unattested or broader saved OpenCode
+discovery while retaining its original native data/auth store. Before **any native
+invocation**, it refuses nonempty legacy/auth-only stores without the canonical
+SQLite database, unknown schemas/journals, unsafe startup layouts and uncheckpointed
+writes. A genuinely empty new store remains usable. The supported initialized
+format is OpenCode 1.2.27's complete migration journal. Built-in read-only SQLite
+queries inspect only schema, approval and active-organization metadata, never
+messages/parts or credential values. Version discovery uses an empty private
+factory directory. A bounded native provider-type listing then rejects well-known
+configuration sources; model metadata fetching is disabled and original native
+logs cannot be created/cleaned by that metadata command. The original native
+store/session/model is never replaced or migrated to make a refusal succeed.
+Concurrent external store replacement is not an atomic filesystem transaction;
+identity/WAL checks are repeated before the verified native startup. Unsafe or
+unverifiable remote organization/settings authority refuses before a model turn.
+Unattested or broader saved OpenCode
 permissions remain preserved and refuse resume. Unsupported Gemini assistance
 fails clearly before provider work. Mocked transport/config tests do not claim
 live provider quality or other-platform native enforcement.
@@ -142,7 +155,15 @@ Native ticket replies use `/view-answer { ... }` with the exact displayed batch
 and digest. Ordinary replies and operate-scoped MCP `answer_run` grants cannot
 approve views. Taskbot currently publishes fallback comments but has no incoming
 reply-ingestion channel. Large text fallbacks direct readers to the complete
-dashboard display. No notification claims to prove that the reader saw media.
+dashboard display. Ask admission/completion publishes an immutable ticket version
+with its exact current batch/digest, discussion/status and answer command. Durable
+outbox ownership skips obsolete unsent versions and deduplicates retries/restarts;
+delivered history remains original. Failed Ask exposes fixed recovery guidance in
+API, dashboard, terminal, ticket, activity and opted-in push content. Raw native
+failure diagnostics remain in the private persisted thread rather than these
+public projections, including when old saved failures are read. Accepted original
+answers/digests remain immutable. No notification claims to prove that the reader
+saw media.
 
 Recipes validates JSON while editing and prevents invalid saves. Available-path
 autocomplete comes from the bounded preview scope. Sample preview data is local

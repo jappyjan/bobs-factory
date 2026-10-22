@@ -7,8 +7,9 @@ import { EventEmitter } from "node:events";
 import {
 	existsSync,
 	mkdirSync,
-	readdirSync,
+	mkdtempSync,
 	readFileSync,
+	rmSync,
 	writeFileSync,
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -28,6 +29,7 @@ import {
 	buildOpenCodeRuntimeEnv,
 	ensureOpenCodeStateDirectories,
 } from "./config.js";
+import { inspectContextStore } from "./context-store.js";
 import { OpenCodeMessageFormatter } from "./formatter.js";
 import type {
 	OpenCodeJsonEvent,
@@ -626,23 +628,58 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 		const runtimeEnv = buildOpenCodeRuntimeEnv(this.config);
 		const dataHome = runtimeEnv.XDG_DATA_HOME;
 		if (!dataHome) throw new Error("Missing native data store");
+		// This check precedes EVERY native invocation, including --version. Native
+		// startup itself migrates pre-SQLite history before command handlers.
+		const store = inspectContextStore(dataHome, this.config.resumeSessionId);
+		if (store.remoteOrg) return new Error(REMOTE_CONFIG_ERROR);
 		const env = {
 			...(this.config.childEnvironment ?? process.env),
 			...this.config.env,
 			...this.config.additionalEnv,
 			...runtimeEnv,
+			OPENCODE_DISABLE_MODELS_FETCH: "1",
 		};
-		const data = join(dataHome, "opencode");
-		// Native well-known authentication can load remote plugins/config even
-		// before a database exists. Ask the native CLI for types only; do not read,
-		// copy, log or return auth.json or any credential value.
-		if (existsSync(join(data, "auth.json"))) {
-			const metadata = spawnSync(
+		// Version discovery runs against an empty factory-owned data directory,
+		// never the original native store. Only the audited startup is supported.
+		const parent = join(
+			this.config.factoryHome,
+			"opencode-state",
+			"context-only",
+		);
+		mkdirSync(parent, { recursive: true, mode: 0o700 });
+		const probe = mkdtempSync(join(parent, "metadata-version-"));
+		try {
+			const version = spawnSync(
 				this.config.openCodePath || "opencode",
-				["providers", "list"],
+				["--version"],
 				{
 					cwd: this.config.workingDirectory || cwd(),
-					env: { ...env, OPENCODE_DISABLE_MODELS_FETCH: "1" },
+					env: { ...env, XDG_DATA_HOME: probe },
+					encoding: "utf8",
+					timeout: 5_000,
+					maxBuffer: 16_384,
+				},
+			);
+			if (
+				version.error ||
+				version.status !== 0 ||
+				version.stdout.trim() !== "1.2.27"
+			)
+				throw new Error("Unsupported native version");
+		} finally {
+			rmSync(probe, { recursive: true, force: true });
+		}
+		store.verify();
+		if (!store.fresh && existsSync(join(dataHome, "opencode", "auth.json"))) {
+			// Native prints types only; credential values remain in its own store.
+			// The schema gate above cannot initialize/migrate native history. The
+			// pinned metadata command uses no original-store writes or model fetch.
+			const metadata = spawnSync(
+				this.config.openCodePath || "opencode",
+				["providers", "list", "--print-logs"],
+				{
+					cwd: this.config.workingDirectory || cwd(),
+					env,
 					encoding: "utf8",
 					timeout: 5_000,
 					maxBuffer: 16_384,
@@ -655,69 +692,10 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 			)
 				return new Error(REMOTE_CONFIG_ERROR);
 		}
-		// A fresh native data store has no saved approvals. Existing stores must
-		// prove their permission metadata before any model turn. The CLI's db
-		// command uses a read-only connection and does not initialize a session.
-		if (
-			!existsSync(data) ||
-			!readdirSync(data).some((name) =>
-				/^opencode(?:-[\w.-]+)?\.db$/.test(name),
-			)
-		)
-			return;
-		const session = this.config.resumeSessionId;
-		const quoted = `'${(session ?? "").replaceAll("'", "''")}'`;
-		const query = `SELECT EXISTS(SELECT 1 FROM account_state WHERE id = 1 AND active_account_id IS NOT NULL AND active_org_id IS NOT NULL) AS remoteOrg, EXISTS(SELECT 1 FROM permission WHERE data <> '[]'${session ? ` AND project_id = (SELECT project_id FROM session WHERE id = ${quoted})` : ""}) AS savedPermissions, ${session ? `(SELECT permission FROM session WHERE id = ${quoted})` : "'[]'"} AS sessionPermission`;
-		const result = spawnSync(
-			this.config.openCodePath || "opencode",
-			["db", query, "--format", "json"],
-			{
-				cwd: this.config.workingDirectory || cwd(),
-				env,
-				encoding: "utf8",
-				timeout: 5_000,
-				maxBuffer: 16_384,
-			},
-		);
-		try {
-			if (result.error || result.status !== 0) throw new Error("unsupported");
-			const rows = JSON.parse(result.stdout);
-			if (!Array.isArray(rows) || rows.length !== 1) throw new Error("unknown");
-			const row = rows[0];
-			if (row.remoteOrg !== 0) return new Error(REMOTE_CONFIG_ERROR);
-			if (row.savedPermissions !== 0)
-				throw new Error("saved project approvals");
-			if (session && row.sessionPermission === null)
-				throw new Error("missing saved session permission metadata");
-			const rules = row.sessionPermission
-				? JSON.parse(row.sessionPermission)
-				: [];
-			if (
-				!Array.isArray(rules) ||
-				rules.some(
-					(rule) =>
-						!rule ||
-						typeof rule.permission !== "string" ||
-						typeof rule.pattern !== "string" ||
-						(rule.action !== "deny" &&
-							!(
-								rule.action === "allow" &&
-								[
-									"factory-context_list_context",
-									"factory-context_read_context",
-								].includes(rule.permission) &&
-								rule.pattern === "*"
-							)),
-				)
-			)
-				throw new Error("broader saved session permissions");
-			return;
-		} catch {
-			return new Error(
-				"Context-only OpenCode could not verify that native saved permissions are restricted. Native history is preserved; refusing a model turn.",
-			);
-		}
+		store.verify();
+		return;
 	}
+
 	private retainContextProfile(sessionId: string) {
 		if (this.config.toolProfile !== "context-only" || sessionId === "pending")
 			return;
