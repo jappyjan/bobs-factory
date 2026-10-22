@@ -5229,17 +5229,18 @@ export class WorkflowRuntime {
 		frame: GraphCheckpoint,
 		prefix: string,
 	): void {
-		if (frame.resultReceipts) {
-			for (const id of Object.keys(frame.resultReceipts))
-				frame.resultReceipts[id] = immutableJson(frame.resultReceipts[id]!);
-			return;
-		}
-		frame.resultReceipts = {};
+		const restoring = !frame.resultReceipts;
+		const receipts = Object.fromEntries(
+			Object.entries(frame.resultReceipts ?? {}).map(([id, receipt]) => [
+				id,
+				immutableJson(receipt),
+			]),
+		);
 		// Older unfinished frames have no ownership map. Only original qualified
 		// receipts of steps visited in this frame can restore it; inherited live
 		// output names never establish production or cause a completed role to replay.
 		for (const step of steps) {
-			if (!frame.visits[step.id]) continue;
+			if (!frame.visits[step.id] || Object.hasOwn(receipts, step.id)) continue;
 			const key = `${prefix}${step.id}`;
 			const receipt = [...run.history].reverse().find((entry) => {
 				if (entry.step !== key) return false;
@@ -5252,11 +5253,17 @@ export class WorkflowRuntime {
 				);
 			});
 			if (receipt) {
-				if (["workflow", "fanout", "foreach"].includes(step.type))
+				if (["workflow", "fanout", "foreach"].includes(step.type)) {
+					// An active step still publishes ownership through normal completion.
+					// A finished container cannot be reconstructed from its wrapper alone,
+					// even when an earlier failed restoration persisted a partial map.
+					if (!restoring && frame.current === step.id && frame.active) continue;
 					throw new Error(
 						`Child result ownership is missing at ${key}; original receipts are retained and nested results cannot be verified`,
 					);
-				Object.defineProperty(frame.resultReceipts, step.id, {
+				}
+				if (!restoring) continue;
+				Object.defineProperty(receipts, step.id, {
 					value: immutableJson({ key, output: receipt.output }),
 					enumerable: true,
 					configurable: true,
@@ -5264,6 +5271,8 @@ export class WorkflowRuntime {
 				});
 			}
 		}
+		// Publish only a completely validated restoration; failure retains the old map.
+		frame.resultReceipts = receipts;
 	}
 	private frameResults(
 		run: FactoryRun,

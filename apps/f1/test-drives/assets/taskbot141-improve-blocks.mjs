@@ -33,27 +33,30 @@ const round3Repair = process.argv.includes("--round3-fixes");
 const planCheckRepair = process.argv.includes("--plan-check-fixes");
 const researchRepair = process.argv.includes("--research-assignment-fixes");
 const parallelCallRepair = process.argv.includes("--parallel-call-fixes");
+const parallelRetryRepair = process.argv.includes("--parallel-retry-fixes");
 const dependencyRepair = process.argv.includes("--dependency-fixes");
 const canvasOnly = process.argv.includes("--canvas-only");
 assert(!(repairOnly && dependencyRepair), "Choose one scoped repair scenario");
 const media = join(
 	root,
 	"apps/f1/test-drives/media/2026-10-22-improve-blocks",
-	...(parallelCallRepair
-		? ["repair-parallel-call"]
-		: researchRepair
-			? ["repair-research-assignments"]
-			: planCheckRepair
-				? ["repair-r2-checks"]
-				: round3Repair
-					? ["repair-r2-r3-r4"]
-					: canvasOnly
-						? ["repair-r2-r3/ui"]
-						: repairOnly
-							? ["repair-r1-r2"]
-							: dependencyRepair
-								? ["repair-r2-r3"]
-								: []),
+	...(parallelRetryRepair
+		? ["repair-parallel-retry"]
+		: parallelCallRepair
+			? ["repair-parallel-call"]
+			: researchRepair
+				? ["repair-research-assignments"]
+				: planCheckRepair
+					? ["repair-r2-checks"]
+					: round3Repair
+						? ["repair-r2-r3-r4"]
+						: canvasOnly
+							? ["repair-r2-r3/ui"]
+							: repairOnly
+								? ["repair-r1-r2"]
+								: dependencyRepair
+									? ["repair-r2-r3"]
+									: []),
 );
 mkdirSync(media, { recursive: true });
 const directory = realpathSync(
@@ -284,6 +287,29 @@ const mock = (runner, config, output) =>
 		runner,
 		config,
 	);
+const failedOwnership = parallelRetryRepair
+	? JSON.parse(
+			readFileSync(
+				join(
+					root,
+					"packages/edge-worker/test/fixtures/parallel-call-failed-456154f3.json",
+				),
+				"utf8",
+			),
+		)
+	: undefined;
+if (failedOwnership) {
+	// Relocate only the disposable operational workspace. All saved authority,
+	// history, outputs and workflow fields remain the genuine captured values.
+	const workspace = join(directory, "retry-worktree");
+	git(repository, "worktree", "add", "-qb", "retry-fixture", workspace, "main");
+	failedOwnership.workspace = workspace;
+	mkdirSync(join(home, "factory", "runs"), { recursive: true });
+	writeFileSync(
+		join(home, "factory", "runs", `${failedOwnership.id}.json`),
+		JSON.stringify(failedOwnership),
+	);
+}
 worker = new EdgeWorker({
 	platform: "cli",
 	factoryHome: home,
@@ -298,7 +324,7 @@ worker = new EdgeWorker({
 	},
 	repositories: [
 		{
-			id: "improve-fixture",
+			id: parallelRetryRepair ? "fixture" : "improve-fixture",
 			name: "Improve F1 fixture",
 			repositoryPath: repository,
 			workspaceBaseDir: join(directory, "worktrees"),
@@ -1001,6 +1027,70 @@ async function completeDrive() {
 			phase: "checks-complete",
 			checks: checks.length,
 			...preview,
+		}),
+	);
+}
+async function parallelRetryFixDrive() {
+	const attempts = [];
+	for (let attempt = 0; attempt < 2; attempt++) {
+		await api(`/api/runs/${failedOwnership.id}/retry`, {}, 202);
+		await until(
+			() =>
+				["failed", "completed"].includes(current(failedOwnership.id).status),
+			"Saved ownership Retry settles",
+		);
+		const run = current(failedOwnership.id);
+		assert.equal(run.status, "failed");
+		assert.match(
+			run.error,
+			/Child result ownership is missing at parallel\/0\/call/,
+		);
+		assert.equal(run.outputs.parallel, undefined);
+		assert.equal(
+			JSON.stringify(run.history),
+			JSON.stringify(failedOwnership.history),
+		);
+		assert.equal(
+			JSON.stringify(run.checkpoint.active.children[0].outputs),
+			JSON.stringify(failedOwnership.checkpoint.active.children[0].outputs),
+		);
+		assert.equal(turns.length, 0);
+		await runtime.flush(run.id);
+		attempts.push({
+			attempt: attempt + 1,
+			status: run.status,
+			error: run.error,
+			historySha256: hash(JSON.stringify(run.history)),
+			projectedParallelPresent: Object.hasOwn(run.outputs, "parallel"),
+			branchOutputs: run.checkpoint.active.children[0].outputs,
+		});
+	}
+	assert.equal(filed.length, 0);
+	assert.equal(runtime.runs.size, 1);
+	save("repair-proof.json", {
+		fixtureSha256: hash(JSON.stringify(failedOwnership)),
+		id: failedOwnership.id,
+		attempts,
+		factoryRoleInvocations: turns.length,
+		filed,
+	});
+	const sourceAfter = sourceIdentity();
+	assert.deepEqual(sourceAfter, sourceBefore);
+	save("results.json", {
+		completedAt: stamp(),
+		sourceAfter,
+		sourceChangedDuringDrive: [],
+		paidCalls: 0,
+		nativeRuns: 0,
+		checks: [
+			"Actual EdgeWorker HTTP Retry twice retains genuine saved missing-container failure; no false completion/empty projection, original history and branch outputs unchanged, zero agent replay.",
+		],
+		restartTested: false,
+	});
+	console.log(
+		JSON.stringify({
+			phase: "parallel-retry-repair-complete",
+			id: failedOwnership.id,
 		}),
 	);
 }
@@ -1960,7 +2050,8 @@ try {
 		};
 		save("preview.json", preview);
 		console.log(JSON.stringify({ phase: "canvas-preview-ready", ...preview }));
-	} else if (parallelCallRepair) await parallelCallFixDrive();
+	} else if (parallelRetryRepair) await parallelRetryFixDrive();
+	else if (parallelCallRepair) await parallelCallFixDrive();
 	else if (researchRepair) await researchAssignmentFixDrive();
 	else if (planCheckRepair) await planCheckFixDrive();
 	else if (round3Repair) await round3FixDrive();
