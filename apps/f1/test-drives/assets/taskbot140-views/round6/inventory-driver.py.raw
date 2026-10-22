@@ -1,0 +1,21 @@
+import hashlib,json,subprocess
+from pathlib import Path
+repo=Path.cwd();root=repo/'apps/f1/test-drives/assets/taskbot140-views';out=root/'round6'
+sha=lambda b:hashlib.sha256(b).hexdigest()
+baseline=json.loads((root/'round5/archive-sha256.json').read_text())
+rows={r['path']:r for r in baseline['files']}
+for path,row in rows.items():
+ b=(repo/path).read_bytes();assert len(b)==row['bytes'] and sha(b)==row['sha256'],path
+originals=json.loads((out/'original-copies.json').read_text())
+excluded={str((out/name).relative_to(repo)) for name in ['archive-sha256.json','submitted-archive-proof.json']}
+paths=[p for p in root.rglob('*') if p.is_file()]+[repo/'apps/f1/test-drives/2026-10-22-taskbot140-views-round6.md',repo/'apps/f1/test-drives/assets/taskbot140-round6-archive-verify.mjs']
+for p in paths:
+ path=str(p.relative_to(repo))
+ if path in excluded:continue
+ b=p.read_bytes();r={'path':path,'bytes':len(b),'sha256':sha(b)}
+ original=originals.get(path,rows.get(path,{}).get('original'))
+ if original:r['original']=original
+ rows[path]=r
+source=json.loads((out/'gates/source-inputs.json.raw').read_text())
+(out/'archive-sha256.json').write_text(json.dumps({'version':'taskbot140-round6-archive-v1','validatedSource':source['head'],'selfExcluded':sorted(excluded),'files':sorted(rows.values(),key=lambda r:r['path'])},indent=2)+'\n')
+print(json.dumps({'files':len(rows),'source':source['head'],'excluded':sorted(excluded)}))

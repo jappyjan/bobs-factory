@@ -1,0 +1,130 @@
+{
+  "validatedHead": "3ae23b333c70f11650e25f0f781448b8b2310fb2",
+  "validatedTree": "e45717f357dece093916ef5ae59f50e2d2749d60",
+  "sourceFingerprint": "e0a2455fd02c2b37b8e86a4743abb2811ec8edd8a5912ea73344d845d08d3bc6",
+  "sourceInputPaths": 2819,
+  "literalInputs": 2818,
+  "drivers": [
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views.mjs",
+      "mode": "100644",
+      "bytes": 33935,
+      "sha256": "89cb26596a2233df5c430181120d81216621df252ad647c72114e2cd304077d2"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views-repairs.mjs",
+      "mode": "100644",
+      "bytes": 54234,
+      "sha256": "afc73532bad8706e7fa303bf71eb810a294d1387e61a73985f7fb35f2e3d2834"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views-ui-repairs.mjs",
+      "mode": "100644",
+      "bytes": 30888,
+      "sha256": "192692a1c243115ebaa12b3008c0d0372e88071839f58c913d259777ddb8f0b2"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views-native.mjs",
+      "mode": "100644",
+      "bytes": 17685,
+      "sha256": "36591556ecf3d90cf8d1b6a770f8b0726cc22f5c81e341fbab9419b86c9fd7a3"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views-round3.mjs",
+      "mode": "100644",
+      "bytes": 60285,
+      "sha256": "bc8857753dbc425467813708799efcae516df244313fbd13d33e618fe934ecc8"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views-round4.mjs",
+      "mode": "100644",
+      "bytes": 62866,
+      "sha256": "30448b1a753d964c29e823b743ef23484055c5ff7cca085787afb37fb03f7428"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views-round5.mjs",
+      "mode": "100644",
+      "bytes": 62962,
+      "sha256": "92c4190027b1c044633f886439660aa7d4f89ea8a807431dd6ac624781db6def"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs",
+      "mode": "100644",
+      "bytes": 17508,
+      "sha256": "188b2fb5000c12f041c9aa4e6557fd9029c9ef4050755c36ee579bba5623de4b"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-native-delivery-round5.mjs",
+      "mode": "100644",
+      "bytes": 13143,
+      "sha256": "5abe1f614fb915b046c2b45253f8229243b3d2e3a1d76852f39a12c4bdf20091"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views-round6.mjs",
+      "mode": "100644",
+      "bytes": 62962,
+      "sha256": "645608d657da93094d9fa2a0ed7fee057ccf7dbd42279f93cd297774ef494b0f"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-dispatch-round6.mjs",
+      "mode": "100644",
+      "bytes": 23272,
+      "sha256": "f19d57400392150a1b16b439052b712d24628ff2473d6acb9e66b0993c2658eb"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-native-delivery-round6.mjs",
+      "mode": "100644",
+      "bytes": 13143,
+      "sha256": "475832b009886d71daa11a801d1cba67c08b156e7dcafd3f384bb9eded6c1503"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-history-assets-round6.mjs",
+      "mode": "100644",
+      "bytes": 16608,
+      "sha256": "02eab25050032ce8a6c671f1bbe41e614fcc7fddc08a49c1eb877203dbe3a541"
+    }
+  ],
+  "nonRuntimeLfsPointer": {
+    "path": "docs/run-backups/manual-ca2bb7eb-c67e-4b8b-ac2f-1e62bf6cad37/run-backup.zip",
+    "gitBytes": 133,
+    "gitBlobSha256": "f50bc0aa50cfeb4d0ebfd5c9a293a8f8514c0b00f8e5dc0ad6100881754b9bae",
+    "qualification": "Unchanged133-byte non-runtime Git LFS pointer only. Hydrated private backup is not read/exported; it is not a build/runtime/resource input."
+  },
+  "excludedAfterFreeze": "Only changelog/test-drive report/evidence paths may change. All production/test/config/dependency/resource literal bytes remain frozen3ae23; no changed backend reuse from9f50/b25 or earlier.",
+  "nativeBuild": {
+    "schemaVersion": 1,
+    "product": "bobs-factory",
+    "version": "1.0.0-beta",
+    "commit": "3ae23b333c70f11650e25f0f781448b8b2310fb2",
+    "dirty": false,
+    "target": "darwin-arm64",
+    "tooling": {
+      "bun": "1.4.2"
+    },
+    "executable": {
+      "file": "bobs-factory",
+      "size": 113447154,
+      "sha256": "72bee45cad8b0060060ebb3931b8888e4a4ca7469e99db229253ba03a2a4bce6"
+    },
+    "resourceDigest": "5b6465f16a8165035ecbb5bca53e826908862495714dbd8e87ebd3dbc65dff59",
+    "validation": "pending runtime smoke",
+    "requirements": "macOS; native target smoke required"
+  },
+  "reuse": "reuse/proof.json.raw",
+  "pinnedOriginal186Inventory": "3b0b2aba788fdf7a3706e118eeba9c0ad47e167fb52fc9386192d604447216f1",
+  "pinnedOriginal577Inventory": "2b792424e48c6c66b84c3ddaaafa72c1ce7c351ef398bd6fbca6ebecc035d527",
+  "pinnedOriginal707Inventory": "97df3e65c918b9aebd1063d35c423cabca48f6b80318200736a462fafc0945da",
+  "pinnedOriginal838Inventory": "c3bc80abf8408f94d7f276c394c07a5f3155b8a8ffa97a3c038a9358f8110a64",
+  "historicalTargets": [
+    "246e422d2110ae743acb6ed561d549db0784703f",
+    "339f0573f2b4bac37accf1783a552ddb08e0fd26",
+    "66668d8fffc63fc5dfcb37c9940f123491cd4c0f",
+    "94d809ff0c02fa5c07677d2f81d0c4b42641ff34",
+    "998de5de891db2000099e44fe6938c0a5b3bd375",
+    "20dc81e7aa61b2af924325c8b3f34875fa4fa683",
+    "3111f7692c7cfcd1046dd933784691930f0db1d3",
+    "53c839ae3ceed654bb390cdb0c7f63b6429a2ed3",
+    "b25ae470b858b0e059603566ec144178ce38fee6",
+    "9f50d043805b06e305517cd945df79fb79689387"
+  ]
+}

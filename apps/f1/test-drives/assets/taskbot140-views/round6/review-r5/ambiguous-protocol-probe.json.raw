@@ -1,0 +1,167 @@
+{
+  "head": "9f50d043805b06e305517cd945df79fb79689387",
+  "home": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-review-r5-probe-3Qu91R",
+  "pending": {
+    "id": "706a1b07-bfc8-44fe-9fe0-53e406b5e9b0",
+    "stepKey": "choose",
+    "kind": "decide",
+    "title": "Choose",
+    "digest": "f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3",
+    "view": {
+      "version": "view-v1",
+      "components": [
+        {
+          "id": "children",
+          "type": "runList",
+          "data": {
+            "waves": [
+              {
+                "id": "bd2a841d-45fd-420e-9279-e2cbd77cb231-0",
+                "label": "launch · Wave 1",
+                "runs": [
+                  {
+                    "id": "child-41b6f8cc6c507f04b8ed57547ce052ffe9fa60f3",
+                    "title": "Child",
+                    "status": "running"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "notifications": {
+      "push": "view-text"
+    },
+    "items": [
+      {
+        "id": "a",
+        "title": "Public item",
+        "details": []
+      }
+    ],
+    "actions": [
+      {
+        "id": "skip",
+        "label": "Skip"
+      }
+    ],
+    "askAvailable": true,
+    "threads": {
+      "a": [
+        {
+          "id": "46c039e3-dd3d-4bc6-8024-0f48b01d5a66",
+          "question": "Original mutation accepted remotely then later protocol ping",
+          "status": "pending",
+          "at": "2026-10-22T11:40:24.027Z"
+        }
+      ]
+    },
+    "createdAt": "2026-10-22T11:40:23.896Z"
+  },
+  "childAt": 1792669224184,
+  "original": "decide\nDecision batch: 706a1b07-bfc8-44fe-9fe0-53e406b5e9b0\nDisplayed digest: f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3\nReply with /view-answer {\"batchId\":\"706a1b07-bfc8-44fe-9fe0-53e406b5e9b0\",\"digest\":\"f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose\nAsk for item a — pending\nQuestion\\: Original mutation accepted remotely then later protocol ping\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-41b6f8cc6c507f04b8ed57547ce052ffe9fa60f3: Child [running]\na\\: Public item\n\n\n<!-- factory:8d26e7a2-784e-44c0-9616-6d7237561f40:bfd7a9010ebd288923fa -->",
+  "old": {
+    "key": "view:706a1b07-bfc8-44fe-9fe0-53e406b5e9b0:f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3",
+    "body": "decide\nDecision batch: 706a1b07-bfc8-44fe-9fe0-53e406b5e9b0\nDisplayed digest: f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3\nReply with /view-answer {\"batchId\":\"706a1b07-bfc8-44fe-9fe0-53e406b5e9b0\",\"digest\":\"f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose\nAsk for item a — pending\nQuestion\\: Original mutation accepted remotely then later protocol ping\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-41b6f8cc6c507f04b8ed57547ce052ffe9fa60f3: Child [running]\na\\: Public item\n",
+    "viewDecision": {
+      "batchId": "706a1b07-bfc8-44fe-9fe0-53e406b5e9b0",
+      "digest": "f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3"
+    },
+    "deliveryId": "c8dda0e5-ff71-4529-8317-43ae489220ae",
+    "superseded": true,
+    "limitation": "This unsent decision display was superseded; use the renewed decision."
+  },
+  "calls": [
+    {
+      "at": 1792669223533,
+      "tool": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792669223537,
+      "tool": "set_status",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "from": "backlog",
+        "to": "in_progress",
+        "author": "bobs-factory"
+      }
+    },
+    {
+      "at": 1792669223545,
+      "tool": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792669223593,
+      "tool": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Probe. 8d26e7a2-784e-44c0-9616-6d7237561f40. Follow progress in Factory.\n\n<!-- factory:8d26e7a2-784e-44c0-9616-6d7237561f40:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792669223981,
+      "tool": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792669223983,
+      "tool": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792669224019,
+      "tool": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: 706a1b07-bfc8-44fe-9fe0-53e406b5e9b0\nDisplayed digest: 5d3df1131bdab2527005f018d57a599f00b842a4062520d25755a5a9df8eebbc\nReply with /view-answer {\"batchId\":\"706a1b07-bfc8-44fe-9fe0-53e406b5e9b0\",\"digest\":\"5d3df1131bdab2527005f018d57a599f00b842a4062520d25755a5a9df8eebbc\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-41b6f8cc6c507f04b8ed57547ce052ffe9fa60f3: Child [running]\na\\: Public item\n\n\n<!-- factory:8d26e7a2-784e-44c0-9616-6d7237561f40:794c5ce7178da6b5d81d -->"
+      }
+    },
+    {
+      "at": 1792669224086,
+      "tool": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792669224088,
+      "tool": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792669224123,
+      "tool": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: 706a1b07-bfc8-44fe-9fe0-53e406b5e9b0\nDisplayed digest: f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3\nReply with /view-answer {\"batchId\":\"706a1b07-bfc8-44fe-9fe0-53e406b5e9b0\",\"digest\":\"f0800d04e501be906e7a41efe65be8be7fe16aad1f6b0c13075bb32e2fb83aa3\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose\nAsk for item a — pending\nQuestion\\: Original mutation accepted remotely then later protocol ping\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-41b6f8cc6c507f04b8ed57547ce052ffe9fa60f3: Child [running]\na\\: Public item\n\n\n<!-- factory:8d26e7a2-784e-44c0-9616-6d7237561f40:bfd7a9010ebd288923fa -->"
+      }
+    }
+  ]
+}

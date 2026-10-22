@@ -1,0 +1,89 @@
+{
+  "head": "9f50d043805b06e305517cd945df79fb79689387",
+  "home": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-review-r5-probe-oFNkLn",
+  "image": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-review-r5-probe-oFNkLn/factory/evidence/0a6bd5c4-3a89-42fe-b3f0-92f9d009faf3/display.png",
+  "originalHash": "5d33f59da4616d85727498b31cc7c8276596c6416bc660dee49a6bc907984eb9",
+  "pending": {
+    "id": "c299cfd4-ae67-4d48-bcf8-b2600f312b2c",
+    "stepKey": "choose",
+    "kind": "decide",
+    "title": "Choose",
+    "digest": "557671ba50db0ecc01c0ce975eddc7b7b7f0cc0b2e1077ab2d4b9b031cf0d7bc",
+    "view": {
+      "version": "view-v1",
+      "components": [
+        {
+          "id": "shot",
+          "type": "screenshots",
+          "data": {
+            "items": [
+              {
+                "index": 0,
+                "sha256": "5d33f59da4616d85727498b31cc7c8276596c6416bc660dee49a6bc907984eb9",
+                "alt": "Original protected image"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "notifications": {
+      "push": "view-text"
+    },
+    "items": [
+      {
+        "id": "a",
+        "title": "Public item",
+        "details": []
+      }
+    ],
+    "actions": [
+      {
+        "id": "skip",
+        "label": "Skip"
+      }
+    ],
+    "askAvailable": true,
+    "threads": {
+      "a": [
+        {
+          "id": "9704e53d-7a82-4b9b-985b-3c9e1406b9ab",
+          "question": "Native checkpoint while final asset comparison is queued",
+          "status": "pending",
+          "at": "2026-10-22T11:42:41.060Z"
+        }
+      ]
+    },
+    "createdAt": "2026-10-22T11:42:41.000Z"
+  },
+  "verifiedAt": 1792669361113,
+  "changedAt": 1792669361113,
+  "sent": {
+    "at": 1792669361190,
+    "tool": "comment",
+    "args": {
+      "project": "synthetic",
+      "id": 1,
+      "author": "bobs-factory",
+      "body": "decide\nDecision batch: c299cfd4-ae67-4d48-bcf8-b2600f312b2c\nDisplayed digest: 557671ba50db0ecc01c0ce975eddc7b7b7f0cc0b2e1077ab2d4b9b031cf0d7bc\nReply with /view-answer {\"batchId\":\"c299cfd4-ae67-4d48-bcf8-b2600f312b2c\",\"digest\":\"557671ba50db0ecc01c0ce975eddc7b7b7f0cc0b2e1077ab2d4b9b031cf0d7bc\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose\nAsk for item a — pending\nQuestion\\: Native checkpoint while final asset comparison is queued\nActions\\: skip \\(Skip\\)\nscreenshots:\n- Screenshot 1: Original protected image (SHA-256 5d33f59da4616d85727498b31cc7c8276596c6416bc660dee49a6bc907984eb9)\na\\: Public item\n\n\n<!-- factory:0a6bd5c4-3a89-42fe-b3f0-92f9d009faf3:bc0ce2de3a1ef687c245 -->"
+    }
+  },
+  "bodies": [
+    "decide\nDecision batch: c299cfd4-ae67-4d48-bcf8-b2600f312b2c\nDisplayed digest: 677a89ec3458abeda5a2f82847f666de10633a2038b72cf9b5d5df8de2564405\nReply with /view-answer {\"batchId\":\"c299cfd4-ae67-4d48-bcf8-b2600f312b2c\",\"digest\":\"677a89ec3458abeda5a2f82847f666de10633a2038b72cf9b5d5df8de2564405\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose\nActions\\: skip \\(Skip\\)\nscreenshots:\n- Screenshot 1: Original protected image (SHA-256 5d33f59da4616d85727498b31cc7c8276596c6416bc660dee49a6bc907984eb9)\na\\: Public item\n\n\n<!-- factory:0a6bd5c4-3a89-42fe-b3f0-92f9d009faf3:93af19c7afcd7ba9a84b -->",
+    "decide\nDecision batch: c299cfd4-ae67-4d48-bcf8-b2600f312b2c\nDisplayed digest: 557671ba50db0ecc01c0ce975eddc7b7b7f0cc0b2e1077ab2d4b9b031cf0d7bc\nReply with /view-answer {\"batchId\":\"c299cfd4-ae67-4d48-bcf8-b2600f312b2c\",\"digest\":\"557671ba50db0ecc01c0ce975eddc7b7b7f0cc0b2e1077ab2d4b9b031cf0d7bc\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose\nAsk for item a — pending\nQuestion\\: Native checkpoint while final asset comparison is queued\nActions\\: skip \\(Skip\\)\nscreenshots:\n- Screenshot 1: Original protected image (SHA-256 5d33f59da4616d85727498b31cc7c8276596c6416bc660dee49a6bc907984eb9)\na\\: Public item\n\n\n<!-- factory:0a6bd5c4-3a89-42fe-b3f0-92f9d009faf3:bc0ce2de3a1ef687c245 -->"
+  ],
+  "privateCheckpoint": {
+    "a": [
+      {
+        "id": "9704e53d-7a82-4b9b-985b-3c9e1406b9ab",
+        "question": "Native checkpoint while final asset comparison is queued",
+        "status": "pending",
+        "at": "2026-10-22T11:42:41.060Z",
+        "agent": {
+          "runner": "codex",
+          "sessionId": "synthetic-owned-native-checkpoint"
+        }
+      }
+    ]
+  }
+}

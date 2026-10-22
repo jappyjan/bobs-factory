@@ -1,0 +1,998 @@
+{
+  "head": "9f50d043805b06e305517cd945df79fb79689387",
+  "error": "Error: Timed out: Original mutation remains ambiguous after response loss",
+  "stack": "Error: Timed out: Original mutation remains ambiguous after response loss\n    at until (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-dispatch-round6.mjs:120:36)\n    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-dispatch-round6.mjs:575:3",
+  "wire": [
+    {
+      "at": 1792670380808,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670381224,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670381384,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670381819,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Current outgoing view. manual-d44acac3-e948-4522-bc56-0073b6ef4dbf. Follow progress in Factory.\n\n<!-- factory:manual-d44acac3-e948-4522-bc56-0073b6ef4dbf:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792670381975,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670382126,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670382279,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670382468,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: ce464265-fe7d-460a-bfdf-bc7b68464376\nDisplayed digest: f9ac7ac8517fdd688bc37d931538857e99a1b6fdab79ccb11ee6f0a1cc168090\nReply with /view-answer {\"batchId\":\"ce464265-fe7d-460a-bfdf-bc7b68464376\",\"digest\":\"f9ac7ac8517fdd688bc37d931538857e99a1b6fdab79ccb11ee6f0a1cc168090\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nDecide\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009: Synthetic [running]\na\\: Item\n\n\n<!-- factory:manual-d44acac3-e948-4522-bc56-0073b6ef4dbf:aafc5bcde350f29d79da -->"
+      }
+    },
+    {
+      "at": 1792670382565,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670382699,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670382878,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Controlled child. Synthetic. Follow progress in Factory.\n\n<!-- factory:child-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792670384784,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670384872,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670387558,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670387648,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670387796,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: 546aec6a-948a-4266-8f93-286ddd10bb18\nDisplayed digest: 8ee5320bc90723ec7690681718baa3b529353c4d85202dc2d4d49d88f81405fd\nReply with /view-answer {\"batchId\":\"546aec6a-948a-4266-8f93-286ddd10bb18\",\"digest\":\"8ee5320bc90723ec7690681718baa3b529353c4d85202dc2d4d49d88f81405fd\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nDecide\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009: Synthetic [completed]\na\\: Item\n\n\n<!-- factory:manual-d44acac3-e948-4522-bc56-0073b6ef4dbf:9fe69e71f9268733cedf -->"
+      }
+    },
+    {
+      "at": 1792670388124,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670388271,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670388469,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:child-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009:09d21291c5952e75d4f2 -->"
+      }
+    },
+    {
+      "at": 1792670388658,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670388801,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670389000,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Workflow Controlled child completed. Coding tickets become Done only after confirmed merge. Inspect run child-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009 for results.\n\n<!-- factory:child-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009:08cb914c436eb1379331 -->"
+      }
+    },
+    {
+      "at": 1792670389355,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670389567,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670389676,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670389911,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Workflow Current outgoing view completed. Coding tickets become Done only after confirmed merge. Inspect run manual-d44acac3-e948-4522-bc56-0073b6ef4dbf for results.\n\n<!-- factory:manual-d44acac3-e948-4522-bc56-0073b6ef4dbf:f085cccb79a52488736a -->"
+      }
+    },
+    {
+      "at": 1792670390102,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670390271,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670390719,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Current outgoing view. manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd. Follow progress in Factory.\n\n<!-- factory:manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792670390983,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670391171,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670391383,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670391589,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: 74ce69d8-5061-44be-b247-4193861573f0\nDisplayed digest: 6c357cd2079f8fd83dc24b05be0435b4cfc2d8094cdd7276531bbcdb93ef3073\nReply with /view-answer {\"batchId\":\"74ce69d8-5061-44be-b247-4193861573f0\",\"digest\":\"6c357cd2079f8fd83dc24b05be0435b4cfc2d8094cdd7276531bbcdb93ef3073\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nDecide\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-6cb0c7ba046494b060e0b92e8da02de484964f46: Synthetic [running]\na\\: Item\n\n\n<!-- factory:manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd:8e66dfa783903f848e04 -->"
+      }
+    },
+    {
+      "at": 1792670391691,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670391831,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670392022,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Controlled child. Synthetic. Follow progress in Factory.\n\n<!-- factory:child-6cb0c7ba046494b060e0b92e8da02de484964f46:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792670394367,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670394476,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670394690,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670394831,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670395016,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:child-6cb0c7ba046494b060e0b92e8da02de484964f46:09d21291c5952e75d4f2 -->"
+      }
+    },
+    {
+      "at": 1792670395165,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670395297,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670395477,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Workflow Controlled child completed. Coding tickets become Done only after confirmed merge. Inspect run child-6cb0c7ba046494b060e0b92e8da02de484964f46 for results.\n\n<!-- factory:child-6cb0c7ba046494b060e0b92e8da02de484964f46:08cb914c436eb1379331 -->"
+      }
+    },
+    {
+      "at": 1792670395656,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670395753,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670395842,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670395986,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: 94879db2-5130-410d-a236-7e2f5b35947c\nDisplayed digest: fa13e5b1f573997af8cdb2e4d633b5d116c0158dd303f6c7649830b01942f89e\nReply with /view-answer {\"batchId\":\"94879db2-5130-410d-a236-7e2f5b35947c\",\"digest\":\"fa13e5b1f573997af8cdb2e4d633b5d116c0158dd303f6c7649830b01942f89e\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nDecide\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-6cb0c7ba046494b060e0b92e8da02de484964f46: Synthetic [completed]\na\\: Item\n\n\n<!-- factory:manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd:d91d2ba2685da652413b -->"
+      }
+    },
+    {
+      "at": 1792670396888,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670396994,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670397145,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670397357,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Workflow Current outgoing view completed. Coding tickets become Done only after confirmed merge. Inspect run manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd for results.\n\n<!-- factory:manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd:f085cccb79a52488736a -->"
+      }
+    },
+    {
+      "at": 1792670397544,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670397722,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670398104,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Current outgoing view. manual-b943dbf5-60c7-41f3-9974-6056fb5b461a. Follow progress in Factory.\n\n<!-- factory:manual-b943dbf5-60c7-41f3-9974-6056fb5b461a:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792670398261,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670398488,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670398648,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670398799,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: 16b4bbe6-ffa5-40a6-9023-2fb632b95b89\nDisplayed digest: 81ba9bd1b0bb30f78cb27e3cb788ff7ecc3d26f16e0f8455b762ef78043eb99a\nReply with /view-answer {\"batchId\":\"16b4bbe6-ffa5-40a6-9023-2fb632b95b89\",\"digest\":\"81ba9bd1b0bb30f78cb27e3cb788ff7ecc3d26f16e0f8455b762ef78043eb99a\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nDecide\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-f84629f937613a48438d799bdb780db83ae8c0e3: Synthetic [running]\na\\: Item\n\n\n<!-- factory:manual-b943dbf5-60c7-41f3-9974-6056fb5b461a:1024e4d370d5993d4df4 -->"
+      }
+    },
+    {
+      "at": 1792670398912,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670399051,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670399237,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Controlled child. Synthetic. Follow progress in Factory.\n\n<!-- factory:child-f84629f937613a48438d799bdb780db83ae8c0e3:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792670401218,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670401396,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792670401619,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: 16b4bbe6-ffa5-40a6-9023-2fb632b95b89\nDisplayed digest: f3f9f2671a0e4d03ed93c34aa94e9c8bd26de3ca0138a8c2fc7c1ed6480092d9\nReply with /view-answer {\"batchId\":\"16b4bbe6-ffa5-40a6-9023-2fb632b95b89\",\"digest\":\"f3f9f2671a0e4d03ed93c34aa94e9c8bd26de3ca0138a8c2fc7c1ed6480092d9\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nDecide\nAsk for item a — pending\nQuestion\\: Synthetic original ambiguous Ask\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-f84629f937613a48438d799bdb780db83ae8c0e3: Synthetic [running]\na\\: Item\n\n\n<!-- factory:manual-b943dbf5-60c7-41f3-9974-6056fb5b461a:0fe7187349640d2a6bcb -->"
+      }
+    }
+  ],
+  "turns": [
+    {
+      "runId": "child-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009",
+      "runner": "claude",
+      "model": "opus"
+    },
+    {
+      "runId": "manual-d44acac3-e948-4522-bc56-0073b6ef4dbf",
+      "runner": "claude",
+      "profile": "context-only",
+      "model": "opus"
+    },
+    {
+      "runId": "child-6cb0c7ba046494b060e0b92e8da02de484964f46",
+      "runner": "claude",
+      "model": "opus"
+    },
+    {
+      "runId": "manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd",
+      "runner": "claude",
+      "profile": "context-only",
+      "model": "opus"
+    },
+    {
+      "runId": "child-f84629f937613a48438d799bdb780db83ae8c0e3",
+      "runner": "claude",
+      "model": "opus"
+    },
+    {
+      "runId": "manual-b943dbf5-60c7-41f3-9974-6056fb5b461a",
+      "runner": "claude",
+      "profile": "context-only",
+      "model": "opus"
+    }
+  ],
+  "requests": [
+    {
+      "path": "/api/runs",
+      "body": {
+        "workflow": "dispatch-view",
+        "repositoryId": "fixture",
+        "runner": "claude",
+        "prompt": "Synthetic outgoing dispatch",
+        "source": "https://localhost:50000/p/synthetic/t/1"
+      },
+      "status": 202,
+      "result": {
+        "accepted": true,
+        "id": "manual-d44acac3-e948-4522-bc56-0073b6ef4dbf",
+        "title": "manual-d44acac3-e948-4522-bc56-0073b6ef4dbf",
+        "status": "running"
+      }
+    },
+    {
+      "path": "/api/runs/manual-d44acac3-e948-4522-bc56-0073b6ef4dbf/view-ask",
+      "body": {
+        "batchId": "ce464265-fe7d-460a-bfdf-bc7b68464376",
+        "digest": "f9ac7ac8517fdd688bc37d931538857e99a1b6fdab79ccb11ee6f0a1cc168090",
+        "itemId": "a",
+        "question": "Synthetic held Ask",
+        "requestId": "06e845cf-6711-468e-8f9e-c64712b862be"
+      },
+      "status": 200,
+      "result": {
+        "id": "ce464265-fe7d-460a-bfdf-bc7b68464376",
+        "stepKey": "choose",
+        "kind": "decide",
+        "title": "Decide",
+        "digest": "3b423733f5ef389cd4b5b80fa42ff03b4af4981f225c41c694ce2c6253ee34d6",
+        "view": {
+          "version": "view-v1",
+          "components": [
+            {
+              "id": "children",
+              "type": "runList",
+              "data": {
+                "waves": [
+                  {
+                    "id": "344a575f-1dfd-42b0-bead-fd8aa1ede02a-0",
+                    "label": "launch · Wave 1",
+                    "runs": [
+                      {
+                        "id": "child-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009",
+                        "title": "Synthetic",
+                        "status": "running"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "a",
+            "title": "Item",
+            "details": []
+          }
+        ],
+        "actions": [
+          {
+            "id": "skip",
+            "label": "Skip"
+          }
+        ],
+        "askAvailable": true,
+        "threads": {
+          "a": [
+            {
+              "id": "06e845cf-6711-468e-8f9e-c64712b862be",
+              "question": "Synthetic held Ask",
+              "status": "pending",
+              "at": "2026-10-22T11:59:44.639Z"
+            }
+          ]
+        },
+        "createdAt": "2026-10-22T11:59:41.733Z"
+      }
+    },
+    {
+      "path": "/api/runs/manual-d44acac3-e948-4522-bc56-0073b6ef4dbf/view-answer",
+      "body": {
+        "batchId": "ce464265-fe7d-460a-bfdf-bc7b68464376",
+        "digest": "3b423733f5ef389cd4b5b80fa42ff03b4af4981f225c41c694ce2c6253ee34d6",
+        "accepted": true,
+        "choices": [
+          {
+            "itemId": "a",
+            "action": "skip"
+          }
+        ]
+      },
+      "status": 409,
+      "result": {
+        "error": "This decision batch was superseded. Refresh and review again."
+      }
+    },
+    {
+      "path": "/api/runs/manual-d44acac3-e948-4522-bc56-0073b6ef4dbf/view-answer",
+      "body": {
+        "batchId": "546aec6a-948a-4266-8f93-286ddd10bb18",
+        "digest": "8ee5320bc90723ec7690681718baa3b529353c4d85202dc2d4d49d88f81405fd",
+        "accepted": true,
+        "choices": [
+          {
+            "itemId": "a",
+            "action": "skip"
+          }
+        ]
+      },
+      "status": 200,
+      "result": {
+        "accepted": true,
+        "id": "manual-d44acac3-e948-4522-bc56-0073b6ef4dbf",
+        "title": "F1 mock run",
+        "status": "running",
+        "output": {
+          "choices": [
+            {
+              "itemId": "a",
+              "action": "skip"
+            }
+          ],
+          "itemsByAction": {
+            "skip": [
+              {
+                "id": "a",
+                "title": "Item"
+              }
+            ]
+          },
+          "followUps": [],
+          "hasFollowUps": false,
+          "fields": {},
+          "batchId": "546aec6a-948a-4266-8f93-286ddd10bb18",
+          "digest": "8ee5320bc90723ec7690681718baa3b529353c4d85202dc2d4d49d88f81405fd"
+        }
+      }
+    },
+    {
+      "path": "/api/runs",
+      "body": {
+        "workflow": "dispatch-view",
+        "repositoryId": "fixture",
+        "runner": "claude",
+        "prompt": "Synthetic outgoing dispatch",
+        "source": "https://localhost:50000/p/synthetic/t/1"
+      },
+      "status": 202,
+      "result": {
+        "accepted": true,
+        "id": "manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd",
+        "title": "manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd",
+        "status": "running"
+      }
+    },
+    {
+      "path": "/api/runs/manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd/view-ask",
+      "body": {
+        "batchId": "74ce69d8-5061-44be-b247-4193861573f0",
+        "digest": "6c357cd2079f8fd83dc24b05be0435b4cfc2d8094cdd7276531bbcdb93ef3073",
+        "itemId": "a",
+        "question": "Synthetic held Ask",
+        "requestId": "7c8ac186-56a4-4721-bbad-d77dc3268c76"
+      },
+      "status": 200,
+      "result": {
+        "id": "74ce69d8-5061-44be-b247-4193861573f0",
+        "stepKey": "choose",
+        "kind": "decide",
+        "title": "Decide",
+        "digest": "22b113c2115d0649e000ddde729be3db80f02efc45a50105e32620989eddfa5d",
+        "view": {
+          "version": "view-v1",
+          "components": [
+            {
+              "id": "children",
+              "type": "runList",
+              "data": {
+                "waves": [
+                  {
+                    "id": "fc473c19-cd68-44cc-94d6-6d4a8bb95ac8-0",
+                    "label": "launch · Wave 1",
+                    "runs": [
+                      {
+                        "id": "child-6cb0c7ba046494b060e0b92e8da02de484964f46",
+                        "title": "Synthetic",
+                        "status": "running"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "a",
+            "title": "Item",
+            "details": []
+          }
+        ],
+        "actions": [
+          {
+            "id": "skip",
+            "label": "Skip"
+          }
+        ],
+        "askAvailable": true,
+        "threads": {
+          "a": [
+            {
+              "id": "7c8ac186-56a4-4721-bbad-d77dc3268c76",
+              "question": "Synthetic held Ask",
+              "status": "pending",
+              "at": "2026-10-22T11:59:53.837Z"
+            }
+          ]
+        },
+        "createdAt": "2026-10-22T11:59:50.741Z"
+      }
+    },
+    {
+      "path": "/api/runs/manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd/view-answer",
+      "body": {
+        "batchId": "74ce69d8-5061-44be-b247-4193861573f0",
+        "digest": "22b113c2115d0649e000ddde729be3db80f02efc45a50105e32620989eddfa5d",
+        "accepted": true,
+        "choices": [
+          {
+            "itemId": "a",
+            "action": "skip"
+          }
+        ]
+      },
+      "status": 409,
+      "result": {
+        "error": "This decision batch was superseded. Refresh and review again."
+      }
+    },
+    {
+      "path": "/api/runs/manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd/view-answer",
+      "body": {
+        "batchId": "94879db2-5130-410d-a236-7e2f5b35947c",
+        "digest": "fa13e5b1f573997af8cdb2e4d633b5d116c0158dd303f6c7649830b01942f89e",
+        "accepted": true,
+        "choices": [
+          {
+            "itemId": "a",
+            "action": "skip"
+          }
+        ]
+      },
+      "status": 200,
+      "result": {
+        "accepted": true,
+        "id": "manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd",
+        "title": "F1 mock run",
+        "status": "running",
+        "output": {
+          "choices": [
+            {
+              "itemId": "a",
+              "action": "skip"
+            }
+          ],
+          "itemsByAction": {
+            "skip": [
+              {
+                "id": "a",
+                "title": "Item"
+              }
+            ]
+          },
+          "followUps": [],
+          "hasFollowUps": false,
+          "fields": {},
+          "batchId": "94879db2-5130-410d-a236-7e2f5b35947c",
+          "digest": "fa13e5b1f573997af8cdb2e4d633b5d116c0158dd303f6c7649830b01942f89e"
+        }
+      }
+    },
+    {
+      "path": "/api/runs",
+      "body": {
+        "workflow": "dispatch-view",
+        "repositoryId": "fixture",
+        "runner": "claude",
+        "prompt": "Original ambiguous mutation",
+        "source": "https://localhost:50000/p/synthetic/t/1"
+      },
+      "status": 202,
+      "result": {
+        "accepted": true,
+        "id": "manual-b943dbf5-60c7-41f3-9974-6056fb5b461a",
+        "title": "manual-b943dbf5-60c7-41f3-9974-6056fb5b461a",
+        "status": "running"
+      }
+    },
+    {
+      "path": "/api/runs/manual-b943dbf5-60c7-41f3-9974-6056fb5b461a/view-ask",
+      "body": {
+        "batchId": "16b4bbe6-ffa5-40a6-9023-2fb632b95b89",
+        "digest": "81ba9bd1b0bb30f78cb27e3cb788ff7ecc3d26f16e0f8455b762ef78043eb99a",
+        "itemId": "a",
+        "question": "Synthetic original ambiguous Ask",
+        "requestId": "21dd5638-656e-4a6d-ad30-c44fd7a19bc1"
+      },
+      "status": 200,
+      "result": {
+        "id": "16b4bbe6-ffa5-40a6-9023-2fb632b95b89",
+        "stepKey": "choose",
+        "kind": "decide",
+        "title": "Decide",
+        "digest": "f3f9f2671a0e4d03ed93c34aa94e9c8bd26de3ca0138a8c2fc7c1ed6480092d9",
+        "view": {
+          "version": "view-v1",
+          "components": [
+            {
+              "id": "children",
+              "type": "runList",
+              "data": {
+                "waves": [
+                  {
+                    "id": "bd7dca5c-5499-4064-bc7e-05b59c5ab308-0",
+                    "label": "launch · Wave 1",
+                    "runs": [
+                      {
+                        "id": "child-f84629f937613a48438d799bdb780db83ae8c0e3",
+                        "title": "Synthetic",
+                        "status": "running"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "a",
+            "title": "Item",
+            "details": []
+          }
+        ],
+        "actions": [
+          {
+            "id": "skip",
+            "label": "Skip"
+          }
+        ],
+        "askAvailable": true,
+        "threads": {
+          "a": [
+            {
+              "id": "21dd5638-656e-4a6d-ad30-c44fd7a19bc1",
+              "question": "Synthetic original ambiguous Ask",
+              "status": "pending",
+              "at": "2026-10-22T12:00:00.948Z"
+            }
+          ]
+        },
+        "createdAt": "2026-10-22T11:59:58.108Z"
+      }
+    }
+  ],
+  "runs": [
+    {
+      "id": "child-6cb0c7ba046494b060e0b92e8da02de484964f46",
+      "status": "completed"
+    },
+    {
+      "id": "child-e411c3c3f23f2af0d9a3f19a60da5ec1e0fb2009",
+      "status": "completed"
+    },
+    {
+      "id": "manual-6eefad6d-f4c6-47cb-a175-9717ab10fafd",
+      "status": "completed"
+    },
+    {
+      "id": "manual-d44acac3-e948-4522-bc56-0073b6ef4dbf",
+      "status": "completed"
+    },
+    {
+      "id": "manual-b943dbf5-60c7-41f3-9974-6056fb5b461a",
+      "status": "waiting"
+    },
+    {
+      "id": "child-f84629f937613a48438d799bdb780db83ae8c0e3",
+      "status": "completed"
+    }
+  ]
+}

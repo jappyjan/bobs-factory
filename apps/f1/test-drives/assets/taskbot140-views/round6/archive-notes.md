@@ -1,0 +1,13 @@
+# Round6 archive
+
+Validated production/test/config/dependency/resource inputs are frozen at3ae23b333c70f11650e25f0f781448b8b2310fb2/treee45717f357dece093916ef5ae59f50e2d2749d60. All15gates pass with unchanged source fingerprint e0a2455fd02c2b37b8e86a4743abb2811ec8edd8a5912ea73344d845d08d3bc6. Later commits add report/evidence only.
+
+Original raw gate/native/F1/focus/failure files are copied byte-exact; `.raw` prevents formatting. Synthetic TLS private keys, incidental homes/config stores and the113MBlocal executable are not published. The executable remains retained locally and its actual hash/size/build/smoke receipts are submitted. No real native credential/history data was read/copied. The non-runtime LFS backup is verified as its133-byte Git pointer, never hydrated/exported.
+
+The cumulative inventory includes every retained prior/current artifact, report and verifier. Original186/577/707/838 inventory bytes are pinned to their immutable commits in pinned-original-inventories.json.raw. The new cumulative inventory and submitted-archive-proof.json exclude themselves to avoid hash cycles. The submitted proof is a real index-export check before its own insertion; its recorded tree is not relabelled as a final commit. An additional exact-final-HEAD tree export is attached as a separate PR comment after the final evidence commit.
+
+Failed/stopped/dirty exploratory runs keep their original identities. The first Edge trial's escaped-colon hold did not arm and was explicitly stopped via SIGTERM (parent exit1). Later resumable-SSE fixture waits failed their actual15s assertions; final controlled protocol-result failure and original response disconnection are described in the report. Actual focused ping/abort uses a real abort. No test/product deadline or assertion was weakened. All final4F1drivers have exact executed copies, source identities and zero paid calls; native queue uses controlled SDK transport, not live Linear. Protected-asset scheduling changes only legitimate checkpoint/save latency, not validators/receipts/progress/answers.
+
+Evidence-only commits skip mutation by the automatic formatting/build hook after the complete frozen-source gates. Their direct checks are syntax, input/driver equivalence, pinned original hashes and actual fresh Git-export verification; no unchanged full gate is relabelled or unnecessarily replayed. Original pending-smoke build metadata is retained, with separate real smoke receipts.
+
+Preliminary assembly had an optional metadata filename typo. Its observed error transcript and genuine967-entry preliminary index proof are retained separately. The final rebuilt inventory/proof includes corrected metadata; the typo is not relabelled a successful assembly.

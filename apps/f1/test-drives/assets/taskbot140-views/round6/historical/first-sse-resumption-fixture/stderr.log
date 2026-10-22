@@ -1,0 +1,15 @@
+2026-10-22T11:58:17.125Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T11:58:17.150Z [WARN ] [EdgeWorker] No repositories or workspaces configured — Slack sessions will not have access to MCP tools
+2026-10-22T11:58:24.628Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T11:58:24.639Z [WARN ] [EdgeWorker] No repositories or workspaces configured — Slack sessions will not have access to MCP tools
+2026-10-22T11:58:32.513Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T11:58:32.522Z [WARN ] [EdgeWorker] No repositories or workspaces configured — Slack sessions will not have access to MCP tools
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: Timed out: Original mutation remains ambiguous after response loss
+    at until (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-dispatch-round6.mjs:120:36)
+    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-dispatch-round6.mjs:572:3
+
+Node.js v24.21.0

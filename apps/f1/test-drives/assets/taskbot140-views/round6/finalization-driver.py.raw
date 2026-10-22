@@ -1,0 +1,64 @@
+import json,re,hashlib,subprocess
+from pathlib import Path
+repo=Path.cwd();root=repo/'apps/f1/test-drives/assets/taskbot140-views';out=root/'round6';gates=Path('/tmp/taskbot140-round6-complete-validation')
+sha=lambda b:hashlib.sha256(b).hexdigest()
+r=json.loads((gates/'gates.json').read_text());assert r['result']=='pass'
+log=(gates/'packages.log').read_text();packages=[];name=None
+for line in log.splitlines():
+ m=re.match(r'> (bobs-factory-[^@]+)@.* test:run ',line)
+ if m:name=m[1]
+ if re.match(r'\s*Test Files\s',line):
+  files={k:int(v) for v,k in re.findall(r'(\d+) (passed|skipped)',line)}
+ if re.match(r'\s*Tests\s',line):
+  row={k:int(v) for v,k in re.findall(r'(\d+) (passed|skipped)',line)}
+  assert name and 'passed' in row,line
+  packages.append({'package':name,'files':{'passed':files.get('passed',0),'skipped':files.get('skipped',0)},'passed':row['passed'],'skipped':row.get('skipped',0)})
+assert len(packages)==16,len(packages)
+counts={'packages':packages,'passed':sum(p['passed'] for p in packages),'skipped':sum(p['skipped'] for p in packages),'passedFiles':sum(p['files']['passed'] for p in packages),'skippedFiles':sum(p['files']['skipped'] for p in packages),'logSha256':sha((gates/'packages.log').read_bytes())}
+(out/'gates/package-counts.json').write_text(json.dumps(counts,indent=2)+'\n')
+source=json.loads((gates/'source-inputs.json').read_text());native=json.loads((out/'native/build/build.json.raw').read_text());f1=json.loads((out/'f1/results.json.raw').read_text())
+old=json.loads((root/'round5/input-equivalence.json').read_text())
+assert native['commit']==source['head']==r['head']==f1['revision']
+assert native['dirty'] is False
+assert native['resourceDigest']==old['nativeBuild']['resourceDigest']
+assert source['tree']==r['tree']==f1['tree']
+assert source['fingerprint']==r['sourceFingerprint']
+assert all(row['sourceAfter']==source['fingerprint'] and row['code']==0 and not row['signal'] for row in r['commands'])
+assert len(r['commands'])==15
+assert f1['deltaSha256']=='e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+assert f1['driverSha256']==sha(Path('apps/f1/test-drives/assets/taskbot140-views-round6.mjs').read_bytes())
+assert len(f1['results'])==7 and f1['paidCalls']==0
+assert re.search(r'(?:#|ℹ) pass 179(?:\n|$)', (gates/'scripts.log').read_text())
+drivers=[]
+for p in [row['path'] for row in old['drivers']]+['apps/f1/test-drives/assets/taskbot140-views-round6.mjs','apps/f1/test-drives/assets/taskbot140-dispatch-round6.mjs','apps/f1/test-drives/assets/taskbot140-native-delivery-round6.mjs','apps/f1/test-drives/assets/taskbot140-history-assets-round6.mjs']:
+ b=Path(p).read_bytes();drivers.append({'path':p,'mode':'100644','bytes':len(b),'sha256':sha(b)})
+equiv={'validatedHead':source['head'],'validatedTree':source['tree'],'sourceFingerprint':source['fingerprint'],'sourceInputPaths':len(source['files']),'literalInputs':len(source['files'])-1,'drivers':drivers,'nonRuntimeLfsPointer':old['nonRuntimeLfsPointer'],'excludedAfterFreeze':'Only changelog/test-drive report/evidence paths may change. All production/test/config/dependency/resource literal bytes remain frozen3ae23; no changed backend reuse from9f50/b25 or earlier.','nativeBuild':native,'reuse':'reuse/proof.json.raw','pinnedOriginal186Inventory':sha((root/'archive-sha256.json').read_bytes()),'pinnedOriginal577Inventory':sha((root/'round3/archive-sha256.json').read_bytes()),'pinnedOriginal707Inventory':sha((root/'round4/archive-sha256.json').read_bytes()),'pinnedOriginal838Inventory':sha((root/'round5/archive-sha256.json').read_bytes()),'historicalTargets':old['historicalTargets']+['b25ae470b858b0e059603566ec144178ce38fee6','9f50d043805b06e305517cd945df79fb79689387']}
+(out/'input-equivalence.json').write_text(json.dumps(equiv,indent=2)+'\n')
+text=Path('/tmp/taskbot140-round6-report-draft.md').read_text()
+edge=next(p for p in packages if p['package']=='bobs-factory-edge-worker')
+lint=(gates/'lint.log').read_text();lintfiles=re.search(r'Checked (\d+) files',lint)[1];warnings=int(re.search(r'Found (\d+) warnings',lint)[1]) if re.search(r'Found (\d+) warnings',lint) else 0
+table=f'''| Command | Fresh result |
+| --- | --- |
+| Frozen install / dependency audit | Exit0 / exit0, zero advisories. No dependency changes in this repair; no external version change in the prior workspace-only core link. |
+| `pnpm build` / `pnpm typecheck` | Exit0 / exit0. |
+| `pnpm lint` | Exit0: {lintfiles}files,0errors,{warnings} warnings. |
+| `VITEST_MAX_WORKERS=1 npm_config_workspace_concurrency=1 pnpm test:packages:run` | Exit0: {counts['passed']}passed/{counts['skipped']}skipped,16packages; {counts['passedFiles']}passed files+{counts['skippedFiles']}native opt-in file skipped. Edge{edge['passed']}passed/{edge['skipped']}skipped/{edge['files']['passed']}files. |
+| Serial `pnpm -r --filter './apps/*' test:run` | Exit0:255CLI+41desktop+17F1=313passed,1desktop skip. |
+| `node --test --test-concurrency=2 scripts/tests/*.test.mjs` | Exit0:179passed,0fail/skips. |
+| Actual current EdgeWorker/CLI F1 | Exit0:6root runs/7named rows,{f1['httpRequests']}protected requests,{f1['activityCount']}activities,13scripted role constructions+1actual unavailable-native start,zero paid calls. |
+| Additional actual EdgeWorker HTTPS/admission + supplemental native runtime/outbox drives | All exit0:4actual EdgeWorker transport/history scenarios,1instrumented asset queue and2native durable/paced scenarios,zero paid calls; original requests,IDs,accepted answers and restarted outboxes retained. |
+| Native ARM64 compilation / standard smoke / view smoke | All exit0; isolated startup/assets/protectedAPI/scopedMCP/shutdown/restart and26actual catalogue/schema/save/preview/reconstruction responses. |
+'''
+text=text.replace('__GATE_TABLE__',table)
+dispatch=json.loads((out/'f1-dispatch/receipt.json.raw').read_text());queue=json.loads((out/'f1-native-queue/receipt.json.raw').read_text());assets=json.loads((out/'f1-assets/receipt.json.raw').read_text());assert assets['head']==source['head'] and not assets['dirty'] and assets['paidCalls']==0 and assets['scenarios']==1
+assert dispatch['head']==queue['head']==source['head'] and dispatch['sourceDirty'] is False and queue['dirty'] is False
+assert dispatch['paidCalls']==queue['paidCalls']==0 and len(dispatch['results'])==4 and len(queue['results'])==2
+for name,receipt in [('taskbot140-dispatch-round6.mjs',dispatch),('taskbot140-native-delivery-round6.mjs',queue),('taskbot140-history-assets-round6.mjs',assets)]:
+ assert receipt['driverSha256']==sha((repo/'apps/f1/test-drives/assets'/name).read_bytes())
+text=text.replace('__F1_IDENTITY__',f"Main actual EdgeWorker/CLI: driverSHA `{f1['driverSha256']}`, clean3ae23/treee457; backend source fingerprint `{f1['backendSourceSha256']}`, measured compiled aggregate `{f1['buildSha256']}`.6root runs/7rows,{f1['httpRequests']}protected requests/{f1['activityCount']}activities,13scripted role constructions plus1actual unavailable no-model Codex start,zero paid calls. Additional actual EdgeWorker/manual API/HTTPS MCP:4scenarios,{len(dispatch['wire'])}wire requests/{len(dispatch['requests'])}protected requests/{len(dispatch['turns'])}scripted turns,driverSHA `{dispatch['driverSha256']}`. Supplemental native runtime/SDK/service/outbox/budget:2scenarios including known429 recovery,driverSHA `{queue['driverSha256']}`. All supplemental drives havezero paid calls and exact3ae23 identity. The instrumented real-asset/checkpoint queue driverSHA `{assets['driverSha256']}` retains the controlled75ms durable-save scheduling qualification. The4-scenario Edge drive uses a controlled original JSON-RPC error after a real correlated ping response, and actual response disconnection; focused runtime tests separately exercise abort/loss. Original lookup is held until ordinary Ask advances so genuine uncertainty is observed before confirmation.")
+text=text.replace('__NATIVE_IDENTITY__',f"Fresh Factory executable **{native['executable']['size']}bytes**, SHA256 `{native['executable']['sha256']}`, clean3ae23/Bun{native['tooling']['bun']}/version{native['version']}/darwin-arm64.29-resource digest `{native['resourceDigest']}`. This is not an independently reproduced whole-dist aggregate claim.")
+receipts=list((out/'native/views').rglob('native-views.json.raw'));assert len(receipts)==1
+text=text.replace('__NATIVE_RECEIPT__',str(receipts[0].relative_to(repo/'apps/f1/test-drives')))
+assert '__' not in text.replace('`__',''), 'Unfilled report placeholder'
+(repo/'apps/f1/test-drives/2026-10-22-taskbot140-views-round6.md').write_text(text)
+print(json.dumps({'counts':counts,'sourceInputs':len(source['files']),'drivers':len(drivers),'f1':f1['directory'],'native':native['executable']}))

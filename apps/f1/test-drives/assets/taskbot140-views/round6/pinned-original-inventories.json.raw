@@ -1,0 +1,18 @@
+{
+  "archive-sha256.json": {
+    "commit": "246e422d2110ae743acb6ed561d549db0784703f",
+    "sha256": "3b0b2aba788fdf7a3706e118eeba9c0ad47e167fb52fc9386192d604447216f1"
+  },
+  "round3/archive-sha256.json": {
+    "commit": "94d809ff0c02fa5c07677d2f81d0c4b42641ff34",
+    "sha256": "2b792424e48c6c66b84c3ddaaafa72c1ce7c351ef398bd6fbca6ebecc035d527"
+  },
+  "round4/archive-sha256.json": {
+    "commit": "53c839ae3ceed654bb390cdb0c7f63b6429a2ed3",
+    "sha256": "97df3e65c918b9aebd1063d35c423cabca48f6b80318200736a462fafc0945da"
+  },
+  "round5/archive-sha256.json": {
+    "commit": "9f50d043805b06e305517cd945df79fb79689387",
+    "sha256": "c3bc80abf8408f94d7f276c394c07a5f3155b8a8ffa97a3c038a9358f8110a64"
+  }
+}

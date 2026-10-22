@@ -1,0 +1,238 @@
+
+> bobs-factory-monorepo@1.0.1 test:packages:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views
+> pnpm --filter './packages/*' test:run
+
+Scope: 16 of 20 workspace projects
+
+> bobs-factory-cloudflare-tunnel-client@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cloudflare-tunnel-client
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cloudflare-tunnel-client
+
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  15:07:47
+   Duration  213ms (transform 18ms, setup 0ms, import 28ms, tests 28ms, environment 0ms)
+
+
+> bobs-factory-core@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/core
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/core
+
+
+ Test Files  19 passed (19)
+      Tests  263 passed (263)
+   Start at  15:07:48
+   Duration  3.94s (transform 145ms, setup 0ms, import 584ms, tests 1.93s, environment 1ms)
+
+
+> bobs-factory-claude-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/claude-runner
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/claude-runner
+
+
+ Test Files  13 passed (13)
+      Tests  142 passed (142)
+   Start at  15:07:52
+   Duration  2.28s (transform 185ms, setup 0ms, import 865ms, tests 415ms, environment 1ms)
+
+
+> bobs-factory-config-updater@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/config-updater
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/config-updater
+
+
+ Test Files  8 passed (8)
+      Tests  52 passed (52)
+   Start at  15:07:55
+   Duration  5.61s (transform 151ms, setup 0ms, import 568ms, tests 4.45s, environment 0ms)
+
+
+> bobs-factory-github-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/github-event-transport
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/github-event-transport
+
+
+ Test Files  5 passed (5)
+      Tests  117 passed (117)
+   Start at  15:08:01
+   Duration  752ms (transform 133ms, setup 0ms, import 273ms, tests 48ms, environment 0ms)
+
+
+> bobs-factory-gitlab-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/gitlab-event-transport
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/gitlab-event-transport
+
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  15:08:02
+   Duration  97ms (transform 14ms, setup 0ms, import 19ms, tests 2ms, environment 0ms)
+
+
+> bobs-factory-linear-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/linear-event-transport
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/linear-event-transport
+
+
+ Test Files  7 passed (7)
+      Tests  86 passed (86)
+   Start at  15:08:03
+   Duration  1.55s (transform 143ms, setup 0ms, import 797ms, tests 228ms, environment 0ms)
+
+
+> bobs-factory-mcp-tools@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools
+
+To /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-operator-2LLpv8/upstream.git
+ * [new branch]      main -> main
+
+ Test Files  15 passed (15)
+      Tests  87 passed (87)
+   Start at  15:08:05
+   Duration  24.16s (transform 1.00s, setup 0ms, import 3.04s, tests 20.03s, environment 1ms)
+
+
+> bobs-factory-slack-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/slack-event-transport
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/slack-event-transport
+
+
+ Test Files  3 passed (3)
+      Tests  82 passed (82)
+   Start at  15:08:29
+   Duration  468ms (transform 127ms, setup 0ms, import 231ms, tests 22ms, environment 0ms)
+
+
+> bobs-factory-zulip-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/zulip-event-transport
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/zulip-event-transport
+
+
+ Test Files  3 passed (3)
+      Tests  25 passed (25)
+   Start at  15:08:30
+   Duration  424ms (transform 100ms, setup 0ms, import 197ms, tests 11ms, environment 0ms)
+
+
+> bobs-factory-simple-agent-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/simple-agent-runner
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/simple-agent-runner
+
+
+ Test Files  2 passed (2)
+      Tests  24 passed (24)
+   Start at  15:08:31
+   Duration  416ms (transform 18ms, setup 0ms, import 29ms, tests 213ms, environment 0ms)
+
+
+> bobs-factory-codex-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/codex-runner
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/codex-runner
+
+
+ Test Files  19 passed | 1 skipped (20)
+      Tests  155 passed | 1 skipped (156)
+   Start at  15:08:32
+   Duration  5.71s (transform 189ms, setup 0ms, import 1.05s, tests 3.18s, environment 1ms)
+
+
+> bobs-factory-cursor-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cursor-runner
+> node ../../node_modules/.pnpm/node_modules/vitest/vitest.mjs run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cursor-runner
+
+
+ Test Files  9 passed (9)
+      Tests  60 passed (60)
+   Start at  15:08:38
+   Duration  5.60s (transform 171ms, setup 0ms, import 553ms, tests 4.36s, environment 0ms)
+
+
+> bobs-factory-gemini-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/gemini-runner
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/gemini-runner
+
+
+ Test Files  4 passed (4)
+      Tests  200 passed | 1 skipped (201)
+   Start at  15:08:44
+   Duration  1.03s (transform 172ms, setup 0ms, import 440ms, tests 262ms, environment 0ms)
+
+
+> bobs-factory-opencode-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/opencode-runner
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/opencode-runner
+
+
+ Test Files  6 passed (6)
+      Tests  66 passed | 1 skipped (67)
+   Start at  15:08:45
+   Duration  22.01s (transform 170ms, setup 0ms, import 681ms, tests 20.88s, environment 0ms)
+
+
+> bobs-factory-edge-worker@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+
+{"layout":"js","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1038052}}}
+{"layout":"python","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1040308}}}
+Note: switching to 'HEAD~1'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at b2d33cd fixture
+
+ Test Files  231 passed (231)
+      Tests  3003 passed | 1 skipped (3004)
+   Start at  15:09:08
+   Duration  930.66s (transform 3.08s, setup 950ms, import 72.22s, tests 839.68s, environment 9ms)
+
