@@ -82,7 +82,11 @@ export interface TicketAdapter {
 		snapshot: TicketSnapshot,
 	): Promise<string | undefined>;
 	comment(body: string): Promise<void>;
-	publish?(receipt: TicketMilestone, documentationBody: string): Promise<void>;
+	publish?(
+		receipt: TicketMilestone,
+		documentationBody: string,
+		beforeWrite?: () => Promise<boolean>,
+	): Promise<undefined | false>;
 	link(url: string): Promise<void>;
 }
 
@@ -502,8 +506,13 @@ export function nativeAdapter(
 		},
 		...(ref.platform === "linear"
 			? {
-					async publish(receipt: TicketMilestone, documentationBody: string) {
+					async publish(
+						receipt: TicketMilestone,
+						documentationBody: string,
+						beforeWrite?: () => Promise<boolean>,
+					) {
 						if (receipt.purpose === "documentation" && !receipt.merged) {
+							if (beforeWrite && !(await beforeWrite())) return false;
 							await tracker.createComment(ref.id, { body: documentationBody });
 							return;
 						}
@@ -514,6 +523,9 @@ export function nativeAdapter(
 						const sessionId = await options.getTranscriptSession();
 						if (!sessionId)
 							throw new Error("Verified Linear transcript session unavailable");
+						// Transcript discovery/creation can await a remote provider. Recheck
+						// current display authority after it, immediately before the write.
+						if (beforeWrite && !(await beforeWrite())) return false;
 						const result = await tracker.createAgentActivity({
 							id: receipt.deliveryId,
 							agentSessionId: sessionId,
@@ -531,6 +543,7 @@ export function nativeAdapter(
 						});
 						if (!result.success)
 							throw new Error("Linear transcript delivery was rejected");
+						return undefined;
 					},
 				}
 			: {}),
@@ -816,8 +829,14 @@ export class TicketTracking {
 							await this.save(run);
 							if (!(await this.validateViewPublication(run, receipt))) continue;
 							const body = `${receipt.body}${receipt.limitation ? `\n\nTracking limitation: ${receipt.limitation}` : ""}\n\n${marker}`;
-							if (adapter.publish) await adapter.publish(receipt, body);
-							else await adapter.comment(body);
+							if (adapter.publish) {
+								if (
+									(await adapter.publish(receipt, body, () =>
+										this.validateViewPublication(run, receipt),
+									)) === false
+								)
+									continue;
+							} else await adapter.comment(body);
 						}
 						receipt.delivered = true;
 						delete receipt.error;

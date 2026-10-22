@@ -87,7 +87,9 @@ async function fixture(
 
 	let failAfterDelivery = false,
 		holdRead: ReturnType<typeof deferred> | undefined,
-		readEntered: ReturnType<typeof deferred> | undefined;
+		readEntered: ReturnType<typeof deferred> | undefined,
+		holdTranscript: ReturnType<typeof deferred> | undefined,
+		transcriptEntered: ReturnType<typeof deferred> | undefined;
 	const ticket: TicketSnapshot = {
 		id: 77,
 		project: "fixture",
@@ -156,7 +158,17 @@ async function fixture(
 						url: issue.url,
 					},
 					tracker,
-					{ getTranscriptSession: async () => session.id },
+					{
+						getTranscriptSession: async () => {
+							if (holdTranscript) {
+								const gate = holdTranscript;
+								holdTranscript = undefined;
+								transcriptEntered!.resolve();
+								await gate.promise;
+							}
+							return session.id;
+						},
+					},
 				);
 	const fetchIssue = tracker.fetchIssue.bind(tracker);
 	tracker.fetchIssue = async (...args) => {
@@ -386,6 +398,13 @@ async function fixture(
 				entered = deferred();
 			holdRead = gate;
 			readEntered = entered;
+			return { release: () => gate.resolve(), entered: entered.promise };
+		},
+		blockNextTranscript() {
+			const gate = deferred(),
+				entered = deferred();
+			holdTranscript = gate;
+			transcriptEntered = entered;
 			return { release: () => gate.resolve(), entered: entered.promise };
 		},
 		async reconstruct() {
@@ -906,4 +925,52 @@ it("retains a source-renewed outgoing version through real persisted reconstruct
 	expect(restored.viewRecords!.at(-1)!.answer!.request.digest).toBe(
 		current.digest,
 	);
+});
+
+it("rechecks Linear source ownership after asynchronous transcript preparation and before activity creation", async () => {
+	const answer = deferred<string>();
+	const f = await fixture(
+		"linear",
+		async (context) => {
+			context.signal.addEventListener(
+				"abort",
+				() => answer.resolve("Stopped"),
+				{ once: true },
+			);
+			return answer.promise;
+		},
+		false,
+		undefined,
+		true,
+	);
+	const initial = (await f.displays())[0]!;
+	const held = f.blockNextTranscript();
+	await ask(f, "Explain child while transcript preparation is held");
+	await held.entered;
+	const pending = structuredClone(f.run.viewDecision!);
+	f.child.resolve();
+	await waitFor(() =>
+		expect(Object.values(f.run.launchActions!)[0]!.progress.a!.status).toBe(
+			"completed",
+		),
+	);
+	held.release();
+	await waitFor(async () =>
+		expect((await f.displays()).at(-1)).toContain("[completed]"),
+	);
+	expect((await f.displays())[0]).toBe(initial);
+	expect(
+		(await f.displays()).every((body) => !body.includes(pending.digest)),
+	).toBe(true);
+	expect(
+		f.run.ticketSync!.receipts.find(
+			(r) => r.viewDecision?.digest === pending.digest,
+		)!.superseded,
+	).toBe(true);
+	await f.runtime.replyView(
+		f.run.id,
+		`/view-answer ${JSON.stringify(accepted(f.run))}`,
+	);
+	await waitFor(() => expect(f.run.status).toBe("completed"));
+	answer.resolve("Historical explanation");
 });
