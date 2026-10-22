@@ -1,6 +1,7 @@
 # Taskbot #142: static Factory composition
 
 Date: 2026-10-23. Implementation verification, not independent acceptance.
+PR: [#179](https://github.com/jappyjan/bobs-factory/pull/179). Implementation source commit: `40b07f0683a7d5cf256e7f1b8d3b5040f7d72b64`, tree `59062ae245d8c08aee0697eb7de51cae8218d180`. The following documentation-only commit adds the PR link and lifecycle receipt; all 41 recorded source/harness inputs remain identical.
 Base: `578bb28233fe699b6743bf84cb24895b25da3ed0` (fresh fetch unchanged before publication).
 Checkout: `/Users/jappy/.t3/worktrees/bobs-factory/taskbot-142-composition`, branch `taskbot/142-composition`.
 Node 24.21.0 / pnpm 10.33.1. Actual app preview used existing Bun 1.4.2; no native build or inference.
@@ -69,3 +70,5 @@ At 360×800, document scroll width equals viewport width (360), Call controls me
 Role-specific old tests now import `fixtures/pre-composition.ts`, whose reconstructed definitions equal the genuine baseline. Media, storage, delivery, merge-recovery and operational-presentation fixtures explicitly restore those historical accepted definitions before adding their original test receipts; new admission correctly resolves reserved IDs to the current catalog. The legacy-review helper retains its old private graph but supplies current bundled definitions when saving new local fixtures. Catalog/architecture/runtime assertions point to the actual new role owner, permit standalone calls and preserve genuine internal-permission tests using a private fixture. Security/outcome assertions remain intact; no existing timeout or approval requirement was relaxed. The new controlled-drive wait allowance accounts for its actual multi-role disk/Git work.
 
 Manual broad monorepo build/type/lint/packages/apps/scripts/audit/native cycles and development CI are deferred by the current epic policy. No release, deployment, live CI, real tracker/forge mutations or native credential/history changes occurred. Product CI watch, independent evidence, human approval and provider delivery checks remain active in the mocked flows. Native inference and physical-device behavior are not claimed. Independent Standards/Spec acceptance and merge belong to the parent coordinator.
+
+Lifecycle: both delegated helpers completed without pending turns before freeze. All controlled runtime drives shut down and removed their synthetic workspaces; the actual preview tab was closed and the preview server exited (port 36142 has no listener). Normal Git commit ran with the configured hook path; this checkout had no pre-commit shim, so hook build/type gates did not run. No manual broad gate is claimed. The checkout is retained for independent review; no ticket status or merge action was performed.
