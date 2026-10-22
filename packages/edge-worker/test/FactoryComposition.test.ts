@@ -38,6 +38,8 @@ function fixture(
 	mode: "repository" | "external" | "mixed",
 	takeover = false,
 	frozen = false,
+	standalone = false,
+	preparationFailure?: "missing" | "invalid" | "unreviewed",
 ) {
 	const home = mkdtempSync(join(tmpdir(), "factory142-"));
 	homes.push(home);
@@ -167,7 +169,11 @@ function fixture(
 				});
 			}
 			const firstHandoff =
-				c.step.tool === "handoff" && !handoffFailed && mode === "repository";
+				c.step.tool === "handoff" &&
+				!handoffFailed &&
+				mode === "repository" &&
+				request.path === "graphql" &&
+				query.includes("statusCheckRollup");
 			if (firstHandoff) handoffFailed = true;
 			const firstMerge =
 				c.step.tool === "merge" && !mergeReworked && mode === "repository";
@@ -175,7 +181,7 @@ function fixture(
 			const extra = {
 				url,
 				headRefOid: git("rev-parse", "HEAD"),
-				baseRefOid: base,
+				baseRefOid: firstMerge ? git("rev-parse", "HEAD") : base,
 				baseRefName: "main",
 				isDraft: draft,
 				state: merged ? "MERGED" : "OPEN",
@@ -238,6 +244,14 @@ function fixture(
 				deliveryMode: mode,
 			};
 		if (id === "plan") {
+			if (preparationFailure === "missing")
+				return { plan: "Missing contract", assets: [] };
+			if (preparationFailure === "invalid")
+				return {
+					plan: "Invalid contract",
+					assets: [],
+					deliveryContract: { mode: "external" },
+				};
 			planVersion++;
 			const contract: DeliveryContract = {
 				format: "delivery-v1",
@@ -295,7 +309,9 @@ function fixture(
 			return currentPlan;
 		}
 		if (id === "plan-review") {
-			const reject = mode === "repository" && !reviewRejected;
+			const reject =
+				preparationFailure === "unreviewed" ||
+				((mode === "repository" || standalone) && !reviewRejected);
 			reviewRejected = true;
 			return {
 				approved: !reject,
@@ -685,7 +701,9 @@ function fixture(
 	host.factoryRuntime = runtime;
 	const definitions = frozen ? preCompositionWorkflows : defaultWorkflows;
 	const workflow = definitions.find(
-		(w) => w.id === (takeover ? "takeover" : "factory"),
+		(w) =>
+			w.id ===
+			(standalone ? "external-delivery" : takeover ? "takeover" : "factory"),
 	)!;
 	run = runtime.create({
 		title: `Controlled ${mode} ${takeover ? "Takeover" : "Factory"}`,
@@ -959,6 +977,29 @@ it.each([
 			expect(f.run.checkpoint!.calls!.planning!.visits.plan).toBe(2);
 		}
 		if (mode === "repository") {
+			const handoff = f.run.history.findIndex(
+				(h) =>
+					h.step === "approval/handoff" &&
+					(h.output as { fix?: boolean })?.fix === true,
+			);
+			const merge = f.run.history.findIndex(
+				(h) =>
+					h.step === "merge/merge" &&
+					(h.output as { rework?: boolean })?.rework === true,
+			);
+			expect(handoff).toBeGreaterThan(0);
+			expect(
+				f.run.history.slice(handoff + 1).some((h) => h.step === "ci/ci-fix"),
+			).toBe(true);
+			expect(merge).toBeGreaterThan(handoff);
+			expect(
+				f.run.history
+					.slice(merge + 1)
+					.some((h) => h.step === "review/assess-impact"),
+			).toBe(true);
+			expect(
+				f.run.humanDecisions!.filter((d) => d.decision === "approve").length,
+			).toBeGreaterThan(1);
 			expect(f.ciCorrected).toBe(true);
 			expect(
 				f.run.checkpoint!.calls!.review!.visits["assess-impact"],
@@ -975,3 +1016,106 @@ it.each([
 	},
 	120000,
 );
+
+// Same production-runtime/host boundary as the four retained drives; only the new preparation path runs here.
+it("drives standalone external preparation, independent rejection, persisted exact human approval and final verification", async () => {
+	const f = fixture("external", false, false, true);
+	let running = f.runtime.launch(f.run);
+	await waitForRuntime(
+		() => expect(f.run.status, f.run.error).toBe("waiting"),
+		{ timeout: 45000 },
+	);
+	expect(f.calls).toContain("clarify");
+	expect(f.calls).toContain("plan");
+	expect(f.calls).toContain("plan-review");
+	expect(f.run.delivery?.contract.authorization.status).toBe("authorized");
+	expect(f.state.fields.description).toBe("after correction");
+	expect(f.calls.filter((x) => x === "plan-review")).toHaveLength(2);
+	const history = structuredClone(f.run.history),
+		gate = structuredClone(f.run.reviewGate!);
+	expect(gate.status).toBe("pending");
+	expect(f.run.humanDecisions ?? []).toHaveLength(0);
+	await f.runtime.shutdown();
+	await running;
+	f.setRuntime(new WorkflowRuntime(f.home, f.hooks));
+	running = f.runtime.launch(f.run);
+	await waitForRuntime(() => expect(f.run.status, f.run.error).toBe("waiting"));
+	expect(f.run.history.slice(0, history.length)).toEqual(history);
+	expect(f.run.reviewGate!.id).toBe(gate.id);
+	expect(() =>
+		f.runtime.decide(f.run.id, {
+			reviewId: gate.id,
+			headSha: "stale",
+			externalDigest: gate.externalDigest,
+			decision: "approve",
+		}),
+	).toThrow();
+	f.runtime.decide(f.run.id, {
+		reviewId: gate.id,
+		headSha: gate.headSha,
+		externalDigest: gate.externalDigest,
+		decision: "approve",
+	});
+	await running;
+	expect(f.run.status, f.run.error).toBe("completed");
+	expect(f.run.delivery?.finalCheck).toMatchObject({
+		reviewId: gate.id,
+		digest: f.run.delivery!.verification!.digest,
+	});
+	expect(f.run.humanDecisions).toHaveLength(1);
+	// A user fork entering acceptance directly still cannot promote copied approved JSON.
+	const fork = structuredClone(f.run.workflow);
+	fork.id = "unreviewed-external-fork";
+	fork.name = "Unreviewed external fork";
+	const accept = fork.steps.find((s) => s.tool === "accept-delivery")!;
+	fork.steps = [accept, ...fork.steps.filter((s) => s !== accept)];
+	f.runtime.updateWorkflows([...defaultWorkflows, fork]);
+	const forged = f.runtime.create({
+		title: "Copied context",
+		input: criterion,
+		repositoryId: "fixture",
+		workspace: f.repo,
+		workflow: fork,
+		launchInputs: {
+			plan: JSON.stringify(f.run.outputs.plan),
+			"plan-review": JSON.stringify(f.run.outputs["plan-review"]),
+			clarify: JSON.stringify(f.run.outputs.clarify),
+		},
+		triggerOrigin: { type: "manual", workflowId: fork.id },
+	});
+	const callsBefore = f.calls.length;
+	await f.runtime.launch(forged);
+	expect(forged.status).toBe("failed");
+	expect(forged.error).toMatch(/original executed/);
+	expect(forged.delivery).toBeUndefined();
+	expect(f.calls).toHaveLength(callsBefore);
+
+	writeFileSync(
+		"/tmp/taskbot142-r1-standalone-flow.json",
+		JSON.stringify(
+			{
+				status: f.run.status,
+				history: f.run.history,
+				checkpoint: f.run.checkpoint,
+				delivery: f.run.delivery,
+				calls: f.calls,
+				commands: f.commands,
+			},
+			null,
+			2,
+		),
+	);
+}, 60000);
+
+it.each([
+	"missing",
+	"invalid",
+	"unreviewed",
+] as const)("refuses %s standalone preparation before tracker effects", async (failure) => {
+	const f = fixture("external", false, false, true, failure);
+	await f.runtime.launch(f.run);
+	expect(f.run.status).toBe("failed");
+	expect(f.run.delivery).toBeUndefined();
+	expect(f.state.fields.description).toBe("before");
+	expect(f.run.history.some((x) => x.step === "external-apply")).toBe(false);
+}, 60000);

@@ -855,3 +855,56 @@ it("reads the original private Snapshot through renamed nested outcome Call port
 	).toThrow();
 	expect(snapshotReceipt.producer.key).toBe("original-snapshot");
 });
+
+it("refreshes mapped Snapshot provenance on a new retained Call visit and preserves both original receipts", async () => {
+	const f = fixture(),
+		revisions: string[] = [];
+	const child = recipe("revisit-inspector", [
+		{
+			...inspect(),
+			maxVisits: 2,
+			branches: [{ when: { path: "retry", equals: true }, next: "repair" }],
+		},
+	]);
+	child.outcomes = ["repair", "completed"];
+	const parent = recipe("revisit-caller", [
+		snapshot("baseline", "call"),
+		{
+			id: "call",
+			name: "Inspect",
+			type: "workflow",
+			workflow: child.id,
+			inputMapping: { baseline: "/baseline" },
+			next: "end",
+			branches: [
+				{ when: { path: "outcome", equals: "repair" }, next: "change" },
+			],
+		},
+		{
+			id: "change",
+			name: "Change",
+			type: "agent",
+			prompt: "Change fixture",
+			next: "baseline",
+		},
+	]);
+	const r = runtime(f.state, async (c) => {
+		if (c.step.id === "change") {
+			writeFileSync(join(f.home, "README.md"), "second immutable fixture");
+			f.git("add", "README.md");
+			f.git("commit", "-m", "changed [skip ci]");
+			return { changed: true };
+		}
+		const value = await readBlob(c);
+		revisions.push(value.revision);
+		return { ...value, retry: revisions.length === 1 };
+	});
+	const run = create(r, f.home, [parent, child]);
+	await r.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	expect(revisions).toEqual([f.revision, f.git("rev-parse", "HEAD")]);
+	expect(new Set(revisions).size).toBe(2);
+	expect(run.history.filter((x) => x.step === "call/inspect")).toHaveLength(2);
+	expect(run.checkpoint!.calls!.call!.visits.inspect).toBe(2);
+	expect(Object.values(run.repositorySnapshots!)).toHaveLength(2);
+});

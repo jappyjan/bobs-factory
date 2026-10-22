@@ -185,6 +185,7 @@ export const CONTEXT_SOURCES = [
 	"index",
 	"callInputs",
 	"childRuns",
+	"delivery",
 ] as const;
 export type ContextSource = (typeof CONTEXT_SOURCES)[number];
 

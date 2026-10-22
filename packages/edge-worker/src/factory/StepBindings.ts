@@ -62,6 +62,7 @@ export function stepBindings(
 					],
 		},
 		callInputs: context.callInputs ?? {},
+		delivery: run.delivery,
 		get childRuns() {
 			return childRunsView(run);
 		},

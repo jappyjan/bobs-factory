@@ -815,6 +815,11 @@ function Inspector({
 	const [showPrompt, setShowPrompt] = useState(local);
 	const targets = [
 		...owner.steps.filter((s) => s.id !== step.id),
+		...(owner.outcomes ?? []).map((id) => ({
+			id,
+			name: `Return: ${id}`,
+			returned: true,
+		})),
 		{ id: "end", name: "Finish" },
 	];
 	const topLevel = !parent;
@@ -1334,7 +1339,7 @@ function RouteTarget({
 	onSelect,
 }: {
 	value: string;
-	targets: { id: string; name: string }[];
+	targets: { id: string; name: string; returned?: boolean }[];
 	editable: boolean;
 	onChange: (value: string) => void;
 	onSelect: (id: string) => void;
@@ -1356,7 +1361,9 @@ function RouteTarget({
 		<button
 			type="button"
 			className="recipe-route-target"
-			disabled={value === "end"}
+			disabled={
+				value === "end" || targets.find((t) => t.id === value)?.returned
+			}
 			onClick={() => onSelect(value)}
 		>
 			→{" "}

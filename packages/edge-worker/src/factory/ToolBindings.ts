@@ -119,16 +119,23 @@ export function producerKey(
 	prefix: string,
 	target: string,
 ): string {
-	if (stepForRun(run, `${prefix}${target}`)) return `${prefix}${target}`;
-	const callKey = prefix.replace(/\/$/, "");
-	const call = stepForRun(run, callKey);
-	const binding =
-		call?.type === "workflow" ? call.bindings?.[target] : undefined;
-	if (!binding) return `${prefix}${target}`;
-	const parentPrefix = callKey.replace(/[^/]+$/, "");
-	return binding.startsWith("@bindings/")
-		? producerKey(run, parentPrefix, binding.slice("@bindings/".length))
-		: `${parentPrefix}${binding}`;
+	const local = `${prefix}${target}`;
+	let scope = prefix;
+	while (scope) {
+		const callKey = scope.replace(/\/$/, "");
+		const call = stepForRun(run, callKey);
+		const binding =
+			call?.type === "workflow" ? call.bindings?.[target] : undefined;
+		if (binding) {
+			const parentPrefix = callKey.replace(/[^/]+$/, "");
+			return binding.startsWith("@bindings/")
+				? producerKey(run, parentPrefix, binding.slice("@bindings/".length))
+				: `${parentPrefix}${binding}`;
+		}
+		if (scope === prefix && stepForRun(run, local)) return local;
+		scope = callKey.replace(/[^/]+$/, "");
+	}
+	return local;
 }
 
 /** Only a configured, executed source can supply a port's current value. */

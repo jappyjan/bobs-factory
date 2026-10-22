@@ -1076,10 +1076,81 @@ const externalRecipe = {
 	stepConfigVersion: "step-config-v1",
 	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
 	description:
-		"Reusable external ticket delivery with declared inputs and original delivery safeguards.",
+		"Reusable external ticket delivery. Without an accepted contract, clarify, plan and independently review before accepting and applying it.",
 	inputs: ports,
 	outcomes: ["completed", "to-architecture", "to-plan"],
 	steps: [
+		{
+			id: "prepare-delivery",
+			name: "Use accepted delivery or prepare it",
+			type: "check",
+			reads: { delivery: "@delivery" },
+			check: {
+				results: {
+					accepted: { path: "/delivery/contractDigest", exists: true },
+				},
+			},
+			next: "clarify",
+			branches: [
+				{ when: { path: "accepted", equals: true }, next: "external-apply" },
+			],
+		},
+		{
+			...roles.clarify!,
+			next: "decisions",
+			branches: [
+				{
+					when: { path: "architectureRevision", equals: true },
+					next: "to-architecture",
+				},
+			],
+		},
+		{ ...roles.decisions!, next: "plan", branches: [] },
+		{
+			...roles.plan!,
+			next: "plan-review",
+			branches: [
+				{
+					when: { path: "architectureRevision", equals: true },
+					next: "to-architecture",
+				},
+			],
+		},
+		{
+			...roles["plan-review"]!,
+			next: "delivery-route-accept",
+			branches: [
+				{
+					when: { path: "architectureRevision", equals: true },
+					next: "to-architecture",
+				},
+				{ when: { path: "approved", equals: false }, next: "plan" },
+			],
+		},
+		{
+			...roles["delivery-route-accept"]!,
+			next: "delivery-route",
+			branches: [],
+		},
+		{
+			...roles["delivery-route"]!,
+			next: "to-architecture",
+			branches: [
+				{ when: { path: "deferred", equals: true }, next: "delivery-deferred" },
+				{ when: { path: "mode", equals: "external" }, next: "external-apply" },
+				{ when: { path: "mode", equals: "mixed" }, next: "external-apply" },
+			],
+		},
+		{
+			...roles["delivery-deferred"]!,
+			next: "plan",
+			branches: [
+				{
+					when: { path: "architectureRevision", equals: true },
+					next: "to-architecture",
+				},
+			],
+		},
 		{ ...roles["external-apply"]!, next: "external-verify", branches: [] },
 		{
 			...roles["external-verify"]!,

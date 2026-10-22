@@ -307,6 +307,17 @@ export interface ForeachCheckpoint {
 export interface GraphCheckpoint {
 	/** Calls with declared outcomes retain one lexical frame across correction routes. */
 	calls?: Record<string, GraphCheckpoint>;
+	/** Completed Parallel scopes remain the owners of their qualified producers. */
+	branches?: Record<string, GraphCheckpoint[]>;
+	/** The exact accepted review context inherited by this lexical frame. */
+	baseline?: Pick<ReviewBaseline, "key" | "round">;
+	/** A producer refresh executes in its original frame and returns without following its route. */
+	producerRefresh?: {
+		source: string;
+		current: string;
+		active?: GraphCheckpoint["active"];
+		outcome?: string;
+	};
 	entry?: string;
 	outcome?: string;
 	iteration?: ItemFrame;
@@ -359,6 +370,7 @@ export interface GraphCheckpoint {
 		children?: GraphCheckpoint[];
 		foreach?: ForeachCheckpoint;
 		call?: WorkflowCall;
+		refreshProducer?: string;
 		reviewBaseline?: ReviewBaseline;
 		impactSnapshot?: ImpactSnapshot;
 	};
@@ -1831,6 +1843,298 @@ export class WorkflowRuntime {
 			});
 		return input;
 	}
+	/** Resolve only retained runtime-owned lexical frames, never an output-shaped checkpoint. */
+	private producerFrame(run: FactoryRun, key: string) {
+		const find = (
+			frame: GraphCheckpoint,
+			steps: WorkflowStep[],
+			workflow: Workflow,
+			prefix: string,
+			remaining: string[],
+			inherited: Record<string, unknown>,
+			chat: boolean,
+			parallel: boolean,
+		):
+			| {
+					frame: GraphCheckpoint;
+					steps: WorkflowStep[];
+					workflow: Workflow;
+					prefix: string;
+					step: WorkflowStep;
+					outputs: Record<string, unknown>;
+					chat: boolean;
+					parallel: boolean;
+			  }
+			| undefined => {
+			const [id, ...tail] = remaining;
+			const step = steps.find((item) => item.id === id);
+			if (!step) return;
+			const outputs = frame.outputs ?? inherited;
+			if (!tail.length)
+				return {
+					frame,
+					steps,
+					workflow,
+					prefix,
+					step,
+					outputs,
+					chat,
+					parallel,
+				};
+			const active = frame.current === step.id ? frame.active : undefined;
+			if (step.type === "workflow") {
+				const called = run.workflowDefinitions?.find(
+					(item) => item.id === step.workflow,
+				);
+				const child = active?.children?.[0] ?? frame.calls?.[step.id];
+				if (called && child)
+					return find(
+						child,
+						called.steps,
+						called,
+						`${prefix}${id}/`,
+						tail,
+						outputs,
+						called.chat ?? chat,
+						parallel,
+					);
+			} else if (step.type === "fanout") {
+				const index = Number(tail[0]);
+				const child = (active?.children ?? frame.branches?.[step.id])?.[index],
+					group = step.groups?.[index];
+				if (child && group)
+					return find(
+						child,
+						group,
+						workflow,
+						`${prefix}${id}/${index}/`,
+						tail.slice(1),
+						outputs,
+						chat,
+						true,
+					);
+			} else if (step.type === "foreach") {
+				const child = active?.children?.find(
+					(item) => item.iteration?.id === tail[0],
+				);
+				if (child && active?.foreach)
+					return find(
+						child,
+						active.foreach.body,
+						workflow,
+						`${prefix}${id}/${tail[0]}/`,
+						tail.slice(1),
+						active.foreach.outputs,
+						chat,
+						true,
+					);
+			}
+			return undefined;
+		};
+		const workflow = run.recoveryWorkflow ?? run.workflow;
+		const found =
+			run.checkpoint &&
+			find(
+				run.checkpoint,
+				workflow.steps,
+				workflow,
+				"",
+				key.split("/"),
+				run.outputs,
+				workflow.chat ?? false,
+				false,
+			);
+		if (!found)
+			throw new Error(`Bound producer has no retained owning frame: ${key}`);
+		if (found.frame.projectResults)
+			this.restoreFrameReceipts(run, found.steps, found.frame, found.prefix);
+		return found;
+	}
+	private frameBaseline(
+		run: FactoryRun,
+		frame: GraphCheckpoint,
+	): ReviewBaseline | undefined {
+		if (!frame.baseline) return undefined;
+		const original = run.reviewRounds?.find(
+			(record) =>
+				record.key === frame.baseline!.key &&
+				record.round === frame.baseline!.round,
+		);
+		if (!original)
+			throw new Error(
+				"Retained producer frame has no original review baseline",
+			);
+		return original;
+	}
+
+	private importedProducerContext(
+		consumer: ExecutionContext,
+		key: string,
+	): ExecutionContext {
+		const owner = this.producerFrame(consumer.run, key);
+		const outputs = { ...owner.outputs };
+		const call = stepForRun(consumer.run, owner.prefix.replace(/\/$/, ""));
+		for (const name of Object.keys(call?.bindings ?? {})) {
+			const value = producerValue(
+				consumer.run,
+				producerKey(consumer.run, owner.prefix, name),
+			);
+			if (value === undefined) delete outputs[name];
+			else outputs[name] = snapshotWorkflowInput(value);
+		}
+		const context: ExecutionContext = {
+			...consumer,
+			step: owner.step,
+			stepKey: key,
+			outputs,
+			iteration: owner.frame.iteration,
+			callInputs: owner.frame.callInputs,
+			snapshotInputs: owner.frame.snapshotInputs,
+			reviewKey: owner.frame.reviewKey,
+			reviewBaseline: this.frameBaseline(consumer.run, owner.frame),
+			bindingInput: (source, previous) =>
+				this.producerInput(
+					context,
+					owner.frame,
+					owner.prefix,
+					source,
+					previous,
+				),
+		};
+		context.input = context.bindingInput!(
+			owner.step,
+			consumer.run.boundOutputs?.[key],
+		);
+		context.currentScope = () => ({
+			originalInput: consumer.run.input,
+			outputs,
+			answers: consumer.run.answers,
+			humanDecisions: consumer.run.humanDecisions ?? [],
+		});
+		return context;
+	}
+	private producerRefreshes = new Map<string, Promise<void>>();
+	private async refreshImportedProducer(
+		consumer: ExecutionContext,
+		key: string,
+	) {
+		const ownerKey = `${consumer.run.id}:${key.replace(/[^/]+$/, "")}`;
+		const previous = this.producerRefreshes.get(ownerKey);
+		const refreshing = (previous ?? Promise.resolve()).then(() =>
+			this.refreshProducerInFrame(consumer, key),
+		);
+		this.producerRefreshes.set(ownerKey, refreshing);
+		try {
+			await refreshing;
+		} finally {
+			if (this.producerRefreshes.get(ownerKey) === refreshing)
+				this.producerRefreshes.delete(ownerKey);
+		}
+	}
+
+	private async refreshProducerInFrame(
+		consumer: ExecutionContext,
+		key: string,
+	) {
+		const { run, signal } = consumer;
+		const owner = this.producerFrame(run, key),
+			frame = owner.frame;
+		if (!frame.producerRefresh) {
+			const context = this.importedProducerContext(consumer, key),
+				receipt = run.boundOutputs?.[key];
+			if (
+				!receipt ||
+				sameOutputBinding(
+					receipt,
+					await outputRevisionBinding(context, receipt),
+				)
+			)
+				return;
+			frame.producerRefresh = {
+				source: owner.step.id,
+				current: frame.current,
+				active: frame.active,
+				outcome: frame.outcome,
+			};
+			frame.current = owner.step.id;
+			const session = frame.agentSessions?.[owner.step.id];
+			if (session)
+				frame.visits[owner.step.id] = (frame.visits[owner.step.id] ?? 0) + 1;
+			frame.active = session
+				? { phase: "executing", agent: { ...session } }
+				: undefined;
+			await this.save(run);
+		} else if (frame.producerRefresh.source !== owner.step.id)
+			throw new Error("Another producer refresh owns this frame");
+		await this.graph(
+			run,
+			owner.steps,
+			owner.outputs,
+			signal,
+			owner.prefix,
+			frame,
+			owner.workflow.id,
+			owner.chat,
+			owner.parallel,
+			this.frameBaseline(run, frame),
+		);
+	}
+
+	private producerInput(
+		context: ExecutionContext,
+		frame: GraphCheckpoint,
+		prefix: string,
+		source: WorkflowStep,
+		previous?: OutputRevisionBinding,
+	) {
+		const { run, reviewBaseline } = context;
+		const outputs = context.outputs ?? run.outputs;
+		const deliveryAware =
+			!!run.delivery ||
+			!!(context.input as Record<string, unknown>)?.deliveryExecutionReference;
+		const sourceInput = this.stepInput(
+			run,
+			source,
+			outputs,
+			reviewBaseline,
+			deliveryAware,
+			previous,
+			frame.iteration,
+		);
+		const sourceContext = {
+			...context,
+			step: source,
+			stepKey: `${prefix}${source.id}`,
+			input: sourceInput,
+		};
+		const sourceConfig = resolveStepConfig(source);
+		const bindings = stepBindings(
+			sourceContext,
+			bindingHistory(sourceContext, previous),
+		);
+		if (source.reads) Object.assign(sourceInput, bindings);
+		else if (
+			sourceConfig.inputs &&
+			sourceConfig.reads.answers &&
+			Object.hasOwn(bindings, "answers")
+		)
+			Object.assign(sourceInput, { answers: bindings.answers });
+		const sources = checkArgs(source, "scope-inputs")?.sources;
+		if (!sourceConfig.inputs && (sources || sourceConfig.explicit))
+			Object.assign(sourceInput, {
+				scopeSources:
+					sources && typeof sources === "object"
+						? Object.fromEntries(
+								Object.entries(sources).map(([label, name]) => [
+									label,
+									bindings[String(name)],
+								]),
+							)
+						: {},
+			});
+		return sourceInput;
+	}
+
 	private async graph(
 		run: FactoryRun,
 		steps: WorkflowStep[],
@@ -1843,6 +2147,12 @@ export class WorkflowRuntime {
 		parallel = false,
 		reviewBaseline?: ReviewBaseline,
 	): Promise<Record<string, unknown>> {
+		if (reviewBaseline)
+			checkpoint.baseline = {
+				key: reviewBaseline.key,
+				round: reviewBaseline.round,
+			};
+		else reviewBaseline = this.frameBaseline(run, checkpoint);
 		const definition = [
 			run.recoveryWorkflow ?? run.workflow,
 			...(run.workflowDefinitions ?? []),
@@ -1867,11 +2177,26 @@ export class WorkflowRuntime {
 		if (checkpoint.projectResults)
 			this.restoreFrameReceipts(run, steps, checkpoint, prefix);
 		while (checkpoint.current !== "end") {
+			const caller = stepForRun(run, prefix.replace(/\/$/, ""));
+			for (const name of Object.keys(caller?.bindings ?? {})) {
+				const value = producerValue(run, producerKey(run, prefix, name));
+				if (value === undefined) delete outputs[name];
+				else outputs[name] = snapshotWorkflowInput(value);
+			}
 			signal.throwIfAborted();
 			this.assertSchedulingOpen();
 			const step = steps.find((item) => item.id === checkpoint.current)!;
 			const key = `${prefix}${step.id}`;
 			const config = resolveStepConfig(step);
+			for (const binding of Object.values(config.reads)) {
+				if (binding.from.startsWith("@")) continue;
+				const name = binding.from.split("/")[0]!;
+				const source = producerKey(run, prefix, name);
+				if (source === `${prefix}${name}`) continue;
+				const value = producerValue(run, source);
+				if (value === undefined) delete outputs[name];
+				else outputs[name] = snapshotWorkflowInput(value);
+			}
 			const reviewConfig = consumesReview(step)
 				? {
 						inventory: readStep(step, "inventory")!,
@@ -1892,7 +2217,13 @@ export class WorkflowRuntime {
 				: undefined;
 			if (!checkpoint.active) {
 				checkpoint.visits[step.id] = (checkpoint.visits[step.id] ?? 0) + 1;
-				checkpoint.active = { phase: "executing" };
+				const session = definition?.outcomes?.length
+					? checkpoint.agentSessions?.[step.id]
+					: undefined;
+				checkpoint.active = {
+					phase: "executing",
+					...(session ? { agent: { ...session } } : {}),
+				};
 				await this.save(run);
 				signal.throwIfAborted();
 			}
@@ -1931,6 +2262,7 @@ export class WorkflowRuntime {
 					["delivery-route", "accept-delivery"].includes(s.tool ?? ""),
 				);
 			const boundScope =
+				checkpoint.producerRefresh?.source === step.id ||
 				checkpoint.refreshes?.at(-1)?.source === step.id ||
 				state.phase !== "executing"
 					? run.boundOutputs?.[key]
@@ -2002,49 +2334,8 @@ export class WorkflowRuntime {
 				chat: reviewBaseline ? false : (step.chat ?? chat),
 				chatMessages: structuredClone(this.chatMessages(run.id)),
 				input,
-				bindingInput: (source, previous) => {
-					const sourceInput = this.stepInput(
-						run,
-						source,
-						outputs,
-						reviewBaseline,
-						deliveryAware,
-						previous,
-						checkpoint.iteration,
-					);
-					const sourceContext = {
-						...context,
-						step: source,
-						stepKey: `${prefix}${source.id}`,
-						input: sourceInput,
-					};
-					const sourceConfig = resolveStepConfig(source);
-					const bindings = stepBindings(
-						sourceContext,
-						bindingHistory(sourceContext, previous),
-					);
-					if (source.reads) Object.assign(sourceInput, bindings);
-					else if (
-						sourceConfig.inputs &&
-						sourceConfig.reads.answers &&
-						Object.hasOwn(bindings, "answers")
-					)
-						Object.assign(sourceInput, { answers: bindings.answers });
-					const sources = checkArgs(source, "scope-inputs")?.sources;
-					if (!sourceConfig.inputs && (sources || sourceConfig.explicit))
-						Object.assign(sourceInput, {
-							scopeSources:
-								sources && typeof sources === "object"
-									? Object.fromEntries(
-											Object.entries(sources).map(([label, name]) => [
-												label,
-												bindings[String(name)],
-											]),
-										)
-									: {},
-						});
-					return sourceInput;
-				},
+				bindingInput: (source, previous) =>
+					this.producerInput(context, checkpoint, prefix, source, previous),
 				outputs,
 				signal,
 				log: (message, source) =>
@@ -2102,26 +2393,44 @@ export class WorkflowRuntime {
 					? { scopeSources: sourceValues() ?? {} }
 					: {}),
 			});
+			if (state.refreshProducer) {
+				await this.refreshImportedProducer(context, state.refreshProducer);
+				delete state.refreshProducer;
+				await this.save(run);
+				continue;
+			}
 			let staleSource: WorkflowStep | undefined;
-			for (const binding of Object.values(config.reads)) {
-				if (binding.from.startsWith("@")) continue;
-				const source = steps.find(
-					(candidate) => candidate.id === binding.from.split("/")[0],
-				);
-				if (!source || source.id === step.id) continue;
-				const sourceKey = `${prefix}${source.id}`;
+			let importedSource: string | undefined;
+			const sourceKeys = new Set([
+				...Object.values(config.reads)
+					.filter((binding) => !binding.from.startsWith("@"))
+					.map((binding) =>
+						producerKey(run, prefix, binding.from.split("/")[0]!),
+					),
+				...Object.keys(step.bindings ?? {}).map((name) =>
+					producerKey(run, `${key}/`, name),
+				),
+			]);
+			for (const sourceKey of sourceKeys) {
+				const source = stepForRun(run, sourceKey);
 				const receipt = run.boundOutputs?.[sourceKey];
-				if (!receipt) continue;
-				const current = await outputRevisionBinding(
-					{ ...context, step: source, stepKey: sourceKey },
-					receipt,
-				);
-				if (current && !sameOutputBinding(receipt, current)) {
-					if (await historicalInventoryRead(context, source, receipt, current))
-						continue;
-					staleSource = source;
-					break;
-				}
+				if (!source || !receipt || sourceKey === key) continue;
+				const local = sourceKey === `${prefix}${source.id}`;
+				const sourceContext = local
+					? { ...context, step: source, stepKey: sourceKey }
+					: this.importedProducerContext(context, sourceKey);
+				const current = await outputRevisionBinding(sourceContext, receipt);
+				if (!current || sameOutputBinding(receipt, current)) continue;
+				if (await historicalInventoryRead(context, source, receipt, current))
+					continue;
+				if (local) staleSource = source;
+				else importedSource = sourceKey;
+				break;
+			}
+			if (importedSource) {
+				state.refreshProducer = importedSource;
+				await this.save(run);
+				continue;
 			}
 			if (staleSource) {
 				this.log(
@@ -2469,6 +2778,10 @@ export class WorkflowRuntime {
 							...this.newCheckpoint(group),
 							outputs: reviewConfig ? {} : structuredClone(outputs),
 						}));
+						if (config.explicit) {
+							checkpoint.branches ??= {};
+							checkpoint.branches[step.id] = state.children;
+						}
 						// Also fill older resumed branches, preserving reviews established within them.
 						for (const child of state.children) {
 							child.reviewKey ??= checkpoint.reviewKey;
@@ -2647,6 +2960,7 @@ export class WorkflowRuntime {
 								state.call,
 							);
 						}
+						const newVisit = !state.children;
 						if (!state.children) {
 							const retained = definition.outcomes?.length
 								? checkpoint.calls?.[step.id]
@@ -2663,7 +2977,7 @@ export class WorkflowRuntime {
 						}
 						// Recovery can already supply an active child. Retain that exact frame,
 						// including visits and ownership, before its first resumed dispatch.
-						if (definition.outcomes?.length) {
+						if (config.explicit || definition.outcomes?.length) {
 							checkpoint.calls ??= {};
 							checkpoint.calls[step.id] = state.children[0]!;
 						}
@@ -2682,7 +2996,7 @@ export class WorkflowRuntime {
 							!!step.inputMapping ||
 							!!step.bindings ||
 							!!checkpoint.iteration;
-						if (isolated && !state.children[0]!.outputs) {
+						if (isolated && (newVisit || !state.children[0]!.outputs)) {
 							const mappings = Object.fromEntries(
 								Object.entries(step.inputMapping ?? {}).map(([name, path]) => [
 									name,
@@ -2702,6 +3016,14 @@ export class WorkflowRuntime {
 							state.children[0]!.outputs = {
 								...(step.bindings ? {} : snapshotWorkflowInput(outputs)),
 								...snapshotWorkflowInput(mappings),
+								...Object.fromEntries(
+									Object.entries(state.children[0]!.resultReceipts ?? {}).map(
+										([id, receipt]) => [
+											id,
+											snapshotWorkflowInput(receipt.output),
+										],
+									),
+								),
 							};
 							state.children[0]!.callInputs = step.inputMapping
 								? immutableJson(mappings)
@@ -2717,7 +3039,7 @@ export class WorkflowRuntime {
 								else child.outputs[name] = snapshotWorkflowInput(value);
 							}
 						}
-						if (!state.children[0]!.snapshotInputs)
+						if (newVisit || !state.children[0]!.snapshotInputs)
 							state.children[0]!.snapshotInputs = step.inputMapping
 								? immutableJson(
 										snapshotInputMappings(
@@ -2740,6 +3062,7 @@ export class WorkflowRuntime {
 							definition.id,
 							definition.chat ?? chat,
 							parallel,
+							config.explicit ? reviewBaseline : undefined,
 						);
 						output = {
 							workflow: definition.id,
@@ -3921,6 +4244,14 @@ export class WorkflowRuntime {
 				checkpoint.refreshes!.pop();
 				checkpoint.current = refreshing.target;
 				checkpoint.active = refreshing.active;
+			} else if (checkpoint.producerRefresh?.source === step.id) {
+				const saved = checkpoint.producerRefresh;
+				checkpoint.current = saved.current;
+				checkpoint.active = saved.active;
+				checkpoint.outcome = saved.outcome;
+				delete checkpoint.producerRefresh;
+				await this.save(run);
+				return outputs;
 			} else {
 				const next = this.nextStep(steps, step, output);
 				if (

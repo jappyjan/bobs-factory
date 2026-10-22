@@ -1,3 +1,7 @@
+# Historical initial implementation evidence
+
+The initial candidate below was NOT CLEAN in independent Round1. See the [combined R1–R5 repair report](taskbot142-r1-repairs.md) for current focused proof and exact reuse limits. Original results and raw receipts remain historical.
+
 # Taskbot #142: static Factory composition
 
 Date: 2026-10-23. Implementation verification, not independent acceptance.

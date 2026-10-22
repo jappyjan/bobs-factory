@@ -1,0 +1,17 @@
+{
+  "packages/edge-worker/src/factory/FactoryTools.ts": "92f21f17b58cc5c4b1af7208fc7e42a6aa907e1064dd62693023456f26b67a01",
+  "packages/edge-worker/src/factory/StepBindings.ts": "442e7f407b74d7b9d27614a284bba1c2ded4dba68bd7f8368a2eb743f765fe8c",
+  "packages/edge-worker/src/factory/StepConfig.ts": "f728d54086f66be6a2111c8f90f2ed0ef750e1df2d055ba4f29b502012d0b1a2",
+  "packages/edge-worker/src/factory/ToolBindings.ts": "733c6e23a25540a8440240f0974969852688272fb5e349c1a6a6cf18ffc57666",
+  "packages/edge-worker/src/factory/Workflow.ts": "6b01a440e86266863e7c85226ee768e85b5f9971236e024f62b5b974228b86d7",
+  "packages/edge-worker/src/factory/WorkflowRuntime.ts": "98745518728c9ad6664c7809ac6742d2ae6de4b5aac9680f81e18fd0dd653039",
+  "packages/edge-worker/src/factory/factoryRecipes.ts": "431017e64220cb968de075a269aab6389d42b4be52fca1a7af58332eccac1aac",
+  "packages/edge-worker/src/factory/web/recipe-builder.tsx": "b3bbe3acf0082c3fe40dee97decab563f7e85ad91332eefbcf8078503ae42e02",
+  "packages/edge-worker/test/FactoryComposition.test.ts": "4486c9e4e893e9785801bda9ac72e089ff268fa9dddff13bcae2774c053c4647",
+  "packages/edge-worker/test/SnapshotCallMapping.test.ts": "e3db758569e4c580ef2bd5ea8aaa099efc6d942a19f4c29d53631627a2607623",
+  "packages/edge-worker/test/fixtures/stock-role-prompts.json": "6241bbb5f3a77cf3578ec697a705a95dab9373dbb3dabc98bd1c952f97e8cedb",
+  "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "a4d28ed95d4a2072195d8965555f495718dbe3c224527d64b5e8451262711a76",
+  "packages/edge-worker/test/CallFreshness.test.ts": "542fe441d1247bf47a5838491123d9f7e459d07f0dd1491b6ddbdecebd4117ae",
+  "packages/edge-worker/test/CallLexicalPorts.test.ts": "e5357bdc04e6585bff2c9b7d1f6120742064ec1474446b38667ba5b0aae7ba37",
+  "packages/edge-worker/test/CallVisitInputs.test.ts": "83774f634734346377b2a47caedf3a5525981eaacb7d17a0b56b517473e13977"
+}
