@@ -41,6 +41,8 @@ Reliability and scalability, and Operational evidence. Research uses the same
 whole-scope pinned Snapshot and bounded dated history. Failed perspectives or
 workers remain explicit limitations; successful work is retained. Workers run
 sequentially within each perspective, keeping total research concurrency at four.
+Coordinators validate the complete assignment collection against the nested
+snapshot's JSON limits, so oversized scopes can be corrected before worker dispatch.
 
 Ask Bob is an ordinary per-item action with a question/comment. Submit the decisions
 to run only the dedicated follow-up agent for those items. Consolidation receives

@@ -95,7 +95,22 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"json-v1": (value) => value,
 	"dependency-graph-v1": (value) => DependencyGraphSchema.parse(value),
 	"research-context-v1": (value) => ResearchContextSchema.parse(value),
-	"research-plan-v1": (value) => ResearchPlanSchema.parse(value),
+	"research-plan-v1": (value) => {
+		const plan = ResearchPlanSchema.parse(value);
+		try {
+			// The next generic For each snapshots this entire collection, not
+			// individual scope fields or the coordinator's summary.
+			sanitizeJsonConfiguration(plan.assignments);
+		} catch (error) {
+			throw new OutputValidationError(value, [
+				{
+					path: "/assignments",
+					message: `Complete assignment collection cannot fit its For each JSON snapshot: ${error instanceof Error ? error.message : String(error)}. Return concise complete assignments while preserving required scope.`,
+				},
+			]);
+		}
+		return plan;
+	},
 	"research-result-v1": (value) => ResearchResultSchema.parse(value),
 	"proposals-v1": (value) => {
 		const proposals = ProposalsSchema.parse(value);

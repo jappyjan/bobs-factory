@@ -75,7 +75,7 @@ export const researchPerspectiveRecipe = recipe(
 			"coordinate",
 			"Coordinate bounded research",
 			"research-plan-v1",
-			"Use /perspective (id, name, brief), /context and /focus. Follow the perspective brief. Return {summary:string,assignments:[{id:string,question:string,scope:string[]}],skippedReason?:string}. Create at most two disjoint bounded assignments. Delegate actual inspection through these assignments; do not do a full survey yourself. Skip operational research when the pinned history has no relevant observations and explain why. Never use native subagents.",
+			"Use /perspective (id, name, brief), /context and /focus. Follow the perspective brief. Return {summary:string,assignments:[{id:string,question:string,scope:string[]}],skippedReason?:string}. Create at most two disjoint bounded assignments. The complete assignments array must fit the nested For each snapshot's character, UTF-8 byte, node and depth limits; preserve required scope when correcting. Delegate actual inspection through these assignments; do not do a full survey yourself. Skip operational research when the pinned history has no relevant observations and explain why. Never use native subagents.",
 			{ ...common, perspective: "@callInputs/perspective" },
 			"assignments",
 		),

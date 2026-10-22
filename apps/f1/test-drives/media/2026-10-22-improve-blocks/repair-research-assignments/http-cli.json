@@ -1,0 +1,154 @@
+[
+	{
+		"at": "2026-10-22T19:48:18.552Z",
+		"cli": ["ping"],
+		"stdout": "\u001b[32m✓\u001b[0m Server is healthy\n  Status: undefined\n  Timestamp: 1792698498548\n",
+		"stderr": "\u001b[90mRPC: http://localhost:57815/cli/rpc\u001b[0m\n"
+	},
+	{
+		"at": "2026-10-22T19:48:18.577Z",
+		"cli": ["status"],
+		"stdout": "\u001b[32m✓\u001b[0m Server Status\n  \u001b[36mStatus\u001b[0m: ready\n  \u001b[36mServer\u001b[0m: CLIRPCServer\n  \u001b[36mUptime\u001b[0m: 0s\n",
+		"stderr": "\u001b[90mRPC: http://localhost:57815/cli/rpc\u001b[0m\n"
+	},
+	{
+		"at": "2026-10-22T19:48:18.724Z",
+		"method": "POST",
+		"path": "/api/workflows/improve-codebase/fork",
+		"status": 200,
+		"request": {
+			"name": "F1 coordinator correction and two complete workers"
+		},
+		"result": {
+			"id": "fork-b070bee0-9a36-4586-968a-2e5257b14f53"
+		}
+	},
+	{
+		"at": "2026-10-22T19:48:19.021Z",
+		"method": "PUT",
+		"path": "/api/workflows",
+		"status": 200,
+		"request": {
+			"defaultWorkflow": "fork-b070bee0-9a36-4586-968a-2e5257b14f53",
+			"workflows": [
+				{
+					"id": "simple",
+					"name": "Simple / Bob’s Factory",
+					"allowedTriggers": ["manual", "ticket-assignment"],
+					"sha256": "d783b6c4cededd653e16e0f2a4553be9a468a153c50ac57217f0007d6b44c275"
+				},
+				{
+					"id": "factory",
+					"name": "Software factory",
+					"allowedTriggers": ["workflow", "manual", "ticket-assignment"],
+					"sha256": "78c931e6b0da3960643ec344bebe719e8b4e5d947f0cf716e2a9951dcb1cf570"
+				},
+				{
+					"id": "takeover",
+					"name": "Take over existing work",
+					"allowedTriggers": ["workflow", "manual", "ticket-assignment"],
+					"sha256": "075964ee635dc4fcf480626ff0017ea2462e3d9fbb7fd8ee09fb87c84f083dd1"
+				},
+				{
+					"id": "factory-pipeline",
+					"name": "Shared factory pipeline",
+					"allowedTriggers": ["workflow"],
+					"sha256": "bdccc0854b1333e620fe61ad2c786cd9c49db76459936453f4b52c446cfe92e3"
+				},
+				{
+					"id": "improve-codebase",
+					"name": "Improve codebase",
+					"allowedTriggers": ["manual"],
+					"sha256": "82bb09a10de1c06ace20f8cc279826f9427e3de0947a106624db7edace4d18cd"
+				},
+				{
+					"id": "map-codebase",
+					"name": "Map the codebase",
+					"allowedTriggers": ["workflow", "manual"],
+					"sha256": "c05140406616727d2286af3567a233982f5122c25b49424374e4c2b42b3ce805"
+				},
+				{
+					"id": "research-perspective",
+					"name": "Research a perspective",
+					"allowedTriggers": ["workflow", "manual"],
+					"sha256": "ba94f027b183a2dbaef2b1488f46fed67504d3ca00e6d4e6cd91d421671259d3"
+				},
+				{
+					"id": "consolidate-proposals",
+					"name": "Consolidate proposals",
+					"allowedTriggers": ["workflow", "manual"],
+					"sha256": "445ba2a5c177239ab00aca1558a1faffe09227236ae53652c461652e2620ab2f"
+				},
+				{
+					"id": "refine-plan",
+					"name": "Refine into a plan",
+					"allowedTriggers": ["workflow", "manual"],
+					"sha256": "88416cab4a9229fb81952a8b005851cc769a8b51e7aa846d3d78525934363d0f"
+				},
+				{
+					"id": "fork-b070bee0-9a36-4586-968a-2e5257b14f53",
+					"name": "F1 coordinator correction and two complete workers",
+					"allowedTriggers": ["manual"],
+					"sha256": "c514b3bc313bb0132e841a8b839f5b0963633464401c38f9b414edd013d2312b"
+				},
+				{
+					"id": "fork-4eb96932-49ec-42d4-b27c-8337b603a603",
+					"name": "Map the codebase (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "0ff235ac6dced617c6ce40cc5adebd74a9b2e5a7572aff9c189000f2a8064a2c"
+				},
+				{
+					"id": "fork-6d00bccf-66fe-4ebd-89ae-fca855177a73",
+					"name": "Research a perspective (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "0b5ff601e77942f15a319e3ade6a3b35d2d98c1e078982e50a3b6708a6cbbd97"
+				},
+				{
+					"id": "fork-cb1e31a8-f0af-4c55-babe-bf7221ca7647",
+					"name": "Consolidate proposals (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "41877b67eaff6d015b0342111c5d16c7342d8a5f6373494710d375887437eadb"
+				},
+				{
+					"id": "fork-9e4a0149-332c-45fc-97a3-1a247ead90b1",
+					"name": "Refine into a plan (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "8a8c9fc8a980955ef7db491cc04fbdaaf0805bee91f0d25fd4718a82204c2f2b"
+				},
+				{
+					"id": "fork-45453a78-2f5e-4615-9ed3-2d1380cc74e4",
+					"name": "Software factory (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "6f104845be68ed8967db84839eb0ed813fc192a218e4bc02e583f3046e2730a3"
+				},
+				{
+					"id": "fork-c973a690-7321-4881-a712-65b88e944593",
+					"name": "Shared factory pipeline (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "397371b18c2344c00da18e64f4743938b431589977418de339a486318631f051"
+				}
+			],
+			"omitted": "Full catalog bodies; each exact definition is hashed above."
+		},
+		"result": {}
+	},
+	{
+		"at": "2026-10-22T19:48:19.079Z",
+		"method": "POST",
+		"path": "/api/runs",
+		"status": 202,
+		"request": {
+			"repositoryId": "improve-fixture",
+			"workflow": "fork-b070bee0-9a36-4586-968a-2e5257b14f53",
+			"runner": "codex",
+			"model": "gpt-6.1-sol",
+			"inputs": {
+				"focus": "Cache ownership in the disposable fixture"
+			}
+		},
+		"result": {
+			"id": "manual-8d973b9f-331e-4c0f-8e41-ca29c614fec6",
+			"status": "running"
+		}
+	}
+]

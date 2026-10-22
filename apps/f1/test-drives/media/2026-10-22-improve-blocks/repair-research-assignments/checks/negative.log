@@ -1,0 +1,59 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker
+
+ ❯ test/ResearchAssignmentBoundary.test.ts (5 tests | 2 failed) 10ms
+     × rejects complete 'ascii' overflow at the producer with raw output and assignment diagnostic 4ms
+     × rejects complete 'utf8' overflow at the producer with raw output and assignment diagnostic 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ResearchAssignmentBoundary.test.ts > coordinator output composes with the actual nested assignment snapshot > rejects complete 'ascii' overflow at the producer with raw output and assignment diagnostic
+AssertionError: Error: For each item snapshot exceeds its data complexity limit: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/ResearchAssignmentBoundary.test.ts:40:76
+     38|    rejected = error;
+     39|   }
+     40|   expect(rejected instanceof OutputValidationError, String(receiverErr…
+       |                                                                            ^
+     41|   if (!(rejected instanceof OutputValidationError)) return;
+     42|   expect(rejected.output).toEqual(raw);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/ResearchAssignmentBoundary.test.ts > coordinator output composes with the actual nested assignment snapshot > rejects complete 'utf8' overflow at the producer with raw output and assignment diagnostic
+AssertionError: Error: For each item snapshot exceeds 1 MiB: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/ResearchAssignmentBoundary.test.ts:40:76
+     38|    rejected = error;
+     39|   }
+     40|   expect(rejected instanceof OutputValidationError, String(receiverErr…
+       |                                                                            ^
+     41|   if (!(rejected instanceof OutputValidationError)) return;
+     42|   expect(rejected.output).toEqual(raw);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  22:44:48
+   Duration  1.49s (transform 789ms, setup 25ms, import 1.36s, tests 10ms, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/ResearchAssignmentBoundary.test.ts

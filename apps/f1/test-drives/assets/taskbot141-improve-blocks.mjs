@@ -31,23 +31,26 @@ const root = resolve(import.meta.dirname, "../../../..");
 const repairOnly = process.argv.includes("--review-fixes");
 const round3Repair = process.argv.includes("--round3-fixes");
 const planCheckRepair = process.argv.includes("--plan-check-fixes");
+const researchRepair = process.argv.includes("--research-assignment-fixes");
 const dependencyRepair = process.argv.includes("--dependency-fixes");
 const canvasOnly = process.argv.includes("--canvas-only");
 assert(!(repairOnly && dependencyRepair), "Choose one scoped repair scenario");
 const media = join(
 	root,
 	"apps/f1/test-drives/media/2026-10-22-improve-blocks",
-	...(planCheckRepair
-		? ["repair-r2-checks"]
-		: round3Repair
-			? ["repair-r2-r3-r4"]
-			: canvasOnly
-				? ["repair-r2-r3/ui"]
-				: repairOnly
-					? ["repair-r1-r2"]
-					: dependencyRepair
-						? ["repair-r2-r3"]
-						: []),
+	...(researchRepair
+		? ["repair-research-assignments"]
+		: planCheckRepair
+			? ["repair-r2-checks"]
+			: round3Repair
+				? ["repair-r2-r3-r4"]
+				: canvasOnly
+					? ["repair-r2-r3/ui"]
+					: repairOnly
+						? ["repair-r1-r2"]
+						: dependencyRepair
+							? ["repair-r2-r3"]
+							: []),
 );
 mkdirSync(media, { recursive: true });
 const directory = realpathSync(
@@ -262,6 +265,17 @@ const opportunities = (
 }));
 let runtime, worker, repairTargetRun;
 const corrections = [];
+const requiredResearchScope =
+	"cache.ts: preserve existing cache lifecycle obligations.";
+const researchAssignments = (kind, count) =>
+	["one", "two"].map((id) => ({
+		id,
+		question: `Inspect ${id} ownership`,
+		scope: [
+			requiredResearchScope,
+			...Array(count).fill((kind === "utf8" ? "界" : "s").repeat(24000)),
+		],
+	}));
 const mock = (runner, config, output) =>
 	f1AgentHandlers("mock", JSON.stringify(output)).createAgentRunner(
 		runner,
@@ -419,7 +433,21 @@ worker = new EdgeWorker({
 					assert.equal(context.execution.modelSource, "run");
 					assert.equal(context.execution.model, "gpt-6.1-sol");
 					assert(context.execution.limitations.includes(inheritance));
-					assert.equal(context.assignment.id, "one");
+					if (researchRepair) {
+						assert.equal(
+							JSON.stringify(context.assignment),
+							JSON.stringify(
+								researchAssignments("utf8", 7).find(
+									(a) => a.id === context.assignment.id,
+								),
+							),
+						);
+						turn.assignment = {
+							id: context.assignment.id,
+							scopeCount: context.assignment.scope.length,
+							sha256: hash(JSON.stringify(context.assignment)),
+						};
+					} else assert.equal(context.assignment.id, "one");
 					output = {
 						summary: "One bounded finding",
 						findings: [
@@ -435,7 +463,15 @@ worker = new EdgeWorker({
 					};
 					break;
 				case "verify":
-					assert.equal(context.workers.summary.completed, 1);
+					assert.equal(
+						context.workers.summary.completed,
+						researchRepair ? 2 : 1,
+					);
+					if (researchRepair)
+						assert.equal(
+							JSON.stringify(context.coordination.assignments),
+							JSON.stringify(researchAssignments("utf8", 7)),
+						);
 					output = {
 						summary: "Bounded evidence retained",
 						findings: [
@@ -550,6 +586,22 @@ worker = new EdgeWorker({
 					break;
 				default:
 					throw new Error(`Unexpected ${role}; no native fallback permitted`);
+			}
+			if (researchRepair && role === "coordinate") {
+				const attempt = turns.filter(
+					(t) => t.runId === run.id && t.role === role,
+				).length;
+				assert.equal(
+					turns.filter((t) => t.runId === run.id && t.role === "worker").length,
+					0,
+				);
+				output = {
+					summary: "Two full bounded ownership assignments",
+					assignments: researchAssignments(
+						attempt === 1 ? "ascii" : "utf8",
+						attempt === 1 ? 22 : attempt === 2 ? 8 : 7,
+					),
+				};
 			}
 			if (planCheckRepair && role === "plan") {
 				output.plan = "p".repeat(8000);
@@ -947,6 +999,109 @@ async function completeDrive() {
 			checks: checks.length,
 			...preview,
 		}),
+	);
+}
+async function researchAssignmentFixDrive() {
+	const fork = await api("/api/workflows/improve-codebase/fork", {
+		name: "F1 coordinator correction and two complete workers",
+	});
+	const definitions = runtime.listWorkflows().map((w) => structuredClone(w));
+	definitions
+		.find((w) => w.id === fork.id)
+		.steps.find((s) => s.id === "perspectives").items.values = [
+		{
+			id: "fixture-perspective",
+			name: "Fixture ownership",
+			brief: "Inspect only the disposable cache ownership seam.",
+		},
+	];
+	await api(
+		"/api/workflows",
+		{ workflows: definitions, defaultWorkflow: fork.id },
+		200,
+		"PUT",
+	);
+	const parentId = await manual(fork.id);
+	repairTargetRun = parentId;
+	await decision(parentId, "decide");
+	const parent = current(parentId);
+	assert.equal(corrections.length, 2);
+	assert(
+		corrections.every((c) =>
+			c.issues.some(
+				(issue) =>
+					issue.path === "/assignments" &&
+					/For each JSON snapshot/.test(issue.message),
+			),
+		),
+	);
+	const perspective = Object.values(parent.outputs.perspectives.results)[0]
+		.research.outputs;
+	assert.equal(parent.outputs.perspectives.summary.completed, 1);
+	assert.equal(
+		JSON.stringify(perspective.coordinate.assignments),
+		JSON.stringify(researchAssignments("utf8", 7)),
+	);
+	assert.equal(perspective.assignments.summary.completed, 2);
+	const ownTurns = turns.filter((t) => t.runId === parentId);
+	assert.equal(ownTurns.filter((t) => t.role === "coordinate").length, 3);
+	assert.equal(ownTurns.filter((t) => t.role === "worker").length, 2);
+	assert.equal(ownTurns.filter((t) => t.role === "verify").length, 1);
+	assert.equal(ownTurns.filter((t) => t.role === "map").length, 1);
+	assert.equal(ownTurns.filter((t) => t.role === "proposals").length, 1);
+	assert.equal(filed.length, 0);
+	assert(![...runtime.runs.values()].some((r) => r.recipeParent));
+	writeFileSync(
+		join(directory, "rejected-originals.json"),
+		JSON.stringify(corrections),
+	);
+	const sourceAfter = sourceIdentity();
+	assert.deepEqual(sourceAfter, sourceBefore);
+	save("repair-proof.json", {
+		parentId,
+		forkId: fork.id,
+		rejectedOriginals: join(directory, "rejected-originals.json"),
+		corrections: corrections.map((c) => ({
+			attempts: c.attempts,
+			issues: c.issues,
+			characters: JSON.stringify(c.output).length,
+			utf8Bytes: Buffer.byteLength(JSON.stringify(c.output)),
+			sha256: hash(JSON.stringify(c.output)),
+			requiredScopesRetained: c.output.assignments.every(
+				(a) => a.scope[0] === requiredResearchScope,
+			),
+		})),
+		acceptedAssignments: perspective.coordinate.assignments.map((a) => ({
+			id: a.id,
+			question: a.question,
+			requiredScope: a.scope[0],
+			scopeLengths: a.scope.map((s) => s.length),
+			utf8Bytes: Buffer.byteLength(JSON.stringify(a)),
+			sha256: hash(JSON.stringify(a)),
+		})),
+		workers: ownTurns
+			.filter((t) => t.role === "worker")
+			.map((t) => t.assignment),
+		completedWorkers: perspective.assignments.summary.completed,
+		verifier: perspective.verify,
+		filed,
+		children: [],
+	});
+	save("results.json", {
+		completedAt: stamp(),
+		sourceAfter,
+		sourceChangedDuringDrive: [],
+		paidCalls: 0,
+		nativeRuns: 0,
+		restartTested: false,
+		checks: [
+			"Actual coordinator corrects oversized ASCII and UTF8 complete assignment collections with raw originals and /assignments diagnostics before any worker dispatch.",
+			"Corrected near-boundary full scopes and required lifecycle obligation reach exactly two actual read-only workers then the independent verifier; only one Map and one Consolidate, no research replay.",
+			"Outer perspective succeeds and reaches actual Decide, stopped before human answer or side effects.",
+		],
+	});
+	console.log(
+		JSON.stringify({ phase: "research-assignment-repair-complete", parentId }),
 	);
 }
 async function planCheckFixDrive() {
@@ -1679,7 +1834,8 @@ try {
 		};
 		save("preview.json", preview);
 		console.log(JSON.stringify({ phase: "canvas-preview-ready", ...preview }));
-	} else if (planCheckRepair) await planCheckFixDrive();
+	} else if (researchRepair) await researchAssignmentFixDrive();
+	else if (planCheckRepair) await planCheckFixDrive();
 	else if (round3Repair) await round3FixDrive();
 	else if (dependencyRepair) await dependencyFixDrive();
 	else if (repairOnly) await reviewFixDrive();
