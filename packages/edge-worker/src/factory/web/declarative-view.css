@@ -118,9 +118,9 @@
 .dv-before-after > section:last-child {
 	background: var(--green);
 }
-.dv-checklist,
-.dv-steps,
-.dv-points,
+ul.dv-checklist,
+ol.dv-steps,
+ul.dv-points,
 .dv-chart ol,
 .dv-run-wave ol,
 .dv-thread {
@@ -343,6 +343,7 @@
 	accent-color: var(--working-text);
 	width: 1.1rem;
 	height: 1.1rem;
+	min-height: 1.1rem;
 }
 .dv-action-note {
 	font-size: 0.7rem;
