@@ -69,7 +69,7 @@ export function GenericHumanDecision({ run }: { run: any }) {
 	if (!snapshot) return null;
 	return (
 		<HumanStepPanel
-			key={`${run.id}/${snapshot.id}/${snapshot.digest}`}
+			key={`${run.id}/${snapshot.id}`}
 			runId={run.id}
 			snapshot={snapshot}
 			disabled={run.status !== "waiting" || Boolean(snapshot.answer)}

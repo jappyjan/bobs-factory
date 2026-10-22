@@ -53,6 +53,24 @@ const git = (cwd, ...args) =>
 		stdio: ["ignore", "pipe", "pipe"],
 	}).trim();
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+// Runtime snapshots intentionally use null prototypes. Compare the complete
+// persisted JSON contract without asking JavaScript prototype identity to match.
+const assertJsonEqual = (actual, expected, message) =>
+	assert.deepEqual(JSON.parse(JSON.stringify(actual)), expected, message);
+function backendSourceManifest() {
+	const files = git(root, "ls-files", "packages", "apps/f1/src")
+		.split("\n")
+		.filter(
+			(file) =>
+				file.includes("/src/") &&
+				/\.(?:tsx?|mjs|js|json)$/.test(file) &&
+				!file.includes("/factory/web/"),
+		)
+		.sort();
+	return Object.fromEntries(
+		files.map((file) => [file, sha256(readFileSync(join(root, file)))]),
+	);
+}
 function sourceDelta() {
 	const hash = createHash("sha256").update(
 		execFileSync("git", ["diff", "HEAD"], { cwd: root }),
@@ -86,11 +104,17 @@ function buildIdentity() {
 		.update("\0");
 	return hash.digest("hex");
 }
+const sourceFiles = backendSourceManifest();
+writeFileSync(
+	join(directory, "source-files.json"),
+	JSON.stringify(sourceFiles, null, 2),
+);
 const identity = {
 	revision: git(root, "rev-parse", "HEAD"),
 	deltaSha256: sourceDelta(),
 	driverSha256: sha256(readFileSync(join(root, driver))),
 	buildSha256: buildIdentity(),
+	backendSourceSha256: sha256(JSON.stringify(sourceFiles)),
 	node: process.version,
 };
 record("setup", { directory, startedAt, paidCalls: 0, ...identity });
@@ -601,6 +625,7 @@ async function api(path, body, expected = 200) {
 		method: body === undefined ? "GET" : "POST",
 		headers: {
 			"Content-Type": "application/json",
+			"X-Factory-Request": "1",
 			Origin: apiOrigin,
 			"Sec-Fetch-Site": "same-origin",
 		},
@@ -860,9 +885,9 @@ try {
 		api(`/api/runs/${first.id}/view-answer`, choiceRequest, 200),
 	]);
 	let approval = await waitDecision(first.id, "approve", "approval");
-	assert.deepEqual(current(first.id).outputs.choose.choices, choices);
+	assertJsonEqual(current(first.id).outputs.choose.choices, choices);
 	assert.equal(current(first.id).outputs.choose.hasFollowUps, true);
-	assert.deepEqual(current(first.id).outputs.choose.itemsByAction.fix, [
+	assertJsonEqual(current(first.id).outputs.choose.itemsByAction.fix, [
 		items[0],
 	]);
 	assert.equal(current(first.id).outputs.choose.followUps.length, 1);
@@ -885,7 +910,7 @@ try {
 	await restart();
 	approval = await waitDecision(first.id, "approve", "approval");
 	assert.equal(approval.id, originalApprovalId);
-	assert.deepEqual(
+	assertJsonEqual(
 		current(first.id).outputs.choose,
 		accepted,
 		"Accepted choices survive ordinary persisted reconstruction",
@@ -920,7 +945,7 @@ try {
 		"Generic output cannot authorize native merge/recovery",
 	);
 	assert.equal(current(first.id).architectureDecisions?.length ?? 0, 0);
-	assert.deepEqual(current(first.id).outputs.choose, accepted);
+	assertJsonEqual(current(first.id).outputs.choose, accepted);
 	await api(`/api/runs/${first.id}/view-answer`, finalRequest, 200);
 	const lastPreview = await api("/api/recipes/view-preview", {
 		workflowId: mainRecipe.id,
@@ -1040,7 +1065,7 @@ try {
 		() => !runtime.isExecuting(batch.accepted.items[0].runId),
 		"Explicit batch stop drains the actual child",
 	);
-	assert.deepEqual(
+	assertJsonEqual(
 		current(waves.id).viewDisplays[0],
 		shown,
 		"Operational status changes do not rewrite accepted Show receipts",
@@ -1083,10 +1108,15 @@ try {
 		join(directory, "activities.json"),
 		JSON.stringify(activities, null, 2),
 	);
+	assert.deepEqual(
+		backendSourceManifest(),
+		sourceFiles,
+		"Every executed backend source input remained unchanged during the drive",
+	);
 	assert.equal(
-		sourceDelta(),
-		identity.deltaSha256,
-		"Source remained frozen throughout this drive",
+		sha256(readFileSync(join(root, driver))),
+		identity.driverSha256,
+		"The executed driver remained unchanged during the drive",
 	);
 	assert.equal(
 		buildIdentity(),
@@ -1100,6 +1130,7 @@ try {
 		endedAt: new Date().toISOString(),
 		paidCalls: 0,
 		...identity,
+		repositoryDeltaAfter: sourceDelta(),
 		results,
 		mockTurns: turns.length,
 		activityCount: activities.totalCount,

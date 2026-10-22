@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Build custom recipe screens from validated components, choose actions per item, approve exact displayed content or show a non-blocking update. Decisions and inline Ask threads survive restart, with safe ticket/terminal fallbacks and a view editor with data previews. ([Taskbot #140](https://taskbot.apps.janjaap.de/p/bobs-factory/t/140))
+- Build custom recipe screens from validated components, choose actions per item, approve exact displayed content or show a non-blocking update. Decisions and inline Ask threads survive restart, Ask replies preserve draft choices, and media is checked before approval, with safe ticket/terminal fallbacks and a view editor with data previews. ([Taskbot #140](https://taskbot.apps.janjaap.de/p/bobs-factory/t/140))
 
 - Configurable Snapshot, File issues and Launch runs recipe actions, with pinned read-only research, durable tracker reconciliation, dependency waves and child-run controls. Snapshot receipts cross declared recipe calls, paused batches observe original child outcomes, and Factory plan review retains its accepted delivery contract binding ([Taskbot #139](https://taskbot.apps.janjaap.de/p/bobs-factory/t/139), [#176](https://github.com/jappyjan/bobs-factory/pull/176)).
 

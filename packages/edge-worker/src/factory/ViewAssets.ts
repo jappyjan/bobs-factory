@@ -2,9 +2,9 @@ import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
-import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
+import { CaptureSchema } from "./FactoryTools.js";
 import { runRepositories, scopeRevision } from "./RepositoryScope.js";
 import { presentationOutputKeys } from "./RunOutputRoles.js";
 import { outputForCheck } from "./ToolBindings.js";
@@ -13,18 +13,30 @@ import type { ResolvedView } from "./View.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 const exec = promisify(execFile);
-async function verifyBytes(path: string, expected: string, limit: number) {
+async function verifyBytes(
+	path: string,
+	expected: string,
+	limit: number,
+	image = false,
+) {
 	const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
 	try {
 		const before = await handle.stat();
 		if (!before.isFile() || before.size > limit)
 			throw new Error("View asset is not a bounded regular file");
 		const hash = createHash("sha256");
+		const chunks: Buffer[] = [];
+		let length = 0;
 		for await (const chunk of handle.createReadStream({
 			autoClose: false,
 			start: 0,
-		}))
+			end: limit,
+		})) {
+			length += chunk.length;
+			if (length > limit) throw new Error("View asset exceeds its size limit");
+			if (image) chunks.push(chunk);
 			hash.update(chunk);
+		}
 		const after = await handle.stat();
 		if (
 			before.ino !== after.ino ||
@@ -35,9 +47,59 @@ async function verifyBytes(path: string, expected: string, limit: number) {
 			throw new Error(
 				"Displayed asset content changed. Refresh and review again.",
 			);
+		if (image) {
+			const bytes = Buffer.concat(chunks);
+			const png = bytes
+				.subarray(0, 8)
+				.equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+			const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+			if (!png && !jpeg) throw new Error("Screenshot is not a PNG or JPEG");
+			return bytes;
+		}
+		return undefined;
 	} finally {
 		await handle.close();
 	}
+}
+/** Same-run containment and retained relocation policy, before any image body read. */
+export async function readViewScreenshot(
+	directory: string,
+	run: FactoryRun,
+	index: number,
+	expected: string,
+): Promise<Buffer> {
+	if (
+		!Number.isSafeInteger(index) ||
+		index < 0 ||
+		!/^[a-f0-9]{64}$/.test(expected)
+	)
+		throw new Error("Invalid screenshot reference");
+	const key = presentationOutputKeys(run).capture;
+	const shot = CaptureSchema.parse(key ? run.outputs[key] : undefined)
+		.screenshots[index];
+	if (!shot || shot.imageSha256 !== expected)
+		throw new Error(
+			"Screenshot reference is not in this run's accepted capture inventory",
+		);
+	const evidence = join(directory, "evidence", run.id);
+	let candidate = resolve(evidence, shot.path);
+	const name = relative(resolve(evidence), candidate);
+	if (
+		!name ||
+		name === ".." ||
+		name.startsWith(`..${sep}`) ||
+		isAbsolute(name)
+	) {
+		const marker = `${sep}${join("factory", "evidence", run.id)}${sep}`;
+		const offset = candidate.lastIndexOf(marker);
+		if (!isAbsolute(shot.path) || offset < 0)
+			throw new Error(
+				"Screenshot must be inside this run's evidence directory",
+			);
+		candidate = resolve(evidence, candidate.slice(offset + marker.length));
+	}
+	const path = evidenceFile(candidate, evidence, 10 * 1024 * 1024);
+	return (await verifyBytes(path, expected, 10 * 1024 * 1024, true))!;
 }
 /** The display cannot invent filesystem paths or borrow assets from another run. */
 export async function verifyViewAssets(
@@ -48,19 +110,8 @@ export async function verifyViewAssets(
 	const evidence = join(directory, "evidence", run.id);
 	for (const component of view.components) {
 		if (component.type === "screenshots") {
-			const key = presentationOutputKeys(run).capture;
-			const capture = CaptureSchema.parse(key ? run.outputs[key] : undefined);
 			for (const ref of component.data.items) {
-				const shot = capture.screenshots[ref.index];
-				if (!shot || shot.imageSha256 !== ref.sha256)
-					throw new Error(
-						"Screenshot reference is not in this run's accepted capture inventory",
-					);
-				await verifyBytes(
-					verifiedScreenshot(shot.path, evidence, ref.sha256),
-					ref.sha256,
-					10 * 1024 * 1024,
-				);
+				await readViewScreenshot(directory, run, ref.index, ref.sha256);
 			}
 		}
 		if (component.type === "video") {

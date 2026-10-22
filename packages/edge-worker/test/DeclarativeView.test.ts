@@ -326,7 +326,7 @@ describe("declarative view presentation", () => {
 		const html = renderToStaticMarkup(
 			createElement(DeclarativeView, { view: everything(), runId: "run/1" }),
 		);
-		expect(html).toContain(`/api/runs/run%2F1/screenshots/3?v=${sha}`);
+		expect(html).toContain(`/api/runs/run%2F1/view-screenshots/3?v=${sha}`);
 		expect(html).toContain(`/api/runs/run%2F1/videos/playback/media?v=${sha}`);
 		expect(html).toContain('preload="none"');
 		expect(html).toContain('href="/#/runs/child-a"');

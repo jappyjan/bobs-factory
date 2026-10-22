@@ -97,7 +97,8 @@ fallbacks are bounded and explicitly mark truncation.
 
 View-provided action labels grant no authority. Actual human controls come only
 from the accepted step configuration. Screenshot/video references cannot choose
-filesystem paths, another run or remote media. Bytes and original verified
+filesystem paths, another run or remote media. Images are limited to 10 MiB before
+body reads, including the protected view image API. Bytes and original verified
 inventory are checked at display creation and approval; code excerpts remain
 inert text. Every component has a useful plain-text fallback, escaping HTML,
 Markdown links and terminal controls.

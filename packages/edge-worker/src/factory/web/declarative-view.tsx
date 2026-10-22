@@ -185,13 +185,13 @@ function ViewComponent({
 						<figure key={index}>
 							{runId ? (
 								<a
-									href={`/api/runs/${encodeURIComponent(runId)}/screenshots/${shot.index}?v=${encodeURIComponent(shot.sha256)}`}
+									href={`/api/runs/${encodeURIComponent(runId)}/view-screenshots/${shot.index}?v=${encodeURIComponent(shot.sha256)}`}
 									target="_blank"
 									rel="noreferrer noopener"
 									aria-label={`Open screenshot: ${shot.alt}`}
 								>
 									<img
-										src={`/api/runs/${encodeURIComponent(runId)}/screenshots/${shot.index}?v=${encodeURIComponent(shot.sha256)}`}
+										src={`/api/runs/${encodeURIComponent(runId)}/view-screenshots/${shot.index}?v=${encodeURIComponent(shot.sha256)}`}
 										alt={shot.alt}
 										loading="lazy"
 										decoding="async"

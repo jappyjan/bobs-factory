@@ -101,6 +101,7 @@ import { outputForCheck } from "./ToolBindings.js";
 import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
 import { VIEW_JSON_SCHEMA, ViewSourceSchema } from "./View.js";
+import { readViewScreenshot } from "./ViewAssets.js";
 import { routeResult, StepSchema, WorkflowSchema } from "./Workflow.js";
 import type { FactoryRun, WorkflowRuntime } from "./WorkflowRuntime.js";
 import { capacityRunStatus } from "./WorkflowRuntime.js";
@@ -2358,6 +2359,31 @@ export class FactoryServer {
 					.send(bytes);
 			},
 		);
+		this.app.get<{
+			Params: { id: string; index: string };
+			Querystring: { v: string };
+		}>("/api/runs/:id/view-screenshots/:index", async (request, reply) => {
+			const index = z.coerce
+				.number()
+				.int()
+				.nonnegative()
+				.parse(request.params.index);
+			const expected = z
+				.string()
+				.regex(/^[a-f0-9]{64}$/)
+				.parse(request.query.v);
+			const bytes = await readViewScreenshot(
+				runtime.directory,
+				runtime.get(request.params.id),
+				index,
+				expected,
+			);
+			return reply
+				.header("Cache-Control", "no-store")
+				.header("X-Content-Type-Options", "nosniff")
+				.type(bytes[0] === 137 ? "image/png" : "image/jpeg")
+				.send(bytes);
+		});
 		this.app.get<{
 			Params: { id: string; index: string };
 			Querystring: { artifact?: string; v?: string };
