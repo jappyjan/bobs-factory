@@ -848,8 +848,8 @@ export class WorkflowCatalog {
 	fork(id: string, name?: string): Workflow {
 		if (id === "simple") throw new Error("Simple cannot be forked");
 		const root = this.list().find((w) => w.id === id);
-		if (!root || !["factory", "takeover"].includes(id))
-			throw new Error("Fork a bundled Factory or Takeover workflow");
+		if (!root || !reserved.has(id))
+			throw new Error("Fork a bundled recipe; Simple cannot be forked");
 		const reachable = closure(root, this.list());
 		const mappings = Object.fromEntries(
 			reachable.map((w) => [w.id, `fork-${randomUUID()}`]),

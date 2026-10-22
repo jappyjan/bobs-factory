@@ -5,6 +5,7 @@ import {
 	assertReviewBrief,
 } from "./Architecture.js";
 import { DeliveryContractSchema, TicketTargetSchema } from "./Delivery.js";
+import { DependencyGraphSchema } from "./DependencyGraph.js";
 import {
 	CiFixResultSchema,
 	ClarifyResultSchema,
@@ -23,24 +24,13 @@ import {
 	filterReview,
 	QaCaptureSchema,
 } from "./FactoryTools.js";
+import { sanitizeJsonConfiguration } from "./Foreach.js";
 import { ImpactSchema } from "./Impact.js";
-import {
-	ImprovementActionSchema,
-	ImprovementSettingsSchema,
-	IssueDestinationSchema,
-	ItemChoiceSchema,
-	OpportunitySchema,
-	PackageSchema,
-	PackagesSchema,
-	PlanCheckSchema,
-	ProposalOutputSchema,
-	ResearchPlanSchema,
-	ResearchResultSchema,
-} from "./Improvement.js";
 import {
 	validateInlineSchema,
 	validateInlineSchemaSync,
 } from "./InlineSchema.js";
+import { IssueDestinationSchema } from "./IssueDestination.js";
 import {
 	OutputValidationError,
 	outputValidationError,
@@ -50,6 +40,20 @@ import {
 	QuestionChoicesSchema,
 	QuestionFieldsSchema,
 } from "./Questions.js";
+import {
+	FollowUpSchema,
+	OpportunitySchema,
+	PackageSchema,
+	PackagesSchema,
+	PlanCheckSchema,
+	PlanPackageSchema,
+	ProposalOutputSchema,
+	ProposalsSchema,
+	planReviewDetails,
+	ResearchContextSchema,
+	ResearchPlanSchema,
+	ResearchResultSchema,
+} from "./ResearchFormats.js";
 import {
 	GeneratedBriefSchema,
 	isReviewBrief,
@@ -68,11 +72,87 @@ import {
 	resolveStepConfig,
 	type StepScope,
 } from "./StepConfig.js";
-import { ViewSchema } from "./View.js";
+import { ViewSchema, viewDataSchemas } from "./View.js";
+
+/** Reserve receiving-scope capacity for other outputs and repeated decision items.
+ * Proposals occur twice; a batch has at most five plans and three reviews.
+ * Validate derived data too, using the consumer's actual character/UTF-8 budgets.
+ * Legacy data-only formats intentionally do not opt into this review contract.
+ */
+function reviewJson<T>(value: T, shares: number): T {
+	try {
+		sanitizeJsonConfiguration(Array.from({ length: shares }, () => value));
+	} catch (error) {
+		throw new Error(
+			`Complete accepted review JSON exceeds its public receiving budget (1/${shares} share, including derived fields): ${error instanceof Error ? error.message : String(error)}. Return concise complete requirements and evidence; do not omit accepted requirements.`,
+		);
+	}
+	return value;
+}
 
 /** Versioned schema library. Parsers are lazy to avoid coupling module initialization order. */
 const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"json-v1": (value) => value,
+	"dependency-graph-v1": (value) => DependencyGraphSchema.parse(value),
+	"research-context-v1": (value) => ResearchContextSchema.parse(value),
+	"research-plan-v1": (value) => {
+		const plan = ResearchPlanSchema.parse(value);
+		try {
+			// The next generic For each snapshots this entire collection, not
+			// individual scope fields or the coordinator's summary.
+			sanitizeJsonConfiguration(plan.assignments);
+		} catch (error) {
+			throw new OutputValidationError(value, [
+				{
+					path: "/assignments",
+					message: `Complete assignment collection cannot fit its For each JSON snapshot: ${error instanceof Error ? error.message : String(error)}. Return concise complete assignments while preserving required scope.`,
+				},
+			]);
+		}
+		return plan;
+	},
+	"research-result-v1": (value) => ResearchResultSchema.parse(value),
+	"proposals-v1": (value) => {
+		const proposals = ProposalsSchema.parse(value);
+		return reviewJson(
+			{
+				...proposals,
+				limitationsDisplay: viewDataSchemas.points.parse({
+					items: proposals.limitations.map((detail, index) => ({
+						label: `Limitation ${index + 1}`,
+						detail,
+					})),
+				}),
+			},
+			8,
+		);
+	},
+	"plan-package-v1": (value) => {
+		const plan = PlanPackageSchema.parse(value);
+		return reviewJson(
+			{
+				...plan,
+				reviewDetails: planReviewDetails(plan),
+				reviewText: `${plan.plan}\n\nAcceptance criteria:\n${plan.criteria.map((c) => `- ${c}`).join("\n")}\n\nDependencies: ${plan.dependencies.join(", ") || "None"}\nPaths: ${plan.paths.join(", ") || "Not specified"}`,
+			},
+			16,
+		);
+	},
+	"plan-check-v1": (value) => {
+		const review = PlanCheckSchema.parse(value);
+		return reviewJson(
+			{
+				...review,
+				display: viewDataSchemas.markdown.parse({
+					text: review.approved
+						? "Approved. No unresolved corrections."
+						: review.feedback.join("\n\n"),
+				}),
+			},
+			64,
+		);
+	},
+	"follow-up-v1": (value) => FollowUpSchema.parse(value),
 	"view-v1": (value) => ViewSchema.parse(value),
 	"generated-guide-v1": (value) => GeneratedGuideSchema.parse(value),
 	"generated-review-brief-v1": (value) =>
@@ -134,11 +214,8 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"improvement-proposals-v1": (value) => ProposalOutputSchema.parse(value),
 	"improvement-packages-v1": (value) => PackagesSchema.parse(value),
 	"improvement-plan-check-v1": (value) => PlanCheckSchema.parse(value),
-	"improvement-settings-v1": (value) => ImprovementSettingsSchema.parse(value),
 	"improvement-issue-destination-v1": (value) =>
 		IssueDestinationSchema.parse(value),
-	"improvement-item-choice-v1": (value) => ItemChoiceSchema.parse(value),
-	"improvement-action-v1": (value) => ImprovementActionSchema.parse(value),
 	"improvement-opportunity-v1": (value) => OpportunitySchema.parse(value),
 	"improvement-package-v1": (value) => PackageSchema.parse(value),
 };

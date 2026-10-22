@@ -1,0 +1,16 @@
+{
+	"apiOrigin": "http://127.0.0.1:52759",
+	"rpcPort": 52758,
+	"factoryPort": 52759,
+	"pid": 77318,
+	"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-bmg4xq",
+	"stockId": "manual-d9dfcf92-983c-4214-b07c-a897a444859e",
+	"decideId": "manual-cf8ee6fb-8c46-4065-b9f2-edd74620d9c8",
+	"approveId": "manual-526509a0-0205-4821-8e24-67058bacb90c",
+	"childId": "child-43f1c9fd4f3bb08f1649ce83138c4c6ff41d3b30",
+	"stoppedCliId": "session-1",
+	"forkId": "fork-0eb908dd-d613-4bf9-bd92-027f0ac1f6b3",
+	"previewWorkflow": "The one-perspective, one-prompt catalog fork; stock canvas and eight-perspective primary run remain separate.",
+	"serveCommand": "F1_AGENT_MODE=mock node apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs --serve",
+	"stop": "kill -TERM 77318 (only this disposable driver)"
+}

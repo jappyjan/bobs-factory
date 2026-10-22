@@ -246,20 +246,9 @@ it("expresses implication, unique IDs, references, bounded counts and filtered n
 it("publishes stable versioned formats for all contract families", () => {
 	const catalog = outputFormatCatalog();
 	for (const [format, value] of [
-		["improvement-settings-v1", {}],
 		[
 			"improvement-issue-destination-v1",
 			{ provider: "linear", workspaceId: "workspace", teamId: "team" },
-		],
-		["improvement-item-choice-v1", { action: "ignore" }],
-		[
-			"improvement-action-v1",
-			{
-				expectedRevision: 0,
-				version: 1,
-				digest: "a".repeat(64),
-				action: "finish",
-			},
 		],
 	] as const) {
 		const step = AgentStepSchema.parse({
@@ -280,6 +269,8 @@ it("publishes stable versioned formats for all contract families", () => {
 		"coverage-v1",
 		"delivery-contract-v1",
 		"improvement-packages-v1",
+		"proposals-v1",
+		"plan-package-v1",
 		"review-brief-v3",
 	])
 		expect(catalog.some((format) => format.id === family)).toBe(true);

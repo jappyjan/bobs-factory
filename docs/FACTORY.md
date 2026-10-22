@@ -1039,17 +1039,18 @@ Recipes support a generic durable For each container over inline items or an ear
 
 ## Workflow definition
 
-[Improve codebase](factory/improve-codebase.md) is a bundled manual workflow with
-optional focus and no task prompt. Parallel perspective coordinators delegate
-bounded research to a configured cheaper worker model. Review the biggest
-architectural opportunities, then choose **Fix**, **File issue**, **Ignore** or
-**Ask follow-up** per item. Prepare and explicitly apply the batch: only Fix
-launches independent normal Factory runs; issue items become deferred backlog
-work. Configure the research-worker model in Recipes before first launch.
+[Improve codebase](factory/improve-codebase.md) is an editable composition of
+generic Snapshot, callable research recipes, nested For each, Check, Decide,
+Approve, File issues and Launch runs. It defaults to manual-only with optional
+Area of focus. Workers inherit the accepted run model unless configured. Ask Bob
+performs targeted follow-up and re-consolidates without replaying completed
+research. Every bundled recipe and reachable sub-recipe can be forked except
+Simple. The canvas shows the executed flow, including plan corrections, human
+approval and dependency-tracked children.
 
 ### Launch fields
 
-Fork Factory or Takeover first, then edit the local workflow's `launchFields` in **Recipes → Edit as JSON** to customize
+Fork a bundled recipe other than Simple first, then edit the local workflow's `launchFields` in **Recipes → Edit as JSON** to customize
 the composer. Only fields belonging to the selected parent workflow appear;
 calling a shared workflow does not add its fields. Repository, workflow and
 agent settings are common controls. For example:

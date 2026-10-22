@@ -1,0 +1,279 @@
+[
+	{
+		"at": "2026-10-22T18:02:03.829Z",
+		"cli": ["ping"],
+		"stdout": "\u001b[32m✓\u001b[0m Server is healthy\n  Status: undefined\n  Timestamp: 1792692123825\n",
+		"stderr": "\u001b[90mRPC: http://localhost:64754/cli/rpc\u001b[0m\n"
+	},
+	{
+		"at": "2026-10-22T18:02:03.852Z",
+		"cli": ["status"],
+		"stdout": "\u001b[32m✓\u001b[0m Server Status\n  \u001b[36mStatus\u001b[0m: ready\n  \u001b[36mServer\u001b[0m: CLIRPCServer\n  \u001b[36mUptime\u001b[0m: 0s\n",
+		"stderr": "\u001b[90mRPC: http://localhost:64754/cli/rpc\u001b[0m\n"
+	},
+	{
+		"at": "2026-10-22T18:02:03.995Z",
+		"method": "POST",
+		"path": "/api/workflows/improve-codebase/fork",
+		"status": 200,
+		"request": {
+			"name": "F1 R1/R2 one-perspective fork"
+		},
+		"result": {
+			"id": "fork-7c73fa2b-2a38-4035-be13-196e7dcd07f7"
+		}
+	},
+	{
+		"at": "2026-10-22T18:02:04.287Z",
+		"method": "PUT",
+		"path": "/api/workflows",
+		"status": 200,
+		"request": {
+			"defaultWorkflow": "fork-7c73fa2b-2a38-4035-be13-196e7dcd07f7",
+			"workflows": [
+				{
+					"id": "simple",
+					"name": "Simple / Bob’s Factory",
+					"allowedTriggers": ["manual", "ticket-assignment"],
+					"sha256": "d783b6c4cededd653e16e0f2a4553be9a468a153c50ac57217f0007d6b44c275"
+				},
+				{
+					"id": "factory",
+					"name": "Software factory",
+					"allowedTriggers": ["workflow", "manual", "ticket-assignment"],
+					"sha256": "78c931e6b0da3960643ec344bebe719e8b4e5d947f0cf716e2a9951dcb1cf570"
+				},
+				{
+					"id": "takeover",
+					"name": "Take over existing work",
+					"allowedTriggers": ["workflow", "manual", "ticket-assignment"],
+					"sha256": "075964ee635dc4fcf480626ff0017ea2462e3d9fbb7fd8ee09fb87c84f083dd1"
+				},
+				{
+					"id": "factory-pipeline",
+					"name": "Shared factory pipeline",
+					"allowedTriggers": ["workflow"],
+					"sha256": "bdccc0854b1333e620fe61ad2c786cd9c49db76459936453f4b52c446cfe92e3"
+				},
+				{
+					"id": "improve-codebase",
+					"name": "Improve codebase",
+					"allowedTriggers": ["manual"],
+					"sha256": "538116b28993ffd7c108beec5a7949fdd4fab0bbb7257f61e9851ad8d941bb0a"
+				},
+				{
+					"id": "map-codebase",
+					"name": "Map the codebase",
+					"allowedTriggers": ["workflow", "manual"],
+					"sha256": "c05140406616727d2286af3567a233982f5122c25b49424374e4c2b42b3ce805"
+				},
+				{
+					"id": "research-perspective",
+					"name": "Research a perspective",
+					"allowedTriggers": ["workflow", "manual"],
+					"sha256": "6cf582b651a18804f004a7aebaf006d2ebcdd6f0101406e1100e6000c9af1702"
+				},
+				{
+					"id": "consolidate-proposals",
+					"name": "Consolidate proposals",
+					"allowedTriggers": ["workflow", "manual"],
+					"sha256": "8388abbcfbc2cee7ae0df1a74b112a3fda97c72f5ea442a38d52c20497b46d03"
+				},
+				{
+					"id": "refine-plan",
+					"name": "Refine into a plan",
+					"allowedTriggers": ["workflow", "manual"],
+					"sha256": "af9fa860aab351e26b26019d977ee2a03b226dd336fabc1a70daca500f202b35"
+				},
+				{
+					"id": "fork-7c73fa2b-2a38-4035-be13-196e7dcd07f7",
+					"name": "F1 R1/R2 one-perspective fork",
+					"allowedTriggers": ["manual"],
+					"sha256": "90b2cfc7aa7a8d064cb975d4922bf220f51a5f718eca360a545ec1ed2f663075"
+				},
+				{
+					"id": "fork-10efd971-ccb0-4668-9339-3eb2de50c67e",
+					"name": "Map the codebase (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "7eb2268a170ed481a1bc1841a85bae31d88a448bcce3b93b8b12c3df3f1110e7"
+				},
+				{
+					"id": "fork-f1f0f1a8-9785-4468-87e2-94785291acd4",
+					"name": "Research a perspective (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "7e2e7c719f22ef782b77d3646c36d6902b13a9cf8a132334ed4f8c0c3de365bd"
+				},
+				{
+					"id": "fork-ac26f704-dc83-41fd-bc89-2f90b5b6bb92",
+					"name": "Consolidate proposals (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "b4dec87aa29114af6540d1115943377cae558d4cfc3253c6575bb3a368fec31d"
+				},
+				{
+					"id": "fork-b2e50baf-5018-494c-9ed4-e60fc8b71958",
+					"name": "Refine into a plan (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "3b6b66f81af4daeca776e5d5dbaf3165236141771a2cc8879c54754dcc6e9d53"
+				},
+				{
+					"id": "fork-332d339a-560c-4c55-afbf-e4659c709622",
+					"name": "Software factory (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "b6772fc1203471312124452bd81def78d810495737b1ffe2fc5c9193033bd3e3"
+				},
+				{
+					"id": "fork-5ca6182d-6389-4a95-aac5-7040228efb4d",
+					"name": "Shared factory pipeline (private)",
+					"allowedTriggers": ["workflow"],
+					"sha256": "176f6a6fd8b807e35528afa9195496199ec450d81ba47f509ebd40115285b8e8"
+				}
+			],
+			"omitted": "Full catalog bodies; each exact definition is hashed above."
+		},
+		"result": {}
+	},
+	{
+		"at": "2026-10-22T18:02:04.346Z",
+		"method": "POST",
+		"path": "/api/runs",
+		"status": 202,
+		"request": {
+			"repositoryId": "improve-fixture",
+			"workflow": "fork-7c73fa2b-2a38-4035-be13-196e7dcd07f7",
+			"runner": "codex",
+			"model": "gpt-6.1-sol",
+			"inputs": {
+				"focus": "Cache ownership in the disposable fixture"
+			}
+		},
+		"result": {
+			"id": "manual-dca8f91a-951a-4ca6-a950-75399f5da9d3",
+			"status": "running"
+		}
+	},
+	{
+		"at": "2026-10-22T18:02:09.777Z",
+		"method": "POST",
+		"path": "/api/runs/manual-dca8f91a-951a-4ca6-a950-75399f5da9d3/view-answer",
+		"status": 200,
+		"request": {
+			"batchId": "b6c98e67-1819-4e8a-86b8-fae81c167797",
+			"digest": "5619674cb0c45596eab86f6853ae370f032c74a0df40936ed8e3146b38843127",
+			"accepted": true,
+			"choices": [
+				{
+					"itemId": "cache",
+					"action": "fix"
+				},
+				{
+					"itemId": "deferred",
+					"action": "skip"
+				},
+				{
+					"itemId": "optional",
+					"action": "skip"
+				}
+			]
+		},
+		"result": {
+			"id": "manual-dca8f91a-951a-4ca6-a950-75399f5da9d3",
+			"status": "running"
+		}
+	},
+	{
+		"at": "2026-10-22T18:02:14.544Z",
+		"method": "POST",
+		"path": "/api/runs/manual-dca8f91a-951a-4ca6-a950-75399f5da9d3/view-answer",
+		"status": 409,
+		"request": {
+			"batchId": "93994c27-94c4-48a0-93c9-6a3642fafa8d",
+			"digest": "0000000000000000000000000000000000000000000000000000000000000000",
+			"accepted": true,
+			"approved": true
+		},
+		"result": {}
+	},
+	{
+		"at": "2026-10-22T18:02:14.606Z",
+		"method": "POST",
+		"path": "/api/runs/manual-dca8f91a-951a-4ca6-a950-75399f5da9d3/view-answer",
+		"status": 200,
+		"request": {
+			"batchId": "93994c27-94c4-48a0-93c9-6a3642fafa8d",
+			"digest": "0c963c5d420ed4a6acde5226f498936f6c91e53338489781112f3a342c7f861b",
+			"accepted": true,
+			"approved": true
+		},
+		"result": {
+			"id": "manual-dca8f91a-951a-4ca6-a950-75399f5da9d3",
+			"status": "running"
+		}
+	},
+	{
+		"at": "2026-10-22T18:02:17.459Z",
+		"method": "POST",
+		"path": "/api/runs",
+		"status": 202,
+		"request": {
+			"repositoryId": "improve-fixture",
+			"workflow": "fork-7c73fa2b-2a38-4035-be13-196e7dcd07f7",
+			"runner": "codex",
+			"model": "gpt-6.1-sol",
+			"inputs": {
+				"focus": "Cache ownership in the disposable fixture"
+			}
+		},
+		"result": {
+			"id": "manual-a5a8287d-ae85-4324-a651-0eb0ffff44e4",
+			"status": "running"
+		}
+	},
+	{
+		"at": "2026-10-22T18:02:23.466Z",
+		"method": "POST",
+		"path": "/api/runs",
+		"status": 202,
+		"request": {
+			"repositoryId": "improve-fixture",
+			"workflow": "fork-7c73fa2b-2a38-4035-be13-196e7dcd07f7",
+			"runner": "codex",
+			"model": "gpt-6.1-sol",
+			"inputs": {
+				"focus": "Cache ownership in the disposable fixture"
+			}
+		},
+		"result": {
+			"id": "manual-d6aca2db-3fa2-4226-9e73-dab872d37433",
+			"status": "running"
+		}
+	},
+	{
+		"at": "2026-10-22T18:02:29.833Z",
+		"method": "POST",
+		"path": "/api/runs/manual-d6aca2db-3fa2-4226-9e73-dab872d37433/view-answer",
+		"status": 200,
+		"request": {
+			"batchId": "6c498850-ed0d-439e-ae68-b87fab2b0f8f",
+			"digest": "164c6bd8776b5c3ae88213d4e92eb4804be7df80829c61fc0cde54bc5799295f",
+			"accepted": true,
+			"choices": [
+				{
+					"itemId": "cache",
+					"action": "fix"
+				},
+				{
+					"itemId": "deferred",
+					"action": "skip"
+				},
+				{
+					"itemId": "optional",
+					"action": "skip"
+				}
+			]
+		},
+		"result": {
+			"id": "manual-d6aca2db-3fa2-4226-9e73-dab872d37433",
+			"status": "running"
+		}
+	}
+]

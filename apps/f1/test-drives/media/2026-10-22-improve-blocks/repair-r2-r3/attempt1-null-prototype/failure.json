@@ -1,0 +1,104 @@
+{
+	"at": "2026-10-22T18:32:26.123Z",
+	"error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [Object: null prototype] {\n- {\n    dependencies: [\n      [\n        'optional'\n      ],\n      [\n\n    at dependencyFixDrive (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:928:9)\n    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:1258:24",
+	"runs": [
+		{
+			"id": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+			"status": "waiting",
+			"step": "approve",
+			"viewDecision": {
+				"id": "a3441cf0-2d32-4cf5-bbe4-bfa736a9aaa5",
+				"stepKey": "approve",
+				"kind": "approve",
+				"title": "Approve batch",
+				"digest": "cd1a4849479c1de90394e24cf4d155d94f727a10c84e3fa65c4684c558735e65",
+				"view": {
+					"version": "view-v1",
+					"components": [
+						{
+							"id": "instruction",
+							"type": "markdown",
+							"data": {
+								"text": "Review these exact plans and independent checks. Approval authorizes only this batch. Each child retains ordinary Factory human review and provider-confirmed merge gates."
+							}
+						},
+						{
+							"id": "plans",
+							"type": "itemCards",
+							"title": "Exact plans",
+							"data": {
+								"items": [
+									{
+										"id": "cache",
+										"title": "Isolate cache ownership",
+										"body": "Wrap the fixture cache behind a narrow owner; verify read/write and explicit clear behavior.",
+										"details": [
+											{
+												"label": "Acceptance criteria",
+												"value": "- Callers use the owner and clear has an observable check."
+											},
+											{
+												"label": "Dependencies",
+												"value": "None"
+											},
+											{
+												"label": "Paths",
+												"value": "cache.ts"
+											}
+										]
+									},
+									{
+										"id": "optional",
+										"title": "Inspect a future adapter",
+										"body": "Wrap the fixture cache behind a narrow owner; verify read/write and explicit clear behavior.",
+										"details": [
+											{
+												"label": "Acceptance criteria",
+												"value": "- Callers use the owner and clear has an observable check."
+											},
+											{
+												"label": "Dependencies",
+												"value": "cache"
+											},
+											{
+												"label": "Paths",
+												"value": "cache.ts"
+											}
+										]
+									}
+								]
+							}
+						},
+						{
+							"id": "architecture",
+							"type": "markdown",
+							"title": "architecture check",
+							"data": {
+								"text": "Approved. No unresolved corrections."
+							}
+						},
+						{
+							"id": "security",
+							"type": "markdown",
+							"title": "security check",
+							"data": {
+								"text": "Approved. No unresolved corrections."
+							}
+						},
+						{
+							"id": "dependencies",
+							"type": "markdown",
+							"title": "dependencies check",
+							"data": {
+								"text": "Approved. No unresolved corrections."
+							}
+						}
+					]
+				},
+				"createdAt": "2026-10-22T18:32:26.069Z",
+				"threads": {}
+			}
+		}
+	],
+	"checks": []
+}

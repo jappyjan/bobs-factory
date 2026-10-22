@@ -51,7 +51,6 @@ import {
 	WorkingRow,
 } from "./focus";
 import { ForeachRunProgress } from "./foreach-progress";
-import { ImprovementPanel, useImprovementResearch } from "./improvements";
 import { Composer } from "./launcher";
 import { NotificationsProvider } from "./notifications-ui";
 import { SetupBoundary } from "./onboarding";
@@ -786,7 +785,6 @@ function RunPage({
 	const { id } = useParams(),
 		query = useRun(id),
 		run = query.data,
-		research = useImprovementResearch(run),
 		action = useAction(),
 		toast = useToast(),
 		settle = useSettle(),
@@ -852,13 +850,8 @@ function RunPage({
 	const reason = settleReason(run, runs),
 		kind = attention(run),
 		artifacts = artifactsOf(run),
-		steps = stepsOf(run, config, research.data?.jobs),
-		visited = new Set([
-			...(run.history?.map((h: any) => h.step) ?? []),
-			...steps
-				.filter((s) => s.researchStatus === "completed")
-				.map((s) => s.key),
-		]);
+		steps = stepsOf(run, config),
+		visited = new Set(run.history?.map((h: any) => h.step) ?? []);
 	const graphRows = steps.length
 			? steps
 			: [{ id: "simple", key: "simple", name: "Bob’s Factory session" }],
@@ -889,15 +882,11 @@ function RunPage({
 								(run.workflowBlock
 									? "Workflow disabled · Resume required"
 									: kind === "question"
-										? run.improvement
-											? run.improvement.phase === "dispatch"
-												? "Tracking improvement runs"
-												: "Review improvement choices"
-											: run.viewDecision && !run.viewDecision.answer
-												? run.viewDecision.kind === "approve"
-													? "Your approval is needed"
-													: "Choose actions for each item"
-												: `${run.questions?.length ?? 0} question(s) for you`
+										? run.viewDecision && !run.viewDecision.answer
+											? run.viewDecision.kind === "approve"
+												? "Your approval is needed"
+												: "Choose actions for each item"
+											: `${run.questions?.length ?? 0} question(s) for you`
 										: kind === "stuck"
 											? run.status === "stopped"
 												? "Stopped — resume?"
@@ -953,7 +942,6 @@ function RunPage({
 				<ArchitectureEntry run={run} />
 			)}
 			<ExecutionDetails run={run} />
-			{run.improvement && <ImprovementPanel run={run} />}
 			<RecipeParentLink run={run} />
 			<RunChildren run={run} />
 			<RunViewDisplays run={run} />
@@ -999,7 +987,7 @@ function RunPage({
 						"Saved updates are being delivered in the background."}
 				</p>
 			)}
-			{kind && !reason && !(kind === "question" && run.improvement) && (
+			{kind && !reason && (
 				<FocusCard
 					summary={run}
 					config={config}
@@ -1037,7 +1025,7 @@ function RunPage({
 			<section className="steps-section">
 				<div className="section-heading">
 					<h2>
-						{run.improvement ? "Research activity" : "Steps"}{" "}
+						Steps{" "}
 						<small>
 							{steps.length
 								? `${rows.filter((step) => visited.has(step.key)).length} of ${steps.length} done`
@@ -1053,7 +1041,6 @@ function RunPage({
 							).length,
 							started =
 								visited.has(step.key) ||
-								Boolean(step.researchStatus) ||
 								Boolean(step.iterationStatus) ||
 								Boolean(run.capacityLeaves?.[step.key]) ||
 								current === step.key ||
@@ -1083,9 +1070,6 @@ function RunPage({
 										<span className="chip">
 											{capacityPhaseLabel(run.capacityLeaves[step.key].phase)}
 										</span>
-									)}
-									{step.researchStatus && !run.capacityLeaves?.[step.key] && (
-										<span className="chip">{step.researchStatus}</span>
 									)}
 									{step.iterationStatus && (
 										<span className="chip">{step.iterationStatus}</span>

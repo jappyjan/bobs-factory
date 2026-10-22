@@ -13,7 +13,7 @@ import {
 } from "./GuideAuthoring.js";
 import { impactInstructions } from "./Impact.js";
 import { instructionTemplate } from "./InstructionLibrary.js";
-import { improvementWorkflow } from "./improvementWorkflow.js";
+import { improvementRecipes } from "./improvementWorkflow.js";
 import {
 	attachmentLaunchField,
 	standardLaunchFields,
@@ -774,7 +774,7 @@ function configuredStock(value: unknown) {
 }
 export const defaultWorkflows = validateWorkflows([
 	...impactDefaults.map(configuredStock),
-	configuredStock(improvementWorkflow),
+	...improvementRecipes,
 ]);
 
 /** Extend only the stock handoff route to reuse its already-authorized CI fixer. */

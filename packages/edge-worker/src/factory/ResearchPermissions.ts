@@ -27,15 +27,19 @@ export function restrictContextRunner(
 	config.allowedTools = [...contextTools];
 	config.toolProfile = "context-only";
 }
+/** Fail before preparation when a provider has no proven pinned-read capability. */
+export function assertResearchRunner(runner: RunnerType) {
+	if (!["claude", "codex", "cursor", "opencode"].includes(runner))
+		throw new Error(
+			`Read-only research is not yet capability-tested for ${runner}; configure a Claude, Codex, Cursor or OpenCode research role`,
+		);
+}
 /** Researchers inspect pinned blobs via the scoped server; no native shell/delegation or external writes. */
 export function restrictResearchRunner(
 	config: AgentRunnerConfig,
 	runner: RunnerType,
 ) {
-	if (!["claude", "codex", "cursor", "opencode"].includes(runner))
-		throw new Error(
-			`Read-only research is not yet capability-tested for ${runner}; configure a Claude, Codex, Cursor or OpenCode research role`,
-		);
+	assertResearchRunner(runner);
 	config.allowedTools = [...researchTools];
 	config.tools = [];
 	config.skills = [];

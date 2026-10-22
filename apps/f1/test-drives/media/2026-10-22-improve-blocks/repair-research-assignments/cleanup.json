@@ -1,0 +1,12 @@
+{
+	"at": "2026-10-22T19:48:28.025Z",
+	"retainedUntilSignal": false,
+	"workerStopped": true,
+	"ownDisposableDirectoryRetained": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-xR08XE",
+	"runs": [
+		{
+			"id": "manual-8d973b9f-331e-4c0f-8e41-ca29c614fec6",
+			"status": "stopped"
+		}
+	]
+}

@@ -1,0 +1,446 @@
+{
+	"sourceHead": "456154f3a75ee55bc031b6293fe4d9fd744283c7",
+	"capture": "Actual save after child agent result; shutdown before Call completion. Only unrelated unused catalog definitions omitted. No checkpoint/history/output/attempt/receipt fields edited.",
+	"run": {
+		"id": "parallel-call",
+		"title": "parallel-call",
+		"repositoryId": "fixture",
+		"workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/parallel-call-8ItmJy",
+		"input": "Synthetic input",
+		"triggerOrigin": {
+			"type": "manual",
+			"workflowId": "parent",
+			"at": "2026-10-22T20:06:31.711Z"
+		},
+		"workflow": {
+			"id": "parent",
+			"stepConfigVersion": "step-config-v1",
+			"name": "Parent",
+			"description": "",
+			"labels": [],
+			"steps": [
+				{
+					"id": "seed",
+					"name": "Seed",
+					"branches": [],
+					"maxVisits": 16,
+					"type": "agent",
+					"prompt": "Return JSON",
+					"json": true,
+					"askQuestions": false
+				},
+				{
+					"id": "parallel",
+					"name": "Parallel",
+					"next": "end",
+					"branches": [],
+					"maxVisits": 16,
+					"type": "fanout",
+					"groups": [
+						[
+							{
+								"id": "call",
+								"name": "Call",
+								"next": "end",
+								"branches": [],
+								"maxVisits": 16,
+								"type": "workflow",
+								"workflow": "reusable"
+							}
+						]
+					]
+				}
+			],
+			"allowedTriggers": ["workflow", "manual", "ticket-assignment"]
+		},
+		"workflowDefinitions": [
+			{
+				"id": "reusable",
+				"stepConfigVersion": "step-config-v1",
+				"name": "Reusable",
+				"description": "",
+				"labels": [],
+				"steps": [
+					{
+						"id": "inside",
+						"name": "Inside",
+						"next": "end",
+						"branches": [],
+						"maxVisits": 16,
+						"type": "agent",
+						"prompt": "Return JSON",
+						"json": true,
+						"askQuestions": false
+					}
+				],
+				"allowedTriggers": ["workflow"]
+			},
+			{
+				"id": "parent",
+				"stepConfigVersion": "step-config-v1",
+				"name": "Parent",
+				"description": "",
+				"labels": [],
+				"steps": [
+					{
+						"id": "seed",
+						"name": "Seed",
+						"branches": [],
+						"maxVisits": 16,
+						"type": "agent",
+						"prompt": "Return JSON",
+						"json": true,
+						"askQuestions": false
+					},
+					{
+						"id": "parallel",
+						"name": "Parallel",
+						"next": "end",
+						"branches": [],
+						"maxVisits": 16,
+						"type": "fanout",
+						"groups": [
+							[
+								{
+									"id": "call",
+									"name": "Call",
+									"next": "end",
+									"branches": [],
+									"maxVisits": 16,
+									"type": "workflow",
+									"workflow": "reusable"
+								}
+							]
+						]
+					}
+				],
+				"allowedTriggers": ["workflow", "manual", "ticket-assignment"]
+			}
+		],
+		"contractVersion": 2,
+		"titleGeneration": {
+			"state": "pending",
+			"settings": {
+				"runner": "claude"
+			},
+			"context": "{\"shortened\":false,\"workflow\":\"Parent\",\"source\":\"\",\"instructions\":\"Synthetic input\"}",
+			"repositoryId": "fixture"
+		},
+		"status": "running",
+		"createdAt": "2026-10-22T20:06:31.712Z",
+		"updatedAt": "2026-10-22T20:06:31.971Z",
+		"outputs": {
+			"seed": {
+				"value": "seed"
+			},
+			"parallel/0/call/inside": {
+				"value": "inside"
+			}
+		},
+		"history": [
+			{
+				"step": "seed",
+				"output": {
+					"value": "seed"
+				},
+				"at": "2026-10-22T20:06:31.766Z"
+			},
+			{
+				"step": "parallel/0/call/inside",
+				"output": {
+					"value": "inside"
+				},
+				"at": "2026-10-22T20:06:31.920Z"
+			}
+		],
+		"answers": [],
+		"questions": [],
+		"events": [
+			{
+				"source": "workflow",
+				"sequence": 0,
+				"at": "2026-10-22T20:06:31.729Z",
+				"step": "seed",
+				"message": "Starting Seed (pass 1)"
+			},
+			{
+				"source": "workflow",
+				"sequence": 1,
+				"at": "2026-10-22T20:06:31.780Z",
+				"step": "seed",
+				"message": "Finished Seed"
+			},
+			{
+				"source": "workflow",
+				"sequence": 2,
+				"at": "2026-10-22T20:06:31.793Z",
+				"step": "parallel",
+				"message": "Starting Parallel (pass 1)"
+			},
+			{
+				"source": "workflow",
+				"sequence": 3,
+				"at": "2026-10-22T20:06:31.830Z",
+				"step": "parallel/0/call",
+				"message": "Starting Call (pass 1)"
+			},
+			{
+				"call": {
+					"type": "workflow",
+					"callerWorkflowId": "parent",
+					"step": "call",
+					"key": "parallel/0/call",
+					"workflowId": "reusable"
+				},
+				"source": "workflow",
+				"sequence": 4,
+				"at": "2026-10-22T20:06:31.852Z",
+				"step": "parallel/0/call",
+				"message": "Calling Reusable from parent/call"
+			},
+			{
+				"source": "workflow",
+				"sequence": 5,
+				"at": "2026-10-22T20:06:31.874Z",
+				"step": "parallel/0/call/inside",
+				"message": "Starting Inside (pass 1)"
+			},
+			{
+				"source": "workflow",
+				"sequence": 6,
+				"at": "2026-10-22T20:06:31.971Z",
+				"step": "run",
+				"message": "Paused for shutdown; will resume automatically on startup."
+			}
+		],
+		"checkpoint": {
+			"current": "parallel",
+			"visits": {
+				"seed": 1,
+				"parallel": 1
+			},
+			"active": {
+				"phase": "executing",
+				"attemptId": "52c2711b-4010-4c58-b050-667093a52558",
+				"children": [
+					{
+						"current": "call",
+						"visits": {
+							"call": 1
+						},
+						"outputs": {
+							"seed": {
+								"value": "seed"
+							}
+						},
+						"active": {
+							"phase": "executing",
+							"attemptId": "8b787da1-2593-4630-8f5c-b9d5b7589ad5",
+							"call": {
+								"type": "workflow",
+								"callerWorkflowId": "parent",
+								"step": "call",
+								"key": "parallel/0/call",
+								"workflowId": "reusable"
+							},
+							"children": [
+								{
+									"current": "inside",
+									"visits": {
+										"inside": 1
+									},
+									"outputs": {
+										"seed": {
+											"value": "seed"
+										},
+										"inside": {
+											"value": "inside"
+										}
+									},
+									"active": {
+										"phase": "result",
+										"attemptId": "a713cefb-0247-405b-935a-5e14b0aa6cb5"
+									}
+								}
+							]
+						}
+					}
+				]
+			}
+		},
+		"step": "parallel/0/call/inside",
+		"activitySteps": [
+			{
+				"at": "2026-10-22T20:06:31.729Z",
+				"step": "seed"
+			},
+			{
+				"at": "2026-10-22T20:06:31.793Z",
+				"step": "parallel"
+			},
+			{
+				"at": "2026-10-22T20:06:31.830Z",
+				"step": "parallel/0/call"
+			},
+			{
+				"at": "2026-10-22T20:06:31.874Z",
+				"step": "parallel/0/call/inside"
+			}
+		],
+		"stepAttempts": [
+			{
+				"id": "6d297d4e-c2cb-4069-8cf3-15800f9d2941",
+				"kind": "step",
+				"step": "seed",
+				"type": "agent",
+				"startedAt": "2026-10-22T20:06:31.730Z",
+				"reason": "initial",
+				"outcome": "completed",
+				"runtime": {
+					"version": "0.2.73",
+					"commit": null,
+					"dirty": null,
+					"target": null,
+					"resourceDigest": null,
+					"packaged": false
+				},
+				"workflowHash": "6ee76e5d41b879a459b186dd96e9a2271c020c948e21eb3d7c7e9870e5e9905f",
+				"contract": {
+					"validator": "factory-results-v6",
+					"version": 2,
+					"architecture": null,
+					"review": null,
+					"impact": null,
+					"qa": null,
+					"video": null,
+					"hash": "7bdb6dab6b7179f497b73ffb7b92843fcd0c82782e7f53fd6dd1b4e0da41e203"
+				},
+				"instructionsHash": "55543b7217f3367a6e0678e27a297d55fa512edb35f5b47f8f8ca251318f0c85",
+				"instructionsSource": "recipe",
+				"contextHashes": {
+					"human": "0fb7df18a8782005369552d93fb94bdf9bf4d9baefd2f409a945af13a96fe28c",
+					"feedback": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+				},
+				"endedAt": "2026-10-22T20:06:31.766Z"
+			},
+			{
+				"id": "52c2711b-4010-4c58-b050-667093a52558",
+				"kind": "step",
+				"step": "parallel",
+				"type": "fanout",
+				"startedAt": "2026-10-22T20:06:31.794Z",
+				"reason": "workflow-transition",
+				"outcome": "interrupted",
+				"runtime": {
+					"version": "0.2.73",
+					"commit": null,
+					"dirty": null,
+					"target": null,
+					"resourceDigest": null,
+					"packaged": false
+				},
+				"workflowHash": "6ee76e5d41b879a459b186dd96e9a2271c020c948e21eb3d7c7e9870e5e9905f",
+				"contract": {
+					"validator": "factory-results-v6",
+					"version": 2,
+					"architecture": null,
+					"review": null,
+					"impact": null,
+					"qa": null,
+					"video": null,
+					"hash": "6bb504fbb1eb8153c9b9c7e321e55b845cda95f6e671c9fe5f95813a6877d211"
+				},
+				"instructionsHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"instructionsSource": "recipe",
+				"contextHashes": {
+					"human": "0fb7df18a8782005369552d93fb94bdf9bf4d9baefd2f409a945af13a96fe28c",
+					"feedback": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+				},
+				"endedAt": "2026-10-22T20:06:31.971Z"
+			},
+			{
+				"id": "8b787da1-2593-4630-8f5c-b9d5b7589ad5",
+				"kind": "step",
+				"step": "parallel/0/call",
+				"type": "workflow",
+				"startedAt": "2026-10-22T20:06:31.830Z",
+				"reason": "workflow-transition",
+				"outcome": "interrupted",
+				"runtime": {
+					"version": "0.2.73",
+					"commit": null,
+					"dirty": null,
+					"target": null,
+					"resourceDigest": null,
+					"packaged": false
+				},
+				"workflowHash": "6ee76e5d41b879a459b186dd96e9a2271c020c948e21eb3d7c7e9870e5e9905f",
+				"contract": {
+					"validator": "factory-results-v6",
+					"version": 2,
+					"architecture": null,
+					"review": null,
+					"impact": null,
+					"qa": null,
+					"video": null,
+					"hash": "6bb504fbb1eb8153c9b9c7e321e55b845cda95f6e671c9fe5f95813a6877d211"
+				},
+				"instructionsHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+				"instructionsSource": "recipe",
+				"contextHashes": {
+					"human": "0fb7df18a8782005369552d93fb94bdf9bf4d9baefd2f409a945af13a96fe28c",
+					"feedback": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+				},
+				"endedAt": "2026-10-22T20:06:31.970Z"
+			},
+			{
+				"id": "a713cefb-0247-405b-935a-5e14b0aa6cb5",
+				"kind": "step",
+				"step": "parallel/0/call/inside",
+				"type": "agent",
+				"startedAt": "2026-10-22T20:06:31.874Z",
+				"reason": "workflow-transition",
+				"outcome": "completed",
+				"runtime": {
+					"version": "0.2.73",
+					"commit": null,
+					"dirty": null,
+					"target": null,
+					"resourceDigest": null,
+					"packaged": false
+				},
+				"workflowHash": "6ee76e5d41b879a459b186dd96e9a2271c020c948e21eb3d7c7e9870e5e9905f",
+				"contract": {
+					"validator": "factory-results-v6",
+					"version": 2,
+					"architecture": null,
+					"review": null,
+					"impact": null,
+					"qa": null,
+					"video": null,
+					"hash": "7bdb6dab6b7179f497b73ffb7b92843fcd0c82782e7f53fd6dd1b4e0da41e203"
+				},
+				"instructionsHash": "55543b7217f3367a6e0678e27a297d55fa512edb35f5b47f8f8ca251318f0c85",
+				"instructionsSource": "recipe",
+				"contextHashes": {
+					"human": "0fb7df18a8782005369552d93fb94bdf9bf4d9baefd2f409a945af13a96fe28c",
+					"feedback": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+				},
+				"endedAt": "2026-10-22T20:06:31.920Z"
+			}
+		],
+		"capacityLeaves": {},
+		"workflowCalls": [
+			{
+				"call": {
+					"type": "workflow",
+					"callerWorkflowId": "parent",
+					"step": "call",
+					"key": "parallel/0/call",
+					"workflowId": "reusable"
+				},
+				"at": "2026-10-22T20:06:31.852Z"
+			}
+		]
+	}
+}

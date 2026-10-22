@@ -49,7 +49,6 @@ const nativeKeys = [
 	"modelVariant",
 	"serviceTier",
 ] as const;
-const forkable = ["factory", "takeover"];
 const paletteKinds = [
 	"agent",
 	"check",
@@ -252,16 +251,29 @@ export function RecipeBuilder({ id }: { id: string }) {
 			return ids;
 		}),
 	);
-	const add = (kind: string, after?: string) => {
+	const add = (entry: string, after?: string) => {
 		const owner = editableOwner(after);
 		if (!owner) {
 			setError("Bundled steps are read-only. Fork this recipe to add steps.");
 			return;
 		}
-		const stepId = uniqueStepId(takenIds, kind);
-		const callable = draft.recipes.find(
+		const requestedRecipe = entry.startsWith("workflow:")
+			? entry.slice("workflow:".length)
+			: undefined;
+		const kind = requestedRecipe === undefined ? entry : "workflow";
+		if (!paletteKinds.some((candidate) => candidate === kind)) return;
+		const callables = draft.recipes.filter(
 			(r) => r.id !== owner.id && r.allowedTriggers.includes("workflow"),
-		)?.id;
+		);
+		const callable =
+			requestedRecipe === undefined
+				? callables[0]?.id
+				: callables.find((r) => r.id === requestedRecipe)?.id;
+		if (requestedRecipe !== undefined && !callable) {
+			setError("This recipe cannot be called from the selected step.");
+			return;
+		}
+		const stepId = uniqueStepId(takenIds, kind);
 		const anchor =
 			after && graph.owners[after] === owner.id
 				? after
@@ -530,7 +542,9 @@ export function RecipeBuilder({ id }: { id: string }) {
 					)}
 				</ReactFlowProvider>
 				{!simulation && steps.length > 0 && (
-					<Palette
+					<RecipePalette
+						recipes={draft.recipes}
+						ownerId={editableOwner(top)?.id ?? recipe.id}
 						disabled={!editableOwner(top)}
 						onAdd={(kind) => add(kind, top)}
 					/>
@@ -662,14 +676,37 @@ function NativeCanvas({
 	);
 }
 
-function Palette({
+export function RecipePalette({
+	recipes,
+	ownerId,
 	disabled,
 	onAdd,
 }: {
+	recipes: Recipe[];
+	ownerId: string;
 	disabled: boolean;
-	onAdd: (kind: string) => void;
+	onAdd: (entry: string) => void;
 }) {
 	const [open, setOpen] = useState(false);
+	const entries = [
+		...paletteKinds.map((kind) => ({
+			id: kind,
+			...kinds[kind],
+			label: kind === "human" ? "Ask me" : kinds[kind].label,
+		})),
+		...recipes
+			.filter(
+				(recipe) =>
+					recipe.id !== ownerId && recipe.allowedTriggers.includes("workflow"),
+			)
+			.map((recipe) => ({
+				id: `workflow:${recipe.id}`,
+				tone: kinds.workflow.tone,
+				icon: recipe.icon ?? kinds.workflow.icon,
+				label: recipe.name,
+				hint: recipe.description || `Call ${recipe.name}`,
+			})),
+	];
 	return (
 		<div className="recipe-palette" data-open={open}>
 			<button
@@ -682,25 +719,25 @@ function Palette({
 			</button>
 			<div className="recipe-palette-items">
 				<p>{disabled ? "Fork to add steps" : "Click, or drag onto a step"}</p>
-				{paletteKinds.map((kind) => (
+				{entries.map((entry) => (
 					<button
-						key={kind}
+						key={entry.id}
 						type="button"
 						draggable={!disabled}
 						disabled={disabled}
-						data-tone={kinds[kind].tone}
-						title={kinds[kind].hint}
+						data-tone={entry.tone}
+						title={entry.hint}
 						onDragStart={(e) => {
-							e.dataTransfer.setData("application/x-recipe-step", kind);
+							e.dataTransfer.setData("application/x-recipe-step", entry.id);
 							e.dataTransfer.effectAllowed = "copy";
 						}}
 						onClick={() => {
-							onAdd(kind);
+							onAdd(entry.id);
 							setOpen(false);
 						}}
 					>
-						<span>{kinds[kind].icon}</span>
-						{kind === "human" ? "Ask me" : kinds[kind].label}
+						<span>{entry.icon}</span>
+						{entry.label}
 					</button>
 				))}
 			</div>
@@ -1499,7 +1536,7 @@ function SettingsPanel({
 						/>
 					</div>
 					{availability.error && <p className="error">{availability.error}</p>}
-					{forkable.includes(recipe.id) && (
+					{!isLocal(recipe) && recipe.id !== "simple" && (
 						<div className="recipe-setting">
 							<span>
 								Fork
@@ -1576,7 +1613,7 @@ function JsonPanel({
 			<p className="muted small">
 				{local
 					? "For fields without a visual editor, such as launch fields and review sources. Apply updates the draft; Save stores it."
-					: "Bundled recipes are read-only. Fork Factory or Takeover to edit their graph."}
+					: "Bundled recipes are read-only. Fork a recipe other than Simple to edit its graph."}
 			</p>
 			<textarea
 				className="code-editor recipe-json"

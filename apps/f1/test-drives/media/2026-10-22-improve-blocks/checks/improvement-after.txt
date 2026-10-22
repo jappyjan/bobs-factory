@@ -1,0 +1,34 @@
+packages/edge-worker/src/factory/Workflow.ts:732:	"Current workflow launch behavior (capability reference): Generic human steps Decide per item, Approve and Show use bounded declarative view-v1 components with literal data or safe JSON Poin…
+packages/edge-worker/src/factory/defaultWorkflows.ts:16:import { improvementRecipes } from "./improvementWorkflow.js";
+packages/edge-worker/src/factory/defaultWorkflows.ts:109:				`Review the plan against ALL input/comments/metadata and decisions. ${implementationScopeInstructions} Reject invented approval gates for routine dependency edits within the accep…
+packages/edge-worker/src/factory/defaultWorkflows.ts:139:Return {"qaContract":"qa-v1","results":[{"storyId":"planned ID","outcome":"passed or failed or blocked","criteria":[{"criterionId":"planned ID","outcome":"passed or failed or blocked"…
+packages/edge-worker/src/factory/defaultWorkflows.ts:777:	...improvementRecipes,
+packages/edge-worker/src/factory/improvementWorkflow.ts:1:import { improvementPerspectives } from "./ResearchPrompts.js";
+packages/edge-worker/src/factory/improvementWorkflow.ts:157:export const improvementWorkflow = {
+packages/edge-worker/src/factory/improvementWorkflow.ts:203:				values: improvementPerspectives.map(([id, name, brief]) => ({
+packages/edge-worker/src/factory/improvementWorkflow.ts:584:export const improvementRecipes = [
+packages/edge-worker/src/factory/improvementWorkflow.ts:585:	improvementWorkflow,
+packages/edge-worker/src/factory/OutputFormats.ts:143:	"improvement-context-v1": (value) =>
+packages/edge-worker/src/factory/OutputFormats.ts:154:	"improvement-research-plan-v1": (value) => ResearchPlanSchema.parse(value),
+packages/edge-worker/src/factory/OutputFormats.ts:155:	"improvement-research-result-v1": (value) =>
+packages/edge-worker/src/factory/OutputFormats.ts:157:	"improvement-proposals-v1": (value) => ProposalOutputSchema.parse(value),
+packages/edge-worker/src/factory/OutputFormats.ts:158:	"improvement-packages-v1": (value) => PackagesSchema.parse(value),
+packages/edge-worker/src/factory/OutputFormats.ts:159:	"improvement-plan-check-v1": (value) => PlanCheckSchema.parse(value),
+packages/edge-worker/src/factory/OutputFormats.ts:160:	"improvement-issue-destination-v1": (value) =>
+packages/edge-worker/src/factory/OutputFormats.ts:162:	"improvement-opportunity-v1": (value) => OpportunitySchema.parse(value),
+packages/edge-worker/src/factory/OutputFormats.ts:163:	"improvement-package-v1": (value) => PackageSchema.parse(value),
+packages/edge-worker/src/factory/StepConfig.ts:69:	"improvement-issue-destination-v1",
+packages/edge-worker/src/factory/StepConfig.ts:70:	"improvement-opportunity-v1",
+packages/edge-worker/src/factory/StepConfig.ts:71:	"improvement-package-v1",
+packages/edge-worker/src/factory/StepConfig.ts:72:	"improvement-context-v1",
+packages/edge-worker/src/factory/StepConfig.ts:73:	"improvement-research-plan-v1",
+packages/edge-worker/src/factory/StepConfig.ts:74:	"improvement-research-result-v1",
+packages/edge-worker/src/factory/StepConfig.ts:75:	"improvement-proposals-v1",
+packages/edge-worker/src/factory/StepConfig.ts:76:	"improvement-packages-v1",
+packages/edge-worker/src/factory/StepConfig.ts:77:	"improvement-plan-check-v1",
+packages/edge-worker/src/factory/ResearchPrompts.ts:2:export const improvementPerspectives = [
+packages/edge-worker/src/factory/ResearchPrompts.ts:45:export const improvementFilter = `This is an ARCHITECTURAL survey, not code review. Find only the biggest worthwhile improvements to architecture, repository organization, trust boundar…
+packages/edge-worker/src/factory/InstructionLibrary.ts:1:import { improvementFilter } from "./ResearchPrompts.js";
+packages/edge-worker/src/factory/InstructionLibrary.ts:45:	"architectural-survey": improvementFilter,
+packages/edge-worker/src/factory/web/artifacts.tsx:513:							<h3>Optional improvements</h3>
+packages/edge-worker/src/factory/web/artifacts.tsx:774:							<h3>Optional improvements</h3>

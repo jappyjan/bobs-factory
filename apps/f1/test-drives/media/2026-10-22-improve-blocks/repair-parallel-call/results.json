@@ -1,0 +1,31 @@
+{
+	"completedAt": "2026-10-22T20:09:06.251Z",
+	"sourceAfter": {
+		"packages/edge-worker/src/EdgeWorker.ts": "8ce291c0c6cffe2a84758116327b7e0397dc9c9d5460313449bf92f681882de4",
+		"packages/edge-worker/src/factory/improvementWorkflow.ts": "d783fc4dfdd17668563b02b2222b1205e926591b0fcc326d03389352cd389d90",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "d84c5d878e0a615a7824d3a76e4caffa1fb08d9e418663b62c03fd4ad72017c9",
+		"packages/edge-worker/src/factory/WorkflowCatalog.ts": "96c0ce6563d667524eca09ae0e77aab0b288dee617a84de653f7ea68d3fdc365",
+		"packages/edge-worker/src/factory/Workflow.ts": "1b2dda708b607af9f5d92a4821076203b0ad4caaccbc14e290670e5552cfdf06",
+		"packages/edge-worker/src/factory/StepBindings.ts": "437205f514761b093ab9b2c6e9bd4aab6723d4de8b58ad08fbaad2f0ff5ba499",
+		"packages/edge-worker/src/factory/View.ts": "c3f7d71604f93d08af6061e8678b2d06547107689413d748fe118d325be95512",
+		"packages/edge-worker/src/factory/ResearchPermissions.ts": "1c63882282c5c8d299fb04dca09717f5b50fdb86daf6981e4d3ca7f14544fd1e",
+		"packages/edge-worker/src/factory/ResearchFormats.ts": "9fa7432ca0597c437dbd8f9e2fd2146c0acbd0c60e21e5c29fff0ba8fdc6ae1a",
+		"packages/edge-worker/src/factory/ResearchPrompts.ts": "095565acbda179bee8fd83c95cdcfa01a03e6f9fb10737d40c5c998a7e3d0e9b",
+		"packages/edge-worker/src/factory/FileIssues.ts": "7996a671bd957194f829b4a2debacafeae7273a83971f5291d5bc654ede7afb7",
+		"packages/edge-worker/src/factory/FileIssueProviders.ts": "b9e73cb03354514658f7d652b43b97f4fded814d9578ae08f10bd68bb6962a2b",
+		"packages/edge-worker/src/factory/OutputFormats.ts": "9670d892b2a3881c7246cbd1e9c14adb0941ed296152d1cfcddd7145abbbd359",
+		"packages/edge-worker/src/factory/Rules.ts": "2059efbb0adf51a95daf05bb61f11125c248754e0d947154de7bed626b32321b",
+		"packages/edge-worker/src/factory/StepConfig.ts": "0593d9a2b036654d3421e70fd502c8f3224e116c383c8dd7f86ff3468dc28ec5",
+		"packages/edge-worker/src/factory/DependencyGraph.ts": "11ead8f87cbfb0aa9c3047d75a9c7447d49e68a03858e1d0bddd6e3246b91b86",
+		"packages/edge-worker/src/factory/ActionSteps.ts": "5e2d004263515c029968c777b05bb3e0db3041b0486db0f5d75ab3629c16dfa8",
+		"apps/f1/src/MockAgentRunner.ts": "2206b0b1c96a90a9a2eb1b2742a49251e44b75202a228858340b6a56c9c22d56"
+	},
+	"sourceChangedDuringDrive": [],
+	"paidCalls": 0,
+	"nativeRuns": 0,
+	"checks": [
+		"Modern Parallel completes an ordinary mapped Call via actual read-only provider hook exactly once; full child JSON retained and inherited Snapshot excluded.",
+		"Real HTTP catalog/manual launch, qualified history and durable completion; no human approval, issue or child Factory side effect."
+	],
+	"restartTested": false
+}

@@ -1,0 +1,40 @@
+{
+	"fixtureSha256": "ed7ed7fea2b6c331f782feacbcbb91302c171c148e10a27531310bd7510870fc",
+	"id": "parallel-call",
+	"attempts": [
+		{
+			"attempt": 1,
+			"status": "failed",
+			"error": "Child result ownership is missing at parallel/0/call; original receipts are retained and nested results cannot be verified",
+			"historySha256": "fee91e1e8020e1af2a2521a9445d9c5241c754a388d0015bae72fef912575e83",
+			"projectedParallelPresent": false,
+			"branchOutputs": {
+				"seed": {
+					"value": "seed"
+				},
+				"call": {
+					"workflow": "reusable",
+					"completed": true
+				}
+			}
+		},
+		{
+			"attempt": 2,
+			"status": "failed",
+			"error": "Child result ownership is missing at parallel/0/call; original receipts are retained and nested results cannot be verified",
+			"historySha256": "fee91e1e8020e1af2a2521a9445d9c5241c754a388d0015bae72fef912575e83",
+			"projectedParallelPresent": false,
+			"branchOutputs": {
+				"seed": {
+					"value": "seed"
+				},
+				"call": {
+					"workflow": "reusable",
+					"completed": true
+				}
+			}
+		}
+	],
+	"factoryRoleInvocations": 0,
+	"filed": []
+}

@@ -23,7 +23,7 @@ export type RuleCondition =
 	| { all: RuleCondition[] }
 	| { any: RuleCondition[] }
 	| { not: RuleCondition }
-	| { conforms: string }
+	| { conforms: string; path?: string }
 	| {
 			compare: {
 				left: RuleOperand;
@@ -135,6 +135,7 @@ export const RuleConditionSchema: z.ZodType<RuleCondition> = z.lazy(() =>
 					.string()
 					.regex(/^[a-z][a-z0-9-]*-v[1-9]\d*$/)
 					.max(100),
+				path: pointer.optional(),
 			})
 			.strict(),
 		z
@@ -430,14 +431,23 @@ function* members(value: object, state: Work): Task<string[]> {
 	}
 	return keys;
 }
+class InvalidJsonSelection extends Error {}
+
 /** Account the complete argument before calling any fixed, synchronous format parser. */
 function* footprint(
 	value: unknown,
 	state: Work,
 	active = new Set<object>(),
 	depth = 0,
+	requireJson = false,
 ): Task<number> {
 	yield* spend(state);
+	if (
+		requireJson &&
+		(value === undefined ||
+			(typeof value === "number" && !Number.isFinite(value)))
+	)
+		throw new InvalidJsonSelection();
 	if (depth > RULE_EVALUATION_LIMITS.dataDepth)
 		throw new Error("Rule data nesting exceeds the evaluation limit");
 	if (typeof value === "string") {
@@ -470,7 +480,13 @@ function* footprint(
 				const descriptor = Object.getOwnPropertyDescriptor(value, String(i));
 				if (descriptor && !("value" in descriptor))
 					throw new Error("Rules accept JSON data, not accessors");
-				nodes += yield* footprint(descriptor?.value, state, active, depth + 1);
+				nodes += yield* footprint(
+					descriptor?.value,
+					state,
+					active,
+					depth + 1,
+					requireJson,
+				);
 			}
 		} else {
 			for (const key of yield* members(value, state))
@@ -479,6 +495,7 @@ function* footprint(
 					state,
 					active,
 					depth + 1,
+					requireJson,
 				);
 		}
 	} finally {
@@ -495,6 +512,7 @@ function* resolve(
 	path: string,
 	state: Work,
 	strictCollectionPath = false,
+	requiredSelection = false,
 ): Task<unknown> {
 	yield* spend(state, path.length + 1);
 	const fromRoot = path.startsWith("$");
@@ -530,7 +548,8 @@ function* resolve(
 						yield* spend(state);
 						add(own(value, name, state));
 					}
-				} else if (strictCollectionPath)
+				} else if (requiredSelection) return undefined;
+				else if (strictCollectionPath)
 					throw new Error(`Rule aggregate path ${path} has no collection at *`);
 			} else if (
 				value &&
@@ -538,6 +557,7 @@ function* resolve(
 				Object.hasOwn(value, key)
 			)
 				add(own(value, key, state));
+			else if (requiredSelection) return undefined;
 			else if (strictCollectionPath)
 				throw new Error(`Rule aggregate path ${path} is missing ${key}`);
 			else if (!expanded) add(undefined);
@@ -741,11 +761,31 @@ function* conditionTask(
 		if (!state.validateFormat)
 			throw new Error("Format rules require the library validator");
 		const before = state.work;
-		const nodes = yield* footprint(scope, state);
+		const strictJson = state.strictJson;
+		let value = scope;
+		let nodes: number;
+		try {
+			if (condition.path !== undefined) {
+				state.strictJson = true;
+				value = yield* resolve(scope, root, condition.path, state, false, true);
+			}
+			nodes = yield* footprint(
+				value,
+				state,
+				new Set(),
+				0,
+				condition.path !== undefined,
+			);
+		} catch (error) {
+			if (error instanceof InvalidJsonSelection) return false;
+			throw error;
+		} finally {
+			state.strictJson = strictJson;
+		}
 		// Prepay pairwise refinement comparisons too; repeated format checks cannot
 		// hide their full argument size behind a single condition visit.
 		yield* spend(state, nodes * (before - state.work));
-		return state.validateFormat(condition.conforms, scope);
+		return state.validateFormat(condition.conforms, value);
 	}
 	if ("all" in condition) {
 		for (const item of list<RuleCondition>(condition.all))

@@ -120,9 +120,6 @@ export function focusRun(
 		...Object.fromEntries(focusFields.map((key) => [key, run[key]])),
 		workflow: workflowDisplay(run.workflow),
 		currentStep: currentStepView(run),
-		improvement: run.workflow.improvement
-			? { phase: run.improvementState?.phase ?? "preparing" }
-			: undefined,
 		recipeParent: run.recipeParent,
 		launchActions: Object.fromEntries(
 			Object.entries(run.launchActions ?? {}).map(([id, batch]) => [
@@ -130,7 +127,6 @@ export function focusRun(
 				launchBatchProjection(batch),
 			]),
 		),
-		improvementParent: run.improvementParent,
 		workflowDefinitions: run.workflowDefinitions?.map(workflowDisplay),
 		error: run.error?.slice(0, 4000),
 		deliveryRecovery,

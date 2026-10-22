@@ -1,0 +1,92 @@
+[
+	{
+		"at": "2026-10-22T15:27:41.534Z",
+		"cli": ["ping"],
+		"stdout": "\u001b[32m✓\u001b[0m Server is healthy\n  Status: undefined\n  Timestamp: 1792682861530\n",
+		"stderr": "\u001b[90mRPC: http://localhost:52202/cli/rpc\u001b[0m\n"
+	},
+	{
+		"at": "2026-10-22T15:27:41.557Z",
+		"cli": ["status"],
+		"stdout": "\u001b[32m✓\u001b[0m Server Status\n  \u001b[36mStatus\u001b[0m: ready\n  \u001b[36mServer\u001b[0m: CLIRPCServer\n  \u001b[36mUptime\u001b[0m: 0s\n",
+		"stderr": "\u001b[90mRPC: http://localhost:52202/cli/rpc\u001b[0m\n"
+	},
+	{
+		"at": "2026-10-22T15:27:41.601Z",
+		"method": "POST",
+		"path": "/api/runs",
+		"status": 202,
+		"request": {
+			"repositoryId": "improve-fixture",
+			"workflow": "improve-codebase",
+			"runner": "codex",
+			"model": "gpt-6.1-sol",
+			"inputs": {
+				"focus": "Cache ownership in the disposable fixture"
+			}
+		},
+		"result": {
+			"id": "manual-15e6c973-2e05-42ae-9848-bbaddfdf4483",
+			"status": "running"
+		}
+	},
+	{
+		"at": "2026-10-22T15:27:59.385Z",
+		"method": "POST",
+		"path": "/api/runs/manual-15e6c973-2e05-42ae-9848-bbaddfdf4483/view-answer",
+		"status": 200,
+		"request": {
+			"batchId": "a52c1153-7936-4685-a3f2-212fb1d280f5",
+			"digest": "0def044c7797866360b7b5a67e113dac40b9b559ab8719cb633eabdfeb041897",
+			"accepted": true,
+			"choices": [
+				{
+					"itemId": "cache",
+					"action": "ask",
+					"comment": "Will clear semantics be preserved?"
+				},
+				{
+					"itemId": "deferred",
+					"action": "skip"
+				},
+				{
+					"itemId": "optional",
+					"action": "skip"
+				}
+			]
+		},
+		"result": {
+			"id": "manual-15e6c973-2e05-42ae-9848-bbaddfdf4483",
+			"status": "running"
+		}
+	},
+	{
+		"at": "2026-10-22T15:28:02.152Z",
+		"method": "POST",
+		"path": "/api/runs/manual-15e6c973-2e05-42ae-9848-bbaddfdf4483/view-answer",
+		"status": 200,
+		"request": {
+			"batchId": "cdfa477f-c76f-4457-81a8-e21d9250f615",
+			"digest": "83a8018296d5067cd02395da2b0630d09675a3a74c6cc5cb6ab1a85f92259c22",
+			"accepted": true,
+			"choices": [
+				{
+					"itemId": "cache",
+					"action": "fix"
+				},
+				{
+					"itemId": "deferred",
+					"action": "issue"
+				},
+				{
+					"itemId": "optional",
+					"action": "skip"
+				}
+			]
+		},
+		"result": {
+			"id": "manual-15e6c973-2e05-42ae-9848-bbaddfdf4483",
+			"status": "running"
+		}
+	}
+]

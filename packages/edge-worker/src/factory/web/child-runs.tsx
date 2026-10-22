@@ -46,7 +46,6 @@ export function childBatchLabel(
 
 export function recipeParentOf(run: {
 	recipeParent?: { runId: string; workflowId?: string };
-	improvementParent?: { runId: string };
 }) {
 	if (run.recipeParent?.runId)
 		return {
@@ -54,11 +53,6 @@ export function recipeParentOf(run: {
 			label: run.recipeParent.workflowId
 				? `recipe ${run.recipeParent.workflowId}`
 				: "a recipe run",
-		};
-	if (run.improvementParent?.runId)
-		return {
-			runId: run.improvementParent.runId,
-			label: "an improvement batch",
 		};
 	return undefined;
 }

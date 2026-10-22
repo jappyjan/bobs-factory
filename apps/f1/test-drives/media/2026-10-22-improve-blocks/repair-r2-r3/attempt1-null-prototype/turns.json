@@ -1,0 +1,560 @@
+[
+	{
+		"at": "2026-10-22T18:32:11.879Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "map",
+		"stepKey": "map/map",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "d11e9d3220ae22515c1983a387af4cf4fc39cbdbd61c543d22f8504ac88304ce",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:12.892Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "coordinate",
+		"stepKey": "perspectives/fixture-perspective/research/coordinate",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": "fixture-perspective",
+		"promptSha256": "177b0f0af40fa8aab46275428a3d096d39f66a0c8dc393a14587c35e9ee49281",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": "fixture-perspective",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:13.671Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "worker",
+		"stepKey": "perspectives/fixture-perspective/research/assignments/one/worker",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": "fixture-perspective",
+		"promptSha256": "59462e47e32e4b0b7166b466f0bd96115b23a982eff0399f3988020a0edfacc1",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": "one",
+		"dependencyFeedback": null,
+		"execution": {
+			"runner": "codex",
+			"model": "gpt-6.1-sol",
+			"modelSource": "run",
+			"limitations": [
+				"No step model is configured; this agent inherits the accepted run model."
+			]
+		},
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:14.476Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "verify",
+		"stepKey": "perspectives/fixture-perspective/research/verify",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": "fixture-perspective",
+		"promptSha256": "ed078d29e945b43ad6375173ce1a4c524c3446897d9390b137959d4db4197a81",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": "fixture-perspective",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:15.404Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "proposals",
+		"stepKey": "consolidate/proposals",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "d948e0b1414a97b44964aecb9550d70f8ca16ebaef8ebe6862c99b31771145a9",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:15.823Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "proposals",
+		"stepKey": "consolidate/proposals",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "d948e0b1414a97b44964aecb9550d70f8ca16ebaef8ebe6862c99b31771145a9",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"correction": {
+			"attempts": 1,
+			"issues": [
+				{
+					"path": "/opportunities/1/title",
+					"message": "Too big: expected string to have <=250 characters",
+					"actual": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+				}
+			],
+			"originalSha256": "e6f48900eab94f32535634c388abe621beb210f0041271952215a1aa1ce138ed"
+		}
+	},
+	{
+		"at": "2026-10-22T18:32:17.639Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "plan",
+		"stepKey": "plans/cache/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "070675843c232f09fe3724e924ba75e7ba83695da91fe38efabb69409883319c",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "cache",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:17.715Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "plan",
+		"stepKey": "plans/optional/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "070675843c232f09fe3724e924ba75e7ba83695da91fe38efabb69409883319c",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "optional",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:18.589Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "plan",
+		"stepKey": "plans/cache/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "070675843c232f09fe3724e924ba75e7ba83695da91fe38efabb69409883319c",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "cache",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"correction": {
+			"attempts": 1,
+			"issues": [
+				{
+					"path": "/dependencies/0",
+					"message": "A plan cannot depend on itself",
+					"actual": "cache"
+				}
+			],
+			"originalSha256": "695cd52f485a28d42a6caaf005b36e02c58b7f33fcdce64c81f623d3a4024238"
+		}
+	},
+	{
+		"at": "2026-10-22T18:32:18.804Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "plan",
+		"stepKey": "plans/optional/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "070675843c232f09fe3724e924ba75e7ba83695da91fe38efabb69409883319c",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "optional",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"correction": {
+			"attempts": 1,
+			"issues": [
+				{
+					"path": "/dependencies/1",
+					"message": "Plan dependencies must be unique",
+					"actual": "cache"
+				}
+			],
+			"originalSha256": "e7f4a6e8049c6f6a8a9d2d4ba69073a1d61dafebdbec7232cd338e786f9b5447"
+		}
+	},
+	{
+		"at": "2026-10-22T18:32:21.364Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "plan",
+		"stepKey": "plans/cache/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "070675843c232f09fe3724e924ba75e7ba83695da91fe38efabb69409883319c",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "cache",
+		"dependencyFeedback": {
+			"passed": false,
+			"ids": ["cache", "optional"],
+			"dependencies": [["optional"], ["cache"]]
+		},
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:21.445Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "plan",
+		"stepKey": "plans/optional/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "070675843c232f09fe3724e924ba75e7ba83695da91fe38efabb69409883319c",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "optional",
+		"dependencyFeedback": {
+			"passed": false,
+			"ids": ["cache", "optional"],
+			"dependencies": [["optional"], ["cache"]]
+		},
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:24.312Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "architecture",
+		"stepKey": "checks/0/architecture",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "e992adb4c0ce54f3411db3667a034c2e424ef492bd9bbe351f5a74bc0b309585",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:24.388Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "security",
+		"stepKey": "checks/1/security",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "4bd5d5520216ba492321839906fe9a7f1a4556ea909c14aa09119cb3a1ecc796",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	},
+	{
+		"at": "2026-10-22T18:32:24.464Z",
+		"runId": "manual-9c098906-bf7d-4eab-b022-99ea81ae9935",
+		"role": "dependencies",
+		"stepKey": "checks/2/dependencies",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "3d53d42b99689cb809d876c757f88ccfa957b956dd0bfbf9ce7c2ea00c4e147b",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/factory/evidence/manual-9c098906-bf7d-4eab-b022-99ea81ae9935"
+	}
+]

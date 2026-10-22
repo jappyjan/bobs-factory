@@ -1,0 +1,6 @@
+{
+	"at": "2026-10-22T20:08:35.569Z",
+	"error": "AssertionError [ERR_ASSERTION]: /api/runs: {\"error\":\"What should Bob build? is required\\nUnrecognized key: \\\"focus\\\"\"}\n\n400 !== 202\n\n    at api (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:703:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async manual (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:748:19)\n    at async parallelCallFixDrive (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:1072:13)\n    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:1963:33",
+	"runs": [],
+	"checks": []
+}

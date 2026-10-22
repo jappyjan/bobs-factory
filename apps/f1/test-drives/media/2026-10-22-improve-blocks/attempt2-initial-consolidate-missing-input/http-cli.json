@@ -1,0 +1,33 @@
+[
+	{
+		"at": "2026-10-22T15:25:12.812Z",
+		"cli": ["ping"],
+		"stdout": "\u001b[32m✓\u001b[0m Server is healthy\n  Status: undefined\n  Timestamp: 1792682712810\n",
+		"stderr": "\u001b[90mRPC: http://localhost:51993/cli/rpc\u001b[0m\n"
+	},
+	{
+		"at": "2026-10-22T15:25:12.833Z",
+		"cli": ["status"],
+		"stdout": "\u001b[32m✓\u001b[0m Server Status\n  \u001b[36mStatus\u001b[0m: ready\n  \u001b[36mServer\u001b[0m: CLIRPCServer\n  \u001b[36mUptime\u001b[0m: 0s\n",
+		"stderr": "\u001b[90mRPC: http://localhost:51993/cli/rpc\u001b[0m\n"
+	},
+	{
+		"at": "2026-10-22T15:25:12.879Z",
+		"method": "POST",
+		"path": "/api/runs",
+		"status": 202,
+		"request": {
+			"repositoryId": "improve-fixture",
+			"workflow": "improve-codebase",
+			"runner": "codex",
+			"model": "gpt-6.1-sol",
+			"inputs": {
+				"focus": "Cache ownership in the disposable fixture"
+			}
+		},
+		"result": {
+			"id": "manual-0575bfd3-8832-4c9a-bc94-d57827d9958f",
+			"status": "running"
+		}
+	}
+]

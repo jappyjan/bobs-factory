@@ -1,0 +1,67 @@
+{"phase":"setup","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC","pid":99339}
+2026-10-22T18:32:10.232Z [INFO ] [EdgeWorker] Deployed default skills to /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/bobs-factory-skills-plugin (5 skills)
+2026-10-22T18:32:10.232Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T18:32:10.232Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T18:32:10.232Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T18:32:10.250Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:50937
+2026-10-22T18:32:10.252Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T18:32:10.252Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T18:32:10.252Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T18:32:10.252Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T18:32:10.252Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T18:32:10.252Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T18:32:10.252Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T18:32:10.252Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T18:32:10.252Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T18:32:10.252Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T18:32:10.253Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T18:32:10.253Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T18:32:10.253Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T18:32:10.254Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T18:32:10.254Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T18:32:10.254Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T18:32:10.254Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T18:32:10.255Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:50936
+2026-10-22T18:32:10.967Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=improve-fixture, overrideValue=undefined
+2026-10-22T18:32:10.967Z [INFO ] [GitService] createSingleRepoWorktree for Improve F1 fixture (id=improve-fixture): baseBranchOverride=undefined
+2026-10-22T18:32:11.120Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC/worktrees/MANUAL-81ae9935 from origin/main (tracking main)
+2026-10-22T18:32:11.237Z [INFO ] [AgentSessionManager] {session=manual-9, platform=manual} Creating chat session
+2026-10-22T18:32:12.020Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:13.011Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:13.789Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:14.595Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:15.520Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:15.960Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:17.948Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:18.111Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:18.971Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:19.178Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:21.699Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:21.857Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:24.770Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:24.856Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+2026-10-22T18:32:24.976Z [INFO ] [AgentSessionManager] {session=manual-9} Session completed (subtype: success)
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
++ [Object: null prototype] {
+- {
+    dependencies: [
+      [
+        'optional'
+      ],
+      [
+
+    at dependencyFixDrive (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:928:9)
+    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:1258:24 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [Object: null prototype],
+  expected: [Object],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+2026-10-22T18:32:26.213Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T18:32:26.213Z [INFO ] [SharedApplicationServer] Shared application server stopped
+{"phase":"cleanup","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-lzfaaC","workerStopped":true}

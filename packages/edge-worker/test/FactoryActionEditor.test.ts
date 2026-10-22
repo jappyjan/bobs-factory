@@ -14,6 +14,7 @@ import {
 	recipeParentOf,
 } from "../src/factory/web/child-runs.js";
 import { bodyProblem } from "../src/factory/web/foreach-step-settings.js";
+import { RecipePalette } from "../src/factory/web/recipe-builder.js";
 import {
 	draftProblems,
 	kinds,
@@ -197,19 +198,67 @@ describe("retained child run view", () => {
 		}));
 		expect(childBatchLabel(retained, "stopped")).toBe("Batch stopped");
 	});
-	it("prefers a generic parent, falls back deterministically, and escapes parent links", () => {
+	it("shows generic parent provenance and escapes parent links", () => {
 		const run = {
 			recipeParent: { runId: "parent/../<", workflowId: "<custom>" },
-			improvementParent: { runId: "legacy" },
 		};
 		expect(recipeParentOf(run)?.runId).toBe("parent/../<");
-		expect(recipeParentOf({ improvementParent: { runId: "legacy" } })).toEqual({
-			runId: "legacy",
-			label: "an improvement batch",
+		expect(recipeParentOf({})).toBeUndefined();
+		expect(recipeParentOf({ recipeParent: { runId: "parent" } })).toEqual({
+			runId: "parent",
+			label: "a recipe run",
 		});
 		const html = render(createElement(RecipeParentLink, { run }));
 		expect(html).toContain("Part of recipe &lt;custom&gt;");
 		expect(html).toContain('href="/runs/parent%2F..%2F%3C"');
-		expect(html).not.toContain("legacy");
+	});
+});
+
+describe("recipe palette", () => {
+	it("offers bundled and local callable recipes while respecting trigger and owner boundaries", () => {
+		const recipe = (
+			id: string,
+			ownership: Recipe["ownership"],
+			allowedTriggers: string[],
+		): Recipe => ({
+			id,
+			name: `${id} recipe`,
+			description: "",
+			labels: [],
+			steps: [],
+			ownership,
+			allowedTriggers,
+		});
+		const recipes = [
+			recipe("owner", "local", ["workflow"]),
+			recipe("bundled-worker", "bundled", ["workflow"]),
+			recipe("local-worker", "local", ["workflow"]),
+			recipe("manual-only", "bundled", ["manual"]),
+		];
+		const html = renderToStaticMarkup(
+			createElement(RecipePalette, {
+				recipes,
+				ownerId: "owner",
+				disabled: false,
+				onAdd: () => {},
+			}),
+		);
+		expect(html).toContain("bundled-worker recipe");
+		expect(html).toContain("local-worker recipe");
+		expect(html).not.toContain("owner recipe");
+		expect(html).not.toContain("manual-only recipe");
+		const readonly = renderToStaticMarkup(
+			createElement(RecipePalette, {
+				recipes,
+				ownerId: "owner",
+				disabled: true,
+				onAdd: () => {},
+			}),
+		);
+		expect(readonly).toContain("Fork to add steps");
+		expect(readonly).toMatch(
+			/disabled=""[^>]*title="Call bundled-worker recipe"/,
+		);
+		expect(readonly).not.toContain('draggable="true"');
 	});
 });

@@ -43,7 +43,6 @@ import {
 	ViewAskSchema,
 	ViewNotificationsSchema,
 } from "./HumanStep.js";
-import { ImprovementActionSchema } from "./Improvement.js";
 import { withAsyncInlineSchemas } from "./InlineSchema.js";
 import {
 	launchAssetFingerprint,
@@ -2051,72 +2050,6 @@ export class FactoryServer {
 					session.credential,
 				);
 				await runtime.flush(request.params.id);
-				return reply.code(202).send(actionResult(request.params.id));
-			},
-		);
-		this.app.get<{ Params: { id: string } }>(
-			"/api/runs/:id/improvements",
-			(request) => {
-				const run = runtime.get(request.params.id),
-					state = run.improvementState;
-				if (!run.workflow.improvement)
-					throw new Error("This run is not an improvement survey");
-				return state
-					? {
-							phase: state.phase,
-							revision: state.revision,
-							proposals: state.proposals,
-							choices: state.choices,
-							comments: state.comments,
-							manifest: state.manifest,
-							acceptance: state.acceptance && {
-								digest: state.acceptance.digest,
-								actor: state.acceptance.actor,
-								at: state.acceptance.at,
-							},
-							jobs: Object.fromEntries(
-								Object.entries(state.jobs).map(([key, job]) => [
-									key,
-									{
-										role: job.role,
-										status: job.status,
-										error: job.error,
-										settings: job.settings,
-									},
-								]),
-							),
-							children: state.children,
-							issues: state.issues,
-							limitations: state.limitations,
-						}
-					: {
-							phase: "preparing",
-							proposals: [],
-							jobs: {},
-							choices: {},
-							comments: [],
-							children: {},
-							issues: {},
-							limitations: [],
-						};
-			},
-		);
-		this.app.get<{ Params: { id: string } }>(
-			"/api/runs/:id/improvement-destinations",
-			(request) =>
-				runtime.improvementDestinations(
-					request.params.id,
-					AbortSignal.timeout(60000),
-				),
-		);
-		this.app.post<{ Params: { id: string } }>(
-			"/api/runs/:id/improvements",
-			async (request, reply) => {
-				await runtime.decideImprovement(
-					request.params.id,
-					ImprovementActionSchema.parse(request.body),
-					sessionFor(request)!.credential,
-				);
 				return reply.code(202).send(actionResult(request.params.id));
 			},
 		);

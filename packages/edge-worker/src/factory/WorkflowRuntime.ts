@@ -29,6 +29,7 @@ import {
 	isUpdatePaused,
 	UpdatePausedError,
 } from "../updates/UpdatePausedError.js";
+import { actionItems } from "./ActionSteps.js";
 import { activityMarkers } from "./ActivityPage.js";
 import {
 	type AgentSettings,
@@ -113,17 +114,8 @@ import {
 	STALE_IMPACT_MESSAGE,
 	validateImpact,
 } from "./Impact.js";
-import {
-	type ImprovementAction,
-	ImprovementActionSchema,
-	type ImprovementState,
-	type IssueDestination,
-} from "./Improvement.js";
-import {
-	applyImprovementAction,
-	runImprovement,
-} from "./ImprovementRuntime.js";
 import type { RoleProgress, RoleRevision } from "./Incremental.js";
+import type { IssueDestination } from "./IssueDestination.js";
 import {
 	attachmentDirectories,
 	LaunchAssetStore,
@@ -415,12 +407,6 @@ export interface FactoryRun {
 		workflowId: string;
 		ancestors: string[];
 	};
-	improvementState?: ImprovementState;
-	improvementParent?: {
-		runId: string;
-		manifestDigest: string;
-		packageId: string;
-	};
 	stepVisitBudget?: StepVisitBudgetUpgrade;
 	workflowBlock?: WorkflowBlock;
 	delivery?: DeliveryState;
@@ -642,18 +628,6 @@ export interface RuntimeHooks {
 		issue: FileIssueIntent,
 		signal: AbortSignal,
 	): Promise<{ id: string; url: string }>;
-	improvementDestinations?(
-		run: FactoryRun,
-		signal: AbortSignal,
-	): Promise<{
-		options: { name: string; destination: IssueDestination }[];
-		limitations: string[];
-	}>;
-	improvementIssue?(
-		run: FactoryRun,
-		issue: ImprovementState["issues"][string],
-		signal: AbortSignal,
-	): Promise<{ id: string; url: string }>;
 	availabilityChanged?(id: string, enabled: boolean): void;
 	execution?(
 		run: FactoryRun,
@@ -734,7 +708,6 @@ export class WorkflowRuntime {
 		ReturnType<typeof setTimeout>
 	>();
 	private shuttingDown = false;
-	private improvementWaiters = new Map<string, () => void>();
 	private defaultWorkflow = "simple";
 	private titleSettings: AgentSettings = {};
 	private viewStates: Record<string, RunViewState> = {};
@@ -1187,7 +1160,6 @@ export class WorkflowRuntime {
 			launchRequest?: FactoryRun["launchRequest"];
 			setupComplete?: boolean;
 			recipeParent?: FactoryRun["recipeParent"];
-			improvementParent?: FactoryRun["improvementParent"];
 			repositories?: import("./RepositoryScope.js").RunRepository[];
 			executionSnapshot?: ExecutionSnapshot;
 			executionSelection?: ExecutionSelection;
@@ -1462,19 +1434,7 @@ export class WorkflowRuntime {
 			for (const batch of Object.values(run.launchActions ?? {}))
 				await this.reconcileLaunchBatch(run, batch, controller.signal);
 			if (task) await task(controller.signal);
-			else if (run.workflow.improvement) {
-				await runImprovement(
-					{
-						runtime: this,
-						agent: (context) => this.hooks.agent(context),
-						issue: this.hooks.improvementIssue,
-						wait: (parent, signal, phase) =>
-							this.waitForImprovement(parent, signal, phase),
-					},
-					run,
-					controller.signal,
-				);
-			} else if (run.workflow.id === "simple") {
+			else if (run.workflow.id === "simple") {
 				if (!this.hooks.simple)
 					throw new Error("Simple recovery handler unavailable");
 				await this.hooks.simple(run, controller.signal);
@@ -1616,102 +1576,6 @@ export class WorkflowRuntime {
 				`Final tracking hook failed: ${String(error)}. Underlying run outcome retained.`,
 			);
 		}
-	}
-	async decideImprovement(
-		id: string,
-		value: ImprovementAction,
-		actor: string,
-	): Promise<void> {
-		const run = this.get(id);
-		const action = ImprovementActionSchema.parse(value);
-		if (
-			!run.workflow.improvement ||
-			(run.status !== "waiting" && action.action !== "stop-batch")
-		)
-			throw new Error(
-				"Improvement decisions require a waiting improvement run",
-			);
-		if (action.action === "stop-batch") {
-			const state = run.improvementState,
-				proposal = state?.proposals.at(-1);
-			if (
-				!state?.acceptance ||
-				state.revision !== action.expectedRevision ||
-				proposal?.digest !== action.digest ||
-				proposal.version !== action.version
-			)
-				throw new Error("Batch changed; refresh before stopping");
-			this.stop(id);
-			for (const child of Object.values(run.improvementState?.children ?? {}))
-				if (
-					["created", "running", "waiting", "interrupted"].includes(
-						this.runs.get(child.runId)?.status ?? "",
-					)
-				)
-					this.stop(child.runId);
-			await this.flush();
-			return;
-		}
-		this.requireRunAvailable(run);
-		if (
-			action.action === "apply" &&
-			run.improvementState?.manifest?.packages.length
-		) {
-			const definitions = run.workflowDefinitions ?? [],
-				factory = definitions.find((w) => w.id === "factory");
-			if (!factory)
-				throw new Error("Accepted Factory definition is unavailable");
-			this.requireAvailable(factory, definitions);
-		}
-		applyImprovementAction(run, action, actor);
-		await this.save(run);
-		this.improvementWaiters.get(id)?.();
-		if (!this.isExecuting(id)) void this.launch(run);
-	}
-	async improvementDestinations(id: string, signal: AbortSignal) {
-		return (
-			this.hooks.improvementDestinations?.(this.get(id), signal) ?? {
-				options: [],
-				limitations: ["No configured issue destination is available"],
-			}
-		);
-	}
-	private waitForImprovement(
-		run: FactoryRun,
-		signal: AbortSignal,
-		phase: ImprovementState["phase"],
-	): Promise<void> {
-		return new Promise((resolve, reject) => {
-			const finish = () => {
-				unsubscribe();
-				signal.removeEventListener("abort", abort);
-				this.improvementWaiters.delete(run.id);
-				resolve();
-			};
-			const abort = () => {
-				unsubscribe();
-				this.improvementWaiters.delete(run.id);
-				reject(signal.reason ?? new Error("Stopped"));
-			};
-			const unsubscribe = this.subscribe((change) => {
-				const ref = Object.values(run.improvementState?.children ?? {}).find(
-					(c) => c.runId === change.id,
-				);
-				if (ref && this.runs.get(ref.runId)?.status !== ref.status) finish();
-			});
-			this.improvementWaiters.set(run.id, finish);
-			signal.addEventListener("abort", abort, { once: true });
-			if (signal.aborted) abort();
-			else if (
-				(phase === "discussion" &&
-					run.improvementState?.phase !== "discussion") ||
-				(phase === "ready" && run.improvementState?.phase !== "ready") ||
-				Object.values(run.improvementState?.children ?? {}).some(
-					(c) => this.runs.get(c.runId)?.status !== c.status,
-				)
-			)
-				finish();
-		});
 	}
 	capacityOptions(run: FactoryRun, key: string, visit = 1): CapacityOptions {
 		return {
@@ -2553,7 +2417,9 @@ export class WorkflowRuntime {
 							child.iteration ??= checkpoint.iteration;
 							child.callInputs ??= checkpoint.callInputs;
 							child.snapshotInputs ??= checkpoint.snapshotInputs;
-							child.projectResults ??= checkpoint.projectResults;
+							child.projectResults ??= config.explicit
+								? true
+								: checkpoint.projectResults;
 						}
 						await this.save(run);
 						signal.throwIfAborted();
@@ -2663,7 +2529,7 @@ export class WorkflowRuntime {
 												result.value[s.id],
 											]),
 										)
-									: checkpoint.projectResults
+									: config.explicit || checkpoint.projectResults
 										? this.frameResults(
 												run,
 												step.groups?.[index] ?? [],
@@ -4969,10 +4835,6 @@ export class WorkflowRuntime {
 				this.snapshots.hasValue(
 					run as unknown as Record<string, unknown>,
 					"simpleExecution",
-				) ||
-				this.snapshots.hasValue(
-					run as unknown as Record<string, unknown>,
-					"improvementState",
 				))
 		);
 	}
@@ -5367,17 +5229,18 @@ export class WorkflowRuntime {
 		frame: GraphCheckpoint,
 		prefix: string,
 	): void {
-		if (frame.resultReceipts) {
-			for (const id of Object.keys(frame.resultReceipts))
-				frame.resultReceipts[id] = immutableJson(frame.resultReceipts[id]!);
-			return;
-		}
-		frame.resultReceipts = {};
+		const restoring = !frame.resultReceipts;
+		const receipts = Object.fromEntries(
+			Object.entries(frame.resultReceipts ?? {}).map(([id, receipt]) => [
+				id,
+				immutableJson(receipt),
+			]),
+		);
 		// Older unfinished frames have no ownership map. Only original qualified
 		// receipts of steps visited in this frame can restore it; inherited live
 		// output names never establish production or cause a completed role to replay.
 		for (const step of steps) {
-			if (!frame.visits[step.id]) continue;
+			if (!frame.visits[step.id] || Object.hasOwn(receipts, step.id)) continue;
 			const key = `${prefix}${step.id}`;
 			const receipt = [...run.history].reverse().find((entry) => {
 				if (entry.step !== key) return false;
@@ -5390,11 +5253,17 @@ export class WorkflowRuntime {
 				);
 			});
 			if (receipt) {
-				if (["workflow", "fanout", "foreach"].includes(step.type))
+				if (["workflow", "fanout", "foreach"].includes(step.type)) {
+					// An active step still publishes ownership through normal completion.
+					// A finished container cannot be reconstructed from its wrapper alone,
+					// even when an earlier failed restoration persisted a partial map.
+					if (!restoring && frame.current === step.id && frame.active) continue;
 					throw new Error(
 						`Child result ownership is missing at ${key}; original receipts are retained and nested results cannot be verified`,
 					);
-				Object.defineProperty(frame.resultReceipts, step.id, {
+				}
+				if (!restoring) continue;
+				Object.defineProperty(receipts, step.id, {
 					value: immutableJson({ key, output: receipt.output }),
 					enumerable: true,
 					configurable: true,
@@ -5402,6 +5271,8 @@ export class WorkflowRuntime {
 				});
 			}
 		}
+		// Publish only a completely validated restoration; failure retains the old map.
+		frame.resultReceipts = receipts;
 	}
 	private frameResults(
 		run: FactoryRun,
@@ -5469,9 +5340,24 @@ export class WorkflowRuntime {
 			if (!step.fileIssues)
 				throw new Error("File issues configuration is missing");
 			run.issueActions ??= {};
+			if (
+				!run.issueActions[actionId] &&
+				actionItems(step.fileIssues, scope).length === 0
+			) {
+				run.issueActions[actionId] = {
+					actionId,
+					inputDigest: digest([]),
+					accepted: immutableJson([]),
+					items: [],
+				};
+				await this.save(run);
+			}
 			if (!run.issueActions[actionId]) {
 				const available = await (this.hooks.issueDestinations?.(run, signal) ??
-					this.improvementDestinations(run.id, signal));
+					Promise.resolve({
+						options: [],
+						limitations: ["No configured issue destination is available"],
+					}));
 				const selected = step.fileIssues.destination;
 				const matches = available.options.filter(({ destination }) =>
 					selected
@@ -5496,12 +5382,12 @@ export class WorkflowRuntime {
 				);
 				await this.save(run);
 			}
-			const send = this.hooks.fileIssue ?? this.hooks.improvementIssue;
-			if (!send)
+			const send = this.hooks.fileIssue;
+			if (!send && run.issueActions[actionId]!.items.length)
 				throw new Error("Configured issue creation adapter is unavailable");
 			return fileIssueBatch(
 				run.issueActions[actionId]!,
-				(intent, sendingSignal) => send(run, intent, sendingSignal),
+				(intent, sendingSignal) => send!(run, intent, sendingSignal),
 				() => this.save(run),
 				signal,
 			);
@@ -6331,14 +6217,6 @@ export class WorkflowRuntime {
 					launchBatchProjection(batch),
 				]),
 			),
-			improvementParent: run.improvementParent,
-			improvement: run.improvementState && {
-				phase: run.improvementState.phase,
-				children: run.improvementState.children,
-				issueCount: Object.values(run.improvementState.issues).filter(
-					(i) => i.phase === "confirmed",
-				).length,
-			},
 			title: run.title,
 			status: capacityRunStatus(run),
 			capacityLeaves: run.capacityLeaves,

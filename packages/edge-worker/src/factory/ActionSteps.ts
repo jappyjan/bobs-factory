@@ -8,6 +8,9 @@ import {
 } from "./Foreach.js";
 import { IssueDestinationSchema } from "./IssueDestination.js";
 
+export const FileIssueTitleSchema = z.string().trim().min(1).max(250);
+export const FileIssueBodySchema = z.string().max(100000);
+
 const list = {
 	items: foreachFields.items,
 	itemId: foreachPointerSchema.default("/id"),

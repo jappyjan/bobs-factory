@@ -1,0 +1,44 @@
+{
+	"completedAt": "2026-10-22T15:35:14.979Z",
+	"checks": [
+		"Stock manual launch, without a worker model, invoked Map + eight coordinator/worker/verifier calls + Consolidate under real EdgeWorker read-only restrictions.",
+		"Exact human approval rejected a stale digest, then created one confirmed unassigned backlog issue through the real filing adapter and admitted one ordinary Factory child at its clarification gate.",
+		"A real catalog fork changed one perspective and one prompt; actual F1 CLI admission invoked only that copied perspective, notified the in-memory tracker, rendered paginated activity and stopped cleanly. Stock remained eight perspectives/manual-only."
+	],
+	"sourceChangedDuringDrive": [],
+	"sourceAfter": {
+		"packages/edge-worker/src/EdgeWorker.ts": "8ce291c0c6cffe2a84758116327b7e0397dc9c9d5460313449bf92f681882de4",
+		"packages/edge-worker/src/factory/improvementWorkflow.ts": "ee06f810ced757aa563f0ffcd3af3a2edded647a4249aa6c6d35ec8757a91151",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "c8433685e8e07035ed043c09a129303a14df96c13dbfa87b059acc533c7aa1ae",
+		"packages/edge-worker/src/factory/WorkflowCatalog.ts": "96c0ce6563d667524eca09ae0e77aab0b288dee617a84de653f7ea68d3fdc365",
+		"packages/edge-worker/src/factory/Workflow.ts": "dda3582233fdad2595ba18c23687d4f754554dbb6972a795460ab4859abb71d2",
+		"packages/edge-worker/src/factory/StepBindings.ts": "437205f514761b093ab9b2c6e9bd4aab6723d4de8b58ad08fbaad2f0ff5ba499",
+		"packages/edge-worker/src/factory/View.ts": "1d3b3a575cbf2c7f3db08c20125c043c04da195ad4af39a21da36273de31124b",
+		"packages/edge-worker/src/factory/ResearchPermissions.ts": "1c63882282c5c8d299fb04dca09717f5b50fdb86daf6981e4d3ca7f14544fd1e",
+		"packages/edge-worker/src/factory/ResearchFormats.ts": "321fdc9d6f19c5dcca087ca85ea00d84e87aafb68ccf1d0724bd207d099d9a60",
+		"packages/edge-worker/src/factory/ResearchPrompts.ts": "095565acbda179bee8fd83c95cdcfa01a03e6f9fb10737d40c5c998a7e3d0e9b",
+		"packages/edge-worker/src/factory/FileIssues.ts": "088b3aba6a101c7668d4f538f0e4ac6ac83981c6ee2dc2c8de56c32d9751f41f",
+		"packages/edge-worker/src/factory/FileIssueProviders.ts": "b9e73cb03354514658f7d652b43b97f4fded814d9578ae08f10bd68bb6962a2b",
+		"packages/edge-worker/src/factory/OutputFormats.ts": "39a75fdbf31d569be28e52d6149ae4533d6feb783aa33ee391989ddcdaa3f06d",
+		"apps/f1/src/MockAgentRunner.ts": "2206b0b1c96a90a9a2eb1b2742a49251e44b75202a228858340b6a56c9c22d56"
+	},
+	"paidCalls": 0,
+	"nativeRuns": 0,
+	"restartTested": false,
+	"preview": {
+		"apiOrigin": "http://127.0.0.1:52759",
+		"rpcPort": 52758,
+		"factoryPort": 52759,
+		"pid": 77318,
+		"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-bmg4xq",
+		"stockId": "manual-d9dfcf92-983c-4214-b07c-a897a444859e",
+		"decideId": "manual-cf8ee6fb-8c46-4065-b9f2-edd74620d9c8",
+		"approveId": "manual-526509a0-0205-4821-8e24-67058bacb90c",
+		"childId": "child-43f1c9fd4f3bb08f1649ce83138c4c6ff41d3b30",
+		"stoppedCliId": "session-1",
+		"forkId": "fork-0eb908dd-d613-4bf9-bd92-027f0ac1f6b3",
+		"previewWorkflow": "The one-perspective, one-prompt catalog fork; stock canvas and eight-perspective primary run remain separate.",
+		"serveCommand": "F1_AGENT_MODE=mock node apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs --serve",
+		"stop": "kill -TERM 77318 (only this disposable driver)"
+	}
+}

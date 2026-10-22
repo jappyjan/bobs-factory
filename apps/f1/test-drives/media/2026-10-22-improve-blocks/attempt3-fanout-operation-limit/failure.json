@@ -1,0 +1,15 @@
+{
+	"at": "2026-10-22T15:28:07.529Z",
+	"error": "Error: Wait approve: manual-15e6c973-2e05-42ae-9848-bbaddfdf4483: Rules exceed the evaluation operation limit\n    at until (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:517:22)\n    at async decision (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:526:2)\n    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/apps/f1/test-drives/assets/taskbot141-improve-blocks.mjs:619:19",
+	"runs": [
+		{
+			"id": "manual-15e6c973-2e05-42ae-9848-bbaddfdf4483",
+			"status": "failed",
+			"step": "plan-check",
+			"error": "Rules exceed the evaluation operation limit"
+		}
+	],
+	"checks": [
+		"Stock manual launch, without a worker model, invoked Map + eight coordinator/worker/verifier calls + Consolidate under real EdgeWorker read-only restrictions."
+	]
+}

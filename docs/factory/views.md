@@ -1,7 +1,7 @@
 # Declarative recipe views
 
 Custom recipes can use `decide`, `approve` and `show` steps. Existing Questions,
-Check-in, Human review, External review and Improve screens keep their current
+Check-in, Human review and External review screens keep their current
 behavior. Saving a new recipe does not rewrite an accepted run.
 
 Every step declares a `view`: either a `view-v1` component list or
@@ -192,3 +192,17 @@ to the editor. **Last run** uses the retained accepted bound-input snapshot and
 shows its run, step, timestamp and whether the view configuration matches the
 draft; it does not read arbitrary paths in saved runs. Preview interaction cannot
 grant approval or launch an agent.
+
+Component data can also use `bindings` to project exact declared fields, for example
+`{ "bindings": { "text": { "path": "/inputs/proposals/summary" } } }`.
+A collection field uses `{ "from": "/inputs/plans", "map": { "id": "/id",
+"title": "/title", "body": "/reviewText" } }`; item pointers are relative to
+each item, and the empty pointer reads the item itself. Maps are bounded to 100
+items and 20 fields. No expressions or scripts execute, private sources are
+unavailable, and the resolved component still passes its normal schema.
+
+A path binding may set `"format":"json"` to display inert serialized public JSON
+in an existing text field, for example `{ "bindings": { "text": { "path":
+"/inputs/dependencyGraph", "format": "json" } } }`. Descriptor-safe public reads
+are sanitized before serialization; the receiving component's text limit remains
+unchanged. This makes the actual displayed Check value part of the existing digest.

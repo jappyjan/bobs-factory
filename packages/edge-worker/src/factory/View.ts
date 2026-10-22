@@ -10,6 +10,7 @@ export const VIEW_VERSION = "view-v1" as const;
 export const VIEW_LIMITS = {
 	components: 40,
 	items: 100,
+	mapFields: 20,
 	paths: 500,
 	pathDepth: 8,
 	text: 64_000,
@@ -57,10 +58,39 @@ const bindingSchema = z.union([
 				),
 		})
 		.strict(),
-	z.object({ path: viewPointerSchema }).strict(),
+	z
+		.object({ path: viewPointerSchema, format: z.literal("json").optional() })
+		.strict(),
 ]);
 export const ViewBindingSchema = z.preprocess(safeJson, bindingSchema);
 export type ViewBinding = z.infer<typeof ViewBindingSchema>;
+
+/** One flat object per source item; an empty pointer reads the item itself. */
+const collectionBindingSchema = z
+	.object({
+		from: viewPointerSchema,
+		map: z
+			.record(
+				viewIdSchema,
+				foreachPointerSchema
+					.refine((path) => !/\p{Cc}/u.test(path), "Invalid view item pointer")
+					.describe("JSON Pointer relative to each item; empty reads the item"),
+			)
+			.refine(
+				(fields) =>
+					Object.keys(fields).length > 0 &&
+					Object.keys(fields).length <= VIEW_LIMITS.mapFields,
+				"View projections require 1–20 map fields",
+			),
+	})
+	.strict()
+	.describe(
+		"Project at most 100 declared items to flat objects using field pointers",
+	);
+const componentFieldBindingSchema = z.union([
+	...bindingSchema.options,
+	collectionBindingSchema,
+]);
 export interface ViewScope {
 	inputs?: Record<string, unknown>;
 	item?: unknown;
@@ -369,7 +399,7 @@ export const viewDataSchemas = {
 		.strict(),
 };
 
-function component<T extends string, D extends z.ZodType>(
+function component<T extends string, D extends z.ZodObject>(
 	type: T,
 	dataSchema: D,
 ) {
@@ -381,11 +411,22 @@ function component<T extends string, D extends z.ZodType>(
 			data: z.union([
 				z.object({ literal: dataSchema }).strict(),
 				z.object({ path: viewPointerSchema }).strict(),
+				z
+					.object({
+						bindings: z.partialRecord(
+							dataSchema.keyof(),
+							componentFieldBindingSchema,
+						),
+					})
+					.strict()
+					.describe(
+						"Bind component schema fields individually; resolved data is validated normally",
+					),
 			]),
 		})
 		.strict();
 }
-function resolvedComponent<T extends string, D extends z.ZodType>(
+function resolvedComponent<T extends string, D extends z.ZodObject>(
 	type: T,
 	dataSchema: D,
 ) {
@@ -519,7 +560,38 @@ export function bindingValue(binding: ViewBinding, scope: ViewScope): unknown {
 	const parsed = ViewBindingSchema.parse(binding);
 	return "literal" in parsed
 		? parsed.literal
-		: foreachPointer(acceptedScope(scope), parsed.path);
+		: boundValue(parsed, acceptedScope(scope));
+}
+
+function boundValue(
+	binding: z.infer<typeof bindingSchema>,
+	accepted: Record<string, unknown>,
+) {
+	if ("literal" in binding) return binding.literal;
+	const value = foreachPointer(accepted, binding.path);
+	return binding.format === "json" ? JSON.stringify(value, null, 2) : value;
+}
+
+/** The caller has sanitized the definition and accepted only public lexical inputs. */
+function componentFieldValue(
+	binding: z.infer<typeof componentFieldBindingSchema>,
+	accepted: Record<string, unknown>,
+): unknown {
+	if ("literal" in binding || "path" in binding)
+		return boundValue(binding, accepted);
+	const items = foreachPointer(accepted, binding.from);
+	if (!Array.isArray(items))
+		throw new Error("View projection source must be an array");
+	if (items.length > VIEW_LIMITS.items)
+		throw new Error("View projections allow at most 100 items");
+	return items.map((item) =>
+		Object.fromEntries(
+			Object.entries(binding.map).map(([field, path]) => [
+				field,
+				foreachPointer(item, path),
+			]),
+		),
+	);
 }
 
 /** Save and render use the same schemas, including data produced by an agent. */
@@ -538,9 +610,16 @@ export function resolveView(
 		components: definition.components.map((component) => ({
 			...component,
 			data:
-				"literal" in component.data
-					? component.data.literal
-					: foreachPointer(accepted, component.data.path),
+				"literal" in component.data || "path" in component.data
+					? boundValue(component.data, accepted)
+					: Object.fromEntries(
+							Object.entries(component.data.bindings).map(
+								([field, binding]) => [
+									field,
+									componentFieldValue(binding!, accepted),
+								],
+							),
+						),
 		})),
 	});
 }

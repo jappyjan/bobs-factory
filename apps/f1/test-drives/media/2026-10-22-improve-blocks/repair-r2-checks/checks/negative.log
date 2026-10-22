@@ -1,0 +1,47 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker
+
+ ❯ test/ImproveBoundaryComposition.test.ts (11 tests | 6 failed | 5 skipped) 50ms
+     × keeps complete corrected ascii data through actual Decide, choice output and the full wrapped Approve scope 14ms
+     × keeps complete corrected utf8 data through actual Decide, choice output and the full wrapped Approve scope 17ms
+     × returns ordinary refinement for complete large packages with duplicate ID 5ms
+     × returns ordinary refinement for complete large packages with unknown ID 5ms
+     × returns ordinary refinement for complete large packages with missing prerequisite 5ms
+     × returns ordinary refinement for complete large packages with wrong item ID 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ImproveBoundaryComposition.test.ts > stock approval composition > keeps complete corrected ascii data through actual Decide, choice output and the full wrapped Approve scope
+ FAIL  test/ImproveBoundaryComposition.test.ts > stock approval composition > keeps complete corrected utf8 data through actual Decide, choice output and the full wrapped Approve scope
+ FAIL  test/ImproveBoundaryComposition.test.ts > stock approval composition > returns ordinary refinement for complete large packages with duplicate ID
+ FAIL  test/ImproveBoundaryComposition.test.ts > stock approval composition > returns ordinary refinement for complete large packages with unknown ID
+ FAIL  test/ImproveBoundaryComposition.test.ts > stock approval composition > returns ordinary refinement for complete large packages with missing prerequisite
+ FAIL  test/ImproveBoundaryComposition.test.ts > stock approval composition > returns ordinary refinement for complete large packages with wrong item ID
+Error: Rules exceed the evaluation operation limit
+ ❯ limit src/factory/Rules.ts:370:21
+    368|  strictJson?: boolean;
+    369| }
+    370| const limit = () => new Error("Rules exceed the evaluation operation l…
+       |                     ^
+    371| function* spend(state: Work, amount = 1): Task<void> {
+    372|  if (!Number.isSafeInteger(amount) || amount < 0 || amount > state.wor…
+ ❯ spend src/factory/Rules.ts:373:9
+ ❯ canonical src/factory/Rules.ts:644:10
+ ❯ canonical src/factory/Rules.ts:688:24
+ ❯ canonical src/factory/Rules.ts:667:17
+ ❯ expressionTask src/factory/Rules.ts:1139:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 5 skipped (11)
+   Start at  22:22:09
+   Duration  1.10s (transform 489ms, setup 22ms, import 918ms, tests 50ms, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/ImproveBoundaryComposition.test.ts -t full wrapped Approve|ordinary refinement

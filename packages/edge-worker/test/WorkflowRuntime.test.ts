@@ -323,7 +323,11 @@ describe("workflow trigger permissions", () => {
 			["factory", ["workflow", "manual", "ticket-assignment"]],
 			["takeover", ["workflow", "manual", "ticket-assignment"]],
 			["factory-pipeline", ["workflow"]],
-			["improve-codebase", ["manual"]],
+			["improve-codebase", ["workflow", "manual", "ticket-assignment"]],
+			["map-codebase", ["workflow"]],
+			["research-perspective", ["workflow"]],
+			["consolidate-proposals", ["workflow"]],
+			["refine-plan", ["workflow"]],
 			["custom", ["workflow", "manual", "ticket-assignment"]],
 		]);
 		expect(migrated.listWorkflows().at(-1)!.steps[0]!.model).toBe(
@@ -4142,4 +4146,32 @@ it("keeps choice metadata in a nested workflow wait across restart", async () =>
 	await waitFor(() => expect(restored.status).toBe("completed"));
 	expect(restored.answers).toHaveLength(1);
 	await restarted.shutdown();
+});
+
+it("projects only produced outputs from modern parallel branches and retains legacy fanout aliases", async () => {
+	for (const modern of [true, false]) {
+		const { runtime } = create({ agent: async (c) => ({ value: c.step.id }) });
+		const source = workflow([
+			agent("seed"),
+			{
+				id: "parallel",
+				name: "Parallel",
+				type: "fanout",
+				groups: [[agent("left")], [agent("right")]],
+				next: "end",
+			},
+		]);
+		if (modern) source.stepConfigVersion = "step-config-v1";
+		const run = start(runtime, source);
+		await runtime.launch(run);
+		expect(run.status).toBe("completed");
+		expect(run.outputs.parallel).toEqual(
+			modern
+				? [{ left: { value: "left" } }, { right: { value: "right" } }]
+				: [
+						{ seed: { value: "seed" }, left: { value: "left" } },
+						{ seed: { value: "seed" }, right: { value: "right" } },
+					],
+		);
+	}
 });

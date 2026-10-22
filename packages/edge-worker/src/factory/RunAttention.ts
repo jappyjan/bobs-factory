@@ -4,7 +4,6 @@
 /** The subset of /api/runs items these rules read. */
 export interface RunSummary {
 	id?: string;
-	improvement?: { phase: string };
 	launchActions?: Record<string, { items: { status: string }[] }>;
 	viewDecision?: {
 		id: string;
@@ -92,10 +91,6 @@ export function workingLabel(run: RunSummary): string {
 		run.reviewGate?.status !== "pending"
 	)
 		return "Tracking child runs";
-	if (run.improvement?.phase === "dispatch") return "Tracking improvement runs";
-	if (run.improvement?.phase === "research") return "Researching improvements";
-	if (run.improvement?.phase === "planning")
-		return "Preparing improvement plans";
 	if (run.deliveryCoordination?.phase === "queued")
 		return run.deliveryCoordination.reason === "Shared QA/environment resource"
 			? "Waiting for shared QA environment"
@@ -144,11 +139,10 @@ export function attention(run: RunSummary): Attention | undefined {
 	if (run.status === "waiting" && run.viewDecision && !run.viewDecision.answer)
 		return "question";
 	if (run.status === "waiting")
-		return run.improvement?.phase === "dispatch" ||
-			(trackingChildren(run) &&
-				!run.questions?.length &&
-				!run.questionCount &&
-				!run.architectureGate)
+		return trackingChildren(run) &&
+			!run.questions?.length &&
+			!run.questionCount &&
+			!run.architectureGate
 			? undefined
 			: "question";
 	if (["failed", "error", "interrupted", "blocked"].includes(run.status))

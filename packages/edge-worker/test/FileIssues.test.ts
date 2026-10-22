@@ -5,15 +5,15 @@ import {
 	SnapshotConfigurationSchema,
 } from "../src/factory/ActionSteps.js";
 import {
+	fileLinearIssue,
+	fileTaskbotIssue,
+} from "../src/factory/FileIssueProviders.js";
+import {
 	type FileIssueBatch,
 	type FileIssueIntent,
 	fileIssueBatch,
 	prepareFileIssues,
 } from "../src/factory/FileIssues.js";
-import {
-	fileLinearIssue,
-	fileTaskbotIssue,
-} from "../src/factory/ImprovementIssues.js";
 
 const destination = {
 	provider: "taskbot" as const,
