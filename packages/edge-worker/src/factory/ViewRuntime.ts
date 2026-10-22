@@ -16,7 +16,7 @@ import {
 import { launchBatchProjection } from "./LaunchRuns.js";
 import { resolveStepConfig } from "./StepConfig.js";
 import { availableViewPaths, resolveView, viewText } from "./View.js";
-import { verifyViewAssets } from "./ViewAssets.js";
+import { prepareViewAssetCheck, verifyViewAssets } from "./ViewAssets.js";
 import {
 	publicViewDecision,
 	publicViewRecord,
@@ -195,12 +195,18 @@ export class HumanViews {
 		{ resolve: () => void; reject: (error: Error) => void }
 	>();
 	private transitions = new Map<string, Promise<unknown>>();
+	private transitionEpoch = new WeakMap<FactoryRun, number>();
 	private transition<T>(
 		run: FactoryRun,
 		operation: () => Promise<T>,
 	): Promise<T> {
 		const previous = this.transitions.get(run.id) ?? Promise.resolve();
-		const work = previous.catch(() => {}).then(operation);
+		const work = previous
+			.catch(() => {})
+			.then(() => {
+				this.transitionEpoch.set(run, (this.transitionEpoch.get(run) ?? 0) + 1);
+				return operation();
+			});
 		this.transitions.set(run.id, work);
 		void work
 			.finally(() => {
@@ -339,6 +345,7 @@ export class HumanViews {
 		run: FactoryRun,
 		version: { batchId: string; digest: string },
 		write: () => T,
+		retries = 2,
 	): Promise<{ value: T } | undefined> {
 		const owned = () => {
 			const record = run.viewRecords?.find(
@@ -388,27 +395,46 @@ export class HumanViews {
 		const prepared = await this.transition(run, async () => {
 			const current = inspect();
 			if (current && !current.source) await renew(current.owner);
-			return current?.source;
+			return (
+				current?.source && {
+					source: current.source,
+					epoch: this.transitionEpoch.get(run)!,
+				}
+			);
 		});
 		if (!prepared) return undefined;
 		// Bounded local file/revision checks do not hold the human transition queue.
-		let validAssets = true;
+		let validAssets = () => false;
 		try {
-			await verifyViewAssets(this.runtime.directory, run, prepared.view);
+			validAssets = await prepareViewAssetCheck(
+				this.runtime.directory,
+				run,
+				prepared.source.view,
+			);
 		} catch {
-			validAssets = false;
+			/* Missing or changed protected files cannot authorize a write. */
 		}
-		return this.transition(run, async () => {
+		const handoff = await this.transition(run, async () => {
 			const verified = inspect();
 			if (!verified) return undefined;
-			if (!verified.source || !validAssets) {
+			if (!verified.source || !validAssets()) {
 				await renew(verified.owner);
 				return undefined;
 			}
+			if (this.transitionEpoch.get(run) !== prepared.epoch + 1)
+				return { retry: true as const };
 			// No await between the authoritative comparison and the actual local write.
 			// The promise is returned inside an envelope: remote work holds no transition.
 			return { value: write() };
 		});
+		if (handoff && "retry" in handoff) {
+			// A competing transition may have waited on durable storage after byte
+			// or repository-revision verification. Repeat those checks outside the
+			// lock; unsettled local authority defers without retiring or dispatching.
+			if (!retries) throw new UnsentDispatchError("unavailable");
+			return this.publication(run, version, write, retries - 1);
+		}
+		return handoff;
 	}
 	async execute(
 		context: ExecutionContext,

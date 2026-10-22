@@ -172,9 +172,124 @@ it("revalidates a same-origin redirected HTTP POST instead of dispatching obsole
 					},
 				},
 			),
-		).rejects.toBeInstanceOf(UnsentDispatchError);
+		).rejects.toThrow("Original MCP mutation outcome requires reconciliation");
+		// The redirected endpoint is never called with obsolete content. The
+		// original POST crossed handoff, so its outcome still needs reconciliation.
 		expect(executed).toBe(0);
 	} finally {
+		await new Promise<void>((resolve) => server.close(() => resolve()));
+	}
+});
+
+it("does not reauthorize stdio ping replies after an actual accepted tool request", async () => {
+	const home = mkdtempSync(join(tmpdir(), "guarded-stdio-protocol-"));
+	const script = join(home, "server.mjs"),
+		log = join(home, "requests.jsonl");
+	writeFileSync(
+		script,
+		`
+import {Server} from ${JSON.stringify(import.meta.resolve("@modelcontextprotocol/sdk/server/index.js"))};
+import {StdioServerTransport} from ${JSON.stringify(import.meta.resolve("@modelcontextprotocol/sdk/server/stdio.js"))};
+import {CallToolRequestSchema,EmptyResultSchema} from ${JSON.stringify(import.meta.resolve("@modelcontextprotocol/sdk/types.js"))};
+import {appendFileSync} from 'node:fs';
+const server=new Server({name:'synthetic',version:'1'},{capabilities:{tools:{}}});
+server.setRequestHandler(CallToolRequestSchema,async request=>{
+ appendFileSync(${JSON.stringify(log)},JSON.stringify(request.params)+'\\n');
+ await server.request({method:'ping'},EmptyResultSchema);
+ return {content:[],structuredContent:{ok:true}};
+});
+await server.connect(new StdioServerTransport());
+`,
+	);
+	let checks = 0;
+	const args = {
+		body: "Original accepted comment",
+		method: "tools/call",
+		id: 1,
+		jsonrpc: "2.0",
+		_meta: { dispatch: "inert" },
+	};
+	try {
+		await expect(
+			callConfiguredTool(
+				{ command: process.execPath, args: [script] },
+				"comment",
+				args,
+				AbortSignal.timeout(5000),
+				home,
+				undefined,
+				{
+					run: async (write) => {
+						if (++checks !== 1) throw new UnsentDispatchError("superseded");
+						return { value: write() };
+					},
+				},
+			),
+		).resolves.toEqual({ ok: true });
+		expect(checks).toBe(1);
+		expect(JSON.parse(readFileSync(log, "utf8"))).toEqual({
+			name: "comment",
+			arguments: args,
+		});
+	} finally {
+		rmSync(home, { recursive: true, force: true });
+	}
+});
+
+it("allows legacy SSE protocol replies after mutation handoff without changing arguments or obtaining another authority grant", async () => {
+	const protocol = new Server(
+		{ name: "synthetic", version: "1" },
+		{ capabilities: { tools: {} } },
+	);
+	const { EmptyResultSchema } = await import(
+		"@modelcontextprotocol/sdk/types.js"
+	);
+	let transport: SSEServerTransport | undefined;
+	const calls: unknown[] = [];
+	protocol.setRequestHandler(CallToolRequestSchema, async (request) => {
+		calls.push(request.params);
+		await protocol.request({ method: "ping" }, EmptyResultSchema);
+		return { content: [], structuredContent: { ok: true } };
+	});
+	const server = createServer(async (request, response) => {
+		if (request.method === "GET") {
+			transport = new SSEServerTransport("/messages", response);
+			await protocol.connect(transport);
+		} else if (request.method === "POST" && transport)
+			await transport.handlePostMessage(request, response);
+		else response.writeHead(405).end();
+	});
+	await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const address = server.address();
+	if (!address || typeof address === "string")
+		throw Error("Missing local address");
+	let checks = 0;
+	const args = {
+		body: "Original immutable marker",
+		method: "tools/call",
+		id: 0,
+	};
+	try {
+		await expect(
+			callConfiguredTool(
+				{ type: "sse", url: `http://127.0.0.1:${address.port}/events` },
+				"comment",
+				args,
+				AbortSignal.timeout(5000),
+				process.cwd(),
+				undefined,
+				{
+					run: async (write) => {
+						if (++checks !== 1) throw new UnsentDispatchError("superseded");
+						return { value: write() };
+					},
+				},
+			),
+		).resolves.toEqual({ ok: true });
+		expect(checks).toBe(1);
+		expect(calls).toEqual([{ name: "comment", arguments: args }]);
+	} finally {
+		await protocol.close();
 		await new Promise<void>((resolve) => server.close(() => resolve()));
 	}
 });

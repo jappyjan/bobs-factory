@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { constants } from "node:fs";
+import { constants, lstatSync, realpathSync } from "node:fs";
 import { open } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
@@ -18,6 +18,7 @@ async function verifyBytes(
 	expected: string,
 	limit: number,
 	image = false,
+	stamps?: (() => boolean)[],
 ) {
 	const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
 	try {
@@ -40,13 +41,35 @@ async function verifyBytes(
 		const after = await handle.stat();
 		if (
 			before.ino !== after.ino ||
+			before.dev !== after.dev ||
 			before.size !== after.size ||
 			before.ctimeMs !== after.ctimeMs ||
+			before.mtimeMs !== after.mtimeMs ||
 			hash.digest("hex") !== expected
 		)
 			throw new Error(
 				"Displayed asset content changed. Refresh and review again.",
 			);
+		// Bounded synchronous identity check at the eventual local handoff.
+		// The bytes were hashed outside the human transition; any replacement or
+		// write during its queue wait invalidates that authority without re-reading.
+		stamps?.push(() => {
+			try {
+				const now = lstatSync(path);
+				return (
+					realpathSync(path) === path &&
+					now.isFile() &&
+					now.dev === after.dev &&
+					now.ino === after.ino &&
+					now.size === after.size &&
+					now.ctimeMs === after.ctimeMs &&
+					now.mtimeMs === after.mtimeMs &&
+					now.mode === after.mode
+				);
+			} catch {
+				return false;
+			}
+		});
 		if (image) {
 			const bytes = Buffer.concat(chunks);
 			const png = bytes
@@ -67,6 +90,7 @@ export async function readViewScreenshot(
 	run: FactoryRun,
 	index: number,
 	expected: string,
+	stamps?: (() => boolean)[],
 ): Promise<Buffer> {
 	if (
 		!Number.isSafeInteger(index) ||
@@ -99,19 +123,38 @@ export async function readViewScreenshot(
 		candidate = resolve(evidence, candidate.slice(offset + marker.length));
 	}
 	const path = evidenceFile(candidate, evidence, 10 * 1024 * 1024);
-	return (await verifyBytes(path, expected, 10 * 1024 * 1024, true))!;
+	stamps?.push(() => {
+		try {
+			return evidenceFile(candidate, evidence, 10 * 1024 * 1024) === path;
+		} catch {
+			return false;
+		}
+	});
+	return (await verifyBytes(path, expected, 10 * 1024 * 1024, true, stamps))!;
 }
 /** The display cannot invent filesystem paths or borrow assets from another run. */
-export async function verifyViewAssets(
+export async function prepareViewAssetCheck(
 	directory: string,
 	run: FactoryRun,
 	view: ResolvedView,
 ) {
 	const evidence = join(directory, "evidence", run.id);
+	const stamps: (() => boolean)[] = [];
+	const protectedFile = (candidate: string, limit: number) => {
+		const path = evidenceFile(candidate, evidence, limit);
+		stamps.push(() => {
+			try {
+				return evidenceFile(candidate, evidence, limit) === path;
+			} catch {
+				return false;
+			}
+		});
+		return path;
+	};
 	for (const component of view.components) {
 		if (component.type === "screenshots") {
 			for (const ref of component.data.items) {
-				await readViewScreenshot(directory, run, ref.index, ref.sha256);
+				await readViewScreenshot(directory, run, ref.index, ref.sha256, stamps);
 			}
 		}
 		if (component.type === "video") {
@@ -151,17 +194,31 @@ export async function verifyViewAssets(
 					"Displayed video belongs to an earlier or dirty revision",
 				);
 			await verifyBytes(
-				evidenceFile(video.path, evidence, videoLimits.bytes),
+				protectedFile(video.path, videoLimits.bytes),
 				validation.sha256,
 				videoLimits.bytes,
+				false,
+				stamps,
 			);
 			for (const asset of [validation.poster, validation.captions])
 				if (asset)
 					await verifyBytes(
-						evidenceFile(asset.path, evidence, 10 * 1024 * 1024),
+						protectedFile(asset.path, 10 * 1024 * 1024),
 						asset.sha256,
 						10 * 1024 * 1024,
+						false,
+						stamps,
 					);
 		}
 	}
+	return () => stamps.every((unchanged) => unchanged());
+}
+
+/** Shared bounded verification for save/render/answer paths without a dispatch handoff. */
+export async function verifyViewAssets(
+	directory: string,
+	run: FactoryRun,
+	view: ResolvedView,
+) {
+	await prepareViewAssetCheck(directory, run, view);
 }

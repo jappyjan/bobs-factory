@@ -97,6 +97,7 @@ async function fixture(
 	}
 
 	let failAfterDelivery = false,
+		readUnavailable = false,
 		holdRead: ReturnType<typeof deferred> | undefined,
 		readEntered: ReturnType<typeof deferred> | undefined,
 		holdTranscript: ReturnType<typeof deferred> | undefined,
@@ -139,6 +140,8 @@ async function fixture(
 	if (!session) throw new Error("Fixture session missing");
 	const taskbotCall = async (tool: string, args: Record<string, unknown>) => {
 		if (tool === "get_ticket") {
+			if (readUnavailable)
+				throw new Error("Synthetic original marker lookup unavailable");
 			await awaitHeldRead();
 			return {
 				content: [{ type: "text", text: JSON.stringify(ticket) }],
@@ -166,6 +169,16 @@ async function fixture(
 		| undefined;
 	let initializeCount = 0,
 		holdInitializeAt = 0;
+	let mutationHold:
+		| {
+				entered: ReturnType<typeof deferred>;
+				release: ReturnType<typeof deferred>;
+				ping: boolean;
+		  }
+		| undefined;
+	const pingReply = deferred();
+	let serverPingId: string | number | undefined;
+	let mutationAbort: AbortController | undefined;
 	const mcpCalls: { tool: string; args: Record<string, unknown> }[] = [];
 	let transport: { type: "http"; url: string } | undefined;
 	if (channel === "mcp") {
@@ -177,6 +190,11 @@ async function fixture(
 			let raw = "";
 			for await (const chunk of request) raw += chunk;
 			const message = JSON.parse(raw);
+			if (message.id === serverPingId && !message.method) {
+				pingReply.resolve();
+				response.writeHead(202).end();
+				return;
+			}
 			if (message.method === "notifications/initialized") {
 				response.writeHead(202).end();
 				return;
@@ -202,6 +220,21 @@ async function fixture(
 					message.params.name,
 					message.params.arguments,
 				);
+				if (message.params.name === "comment" && mutationHold) {
+					const held = mutationHold;
+					mutationHold = undefined;
+					held.entered.resolve();
+					await held.release.promise;
+					if (held.ping) {
+						serverPingId = message.id;
+						response.writeHead(200, { "Content-Type": "text/event-stream" });
+						response.write(
+							`event: message\ndata: ${JSON.stringify({ jsonrpc: "2.0", id: serverPingId, method: "ping" })}\n\n`,
+						);
+						request.on("close", () => response.destroy());
+					} else response.destroy();
+					return;
+				}
 			} else throw new Error(`Unexpected MCP method ${message.method}`);
 			response.writeHead(200, { "Content-Type": "application/json" });
 			response.end(JSON.stringify({ jsonrpc: "2.0", id: message.id, result }));
@@ -285,18 +318,23 @@ async function fixture(
 								home,
 							)
 						: taskbotCall(tool, args),
-				async (tool, args, dispatch) =>
-					transport
+				async (tool, args, dispatch) => {
+					mutationAbort = new AbortController();
+					return transport
 						? callConfiguredTool(
 								transport,
 								tool,
 								args,
-								AbortSignal.timeout(5000),
+								AbortSignal.any([
+									AbortSignal.timeout(5000),
+									mutationAbort.signal,
+								]),
 								home,
 								undefined,
 								dispatch,
 							)
-						: (await dispatch.run(() => taskbotCall(tool, args))).value,
+						: (await dispatch.run(() => taskbotCall(tool, args))).value;
+				},
 			)
 		: nativeAdapter(
 				{
@@ -542,6 +580,20 @@ async function fixture(
 		},
 		displays,
 		mcpCalls,
+		blockMutation(ping: boolean) {
+			const held = { entered: deferred(), release: deferred(), ping };
+			mutationHold = held;
+			releaseGates.push(() => {
+				held.release.resolve();
+				mutationAbort?.abort();
+			});
+			return {
+				entered: held.entered.promise,
+				release: () => held.release.resolve(),
+				pingReply: pingReply.promise,
+				abort: () => mutationAbort?.abort(),
+			};
+		},
 		async blockNativeBudget() {
 			nativeHold = { entered: deferred(), release: deferred() };
 			releaseGates.push(() => nativeHold!.release.resolve());
@@ -577,6 +629,17 @@ async function fixture(
 		},
 		loseResponse() {
 			failAfterDelivery = true;
+		},
+		setReadUnavailable(value: boolean) {
+			readUnavailable = value;
+		},
+		replaceRemoteComment(original: string, replacement?: string) {
+			const index = ticket.comments.findIndex(
+				(comment) => comment.body === original,
+			);
+			if (index < 0) throw new Error("Missing original stored comment");
+			if (replacement === undefined) ticket.comments.splice(index, 1);
+			else ticket.comments[index] = { body: replacement };
 		},
 		blockNextRead() {
 			const gate = deferred(),
@@ -1332,4 +1395,297 @@ it("revalidates protected real-file assets after actual MCP initialization befor
 			.every((call) => !String(call.args.body).includes(pending.digest)),
 	).toBe(true);
 	reply.resolve("Historical Ask");
+});
+
+it.each([
+	false,
+	true,
+])("reconciles the original accepted MCP comment after %s protocol ping / ambiguous response and real source change", async (ping) => {
+	const answer = deferred<string>();
+	const f = await fixture(
+		"mcp",
+		async (context) => {
+			context.signal.addEventListener(
+				"abort",
+				() => answer.resolve("Historical answer"),
+				{ once: true },
+			);
+			return answer.promise;
+		},
+		false,
+		undefined,
+		true,
+	);
+	const initial = (await f.displays())[0]!;
+	const held = f.blockMutation(ping);
+	await ask(f, "Keep the original ambiguous comment identity");
+	await held.entered;
+	const pending = structuredClone(f.run.viewDecision!);
+	const original = (await f.displays()).find((body) =>
+		body.includes(pending.digest),
+	)!;
+	expect(original).toContain("<!-- factory:");
+	f.child.resolve();
+	await waitFor(() =>
+		expect(Object.values(f.run.launchActions!)[0]!.progress.a!.status).toBe(
+			"completed",
+		),
+	);
+	held.release();
+	if (ping) {
+		await held.pingReply;
+		held.abort();
+	}
+	await waitFor(() =>
+		expect(
+			f.run.ticketSync!.receipts.find(
+				(r) => r.viewDecision?.digest === pending.digest,
+			)?.error,
+		).toBeTruthy(),
+	);
+	const before = structuredClone(
+		f.run.ticketSync!.receipts.find(
+			(r) => r.viewDecision?.digest === pending.digest,
+		)!,
+	);
+	expect(before.delivered).not.toBe(true);
+	expect(before.superseded).not.toBe(true);
+	answer.resolve("A new ordinary Ask answer");
+	await waitFor(() =>
+		expect(f.run.viewDecision!.digest).not.toBe(pending.digest),
+	);
+	await f.service.flush(f.run);
+	const after = f.run.ticketSync!.receipts.find(
+		(r) => r.viewDecision?.digest === pending.digest,
+	)!;
+	expect(after.delivered).toBe(true);
+	expect(after.superseded).not.toBe(true);
+	expect(after.deliveryId).toBe(before.deliveryId);
+	expect(after.body).toBe(before.body);
+	expect((await f.displays()).filter((body) => body === original)).toHaveLength(
+		1,
+	);
+	expect((await f.displays())[0]).toBe(initial);
+	await expect(
+		f.runtime.replyView(
+			f.run.id,
+			`/view-answer ${JSON.stringify({ ...accepted(f.run), batchId: pending.id, digest: pending.digest })}`,
+		),
+	).rejects.toThrow(/superseded|changed/);
+	const current = f.run.ticketSync!.receipts.find(
+		(r) => r.viewDecision?.digest === f.run.viewDecision!.digest,
+	)!;
+	expect(current.deliveryId).not.toBe(before.deliveryId);
+	const count = (await f.displays()).length;
+	const restored = await f.reconstruct();
+	expect((await f.displays()).length).toBe(count);
+	expect(
+		restored.ticketSync!.receipts.find((r) => r.key === before.key)!.delivered,
+	).toBe(true);
+	await f.runtime.replyView(
+		restored.id,
+		`/view-answer ${JSON.stringify(accepted(restored))}`,
+	);
+	await waitFor(() => expect(restored.status).toBe("completed"));
+});
+
+it.each([
+	false,
+	true,
+])("revalidates protected PNG authority across a legitimate native checkpoint queue (changed=%s)", async (changed) => {
+	const answer = deferred<string>();
+	let askContext: Parameters<RuntimeHooks["agent"]>[0] | undefined;
+	const f = await fixture(
+		"mcp",
+		async (context) => {
+			askContext = context;
+			context.signal.addEventListener(
+				"abort",
+				() => answer.resolve("Historical Ask"),
+				{ once: true },
+			);
+			return answer.promise;
+		},
+		false,
+		undefined,
+		false,
+		true,
+	);
+	const initial = (await f.displays())[0]!;
+	const held = f.blockNextConnection();
+	await ask(f, "Checkpoint while the protected-asset handoff is queued");
+	await held.entered;
+	await waitFor(() => expect(askContext).toBeDefined());
+	const pending = structuredClone(f.run.viewDecision!);
+	const views = f.runtime.humanViews;
+	const originalDispatch = views.dispatchPublication.bind(views);
+	const originalTransition = Reflect.get(views, "transition").bind(views) as <
+		T,
+	>(
+		run: FactoryRun,
+		operation: () => Promise<T>,
+	) => Promise<T>;
+	const originalSave = f.runtime.save.bind(f.runtime);
+	const saving = deferred(),
+		release = deferred();
+	let active = false,
+		phase = 0,
+		armed = true,
+		holdSave = false,
+		checkpoint: Promise<void> | undefined;
+	f.runtime.save = async (run) => {
+		const saved = originalSave(run);
+		if (holdSave) {
+			holdSave = false;
+			await saved;
+			saving.resolve();
+			await release.promise;
+		}
+		return saved;
+	};
+	views.dispatchPublication = (...args) => {
+		active = true;
+		phase = 0;
+		return originalDispatch(...args).finally(() => {
+			active = false;
+		});
+	};
+	Reflect.set(
+		views,
+		"transition",
+		(run: FactoryRun, operation: () => Promise<unknown>) => {
+			// Instrument scheduling only: the real checkpoint and durable save are used.
+			// No source/output/receipt/validator/answer is patched.
+			if (active && armed && ++phase === 2) {
+				armed = false;
+				holdSave = true;
+				checkpoint = askContext!.checkpointAgent!({
+					runner: "codex",
+					sessionId: "synthetic-owned-asset-checkpoint",
+				});
+			}
+			return originalTransition(run, operation);
+		},
+	);
+	try {
+		held.release();
+		await saving.promise;
+		expect(f.run.viewDecision!.digest).toBe(pending.digest);
+		if (changed)
+			writeFileSync(
+				f.image,
+				"Changed real protected PNG while a private checkpoint save is acknowledged",
+			);
+		release.resolve();
+		await checkpoint;
+		if (changed) {
+			await waitFor(() =>
+				expect(
+					f.run.ticketSync!.receipts.find(
+						(r) => r.viewDecision?.digest === pending.digest,
+					)?.superseded,
+				).toBe(true),
+			);
+			expect(await f.displays()).toEqual([initial]);
+			expect(
+				f.mcpCalls
+					.filter((c) => c.tool === "comment")
+					.some((c) => String(c.args.body).includes(pending.digest)),
+			).toBe(false);
+		} else {
+			await waitFor(async () =>
+				expect((await f.displays()).at(-1)).toContain(pending.digest),
+			);
+			expect(f.run.viewDecision!.digest).toBe(pending.digest);
+			expect(
+				f.run.viewRecords!.find((r) => r.snapshot.id === pending.id)!
+					.superseded,
+			).not.toBe(true);
+			expect((await f.displays())[0]).toBe(initial);
+		}
+		expect(
+			f.run.viewRecords!.find((r) => r.snapshot.id === pending.id)!.snapshot
+				.threads!.item0![0]!.agent?.sessionId,
+		).toBe("synthetic-owned-asset-checkpoint");
+	} finally {
+		release.resolve();
+		Reflect.set(views, "transition", originalTransition);
+		views.dispatchPublication = originalDispatch;
+		f.runtime.save = originalSave;
+		answer.resolve("Historical Ask");
+	}
+});
+
+it.each([
+	"unavailable",
+	"different",
+	"absent",
+] as const)("preserves original ambiguity across a newer Ask and restart when marker lookup is %s", async (disposition) => {
+	const answer = deferred<string>();
+	const f = await fixture("taskbot", async () => answer.promise);
+	f.loseResponse();
+	await ask(f, "Retain the original marker before advancing Ask");
+	await waitFor(() =>
+		expect(f.run.ticketSync!.receipts.some((r) => r.error)).toBe(true),
+	);
+	const pending = structuredClone(f.run.viewDecision!);
+	const before = structuredClone(
+		f.run.ticketSync!.receipts.find(
+			(r) => r.viewDecision?.digest === pending.digest,
+		)!,
+	);
+	const original = (await f.displays()).find((body) =>
+		body.includes(pending.digest),
+	)!;
+	expect(before.commentAttempt!.body).toBe(original);
+	f.service.setUpdateMaintenance(true);
+	if (disposition === "unavailable") f.setReadUnavailable(true);
+	else
+		f.replaceRemoteComment(
+			original,
+			disposition === "different"
+				? `${original}\nExternally changed body`
+				: undefined,
+		);
+	answer.resolve("Ordinary newer answer before original reconciliation");
+	await waitFor(() =>
+		expect(f.run.viewDecision!.digest).not.toBe(pending.digest),
+	);
+	const restored = await f.reconstruct();
+	f.service.setUpdateMaintenance(false);
+	await f.service.flush(restored);
+	const retained = restored.ticketSync!.receipts.find(
+		(r) => r.key === before.key,
+	)!;
+	expect(retained.deliveryId).toBe(before.deliveryId);
+	expect(retained.body).toBe(before.body);
+	expect(retained.delivered).not.toBe(true);
+	if (disposition === "absent") {
+		expect(retained.superseded).toBe(true);
+		expect(retained.commentAttempt!.state).toBe("absent");
+		expect(
+			(await f.displays()).some((body) => body.includes(pending.digest)),
+		).toBe(false);
+	} else {
+		expect(retained.superseded).not.toBe(true);
+		expect(retained.error).toMatch(
+			disposition === "different" ? /different content/ : /lookup unavailable/,
+		);
+		expect(retained.commentAttempt!.state).toBe("pending");
+		if (disposition === "unavailable") f.setReadUnavailable(false);
+		else
+			f.replaceRemoteComment(`${original}\nExternally changed body`, original);
+		await f.service.flush(restored);
+		expect(retained.delivered).toBe(true);
+		expect(retained.superseded).not.toBe(true);
+		expect(retained.commentAttempt!.body).toBe(original);
+		expect(
+			(await f.displays()).filter((body) => body === original),
+		).toHaveLength(1);
+	}
+	await f.runtime.replyView(
+		restored.id,
+		`/view-answer ${JSON.stringify(accepted(restored))}`,
+	);
+	await waitFor(() => expect(restored.status).toBe("completed"));
 });

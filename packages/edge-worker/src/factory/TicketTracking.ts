@@ -50,6 +50,8 @@ export interface TicketMilestone {
 	body: string;
 	purpose?: "documentation" | "operational";
 	deliveryId?: string;
+	/** Original Taskbot wire input, retained across ambiguous responses and newer displays. */
+	commentAttempt?: { body: string; state: "pending" | "absent" | "confirmed" };
 	stage?: TicketStage;
 	stageSuperseded?: boolean;
 	stageApplied?: boolean;
@@ -764,6 +766,59 @@ export class TicketTracking {
 					if (this.updateMaintenance) break;
 					if (
 						!receipt.delivered &&
+						(receipt.viewDecision ||
+							run.viewRecords?.some(
+								(record) =>
+									record.snapshot.kind !== "show" &&
+									receipt.key === `view:${record.snapshot.id}`,
+							)) &&
+						receipt.deliveryId &&
+						ref.provider === "taskbot" &&
+						receipt.commentAttempt?.state !== "absent"
+					) {
+						// A newer display cannot establish that an earlier mutation was
+						// unsent. Resolve its original marker/input before viewState can
+						// retire it, including crash gaps and pre-field saved receipts.
+						try {
+							const marker = `<!-- factory:${run.id}:${createHash("sha256").update(receipt.key).digest("hex").slice(0, 20)} -->`;
+							const original =
+								receipt.commentAttempt?.body ?? `${receipt.body}\n\n${marker}`;
+							const snapshot = await (await this.adapter(run)).read("tracking");
+							const found = snapshot.comments.filter((comment) =>
+								comment.body.includes(marker),
+							);
+							if (found.some((comment) => comment.body !== original))
+								throw new StatusConflict(
+									"Original decision delivery marker has different content; retain its identity for reconciliation.",
+								);
+							receipt.commentAttempt = {
+								body: original,
+								state: found.length ? "confirmed" : "absent",
+							};
+							if (found.length) {
+								receipt.delivered = true;
+								delete receipt.superseded;
+								delete receipt.error;
+								delete receipt.conflict;
+							}
+							sync.error = sync.receipts.find(
+								(r) => !r.delivered && !r.superseded && r.error,
+							)?.error;
+							await this.save(run);
+						} catch (error) {
+							delete receipt.superseded;
+							receipt.conflict = error instanceof StatusConflict;
+							receipt.error =
+								error instanceof Error
+									? error.message
+									: "Original Taskbot delivery requires reconciliation";
+							sync.error = receipt.error;
+							await this.save(run);
+							break;
+						}
+					}
+					if (
+						!receipt.delivered &&
 						receipt.viewDecision &&
 						receipt.deliveryId &&
 						ref.provider === "native" &&
@@ -898,6 +953,19 @@ export class TicketTracking {
 							await this.save(run);
 							if (!(await this.validateViewPublication(run, receipt))) continue;
 							const body = `${receipt.body}${receipt.limitation ? `\n\nTracking limitation: ${receipt.limitation}` : ""}\n\n${marker}`;
+							if (receipt.viewDecision && ref.provider === "taskbot") {
+								if (
+									receipt.commentAttempt &&
+									receipt.commentAttempt.body !== body
+								)
+									throw new StatusConflict(
+										"Original decision delivery input cannot change under its delivery ID.",
+									);
+								receipt.commentAttempt = { body, state: "pending" };
+								// Persist a conservative crash-gap intent before provider preparation.
+								// The final mutation guard still decides whether to dispatch.
+								await this.save(run);
+							}
 							const dispatch: ViewDeliveryControl | undefined =
 								receipt.viewDecision
 									? {
@@ -936,6 +1004,8 @@ export class TicketTracking {
 							} else await adapter.comment(body, dispatch);
 						}
 						receipt.delivered = true;
+						if (receipt.commentAttempt)
+							receipt.commentAttempt.state = "confirmed";
 						delete receipt.error;
 						delete receipt.conflict;
 					} catch (error) {
@@ -945,6 +1015,8 @@ export class TicketTracking {
 						) {
 							receipt.superseded = true;
 							receipt.limitation = error.message;
+							if (receipt.commentAttempt)
+								receipt.commentAttempt.state = "absent";
 							delete receipt.error;
 							continue;
 						}

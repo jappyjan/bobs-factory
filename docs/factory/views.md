@@ -169,6 +169,14 @@ Native Linear retries retain a private run/receipt/batch/digest/delivery binding
 separate from the provider input. Recovery without its runtime validator stays
 pending; known-unsent obsolete versions retire without delivery confirmation.
 Ambiguous attempts reconcile their original ID and exact wire content first.
+A Taskbot comment's original marker and body are reconciled before a newer Ask
+digest or batch can retire it. The final transport guard covers the exact locally
+generated mutation envelope; ping replies and cancellation cannot revoke a sent
+attempt. A redirected mutation still retains its original uncertain outcome if a
+later handoff is refused. Protected-file identity is checked again after the local
+transition queue, using stamps retained from bounded byte verification. A competing
+transition repeats byte/revision verification outside the lock; continually
+unsettled authority defers delivery rather than declaring it obsolete.
 A new digest always gets a new delivery identity. This is a final local check, not an atomic lock on an external provider or later source
 changes; a subsequently changed display still requires fresh human review. No
 remote read/write or model wait holds the human transition queue. Failed Ask exposes fixed recovery guidance in
