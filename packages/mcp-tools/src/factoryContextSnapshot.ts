@@ -155,6 +155,7 @@ export class FactoryContextSnapshot {
 	private readonly seen = new WeakMap<object, Reference>();
 	private readonly ancestors = new Set<object>();
 	private readonly written = new Set<string>();
+	private readonly capturedLengths = new Map<string, number>();
 	private readonly manifests = new WeakMap<
 		object,
 		{ digest: string; entries: number; version: number }
@@ -205,7 +206,16 @@ export class FactoryContextSnapshot {
 		return id;
 	}
 	private put(node: Node): Reference {
-		return this.reference(this.write("nodes", JSON.stringify(node)));
+		const id = this.write("nodes", JSON.stringify(node));
+		this.capturedLengths.set(id, node.characters);
+		return this.reference(id);
+	}
+	private captureLength(reference: Reference): number {
+		// The writer already computed this length. Readers still verify node bytes.
+		return (
+			this.capturedLengths.get(this.id(reference)) ??
+			this.node(reference).characters
+		);
 	}
 	node(reference: unknown): Node {
 		const id = this.id(reference);
@@ -356,12 +366,12 @@ export class FactoryContextSnapshot {
 					characters +=
 						(entries.length ? 1 : 0) +
 						(array ? 0 : stringLength(key) + 1) +
-						this.node(reference).characters;
+						this.captureLength(reference);
 					entries.push([key, this.id(reference)]);
 				} else {
 					characters +=
-						this.node(reference).characters -
-						this.node(this.reference(entries[previous]![1])).characters;
+						this.captureLength(reference) -
+						this.captureLength(this.reference(entries[previous]![1]));
 					entries[previous] = [key, this.id(reference)];
 				}
 				yield;
@@ -393,19 +403,27 @@ export class FactoryContextSnapshot {
 		renameSync(temporary, this.path);
 	}
 	writeSync(input: unknown, project = false) {
-		for (const _ of this.writeSnapshot(input, project)) {
-			/* bounded synchronous compatibility path */
+		try {
+			for (const _ of this.writeSnapshot(input, project)) {
+				/* bounded synchronous compatibility path */
+			}
+		} finally {
+			this.capturedLengths.clear();
 		}
 	}
 	async writeAsync(input: unknown, project = false) {
 		let count = 0,
 			started = performance.now();
-		for (const _ of this.writeSnapshot(input, project)) {
-			if (++count >= 64 || performance.now() - started >= 8) {
-				await setImmediate();
-				count = 0;
-				started = performance.now();
+		try {
+			for (const _ of this.writeSnapshot(input, project)) {
+				if (++count >= 64 || performance.now() - started >= 8) {
+					await setImmediate();
+					count = 0;
+					started = performance.now();
+				}
 			}
+		} finally {
+			this.capturedLengths.clear();
 		}
 	}
 	static open(path: string) {
@@ -421,10 +439,14 @@ export class FactoryContextSnapshot {
 		return store;
 	}
 	append(value: unknown): Reference {
-		const writer = this.capture(value, false);
-		let next = writer.next();
-		while (!next.done) next = writer.next();
-		return next.value!;
+		try {
+			const writer = this.capture(value, false);
+			let next = writer.next();
+			while (!next.done) next = writer.next();
+			return next.value!;
+		} finally {
+			this.capturedLengths.clear();
+		}
 	}
 	keys(value: unknown): string[] {
 		return this.node(value).entries?.map(([key]) => key) ?? [];

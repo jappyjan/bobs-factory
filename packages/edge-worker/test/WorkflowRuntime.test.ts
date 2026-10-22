@@ -532,7 +532,10 @@ describe("workflow trigger permissions", () => {
 });
 
 describe("workflow runtime", () => {
-	it("batches agent event bursts while saving checkpoints immediately", async () => {
+	it.each([
+		"agent",
+		"workflow",
+	] as const)("batches %s event bursts while saving checkpoints immediately", async (source) => {
 		vi.useFakeTimers();
 		try {
 			const { runtime, home } = create();
@@ -542,7 +545,7 @@ describe("workflow runtime", () => {
 			runtime.subscribe(changed);
 			const path = join(home, "factory", "runs", `${run.id}.json`);
 			for (let index = 0; index < 500; index++)
-				runtime.log(run, "review", `Tool result ${index}`, "agent");
+				runtime.log(run, "review", `Tool result ${index}`, source);
 			expect(run.events).toHaveLength(500);
 			expect(changed).not.toHaveBeenCalled();
 			expect(readJson(path).events).toEqual([]);
@@ -551,7 +554,7 @@ describe("workflow runtime", () => {
 			expect(changed).toHaveBeenCalledTimes(1);
 			expect(readJson(path).events).toEqual(run.events);
 
-			runtime.log(run, "review", "Last tool result", "agent");
+			runtime.log(run, "review", "Last tool result", source);
 			run.checkpoint = { current: "end", visits: { review: 1 } };
 			await runtime.save(run);
 			const saved = readJson(path);
