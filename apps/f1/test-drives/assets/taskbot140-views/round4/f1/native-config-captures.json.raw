@@ -1,0 +1,1213 @@
+[
+  {
+    "runId": "session-1",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": null,
+    "at": "2026-10-22T09:41:50.833Z",
+    "context": {
+      "item": {
+        "id": "cache",
+        "title": "<script>cache()</script>",
+        "body": "Keep HTML inert; [unsafe](javascript:alert(1))",
+        "impact": "Reuse accepted cache receipts"
+      },
+      "question": "What does this retained item change?",
+      "thread": [
+        {
+          "question": "What does this retained item change?"
+        }
+      ],
+      "displayedView": {
+        "version": "view-v1",
+        "components": [
+          {
+            "id": "intro",
+            "type": "markdown",
+            "data": {
+              "text": "Agent-authored view: <script>window.__f1Pwned=true</script> [bad](javascript:alert(1))"
+            }
+          },
+          {
+            "id": "no-screens",
+            "type": "screenshots",
+            "data": {
+              "items": []
+            }
+          },
+          {
+            "id": "notes",
+            "type": "points",
+            "data": {
+              "items": [
+                {
+                  "label": "Accepted evidence",
+                  "detail": "No raw HTML or script executes."
+                }
+              ]
+            }
+          },
+          {
+            "id": "catalog",
+            "type": "itemCards",
+            "data": {
+              "items": [
+                {
+                  "id": "cache",
+                  "title": "<script>cache()</script>",
+                  "body": "Keep HTML inert; [unsafe](javascript:alert(1))"
+                },
+                {
+                  "id": "labels",
+                  "title": "Clarify progress",
+                  "body": "Keep the stage labels readable"
+                }
+              ]
+            }
+          },
+          {
+            "id": "form",
+            "type": "choices",
+            "data": {
+              "fields": [
+                {
+                  "id": "reason",
+                  "label": "Decision note",
+                  "required": true,
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          {
+            "id": "bar",
+            "type": "decisionBar",
+            "data": {
+              "summary": "Choose every item, then explicitly save.",
+              "actions": [
+                {
+                  "id": "review",
+                  "label": "Review every item"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-1/72ec8acce2bfc625e677b61c2221575a4eaf12daafc41635f955be62f699080c",
+    "allowedTools": [
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context"
+    ],
+    "tools": [],
+    "additionalDirectories": [],
+    "mcpServerNames": [
+      "factory-context"
+    ],
+    "toolProfile": "context-only",
+    "resolvedNative": {
+      "toolProfile": "context-only",
+      "model": "gpt-6.1-sol",
+      "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-1/72ec8acce2bfc625e677b61c2221575a4eaf12daafc41635f955be62f699080c",
+      "sandbox": {
+        "kind": "profile",
+        "profileId": "bobs-factory-context-only",
+        "filesystem": {
+          ":root": "deny",
+          ":minimal": "read",
+          ":workspace_roots": "deny",
+          ":tmpdir": "deny",
+          ":slash_tmp": "deny",
+          "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-1/72ec8acce2bfc625e677b61c2221575a4eaf12daafc41635f955be62f699080c": "read"
+        },
+        "networkAccess": false
+      },
+      "approvalPolicy": "never",
+      "webSearchMode": "disabled",
+      "configOverrides": {
+        "features": {
+          "shell_tool": false,
+          "unified_exec": false,
+          "unified_exec_tty": false,
+          "experimental_use_unified_exec_tool": false,
+          "view_image": false,
+          "apps": false,
+          "connectors": false,
+          "enable_mcp_apps": false,
+          "codex_apps_mcp_2026_07_28": false,
+          "browser_use": false,
+          "browser_use_external": false,
+          "browser_use_full_cdp_access": false,
+          "browser_annotation_api": false,
+          "in_app_browser": false,
+          "computer_use": false,
+          "in_app_local_automation": false,
+          "plugins": false,
+          "remote_plugin": false,
+          "remote_control": false,
+          "plugin_hooks": false,
+          "plugin_sharing": false,
+          "recommended_plugins": false,
+          "hooks": false,
+          "codex_hooks": false,
+          "image_generation": false,
+          "imagegenext": false,
+          "code_mode": false,
+          "code_mode_only": false,
+          "code_mode_only_strict_3p_tools": false,
+          "code_mode_buffered_exec": false,
+          "code_mode_interrupt": false,
+          "code_mode_prewarm": false,
+          "code_mode_tool_search": false,
+          "code_mode_host": false,
+          "code_mode_host_grpc": false,
+          "js_repl": false,
+          "js_repl_tools_only": false,
+          "multi_agent": false,
+          "multi_agent_mode": false,
+          "multi_agent_v2": false,
+          "multi_agent_v2_dynamic_tools": false,
+          "collab": false,
+          "enable_fanout": false,
+          "agent_message_board": false,
+          "send_async_message": false,
+          "memory_tool": false,
+          "memories": false,
+          "external_agent_memory_import": false,
+          "web_search": false,
+          "web_search_cached": false,
+          "web_search_request": false,
+          "standalone_web_search": false,
+          "request_permissions": false,
+          "request_permissions_tool": false,
+          "request_rule": false,
+          "guardian_approval": false,
+          "exec_permission_approvals": false,
+          "skill_search": false,
+          "skill_mcp_dependency_install": false,
+          "tool_suggest": false,
+          "tool_search": false,
+          "search_tool": false,
+          "shell_snapshot": false,
+          "shell_snapshot_v2": false,
+          "skip_host_skill_discovery": true
+        },
+        "agents": {
+          "enabled": false
+        },
+        "web_search": "disabled",
+        "allow_login_shell": false,
+        "notify": [],
+        "hooks": {
+          "Interrupt": [],
+          "PermissionRequest": [],
+          "PostCompact": [],
+          "PostToolUse": [],
+          "PreCompact": [],
+          "PreToolUse": [],
+          "SessionEnd": [],
+          "SessionStart": [],
+          "Stop": [],
+          "SubagentStart": [],
+          "SubagentStop": [],
+          "UserPromptSubmit": []
+        },
+        "skills": {
+          "config": [],
+          "bundled": {
+            "enabled": false
+          },
+          "include_instructions": false
+        },
+        "memories": {
+          "generate_memories": false,
+          "use_memories": false,
+          "dedicated_tools": false
+        },
+        "project_doc_max_bytes": 0,
+        "project_doc_fallback_filenames": [],
+        "instructions": "",
+        "include_environment_context": false,
+        "include_apps_instructions": false,
+        "tools": {
+          "experimental_request_user_input": {
+            "enabled": false
+          },
+          "update_plan": {
+            "enabled": false
+          }
+        },
+        "mcp_servers": {
+          "linear": {
+            "enabled": false
+          },
+          "mailbox": {
+            "enabled": false
+          },
+          "outline": {
+            "enabled": false
+          },
+          "taskbot": {
+            "enabled": false
+          },
+          "twenty": {
+            "enabled": false
+          },
+          "node_repl": {
+            "enabled": false
+          },
+          "factory-context": {
+            "command": "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+            "args": [
+              "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools/dist/factory-context-main.js",
+              "--snapshot",
+              "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bobs-factory-context-R8iNcb/input.json"
+            ],
+            "startup_timeout_sec": 45,
+            "required": true,
+            "enabled": true,
+            "enabled_tools": [
+              "list_context",
+              "read_context"
+            ],
+            "default_tools_approval_mode": "approve"
+          }
+        }
+      }
+    }
+  },
+  {
+    "runId": "session-1",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": "f1-mock-89d55dcf-ee9a-4de6-b9a1-ca487e5bf242",
+    "at": "2026-10-22T09:41:51.321Z",
+    "context": {
+      "item": {
+        "id": "cache",
+        "title": "<script>cache()</script>",
+        "body": "Keep HTML inert; [unsafe](javascript:alert(1))",
+        "impact": "Reuse accepted cache receipts"
+      },
+      "question": "What does this retained item change?",
+      "thread": [
+        {
+          "question": "What does this retained item change?"
+        }
+      ],
+      "displayedView": {
+        "version": "view-v1",
+        "components": [
+          {
+            "id": "intro",
+            "type": "markdown",
+            "data": {
+              "text": "Agent-authored view: <script>window.__f1Pwned=true</script> [bad](javascript:alert(1))"
+            }
+          },
+          {
+            "id": "no-screens",
+            "type": "screenshots",
+            "data": {
+              "items": []
+            }
+          },
+          {
+            "id": "notes",
+            "type": "points",
+            "data": {
+              "items": [
+                {
+                  "label": "Accepted evidence",
+                  "detail": "No raw HTML or script executes."
+                }
+              ]
+            }
+          },
+          {
+            "id": "catalog",
+            "type": "itemCards",
+            "data": {
+              "items": [
+                {
+                  "id": "cache",
+                  "title": "<script>cache()</script>",
+                  "body": "Keep HTML inert; [unsafe](javascript:alert(1))"
+                },
+                {
+                  "id": "labels",
+                  "title": "Clarify progress",
+                  "body": "Keep the stage labels readable"
+                }
+              ]
+            }
+          },
+          {
+            "id": "form",
+            "type": "choices",
+            "data": {
+              "fields": [
+                {
+                  "id": "reason",
+                  "label": "Decision note",
+                  "required": true,
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          {
+            "id": "bar",
+            "type": "decisionBar",
+            "data": {
+              "summary": "Choose every item, then explicitly save.",
+              "actions": [
+                {
+                  "id": "review",
+                  "label": "Review every item"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-1/72ec8acce2bfc625e677b61c2221575a4eaf12daafc41635f955be62f699080c",
+    "allowedTools": [
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context"
+    ],
+    "tools": [],
+    "additionalDirectories": [],
+    "mcpServerNames": [
+      "factory-context"
+    ],
+    "toolProfile": "context-only",
+    "resolvedNative": {
+      "toolProfile": "context-only",
+      "model": "gpt-6.1-sol",
+      "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-1/72ec8acce2bfc625e677b61c2221575a4eaf12daafc41635f955be62f699080c",
+      "sandbox": {
+        "kind": "profile",
+        "profileId": "bobs-factory-context-only",
+        "filesystem": {
+          ":root": "deny",
+          ":minimal": "read",
+          ":workspace_roots": "deny",
+          ":tmpdir": "deny",
+          ":slash_tmp": "deny",
+          "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-1/72ec8acce2bfc625e677b61c2221575a4eaf12daafc41635f955be62f699080c": "read"
+        },
+        "networkAccess": false
+      },
+      "approvalPolicy": "never",
+      "webSearchMode": "disabled",
+      "configOverrides": {
+        "features": {
+          "shell_tool": false,
+          "unified_exec": false,
+          "unified_exec_tty": false,
+          "experimental_use_unified_exec_tool": false,
+          "view_image": false,
+          "apps": false,
+          "connectors": false,
+          "enable_mcp_apps": false,
+          "codex_apps_mcp_2026_07_28": false,
+          "browser_use": false,
+          "browser_use_external": false,
+          "browser_use_full_cdp_access": false,
+          "browser_annotation_api": false,
+          "in_app_browser": false,
+          "computer_use": false,
+          "in_app_local_automation": false,
+          "plugins": false,
+          "remote_plugin": false,
+          "remote_control": false,
+          "plugin_hooks": false,
+          "plugin_sharing": false,
+          "recommended_plugins": false,
+          "hooks": false,
+          "codex_hooks": false,
+          "image_generation": false,
+          "imagegenext": false,
+          "code_mode": false,
+          "code_mode_only": false,
+          "code_mode_only_strict_3p_tools": false,
+          "code_mode_buffered_exec": false,
+          "code_mode_interrupt": false,
+          "code_mode_prewarm": false,
+          "code_mode_tool_search": false,
+          "code_mode_host": false,
+          "code_mode_host_grpc": false,
+          "js_repl": false,
+          "js_repl_tools_only": false,
+          "multi_agent": false,
+          "multi_agent_mode": false,
+          "multi_agent_v2": false,
+          "multi_agent_v2_dynamic_tools": false,
+          "collab": false,
+          "enable_fanout": false,
+          "agent_message_board": false,
+          "send_async_message": false,
+          "memory_tool": false,
+          "memories": false,
+          "external_agent_memory_import": false,
+          "web_search": false,
+          "web_search_cached": false,
+          "web_search_request": false,
+          "standalone_web_search": false,
+          "request_permissions": false,
+          "request_permissions_tool": false,
+          "request_rule": false,
+          "guardian_approval": false,
+          "exec_permission_approvals": false,
+          "skill_search": false,
+          "skill_mcp_dependency_install": false,
+          "tool_suggest": false,
+          "tool_search": false,
+          "search_tool": false,
+          "shell_snapshot": false,
+          "shell_snapshot_v2": false,
+          "skip_host_skill_discovery": true
+        },
+        "agents": {
+          "enabled": false
+        },
+        "web_search": "disabled",
+        "allow_login_shell": false,
+        "notify": [],
+        "hooks": {
+          "Interrupt": [],
+          "PermissionRequest": [],
+          "PostCompact": [],
+          "PostToolUse": [],
+          "PreCompact": [],
+          "PreToolUse": [],
+          "SessionEnd": [],
+          "SessionStart": [],
+          "Stop": [],
+          "SubagentStart": [],
+          "SubagentStop": [],
+          "UserPromptSubmit": []
+        },
+        "skills": {
+          "config": [],
+          "bundled": {
+            "enabled": false
+          },
+          "include_instructions": false
+        },
+        "memories": {
+          "generate_memories": false,
+          "use_memories": false,
+          "dedicated_tools": false
+        },
+        "project_doc_max_bytes": 0,
+        "project_doc_fallback_filenames": [],
+        "instructions": "",
+        "include_environment_context": false,
+        "include_apps_instructions": false,
+        "tools": {
+          "experimental_request_user_input": {
+            "enabled": false
+          },
+          "update_plan": {
+            "enabled": false
+          }
+        },
+        "mcp_servers": {
+          "linear": {
+            "enabled": false
+          },
+          "mailbox": {
+            "enabled": false
+          },
+          "outline": {
+            "enabled": false
+          },
+          "taskbot": {
+            "enabled": false
+          },
+          "twenty": {
+            "enabled": false
+          },
+          "node_repl": {
+            "enabled": false
+          },
+          "factory-context": {
+            "command": "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+            "args": [
+              "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools/dist/factory-context-main.js",
+              "--snapshot",
+              "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bobs-factory-context-rsnCgj/input.json"
+            ],
+            "startup_timeout_sec": 45,
+            "required": true,
+            "enabled": true,
+            "enabled_tools": [
+              "list_context",
+              "read_context"
+            ],
+            "default_tools_approval_mode": "approve"
+          }
+        }
+      },
+      "resumeSessionId": "f1-mock-89d55dcf-ee9a-4de6-b9a1-ca487e5bf242"
+    }
+  },
+  {
+    "runId": "session-4",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T09:42:03.943Z",
+    "context": {
+      "item": {
+        "id": "item0",
+        "title": "Item 0",
+        "body": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+      },
+      "question": "RepairQuestion",
+      "thread": [
+        {
+          "question": "RepairQuestion"
+        }
+      ],
+      "displayedView": {
+        "version": "view-v1",
+        "components": [
+          {
+            "id": "message",
+            "type": "markdown",
+            "data": {
+              "text": "The current decision takes priority over old Show history."
+            }
+          }
+        ]
+      }
+    },
+    "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-4/2117cee61484795ea3bb2755e9a29b2c9cbd3b945d1cb6ffc4a3d93fe5c372c6",
+    "allowedTools": [
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context"
+    ],
+    "tools": [],
+    "additionalDirectories": [],
+    "mcpServerNames": [
+      "factory-context"
+    ],
+    "toolProfile": "context-only",
+    "resolvedNative": {
+      "toolProfile": "context-only",
+      "model": "gpt-5",
+      "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-4/2117cee61484795ea3bb2755e9a29b2c9cbd3b945d1cb6ffc4a3d93fe5c372c6",
+      "sandbox": {
+        "kind": "profile",
+        "profileId": "bobs-factory-context-only",
+        "filesystem": {
+          ":root": "deny",
+          ":minimal": "read",
+          ":workspace_roots": "deny",
+          ":tmpdir": "deny",
+          ":slash_tmp": "deny",
+          "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-4/2117cee61484795ea3bb2755e9a29b2c9cbd3b945d1cb6ffc4a3d93fe5c372c6": "read"
+        },
+        "networkAccess": false
+      },
+      "approvalPolicy": "never",
+      "webSearchMode": "disabled",
+      "configOverrides": {
+        "features": {
+          "shell_tool": false,
+          "unified_exec": false,
+          "unified_exec_tty": false,
+          "experimental_use_unified_exec_tool": false,
+          "view_image": false,
+          "apps": false,
+          "connectors": false,
+          "enable_mcp_apps": false,
+          "codex_apps_mcp_2026_07_28": false,
+          "browser_use": false,
+          "browser_use_external": false,
+          "browser_use_full_cdp_access": false,
+          "browser_annotation_api": false,
+          "in_app_browser": false,
+          "computer_use": false,
+          "in_app_local_automation": false,
+          "plugins": false,
+          "remote_plugin": false,
+          "remote_control": false,
+          "plugin_hooks": false,
+          "plugin_sharing": false,
+          "recommended_plugins": false,
+          "hooks": false,
+          "codex_hooks": false,
+          "image_generation": false,
+          "imagegenext": false,
+          "code_mode": false,
+          "code_mode_only": false,
+          "code_mode_only_strict_3p_tools": false,
+          "code_mode_buffered_exec": false,
+          "code_mode_interrupt": false,
+          "code_mode_prewarm": false,
+          "code_mode_tool_search": false,
+          "code_mode_host": false,
+          "code_mode_host_grpc": false,
+          "js_repl": false,
+          "js_repl_tools_only": false,
+          "multi_agent": false,
+          "multi_agent_mode": false,
+          "multi_agent_v2": false,
+          "multi_agent_v2_dynamic_tools": false,
+          "collab": false,
+          "enable_fanout": false,
+          "agent_message_board": false,
+          "send_async_message": false,
+          "memory_tool": false,
+          "memories": false,
+          "external_agent_memory_import": false,
+          "web_search": false,
+          "web_search_cached": false,
+          "web_search_request": false,
+          "standalone_web_search": false,
+          "request_permissions": false,
+          "request_permissions_tool": false,
+          "request_rule": false,
+          "guardian_approval": false,
+          "exec_permission_approvals": false,
+          "skill_search": false,
+          "skill_mcp_dependency_install": false,
+          "tool_suggest": false,
+          "tool_search": false,
+          "search_tool": false,
+          "shell_snapshot": false,
+          "shell_snapshot_v2": false,
+          "skip_host_skill_discovery": true
+        },
+        "agents": {
+          "enabled": false
+        },
+        "web_search": "disabled",
+        "allow_login_shell": false,
+        "notify": [],
+        "hooks": {
+          "Interrupt": [],
+          "PermissionRequest": [],
+          "PostCompact": [],
+          "PostToolUse": [],
+          "PreCompact": [],
+          "PreToolUse": [],
+          "SessionEnd": [],
+          "SessionStart": [],
+          "Stop": [],
+          "SubagentStart": [],
+          "SubagentStop": [],
+          "UserPromptSubmit": []
+        },
+        "skills": {
+          "config": [],
+          "bundled": {
+            "enabled": false
+          },
+          "include_instructions": false
+        },
+        "memories": {
+          "generate_memories": false,
+          "use_memories": false,
+          "dedicated_tools": false
+        },
+        "project_doc_max_bytes": 0,
+        "project_doc_fallback_filenames": [],
+        "instructions": "",
+        "include_environment_context": false,
+        "include_apps_instructions": false,
+        "tools": {
+          "experimental_request_user_input": {
+            "enabled": false
+          },
+          "update_plan": {
+            "enabled": false
+          }
+        },
+        "mcp_servers": {
+          "linear": {
+            "enabled": false
+          },
+          "mailbox": {
+            "enabled": false
+          },
+          "outline": {
+            "enabled": false
+          },
+          "taskbot": {
+            "enabled": false
+          },
+          "twenty": {
+            "enabled": false
+          },
+          "node_repl": {
+            "enabled": false
+          },
+          "factory-context": {
+            "command": "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+            "args": [
+              "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools/dist/factory-context-main.js",
+              "--snapshot",
+              "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bobs-factory-context-akIKQ5/input.json"
+            ],
+            "startup_timeout_sec": 45,
+            "required": true,
+            "enabled": true,
+            "enabled_tools": [
+              "list_context",
+              "read_context"
+            ],
+            "default_tools_approval_mode": "approve"
+          }
+        }
+      }
+    }
+  },
+  {
+    "runId": "session-5",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": null,
+    "at": "2026-10-22T09:42:07.813Z",
+    "context": {
+      "item": {
+        "id": "item0",
+        "title": "Public item"
+      },
+      "question": "NATIVE_FAILURE_PUBLIC",
+      "thread": [
+        {
+          "question": "NATIVE_FAILURE_PUBLIC"
+        }
+      ],
+      "displayedView": {
+        "version": "view-v1",
+        "components": [
+          {
+            "id": "message",
+            "type": "markdown",
+            "data": {
+              "text": "Public native failure context"
+            }
+          }
+        ]
+      }
+    },
+    "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-5/7fab8cd3faf3f7780f6699ab21afab95126d9e3c92574d162edb7dc1aa274914",
+    "allowedTools": [
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context"
+    ],
+    "tools": [],
+    "additionalDirectories": [],
+    "mcpServerNames": [
+      "factory-context"
+    ],
+    "toolProfile": "context-only",
+    "resolvedNative": {
+      "toolProfile": "context-only",
+      "model": "gpt-6.1-sol",
+      "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-5/7fab8cd3faf3f7780f6699ab21afab95126d9e3c92574d162edb7dc1aa274914",
+      "sandbox": {
+        "kind": "profile",
+        "profileId": "bobs-factory-context-only",
+        "filesystem": {
+          ":root": "deny",
+          ":minimal": "read",
+          ":workspace_roots": "deny",
+          ":tmpdir": "deny",
+          ":slash_tmp": "deny",
+          "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-5/7fab8cd3faf3f7780f6699ab21afab95126d9e3c92574d162edb7dc1aa274914": "read"
+        },
+        "networkAccess": false
+      },
+      "approvalPolicy": "never",
+      "webSearchMode": "disabled",
+      "configOverrides": {
+        "features": {
+          "shell_tool": false,
+          "unified_exec": false,
+          "unified_exec_tty": false,
+          "experimental_use_unified_exec_tool": false,
+          "view_image": false,
+          "apps": false,
+          "connectors": false,
+          "enable_mcp_apps": false,
+          "codex_apps_mcp_2026_07_28": false,
+          "browser_use": false,
+          "browser_use_external": false,
+          "browser_use_full_cdp_access": false,
+          "browser_annotation_api": false,
+          "in_app_browser": false,
+          "computer_use": false,
+          "in_app_local_automation": false,
+          "plugins": false,
+          "remote_plugin": false,
+          "remote_control": false,
+          "plugin_hooks": false,
+          "plugin_sharing": false,
+          "recommended_plugins": false,
+          "hooks": false,
+          "codex_hooks": false,
+          "image_generation": false,
+          "imagegenext": false,
+          "code_mode": false,
+          "code_mode_only": false,
+          "code_mode_only_strict_3p_tools": false,
+          "code_mode_buffered_exec": false,
+          "code_mode_interrupt": false,
+          "code_mode_prewarm": false,
+          "code_mode_tool_search": false,
+          "code_mode_host": false,
+          "code_mode_host_grpc": false,
+          "js_repl": false,
+          "js_repl_tools_only": false,
+          "multi_agent": false,
+          "multi_agent_mode": false,
+          "multi_agent_v2": false,
+          "multi_agent_v2_dynamic_tools": false,
+          "collab": false,
+          "enable_fanout": false,
+          "agent_message_board": false,
+          "send_async_message": false,
+          "memory_tool": false,
+          "memories": false,
+          "external_agent_memory_import": false,
+          "web_search": false,
+          "web_search_cached": false,
+          "web_search_request": false,
+          "standalone_web_search": false,
+          "request_permissions": false,
+          "request_permissions_tool": false,
+          "request_rule": false,
+          "guardian_approval": false,
+          "exec_permission_approvals": false,
+          "skill_search": false,
+          "skill_mcp_dependency_install": false,
+          "tool_suggest": false,
+          "tool_search": false,
+          "search_tool": false,
+          "shell_snapshot": false,
+          "shell_snapshot_v2": false,
+          "skip_host_skill_discovery": true
+        },
+        "agents": {
+          "enabled": false
+        },
+        "web_search": "disabled",
+        "allow_login_shell": false,
+        "notify": [],
+        "hooks": {
+          "Interrupt": [],
+          "PermissionRequest": [],
+          "PostCompact": [],
+          "PostToolUse": [],
+          "PreCompact": [],
+          "PreToolUse": [],
+          "SessionEnd": [],
+          "SessionStart": [],
+          "Stop": [],
+          "SubagentStart": [],
+          "SubagentStop": [],
+          "UserPromptSubmit": []
+        },
+        "skills": {
+          "config": [],
+          "bundled": {
+            "enabled": false
+          },
+          "include_instructions": false
+        },
+        "memories": {
+          "generate_memories": false,
+          "use_memories": false,
+          "dedicated_tools": false
+        },
+        "project_doc_max_bytes": 0,
+        "project_doc_fallback_filenames": [],
+        "instructions": "",
+        "include_environment_context": false,
+        "include_apps_instructions": false,
+        "tools": {
+          "experimental_request_user_input": {
+            "enabled": false
+          },
+          "update_plan": {
+            "enabled": false
+          }
+        },
+        "mcp_servers": {
+          "linear": {
+            "enabled": false
+          },
+          "mailbox": {
+            "enabled": false
+          },
+          "outline": {
+            "enabled": false
+          },
+          "taskbot": {
+            "enabled": false
+          },
+          "twenty": {
+            "enabled": false
+          },
+          "node_repl": {
+            "enabled": false
+          },
+          "factory-context": {
+            "command": "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+            "args": [
+              "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools/dist/factory-context-main.js",
+              "--snapshot",
+              "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bobs-factory-context-eYDZu1/input.json"
+            ],
+            "startup_timeout_sec": 45,
+            "required": true,
+            "enabled": true,
+            "enabled_tools": [
+              "list_context",
+              "read_context"
+            ],
+            "default_tools_approval_mode": "approve"
+          }
+        }
+      }
+    }
+  },
+  {
+    "runId": "session-6",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T09:42:10.349Z",
+    "context": {
+      "item": {
+        "id": "a",
+        "title": "Alpha"
+      },
+      "question": "ROTATE_ALPHA",
+      "thread": [
+        {
+          "question": "ROTATE_ALPHA"
+        }
+      ],
+      "displayedView": {
+        "version": "view-v1",
+        "components": [
+          {
+            "id": "children",
+            "type": "runList",
+            "data": {
+              "waves": [
+                {
+                  "id": "497568d7-251a-4baa-8cc8-e5b070ae9bce-0",
+                  "label": "dispatch · Wave 1",
+                  "runs": [
+                    {
+                      "id": "child-da7d1b9c56085a89cd884f38ec16f0362c880244",
+                      "title": "Controlled child",
+                      "status": "running"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-6/07b46201b2ec477a762939187f0b828189c97b079c083687c8161aa774d5c7ac",
+    "allowedTools": [
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context"
+    ],
+    "tools": [],
+    "additionalDirectories": [],
+    "mcpServerNames": [
+      "factory-context"
+    ],
+    "toolProfile": "context-only",
+    "resolvedNative": {
+      "toolProfile": "context-only",
+      "model": "gpt-5",
+      "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-6/07b46201b2ec477a762939187f0b828189c97b079c083687c8161aa774d5c7ac",
+      "sandbox": {
+        "kind": "profile",
+        "profileId": "bobs-factory-context-only",
+        "filesystem": {
+          ":root": "deny",
+          ":minimal": "read",
+          ":workspace_roots": "deny",
+          ":tmpdir": "deny",
+          ":slash_tmp": "deny",
+          "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-ktoTjR/home/factory/assistance/session-6/07b46201b2ec477a762939187f0b828189c97b079c083687c8161aa774d5c7ac": "read"
+        },
+        "networkAccess": false
+      },
+      "approvalPolicy": "never",
+      "webSearchMode": "disabled",
+      "configOverrides": {
+        "features": {
+          "shell_tool": false,
+          "unified_exec": false,
+          "unified_exec_tty": false,
+          "experimental_use_unified_exec_tool": false,
+          "view_image": false,
+          "apps": false,
+          "connectors": false,
+          "enable_mcp_apps": false,
+          "codex_apps_mcp_2026_07_28": false,
+          "browser_use": false,
+          "browser_use_external": false,
+          "browser_use_full_cdp_access": false,
+          "browser_annotation_api": false,
+          "in_app_browser": false,
+          "computer_use": false,
+          "in_app_local_automation": false,
+          "plugins": false,
+          "remote_plugin": false,
+          "remote_control": false,
+          "plugin_hooks": false,
+          "plugin_sharing": false,
+          "recommended_plugins": false,
+          "hooks": false,
+          "codex_hooks": false,
+          "image_generation": false,
+          "imagegenext": false,
+          "code_mode": false,
+          "code_mode_only": false,
+          "code_mode_only_strict_3p_tools": false,
+          "code_mode_buffered_exec": false,
+          "code_mode_interrupt": false,
+          "code_mode_prewarm": false,
+          "code_mode_tool_search": false,
+          "code_mode_host": false,
+          "code_mode_host_grpc": false,
+          "js_repl": false,
+          "js_repl_tools_only": false,
+          "multi_agent": false,
+          "multi_agent_mode": false,
+          "multi_agent_v2": false,
+          "multi_agent_v2_dynamic_tools": false,
+          "collab": false,
+          "enable_fanout": false,
+          "agent_message_board": false,
+          "send_async_message": false,
+          "memory_tool": false,
+          "memories": false,
+          "external_agent_memory_import": false,
+          "web_search": false,
+          "web_search_cached": false,
+          "web_search_request": false,
+          "standalone_web_search": false,
+          "request_permissions": false,
+          "request_permissions_tool": false,
+          "request_rule": false,
+          "guardian_approval": false,
+          "exec_permission_approvals": false,
+          "skill_search": false,
+          "skill_mcp_dependency_install": false,
+          "tool_suggest": false,
+          "tool_search": false,
+          "search_tool": false,
+          "shell_snapshot": false,
+          "shell_snapshot_v2": false,
+          "skip_host_skill_discovery": true
+        },
+        "agents": {
+          "enabled": false
+        },
+        "web_search": "disabled",
+        "allow_login_shell": false,
+        "notify": [],
+        "hooks": {
+          "Interrupt": [],
+          "PermissionRequest": [],
+          "PostCompact": [],
+          "PostToolUse": [],
+          "PreCompact": [],
+          "PreToolUse": [],
+          "SessionEnd": [],
+          "SessionStart": [],
+          "Stop": [],
+          "SubagentStart": [],
+          "SubagentStop": [],
+          "UserPromptSubmit": []
+        },
+        "skills": {
+          "config": [],
+          "bundled": {
+            "enabled": false
+          },
+          "include_instructions": false
+        },
+        "memories": {
+          "generate_memories": false,
+          "use_memories": false,
+          "dedicated_tools": false
+        },
+        "project_doc_max_bytes": 0,
+        "project_doc_fallback_filenames": [],
+        "instructions": "",
+        "include_environment_context": false,
+        "include_apps_instructions": false,
+        "tools": {
+          "experimental_request_user_input": {
+            "enabled": false
+          },
+          "update_plan": {
+            "enabled": false
+          }
+        },
+        "mcp_servers": {
+          "linear": {
+            "enabled": false
+          },
+          "mailbox": {
+            "enabled": false
+          },
+          "outline": {
+            "enabled": false
+          },
+          "taskbot": {
+            "enabled": false
+          },
+          "twenty": {
+            "enabled": false
+          },
+          "node_repl": {
+            "enabled": false
+          },
+          "factory-context": {
+            "command": "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+            "args": [
+              "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools/dist/factory-context-main.js",
+              "--snapshot",
+              "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bobs-factory-context-MGbYWE/input.json"
+            ],
+            "startup_timeout_sec": 45,
+            "required": true,
+            "enabled": true,
+            "enabled_tools": [
+              "list_context",
+              "read_context"
+            ],
+            "default_tools_approval_mode": "approve"
+          }
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,441 @@
+
+> bobs-factory-monorepo@1.0.1 lint /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views
+> biome check
+
+packages/core/src/security/WebhookIpValidator.ts:2:9 lint/complexity/noStaticOnlyClass ━━━━━━━━━━━━━
+
+  ! Avoid classes that contain only static members.
+  
+    1 │ // Node 18+ globals — available at runtime but not in ES2022 lib typings
+  > 2 │ declare class AbortSignal {
+      │         ^^^^^^^^^^^^^^^^^^^
+  > 3 │ 	static timeout(ms: number): AbortSignal;
+  > 4 │ }
+      │ ^
+    5 │ declare function fetch(
+    6 │ 	url: string,
+  
+  i Prefer using simple functions instead of classes with only static members.
+  
+
+packages/edge-worker/src/factory/web/styles.css:139:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    137 │ }
+    138 │ h1,
+  > 139 │ h2,
+        │ ^^
+    140 │ h3,
+    141 │ h4,
+  
+  i This selector specificity is (0, 1, 1)
+  
+    10 │ 	max-width: 100%;
+    11 │ }
+  > 12 │ .run-view-displays h2 {
+       │ ^^^^^^^^^^^^^^^^^^^^^
+    13 │ 	overflow-wrap: anywhere;
+    14 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:146:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    144 │ }
+    145 │ h1,
+  > 146 │ h2,
+        │ ^^
+    147 │ h3 {
+    148 │ 	font-weight: 800;
+  
+  i This selector specificity is (0, 1, 1)
+  
+    10 │ 	max-width: 100%;
+    11 │ }
+  > 12 │ .run-view-displays h2 {
+       │ ^^^^^^^^^^^^^^^^^^^^^
+    13 │ 	overflow-wrap: anywhere;
+    14 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:155:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    153 │ 	line-height: 1.2;
+    154 │ }
+  > 155 │ h2 {
+        │ ^^
+    156 │ 	font-size: 21px;
+    157 │ }
+  
+  i This selector specificity is (0, 1, 1)
+  
+    10 │ 	max-width: 100%;
+    11 │ }
+  > 12 │ .run-view-displays h2 {
+       │ ^^^^^^^^^^^^^^^^^^^^^
+    13 │ 	overflow-wrap: anywhere;
+    14 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:431:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    429 │ 	margin-left: auto;
+    430 │ }
+  > 431 │ .toggle {
+        │ ^^^^^^^
+    432 │ 	display: inline-flex;
+    433 │ 	border-radius: 999px;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    426 │ 	font-weight: 700;
+    427 │ }
+  > 428 │ .section-heading .toggle {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    429 │ 	margin-left: auto;
+    430 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1489:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1487 │ 	transform: translateX(-50%);
+    1488 │ }
+  > 1489 │ .markdown {
+         │ ^^^^^^^^^
+    1490 │ 	min-width: 0;
+    1491 │ 	max-width: 100%;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    828 │ 	color: var(--muted);
+    829 │ }
+  > 830 │ .stuck-panel .markdown {
+        │ ^^^^^^^^^^^^^^^^^^^^^^
+    831 │ 	margin: 8px 0;
+    832 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1788:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    1786 │ 	gap: 16px;
+    1787 │ }
+  > 1788 │ .assessment section {
+         │ ^^^^^^^^^^^^^^^^^^^
+    1789 │ 	background: var(--quiet);
+    1790 │ 	padding: 16px;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    849 │ 	object-fit: cover;
+    850 │ }
+  > 851 │ .pairs section + section {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    852 │ 	margin-top: 12px;
+    853 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1868:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    1866 │ 	border-radius: 12px;
+    1867 │ }
+  > 1868 │ .diff span {
+         │ ^^^^^^^^^^
+    1869 │ 	display: block;
+    1870 │ 	white-space: pre;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    803 │ 	min-height: 32px;
+    804 │ }
+  > 805 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    806 │ 	margin-right: 6px;
+    807 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1921:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1919 │ 	font-weight: 800;
+    1920 │ }
+  > 1921 │ .error,
+         │ ^^^^^^
+    1922 │ .connection-error {
+    1923 │ 	background: var(--red);
+  
+  i This selector specificity is (0, 2, 0)
+  
+    613 │ 	margin: 0;
+    614 │ }
+  > 615 │ .run-title-status .error {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    616 │ 	flex-basis: 100%;
+    617 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1939:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1937 │ 	color: var(--muted);
+    1938 │ }
+  > 1939 │ .bob {
+         │ ^^^^
+    1940 │ 	overflow: visible;
+    1941 │ 	animation: bob-bounce 3s ease-in-out infinite;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    717 │ 	font-weight: 700;
+    718 │ }
+  > 719 │ .question-heading .bob {
+        │ ^^^^^^^^^^^^^^^^^^^^^^
+    720 │ 	flex-shrink: 0;
+    721 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1955:18 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    1953 │ }
+    1954 │ .bob-sleepy {
+  > 1955 │ 	animation: none !important;
+         │ 	                ^^^^^^^^^^
+    1956 │ }
+    1957 │ /* Factory is unreachable: Bob slows down and looks around for it. */
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    1955 │ → animation:·none·!important;
+         │                  ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:2393:19 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    2391 │ 	*:before,
+    2392 │ 	*:after {
+  > 2393 │ 		animation: none !important;
+         │ 		                ^^^^^^^^^^
+    2394 │ 		transition: none !important;
+    2395 │ 		scroll-behavior: auto !important;
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    2393 │ → → animation:·none·!important;
+         │                    ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:2394:20 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    2392 │ 	*:after {
+    2393 │ 		animation: none !important;
+  > 2394 │ 		transition: none !important;
+         │ 		                 ^^^^^^^^^^
+    2395 │ 		scroll-behavior: auto !important;
+    2396 │ 	}
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    2394 │ → → transition:·none·!important;
+         │                     ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:2395:25 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    2393 │ 		animation: none !important;
+    2394 │ 		transition: none !important;
+  > 2395 │ 		scroll-behavior: auto !important;
+         │ 		                      ^^^^^^^^^^
+    2396 │ 	}
+    2397 │ }
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    2395 │ → → scroll-behavior:·auto·!important;
+         │                          ----------- 
+
+packages/edge-worker/src/factory/web/styles.css:2462:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    2460 │ 	gap: 12px;
+    2461 │ }
+  > 2462 │ .guide-topline > span {
+         │ ^^^^^^^^^^^^^^^^^^^^^
+    2463 │ 	font-size: 11px;
+    2464 │ 	letter-spacing: 0.1em;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    803 │ 	min-height: 32px;
+    804 │ }
+  > 805 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    806 │ 	margin-right: 6px;
+    807 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:2539:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    2537 │ 	margin: 24px 0;
+    2538 │ }
+  > 2539 │ .guide-comparison section {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^
+    2540 │ 	padding: 18px;
+    2541 │ 	border: 1px solid var(--line);
+  
+  i This selector specificity is (0, 1, 2)
+  
+    849 │ 	object-fit: cover;
+    850 │ }
+  > 851 │ .pairs section + section {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    852 │ 	margin-top: 12px;
+    853 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:3021:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    3019 │ 	justify-self: end;
+    3020 │ }
+  > 3021 │ .guide-navigation > span {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    3022 │ 	flex: 1;
+    3023 │ 	text-align: center;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    803 │ 	min-height: 32px;
+    804 │ }
+  > 805 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    806 │ 	margin-right: 6px;
+    807 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:3035:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    3033 │ 	margin: 20px 0;
+    3034 │ }
+  > 3035 │ .compact-comparison section {
+         │ ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    3036 │ 	background: var(--quiet);
+    3037 │ 	padding: 12px;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    849 │ 	object-fit: cover;
+    850 │ }
+  > 851 │ .pairs section + section {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    852 │ 	margin-top: 12px;
+    853 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:3371:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    3369 │ 	min-width: 0;
+    3370 │ }
+  > 3371 │ .group-title > span {
+         │ ^^^^^^^^^^^^^^^^^^^
+    3372 │ 	display: block;
+    3373 │ 	font-size: 0.8rem;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    803 │ 	min-height: 32px;
+    804 │ }
+  > 805 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    806 │ 	margin-right: 6px;
+    807 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+website/src/styles.css:55:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    53 │ 	scroll-behavior: auto !important;
+    54 │ }
+  > 55 │ body {
+       │ ^^^^
+    56 │ 	overflow-x: clip;
+    57 │ }
+  
+  i This selector specificity is (0, 1, 2)
+  
+    46 │ }
+    47 │ html.lenis,
+  > 48 │ html.lenis body {
+       │ ^^^^^^^^^^^^^^^
+    49 │ 	height: auto;
+    50 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 17.
+Checked 1499 files in 1038ms. No fixes applied.
+Found 37 warnings.

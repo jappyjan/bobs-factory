@@ -1,0 +1,155 @@
+{
+  "result": "FAIL",
+  "directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-Teeu2r",
+  "revision": "998de5de891db2000099e44fe6938c0a5b3bd375",
+  "tree": "7a4baae53451771f5f01547e7863a1fefa71f358",
+  "deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "driverSha256": "fb6c3aed00b88f0f7158d67202a329371994fb3d66544528e7d217f4dd50b845",
+  "buildSha256": "239eb675a14b1240737c6767de9848d7ce36e015eef9638a43aad654846afdf9",
+  "backendSourceSha256": "0ecc16770721ffd263c96fa469a8efec94c53e4daa1ce5ca0196f418ee44b254",
+  "dashboardBuild": "b6c096735522dd1c43f9750f",
+  "dashboardResources": [
+    {
+      "path": "/app.6a33667cbb51eaff0ef37e1b.js",
+      "sha256": "6a33667cbb51eaff0ef37e1bf37555651d422b882c33908467c96bf958e42d4a"
+    },
+    {
+      "path": "/styles.6846ba8d2fed98aee259d76c.css",
+      "sha256": "6846ba8d2fed98aee259d76c0735455de84de134ceeab23f90062041f4bd511a"
+    },
+    {
+      "path": "/",
+      "sha256": "a20e8be5d8e818ee410fce5946b8b1e4abbf93cb0fd1b1d037c6d0b90dae2734"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004"
+    },
+    {
+      "path": "/icons/icon-192.png",
+      "sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961"
+    },
+    {
+      "path": "/icons/icon-512.png",
+      "sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86"
+    },
+    {
+      "path": "/icons/maskable-512.png",
+      "sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9"
+    },
+    {
+      "path": "/icons/apple-touch-icon.png",
+      "sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4"
+    },
+    {
+      "path": "/sw.js",
+      "sha256": "2ac9bdf6e06459b8ad8c3ec8773d8ff899a82b226d8821310b6648bbcc2509d8"
+    }
+  ],
+  "node": "v24.21.0",
+  "error": "AssertionError [ERR_ASSERTION]: /api/runs/session-2/view-answer: {\"error\":\"Displayed content changed. Refresh and review the new decision batch.\"}\n\n409 !== 200\n\n    at api (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views-round4.mjs:991:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views-round4.mjs:1877:2",
+  "runs": [
+    {
+      "id": "child-db1e23c2ab73751130655cdb5830f32521fe2f03",
+      "status": "completed",
+      "step": "child-summary"
+    },
+    {
+      "id": "session-1",
+      "status": "completed",
+      "step": "tail"
+    },
+    {
+      "id": "session-2",
+      "status": "waiting",
+      "step": "approval"
+    },
+    {
+      "id": "child-6436874d1c84183fd1f7ce2390219643a8b3f780",
+      "status": "completed",
+      "step": "child-summary"
+    }
+  ],
+  "turns": [
+    {
+      "runId": "session-1",
+      "role": "research",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T09:36:33.908Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "story",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T09:36:34.364Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "detail",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T09:36:35.078Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "detail",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T09:36:35.115Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "view-follow-up",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T09:36:36.720Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "view-follow-up",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": "f1-mock-bb9902ea-1b9c-4710-9bbc-4b42d7b3c1f7",
+      "at": "2026-10-22T09:36:37.211Z"
+    },
+    {
+      "runId": "session-2",
+      "role": "research",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T09:36:41.617Z"
+    },
+    {
+      "runId": "session-2",
+      "role": "story",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T09:36:42.057Z"
+    },
+    {
+      "runId": "session-2",
+      "role": "detail",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T09:36:42.732Z"
+    },
+    {
+      "runId": "session-2",
+      "role": "detail",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T09:36:42.766Z"
+    }
+  ]
+}

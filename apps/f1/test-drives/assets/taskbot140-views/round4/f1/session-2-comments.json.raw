@@ -1,0 +1,72 @@
+[
+  {
+    "id": "comment-20",
+    "body": "Factory work started: Custom declarative human recipe. f1-views-main. Follow progress in Factory.\n\n<!-- factory:session-2:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T09:41:55.586Z"
+  },
+  {
+    "id": "comment-21",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-2:dd11cd799bca5bdc52a5 -->",
+    "createdAt": "2026-10-22T09:41:55.994Z"
+  },
+  {
+    "id": "comment-22",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-2:bb39a7a97b53990e6f79 -->",
+    "createdAt": "2026-10-22T09:41:56.426Z"
+  },
+  {
+    "id": "comment-23",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-2:eb7cf0968f0405d247de -->",
+    "createdAt": "2026-10-22T09:41:57.305Z"
+  },
+  {
+    "id": "comment-24",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-2:8ab87c697ef1cf0cc206 -->",
+    "createdAt": "2026-10-22T09:41:57.488Z"
+  },
+  {
+    "id": "comment-25",
+    "body": "markdown:\nThis per\\-item Show does not stop For each progression\\.\n\n<!-- factory:session-2:c6bd9d8556a0b9f604b2 -->",
+    "createdAt": "2026-10-22T09:41:57.775Z"
+  },
+  {
+    "id": "comment-26",
+    "body": "markdown:\nThis per\\-item Show does not stop For each progression\\.\n\n<!-- factory:session-2:6576671b5679e199c132 -->",
+    "createdAt": "2026-10-22T09:41:57.870Z"
+  },
+  {
+    "id": "comment-27",
+    "body": "markdown:\nThe ordinary no\\-follow\\-up route was selected\\.\n\n<!-- factory:session-2:d229e4d188403cec6533 -->",
+    "createdAt": "2026-10-22T09:41:58.256Z"
+  },
+  {
+    "id": "comment-28",
+    "body": "Factory work started: Ordinary child with a human view. f1-views-main. Follow progress in Factory.\n\n<!-- factory:child-2a9237ae7c170fb5b2c250d541edc6b45fad33a8:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T09:41:59.121Z"
+  },
+  {
+    "id": "comment-29",
+    "body": "approve\nDecision batch: 1841ba78-b281-4dca-a811-4d02de74ef11\nDisplayed digest: 2627f786578533742a0c892c1a70215858738baa8377840e02661de675ad039f\nReply with /view-answer {\"batchId\":\"1841ba78-b281-4dca-a811-4d02de74ef11\",\"digest\":\"2627f786578533742a0c892c1a70215858738baa8377840e02661de675ad039f\",\"accepted\":true,\"approved\":true} or approved:false with feedback.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nApprove the displayed artifact\nmarkdown:\nReview the exact artifact and current child\\-run state\\. &lt;img src=x onerror=alert\\(1\\)&gt;\n\nrunList:\nWave dispatch · Wave 1:\n- child\\-2a9237ae7c170fb5b2c250d541edc6b45fad33a8: Controlled child [running]\n\nchoices:\nI checked the artifact (understood, checkbox, required)\n\n<!-- factory:session-2:f0554a446e2348de15cd -->",
+    "createdAt": "2026-10-22T09:41:59.281Z"
+  },
+  {
+    "id": "comment-30",
+    "body": "markdown:\nThe isolated child completed its recipe\\.\n\n<!-- factory:child-2a9237ae7c170fb5b2c250d541edc6b45fad33a8:c61bec6c279680fd72d1 -->",
+    "createdAt": "2026-10-22T09:41:59.811Z"
+  },
+  {
+    "id": "comment-31",
+    "body": "Workflow Ordinary child with a human view completed. Coding tickets become Done only after confirmed merge. Inspect run child-2a9237ae7c170fb5b2c250d541edc6b45fad33a8 for results.\n\n<!-- factory:child-2a9237ae7c170fb5b2c250d541edc6b45fad33a8:f085cccb79a52488736a -->",
+    "createdAt": "2026-10-22T09:41:59.910Z"
+  },
+  {
+    "id": "comment-32",
+    "body": "markdown:\nRequest changes remains explicit feedback and follows the configured route\\.\n\n<!-- factory:session-2:4bf12be56cf631dc10f2 -->",
+    "createdAt": "2026-10-22T09:42:00.745Z"
+  },
+  {
+    "id": "comment-33",
+    "body": "Workflow Custom declarative human recipe completed. Coding tickets become Done only after confirmed merge. Inspect run session-2 for results.\n\n<!-- factory:session-2:b6ccf30198c886c8bc72 -->",
+    "createdAt": "2026-10-22T09:42:00.954Z"
+  }
+]

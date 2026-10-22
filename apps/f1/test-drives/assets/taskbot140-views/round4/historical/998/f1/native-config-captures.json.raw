@@ -1,0 +1,561 @@
+[
+  {
+    "runId": "session-1",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": null,
+    "at": "2026-10-22T09:36:36.720Z",
+    "context": {
+      "item": {
+        "id": "cache",
+        "title": "<script>cache()</script>",
+        "body": "Keep HTML inert; [unsafe](javascript:alert(1))",
+        "impact": "Reuse accepted cache receipts"
+      },
+      "question": "What does this retained item change?",
+      "thread": [
+        {
+          "question": "What does this retained item change?"
+        }
+      ],
+      "displayedView": {
+        "version": "view-v1",
+        "components": [
+          {
+            "id": "intro",
+            "type": "markdown",
+            "data": {
+              "text": "Agent-authored view: <script>window.__f1Pwned=true</script> [bad](javascript:alert(1))"
+            }
+          },
+          {
+            "id": "no-screens",
+            "type": "screenshots",
+            "data": {
+              "items": []
+            }
+          },
+          {
+            "id": "notes",
+            "type": "points",
+            "data": {
+              "items": [
+                {
+                  "label": "Accepted evidence",
+                  "detail": "No raw HTML or script executes."
+                }
+              ]
+            }
+          },
+          {
+            "id": "catalog",
+            "type": "itemCards",
+            "data": {
+              "items": [
+                {
+                  "id": "cache",
+                  "title": "<script>cache()</script>",
+                  "body": "Keep HTML inert; [unsafe](javascript:alert(1))"
+                },
+                {
+                  "id": "labels",
+                  "title": "Clarify progress",
+                  "body": "Keep the stage labels readable"
+                }
+              ]
+            }
+          },
+          {
+            "id": "form",
+            "type": "choices",
+            "data": {
+              "fields": [
+                {
+                  "id": "reason",
+                  "label": "Decision note",
+                  "required": true,
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          {
+            "id": "bar",
+            "type": "decisionBar",
+            "data": {
+              "summary": "Choose every item, then explicitly save.",
+              "actions": [
+                {
+                  "id": "review",
+                  "label": "Review every item"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-Teeu2r/home/factory/assistance/session-1/e218b02857e32efb3abf58ebb9051541382d6b8e40a8ec19ac3a327f3b32f959",
+    "allowedTools": [
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context"
+    ],
+    "tools": [],
+    "additionalDirectories": [],
+    "mcpServerNames": [
+      "factory-context"
+    ],
+    "toolProfile": "context-only",
+    "resolvedNative": {
+      "toolProfile": "context-only",
+      "model": "gpt-6.1-sol",
+      "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-Teeu2r/home/factory/assistance/session-1/e218b02857e32efb3abf58ebb9051541382d6b8e40a8ec19ac3a327f3b32f959",
+      "sandbox": {
+        "kind": "profile",
+        "profileId": "bobs-factory-context-only",
+        "filesystem": {
+          ":root": "deny",
+          ":minimal": "read",
+          ":workspace_roots": "deny",
+          ":tmpdir": "deny",
+          ":slash_tmp": "deny",
+          "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-Teeu2r/home/factory/assistance/session-1/e218b02857e32efb3abf58ebb9051541382d6b8e40a8ec19ac3a327f3b32f959": "read"
+        },
+        "networkAccess": false
+      },
+      "approvalPolicy": "never",
+      "webSearchMode": "disabled",
+      "configOverrides": {
+        "features": {
+          "shell_tool": false,
+          "unified_exec": false,
+          "unified_exec_tty": false,
+          "experimental_use_unified_exec_tool": false,
+          "view_image": false,
+          "apps": false,
+          "connectors": false,
+          "enable_mcp_apps": false,
+          "codex_apps_mcp_2026_07_28": false,
+          "browser_use": false,
+          "browser_use_external": false,
+          "browser_use_full_cdp_access": false,
+          "browser_annotation_api": false,
+          "in_app_browser": false,
+          "computer_use": false,
+          "in_app_local_automation": false,
+          "plugins": false,
+          "remote_plugin": false,
+          "remote_control": false,
+          "plugin_hooks": false,
+          "plugin_sharing": false,
+          "recommended_plugins": false,
+          "hooks": false,
+          "codex_hooks": false,
+          "image_generation": false,
+          "imagegenext": false,
+          "code_mode": false,
+          "code_mode_only": false,
+          "code_mode_only_strict_3p_tools": false,
+          "code_mode_buffered_exec": false,
+          "code_mode_interrupt": false,
+          "code_mode_prewarm": false,
+          "code_mode_tool_search": false,
+          "code_mode_host": false,
+          "code_mode_host_grpc": false,
+          "js_repl": false,
+          "js_repl_tools_only": false,
+          "multi_agent": false,
+          "multi_agent_mode": false,
+          "multi_agent_v2": false,
+          "multi_agent_v2_dynamic_tools": false,
+          "collab": false,
+          "enable_fanout": false,
+          "agent_message_board": false,
+          "send_async_message": false,
+          "memory_tool": false,
+          "memories": false,
+          "external_agent_memory_import": false,
+          "web_search": false,
+          "web_search_cached": false,
+          "web_search_request": false,
+          "standalone_web_search": false,
+          "request_permissions": false,
+          "request_permissions_tool": false,
+          "request_rule": false,
+          "guardian_approval": false,
+          "exec_permission_approvals": false,
+          "skill_search": false,
+          "skill_mcp_dependency_install": false,
+          "tool_suggest": false,
+          "tool_search": false,
+          "search_tool": false,
+          "shell_snapshot": false,
+          "shell_snapshot_v2": false,
+          "skip_host_skill_discovery": true
+        },
+        "agents": {
+          "enabled": false
+        },
+        "web_search": "disabled",
+        "allow_login_shell": false,
+        "notify": [],
+        "hooks": {
+          "Interrupt": [],
+          "PermissionRequest": [],
+          "PostCompact": [],
+          "PostToolUse": [],
+          "PreCompact": [],
+          "PreToolUse": [],
+          "SessionEnd": [],
+          "SessionStart": [],
+          "Stop": [],
+          "SubagentStart": [],
+          "SubagentStop": [],
+          "UserPromptSubmit": []
+        },
+        "skills": {
+          "config": [],
+          "bundled": {
+            "enabled": false
+          },
+          "include_instructions": false
+        },
+        "memories": {
+          "generate_memories": false,
+          "use_memories": false,
+          "dedicated_tools": false
+        },
+        "project_doc_max_bytes": 0,
+        "project_doc_fallback_filenames": [],
+        "instructions": "",
+        "include_environment_context": false,
+        "include_apps_instructions": false,
+        "tools": {
+          "experimental_request_user_input": {
+            "enabled": false
+          },
+          "update_plan": {
+            "enabled": false
+          }
+        },
+        "mcp_servers": {
+          "linear": {
+            "enabled": false
+          },
+          "mailbox": {
+            "enabled": false
+          },
+          "outline": {
+            "enabled": false
+          },
+          "taskbot": {
+            "enabled": false
+          },
+          "twenty": {
+            "enabled": false
+          },
+          "node_repl": {
+            "enabled": false
+          },
+          "factory-context": {
+            "command": "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+            "args": [
+              "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools/dist/factory-context-main.js",
+              "--snapshot",
+              "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bobs-factory-context-r1ZYdu/input.json"
+            ],
+            "startup_timeout_sec": 45,
+            "required": true,
+            "enabled": true,
+            "enabled_tools": [
+              "list_context",
+              "read_context"
+            ],
+            "default_tools_approval_mode": "approve"
+          }
+        }
+      }
+    }
+  },
+  {
+    "runId": "session-1",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": "f1-mock-bb9902ea-1b9c-4710-9bbc-4b42d7b3c1f7",
+    "at": "2026-10-22T09:36:37.211Z",
+    "context": {
+      "item": {
+        "id": "cache",
+        "title": "<script>cache()</script>",
+        "body": "Keep HTML inert; [unsafe](javascript:alert(1))",
+        "impact": "Reuse accepted cache receipts"
+      },
+      "question": "What does this retained item change?",
+      "thread": [
+        {
+          "question": "What does this retained item change?"
+        }
+      ],
+      "displayedView": {
+        "version": "view-v1",
+        "components": [
+          {
+            "id": "intro",
+            "type": "markdown",
+            "data": {
+              "text": "Agent-authored view: <script>window.__f1Pwned=true</script> [bad](javascript:alert(1))"
+            }
+          },
+          {
+            "id": "no-screens",
+            "type": "screenshots",
+            "data": {
+              "items": []
+            }
+          },
+          {
+            "id": "notes",
+            "type": "points",
+            "data": {
+              "items": [
+                {
+                  "label": "Accepted evidence",
+                  "detail": "No raw HTML or script executes."
+                }
+              ]
+            }
+          },
+          {
+            "id": "catalog",
+            "type": "itemCards",
+            "data": {
+              "items": [
+                {
+                  "id": "cache",
+                  "title": "<script>cache()</script>",
+                  "body": "Keep HTML inert; [unsafe](javascript:alert(1))"
+                },
+                {
+                  "id": "labels",
+                  "title": "Clarify progress",
+                  "body": "Keep the stage labels readable"
+                }
+              ]
+            }
+          },
+          {
+            "id": "form",
+            "type": "choices",
+            "data": {
+              "fields": [
+                {
+                  "id": "reason",
+                  "label": "Decision note",
+                  "required": true,
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          {
+            "id": "bar",
+            "type": "decisionBar",
+            "data": {
+              "summary": "Choose every item, then explicitly save.",
+              "actions": [
+                {
+                  "id": "review",
+                  "label": "Review every item"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-Teeu2r/home/factory/assistance/session-1/e218b02857e32efb3abf58ebb9051541382d6b8e40a8ec19ac3a327f3b32f959",
+    "allowedTools": [
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context"
+    ],
+    "tools": [],
+    "additionalDirectories": [],
+    "mcpServerNames": [
+      "factory-context"
+    ],
+    "toolProfile": "context-only",
+    "resolvedNative": {
+      "toolProfile": "context-only",
+      "model": "gpt-6.1-sol",
+      "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-Teeu2r/home/factory/assistance/session-1/e218b02857e32efb3abf58ebb9051541382d6b8e40a8ec19ac3a327f3b32f959",
+      "sandbox": {
+        "kind": "profile",
+        "profileId": "bobs-factory-context-only",
+        "filesystem": {
+          ":root": "deny",
+          ":minimal": "read",
+          ":workspace_roots": "deny",
+          ":tmpdir": "deny",
+          ":slash_tmp": "deny",
+          "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-round4-Teeu2r/home/factory/assistance/session-1/e218b02857e32efb3abf58ebb9051541382d6b8e40a8ec19ac3a327f3b32f959": "read"
+        },
+        "networkAccess": false
+      },
+      "approvalPolicy": "never",
+      "webSearchMode": "disabled",
+      "configOverrides": {
+        "features": {
+          "shell_tool": false,
+          "unified_exec": false,
+          "unified_exec_tty": false,
+          "experimental_use_unified_exec_tool": false,
+          "view_image": false,
+          "apps": false,
+          "connectors": false,
+          "enable_mcp_apps": false,
+          "codex_apps_mcp_2026_07_28": false,
+          "browser_use": false,
+          "browser_use_external": false,
+          "browser_use_full_cdp_access": false,
+          "browser_annotation_api": false,
+          "in_app_browser": false,
+          "computer_use": false,
+          "in_app_local_automation": false,
+          "plugins": false,
+          "remote_plugin": false,
+          "remote_control": false,
+          "plugin_hooks": false,
+          "plugin_sharing": false,
+          "recommended_plugins": false,
+          "hooks": false,
+          "codex_hooks": false,
+          "image_generation": false,
+          "imagegenext": false,
+          "code_mode": false,
+          "code_mode_only": false,
+          "code_mode_only_strict_3p_tools": false,
+          "code_mode_buffered_exec": false,
+          "code_mode_interrupt": false,
+          "code_mode_prewarm": false,
+          "code_mode_tool_search": false,
+          "code_mode_host": false,
+          "code_mode_host_grpc": false,
+          "js_repl": false,
+          "js_repl_tools_only": false,
+          "multi_agent": false,
+          "multi_agent_mode": false,
+          "multi_agent_v2": false,
+          "multi_agent_v2_dynamic_tools": false,
+          "collab": false,
+          "enable_fanout": false,
+          "agent_message_board": false,
+          "send_async_message": false,
+          "memory_tool": false,
+          "memories": false,
+          "external_agent_memory_import": false,
+          "web_search": false,
+          "web_search_cached": false,
+          "web_search_request": false,
+          "standalone_web_search": false,
+          "request_permissions": false,
+          "request_permissions_tool": false,
+          "request_rule": false,
+          "guardian_approval": false,
+          "exec_permission_approvals": false,
+          "skill_search": false,
+          "skill_mcp_dependency_install": false,
+          "tool_suggest": false,
+          "tool_search": false,
+          "search_tool": false,
+          "shell_snapshot": false,
+          "shell_snapshot_v2": false,
+          "skip_host_skill_discovery": true
+        },
+        "agents": {
+          "enabled": false
+        },
+        "web_search": "disabled",
+        "allow_login_shell": false,
+        "notify": [],
+        "hooks": {
+          "Interrupt": [],
+          "PermissionRequest": [],
+          "PostCompact": [],
+          "PostToolUse": [],
+          "PreCompact": [],
+          "PreToolUse": [],
+          "SessionEnd": [],
+          "SessionStart": [],
+          "Stop": [],
+          "SubagentStart": [],
+          "SubagentStop": [],
+          "UserPromptSubmit": []
+        },
+        "skills": {
+          "config": [],
+          "bundled": {
+            "enabled": false
+          },
+          "include_instructions": false
+        },
+        "memories": {
+          "generate_memories": false,
+          "use_memories": false,
+          "dedicated_tools": false
+        },
+        "project_doc_max_bytes": 0,
+        "project_doc_fallback_filenames": [],
+        "instructions": "",
+        "include_environment_context": false,
+        "include_apps_instructions": false,
+        "tools": {
+          "experimental_request_user_input": {
+            "enabled": false
+          },
+          "update_plan": {
+            "enabled": false
+          }
+        },
+        "mcp_servers": {
+          "linear": {
+            "enabled": false
+          },
+          "mailbox": {
+            "enabled": false
+          },
+          "outline": {
+            "enabled": false
+          },
+          "taskbot": {
+            "enabled": false
+          },
+          "twenty": {
+            "enabled": false
+          },
+          "node_repl": {
+            "enabled": false
+          },
+          "factory-context": {
+            "command": "/nix/store/si2a6wj95hir7ls51z4a9bfxj0bfv3vn-nodejs-slim-24.21.0/bin/node",
+            "args": [
+              "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools/dist/factory-context-main.js",
+              "--snapshot",
+              "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/bobs-factory-context-U9tA7c/input.json"
+            ],
+            "startup_timeout_sec": 45,
+            "required": true,
+            "enabled": true,
+            "enabled_tools": [
+              "list_context",
+              "read_context"
+            ],
+            "default_tools_approval_mode": "approve"
+          }
+        }
+      },
+      "resumeSessionId": "f1-mock-bb9902ea-1b9c-4710-9bbc-4b42d7b3c1f7"
+    }
+  }
+]

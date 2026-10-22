@@ -1,0 +1,87 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+
+ ❯ test/HumanViewTicketDelivery.test.ts (10 tests | 2 failed | 8 skipped) 12043ms
+   × suppresses a source-only obsolete taskbot write after an actual held provider read and renews without waiting for Ask 6058ms
+   × suppresses a source-only obsolete linear write after an actual held provider read and renews without waiting for Ask 5985ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/HumanViewTicketDelivery.test.ts > suppresses a source-only obsolete taskbot write after an actual held provider read and renews without waiting for Ask
+AssertionError: expected 'decide\nDecision batch: 61a9d9ee-42d3…' to contain 'Child [completed]'
+
+- Expected
++ Received
+
+- Child [completed]
++ decide
++ Decision batch: 61a9d9ee-42d3-4652-9169-f2622a4fd90a
++ Displayed digest: 9bfa8a9eda955a17d0bebe4ea03b37bc1daa237fb8bf4b4648f826f4dcbe7c17
++ Reply with /view-answer {"batchId":"61a9d9ee-42d3-4652-9169-f2622a4fd90a","digest":"9bfa8a9eda955a17d0bebe4ea03b37bc1daa237fb8bf4b4648f826f4dcbe7c17","accepted":true,"choices":[{"itemId":"…","action":"…"}]} after reviewing every item.
++ Review the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.
++ Choose safely
++ Ask for item item0 — pending
++ Question\: Explain child progress while provider read is held
++ Actions\: skip \(Skip\)
++ runList:
++ Wave launch · Wave 1:
++ - child\-782f4f21f16f791af11ec05b95ffaa6f1cfdaa64: Controlled child [running]
++ item0\: Item 0
++ Public context
++
++ <!-- factory:f12552d5-a535-4d52-9be0-103aa773beb6:109666cbd36dfdd48fc1 -->
+
+ ❯ test/HumanViewTicketDelivery.test.ts:643:64
+    641|  expect(f.run.viewDecision!.digest).toBe(pending.digest);
+    642|  held.release();
+    643|  await waitFor(async () => expect((await f.displays()).at(-1)).toConta…
+       |                                                                ^
+    644|  expect((await f.displays()).slice(1).every(body => !body.includes(pen…
+    645|  expect((await f.displays())[0]).toBe(initialBody);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/HumanViewTicketDelivery.test.ts > suppresses a source-only obsolete linear write after an actual held provider read and renews without waiting for Ask
+AssertionError: expected 'decide\nDecision batch: 73cbcd85-fbcb…' to contain 'Child [completed]'
+
+- Expected
++ Received
+
+- Child [completed]
++ decide
++ Decision batch: 73cbcd85-fbcb-4e3b-a4ca-cfbe9b0becb3
++ Displayed digest: b09da002753f5bf00dea159049da2eae97f7f914e16d5fdb8f341f7287c9c7f2
++ Reply with /view-answer {"batchId":"73cbcd85-fbcb-4e3b-a4ca-cfbe9b0becb3","digest":"b09da002753f5bf00dea159049da2eae97f7f914e16d5fdb8f341f7287c9c7f2","accepted":true,"choices":[{"itemId":"…","action":"…"}]} after reviewing every item.
++ Review the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.
++ Choose safely
++ Ask for item item0 — pending
++ Question\: Explain child progress while provider read is held
++ Actions\: skip \(Skip\)
++ runList:
++ Wave launch · Wave 1:
++ - child\-b8db89341ddf9ee671e564283b16ab40d85d73ad: Controlled child [running]
++ item0\: Item 0
++ Public context
+
+ ❯ test/HumanViewTicketDelivery.test.ts:643:64
+    641|  expect(f.run.viewDecision!.digest).toBe(pending.digest);
+    642|  held.release();
+    643|  await waitFor(async () => expect((await f.displays()).at(-1)).toConta…
+       |                                                                ^
+    644|  expect((await f.displays()).slice(1).every(body => !body.includes(pen…
+    645|  expect((await f.displays())[0]).toBe(initialBody);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 8 skipped (10)
+   Start at  12:30:36
+   Duration  13.50s (transform 708ms, setup 19ms, import 1.34s, tests 12.04s, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/HumanViewTicketDelivery.test.ts --maxWorkers=1 -t source-only obsolete

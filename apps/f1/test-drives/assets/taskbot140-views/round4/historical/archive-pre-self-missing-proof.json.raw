@@ -1,0 +1,59 @@
+{
+  "version": "taskbot140-round4-archive-v1",
+  "at": "2026-10-22T10:03:36.823Z",
+  "tree": "d85d15530195cc13d05c88c4da6a1cc2d0e3ca46",
+  "selection": [
+    "--index"
+  ],
+  "exportSha256": "cc0c36601266ef01ac554e1a2b9d7d898c02504b26b86830de3bc62f5d52db27",
+  "nonRuntimeLfsPointers": 1,
+  "files": 706,
+  "originalCopies": 254,
+  "sourceInputs": 2814,
+  "driverInputs": 6,
+  "reportLinks": 149,
+  "failures": [
+    {
+      "path": "apps/f1/test-drives/2026-10-22-taskbot140-views-round4.md",
+      "target": "assets/taskbot140-views/round4/submitted-archive-proof.json",
+      "error": "Missing relative report link in fresh Git export"
+    }
+  ],
+  "originalVerifier": {
+    "version": "taskbot140-archive-v1",
+    "at": "2026-10-22T10:03:38.168Z",
+    "node": "v24.21.0",
+    "verifierSha256": "2bb35f6fef75d6fa5fefe8f1427af7b656052361fc50f7e247654dea26eaf58f",
+    "submitted": {
+      "selection": "tree",
+      "reference": "d85d15530195cc13d05c88c4da6a1cc2d0e3ca46",
+      "tree": "d85d15530195cc13d05c88c4da6a1cc2d0e3ca46",
+      "head": "3111f7692c7cfcd1046dd933784691930f0db1d3",
+      "archiveExportSha256": "b422291f9a47e1b38d471aa42e88bead2902df57bb46f90334b698b4962c41fe"
+    },
+    "checks": {
+      "originalInventory": 1,
+      "archive": 186,
+      "rawLogMappings": 58,
+      "native": 18,
+      "uiEvidence": 54,
+      "items": 8,
+      "originalJsonByteHashes": 3,
+      "immutableSourceArchives": 2,
+      "f1:attempt1-request-header-omission": 7,
+      "f1:attempt2-json-prototype-comparison": 7,
+      "f1:pre-media-pass": 14,
+      "f1:final": 14,
+      "reportLinks": 42
+    },
+    "failures": [],
+    "originalCopies": {
+      "enabled": false,
+      "checked": 0,
+      "failures": [],
+      "result": "not requested"
+    },
+    "result": "pass"
+  },
+  "result": "FAIL"
+}
