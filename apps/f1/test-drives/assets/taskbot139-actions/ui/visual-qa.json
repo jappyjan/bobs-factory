@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "source": "ae847b3573157e0bfa6006ddbadbdb6f4d856481",
+  "all16ImagesInspected": true,
+  "originalPngBytesRetained": true,
+  "horizontalOverflowObserved": false,
+  "inspected": [
+    "desktop-dark-child-list",
+    "mobile-dark-child-list",
+    "mobile-dark-child-wave-two",
+    "mobile-dark-parent-link",
+    "desktop-light-parent-link",
+    "desktop-light-child-list",
+    "mobile-light-child-list",
+    "mobile-light-child-wave-two",
+    "desktop-light-builder-actions",
+    "desktop-light-builder-mapping",
+    "mobile-light-builder-mapping",
+    "mobile-light-builder-invalid",
+    "mobile-light-parent-stop-restarted",
+    "mobile-dark-builder-mapping",
+    "desktop-dark-batch-stop-restarted",
+    "mobile-dark-batch-stop-restarted"
+  ],
+  "notes": [
+    "Light/dark status cards, waves, parent links, configuration, and retained stop states are readable at their captured viewport.",
+    "The malformed JSON screenshot shows the invalid value and disabled Save. Its inline parse alert is below the tall field and is retained in ui-interactions.json.",
+    "Normal editor toasts appear in mapping/invalid views; they do not obscure the configuration field."
+  ]
+}

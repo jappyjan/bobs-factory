@@ -1,0 +1,928 @@
+{
+  "mode": "Production WorkflowRuntime and FactoryServer; scripted agents and tracker, disposable Git worktrees",
+  "startedAt": "2026-10-22T02:22:11.501Z",
+  "node": "v24.21.0",
+  "head": "ae847b3573157e0bfa6006ddbadbdb6f4d856481",
+  "tree": "34495518ecf931ad4ed5a40157ff7898bb321477",
+  "worktree": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions",
+  "workingStatus": "",
+  "trackedDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source": {
+    "apps/f1/test-drives/assets/taskbot139-actions-ui.mjs": "65a35ed967780c164390d8995f59bec8fc0f5e138edb965d6d581a0c2aefbe62",
+    "packages/edge-worker/src/factory/ActionSteps.ts": "ede8a0b659ade3ead9d605c3baab520f266a8bf86c4c288d0fc1eaeab688fe53",
+    "packages/edge-worker/src/factory/IssueDestination.ts": "84f52ae509a1bcac39a6af87378581513e38db7ee2a54d3eff602d8acaec0748",
+    "packages/edge-worker/src/factory/RepositorySnapshot.ts": "00efbfa7a63e39339acb21157ff8e19ea260afcd756f5f2c4769fae83916aa9d",
+    "packages/edge-worker/src/factory/FileIssues.ts": "79970d455fc4f7464708f69e9bfcefc3c8f8338ce1ea0789e11b95e895a35e8c",
+    "packages/edge-worker/src/factory/LaunchRuns.ts": "b15aa84ee57b09330123edfb90dd9b52eb8903c4e88fd94724220c5c3acedda0",
+    "packages/edge-worker/src/factory/Workflow.ts": "54023d07051b5a522381392708db1dd1c0a596c6ebb47965a2824a601d1f40a9",
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts": "626fb0e38f054940b4d0f4af562f33214f31b5ee31f74df1eeb57c65e150847e",
+    "packages/edge-worker/src/factory/RunProjection.ts": "05ffff543b1b904f4ad92d450fe480eb13bbdafee2d0109b13cbfd660cd07f3a",
+    "packages/edge-worker/src/factory/RunAttention.ts": "43b9d5c34e1dc383a7e92370457cc75f4f4e701c7395c1b122d3f820f3cd7761",
+    "packages/edge-worker/src/factory/FactoryServer.ts": "4d60c8f1dab15864f2e54453017ff3d2b009409294746b1a921e56f8041744b8",
+    "packages/edge-worker/src/factory/web/action-step-settings.tsx": "8b98bde8edd35288325c06b27e3a280f605361e3dcf8e42cf2dffa1448565b4b",
+    "packages/edge-worker/src/factory/web/child-runs.tsx": "cb9a5b54bd982b62cb18ff6598fdb86243217ccd298eca07245b568f1f92a48c",
+    "packages/edge-worker/src/factory/web/recipe-builder.tsx": "8b1bb9da4dee696bb70e1c5ddfe6f45733fc07958acf8143f19b2a533b2df8e0",
+    "packages/edge-worker/src/factory/web/recipe-graph.ts": "855795407a0e7216ca5338987706eb27af7351246a161ff02230868a72d11734",
+    "packages/edge-worker/src/factory/web/app.tsx": "4e3c11ab7fe34ace025c3d5fbe35671f5a8b91ced145d20eda788f95868dcf31",
+    "packages/edge-worker/src/factory/web/artifacts.tsx": "9c378a9a72d7c74ebfb8c9e545c896154b627d2c1cc0f78a44b9e05f388065a0",
+    "packages/edge-worker/src/factory/web/styles.css": "33b31985cb97d0543853419e970ca6d135459aa13847311b38f9b95a094f0d61"
+  },
+  "sourceFingerprint": "3e297b24e1aa0cc2eb9ed3d98bd80b8658f5cc06d436bfb6b483839ca85fd272",
+  "backend": {
+    "ActionSteps.js": "86da2624be72b58813dd0260afb225facf6164c7263feab67f15a1df002031ea",
+    "RepositorySnapshot.js": "2d13c70efeb97f0c060bcefcada1c0172495c831aef63a0fa1984df16a68df22",
+    "FileIssues.js": "b1ff41d1177c465eb4beda219e256221c5fa2dfca9d803467e1783a3fed7af8a",
+    "LaunchRuns.js": "a0027c7ab2510ddabe4c5a7b21532298af6de09ff428a757df4049722ca2069a",
+    "Workflow.js": "9f31f943f6a4d5b5c0cd33f3a5463b95b6808e8804df08c8fc0f32d98e04f81b",
+    "WorkflowRuntime.js": "a168eeaf3d62768444245d7e6507ddcc9f3afe52ff24496bc6e4b1467bfa720d",
+    "RunProjection.js": "5b3da6a451779766b833774a809744ed3162e677e8a7a84b5c619d448be42d0a",
+    "FactoryServer.js": "8c95272e05a540ac03eeebd890e66569e7d5dfed1cb7264ea1a4f6721622f776"
+  },
+  "build": "0a27c450bb0326b3340d8a68",
+  "assets": [
+    {
+      "path": "/app.2be538fdc4c802b32e7bdb62.js",
+      "sha256": "2be538fdc4c802b32e7bdb62c0097387e24459d86fdb1b720fb639ef22985c9e"
+    },
+    {
+      "path": "/styles.d3d1a0cd265a0b9319817335.css",
+      "sha256": "d3d1a0cd265a0b9319817335478f6cbea38ddd7cf140a63f409919325e91707d"
+    },
+    {
+      "path": "/",
+      "sha256": "614a5707a103cb7e0f724d4a3d67a273e67ee2fffc90a8ff1ab5598c528ff26f"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004"
+    },
+    {
+      "path": "/icons/icon-192.png",
+      "sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961"
+    },
+    {
+      "path": "/icons/icon-512.png",
+      "sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86"
+    },
+    {
+      "path": "/icons/maskable-512.png",
+      "sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9"
+    },
+    {
+      "path": "/icons/apple-touch-icon.png",
+      "sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4"
+    },
+    {
+      "path": "/sw.js",
+      "sha256": "00e4e9e0acad797805ac6e3181c705e7132e1f7e0d7068f130b9aee253195df8"
+    }
+  ],
+  "origin": "http://localhost:3689",
+  "runtimeDirectory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR",
+  "factoryHome": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/home",
+  "repositoryPath": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/repository",
+  "sourceRevision": "2fe0b169c273797febf0616c991d86e6beb8e422",
+  "runId": "generic-actions-ui-run",
+  "runUrl": "http://localhost:3689/#/runs/generic-actions-ui-run",
+  "builderUrl": "http://localhost:3689/#/recipes?recipe=generic-actions-ui&step=dispatch",
+  "limitations": [
+    "Scripted agents produce deterministic outputs; no paid/native model or provider effects.",
+    "Mock tracker acknowledges synthetic example.invalid issue links; real provider send/reconciliation is covered separately.",
+    "Child recipe is a generic question-capable agent; completed output has no merge proof and correctly blocks its dependant.",
+    "Fixture uses production persistence, action dispatch and disposable git worktree preparation. No accepted receipts or run state are patched for screenshots.",
+    "UI evidence does not establish EdgeWorker intake, real delivery-provider merge, native execution or machine-capacity correctness."
+  ],
+  "assertions": [
+    "Snapshot→scripted agent→mock File issues→Launch runs traversed production action graph",
+    "Three children created in distinct Git worktrees; two dependent intents retained without a child",
+    "waiting/running/completed/queued/blocked projection reflects actual runtime",
+    "wait:false action returned exactly once while parent remains waiting for child obligations",
+    "Completed-without-merge child cannot release its dependant"
+  ],
+  "restarts": [
+    {
+      "at": "2026-10-22T02:23:56.862Z",
+      "before": {
+        "status": "stopped",
+        "batches": {
+          "86befe84-3c52-4d18-81b1-ebb8badd4cae": {
+            "key": "dispatch",
+            "actionId": "86befe84-3c52-4d18-81b1-ebb8badd4cae",
+            "workflowId": "generic-actions-ui",
+            "targetWorkflowId": "generic-actions-child",
+            "wait": false,
+            "paused": true,
+            "cancelled": false,
+            "items": [
+              {
+                "id": "readiness",
+                "index": 0,
+                "title": "Review dependency readiness",
+                "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+                "url": "/runs/child-529575b673722a521d503aa27b14345ffc045ea8",
+                "wave": 0,
+                "dependencies": [],
+                "status": "waiting",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "runtime",
+                "index": 1,
+                "title": "Inspect runtime durability",
+                "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+                "url": "/runs/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+                "wave": 0,
+                "dependencies": [],
+                "status": "running",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "documentation",
+                "index": 2,
+                "title": "Document accepted behavior",
+                "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+                "url": "/runs/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+                "wave": 0,
+                "dependencies": [],
+                "status": "completed",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "integration",
+                "index": 3,
+                "title": "Integrate approved dependency",
+                "runId": "child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+                "url": "/runs/child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+                "wave": 1,
+                "dependencies": [
+                  "readiness"
+                ],
+                "status": "queued",
+                "creation": "pending"
+              },
+              {
+                "id": "follow-up",
+                "index": 4,
+                "title": "Follow completed documentation",
+                "runId": "child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+                "url": "/runs/child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+                "wave": 1,
+                "dependencies": [
+                  "documentation"
+                ],
+                "status": "blocked",
+                "creation": "pending",
+                "error": "Prerequisite documentation completed without exact human-approved, provider-confirmed repository merge proof"
+              }
+            ]
+          }
+        },
+        "hookCalls": [
+          {
+            "runId": "generic-actions-ui-run",
+            "step": "propose",
+            "at": "2026-10-22T02:22:12.948Z"
+          },
+          {
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "itemId": "readiness",
+            "step": "work",
+            "at": "2026-10-22T02:22:14.136Z"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "itemId": "runtime",
+            "step": "work",
+            "at": "2026-10-22T02:22:15.293Z"
+          },
+          {
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "itemId": "documentation",
+            "step": "work",
+            "at": "2026-10-22T02:22:15.695Z"
+          }
+        ],
+        "issueSends": [
+          {
+            "key": "951defe40c05ea687bd1013c29ff9f85b771bef62d07d5024a252d77fc303666",
+            "itemId": "safe-issue",
+            "title": "Track the accepted review"
+          }
+        ],
+        "prepared": [
+          {
+            "runId": "generic-actions-ui-run",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/generic-actions-ui-run",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-529575b673722a521d503aa27b14345ffc045ea8",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          }
+        ]
+      },
+      "after": {
+        "status": "stopped",
+        "batches": {
+          "86befe84-3c52-4d18-81b1-ebb8badd4cae": {
+            "key": "dispatch",
+            "actionId": "86befe84-3c52-4d18-81b1-ebb8badd4cae",
+            "workflowId": "generic-actions-ui",
+            "targetWorkflowId": "generic-actions-child",
+            "wait": false,
+            "paused": true,
+            "cancelled": false,
+            "items": [
+              {
+                "id": "readiness",
+                "index": 0,
+                "title": "Review dependency readiness",
+                "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+                "url": "/runs/child-529575b673722a521d503aa27b14345ffc045ea8",
+                "wave": 0,
+                "dependencies": [],
+                "status": "waiting",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "runtime",
+                "index": 1,
+                "title": "Inspect runtime durability",
+                "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+                "url": "/runs/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+                "wave": 0,
+                "dependencies": [],
+                "status": "running",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "documentation",
+                "index": 2,
+                "title": "Document accepted behavior",
+                "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+                "url": "/runs/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+                "wave": 0,
+                "dependencies": [],
+                "status": "completed",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "integration",
+                "index": 3,
+                "title": "Integrate approved dependency",
+                "runId": "child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+                "url": "/runs/child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+                "wave": 1,
+                "dependencies": [
+                  "readiness"
+                ],
+                "status": "queued",
+                "creation": "pending"
+              },
+              {
+                "id": "follow-up",
+                "index": 4,
+                "title": "Follow completed documentation",
+                "runId": "child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+                "url": "/runs/child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+                "wave": 1,
+                "dependencies": [
+                  "documentation"
+                ],
+                "status": "blocked",
+                "creation": "pending",
+                "error": "Prerequisite documentation completed without exact human-approved, provider-confirmed repository merge proof"
+              }
+            ]
+          }
+        },
+        "hookCalls": [
+          {
+            "runId": "generic-actions-ui-run",
+            "step": "propose",
+            "at": "2026-10-22T02:22:12.948Z"
+          },
+          {
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "itemId": "readiness",
+            "step": "work",
+            "at": "2026-10-22T02:22:14.136Z"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "itemId": "runtime",
+            "step": "work",
+            "at": "2026-10-22T02:22:15.293Z"
+          },
+          {
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "itemId": "documentation",
+            "step": "work",
+            "at": "2026-10-22T02:22:15.695Z"
+          }
+        ],
+        "issueSends": [
+          {
+            "key": "951defe40c05ea687bd1013c29ff9f85b771bef62d07d5024a252d77fc303666",
+            "itemId": "safe-issue",
+            "title": "Track the accepted review"
+          }
+        ],
+        "prepared": [
+          {
+            "runId": "generic-actions-ui-run",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/generic-actions-ui-run",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-529575b673722a521d503aa27b14345ffc045ea8",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-22T02:24:32.584Z",
+      "before": {
+        "status": "stopped",
+        "batches": {
+          "86befe84-3c52-4d18-81b1-ebb8badd4cae": {
+            "key": "dispatch",
+            "actionId": "86befe84-3c52-4d18-81b1-ebb8badd4cae",
+            "workflowId": "generic-actions-ui",
+            "targetWorkflowId": "generic-actions-child",
+            "wait": false,
+            "paused": true,
+            "cancelled": true,
+            "items": [
+              {
+                "id": "readiness",
+                "index": 0,
+                "title": "Review dependency readiness",
+                "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+                "url": "/runs/child-529575b673722a521d503aa27b14345ffc045ea8",
+                "wave": 0,
+                "dependencies": [],
+                "status": "cancelled",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "runtime",
+                "index": 1,
+                "title": "Inspect runtime durability",
+                "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+                "url": "/runs/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+                "wave": 0,
+                "dependencies": [],
+                "status": "cancelled",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "documentation",
+                "index": 2,
+                "title": "Document accepted behavior",
+                "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+                "url": "/runs/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+                "wave": 0,
+                "dependencies": [],
+                "status": "completed",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "integration",
+                "index": 3,
+                "title": "Integrate approved dependency",
+                "runId": "child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+                "url": "/runs/child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+                "wave": 1,
+                "dependencies": [
+                  "readiness"
+                ],
+                "status": "cancelled",
+                "creation": "pending"
+              },
+              {
+                "id": "follow-up",
+                "index": 4,
+                "title": "Follow completed documentation",
+                "runId": "child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+                "url": "/runs/child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+                "wave": 1,
+                "dependencies": [
+                  "documentation"
+                ],
+                "status": "cancelled",
+                "creation": "pending",
+                "error": "Prerequisite documentation completed without exact human-approved, provider-confirmed repository merge proof"
+              }
+            ]
+          }
+        },
+        "hookCalls": [
+          {
+            "runId": "generic-actions-ui-run",
+            "step": "propose",
+            "at": "2026-10-22T02:22:12.948Z"
+          },
+          {
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "itemId": "readiness",
+            "step": "work",
+            "at": "2026-10-22T02:22:14.136Z"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "itemId": "runtime",
+            "step": "work",
+            "at": "2026-10-22T02:22:15.293Z"
+          },
+          {
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "itemId": "documentation",
+            "step": "work",
+            "at": "2026-10-22T02:22:15.695Z"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "itemId": "runtime",
+            "step": "work",
+            "at": "2026-10-22T02:23:56.953Z"
+          }
+        ],
+        "issueSends": [
+          {
+            "key": "951defe40c05ea687bd1013c29ff9f85b771bef62d07d5024a252d77fc303666",
+            "itemId": "safe-issue",
+            "title": "Track the accepted review"
+          }
+        ],
+        "prepared": [
+          {
+            "runId": "generic-actions-ui-run",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/generic-actions-ui-run",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-529575b673722a521d503aa27b14345ffc045ea8",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          }
+        ]
+      },
+      "after": {
+        "status": "stopped",
+        "batches": {
+          "86befe84-3c52-4d18-81b1-ebb8badd4cae": {
+            "key": "dispatch",
+            "actionId": "86befe84-3c52-4d18-81b1-ebb8badd4cae",
+            "workflowId": "generic-actions-ui",
+            "targetWorkflowId": "generic-actions-child",
+            "wait": false,
+            "paused": true,
+            "cancelled": true,
+            "items": [
+              {
+                "id": "readiness",
+                "index": 0,
+                "title": "Review dependency readiness",
+                "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+                "url": "/runs/child-529575b673722a521d503aa27b14345ffc045ea8",
+                "wave": 0,
+                "dependencies": [],
+                "status": "cancelled",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "runtime",
+                "index": 1,
+                "title": "Inspect runtime durability",
+                "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+                "url": "/runs/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+                "wave": 0,
+                "dependencies": [],
+                "status": "cancelled",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "documentation",
+                "index": 2,
+                "title": "Document accepted behavior",
+                "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+                "url": "/runs/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+                "wave": 0,
+                "dependencies": [],
+                "status": "completed",
+                "creation": "confirmed",
+                "launchCommitted": true
+              },
+              {
+                "id": "integration",
+                "index": 3,
+                "title": "Integrate approved dependency",
+                "runId": "child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+                "url": "/runs/child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+                "wave": 1,
+                "dependencies": [
+                  "readiness"
+                ],
+                "status": "cancelled",
+                "creation": "pending"
+              },
+              {
+                "id": "follow-up",
+                "index": 4,
+                "title": "Follow completed documentation",
+                "runId": "child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+                "url": "/runs/child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+                "wave": 1,
+                "dependencies": [
+                  "documentation"
+                ],
+                "status": "cancelled",
+                "creation": "pending",
+                "error": "Prerequisite documentation completed without exact human-approved, provider-confirmed repository merge proof"
+              }
+            ]
+          }
+        },
+        "hookCalls": [
+          {
+            "runId": "generic-actions-ui-run",
+            "step": "propose",
+            "at": "2026-10-22T02:22:12.948Z"
+          },
+          {
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "itemId": "readiness",
+            "step": "work",
+            "at": "2026-10-22T02:22:14.136Z"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "itemId": "runtime",
+            "step": "work",
+            "at": "2026-10-22T02:22:15.293Z"
+          },
+          {
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "itemId": "documentation",
+            "step": "work",
+            "at": "2026-10-22T02:22:15.695Z"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "itemId": "runtime",
+            "step": "work",
+            "at": "2026-10-22T02:23:56.953Z"
+          }
+        ],
+        "issueSends": [
+          {
+            "key": "951defe40c05ea687bd1013c29ff9f85b771bef62d07d5024a252d77fc303666",
+            "itemId": "safe-issue",
+            "title": "Track the accepted review"
+          }
+        ],
+        "prepared": [
+          {
+            "runId": "generic-actions-ui-run",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/generic-actions-ui-run",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-529575b673722a521d503aa27b14345ffc045ea8",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          },
+          {
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+          }
+        ]
+      }
+    }
+  ],
+  "readyAt": "2026-10-22T02:22:16.292Z",
+  "ready": {
+    "status": "waiting",
+    "batches": {
+      "86befe84-3c52-4d18-81b1-ebb8badd4cae": {
+        "key": "dispatch",
+        "actionId": "86befe84-3c52-4d18-81b1-ebb8badd4cae",
+        "workflowId": "generic-actions-ui",
+        "targetWorkflowId": "generic-actions-child",
+        "wait": false,
+        "paused": false,
+        "cancelled": false,
+        "items": [
+          {
+            "id": "readiness",
+            "index": 0,
+            "title": "Review dependency readiness",
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "url": "/runs/child-529575b673722a521d503aa27b14345ffc045ea8",
+            "wave": 0,
+            "dependencies": [],
+            "status": "waiting",
+            "creation": "confirmed",
+            "launchCommitted": true
+          },
+          {
+            "id": "runtime",
+            "index": 1,
+            "title": "Inspect runtime durability",
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "url": "/runs/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "wave": 0,
+            "dependencies": [],
+            "status": "running",
+            "creation": "confirmed",
+            "launchCommitted": true
+          },
+          {
+            "id": "documentation",
+            "index": 2,
+            "title": "Document accepted behavior",
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "url": "/runs/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "wave": 0,
+            "dependencies": [],
+            "status": "completed",
+            "creation": "confirmed",
+            "launchCommitted": true
+          },
+          {
+            "id": "integration",
+            "index": 3,
+            "title": "Integrate approved dependency",
+            "runId": "child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+            "url": "/runs/child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+            "wave": 1,
+            "dependencies": [
+              "readiness"
+            ],
+            "status": "queued",
+            "creation": "pending"
+          },
+          {
+            "id": "follow-up",
+            "index": 4,
+            "title": "Follow completed documentation",
+            "runId": "child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+            "url": "/runs/child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+            "wave": 1,
+            "dependencies": [
+              "documentation"
+            ],
+            "status": "blocked",
+            "creation": "pending",
+            "error": "Prerequisite documentation completed without exact human-approved, provider-confirmed repository merge proof"
+          }
+        ]
+      }
+    },
+    "hookCalls": [
+      {
+        "runId": "generic-actions-ui-run",
+        "step": "propose",
+        "at": "2026-10-22T02:22:12.948Z"
+      },
+      {
+        "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+        "itemId": "readiness",
+        "step": "work",
+        "at": "2026-10-22T02:22:14.136Z"
+      },
+      {
+        "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+        "itemId": "runtime",
+        "step": "work",
+        "at": "2026-10-22T02:22:15.293Z"
+      },
+      {
+        "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+        "itemId": "documentation",
+        "step": "work",
+        "at": "2026-10-22T02:22:15.695Z"
+      }
+    ],
+    "issueSends": [
+      {
+        "key": "951defe40c05ea687bd1013c29ff9f85b771bef62d07d5024a252d77fc303666",
+        "itemId": "safe-issue",
+        "title": "Track the accepted review"
+      }
+    ],
+    "prepared": [
+      {
+        "runId": "generic-actions-ui-run",
+        "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/generic-actions-ui-run",
+        "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+      },
+      {
+        "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+        "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-529575b673722a521d503aa27b14345ffc045ea8",
+        "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+      },
+      {
+        "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+        "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+        "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+      },
+      {
+        "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+        "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+        "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+      }
+    ]
+  },
+  "stoppedAt": "2026-10-22T02:24:51.570Z",
+  "final": {
+    "status": "stopped",
+    "batches": {
+      "86befe84-3c52-4d18-81b1-ebb8badd4cae": {
+        "key": "dispatch",
+        "actionId": "86befe84-3c52-4d18-81b1-ebb8badd4cae",
+        "workflowId": "generic-actions-ui",
+        "targetWorkflowId": "generic-actions-child",
+        "wait": false,
+        "paused": true,
+        "cancelled": true,
+        "items": [
+          {
+            "id": "readiness",
+            "index": 0,
+            "title": "Review dependency readiness",
+            "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+            "url": "/runs/child-529575b673722a521d503aa27b14345ffc045ea8",
+            "wave": 0,
+            "dependencies": [],
+            "status": "cancelled",
+            "creation": "confirmed",
+            "launchCommitted": true
+          },
+          {
+            "id": "runtime",
+            "index": 1,
+            "title": "Inspect runtime durability",
+            "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "url": "/runs/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+            "wave": 0,
+            "dependencies": [],
+            "status": "cancelled",
+            "creation": "confirmed",
+            "launchCommitted": true
+          },
+          {
+            "id": "documentation",
+            "index": 2,
+            "title": "Document accepted behavior",
+            "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "url": "/runs/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+            "wave": 0,
+            "dependencies": [],
+            "status": "completed",
+            "creation": "confirmed",
+            "launchCommitted": true
+          },
+          {
+            "id": "integration",
+            "index": 3,
+            "title": "Integrate approved dependency",
+            "runId": "child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+            "url": "/runs/child-c3a857fd78f499a96a6ea7072e17cc5b52bedc4b",
+            "wave": 1,
+            "dependencies": [
+              "readiness"
+            ],
+            "status": "cancelled",
+            "creation": "pending"
+          },
+          {
+            "id": "follow-up",
+            "index": 4,
+            "title": "Follow completed documentation",
+            "runId": "child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+            "url": "/runs/child-314c9a8b808af57c26887ed57e30668ef73de9ff",
+            "wave": 1,
+            "dependencies": [
+              "documentation"
+            ],
+            "status": "cancelled",
+            "creation": "pending",
+            "error": "Prerequisite documentation completed without exact human-approved, provider-confirmed repository merge proof"
+          }
+        ]
+      }
+    },
+    "hookCalls": [
+      {
+        "runId": "generic-actions-ui-run",
+        "step": "propose",
+        "at": "2026-10-22T02:22:12.948Z"
+      },
+      {
+        "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+        "itemId": "readiness",
+        "step": "work",
+        "at": "2026-10-22T02:22:14.136Z"
+      },
+      {
+        "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+        "itemId": "runtime",
+        "step": "work",
+        "at": "2026-10-22T02:22:15.293Z"
+      },
+      {
+        "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+        "itemId": "documentation",
+        "step": "work",
+        "at": "2026-10-22T02:22:15.695Z"
+      },
+      {
+        "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+        "itemId": "runtime",
+        "step": "work",
+        "at": "2026-10-22T02:23:56.953Z"
+      }
+    ],
+    "issueSends": [
+      {
+        "key": "951defe40c05ea687bd1013c29ff9f85b771bef62d07d5024a252d77fc303666",
+        "itemId": "safe-issue",
+        "title": "Track the accepted review"
+      }
+    ],
+    "prepared": [
+      {
+        "runId": "generic-actions-ui-run",
+        "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/generic-actions-ui-run",
+        "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+      },
+      {
+        "runId": "child-529575b673722a521d503aa27b14345ffc045ea8",
+        "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-529575b673722a521d503aa27b14345ffc045ea8",
+        "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+      },
+      {
+        "runId": "child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+        "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-96be37c53b0bf1aa0241a93d6694ae7dc4dc472d",
+        "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+      },
+      {
+        "runId": "child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+        "workspace": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot139-actions-ui-crtRDR/worktrees/child-5a4ca9758a691a29d8085a9fd572e2fab1518bd0",
+        "revision": "2fe0b169c273797febf0616c991d86e6beb8e422"
+      }
+    ]
+  }
+}

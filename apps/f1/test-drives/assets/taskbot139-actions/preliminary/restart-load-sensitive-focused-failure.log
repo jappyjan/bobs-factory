@@ -1,0 +1,39 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker
+
+ ❯ test/ActionRuntime.test.ts (17 tests | 1 failed) 95564ms
+     × wait=false returns links, runs later steps and resumes deferred waves after shutdown without changing original output 12708ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ActionRuntime.test.ts > generic side-effect runtime integration > wait=false returns links, runs later steps and resumes deferred waves after shutdown without changing original output
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/ActionRuntime.test.ts:302:57
+    300|   expect(Object.keys(reloaded.launchActions!)).toEqual(actionIds);
+    301|   f.release("one");
+    302|   await waitForRuntime(() => expect(f.holds.has("two")).toBe(true));
+       |                                                         ^
+    303|   f.release("two");
+    304|   await waitForRuntime(() => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 36 passed (37)
+   Start at  05:12:52
+   Duration  101.21s (transform 8.64s, setup 439ms, import 15.34s, tests 137.60s, environment 1ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-139-actions/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/CheckIntegration.test.ts test/RepositorySnapshot.test.ts test/ActionAttention.test.ts test/ActionRuntime.test.ts test/ActionSeams.test.ts --maxWorkers=2
