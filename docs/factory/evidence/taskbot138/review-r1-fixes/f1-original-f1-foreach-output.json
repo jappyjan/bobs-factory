@@ -1,0 +1,355 @@
+{
+	"workflow": "f1-foreach-output",
+	"run": "session-1",
+	"status": "completed",
+	"outputs": {
+		"repository": {
+			"baseBranch": "main",
+			"name": "For each F1 fixture",
+			"githubUrl": "https://github.com/fixture/foreach"
+		},
+		"ticket": {
+			"attachments": [],
+			"id": "issue-1",
+			"identifier": "DEF-1",
+			"title": "F1 f1-foreach-output",
+			"description": "Run the deterministic For each orchestration fixture without changing repository files.",
+			"url": "https://linear.app/test/issue/DEF-1",
+			"priority": 0,
+			"createdAt": "2026-10-22T00:51:45.575Z",
+			"updatedAt": "2026-10-22T00:51:45.575Z",
+			"labels": [],
+			"team": {
+				"id": "team-default",
+				"name": "Default Team",
+				"key": "DEF"
+			},
+			"comments": []
+		},
+		"source": {
+			"items": [
+				{
+					"id": "alpha",
+					"name": "Alpha"
+				},
+				{
+					"id": "beta",
+					"name": "Beta"
+				},
+				{
+					"id": "gamma",
+					"name": "Gamma"
+				}
+			]
+		},
+		"batch/beta/inspect": {
+			"id": "beta",
+			"index": 1,
+			"name": "Beta"
+		},
+		"batch/alpha/inspect": {
+			"id": "alpha",
+			"index": 0,
+			"name": "Alpha"
+		},
+		"batch/gamma/inspect": {
+			"id": "gamma",
+			"index": 2,
+			"name": "Gamma"
+		},
+		"batch": {
+			"results": {
+				"alpha": {
+					"inspect": {
+						"id": "alpha",
+						"index": 0,
+						"name": "Alpha"
+					}
+				},
+				"beta": {
+					"inspect": {
+						"id": "beta",
+						"index": 1,
+						"name": "Beta"
+					}
+				},
+				"gamma": {
+					"inspect": {
+						"id": "gamma",
+						"index": 2,
+						"name": "Gamma"
+					}
+				}
+			},
+			"summary": {
+				"total": 3,
+				"completed": 3,
+				"failed": 0,
+				"cancelled": 0,
+				"failures": [],
+				"limitations": []
+			}
+		},
+		"verify": {
+			"passed": true,
+			"completed": true,
+			"failed": true,
+			"results": {
+				"alpha": {
+					"inspect": {
+						"id": "alpha",
+						"index": 0,
+						"name": "Alpha"
+					}
+				},
+				"beta": {
+					"inspect": {
+						"id": "beta",
+						"index": 1,
+						"name": "Beta"
+					}
+				},
+				"gamma": {
+					"inspect": {
+						"id": "gamma",
+						"index": 2,
+						"name": "Gamma"
+					}
+				}
+			}
+		}
+	},
+	"foreach": {
+		"batch": {
+			"key": "batch",
+			"visit": 1,
+			"concurrency": 2,
+			"maxItems": 10,
+			"failure": "all-must-succeed",
+			"items": [
+				{
+					"id": "alpha",
+					"index": 0,
+					"status": "completed"
+				},
+				{
+					"id": "beta",
+					"index": 1,
+					"status": "completed"
+				},
+				{
+					"id": "gamma",
+					"index": 2,
+					"status": "completed"
+				}
+			],
+			"completed": 3,
+			"failed": 0,
+			"total": 3
+		}
+	},
+	"turns": [
+		{
+			"run": "session-1",
+			"workflow": "f1-foreach-output",
+			"key": "source",
+			"id": "source",
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-b6d19c6e-3bb7-420d-9a68-c39aa47d345d"
+		},
+		{
+			"run": "session-1",
+			"workflow": "f1-foreach-output",
+			"key": "batch/beta/inspect",
+			"id": "inspect",
+			"item": {
+				"id": "beta",
+				"name": "Beta"
+			},
+			"index": 1,
+			"current": {
+				"id": "beta",
+				"name": "Beta"
+			},
+			"position": 1,
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-13c950f2-cb72-4cdc-8883-6d3c1166f42e"
+		},
+		{
+			"run": "session-1",
+			"workflow": "f1-foreach-output",
+			"key": "batch/alpha/inspect",
+			"id": "inspect",
+			"item": {
+				"id": "alpha",
+				"name": "Alpha"
+			},
+			"index": 0,
+			"current": {
+				"id": "alpha",
+				"name": "Alpha"
+			},
+			"position": 0,
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-5552afd2-23ea-41a2-ad6d-07371288389c"
+		},
+		{
+			"run": "session-1",
+			"workflow": "f1-foreach-output",
+			"key": "batch/gamma/inspect",
+			"id": "inspect",
+			"item": {
+				"id": "gamma",
+				"name": "Gamma"
+			},
+			"index": 2,
+			"current": {
+				"id": "gamma",
+				"name": "Gamma"
+			},
+			"position": 2,
+			"resumeSessionId": null,
+			"sessionId": "f1-mock-c5e1599d-c6a5-4d06-b3e0-33cea6e46d12"
+		}
+	],
+	"history": [
+		{
+			"step": "source",
+			"output": {
+				"items": [
+					{
+						"id": "alpha",
+						"name": "Alpha"
+					},
+					{
+						"id": "beta",
+						"name": "Beta"
+					},
+					{
+						"id": "gamma",
+						"name": "Gamma"
+					}
+				]
+			},
+			"at": "2026-10-22T00:51:47.236Z"
+		},
+		{
+			"step": "batch/beta/inspect",
+			"output": {
+				"id": "beta",
+				"index": 1,
+				"name": "Beta"
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "beta",
+				"index": 1,
+				"itemDigest": "04f3ee38acfc6e8a6ccdbef4a0e6da831c656b5a13b0c102c38c73ad0505877a"
+			},
+			"at": "2026-10-22T00:51:48.693Z"
+		},
+		{
+			"step": "batch/alpha/inspect",
+			"output": {
+				"id": "alpha",
+				"index": 0,
+				"name": "Alpha"
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "alpha",
+				"index": 0,
+				"itemDigest": "92593e1208b66047bd5600afb4b48a32e25a5dc4222b72dab7db8e58d6beec98"
+			},
+			"at": "2026-10-22T00:51:48.875Z"
+		},
+		{
+			"step": "batch/gamma/inspect",
+			"output": {
+				"id": "gamma",
+				"index": 2,
+				"name": "Gamma"
+			},
+			"iteration": {
+				"frame": "batch",
+				"id": "gamma",
+				"index": 2,
+				"itemDigest": "3fa7de21874788e105ec2c80e3e8d87539f07c988f28bf78f1050c77d30f4165"
+			},
+			"at": "2026-10-22T00:51:49.821Z"
+		},
+		{
+			"step": "batch",
+			"output": {
+				"results": {
+					"alpha": {
+						"inspect": {
+							"id": "alpha",
+							"index": 0,
+							"name": "Alpha"
+						}
+					},
+					"beta": {
+						"inspect": {
+							"id": "beta",
+							"index": 1,
+							"name": "Beta"
+						}
+					},
+					"gamma": {
+						"inspect": {
+							"id": "gamma",
+							"index": 2,
+							"name": "Gamma"
+						}
+					}
+				},
+				"summary": {
+					"total": 3,
+					"completed": 3,
+					"failed": 0,
+					"cancelled": 0,
+					"failures": [],
+					"limitations": []
+				}
+			},
+			"at": "2026-10-22T00:51:49.943Z"
+		},
+		{
+			"step": "verify",
+			"output": {
+				"passed": true,
+				"completed": true,
+				"failed": true,
+				"results": {
+					"alpha": {
+						"inspect": {
+							"id": "alpha",
+							"index": 0,
+							"name": "Alpha"
+						}
+					},
+					"beta": {
+						"inspect": {
+							"id": "beta",
+							"index": 1,
+							"name": "Beta"
+						}
+					},
+					"gamma": {
+						"inspect": {
+							"id": "gamma",
+							"index": 2,
+							"name": "Gamma"
+						}
+					}
+				}
+			},
+			"evidence": {},
+			"at": "2026-10-22T00:51:50.075Z"
+		}
+	],
+	"activityCount": 6,
+	"activityTypes": ["thought"],
+	"commentCount": 5
+}

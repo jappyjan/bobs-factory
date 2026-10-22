@@ -518,18 +518,23 @@ function ownRoles(
 	return steps.flatMap((step, i) =>
 		step.type === "agent"
 			? [{ step, path: [...path, i] }]
-			: step.type === "fanout"
-				? (step.groups ?? []).flatMap((group: any[], j: number) =>
-						ownRoles(group, [...path, i, "groups", j]),
-					)
-				: [],
+			: step.type === "foreach"
+				? ownRoles(step.body ?? [], [...path, i, "body"])
+				: step.type === "fanout"
+					? (step.groups ?? []).flatMap((group: any[], j: number) =>
+							ownRoles(group, [...path, i, "groups", j]),
+						)
+					: [],
 	);
 }
 function semanticRole(steps: any[], id: string, parent = ""): string {
 	for (const step of steps) {
 		const key = `${parent}${step.id}`;
 		if (step.id === id) return key;
-		for (const group of step.groups ?? []) {
+		for (const group of [
+			...(step.groups ?? []),
+			...(step.type === "foreach" ? [step.body ?? []] : []),
+		]) {
 			const role = semanticRole(group, id, `${key}/`);
 			if (role) return role;
 		}

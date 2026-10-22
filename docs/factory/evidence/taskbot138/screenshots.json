@@ -1,0 +1,205 @@
+{
+	"productionSource": "9b79a19f7b672a8a759400cc9f715aec3f140635",
+	"fixtureOnlyCommit": "31c3c6330159844c098a52716882d415668edf05",
+	"build": "37aae3292ed089cb18e738f1",
+	"screenshots": [
+		{
+			"name": "desktop-light-builder-source",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxm41-75c7e978.png",
+			"file": "screenshots/desktop-light-builder-source.png",
+			"sha256": "ff8bd5bbe25972f1ecbd73e07aaf219f45c61ddb64c7aa5eabc58ec20691b605",
+			"bytes": 135277,
+			"pixels": [1280, 889],
+			"cssViewport": [1440, 1000],
+			"capturedFileModifiedAt": "2026-10-21T23:31:32.017920+00:00"
+		},
+		{
+			"name": "desktop-light-builder-body",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxm79-ed8e4e68.png",
+			"file": "screenshots/desktop-light-builder-body.png",
+			"sha256": "a87fa00e967ca49ede1dd74cac8f4dc57e3daf56dfcc9f7007a660a2a5c1b4ea",
+			"bytes": 139647,
+			"pixels": [1280, 889],
+			"cssViewport": [1440, 1000],
+			"capturedFileModifiedAt": "2026-10-21T23:31:32.134277+00:00"
+		},
+		{
+			"name": "desktop-dark-builder-body",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxmbh-3858ec93.png",
+			"file": "screenshots/desktop-dark-builder-body.png",
+			"sha256": "a49690805e91c41a90d2ddc928472bece34adbfc464f973cd47288d421f359a8",
+			"bytes": 145581,
+			"pixels": [1280, 889],
+			"cssViewport": [1440, 1000],
+			"capturedFileModifiedAt": "2026-10-21T23:31:32.285894+00:00"
+		},
+		{
+			"name": "mobile-dark-builder-body",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxzva-280b7bae.png",
+			"file": "screenshots/mobile-dark-builder-body.png",
+			"sha256": "e11ea31b835f1a261ed75fd0a20e11f61ee32bc3bcc1f6c2cdb57465014ff997",
+			"bytes": 129414,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:31:49.847266+00:00"
+		},
+		{
+			"name": "mobile-dark-builder-source",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxzyf-89d088ab.png",
+			"file": "screenshots/mobile-dark-builder-source.png",
+			"sha256": "0ac0fe145f0d0fcbf25fdd52ba9b75fdc52d821a01905c40f2a6c947b7f1d98a",
+			"bytes": 105605,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:31:49.960158+00:00"
+		},
+		{
+			"name": "mobile-light-builder-source",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqy018-6ede3964.png",
+			"file": "screenshots/mobile-light-builder-source.png",
+			"sha256": "f89746620963a2b6d69440124c42a1fe0b926cfff4258f36fc8c0050291b414f",
+			"bytes": 100159,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:31:50.061378+00:00"
+		},
+		{
+			"name": "mobile-light-builder-body",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqy044-29c6af80.png",
+			"file": "screenshots/mobile-light-builder-body.png",
+			"sha256": "cee676d0693a063796f65ce7fde6795e2a922475e14122f8a2ba9a364924a11e",
+			"bytes": 122718,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:31:50.165164+00:00"
+		},
+		{
+			"name": "mobile-light-malformed-read",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqy92p-70a36747.png",
+			"file": "screenshots/mobile-light-malformed-read.png",
+			"sha256": "62eaf2220f86c0577177268e5a2269b4992f4191ef97d4685eae107f11de6154",
+			"bytes": 94254,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:32:01.777730+00:00"
+		},
+		{
+			"name": "mobile-light-simulation-results",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqzl36-e1c8242d.png",
+			"file": "screenshots/mobile-light-simulation-results.png",
+			"sha256": "ff8ed660f5d82bf590780ed8c87861aa530fb21b779d9b648da0514a9d7a25c8",
+			"bytes": 178609,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:33:04.002877+00:00"
+		},
+		{
+			"name": "mobile-dark-run-pending",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir0g2p-afb8aca5.png",
+			"file": "screenshots/mobile-dark-run-pending.png",
+			"sha256": "1d0f34af73496c7e2bffbb629d6454f7bfb9111abb9ec407f4cef2a85c9b070b",
+			"bytes": 230244,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:33:44.161755+00:00"
+		},
+		{
+			"name": "desktop-light-run-progress-final",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir11a2-d6322979.png",
+			"file": "screenshots/desktop-light-run-progress-final.png",
+			"sha256": "2ba81c43ac8449bb2070f67100c585f3bc4c67ee30b181259de3bdd6f5c6fb3b",
+			"bytes": 184371,
+			"pixels": [1280, 889],
+			"cssViewport": [1440, 1000],
+			"capturedFileModifiedAt": "2026-10-21T23:34:11.647614+00:00"
+		},
+		{
+			"name": "desktop-dark-run-progress-final",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir11io-53c8179c.png",
+			"file": "screenshots/desktop-dark-run-progress-final.png",
+			"sha256": "a6e00b9ab1f1457d44ff0ceafc2e4748516e04da5192c3307775002fb77b2513",
+			"bytes": 232271,
+			"pixels": [1280, 889],
+			"cssViewport": [1440, 1000],
+			"capturedFileModifiedAt": "2026-10-21T23:34:11.954638+00:00"
+		},
+		{
+			"name": "mobile-dark-run-progress-final",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir11s6-6ff1c71b.png",
+			"file": "screenshots/mobile-dark-run-progress-final.png",
+			"sha256": "aa3e7f8ad78691e3dac9f0cb02e1a868aecf4756a78c4f0fc07567cdcab689b3",
+			"bytes": 242508,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:34:12.299546+00:00"
+		},
+		{
+			"name": "mobile-light-run-progress-final",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir123x-9abccc9c.png",
+			"file": "screenshots/mobile-light-run-progress-final.png",
+			"sha256": "b8862126d7e84887b399b749a77531f1c460cfcc785f36e0b859f1df42468a6a",
+			"bytes": 216107,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:34:12.842937+00:00"
+		},
+		{
+			"name": "mobile-light-builder-canvas",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir1jw6-b4d44d28.png",
+			"file": "screenshots/mobile-light-builder-canvas.png",
+			"sha256": "0bc0de1302649c36ab15e828f9cb5ddd09b57301b2dbf43208bc5e96948bbbc0",
+			"bytes": 78531,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:34:35.768921+00:00"
+		},
+		{
+			"name": "mobile-dark-builder-canvas",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir1jzv-8077b052.png",
+			"file": "screenshots/mobile-dark-builder-canvas.png",
+			"sha256": "3a205695b4ead581d92e161d682d7caed8236459c8433d46ef46e025c5c4ec61",
+			"bytes": 80875,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:34:35.900265+00:00"
+		},
+		{
+			"name": "mobile-dark-builder-body-json",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir2dkj-6a3e9f24.png",
+			"file": "screenshots/mobile-dark-builder-body-json.png",
+			"sha256": "41b8553ddc74d1579768a58034c350a47f2d7d10af9a2a4c82b41729ac526f5a",
+			"bytes": 145795,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:35:14.228482+00:00"
+		},
+		{
+			"name": "mobile-light-builder-body-json",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir2dp6-9f876289.png",
+			"file": "screenshots/mobile-light-builder-body-json.png",
+			"sha256": "9baffb0d543be32bb5d1b66e44f922bb41c993aa0e4c616a161aece0ee24c024",
+			"bytes": 137467,
+			"pixels": [780, 1688],
+			"cssViewport": [390, 844],
+			"capturedFileModifiedAt": "2026-10-21T23:35:14.395497+00:00"
+		}
+	]
+}

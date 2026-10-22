@@ -21,6 +21,7 @@ const focusFields = [
 	"workflowBlock",
 	"triggerOrigin",
 	"capacityLeaves",
+	"foreach",
 	"deliveryCoordination",
 	"questions",
 	"questionBatchId",

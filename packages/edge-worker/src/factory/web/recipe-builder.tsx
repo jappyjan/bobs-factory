@@ -6,16 +6,19 @@ import { DEFAULT_STEP_MAX_VISITS, MAX_STEP_VISITS } from "../WorkflowLimits";
 import { AgentStepSettings } from "./agent-step-settings";
 import { CheckJsonField, CheckStepSettings } from "./check-step-settings";
 import { api, useAction, useConfig } from "./client";
+import { ForeachSimulation } from "./foreach-simulation";
+import { CallInputMapping, ForeachStepSettings } from "./foreach-step-settings";
 import { AgentSettings } from "./forms";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
 import {
 	authorableTools,
+	childrenOf,
 	connect,
 	describeCondition,
 	draftProblems,
 	editableOf,
 	fallbackOf,
-	findStep,
+	findStepPath,
 	insertStepAfter,
 	kindOf,
 	kinds,
@@ -52,6 +55,7 @@ const paletteKinds = [
 	"tool",
 	"script",
 	"fanout",
+	"foreach",
 	"workflow",
 ] as const;
 const revision = (recipe?: Recipe) =>
@@ -224,16 +228,16 @@ export function RecipeBuilder({ id }: { id: string }) {
 		draft.edit(owner.id, fn, owner.id === recipe.id ? recipe : undefined);
 	};
 	// A parallel branch is selected as "parent/child"; IDs are only unique per list.
-	const [top, child] = selectedId?.includes("/")
-		? (selectedId.split("/") as [string, string])
-		: [selectedId, undefined];
+	const selectionPath = selectedId?.split("/") ?? [];
+	const top = selectionPath[0];
+	const child = selectionPath.slice(1).join("/") || undefined;
 	const takenIds = new Set(
 		draft.recipes.flatMap((r) => {
 			const ids: string[] = [];
 			const walk = (list: Step[]) => {
 				for (const s of list) {
 					ids.push(s.id);
-					for (const g of s.groups ?? []) walk(g);
+					walk(childrenOf(s));
 				}
 			};
 			walk(r.steps);
@@ -333,7 +337,7 @@ export function RecipeBuilder({ id }: { id: string }) {
 			? ownerOf(top).steps.find((s) => s.id === top)
 			: undefined;
 	const selectedStep = child
-		? findStep((ownedTop?.groups ?? []).flat(), child)
+		? findStepPath(ownedTop ? childrenOf(ownedTop) : [], child.split("/"))
 		: ownedTop;
 	const nativeSelected = recipe.id === "simple" && selectedId === "native";
 
@@ -545,7 +549,15 @@ export function RecipeBuilder({ id }: { id: string }) {
 					<Inspector
 						key={`${selectedId}/${draftGeneration}`}
 						step={selectedStep}
-						parent={child ? ownedTop : undefined}
+						parent={
+							child
+								? findStepPath(
+										ownedTop ? [ownedTop] : [],
+										selectionPath.slice(0, -1),
+									)
+								: undefined
+						}
+						selection={selectedId!}
 						owner={ownerOf(top)}
 						opened={recipe}
 						displayed={steps}
@@ -553,7 +565,12 @@ export function RecipeBuilder({ id }: { id: string }) {
 						config={config}
 						onChange={(patch) =>
 							edit(ownerOf(top), (r) =>
-								updateStep(r, selectedStep.id, patch, child ? top : undefined),
+								updateStep(
+									r,
+									selectedStep.id,
+									patch,
+									child ? selectionPath.slice(0, -1).join("/") : undefined,
+								),
 							)
 						}
 						onConfigError={reportConfigError}
@@ -711,6 +728,7 @@ function PanelHeader({
 function Inspector({
 	step,
 	parent,
+	selection,
 	owner,
 	opened,
 	displayed,
@@ -725,6 +743,7 @@ function Inspector({
 }: {
 	step: Step;
 	parent?: Step;
+	selection: string;
 	owner: Recipe;
 	opened: Recipe;
 	displayed: Step[];
@@ -801,11 +820,13 @@ function Inspector({
 					<button
 						type="button"
 						className="link"
-						onClick={() => onSelect(parent.id)}
+						onClick={() =>
+							onSelect(selection.split("/").slice(0, -1).join("/"))
+						}
 					>
 						{parent.name}
 					</button>
-					. Add or remove parallel branches in the recipe JSON.
+					. Edit the containing body or parallel branches in its settings.
 				</p>
 			)}
 			{owner.id !== opened.id && (
@@ -950,6 +971,16 @@ function Inspector({
 					</label>
 				</section>
 			)}
+			{step.type === "foreach" && (
+				<ForeachStepSettings
+					step={step}
+					readOnly={!local}
+					selection={selection}
+					onChange={onChange}
+					onError={onConfigError}
+					onSelect={onSelect}
+				/>
+			)}
 			{step.type === "fanout" && (
 				<section className="recipe-section">
 					<h3>Runs in parallel</h3>
@@ -960,7 +991,7 @@ function Inspector({
 									<button
 										key={child.id}
 										type="button"
-										onClick={() => onSelect(`${step.id}/${child.id}`)}
+										onClick={() => onSelect(`${selection}/${child.id}`)}
 									>
 										<span>
 											{kindOf(child).icon} {child.name}
@@ -999,6 +1030,12 @@ function Inspector({
 								))}
 						</select>
 					) : null}
+					<CallInputMapping
+						step={step}
+						readOnly={!local}
+						onChange={onChange}
+						onError={onConfigError}
+					/>
 					{step.workflow && (
 						<Button
 							variant="secondary"
@@ -1165,7 +1202,7 @@ function Inspector({
 					)}
 				</section>
 			)}
-			{topLevel && (
+			{
 				<section className="recipe-section">
 					<h3>Safety limit</h3>
 					<label className="recipe-inline">
@@ -1182,7 +1219,7 @@ function Inspector({
 						visits to this step
 					</label>
 				</section>
-			)}
+			}
 			{local && topLevel && owner.steps.length > 1 && (
 				<Button variant="danger" onClick={onRemove}>
 					Delete step
@@ -1601,7 +1638,7 @@ function SimulationPanel({
 					<>
 						<p>
 							<b>{step.name}</b> — {stepSummary(step, recipes)}
-							{step.type !== "check" && " What happens?"}
+							{!["check", "foreach"].includes(step.type) && " What happens?"}
 						</p>
 						{step.type === "check" ? (
 							<CheckSimulation
@@ -1609,6 +1646,13 @@ function SimulationPanel({
 								step={step}
 								fallback={fallbackOf(steps, step)}
 								steps={steps}
+								onContinue={go}
+							/>
+						) : step.type === "foreach" ? (
+							<ForeachSimulation
+								key={`${current}/${simulation.visits[current]}`}
+								step={step}
+								fallback={fallbackOf(steps, step)}
 								onContinue={go}
 							/>
 						) : (

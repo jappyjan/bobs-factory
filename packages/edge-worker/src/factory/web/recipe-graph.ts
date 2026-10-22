@@ -1,4 +1,5 @@
 import { layout as dagreLayout, graphlib } from "@dagrejs/dagre";
+import { ForeachSettingsSchema, prepareForeach } from "../Foreach.js";
 import type { WorkflowStep } from "../Workflow.js";
 import { DEFAULT_STEP_MAX_VISITS } from "../WorkflowLimits.js";
 
@@ -94,7 +95,14 @@ export function describeCondition(when: { path: string; equals?: unknown }) {
 
 export type Kind = { icon: string; label: string; tone: string; hint: string };
 export const kinds: Record<
-	"agent" | "check" | "tool" | "script" | "fanout" | "workflow" | "human",
+	| "agent"
+	| "check"
+	| "tool"
+	| "script"
+	| "fanout"
+	| "foreach"
+	| "workflow"
+	| "human",
 	Kind
 > = {
 	agent: {
@@ -126,6 +134,12 @@ export const kinds: Record<
 		label: "In parallel",
 		tone: "orange",
 		hint: "Runs several branches at the same time",
+	},
+	foreach: {
+		icon: "↻",
+		label: "For each",
+		tone: "orange",
+		hint: "Runs a body for every item, with durable per-item progress",
 	},
 	workflow: {
 		icon: "🧩",
@@ -201,10 +215,29 @@ export function stepSummary(step: Step, recipes: Recipe[]): string {
 		return toolText[step.tool ?? ""] ?? `Built-in action “${step.tool}”.`;
 	if (step.type === "workflow")
 		return `Runs “${recipes.find((r) => r.id === step.workflow)?.name ?? step.workflow}”, then continues.`;
+	if (step.type === "foreach")
+		return `${itemSourceSummary(step)} · up to ${step.concurrency ?? 4} at once · ${step.failure === "keep-successful" ? "keep successful items" : "all must succeed"}.`;
 	if (step.type === "fanout")
 		return `${step.groups?.length ?? 0} branches run at the same time.`;
 	if (step.type === "script") return step.script ?? "";
 	return (step.prompt ?? "").split(/(?<=\.)\s/)[0] ?? "";
+}
+export function itemSourceSummary(step: Step): string {
+	return step.items && "from" in step.items
+		? `Items from ${step.items.from}`
+		: `${step.items && "values" in step.items ? step.items.values.length : 0} inline items`;
+}
+/** Direct children retain their lexical container scope. */
+export function childrenOf(step: Step): Step[] {
+	return step.type === "foreach"
+		? (step.body ?? [])
+		: (step.groups ?? []).flat();
+}
+export function findStepPath(steps: Step[], path: string[]): Step | undefined {
+	const step = steps.find((s) => s.id === path[0]);
+	return path.length <= 1 || !step
+		? step
+		: findStepPath(childrenOf(step), path.slice(1));
 }
 export function agentSummary(step: Step, defaultRunner: string) {
 	if (step.type !== "agent") return undefined;
@@ -292,16 +325,14 @@ export function stepName(steps: Step[], id: string) {
 export function findStep(steps: Step[], id: string): Step | undefined {
 	for (const step of steps) {
 		if (step.id === id) return step;
-		for (const group of step.groups ?? []) {
-			const found = findStep(group, id);
-			if (found) return found;
-		}
+		const found = findStep(childrenOf(step), id);
+		if (found) return found;
 	}
 	return undefined;
 }
 export function agentSteps(steps: Step[]): Step[] {
 	return steps.flatMap((s) =>
-		s.type === "agent" ? [s] : (s.groups ?? []).flatMap(agentSteps),
+		s.type === "agent" ? [s] : agentSteps(childrenOf(s)),
 	);
 }
 
@@ -333,6 +364,7 @@ export function recipeGraph(
 	recipe.steps.forEach((step, i) => {
 		const called =
 			step.type === "workflow" &&
+			!step.inputMapping &&
 			!step.branches.length &&
 			!seen.includes(step.workflow ?? "")
 				? recipes.find((r) => r.id === step.workflow)
@@ -488,37 +520,39 @@ export function layoutSteps(
 
 /* ---------------------------------------------------------------- editing */
 
-function mapSteps(steps: Step[], id: string, fn: (step: Step) => Step): Step[] {
-	return steps.map((s) =>
-		s.id === id
-			? fn(s)
-			: s.groups
-				? { ...s, groups: s.groups.map((g) => mapSteps(g, id, fn)) }
-				: s,
-	);
+function patchInContainer(
+	step: Step,
+	path: string[],
+	patch: Partial<Step>,
+): Step {
+	const update = (list: Step[]): Step[] =>
+		list.map((child) =>
+			child.id !== path[0]
+				? child
+				: path.length === 1
+					? { ...child, ...patch }
+					: patchInContainer(child, path.slice(1), patch),
+		);
+	return step.type === "foreach"
+		? { ...step, body: update(step.body ?? []) }
+		: { ...step, groups: step.groups?.map(update) };
 }
-/** Updates a top-level step, or a step inside `parent`'s parallel branches. */
+/** Updates a top-level step or an exact lexical path inside a container. */
 export function updateStep(
 	recipe: Recipe,
 	id: string,
 	patch: Partial<Step>,
 	parent?: string,
 ): Recipe {
+	const path = parent ? [...parent.split("/"), id] : [id];
 	return {
 		...recipe,
-		steps: recipe.steps.map((s) =>
-			parent
-				? s.id === parent
-					? {
-							...s,
-							groups: s.groups?.map((g) =>
-								mapSteps(g, id, (c) => ({ ...c, ...patch })),
-							),
-						}
-					: s
-				: s.id === id
-					? { ...s, ...patch }
-					: s,
+		steps: recipe.steps.map((step) =>
+			step.id !== path[0]
+				? step
+				: path.length === 1
+					? { ...step, ...patch }
+					: patchInContainer(step, path.slice(1), patch),
 		),
 	};
 }
@@ -583,7 +617,15 @@ export function uniqueStepId(taken: Iterable<string>, base: string) {
 	return `${base}-${i}`;
 }
 export function newStep(
-	kind: "agent" | "check" | "tool" | "script" | "fanout" | "workflow" | "human",
+	kind:
+		| "agent"
+		| "check"
+		| "tool"
+		| "script"
+		| "fanout"
+		| "foreach"
+		| "workflow"
+		| "human",
 	id: string,
 	callable?: string,
 ): Step {
@@ -652,6 +694,26 @@ export function newStep(
 					],
 				],
 			};
+		case "foreach":
+			return {
+				...base,
+				name: "For each item",
+				type: "foreach",
+				items: { values: [{ id: "first", name: "First item" }] },
+				itemId: "/id",
+				concurrency: 4,
+				maxItems: 100,
+				failure: "all-must-succeed",
+				body: [
+					{
+						...base,
+						id: `${id}-work`,
+						type: "agent",
+						name: "Process item",
+						prompt: "Process /item at /index. Return the result for this item.",
+					},
+				],
+			};
 		case "workflow":
 			return {
 				...base,
@@ -674,6 +736,24 @@ export function draftProblems(recipe: Recipe): string[] {
 			for (const b of s.branches)
 				if (!b.when.path.trim())
 					problems.push(`“${s.name}” has a route without a condition.`);
+			if (s.type === "foreach") {
+				if (!s.body?.length) problems.push(`“${s.name}” needs a body.`);
+				const settings = ForeachSettingsSchema.safeParse(s);
+				if (!settings.success)
+					problems.push(
+						`“${s.name}”: ${settings.error.issues.map((issue) => issue.message).join("; ")}`,
+					);
+				if (s.items && "values" in s.items && settings.success) {
+					try {
+						prepareForeach(s, { outputs: {} });
+					} catch (error) {
+						problems.push(
+							`“${s.name}”: ${error instanceof Error ? error.message : "Invalid items"}`,
+						);
+					}
+				}
+				walk(s.body ?? []);
+			}
 			for (const g of s.groups ?? []) walk(g);
 		}
 	};

@@ -1018,6 +1018,10 @@ run. Equal titles do not imply that unrelated runs replace one another.
 Custom title fields have been removed from launch forms. Legacy request titles
 are ignored, and title editing is deferred to future work.
 
+## For each
+
+Recipes support a generic durable For each container over inline items or an earlier output. Configure its body, stable item IDs, concurrency, collection limit and failure policy in the step panel. Nested bodies and recipe calls retain lexical item context, per-item native checkpoints and visit budgets; run activity shows persisted item progress. See the [For each reference](factory/foreach.md) for syntax, keyed outputs, failure/restart/capacity semantics and simulation limits.
+
 ## Workflow definition
 
 [Improve codebase](factory/improve-codebase.md) is a bundled manual workflow with

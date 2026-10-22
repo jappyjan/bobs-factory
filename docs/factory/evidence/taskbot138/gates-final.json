@@ -1,0 +1,120 @@
+{
+	"source": "f4fe779d15feda6050c0e6b560efe0b060e94f2b",
+	"tree": "d3e77e459995f9c097e057b2c4201592b57a3b9f",
+	"runtimeSource": "9b79a19f7b672a8a759400cc9f715aec3f140635",
+	"runtimeSourceUnchanged": true,
+	"deltaSinceRuntimeSource": [
+		"apps/f1/test-drives/assets/taskbot138-foreach-ui.mjs",
+		"packages/edge-worker/test/EdgeWorker.workflow-triggers.test.ts"
+	],
+	"node": "v24.21.0",
+	"pnpm": "10.33.1",
+	"gates": [
+		{
+			"name": "typecheck",
+			"command": ["corepack", "pnpm", "typecheck"],
+			"startedAt": "2026-10-21T23:49:21.338012+00:00",
+			"finishedAt": "2026-10-21T23:49:25.705359+00:00",
+			"elapsedSeconds": 4.343,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-r2-typecheck.log",
+			"sha256": "d54e5393d31a1a080b12729f25f6efc2464dce806e4a7cafb1e694af793342f3",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "lint",
+			"command": ["corepack", "pnpm", "lint"],
+			"startedAt": "2026-10-21T23:49:25.733661+00:00",
+			"finishedAt": "2026-10-21T23:49:27.211751+00:00",
+			"elapsedSeconds": 1.454,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-r2-lint.log",
+			"sha256": "7dedec35ca7ef71c4ca4f5c9660119cd5efe6b3358f58a964354c64bb93169d0",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "packages",
+			"command": ["corepack", "pnpm", "test:packages:run", "--maxWorkers=2"],
+			"startedAt": "2026-10-21T23:49:27.240660+00:00",
+			"finishedAt": "2026-10-21T23:59:46.590245+00:00",
+			"elapsedSeconds": 619.312,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-r2-packages.log",
+			"sha256": "84ceff6496ee9455f27088fc6c2711d2314da559a28ef62a7539a44ad87449ff",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "apps",
+			"command": [
+				"corepack",
+				"pnpm",
+				"--filter",
+				"./apps/*",
+				"test:run",
+				"--maxWorkers=2"
+			],
+			"startedAt": "2026-10-21T23:59:46.666211+00:00",
+			"finishedAt": "2026-10-22T00:00:45.613209+00:00",
+			"elapsedSeconds": 58.912,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-r2-apps.log",
+			"sha256": "2db007a123a6f73a188ec6a9b437d3452aedd5583a44cfeb458109c71b36c1c9",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "scripts",
+			"command": [
+				"node",
+				"--test",
+				"scripts/tests/archive-path.test.mjs",
+				"scripts/tests/artifact-handoff.test.mjs",
+				"scripts/tests/beta-attestation.test.mjs",
+				"scripts/tests/bounded-archive.test.mjs",
+				"scripts/tests/desktop-runtime.test.mjs",
+				"scripts/tests/desktop-shell-drive.test.mjs",
+				"scripts/tests/native-receipts.test.mjs",
+				"scripts/tests/nightly-artifacts.test.mjs",
+				"scripts/tests/nightly-baseline.test.mjs",
+				"scripts/tests/nightly-source.test.mjs",
+				"scripts/tests/nix-beta-attestation.test.mjs",
+				"scripts/tests/prepared-evidence-intake.test.mjs",
+				"scripts/tests/public-install.test.mjs",
+				"scripts/tests/release-candidate.test.mjs",
+				"scripts/tests/release-discovery.test.mjs",
+				"scripts/tests/release-extensions.test.mjs",
+				"scripts/tests/release-material.test.mjs",
+				"scripts/tests/release-publication.test.mjs",
+				"scripts/tests/reviewed-javascript-sources.test.mjs",
+				"scripts/tests/source-transport.test.mjs",
+				"scripts/tests/trial-launcher-bootstrap.test.mjs",
+				"scripts/tests/trial-launcher.test.mjs",
+				"scripts/tests/unsigned-release-flow.test.mjs",
+				"scripts/tests/website-downloads.test.mjs"
+			],
+			"startedAt": "2026-10-22T00:00:45.646754+00:00",
+			"finishedAt": "2026-10-22T00:01:51.278953+00:00",
+			"elapsedSeconds": 65.606,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-r2-scripts.log",
+			"sha256": "19f3387716f8d25e831e8d5c92296620aefdc1c816e3fcc544f4f23c634db1a5",
+			"statusBefore": "",
+			"statusAfter": ""
+		},
+		{
+			"name": "audit",
+			"command": ["corepack", "pnpm", "audit"],
+			"startedAt": "2026-10-22T00:01:51.322431+00:00",
+			"finishedAt": "2026-10-22T00:01:52.588742+00:00",
+			"elapsedSeconds": 1.226,
+			"exitCode": 0,
+			"log": "/tmp/taskbot138-final-source-r2-audit.log",
+			"sha256": "15950a68a7ed99c59779717acefdceb3f69cfd31bde67d2c954f2a3cea4d7955",
+			"statusBefore": "",
+			"statusAfter": ""
+		}
+	]
+}

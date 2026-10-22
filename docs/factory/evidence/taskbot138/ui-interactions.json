@@ -1,0 +1,165 @@
+{
+	"shots": [
+		{
+			"name": "desktop-light-builder-source",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxm41-75c7e978.png"
+		},
+		{
+			"name": "desktop-light-builder-body",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxm79-ed8e4e68.png"
+		},
+		{
+			"name": "desktop-dark-builder-body",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxmbh-3858ec93.png"
+		},
+		{
+			"name": "mobile-dark-builder-body",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxzva-280b7bae.png"
+		},
+		{
+			"name": "mobile-dark-builder-source",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqxzyf-89d088ab.png"
+		},
+		{
+			"name": "mobile-light-builder-source",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqy018-6ede3964.png"
+		},
+		{
+			"name": "mobile-light-builder-body",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqy044-29c6af80.png"
+		},
+		{
+			"name": "mobile-light-malformed-read",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqy92p-70a36747.png"
+		},
+		{
+			"name": "mobile-light-simulation-results",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mviqzl36-e1c8242d.png"
+		},
+		{
+			"name": "mobile-light-run-progress",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir0fn6-46b7f8e3.png"
+		},
+		{
+			"name": "mobile-dark-run-progress",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir0fvb-17b3f54f.png"
+		},
+		{
+			"name": "mobile-dark-run-pending",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir0g2p-afb8aca5.png"
+		},
+		{
+			"name": "desktop-dark-run-progress",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir0ggw-7acc4cfb.png"
+		},
+		{
+			"name": "desktop-light-run-progress",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir0gr3-87a5b20b.png"
+		},
+		{
+			"name": "desktop-light-run-progress-final",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir11a2-d6322979.png"
+		},
+		{
+			"name": "desktop-dark-run-progress-final",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir11io-53c8179c.png"
+		},
+		{
+			"name": "mobile-dark-run-progress-final",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir11s6-6ff1c71b.png"
+		},
+		{
+			"name": "mobile-light-run-progress-final",
+			"url": "http://localhost:3688/#/runs/foreach-ui-run",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir123x-9abccc9c.png"
+		},
+		{
+			"name": "mobile-light-builder-canvas",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir1jw6-b4d44d28.png"
+		},
+		{
+			"name": "mobile-dark-builder-canvas",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir1jzv-8077b052.png"
+		},
+		{
+			"name": "mobile-dark-builder-body-json",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir2dkj-6a3e9f24.png"
+		},
+		{
+			"name": "mobile-light-builder-body-json",
+			"url": "http://localhost:3688/#/recipes?recipe=foreach-ui&step=perspectives",
+			"screenshotPath": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvir2dp6-9f876289.png"
+		}
+	],
+	"proof": {
+		"capturedAt": "2026-10-21T23:35:14.450Z",
+		"savedConcurrency": 3,
+		"acceptedConcurrency": 2,
+		"progress": {
+			"perspectives": {
+				"key": "perspectives",
+				"visit": 1,
+				"concurrency": 2,
+				"maxItems": 20,
+				"failure": "keep-successful",
+				"items": [
+					{
+						"id": "security",
+						"index": 0,
+						"status": "completed"
+					},
+					{
+						"id": "runtime",
+						"index": 1,
+						"status": "failed",
+						"error": "Scripted fixture limitation: runtime evidence is unavailable"
+					},
+					{
+						"id": "accessibility",
+						"index": 2,
+						"status": "running"
+					},
+					{
+						"id": "performance",
+						"index": 3,
+						"status": "running"
+					},
+					{
+						"id": "maintainability",
+						"index": 4,
+						"status": "pending"
+					}
+				],
+				"completed": 1,
+				"failed": 1,
+				"total": 5
+			}
+		},
+		"viewport": [390, 844],
+		"overflow": false
+	},
+	"invalidSave": [
+		"          - button \"Save\" [disabled] [ref=t3-b28e8655-9q-e214] [box=209,60,56,38]"
+	],
+	"simulation": "Skip to content\nToday\nRecipes\nSettings\nInstall app\n🖥️\n← Recipes\n■ Stop\n⚙ Settings\n{ } JSON\n✦\nCollect perspective assignments\nClaude\n×1\n↻\nFor each perspective\nFor each\nItems from /inputs/assignments\n↔ 3 at once · max 20\n✦ Inspect this perspective\n×1\n✓\nCheck retained results and limitations\nCheck\nCollect perspective assignments\nFor each perspective\n\nFor each perspective — Items from /inputs/assignments · up to 3 at once · keep successful items.\n\nUses the production item snapshot, key validation and aggregation. Choose the completion order below. Body outcomes are synthetic: this does not execute agents, nested bodies, called recipes or side effects. Each item has its own visit budget; a visit-limit failure follows the selected failure policy. Machine capacity can further reduce real execution concurrency.\n\n1 of 3 completed · 0 active · concurrency 3\n\nsecurity\nIndex 0 · completed\nruntime\nIndex 1 · failed\nSynthetic item failure\nquality\nIndex 2 · failed\n“Inspect this perspective” exhausted its per-item limit of 3 visits\nIteration finished\n{\n  \"results\": {\n    \"security\": {\n      \"inspect\": {\n        \"simulated\": true,\n        \"item\": {\n          \"id\": \"security\",\n          \"name\": \"Security\"\n        },\n        \"index\": 0\n      }\n    }\n  },\n  \"summary\": {\n    \"total\": 3,\n    \"completed\": 1,\n    \"failed\": 2,\n    \"cancelled\": 0,\n    \"failures\": [\n      {\n        \"id\": \"runtime\",\n        \"index\": 1,\n        \"status\": \"failed\",\n        \"error\": \"Synthetic item failure\"\n      },\n      {\n        \"id\": \"quality\",\n        \"index\": 2,\n        \"status\": \"failed\",\n        \"error\": \"“Inspect this perspective” exhausted its per-item limit of 3 visits\"\n      }\n    ],\n    \"limitations\": [\n      \"runtime: Synthetic item failure\",\n      \"quality: “Inspect this perspective” exhausted its per-item limit of 3 visits\"\n    ]\n  }\n}\nContinue\nReset item simulation\nRestart"
+}

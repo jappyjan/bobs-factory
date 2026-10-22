@@ -1,0 +1,19 @@
+{
+	"source": "9b79a19f7b672a8a759400cc9f715aec3f140635",
+	"command": [
+		"bun",
+		"run",
+		"scripts/build-binary.ts",
+		"--target",
+		"darwin-arm64",
+		"--output",
+		"/tmp/taskbot138-native-9b79a19f"
+	],
+	"startedAt": "2026-10-21T23:29:21.178981+00:00",
+	"finishedAt": "2026-10-21T23:29:28.540429+00:00",
+	"elapsedSeconds": 7.361,
+	"exitCode": 0,
+	"log": "/tmp/taskbot138-native-build.log",
+	"sha256": "41fe15c9ab89fce1c77f06d5aca6a3ab27261762854439733c80a80eb7a0b3dc",
+	"statusAfter": ""
+}

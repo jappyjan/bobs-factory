@@ -7682,6 +7682,7 @@ ${taskSection}`;
 							if (nested) scan(nested);
 						}
 						for (const group of step.groups ?? []) steps(group);
+						if (step.body) steps(step.body);
 					}
 				};
 				steps(workflow.steps);
@@ -7860,6 +7861,7 @@ ${taskSection}`;
 					]);
 				}
 				if (step.groups) for (const group of step.groups) scan(group);
+				if (step.body) scan(step.body);
 				if (step.workflow && !visited.has(step.workflow)) {
 					visited.add(step.workflow);
 					const nested = definitions.find((item) => item.id === step.workflow);

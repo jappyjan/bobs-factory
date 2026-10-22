@@ -41,6 +41,7 @@ function setup() {
 	// Exercise actual launch/session code; stub only network/attachment boundaries.
 	const edge = worker as any;
 	const runtime = edge.getFactoryRuntime();
+	const storageRetention = edge.storageRetention;
 	const fullIssue = {
 		id: "issue",
 		identifier: "TEST-1",
@@ -66,7 +67,11 @@ function setup() {
 	});
 	cleanups.push(async () => {
 		await edge.runnerSlots.ready();
-		await runtime.shutdown();
+		// Reload tests replace these owners; quiesce both before removing their home.
+		for (const storage of new Set([storageRetention, edge.storageRetention]))
+			await storage?.stop();
+		for (const instance of new Set([runtime, edge.factoryRuntime]))
+			await instance?.shutdown();
 		edge.ticketTracking?.stop();
 		await edge.stateSaveQueue;
 		await edge.runnerSlots.ready();

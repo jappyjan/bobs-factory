@@ -80,6 +80,15 @@ import {
 	type ExecutionSnapshot,
 } from "./ExecutionProfiles.js";
 import { executeCommand, FactoryTools } from "./FactoryTools.js";
+import {
+	aggregateForeach,
+	type ForeachItemState,
+	type ForeachProgress,
+	type ForeachSnapshot,
+	foreachPointer,
+	foreachScope,
+	prepareForeach,
+} from "./Foreach.js";
 import type { GitProviderSnapshot } from "./GitProvider.js";
 import { GitSettings } from "./GitSettings.js";
 import {
@@ -182,6 +191,7 @@ import {
 	stepForRun,
 } from "./ToolBindings.js";
 import {
+	assertForeachBody,
 	isComputeIntensive,
 	readPath,
 	requireTrigger,
@@ -256,7 +266,24 @@ export interface QuestionRecheck {
 	convergence?: { key: string; snapshotDigest: string; at: string };
 	convergenceConsumed?: true;
 }
+export interface ItemFrame {
+	id: string;
+	index: number;
+	value: unknown;
+	frame: string;
+}
+export interface ForeachCheckpoint {
+	snapshot: ForeachSnapshot;
+	body: WorkflowStep[];
+	outputs: Record<string, unknown>;
+	states: ForeachItemState[];
+}
 export interface GraphCheckpoint {
+	iteration?: ItemFrame;
+	callInputs?: Record<string, unknown>;
+	/** New item/mapped-call scopes publish their own receipts, independently of inherited reads. */
+	projectResults?: true;
+	resultReceipts?: Record<string, { key: string; output: unknown }>;
 	// Inherited by called workflows and fanout branches; calls return it to their caller.
 	reviewKey?: string;
 	current: string;
@@ -272,6 +299,7 @@ export interface GraphCheckpoint {
 	active?: {
 		attemptId?: string;
 		phase: "executing" | "result" | "waiting" | "answered";
+		terminalFailure?: true;
 		questionRecheck?: QuestionRecheck;
 		questionDisplay?: {
 			source?: {
@@ -295,6 +323,7 @@ export interface GraphCheckpoint {
 		};
 		agent?: AgentCheckpoint;
 		children?: GraphCheckpoint[];
+		foreach?: ForeachCheckpoint;
 		call?: WorkflowCall;
 		reviewBaseline?: ReviewBaseline;
 		impactSnapshot?: ImpactSnapshot;
@@ -336,6 +365,14 @@ import {
 import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
+	/** Operational item progress, separate from accepted immutable item/output receipts. */
+	foreach?: Record<string, ForeachProgress>;
+	/** Original accepted collections; operational status never mutates these receipts. */
+	foreachIterations?: {
+		key: string;
+		visit: number;
+		snapshot: ForeachSnapshot;
+	}[];
 	improvementState?: ImprovementState;
 	improvementParent?: {
 		runId: string;
@@ -466,6 +503,12 @@ export interface FactoryRun {
 		at: string;
 		call?: WorkflowCall;
 		questionRecheck?: QuestionRecheck;
+		iteration?: {
+			frame: string;
+			id: string;
+			index: number;
+			itemDigest: string;
+		};
 	}[];
 	answers: { questions: string[]; answer: string; at: string }[];
 	questionRequests?: { questions: string[]; text: string; at: string }[];
@@ -485,6 +528,8 @@ export interface ChatMessage {
 	step: string;
 }
 export interface ExecutionContext {
+	iteration?: ItemFrame;
+	callInputs?: Record<string, unknown>;
 	validateRoleOutput?: (value: unknown) => unknown;
 	readOnlyResearch?: boolean;
 	researchAccess?: {
@@ -851,7 +896,8 @@ export class WorkflowRuntime {
 							!!run.workflowDefinitions?.some(
 								(child) => child.id === step.workflow && visit(child),
 							)) ||
-						(step.groups ?? []).some(walk),
+						(step.groups ?? []).some(walk) ||
+						(step.body ? walk(step.body) : false),
 				);
 			return walk(w.steps);
 		};
@@ -871,7 +917,8 @@ export class WorkflowRuntime {
 							policy.definitions.some(
 								(child) => child.id === s.workflow && check(child, seen),
 							)) ||
-						(s.groups ?? []).some(walk),
+						(s.groups ?? []).some(walk) ||
+						(s.body ? walk(s.body) : false),
 				);
 			return walk(w.steps);
 		};
@@ -1641,6 +1688,7 @@ export class WorkflowRuntime {
 		reviewBaseline?: ReviewBaseline,
 		deliveryAware = !!run.delivery,
 		binding?: OutputRevisionBinding,
+		iteration?: ItemFrame,
 	) {
 		if (binding?.inputScope)
 			outputs = Object.fromEntries(
@@ -1745,6 +1793,11 @@ export class WorkflowRuntime {
 						[name]: structuredClone(run.launchAttachments[name]),
 					});
 		}
+		if (iteration)
+			Object.assign(input, {
+				item: structuredClone(iteration.value),
+				index: iteration.index,
+			});
 		return input;
 	}
 	private async graph(
@@ -1759,6 +1812,8 @@ export class WorkflowRuntime {
 		parallel = false,
 		reviewBaseline?: ReviewBaseline,
 	): Promise<Record<string, unknown>> {
+		if (checkpoint.projectResults)
+			this.restoreFrameReceipts(run, steps, checkpoint, prefix);
 		while (checkpoint.current !== "end") {
 			signal.throwIfAborted();
 			this.assertSchedulingOpen();
@@ -1831,6 +1886,7 @@ export class WorkflowRuntime {
 				reviewBaseline,
 				deliveryAware,
 				boundScope,
+				checkpoint.iteration,
 			);
 			this.requireRunAvailable(run);
 			this.launchAssets.verify(run.id, run.launchAttachments);
@@ -1843,6 +1899,12 @@ export class WorkflowRuntime {
 				attemptId: state.attemptId,
 				execution,
 				reviewKey: checkpoint.reviewKey,
+				iteration: checkpoint.iteration
+					? immutableJson(checkpoint.iteration)
+					: undefined,
+				callInputs: checkpoint.callInputs
+					? immutableJson(checkpoint.callInputs)
+					: undefined,
 				run,
 				step,
 				stepKey: key,
@@ -1850,6 +1912,12 @@ export class WorkflowRuntime {
 				historyIndex: () => this.historyPreviews(run),
 				currentScope: () => ({
 					originalInput: run.input,
+					...(checkpoint.iteration
+						? {
+								item: structuredClone(checkpoint.iteration.value),
+								index: checkpoint.iteration.index,
+							}
+						: {}),
 					launchAttachments: run.launchAttachments,
 					...(deliveryAware
 						? {
@@ -1885,6 +1953,7 @@ export class WorkflowRuntime {
 						reviewBaseline,
 						deliveryAware,
 						previous,
+						checkpoint.iteration,
 					);
 					const sourceContext = {
 						...context,
@@ -1951,6 +2020,11 @@ export class WorkflowRuntime {
 				if (Object.hasOwn(bindings, "answers"))
 					Object.assign(input, { answers: bindings.answers });
 			}
+			if (checkpoint.iteration)
+				Object.assign(input, {
+					item: structuredClone(checkpoint.iteration.value),
+					index: checkpoint.iteration.index,
+				});
 			const scopeSources = checkArgs(step, "scope-inputs")?.sources;
 			const sourceValues = () => {
 				if (!scopeSources || typeof scopeSources !== "object") return undefined;
@@ -2208,6 +2282,14 @@ export class WorkflowRuntime {
 							output = await this.executeCheck(context, output);
 					} else if (step.type === "check") {
 						output = await this.executeCheck(context);
+					} else if (step.type === "foreach") {
+						output = await this.executeForeach(
+							context,
+							checkpoint,
+							workflowId,
+							chat,
+							reviewBaseline,
+						);
 					} else if (step.type === "fanout") {
 						if (
 							step.groups?.some((group) =>
@@ -2299,8 +2381,12 @@ export class WorkflowRuntime {
 							outputs: reviewConfig ? {} : structuredClone(outputs),
 						}));
 						// Also fill older resumed branches, preserving reviews established within them.
-						for (const child of state.children)
+						for (const child of state.children) {
 							child.reviewKey ??= checkpoint.reviewKey;
+							child.iteration ??= checkpoint.iteration;
+							child.callInputs ??= checkpoint.callInputs;
+							child.projectResults ??= checkpoint.projectResults;
+						}
 						await this.save(run);
 						signal.throwIfAborted();
 						const branchController = new AbortController();
@@ -2409,7 +2495,14 @@ export class WorkflowRuntime {
 												result.value[s.id],
 											]),
 										)
-									: result.value
+									: checkpoint.projectResults
+										? this.frameResults(
+												run,
+												step.groups?.[index] ?? [],
+												state.children![index]!,
+												`${key}/${index}/`,
+											)
+										: result.value
 								: undefined,
 						);
 						if (impactSourceId) {
@@ -2464,14 +2557,46 @@ export class WorkflowRuntime {
 						}
 						state.children ??= [this.newCheckpoint(definition.steps)];
 						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
-						if (config.explicit)
-							state.children[0]!.outputs ??= snapshotWorkflowInput(outputs);
+						state.children[0]!.iteration ??= checkpoint.iteration;
+						if (
+							checkpoint.projectResults ||
+							step.inputMapping ||
+							checkpoint.iteration
+						)
+							state.children[0]!.projectResults = true;
+						const isolated =
+							config.explicit || !!step.inputMapping || !!checkpoint.iteration;
+						if (isolated && !state.children[0]!.outputs) {
+							const mappings = Object.fromEntries(
+								Object.entries(step.inputMapping ?? {}).map(([name, path]) => [
+									name,
+									structuredClone(
+										foreachPointer(
+											foreachScope({
+												outputs,
+												inputs: stepBindings(context),
+												item: checkpoint.iteration?.value,
+												index: checkpoint.iteration?.index,
+											}),
+											path,
+										),
+									),
+								]),
+							);
+							state.children[0]!.outputs = {
+								...snapshotWorkflowInput(outputs),
+								...snapshotWorkflowInput(mappings),
+							};
+							state.children[0]!.callInputs = step.inputMapping
+								? immutableJson(mappings)
+								: checkpoint.callInputs;
+						}
 						await this.save(run);
 						signal.throwIfAborted();
 						await this.graph(
 							run,
 							definition.steps,
-							config.explicit ? state.children[0]!.outputs! : outputs,
+							isolated ? state.children[0]!.outputs! : outputs,
 							signal,
 							`${key}/`,
 							state.children[0]!,
@@ -2479,7 +2604,20 @@ export class WorkflowRuntime {
 							definition.chat ?? chat,
 							parallel,
 						);
-						output = { workflow: definition.id, completed: true };
+						output = {
+							workflow: definition.id,
+							completed: true,
+							...(step.inputMapping || checkpoint.iteration
+								? {
+										outputs: this.frameResults(
+											run,
+											definition.steps,
+											state.children[0]!,
+											`${key}/`,
+										),
+									}
+								: {}),
+						};
 						checkpoint.reviewKey = state.children[0]!.reviewKey;
 					} else {
 						run.capacityLeaves ??= {};
@@ -2780,7 +2918,7 @@ export class WorkflowRuntime {
 							(await outputRevisionBinding(context, boundScope, true))!;
 					}
 					if (
-						(config.explicit && key !== step.id) ||
+						((config.explicit || !!checkpoint.iteration) && key !== step.id) ||
 						hasCheck(step, "specialist-evidence")
 					)
 						run.outputs[key] = output;
@@ -2788,6 +2926,16 @@ export class WorkflowRuntime {
 						immutableJson({
 							step: key,
 							output,
+							...(checkpoint.iteration
+								? {
+										iteration: {
+											frame: checkpoint.iteration.frame,
+											id: checkpoint.iteration.id,
+											index: checkpoint.iteration.index,
+											itemDigest: digest(checkpoint.iteration.value),
+										},
+									}
+								: {}),
 							...(step.type === "check" && context.checkEvidence
 								? { evidence: context.checkEvidence }
 								: {}),
@@ -3604,13 +3752,36 @@ export class WorkflowRuntime {
 						immutableJson({ step: key, output, at: new Date().toISOString() }),
 					);
 			}
+			if (checkpoint.projectResults)
+				Object.defineProperty(checkpoint.resultReceipts!, step.id, {
+					value: immutableJson({ key, output: snapshotWorkflowInput(output) }),
+					enumerable: true,
+					configurable: true,
+					writable: true,
+				});
 			const refreshing = checkpoint.refreshes?.at(-1);
 			if (refreshing?.source === step.id) {
 				checkpoint.refreshes!.pop();
 				checkpoint.current = refreshing.target;
 				checkpoint.active = refreshing.active;
 			} else {
-				checkpoint.current = this.nextStep(steps, step, output);
+				const next = this.nextStep(steps, step, output);
+				if (
+					checkpoint.iteration &&
+					next === "end" &&
+					(["failed", "blocked"].includes(String(readPath(output, "status"))) ||
+						readPath(output, "reviewBlocked") === true ||
+						readPath(output, "reviewIncomplete") === true)
+				) {
+					// Failure belongs to its exact lexical destination, including inside calls/Parallel.
+					// Retain the accepted receipt and native checkpoint until explicit Retry.
+					state.terminalFailure = true;
+					await this.save(run);
+					throw new Error(
+						`Item ended with ${String(readPath(output, "status") ?? "incomplete evidence")} at ${key}`,
+					);
+				}
+				checkpoint.current = next;
 				checkpoint.active = undefined;
 			}
 			this.log(run, key, `Finished ${step.name}`);
@@ -4043,7 +4214,7 @@ export class WorkflowRuntime {
 			| undefined => {
 			if (!frame) return;
 			const step = steps.find((s) => s.id === frame.current);
-			if (!step || step.type === "fanout") return;
+			if (!step || step.type === "fanout" || step.type === "foreach") return;
 			const state = frame.active;
 			if (!state) return;
 			const key = `${prefix}${step.id}`;
@@ -4701,6 +4872,16 @@ export class WorkflowRuntime {
 			)
 				step = steps.find((s) => s.id === frame.current)!;
 			const key = `${prefix}${step.id}`;
+			if (frame.active?.terminalFailure) {
+				const native = frame.active.agent;
+				frame.active = {
+					phase: "executing",
+					...(native?.sessionId
+						? { agent: { runner: native.runner, sessionId: native.sessionId } }
+						: {}),
+				};
+				frame.visits[step.id] = (frame.visits[step.id] ?? 0) + 1;
+			}
 			const agent =
 				frame.active?.phase === "executing" ? frame.active.agent : undefined;
 			if (
@@ -4760,6 +4941,21 @@ export class WorkflowRuntime {
 				);
 				if (child && frame.active?.children?.[0])
 					extend(frame.active.children[0], child.steps, `${prefix}${step.id}/`);
+			} else if (step.type === "foreach" && frame.active?.foreach) {
+				const loop = frame.active.foreach;
+				loop.states.forEach((state, index) => {
+					if (state.status !== "completed") {
+						state.status = "pending";
+						delete state.error;
+						const child = frame.active!.children?.[index];
+						if (child)
+							extend(
+								child,
+								loop.body,
+								`${prefix}${step.id}/${loop.snapshot.items[index]!.id}/`,
+							);
+					}
+				});
 			} else if (step.type === "fanout") {
 				step.groups?.forEach((group, index) => {
 					const child = frame.active?.children?.[index];
@@ -4876,6 +5072,289 @@ export class WorkflowRuntime {
 	}
 	private newCheckpoint(steps: WorkflowStep[]): GraphCheckpoint {
 		return { current: steps[0]?.id ?? "end", visits: {} };
+	}
+	private restoreFrameReceipts(
+		run: FactoryRun,
+		steps: WorkflowStep[],
+		frame: GraphCheckpoint,
+		prefix: string,
+	): void {
+		if (frame.resultReceipts) {
+			for (const id of Object.keys(frame.resultReceipts))
+				frame.resultReceipts[id] = immutableJson(frame.resultReceipts[id]!);
+			return;
+		}
+		frame.resultReceipts = {};
+		// Older unfinished frames have no ownership map. Only original qualified
+		// receipts of steps visited in this frame can restore it; inherited live
+		// output names never establish production or cause a completed role to replay.
+		for (const step of steps) {
+			if (!frame.visits[step.id]) continue;
+			const key = `${prefix}${step.id}`;
+			const receipt = [...run.history].reverse().find((entry) => {
+				if (entry.step !== key) return false;
+				if (!frame.iteration) return !entry.iteration;
+				return (
+					entry.iteration?.frame === frame.iteration.frame &&
+					entry.iteration.id === frame.iteration.id &&
+					entry.iteration.index === frame.iteration.index &&
+					entry.iteration.itemDigest === digest(frame.iteration.value)
+				);
+			});
+			if (receipt) {
+				if (["workflow", "fanout", "foreach"].includes(step.type))
+					throw new Error(
+						`Child result ownership is missing at ${key}; original receipts are retained and nested results cannot be verified`,
+					);
+				Object.defineProperty(frame.resultReceipts, step.id, {
+					value: immutableJson({ key, output: receipt.output }),
+					enumerable: true,
+					configurable: true,
+					writable: true,
+				});
+			}
+		}
+	}
+	private frameResults(
+		run: FactoryRun,
+		steps: WorkflowStep[],
+		frame: GraphCheckpoint,
+		prefix: string,
+	): Record<string, unknown> {
+		this.restoreFrameReceipts(run, steps, frame, prefix);
+		return Object.fromEntries(
+			steps.flatMap((step) => {
+				if (!Object.hasOwn(frame.resultReceipts!, step.id)) return [];
+				const receipt = frame.resultReceipts![step.id]!;
+				if (receipt.key !== `${prefix}${step.id}`)
+					throw new Error(
+						`Child output receipt belongs to another frame: ${step.id}`,
+					);
+				return [[step.id, snapshotWorkflowInput(receipt.output)]];
+			}),
+		);
+	}
+	private async executeForeach(
+		context: ExecutionContext,
+		checkpoint: GraphCheckpoint,
+		workflowId: string,
+		chat: boolean,
+		reviewBaseline?: ReviewBaseline,
+	): Promise<unknown> {
+		const { run, step, signal } = context;
+		const key = context.stepKey!;
+		const active = checkpoint.active!;
+		assertForeachBody(
+			step.body ?? [],
+			run.workflowDefinitions ?? [run.workflow],
+			[workflowId],
+		);
+		if (!active.foreach) {
+			const snapshot = prepareForeach(step, {
+				outputs: context.outputs!,
+				inputs: stepBindings(context),
+				item: checkpoint.iteration?.value,
+				index: checkpoint.iteration?.index,
+			});
+			active.foreach = {
+				snapshot: immutableJson(snapshot),
+				body: structuredClone(step.body!),
+				outputs: snapshotWorkflowInput(context.outputs!),
+				states: snapshot.items.map(() => ({ status: "pending" })),
+			};
+			run.foreachIterations ??= [];
+			run.foreachIterations.push(
+				immutableJson({
+					key,
+					visit: checkpoint.visits[step.id]!,
+					snapshot: active.foreach.snapshot,
+				}),
+			);
+			active.children = snapshot.items.map((item) => ({
+				...this.newCheckpoint(step.body!),
+				projectResults: true,
+				resultReceipts: {},
+				iteration: { ...item, frame: key },
+				callInputs: checkpoint.callInputs,
+				reviewKey: checkpoint.reviewKey,
+			}));
+		}
+		const loop = active.foreach;
+		assertForeachBody(loop.body, run.workflowDefinitions ?? [run.workflow], [
+			workflowId,
+		]);
+		// Rehydrate accepted configuration authority after ordinary serialized loading.
+		registerWorkflowConfig(
+			{
+				id: workflowId,
+				stepConfigVersion: "step-config-v1",
+				steps: loop.body,
+			},
+			run.workflow.id,
+		);
+		loop.snapshot = immutableJson(loop.snapshot);
+		if (
+			!active.children ||
+			active.children.length !== loop.snapshot.items.length ||
+			loop.states.length !== loop.snapshot.items.length
+		)
+			throw new Error("For each checkpoint has inconsistent item frames");
+		for (const [index, item] of loop.snapshot.items.entries()) {
+			active.children[index]!.projectResults = true;
+			const frame = active.children[index]!.iteration;
+			if (
+				!frame ||
+				frame.id !== item.id ||
+				frame.index !== item.index ||
+				frame.frame !== key ||
+				digest(frame.value) !== digest(item.value)
+			)
+				throw new Error(
+					`For each checkpoint item ${item.id} does not match its accepted frame`,
+				);
+			if (loop.states[index]!.status === "completed") {
+				const produced = this.frameResults(
+					run,
+					loop.body,
+					active.children[index]!,
+					`${key}/${item.id}/`,
+				);
+				// The snapshot store can rehydrate JSON with null prototypes; compare
+				// canonical JSON authority rather than JavaScript object prototypes.
+				if (digest(produced) !== digest(loop.states[index]!.result))
+					throw new Error(
+						`Completed item ${item.id} has no matching exact-frame result receipts; original results are retained`,
+					);
+			}
+		}
+		const progress = () => {
+			run.foreach ??= {};
+			run.foreach[key] = {
+				key,
+				visit: checkpoint.visits[step.id]!,
+				concurrency: loop.snapshot.concurrency,
+				maxItems: loop.snapshot.maxItems,
+				failure: loop.snapshot.failure,
+				items: loop.snapshot.items.map(({ id, index }, i) => ({
+					id,
+					index,
+					status: loop.states[i]!.status,
+					...(loop.states[i]!.error ? { error: loop.states[i]!.error } : {}),
+				})),
+				completed: loop.states.filter((s) => s.status === "completed").length,
+				failed: loop.states.filter((s) => s.status === "failed").length,
+				total: loop.states.length,
+			};
+		};
+		// Running/cancelled work resumes its retained child/native checkpoint, never a new graph.
+		for (const state of loop.states)
+			if (state.status === "running" || state.status === "cancelled") {
+				state.status = "pending";
+				delete state.error;
+			}
+		progress();
+		await this.save(run); // Full snapshot and every child identity precede dispatch.
+		signal.throwIfAborted();
+		const controller = new AbortController();
+		const cancel = () => controller.abort(signal.reason);
+		signal.addEventListener("abort", cancel, { once: true });
+		if (signal.aborted) cancel();
+		let next = 0;
+		let suspension: unknown;
+		let fatal =
+			loop.snapshot.failure === "all-must-succeed" &&
+			loop.states.some((s) => s.status === "failed");
+		const worker = async () => {
+			while (!controller.signal.aborted && !fatal && !suspension) {
+				const index = next++;
+				if (index >= loop.states.length) return;
+				const state = loop.states[index]!;
+				if (state.status === "completed" || state.status === "failed") continue;
+				const item = loop.snapshot.items[index]!;
+				const child = active.children![index]!;
+				child.outputs ??= snapshotWorkflowInput(loop.outputs);
+				state.status = "running";
+				progress();
+				await this.save(run);
+				try {
+					controller.signal.throwIfAborted();
+					await this.graph(
+						run,
+						loop.body,
+						child.outputs,
+						controller.signal,
+						`${key}/${item.id}/`,
+						child,
+						workflowId,
+						chat,
+						true,
+						reviewBaseline,
+					);
+					controller.signal.throwIfAborted();
+					state.result = this.frameResults(
+						run,
+						loop.body,
+						child,
+						`${key}/${item.id}/`,
+					);
+					state.status = "completed";
+				} catch (error) {
+					if (isUpdatePaused(error) && !signal.aborted) {
+						suspension ??= error;
+						state.status = "pending";
+					} else if (controller.signal.aborted) {
+						state.status = "cancelled";
+						state.error = signal.aborted
+							? "Run cancelled; unfinished context retained"
+							: "Sibling failed; unfinished context retained";
+					} else {
+						state.status = "failed";
+						state.error =
+							error instanceof Error ? error.message : String(error);
+						if (loop.snapshot.failure === "all-must-succeed") {
+							fatal = true;
+							controller.abort(error);
+						}
+					}
+				} finally {
+					progress();
+					await this.save(run);
+				}
+			}
+		};
+		try {
+			// Orchestration holds no capacity lease or shared-resource reservation.
+			// All workers settle their native/leaf cleanup before join or failure.
+			const outcomes = await Promise.allSettled(
+				Array.from(
+					{ length: Math.min(loop.snapshot.concurrency, loop.states.length) },
+					worker,
+				),
+			);
+			const unexpected = outcomes.find((o) => o.status === "rejected");
+			if (unexpected?.status === "rejected") throw unexpected.reason;
+			if (fatal || signal.aborted)
+				for (const state of loop.states)
+					if (state.status === "pending") {
+						state.status = "cancelled";
+						state.error = fatal
+							? "Not dispatched: sibling failed"
+							: "Not dispatched: run cancelled";
+					}
+			progress();
+			await this.save(run);
+			signal.throwIfAborted();
+			if (suspension) throw suspension;
+			if (fatal) {
+				const summary = aggregateForeach(loop.snapshot, loop.states).summary;
+				throw new Error(
+					`For each ${key} failed: ${summary.failures.map((f) => `${f.id}: ${f.error}`).join("; ")}`,
+				);
+			}
+			return aggregateForeach(loop.snapshot, loop.states);
+		} finally {
+			signal.removeEventListener("abort", cancel);
+		}
 	}
 	/** Runtime owns checkpoint/convergence bookkeeping; the evaluator only consumes data. */
 	private async executeCheck(
@@ -5305,6 +5784,7 @@ export class WorkflowRuntime {
 			title: run.title,
 			status: capacityRunStatus(run),
 			capacityLeaves: run.capacityLeaves,
+			foreach: run.foreach,
 			deliveryCoordination: run.deliveryCoordination,
 			createdAt: run.createdAt,
 			updatedAt: run.updatedAt,
