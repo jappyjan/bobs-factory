@@ -8447,6 +8447,8 @@ ${taskSection}`;
 					(r) =>
 						this.getFactoryRuntime().save(this.getFactoryRuntime().get(r.id)),
 				).finalCheck(run, true),
+			(run, version) =>
+				this.getFactoryRuntime().humanViews.validatePublication(run, version),
 		);
 		return this.ticketTracking;
 	}

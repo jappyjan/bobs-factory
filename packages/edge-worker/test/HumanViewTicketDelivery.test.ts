@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
 	copyFileSync,
 	mkdirSync,
@@ -7,6 +7,7 @@ import {
 	readFileSync,
 	realpathSync,
 	rmSync,
+	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -57,6 +58,8 @@ async function fixture(
 	agent: RuntimeHooks["agent"],
 	large = false,
 	legacySnapshot?: string,
+	children = false,
+	assets = false,
 ) {
 	const home = realpathSync(mkdtempSync(join(tmpdir(), "human-view-ticket-")));
 	homes.push(home);
@@ -97,6 +100,20 @@ async function fixture(
 		...taskbotSource("https://taskbot.example/p/fixture/t/77")!,
 		server: "taskbot",
 	};
+	const awaitHeldRead = async () => {
+		if (!holdRead) return;
+		const gate = holdRead;
+		holdRead = undefined;
+		readEntered!.resolve();
+		await gate.promise;
+	};
+	const imageBytes = Buffer.from(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aNNsAAAAASUVORK5CYII=",
+		"base64",
+	);
+	const imageHash = createHash("sha256").update(imageBytes).digest("hex");
+	let image = "";
+	const child = deferred();
 	const tracker = new CLIIssueTrackerService();
 	tracker.seedDefaultData();
 	const issue = await tracker.createIssue({
@@ -110,10 +127,12 @@ async function fixture(
 	const adapter =
 		channel === "taskbot"
 			? taskbotAdapter(ref, async (tool, args) => {
-					if (tool === "get_ticket")
+					if (tool === "get_ticket") {
+						await awaitHeldRead();
 						return {
 							content: [{ type: "text", text: JSON.stringify(ticket) }],
 						};
+					}
 					if (tool === "set_status") {
 						ticket.status = String(args.to);
 						return { content: [] };
@@ -139,25 +158,46 @@ async function fixture(
 					tracker,
 					{ getTranscriptSession: async () => session.id },
 				);
-	const originalRead = adapter.read.bind(adapter);
-	adapter.read = async (...args) => {
-		if (holdRead) {
-			const gate = holdRead;
-			holdRead = undefined;
-			readEntered!.resolve();
-			await gate.promise;
-		}
-		return originalRead(...args);
+	const fetchIssue = tracker.fetchIssue.bind(tracker);
+	tracker.fetchIssue = async (...args) => {
+		await awaitHeldRead();
+		return fetchIssue(...args);
 	};
 	let runtime!: WorkflowRuntime;
 	const service = new TicketTracking(
 		async () => adapter,
 		(run) => runtime.save(run),
 		() => {},
+		undefined,
+		(run, version) => runtime.humanViews.validatePublication(run, version),
 	);
 	services.push(service);
 	const hooks = {
-		agent,
+		agent: async (context: Parameters<RuntimeHooks["agent"]>[0]) => {
+			if (context.step.id === "view-scope") return { areas: [] };
+			if (context.step.id === "view-capture") {
+				mkdirSync(context.evidenceDir, { recursive: true });
+				image = join(context.evidenceDir, "display.png");
+				writeFileSync(image, imageBytes);
+				return {
+					screenshots: [
+						{
+							path: image,
+							caption: "Retained capture",
+							area: "Review",
+							imageSha256: imageHash,
+						},
+					],
+					unavailable: [],
+				};
+			}
+			if (context.step.id !== "child-work") return agent(context);
+			context.signal.addEventListener("abort", () => child.resolve(), {
+				once: true,
+			});
+			await child.promise;
+			return { done: true };
+		},
 		script: async () => {
 			throw new Error("Unexpected script");
 		},
@@ -173,25 +213,108 @@ async function fixture(
 	runtimes.push(runtime);
 	const definitions = validateWorkflows([
 		...defaultWorkflows,
+		...(children
+			? [
+					{
+						id: "ticket-child",
+						name: "Controlled child",
+						stepConfigVersion: "step-config-v1",
+						allowedTriggers: ["workflow"],
+						steps: [
+							{
+								id: "child-work",
+								name: "Child",
+								type: "agent",
+								prompt: "Controlled child",
+							},
+						],
+					},
+				]
+			: []),
 		{
 			id: "ticket-views",
 			name: "Ticket views",
 			stepConfigVersion: "step-config-v1",
 			steps: [
+				...(assets
+					? [
+							{
+								id: "view-scope",
+								name: "Scope",
+								type: "agent",
+								prompt: "Controlled scope",
+							},
+							{
+								id: "view-capture",
+								name: "Capture",
+								type: "agent",
+								prompt: "Controlled capture",
+								reads: { scope: "view-scope" },
+								output: { format: "capture-v1" },
+								checks: ["capture-evidence"],
+							},
+						]
+					: []),
+				...(children
+					? [
+							{
+								id: "launch",
+								name: "Launch",
+								type: "launch-runs",
+								launchRuns: {
+									items: {
+										values: [
+											{ id: "a", title: "Child", prompt: "Controlled child" },
+										],
+									},
+									workflow: "ticket-child",
+									wait: false,
+									inputMapping: { prompt: "/prompt" },
+								},
+							},
+						]
+					: []),
 				{
 					id: "choose",
 					name: "Choose safely",
 					type: "decide",
+					reads: children ? { children: "@childRuns" } : {},
 					notifications: { push: "view-text" },
 					view: {
 						version: "view-v1",
-						components: [
-							{
-								id: "brief",
-								type: "markdown",
-								data: { literal: { text: "Public artifact" } },
-							},
-						],
+						components: assets
+							? [
+									{
+										id: "screens",
+										type: "screenshots",
+										data: {
+											literal: {
+												items: [
+													{
+														index: 0,
+														sha256: imageHash,
+														alt: "Retained screenshot",
+													},
+												],
+											},
+										},
+									},
+								]
+							: children
+								? [
+										{
+											id: "children",
+											type: "runList",
+											data: { path: "/inputs/children" },
+										},
+									]
+								: [
+										{
+											id: "brief",
+											type: "markdown",
+											data: { literal: { text: "Public artifact" } },
+										},
+									],
 					},
 					decide: {
 						items: {
@@ -244,6 +367,10 @@ async function fixture(
 	await waitFor(async () => expect((await displays()).length).toBe(1));
 	return {
 		home,
+		get image() {
+			return image;
+		},
+		child,
 		service,
 		hooks,
 		run,
@@ -596,4 +723,187 @@ it("projects an actual old persisted raw native failure safely and renews only i
 	await waitFor(() => expect(f.run.status).toBe("completed"));
 	expect(record.answer!.request.digest).toBe(current.digest);
 	expect(record.snapshot.threads!.item0![0]!.error).toBe(diagnostic);
+});
+
+it.each([
+	"taskbot",
+	"linear",
+] as const)("suppresses a source-only obsolete %s write after an actual held provider read and renews without waiting for Ask", async (channel) => {
+	const answer = deferred<string>();
+	const f = await fixture(
+		channel,
+		async (context) => {
+			context.signal.addEventListener(
+				"abort",
+				() => answer.resolve("Stopped historical Ask"),
+				{ once: true },
+			);
+			return answer.promise;
+		},
+		false,
+		undefined,
+		true,
+	);
+	const initialBody = (await f.displays())[0]!;
+	const held = f.blockNextRead();
+	await ask(f, "Explain child progress while provider read is held");
+	await held.entered;
+	const pending = structuredClone(f.run.viewDecision!);
+	f.child.resolve();
+	await waitFor(() =>
+		expect(Object.values(f.run.launchActions!)[0]!.progress.a!.status).toBe(
+			"completed",
+		),
+	);
+	// Real child progress changed; the saved public snapshot has not been rotated.
+	expect(f.run.viewDecision!.digest).toBe(pending.digest);
+	held.release();
+	await waitFor(async () =>
+		expect((await f.displays()).at(-1)).toContain("[completed]"),
+	);
+	expect(
+		(await f.displays())
+			.slice(1)
+			.every((body) => !body.includes(pending.digest)),
+	).toBe(true);
+	expect((await f.displays())[0]).toBe(initialBody);
+	expect(f.run.viewDecision!.id).not.toBe(pending.id);
+	const obsolete = f.run.ticketSync!.receipts.find(
+		(receipt) => receipt.viewDecision?.digest === pending.digest,
+	)!;
+	expect(obsolete.superseded).toBe(true);
+	expect(obsolete.delivered).not.toBe(true);
+	await expect(
+		f.runtime.answerView(f.run.id, {
+			...accepted(f.run),
+			batchId: pending.id,
+			digest: pending.digest,
+		}),
+	).rejects.toThrow("superseded");
+	const renewed = f.run.viewDecision!,
+		count = (await f.displays()).length;
+	await f.runtime.replyView(
+		f.run.id,
+		`/view-answer ${JSON.stringify(accepted(f.run))}`,
+	);
+	await waitFor(() => expect(f.run.status).toBe("completed"));
+	// Late native Ask result stays on the historical record and cannot republish it.
+	answer.resolve("Historical child explanation");
+	await waitFor(() =>
+		expect(
+			f.run.viewRecords!.find((r) => r.snapshot.id === pending.id)!.snapshot
+				.threads!.item0![0]!.status,
+		).toBe("answered"),
+	);
+	expect(f.run.viewDecision!.id).toBe(renewed.id);
+	expect((await f.displays()).length).toBe(count);
+	await f.service.flush(f.run);
+	expect((await f.displays()).length).toBe(count);
+});
+
+it("refuses changed real protected asset bytes at the final write boundary without rewriting accepted capture history", async () => {
+	const answer = deferred<string>();
+	const f = await fixture(
+		"taskbot",
+		async (context) => {
+			context.signal.addEventListener(
+				"abort",
+				() => answer.resolve("Stopped"),
+				{ once: true },
+			);
+			return answer.promise;
+		},
+		false,
+		undefined,
+		false,
+		true,
+	);
+	const capture = JSON.stringify(f.run.outputs["view-capture"]);
+	const original = (await f.displays())[0]!;
+	const held = f.blockNextRead();
+	await ask(f, "Explain the displayed screenshot");
+	await held.entered;
+	const pending = structuredClone(f.run.viewDecision!);
+	const changed = readFileSync(f.image);
+	changed[changed.length - 1] ^= 1;
+	writeFileSync(f.image, changed);
+	held.release();
+	await waitFor(() => expect(f.run.status).toBe("failed"));
+	await f.service.flush(f.run);
+	expect(await f.displays()).toEqual([original]);
+	expect(JSON.stringify(f.run.outputs["view-capture"])).toBe(capture);
+	expect(
+		f.run.viewRecords!.find((r) => r.snapshot.id === pending.id)!.superseded,
+	).toBe(true);
+	expect(
+		f.run.ticketSync!.receipts.find(
+			(r) => r.viewDecision?.digest === pending.digest,
+		)!.superseded,
+	).toBe(true);
+	await expect(
+		f.runtime.answerView(f.run.id, {
+			batchId: pending.id,
+			digest: pending.digest,
+			accepted: true,
+			choices: [{ itemId: "item0", action: "skip" }],
+		}),
+	).rejects.toThrow("superseded");
+});
+
+it("retains a source-renewed outgoing version through real persisted reconstruction without replaying the obsolete intent", async () => {
+	const answer = deferred<string>();
+	const f = await fixture(
+		"taskbot",
+		async (context) => {
+			context.signal.addEventListener(
+				"abort",
+				() => answer.resolve("Stopped historical Ask"),
+				{ once: true },
+			);
+			return answer.promise;
+		},
+		false,
+		undefined,
+		true,
+	);
+	const held = f.blockNextRead();
+	await ask(f, "Question before source renewal and restart");
+	await held.entered;
+	const pending = structuredClone(f.run.viewDecision!);
+	f.child.resolve();
+	await waitFor(() =>
+		expect(Object.values(f.run.launchActions!)[0]!.progress.a!.status).toBe(
+			"completed",
+		),
+	);
+	held.release();
+	await waitFor(async () =>
+		expect((await f.displays()).at(-1)).toContain("[completed]"),
+	);
+	const current = structuredClone(f.run.viewDecision!),
+		history = await f.displays();
+	const restored = await f.reconstruct();
+	expect(restored.viewDecision!.id).toBe(current.id);
+	expect(restored.viewDecision!.digest).toBe(current.digest);
+	expect(await f.displays()).toEqual(history);
+	expect(
+		restored.ticketSync!.receipts.find(
+			(r) => r.viewDecision?.digest === pending.digest,
+		)!.superseded,
+	).toBe(true);
+	await expect(
+		f.runtime.answerView(restored.id, {
+			...accepted(restored),
+			batchId: pending.id,
+			digest: pending.digest,
+		}),
+	).rejects.toThrow("superseded");
+	await f.runtime.replyView(
+		restored.id,
+		`/view-answer ${JSON.stringify(accepted(restored))}`,
+	);
+	await waitFor(() => expect(restored.status).toBe("completed"));
+	expect(restored.viewRecords!.at(-1)!.answer!.request.digest).toBe(
+		current.digest,
+	);
 });

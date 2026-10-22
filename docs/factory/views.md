@@ -158,7 +158,13 @@ reply-ingestion channel. Large text fallbacks direct readers to the complete
 dashboard display. Ask admission/completion publishes an immutable ticket version
 with its exact current batch/digest, discussion/status and answer command. Durable
 outbox ownership skips obsolete unsent versions and deduplicates retries/restarts;
-delivered history remains original. Failed Ask exposes fixed recovery guidance in
+delivered history remains original. Immediately before an unsent provider write,
+the runtime checks the exact active frame, batch and digest, re-resolves declared
+configuration/content and verifies protected assets. Source changes supersede the
+unsent version and renew the display without waiting for an Ask model turn. This
+is a final local check, not an atomic lock on an external provider or later source
+changes; a subsequently changed display still requires fresh human review. No
+remote read/write or model wait holds the human transition queue. Failed Ask exposes fixed recovery guidance in
 API, dashboard, terminal, ticket, activity and opted-in push content. Raw native
 failure diagnostics remain in the private persisted thread rather than these
 public projections, including when old saved failures are read. Accepted original

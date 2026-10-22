@@ -646,6 +646,24 @@ export class TicketTracking {
 			? "current"
 			: "deferred";
 	}
+	private async validateViewPublication(
+		run: FactoryRun,
+		receipt: TicketMilestone,
+	) {
+		if (this.viewState(run, receipt) !== "current") return false;
+		if (!receipt.viewDecision) return true;
+		if (!this.checkView)
+			throw new Error(
+				"Current decision delivery requires runtime display validation",
+			);
+		if (await this.checkView(run, receipt.viewDecision))
+			return this.viewState(run, receipt) === "current";
+		receipt.superseded = true;
+		receipt.limitation =
+			"The active decision or its displayed content changed before delivery; use the renewed decision.";
+		delete receipt.error;
+		return false;
+	}
 	stop(): void {
 		this.stopped = true;
 		for (const timer of this.retries.values()) clearTimeout(timer);
@@ -656,6 +674,10 @@ export class TicketTracking {
 		private save: (run: FactoryRun) => void | Promise<void>,
 		private log: (run: FactoryRun, message: string) => void,
 		private checkExternal?: (run: FactoryRun) => Promise<boolean>,
+		private checkView?: (
+			run: FactoryRun,
+			version: NonNullable<TicketMilestone["viewDecision"]>,
+		) => Promise<boolean>,
 	) {}
 	async record(run: FactoryRun, milestone: TicketMilestone): Promise<void> {
 		if (!run.ticketReference || run.workflow.id === "simple") return;
@@ -792,7 +814,7 @@ export class TicketTracking {
 						) {
 							receipt.deliveryId ??= randomUUID();
 							await this.save(run);
-							if (this.viewState(run, receipt) !== "current") continue;
+							if (!(await this.validateViewPublication(run, receipt))) continue;
 							const body = `${receipt.body}${receipt.limitation ? `\n\nTracking limitation: ${receipt.limitation}` : ""}\n\n${marker}`;
 							if (adapter.publish) await adapter.publish(receipt, body);
 							else await adapter.comment(body);

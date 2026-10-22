@@ -308,6 +308,79 @@ export class HumanViews {
 			},
 		};
 	}
+	/** Final local authority check after provider preparation, never during a remote wait. */
+	async validatePublication(
+		run: FactoryRun,
+		version: { batchId: string; digest: string },
+	): Promise<boolean> {
+		const owned = () => {
+			const record = run.viewRecords?.find(
+				(r) => r.snapshot.id === version.batchId,
+			);
+			if (
+				this.runtime.runs.get(run.id) !== run ||
+				!record ||
+				record.answer ||
+				record.superseded ||
+				run.status !== "waiting" ||
+				run.viewDecision?.id !== version.batchId ||
+				run.viewDecision.digest !== version.digest ||
+				publicViewRecord(run.id, record).digest !== version.digest
+			)
+				return;
+			try {
+				return { record, current: this.current(run, record) };
+			} catch {
+				/* A retained snapshot cannot own a different active frame. */
+			}
+			return undefined;
+		};
+		const renew = async (owner: NonNullable<ReturnType<typeof owned>>) => {
+			owner.record.superseded = true;
+			this.contexts.set(owner.record.snapshot.id, owner.current.context);
+			delete owner.current.found.frame.active!.viewId;
+			await this.runtime.save(run);
+			this.waiting.get(owner.record.snapshot.id)?.resolve();
+		};
+		const inspect = () => {
+			const owner = owned();
+			if (!owner) return undefined;
+			try {
+				const source = content(owner.current.context);
+				if (
+					digest(source.config) === owner.record.configDigest &&
+					digest({ view: source.view, items: source.items }) ===
+						owner.record.sourceDigest
+				)
+					return { owner, source };
+			} catch {
+				/* Invalid current bindings/config cannot authorize the saved display. */
+			}
+			return { owner, source: undefined };
+		};
+		const prepared = await this.transition(run, async () => {
+			const current = inspect();
+			if (current && !current.source) await renew(current.owner);
+			return current?.source;
+		});
+		if (!prepared) return false;
+		// Bounded local file/revision checks do not hold the human transition queue.
+		let validAssets = true;
+		try {
+			await verifyViewAssets(this.runtime.directory, run, prepared.view);
+		} catch {
+			validAssets = false;
+		}
+		return this.transition(run, async () => {
+			const verified = inspect();
+			if (!verified) return false;
+			if (!verified.source || !validAssets) {
+				await renew(verified.owner);
+				return false;
+			}
+			return true;
+		});
+	}
 	async execute(
 		context: ExecutionContext,
 		frame: GraphCheckpoint,
