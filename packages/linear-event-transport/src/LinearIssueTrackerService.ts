@@ -1,8 +1,11 @@
 import {
 	cleanPublicMarkdown,
+	type DispatchControl,
 	isInternalPublication,
 	isOperationalLinearComment,
 	presentLinearActivity,
+	UnsentDispatchError,
+	type ViewDeliveryIdentity,
 } from "bobs-factory-core";
 
 /**
@@ -24,6 +27,8 @@ const requestScheduling = new AsyncLocalStorage<
 	| {
 			priority: number;
 			group?: object;
+			dispatch?: DispatchControl;
+			input?: AgentActivityCreateInput;
 	  }
 	| undefined
 >();
@@ -33,6 +38,15 @@ export interface LinearDeliveryOptions {
 	factoryHome?: string;
 	requestIntervalMs?: number;
 	isEnabled?: () => boolean;
+	/** Resolve private durable view authority; absence must never authorize recovery. */
+	resolveView?: (
+		identity: ViewDeliveryIdentity,
+		input: AgentActivityCreateInput,
+	) => DispatchControl;
+	/** Bind only a canonical retained runtime receipt, never infer authority from content. */
+	identifyView?: (
+		input: AgentActivityCreateInput,
+	) => ViewDeliveryIdentity | undefined;
 }
 
 type LinearRequestBinding = {
@@ -180,7 +194,14 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 				);
 				const binding = this.requestBinding;
 				const request = linearClient.client.request.bind(linearClient.client);
-				linearClient.client.request = (document, variables, headers) => {
+				linearClient.client.request = <
+					Data,
+					Variables extends Record<string, unknown>,
+				>(
+					document: Parameters<typeof request>[0],
+					variables?: Variables,
+					headers?: RequestInit["headers"],
+				) => {
 					if (deliveryOptions.isEnabled?.() === false)
 						return Promise.reject(
 							new Error(
@@ -193,6 +214,13 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 							| undefined
 					)?.input;
 					const delivery = requestScheduling.getStore();
+					// Scope authority to this exact locally captured mutation. Metadata reads
+					// and unrelated work created during a runtime transition inherit no power.
+					const dispatch =
+						delivery?.input ===
+						(variables as { input?: unknown } | undefined)?.input
+							? delivery?.dispatch
+							: undefined;
 					const priority =
 						delivery?.priority ??
 						(input?.body !== undefined ||
@@ -208,12 +236,16 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 						...headersRecord(headers),
 					};
 					return binding.budget.run(
-						() => {
+						async () => {
 							if (deliveryOptions.isEnabled?.() === false)
 								throw new Error(
 									"Linear ticket manager is disabled; ticket updates are retained",
 								);
-							return request(document, variables, capturedHeaders);
+							const write = () =>
+								request<Data, Variables>(document, variables, capturedHeaders);
+							// SDK64 serializes and invokes fetch synchronously here. OAuth retries
+							// re-enter this budget after refresh, with the same local authority.
+							return dispatch ? (await dispatch.run(write)).value : write();
 						},
 						priority,
 						delivery?.group,
@@ -227,14 +259,8 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 				deliveryOptions.factoryHome,
 				deliveryOptions.workspaceId ?? oauthConfig?.workspaceId ?? "default",
 				this,
-				(input: AgentActivityCreateInput, priority) =>
-					requestScheduling.run(
-						{ priority, group: this.activityDelivery },
-						async () => {
-							const result = await this.linearClient.createAgentActivity(input);
-							return { success: result.success, id: result.agentActivityId };
-						},
-					),
+				(input: AgentActivityCreateInput, priority, dispatch) =>
+					this.sendActivity(input, priority, dispatch),
 				this.logger,
 				async (input) => {
 					try {
@@ -322,6 +348,8 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 						? `${input.agentSessionId}:checks`
 						: undefined;
 				},
+				deliveryOptions.resolveView,
+				deliveryOptions.identifyView,
 			);
 
 		if (deliveryOptions.factoryHome)
@@ -1301,6 +1329,38 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	withBackgroundRequests<T>(operation: () => Promise<T>): Promise<T> {
 		return requestScheduling.run({ priority: -10 }, operation);
 	}
+	private async sendActivity(
+		input: AgentActivityCreateInput,
+		priority: number,
+		dispatch?: DispatchControl,
+	) {
+		if (dispatch && !this.requestBinding)
+			throw new UnsentDispatchError("unavailable");
+		let declined: unknown;
+		const guarded: DispatchControl | undefined = dispatch
+			? {
+					run: async (write) => {
+						try {
+							return await dispatch.run(write);
+						} catch (error) {
+							declined = error;
+							throw error;
+						}
+					},
+				}
+			: undefined;
+		try {
+			return await requestScheduling.run(
+				{ priority, group: this.activityDelivery, dispatch: guarded, input },
+				async () => {
+					const result = await this.linearClient.createAgentActivity(input);
+					return { success: result.success, id: result.agentActivityId };
+				},
+			);
+		} catch (error) {
+			throw declined ?? error;
+		}
+	}
 
 	/**
 	 * Post an agent activity to an agent session.
@@ -1312,6 +1372,17 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	): Promise<AgentActivityPayload> {
 		const priority = delivery?.priority === "interactive" ? 20 : undefined;
 		if (!this.activityDelivery) {
+			if (delivery?.view) {
+				const receipt = await this.sendActivity(
+					input,
+					priority ?? 10,
+					delivery.view,
+				);
+				return {
+					success: receipt.success,
+					agentActivityId: receipt.id,
+				} as AgentActivityPayload;
+			}
 			const content = presentLinearActivity(input.content);
 			if (!content) return { success: true } as AgentActivityPayload;
 			return requestScheduling.run(
@@ -1331,7 +1402,11 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 		// the read backlog. Future routine traffic keeps its normal priority.
 		if (priority !== undefined)
 			this.requestBudget?.promotePending(this.activityDelivery, priority);
-		const receipt = await this.activityDelivery.post(input, priority);
+		const receipt = await this.activityDelivery.post(
+			input,
+			priority,
+			delivery?.view,
+		);
 		return {
 			success: receipt.success,
 			agentActivityId: receipt.id,
@@ -1352,6 +1427,11 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 			this.activityDelivery?.flush(),
 			this.commentDelivery?.flush(),
 		]).then(() => {});
+	}
+	reconcileAgentActivityDelivery(id: string) {
+		return (
+			this.activityDelivery?.reconcileDelivery(id) ?? Promise.resolve(undefined)
+		);
 	}
 	getActivityDeliveryStatus() {
 		const statuses = [

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { immutableJson } from "bobs-factory-core";
+import { immutableJson, UnsentDispatchError } from "bobs-factory-core";
 import { digest } from "./Delivery.js";
 import { releaseDelivery } from "./DeliveryCoordination.js";
 import { foreachPointer, sanitizeJsonConfiguration } from "./Foreach.js";
@@ -313,6 +313,33 @@ export class HumanViews {
 		run: FactoryRun,
 		version: { batchId: string; digest: string },
 	): Promise<boolean> {
+		return (await this.publication(run, version, () => true)) !== undefined;
+	}
+	async dispatchPublication<T>(
+		run: FactoryRun,
+		version: { batchId: string; digest: string },
+		write: () => T,
+	): Promise<{ value: T }> {
+		if (
+			this.runtime.runs.get(run.id) !== run ||
+			["blocked", "interrupted"].includes(run.status)
+		)
+			throw new UnsentDispatchError("unavailable");
+		const dispatched = await this.publication(run, version, write);
+		if (
+			!dispatched &&
+			(this.runtime.runs.get(run.id) !== run ||
+				["blocked", "interrupted"].includes(run.status))
+		)
+			throw new UnsentDispatchError("unavailable");
+		if (!dispatched) throw new UnsentDispatchError("superseded");
+		return dispatched;
+	}
+	private async publication<T>(
+		run: FactoryRun,
+		version: { batchId: string; digest: string },
+		write: () => T,
+	): Promise<{ value: T } | undefined> {
 		const owned = () => {
 			const record = run.viewRecords?.find(
 				(r) => r.snapshot.id === version.batchId,
@@ -363,7 +390,7 @@ export class HumanViews {
 			if (current && !current.source) await renew(current.owner);
 			return current?.source;
 		});
-		if (!prepared) return false;
+		if (!prepared) return undefined;
 		// Bounded local file/revision checks do not hold the human transition queue.
 		let validAssets = true;
 		try {
@@ -373,12 +400,14 @@ export class HumanViews {
 		}
 		return this.transition(run, async () => {
 			const verified = inspect();
-			if (!verified) return false;
+			if (!verified) return undefined;
 			if (!verified.source || !validAssets) {
 				await renew(verified.owner);
-				return false;
+				return undefined;
 			}
-			return true;
+			// No await between the authoritative comparison and the actual local write.
+			// The promise is returned inside an envelope: remote work holds no transition.
+			return { value: write() };
 		});
 	}
 	async execute(

@@ -321,6 +321,15 @@ export {
 	type GitProviderConfig,
 	GitProviderConfigSchema,
 } from "./config-schemas.js";
+export type {
+	DispatchControl,
+	ViewDeliveryControl,
+	ViewDeliveryIdentity,
+} from "./DispatchControl.js";
+export {
+	UnsentDispatchError,
+	ViewDeliveryIdentitySchema,
+} from "./DispatchControl.js";
 export {
 	executionEnvironment,
 	executionScope,

@@ -25,6 +25,7 @@ import type {
 import type { IIssueTrackerService } from "../IIssueTrackerService.js";
 import {
 	type AgentActivityCreateInput,
+	type AgentActivityDeliveryOptions,
 	type AgentActivityPayload,
 	AgentActivityType,
 	type AgentSessionCreateOnCommentInput,
@@ -541,6 +542,7 @@ export class CLIIssueTrackerService
 	async createComment(
 		issueId: string,
 		input: CommentCreateInput,
+		delivery?: Pick<AgentActivityDeliveryOptions, "view">,
 	): Promise<Comment> {
 		const issue = await this.fetchIssue(issueId);
 		const currentUser = await this.fetchCurrentUser();
@@ -565,31 +567,34 @@ export class CLIIssueTrackerService
 				: attachmentMarkdown;
 		}
 
-		// Generate comment ID
-		const commentId = `comment-${this.state.commentCounter++}`;
+		const write = () => {
+			// Generate comment ID
+			const commentId = `comment-${this.state.commentCounter++}`;
 
-		// Create the comment data
-		const commentData: CLICommentData = {
-			id: commentId,
-			body: finalBody,
-			url: `https://linear.app/test/issue/${issue.identifier}#comment-${commentId}`,
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			userId: currentUser.id,
-			issueId: issue.id,
-			parentId: input.parentId,
+			// Create the comment data
+			const commentData: CLICommentData = {
+				id: commentId,
+				body: finalBody,
+				url: `https://linear.app/test/issue/${issue.identifier}#comment-${commentId}`,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				userId: currentUser.id,
+				issueId: issue.id,
+				parentId: input.parentId,
+			};
+
+			// Save to state
+			this.state.comments.set(commentId, commentData);
+
+			// Create and return the comment
+			const comment = createCLIComment(commentData);
+
+			// Emit state change event
+			this.emit("comment:created", { comment });
+
+			return comment;
 		};
-
-		// Save to state
-		this.state.comments.set(commentId, commentData);
-
-		// Create and return the comment
-		const comment = createCLIComment(commentData);
-
-		// Emit state change event
-		this.emit("comment:created", { comment });
-
-		return comment;
+		return delivery?.view ? (await delivery.view.run(write)).value : write();
 	}
 
 	// ========================================================================
@@ -1345,41 +1350,45 @@ export class CLIIssueTrackerService
 	 */
 	async createAgentActivity(
 		input: AgentActivityCreateInput,
+		delivery?: AgentActivityDeliveryOptions,
 	): Promise<AgentActivityPayload> {
 		// Validate session exists
 		await this.fetchAgentSession(input.agentSessionId);
 
-		// Generate activity ID
-		const activityId = `activity-${this.state.activityCounter++}`;
+		const write = () => {
+			// Generate activity ID
+			const activityId = `activity-${this.state.activityCounter++}`;
 
-		// Store the activity
-		const activityData: CLIAgentActivityData = {
-			id: activityId,
-			agentSessionId: input.agentSessionId,
-			type: input.content.type,
-			content:
-				"body" in input.content
-					? typeof input.content.body === "string"
-						? input.content.body
-						: JSON.stringify(input.content.body)
-					: JSON.stringify(input.content),
-			createdAt: new Date(),
-			ephemeral: input.ephemeral ?? undefined,
-			signal: input.signal ?? undefined,
+			// Store the activity
+			const activityData: CLIAgentActivityData = {
+				id: activityId,
+				agentSessionId: input.agentSessionId,
+				type: input.content.type,
+				content:
+					"body" in input.content
+						? typeof input.content.body === "string"
+							? input.content.body
+							: JSON.stringify(input.content.body)
+						: JSON.stringify(input.content),
+				createdAt: new Date(),
+				ephemeral: input.ephemeral ?? undefined,
+				signal: input.signal ?? undefined,
+			};
+
+			this.state.agentActivities.set(activityId, activityData);
+
+			// Emit state change event
+			this.emit("agentActivity:created", { input, activityId });
+
+			// Return success payload with agentActivity that can be awaited
+			// AgentSessionManager expects result.agentActivity to be promise-like
+			return {
+				agentActivity: Promise.resolve({ id: activityId }),
+				success: true,
+				lastSyncId: Date.now(),
+			} as AgentActivityPayload;
 		};
-
-		this.state.agentActivities.set(activityId, activityData);
-
-		// Emit state change event
-		this.emit("agentActivity:created", { input, activityId });
-
-		// Return success payload with agentActivity that can be awaited
-		// AgentSessionManager expects result.agentActivity to be promise-like
-		return {
-			agentActivity: Promise.resolve({ id: activityId }),
-			success: true,
-			lastSyncId: Date.now(),
-		} as AgentActivityPayload;
+		return delivery?.view ? (await delivery.view.run(write)).value : write();
 	}
 
 	/**

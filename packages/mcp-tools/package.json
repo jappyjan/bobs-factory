@@ -21,6 +21,7 @@
 		"typecheck": "tsgo --noEmit"
 	},
 	"dependencies": {
+		"bobs-factory-core": "workspace:*",
 		"@linear/sdk": "^64.0.0",
 		"@modelcontextprotocol/sdk": "^1.32.1",
 		"fs-extra": "^11.3.2",

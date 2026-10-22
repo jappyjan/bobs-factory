@@ -1,7 +1,14 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { ILogger } from "bobs-factory-core";
+import {
+	type DispatchControl,
+	type ILogger,
+	UnsentDispatchError,
+	type ViewDeliveryControl,
+	type ViewDeliveryIdentity,
+	ViewDeliveryIdentitySchema,
+} from "bobs-factory-core";
 import { isLinearRateLimit, linearRetryAt } from "./LinearRequestBudget.js";
 
 type Delivery<Input> = {
@@ -19,6 +26,8 @@ type Delivery<Input> = {
 	originalEvidence?: Input;
 	stateGroup?: string;
 	priority?: number;
+	/** Private runtime binding, never part of the provider mutation. */
+	view?: ViewDeliveryIdentity;
 };
 
 export class LinearDeliveryPendingError extends Error {
@@ -47,6 +56,7 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 		send: (
 			input: Input,
 			priority: number,
+			dispatch?: DispatchControl,
 		) => Promise<{ success: boolean; id?: string }>,
 		logger: ILogger,
 		reconcile: (input: Input) => Promise<boolean>,
@@ -56,6 +66,11 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 		routine: (input: Input) => boolean,
 		present?: (input: Input) => Input | undefined,
 		stateGroup?: (input: Input) => string | undefined,
+		resolveView?: (
+			identity: ViewDeliveryIdentity,
+			input: Input,
+		) => DispatchControl,
+		identifyView?: (input: Input) => ViewDeliveryIdentity | undefined,
 	): LinearDeliveryOutbox<Input> {
 		const key = `${resolve(home)}\0${workspaceId}\0${kind}`;
 		let store = LinearDeliveryOutbox.stores.get(key) as
@@ -74,6 +89,8 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 				routine,
 				present,
 				stateGroup,
+				resolveView,
+				identifyView,
 			);
 			LinearDeliveryOutbox.stores.set(key, store);
 		}
@@ -82,6 +99,8 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 		store.stateGroup = stateGroup;
 		store.reconcile = reconcile;
 		store.retryAt = retryAt;
+		store.resolveView = resolveView;
+		store.identifyView = identifyView;
 		store.owners.add(owner);
 		return store;
 	}
@@ -92,6 +111,7 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 		private send: (
 			input: Input,
 			priority: number,
+			dispatch?: DispatchControl,
 		) => Promise<{ success: boolean; id?: string }>,
 		private logger: ILogger,
 		private reconcile: (input: Input) => Promise<boolean>,
@@ -101,6 +121,11 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 		private routine: (input: Input) => boolean,
 		private present?: (input: Input) => Input | undefined,
 		private stateGroup?: (input: Input) => string | undefined,
+		private resolveView?: (
+			identity: ViewDeliveryIdentity,
+			input: Input,
+		) => DispatchControl,
+		private identifyView?: (input: Input) => ViewDeliveryIdentity | undefined,
 	) {
 		const directory = join(home, "state", `linear-${kind}-delivery`);
 		mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -127,6 +152,11 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 				);
 			this.records = saved.records;
 			for (const record of this.records) {
+				if (record.view) {
+					record.view = ViewDeliveryIdentitySchema.parse(record.view);
+					if (record.view.deliveryId !== record.id)
+						throw new Error("Invalid guarded delivery identity");
+				}
 				if (record.input) record.fingerprint ??= this.fingerprint(record.input);
 				if (record.status !== "pending") delete record.input;
 			}
@@ -139,6 +169,7 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 	async post(
 		input: Input,
 		priority?: number,
+		view?: ViewDeliveryControl,
 	): Promise<{ success: boolean; id?: string }> {
 		const fingerprint = this.fingerprint(input);
 		const stateGroup = this.stateGroup?.(input);
@@ -166,6 +197,21 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 			throw new Error(
 				"Linear delivery identity is already bound to different session/content",
 			);
+		if (view && (!input.id || view.identity.deliveryId !== input.id))
+			throw new Error(
+				"Guarded delivery requires its original explicit identity",
+			);
+		if (record && !record.view && view) {
+			record.view = ViewDeliveryIdentitySchema.parse(view.identity);
+			this.save();
+		}
+		if (
+			record &&
+			JSON.stringify(record.view) !== JSON.stringify(view?.identity)
+		)
+			throw new Error(
+				"Linear delivery identity is already bound to different dispatch authority",
+			);
 		if (!record) {
 			const id = input.id ?? randomUUID();
 			record = {
@@ -178,11 +224,16 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 				attempts: 0,
 				nextAt: Math.max(0, this.retryAt()),
 				...(priority !== undefined ? { priority } : {}),
+				...(view
+					? { view: ViewDeliveryIdentitySchema.parse(view.identity) }
+					: {}),
 			};
 			this.records.push(record);
 			this.save(); // The identity exists before any mutation is sent.
 		}
 		await this.flush();
+		if (record.view && record.status === "superseded")
+			throw new UnsentDispatchError("superseded");
 		if (record.status !== "delivered" && record.status !== "superseded")
 			throw new LinearDeliveryPendingError(
 				record.id,
@@ -209,6 +260,64 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 				? { nextAttemptAt: Math.min(...pending.map((r) => r.nextAt)) }
 				: {}),
 		};
+	}
+	async reconcileDelivery(
+		id: string,
+	): Promise<Delivery<Input>["status"] | undefined> {
+		// Join any dispatched attempt first. This is remote waiting outside human transitions.
+		while (this.flushing) await this.flushing;
+		const work = this.reconcileRecord(id);
+		const pending = work.then(
+			() => {},
+			() => {},
+		);
+		this.flushing = pending;
+		try {
+			return await work;
+		} finally {
+			if (this.flushing === pending) this.flushing = undefined;
+			this.schedule();
+		}
+	}
+	private async reconcileRecord(
+		id: string,
+	): Promise<Delivery<Input>["status"] | undefined> {
+		const record = this.records.find((entry) => entry.id === id);
+		if (!record) return;
+		if (record.status === "pending" && record.ambiguous) {
+			record.originalEvidence ??= record.input;
+			this.save();
+			if (await this.reconcile(record.presentation?.input ?? record.input!)) {
+				record.activityId = record.id;
+				record.status = "delivered";
+				delete record.input;
+				if (record.presentation) delete record.presentation.input;
+				delete record.error;
+			} else record.ambiguous = false;
+			this.save();
+		}
+		this.identify(record);
+		if (record.status === "pending" && record.view) {
+			if (!this.resolveView) throw new UnsentDispatchError("unavailable");
+			try {
+				await this.resolveView(
+					record.view,
+					record.presentation?.input ?? record.input!,
+				).run(() => undefined);
+			} catch (error) {
+				if (
+					!(error instanceof UnsentDispatchError) ||
+					error.reason !== "superseded"
+				)
+					throw error;
+				record.status = "superseded";
+				record.originalEvidence ??= record.input;
+				delete record.input;
+				record.error = error.message;
+				this.save();
+			}
+		}
+		return record.status;
 	}
 
 	start(owner: object): void {
@@ -280,8 +389,14 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 					this.save();
 					continue;
 				}
+				if (record.ambiguous) {
+					// Exact original lookup proved absence. Only now may current authority decline an unsent retry.
+					record.ambiguous = false;
+					this.save();
+				}
+				this.identify(record);
 				// Only after resolving a prior ambiguous send using its original wire content.
-				if (!record.presentation && this.present) {
+				if (!record.view && !record.presentation && this.present) {
 					const presented = this.present(record.input!);
 					record.presentation = {
 						version: 1,
@@ -305,12 +420,30 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 					this.save();
 				}
 
-				record.attempts++;
-				record.ambiguous = true; // A crash after send must reconcile before resending.
-				this.save();
+				const markDispatch = () => {
+					record.attempts++;
+					record.ambiguous = true; // Persist before the actual write, after local preparation.
+					this.save();
+				};
+				let dispatch: DispatchControl | undefined;
+				if (record.view) {
+					if (!this.resolveView) throw new UnsentDispatchError("unavailable");
+					const authority = this.resolveView(
+						record.view,
+						record.presentation?.input ?? record.input!,
+					);
+					dispatch = {
+						run: (write) =>
+							authority.run(() => {
+								markDispatch();
+								return write();
+							}),
+					};
+				} else markDispatch();
 				const result = await this.send(
 					record.presentation?.input ?? record.input!,
 					record.priority ?? this.priority(record.input!),
+					dispatch,
 				);
 				if (!result.success)
 					throw new Error("Linear activity mutation returned success=false");
@@ -321,6 +454,17 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 				delete record.error;
 				this.save();
 			} catch (error) {
+				if (error instanceof UnsentDispatchError) {
+					record.ambiguous = false;
+					if (error.reason === "superseded") {
+						record.status = "superseded";
+						record.originalEvidence ??= record.input;
+						delete record.input;
+						record.error = error.message;
+						this.save();
+						continue;
+					}
+				}
 				if (isLinearRateLimit(error)) record.ambiguous = false; // Provider rejected the request before executing it.
 				record.error =
 					error instanceof Error ? error.message : "Linear request failed";
@@ -361,6 +505,15 @@ export class LinearDeliveryOutbox<Input extends { id?: string | null }> {
 			{ mode: 0o600 },
 		);
 		renameSync(temporary, this.file);
+	}
+	private identify(record: Delivery<Input>): void {
+		if (record.status !== "pending" || record.view || !record.input) return;
+		const identity = this.identifyView?.(record.input);
+		if (!identity) return;
+		record.view = ViewDeliveryIdentitySchema.parse(identity);
+		if (record.view.deliveryId !== record.id)
+			throw new UnsentDispatchError("unavailable");
+		this.save();
 	}
 
 	private fingerprint(input: Input): string {

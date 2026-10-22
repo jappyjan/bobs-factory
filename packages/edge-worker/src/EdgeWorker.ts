@@ -64,6 +64,7 @@ import {
 	CLIRPCServer,
 	createLogger,
 	DEFAULT_PROXY_URL,
+	type DispatchControl,
 	executionEnvironment,
 	factoryRuntimeIdentity,
 	GitHubTokenStore,
@@ -94,6 +95,7 @@ import {
 	resolvePath,
 	StorageRetentionStore,
 	storageDigest,
+	UnsentDispatchError,
 	WebhookIpValidator,
 } from "bobs-factory-core";
 import { CursorRunner } from "bobs-factory-cursor-runner";
@@ -4026,6 +4028,64 @@ ${taskSection}`;
 				workspaceId,
 				factoryHome: this.factoryHome,
 				isEnabled: () => linearConnection(this.config).enabled,
+				identifyView: (input) => {
+					for (const run of this.getFactoryRuntime().runs.values()) {
+						if (
+							run.ticketReference?.provider !== "native" ||
+							run.ticketReference.platform !== "linear" ||
+							run.ticketReference.workspaceId !== workspaceId
+						)
+							continue;
+						const receipt = run.ticketSync?.receipts.find(
+							(entry) => entry.deliveryId === input.id && entry.viewDecision,
+						);
+						if (receipt?.deliveryId && receipt.viewDecision)
+							return {
+								version: 1,
+								runId: run.id,
+								receiptKey: receipt.key,
+								...receipt.viewDecision,
+								deliveryId: receipt.deliveryId,
+							};
+					}
+					return undefined;
+				},
+				resolveView: (identity, input) => ({
+					run: async (write) => {
+						const runtime = this.getFactoryRuntime();
+						const run = runtime.runs.get(identity.runId);
+						const receipt = run?.ticketSync?.receipts.find(
+							(entry) => entry.key === identity.receiptKey,
+						);
+						if (
+							!run ||
+							!receipt ||
+							run.ticketReference?.provider !== "native" ||
+							run.ticketReference.platform !== "linear" ||
+							run.ticketReference.workspaceId !== workspaceId ||
+							receipt.deliveryId !== identity.deliveryId ||
+							receipt.viewDecision?.batchId !== identity.batchId ||
+							receipt.viewDecision?.digest !== identity.digest ||
+							input.id !== identity.deliveryId ||
+							input.agentSessionId !== run.ticketSync?.transcript?.sessionId ||
+							input.content.type !== "thought" ||
+							!("body" in input.content) ||
+							input.content.body !== receipt.body ||
+							Object.keys(input).some(
+								(key) => !["id", "agentSessionId", "content"].includes(key),
+							) ||
+							Object.keys(input.content).some(
+								(key) => !["type", "body"].includes(key),
+							)
+						)
+							throw new UnsentDispatchError("unavailable");
+						return runtime.humanViews.dispatchPublication(run, identity, () => {
+							if (receipt.superseded || receipt.delivered)
+								throw new UnsentDispatchError("superseded");
+							return write();
+						});
+					},
+				}),
 			},
 		);
 	}
@@ -8449,6 +8509,12 @@ ${taskSection}`;
 				).finalCheck(run, true),
 			(run, version) =>
 				this.getFactoryRuntime().humanViews.validatePublication(run, version),
+			(run, version, write) =>
+				this.getFactoryRuntime().humanViews.dispatchPublication(
+					run,
+					version,
+					write,
+				),
 		);
 		return this.ticketTracking;
 	}
@@ -8549,6 +8615,7 @@ ${taskSection}`;
 			args: Record<string, unknown>,
 			signal: AbortSignal,
 			timeoutMs?: number,
+			dispatch?: DispatchControl,
 		) =>
 			this.runnerSlots.run(
 				async () => {
@@ -8633,6 +8700,7 @@ ${taskSection}`;
 										tool,
 										args,
 										transportSignal,
+										...(dispatch ? [dispatch] : []),
 									)
 								: await callConfiguredTool(
 										directConfig,
@@ -8641,11 +8709,13 @@ ${taskSection}`;
 										transportSignal,
 										run.workspace || repository.repositoryPath,
 										built.config.childEnvironment,
+										...(dispatch ? [dispatch] : []),
 									);
 						return execution
 							? JSON.parse(execution.redact(JSON.stringify(result)))
 							: result;
 					} catch (error) {
+						if (error instanceof UnsentDispatchError) throw error;
 						throw new Error(
 							execution ? execution.redact(String(error)) : String(error),
 						);
@@ -8670,7 +8740,8 @@ ${taskSection}`;
 				args: Record<string, unknown>,
 				signal: AbortSignal,
 				timeoutMs?: number,
-			) => request(server, tool, args, signal, timeoutMs),
+				dispatch?: DispatchControl,
+			) => request(server, tool, args, signal, timeoutMs, dispatch),
 			listTools: async (server: string, signal: AbortSignal) => {
 				await request(server, undefined, {}, signal);
 			},
@@ -8903,8 +8974,11 @@ ${taskSection}`;
 		const server = servers[ref.server]!;
 		if (server.type === "sdk")
 			throw new Error("Taskbot needs a configured HTTP/SSE transport");
-		return taskbotAdapter(ref, (tool, args) =>
-			callTool(ref.server, tool, args, signal, 60000),
+		return taskbotAdapter(
+			ref,
+			(tool, args) => callTool(ref.server, tool, args, signal, 60000),
+			(tool, args, dispatch) =>
+				callTool(ref.server, tool, args, signal, 60000, dispatch),
 		);
 	}
 	private async resolveFactoryTicket(

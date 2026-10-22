@@ -162,7 +162,14 @@ delivered history remains original. Immediately before an unsent provider write,
 the runtime checks the exact active frame, batch and digest, re-resolves declared
 configuration/content and verifies protected assets. Source changes supersede the
 unsent version and renew the display without waiting for an Ask model turn. This
-is a final local check, not an atomic lock on an external provider or later source
+extends through local capacity admission, HTTP/SSE connection and header setup,
+stdio framing, and initialized native Codex MCP handoff. The write thunk starts
+inside the short final comparison; its response is awaited outside that transition.
+Native Linear retries retain a private run/receipt/batch/digest/delivery binding,
+separate from the provider input. Recovery without its runtime validator stays
+pending; known-unsent obsolete versions retire without delivery confirmation.
+Ambiguous attempts reconcile their original ID and exact wire content first.
+A new digest always gets a new delivery identity. This is a final local check, not an atomic lock on an external provider or later source
 changes; a subsequently changed display still requires fresh human review. No
 remote read/write or model wait holds the human transition queue. Failed Ask exposes fixed recovery guidance in
 API, dashboard, terminal, ticket, activity and opted-in push content. Raw native

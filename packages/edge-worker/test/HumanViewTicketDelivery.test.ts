@@ -9,11 +9,15 @@ import {
 	rmSync,
 	writeFileSync,
 } from "node:fs";
+import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { LinearClient } from "@linear/sdk";
 import { CodexRunner } from "bobs-factory-codex-runner";
 import { CLIIssueTrackerService, publicFailure } from "bobs-factory-core";
+import { LinearIssueTrackerService } from "bobs-factory-linear-event-transport";
+import { callConfiguredTool } from "bobs-factory-mcp-tools";
 import { afterEach, expect, it } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { runPushEvent } from "../src/factory/PushEvents.js";
@@ -39,10 +43,17 @@ const homes: string[] = [],
 	runtimes: WorkflowRuntime[] = [],
 	services: TicketTracking[] = [],
 	servers: FactoryServer[] = [];
+const mcpServers: Server[] = [];
+const nativeTrackers: LinearIssueTrackerService[] = [];
+const releaseGates: (() => void)[] = [];
 afterEach(async () => {
+	for (const release of releaseGates.splice(0)) release();
 	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
 	for (const server of servers.splice(0)) await server.stop();
 	for (const service of services.splice(0)) service.stop();
+	for (const tracker of nativeTrackers.splice(0)) tracker.stopDelivery();
+	for (const server of mcpServers.splice(0))
+		await new Promise<void>((resolve) => server.close(() => resolve()));
 	for (const home of homes.splice(0))
 		rmSync(home, { recursive: true, force: true });
 });
@@ -54,7 +65,7 @@ function deferred<T = void>() {
 	return { promise, resolve };
 }
 async function fixture(
-	channel: "taskbot" | "linear",
+	channel: "taskbot" | "linear" | "mcp" | "linear-budget",
 	agent: RuntimeHooks["agent"],
 	large = false,
 	legacySnapshot?: string,
@@ -126,62 +137,201 @@ async function fixture(
 		await tracker.createAgentSessionOnIssue({ issueId: issue.id })
 	).agentSession;
 	if (!session) throw new Error("Fixture session missing");
-	const adapter =
-		channel === "taskbot"
-			? taskbotAdapter(ref, async (tool, args) => {
-					if (tool === "get_ticket") {
-						await awaitHeldRead();
-						return {
-							content: [{ type: "text", text: JSON.stringify(ticket) }],
-						};
-					}
-					if (tool === "set_status") {
-						ticket.status = String(args.to);
-						return { content: [] };
-					}
-					if (tool === "comment") {
-						ticket.comments.push({ body: String(args.body) });
-						if (failAfterDelivery) {
-							failAfterDelivery = false;
-							throw new Error("Synthetic response lost after accepted comment");
-						}
-						return { content: [] };
-					}
-					throw new Error(`Unexpected transport ${tool}`);
-				})
-			: nativeAdapter(
-					{
-						provider: "native",
-						platform: "linear",
-						workspaceId: "fixture",
-						id: issue.id,
-						url: issue.url,
-					},
-					tracker,
-					{
-						getTranscriptSession: async () => {
-							if (holdTranscript) {
-								const gate = holdTranscript;
-								holdTranscript = undefined;
-								transcriptEntered!.resolve();
-								await gate.promise;
-							}
-							return session.id;
-						},
-					},
+	const taskbotCall = async (tool: string, args: Record<string, unknown>) => {
+		if (tool === "get_ticket") {
+			await awaitHeldRead();
+			return {
+				content: [{ type: "text", text: JSON.stringify(ticket) }],
+			};
+		}
+		if (tool === "set_status") {
+			ticket.status = String(args.to);
+			return { content: [] };
+		}
+		if (tool === "comment") {
+			ticket.comments.push({ body: String(args.body) });
+			if (failAfterDelivery) {
+				failAfterDelivery = false;
+				throw new Error("Synthetic response lost after accepted comment");
+			}
+			return { content: [] };
+		}
+		throw new Error(`Unexpected transport ${tool}`);
+	};
+	let connectionHold:
+		| {
+				entered: ReturnType<typeof deferred>;
+				release: ReturnType<typeof deferred>;
+		  }
+		| undefined;
+	let initializeCount = 0,
+		holdInitializeAt = 0;
+	const mcpCalls: { tool: string; args: Record<string, unknown> }[] = [];
+	let transport: { type: "http"; url: string } | undefined;
+	if (channel === "mcp") {
+		const server = createServer(async (request, response) => {
+			if (request.method !== "POST") {
+				response.writeHead(405).end();
+				return;
+			}
+			let raw = "";
+			for await (const chunk of request) raw += chunk;
+			const message = JSON.parse(raw);
+			if (message.method === "notifications/initialized") {
+				response.writeHead(202).end();
+				return;
+			}
+			let result: unknown;
+			if (message.method === "initialize") {
+				initializeCount++;
+				if (connectionHold && initializeCount === holdInitializeAt) {
+					connectionHold.entered.resolve();
+					await connectionHold.release.promise;
+				}
+				result = {
+					protocolVersion: message.params.protocolVersion,
+					capabilities: { tools: {} },
+					serverInfo: { name: "synthetic-taskbot", version: "1" },
+				};
+			} else if (message.method === "tools/call") {
+				mcpCalls.push({
+					tool: message.params.name,
+					args: message.params.arguments,
+				});
+				result = await taskbotCall(
+					message.params.name,
+					message.params.arguments,
 				);
+			} else throw new Error(`Unexpected MCP method ${message.method}`);
+			response.writeHead(200, { "Content-Type": "application/json" });
+			response.end(JSON.stringify({ jsonrpc: "2.0", id: message.id, result }));
+		});
+		mcpServers.push(server);
+		await new Promise<void>((resolve) =>
+			server.listen(0, "127.0.0.1", resolve),
+		);
+		const address = server.address();
+		if (!address || typeof address === "string")
+			throw new Error("Missing local MCP address");
+		transport = { type: "http", url: `http://127.0.0.1:${address.port}/mcp` };
+	}
+	let runtime!: WorkflowRuntime;
+	const nativeBodies: string[] = [];
+	let nativeHold:
+		| {
+				entered: ReturnType<typeof deferred>;
+				release: ReturnType<typeof deferred>;
+		  }
+		| undefined;
+	let nativeService: LinearIssueTrackerService | undefined,
+		nativeClient: LinearClient | undefined;
+	if (channel === "linear-budget") {
+		nativeClient = new LinearClient({ accessToken: home });
+		nativeClient.client.request = async (_document, variables: any) => {
+			if (variables.id === "held-budget" && nativeHold) {
+				nativeHold.entered.resolve();
+				await nativeHold.release.promise;
+				return { issue: { id: "held-budget", reactions: [] } };
+			}
+			if (variables.input) {
+				nativeBodies.push(variables.input.content.body);
+				return {
+					agentActivityCreate: {
+						success: true,
+						agentActivity: { id: variables.input.id },
+						lastSyncId: 1,
+					},
+				};
+			}
+			throw new Error("Unexpected native Linear request");
+		};
+		nativeService = new LinearIssueTrackerService(
+			nativeClient,
+			undefined,
+			undefined,
+			{
+				factoryHome: home,
+				workspaceId: home,
+				requestIntervalMs: 0,
+				resolveView: (identity, input) => ({
+					run: (write) => {
+						const run = runtime.get(identity.runId);
+						const receipt = run.ticketSync!.receipts.find(
+							(entry) => entry.key === identity.receiptKey,
+						)!;
+						expect(receipt.deliveryId).toBe(input.id);
+						expect(receipt.body).toBe(input.content.body);
+						return runtime.humanViews.dispatchPublication(run, identity, write);
+					},
+				}),
+			},
+		);
+		nativeTrackers.push(nativeService);
+		tracker.createAgentActivity =
+			nativeService.createAgentActivity.bind(nativeService);
+		tracker.reconcileAgentActivityDelivery =
+			nativeService.reconcileAgentActivityDelivery.bind(nativeService);
+	}
+	const adapter = !channel.startsWith("linear")
+		? taskbotAdapter(
+				ref,
+				(tool, args) =>
+					transport
+						? callConfiguredTool(
+								transport,
+								tool,
+								args,
+								AbortSignal.timeout(5000),
+								home,
+							)
+						: taskbotCall(tool, args),
+				async (tool, args, dispatch) =>
+					transport
+						? callConfiguredTool(
+								transport,
+								tool,
+								args,
+								AbortSignal.timeout(5000),
+								home,
+								undefined,
+								dispatch,
+							)
+						: (await dispatch.run(() => taskbotCall(tool, args))).value,
+			)
+		: nativeAdapter(
+				{
+					provider: "native",
+					platform: "linear",
+					workspaceId: "fixture",
+					id: issue.id,
+					url: issue.url,
+				},
+				tracker,
+				{
+					getTranscriptSession: async () => {
+						if (holdTranscript) {
+							const gate = holdTranscript;
+							holdTranscript = undefined;
+							transcriptEntered!.resolve();
+							await gate.promise;
+						}
+						return session.id;
+					},
+				},
+			);
 	const fetchIssue = tracker.fetchIssue.bind(tracker);
 	tracker.fetchIssue = async (...args) => {
 		await awaitHeldRead();
 		return fetchIssue(...args);
 	};
-	let runtime!: WorkflowRuntime;
 	const service = new TicketTracking(
 		async () => adapter,
 		(run) => runtime.save(run),
 		() => {},
 		undefined,
 		(run, version) => runtime.humanViews.validatePublication(run, version),
+		(run, version, write) =>
+			runtime.humanViews.dispatchPublication(run, version, write),
 	);
 	services.push(service);
 	const hooks = {
@@ -359,21 +509,22 @@ async function fixture(
 			});
 	// Trusted originating-ticket binding, before execution, as in EdgeWorker admission.
 	if (!legacySnapshot)
-		run.ticketReference =
-			channel === "taskbot"
-				? ref
-				: {
-						provider: "native",
-						platform: "linear",
-						workspaceId: "fixture",
-						id: issue.id,
-						url: issue.url,
-					};
+		run.ticketReference = !channel.startsWith("linear")
+			? ref
+			: {
+					provider: "native",
+					platform: "linear",
+					workspaceId: "fixture",
+					id: issue.id,
+					url: issue.url,
+				};
 	void runtime.launch(run);
 	const bodies = async () =>
-		channel === "taskbot"
+		!channel.startsWith("linear")
 			? ticket.comments.map((c) => c.body)
-			: (await tracker.listAgentActivities(session.id)).map((a) => a.content);
+			: channel === "linear-budget"
+				? nativeBodies
+				: (await tracker.listAgentActivities(session.id)).map((a) => a.content);
 	const displays = async () =>
 		(await bodies()).filter((body) => body.includes("Decision batch:"));
 	await waitFor(async () => expect((await displays()).length).toBe(1));
@@ -390,6 +541,40 @@ async function fixture(
 			return runtime;
 		},
 		displays,
+		mcpCalls,
+		async blockNativeBudget() {
+			nativeHold = { entered: deferred(), release: deferred() };
+			releaseGates.push(() => nativeHold!.release.resolve());
+			const pending = nativeClient!.issue("held-budget");
+			await nativeHold.entered.promise;
+			return {
+				release: async () => {
+					nativeHold!.release.resolve();
+					await pending;
+				},
+			};
+		},
+		nativeQueued(digest: string) {
+			const directory = join(home, "state", "linear-activity-delivery");
+			return readdirSync(directory).some(
+				(file) =>
+					file.endsWith(".json") &&
+					JSON.parse(readFileSync(join(directory, file), "utf8")).records.some(
+						(entry: any) =>
+							entry.view?.digest === digest && entry.status === "pending",
+					),
+			);
+		},
+		blockNextConnection() {
+			const hold = { entered: deferred(), release: deferred() };
+			connectionHold = hold;
+			releaseGates.push(() => hold.release.resolve());
+			holdInitializeAt = initializeCount + 3;
+			return {
+				entered: hold.entered.promise,
+				release: () => hold.release.resolve(),
+			};
+		},
 		loseResponse() {
 			failAfterDelivery = true;
 		},
@@ -973,4 +1158,178 @@ it("rechecks Linear source ownership after asynchronous transcript preparation a
 	);
 	await waitFor(() => expect(f.run.status).toBe("completed"));
 	answer.resolve("Historical explanation");
+});
+
+it("suppresses an obsolete actual tools/call after held HTTP initialize and real child completion", async () => {
+	const answer = deferred<string>();
+	const f = await fixture(
+		"mcp",
+		async (context) => {
+			context.signal.addEventListener(
+				"abort",
+				() => answer.resolve("Historical Ask"),
+				{ once: true },
+			);
+			return answer.promise;
+		},
+		false,
+		undefined,
+		true,
+	);
+	const original = (await f.displays())[0]!;
+	const held = f.blockNextConnection();
+	await ask(f, "Explain the child during MCP initialization");
+	await held.entered;
+	const pending = structuredClone(f.run.viewDecision!);
+	f.child.resolve();
+	await waitFor(() =>
+		expect(Object.values(f.run.launchActions!)[0]!.progress.a!.status).toBe(
+			"completed",
+		),
+	);
+	expect(f.run.viewDecision!.digest).toBe(pending.digest);
+	held.release();
+	await waitFor(async () =>
+		expect((await f.displays()).at(-1)).toContain("[completed]"),
+	);
+	expect(
+		f.mcpCalls
+			.filter((call) => call.tool === "comment")
+			.every((call) => !String(call.args.body).includes(pending.digest)),
+	).toBe(true);
+	expect((await f.displays())[0]).toBe(original);
+	const obsolete = f.run.ticketSync!.receipts.find(
+		(receipt) => receipt.viewDecision?.digest === pending.digest,
+	)!;
+	expect(obsolete.superseded).toBe(true);
+	expect(obsolete.delivered).not.toBe(true);
+	await expect(
+		f.runtime.replyView(
+			f.run.id,
+			`/view-answer ${JSON.stringify({ ...accepted(f.run), batchId: pending.id, digest: pending.digest })}`,
+		),
+	).rejects.toThrow(/superseded|changed/);
+	answer.resolve("Historical answer");
+	await f.runtime.flush(f.run.id);
+	const restored = await f.reconstruct();
+	await f.runtime.replyView(
+		restored.id,
+		`/view-answer ${JSON.stringify(accepted(restored))}`,
+	);
+	await waitFor(() => expect(restored.status).toBe("completed"));
+	expect(
+		restored.viewRecords!.find((record) => record.snapshot.id === pending.id)!
+			.superseded,
+	).toBe(true);
+});
+
+it("carries current runtime authority through the native durable outbox and a held shared budget", async () => {
+	const answer = deferred<string>();
+	const f = await fixture(
+		"linear-budget",
+		async (context) => {
+			context.signal.addEventListener(
+				"abort",
+				() => answer.resolve("Historical Ask"),
+				{ once: true },
+			);
+			return answer.promise;
+		},
+		false,
+		undefined,
+		true,
+	);
+	const original = (await f.displays())[0]!;
+	const held = await f.blockNativeBudget();
+	await ask(f, "Explain pending child while native request budget is held");
+	const pending = structuredClone(f.run.viewDecision!);
+	await waitFor(() => expect(f.nativeQueued(pending.digest)).toBe(true));
+	f.child.resolve();
+	await waitFor(() =>
+		expect(Object.values(f.run.launchActions!)[0]!.progress.a!.status).toBe(
+			"completed",
+		),
+	);
+	expect(f.run.viewDecision!.digest).toBe(pending.digest);
+	await held.release();
+	await waitFor(async () =>
+		expect((await f.displays()).at(-1)).toContain("[completed]"),
+	);
+	expect(
+		(await f.displays())
+			.slice(1)
+			.every((body) => !body.includes(pending.digest)),
+	).toBe(true);
+	expect((await f.displays())[0]).toBe(original);
+	const obsolete = f.run.ticketSync!.receipts.find(
+		(entry) => entry.viewDecision?.digest === pending.digest,
+	)!;
+	expect(obsolete.superseded).toBe(true);
+	expect(obsolete.delivered).not.toBe(true);
+	answer.resolve("Historical completion");
+	await f.runtime.flush(f.run.id);
+	const restored = await f.reconstruct();
+	await f.runtime.replyView(
+		restored.id,
+		`/view-answer ${JSON.stringify(accepted(restored))}`,
+	);
+	await waitFor(() => expect(restored.status).toBe("completed"));
+});
+
+it("does not hold the human transition while a legitimately dispatched response is pending", async () => {
+	const f = await fixture("taskbot", async () => "Current bounded answer");
+	const remote = deferred<string>();
+	const initial = f.run.viewDecision!;
+	const dispatched = await f.runtime.humanViews.dispatchPublication(
+		f.run,
+		{ batchId: initial.id, digest: initial.digest },
+		() => remote.promise,
+	);
+	await ask(f, "Ask while the external response is pending");
+	await waitFor(() =>
+		expect(f.run.viewDecision!.threads!.item0![0]!.status).toBe("answered"),
+	);
+	expect(f.run.viewDecision!.digest).not.toBe(initial.digest);
+	remote.resolve("Original dispatched response");
+	expect(await dispatched.value).toBe("Original dispatched response");
+});
+
+it("revalidates protected real-file assets after actual MCP initialization before any outgoing comment", async () => {
+	const reply = deferred<string>();
+	const f = await fixture(
+		"mcp",
+		async (context) => {
+			context.signal.addEventListener(
+				"abort",
+				() => reply.resolve("Historical Ask"),
+				{ once: true },
+			);
+			return reply.promise;
+		},
+		false,
+		undefined,
+		false,
+		true,
+	);
+	const initial = (await f.displays())[0]!;
+	const held = f.blockNextConnection();
+	await ask(f, "Review the captured asset while connection setup is held");
+	await held.entered;
+	const pending = structuredClone(f.run.viewDecision!);
+	writeFileSync(f.image, "Changed actual protected asset");
+	held.release();
+	await waitFor(() =>
+		expect(
+			f.run.ticketSync!.receipts.find(
+				(entry) => entry.viewDecision?.digest === pending.digest,
+			)?.superseded,
+		).toBe(true),
+	);
+	expect(await f.displays()).toEqual([initial]);
+	expect(
+		f.mcpCalls
+			.filter((call) => call.tool === "comment")
+			.every((call) => !String(call.args.body).includes(pending.digest)),
+	).toBe(true);
+	reply.resolve("Historical Ask");
 });

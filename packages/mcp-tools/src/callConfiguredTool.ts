@@ -2,6 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { DispatchControl } from "bobs-factory-core";
 
 export type ToolServerConfig =
 	| {
@@ -20,6 +21,7 @@ export async function callConfiguredTool(
 	signal: AbortSignal,
 	cwd: string,
 	childEnvironment?: Record<string, string>,
+	dispatch?: DispatchControl,
 ): Promise<unknown> {
 	return withConfiguredClient(
 		config,
@@ -51,6 +53,7 @@ export async function callConfiguredTool(
 			}
 			return result.structuredContent ?? result;
 		},
+		dispatch,
 	);
 }
 
@@ -78,8 +81,22 @@ async function withConfiguredClient<T>(
 	cwd: string,
 	childEnvironment: Record<string, string> | undefined,
 	operation: (client: Client) => Promise<T>,
+	dispatch?: DispatchControl,
 ): Promise<T> {
 	const client = new Client({ name: "cyrus-factory", version: "1.0.0" });
+	let invoking = false;
+	let declined: unknown;
+	const guardedFetch: typeof fetch = async (input, init) => {
+		if (!invoking || init?.method?.toUpperCase() !== "POST")
+			return fetch(input, init);
+		try {
+			const { value } = await dispatch!.run(() => fetch(input, init));
+			return await value;
+		} catch (error) {
+			declined = error;
+			throw error;
+		}
+	};
 	const transport =
 		"command" in config
 			? new StdioClientTransport({
@@ -98,10 +115,27 @@ async function withConfiguredClient<T>(
 			: config.type === "sse"
 				? new SSEClientTransport(new URL(config.url), {
 						requestInit: { headers: config.headers },
+						...(dispatch ? { fetch: guardedFetch } : {}),
 					})
 				: new StreamableHTTPClientTransport(new URL(config.url), {
 						requestInit: { headers: config.headers },
+						...(dispatch ? { fetch: guardedFetch } : {}),
 					});
+	if (dispatch && transport instanceof StdioClientTransport) {
+		const send = transport.send.bind(transport);
+		transport.send = async (
+			...args: Parameters<StdioClientTransport["send"]>
+		) => {
+			if (!invoking) return send(...args);
+			try {
+				const { value } = await dispatch.run(() => send(...args));
+				return await value;
+			} catch (error) {
+				declined = error;
+				throw error;
+			}
+		};
+	}
 	let closing: Promise<void> | undefined;
 	const close = () =>
 		(closing ??= client.close().finally(() => transport.close()));
@@ -113,8 +147,12 @@ async function withConfiguredClient<T>(
 		signal.throwIfAborted();
 		await client.connect(transport);
 		signal.throwIfAborted();
+		invoking = true;
 		return await operation(client);
+	} catch (error) {
+		throw declined ?? error;
 	} finally {
+		invoking = false;
 		signal.removeEventListener("abort", stop);
 		await close();
 	}
