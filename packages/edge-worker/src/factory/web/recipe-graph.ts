@@ -19,6 +19,8 @@ export type Recipe = {
 	description: string;
 	labels: string[];
 	steps: Step[];
+	inputs?: string[];
+	outcomes?: string[];
 	internal?: boolean;
 	chat?: boolean;
 	allowedTriggers: string[];
@@ -43,6 +45,8 @@ const editableKeys = [
 	"description",
 	"labels",
 	"steps",
+	"inputs",
+	"outcomes",
 	"internal",
 	"chat",
 	"allowedTriggers",
@@ -324,6 +328,7 @@ export type Route = {
 	/** Points back to a step that already ran, i.e. a loop. */
 	back: boolean;
 	index?: number;
+	entry?: string;
 };
 /** The runtime's next step: first matching branch, then next, then array order. */
 export function fallbackOf(steps: Step[], step: Step): string {
@@ -360,7 +365,7 @@ export function runOrder(steps: Step[]): string[] {
 export function routesOf(steps: Step[]): Route[] {
 	const position = new Map(runOrder(steps).map((id, i) => [id, i]));
 	const back = (from: string, to: string) =>
-		to !== "end" && (position.get(to) ?? 0) <= (position.get(from) ?? 0);
+		position.has(to) && (position.get(to) ?? 0) <= (position.get(from) ?? 0);
 	return steps.flatMap((step) => {
 		const fallback = fallbackOf(steps, step);
 		return [
@@ -368,9 +373,10 @@ export function routesOf(steps: Step[]): Route[] {
 				from: step.id,
 				to: b.next,
 				kind: "branch" as const,
-				label: describeCondition(b.when),
+				label: `${describeCondition(b.when)}${b.entry ? ` · enter ${b.entry}` : ""}`,
 				back: back(step.id, b.next),
 				index,
+				...(b.entry ? { entry: b.entry } : {}),
 			})),
 			{
 				from: step.id,
@@ -399,75 +405,54 @@ export function agentSteps(steps: Step[]): Step[] {
 	);
 }
 
-/* ------------------------------------------------- called recipes, inline */
+/* ---------------------------------------------------------- called recipes */
 
 export type RecipeGraph = {
-	/** Steps as one run sees them, called recipes expanded in place. */
+	/** The caller's real steps. Calls retain their inputs, outcomes and routes. */
 	steps: Step[];
-	/** Recipe that owns (and saves) each displayed step. */
+	/** Recipe that owns (and saves) each displayed top-level step. */
 	owners: Record<string, string>;
-	/** Recipes shown inline, in call order. */
+	/** Directly called catalog recipes, in call order. */
 	included: string[];
 };
-/**
- * Expands simple calls (no branches, unique step IDs) into the caller so the
- * whole run is visible. Routes keep their meaning: a called recipe finishing
- * continues where the call would have continued.
- */
-export function recipeGraph(
-	recipe: Recipe,
-	recipes: Recipe[],
-	seen: string[] = [recipe.id],
-): RecipeGraph {
-	const owners: Record<string, string> = {};
-	const included: string[] = [];
-	const redirects = new Map<string, string>();
-	const steps: Step[] = [];
-	const used = new Set(recipe.steps.map((s) => s.id));
-	recipe.steps.forEach((step, i) => {
-		const called =
-			step.type === "workflow" &&
-			!step.inputMapping &&
-			!step.branches.length &&
-			!seen.includes(step.workflow ?? "")
-				? recipes.find((r) => r.id === step.workflow)
-				: undefined;
-		const inner = called?.steps.length
-			? recipeGraph(called, recipes, [...seen, called.id])
-			: undefined;
-		if (!called || !inner || inner.steps.some((s) => used.has(s.id))) {
-			steps.push(step);
-			owners[step.id] = recipe.id;
-			return;
-		}
-		const continuation = step.next ?? recipe.steps[i + 1]?.id ?? "end";
-		const explicit = step.next !== undefined;
-		const clones = inner.steps.map((s, j) => {
-			const clone = structuredClone(s);
-			if (clone.next === "end") clone.next = continuation;
-			for (const b of clone.branches)
-				if (b.next === "end") b.next = continuation;
-			if (explicit && j === inner.steps.length - 1 && clone.next === undefined)
-				clone.next = continuation;
-			return clone;
-		});
-		for (const s of clones) used.add(s.id);
-		redirects.set(step.id, clones[0]!.id);
-		steps.push(...clones);
-		Object.assign(owners, inner.owners);
-		included.push(called.id, ...inner.included);
-	});
-	const redirect = (id: string) => {
-		let target = id;
-		for (let i = 0; redirects.has(target) && i < 50; i++)
-			target = redirects.get(target)!;
-		return target;
+/** Displaying a graph must never rewrite the accepted definition or erase calls. */
+export function recipeGraph(recipe: Recipe, recipes: Recipe[]): RecipeGraph {
+	return {
+		steps: recipe.steps,
+		owners: Object.fromEntries(
+			recipe.steps.map((step) => [step.id, recipe.id]),
+		),
+		included: [
+			...new Set(
+				recipe.steps.flatMap((step) =>
+					step.type === "workflow" &&
+					recipes.some((target) => target.id === step.workflow)
+						? [step.workflow!]
+						: [],
+				),
+			),
+		],
 	};
-	for (const s of steps) {
-		if (s.next) s.next = redirect(s.next);
-		for (const b of s.branches) b.next = redirect(b.next);
-	}
-	return { steps, owners, included };
+}
+
+/** Resolve from the supplied definitions, including private forked dependencies. */
+export function calledRecipeOf(
+	step: Step,
+	recipes: Recipe[],
+	ancestors: string[] = [],
+): { recipe?: Recipe; problem?: string } {
+	if (step.type !== "workflow") return {};
+	const recipe = recipes.find((candidate) => candidate.id === step.workflow);
+	if (!recipe) return { problem: "Called recipe is unavailable" };
+	if (ancestors.includes(recipe.id))
+		return { recipe, problem: "Recursive call · open recipe to inspect" };
+	if (!recipe.steps.length) return { recipe, problem: "No configured steps" };
+	return { recipe };
+}
+
+/** Canvas IDs identify a call instance; definition IDs remain unchanged. */
+export function calledNodeId(callId: string, stepId: string): string {
+	return JSON.stringify([callId, stepId]);
 }
 
 /* ------------------------------------------------------------------ phases */
@@ -541,23 +526,31 @@ export function layoutSteps(
 	options: {
 		size: (step: Step) => { width: number; height: number };
 		end?: { width: number; height: number };
+		terminal?: { width: number; height: number };
 		nodesep?: number;
 		ranksep?: number;
+		direction?: "LR" | "TB";
 	},
 ): Record<string, { x: number; y: number }> {
 	const g = new graphlib.Graph();
 	g.setGraph({
-		rankdir: "LR",
+		rankdir: options.direction ?? "LR",
 		nodesep: options.nodesep ?? 36,
 		ranksep: options.ranksep ?? 56,
 		edgesep: 20,
 	});
 	g.setDefaultEdgeLabel(() => ({}));
 	const main = new Set(mainPath(steps));
-	for (const s of steps) g.setNode(s.id, options.size(s));
-	g.setNode("end", options.end ?? { width: 60, height: 60 });
+	for (const s of steps) g.setNode(s.id, { ...options.size(s) });
+	g.setNode("end", { ...(options.end ?? { width: 60, height: 60 }) });
+	const routes = routesOf(steps);
+	for (const route of routes)
+		if (!g.hasNode(route.to))
+			g.setNode(route.to, {
+				...(options.terminal ?? options.end ?? { width: 60, height: 60 }),
+			});
 	// Loops are drawn around the layout; ranking only follows forward routes.
-	for (const r of routesOf(steps))
+	for (const r of routes)
 		if (!r.back)
 			g.setEdge(r.from, r.to, {
 				weight:
@@ -995,7 +988,7 @@ export function outcomesOf(steps: Step[], id: string): Outcome[] {
 			branch: false,
 		},
 		...step.branches.map((b) => ({
-			label: describeCondition(b.when),
+			label: `${describeCondition(b.when)}${b.entry ? ` · enter ${b.entry}` : ""}`,
 			to: b.next,
 			branch: true,
 		})),

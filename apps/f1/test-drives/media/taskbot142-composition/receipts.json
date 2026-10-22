@@ -1,0 +1,416 @@
+{
+  "base": "578bb28233fe699b6743bf84cb24895b25da3ed0",
+  "baselineExportSha256": "e0096303d5269acbf754998684d37fe9b2955b3dce0f8a536798446c38be8655",
+  "baselineDefinitionsEqual": 9,
+  "baselineConfiguredRolesEqual": 41,
+  "baselinePromptInstructionStringsEqual": 76,
+  "stockPromptVariantsEqualAfterPathMapping": 210,
+  "frozenCommonPromptVariantsEqual": 429,
+  "sourceInputsSha256": "67a7041cc0f4d458569d700515ac2b8e3ab783ef9f9a3dcdb21b43c1bf32fb09",
+  "sourceInputFiles": 41,
+  "webBuild": "879d38a4edaef916c2d90af7",
+  "flows": [
+    {
+      "case": "repository; takeover=False; frozen=False",
+      "path": "/tmp/taskbot142-repository-false-false-flow.json",
+      "sha256": "d486ffa8fd670ab79e5e182f2c381af62ae4b7b1c9a08e70a9f3fdd5f2195a3f",
+      "bytes": 890870,
+      "status": "completed",
+      "historyReceipts": 63,
+      "modelRoleCalls": 33,
+      "commandReceipts": 56,
+      "originalClarificationCalls": 1,
+      "retainedVisits": {
+        "planning": {
+          "clarify": 1,
+          "decisions": 1,
+          "plan": 2,
+          "plan-review": 2
+        },
+        "delivery": {
+          "delivery-route-accept": 1,
+          "delivery-route": 1
+        },
+        "check-in": {
+          "architecture": 1,
+          "architecture-review": 1,
+          "architecture-decision": 1
+        },
+        "implementation": {
+          "implement": 1,
+          "draft-pr": 1
+        },
+        "review": {
+          "assess-impact": 3,
+          "extract-requirements": 4,
+          "impact-checks": 2,
+          "specialist-review": 2,
+          "review-gate": 2,
+          "code-fix": 1
+        },
+        "ci": {
+          "ci-fix": 1,
+          "after-ci-fix-observe": 1,
+          "after-ci-fix": 1,
+          "ci": 1
+        },
+        "qa": {
+          "visual-scope": 1,
+          "capture": 1,
+          "visual-review": 1,
+          "visual-gate": 1
+        },
+        "approval": {
+          "guide": 1,
+          "handoff": 1,
+          "human-review": 1
+        },
+        "merge": {
+          "merge": 1
+        }
+      }
+    },
+    {
+      "case": "external; takeover=False; frozen=False",
+      "path": "/tmp/taskbot142-external-false-false-flow.json",
+      "sha256": "8a5ec8b835ad1ee16f1070610042a5f9785b6177cf94045cbf894fcf43a441a0",
+      "bytes": 91506,
+      "status": "completed",
+      "historyReceipts": 23,
+      "modelRoleCalls": 3,
+      "commandReceipts": 0,
+      "originalClarificationCalls": 1,
+      "retainedVisits": {
+        "planning": {
+          "clarify": 1,
+          "decisions": 1,
+          "plan": 1,
+          "plan-review": 1
+        },
+        "delivery": {
+          "delivery-route-accept": 1,
+          "delivery-route": 1
+        },
+        "external": {
+          "external-apply": 1,
+          "external-verify": 2,
+          "external-after-verify": 2,
+          "external-guide": 2,
+          "external-human-review": 2,
+          "external-final": 2
+        }
+      }
+    },
+    {
+      "case": "mixed; takeover=False; frozen=False",
+      "path": "/tmp/taskbot142-mixed-false-false-flow.json",
+      "sha256": "b80a38cf5009466b78e9484a87748bb9887d907bd0b6b92d3c4ac5d09909d7b6",
+      "bytes": 1177668,
+      "status": "completed",
+      "historyReceipts": 94,
+      "modelRoleCalls": 39,
+      "commandReceipts": 74,
+      "originalClarificationCalls": 1,
+      "retainedVisits": {
+        "planning": {
+          "clarify": 1,
+          "decisions": 1,
+          "plan": 2,
+          "plan-review": 2
+        },
+        "delivery": {
+          "delivery-route-accept": 2,
+          "delivery-route": 2
+        },
+        "external": {
+          "external-apply": 2,
+          "external-verify": 2,
+          "external-after-verify": 2,
+          "external-correction": 1,
+          "external-final": 1
+        },
+        "check-in": {
+          "architecture": 2,
+          "architecture-review": 2,
+          "architecture-decision": 2
+        },
+        "implementation": {
+          "implement": 2,
+          "draft-pr": 2
+        },
+        "review": {
+          "assess-impact": 2,
+          "extract-requirements": 4,
+          "impact-checks": 2,
+          "specialist-review": 2,
+          "review-gate": 2
+        },
+        "ci": {
+          "ci": 2
+        },
+        "qa": {
+          "visual-scope": 2,
+          "capture": 2,
+          "visual-review": 3,
+          "visual-gate": 2
+        },
+        "approval": {
+          "guide": 2,
+          "handoff": 2,
+          "human-review": 2,
+          "delivery-feedback-route": 1
+        },
+        "merge": {
+          "merge": 1
+        }
+      }
+    },
+    {
+      "case": "repository; takeover=True; frozen=False",
+      "path": "/tmp/taskbot142-repository-true-false-flow.json",
+      "sha256": "710a4b243ccc3849a9460231c1508f9bf739e4e686075c6d16121d96973614da",
+      "bytes": 896235,
+      "status": "completed",
+      "historyReceipts": 65,
+      "modelRoleCalls": 34,
+      "commandReceipts": 61,
+      "originalClarificationCalls": 1,
+      "retainedVisits": {
+        "planning": {
+          "clarify": 1,
+          "decisions": 1,
+          "plan": 2,
+          "plan-review": 2
+        },
+        "delivery": {
+          "delivery-route-accept": 1,
+          "delivery-route": 1
+        },
+        "check-in": {
+          "architecture": 1,
+          "architecture-review": 1,
+          "architecture-decision": 1
+        },
+        "implementation": {
+          "implement": 1,
+          "draft-pr": 1
+        },
+        "review": {
+          "assess-impact": 3,
+          "extract-requirements": 4,
+          "impact-checks": 2,
+          "specialist-review": 2,
+          "review-gate": 2,
+          "code-fix": 1
+        },
+        "ci": {
+          "ci-fix": 1,
+          "after-ci-fix-observe": 1,
+          "after-ci-fix": 1,
+          "ci": 1
+        },
+        "qa": {
+          "visual-scope": 1,
+          "capture": 1,
+          "visual-review": 1,
+          "visual-gate": 1
+        },
+        "approval": {
+          "guide": 1,
+          "handoff": 1,
+          "human-review": 1
+        },
+        "merge": {
+          "merge": 1
+        }
+      }
+    },
+    {
+      "case": "external; takeover=False; frozen=True",
+      "path": "/tmp/taskbot142-external-false-true-flow.json",
+      "sha256": "590fc94f0a935743479dacb308d876cab9f5e995cf600403e0849aa1979a06cc",
+      "bytes": 15423,
+      "status": "completed",
+      "historyReceipts": 14,
+      "modelRoleCalls": 3,
+      "commandReceipts": 0,
+      "originalClarificationCalls": 1,
+      "retainedVisits": {}
+    }
+  ],
+  "logs": [
+    {
+      "path": "/tmp/taskbot142-candidate-flows.log",
+      "bytes": 1849,
+      "sha256": "cdbf24ec84c2cb0f481f514ab92c06aec4c201e2ab5188533053b54bcb51e033"
+    },
+    {
+      "path": "/tmp/taskbot142-external-reverify-final.log",
+      "bytes": 588,
+      "sha256": "64923db932841c40b134658c8eae2937750efbfc6936470794fec28a340bdbaa"
+    },
+    {
+      "path": "/tmp/taskbot142-final-contracts.log",
+      "bytes": 582,
+      "sha256": "43224df89e4c93dd9c9436df8f3d70a03987ed4ba2bc92b5f3406abc9028f145"
+    },
+    {
+      "path": "/tmp/taskbot142-fixture-focused-second.log",
+      "bytes": 580,
+      "sha256": "1a56dcb66d707525d7a938f9157d28a208c178a46c458a2c1296c3616ebd8e38"
+    },
+    {
+      "path": "/tmp/taskbot142-fixture-remaining-second.log",
+      "bytes": 2413,
+      "sha256": "e4f817647cdc5cfe7ff9acca2787b8d53e576b3f376e8588ea8312fa6c32f533"
+    },
+    {
+      "path": "/tmp/taskbot142-recovery-legacy.log",
+      "bytes": 580,
+      "sha256": "18e588d5932d1a45d6d103d3b1a279ffe4124382fb8ae462c8ec06df08e2996c"
+    },
+    {
+      "path": "/tmp/taskbot142-runtime-corrections.log",
+      "bytes": 2633,
+      "sha256": "e0a3d616058366299ae378fb855613f25756f0d08951e43204d4763ec61d7d39"
+    },
+    {
+      "path": "/tmp/taskbot142-edge-types-clean.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/taskbot142-web-types-candidate.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/taskbot142-web-build-final.log",
+      "bytes": 44,
+      "sha256": "32877ebcd521c9cee1f2732ea5f45abacf98983b7e7e470278eb3168e09eba27"
+    }
+  ],
+  "earlierFailedLogCount": 24,
+  "earlierFailedLogs": [
+    {
+      "path": "/tmp/taskbot142-call-first.log",
+      "bytes": 2658,
+      "sha256": "81963f1d4b5a45f1fbe012bffc80f6a73d773a47b3515f5cc0e88b0540af777d"
+    },
+    {
+      "path": "/tmp/taskbot142-call-second.log",
+      "bytes": 1634,
+      "sha256": "f41016fa9dba31598c87c931bc8979d250f92873eed0f90f79f3b960843f05ac"
+    },
+    {
+      "path": "/tmp/taskbot142-candidate-flows.log",
+      "bytes": 1849,
+      "sha256": "cdbf24ec84c2cb0f481f514ab92c06aec4c201e2ab5188533053b54bcb51e033"
+    },
+    {
+      "path": "/tmp/taskbot142-catalog-second.log",
+      "bytes": 1856,
+      "sha256": "9640d7855cd78e83771c973b7d5a586d02c28522c059c310aacf244f08bd8fdb"
+    },
+    {
+      "path": "/tmp/taskbot142-edge-types-final.log",
+      "bytes": 273,
+      "sha256": "c0a2b6208dcc2baef5bd67f805ae402c9e67eca600b7c27ea69dc2d3afd702d6"
+    },
+    {
+      "path": "/tmp/taskbot142-edge-types-first.log",
+      "bytes": 8248,
+      "sha256": "4b92668a0aec637f2ce195d70548c81e32a439dbf7adce025f3d1e698ddf4efb"
+    },
+    {
+      "path": "/tmp/taskbot142-final-mechanism.log",
+      "bytes": 9018,
+      "sha256": "581a181275fb42dca0f30d8942bfa79f0a911855ea369e5ea9bec9c8cdd0de6e"
+    },
+    {
+      "path": "/tmp/taskbot142-fixture-focused-first.log",
+      "bytes": 11176,
+      "sha256": "7bb52c5da714c8dbf7b9c3c2c35779cd605888523c71c70e9d4d98c597171d93"
+    },
+    {
+      "path": "/tmp/taskbot142-fixture-remaining-second.log",
+      "bytes": 2413,
+      "sha256": "e4f817647cdc5cfe7ff9acca2787b8d53e576b3f376e8588ea8312fa6c32f533"
+    },
+    {
+      "path": "/tmp/taskbot142-fixture-remaining.log",
+      "bytes": 87972,
+      "sha256": "d89bdabd1ed5df47672de33382f2be2a1fed18eeadad60be3895850799aa8c49"
+    },
+    {
+      "path": "/tmp/taskbot142-flows-eighth.log",
+      "bytes": 1463,
+      "sha256": "ea247fa993c32c377859a2a3f309c54f62ed93ad93c3f0c8869f139d1f52fc55"
+    },
+    {
+      "path": "/tmp/taskbot142-flows-first.log",
+      "bytes": 5047,
+      "sha256": "84aba69c693b754ac282763c0a33b71a22b157b0c67faa1b012a4e00f052c6ad"
+    },
+    {
+      "path": "/tmp/taskbot142-flows-fourth.log",
+      "bytes": 4271,
+      "sha256": "04876e5044f6a9e6a9e936551c26eacee312ec0a1b31e8fe0046b769d4636d2c"
+    },
+    {
+      "path": "/tmp/taskbot142-flows-second.log",
+      "bytes": 5773,
+      "sha256": "3a7c477bb09229bf14a43c876b7b9f9bda3edae60548d232a6dac49214091479"
+    },
+    {
+      "path": "/tmp/taskbot142-flows-seventh.log",
+      "bytes": 2371,
+      "sha256": "f6d4afc75519d5bda61875ad856ac405a9b374a5e2b19deb8d9bf968d8580b89"
+    },
+    {
+      "path": "/tmp/taskbot142-flows-sixth.log",
+      "bytes": 3242,
+      "sha256": "45194857dfaad88837be156d87302c0374280dcc374eb1bf0a1a36854c85a27e"
+    },
+    {
+      "path": "/tmp/taskbot142-flows-third.log",
+      "bytes": 5327,
+      "sha256": "8a01d258037f88c77469e76b6a18e8450185b4e26addd0283994706f6e226e45"
+    },
+    {
+      "path": "/tmp/taskbot142-format-second.log",
+      "bytes": 15542,
+      "sha256": "21f998f6537d276ede27bacba0221573270eb4bacecf72513b6bd460fd0f98f5"
+    },
+    {
+      "path": "/tmp/taskbot142-format-third.log",
+      "bytes": 5934,
+      "sha256": "699dd37b022b4ef9e2d7b1e0d91bbfe5caeb24dd209e58d0247007572adffa70"
+    },
+    {
+      "path": "/tmp/taskbot142-mechanism-first.log",
+      "bytes": 8003,
+      "sha256": "b8f338b916568e0cc3b58705b3d00474aa506744963af52ca2db5ed030ce382f"
+    },
+    {
+      "path": "/tmp/taskbot142-mixed-fifth.log",
+      "bytes": 2422,
+      "sha256": "cbb2a7cd41b6bdaa6d37d6c2e9c6d1b3871508e356c4c4101ba54bee4e72c211"
+    },
+    {
+      "path": "/tmp/taskbot142-runtime-corrections.log",
+      "bytes": 2633,
+      "sha256": "e0a3d616058366299ae378fb855613f25756f0d08951e43204d4763ec61d7d39"
+    },
+    {
+      "path": "/tmp/taskbot142-web-types-clean.log",
+      "bytes": 483,
+      "sha256": "080fa725b00e32bc6090e8ebd1d63de870dc502e1ea43915121bfd2e06f3f27e"
+    },
+    {
+      "path": "/tmp/taskbot142-web-types-final.log",
+      "bytes": 449,
+      "sha256": "e07d644c8d591cf8d44c289951e82b1ccbd5bd05fc7433318c7f9c645f161624"
+    }
+  ]
+}

@@ -12,7 +12,6 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { qaDigest } from "../src/factory/EvidenceDigest.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
 import { FactoryServer as ProtectedFactoryServer } from "../src/factory/FactoryServer.js";
@@ -35,6 +34,7 @@ import {
 	WorkflowRuntime,
 } from "../src/factory/WorkflowRuntime.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 import { qaScope } from "./fixtures/qa.js";
 import { renamedFactory } from "./fixtures/renamed-factory.js";
 
@@ -75,6 +75,11 @@ function setup() {
 		input: "",
 		workflow: defaultWorkflows.find((w) => w.id === "factory")!,
 	});
+	// The retained-media control is an accepted pre-composition run.
+	run.workflow = structuredClone(
+		defaultWorkflows.find((w) => w.id === "factory")!,
+	);
+	run.workflowDefinitions = structuredClone(defaultWorkflows);
 	const evidenceDir = join(runtime.directory, "evidence", run.id);
 	mkdirSync(evidenceDir, { recursive: true });
 	const task = VideoTaskSchema.parse({

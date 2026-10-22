@@ -1,8 +1,9 @@
 import {
-	defaultWorkflows,
+	defaultWorkflows as currentWorkflows,
 	legacyReviewSteps,
 } from "../../src/factory/defaultWorkflows.js";
 import { StepSchema, type Workflow } from "../../src/factory/Workflow.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./pre-composition.js";
 
 /** Exercise accepted/custom legacy contracts independently of new stock review. */
 export function legacyReviewWorkflows(): Workflow[] {
@@ -43,5 +44,5 @@ export function localReviewWorkflows(
 			if (original === "factory-pipeline") w.internal = true;
 			return w;
 		});
-	return [...structuredClone(defaultWorkflows), ...locals];
+	return [...structuredClone(currentWorkflows), ...locals];
 }

@@ -14,7 +14,6 @@ import {
 	type TicketDeliveryAdapter,
 	type TicketState,
 } from "../src/factory/Delivery.js";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { FactoryTools } from "../src/factory/FactoryTools.js";
 import {
 	attachRequirementCoverage,
@@ -39,6 +38,7 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { checkin } from "./fixtures/architecture.js";
 import { legacyReviewWorkflows } from "./fixtures/legacy-review.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
@@ -73,6 +73,9 @@ function setup() {
 		triggerOrigin: { type: "manual", workflowId: workflow.id },
 		executionSnapshot: undefined,
 	});
+	// These frozen delivery/recovery fixtures retain their original accepted flat graph.
+	run.workflow = structuredClone(workflow);
+	run.workflowDefinitions = structuredClone(defaultWorkflows);
 	const contract: DeliveryContract = {
 		format: "delivery-v1",
 		version: 1,

@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { createCLIIssueTracker } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import * as tools from "../src/factory/FactoryTools.js";
 import { pendingMergeConfirmation } from "../src/factory/MergeRecovery.js";
 import { resolveStepConfig } from "../src/factory/StepConfig.js";
@@ -13,6 +12,7 @@ import type { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import legacyWorkflows from "./fixtures/legacy-workflows-a4990127.json" with {
 	type: "json",
 };
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 const directories: string[] = [];
 afterEach(() => {
@@ -76,6 +76,10 @@ async function fixture(modern = false) {
 	await (worker as any).runnerSlots.ready();
 	const runtime: WorkflowRuntime = (worker as any).getFactoryRuntime();
 	const run = modern ? runtime.create(accepted) : runtime.get(accepted.id);
+	if (modern) {
+		run.workflow = structuredClone(workflow);
+		run.workflowDefinitions = structuredClone(definitions);
+	}
 	if (!modern) {
 		expect(run.workflow.stepConfigVersion).toBeUndefined();
 		const accepted = run.workflowDefinitions!.find(

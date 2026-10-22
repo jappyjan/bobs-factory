@@ -2,7 +2,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import {
 	stepVisitLimit,
 	upgradeStockStepVisits,
@@ -21,6 +20,7 @@ import { newStep } from "../src/factory/web/recipe-graph.js";
 import legacyWorkflows from "./fixtures/legacy-workflows-a4990127.json" with {
 	type: "json",
 };
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];

@@ -3,8 +3,8 @@ import {
 	AgentSettingsSchema,
 	resolveAgentSettings,
 } from "../src/factory/AgentSettings.js";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 it("maps reasoning and variants to native runner settings with same-provider inheritance", () => {
 	expect(resolveAgentSettings("codex", { reasoningEffort: "ultra" })).toEqual({

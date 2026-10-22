@@ -794,3 +794,64 @@ describe("private Snapshot provenance across mapped Call inputs", () => {
 		expect(checks).toBe(6);
 	});
 });
+
+it("reads the original private Snapshot through renamed nested outcome Call ports, never equal JSON", async () => {
+	const f = fixture();
+	const reader = {
+		...recipe("port-reader", [inspect("baseline")]),
+		inputs: ["baseline"],
+		outcomes: ["completed"],
+	};
+	const bridge = {
+		...recipe("port-bridge", [
+			{
+				id: "nested",
+				name: "Nested",
+				type: "workflow",
+				workflow: reader.id,
+				bindings: { baseline: "@bindings/pinned" },
+				next: "end",
+			},
+		]),
+		inputs: ["pinned"],
+		outcomes: ["completed"],
+	};
+	const parent = recipe("port-parent", [
+		snapshot("original-snapshot", "handoff"),
+		{
+			id: "handoff",
+			name: "Handoff",
+			type: "workflow",
+			workflow: bridge.id,
+			bindings: { pinned: "original-snapshot" },
+			next: "end",
+		},
+	]);
+	const instance = runtime(f.state, async (context) => {
+		expect(snapshotForRead(context, "baseline")?.producer.key).toBe(
+			"original-snapshot",
+		);
+		const read = await readBlob(context);
+		expect(read.revision).toBe(f.revision);
+		return read;
+	});
+	const run = create(instance, f.home, [parent, bridge, reader]);
+	await instance.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	expect(run.history.map((x) => x.step)).toContain("handoff/nested/inspect");
+	const snapshotReceipt = Object.values(run.repositorySnapshots!)[0]!;
+	// An inherited lookalike with no declared executed producer cannot acquire identity.
+	const step = reader.steps[0]!;
+	expect(() =>
+		snapshotForRead(
+			{
+				run,
+				step,
+				stepKey: "unbound/inspect",
+				outputs: { baseline: run.outputs["original-snapshot"] },
+			} as ExecutionContext,
+			"baseline",
+		),
+	).toThrow();
+	expect(snapshotReceipt.producer.key).toBe("original-snapshot");
+});

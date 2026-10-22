@@ -18,7 +18,6 @@ import {
 	snapshotProposal,
 	verifyProposal,
 } from "../src/factory/Architecture.js";
-import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { validateFactoryResult } from "../src/factory/FactoryResults.js";
 import { validateReviewFix } from "../src/factory/ReviewRecovery.js";
 import { hasCheck } from "../src/factory/StepConfig.js";
@@ -35,6 +34,7 @@ import {
 } from "../src/factory/WorkflowRuntime.js";
 import { proposal } from "./fixtures/architecture.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
 
 const homes: string[] = [];
@@ -61,7 +61,7 @@ function migrate(definitions: Workflow[]) {
 				(w) =>
 					w.id ===
 					(catalog.read().migration!.mappings["factory-pipeline"] ??
-						"factory-pipeline"),
+						"architecture-review"),
 			)!,
 	};
 }
@@ -1074,7 +1074,7 @@ it("upgrades untouched stock planning, preserving customized model settings and 
 	const upgraded = migrate(old).catalog.list();
 	expect(
 		upgraded
-			.find((w) => w.id === "factory-pipeline")!
+			.find((w) => w.id === "architecture-review")!
 			.steps.some((s) => hasCheck(s, "architecture-proposal")),
 	).toBe(true);
 	const customized = structuredClone(defaultWorkflows);
@@ -1090,8 +1090,10 @@ it("upgrades untouched stock planning, preserving customized model settings and 
 		),
 	).toBe(true);
 	expect(
-		migrate(customized).pipeline.steps.find((s) => s.id === "plan-review")!
-			.model,
+		migrate(customized)
+			.catalog.list()
+			.find((w) => w.id === "clarify-plan")!
+			.steps.find((s) => s.id === "plan-review")!.model,
 	).toBe("operator-selected");
 	const { runtime, run, home, hooks } = setup();
 	await waiting(run);

@@ -68,7 +68,6 @@ import {
 	restoreDelivery,
 } from "./DeliveryCoordination.js";
 import {
-	defaultWorkflows,
 	upgradedArchitectureSteps,
 	upgradedGuideStep,
 	upgradeHandoffReadiness,
@@ -196,14 +195,22 @@ import {
 	resolveStepConfig,
 	reviewEvidenceContract,
 } from "./StepConfig.js";
+import {
+	stockFactorySteps,
+	stockWorkflowMetadata,
+} from "./stockFactorySteps.js";
 import { recordTicketMilestone } from "./TicketTracking.js";
 import {
 	boundOutput,
 	boundStepKey,
 	boundToolOutput,
+	nextProducerKey,
 	outputForTool,
+	producerKey,
+	producerValue,
 	registerOutputHistory,
 	stepForRun,
+	writeBoundOutput,
 } from "./ToolBindings.js";
 import { HumanViews } from "./ViewRuntime.js";
 import {
@@ -298,6 +305,10 @@ export interface ForeachCheckpoint {
 	states: ForeachItemState[];
 }
 export interface GraphCheckpoint {
+	/** Calls with declared outcomes retain one lexical frame across correction routes. */
+	calls?: Record<string, GraphCheckpoint>;
+	entry?: string;
+	outcome?: string;
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
 	/** Runtime-owned origin receipts; never part of public mapped JSON inputs. */
@@ -1832,6 +1843,27 @@ export class WorkflowRuntime {
 		parallel = false,
 		reviewBaseline?: ReviewBaseline,
 	): Promise<Record<string, unknown>> {
+		const definition = [
+			run.recoveryWorkflow ?? run.workflow,
+			...(run.workflowDefinitions ?? []),
+		].find((item) => item.id === workflowId);
+		const outcomes = definition?.outcomes ?? [];
+		if (!prefix && definition?.inputs) {
+			for (const name of definition.inputs) {
+				if (
+					Object.hasOwn(outputs, name) ||
+					!Object.hasOwn(run.launchInputs ?? {}, name)
+				)
+					continue;
+				const value = run.launchInputs![name];
+				if (typeof value !== "string") continue;
+				try {
+					outputs[name] = JSON.parse(value);
+				} catch {
+					outputs[name] = value;
+				}
+			}
+		}
 		if (checkpoint.projectResults)
 			this.restoreFrameReceipts(run, steps, checkpoint, prefix);
 		while (checkpoint.current !== "end") {
@@ -1891,6 +1923,10 @@ export class WorkflowRuntime {
 			this.log(run, key, `Starting ${step.name} (pass ${count})`);
 			const deliveryAware =
 				!!run.delivery ||
+				steps.some(
+					(s) =>
+						resolveStepConfig(s).explicit && hasCheck(s, "delivery-contract"),
+				) ||
 				steps.some((s) =>
 					["delivery-route", "accept-delivery"].includes(s.tool ?? ""),
 				);
@@ -2130,10 +2166,15 @@ export class WorkflowRuntime {
 					continue;
 				}
 			}
-			const impactSource = steps.find((s) => s.id === impactSourceId);
+			const impactProducer = impactSourceId
+				? boundStepKey(context, "impact")
+				: undefined;
+			const impactSource = impactProducer
+				? stepForRun(run, impactProducer)
+				: undefined;
 			context.impactKey =
 				impactSource && readStep(impactSource, "fanout")
-					? `${prefix}${readStep(impactSource, "fanout")}`
+					? `${impactProducer!.slice(0, impactProducer!.lastIndexOf("/") + 1)}${readStep(impactSource, "fanout")}`
 					: checkpoint.reviewKey;
 			context.coordinateDelivery = (operation) =>
 				this.coordinate(context, operation);
@@ -2228,6 +2269,23 @@ export class WorkflowRuntime {
 				await this.save(run);
 			}
 			let output: unknown = outputs[step.id];
+			const advance = (next: string) => {
+				const route = step.branches.find(
+					(branch) =>
+						JSON.stringify(readPath(output, branch.when.path)) ===
+						JSON.stringify(branch.when.equals),
+				);
+				if (route?.entry) checkpoint.entry = route.entry;
+				if (outcomes.includes(next)) {
+					checkpoint.outcome = next;
+					checkpoint.current = "end";
+					if (checkpoint.projectResults)
+						checkpoint.resultReceipts![step.id] = immutableJson({
+							key,
+							output: snapshotWorkflowInput(output),
+						});
+				} else checkpoint.current = next;
+			};
 			if (state.phase === "executing") {
 				let completionMessage: string | undefined;
 				state.attemptId = beginStepAttempt(context);
@@ -2589,17 +2647,41 @@ export class WorkflowRuntime {
 								state.call,
 							);
 						}
-						state.children ??= [this.newCheckpoint(definition.steps)];
+						if (!state.children) {
+							const retained = definition.outcomes?.length
+								? checkpoint.calls?.[step.id]
+								: undefined;
+							const child = retained ?? this.newCheckpoint(definition.steps);
+							if (retained) {
+								child.current = checkpoint.entry ?? definition.steps[0]!.id;
+								child.active = undefined;
+								delete child.outcome;
+							}
+							if (checkpoint.entry) child.current = checkpoint.entry;
+							delete checkpoint.entry;
+							state.children = [child];
+						}
+						// Recovery can already supply an active child. Retain that exact frame,
+						// including visits and ownership, before its first resumed dispatch.
+						if (definition.outcomes?.length) {
+							checkpoint.calls ??= {};
+							checkpoint.calls[step.id] = state.children[0]!;
+						}
 						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
 						state.children[0]!.iteration ??= checkpoint.iteration;
 						if (
 							checkpoint.projectResults ||
+							step.bindings ||
+							definition.outcomes?.length ||
 							step.inputMapping ||
 							checkpoint.iteration
 						)
 							state.children[0]!.projectResults = true;
 						const isolated =
-							config.explicit || !!step.inputMapping || !!checkpoint.iteration;
+							config.explicit ||
+							!!step.inputMapping ||
+							!!step.bindings ||
+							!!checkpoint.iteration;
 						if (isolated && !state.children[0]!.outputs) {
 							const mappings = Object.fromEntries(
 								Object.entries(step.inputMapping ?? {}).map(([name, path]) => [
@@ -2618,12 +2700,22 @@ export class WorkflowRuntime {
 								]),
 							);
 							state.children[0]!.outputs = {
-								...snapshotWorkflowInput(outputs),
+								...(step.bindings ? {} : snapshotWorkflowInput(outputs)),
 								...snapshotWorkflowInput(mappings),
 							};
 							state.children[0]!.callInputs = step.inputMapping
 								? immutableJson(mappings)
 								: checkpoint.callInputs;
+						}
+						if (step.bindings) {
+							const child = state.children[0]!;
+							child.outputs ??= {};
+							for (const name of Object.keys(step.bindings)) {
+								const source = producerKey(run, `${key}/`, name);
+								const value = producerValue(run, source);
+								if (value === undefined) delete child.outputs[name];
+								else child.outputs[name] = snapshotWorkflowInput(value);
+							}
 						}
 						if (!state.children[0]!.snapshotInputs)
 							state.children[0]!.snapshotInputs = step.inputMapping
@@ -2652,7 +2744,13 @@ export class WorkflowRuntime {
 						output = {
 							workflow: definition.id,
 							completed: true,
-							...(step.inputMapping || checkpoint.iteration
+							...(definition.outcomes?.length
+								? { outcome: state.children[0]!.outcome ?? "completed" }
+								: {}),
+							...(step.inputMapping ||
+							step.bindings ||
+							definition.outcomes?.length ||
+							checkpoint.iteration
 								? {
 										outputs: this.frameResults(
 											run,
@@ -3277,10 +3375,11 @@ export class WorkflowRuntime {
 						undefined,
 						context,
 					);
-				checkpoint.current =
+				advance(
 					step.type === "check"
 						? this.nextStep(steps, step, output)
-						: reviewer.id;
+						: reviewer.id,
+				);
 				const destination = steps.find(
 					(item) => item.id === checkpoint.current,
 				);
@@ -3363,10 +3462,11 @@ export class WorkflowRuntime {
 						"QA or visual evidence is incomplete and this recipe has no capture → visual-review → visual-gate recovery path. Configure that path for a new run; missing evidence cannot be approved.",
 					);
 				if (readPath(output, "qaRetry") === true) {
-					checkpoint.current =
+					advance(
 						step.type === "check"
 							? this.nextStep(steps, step, output)
-							: capture.id;
+							: capture.id,
+					);
 					checkpoint.active = undefined;
 					run.questions = [];
 					run.status = "running";
@@ -3395,10 +3495,11 @@ export class WorkflowRuntime {
 							| undefined,
 						context,
 					);
-				checkpoint.current =
+				advance(
 					step.type === "check"
 						? this.nextStep(steps, step, output)
-						: capture.id;
+						: capture.id,
+				);
 				checkpoint.active = undefined;
 				this.log(
 					run,
@@ -3426,10 +3527,11 @@ export class WorkflowRuntime {
 						undefined,
 						context,
 					);
-				checkpoint.current =
+				advance(
 					step.type === "check"
 						? this.nextStep(steps, step, output)
-						: readStep(step, "fix")!;
+						: readStep(step, "fix")!,
+				);
 				checkpoint.active = undefined;
 				continue;
 			}
@@ -3447,6 +3549,7 @@ export class WorkflowRuntime {
 						? impactSourceId
 						: this.nextStep(steps, step, output);
 				if (
+					!outcomes.includes(fixer) &&
 					!steps.some(
 						(item) =>
 							item.id === fixer && ["agent", "script"].includes(item.type),
@@ -3466,14 +3569,15 @@ export class WorkflowRuntime {
 							| undefined,
 						context,
 					);
-				checkpoint.current = fixer;
+				advance(fixer);
 				checkpoint.active = undefined;
 				continue;
 			}
 			if (
 				step.type === "agent" &&
 				hasCheck(step, "architecture-revision") &&
-				readPath(output, "architectureRevision") === true
+				readPath(output, "architectureRevision") === true &&
+				!outcomes.includes(this.nextStep(steps, step, output))
 			) {
 				const decisionStep = architectureRevisionDecision(step, steps);
 				const target = String(
@@ -3517,7 +3621,7 @@ export class WorkflowRuntime {
 					);
 				// Keep the accepted graph: a rejected review returns to its configured
 				// candidate route with the explicit answer, never an implicit acceptance.
-				checkpoint.current = this.nextStep(steps, step, output);
+				advance(this.nextStep(steps, step, output));
 				checkpoint.active = undefined;
 				await this.save(run);
 				continue;
@@ -3575,7 +3679,11 @@ export class WorkflowRuntime {
 							: policy === "never"
 								? "Operator configured approval=never"
 								: proposal.content.rationale;
-						outputs[planOutput] = structuredClone(proposal.content.candidate);
+						writeBoundOutput(
+							context,
+							"plan",
+							structuredClone(proposal.content.candidate),
+						);
 						outputs[step.id] = {
 							decision: "routine",
 							proposalId: proposal.id,
@@ -3594,7 +3702,7 @@ export class WorkflowRuntime {
 							source,
 							stepKey: key,
 							planOutput: config.explicit
-								? `${prefix}${planOutput}`
+								? boundStepKey(context, "plan")!
 								: planOutput,
 						};
 						await this.save(run);
@@ -3640,7 +3748,11 @@ export class WorkflowRuntime {
 						decision: proposal.status === "accepted" ? "accept" : "revise",
 					};
 					if (proposal.status === "accepted")
-						outputs[planOutput] = structuredClone(proposal.content.candidate);
+						writeBoundOutput(
+							context,
+							"plan",
+							structuredClone(proposal.content.candidate),
+						);
 					else {
 						const target = readStep(step, "revise");
 						if (
@@ -3720,7 +3832,7 @@ export class WorkflowRuntime {
 					throw new Error(
 						"Changed review scope needs an explicit rework route before human approval",
 					);
-				checkpoint.current = next;
+				advance(next);
 				checkpoint.active = undefined;
 				await this.save(run);
 				signal.throwIfAborted();
@@ -3826,7 +3938,7 @@ export class WorkflowRuntime {
 						`Item ended with ${String(readPath(output, "status") ?? "incomplete evidence")} at ${key}`,
 					);
 				}
-				checkpoint.current = next;
+				advance(next);
 				checkpoint.active = undefined;
 			}
 			this.log(run, key, `Finished ${step.name}`);
@@ -4672,6 +4784,69 @@ export class WorkflowRuntime {
 		return run;
 	}
 
+	/** Locate a real sequential action without flattening or changing its accepted Call closure. */
+	private actionPath(
+		run: FactoryRun,
+		root: Workflow,
+		tool: string,
+	): WorkflowStep[] | undefined {
+		const find = (
+			definition: Workflow,
+			seen: Set<string>,
+		): WorkflowStep[] | undefined => {
+			for (const step of definition.steps) {
+				if (step.tool === tool) return [step];
+				if (step.type !== "workflow" || seen.has(step.workflow!)) continue;
+				const child = run.workflowDefinitions?.find(
+					(w) => w.id === step.workflow,
+				);
+				const path = child && find(child, new Set([...seen, child.id]));
+				if (path) return [step, ...path];
+			}
+			return undefined;
+		};
+		return find(root, new Set([root.id]));
+	}
+	private outcomePath(run: FactoryRun, root: Workflow, path?: WorkflowStep[]) {
+		return Boolean(
+			root.outcomes?.length ||
+				path?.some(
+					(s) =>
+						s.type === "workflow" &&
+						run.workflowDefinitions?.find((w) => w.id === s.workflow)?.outcomes
+							?.length,
+				),
+		);
+	}
+	/** Explicit audited re-entry retains original children, native sessions, visits and output ownership. */
+	private reenterAction(run: FactoryRun, root: Workflow, path: WorkflowStep[]) {
+		const enter = (frame: GraphCheckpoint, remaining: WorkflowStep[]): void => {
+			const step = remaining[0]!;
+			const active = frame.current === step.id ? frame.active : undefined;
+			frame.current = step.id;
+			delete frame.outcome;
+			delete frame.entry;
+			if (remaining.length === 1) {
+				frame.active = undefined;
+				return;
+			}
+			const childDefinition = run.workflowDefinitions!.find(
+				(w) => w.id === step.workflow,
+			)!;
+			const child =
+				frame.calls?.[step.id] ??
+				active?.children?.[0] ??
+				this.newCheckpoint(childDefinition.steps);
+			enter(child, remaining.slice(1));
+			if (childDefinition.outcomes?.length) {
+				frame.calls ??= {};
+				frame.calls[step.id] = child;
+			}
+			frame.active = { phase: "executing", children: [child] };
+		};
+		run.checkpoint ??= this.newCheckpoint(root.steps);
+		enter(run.checkpoint, path);
+	}
 	reverifyExternal(id: string, actor: string): FactoryRun {
 		const run = this.get(id);
 		if (
@@ -4693,12 +4868,17 @@ export class WorkflowRuntime {
 				["running", "waiting", "interrupted"].includes(other.status)
 			)
 				throw new Error("Another run owns this ticket");
-		const definition = [
-			run.recoveryWorkflow,
-			run.workflow,
-			...(run.workflowDefinitions ?? []),
-		].find((w) => w?.steps.some((s) => s.tool === "external-verify"));
-		if (!definition)
+		const root = run.recoveryWorkflow ?? run.workflow;
+		const path = this.actionPath(run, root, "external-verify");
+		const composed = this.outcomePath(run, root, path);
+		const definition = composed
+			? root
+			: [
+					run.recoveryWorkflow,
+					run.workflow,
+					...(run.workflowDefinitions ?? []),
+				].find((w) => w?.steps.some((s) => s.tool === "external-verify"));
+		if (!definition || (composed && !path))
 			throw new Error("Accepted workflow has no external reverification path");
 		run.externalReverifications ??= [];
 		run.externalReverifications.push({
@@ -4712,18 +4892,26 @@ export class WorkflowRuntime {
 			id: "external-reverification",
 			name: "Renewed external verification",
 		};
-		const reverify = run.recoveryWorkflow.steps.find(
-			(s) => s.tool === "external-verify",
-		);
-		if (!reverify)
-			throw new Error("External recovery has no independent verifier");
-		run.checkpoint = { current: reverify.id, visits: {} };
+		if (composed) this.reenterAction(run, root, path!);
+		else
+			run.checkpoint = {
+				current: run.recoveryWorkflow.steps.find(
+					(s) => s.tool === "external-verify",
+				)!.id,
+				visits: {},
+			};
 		delete run.reviewGate;
 		delete run.delivery.finalCheck;
-		const final = run.recoveryWorkflow.steps.find(
-			(s) => s.tool === "external-final",
+		const finalPath = this.actionPath(
+			run,
+			run.recoveryWorkflow,
+			"external-final",
 		);
-		if (final) run.outputs[final.id] = { drift: true, complete: false };
+		if (finalPath)
+			run.outputs[finalPath.map((s) => s.id).join("/")] = {
+				drift: true,
+				complete: false,
+			};
 		for (const receipt of run.ticketSync.receipts)
 			if (receipt.completion && !receipt.delivered && !receipt.superseded) {
 				receipt.superseded = true;
@@ -4796,18 +4984,30 @@ export class WorkflowRuntime {
 			previousCheckpoint: structuredClone(run.checkpoint),
 			contractDigest: reviewedDigest,
 		};
-		const stock = defaultWorkflows.find((w) => w.id === "factory-pipeline")!;
-		run.recoveryWorkflow = {
-			...structuredClone(stock),
-			id: "external-recovery",
-			name: "Audited external recovery",
-		};
-		const reverify = run.recoveryWorkflow.steps.find(
-			(s) => s.tool === "external-verify",
-		);
-		if (!reverify)
-			throw new Error("External recovery has no independent verifier");
-		run.checkpoint = { current: reverify.id, visits: {} };
+		const root = run.recoveryWorkflow ?? run.workflow;
+		const path = this.actionPath(run, root, "external-verify");
+		if (path && this.outcomePath(run, root, path)) {
+			run.recoveryWorkflow = {
+				...structuredClone(root),
+				id: "external-recovery",
+				name: "Audited external recovery",
+			};
+			this.reenterAction(run, root, path);
+		} else {
+			// Bounded pre-142 recovery adapter: frozen runs keep the exact former destination.
+			run.recoveryWorkflow = {
+				...structuredClone(stockWorkflowMetadata["factory-pipeline"]!),
+				steps: structuredClone(Object.values(stockFactorySteps)),
+				id: "external-recovery",
+				name: "Audited external recovery",
+			};
+			run.checkpoint = {
+				current: run.recoveryWorkflow.steps.find(
+					(s) => s.tool === "external-verify",
+				)!.id,
+				visits: {},
+			};
+		}
 		delete run.reviewGate;
 		run.status = "running";
 		delete run.error;
@@ -4905,36 +5105,43 @@ export class WorkflowRuntime {
 		prefix: string,
 		fixer: string,
 	) {
-		for (const assessor of steps) {
+		const call = stepForRun(run, prefix.replace(/\/$/, ""));
+		const names = [
+			...steps.map((step) => step.id),
+			...Object.keys(call?.bindings ?? {}),
+		];
+		const candidates = [
+			...new Set(names.map((name) => producerKey(run, prefix, name))),
+		];
+		for (const sourceKey of candidates) {
+			const assessor = stepForRun(run, sourceKey);
 			if (
+				!assessor ||
 				!hasCheck(assessor, "impact-reuse") ||
-				!readStep(assessor, "fanout") ||
-				!assessor.branches.some(
-					(branch) =>
-						branch.when.path === "correctionRequired" &&
-						branch.when.equals === true &&
-						branch.next === fixer,
-				)
+				!readStep(assessor, "fanout")
 			)
 				continue;
-			// A blocked assessment can route here after its assistance answer. It is
-			// still an obligation, though it cannot authorize evidence reuse.
+			const fanoutKey = boundStepKey(
+				{ run, step: assessor, stepKey: sourceKey },
+				"fanout",
+			);
 			const decision = [...(run.impactDecisions ?? [])]
 				.reverse()
-				.find(
-					(item) =>
-						item.snapshot.key === `${prefix}${readStep(assessor, "fanout")}`,
-				);
+				.find((item) => item.snapshot.key === fanoutKey);
+			const original =
+				sourceKey.startsWith(prefix) &&
+				sourceKey.slice(prefix.length) === assessor.id
+					? outputs[assessor.id]
+					: producerValue(run, sourceKey);
 			if (
 				!decision?.correctionRequired ||
-				readPath(outputs[assessor.id], "snapshot.digest") !==
-					decision.snapshot.digest ||
-				readPath(outputs[assessor.id], "at") !== decision.at ||
-				this.nextStep(steps, assessor, decision) !== fixer
+				readPath(original, "snapshot.digest") !== decision.snapshot.digest ||
+				readPath(original, "at") !== decision.at ||
+				nextProducerKey(run, sourceKey, decision) !== `${prefix}${fixer}`
 			)
 				continue;
 			return {
-				source: `${prefix}${assessor.id}`,
+				source: sourceKey,
 				required: true,
 				snapshotDigest: decision.snapshot.digest,
 				summary: decision.summary,
@@ -4959,7 +5166,36 @@ export class WorkflowRuntime {
 		const assessor = steps.find(
 			(s) => s.id === source && hasCheck(s, "impact-reuse"),
 		);
-		if (!assessor) return false;
+		if (!assessor) {
+			const definition = run.workflowDefinitions?.find((item) =>
+				item.steps.some((step) => step === current),
+			);
+			const route = current?.branches.find(
+				(branch) =>
+					branch.when.path === "impactRequired" && branch.when.equals === true,
+			);
+			const key =
+				current &&
+				boundStepKey(
+					{ run, step: current, stepKey: `${prefix}${current.id}` },
+					"impact",
+				);
+			if (
+				!route ||
+				!definition?.outcomes?.includes(route.next) ||
+				!hasCheck(stepForRun(run, key) ?? {}, "impact-reuse")
+			)
+				return false;
+			frame.outcome = route.next;
+			frame.current = "end";
+			frame.active = undefined;
+			this.log(
+				run,
+				"run",
+				`Returning ${route.next} to renew its declared impact source; original frames, pass limits and evidence remain retained.`,
+			);
+			return true;
+		}
 		frame.current = assessor.id;
 		frame.active = undefined;
 		this.log(
@@ -4992,7 +5228,8 @@ export class WorkflowRuntime {
 				run.error === STALE_IMPACT_MESSAGE &&
 				this.renewStaleImpact(run, frame, steps, prefix)
 			)
-				step = steps.find((s) => s.id === frame.current)!;
+				step = steps.find((s) => s.id === frame.current);
+			if (!step) return;
 			const key = `${prefix}${step.id}`;
 			if (frame.active?.terminalFailure) {
 				const native = frame.active.agent;

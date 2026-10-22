@@ -508,6 +508,14 @@ export function RecipeBuilder({ id }: { id: string }) {
 				<ReactFlowProvider>
 					{steps.length ? (
 						<RecipeCanvas
+							recipes={draft.recipes}
+							recipeId={recipe.id}
+							onOpenRecipe={(recipeId, stepId) =>
+								setParams({
+									recipe: recipeId,
+									...(stepId ? { step: stepId } : {}),
+								})
+							}
 							steps={steps}
 							defaultRunner={config.defaultRunner}
 							selected={top}
@@ -1720,8 +1728,13 @@ function SimulationPanel({
 			</ol>
 			{simulation.stopped ? (
 				<p>⛔ {simulation.stopped}</p>
-			) : current === "end" ? (
-				<p>🏁 Finished after {simulation.trail.length - 1} steps.</p>
+			) : current === "end" || !step ? (
+				<p>
+					🏁{" "}
+					{current === "end"
+						? `Finished after ${simulation.trail.length - 1} steps.`
+						: `Returned outcome: ${current}.`}
+				</p>
 			) : (
 				step && (
 					<>

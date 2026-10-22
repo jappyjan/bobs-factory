@@ -8361,6 +8361,8 @@ kbd {
 	position: relative;
 	flex: 1;
 	min-height: 0;
+	min-width: 0;
+	overflow: hidden;
 }
 .recipe-workspace .react-flow {
 	--xy-background-color: transparent;
@@ -8401,6 +8403,54 @@ kbd {
 		opacity 0.2s,
 		box-shadow 0.2s,
 		transform 0.2s;
+}
+.recipe-node[data-expanded="true"] {
+	justify-content: flex-start;
+	padding-top: 12px;
+	background: color-mix(in srgb, var(--surface) 94%, var(--phase));
+}
+.recipe-node[data-expanded="true"] > .recipe-node-main {
+	width: 360px;
+	max-width: 100%;
+	min-height: 34px;
+}
+.recipe-call-controls {
+	width: 196px;
+	max-width: 100%;
+	min-width: 0;
+}
+.recipe-call-controls > small {
+	display: block;
+	font-size: 11px;
+	color: var(--muted);
+	overflow-wrap: anywhere;
+}
+.recipe-call-toggle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	min-height: 44px;
+	padding: 6px 8px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--quiet);
+	color: var(--text);
+	font-size: 11px;
+	font-weight: 700;
+	cursor: pointer;
+}
+.recipe-call-toggle:hover {
+	background: var(--track);
+}
+.recipe-call-toggle:focus-visible {
+	outline: 3px solid #7b61ff;
+	outline-offset: 2px;
+}
+.recipe-end small {
+	font-size: 11px;
+	font-weight: 800;
+	color: var(--text);
 }
 .recipe-node[data-selected="true"] {
 	border-color: #7b61ff;
@@ -8510,6 +8560,23 @@ kbd {
 	border-radius: 50%;
 	background: var(--green);
 	font-size: 24px;
+}
+.recipe-end[data-outcome="true"] {
+	width: 128px;
+	border-radius: 16px;
+	padding: 6px;
+}
+.recipe-end[data-outcome="true"] small {
+	display: grid;
+	gap: 3px;
+	min-width: 0;
+	max-width: 100%;
+	text-align: center;
+}
+.recipe-end[data-outcome="true"] b {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 .recipe-end[data-state="current"] {
 	box-shadow: 0 0 0 8px #3ddc9755;

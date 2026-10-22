@@ -5,7 +5,7 @@ import { publishStorageJson, storageDigest } from "bobs-factory-core";
 import { afterEach, expect, it, vi } from "vitest";
 import {
 	conservativeWorkflows,
-	defaultWorkflows,
+	defaultWorkflows as currentWorkflows,
 } from "../src/factory/defaultWorkflows.js";
 import { validateWorkflows, WorkflowSchema } from "../src/factory/Workflow.js";
 import {
@@ -18,6 +18,7 @@ import type {
 	RetainedWorkspaceProof,
 	WorkspaceRetentionSource,
 } from "../src/storage/WorktreeArtifacts.js";
+import { preCompositionWorkflows as defaultWorkflows } from "./fixtures/pre-composition.js";
 
 // Exercise the complete runtime reference inspection without filesystem/Git
 // deletion. The F1 storage routes separately verify the real worktree adapter.
@@ -88,13 +89,16 @@ async function fixture(legacy = false) {
 		workspace,
 		input: "Retained delivery",
 		workflow: definitions.at(-1)!,
-		workflowDefinitions: definitions,
+		workflowDefinitions: [...currentWorkflows, stock],
 		triggerOrigin: {
 			type: "manual",
 			workflowId: stock.id,
 			at: new Date().toISOString(),
 		},
 	});
+	// Retention inspects a genuine accepted #141 graph, rather than upgrading it at new admission.
+	run.workflow = structuredClone(stock);
+	run.workflowDefinitions = structuredClone(definitions);
 	if (legacy) {
 		// A persisted old stock definition is normalized in memory, never rewritten.
 		const oldDefinitions = structuredClone(conservativeWorkflows);

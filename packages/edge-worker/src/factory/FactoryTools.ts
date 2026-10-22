@@ -1001,7 +1001,13 @@ export class FactoryTools {
 								...externalEvidence,
 							}
 						: guide;
-				writeBoundOutput(context, "guide", updatedGuide);
+				// New recipes declare the action's own result slot. Frozen graphs keep
+				// their original shared guide destination.
+				writeBoundOutput(
+					context,
+					readStep(context.step, "result") ? "result" : "guide",
+					updatedGuide,
+				);
 				await context.save?.();
 				return updatedGuide;
 			}
