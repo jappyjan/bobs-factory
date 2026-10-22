@@ -1,0 +1,15 @@
+
+> bobs-factory-edge-worker@0.2.73 typecheck /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+> tsgo --noEmit && tsgo -p tsconfig.web.json
+
+src/EdgeWorker.ts(9,58): error TS6133: 'ViewDeliveryIdentity' is declared but its value is never read.
+src/EdgeWorker.ts(4030,5): error TS2353: Object literal may only specify known properties, and 'resolveView' does not exist in type 'LinearDeliveryOptions'.
+src/EdgeWorker.ts(4030,19): error TS7006: Parameter 'identity' implicitly has an 'any' type.
+src/EdgeWorker.ts(4030,29): error TS7006: Parameter 'input' implicitly has an 'any' type.
+src/EdgeWorker.ts(4031,18): error TS7006: Parameter 'write' implicitly has an 'any' type.
+src/EdgeWorker.ts(4038,8): error TS18048: 'receipt.viewDecision' is possibly 'undefined'.
+src/EdgeWorker.ts(8659,11): error TS2554: Expected 6 arguments, but got 7.
+src/EdgeWorker.ts(8668,11): error TS2554: Expected 5-6 arguments, but got 7.
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 typecheck: `tsgo --noEmit && tsgo -p tsconfig.web.json`
+Exit status 1

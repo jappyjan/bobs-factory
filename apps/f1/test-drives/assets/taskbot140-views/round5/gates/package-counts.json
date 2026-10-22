@@ -1,0 +1,153 @@
+{
+  "packages": [
+    {
+      "package": "bobs-factory-cloudflare-tunnel-client",
+      "files": {
+        "passed": 2,
+        "skipped": 0
+      },
+      "passed": 26,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-core",
+      "files": {
+        "passed": 19,
+        "skipped": 0
+      },
+      "passed": 263,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-claude-runner",
+      "files": {
+        "passed": 13,
+        "skipped": 0
+      },
+      "passed": 142,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-config-updater",
+      "files": {
+        "passed": 8,
+        "skipped": 0
+      },
+      "passed": 52,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-github-event-transport",
+      "files": {
+        "passed": 5,
+        "skipped": 0
+      },
+      "passed": 117,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-gitlab-event-transport",
+      "files": {
+        "passed": 1,
+        "skipped": 0
+      },
+      "passed": 11,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-linear-event-transport",
+      "files": {
+        "passed": 7,
+        "skipped": 0
+      },
+      "passed": 86,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-mcp-tools",
+      "files": {
+        "passed": 15,
+        "skipped": 0
+      },
+      "passed": 85,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-slack-event-transport",
+      "files": {
+        "passed": 3,
+        "skipped": 0
+      },
+      "passed": 82,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-zulip-event-transport",
+      "files": {
+        "passed": 3,
+        "skipped": 0
+      },
+      "passed": 25,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-simple-agent-runner",
+      "files": {
+        "passed": 2,
+        "skipped": 0
+      },
+      "passed": 24,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-codex-runner",
+      "files": {
+        "passed": 19,
+        "skipped": 1
+      },
+      "passed": 155,
+      "skipped": 1
+    },
+    {
+      "package": "bobs-factory-cursor-runner",
+      "files": {
+        "passed": 9,
+        "skipped": 0
+      },
+      "passed": 60,
+      "skipped": 0
+    },
+    {
+      "package": "bobs-factory-gemini-runner",
+      "files": {
+        "passed": 4,
+        "skipped": 0
+      },
+      "passed": 200,
+      "skipped": 1
+    },
+    {
+      "package": "bobs-factory-opencode-runner",
+      "files": {
+        "passed": 6,
+        "skipped": 0
+      },
+      "passed": 66,
+      "skipped": 1
+    },
+    {
+      "package": "bobs-factory-edge-worker",
+      "files": {
+        "passed": 231,
+        "skipped": 0
+      },
+      "passed": 2996,
+      "skipped": 1
+    }
+  ],
+  "passed": 4390,
+  "skipped": 4,
+  "passedFiles": 347,
+  "skippedFiles": 1,
+  "logSha256": "18104bdf8e8ba75466a3d97f45fb3961fa229260ffe6dad9cfc0e366674a8de2"
+}

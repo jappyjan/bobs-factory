@@ -1,0 +1,7 @@
+# Archive boundaries
+
+Original raw logs, JSON receipts, driver bytes and licenses use their exact bytes; `.raw` prevents formatter changes. All logs are explicitly tracked. The cumulative inventory extends the original707 and pins original186/577/707 inventory bytes. No historical failure/stopped/dirty exploration is relabelled. Earlier scratch driver versions were not captured; those logs/receipts are preserved without inventing driver/source identity. Final frozen drives capture exact committed driver bytes.
+
+The inventory excludes itself and the derivative submitted-archive proof to avoid self-reference. Every relative report link is separately checked, including the derivative proof. A fresh final-tree proof is published externally after commit; an earlier staged proof identifies its actual earlier tree. Source/input equivalence covers the complete non-evidence tracked set, literal symlink bytes and nine retained/current drivers. The preexisting non-runtime Git LFS backup is verified as its unchanged133-byte Git pointer without exporting its hydrated private data.
+
+Native binaries stay in retained disposable build directories; the report claims their exact hashes/metadata and actual smoke receipts, not tracked binary payloads or release publication. Synthetic TLS private keys and incidental fixture homes are not advertised/exported. Provider/UI reuse is strictly scoped by input and image hashes and excludes all changed dispatch/backend modules.

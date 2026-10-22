@@ -1,0 +1,94 @@
+2026-10-22T11:04:36.670Z [INFO ] [EdgeWorker] Deployed default skills to /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-dispatch-round5-nNrkMB/home/bobs-factory-skills-plugin (5 skills)
+2026-10-22T11:04:36.671Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-dispatch-round5-nNrkMB/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T11:04:36.671Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T11:04:36.685Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:60406
+2026-10-22T11:04:36.687Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T11:04:36.687Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T11:04:36.687Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T11:04:36.687Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T11:04:36.687Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T11:04:36.687Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T11:04:36.687Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T11:04:36.687Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T11:04:36.687Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T11:04:36.687Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T11:04:36.688Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T11:04:36.688Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T11:04:36.688Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T11:04:36.690Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T11:04:36.690Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T11:04:36.690Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T11:04:36.690Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T11:04:36.691Z [INFO ] [SharedApplicationServer] Shared application server listening on http://localhost:60405
+2026-10-22T11:04:36.731Z [INFO ] [AgentSessionManager] {session=manual-f, platform=manual} Creating chat session
+2026-10-22T11:04:36.861Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T11:04:36.861Z [INFO ] [GitService] createSingleRepoWorktree for Synthetic (id=fixture): baseBranchOverride=undefined
+2026-10-22T11:04:36.997Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-dispatch-round5-nNrkMB/worktrees/MANUAL-c2930f67 from origin/main (tracking main)
+2026-10-22T11:04:37.078Z [INFO ] [AgentSessionManager] {session=manual-f, platform=manual} Creating chat session
+2026-10-22T11:04:37.382Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T11:04:37.382Z [INFO ] [GitService] createSingleRepoWorktree for Synthetic (id=fixture): baseBranchOverride=undefined
+2026-10-22T11:04:37.574Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-dispatch-round5-nNrkMB/worktrees/MANUAL-f2345771 from origin/main (tracking main)
+2026-10-22T11:04:37.787Z [INFO ] [AgentSessionManager] {session=child-27, platform=manual} Creating chat session
+2026-10-22T11:04:42.940Z [INFO ] [AgentSessionManager] {session=child-27} Session completed (subtype: success)
+2026-10-22T11:04:43.709Z [INFO ] [AgentSessionManager] {session=manual-f} Session completed (subtype: success)
+2026-10-22T11:04:43.914Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T11:04:43.914Z [INFO ] [SharedApplicationServer] Shared application server stopped
+2026-10-22T11:04:43.969Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T11:04:43.977Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:60406
+2026-10-22T11:04:43.978Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T11:04:43.978Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T11:04:43.978Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T11:04:43.978Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T11:04:43.978Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T11:04:43.978Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T11:04:43.978Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T11:04:43.978Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T11:04:43.978Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T11:04:43.978Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T11:04:43.979Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T11:04:43.979Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T11:04:43.979Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T11:04:43.980Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T11:04:43.980Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T11:04:43.980Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T11:04:43.980Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T11:04:43.980Z [INFO ] [SharedApplicationServer] Shared application server listening on http://localhost:60405
+2026-10-22T11:04:45.071Z [INFO ] [AgentSessionManager] {session=manual-3, platform=manual} Creating chat session
+2026-10-22T11:04:45.264Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T11:04:45.265Z [INFO ] [GitService] createSingleRepoWorktree for Synthetic (id=fixture): baseBranchOverride=undefined
+2026-10-22T11:04:45.455Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-dispatch-round5-nNrkMB/worktrees/MANUAL-67248524 from origin/main (tracking main)
+2026-10-22T11:04:45.625Z [INFO ] [AgentSessionManager] {session=manual-3, platform=manual} Creating chat session
+2026-10-22T11:04:46.016Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=fixture, overrideValue=undefined
+2026-10-22T11:04:46.016Z [INFO ] [GitService] createSingleRepoWorktree for Synthetic (id=fixture): baseBranchOverride=undefined
+2026-10-22T11:04:46.252Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-dispatch-round5-nNrkMB/worktrees/MANUAL-18fb8820 from origin/main (tracking main)
+2026-10-22T11:04:46.471Z [INFO ] [AgentSessionManager] {session=child-95, platform=manual} Creating chat session
+2026-10-22T11:04:49.379Z [INFO ] [AgentSessionManager] {session=child-95} Session completed (subtype: success)
+2026-10-22T11:04:51.711Z [INFO ] [AgentSessionManager] {session=manual-3} Session completed (subtype: success)
+2026-10-22T11:04:51.847Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T11:04:51.847Z [INFO ] [SharedApplicationServer] Shared application server stopped
+2026-10-22T11:04:51.910Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T11:04:51.916Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:60406
+2026-10-22T11:04:51.917Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T11:04:51.917Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T11:04:51.917Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T11:04:51.917Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T11:04:51.917Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T11:04:51.918Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T11:04:51.918Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T11:04:51.918Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T11:04:51.918Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T11:04:51.919Z [INFO ] [SharedApplicationServer] Shared application server listening on http://localhost:60405
+{"result":"PASS","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-dispatch-round5-nNrkMB","head":"b25ae470b858b0e059603566ec144178ce38fee6","scenarios":2,"wireRequests":47,"protectedRequests":8,"turns":4,"paidCalls":0}
+2026-10-22T11:04:52.386Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T11:04:52.386Z [INFO ] [SharedApplicationServer] Shared application server stopped

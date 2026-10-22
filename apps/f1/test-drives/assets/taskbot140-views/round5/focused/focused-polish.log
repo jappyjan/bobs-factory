@@ -1,0 +1,283 @@
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:213:47 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    211 │ 	mcp,
+    212 │ 	JSON.stringify({
+  > 213 │ 		mcpServers: { taskbot: { type: "http", url: source + "/mcp" } },
+        │ 		                                            ^^^^^^^^^^^^^^^
+    214 │ 	}),
+    215 │ );
+  
+  i Unsafe fix: Use a template literal.
+  
+    211 211 │     mcp,
+    212 212 │     JSON.stringify({
+    213     │ - → → mcpServers:·{·taskbot:·{·type:·"http",·url:·source·+·"/mcp"·}·},
+        213 │ + → → mcpServers:·{·taskbot:·{·type:·"http",·url:·`${source}/mcp`·}·},
+    214 214 │     }),
+    215 215 │   );
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:223:19 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    221 │ 	"unused-migration",
+    222 │ );
+  > 223 │ const apiOrigin = "http://127.0.0.1:" + process.env.BOBS_FACTORY_FACTORY_PORT;
+        │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    224 │ const tracker = createCLIIssueTracker();
+    225 │ let worker,
+  
+  i Unsafe fix: Use a template literal.
+  
+    221 221 │   	"unused-migration",
+    222 222 │   );
+    223     │ - const·apiOrigin·=·"http://127.0.0.1:"·+·process.env.BOBS_FACTORY_FACTORY_PORT;
+        223 │ + const·apiOrigin·=·`http://127.0.0.1:${process.env.BOBS_FACTORY_FACTORY_PORT}`;
+    224 224 │   const tracker = createCLIIssueTracker();
+    225 225 │   let worker,
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:318:9 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    316 │ 					assistance
+    317 │ 						? config.workingDirectory.startsWith(
+  > 318 │ 								join(home, "factory", "assistance", r.id) + "/",
+        │ 								^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    319 │ 							)
+    320 │ 						: r.workspace === config.workingDirectory,
+  
+  i Unsafe fix: Use a template literal.
+  
+    316 316 │             assistance
+    317 317 │               ? config.workingDirectory.startsWith(
+    318     │ - → → → → → → → → join(home,·"factory",·"assistance",·r.id)·+·"/",
+        318 │ + → → → → → → → → `${join(home,·"factory",·"assistance",·r.id)}/`,
+    319 319 │                 )
+    320 320 │               : r.workspace === config.workingDirectory,
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:335:12 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    333 │ 					await original?.(message);
+    334 │ 					if (message.type === "system" && message.subtype === "init") {
+  > 335 │ 						gate("entered:" + owner.id).release();
+        │ 						     ^^^^^^^^^^^^^^^^^^^^^
+    336 │ 						await wait.promise;
+    337 │ 					}
+  
+  i Unsafe fix: Use a template literal.
+  
+    333 333 │             await original?.(message);
+    334 334 │             if (message.type === "system" && message.subtype === "init") {
+    335     │ - → → → → → → gate("entered:"·+·owner.id).release();
+        335 │ + → → → → → → gate(`entered:${owner.id}`).release();
+    336 336 │               await wait.promise;
+    337 337 │             }
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:394:13 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    392 │ 				runner: "claude",
+    393 │ 				prompt: "Synthetic outgoing dispatch",
+  > 394 │ 				source: source + "/p/synthetic/t/1",
+        │ 				        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    395 │ 			},
+    396 │ 			202,
+  
+  i Unsafe fix: Use a template literal.
+  
+    392 392 │           runner: "claude",
+    393 393 │           prompt: "Synthetic outgoing dispatch",
+    394     │ - → → → → source:·source·+·"/p/synthetic/t/1",
+        394 │ + → → → → source:·`${source}/p/synthetic/t/1`,
+    395 395 │         },
+    396 396 │         202,
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:408:14 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    406 │ 			"saved Decide wait",
+    407 │ 		);
+  > 408 │ 		await gate("entered:" + childId()).promise;
+        │ 		           ^^^^^^^^^^^^^^^^^^^^^^
+    409 │ 		await until(
+    410 │ 			() =>
+  
+  i Unsafe fix: Use a template literal.
+  
+    406 406 │         "saved Decide wait",
+    407 407 │       );
+    408     │ - → → await·gate("entered:"·+·childId()).promise;
+        408 │ + → → await·gate(`entered:${childId()}`).promise;
+    409 409 │       await until(
+    410 410 │         () =>
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:434:45 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    432 │ 			requestId: randomUUID(),
+    433 │ 		});
+  > 434 │ 		if (boundary === "initialize") await gate("entered:" + run.id).promise;
+        │ 		                                          ^^^^^^^^^^^^^^^^^^^
+    435 │ 		if (boundary === "initialize") await gate("initialize-entered").promise;
+    436 │ 		else {
+  
+  i Unsafe fix: Use a template literal.
+  
+    432 432 │         requestId: randomUUID(),
+    433 433 │       });
+    434     │ - → → if·(boundary·===·"initialize")·await·gate("entered:"·+·run.id).promise;
+        434 │ + → → if·(boundary·===·"initialize")·await·gate(`entered:${run.id}`).promise;
+    435 435 │       if (boundary === "initialize") await gate("initialize-entered").promise;
+    436 436 │       else {
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:443:8 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    441 │ 		}
+    442 │ 		const pending = structuredClone(run.viewDecision);
+  > 443 │ 		gate("child:" + childId()).release();
+        │ 		     ^^^^^^^^^^^^^^^^^^^^
+    444 │ 		await until(
+    445 │ 			() =>
+  
+  i Unsafe fix: Use a template literal.
+  
+    441 441 │       }
+    442 442 │       const pending = structuredClone(run.viewDecision);
+    443     │ - → → gate("child:"·+·childId()).release();
+        443 │ + → → gate(`child:${childId()}`).release();
+    444 444 │       await until(
+    445 445 │         () =>
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:455:15 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    453 │ 			await blocker.release();
+    454 │ 			await worker.runnerSlots.setLimit(4);
+  > 455 │ 			await gate("entered:" + run.id).promise;
+        │ 			           ^^^^^^^^^^^^^^^^^^^
+    456 │ 		}
+    457 │ 		await until(
+  
+  i Unsafe fix: Use a template literal.
+  
+    453 453 │         await blocker.release();
+    454 454 │         await worker.runnerSlots.setLimit(4);
+    455     │ - → → → await·gate("entered:"·+·run.id).promise;
+        455 │ + → → → await·gate(`entered:${run.id}`).promise;
+    456 456 │       }
+    457 457 │       await until(
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:488:8 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    486 │ 			409,
+    487 │ 		);
+  > 488 │ 		gate("ask:" + run.id).release();
+        │ 		     ^^^^^^^^^^^^^^^
+    489 │ 		await runtime.flush(run.id);
+    490 │ 		const current = structuredClone(run.viewDecision),
+  
+  i Unsafe fix: Use a template literal.
+  
+    486 486 │         409,
+    487 487 │       );
+    488     │ - → → gate("ask:"·+·run.id).release();
+        488 │ + → → gate(`ask:${run.id}`).release();
+    489 489 │       await runtime.flush(run.id);
+    490 490 │       const current = structuredClone(run.viewDecision),
+  
+
+packages/linear-event-transport/test/ViewDelivery.test.ts:37:10 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    35 │ 		content: {
+    36 │ 			type: "thought",
+  > 37 │ 			body: "Decision batch: synthetic\nDisplayed digest: " + "a".repeat(64),
+       │ 			      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    38 │ 		},
+    39 │ 	};
+  
+  i Unsafe fix: Use a template literal.
+  
+     35  35 │       content: {
+     36  36 │         type: "thought",
+     37     │ - → → → body:·"Decision·batch:·synthetic\nDisplayed·digest:·"·+·"a".repeat(64),
+         37 │ + → → → body:·`Decision·batch:·synthetic\nDisplayed·digest:·${"a".repeat(64)}`,
+     38  38 │       },
+     39  39 │     };
+  
+
+apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:313:11 lint/correctness/noUnusedVariables  FIXABLE  ━━━━━━━━━━
+
+  ! This variable context is unused.
+  
+    311 │ 						JSON.stringify({ title: "Synthetic" }),
+    312 │ 					).createAgentRunner(type, config);
+  > 313 │ 				const context = loadFactoryContextSnapshot(contextConfig.args.at(-1));
+        │ 				      ^^^^^^^
+    314 │ 				const assistance = config.toolProfile === "context-only";
+    315 │ 				const owner = [...runtime.runs.values()].find((r) =>
+  
+  i Unused variables are often the result of typos, incomplete refactors, or other sources of bugs.
+  
+  i Unsafe fix: If this is intentional, prepend context with an underscore.
+  
+    311 311 │               JSON.stringify({ title: "Synthetic" }),
+    312 312 │             ).createAgentRunner(type, config);
+    313     │ - → → → → const·context·=·loadFactoryContextSnapshot(contextConfig.args.at(-1));
+        313 │ + → → → → const·_context·=·loadFactoryContextSnapshot(contextConfig.args.at(-1));
+    314 314 │           const assistance = config.toolProfile === "context-only";
+    315 315 │           const owner = [...runtime.runs.values()].find((r) =>
+  
+
+packages/linear-event-transport/test/ViewDelivery.test.ts:54:34 lint/correctness/noUnusedFunctionParameters  FIXABLE  ━━━━━━━━━━
+
+  ! This parameter is unused.
+  
+    52 │ 		},
+    53 │ 	};
+  > 54 │ 	const open = (authority = true, identify = false) => {
+       │ 	                                ^^^^^^^^
+    55 │ 		const client = new LinearClient({ accessToken: workspaceId });
+    56 │ 		client.client.request = vi.fn(async (_document, variables: any) => {
+  
+  i Unused parameters might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: If this is intentional, prepend identify with an underscore.
+  
+     52  52 │       },
+     53  53 │     };
+     54     │ - → const·open·=·(authority·=·true,·identify·=·false)·=>·{
+         54 │ + → const·open·=·(authority·=·true,·_identify·=·false)·=>·{
+     55  55 │       const client = new LinearClient({ accessToken: workspaceId });
+     56  56 │       client.client.request = vi.fn(async (_document, variables: any) => {
+  
+
+Skipped 13 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 4 files in 70ms. Fixed 4 files.
+Found 2 warnings.
+Found 11 infos.
