@@ -24,6 +24,8 @@ const focusFields = [
 	"capacityLeaves",
 	"foreach",
 	"deliveryCoordination",
+	"viewDecision",
+	"viewDisplays",
 	"questions",
 	"questionBatchId",
 	"questionChoices",

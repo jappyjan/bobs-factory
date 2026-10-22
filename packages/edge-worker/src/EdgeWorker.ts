@@ -7209,7 +7209,9 @@ ${taskSection}`;
 				factoryRun.status === "waiting" &&
 				factoryRun.reviewGate?.status !== "pending"
 			)
-				this.factoryRuntime!.answer(factoryRun.id, activityBody);
+				if (factoryRun.viewDecision && !factoryRun.viewDecision.answer)
+					await this.factoryRuntime!.replyView(factoryRun.id, activityBody);
+				else this.factoryRuntime!.answer(factoryRun.id, activityBody);
 			else {
 				if (factoryRun.reviewGate?.status === "pending")
 					throw new Error(
@@ -8035,6 +8037,9 @@ ${taskSection}`;
 				tool: (context) => {
 					this.startRunTitle(context.run.id);
 					return tools.tool(context);
+				},
+				viewDecision: async (run, text) => {
+					await this.postFactoryComment(run, text, "operational");
 				},
 				question: async (run) => {
 					const body = `## Factory clarification\n\n${questionNotification(run.questions, run.questionRecommendations, run.questionChoices)}`;

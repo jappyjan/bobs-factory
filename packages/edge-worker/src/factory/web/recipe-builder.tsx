@@ -10,6 +10,7 @@ import { api, useAction, useConfig } from "./client";
 import { ForeachSimulation } from "./foreach-simulation";
 import { CallInputMapping, ForeachStepSettings } from "./foreach-step-settings";
 import { AgentSettings } from "./forms";
+import { HumanStepSettings } from "./human-step-settings";
 import { RecipeCanvas, type Simulation } from "./recipe-canvas";
 import {
 	authorableTools,
@@ -52,6 +53,9 @@ const forkable = ["factory", "takeover"];
 const paletteKinds = [
 	"agent",
 	"check",
+	"decide",
+	"approve",
+	"show",
 	"human",
 	"tool",
 	"script",
@@ -271,7 +275,7 @@ export function RecipeBuilder({ id }: { id: string }) {
 	const problems = [
 		...Object.values(settingsErrors).filter(Boolean),
 		...draft.dirtyIds.flatMap((rid) =>
-			draftProblems(draft.lookup(rid)!).map((p) =>
+			draftProblems(draft.lookup(rid)!, draft.recipes).map((p) =>
 				rid === recipe.id ? p : `${draft.lookup(rid)!.name}: ${p}`,
 			),
 		),
@@ -916,6 +920,15 @@ function Inspector({
 					onError={onConfigError}
 				/>
 			)}
+			{["decide", "approve", "show"].includes(step.type) && (
+				<HumanStepSettings
+					step={step}
+					workflowId={owner.id}
+					readOnly={!local}
+					onChange={onChange}
+					onError={onConfigError}
+				/>
+			)}
 			{(step.type === "tool" || step.type === "script") && local && (
 				<section className="recipe-section">
 					<h3>What runs</h3>
@@ -1076,6 +1089,21 @@ function Inspector({
 							)}
 						</datalist>
 					)}
+					{(step.type === "decide" || step.type === "approve") && (
+						<datalist id="human-route-fields">
+							{(step.type === "decide"
+								? [
+										"hasFollowUps",
+										...(step.decide?.actions ?? []).map(
+											(action) => `itemsByAction.${action.id}.length`,
+										),
+									]
+								: ["approved", "feedback"]
+							).map((field) => (
+								<option key={field} value={field} />
+							))}
+						</datalist>
+					)}
 					<ul className="recipe-routes">
 						{step.branches.map((branch, index) => (
 							<li key={`${index}-${branch.next}`} data-new={!branch.when.path}>
@@ -1086,7 +1114,11 @@ function Inspector({
 											aria-label="Output field"
 											placeholder="output field"
 											list={
-												step.type === "check" ? "check-route-fields" : undefined
+												step.type === "check"
+													? "check-route-fields"
+													: step.type === "decide" || step.type === "approve"
+														? "human-route-fields"
+														: undefined
 											}
 											value={branch.when.path}
 											onChange={(e) =>
@@ -1179,7 +1211,12 @@ function Inspector({
 										...step.branches,
 										{
 											when: {
-												path: step.type === "check" ? "passed" : "approved",
+												path:
+													step.type === "check"
+														? "passed"
+														: step.type === "decide"
+															? "hasFollowUps"
+															: "approved",
 												equals: false,
 											},
 											next: fallback!,

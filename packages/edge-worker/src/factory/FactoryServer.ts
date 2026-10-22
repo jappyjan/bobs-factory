@@ -37,6 +37,11 @@ import {
 import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
 import { factoryWebAssets } from "./FactoryWebAssets.js";
+import {
+	DecideConfigurationSchema,
+	ViewAnswerSchema,
+	ViewAskSchema,
+} from "./HumanStep.js";
 import { ImprovementActionSchema } from "./Improvement.js";
 import { withAsyncInlineSchemas } from "./InlineSchema.js";
 import {
@@ -95,6 +100,7 @@ import type { TicketManagers } from "./TicketManagers.js";
 import { outputForCheck } from "./ToolBindings.js";
 import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
+import { VIEW_JSON_SCHEMA, ViewSourceSchema } from "./View.js";
 import { routeResult, StepSchema, WorkflowSchema } from "./Workflow.js";
 import type { FactoryRun, WorkflowRuntime } from "./WorkflowRuntime.js";
 import { capacityRunStatus } from "./WorkflowRuntime.js";
@@ -1209,6 +1215,27 @@ export class FactoryServer {
 			access: ACCESS_MODES,
 			contextSources: CONTEXT_SOURCES,
 		}));
+		this.app.get("/api/recipes/view-schema", () => VIEW_JSON_SCHEMA);
+		this.app.post(
+			"/api/recipes/view-preview",
+			{ bodyLimit: 1024 * 1024 },
+			async (request) => {
+				const body = z
+					.object({
+						workflowId: z.string().min(1).max(80),
+						stepId: z.string().min(1).max(400),
+						view: ViewSourceSchema,
+						decide: DecideConfigurationSchema.optional(),
+						reads: z.unknown().optional(),
+						runId: z.string().min(1).max(200).optional(),
+						lastRun: z.boolean().optional(),
+						sampleScope: z.unknown().optional(),
+					})
+					.strict()
+					.parse(request.body);
+				return runtime.humanViews.preview(body);
+			},
+		);
 		this.app.post(
 			"/api/workflows/check/simulate",
 			{ bodyLimit: 256 * 1024 },
@@ -1731,6 +1758,9 @@ export class FactoryServer {
 					}),
 					...(run
 						? {
+								viewDecision: run.viewDecision,
+								viewDisplays: run.viewDisplays,
+								viewText: runtime.humanViews.displayText(run),
 								recipeParent: run.recipeParent,
 								launchActions: Object.fromEntries(
 									Object.entries(run.launchActions ?? {}).map(([id, batch]) => [
@@ -2226,6 +2256,23 @@ export class FactoryServer {
 						runActionResult(await operator.recheck(request.params.id, context)),
 					);
 			},
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/view-answer",
+			{ bodyLimit: 256 * 1024 },
+			async (request) => {
+				const output = await runtime.answerView(
+					request.params.id,
+					ViewAnswerSchema.parse(request.body),
+				);
+				return { ...actionResult(request.params.id), output };
+			},
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/view-ask",
+			{ bodyLimit: 32 * 1024 },
+			async (request) =>
+				runtime.askView(request.params.id, ViewAskSchema.parse(request.body)),
 		);
 		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/answer",

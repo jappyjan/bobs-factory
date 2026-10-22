@@ -19,6 +19,8 @@ type ExecutionStep = Pick<
 	| "tool"
 	| "args"
 	| "arguments"
+	| "view"
+	| "decide"
 	| "architectureContract"
 	| "architectureBrief"
 	| "architectureSource"
@@ -57,6 +59,12 @@ export function workflowExecutionContext(context: ExecutionContext) {
 				...(item.inputMapping
 					? { inputMapping: structuredClone(item.inputMapping) }
 					: {}),
+				...(item.view
+					? {
+							view: structuredClone(item.view),
+							...(item.decide ? { decide: structuredClone(item.decide) } : {}),
+						}
+					: {}),
 				tool: item.tool,
 				args: structuredClone(item.args),
 				arguments: structuredClone(item.arguments),
@@ -93,6 +101,20 @@ export function workflowExecutionContext(context: ExecutionContext) {
 		answers: structuredClone(run.answers ?? []),
 		architectureDecisions: structuredClone(run.architectureDecisions ?? []),
 		humanDecisions: structuredClone(run.humanDecisions ?? []),
+		...(run.viewRecords?.some((record) => record.answer)
+			? {
+					viewDecisions: run.viewRecords
+						.filter((record) => record.answer)
+						.map((record) => ({
+							id: record.snapshot.id,
+							stepKey: record.snapshot.stepKey,
+							kind: record.snapshot.kind,
+							digest: record.snapshot.digest,
+							at: record.answer!.at,
+							output: structuredClone(record.answer!.output),
+						})),
+				}
+			: {}),
 		decisionAttribution: {
 			unnamedOperator: "Factory operator (name not recorded)",
 		},

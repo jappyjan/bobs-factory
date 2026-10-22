@@ -543,6 +543,33 @@ export class TodayApp {
 
 	private answer(run: RunItem) {
 		const detail = this.details.get(run.id);
+		if (detail?.viewDecision && !detail.viewDecision.answer) {
+			const snapshot = detail.viewDecision;
+			this.overlay = {
+				kind: "prompt",
+				form: new PromptForm(
+					snapshot.title,
+					"Review the view in the conversation, then explicitly submit the displayed batch and digest.",
+					"Decision JSON including batchId, digest, accepted:true and choices or approved/feedback",
+				),
+				submit: async (text) => {
+					const request = JSON.parse(text);
+					if (
+						request.batchId !== snapshot.id ||
+						request.digest !== snapshot.digest ||
+						request.accepted !== true
+					)
+						throw new Error(
+							"Use this displayed decision batch and digest with explicit accepted:true",
+						);
+					await this.options.client.post(
+						this.path(run, "view-answer"),
+						request,
+					);
+				},
+			};
+			return;
+		}
 		if (!detail?.questions?.length) {
 			this.ensureDetail(run);
 			return this.notify("Loading the question…");
@@ -1090,6 +1117,11 @@ export class TodayApp {
 		const lines: { text: string; style: Style }[] = [];
 		if (kind === "question") {
 			if (!detail) return [{ text: "Loading the question…", style: t.muted }];
+			if (detail.viewDecision && !detail.viewDecision.answer)
+				return wrap(detail.viewDecision.title, inner).map((text) => ({
+					text,
+					style: t.text,
+				}));
 			(detail.questions ?? []).slice(0, 3).forEach((question, i) => {
 				const lead = question.replace(/\s+/g, " ").trim();
 				for (const line of wrap(`${i + 1}. ${lead}`, inner).slice(0, 2))
@@ -1397,6 +1429,9 @@ export class TodayApp {
 		const detail = this.details.get(run.id);
 		const workflows = this.config?.workflows ?? [];
 		const rows: { text: string; style: Style }[] = [];
+		if (detail?.viewText)
+			for (const line of wrap(detail.viewText, w - 2))
+				rows.push({ text: line, style: t.text });
 		if (activity.hasOlder)
 			rows.push({
 				text: "Older activity is available in the browser (o).",

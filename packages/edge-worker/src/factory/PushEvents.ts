@@ -37,6 +37,16 @@ export function runPushEvent(run: FactoryRun): PushEvent | undefined {
 	// Ticket preparation temporarily marks restored waits as running. Unanswered
 	// questions and pending gates remain authoritative until answer/decide clears them.
 	const unresolved = run.status === "waiting" || run.status === "running";
+	if (unresolved && run.viewDecision && !run.viewDecision.answer)
+		return {
+			category: run.viewDecision.kind === "approve" ? "review" : "question",
+			identity: digest([
+				"human-view-v1",
+				run.viewDecision.id,
+				run.viewDecision.digest,
+			]),
+			destination,
+		};
 	if (unresolved && run.architectureGate)
 		return {
 			category: "question",

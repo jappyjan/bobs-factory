@@ -41,11 +41,13 @@ import { RunConversation } from "./conversation";
 import { ExecutionDetails } from "./execution";
 import {
 	FocusCard,
+	GenericHumanDecision,
 	originLabel,
 	ReviewEntry,
 	RunMeta,
 	RunOrigin,
 	RunTitleStatus,
+	RunViewDisplays,
 	WorkingRow,
 } from "./focus";
 import { ForeachRunProgress } from "./foreach-progress";
@@ -891,7 +893,11 @@ function RunPage({
 											? run.improvement.phase === "dispatch"
 												? "Tracking improvement runs"
 												: "Review improvement choices"
-											: `${run.questions?.length ?? 0} question(s) for you`
+											: run.viewDecision && !run.viewDecision.answer
+												? run.viewDecision.kind === "approve"
+													? "Your approval is needed"
+													: "Choose actions for each item"
+												: `${run.questions?.length ?? 0} question(s) for you`
 										: kind === "stuck"
 											? run.status === "stopped"
 												? "Stopped — resume?"
@@ -950,6 +956,15 @@ function RunPage({
 			{run.improvement && <ImprovementPanel run={run} />}
 			<RecipeParentLink run={run} />
 			<RunChildren run={run} />
+			<RunViewDisplays run={run} />
+			{run.viewDecision?.answer && (
+				<section
+					className="review-surface"
+					aria-label="Accepted recipe decision"
+				>
+					<GenericHumanDecision run={run} />
+				</section>
+			)}
 			{run.deliveryCoordination?.phase === "queued" && (
 				<p role="status">
 					{workingLabel(run)}.{" "}

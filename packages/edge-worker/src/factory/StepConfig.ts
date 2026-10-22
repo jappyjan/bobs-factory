@@ -25,6 +25,7 @@ import {
 /** Stable output format IDs. Implementations live in OutputFormats.ts. */
 export const FORMAT_IDS = [
 	"json-v1",
+	"view-v1",
 	"clarify-v1",
 	"plan-v1",
 	"plan-review-v1",
@@ -176,6 +177,7 @@ export const CONTEXT_SOURCES = [
 	"item",
 	"index",
 	"callInputs",
+	"childRuns",
 ] as const;
 export type ContextSource = (typeof CONTEXT_SOURCES)[number];
 

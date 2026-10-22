@@ -1,7 +1,17 @@
 @import "tailwindcss";
 
 @import "@xyflow/react/dist/style.css";
+@import "./declarative-view.css";
 @source "./*.tsx";
+.run-view-displays {
+	display: grid;
+	gap: 16px;
+	min-width: 0;
+	max-width: 100%;
+}
+.run-view-displays h2 {
+	overflow-wrap: anywhere;
+}
 :root {
 	color-scheme: light;
 	--bg: #fffaf3;
