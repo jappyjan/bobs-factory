@@ -208,17 +208,18 @@ describe("producer formats compose with the actual stock human views", () => {
 			opportunities: Array.from({ length: 5 }, (_, i) => ({
 				...proposal,
 				id: `p${i}`,
-				title: "t".repeat(250),
-				problem: "b".repeat(8000),
-				consequence: "c".repeat(4000),
-				before: "d".repeat(4000),
-				after: "e".repeat(4000),
-				plan: "f".repeat(4000),
-				effort: "g".repeat(4000),
+				title: "t".repeat(i === 0 ? 250 : 1),
+				problem: "b".repeat(i === 0 ? 8000 : 1),
+				consequence: "c".repeat(i === 0 ? 4000 : 1),
+				before: "d".repeat(i === 0 ? 4000 : 1),
+				after: "e".repeat(i === 0 ? 4000 : 1),
+				plan: "f".repeat(i === 0 ? 4000 : 1),
+				effort: "g".repeat(i === 0 ? 4000 : 1),
 			})),
 			limitations: [
 				"l".repeat(201),
-				...Array.from({ length: 29 }, () => "m".repeat(2000)),
+				"m".repeat(2000),
+				...Array.from({ length: 28 }, () => "m".repeat(1000)),
 			],
 		};
 		const accepted = await parseStepOutputAsync(producer, raw);
@@ -285,7 +286,17 @@ describe("producer formats compose with the actual stock human views", () => {
 				feedback: [],
 			}),
 		}));
-		const view = resolveView(approve.view!, { inputs: { plans, checks } });
+		const view = resolveView(approve.view!, {
+			inputs: {
+				plans,
+				checks,
+				dependencyGraph: {
+					passed: true,
+					ids: plans.map((p: any) => p.id),
+					dependencies: plans.map((p: any) => p.dependencies),
+				},
+			},
+		});
 		const cards = view.components[1]!;
 		if (cards.type !== "itemCards") throw new Error("Missing plan cards");
 		expect(cards.data.items).toHaveLength(5);

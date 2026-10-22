@@ -5,6 +5,7 @@ import {
 	evaluateCheck,
 	evaluateCheckAsync,
 } from "../src/factory/Check.js";
+import { conforms } from "../src/factory/OutputFormats.js";
 
 const configuration: CheckConfiguration = {
 	results: {
@@ -355,20 +356,70 @@ describe("generic Check evaluation", () => {
 			},
 		});
 		const graph = { ids: ["a"], dependencies: [[]] };
-		const validate = vi.fn((_format, value) => value !== undefined);
+		const validate = vi.fn(conforms);
 		await expect(
 			evaluateCheckAsync(check, { items: [1, 2], graph }, {}, validate),
 		).resolves.toEqual({ passed: false, valid: true, missing: false });
-		expect(validate.mock.calls.map((call) => call[1])).toEqual([
-			graph,
-			graph,
-			undefined,
-		]);
+		expect(validate.mock.calls.map((call) => call[1])).toEqual([graph, graph]);
 		expect(
 			CheckSchema.safeParse({
 				results: { valid: { conforms: "json-v1", path: "../private" } },
 			}).success,
 		).toBe(false);
+	});
+	it.each([
+		{ path: "/inputs/missing", inputs: { present: true } },
+		{ path: "/inputs/missing/*", inputs: { present: true } },
+		{ path: "/inputs/items/*/value", inputs: { items: [{ value: 1 }, {}] } },
+		{ path: "/inputs/value", inputs: { value: undefined } },
+		{ path: "/inputs/value", inputs: { value: { nested: undefined } } },
+		{ path: "/inputs/value", inputs: { value: [undefined] } },
+		{ path: "/inputs/value", inputs: { value: NaN } },
+		{ path: "/inputs/value", inputs: { value: Infinity } },
+	])("rejects unavailable or non-JSON selected values with the real permissive library: $path", async ({
+		path,
+		inputs,
+	}) => {
+		const check = CheckSchema.parse({
+			results: { valid: { conforms: "json-v1", path } },
+		});
+		const validate = vi.fn(conforms);
+		await expect(
+			evaluateCheckAsync(check, inputs, {}, validate),
+		).resolves.toEqual({ passed: false, valid: false });
+		expect(validate).not.toHaveBeenCalled();
+	});
+	it("retains actual-library null, escaped/root/empty selections and unchanged no-selector semantics", async () => {
+		const inputs = { "a/b~c": null, empty: [], number: 0, flag: false };
+		for (const path of [
+			"",
+			"$",
+			"/inputs/a~1b~0c",
+			"/inputs/empty",
+			"/inputs/empty/*",
+			"/inputs/number",
+			"/inputs/flag",
+		]) {
+			await expect(
+				evaluateCheckAsync(
+					CheckSchema.parse({
+						results: { valid: { conforms: "json-v1", path } },
+					}),
+					inputs,
+					{},
+					conforms,
+				),
+			).resolves.toEqual({ passed: true, valid: true });
+		}
+		expect(conforms("json-v1", undefined)).toBe(true);
+		await expect(
+			evaluateCheckAsync(
+				{ results: { valid: { conforms: "json-v1" } } },
+				{ historical: undefined },
+				{},
+				conforms,
+			),
+		).resolves.toEqual({ passed: true, valid: true });
 	});
 });
 

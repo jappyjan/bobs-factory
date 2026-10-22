@@ -200,3 +200,9 @@ A collection field uses `{ "from": "/inputs/plans", "map": { "id": "/id",
 each item, and the empty pointer reads the item itself. Maps are bounded to 100
 items and 20 fields. No expressions or scripts execute, private sources are
 unavailable, and the resolved component still passes its normal schema.
+
+A path binding may set `"format":"json"` to display inert serialized public JSON
+in an existing text field, for example `{ "bindings": { "text": { "path":
+"/inputs/dependencyGraph", "format": "json" } } }`. Descriptor-safe public reads
+are sanitized before serialization; the receiving component's text limit remains
+unchanged. This makes the actual displayed Check value part of the existing digest.

@@ -58,7 +58,9 @@ const bindingSchema = z.union([
 				),
 		})
 		.strict(),
-	z.object({ path: viewPointerSchema }).strict(),
+	z
+		.object({ path: viewPointerSchema, format: z.literal("json").optional() })
+		.strict(),
 ]);
 export const ViewBindingSchema = z.preprocess(safeJson, bindingSchema);
 export type ViewBinding = z.infer<typeof ViewBindingSchema>;
@@ -558,7 +560,16 @@ export function bindingValue(binding: ViewBinding, scope: ViewScope): unknown {
 	const parsed = ViewBindingSchema.parse(binding);
 	return "literal" in parsed
 		? parsed.literal
-		: foreachPointer(acceptedScope(scope), parsed.path);
+		: boundValue(parsed, acceptedScope(scope));
+}
+
+function boundValue(
+	binding: z.infer<typeof bindingSchema>,
+	accepted: Record<string, unknown>,
+) {
+	if ("literal" in binding) return binding.literal;
+	const value = foreachPointer(accepted, binding.path);
+	return binding.format === "json" ? JSON.stringify(value, null, 2) : value;
 }
 
 /** The caller has sanitized the definition and accepted only public lexical inputs. */
@@ -566,8 +577,8 @@ function componentFieldValue(
 	binding: z.infer<typeof componentFieldBindingSchema>,
 	accepted: Record<string, unknown>,
 ): unknown {
-	if ("literal" in binding) return binding.literal;
-	if ("path" in binding) return foreachPointer(accepted, binding.path);
+	if ("literal" in binding || "path" in binding)
+		return boundValue(binding, accepted);
 	const items = foreachPointer(accepted, binding.from);
 	if (!Array.isArray(items))
 		throw new Error("View projection source must be an array");
@@ -599,18 +610,16 @@ export function resolveView(
 		components: definition.components.map((component) => ({
 			...component,
 			data:
-				"literal" in component.data
-					? component.data.literal
-					: "path" in component.data
-						? foreachPointer(accepted, component.data.path)
-						: Object.fromEntries(
-								Object.entries(component.data.bindings).map(
-									([field, binding]) => [
-										field,
-										componentFieldValue(binding!, accepted),
-									],
-								),
+				"literal" in component.data || "path" in component.data
+					? boundValue(component.data, accepted)
+					: Object.fromEntries(
+							Object.entries(component.data.bindings).map(
+								([field, binding]) => [
+									field,
+									componentFieldValue(binding!, accepted),
+								],
 							),
+						),
 		})),
 	});
 }

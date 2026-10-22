@@ -136,7 +136,9 @@ Conditions support:
   `no-commit-sha`, or `repository-relative`.
 - `conforms: "<format-id>"` is a semantic format predicate. It invokes only the
   fixed pure format-library parser on the current scope, or on an optional `path`
-  selected with the same safe JSON Pointer semantics. This makes every
+  selected with the same safe JSON Pointer semantics. An unavailable selection,
+  including a missing wildcard source, fails before the fixed parser; actual empty
+  collections and null are valid. No-selector behavior is unchanged. This makes every
   schema-native cross-field constraint reusable as a rule, including nested
   `each` conditions. It fails closed without a format validator. It cannot run
   evidence checks or scripts, mutate output, or select an unknown parser.

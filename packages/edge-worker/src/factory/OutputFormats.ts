@@ -24,6 +24,7 @@ import {
 	filterReview,
 	QaCaptureSchema,
 } from "./FactoryTools.js";
+import { sanitizeJsonConfiguration } from "./Foreach.js";
 import { ImpactSchema } from "./Impact.js";
 import {
 	validateInlineSchema,
@@ -73,6 +74,22 @@ import {
 } from "./StepConfig.js";
 import { ViewSchema, viewDataSchemas } from "./View.js";
 
+/** Reserve receiving-scope capacity for other outputs and repeated decision items.
+ * Proposals occur twice; a batch has at most five plans and three reviews.
+ * Validate derived data too, using the consumer's actual character/UTF-8 budgets.
+ * Legacy data-only formats intentionally do not opt into this review contract.
+ */
+function reviewJson<T>(value: T, shares: number): T {
+	try {
+		sanitizeJsonConfiguration(Array.from({ length: shares }, () => value));
+	} catch (error) {
+		throw new Error(
+			`Complete accepted review JSON exceeds its public receiving budget (1/${shares} share, including derived fields): ${error instanceof Error ? error.message : String(error)}. Return concise complete requirements and evidence; do not omit accepted requirements.`,
+		);
+	}
+	return value;
+}
+
 /** Versioned schema library. Parsers are lazy to avoid coupling module initialization order. */
 const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"json-v1": (value) => value,
@@ -82,34 +99,43 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"research-result-v1": (value) => ResearchResultSchema.parse(value),
 	"proposals-v1": (value) => {
 		const proposals = ProposalsSchema.parse(value);
-		return {
-			...proposals,
-			limitationsDisplay: viewDataSchemas.points.parse({
-				items: proposals.limitations.map((detail, index) => ({
-					label: `Limitation ${index + 1}`,
-					detail,
-				})),
-			}),
-		};
+		return reviewJson(
+			{
+				...proposals,
+				limitationsDisplay: viewDataSchemas.points.parse({
+					items: proposals.limitations.map((detail, index) => ({
+						label: `Limitation ${index + 1}`,
+						detail,
+					})),
+				}),
+			},
+			8,
+		);
 	},
 	"plan-package-v1": (value) => {
 		const plan = PlanPackageSchema.parse(value);
-		return {
-			...plan,
-			reviewDetails: planReviewDetails(plan),
-			reviewText: `${plan.plan}\n\nAcceptance criteria:\n${plan.criteria.map((c) => `- ${c}`).join("\n")}\n\nDependencies: ${plan.dependencies.join(", ") || "None"}\nPaths: ${plan.paths.join(", ") || "Not specified"}`,
-		};
+		return reviewJson(
+			{
+				...plan,
+				reviewDetails: planReviewDetails(plan),
+				reviewText: `${plan.plan}\n\nAcceptance criteria:\n${plan.criteria.map((c) => `- ${c}`).join("\n")}\n\nDependencies: ${plan.dependencies.join(", ") || "None"}\nPaths: ${plan.paths.join(", ") || "Not specified"}`,
+			},
+			16,
+		);
 	},
 	"plan-check-v1": (value) => {
 		const review = PlanCheckSchema.parse(value);
-		return {
-			...review,
-			display: viewDataSchemas.markdown.parse({
-				text: review.approved
-					? "Approved. No unresolved corrections."
-					: review.feedback.join("\n\n"),
-			}),
-		};
+		return reviewJson(
+			{
+				...review,
+				display: viewDataSchemas.markdown.parse({
+					text: review.approved
+						? "Approved. No unresolved corrections."
+						: review.feedback.join("\n\n"),
+				}),
+			},
+			64,
+		);
 	},
 	"follow-up-v1": (value) => FollowUpSchema.parse(value),
 	"view-v1": (value) => ViewSchema.parse(value),

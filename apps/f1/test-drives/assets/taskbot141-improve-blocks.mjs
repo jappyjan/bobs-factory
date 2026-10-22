@@ -29,19 +29,22 @@ assert.equal(
 assert.match(process.version, /^v24\./);
 const root = resolve(import.meta.dirname, "../../../..");
 const repairOnly = process.argv.includes("--review-fixes");
+const round3Repair = process.argv.includes("--round3-fixes");
 const dependencyRepair = process.argv.includes("--dependency-fixes");
 const canvasOnly = process.argv.includes("--canvas-only");
 assert(!(repairOnly && dependencyRepair), "Choose one scoped repair scenario");
 const media = join(
 	root,
 	"apps/f1/test-drives/media/2026-10-22-improve-blocks",
-	...(canvasOnly
-		? ["repair-r2-r3/ui"]
-		: repairOnly
-			? ["repair-r1-r2"]
-			: dependencyRepair
-				? ["repair-r2-r3"]
-				: []),
+	...(round3Repair
+		? ["repair-r2-r3-r4"]
+		: canvasOnly
+			? ["repair-r2-r3/ui"]
+			: repairOnly
+				? ["repair-r1-r2"]
+				: dependencyRepair
+					? ["repair-r2-r3"]
+					: []),
 );
 mkdirSync(media, { recursive: true });
 const directory = realpathSync(
@@ -524,6 +527,26 @@ worker = new EdgeWorker({
 				default:
 					throw new Error(`Unexpected ${role}; no native fallback permitted`);
 			}
+			if (round3Repair && role === "proposals" && run.id === repairTargetRun) {
+				const attempt = turns.filter(
+					(t) => t.runId === run.id && t.role === role,
+				).length;
+				output.opportunities = opportunities.map((item) =>
+					item.id !== "cache"
+						? item
+						: {
+								...item,
+								evidence:
+									attempt < 3
+										? Array(20).fill((attempt === 2 ? "界" : "e").repeat(24000))
+										: [...item.evidence, "界".repeat(20000)],
+								nonGoals:
+									attempt === 1
+										? [...item.nonGoals, ...Array(5).fill("n".repeat(24000))]
+										: item.nonGoals,
+							},
+				);
+			}
 			return mock(runner, config, output);
 		},
 	},
@@ -894,6 +917,244 @@ async function completeDrive() {
 			phase: "checks-complete",
 			checks: checks.length,
 			...preview,
+		}),
+	);
+}
+async function round3FixDrive() {
+	const fork = await api("/api/workflows/improve-codebase/fork", {
+		name: "F1 Round3 one-perspective fork",
+	});
+	const definitions = runtime.listWorkflows().map((w) => structuredClone(w));
+	const workflow = definitions.find((w) => w.id === fork.id);
+	workflow.steps.find(
+		(s) => s.id === "dispatch",
+	).groups[1][0].launchRuns.workflow = "factory";
+	workflow.steps.find((s) => s.id === "perspectives").items.values = [
+		{
+			id: "fixture-perspective",
+			name: "Fixture ownership",
+			brief: "Inspect only the disposable cache ownership seam.",
+		},
+	];
+	const selectorCases = [
+		{ id: "direct", path: "/inputs/payload/missing", passed: false },
+		{ id: "wildcard", path: "/inputs/payload/missing/*", passed: false },
+		{ id: "present", path: "/inputs/payload/focus", passed: true },
+	];
+	for (const test of selectorCases)
+		definitions.push({
+			id: `f1-selector-${test.id}`,
+			name: `F1 selector ${test.id}`,
+			allowedTriggers: ["manual"],
+			stepConfigVersion: "step-config-v1",
+			launchFields: [
+				{
+					name: "focus",
+					label: "Fixture input",
+					type: "textarea",
+					required: false,
+				},
+			],
+			steps: [
+				{
+					id: "gate",
+					name: "Validate selected data",
+					type: "check",
+					reads: { payload: "@launchInputs" },
+					check: {
+						results: { valid: { conforms: "json-v1", path: test.path } },
+					},
+					branches: [
+						{ when: { path: "passed", equals: false }, next: "missing" },
+					],
+					next: "present",
+				},
+				...["missing", "present"].map((id) => ({
+					id,
+					name: `Selected data ${id}`,
+					type: "show",
+					next: "end",
+					view: {
+						version: "view-v1",
+						components: [
+							{
+								id: "result",
+								type: "markdown",
+								data: { literal: { text: `Selected data ${id}` } },
+							},
+						],
+					},
+				})),
+			],
+		});
+	await api(
+		"/api/workflows",
+		{ workflows: definitions, defaultWorkflow: fork.id },
+		200,
+		"PUT",
+	);
+	const parentId = await manual(fork.id);
+	repairTargetRun = parentId;
+	const decide = await decision(parentId, "decide");
+	assert.equal(corrections.length, 2);
+	assert(
+		corrections.every((c) =>
+			c.issues.some(
+				(issue) => issue.path === "/" && /receiving budget/.test(issue.message),
+			),
+		),
+	);
+	const parent = current(parentId);
+	const proposals = parent.outputs.consolidate.outputs.proposals;
+	assert.deepEqual(
+		proposals.opportunities[0].criteria,
+		opportunities[0].criteria,
+	);
+	assert.deepEqual(proposals.opportunities[0].paths, opportunities[0].paths);
+	assert(proposals.opportunities[0].evidence.includes("界".repeat(20000)));
+	await choose(parentId, { cache: "fix", deferred: "issue" });
+	const approval = await decision(parentId, "approve");
+	const graphCard = approval.view.components.find(
+		(c) => c.id === "dependency-graph",
+	);
+	assert.deepEqual(JSON.parse(graphCard.data.text), {
+		passed: true,
+		ids: ["cache"],
+		dependencies: [[]],
+	});
+	assert.equal(filed.length, 0);
+	assert(![...runtime.runs.values()].some((r) => r.recipeParent));
+	const preview = {
+		apiOrigin,
+		rpcPort,
+		factoryPort,
+		pid: process.pid,
+		directory,
+		parentId,
+		forkId: fork.id,
+		stop: `kill -TERM ${process.pid}`,
+		scenario:
+			"Actual editable one-perspective fork, current graph result displayed at pending Approve; await explicit controlled UI approval.",
+	};
+	save("preview.json", preview);
+	console.log(JSON.stringify({ phase: "round3-preview-ready", ...preview }));
+	if (process.argv.includes("--serve")) {
+		await until(
+			() =>
+				parent.viewRecords.some(
+					(r) =>
+						r.snapshot.id === approval.id && r.answer?.output.approved === true,
+				),
+			"Explicit controlled UI approval",
+		);
+	} else
+		await api(`/api/runs/${parentId}/view-answer`, {
+			batchId: approval.id,
+			digest: approval.digest,
+			accepted: true,
+			approved: true,
+		});
+	await until(
+		() =>
+			filed.length === 1 &&
+			[...runtime.runs.values()].some(
+				(r) =>
+					r.recipeParent?.runId === parentId &&
+					r.status === "waiting" &&
+					r.questions?.length,
+			),
+		"Current complete scope and canonical child dispatch",
+	);
+	const batch = Object.values(parent.launchActions)[0];
+	const item = batch.accepted.items[0],
+		child = current(item.runId);
+	const card = approval.view.components.find((c) => c.type === "itemCards").data
+		.items[0];
+	const canonical = `${card.body}\n\nAcceptance criteria:\n${card.details[0].value}\n\nDependencies: ${card.details[1].value}\nPaths: ${card.details[2].value}`;
+	assert.equal(item.plan, canonical);
+	assert.equal(child.input, `${item.prompt}\n\n## Plan\n${canonical}`);
+	assert.deepEqual(child.launchInputs, {
+		prompt: item.prompt,
+		plan: canonical,
+	});
+	assert.equal(child.humanDecisions?.length ?? 0, 0);
+	const selectors = [];
+	for (const test of selectorCases) {
+		const id = await manual(`f1-selector-${test.id}`);
+		await until(
+			() => current(id).status === "completed",
+			`Actual selector ${test.id} completed`,
+		);
+		assert.deepEqual(JSON.parse(JSON.stringify(current(id).outputs.gate)), {
+			passed: test.passed,
+			valid: test.passed,
+		});
+		assert.equal(
+			current(id).viewDisplays[0].title,
+			`Selected data ${test.passed ? "present" : "missing"}`,
+		);
+		assert.equal(turns.filter((t) => t.runId === id).length, 0);
+		selectors.push({
+			...test,
+			runId: id,
+			result: current(id).outputs.gate,
+			display: current(id).viewDisplays[0],
+		});
+	}
+	// Preserve full rejected outputs locally; publish exact hashes/counts plus actual issues.
+	writeFileSync(
+		join(directory, "rejected-originals.json"),
+		JSON.stringify(corrections),
+	);
+	const sourceAfter = sourceIdentity();
+	assert.deepEqual(sourceAfter, sourceBefore);
+	save("repair-proof.json", {
+		rejectedOriginals: join(directory, "rejected-originals.json"),
+		corrections: corrections.map((c) => ({
+			attempts: c.attempts,
+			issues: c.issues.map(({ path, message }) => ({ path, message })),
+			sha256: hash(JSON.stringify(c.output)),
+			characters: JSON.stringify(c.output).length,
+			utf8Bytes: Buffer.byteLength(JSON.stringify(c.output)),
+			criteria: c.output.opportunities[0].criteria,
+			paths: c.output.opportunities[0].paths,
+		})),
+		acceptedApproval: approval,
+		acceptedDecide: decide,
+		graph: JSON.parse(graphCard.data.text),
+		acceptedItems: batch.accepted.items,
+		acceptedDefinitionHashes: batch.accepted.definitions.map((d) => ({
+			id: d.id,
+			sha256: hash(JSON.stringify(d)),
+		})),
+		child: {
+			id: child.id,
+			input: child.input,
+			launchInputs: child.launchInputs,
+			humanDecisions: child.humanDecisions ?? [],
+		},
+		filed,
+		selectors,
+	});
+	save("results.json", {
+		completedAt: stamp(),
+		sourceAfter,
+		sourceChangedDuringDrive: [],
+		paidCalls: 0,
+		nativeRuns: 0,
+		restartTested: false,
+		preview,
+		checks: [
+			"Actual Consolidate aggregate character/UTF8 outputs rejected with original correction context, then complete bounded Chinese evidence and requirements reach real Decide/Approve.",
+			"Actual graph result displayed; explicit controlled UI exact approval files one mock issue and admits stock Factory child with identical full canonical task, zero child approvals.",
+			"Actual EdgeWorker/WorkflowRuntime production json-v1 Check direct/wildcard missing paths route false; present control routes true; no provider role invoked by any Check.",
+		],
+	});
+	console.log(
+		JSON.stringify({
+			phase: "round3-checks-complete",
+			...preview,
+			childId: child.id,
 		}),
 	);
 }
@@ -1281,7 +1542,8 @@ try {
 		};
 		save("preview.json", preview);
 		console.log(JSON.stringify({ phase: "canvas-preview-ready", ...preview }));
-	} else if (dependencyRepair) await dependencyFixDrive();
+	} else if (round3Repair) await round3FixDrive();
+	else if (dependencyRepair) await dependencyFixDrive();
 	else if (repairOnly) await reviewFixDrive();
 	else await completeDrive();
 	if (process.argv.includes("--serve")) {

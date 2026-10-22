@@ -31,6 +31,32 @@ const literal = (type: string, data: unknown, title?: string) => ({
 });
 
 describe("declarative views and declared read bindings", () => {
+	it("formats selected public JSON for bounded text without invoking hooks or changing the text limit", () => {
+		const source = ViewSourceSchema.parse(
+			view([
+				markdown({
+					bindings: { text: { path: "/inputs/check", format: "json" } },
+				}),
+			]),
+		);
+		const check = { passed: false, ids: ["a"], dependencies: [[]] };
+		expect(
+			resolveView(source, { inputs: { check } }).components[0]!.data,
+		).toEqual({ text: JSON.stringify(check, null, 2) });
+		const getter = vi.fn(() => "secret");
+		const unsafe = Object.defineProperty({}, "toJSON", {
+			enumerable: true,
+			get: getter,
+		});
+		expect(() => resolveView(source, { inputs: { check: unsafe } })).toThrow(
+			"accessors",
+		);
+		expect(getter).not.toHaveBeenCalled();
+		expect(() =>
+			resolveView(source, { inputs: { check: "x".repeat(16000) } }),
+		).toThrow();
+		expect(() => resolveView(source, { inputs: {} })).toThrow();
+	});
 	it("validates the envelope and literal data on save and again after resolving a path", () => {
 		const saved = ViewSourceSchema.parse(
 			view([markdown({ path: "/inputs/brief" })]),

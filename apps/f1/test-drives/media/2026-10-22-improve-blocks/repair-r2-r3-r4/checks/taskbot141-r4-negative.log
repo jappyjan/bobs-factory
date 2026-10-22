@@ -1,0 +1,82 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker
+
+ ❯ test/Check.test.ts (32 tests | 9 failed | 22 skipped) 13ms
+     × validates only the selected pointer including root paths inside nested scopes, and fails closed for absent data 8ms
+     × rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/missing' 1ms
+     × rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/missing/*' 0ms
+     × rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/items/*/value' 0ms
+     × rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value' 0ms
+     × rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value' 0ms
+     × rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value' 0ms
+     × rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value' 0ms
+     × rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value' 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/Check.test.ts > generic Check evaluation > validates only the selected pointer including root paths inside nested scopes, and fails closed for absent data
+AssertionError: expected { passed: true, valid: true, …(1) } to deeply equal { passed: false, valid: true, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "missing": false,
+-   "passed": false,
++   "missing": true,
++   "passed": true,
+    "valid": true,
+  }
+
+ ❯ test/Check.test.ts:362:4
+    360|   await expect(
+    361|    evaluateCheckAsync(check, { items: [1, 2], graph }, {}, validate),
+    362|   ).resolves.toEqual({ passed: false, valid: true, missing: false });
+       |    ^
+    363|   expect(validate.mock.calls.map((call) => call[1])).toEqual([graph, g…
+    364|   expect(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  test/Check.test.ts > generic Check evaluation > rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/missing'
+ FAIL  test/Check.test.ts > generic Check evaluation > rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/missing/*'
+ FAIL  test/Check.test.ts > generic Check evaluation > rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/items/*/value'
+ FAIL  test/Check.test.ts > generic Check evaluation > rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value'
+ FAIL  test/Check.test.ts > generic Check evaluation > rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value'
+ FAIL  test/Check.test.ts > generic Check evaluation > rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value'
+ FAIL  test/Check.test.ts > generic Check evaluation > rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value'
+ FAIL  test/Check.test.ts > generic Check evaluation > rejects unavailable or non-JSON selected values with the real permissive library: '/inputs/value'
+AssertionError: expected { passed: true, valid: true } to deeply equal { passed: false, valid: false }
+
+- Expected
++ Received
+
+  {
+-   "passed": false,
+-   "valid": false,
++   "passed": true,
++   "valid": true,
+  }
+
+ ❯ test/Check.test.ts:389:4
+    387|   await expect(
+    388|    evaluateCheckAsync(check, inputs, {}, validate),
+    389|   ).resolves.toEqual({ passed: false, valid: false });
+       |    ^
+    390|   expect(validate).not.toHaveBeenCalled();
+    391|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 1 passed | 22 skipped (32)
+   Start at  21:47:34
+   Duration  926ms (transform 455ms, setup 16ms, import 786ms, tests 13ms, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/Check.test.ts -t selected pointer|non-JSON selected|actual-library null

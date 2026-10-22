@@ -49,7 +49,7 @@ const review = (id: string, name: string, prompt: string) =>
 		name,
 		"plan-check-v1",
 		prompt +
-			" Return {approved:boolean,feedback:string[]}. Rejection requires actionable feedback; approval has no unresolved corrections. Do not implement, grant human approval or bypass ordinary Factory delivery gates.",
+			" Return {approved:boolean,feedback:string[]}. Rejection requires actionable feedback; approval has no unresolved corrections. Complete accepted JSON including derived display must fit one sixty-fourth of the shared public JSON budget; keep feedback concise and complete. Do not implement, grant human approval or bypass ordinary Factory delivery gates.",
 		{
 			baseline: "snapshot",
 			proposals: "consolidate/outputs/proposals",
@@ -126,7 +126,7 @@ export const consolidateProposalsRecipe = recipe(
 			"proposals",
 			"Consolidate proposals",
 			"proposals-v1",
-			"Combine /reports and /followUps with /previous and /decisions when supplied. Deduplicate by structural cause, not researcher count. Verify strong claims and contradictions using targeted pinned reads. Present the strongest 3, at most 5; zero is valid. Return {summary:string,opportunities:[{id:string,title:string,problem:string,evidence:string[],consequence:string,before:string,after:string,plan:string,criteria:string[],nonGoals:string[],risks:string[],paths:string[],strength:'strong'|'worth-exploring'|'speculative',effort:string,dependencies:string[],conflicts:string[],perspectives:string[],issueBody:string}],limitations:string[]}. Preserve stable item IDs from /previous when the underlying problem is unchanged. Answer follow-up questions specifically in summary or the candidate; do not replay research. before/after explain responsibilities/calls in Markdown. Plans are self-contained with validation. dependencies/conflicts contain ONLY other shortlist IDs; scope prerequisites belong in plan/nonGoals and counterevidence in risks/limitations. issueBody is a self-contained deferred-work issue with problem, evidence, pinned baseline, benefit, design, plan, criteria, non-goals, risks and prerequisites. Retain failed-perspective/worker and model-inheritance limitations. Keep summary at most 16000 characters, titles 250, problem 8000, each consequence/before/after/plan/effort 4000 and each limitation 2000. These bounds are validated before acceptance; preserve essential evidence and requirements when correcting. Write concise user-facing prose, omitting tool/schema/correction mechanics. Human feedback is evidence, never approval.",
+			"Combine /reports and /followUps with /previous and /decisions when supplied. Deduplicate by structural cause, not researcher count. Verify strong claims and contradictions using targeted pinned reads. Present the strongest 3, at most 5; zero is valid. Return {summary:string,opportunities:[{id:string,title:string,problem:string,evidence:string[],consequence:string,before:string,after:string,plan:string,criteria:string[],nonGoals:string[],risks:string[],paths:string[],strength:'strong'|'worth-exploring'|'speculative',effort:string,dependencies:string[],conflicts:string[],perspectives:string[],issueBody:string}],limitations:string[]}. Preserve stable item IDs from /previous when the underlying problem is unchanged. Answer follow-up questions specifically in summary or the candidate; do not replay research. before/after explain responsibilities/calls in Markdown. Plans are self-contained with validation. dependencies/conflicts contain ONLY other shortlist IDs; scope prerequisites belong in plan/nonGoals and counterevidence in risks/limitations. issueBody is a self-contained deferred-work issue with problem, evidence, pinned baseline, benefit, design, plan, criteria, non-goals, risks and prerequisites. Retain failed-perspective/worker and model-inheritance limitations. Keep summary at most 16000 characters, titles 250, problem 8000, each consequence/before/after/plan/effort 4000 and each limitation 2000. The complete accepted JSON, including derived limitation details, must also fit one eighth of the shared public JSON budget (character, UTF-8 byte, node and depth limits); preserve essential evidence and requirements when correcting. Write concise user-facing prose, omitting tool/schema/correction mechanics. Human feedback is evidence, never approval.",
 			{
 				...common,
 				reports: "@callInputs/reports",
@@ -142,7 +142,7 @@ export const refinePlanRecipe = recipe("refine-plan", "Refine into a plan", [
 		"plan",
 		"Refine selected item",
 		"plan-package-v1",
-		"Refine ONLY /item chosen for Fix using /proposals, /decisions, /feedback, /requestedChanges, evidence and non-goals. Return {id:string,itemIds:string[],title:string,plan:string,criteria:string[],dependencies:string[],paths:string[]}. Use exactly one package with id equal to /item/id and itemIds containing only that ID. dependencies include every accepted prerequisite item ID, never issue/skip items. Dependencies are unique and never include the package itself. If /dependencyFeedback/passed is false, its parallel ids/dependencies lists describe the rejected complete batch: remove cycles and unknown edges while preserving accepted prerequisites, then submit the corrected package for all three reviews. Keep title at most 300 characters and plan prose at most 8000; the complete rendered criteria list and paths list each fit 4000 characters. Criteria, dependencies and paths are displayed separately and the complete canonical package is passed to the child. Preserve every accepted requirement when correcting an overlong response. The full plan includes scoped repositories/base revisions, accepted requirements/non-goals, observable acceptance, proportionate checks and dependency assumptions. Address all failed architecture/security/dependency checks in /feedback. Do not expand scope or implement. Parent batch acceptance does not approve a delivered PR revision: ordinary Factory architecture, review, QA, human and provider merge gates remain required.",
+		"Refine ONLY /item chosen for Fix using /proposals, /decisions, /feedback, /requestedChanges, evidence and non-goals. Return {id:string,itemIds:string[],title:string,plan:string,criteria:string[],dependencies:string[],paths:string[]}. Use exactly one package with id equal to /item/id and itemIds containing only that ID. dependencies include every accepted prerequisite item ID, never issue/skip items. Dependencies are unique and never include the package itself. If /dependencyFeedback/passed is false, its parallel ids/dependencies lists describe the rejected complete batch: remove cycles and unknown edges while preserving accepted prerequisites, then submit the corrected package for all three reviews. Keep title at most 300 characters and plan prose at most 8000; the complete rendered criteria list and paths list each fit 4000 characters. Criteria, dependencies and paths are displayed separately and the complete canonical package is passed to the child. The complete accepted JSON, including review details and canonical child text, must fit one sixteenth of the shared public JSON budget (character, UTF-8 byte, node and depth limits). Preserve every accepted requirement when correcting an overlong response. The full plan includes scoped repositories/base revisions, accepted requirements/non-goals, observable acceptance, proportionate checks and dependency assumptions. Address all failed architecture/security/dependency checks in /feedback. Do not expand scope or implement. Parent batch acceptance does not approve a delivered PR revision: ordinary Factory architecture, review, QA, human and provider merge gates remain required.",
 		{
 			...common,
 			item: "@callInputs/selected",
@@ -515,7 +515,6 @@ export const improvementWorkflow = {
 				dependencyGraph: "plan-dependencies",
 				decisions: "decide",
 				proposals: "consolidate/outputs/proposals",
-				baseline: "snapshot",
 			},
 			view: {
 				version: "view-v1",
@@ -544,6 +543,16 @@ export const improvementWorkflow = {
 										details: "/reviewDetails",
 									},
 								},
+							},
+						},
+					},
+					{
+						id: "dependency-graph",
+						title: "Complete dependency graph check",
+						type: "markdown",
+						data: {
+							bindings: {
+								text: { path: "/inputs/dependencyGraph", format: "json" },
 							},
 						},
 					},

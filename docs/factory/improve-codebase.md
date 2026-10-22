@@ -95,3 +95,13 @@ Output shapes: [`ResearchFormats.ts`](../../packages/edge-worker/src/factory/Res
 Execution uses the ordinary recipe interpreter and generic actions/views.
 
 Consolidate validates proposal titles against the filing action's 250-character bound before acceptance. Refine rejects duplicate/self prerequisites, and a pure dependency-graph format validates the complete projected batch before reviews and approval. Invalid graphs return the actual ID/prerequisite lists to Refine; all three independent reviews run on the corrected plans. Action-level filing/launch guards remain in place. Complete dashboard Details and canonical child tasks retain criteria, paths and dependencies. The inherited bounded text fallback explicitly warns about omitted content and requires dashboard review before acceptance.
+
+Complete accepted review JSON has conservative shares of the existing public JSON
+budget, checked after derivation: proposals1/8, each plan1/16, each review1/64.
+The actual sanitizer enforces characters, UTF-8 bytes, nodes and depth; this reserves
+space for proposal copies in decisions, five plans, three reviews and wrappers.
+Oversized responses return to the producing agent with original output retained;
+no accepted requirements are truncated. Approval displays the full bounded graph
+check as inert JSON, binding its actual value into the display digest. Its unused
+raw Snapshot read is removed; pinned Map/research/refinement contexts and the
+baseline requirements in canonical reviewed plans remain unchanged.

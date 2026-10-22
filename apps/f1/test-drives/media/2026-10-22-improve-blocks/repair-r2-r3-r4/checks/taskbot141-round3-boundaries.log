@@ -1,0 +1,34 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker
+
+ ❯ test/ResearchFormats.test.ts (25 tests | 1 failed) 26ms
+     × displays complete limitations beyond label length and all projected fields at their receiving bounds 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ResearchFormats.test.ts > producer formats compose with the actual stock human views > displays complete limitations beyond label length and all projected fields at their receiving bounds
+Error: /: Complete accepted review JSON exceeds its public receiving budget (1/8 share, including derived fields): For each item snapshot exceeds its data complexity limit. Return concise complete requirements and evidence; do not omit accepted requirements.
+ ❯ outputValidationError src/factory/OutputValidation.ts:16:9
+     14| ): OutputValidationError {
+     15|  if (error instanceof OutputValidationError) return error;
+     16|  return new OutputValidationError(
+       |         ^
+     17|   output,
+     18|   error instanceof ZodError
+ ❯ parseStepOutputAsync src/factory/OutputFormats.ts:356:9
+ ❯ test/ResearchFormats.test.ts:225:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 127 passed (128)
+   Start at  21:55:07
+   Duration  982ms (transform 891ms, setup 57ms, import 1.75s, tests 71ms, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/ImproveBoundaryComposition.test.ts test/ResearchFormats.test.ts test/View.test.ts
