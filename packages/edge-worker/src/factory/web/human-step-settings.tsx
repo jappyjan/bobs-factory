@@ -1,4 +1,11 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { DecideConfigurationSchema, decisionItems } from "../HumanStep";
 import {
 	availableViewPaths,
@@ -63,12 +70,195 @@ type PreviewProvenance = {
 	workflowId: string;
 	definitionMatch: boolean;
 };
-type LastRunPreview = {
+export type LastRunPreview = {
 	scope: ViewScope;
 	provenance: PreviewProvenance;
 	paths: string[];
 	view: ResolvedView;
 };
+
+/** Scope ownership is narrower than definition equality: an edited view may
+ * still preview the accepted inputs, but another recipe/read mapping may not. */
+export function humanPreviewConfiguration(
+	workflowId: string | undefined,
+	step: Step,
+	definition?: unknown,
+) {
+	return {
+		workflowId,
+		owner: JSON.stringify({ workflowId, stepId: step.id, reads: step.reads }),
+		signature: JSON.stringify({ workflowId, step, definition }),
+		body: JSON.stringify({
+			workflowId,
+			stepId: step.id,
+			type: step.type,
+			name: step.name,
+			view: step.view,
+			decide: step.decide,
+			reads: step.reads,
+			notifications: step.notifications,
+			lastRun: true,
+		}),
+	};
+}
+
+type PreviewConfiguration = ReturnType<typeof humanPreviewConfiguration>;
+type PreviewState = {
+	mode: "sample" | "last-run";
+	loaded?: {
+		value: LastRunPreview;
+		owner: string;
+		signature: string;
+	};
+	loading?: string;
+	error?: { signature: string; message: string };
+};
+type PreviewLoader = (
+	body: string,
+	signal: AbortSignal,
+) => Promise<LastRunPreview>;
+
+/** Owns requests independently of fetch cancellation, including transports that
+ * settle after abort. The current render's configuration is checked at commit. */
+export class HumanPreviewSession {
+	private state: PreviewState = { mode: "sample" };
+	private listeners = new Set<() => void>();
+	private request?: {
+		configuration: PreviewConfiguration;
+		controller: AbortController;
+	};
+	constructor(
+		private readonly current: () => PreviewConfiguration,
+		private readonly loader: PreviewLoader = (body, signal) =>
+			api<LastRunPreview>("/api/recipes/view-preview", {
+				method: "POST",
+				body,
+				signal,
+			}),
+	) {}
+	getSnapshot = () => this.state;
+	subscribe = (listener: () => void) => {
+		this.listeners.add(listener);
+		return () => this.listeners.delete(listener);
+	};
+	private replace(state: PreviewState) {
+		this.state = state;
+		for (const listener of this.listeners) listener();
+	}
+	private cancel() {
+		this.request?.controller.abort();
+		this.request = undefined;
+	}
+	dispose = () => this.cancel();
+	configurationChanged() {
+		const configuration = this.current();
+		if (
+			this.request &&
+			this.request.configuration.signature !== configuration.signature
+		)
+			this.cancel();
+		const loaded =
+			this.state.loaded?.owner === configuration.owner
+				? this.state.loaded
+				: undefined;
+		const loading = this.request?.configuration.signature;
+		const error =
+			this.state.error?.signature === configuration.signature
+				? this.state.error
+				: undefined;
+		if (
+			loaded !== this.state.loaded ||
+			loading !== this.state.loading ||
+			error !== this.state.error
+		)
+			this.replace({ ...this.state, loaded, loading, error });
+	}
+	presentation(configuration = this.current()) {
+		const loaded =
+			this.state.loaded?.owner === configuration.owner
+				? this.state.loaded
+				: undefined;
+		return {
+			mode: this.state.mode,
+			lastRun: loaded?.value,
+			definitionMatch:
+				!!loaded?.value.provenance.definitionMatch &&
+				loaded.signature === configuration.signature,
+			loading: this.state.loading === configuration.signature,
+			loadError:
+				this.state.error?.signature === configuration.signature
+					? this.state.error.message
+					: "",
+		};
+	}
+	sample = () => {
+		this.cancel();
+		this.replace({
+			...this.state,
+			mode: "sample",
+			loading: undefined,
+			error: undefined,
+		});
+	};
+	lastRun = async () => {
+		if (this.presentation().lastRun) {
+			this.replace({ ...this.state, mode: "last-run" });
+			return;
+		}
+		await this.load();
+	};
+	load = async () => {
+		const configuration = this.current();
+		if (!configuration.workflowId) return;
+		this.cancel();
+		const request = { configuration, controller: new AbortController() };
+		this.request = request;
+		this.replace({
+			...this.state,
+			mode: "last-run",
+			loading: configuration.signature,
+			error: undefined,
+		});
+		const ownsResult = () =>
+			this.request === request &&
+			!request.controller.signal.aborted &&
+			this.current().signature === configuration.signature;
+		try {
+			const value = await this.loader(
+				configuration.body,
+				request.controller.signal,
+			);
+			if (!ownsResult()) return;
+			if (
+				value.provenance.kind !== "last-run" ||
+				value.provenance.workflowId !== configuration.workflowId
+			)
+				throw new Error("Preview response belongs to another recipe.");
+			this.replace({
+				...this.state,
+				loaded: {
+					value,
+					owner: configuration.owner,
+					signature: configuration.signature,
+				},
+			});
+		} catch (cause) {
+			if (ownsResult())
+				this.replace({
+					...this.state,
+					error: {
+						signature: configuration.signature,
+						message: describeError(cause),
+					},
+				});
+		} finally {
+			if (ownsResult()) {
+				this.request = undefined;
+				this.replace({ ...this.state, loading: undefined });
+			}
+		}
+	};
+}
 
 /** An invalid JSON draft never replaces the last schema-valid definition. */
 function ViewEditor({
@@ -213,6 +403,7 @@ export function HumanStepSettings({
 	previewScope,
 	previewProvenance,
 	workflowId,
+	previewDefinition,
 }: {
 	step: Step;
 	readOnly: boolean;
@@ -221,30 +412,38 @@ export function HumanStepSettings({
 	previewScope?: ViewScope;
 	previewProvenance?: string;
 	workflowId?: string;
+	previewDefinition?: unknown;
 }) {
 	const [sampleText, setSampleText] = useState(() =>
 		JSON.stringify(previewScope ?? exampleScope, null, 2),
 	);
-	const [mode, setMode] = useState<"sample" | "last-run">("sample");
-	const [lastRun, setLastRun] = useState<LastRunPreview>();
-	const [loading, setLoading] = useState(false);
-	const [loadError, setLoadError] = useState("");
-	const request = useRef<AbortController | undefined>(undefined);
+	const configuration = humanPreviewConfiguration(
+		workflowId,
+		step,
+		previewDefinition,
+	);
+	const configurationRef = useRef(configuration);
+	configurationRef.current = configuration;
+	const [session] = useState(
+		() => new HumanPreviewSession(() => configurationRef.current),
+	);
+	useSyncExternalStore(
+		session.subscribe,
+		session.getSnapshot,
+		session.getSnapshot,
+	);
+	const { mode, lastRun, loading, loadError, definitionMatch } =
+		session.presentation(configuration);
 	const id = useId();
 	const configProblem = viewConfigurationProblem(step);
-	const readsSignature = JSON.stringify(step.reads ?? {});
 	useEffect(() => {
 		onError("View configuration", configProblem ?? "");
 		return () => onError("View configuration", "");
 	}, [configProblem, onError]);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: A different step or declared-read mapping invalidates and cancels the previous run-data preview.
 	useEffect(() => {
-		request.current?.abort();
-		setLastRun(undefined);
-		setLoadError("");
-		setLoading(false);
-		return () => request.current?.abort();
-	}, [step.id, readsSignature]);
+		session.configurationChanged();
+	});
+	useEffect(() => session.dispose, [session]);
 	const scopeResult = useMemo((): { scope?: ViewScope; error?: string } => {
 		if (mode === "last-run")
 			return lastRun
@@ -291,39 +490,9 @@ export function HumanStepSettings({
 	} catch {
 		/* Error is displayed with the preview. */
 	}
-	const load = async () => {
-		if (!workflowId || loading) return;
-		request.current?.abort();
-		const controller = new AbortController();
-		request.current = controller;
-		setLoading(true);
-		setLoadError("");
-		try {
-			const result = await api<LastRunPreview>("/api/recipes/view-preview", {
-				method: "POST",
-				signal: controller.signal,
-				body: JSON.stringify({
-					workflowId,
-					stepId: step.id,
-					view: step.view,
-					decide: step.decide,
-					reads: step.reads,
-					lastRun: true,
-				}),
-			});
-			if (!controller.signal.aborted) {
-				setLastRun(result);
-				setMode("last-run");
-			}
-		} catch (cause) {
-			if (!controller.signal.aborted) setLoadError(describeError(cause));
-		} finally {
-			if (!controller.signal.aborted) setLoading(false);
-		}
-	};
 	const provenance =
 		mode === "last-run" && lastRun
-			? `Last run ${lastRun.provenance.runId ?? ""}${lastRun.provenance.at ? ` · ${lastRun.provenance.at}` : ""}${lastRun.provenance.definitionMatch ? " · accepted definition matches" : " · retained accepted input snapshot; draft configuration differs"}`
+			? `Last run ${lastRun.provenance.runId ?? ""}${lastRun.provenance.at ? ` · ${lastRun.provenance.at}` : ""}${definitionMatch ? " · accepted step view configuration matches" : " · retained accepted input snapshot; draft configuration differs"}`
 			: (previewProvenance ?? "Sample data edited below. No run is changed.");
 	return (
 		<section
@@ -343,6 +512,28 @@ export function HumanStepSettings({
 					: step.type === "approve"
 						? "Approve and Request changes bind the exact server-rendered content, assets and accepted configuration. A changed version requires a fresh answer."
 						: "Define item bindings and allowed actions. Output includes choices, itemsByAction, followUps and hasFollowUps for ordinary recipe routes. Ask uses a dedicated follow-up and retains source research."}
+			</p>
+			<label className="dv-checkbox" htmlFor={`${id}-push-text`}>
+				<input
+					id={`${id}-push-text`}
+					type="checkbox"
+					checked={step.notifications?.push === "view-text"}
+					disabled={readOnly}
+					aria-describedby={`${id}-push-help`}
+					onChange={(event) =>
+						onChange({
+							notifications: {
+								push: event.target.checked ? "view-text" : "private",
+							},
+						})
+					}
+				/>
+				<span>Include bounded view text in push notifications</span>
+			</label>
+			<p id={`${id}-push-help`} className="recipe-note">
+				Private notices are the default. Enabling this sends a bounded text
+				summary of displayed content through your push provider and device
+				notifications. It may appear on a lock screen.
 			</p>
 			<CheckJsonField
 				label="View reads"
@@ -395,7 +586,7 @@ export function HumanStepSettings({
 					<button
 						className={`button ${mode === "sample" ? "" : "secondary"}`}
 						type="button"
-						onClick={() => setMode("sample")}
+						onClick={session.sample}
 						aria-pressed={mode === "sample"}
 					>
 						Sample data
@@ -403,10 +594,7 @@ export function HumanStepSettings({
 					<button
 						className={`button ${mode === "last-run" ? "" : "secondary"}`}
 						type="button"
-						onClick={() => {
-							setMode("last-run");
-							if (!lastRun) void load();
-						}}
+						onClick={() => void session.lastRun()}
 						aria-pressed={mode === "last-run"}
 						disabled={!workflowId || loading}
 					>
@@ -416,7 +604,7 @@ export function HumanStepSettings({
 						<button
 							className="button secondary"
 							type="button"
-							onClick={() => void load()}
+							onClick={() => void session.load()}
 							disabled={loading}
 						>
 							Refresh data

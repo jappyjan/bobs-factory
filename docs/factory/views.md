@@ -49,9 +49,25 @@ expressions or script evaluation.
 The output is `choices`, `itemsByAction.<action>`, `followUps`, `hasFollowUps` and
 form `fields`. Action comments are optional and allowed only when configured.
 Inline **Ask** uses its own retained thread and a dedicated context-only agent
-with only context-list/read tools. It never reruns the source agent. The model
+with only bounded context-list/read tools for the displayed item, question, public discussion and view. The enforced provider profile clears inherited tools, settings, external MCP servers, plugins, filesystem/shell, web, delegation and artifact powers. It does not require a Snapshot. Unsupported native permission profiles fail before a model turn; providers are never silently switched. It never reruns the source agent. The model
 inherits the run unless the optional `ask` settings select one. Selecting a
-follow-up action is separate from inline discussion and routes normally.
+follow-up action is separate from inline discussion and routes normally. The original native provider, model and session remain bound to the thread on resume. Late replies settle their historical batch and cannot replace a renewed or accepted current decision.
+
+Context-only execution uses the existing prepared provider; it does not bundle
+external agent executables or credentials. Claude uses an empty native tool set,
+strict MCP/settings sources and both pre-tool and permission denial. Cursor uses
+its actual native hooks with default denial and exact context transport/tool
+checks. Known mandatory managed/startup-hook configurations fail closed. Codex
+requires a native effective permission profile; the verified 0.163.0 adapter
+disables shell/web/delegation/discovery and denies filesystem and network effects
+outside minimal native runtime/private empty cwd reads. Native `apply_patch` may
+remain named, but its filesystem effects are denied. Native configuration or
+cached tools that reopen access reject before a turn. OpenCode isolates config
+discovery while retaining its original native data/auth store, and verifies bounded
+read-only native permission metadata. Unattested or broader saved OpenCode
+permissions remain preserved and refuse resume. Unsupported Gemini assistance
+fails clearly before provider work. Mocked transport/config tests do not claim
+live provider quality or other-platform native enforcement.
 
 `Approve` has the same view/read fields and returns `approved`, `feedback` and
 `fields`. Approve requires explicit human confirmation; Request changes requires
@@ -76,7 +92,9 @@ The builder's **Component schema and examples** exposes the complete schema.
 All objects reject unknown keys. A view has at most 40 components; ordinary
 component lists have at most 100 items. Traversal is bounded to safe acyclic
 plain JSON (1 MiB, depth 32); a run retains at most 100 view snapshots. Text
-fallbacks are bounded and explicitly mark truncation.
+fallbacks are bounded and explicitly mark truncation. The current pending decision and its exact batch, digest and answer command appear before historical Shows. Public Ask questions, replies, errors and pending/answered status are included. A shortened fallback does not claim unseen content was reviewed: open the complete dashboard display, discussion and assets before accepting.
+
+Push notifications stay private by default. Only a trusted recipe edit with explicit operator consent may set `notifications: {"push":"view-text"}` on a human step. This discloses bounded escaped component/discussion text to the push provider and device lock screen. The accepted snapshot and queued event retain this choice and exact batch/digest; later edits cannot upgrade private events, and agent-authored views cannot opt in. Existing device/operator consent, at-most-one attempt and no-replay policy still apply.
 
 | Type | `data` value |
 | --- | --- |

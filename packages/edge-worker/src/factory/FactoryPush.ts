@@ -60,6 +60,7 @@ const StoreSchema = z.object({
 		z.object({
 			identity: z.string(),
 			sequence: z.number().int().nonnegative(),
+			viewText: z.string().max(2000).optional(),
 		}),
 	),
 	receipts: z
@@ -218,6 +219,9 @@ export class FactoryPush {
 				runs[id] = {
 					identity: event ? `${event.category}:${event.identity}` : "",
 					sequence: 1,
+					...(event?.viewText === undefined
+						? {}
+						: { viewText: event.viewText }),
 				};
 			}
 			this.store = { version: 1, vapid, devices: [], runs, receipts: [] };
@@ -361,9 +365,18 @@ export class FactoryPush {
 				const previous = this.store.runs[runId];
 				if (previous?.identity === identity) continue;
 				const sequence = (previous?.sequence ?? 0) + 1;
-				this.store.runs[runId] = { identity, sequence };
+				// Capture this transition's accepted privacy/content once. Later saves or
+				// recipe edits cannot replace a queued event's privacy or content.
+				const captured = event ? { ...event } : undefined;
+				this.store.runs[runId] = {
+					identity,
+					sequence,
+					...(captured?.viewText === undefined
+						? {}
+						: { viewText: captured.viewText }),
+				};
 				changed = true;
-				if (baseline || !event) {
+				if (baseline || !captured) {
 					this.pending.delete(runId);
 					continue;
 				}
@@ -373,7 +386,7 @@ export class FactoryPush {
 					.filter((d) => d.backoffUntil <= this.now())
 					.map((d) => ({ id: d.id, generation: d.generation }));
 				// Coalescing replaces unsent work. It is already durably consumed and never replayed.
-				const pending = { runId, event, id, devices };
+				const pending = { runId, event: captured, id, devices };
 				if (this.pending.size < 64 || this.pending.has(runId))
 					this.pending.set(runId, pending);
 				for (const device of enabled) this.receipt(device.id, id, "skipped");
@@ -426,7 +439,7 @@ export class FactoryPush {
 			this.receipt(device.id, pending.id, "claimed");
 			device.lastAttemptAt = this.now();
 			this.persist();
-			const payload = JSON.stringify({
+			const content = {
 				version: 1,
 				category: pending.event.category,
 				runId: pending.runId,
@@ -435,9 +448,26 @@ export class FactoryPush {
 				title: "Bob’s Factory",
 				body: categoryText[pending.event.category],
 				tag: `factory-${digest(pending.runId).slice(0, 32)}`,
-			});
+			};
+			let payload = JSON.stringify(content);
+			if (
+				pending.event.viewText !== undefined &&
+				["question", "review"].includes(pending.event.category)
+			) {
+				const withView = JSON.stringify({
+					...content,
+					viewText: {
+						version: "human-view-v1",
+						text: pending.event.viewText,
+					},
+				});
+				// Leave room for encrypted Web Push framing; never cut a protocol header.
+				if (Buffer.byteLength(withView, "utf8") <= 3072) payload = withView;
+			}
 			let timeout: ReturnType<typeof setTimeout> | undefined;
 			try {
+				if (Buffer.byteLength(payload, "utf8") > 3072)
+					throw new Error("Push payload exceeds the safe transport limit");
 				await Promise.race([
 					this.sender(
 						device.subscription,

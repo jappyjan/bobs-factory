@@ -71,8 +71,8 @@ export class CodexRunner extends EventEmitter implements IAgentRunner {
 		this.skillStager = new CodexSkillStager({
 			workingDirectory: config.workingDirectory,
 			additionalDirectories: config.additionalDirectories,
-			skills: config.skills,
-			plugins: config.plugins,
+			skills: config.toolProfile === "context-only" ? [] : config.skills,
+			plugins: config.toolProfile === "context-only" ? [] : config.plugins,
 		});
 		this.mapper = new CodexEventMapper(this.buildMapperContext());
 

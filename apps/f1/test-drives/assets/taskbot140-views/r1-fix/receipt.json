@@ -1,0 +1,87 @@
+{
+  "version": "taskbot140-r1-tracking-repair-v1",
+  "at": "2026-10-22T06:02:44.040953+00:00",
+  "reviewedCommit": "246e422d2110ae743acb6ed561d549db0784703f",
+  "verifiedRepairedIndexTree": "b240a54532a2d2981d260cd5d3887930a09b666a",
+  "archiveManifestSha256": "3b0b2aba788fdf7a3706e118eeba9c0ad47e167fb52fc9386192d604447216f1",
+  "verifierSha256": "2bb35f6fef75d6fa5fefe8f1427af7b656052361fc50f7e247654dea26eaf58f",
+  "originalFilesAdded": 71,
+  "immutableArchiveFilesVerified": 186,
+  "commands": [
+    {
+      "command": [
+        "node",
+        "--check",
+        "apps/f1/test-drives/assets/taskbot140-archive-verify.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "syntax.stdout.txt",
+      "stderr": "syntax.stderr.txt"
+    },
+    {
+      "command": [
+        "pnpm",
+        "exec",
+        "biome",
+        "check",
+        "apps/f1/test-drives/assets/taskbot140-archive-verify.mjs"
+      ],
+      "exitCode": 0,
+      "stdout": "lint.stdout.txt",
+      "stderr": "lint.stderr.txt"
+    },
+    {
+      "command": [
+        "node",
+        "<fresh git archive>/apps/f1/test-drives/assets/taskbot140-archive-verify.mjs",
+        "--tree",
+        "b240a54532a2d2981d260cd5d3887930a09b666a"
+      ],
+      "exitCode": 0,
+      "stdout": "submitted-verifier.stdout.json",
+      "stderr": "submitted-verifier.stderr.txt"
+    },
+    {
+      "command": [
+        "node",
+        "apps/f1/test-drives/assets/taskbot140-archive-verify.mjs",
+        "--tree",
+        "246e422d2110ae743acb6ed561d549db0784703f",
+        "--check-originals"
+      ],
+      "exitCode": 1,
+      "stdout": "reviewed-tree.stdout.json",
+      "stderr": "reviewed-tree.stderr.txt"
+    },
+    {
+      "command": [
+        "node",
+        "apps/f1/test-drives/assets/taskbot140-archive-verify.mjs",
+        "--index",
+        "--check-originals"
+      ],
+      "exitCode": 0,
+      "stdout": "repaired-index.stdout.json",
+      "stderr": "repaired-index.stderr.txt"
+    }
+  ],
+  "files": {
+    "lint.exit-code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "lint.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lint.stdout.txt": "18f87a70f77f61c8a54d5b48ec6d72e3bfb3df119327ac01aa0256c5acba3866",
+    "missing-originals.json": "9e723aa65724787aba9350565542cec3a469fa57134f9887fff9e707a887dfb7",
+    "repaired-index.exit-code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "repaired-index.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "repaired-index.stdout.json": "d89f6787d9efebf9417942ab4781f4f7dbee26a5fdf679f59b52e6a653a18805",
+    "reviewed-tree.exit-code.txt": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "reviewed-tree.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reviewed-tree.stdout.json": "0fa9075857ed0b23f488a35d936837b335ad72b23107f3e503d744344c349cf5",
+    "submitted-verifier.exit-code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "submitted-verifier.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "submitted-verifier.stdout.json": "45be8bce6238ce12c6b2db5829523279ad93487fb4597d289c48b53e0b95b4a1",
+    "syntax.exit-code.txt": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "syntax.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "syntax.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "limits": "Only evidence tracking/verification changed. Original archive inventory unchanged. No product gates, F1 runs or native smoke replayed. New r1-fix receipts sit outside the immutable 186-entry inventory."
+}

@@ -1,0 +1,49 @@
+{
+  "threadFallback": {
+    "questionVisible": false,
+    "answerVisible": false,
+    "digestChanged": true,
+    "currentDigestVisible": true,
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-0mpbDV"
+  },
+  "largeFallback": {
+    "length": 100000,
+    "batchVisible": false,
+    "digestVisible": false,
+    "commandVisible": false,
+    "truncationNotice": false,
+    "lastItemVisible": true,
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-I4xG3V"
+  },
+  "priorShowsFallback": {
+    "length": 100000,
+    "currentBatchVisible": false,
+    "currentDigestVisible": false,
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-meTIiB"
+  }
+}
+file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-review-r1/packages/edge-worker/dist/factory/Workflow.js:317
+    const workflows = z.array(WorkflowSchema).min(1).max(50).parse(value);
+                                                             ^
+
+ZodError: [
+  {
+    "code": "unrecognized_keys",
+    "keys": [
+      "title"
+    ],
+    "path": [
+      6,
+      "steps",
+      0,
+      "launchRuns",
+      "inputMapping"
+    ],
+    "message": "Unrecognized key: \"title\""
+  }
+]
+    at validateWorkflows (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-review-r1/packages/edge-worker/dist/factory/Workflow.js:317:62)
+    at fixture (file:///private/tmp/taskbot140-review-r1/probes.mjs:13:285)
+    at file:///private/tmp/taskbot140-review-r1/probes.mjs:22:313
+
+Node.js v24.21.0

@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import type { OpenCodeRunnerConfig } from "./types.js";
 
@@ -399,6 +400,33 @@ export function buildOpenCodeConfig(
 	config: OpenCodeRunnerConfig,
 ): OpenCodeConfigBuildResult {
 	const unsupported: string[] = [];
+	if (config.toolProfile === "context-only") {
+		const source = config.mcpConfig?.["factory-context"] as
+			| CyrusMcpServerConfig
+			| undefined;
+		const context = source
+			? mapMcpServer("factory-context", source, unsupported, true)
+			: undefined;
+		const permission: Record<string, OpenCodePermissionRule> = {
+			"*": "deny",
+			"factory-context_list_context": "allow",
+			"factory-context_read_context": "allow",
+		};
+		return {
+			config: {
+				$schema: "https://opencode.ai/config.json",
+				mcp: context ? { "factory-context": context } : {},
+				permission,
+				default_agent: "factory-context-only",
+				agent: {
+					"factory-context-only": { mode: "primary", permission },
+				},
+				plugin: [],
+				instructions: [],
+			},
+			unsupported,
+		};
+	}
 	if (config.maxTurns !== undefined) {
 		unsupported.push(
 			"maxTurns: OpenCode CLI does not expose a max-turns runtime option",
@@ -516,6 +544,35 @@ export function buildOpenCodeRuntimeEnv(
 	const env: Record<string, string> = {
 		OPENCODE_CONFIG_CONTENT: JSON.stringify(built.config),
 	};
+	if (config.toolProfile === "context-only") {
+		const original = {
+			...(config.childEnvironment ?? process.env),
+			...config.env,
+			...config.additionalEnv,
+		};
+		const root = join(config.factoryHome, "opencode-state", "context-only");
+		return {
+			...env,
+			// Keep native authentication and conversations in place. Isolate only
+			// automatic config/plugin/instruction discovery; never copy credentials.
+			XDG_DATA_HOME:
+				original.XDG_DATA_HOME ||
+				join(original.HOME || homedir(), ".local/share"),
+			HOME: join(root, "home"),
+			XDG_CONFIG_HOME: join(root, "config"),
+			OPENCODE_CONFIG_DIR: join(root, "config", "opencode"),
+			XDG_STATE_HOME: join(root, "state"),
+			XDG_CACHE_HOME: join(root, "cache"),
+			OPENCODE_CONFIG: "",
+			OPENCODE_TEST_HOME: "",
+			OPENCODE_TEST_MANAGED_CONFIG_DIR: "",
+			OPENCODE_DISABLE_PROJECT_CONFIG: "1",
+			OPENCODE_DISABLE_CLAUDE_CODE: "1",
+			OPENCODE_DISABLE_EXTERNAL_SKILLS: "1",
+			OPENCODE_DISABLE_DEFAULT_PLUGINS: "1",
+			OPENCODE_PERMISSION: JSON.stringify(built.config.permission),
+		};
+	}
 	if ((config.opencodeStateScope ?? "inherit") === "inherit") {
 		return env;
 	}
@@ -545,6 +602,7 @@ export function ensureOpenCodeStateDirectories(
 	env: Record<string, string>,
 ): void {
 	for (const key of [
+		"HOME",
 		"OPENCODE_CONFIG_DIR",
 		"XDG_STATE_HOME",
 		"XDG_CACHE_HOME",

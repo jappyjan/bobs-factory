@@ -182,11 +182,25 @@ self.addEventListener("push", (event) => {
 				destination: notificationDestination(payload),
 			}
 		: { category: "test", destination: "/#/" };
+	// Only the server's accepted-human-view envelope opts into displaying content.
+	// Ordinary/legacy bodies and malformed envelopes always keep private fixed text.
+	const viewText =
+		valid &&
+		["question", "review"].includes(payload.category) &&
+		data.destination !== "/#/" &&
+		payload.viewText?.version === "human-view-v1" &&
+		typeof payload.viewText.text === "string" &&
+		payload.viewText.text.length <= 2000 &&
+		new TextEncoder().encode(JSON.stringify(payload)).length <= 3072
+			? payload.viewText.text
+			: undefined;
 	event.waitUntil(
 		self.registration.showNotification("Bob’s Factory", {
-			body: valid
-				? notificationBodies[payload.category]
-				: "Open Factory to check current state.",
+			body:
+				viewText ??
+				(valid
+					? notificationBodies[payload.category]
+					: "Open Factory to check current state."),
 			icon: "/icons/icon-192.png",
 			badge: "/icons/icon-192.png",
 			tag:

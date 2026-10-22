@@ -7,6 +7,7 @@ import type {
 	CodexConfigValue,
 	CodexRunnerConfig,
 } from "../types.js";
+import { contextOnlyOverrides, contextOnlySandbox } from "./contextOnly.js";
 import { resolveGitMetadataDirectories } from "./gitMetadata.js";
 import { buildCodexMcpServersConfig } from "./mcpConfigTranslator.js";
 import { resolveCodexSandbox } from "./sandboxPolicy.js";
@@ -29,6 +30,29 @@ export class CodexConfigBuilder {
 
 	async build(signal?: AbortSignal): Promise<ResolvedCodexConfig> {
 		signal?.throwIfAborted();
+		if (this.config.toolProfile === "context-only") {
+			const codexHome = this.resolveCodexHome();
+			return {
+				toolProfile: "context-only",
+				model: this.config.model,
+				sandbox: contextOnlySandbox(this.config.workingDirectory, codexHome),
+				workingDirectory: this.config.workingDirectory,
+				approvalPolicy: "never",
+				skipGitRepoCheck: true,
+				modelReasoningEffort:
+					this.config.modelReasoningEffort ??
+					getDefaultReasoningEffortForModel(this.config.model),
+				webSearchMode: "disabled",
+				developerInstructions:
+					(this.config.appendSystemPrompt ?? "").trim() || undefined,
+				configOverrides: contextOnlyOverrides(this.config),
+				env: this.buildEnvOverride(codexHome),
+				codexHome,
+				codexPath: this.config.codexPath,
+				outputSchema: this.config.outputSchema,
+				resumeSessionId: this.config.resumeSessionId,
+			};
+		}
 		await this.resolveModelWithFallback(signal);
 		signal?.throwIfAborted();
 

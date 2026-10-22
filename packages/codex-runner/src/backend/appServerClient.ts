@@ -35,6 +35,8 @@ interface JsonRpcMessage {
 
 export interface AppServerClientOptions {
 	binaryPath: string;
+	/** Private context-only cwd; avoids inherited project configuration at launch. */
+	cwd?: string;
 	args?: string[];
 	env?: Record<string, string>;
 	/** Optional logger; defaults to console. */
@@ -105,6 +107,7 @@ export class AppServerClient extends EventEmitter {
 		}
 		const args = this.options.args ?? ["app-server", "--listen", "stdio://"];
 		const child = spawn(this.options.binaryPath, args, {
+			...(this.options.cwd ? { cwd: this.options.cwd } : {}),
 			stdio: ["pipe", "pipe", "pipe"],
 			// Run in its own process group (POSIX) so teardown can signal the whole
 			// tree at once. We launch codex via the `@openai/codex` Node bin shim,
@@ -323,6 +326,12 @@ export class AppServerClient extends EventEmitter {
 				`[AppServerClient] server-request handler threw for ${method}`,
 				err,
 			);
+			this.write({
+				jsonrpc: "2.0",
+				id,
+				error: { code: -32603, message: "Server request denied" },
+			});
+			return;
 		}
 		this.write({ jsonrpc: "2.0", id, result });
 	}

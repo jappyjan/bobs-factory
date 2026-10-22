@@ -1,0 +1,11 @@
+
+> bobs-factory-edge-worker@0.2.73 typecheck /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+> tsgo --noEmit && tsgo -p tsconfig.web.json
+
+src/factory/ViewText.ts(13,4): error TS2345: Argument of type '`Decision batch: ${string}`' is not assignable to parameter of type '"approve" | "decide" | "show"'.
+src/factory/ViewText.ts(18,5): error TS2345: Argument of type '`Reply with /view-answer {"batchId":"${string}","digest":"${string}","accepted":true,"approved":true} or approved:false with feedback.` | `Reply with /view-answer {"batchId":"${string}","digest":"${string}","accepted":true,"choices":[{"itemId":"…","action":"…"}]} after reviewing every item.`' is not assignable to parameter of type '"approve" | "decide" | "show"'.
+  Type '`Reply with /view-answer {"batchId":"${string}","digest":"${string}","accepted":true,"approved":true} or approved:false with feedback.`' is not assignable to type '"approve" | "decide" | "show"'.
+src/factory/ViewText.ts(23,4): error TS2345: Argument of type '"Review the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed."' is not assignable to parameter of type '"approve" | "decide" | "show"'.
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 typecheck: `tsgo --noEmit && tsgo -p tsconfig.web.json`
+Exit status 1

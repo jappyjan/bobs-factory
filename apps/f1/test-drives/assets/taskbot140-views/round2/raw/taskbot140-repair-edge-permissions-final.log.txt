@@ -1,0 +1,12 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+
+
+ Test Files  2 passed (2)
+      Tests  2 passed (2)
+   Start at  09:35:38
+   Duration  2.28s (transform 973ms, setup 20ms, import 1.70s, tests 410ms, environment 0ms)
+

@@ -1,0 +1,62 @@
+{
+  "threadFallback": {
+    "questionVisible": false,
+    "answerVisible": false,
+    "digestChanged": true,
+    "currentDigestVisible": true,
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-EQHHnj"
+  },
+  "largeFallback": {
+    "length": 100000,
+    "batchVisible": false,
+    "digestVisible": false,
+    "commandVisible": false,
+    "truncationNotice": false,
+    "lastItemVisible": true,
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-Ph411J"
+  },
+  "priorShowsFallback": {
+    "length": 100000,
+    "currentBatchVisible": false,
+    "currentDigestVisible": false,
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-U9ESaN"
+  },
+  "staleAskRace": {
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-mjIeac",
+    "original": "660f3ff4-8dae-4da0-a0f4-50f1a79fb008",
+    "renewed": "1f3a4d4b-ac21-4e27-b6d5-5fd4335272bb",
+    "publishedAfterLateAsk": "660f3ff4-8dae-4da0-a0f4-50f1a79fb008",
+    "activeViewId": "1f3a4d4b-ac21-4e27-b6d5-5fd4335272bb",
+    "staleError": "Displayed content changed. Refresh and review the new decision batch.",
+    "renewedError": "Run is not waiting for this decision",
+    "oldError": "This decision batch was superseded. Refresh and review again.",
+    "records": [
+      {
+        "id": "660f3ff4-8dae-4da0-a0f4-50f1a79fb008",
+        "superseded": true,
+        "answer": false
+      },
+      {
+        "id": "1f3a4d4b-ac21-4e27-b6d5-5fd4335272bb",
+        "answer": false
+      }
+    ]
+  },
+  "codexConfig": {
+    "sandbox": {
+      "kind": "workspace-mode",
+      "mode": "danger-full-access",
+      "writableRoots": [
+        "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-codex-DQUHCO"
+      ],
+      "networkAccess": true
+    },
+    "approvalPolicy": "never",
+    "configOverrides": {
+      "features": {
+        "multi_agent": false
+      }
+    },
+    "workingDirectory": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-codex-DQUHCO"
+  }
+}

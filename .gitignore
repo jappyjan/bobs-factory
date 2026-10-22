@@ -19,6 +19,17 @@ logs
 *.log
 npm-debug.log*
 
+# Immutable Taskbot #140 validation receipts, including original failed attempts.
+!/apps/f1/test-drives/assets/taskbot140-views/gates/logs/
+/apps/f1/test-drives/assets/taskbot140-views/gates/logs/*
+!/apps/f1/test-drives/assets/taskbot140-views/gates/logs/*.log.txt
+!/apps/f1/test-drives/assets/taskbot140-views/gates/logs/*.json.raw
+!/apps/f1/test-drives/assets/taskbot140-views/native/driver-attempt-*.log
+!/apps/f1/test-drives/assets/taskbot140-views/native/attempt-*/worker-*.log
+!/apps/f1/test-drives/assets/taskbot140-views/ui/attempt-*/driver.log
+!/apps/f1/test-drives/assets/taskbot140-views/ui/final/driver.log
+!/apps/f1/test-drives/assets/taskbot140-views/ui/final/verification*.log
+
 # Workspace directories
 workspaces/
 

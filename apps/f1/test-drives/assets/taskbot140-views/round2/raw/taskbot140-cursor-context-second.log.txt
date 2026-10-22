@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cursor-runner
+
+
+ Test Files  4 passed (4)
+      Tests  31 passed (31)
+   Start at  09:20:34
+   Duration  2.76s (transform 968ms, setup 0ms, import 980ms, tests 3.96s, environment 0ms)
+

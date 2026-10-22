@@ -674,6 +674,309 @@ describe("production declarative human steps", () => {
 		expect(calls.filter((key) => key.includes("/ask/"))).toHaveLength(1);
 	});
 
+	it("keeps the current text protocol visible after large displays and faithfully includes digest-bound Ask discussion through reconstruction", async () => {
+		const directory = home();
+		const published: string[] = [];
+		const instance = runtime(directory, {
+			agent: async () => "UNIQUE_ANSWER <script>inert</script>",
+			viewDecision: async (_run, text) => {
+				published.push(text);
+			},
+		});
+		const hugeView = {
+			version: "view-v1",
+			components: Array.from({ length: 5 }, (_, i) => ({
+				id: `text${i}`,
+				type: "markdown",
+				data: { literal: { text: "S".repeat(16000) } },
+			})),
+		};
+		const largeItems = Array.from({ length: 13 }, (_, i) => ({
+			id: `item${i}`,
+			title: `Item ${i}`,
+			body: "B".repeat(8000),
+		}));
+		const run = source(instance, directory, [
+			show({ id: "prior-one", view: hugeView }),
+			show({ id: "prior-two", view: hugeView }),
+			decide({
+				reads: {},
+				view: view(),
+				decide: {
+					items: { literal: largeItems },
+					body: "/body",
+					actions: [{ id: "skip", label: "Skip" }],
+					ask: { prompt: "Explain supplied context only" },
+				},
+			}),
+		]);
+		await waiting(instance, run);
+		const text = instance.humanViews.displayText(run);
+		expect(text.length).toBeLessThanOrEqual(100000);
+		expect(text).toContain(`Decision batch: ${run.viewDecision!.id}`);
+		expect(text).toContain(`Displayed digest: ${run.viewDecision!.digest}`);
+		expect(text).toContain("/view-answer");
+		expect(text).toContain("INCOMPLETE");
+		expect(text).toContain("complete current display");
+		expect(text.indexOf(run.viewDecision!.id)).toBeLessThan(1000);
+		const originalDigest = run.viewDecision!.digest;
+		await instance.askView(run.id, {
+			batchId: run.viewDecision!.id,
+			digest: originalDigest,
+			itemId: "item0",
+			question: "UNIQUE_QUESTION",
+			requestId: randomUUID(),
+		});
+		await waitFor(() =>
+			expect(run.viewDecision!.threads?.item0?.[0]?.status).toBe("answered"),
+		);
+		const withAsk = instance.humanViews.displayText(run);
+		expect(withAsk).toContain("UNIQUE\\_QUESTION");
+		expect(withAsk).toContain("UNIQUE\\_ANSWER");
+		expect(withAsk).toContain("answered");
+		expect(withAsk).not.toContain("<script>");
+		expect(withAsk).toContain(run.viewDecision!.digest);
+		expect(run.viewDecision!.digest).not.toBe(originalDigest);
+		await instance.flush(run.id);
+		await instance.shutdown();
+		const restored = runtime(directory);
+		restored.resumeAll();
+		expect(restored.humanViews.displayText(restored.get(run.id))).toBe(withAsk);
+		// Initial terminal/ticket publication uses the same reserved protocol, before long content.
+		expect(published.at(-1)).toContain("/view-answer");
+		expect(published.at(-1)).toContain(run.viewDecision!.id);
+	});
+
+	it.each([
+		"late-before-answer",
+		"late-after-answer",
+		"ask-before-rotation",
+		"child-before-ask-before-submission",
+	] as const)("retains historical Ask ownership across real child changes: %s", async (ordering) => {
+		const directory = home();
+		let releaseChild!: () => void, releaseAsk!: () => void;
+		const childHeld = new Promise<void>((resolve) => {
+			releaseChild = resolve;
+		});
+		const askHeld = new Promise<void>((resolve) => {
+			releaseAsk = resolve;
+		});
+		const native = {
+			runner: "codex" as const,
+			sessionId: "original-native-ask",
+			model: "original-model",
+			toolProfile: "context-only" as const,
+		};
+		const instance = runtime(directory, {
+			agent: async (context) => {
+				if (context.step.id === "child-work") {
+					context.signal.addEventListener("abort", releaseChild, {
+						once: true,
+					});
+					await childHeld;
+					return { done: true };
+				}
+				context.signal.addEventListener("abort", releaseAsk, { once: true });
+				await context.checkpointAgent?.(native);
+				await askHeld;
+				return "Retained historical Ask answer";
+			},
+		});
+		const child = {
+			id: "controlled-child",
+			name: "Controlled child",
+			allowedTriggers: ["workflow"],
+			stepConfigVersion: "step-config-v1",
+			steps: [agent("child-work")],
+		};
+		const run = source(
+			instance,
+			directory,
+			[
+				{
+					id: "launch",
+					name: "Launch",
+					type: "launch-runs",
+					launchRuns: {
+						items: {
+							values: [{ id: "a", title: "Child", prompt: "Controlled child" }],
+						},
+						workflow: "controlled-child",
+						wait: false,
+						inputMapping: { prompt: "/prompt" },
+					},
+				},
+				decide({
+					reads: { children: "@childRuns" },
+					view: {
+						version: "view-v1",
+						components: [
+							{
+								id: "children",
+								type: "runList",
+								data: { path: "/inputs/children" },
+							},
+						],
+					},
+					decide: {
+						items: { literal: [{ id: "a", title: "Alpha" }] },
+						actions: [{ id: "skip", label: "Skip" }],
+						ask: { prompt: "Explain supplied context" },
+					},
+				}),
+			],
+			[child],
+		);
+		const original = await waiting(instance, run);
+		await instance.askView(run.id, {
+			batchId: original.id,
+			digest: original.digest,
+			itemId: "a",
+			question: "Explain child",
+			requestId: randomUUID(),
+		});
+		await waitFor(() =>
+			expect(run.viewRecords![0]!.snapshot.threads?.a?.[0]?.agent).toEqual(
+				native,
+			),
+		);
+		if (ordering === "ask-before-rotation") {
+			releaseAsk();
+			await waitFor(() =>
+				expect(run.viewRecords![0]!.snapshot.threads?.a?.[0]?.status).toBe(
+					"answered",
+				),
+			);
+		}
+		releaseChild();
+		await waitFor(() =>
+			expect(Object.values(run.launchActions!)[0]!.progress.a!.status).toBe(
+				"completed",
+			),
+		);
+		if (ordering === "child-before-ask-before-submission") {
+			releaseAsk();
+			await waitFor(() => expect(run.viewDecision!.id).not.toBe(original.id));
+		} else {
+			await expect(
+				instance.answerView(
+					run.id,
+					request(run, { choices: [{ itemId: "a", action: "skip" }] }),
+				),
+			).rejects.toThrow("Displayed content changed");
+		}
+		await waitFor(() => expect(run.viewDecision!.id).not.toBe(original.id));
+		const renewed = structuredClone(run.viewDecision!);
+		const accepted = {
+			batchId: renewed.id,
+			digest: renewed.digest,
+			accepted: true,
+			choices: [{ itemId: "a", action: "skip" }],
+		};
+		if (ordering === "late-after-answer") {
+			await instance.answerView(run.id, accepted);
+			await completed(run);
+		}
+		releaseAsk();
+		await waitFor(() =>
+			expect(run.viewRecords![0]!.snapshot.threads?.a?.[0]?.status).toBe(
+				"answered",
+			),
+		);
+		expect(run.viewDecision!.id).toBe(renewed.id);
+		expect(run.viewDecision!.digest).toBe(renewed.digest);
+		if (ordering !== "late-after-answer")
+			expect(run.checkpoint.active!.viewId).toBe(renewed.id);
+		expect(run.viewRecords![0]!.superseded).toBe(true);
+		expect(run.viewRecords![0]!.snapshot.threads!.a![0]).toMatchObject({
+			answer: "Retained historical Ask answer",
+			agent: native,
+		});
+		await instance.flush(run.id);
+		await instance.shutdown();
+		const restored = runtime(directory);
+		restored.resumeAll();
+		const saved = restored.get(run.id);
+		expect(saved.viewDecision!.id).toBe(renewed.id);
+		expect(saved.viewDecision!.digest).toBe(renewed.digest);
+		expect(saved.viewRecords![0]!.snapshot.threads!.a![0]!.agent).toEqual(
+			native,
+		);
+		if (ordering !== "late-after-answer") {
+			await waitFor(() => expect(saved.status).toBe("waiting"));
+		}
+		await expect(
+			restored.answerView(saved.id, {
+				...accepted,
+				batchId: original.id,
+				digest: original.digest,
+			}),
+		).rejects.toThrow("superseded");
+		await restored.answerView(saved.id, accepted);
+		await completed(saved);
+		expect(saved.outputs.choose).toMatchObject({
+			choices: [{ itemId: "a", action: "skip" }],
+			hasFollowUps: false,
+		});
+	});
+
+	it("scopes concurrent Ask request IDs to their original item and batch rather than losing a pending thread", async () => {
+		const directory = home();
+		let release!: () => void;
+		const held = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		const keys: string[] = [];
+		const instance = runtime(directory, {
+			agent: async (context) => {
+				keys.push(context.stepKey!);
+				context.signal.addEventListener("abort", release, { once: true });
+				await held;
+				return `Answer for ${(context.input as { item: { id: string } }).item.id}`;
+			},
+		});
+		const run = source(instance, directory, [
+			decide({
+				reads: {},
+				view: view(),
+				decide: {
+					items: { literal: items },
+					actions,
+					ask: { prompt: "Explain supplied item" },
+				},
+			}),
+		]);
+		await waiting(instance, run);
+		const requestId = randomUUID();
+		for (const item of items)
+			await instance.askView(run.id, {
+				batchId: run.viewDecision!.id,
+				digest: run.viewDecision!.digest,
+				itemId: item.id,
+				question: `Explain ${item.id}`,
+				requestId,
+			});
+		await waitFor(() => expect(keys).toHaveLength(2));
+		expect(new Set(keys).size).toBe(2);
+		release();
+		await waitFor(() =>
+			expect(
+				Object.values(run.viewDecision!.threads!)
+					.flat()
+					.map((thread) => thread.status),
+			).toEqual(["answered", "answered"]),
+		);
+		const text = instance.humanViews.displayText(run);
+		expect(text).toContain("Answer for");
+		await instance.answerView(
+			run.id,
+			request(run, {
+				choices: items.map((item) => ({ itemId: item.id, action: "skip" })),
+			}),
+		);
+		await completed(run);
+	});
+
 	it("keeps Show nonblocking and does not acquire a machine execution lease", async () => {
 		const directory = home(),
 			acquireLease = vi.fn(async () => {

@@ -15,6 +15,11 @@ import {
 	viewIdSchema,
 } from "./View.js";
 
+export const ViewNotificationsSchema = z
+	.object({ push: z.enum(["private", "view-text"]) })
+	.strict();
+export type ViewNotifications = z.infer<typeof ViewNotificationsSchema>;
+
 const key = z
 	.string()
 	.regex(/^[A-Za-z][A-Za-z0-9_-]{0,79}$/)
@@ -80,6 +85,8 @@ export interface ViewThread {
 	error?: string;
 	at: string;
 	agent?: import("./WorkflowRuntime.js").AgentCheckpoint;
+	/** Retained internal native-step identity; absent on original saved threads. */
+	executionKey?: string;
 }
 export interface ViewSnapshot {
 	id: string;
@@ -91,6 +98,7 @@ export interface ViewSnapshot {
 	items?: ViewItem[];
 	actions?: DecideConfiguration["actions"];
 	askAvailable?: boolean;
+	notifications?: ViewNotifications;
 	threads?: Record<string, ViewThread[]>;
 	answer?: unknown;
 	createdAt: string;

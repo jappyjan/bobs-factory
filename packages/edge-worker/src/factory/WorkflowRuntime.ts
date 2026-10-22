@@ -251,6 +251,9 @@ export interface WorkflowCall {
 	workflowId: string;
 }
 export interface AgentCheckpoint {
+	/** Effective assistance settings retained with its actual native conversation. */
+	model?: string;
+	toolProfile?: "context-only";
 	/** Original bound input/repository snapshot, retained across native turn restart. */
 	inspection?: OutputRevisionBinding;
 	infrastructureFailure?: { reason: string; at: string; output?: unknown };
@@ -576,6 +579,8 @@ export interface ExecutionContext {
 	snapshotInputs?: Record<string, SnapshotInputProvenance>;
 	validateRoleOutput?: (value: unknown) => unknown;
 	readOnlyResearch?: boolean;
+	/** Trusted human-thread execution profile, never selected by authored output. */
+	contextAssistance?: true;
 	researchAccess?: {
 		repositories: { id: string; root: string; revision: string }[];
 		maxCalls: number;

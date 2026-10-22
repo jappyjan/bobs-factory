@@ -1,6 +1,17 @@
-import type { ChildProcessWithoutNullStreams } from "node:child_process";
+import {
+	type ChildProcessWithoutNullStreams,
+	spawnSync,
+} from "node:child_process";
 import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { cwd } from "node:process";
 import type {
 	IAgentRunner,
@@ -374,8 +385,9 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 		};
 
 		const selectorError = this.validateModelSelector();
-		if (selectorError) {
-			this.finalizeSession(selectorError);
+		const profileError = this.contextProfileProblem();
+		if (selectorError || profileError) {
+			this.finalizeSession(selectorError ?? profileError);
 			return this.sessionInfo;
 		}
 
@@ -539,6 +551,150 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 		);
 	}
 
+	private contextProfileReceipt(sessionId: string): string {
+		return join(
+			this.config.factoryHome,
+			"opencode-context-profiles",
+			`${crypto.createHash("sha256").update(sessionId).digest("hex")}.json`,
+		);
+	}
+	private contextProfileProblem(): Error | undefined {
+		if (this.config.toolProfile !== "context-only") return;
+		const managed =
+			process.platform === "darwin"
+				? "/Library/Application Support/opencode"
+				: process.platform === "win32"
+					? join(process.env.ProgramData || "C:\\ProgramData", "opencode")
+					: "/etc/opencode";
+		if (
+			["opencode.json", "opencode.jsonc"].some((name) =>
+				existsSync(join(managed, name)),
+			)
+		)
+			return new Error(
+				"Context-only OpenCode cannot run with managed configuration that may override its permissions.",
+			);
+		if (!this.config.resumeSessionId) return this.nativePermissionProblem();
+		try {
+			const receipt = JSON.parse(
+				readFileSync(
+					this.contextProfileReceipt(this.config.resumeSessionId),
+					"utf8",
+				),
+			);
+			if (
+				receipt.profile === "context-only-v1" &&
+				receipt.sessionId === this.config.resumeSessionId &&
+				receipt.directory === resolve(this.config.workingDirectory || cwd()) &&
+				receipt.dataHome === buildOpenCodeRuntimeEnv(this.config).XDG_DATA_HOME
+			)
+				return this.nativePermissionProblem();
+		} catch {
+			// Original native history remains in place; never silently start anew.
+		}
+		return new Error(
+			"This OpenCode conversation has no matching context-only permission receipt. Its native history is preserved; refusing to resume broader saved permissions.",
+		);
+	}
+	private nativePermissionProblem(): Error | undefined {
+		try {
+			return this.checkNativePermissions();
+		} catch {
+			return new Error(
+				"Context-only OpenCode could not verify that native saved permissions are restricted. Native history is preserved; refusing a model turn.",
+			);
+		}
+	}
+	private checkNativePermissions(): Error | undefined {
+		const runtimeEnv = buildOpenCodeRuntimeEnv(this.config);
+		const dataHome = runtimeEnv.XDG_DATA_HOME;
+		if (!dataHome) throw new Error("Missing native data store");
+		const env = {
+			...(this.config.childEnvironment ?? process.env),
+			...this.config.env,
+			...this.config.additionalEnv,
+			...runtimeEnv,
+		};
+		const data = join(dataHome, "opencode");
+		// A fresh native data store has no saved approvals. Existing stores must
+		// prove their permission metadata before any model turn. The CLI's db
+		// command uses a read-only connection and does not initialize a session.
+		if (
+			!existsSync(data) ||
+			!readdirSync(data).some((name) =>
+				/^opencode(?:-[\w.-]+)?\.db$/.test(name),
+			)
+		)
+			return;
+		const session = this.config.resumeSessionId;
+		const quoted = `'${(session ?? "").replaceAll("'", "''")}'`;
+		const query = `SELECT EXISTS(SELECT 1 FROM permission WHERE data <> '[]'${session ? ` AND project_id = (SELECT project_id FROM session WHERE id = ${quoted})` : ""}) AS savedPermissions, ${session ? `(SELECT permission FROM session WHERE id = ${quoted})` : "'[]'"} AS sessionPermission`;
+		const result = spawnSync(
+			this.config.openCodePath || "opencode",
+			["db", query, "--format", "json"],
+			{
+				cwd: this.config.workingDirectory || cwd(),
+				env,
+				encoding: "utf8",
+				timeout: 5_000,
+				maxBuffer: 16_384,
+			},
+		);
+		try {
+			if (result.error || result.status !== 0) throw new Error("unsupported");
+			const rows = JSON.parse(result.stdout);
+			if (!Array.isArray(rows) || rows.length !== 1) throw new Error("unknown");
+			const row = rows[0];
+			if (row.savedPermissions !== 0)
+				throw new Error("saved project approvals");
+			if (session && row.sessionPermission === null)
+				throw new Error("missing saved session permission metadata");
+			const rules = row.sessionPermission
+				? JSON.parse(row.sessionPermission)
+				: [];
+			if (
+				!Array.isArray(rules) ||
+				rules.some(
+					(rule) =>
+						!rule ||
+						typeof rule.permission !== "string" ||
+						typeof rule.pattern !== "string" ||
+						(rule.action !== "deny" &&
+							!(
+								rule.action === "allow" &&
+								[
+									"factory-context_list_context",
+									"factory-context_read_context",
+								].includes(rule.permission) &&
+								rule.pattern === "*"
+							)),
+				)
+			)
+				throw new Error("broader saved session permissions");
+			return;
+		} catch {
+			return new Error(
+				"Context-only OpenCode could not verify that native saved permissions are restricted. Native history is preserved; refusing a model turn.",
+			);
+		}
+	}
+	private retainContextProfile(sessionId: string) {
+		if (this.config.toolProfile !== "context-only" || sessionId === "pending")
+			return;
+		const path = this.contextProfileReceipt(sessionId);
+		mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+		writeFileSync(
+			path,
+			JSON.stringify({
+				profile: "context-only-v1",
+				sessionId,
+				directory: resolve(this.config.workingDirectory || cwd()),
+				dataHome: buildOpenCodeRuntimeEnv(this.config).XDG_DATA_HOME,
+			}),
+			{ mode: 0o600 },
+		);
+	}
+
 	private buildRuntimeEnv(): Record<string, string> {
 		const built = buildOpenCodeConfig(this.config);
 		for (const entry of built.unsupported) {
@@ -568,8 +724,13 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 		}
 		if (this.config.modelVariant)
 			args.push("--variant", this.config.modelVariant);
-		if (this.config.agent) {
-			args.push("--agent", this.config.agent);
+		if (this.config.toolProfile === "context-only" || this.config.agent) {
+			args.push(
+				"--agent",
+				this.config.toolProfile === "context-only"
+					? "factory-context-only"
+					: this.config.agent!,
+			);
 		}
 		if (this.config.resumeSessionId) {
 			args.push("--session", this.config.resumeSessionId);
@@ -613,6 +774,14 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 			case "step_start": {
 				const sessionId =
 					event.sessionID || event.sessionId || event.session_id || "pending";
+				try {
+					this.retainContextProfile(sessionId);
+				} catch (error) {
+					const child = this.process;
+					this.finalizeSession(error);
+					child?.kill("SIGTERM");
+					return;
+				}
 				if (this.sessionInfo) {
 					this.sessionInfo.sessionId = sessionId;
 				}

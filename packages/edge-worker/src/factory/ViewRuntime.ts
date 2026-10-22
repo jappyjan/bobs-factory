@@ -8,19 +8,16 @@ import {
 	decisionItems,
 	ViewAnswerSchema,
 	ViewAskSchema,
+	ViewNotificationsSchema,
 	type ViewRecord,
 	type ViewSnapshot,
 	viewAnswerOutput,
 } from "./HumanStep.js";
 import { launchBatchProjection } from "./LaunchRuns.js";
 import { resolveStepConfig } from "./StepConfig.js";
-import {
-	availableViewPaths,
-	resolveView,
-	viewPlainText,
-	viewText,
-} from "./View.js";
+import { availableViewPaths, resolveView, viewText } from "./View.js";
 import { verifyViewAssets } from "./ViewAssets.js";
+import { humanViewText } from "./ViewText.js";
 import { StepSchema, type WorkflowStep } from "./Workflow.js";
 import type {
 	ExecutionContext,
@@ -116,6 +113,7 @@ function configuration(step: WorkflowStep) {
 		name: step.name,
 		view: step.view,
 		decide: step.decide,
+		notifications: step.notifications,
 		reads: step.reads ?? {},
 	});
 }
@@ -126,7 +124,9 @@ function publicSnapshot(record: ViewRecord): ViewSnapshot {
 		threads: Object.fromEntries(
 			Object.entries(snapshot.threads ?? {}).map(([id, threads]) => [
 				id,
-				threads.map(({ agent: _agent, ...thread }) => thread),
+				threads.map(
+					({ agent: _agent, executionKey: _executionKey, ...thread }) => thread,
+				),
 			]),
 		),
 		...(record.answer ? { answer: structuredClone(record.answer.output) } : {}),
@@ -203,6 +203,51 @@ export class HumanViews {
 		string,
 		{ resolve: () => void; reject: (error: Error) => void }
 	>();
+	private transitions = new Map<string, Promise<unknown>>();
+	private transition<T>(
+		run: FactoryRun,
+		operation: () => Promise<T>,
+	): Promise<T> {
+		const previous = this.transitions.get(run.id) ?? Promise.resolve();
+		const work = previous.catch(() => {}).then(operation);
+		this.transitions.set(run.id, work);
+		void work
+			.finally(() => {
+				if (this.transitions.get(run.id) === work)
+					this.transitions.delete(run.id);
+			})
+			.catch(() => {});
+		return work;
+	}
+	private publishCurrent(run: FactoryRun, record: ViewRecord): boolean {
+		if (
+			record.answer ||
+			record.superseded ||
+			run.status !== "waiting" ||
+			run.viewDecision?.id !== record.snapshot.id ||
+			!run.viewRecords?.includes(record)
+		)
+			return false;
+		try {
+			const current = this.current(run, record);
+			const source = content(current.context);
+			if (
+				digest(source.config) !== record.configDigest ||
+				digest({ view: source.view, items: source.items }) !==
+					record.sourceDigest
+			) {
+				record.superseded = true;
+				this.contexts.set(record.snapshot.id, current.context);
+				delete current.found.frame.active!.viewId;
+				return true;
+			}
+			run.viewDecision = publicSnapshot(record);
+			return false;
+		} catch {
+			/* Historical results never recover publication authority. */
+			return false;
+		}
+	}
 	private submissions = new Map<string, Promise<unknown>>();
 	private asks = new Map<string, Promise<unknown>>();
 	constructor(
@@ -239,7 +284,10 @@ export class HumanViews {
 			threads: Object.fromEntries(
 				Object.entries(threads ?? {}).map(([id, threads]) => [
 					id,
-					threads.map(({ agent: _agent, ...thread }) => thread),
+					threads.map(
+						({ agent: _agent, executionKey: _executionKey, ...thread }) =>
+							thread,
+					),
 				]),
 			),
 		});
@@ -293,6 +341,9 @@ export class HumanViews {
 					items: source.items,
 				}),
 				view: immutableJson(source.view),
+				...(step.notifications
+					? { notifications: immutableJson(step.notifications) }
+					: {}),
 				...(source.items
 					? {
 							items: source.items.map(({ value: _value, ...item }) => item),
@@ -306,11 +357,7 @@ export class HumanViews {
 			record = {
 				snapshot,
 				configDigest: digest(source.config),
-				definitionDigest: digest({
-					view: step.view,
-					decide: step.decide,
-					reads: step.reads ?? {},
-				}),
+				definitionDigest: digest(source.config),
 				sourceDigest: digest({ view: source.view, items: source.items }),
 				items: source.items?.map(({ id, value }) => ({ id, value })),
 				scope: immutableJson(source.scope),
@@ -400,54 +447,41 @@ export class HumanViews {
 		}
 	}
 	text(record: ViewRecord): string {
-		const snapshot = record.snapshot;
-		const lines = [
-			viewPlainText(`${snapshot.kind}: ${snapshot.title}`),
-			viewText(snapshot.view),
-		];
-		for (const item of snapshot.items ?? [])
-			lines.push(
-				...[
-					`${item.id}: ${item.title}`,
-					item.body ?? "",
-					...item.details.map((d) => `${d.label}: ${d.value}`),
-				].map(viewPlainText),
-			);
-		if (snapshot.actions)
-			lines.push(
-				viewPlainText(
-					`Actions: ${snapshot.actions.map((a) => `${a.id} (${a.label})`).join(", ")}`,
-				),
-			);
-		lines.push(
-			`Decision batch: ${snapshot.id}`,
-			`Displayed digest: ${snapshot.digest}`,
-			snapshot.kind === "approve"
-				? 'Reply with /view-answer {"batchId":"' +
-						snapshot.id +
-						'","digest":"' +
-						snapshot.digest +
-						'","accepted":true,"approved":true} or approved:false with feedback.'
-				: 'Reply with /view-answer {"batchId":"' +
-						snapshot.id +
-						'","digest":"' +
-						snapshot.digest +
-						'","accepted":true,"choices":[{"itemId":"…","action":"…"}]} after reviewing every item.',
-		);
-		// Ordinary item text cannot create markup, terminal controls or active ticket links.
-		return lines.join("\n").slice(0, 100000);
+		return humanViewText(record.snapshot);
 	}
 	displayText(run: FactoryRun) {
-		return (run.viewRecords ?? [])
-			.filter(
-				(record) =>
-					record.snapshot.kind === "show" ||
-					record.snapshot.id === run.viewDecision?.id,
-			)
-			.map((record) => this.text(record))
-			.join("\n\n")
-			.slice(0, 100000);
+		const records = run.viewRecords ?? [];
+		const current = records.find((r) => r.snapshot.id === run.viewDecision?.id);
+		const history = records.filter((r) => r.snapshot.kind === "show").reverse();
+		const historyNotice =
+			"\n[Earlier Show displays omitted. Open the dashboard for retained history.]";
+		const chunks = current
+			? [
+					humanViewText(current.snapshot, {
+						maxLength: history.length
+							? 100000 - historyNotice.length - 2
+							: 100000,
+					}),
+				]
+			: [];
+		let remaining = 100000 - chunks.join("\n\n").length;
+		for (const record of history) {
+			const notice =
+				"\n[Earlier Show displays omitted. Open the dashboard for retained history.]";
+			if (remaining < 1600 + notice.length) {
+				if (chunks.length && remaining >= notice.length + 2)
+					chunks.push(notice);
+				break;
+			}
+			const text = humanViewText(record.snapshot, {
+				maxLength: remaining - notice.length - 2,
+			});
+			chunks.push(text);
+			remaining -= text.length + 2;
+		}
+		return chunks.join("\n\n");
 	}
+
 	snapshot(run: FactoryRun) {
 		return run.viewDecision;
 	}
@@ -463,7 +497,7 @@ export class HumanViews {
 			await existing;
 			return this.answer(id, request);
 		}
-		const work = (async () => {
+		const work = this.transition(run, async () => {
 			if (record.answer) {
 				if (digest(record.answer.request) !== digest(request))
 					throw new Error(
@@ -526,7 +560,7 @@ export class HumanViews {
 			await this.runtime.save(run);
 			this.waiting.get(record.snapshot.id)?.resolve();
 			return record.answer.output;
-		})();
+		});
 		this.submissions.set(request.batchId, work);
 		try {
 			return await work;
@@ -540,64 +574,81 @@ export class HumanViews {
 	}
 	async ask(id: string, input: unknown) {
 		const request = ViewAskSchema.parse(input),
-			run = this.runtime.get(id),
-			record = run.viewRecords?.find(
+			run = this.runtime.get(id);
+		return this.transition(run, async () => {
+			const record = run.viewRecords?.find(
 				(record) => record.snapshot.id === request.batchId,
 			);
-		if (
-			!record ||
-			record.answer ||
-			run.status !== "waiting" ||
-			run.viewDecision?.id !== request.batchId
-		)
-			throw new Error("Run is not waiting for this item decision");
-		if (this.submissions.has(request.batchId))
-			throw new Error("A decision submission is in progress");
-		const originalThread = record.snapshot.threads?.[request.itemId]?.find(
-			(thread) => thread.id === request.requestId,
-		);
-		if (originalThread) {
-			if (originalThread.question !== request.question)
-				throw new Error("Ask request ID already belongs to another question");
+			if (
+				!record ||
+				record.answer ||
+				record.superseded ||
+				run.status !== "waiting" ||
+				run.viewDecision?.id !== request.batchId
+			)
+				throw new Error("Run is not waiting for this item decision");
+			if (this.submissions.has(request.batchId))
+				throw new Error("A decision submission is in progress");
+			const originalThread = record.snapshot.threads?.[request.itemId]?.find(
+				(thread) => thread.id === request.requestId,
+			);
+			if (originalThread) {
+				if (originalThread.question !== request.question)
+					throw new Error("Ask request ID already belongs to another question");
+				return publicSnapshot(record);
+			}
+			const { context } = this.current(run, record),
+				source = content(context);
+			if (
+				!context.step.decide?.ask ||
+				request.digest !== record.snapshot.digest ||
+				digest({ view: source.view, items: source.items }) !==
+					record.sourceDigest ||
+				digest(source.config) !== record.configDigest
+			)
+				throw new Error("Ask is unavailable or the displayed decision changed");
+			if (!record.items?.some((item) => item.id === request.itemId))
+				throw new Error("Unknown decision item");
+			record.snapshot.threads ??= {};
+			const threads = record.snapshot.threads;
+			threads[request.itemId] ??= [];
+			const entries = threads[request.itemId]!;
+			const previous = entries.find(
+				(thread) => thread.id === request.requestId,
+			);
+			if (previous) {
+				if (previous.question !== request.question)
+					throw new Error("Ask request ID already belongs to another question");
+				return publicSnapshot(record);
+			}
+			if (entries.length >= 20 || this.asksFor(record).length >= 100)
+				throw new Error("Ask thread limit reached");
+			entries.push({
+				id: request.requestId,
+				...(run.viewRecords?.some((previous) =>
+					Object.values(previous.snapshot.threads ?? {})
+						.flat()
+						.some((thread) => thread.id === request.requestId),
+				)
+					? {
+							executionKey: `${record.snapshot.stepKey}/ask/${record.snapshot.id}/${request.itemId}/${request.requestId}`,
+						}
+					: {}),
+				question: request.question,
+				status: "pending",
+				at: new Date().toISOString(),
+			});
+			this.updateDigest(run, record);
+			run.viewDecision = publicSnapshot(record);
+			await this.runtime.save(run);
+			void this.runAsk(
+				context,
+				record,
+				request.itemId,
+				request.requestId,
+			).catch(() => {});
 			return publicSnapshot(record);
-		}
-		const { context } = this.current(run, record),
-			source = content(context);
-		if (
-			!context.step.decide?.ask ||
-			request.digest !== record.snapshot.digest ||
-			digest({ view: source.view, items: source.items }) !==
-				record.sourceDigest ||
-			digest(source.config) !== record.configDigest
-		)
-			throw new Error("Ask is unavailable or the displayed decision changed");
-		if (!record.items?.some((item) => item.id === request.itemId))
-			throw new Error("Unknown decision item");
-		record.snapshot.threads ??= {};
-		const threads = record.snapshot.threads;
-		threads[request.itemId] ??= [];
-		const entries = threads[request.itemId]!;
-		const previous = entries.find((thread) => thread.id === request.requestId);
-		if (previous) {
-			if (previous.question !== request.question)
-				throw new Error("Ask request ID already belongs to another question");
-			return publicSnapshot(record);
-		}
-		if (entries.length >= 20 || this.asksFor(record).length >= 100)
-			throw new Error("Ask thread limit reached");
-		entries.push({
-			id: request.requestId,
-			question: request.question,
-			status: "pending",
-			at: new Date().toISOString(),
 		});
-		this.updateDigest(run, record);
-		run.viewDecision = publicSnapshot(record);
-		await this.runtime.save(run);
-		void this.runAsk(context, record, request.itemId, request.requestId).catch(
-			() => {},
-		);
-		return publicSnapshot(record);
 	}
 	private async runAsk(
 		context: ExecutionContext,
@@ -605,15 +656,23 @@ export class HumanViews {
 		itemId: string,
 		requestId: string,
 	) {
-		if (this.asks.has(requestId)) return this.asks.get(requestId);
+		const askKey = JSON.stringify([
+			context.run.id,
+			record.snapshot.id,
+			itemId,
+			requestId,
+		]);
+		if (this.asks.has(askKey)) return this.asks.get(askKey);
 		const thread = record.snapshot.threads![itemId]!.find(
 			(thread) => thread.id === requestId,
 		)!;
 		const work = (async () => {
+			let result: { answer: string } | { error: string };
 			try {
 				const settings = context.step.decide!.ask!;
 				const output = await this.hooks.agent({
 					...context,
+					contextAssistance: true,
 					input: {
 						item: record.items!.find((item) => item.id === itemId)!.value,
 						question: thread.question,
@@ -639,12 +698,22 @@ export class HumanViews {
 							],
 						},
 					},
-					stepKey: `${record.snapshot.stepKey}/ask/${requestId}`,
+					stepKey:
+						thread.executionKey ??
+						`${record.snapshot.stepKey}/ask/${requestId}`,
 					resumeAgent: thread.agent as ExecutionContext["resumeAgent"],
-					checkpointAgent: async (agent) => {
-						thread.agent = agent;
-						await this.runtime.save(context.run);
-					},
+					checkpointAgent: async (agent) =>
+						this.transition(context.run, async () => {
+							context.signal.throwIfAborted();
+							if (
+								!context.run.viewRecords?.includes(record) ||
+								record.answer ||
+								thread.status !== "pending"
+							)
+								return;
+							thread.agent = agent;
+							await this.runtime.save(context.run);
+						}),
 				});
 				context.signal.throwIfAborted();
 				const safeOutput = sanitizeJsonConfiguration(output);
@@ -656,30 +725,54 @@ export class HumanViews {
 					throw new Error(
 						"Ask requires a text answer of at most 24000 characters",
 					);
-				thread.answer = text;
-				thread.status = "answered";
+				result = { answer: text };
 			} catch (error) {
 				if (context.signal.aborted) return;
-				thread.status = "failed";
-				thread.error = error instanceof Error ? error.message : "Ask failed";
+				const message = error instanceof Error ? error.message : "Ask failed";
+				result = {
+					error:
+						message.length <= 24000
+							? message
+							: `${message.slice(0, 23950)} [error text truncated]`,
+				};
 			}
-			this.updateDigest(context.run, record);
-			context.run.viewDecision = publicSnapshot(record);
-			await this.runtime.save(context.run);
+			await this.transition(context.run, async () => {
+				if (
+					context.signal.aborted ||
+					!context.run.viewRecords?.includes(record) ||
+					record.answer ||
+					thread.status !== "pending"
+				)
+					return;
+				if ("answer" in result) {
+					thread.answer = result.answer;
+					thread.status = "answered";
+				} else {
+					thread.error = result.error;
+					thread.status = "failed";
+				}
+				this.updateDigest(context.run, record);
+				const renew = this.publishCurrent(context.run, record);
+				await this.runtime.save(context.run);
+				if (renew) this.waiting.get(record.snapshot.id)?.resolve();
+			});
 		})();
-		this.asks.set(requestId, work);
+		this.asks.set(askKey, work);
 		try {
 			return await work;
 		} finally {
-			this.asks.delete(requestId);
+			this.asks.delete(askKey);
 		}
 	}
 	async preview(input: {
 		workflowId: string;
 		stepId: string;
 		view: unknown;
+		type?: "decide" | "approve" | "show";
+		name?: string;
 		decide?: unknown;
 		reads?: unknown;
+		notifications?: unknown;
 		runId?: string;
 		lastRun?: boolean;
 		sampleScope?: unknown;
@@ -689,6 +782,10 @@ export class HumanViews {
 			view: input.view,
 			decide: input.decide,
 			reads: input.reads ?? {},
+			notifications:
+				input.notifications === undefined
+					? undefined
+					: ViewNotificationsSchema.parse(input.notifications),
 		};
 		let scope = input.sampleScope ?? { inputs: {} },
 			provenance: Record<string, unknown> = {
@@ -727,9 +824,12 @@ export class HumanViews {
 					record.definitionDigest ===
 					digest(
 						sanitizeJsonConfiguration({
+							type: input.type ?? record.snapshot.kind,
+							name: input.name ?? record.snapshot.title,
 							view: config.view,
 							decide: config.decide,
 							reads: config.reads,
+							notifications: config.notifications,
 						}),
 					),
 			};

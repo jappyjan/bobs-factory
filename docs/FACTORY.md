@@ -428,9 +428,24 @@ blockers, and successful completion including runs without a review guide.
 Mirrored native sessions are suppressed when a Factory run exists. User stops,
 automatic restart recovery, tool activity, capacity waits and CI/merge polling do
 not alert. Closely spaced events for one run coalesce; unchanged questions/gates
-and repeated saves never alert again. Notifications show Factory's name and a
-fixed event type, never ticket titles, question text, findings, transcripts or
-raw errors. Clicks focus an existing app tab or open the relevant run/review hash
+and repeated saves never alert again. Notifications default to Factory's name and a
+fixed event type. This private default excludes ticket titles, question text,
+findings, transcripts and raw errors, including existing frozen recipes and queued
+notifications. A custom Decide or Approve step can explicitly select
+`notifications: { "push": "view-text" }` to include its accepted displayed view's
+plain-text fallback. This sends displayed content through the existing encrypted
+push path and can reveal it on the device, including its lock screen. The
+choice is captured on the accepted decision snapshot; agent output and later
+recipe edits cannot opt an existing decision into sharing. `"private"` restores
+the fixed-text policy for new accepted decisions. Show does not create a decision
+alert.
+
+Opted-in view text includes the exact decision batch and displayed-content digest,
+uses bounded text with explicit truncation/full-dashboard guidance, and carries no
+executable markup or notification actions. Serialized payloads stay within 3,072
+UTF-8 bytes; if that envelope cannot fit, delivery uses the private fixed text.
+Push is a display/attention channel, not human acceptance: open the dashboard or
+use the documented explicit answer protocol. Clicks focus an existing app tab or open the relevant run/review hash
 route and refresh authoritative state before actions. Navigating to another
 form discards unsent edits, following the dashboard's normal form behavior.
 Protected links still require tailnet access and the existing access controls.

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import type { MergeReadiness } from "./MergeReadiness.js";
+import { humanViewText } from "./ViewText.js";
 import type { FactoryRun, GraphCheckpoint } from "./WorkflowRuntime.js";
 
 export type PushCategory =
@@ -14,6 +15,8 @@ export interface PushEvent {
 	category: PushCategory;
 	identity: string;
 	destination: string;
+	/** Present only for an accepted human-step snapshot's explicit privacy opt-in. */
+	viewText?: string;
 }
 export const digest = (value: unknown) =>
 	createHash("sha256").update(JSON.stringify(value)).digest("base64url");
@@ -37,7 +40,27 @@ export function runPushEvent(run: FactoryRun): PushEvent | undefined {
 	// Ticket preparation temporarily marks restored waits as running. Unanswered
 	// questions and pending gates remain authoritative until answer/decide clears them.
 	const unresolved = run.status === "waiting" || run.status === "running";
-	if (unresolved && run.viewDecision && !run.viewDecision.answer)
+	if (
+		unresolved &&
+		run.viewDecision &&
+		run.viewDecision.kind !== "show" &&
+		!run.viewDecision.answer
+	) {
+		let viewText: string | undefined;
+		if (run.viewDecision.notifications?.push === "view-text") {
+			// Bound the encoded string, including Unicode and JSON escape expansion.
+			// Reformat rather than slicing away the exact batch/digest/protocol header.
+			for (let maxLength = 2000; maxLength >= 1000; maxLength >>= 1) {
+				const text = humanViewText(run.viewDecision, {
+					maxLength,
+					includeProtocol: true,
+				});
+				if (Buffer.byteLength(JSON.stringify(text), "utf8") <= 2000) {
+					viewText = text;
+					break;
+				}
+			}
+		}
 		return {
 			category: run.viewDecision.kind === "approve" ? "review" : "question",
 			identity: digest([
@@ -46,7 +69,9 @@ export function runPushEvent(run: FactoryRun): PushEvent | undefined {
 				run.viewDecision.digest,
 			]),
 			destination,
+			...(viewText === undefined ? {} : { viewText }),
 		};
+	}
 	if (unresolved && run.architectureGate)
 		return {
 			category: "question",

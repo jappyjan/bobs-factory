@@ -5,8 +5,10 @@ import {
 	existsSync,
 	mkdirSync,
 	readFileSync,
+	statSync,
 	type WriteStream,
 } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { cwd } from "node:process";
 import { fileURLToPath } from "node:url";
@@ -52,6 +54,44 @@ import type {
 } from "./types.js";
 
 type ToolInput = Record<string, unknown>;
+
+/** Native startup hooks run before tool permission hooks. Do not execute
+ * inherited scripts merely because the model's own tools are restricted. */
+export function cursorContextStartupProblem(
+	workspace: string,
+	env: NodeJS.ProcessEnv = process.env,
+	platform = process.platform,
+): string | undefined {
+	const home = env.HOME || homedir();
+	const managed =
+		platform === "darwin"
+			? "/Library/Application Support/Cursor/hooks.json"
+			: platform === "win32"
+				? join(env.ProgramData || "C:\\ProgramData", "Cursor/hooks.json")
+				: "/etc/cursor/hooks.json";
+	const problem =
+		"Context-only Cursor cannot run inherited startup hooks. Native settings are preserved; refusing to start the agent.";
+	if (
+		[managed, join(home, ".cursor/hooks.json")].some((path) => existsSync(path))
+	)
+		return problem;
+	for (const path of [
+		join(home, ".claude/settings.json"),
+		join(workspace, ".claude/settings.json"),
+		join(workspace, ".claude/settings.local.json"),
+	]) {
+		if (!existsSync(path)) continue;
+		try {
+			if (statSync(path).size > 65_536) return problem;
+			const settings = JSON.parse(readFileSync(path, "utf8"));
+			if (settings.hooks && Object.keys(settings.hooks).length > 0)
+				return problem;
+		} catch {
+			return problem;
+		}
+	}
+	return;
+}
 
 type SDKSystemInitMessage = Extract<
 	SDKMessage,
@@ -419,7 +459,21 @@ export class CursorRunner extends EventEmitter implements IAgentRunner {
 
 	constructor(config: CursorRunnerConfig) {
 		super();
-		this.config = config;
+		this.config =
+			config.toolProfile === "context-only"
+				? {
+						...config,
+						allowedTools: [
+							"mcp__factory-context__list_context",
+							"mcp__factory-context__read_context",
+						],
+						allowedDirectories: [],
+						mcpConfigPath: undefined,
+						mcpConfig: config.mcpConfig?.["factory-context"]
+							? { "factory-context": config.mcpConfig["factory-context"] }
+							: {},
+					}
+				: config;
 		this.formatter = new CursorMessageFormatter();
 
 		if (config.onMessage) this.on("message", config.onMessage);
@@ -474,6 +528,10 @@ export class CursorRunner extends EventEmitter implements IAgentRunner {
 		const workspace = resolve(this.config.workingDirectory || cwd());
 
 		try {
+			if (this.config.toolProfile === "context-only") {
+				const problem = cursorContextStartupProblem(workspace);
+				if (problem) throw new Error(problem);
+			}
 			this.artifactAbort = new AbortController();
 			await this.installPermissionsArtifacts(workspace);
 
@@ -805,6 +863,7 @@ export class CursorRunner extends EventEmitter implements IAgentRunner {
 		const sdkMcpServers = mapCyrusMcpToSdk(this.config.mcpConfig);
 		const cfg: CyrusPermissionsConfig = buildCyrusPermissionsConfig({
 			workspace,
+			toolProfile: this.config.toolProfile,
 			allowedTools: this.config.allowedTools,
 			disallowedTools: this.config.disallowedTools,
 			mcpServers: sdkMcpServers,

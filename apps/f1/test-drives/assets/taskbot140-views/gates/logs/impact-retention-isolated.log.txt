@@ -1,0 +1,14 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+
+ ✓ test/CheckImpactRetention.test.ts > retains authenticated Check receipts through blocked-review assistance, durable reassessment and only the outstanding reviewer 12216ms
+ ✓ test/CheckImpactRetention.test.ts > keeps historical inventory authority scoped to actual independent reassessment and fresh exact-frame proof without rebinding its original inspection 12813ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  08:18:04
+   Duration  26.24s (transform 630ms, setup 19ms, import 1.10s, tests 25.03s, environment 0ms)
+

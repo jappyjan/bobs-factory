@@ -10,6 +10,23 @@ export const researchTools = [
 	"list_repository",
 	"read_repository",
 ].map((t) => `mcp__factory-context__${t}`);
+export const contextTools = [
+	"mcp__factory-context__list_context",
+	"mcp__factory-context__read_context",
+];
+/** Runtime-owned explanation capability; it never grants repository access. */
+export function restrictContextRunner(
+	config: AgentRunnerConfig,
+	runner: RunnerType,
+) {
+	if (!["claude", "codex", "cursor", "opencode"].includes(runner))
+		throw new Error(
+			`Context-only assistance is not yet capability-tested for ${runner}; configure Claude, Codex, Cursor or OpenCode. The original thread is retained.`,
+		);
+	restrictResearchRunner(config, runner);
+	config.allowedTools = [...contextTools];
+	config.toolProfile = "context-only";
+}
 /** Researchers inspect pinned blobs via the scoped server; no native shell/delegation or external writes. */
 export function restrictResearchRunner(
 	config: AgentRunnerConfig,
@@ -85,7 +102,6 @@ export function restrictResearchRunner(
 		native.includeWebSearch = false;
 		native.webSearchMode = "disabled";
 		native.configOverrides = {
-			...native.configOverrides,
 			features: {
 				shell_tool: false,
 				apply_patch_tool: false,

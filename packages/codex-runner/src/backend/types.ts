@@ -123,6 +123,8 @@ export type ResolvedCodexSandbox =
  * `turn/start` params for the app-server.
  */
 export interface ResolvedCodexConfig {
+	/** Internal tool ceiling; never accepted from recipe data. */
+	toolProfile?: "context-only";
 	model?: string;
 	sandbox: ResolvedCodexSandbox;
 	workingDirectory?: string;

@@ -924,6 +924,7 @@ function Inspector({
 				<HumanStepSettings
 					step={step}
 					workflowId={owner.id}
+					previewDefinition={owner}
 					readOnly={!local}
 					onChange={onChange}
 					onError={onConfigError}

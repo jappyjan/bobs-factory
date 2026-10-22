@@ -41,6 +41,7 @@ import {
 	DecideConfigurationSchema,
 	ViewAnswerSchema,
 	ViewAskSchema,
+	ViewNotificationsSchema,
 } from "./HumanStep.js";
 import { ImprovementActionSchema } from "./Improvement.js";
 import { withAsyncInlineSchemas } from "./InlineSchema.js";
@@ -1226,8 +1227,11 @@ export class FactoryServer {
 						workflowId: z.string().min(1).max(80),
 						stepId: z.string().min(1).max(400),
 						view: ViewSourceSchema,
+						type: z.enum(["decide", "approve", "show"]).optional(),
+						name: z.string().min(1).max(120).optional(),
 						decide: DecideConfigurationSchema.optional(),
 						reads: z.unknown().optional(),
+						notifications: ViewNotificationsSchema.optional(),
 						runId: z.string().min(1).max(200).optional(),
 						lastRun: z.boolean().optional(),
 						sampleScope: z.unknown().optional(),

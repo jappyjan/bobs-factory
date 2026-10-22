@@ -4,6 +4,19 @@ Date: 2026-10-22. [PR #177](https://github.com/jappyjan/bobs-factory/pull/177). 
 [epic #135](https://taskbot.apps.janjaap.de/p/bobs-factory/t/135), predecessor
 [#139 / PR #176](https://github.com/jappyjan/bobs-factory/pull/176).
 
+## Historical round1 evidence
+
+The evidence below was captured for production source `667cbffd` and published at
+reviewed head `246e422d`. Independent round1 (Taskbot comment2197) found R1–R6;
+this historical packet is **not acceptance clearance**. Backend validation here
+does not cover the repairs. The follow-up packet is
+[round1 repairs and current validation](2026-10-22-taskbot140-views-round2.md).
+The reviewer matched all1377 source inputs,29 resources and8 critical compiled
+files, but did **not** reproduce the original whole-dist aggregate (original
+`09c4f770…`, reviewer `62818161…`); no independently reproduced aggregate or clean
+246 native-binary claim is made. Original failures and all original bytes remain
+retained. The fresh Git archive verifier now checks the previously omitted logs.
+
 ## Scope and identity
 
 This validates saved custom recipes using the production `decide`, `approve` and

@@ -1,0 +1,9 @@
+Preparing worktree (new branch 'fixture/views-approve-ui-run')
+Preparing worktree (new branch 'fixture/views-decide-ui-run')
+Preparing worktree (new branch 'fixture/views-children-ui-run')
+Preparing worktree (new branch 'fixture/child-a2eba2850028753b44b25f077d015f9b610d9a03')
+Preparing worktree (new branch 'fixture/child-f5a54f2c94c6d407c9eae350ddf4102fd4c4610a')
+Preparing worktree (new branch 'fixture/child-7ac1ad18755bed55697edb0c766107fefaee72ef')
+{"ready":true,"origin":"http://localhost:3690","urls":{"decide":"http://localhost:3690/#/runs/views-decide-ui-run","approve":"http://localhost:3690/#/runs/views-approve-ui-run","runs":"http://localhost:3690/#/runs/views-children-ui-run"},"builderUrl":"http://localhost:3690/#/recipes?recipe=views-decide-ui&step=choose","evidence":"/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views/ui/attempt-1","directory":"/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-views-ui-kLIpqF","build":"d913ccf7228f6e6f7366daad"}
+Browser receipt retained
+PASS declarative views UI fixture stopped; disposable state retained
