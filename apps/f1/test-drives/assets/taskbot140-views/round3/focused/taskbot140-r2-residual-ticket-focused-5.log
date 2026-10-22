@@ -1,0 +1,36 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+
+ ❯ test/HumanViewTicketDelivery.test.ts (6 tests | 2 failed) 3041ms
+   × reconstructs actual original339 persisted notified-crash-gap without losing or replaying obsolete publication 1ms
+   × reconstructs actual original339 persisted unsent-initial-after-ask without losing or replaying obsolete publication 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/HumanViewTicketDelivery.test.ts > reconstructs actual original339 persisted notified-crash-gap without losing or replaying obsolete publication
+ FAIL  test/HumanViewTicketDelivery.test.ts > reconstructs actual original339 persisted unsent-initial-after-ask without losing or replaying obsolete publication
+ReferenceError: readdirSync is not defined
+ ❯ copy test/HumanViewTicketDelivery.test.ts:64:24
+     62|   const copy = (from: string, to: string) => {
+     63|    mkdirSync(to, { recursive: true });
+     64|    for (const entry of readdirSync(from, { withFileTypes: true })) {
+       |                        ^
+     65|     if (entry.isDirectory())
+     66|      copy(join(from, entry.name), join(to, entry.name));
+ ❯ fixture test/HumanViewTicketDelivery.test.ts:74:3
+ ❯ test/HumanViewTicketDelivery.test.ts:470:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  2 failed | 95 passed (97)
+   Start at  11:33:07
+   Duration  34.13s (transform 990ms, setup 35ms, import 2.28s, tests 31.41s, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/HumanViewTicketDelivery.test.ts test/HumanViewsApi.test.ts test/HumanViewsRuntime.test.ts test/HumanViewPush.test.ts test/TicketTracking.test.ts --maxWorkers=1

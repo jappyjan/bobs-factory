@@ -1,0 +1,8 @@
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+[
+  {
+    "mode": "raw-native-failure",
+    "files": 9,
+    "run": "4fb86aa0-41c4-45d4-98eb-ef57b87e6242"
+  }
+]

@@ -1,0 +1,10 @@
+Preparing worktree (new branch 'fixture/views-approve-ui-run')
+Preparing worktree (new branch 'fixture/views-decide-ui-run')
+Preparing worktree (new branch 'fixture/views-children-ui-run')
+Preparing worktree (new branch 'fixture/child-d6c1ad5402e529828ff18245eea67cea2d48be8e')
+Preparing worktree (new branch 'fixture/child-5eb2e47cfca7ecef41e9dc9dd848c5aa8fe75273')
+Preparing worktree (new branch 'fixture/child-c51fa3b1e3bbe92748d88f4b126f6b6fa7442c03')
+{"ready":true,"origin":"http://localhost:3693","urls":{"decide":"http://localhost:3693/#/runs/views-decide-ui-run","approve":"http://localhost:3693/#/runs/views-approve-ui-run","runs":"http://localhost:3693/#/runs/views-children-ui-run"},"builderUrl":"http://localhost:3693/#/recipes?recipe=views-decide-ui&step=choose","evidence":"/tmp/taskbot140-round3-ui","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-views-ui-round3-kBHNAm","build":"b6c096735522dd1c43f9750f"}
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+{"previewGate":"released","ids":[],"pending":[]}
+PASS declarative views UI fixture stopped; disposable state retained

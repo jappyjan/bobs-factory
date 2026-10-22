@@ -1,0 +1,46 @@
+{
+  "before": {
+    "dbExists": false,
+    "authHash": "8d586f447a72622c83aaae7001a7d31940635db3d5f427c1b27bd6b184c629a8"
+  },
+  "after": {
+    "dbExists": true,
+    "dbBytes": 4096,
+    "authUnchanged": true
+  },
+  "errors": [
+    "Error: Context-only OpenCode could not verify native provider and organization configuration authority. Native history is preserved; refusing a model turn."
+  ],
+  "lastMessage": {
+    "type": "result",
+    "subtype": "error_during_execution",
+    "duration_ms": 895,
+    "duration_api_ms": 0,
+    "is_error": true,
+    "num_turns": 1,
+    "stop_reason": null,
+    "errors": [
+      "Context-only OpenCode could not verify native provider and organization configuration authority. Native history is preserved; refusing a model turn."
+    ],
+    "total_cost_usd": 0,
+    "usage": {
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      }
+    },
+    "modelUsage": {},
+    "permission_denials": [],
+    "uuid": "8af6ab40-e844-448c-a966-3e454838228b",
+    "session_id": "pending"
+  },
+  "syntheticQuery": {
+    "status": 0,
+    "stdout": "[\n  {\n    \"sessions\": 1,\n    \"messages\": 1,\n    \"parts\": 1,\n    \"syntheticPart\": \"{\\\"type\\\":\\\"text\\\",\\\"text\\\":\\\"SYNTHETIC NATIVE HISTORY MUST NOT BE MIGRATED DURING METADATA REFUSAL\\\",\\\"time\\\":{\\\"created\\\":1}}\"\n  }\n]\n",
+    "stderr": ""
+  }
+}

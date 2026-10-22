@@ -1,0 +1,49 @@
+packages/edge-worker/test/HumanViewTicketDelivery.test.ts:375:16 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    373 │ 		expect(result).toMatchObject({ is_error: true });
+    374 │ 		// Same failure wrapper as EdgeWorker's actual production agent step.
+  > 375 │ 		diagnostic = "Agent step failed: " + publicFailure(JSON.stringify(result));
+        │ 		             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    376 │ 		throw new Error(diagnostic);
+    377 │ 	});
+  
+  i Unsafe fix: Use a template literal.
+  
+    373 373 │       expect(result).toMatchObject({ is_error: true });
+    374 374 │       // Same failure wrapper as EdgeWorker's actual production agent step.
+    375     │ - → → diagnostic·=·"Agent·step·failed:·"·+·publicFailure(JSON.stringify(result));
+        375 │ + → → diagnostic·=·`Agent·step·failed:·${publicFailure(JSON.stringify(result))}`;
+    376 376 │       throw new Error(diagnostic);
+    377 377 │     });
+  
+
+packages/edge-worker/test/HumanViewTicketDelivery.test.ts:5:2 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! Several of these imports are unused.
+  
+    3 │ 	mkdirSync,
+    4 │ 	mkdtempSync,
+  > 5 │ 	readFileSync,
+      │ 	^^^^^^^^^^^^
+    6 │ 	realpathSync,
+    7 │ 	rmSync,
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Unsafe fix: Remove the unused imports.
+  
+      3   3 │     mkdirSync,
+      4   4 │     mkdtempSync,
+      5     │ - → readFileSync,
+      6   5 │     realpathSync,
+      7   6 │     rmSync,
+  
+
+Skipped 4 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 3 files in 44ms. Fixed 1 file.
+Found 1 warning.
+Found 1 info.

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "comment-47",
+    "body": "Factory work started: Safe native Ask failure. f1-views-repair-safe-native-error. Follow progress in Factory.\n\n<!-- factory:session-5:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T08:43:47.771Z"
+  },
+  {
+    "id": "comment-48",
+    "body": "decide\nDecision batch: 00a8cd97-c157-4758-9c63-8931d026b225\nDisplayed digest: 04b3a708e3f68c2fdba1daf84fb9d67dc7ce69b3270a2024c015c35b6e401aba\nReply with /view-answer {\"batchId\":\"00a8cd97-c157-4758-9c63-8931d026b225\",\"digest\":\"04b3a708e3f68c2fdba1daf84fb9d67dc7ce69b3270a2024c015c35b6e401aba\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nCurrent large decision\nAsk for item item0 — pending\nQuestion\\: NATIVE\\_FAILURE\\_PUBLIC\nActions\\: skip \\(Skip\\)\nmarkdown:\nPublic native failure context\nitem0\\: Public item\n\n\n<!-- factory:session-5:ec468559654e056d9444 -->",
+    "createdAt": "2026-10-22T08:43:47.961Z"
+  },
+  {
+    "id": "comment-49",
+    "body": "decide\nDecision batch: 00a8cd97-c157-4758-9c63-8931d026b225\nDisplayed digest: 386e5937c2aa8a49991c7230b60149cd672d3a6ff3fca0818df8aa84e37ac468\nReply with /view-answer {\"batchId\":\"00a8cd97-c157-4758-9c63-8931d026b225\",\"digest\":\"386e5937c2aa8a49991c7230b60149cd672d3a6ff3fca0818df8aa84e37ac468\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nCurrent large decision\nAsk for item item0 — failed\nQuestion\\: NATIVE\\_FAILURE\\_PUBLIC\nError\\: Ask could not complete\\. Private agent diagnostics were retained\\. Check the agent setup and retry Ask with a new request, or continue with an item action after reviewing the complete display\\.\nActions\\: skip \\(Skip\\)\nmarkdown:\nPublic native failure context\nitem0\\: Public item\n\n\n<!-- factory:session-5:5b6ac9056949cb926768 -->",
+    "createdAt": "2026-10-22T08:43:48.102Z"
+  },
+  {
+    "id": "comment-50",
+    "body": "Workflow Safe native Ask failure completed. Coding tickets become Done only after confirmed merge. Inspect run session-5 for results.\n\n<!-- factory:session-5:08cb914c436eb1379331 -->",
+    "createdAt": "2026-10-22T08:43:48.984Z"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "comment-51",
+    "body": "Factory work started: Historical Ask owner during child changes. f1-views-repair-ask-race. Follow progress in Factory.\n\n<!-- factory:session-6:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T08:43:49.410Z"
+  },
+  {
+    "id": "comment-52",
+    "body": "decide\nDecision batch: a0b80694-04f3-4810-b5a1-2b4f94d166cd\nDisplayed digest: b30893fb310edb893d121e109c88e3287175a75140866c893dc7c38e445543a5\nReply with /view-answer {\"batchId\":\"a0b80694-04f3-4810-b5a1-2b4f94d166cd\",\"digest\":\"b30893fb310edb893d121e109c88e3287175a75140866c893dc7c38e445543a5\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose after inspecting actual child state\nActions\\: skip \\(Skip\\)\nrunList:\nWave dispatch · Wave 1:\n- child\\-328a686e077777b2f88076c7049151edd673c58e: Controlled child [running]\na\\: Alpha\n\n\n<!-- factory:session-6:7b0f9a79082060bc7b4a -->",
+    "createdAt": "2026-10-22T08:43:50.288Z"
+  },
+  {
+    "id": "comment-53",
+    "body": "Factory work started: Controlled local child. f1-views-repair-ask-race. Follow progress in Factory.\n\n<!-- factory:child-328a686e077777b2f88076c7049151edd673c58e:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T08:43:50.395Z"
+  },
+  {
+    "id": "comment-54",
+    "body": "decide\nDecision batch: a0b80694-04f3-4810-b5a1-2b4f94d166cd\nDisplayed digest: e18077dd565d1a1fd91197a819c6a7d5bdc9315a8a5fa8a5daad6dca6b67f232\nReply with /view-answer {\"batchId\":\"a0b80694-04f3-4810-b5a1-2b4f94d166cd\",\"digest\":\"e18077dd565d1a1fd91197a819c6a7d5bdc9315a8a5fa8a5daad6dca6b67f232\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose after inspecting actual child state\nAsk for item a — pending\nQuestion\\: ROTATE\\_ALPHA\nActions\\: skip \\(Skip\\)\nrunList:\nWave dispatch · Wave 1:\n- child\\-328a686e077777b2f88076c7049151edd673c58e: Controlled child [running]\na\\: Alpha\n\n\n<!-- factory:session-6:a81fd32e644a201a1d4c -->",
+    "createdAt": "2026-10-22T08:43:50.825Z"
+  },
+  {
+    "id": "comment-55",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:child-328a686e077777b2f88076c7049151edd673c58e:ae6317d3db7e5f63c098 -->",
+    "createdAt": "2026-10-22T08:43:51.189Z"
+  },
+  {
+    "id": "comment-56",
+    "body": "Workflow Controlled local child completed. Coding tickets become Done only after confirmed merge. Inspect run child-328a686e077777b2f88076c7049151edd673c58e for results.\n\n<!-- factory:child-328a686e077777b2f88076c7049151edd673c58e:08cb914c436eb1379331 -->",
+    "createdAt": "2026-10-22T08:43:51.426Z"
+  },
+  {
+    "id": "comment-57",
+    "body": "decide\nDecision batch: d098d1bc-373b-4f68-8349-7793915ffbb4\nDisplayed digest: 7e66c44ecc30217f7d0b3a06ac0559eb24a6df271193cef2b35381b324315279\nReply with /view-answer {\"batchId\":\"d098d1bc-373b-4f68-8349-7793915ffbb4\",\"digest\":\"7e66c44ecc30217f7d0b3a06ac0559eb24a6df271193cef2b35381b324315279\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose after inspecting actual child state\nActions\\: skip \\(Skip\\)\nrunList:\nWave dispatch · Wave 1:\n- child\\-328a686e077777b2f88076c7049151edd673c58e: Controlled child [completed]\na\\: Alpha\n\n\n<!-- factory:session-6:c80e5c6326967e2deeae -->",
+    "createdAt": "2026-10-22T08:43:51.683Z"
+  },
+  {
+    "id": "comment-58",
+    "body": "UNIQUE_REPAIR_ASK_ANSWER <script>inertAsk()</script> Original context only; no research rerun.\n\n<!-- factory:session-6:444b10179c79d546ae9f -->",
+    "createdAt": "2026-10-22T08:43:51.875Z"
+  }
+]
