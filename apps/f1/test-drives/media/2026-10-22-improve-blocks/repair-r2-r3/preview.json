@@ -1,0 +1,11 @@
+{
+	"apiOrigin": "http://127.0.0.1:50991",
+	"rpcPort": 50990,
+	"factoryPort": 50991,
+	"pid": 2585,
+	"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4",
+	"parentId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+	"childId": "child-57876a7806fb582b29676b4b7e28dc598574d493",
+	"forkId": "fork-23c949ff-cb92-4fe3-91c1-a95c7f8709d5",
+	"stop": "kill -TERM 2585"
+}

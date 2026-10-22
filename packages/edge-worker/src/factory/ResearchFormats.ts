@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FileIssueBodySchema, FileIssueTitleSchema } from "./ActionSteps.js";
 import { viewDataSchemas } from "./View.js";
 
 const text = z.string().trim().min(1).max(24000);
@@ -35,7 +36,7 @@ export type Opportunity = z.infer<typeof OpportunitySchema>;
 const card = viewDataSchemas.itemCards.shape.items.element;
 const detail = card.shape.details.unwrap().element.shape.value;
 const ReviewOpportunitySchema = OpportunitySchema.extend({
-	title: text.pipe(card.shape.title),
+	title: text.pipe(FileIssueTitleSchema).pipe(card.shape.title),
 	problem: text.pipe(card.shape.body.unwrap()),
 	consequence: text.pipe(detail),
 	before: text.pipe(detail),
@@ -47,7 +48,11 @@ export const ProposalsSchema = z
 	.object({
 		summary: text.pipe(viewDataSchemas.markdown.shape.text),
 		opportunities: z
-			.array(ReviewOpportunitySchema.extend({ issueBody: text }))
+			.array(
+				ReviewOpportunitySchema.extend({
+					issueBody: text.pipe(FileIssueBodySchema),
+				}),
+			)
 			.max(5),
 		limitations: z
 			.array(
@@ -121,6 +126,20 @@ export const PlanPackageSchema = PackageSchema.extend({
 	title: text.pipe(card.shape.title),
 	plan: text.pipe(card.shape.body.unwrap()),
 }).superRefine((plan, ctx) => {
+	for (const [index, dependency] of plan.dependencies.entries()) {
+		if (
+			dependency === plan.id ||
+			plan.dependencies.indexOf(dependency) !== index
+		)
+			ctx.addIssue({
+				code: "custom",
+				path: ["dependencies", index],
+				message:
+					dependency === plan.id
+						? "A plan cannot depend on itself"
+						: "Plan dependencies must be unique",
+			});
+	}
 	for (const [index, field] of [
 		"criteria",
 		"dependencies",

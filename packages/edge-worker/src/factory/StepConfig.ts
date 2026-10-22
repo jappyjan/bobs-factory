@@ -25,6 +25,7 @@ import {
 /** Stable output format IDs. Implementations live in OutputFormats.ts. */
 export const FORMAT_IDS = [
 	"json-v1",
+	"dependency-graph-v1",
 	"research-context-v1",
 	"research-plan-v1",
 	"research-result-v1",

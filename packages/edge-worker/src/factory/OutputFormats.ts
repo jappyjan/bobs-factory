@@ -5,6 +5,7 @@ import {
 	assertReviewBrief,
 } from "./Architecture.js";
 import { DeliveryContractSchema, TicketTargetSchema } from "./Delivery.js";
+import { DependencyGraphSchema } from "./DependencyGraph.js";
 import {
 	CiFixResultSchema,
 	ClarifyResultSchema,
@@ -75,6 +76,7 @@ import { ViewSchema, viewDataSchemas } from "./View.js";
 /** Versioned schema library. Parsers are lazy to avoid coupling module initialization order. */
 const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"json-v1": (value) => value,
+	"dependency-graph-v1": (value) => DependencyGraphSchema.parse(value),
 	"research-context-v1": (value) => ResearchContextSchema.parse(value),
 	"research-plan-v1": (value) => ResearchPlanSchema.parse(value),
 	"research-result-v1": (value) => ResearchResultSchema.parse(value),

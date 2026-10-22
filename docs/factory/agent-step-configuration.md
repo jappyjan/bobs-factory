@@ -135,7 +135,8 @@ Conditions support:
 - `text: {path, test}` uses one fixed predicate: `nonblank`, `no-local-path`,
   `no-commit-sha`, or `repository-relative`.
 - `conforms: "<format-id>"` is a semantic format predicate. It invokes only the
-  fixed pure format-library parser on the current scope. This makes every
+  fixed pure format-library parser on the current scope, or on an optional `path`
+  selected with the same safe JSON Pointer semantics. This makes every
   schema-native cross-field constraint reusable as a rule, including nested
   `each` conditions. It fails closed without a format validator. It cannot run
   evidence checks or scripts, mutate output, or select an unknown parser.
@@ -203,7 +204,7 @@ correction behavior; evidence-dependent hard failures remain at their old stage.
 | Delivery target URL credentials/origin/path coordinates; delivery mode/targets; globally unique target/operation/criterion IDs and resources; required capabilities, before-state fields and supported/target-bound relationship mutations | `delivery-contract-v1`; `conforms` retains URL parsing and complete semantic checks, with ordinary uniqueness, membership and conditional rules available separately |
 | Impact dependency path restrictions; duplicate specialists/checks/feedback IDs; status/questions and assessment consistency | `impact-v1` retains its schema; `impact-reuse` retains independent snapshot/receipt comparisons and their original failure stage |
 | Specialist/inventory/coverage unique IDs, active references, accepted skip decisions, later-stage obligations, consequential-finding evidence and stable reopening/dispositions | Versioned `inventory-v1`/`specialist-v1`/`coverage-v1` are usable as standalone pure schemas; explicit `inventory-evidence` / `specialist-evidence` (with optional `coverage: true`) adapters compares the bound inventory, rounds and original receipts. Pure uniqueness/membership/conditional constraints are reusable rules |
-| Improvement reserved identifiers, unique research assignment IDs, approved/feedback consistency; retained settings/destination/item-choice/opportunity/package/action schemas | Versioned improvement formats, `unique`, conditional emptiness and `conforms`. DAG/choice/package validation remains fixed runtime behavior for the existing improvement routine; ticket 6 owns rebuilding that routine |
+| Improvement reserved identifiers, unique research assignment IDs, approved/feedback consistency; retained settings/destination/item-choice/opportunity/package/action schemas | Versioned improvement formats, `unique`, conditional emptiness and `conforms`. `dependency-graph-v1` checks complete projected ID/prerequisite lists through the generic Check before approval; raw legacy formats remain data-only |
 
 Historical result parsers sometimes accept readable older artifacts more broadly
 than newly authored guides. The authored-guide adapter keeps enforcing its richer

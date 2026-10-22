@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { evaluateCheckAsync } from "../src/factory/Check.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { prepareFileIssues } from "../src/factory/FileIssues.js";
 import { decisionItems } from "../src/factory/HumanStep.js";
 import {
 	parseOutputFormat,
@@ -152,13 +154,61 @@ const packageValue = {
 };
 
 describe("producer formats compose with the actual stock human views", () => {
+	it("accepts the exact filing title bound without truncation and leaves legacy data aliases compatible", async () => {
+		const raw = {
+			summary: "Summary",
+			opportunities: [{ ...proposal, title: "t".repeat(250) }],
+		};
+		const accepted = (await parseStepOutputAsync(producer, raw)) as {
+			opportunities: unknown[];
+		};
+		const action = stock.steps.find((s) => s.id === "dispatch")!
+			.groups![0]![0]!;
+		const batch = prepareFileIssues(
+			"fixture",
+			action.id,
+			action.fileIssues!,
+			{
+				outputs: {
+					decide: { itemsByAction: { issue: accepted.opportunities } },
+				},
+			},
+			{
+				provider: "taskbot",
+				instance: "https://tracker.test",
+				server: "fixture",
+				project: "fixture",
+			},
+		);
+		expect(batch.accepted[0]!.title).toBe(raw.opportunities[0]!.title);
+		expect(batch.accepted[0]!.body).toBe(
+			`${proposal.issueBody}\n\n${batch.accepted[0]!.marker}`,
+		);
+		for (const length of [251, 300]) {
+			const invalid = {
+				...raw,
+				opportunities: [{ ...proposal, title: "t".repeat(length) }],
+			};
+			await expect(
+				parseStepOutputAsync(producer, invalid),
+			).rejects.toMatchObject({
+				output: invalid,
+				issues: expect.arrayContaining([
+					expect.objectContaining({ path: "/opportunities/0/title" }),
+				]),
+			});
+			expect(() =>
+				parseOutputFormat("improvement-proposals-v1", invalid),
+			).not.toThrow();
+		}
+	});
 	it("displays complete limitations beyond label length and all projected fields at their receiving bounds", async () => {
 		const raw = {
 			summary: ` ${"s".repeat(16000)} `,
 			opportunities: Array.from({ length: 5 }, (_, i) => ({
 				...proposal,
 				id: `p${i}`,
-				title: "t".repeat(300),
+				title: "t".repeat(250),
 				problem: "b".repeat(8000),
 				consequence: "c".repeat(4000),
 				before: "d".repeat(4000),
@@ -185,7 +235,7 @@ describe("producer formats compose with the actual stock human views", () => {
 	it.each([
 		["summary", 16001],
 		["limitations", 2001],
-		["title", 301],
+		["title", 251],
 		["problem", 8001],
 		["consequence", 4001],
 		["before", 4001],
@@ -269,5 +319,84 @@ describe("producer formats compose with the actual stock human views", () => {
 		expect(() =>
 			parseOutputFormat("improvement-package-v1", raw),
 		).not.toThrow();
+	});
+});
+
+describe("plan dependency correction before human acceptance", () => {
+	it.each([
+		{ dependencies: ["a"] },
+		{ dependencies: ["base", "base"] },
+	])("rejects self or duplicate dependencies at Refine with raw output and exact path", async ({
+		dependencies,
+	}) => {
+		const raw = { ...packageValue, dependencies };
+		await expect(parseStepOutputAsync(planProducer, raw)).rejects.toMatchObject(
+			{
+				output: raw,
+				issues: expect.arrayContaining([
+					expect.objectContaining({
+						path: expect.stringMatching(/^\/dependencies\/\d+$/),
+					}),
+				]),
+			},
+		);
+		expect(() =>
+			parseOutputFormat("improvement-package-v1", raw),
+		).not.toThrow();
+	});
+	it.each([
+		{ dependencies: [["b"], ["a"]] },
+		{ dependencies: [["a"], ["a"]] },
+		{ dependencies: [[], ["a", "a"]] },
+		{ dependencies: [[], ["missing"]] },
+	])("fails the actual stock graph Check before dispatch for invalid dependencies %j", async ({
+		dependencies,
+	}) => {
+		const check = stock.steps.find((s) => s.id === "plan-dependencies")!;
+		const result = await evaluateCheckAsync(
+			check.check!,
+			{
+				plans: ["a", "b"].map((id, index) => ({
+					id,
+					dependencies: dependencies[index],
+				})),
+			},
+			{},
+			(format, value) => {
+				try {
+					parseOutputFormat(format, value);
+					return true;
+				} catch {
+					return false;
+				}
+			},
+		);
+		expect(result).toEqual({ passed: false, ids: ["a", "b"], dependencies });
+		expect(check.branches).toEqual([
+			{ when: { path: "passed", equals: false }, next: "plans" },
+		]);
+	});
+	it("validates empty and maximum-size stock plan DAGs without revalidating full approval prose in the rule budget", async () => {
+		const check = stock.steps.find((s) => s.id === "plan-dependencies")!;
+		for (const count of [0, 5]) {
+			const plans = Array.from({ length: count }, (_, i) => ({
+				...packageValue,
+				id: `p${i}`,
+				plan: "p".repeat(8000),
+				criteria: ["c".repeat(3998)],
+				paths: ["r".repeat(4000)],
+				dependencies: Array.from({ length: i }, (_, j) => `p${j}`),
+			}));
+			const result = await evaluateCheckAsync(
+				check.check!,
+				{ plans },
+				{},
+				(format, value) => {
+					parseOutputFormat(format, value);
+					return true;
+				},
+			);
+			expect(result.passed).toBe(true);
+		}
 	});
 });

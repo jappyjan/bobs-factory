@@ -1,0 +1,53 @@
+{"phase":"setup","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4","pid":2585}
+2026-10-22T18:32:45.074Z [INFO ] [EdgeWorker] Deployed default skills to /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/bobs-factory-skills-plugin (5 skills)
+2026-10-22T18:32:45.075Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T18:32:45.075Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T18:32:45.075Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T18:32:45.090Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:50991
+2026-10-22T18:32:45.092Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T18:32:45.092Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T18:32:45.092Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T18:32:45.092Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T18:32:45.092Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T18:32:45.092Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T18:32:45.092Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T18:32:45.092Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T18:32:45.093Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T18:32:45.093Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T18:32:45.093Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T18:32:45.093Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T18:32:45.093Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T18:32:45.095Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T18:32:45.095Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T18:32:45.095Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T18:32:45.095Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T18:32:45.095Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:50990
+2026-10-22T18:32:45.759Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=improve-fixture, overrideValue=undefined
+2026-10-22T18:32:45.759Z [INFO ] [GitService] createSingleRepoWorktree for Improve F1 fixture (id=improve-fixture): baseBranchOverride=undefined
+2026-10-22T18:32:45.895Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/worktrees/MANUAL-bfba158a from origin/main (tracking main)
+2026-10-22T18:32:46.010Z [INFO ] [AgentSessionManager] {session=manual-c, platform=manual} Creating chat session
+2026-10-22T18:32:46.673Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:47.566Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:48.337Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:49.084Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:50.006Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:50.442Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:52.392Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:52.555Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:53.400Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:53.627Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:56.092Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:56.247Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:58.919Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:59.008Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:32:59.179Z [INFO ] [AgentSessionManager] {session=manual-c} Session completed (subtype: success)
+2026-10-22T18:33:01.646Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=improve-fixture, overrideValue=undefined
+2026-10-22T18:33:01.646Z [INFO ] [GitService] createSingleRepoWorktree for Improve F1 fixture (id=improve-fixture): baseBranchOverride=undefined
+2026-10-22T18:33:01.871Z [INFO ] [GitService] Creating git worktree at /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/worktrees/MANUAL-8574d493 from origin/main (tracking main)
+2026-10-22T18:33:02.113Z [INFO ] [AgentSessionManager] {session=child-57, platform=manual} Creating chat session
+2026-10-22T18:33:02.926Z [INFO ] [AgentSessionManager] {session=child-57} Session completed (subtype: success)
+{"phase":"dependency-repair-checks-complete","apiOrigin":"http://127.0.0.1:50991","rpcPort":50990,"factoryPort":50991,"pid":2585,"directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4","parentId":"manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a","childId":"child-57876a7806fb582b29676b4b7e28dc598574d493","forkId":"fork-23c949ff-cb92-4fe3-91c1-a95c7f8709d5","stop":"kill -TERM 2585"}
+2026-10-22T18:34:12.012Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T18:34:12.013Z [INFO ] [SharedApplicationServer] Shared application server stopped
+{"phase":"cleanup","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4","workerStopped":true}

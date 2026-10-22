@@ -2,8 +2,10 @@ import { immutableJson } from "bobs-factory-core";
 import { z } from "zod";
 import {
 	actionItems,
+	FileIssueBodySchema,
 	type FileIssuesConfiguration,
 	FileIssuesConfigurationSchema,
+	FileIssueTitleSchema,
 } from "./ActionSteps.js";
 import { digest } from "./Delivery.js";
 import {
@@ -56,16 +58,12 @@ export function prepareFileIssues(
 		sanitizeJsonConfiguration(destination),
 	);
 	const accepted = actionItems(config, scope).map((item): FileIssueAccepted => {
-		const title = z
-			.string()
-			.trim()
-			.min(1)
-			.max(250)
-			.parse(foreachPointer(item.value, config.fields.title));
-		const body = z
-			.string()
-			.max(100000)
-			.parse(foreachPointer(item.value, config.fields.body));
+		const title = FileIssueTitleSchema.parse(
+			foreachPointer(item.value, config.fields.title),
+		);
+		const body = FileIssueBodySchema.parse(
+			foreachPointer(item.value, config.fields.body),
+		);
 		const labels = config.fields.labels
 			? z
 					.array(z.string().trim().min(1).max(100))

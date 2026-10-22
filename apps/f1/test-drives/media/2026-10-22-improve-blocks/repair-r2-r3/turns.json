@@ -1,0 +1,590 @@
+[
+	{
+		"at": "2026-10-22T18:32:46.559Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "map",
+		"stepKey": "map/map",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "91836371420a2cf3747a7855a0817d4f2e0d2816f71fda02934a7f112fb10b5d",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:47.456Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "coordinate",
+		"stepKey": "perspectives/fixture-perspective/research/coordinate",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": "fixture-perspective",
+		"promptSha256": "60864a837d03e72a430630dd98111fce1f498161d21344e485b849f1f65c9125",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": "fixture-perspective",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:48.224Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "worker",
+		"stepKey": "perspectives/fixture-perspective/research/assignments/one/worker",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": "fixture-perspective",
+		"promptSha256": "3a2878d448266921215f50cdbbe35ae6ea3f0f486d955aceeb0cb0ad1fb74c45",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": "one",
+		"dependencyFeedback": null,
+		"execution": {
+			"runner": "codex",
+			"model": "gpt-6.1-sol",
+			"modelSource": "run",
+			"limitations": [
+				"No step model is configured; this agent inherits the accepted run model."
+			]
+		},
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:48.966Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "verify",
+		"stepKey": "perspectives/fixture-perspective/research/verify",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": "fixture-perspective",
+		"promptSha256": "4aade3446f11635b0e6df96002ced294a26fef2068a100c62fddf1eea4badc58",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": "fixture-perspective",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:49.889Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "proposals",
+		"stepKey": "consolidate/proposals",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "c10767f14d71bf6cab0d4cc8b745cda3b9fa4cb6d2c5b9fe796c53bb0e711b9e",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:50.309Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "proposals",
+		"stepKey": "consolidate/proposals",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "c10767f14d71bf6cab0d4cc8b745cda3b9fa4cb6d2c5b9fe796c53bb0e711b9e",
+		"forkPromptObserved": false,
+		"focus": "Cache ownership in the disposable fixture",
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"correction": {
+			"attempts": 1,
+			"issues": [
+				{
+					"path": "/opportunities/1/title",
+					"message": "Too big: expected string to have <=250 characters",
+					"actual": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+				}
+			],
+			"originalSha256": "e6f48900eab94f32535634c388abe621beb210f0041271952215a1aa1ce138ed"
+		}
+	},
+	{
+		"at": "2026-10-22T18:32:52.091Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "plan",
+		"stepKey": "plans/cache/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "f8bc4a49817d15642c6714c3352aed835460c015cfb83de5c28e262a8a975f54",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "cache",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:52.163Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "plan",
+		"stepKey": "plans/optional/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "f8bc4a49817d15642c6714c3352aed835460c015cfb83de5c28e262a8a975f54",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "optional",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:53.041Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "plan",
+		"stepKey": "plans/cache/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "f8bc4a49817d15642c6714c3352aed835460c015cfb83de5c28e262a8a975f54",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "cache",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"correction": {
+			"attempts": 1,
+			"issues": [
+				{
+					"path": "/dependencies/0",
+					"message": "A plan cannot depend on itself",
+					"actual": "cache"
+				}
+			],
+			"originalSha256": "695cd52f485a28d42a6caaf005b36e02c58b7f33fcdce64c81f623d3a4024238"
+		}
+	},
+	{
+		"at": "2026-10-22T18:32:53.230Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "plan",
+		"stepKey": "plans/optional/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "f8bc4a49817d15642c6714c3352aed835460c015cfb83de5c28e262a8a975f54",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "optional",
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"correction": {
+			"attempts": 1,
+			"issues": [
+				{
+					"path": "/dependencies/1",
+					"message": "Plan dependencies must be unique",
+					"actual": "cache"
+				}
+			],
+			"originalSha256": "e7f4a6e8049c6f6a8a9d2d4ba69073a1d61dafebdbec7232cd338e786f9b5447"
+		}
+	},
+	{
+		"at": "2026-10-22T18:32:55.772Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "plan",
+		"stepKey": "plans/cache/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "f8bc4a49817d15642c6714c3352aed835460c015cfb83de5c28e262a8a975f54",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "cache",
+		"dependencyFeedback": {
+			"passed": false,
+			"ids": ["cache", "optional"],
+			"dependencies": [["optional"], ["cache"]]
+		},
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:55.854Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "plan",
+		"stepKey": "plans/optional/refine/plan",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "f8bc4a49817d15642c6714c3352aed835460c015cfb83de5c28e262a8a975f54",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": "optional",
+		"dependencyFeedback": {
+			"passed": false,
+			"ids": ["cache", "optional"],
+			"dependencies": [["optional"], ["cache"]]
+		},
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:58.464Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "architecture",
+		"stepKey": "checks/0/architecture",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "4adf2d120f8ab9a7973f045cf5c67cd693b181619c1d0a8ed6e196d96a8b9e0b",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:58.541Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "security",
+		"stepKey": "checks/1/security",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "6267d6972dcfea0ba0f2608a9905484cb7b5a81a7894b8244ecb3229ae9c326f",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:32:58.617Z",
+		"runId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"role": "dependencies",
+		"stepKey": "checks/2/dependencies",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "881048a44216b3b73da5b361b0cc768d420465783cbde2fcf10c1f104fc3216d",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__list_repository",
+			"mcp__factory-context__read_repository"
+		],
+		"tools": [],
+		"mcpServers": ["factory-context"],
+		"strictMcpConfig": true,
+		"sandbox": "read-only",
+		"configOverrides": {
+			"features": {
+				"shell_tool": false,
+				"apply_patch_tool": false,
+				"multi_agent": false
+			},
+			"web_search": "disabled"
+		},
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/home/factory/evidence/manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a"
+	},
+	{
+		"at": "2026-10-22T18:33:02.738Z",
+		"runId": "child-57876a7806fb582b29676b4b7e28dc598574d493",
+		"role": "clarify",
+		"stepKey": "pipeline/clarify",
+		"runner": "codex",
+		"model": "gpt-6.1-sol",
+		"perspective": null,
+		"promptSha256": "55b466e539a0d4ceee3f1332414824351c90dbfa7a81991527709d83fda93bbf",
+		"forkPromptObserved": false,
+		"focus": null,
+		"itemId": null,
+		"dependencyFeedback": null,
+		"execution": null,
+		"allowedTools": [
+			"mcp__linear__get_issue",
+			"mcp__linear__save_issue",
+			"mcp__factory-context__list_context",
+			"mcp__factory-context__read_context",
+			"mcp__factory-context__submit_result_artifact"
+		],
+		"mcpServers": [
+			"linear",
+			"bobs-factory-tools",
+			"cyrus-docs",
+			"factory-context"
+		],
+		"strictMcpConfig": true,
+		"workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4/worktrees/MANUAL-8574d493"
+	}
+]

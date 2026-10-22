@@ -1,0 +1,36 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker
+
+ ❯ test/ResearchFormats.test.ts (25 tests | 1 failed | 2 skipped) 16ms
+     × accepts the exact filing title bound without truncation and leaves legacy data aliases compatible 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/ResearchFormats.test.ts > producer formats compose with the actual stock human views > accepts the exact filing title bound without truncation and leaves legacy data aliases compatible
+Error: For each outputs must be plain JSON objects
+ ❯ foreachScope src/factory/Foreach.ts:268:9
+    266|  const outputs = descriptors.outputs?.value;
+    267|  if (!outputs || typeof outputs !== "object" || Array.isArray(outputs))
+    268|   throw new Error("For each outputs must be plain JSON objects");
+       |         ^
+    269|  const outputDescriptors = jsonDescriptors(outputs);
+    270|  const result: Record<string, unknown> = Object.create(null);
+ ❯ prepareForeach src/factory/Foreach.ts:288:21
+ ❯ actionItems src/factory/ActionSteps.ts:97:9
+ ❯ prepareFileIssues src/factory/FileIssues.ts:60:19
+ ❯ test/ResearchFormats.test.ts:167:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 46 passed | 3 skipped (50)
+   Start at  21:29:23
+   Duration  24.81s (transform 975ms, setup 55ms, import 1.92s, tests 23.81s, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-141-improve/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/ResearchFormats.test.ts test/Check.test.ts test/ImproveRecipe.test.ts -t producer formats|plan dependency correction|Check|executes nested research

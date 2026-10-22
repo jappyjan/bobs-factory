@@ -46,6 +46,7 @@ function fixture(
 		workerFailure?: boolean;
 		perspectiveFailure?: boolean;
 		rejectOnce?: boolean;
+		cycleOnce?: boolean;
 		empty?: boolean;
 		longReviewedPlan?: boolean;
 	} = {},
@@ -215,7 +216,12 @@ function fixture(
 							".",
 						),
 						criteria: input.item.criteria,
-						dependencies: input.item.dependencies,
+						dependencies:
+							options.cycleOnce &&
+							input.item.id === "a" &&
+							!input.dependencyFeedback
+								? ["b"]
+								: input.item.dependencies,
 						paths: input.item.paths,
 					};
 					break;
@@ -401,6 +407,7 @@ describe("Improve is an ordinary composed recipe", () => {
 			workerFailure: true,
 			perspectiveFailure: true,
 			rejectOnce: true,
+			cycleOnce: true,
 			longReviewedPlan: true,
 		});
 		void f.runtime.launch(f.run);
@@ -437,13 +444,35 @@ describe("Improve is an ordinary composed recipe", () => {
 		).rejects.toThrow();
 		await choose(f);
 		const approval = await waiting(f, "approve");
-		expect(f.calls.filter((c) => c.key.endsWith("/plan"))).toHaveLength(4);
+		expect(f.calls.filter((c) => c.key.endsWith("/plan"))).toHaveLength(6);
 		expect(
 			f.calls
 				.filter((c) => c.key.endsWith("/plan"))
-				.slice(2)
+				.slice(4)
 				.every((c) => c.input.feedback.passed === false),
 		).toBe(true);
+		const graphFailure = f.run.history.find(
+			(h) =>
+				h.step === "plan-dependencies" && (h.output as any)?.passed === false,
+		)!;
+		expect(graphFailure.output).toEqual({
+			passed: false,
+			ids: ["a", "b"],
+			dependencies: [["b"], ["a"]],
+		});
+		expect(
+			f.calls
+				.filter((c) => c.key.endsWith("/plan"))
+				.slice(2, 4)
+				.map((c) => c.input.dependencyFeedback),
+		).toEqual([graphFailure.output, graphFailure.output]);
+		expect(
+			f.calls.filter((c) =>
+				["architecture", "security", "dependencies"].includes(
+					c.key.split("/").at(-1)!,
+				),
+			),
+		).toHaveLength(6);
 		expect(
 			approval.view.components.find((c) => c.id === "plans")!.data,
 		).toEqual({

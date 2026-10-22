@@ -1,0 +1,43 @@
+{
+	"completedAt": "2026-10-22T18:33:03.335Z",
+	"sourceAfter": {
+		"packages/edge-worker/src/EdgeWorker.ts": "8ce291c0c6cffe2a84758116327b7e0397dc9c9d5460313449bf92f681882de4",
+		"packages/edge-worker/src/factory/improvementWorkflow.ts": "e8b44885bab5d5e18d8add5ec137e34763b2b6dc5610318a4b0454690210693f",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "c8433685e8e07035ed043c09a129303a14df96c13dbfa87b059acc533c7aa1ae",
+		"packages/edge-worker/src/factory/WorkflowCatalog.ts": "96c0ce6563d667524eca09ae0e77aab0b288dee617a84de653f7ea68d3fdc365",
+		"packages/edge-worker/src/factory/Workflow.ts": "3e6fdc43081efd821ee2a2f6681324d99cf8d0fdea29e57cffebd949859415a2",
+		"packages/edge-worker/src/factory/StepBindings.ts": "437205f514761b093ab9b2c6e9bd4aab6723d4de8b58ad08fbaad2f0ff5ba499",
+		"packages/edge-worker/src/factory/View.ts": "1d3b3a575cbf2c7f3db08c20125c043c04da195ad4af39a21da36273de31124b",
+		"packages/edge-worker/src/factory/ResearchPermissions.ts": "1c63882282c5c8d299fb04dca09717f5b50fdb86daf6981e4d3ca7f14544fd1e",
+		"packages/edge-worker/src/factory/ResearchFormats.ts": "9fa7432ca0597c437dbd8f9e2fd2146c0acbd0c60e21e5c29fff0ba8fdc6ae1a",
+		"packages/edge-worker/src/factory/ResearchPrompts.ts": "095565acbda179bee8fd83c95cdcfa01a03e6f9fb10737d40c5c998a7e3d0e9b",
+		"packages/edge-worker/src/factory/FileIssues.ts": "7996a671bd957194f829b4a2debacafeae7273a83971f5291d5bc654ede7afb7",
+		"packages/edge-worker/src/factory/FileIssueProviders.ts": "b9e73cb03354514658f7d652b43b97f4fded814d9578ae08f10bd68bb6962a2b",
+		"packages/edge-worker/src/factory/OutputFormats.ts": "93b2095b9ab18db864b7a813031b05b4c5e99ece3d0b5bd34aa197cd1599f1ca",
+		"packages/edge-worker/src/factory/Rules.ts": "a82b5396668e1d3ef5a30ac488d5f61fefaa466327958b309b33a293188d5c72",
+		"packages/edge-worker/src/factory/StepConfig.ts": "0593d9a2b036654d3421e70fd502c8f3224e116c383c8dd7f86ff3468dc28ec5",
+		"packages/edge-worker/src/factory/DependencyGraph.ts": "11ead8f87cbfb0aa9c3047d75a9c7447d49e68a03858e1d0bddd6e3246b91b86",
+		"packages/edge-worker/src/factory/ActionSteps.ts": "5e2d004263515c029968c777b05bb3e0db3041b0486db0f5d75ab3629c16dfa8",
+		"apps/f1/src/MockAgentRunner.ts": "2206b0b1c96a90a9a2eb1b2742a49251e44b75202a228858340b6a56c9c22d56"
+	},
+	"sourceChangedDuringDrive": [],
+	"paidCalls": 0,
+	"nativeRuns": 0,
+	"restartTested": false,
+	"preview": {
+		"apiOrigin": "http://127.0.0.1:50991",
+		"rpcPort": 50990,
+		"factoryPort": 50991,
+		"pid": 2585,
+		"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-NicVq4",
+		"parentId": "manual-c4ce307d-af7f-432c-a73d-1a8fbfba158a",
+		"childId": "child-57876a7806fb582b29676b4b7e28dc598574d493",
+		"forkId": "fork-23c949ff-cb92-4fe3-91c1-a95c7f8709d5",
+		"stop": "kill -TERM 2585"
+	},
+	"checks": [
+		"251-character filing title rejected/corrected at Consolidate; full 250-character title filed once after exact approval.",
+		"Self/duplicate prerequisites rejected at Refine with original output and exact paths; complete cycle rejected by stock generic Check, actual graph passed back to Refine, then all three independent reviews run.",
+		"Complete canonical plans and stable dependency IDs retained in accepted batch/actual stock child; dependent child remains unadmitted without exact human/provider merge proof."
+	]
+}

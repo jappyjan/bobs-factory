@@ -27,6 +27,7 @@ Snapshot repository + dated run history
 → Check selected prerequisites and alternatives
 → For each Fix: Refine into a plan (callable recipe)
 → Check exact selected plan coverage
+→ Check complete plan dependency graph (no → Refine with graph feedback)
 → Parallel architecture / security / dependency reviews
 → Check all approved? (no → Refine with feedback)
 → Approve exact batch (request changes → Decide)
@@ -92,3 +93,5 @@ Definitions: [`improvementWorkflow.ts`](../../packages/edge-worker/src/factory/i
 Shared prompt substance: [`ResearchPrompts.ts`](../../packages/edge-worker/src/factory/ResearchPrompts.ts).
 Output shapes: [`ResearchFormats.ts`](../../packages/edge-worker/src/factory/ResearchFormats.ts).
 Execution uses the ordinary recipe interpreter and generic actions/views.
+
+Consolidate validates proposal titles against the filing action's 250-character bound before acceptance. Refine rejects duplicate/self prerequisites, and a pure dependency-graph format validates the complete projected batch before reviews and approval. Invalid graphs return the actual ID/prerequisite lists to Refine; all three independent reviews run on the corrected plans. Action-level filing/launch guards remain in place. Complete dashboard Details and canonical child tasks retain criteria, paths and dependencies. The inherited bounded text fallback explicitly warns about omitted content and requires dashboard review before acceptance.

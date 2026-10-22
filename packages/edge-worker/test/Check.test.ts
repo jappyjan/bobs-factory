@@ -344,6 +344,32 @@ describe("generic Check evaluation", () => {
 			evidence: {},
 		});
 	});
+	it("validates only the selected pointer including root paths inside nested scopes, and fails closed for absent data", async () => {
+		const check = CheckSchema.parse({
+			results: {
+				valid: {
+					each: "/inputs/items",
+					require: { conforms: "json-v1", path: "$/inputs/graph" },
+				},
+				missing: { conforms: "json-v1", path: "/inputs/missing" },
+			},
+		});
+		const graph = { ids: ["a"], dependencies: [[]] };
+		const validate = vi.fn((_format, value) => value !== undefined);
+		await expect(
+			evaluateCheckAsync(check, { items: [1, 2], graph }, {}, validate),
+		).resolves.toEqual({ passed: false, valid: true, missing: false });
+		expect(validate.mock.calls.map((call) => call[1])).toEqual([
+			graph,
+			graph,
+			undefined,
+		]);
+		expect(
+			CheckSchema.safeParse({
+				results: { valid: { conforms: "json-v1", path: "../private" } },
+			}).success,
+		).toBe(false);
+	});
 });
 
 describe("Check configuration and evaluation bounds", () => {

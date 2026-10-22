@@ -23,7 +23,7 @@ export type RuleCondition =
 	| { all: RuleCondition[] }
 	| { any: RuleCondition[] }
 	| { not: RuleCondition }
-	| { conforms: string }
+	| { conforms: string; path?: string }
 	| {
 			compare: {
 				left: RuleOperand;
@@ -135,6 +135,7 @@ export const RuleConditionSchema: z.ZodType<RuleCondition> = z.lazy(() =>
 					.string()
 					.regex(/^[a-z][a-z0-9-]*-v[1-9]\d*$/)
 					.max(100),
+				path: pointer.optional(),
 			})
 			.strict(),
 		z
@@ -741,11 +742,15 @@ function* conditionTask(
 		if (!state.validateFormat)
 			throw new Error("Format rules require the library validator");
 		const before = state.work;
-		const nodes = yield* footprint(scope, state);
+		const value =
+			condition.path === undefined
+				? scope
+				: yield* resolve(scope, root, condition.path, state);
+		const nodes = yield* footprint(value, state);
 		// Prepay pairwise refinement comparisons too; repeated format checks cannot
 		// hide their full argument size behind a single condition visit.
 		yield* spend(state, nodes * (before - state.work));
-		return state.validateFormat(condition.conforms, scope);
+		return state.validateFormat(condition.conforms, value);
 	}
 	if ("all" in condition) {
 		for (const item of list<RuleCondition>(condition.all))

@@ -29,10 +29,19 @@ assert.equal(
 assert.match(process.version, /^v24\./);
 const root = resolve(import.meta.dirname, "../../../..");
 const repairOnly = process.argv.includes("--review-fixes");
+const dependencyRepair = process.argv.includes("--dependency-fixes");
+const canvasOnly = process.argv.includes("--canvas-only");
+assert(!(repairOnly && dependencyRepair), "Choose one scoped repair scenario");
 const media = join(
 	root,
 	"apps/f1/test-drives/media/2026-10-22-improve-blocks",
-	...(repairOnly ? ["repair-r1-r2"] : []),
+	...(canvasOnly
+		? ["repair-r2-r3/ui"]
+		: repairOnly
+			? ["repair-r1-r2"]
+			: dependencyRepair
+				? ["repair-r2-r3"]
+				: []),
 );
 mkdirSync(media, { recursive: true });
 const directory = realpathSync(
@@ -69,6 +78,10 @@ const sourcePaths = [
 		"FileIssues",
 		"FileIssueProviders",
 		"OutputFormats",
+		"Rules",
+		"StepConfig",
+		"DependencyGraph",
+		"ActionSteps",
 	].map((name) => `packages/edge-worker/src/factory/${name}.ts`),
 	"apps/f1/src/MockAgentRunner.ts",
 ];
@@ -291,6 +304,8 @@ worker = new EdgeWorker({
 					"F1_FORK_PROMPT",
 				),
 				focus: context.focus ?? null,
+				itemId: context.item?.id ?? null,
+				dependencyFeedback: context.dependencyFeedback ?? null,
 				execution: context.execution ?? null,
 				allowedTools: [...new Set(config.allowedTools)],
 				tools: config.tools,
@@ -427,7 +442,21 @@ worker = new EdgeWorker({
 						summary: context.followUps
 							? "The targeted answer was folded into the same stable shortlist."
 							: "Three fixture opportunities",
-						opportunities,
+						opportunities: dependencyRepair
+							? opportunities.map((item) => ({
+									...item,
+									title:
+										item.id === "deferred"
+											? "T".repeat(
+													run.id === repairTargetRun &&
+														!context.outputCorrection
+														? 251
+														: 250,
+												)
+											: item.title,
+									dependencies: item.id === "optional" ? ["cache"] : [],
+								}))
+							: opportunities,
 						limitations: [
 							inheritance,
 							"Mocked providers; no native source inspection was executed.",
@@ -472,7 +501,17 @@ worker = new EdgeWorker({
 									)
 								: context.item.plan,
 						criteria: context.item.criteria,
-						dependencies: [],
+						dependencies: dependencyRepair
+							? context.item.id === "cache"
+								? !context.dependencyFeedback
+									? context.outputCorrection
+										? ["optional"]
+										: ["cache"]
+									: []
+								: !context.dependencyFeedback && !context.outputCorrection
+									? ["cache", "cache"]
+									: ["cache"]
+							: [],
 						paths: context.item.paths,
 					};
 					break;
@@ -858,6 +897,188 @@ async function completeDrive() {
 		}),
 	);
 }
+async function dependencyFixDrive() {
+	const fork = await api("/api/workflows/improve-codebase/fork", {
+		name: "F1 R2/R3 one-perspective fork",
+	});
+	const definitions = runtime.listWorkflows().map((w) => structuredClone(w));
+	const workflow = definitions.find((w) => w.id === fork.id);
+	workflow.steps.find(
+		(s) => s.id === "dispatch",
+	).groups[1][0].launchRuns.workflow = "factory";
+	workflow.steps.find((s) => s.id === "perspectives").items.values = [
+		{
+			id: "fixture-perspective",
+			name: "Fixture ownership perspective",
+			brief: "Only inspect the disposable cache ownership seam.",
+		},
+	];
+	await api(
+		"/api/workflows",
+		{ workflows: definitions, defaultWorkflow: fork.id },
+		200,
+		"PUT",
+	);
+	const parentId = await manual(fork.id);
+	repairTargetRun = parentId;
+	const decide = await decision(parentId, "decide");
+	assert.equal(
+		decide.items.find((item) => item.id === "deferred").title,
+		"T".repeat(250),
+	);
+	await choose(parentId, { cache: "fix", optional: "fix", deferred: "issue" });
+	const approval = await decision(parentId, "approve");
+	const parent = current(parentId);
+	const graphFailure = parent.history.find(
+		(h) => h.step === "plan-dependencies" && h.output?.passed === false,
+	);
+	assert.deepEqual(JSON.parse(JSON.stringify(graphFailure?.output)), {
+		passed: false,
+		ids: ["cache", "optional"],
+		dependencies: [["optional"], ["cache"]],
+	});
+	assert.equal(corrections.length, 3);
+	const titleCorrection = corrections.find((c) => c.output.opportunities);
+	assert.equal(
+		titleCorrection.output.opportunities.find((item) => item.id === "deferred")
+			.title.length,
+		251,
+	);
+	assert(
+		titleCorrection.issues.some(
+			(issue) => issue.path === "/opportunities/1/title",
+		),
+	);
+	const dependencyCorrections = corrections.filter(
+		(c) => c.output.dependencies,
+	);
+	assert.equal(dependencyCorrections.length, 2);
+	assert(
+		dependencyCorrections.every((c) =>
+			c.issues.some((issue) => /^\/dependencies\/\d+$/.test(issue.path)),
+		),
+	);
+	for (const id of ["cache", "optional"]) {
+		const attempts = turns.filter(
+			(t) => t.runId === parentId && t.role === "plan" && t.itemId === id,
+		);
+		assert.equal(attempts.length, 3);
+		assert.deepEqual(
+			JSON.parse(JSON.stringify(attempts[2].dependencyFeedback)),
+			JSON.parse(JSON.stringify(graphFailure.output)),
+		);
+	}
+	for (const role of ["architecture", "security", "dependencies"])
+		assert.equal(
+			turns.filter((t) => t.runId === parentId && t.role === role).length,
+			1,
+		);
+	assert.equal(filed.length, 0);
+	assert(![...runtime.runs.values()].some((r) => r.recipeParent));
+	await api(`/api/runs/${parentId}/view-answer`, {
+		batchId: approval.id,
+		digest: approval.digest,
+		accepted: true,
+		approved: true,
+	});
+	await until(
+		() =>
+			filed.length === 1 &&
+			[...runtime.runs.values()].some(
+				(r) =>
+					r.recipeParent?.runId === parentId &&
+					r.status === "waiting" &&
+					r.questions?.length,
+			),
+		"Corrected filing and ordinary Factory child admission",
+	);
+	const batch = Object.values(parent.launchActions)[0];
+	const acceptedBefore = JSON.stringify(batch.accepted);
+	const cache = batch.accepted.items.find((item) => item.id === "cache");
+	const optional = batch.accepted.items.find((item) => item.id === "optional");
+	assert.deepEqual(cache.dependencies, []);
+	assert.deepEqual(optional.dependencies, ["cache"]);
+	assert(
+		!runtime.runs.has(optional.runId),
+		"Dependent child waits for actual human/provider merge proof",
+	);
+	const child = current(cache.runId);
+	assert.equal(child.workflow.id, "factory");
+	assert.equal(child.humanDecisions?.length ?? 0, 0);
+	const cards = approval.view.components.find((c) => c.type === "itemCards")
+		.data.items;
+	for (const item of batch.accepted.items) {
+		const card = cards.find((c) => c.id === item.id);
+		const canonical = `${card.body}\n\nAcceptance criteria:\n${card.details[0].value}\n\nDependencies: ${card.details[1].value}\nPaths: ${card.details[2].value}`;
+		assert.equal(item.plan, canonical);
+	}
+	assert.equal(child.input, `${cache.prompt}\n\n## Plan\n${cache.plan}`);
+	assert.deepEqual(child.launchInputs, {
+		prompt: cache.prompt,
+		plan: cache.plan,
+	});
+	assert.equal(filed[0].title, "T".repeat(250));
+	assert.equal(filed[0].state, "backlog");
+	assert.equal(filed[0].assignee, null);
+	assert.equal(JSON.stringify(batch.accepted), acceptedBefore);
+	const sourceAfter = sourceIdentity();
+	assert.deepEqual(sourceAfter, sourceBefore);
+	save("repair-proof.json", {
+		corrections,
+		graphFailure,
+		acceptedApproval: approval,
+		acceptedLaunch: {
+			...batch.accepted,
+			workflow: {
+				id: batch.accepted.workflow.id,
+				sha256: hash(JSON.stringify(batch.accepted.workflow)),
+			},
+			definitions: batch.accepted.definitions.map((d) => ({
+				id: d.id,
+				sha256: hash(JSON.stringify(d)),
+			})),
+		},
+		filed,
+		child: {
+			id: child.id,
+			input: child.input,
+			launchInputs: child.launchInputs,
+			humanDecisions: child.humanDecisions ?? [],
+		},
+		history: parent.history
+			.filter((h) => ["plan-dependencies", "plan-check"].includes(h.step))
+			.map(({ step, at, output }) => ({ step, at, output })),
+	});
+	const preview = {
+		apiOrigin,
+		rpcPort,
+		factoryPort,
+		pid: process.pid,
+		directory,
+		parentId,
+		childId: child.id,
+		forkId: fork.id,
+		stop: `kill -TERM ${process.pid}`,
+	};
+	save("preview.json", preview);
+	save("results.json", {
+		completedAt: stamp(),
+		sourceAfter,
+		sourceChangedDuringDrive: [],
+		paidCalls: 0,
+		nativeRuns: 0,
+		restartTested: false,
+		preview,
+		checks: [
+			"251-character filing title rejected/corrected at Consolidate; full 250-character title filed once after exact approval.",
+			"Self/duplicate prerequisites rejected at Refine with original output and exact paths; complete cycle rejected by stock generic Check, actual graph passed back to Refine, then all three independent reviews run.",
+			"Complete canonical plans and stable dependency IDs retained in accepted batch/actual stock child; dependent child remains unadmitted without exact human/provider merge proof.",
+		],
+	});
+	console.log(
+		JSON.stringify({ phase: "dependency-repair-checks-complete", ...preview }),
+	);
+}
 async function reviewFixDrive() {
 	const fork = await api("/api/workflows/improve-codebase/fork", {
 		name: "F1 R1/R2 one-perspective fork",
@@ -1044,7 +1265,24 @@ try {
 	await worker.start();
 	assert.match(await cli("ping"), /Server is healthy/i);
 	assert.match(await cli("status"), /status/i);
-	if (repairOnly) await reviewFixDrive();
+	if (canvasOnly) {
+		assert(
+			process.argv.includes("--serve"),
+			"Canvas preview must retain its own server",
+		);
+		const preview = {
+			apiOrigin,
+			rpcPort,
+			factoryPort,
+			pid: process.pid,
+			directory,
+			stockCanvas: "/#/recipes?recipe=improve-codebase&step=plan-dependencies",
+			stop: `kill -TERM ${process.pid}`,
+		};
+		save("preview.json", preview);
+		console.log(JSON.stringify({ phase: "canvas-preview-ready", ...preview }));
+	} else if (dependencyRepair) await dependencyFixDrive();
+	else if (repairOnly) await reviewFixDrive();
 	else await completeDrive();
 	if (process.argv.includes("--serve")) {
 		retained = true;
