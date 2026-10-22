@@ -28,6 +28,8 @@ export type { OnAskUserQuestion } from "bobs-factory-core";
 export type OutputFormatConfig = OutputFormat;
 
 export interface ClaudeRunnerConfig {
+	/** Enforced at the native query boundary, independent of inherited grants. */
+	toolProfile?: "context-only";
 	effort?: Options["effort"];
 	serviceTier?: "standard" | "fast";
 	workingDirectory?: string;

@@ -1,0 +1,205 @@
+{
+  "result": "FAIL",
+  "directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0",
+  "revision": "2b6b8aed53e481a7a529f3d1d893ca621ea6b559",
+  "tree": "64c837bb7bd8d7afcacb23df57ff98e6bda83686",
+  "deltaSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "driverSha256": "bab038b04e72efe259a0595dba95815247b399b90f84be3d3b17af5176b00598",
+  "buildSha256": "bdb6d7a38bc7c029479353b17cea8bbef0389ca2a02e4429123bda6e2912042a",
+  "backendSourceSha256": "3700dcaad5508c0734cece557ff4fa650f382c5a9f2514cfc707755905baf87a",
+  "dashboardBuild": "b6c096735522dd1c43f9750f",
+  "dashboardResources": [
+    {
+      "path": "/app.6a33667cbb51eaff0ef37e1b.js",
+      "sha256": "6a33667cbb51eaff0ef37e1bf37555651d422b882c33908467c96bf958e42d4a"
+    },
+    {
+      "path": "/styles.6846ba8d2fed98aee259d76c.css",
+      "sha256": "6846ba8d2fed98aee259d76c0735455de84de134ceeab23f90062041f4bd511a"
+    },
+    {
+      "path": "/",
+      "sha256": "a20e8be5d8e818ee410fce5946b8b1e4abbf93cb0fd1b1d037c6d0b90dae2734"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004"
+    },
+    {
+      "path": "/icons/icon-192.png",
+      "sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961"
+    },
+    {
+      "path": "/icons/icon-512.png",
+      "sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86"
+    },
+    {
+      "path": "/icons/maskable-512.png",
+      "sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9"
+    },
+    {
+      "path": "/icons/apple-touch-icon.png",
+      "sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4"
+    },
+    {
+      "path": "/sw.js",
+      "sha256": "2ac9bdf6e06459b8ad8c3ec8773d8ff899a82b226d8821310b6648bbcc2509d8"
+    }
+  ],
+  "node": "v24.21.0",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  {\n-   idleRetries: undefined,\n    model: 'gpt-5',\n+   result: {\n+     output: {\n+       text: 'UNIQUE_REPAIR_ASK_ANSWER <script>inertAsk()</script> Original context only; no research rerun.'\n+     },\n+     revision: {\n+       at: '2026-10-22T06:47:50.166Z',\n+       dirty: false,\n+       headSha: 'b58a6c0ce01f79f66c3e24ad0bca967dc6cf972b',\n+       historyLength: 1\n+     }\n+   },\n    runner: 'codex',\n    sessionId: 'f1-mock-2c7d018c-90c1-4b8a-a9d5-4d8f83a36e51',\n    toolProfile: 'context-only'\n  }\n\n    at assertJsonEqual (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views-repairs.mjs:62:9)\n    at repairsScenarios (file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views-repairs.mjs:1278:2)\n    at async file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views-repairs.mjs:1689:2",
+  "runs": [
+    {
+      "id": "child-ac9adc2488cb8890a683537440ab0540adfdc1d2",
+      "status": "completed",
+      "step": "child-summary"
+    },
+    {
+      "id": "session-1",
+      "status": "completed",
+      "step": "tail"
+    },
+    {
+      "id": "session-2",
+      "status": "completed",
+      "step": "requested-changes"
+    },
+    {
+      "id": "child-043619170f8aa7194ab2a1ff7e4e64923e4a945e",
+      "status": "completed",
+      "step": "child-summary"
+    },
+    {
+      "id": "session-3",
+      "status": "stopped",
+      "step": "after-display"
+    },
+    {
+      "id": "child-ce36afd6d11a221b191f06f36e5db0c72bcaf60d",
+      "status": "stopped",
+      "step": "child-accept",
+      "error": "Run terminated"
+    },
+    {
+      "id": "session-4",
+      "status": "completed",
+      "step": "choose"
+    },
+    {
+      "id": "session-5",
+      "status": "waiting",
+      "step": "choose"
+    },
+    {
+      "id": "child-9ea87e996d82540b95d01d53c17acb781dbe2f17",
+      "status": "completed",
+      "step": "controlled-work"
+    }
+  ],
+  "turns": [
+    {
+      "runId": "session-1",
+      "role": "research",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T06:47:28.960Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "story",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T06:47:29.396Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "detail",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T06:47:30.056Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "detail",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T06:47:30.086Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "view-follow-up",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": null,
+      "at": "2026-10-22T06:47:31.537Z"
+    },
+    {
+      "runId": "session-1",
+      "role": "view-follow-up",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": "f1-mock-f20506df-7910-40bc-bccd-71a679286788",
+      "at": "2026-10-22T06:47:31.996Z"
+    },
+    {
+      "runId": "session-2",
+      "role": "research",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T06:47:36.346Z"
+    },
+    {
+      "runId": "session-2",
+      "role": "story",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T06:47:36.996Z"
+    },
+    {
+      "runId": "session-2",
+      "role": "detail",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T06:47:37.644Z"
+    },
+    {
+      "runId": "session-2",
+      "role": "detail",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T06:47:37.675Z"
+    },
+    {
+      "runId": "session-4",
+      "role": "view-follow-up",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T06:47:44.876Z"
+    },
+    {
+      "runId": "child-9ea87e996d82540b95d01d53c17acb781dbe2f17",
+      "role": "controlled-work",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T06:47:49.081Z"
+    },
+    {
+      "runId": "session-5",
+      "role": "view-follow-up",
+      "runner": "codex",
+      "model": "gpt-5",
+      "resume": null,
+      "at": "2026-10-22T06:47:49.314Z"
+    }
+  ]
+}

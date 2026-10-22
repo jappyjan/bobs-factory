@@ -1,0 +1,14 @@
+Preparing worktree (new branch 'fixture/views-decide-ui-run')
+Preparing worktree (new branch 'fixture/views-children-ui-run')
+Preparing worktree (new branch 'fixture/views-approve-ui-run')
+Preparing worktree (new branch 'fixture/child-2a810399eb62e4fe7c5e8279ee14d2d597317660')
+Preparing worktree (new branch 'fixture/child-9aadb061a1b3d2d56ce22b189edbf170ca5a622e')
+Preparing worktree (new branch 'fixture/child-082c6e9916058558cf6fff0d3474dc5f97f183f5')
+{"ready":true,"origin":"http://localhost:3692","urls":{"decide":"http://localhost:3692/#/runs/views-decide-ui-run","approve":"http://localhost:3692/#/runs/views-approve-ui-run","runs":"http://localhost:3692/#/runs/views-children-ui-run"},"builderUrl":"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose","evidence":"/tmp/taskbot140-views-ui-repairs-final","directory":"/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-views-ui-repairs-CHo3Vo","build":"b6c096735522dd1c43f9750f"}
+{"previewGate":"holding","pending":[]}
+{"previewGate":"held","id":3,"requestSha256":"aa398e824e55375df111544ef50a1645789fc0e72add1a54d1f3a9944431e46c"}
+{"previewGate":"held","id":4,"requestSha256":"fce9d0e5da1dd9d64983604947f2f9bfdf7477ff6302d913600a8272b5e8f58b"}
+{"previewGate":"released","ids":[4],"pending":[3]}
+{"previewGate":"released","ids":[3],"pending":[]}
+{"previewGate":"released","ids":[],"pending":[]}
+PASS declarative views UI fixture stopped; disposable state retained

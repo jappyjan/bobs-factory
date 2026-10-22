@@ -1,0 +1,29 @@
+{
+  "result": "PASS",
+  "revision": "e4e9fe2c5f427acdde834305207d945b8ce143ba",
+  "deltaSha256": "beb65e0150a341a96cc45c20eebde3b88568803fb56ab8e7bda6622b9f2973df",
+  "repositoryDeltaAfter": "beb65e0150a341a96cc45c20eebde3b88568803fb56ab8e7bda6622b9f2973df",
+  "driverSha256": "c85f32f5f90671b7d4c99b3e17d1150c745cba3d47adfeedd3cc79f04d8b2833",
+  "buildSha256": "5cf5694181f67449fd678cd9eaa60b89c75cf2bff54c5252def38550b79f9bcd",
+  "backendSourceSha256": "dcd406138bbc64d8875e177343b0798c6faa6c2d1db69fa537e2605cd885df72",
+  "node": "v24.21.0",
+  "startedAt": "2026-10-22T04:57:04.543Z",
+  "endedAt": "2026-10-22T04:57:19.571Z",
+  "paidCalls": 0,
+  "exitCode": 0,
+  "retainedRawDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-I6MXpo",
+  "logs": "/tmp/taskbot140-f1-attempt-rhWAHl",
+  "executedBackendSourcesUnchanged": true,
+  "executedCompiledBuildUnchanged": true,
+  "driverUnchanged": true,
+  "scenarioCount": 3,
+  "mockTurns": 9,
+  "activityCount": 8,
+  "httpRequests": 17,
+  "limits": [
+    "Deterministic F1 mock providers; no live model/auth/forge quality claim",
+    "Push attention identity observed; no live device delivery claim",
+    "Browser screenshots are separate owner evidence",
+    "Generic approvals intentionally create zero native merge or architecture decisions"
+  ]
+}

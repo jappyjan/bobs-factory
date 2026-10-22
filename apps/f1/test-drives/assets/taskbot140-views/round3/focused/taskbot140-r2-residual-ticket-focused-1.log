@@ -1,0 +1,81 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+
+ ❯ test/HumanViewTicketDelivery.test.ts (4 tests | 4 failed) 7172ms
+   × publishes current taskbot discussion at admission and completion, retains history and deduplicates reconstruction 730ms
+   × publishes current linear discussion at admission and completion, retains history and deduplicates reconstruction 5272ms
+   × reconciles a lost response by the exact current version marker and skips obsolete versions after a delayed adapter read 638ms
+   × retains real native startup diagnostics privately while API, text, actual ticket and opt-in push show safe recovery guidance across restart 532ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/HumanViewTicketDelivery.test.ts > publishes current taskbot discussion at admission and completion, retains history and deduplicates reconstruction
+TypeError: runtime.load is not a function
+ ❯ Object.reconstruct test/HumanViewTicketDelivery.test.ts:231:18
+    229|    runtime = new WorkflowRuntime(home, hooks);
+    230|    runtimes.push(runtime);
+    231|    await runtime.load();
+       |                  ^
+    232|    const restored = runtime.get(run.id);
+    233|    void runtime.launch(restored);
+ ❯ test/HumanViewTicketDelivery.test.ts:301:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/HumanViewTicketDelivery.test.ts > publishes current linear discussion at admission and completion, retains history and deduplicates reconstruction
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/HumanViewTicketDelivery.test.ts:206:62
+    204|  const displays = async () =>
+    205|   (await bodies()).filter((body) => body.includes("Decision batch:"));
+    206|  await waitFor(async () => expect((await displays()).length).toBe(1));
+       |                                                              ^
+    207|  return {
+    208|   home,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/HumanViewTicketDelivery.test.ts > reconciles a lost response by the exact current version marker and skips obsolete versions after a delayed adapter read
+TypeError: runtime.load is not a function
+ ❯ Object.reconstruct test/HumanViewTicketDelivery.test.ts:231:18
+    229|    runtime = new WorkflowRuntime(home, hooks);
+    230|    runtimes.push(runtime);
+    231|    await runtime.load();
+       |                  ^
+    232|    const restored = runtime.get(run.id);
+    233|    void runtime.launch(restored);
+ ❯ test/HumanViewTicketDelivery.test.ts:345:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  test/HumanViewTicketDelivery.test.ts > retains real native startup diagnostics privately while API, text, actual ticket and opt-in push show safe recovery guidance across restart
+TypeError: runtime.load is not a function
+ ❯ Object.reconstruct test/HumanViewTicketDelivery.test.ts:231:18
+    229|    runtime = new WorkflowRuntime(home, hooks);
+    230|    runtimes.push(runtime);
+    231|    await runtime.load();
+       |                  ^
+    232|    const restored = runtime.get(run.id);
+    233|    void runtime.launch(restored);
+ ❯ test/HumanViewTicketDelivery.test.ts:390:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  11:27:10
+   Duration  8.64s (transform 798ms, setup 18ms, import 1.37s, tests 7.17s, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/HumanViewTicketDelivery.test.ts --maxWorkers=1

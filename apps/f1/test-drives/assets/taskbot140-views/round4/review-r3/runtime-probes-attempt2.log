@@ -1,0 +1,135 @@
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+... Skipped lines
+
+  {
+    configDigest: '416523fd3e586f2ce6619d12adf65273abe51aed5aa1b58e13e0a53f4768792f',
+    definitionDigest: '416523fd3e586f2ce6619d12adf65273abe51aed5aa1b58e13e0a53f4768792f',
+    items: [
+      {
+...
+    publicationDigest: '38aeb70344510bfe204bae13d42fc80e3afc1ca5cd23eddcf48b74fcdefef758',
++   scope: [Object: null prototype] {
++     inputs: [Object: null prototype] {}
+-   scope: {
+-     inputs: {}
+    },
+    snapshot: {
+      actions: [
+        {
+          id: 'skip',
+...
+      kind: 'decide',
++     notifications: [Object: null prototype] {
+-     notifications: {
+        push: 'view-text'
+      },
+      stepKey: 'choose',
+      threads: {
+        a: [
+...
+      title: 'Choose',
++     view: [Object: null prototype] {
+-     view: {
+        components: [
++         [Object: null prototype] {
++           data: [Object: null prototype] {
+-         {
+-           data: {
+              text: 'Public artifact'
+            },
+            id: 'brief',
+            type: 'markdown'
+          }
+
+    at file:///private/tmp/taskbot140-review-r3-fast2/runtime-probes.mjs:54:227 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: {
+    snapshot: {
+      id: 'e7ca30a9-d284-4e94-ae9b-07956ab8176e',
+      stepKey: 'choose',
+      kind: 'decide',
+      title: 'Choose',
+      digest: '38aeb70344510bfe204bae13d42fc80e3afc1ca5cd23eddcf48b74fcdefef758',
+      view: [Object: null prototype] {
+        version: 'view-v1',
+        components: [
+          [Object: null prototype] {
+            id: 'brief',
+            type: 'markdown',
+            data: [Object: null prototype]
+          }
+        ]
+      },
+      notifications: [Object: null prototype] { push: 'view-text' },
+      items: [ { id: 'a', title: 'Public item', details: [] } ],
+      actions: [ { id: 'skip', label: 'Skip' } ],
+      askAvailable: true,
+      threads: {
+        a: [
+          {
+            id: 'b85f2f32-ef38-4405-a6a2-c72c12839f84',
+            question: 'Explain native startup failure safely',
+            status: 'failed',
+            at: '2026-10-22T09:24:13.439Z',
+            error: 'Agent step failed: spawn /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-review-r3-probe-pfJE2K/private-provider-name/codex-unavailable ENOENT'
+          }
+        ]
+      },
+      createdAt: '2026-10-22T09:24:13.373Z'
+    },
+    configDigest: '416523fd3e586f2ce6619d12adf65273abe51aed5aa1b58e13e0a53f4768792f',
+    definitionDigest: '416523fd3e586f2ce6619d12adf65273abe51aed5aa1b58e13e0a53f4768792f',
+    sourceDigest: '6b9636e098fbdc86248270674a00b3af1298b51e1b9f3992742d00ce8cac06ee',
+    items: [ { id: 'a', value: { id: 'a', title: 'Public item' } } ],
+    scope: [Object: null prototype] { inputs: [Object: null prototype] {} },
+    publicationDigest: '38aeb70344510bfe204bae13d42fc80e3afc1ca5cd23eddcf48b74fcdefef758',
+    notified: true
+  },
+  expected: {
+    snapshot: {
+      id: 'e7ca30a9-d284-4e94-ae9b-07956ab8176e',
+      stepKey: 'choose',
+      kind: 'decide',
+      title: 'Choose',
+      digest: '38aeb70344510bfe204bae13d42fc80e3afc1ca5cd23eddcf48b74fcdefef758',
+      view: {
+        version: 'view-v1',
+        components: [ { id: 'brief', type: 'markdown', data: [Object] } ]
+      },
+      notifications: { push: 'view-text' },
+      items: [ { id: 'a', title: 'Public item', details: [] } ],
+      actions: [ { id: 'skip', label: 'Skip' } ],
+      askAvailable: true,
+      threads: {
+        a: [
+          {
+            id: 'b85f2f32-ef38-4405-a6a2-c72c12839f84',
+            question: 'Explain native startup failure safely',
+            status: 'failed',
+            at: '2026-10-22T09:24:13.439Z',
+            error: 'Agent step failed: spawn /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-review-r3-probe-pfJE2K/private-provider-name/codex-unavailable ENOENT'
+          }
+        ]
+      },
+      createdAt: '2026-10-22T09:24:13.373Z'
+    },
+    configDigest: '416523fd3e586f2ce6619d12adf65273abe51aed5aa1b58e13e0a53f4768792f',
+    definitionDigest: '416523fd3e586f2ce6619d12adf65273abe51aed5aa1b58e13e0a53f4768792f',
+    sourceDigest: '6b9636e098fbdc86248270674a00b3af1298b51e1b9f3992742d00ce8cac06ee',
+    items: [ { id: 'a', value: { id: 'a', title: 'Public item' } } ],
+    scope: { inputs: {} },
+    publicationDigest: '38aeb70344510bfe204bae13d42fc80e3afc1ca5cd23eddcf48b74fcdefef758',
+    notified: true
+  },
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

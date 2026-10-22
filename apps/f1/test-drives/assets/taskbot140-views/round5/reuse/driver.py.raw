@@ -1,0 +1,36 @@
+import json,hashlib,subprocess
+from pathlib import Path
+repo=Path.cwd()
+sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
+head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+base=Path('apps/f1/test-drives/assets/taskbot140-views')
+ui=json.loads((base/'round3/ui/reuse.json.raw').read_text())
+proof={'head':head,'claim':'Appearance/resource/provider-only input reuse. Changed core dispatch control, configured/native MCP, Linear delivery and TicketTracking/ViewRuntime/EdgeWorker backend are excluded and receive fresh gates/F1/native. No live model/device/OS-reader or whole-dist equivalence claim.','uiSources':{},'images':[],'nativeProviderInputs':{},'codexNativeInputs':{},'historicalVisibleProjections':ui['projections'],'limits':['23 images retain original execution/source identities; this is no new browser execution.','Four initial projection equalities were executed and authenticated on94; no changed runtime/protocol/approval equivalence is inferred from those historical projections.','Current fresh workflow tests and three drives cover final configured MCP dispatch, native durable/paced retry, source rotation and exact current answer protocol. Reused native permission/OS-denial evidence does not cover new MCP transport code.']}
+for p,expected in ui['byteIdenticalSources'].items():
+ assert sha(p)==expected,p
+ proof['uiSources'][p]=expected
+# The current public error formatter and editor ownership/controller remain exact too.
+old=json.loads((base/'round3/gates/source-inputs.json.raw').read_text())
+oldhash={r['path']:r['sha256'] for r in old['files']}
+for p in ['packages/edge-worker/src/factory/ViewPresentation.ts','packages/edge-worker/src/factory/ViewText.ts']:
+ assert sha(p)==oldhash[p],p
+ proof['uiSources'][p]=oldhash[p]
+for row in ui['images']:
+ assert sha(row['path'])==row['sha256'],row['path']
+ proof['images'].append(row)
+for name in ['failure-desktop-light.png','failure-390-dark.png','answered-390-dark.png']:
+ p=base/'round3/ui'/name
+ proof['images'].append({'path':str(p),'bytes':p.stat().st_size,'sha256':sha(p)})
+assert len(proof['images'])==23
+native=json.loads((base/'round3/native/provider/receipt.json.raw').read_text())
+for p,expected in native['inputs'].items():
+ assert sha(p)==expected,p
+ proof['nativeProviderInputs'][p]=expected
+codex=json.loads((base/'round2/native/codex-input-equivalence.json').read_text())
+for r in codex['files']:
+ if not r['path'].startswith('packages/'):continue
+ assert sha(r['path'])==r['sha256'],r['path']
+ proof['codexNativeInputs'][r['path']]=r['sha256']
+proof['shell']=ui['shell'];proof['shellAssets']=ui['shellAssets'];proof['result']='PASS'
+Path('/tmp/taskbot140-round5-reuse.json').write_text(json.dumps(proof,indent=2)+'\n')
+print(json.dumps({k:len(v) for k,v in proof.items() if isinstance(v,(dict,list))}))

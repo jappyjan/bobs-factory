@@ -1,0 +1,218 @@
+
+> bobs-factory-monorepo@1.0.1 test:packages:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views
+> pnpm --filter './packages/*' test:run
+
+Scope: 16 of 20 workspace projects
+
+> bobs-factory-cloudflare-tunnel-client@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cloudflare-tunnel-client
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cloudflare-tunnel-client
+
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  07:58:08
+   Duration  130ms (transform 34ms, setup 0ms, import 48ms, tests 31ms, environment 0ms)
+
+
+> bobs-factory-core@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/core
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/core
+
+
+ Test Files  19 passed (19)
+      Tests  263 passed (263)
+   Start at  07:58:09
+   Duration  2.12s (transform 198ms, setup 0ms, import 689ms, tests 1.98s, environment 1ms)
+
+
+> bobs-factory-mcp-tools@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools
+
+To /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-operator-2CT0SL/upstream.git
+ * [new branch]      main -> main
+
+ Test Files  14 passed (14)
+      Tests  82 passed (82)
+   Start at  07:58:11
+   Duration  12.43s (transform 1.18s, setup 0ms, import 3.18s, tests 20.54s, environment 1ms)
+
+
+> bobs-factory-claude-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/claude-runner
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/claude-runner
+
+
+ Test Files  12 passed (12)
+      Tests  137 passed (137)
+   Start at  07:58:24
+   Duration  1.20s (transform 365ms, setup 0ms, import 1.10s, tests 131ms, environment 1ms)
+
+
+> bobs-factory-config-updater@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/config-updater
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/config-updater
+
+
+ Test Files  8 passed (8)
+      Tests  52 passed (52)
+   Start at  07:58:25
+   Duration  4.46s (transform 204ms, setup 0ms, import 722ms, tests 4.70s, environment 0ms)
+
+
+> bobs-factory-github-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/github-event-transport
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/github-event-transport
+
+
+ Test Files  5 passed (5)
+      Tests  117 passed (117)
+   Start at  07:58:30
+   Duration  467ms (transform 158ms, setup 0ms, import 333ms, tests 49ms, environment 0ms)
+
+
+> bobs-factory-gitlab-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/gitlab-event-transport
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/gitlab-event-transport
+
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  07:58:31
+   Duration  99ms (transform 13ms, setup 0ms, import 20ms, tests 2ms, environment 0ms)
+
+
+> bobs-factory-linear-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/linear-event-transport
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/linear-event-transport
+
+
+ Test Files  6 passed (6)
+      Tests  75 passed (75)
+   Start at  07:58:32
+   Duration  732ms (transform 196ms, setup 0ms, import 788ms, tests 186ms, environment 0ms)
+
+
+> bobs-factory-slack-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/slack-event-transport
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/slack-event-transport
+
+
+ Test Files  3 passed (3)
+      Tests  82 passed (82)
+   Start at  07:58:33
+   Duration  353ms (transform 159ms, setup 0ms, import 287ms, tests 26ms, environment 0ms)
+
+
+> bobs-factory-zulip-event-transport@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/zulip-event-transport
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/zulip-event-transport
+
+
+ Test Files  3 passed (3)
+      Tests  25 passed (25)
+   Start at  07:58:34
+   Duration  296ms (transform 134ms, setup 0ms, import 242ms, tests 11ms, environment 0ms)
+
+
+> bobs-factory-simple-agent-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/simple-agent-runner
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/simple-agent-runner
+
+
+ Test Files  2 passed (2)
+      Tests  24 passed (24)
+   Start at  07:58:34
+   Duration  313ms (transform 35ms, setup 0ms, import 48ms, tests 211ms, environment 0ms)
+
+
+> bobs-factory-codex-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/codex-runner
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/codex-runner
+
+
+ Test Files  17 passed (17)
+      Tests  140 passed (140)
+   Start at  07:58:35
+   Duration  2.24s (transform 299ms, setup 0ms, import 968ms, tests 2.01s, environment 1ms)
+
+
+> bobs-factory-cursor-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cursor-runner
+> node ../../node_modules/.pnpm/node_modules/vitest/vitest.mjs run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/cursor-runner
+
+
+ Test Files  8 passed (8)
+      Tests  56 passed (56)
+   Start at  07:58:37
+   Duration  1.92s (transform 201ms, setup 0ms, import 406ms, tests 2.64s, environment 0ms)
+
+
+> bobs-factory-gemini-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/gemini-runner
+> vitest run
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/gemini-runner
+
+
+ Test Files  4 passed (4)
+      Tests  200 passed | 1 skipped (201)
+   Start at  07:58:40
+   Duration  663ms (transform 262ms, setup 0ms, import 558ms, tests 261ms, environment 0ms)
+
+
+> bobs-factory-opencode-runner@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/opencode-runner
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/opencode-runner
+
+
+ Test Files  4 passed (4)
+      Tests  34 passed (34)
+   Start at  07:58:41
+   Duration  5.76s (transform 259ms, setup 0ms, import 614ms, tests 6.30s, environment 0ms)
+
+
+> bobs-factory-edge-worker@0.2.73 test:run /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+
+{"layout":"js","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1038052}}}
+{"layout":"python","before":{"specialistInvocations":12,"extractionInvocations":2,"workflowVisits":21,"actualContextRetrieval":{"calls":44,"characters":773102}},"after":{"specialistInvocations":8,"extractionInvocations":1,"workflowVisits":20,"actualContextRetrieval":{"calls":48,"characters":1040308}}}
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 test:run: `vitest run`
+Exit status 130
+ ELIFECYCLE  Command failed with exit code 130.

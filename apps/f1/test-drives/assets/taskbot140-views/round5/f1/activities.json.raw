@@ -1,0 +1,67 @@
+{
+  "session": {
+    "sessionId": "session-1",
+    "issueId": "issue-1",
+    "status": "active",
+    "createdAt": 1792667050519,
+    "updatedAt": 1792667056928
+  },
+  "activities": [
+    {
+      "id": "activity-1",
+      "type": "thought",
+      "content": "I've received your request and I'm starting to work on it. Let me analyze the issue and prepare my approach.",
+      "createdAt": 1792667050520
+    },
+    {
+      "id": "activity-2",
+      "type": "thought",
+      "content": "**Routing** (Catch-all)\n- **View F1 fixture** → `main` (default)",
+      "createdAt": 1792667050766
+    },
+    {
+      "id": "activity-3",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792667051133
+    },
+    {
+      "id": "activity-4",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792667051569
+    },
+    {
+      "id": "activity-5",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792667052319
+    },
+    {
+      "id": "activity-6",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792667052357
+    },
+    {
+      "id": "activity-7",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792667053826
+    },
+    {
+      "id": "activity-8",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792667054276
+    },
+    {
+      "id": "activity-9",
+      "type": "prompt",
+      "content": "/view-answer {\"batchId\":\"7024d90f-d55f-4006-8be2-3cd2640183ec\",\"digest\":\"84a4a8b559dd570ec3673c8702002b5b3aa81f8c299647e62f5923bbabd851b2\",\"accepted\":true,\"approved\":true,\"feedback\":\"Explicit acceptance of the current displayed artifact\",\"fields\":{\"understood\":true}}",
+      "createdAt": 1792667056928
+    }
+  ],
+  "totalCount": 9,
+  "hasMore": false
+}

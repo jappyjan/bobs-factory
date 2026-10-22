@@ -1,0 +1,27 @@
+[
+  {
+    "mode": "answer",
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-r2-probe-BGNCRY",
+    "batch": "28f34020-a812-4567-b6f7-0c0d8280dc15",
+    "initialDigest": "84f4092dec61cf4f0e722a13c57a98c657ca9d64e0e629413dcac3cfbcaa17a9",
+    "currentDigest": "52f446097355f5f3e704384f187daad9573810429397132c60544fa9a4c68eb8",
+    "status": "answered",
+    "publishedCount": 1,
+    "publishedHasCurrentDigest": false,
+    "publishedHasQuestion": false,
+    "dynamicTextHasQuestion": true
+  },
+  {
+    "mode": "native-error",
+    "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-r2-probe-V6jj5q",
+    "batch": "741da5d2-6774-4c89-9e0f-62214df42ef3",
+    "initialDigest": "7dd70eee520574d33af74df11025b85686ba4999a03a4553ac4131de0e72e4b4",
+    "currentDigest": "4cbf29a2d1ca0d09460b29977ddf50d9c5b7e23db1d36fceda5e2d19290615ab",
+    "status": "failed",
+    "publishedCount": 1,
+    "publishedHasCurrentDigest": false,
+    "publishedHasQuestion": false,
+    "dynamicTextHasQuestion": true,
+    "publicError": "Agent step failed: Context-only Codex working directory must be owned, private and empty"
+  }
+]

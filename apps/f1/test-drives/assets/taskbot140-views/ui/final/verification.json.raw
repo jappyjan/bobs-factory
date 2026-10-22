@@ -1,0 +1,410 @@
+{
+  "at": "2026-10-22T05:15:57.324Z",
+  "source": "667cbffd00357b2d192239f89c33d300c70a0c8e",
+  "build": "32c73ab9807a3c6248b0d42f",
+  "assertions": [
+    "Source research executes once; Ask is a separate single invocation",
+    "Ordinary routes use exact accepted choices and hasFollowUps",
+    "Both explicit approval outcomes retain fields, feedback and exact displayed digest",
+    "Notifications are distinct by actual run and notice text; both real reconstructions preserve notice count",
+    "Real Ask preserves drafts and invalidates only content confirmation, with native keyboard focus",
+    "Stale answers, incomplete approval fields, HTML/private pointer/remote media inputs are rejected by production API",
+    "Builder live sample/last-run preview, path discovery, provenance and invalid Save were exercised",
+    "All six 360px/theme audits have zero overflow, remote resource or executable DOM",
+    "Twelve current source screenshots have the exact required viewport/theme matrix",
+    "Executed driver bytes match the original execution identity",
+    "Six concurrent identical accepted retries return the original canonical outputs without replacing human decisions",
+    "Conflicting accepted retry is rejected and original decision remains immutable"
+  ],
+  "api": [
+    {
+      "path": "/api/runs/views-decide-ui-run/view-answer",
+      "body": {
+        "batchId": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+        "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9",
+        "accepted": true,
+        "choices": [
+          {
+            "itemId": "cache",
+            "action": "fix",
+            "comment": "Retain the original cache key and receipt."
+          },
+          {
+            "itemId": "labels",
+            "action": "issue",
+            "comment": "Create a separate backlog item."
+          },
+          {
+            "itemId": "unsafe",
+            "action": "skip",
+            "comment": "Keep malicious strings inert."
+          }
+        ],
+        "fields": {}
+      },
+      "status": 200,
+      "result": {
+        "accepted": true,
+        "id": "views-decide-ui-run",
+        "title": "Review findings · choose next work",
+        "status": "completed",
+        "output": {
+          "choices": [
+            {
+              "itemId": "cache",
+              "action": "fix",
+              "comment": "Retain the original cache key and receipt."
+            },
+            {
+              "itemId": "labels",
+              "action": "issue",
+              "comment": "Create a separate backlog item."
+            },
+            {
+              "itemId": "unsafe",
+              "action": "skip",
+              "comment": "Keep malicious strings inert."
+            }
+          ],
+          "itemsByAction": {
+            "fix": [
+              {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              }
+            ],
+            "issue": [
+              {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              }
+            ],
+            "skip": [
+              {
+                "id": "unsafe",
+                "title": "Treat untrusted strings as text",
+                "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+                "impact": "Safe rendering",
+                "evidence": "No raw HTML or remote image requests"
+              }
+            ]
+          },
+          "followUps": [
+            {
+              "itemId": "cache",
+              "item": {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              },
+              "action": "fix",
+              "comment": "Retain the original cache key and receipt.",
+              "thread": [
+                {
+                  "id": "78abc7af-c53b-4d0e-9f92-0992ba249ad0",
+                  "question": "When can this cached result safely be reused?",
+                  "answer": "The cached result can be reused only when its accepted inputs and evidence still match. This answer came from the dedicated item follow-up; the source research was not rerun.",
+                  "status": "answered",
+                  "at": "2026-10-22T05:09:17.259Z"
+                }
+              ]
+            },
+            {
+              "itemId": "labels",
+              "item": {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              },
+              "action": "issue",
+              "comment": "Create a separate backlog item.",
+              "thread": []
+            }
+          ],
+          "hasFollowUps": true,
+          "fields": {},
+          "batchId": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+          "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9"
+        }
+      }
+    },
+    {
+      "path": "/api/runs/views-decide-ui-run/view-answer",
+      "body": {
+        "batchId": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+        "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9",
+        "accepted": true,
+        "choices": [
+          {
+            "itemId": "cache",
+            "action": "fix",
+            "comment": "Retain the original cache key and receipt."
+          },
+          {
+            "itemId": "labels",
+            "action": "issue",
+            "comment": "Create a separate backlog item."
+          },
+          {
+            "itemId": "unsafe",
+            "action": "skip",
+            "comment": "Keep malicious strings inert."
+          }
+        ],
+        "fields": {}
+      },
+      "status": 200,
+      "result": {
+        "accepted": true,
+        "id": "views-decide-ui-run",
+        "title": "Review findings · choose next work",
+        "status": "completed",
+        "output": {
+          "choices": [
+            {
+              "itemId": "cache",
+              "action": "fix",
+              "comment": "Retain the original cache key and receipt."
+            },
+            {
+              "itemId": "labels",
+              "action": "issue",
+              "comment": "Create a separate backlog item."
+            },
+            {
+              "itemId": "unsafe",
+              "action": "skip",
+              "comment": "Keep malicious strings inert."
+            }
+          ],
+          "itemsByAction": {
+            "fix": [
+              {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              }
+            ],
+            "issue": [
+              {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              }
+            ],
+            "skip": [
+              {
+                "id": "unsafe",
+                "title": "Treat untrusted strings as text",
+                "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+                "impact": "Safe rendering",
+                "evidence": "No raw HTML or remote image requests"
+              }
+            ]
+          },
+          "followUps": [
+            {
+              "itemId": "cache",
+              "item": {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              },
+              "action": "fix",
+              "comment": "Retain the original cache key and receipt.",
+              "thread": [
+                {
+                  "id": "78abc7af-c53b-4d0e-9f92-0992ba249ad0",
+                  "question": "When can this cached result safely be reused?",
+                  "answer": "The cached result can be reused only when its accepted inputs and evidence still match. This answer came from the dedicated item follow-up; the source research was not rerun.",
+                  "status": "answered",
+                  "at": "2026-10-22T05:09:17.259Z"
+                }
+              ]
+            },
+            {
+              "itemId": "labels",
+              "item": {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              },
+              "action": "issue",
+              "comment": "Create a separate backlog item.",
+              "thread": []
+            }
+          ],
+          "hasFollowUps": true,
+          "fields": {},
+          "batchId": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+          "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9"
+        }
+      }
+    },
+    {
+      "path": "/api/runs/views-approve-ui-run/view-answer",
+      "body": {
+        "batchId": "fbf3ca3b-c622-4bfb-a284-82521c398a02",
+        "digest": "e9261b6f0fecc4ddf118e4d1c58af39fd9ab0bd3a76b0247676a652a81a1c869",
+        "accepted": true,
+        "fields": {
+          "owner": "UI validation",
+          "understood": true
+        },
+        "approved": false,
+        "feedback": "Keep the explicit limitations visible and include the remaining evidence."
+      },
+      "status": 200,
+      "result": {
+        "accepted": true,
+        "id": "views-approve-ui-run",
+        "title": "Delivery brief · exact content approval",
+        "status": "completed",
+        "output": {
+          "approved": false,
+          "feedback": "Keep the explicit limitations visible and include the remaining evidence.",
+          "fields": {
+            "owner": "UI validation",
+            "understood": true
+          },
+          "batchId": "fbf3ca3b-c622-4bfb-a284-82521c398a02",
+          "digest": "e9261b6f0fecc4ddf118e4d1c58af39fd9ab0bd3a76b0247676a652a81a1c869"
+        }
+      }
+    },
+    {
+      "path": "/api/runs/views-approve-ui-run/view-answer",
+      "body": {
+        "batchId": "fbf3ca3b-c622-4bfb-a284-82521c398a02",
+        "digest": "e9261b6f0fecc4ddf118e4d1c58af39fd9ab0bd3a76b0247676a652a81a1c869",
+        "accepted": true,
+        "fields": {
+          "owner": "UI validation",
+          "understood": true
+        },
+        "approved": false,
+        "feedback": "Keep the explicit limitations visible and include the remaining evidence."
+      },
+      "status": 200,
+      "result": {
+        "accepted": true,
+        "id": "views-approve-ui-run",
+        "title": "Delivery brief · exact content approval",
+        "status": "completed",
+        "output": {
+          "approved": false,
+          "feedback": "Keep the explicit limitations visible and include the remaining evidence.",
+          "fields": {
+            "owner": "UI validation",
+            "understood": true
+          },
+          "batchId": "fbf3ca3b-c622-4bfb-a284-82521c398a02",
+          "digest": "e9261b6f0fecc4ddf118e4d1c58af39fd9ab0bd3a76b0247676a652a81a1c869"
+        }
+      }
+    },
+    {
+      "path": "/api/runs/views-children-ui-run/view-answer",
+      "body": {
+        "batchId": "5cbd63dd-3988-4445-859c-1d4322db8688",
+        "digest": "045130290abb9641bc8d7f60c4d5da34c0d0c6815a5768dcb1e236344b731422",
+        "accepted": true,
+        "fields": {},
+        "approved": true,
+        "feedback": ""
+      },
+      "status": 200,
+      "result": {
+        "accepted": true,
+        "id": "views-children-ui-run",
+        "title": "Independent work · dependency waves",
+        "status": "waiting",
+        "output": {
+          "approved": true,
+          "feedback": "",
+          "fields": {},
+          "batchId": "5cbd63dd-3988-4445-859c-1d4322db8688",
+          "digest": "045130290abb9641bc8d7f60c4d5da34c0d0c6815a5768dcb1e236344b731422"
+        }
+      }
+    },
+    {
+      "path": "/api/runs/views-children-ui-run/view-answer",
+      "body": {
+        "batchId": "5cbd63dd-3988-4445-859c-1d4322db8688",
+        "digest": "045130290abb9641bc8d7f60c4d5da34c0d0c6815a5768dcb1e236344b731422",
+        "accepted": true,
+        "fields": {},
+        "approved": true,
+        "feedback": ""
+      },
+      "status": 200,
+      "result": {
+        "accepted": true,
+        "id": "views-children-ui-run",
+        "title": "Independent work · dependency waves",
+        "status": "waiting",
+        "output": {
+          "approved": true,
+          "feedback": "",
+          "fields": {},
+          "batchId": "5cbd63dd-3988-4445-859c-1d4322db8688",
+          "digest": "045130290abb9641bc8d7f60c4d5da34c0d0c6815a5768dcb1e236344b731422"
+        }
+      }
+    },
+    {
+      "path": "/api/runs/views-decide-ui-run/view-answer",
+      "body": {
+        "batchId": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+        "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9",
+        "accepted": true,
+        "choices": [
+          {
+            "itemId": "cache",
+            "action": "skip",
+            "comment": "Retain the original cache key and receipt."
+          },
+          {
+            "itemId": "labels",
+            "action": "issue",
+            "comment": "Create a separate backlog item."
+          },
+          {
+            "itemId": "unsafe",
+            "action": "skip",
+            "comment": "Keep malicious strings inert."
+          }
+        ],
+        "fields": {}
+      },
+      "status": 409,
+      "result": {
+        "error": "This decision was already answered; accepted choices cannot be overwritten"
+      }
+    }
+  ],
+  "driverCorrection": {
+    "executedSha256": "526cba68f5a272b6dd562a9287e53fb3667342e807ce4817ac244b862389eb6f",
+    "correctedReusableSha256": "9bd302426996f64ea4aed760eafd30c713965aab63ccaa9610cb9d4b601784a6",
+    "reason": "The run,text notification hook cannot infer Show publication identity from the previous run.viewDecision. The reusable driver now deduplicates exact run+text; this external verifier checks the actual original execution without hotpatching it."
+  }
+}

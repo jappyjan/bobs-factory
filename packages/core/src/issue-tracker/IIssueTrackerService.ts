@@ -409,7 +409,11 @@ export interface IIssueTrackerService {
 	 * @remarks
 	 * Use `parentId` to create threaded replies to existing comments.
 	 */
-	createComment(issueId: string, input: CommentCreateInput): Promise<Comment>;
+	createComment(
+		issueId: string,
+		input: CommentCreateInput,
+		delivery?: Pick<AgentActivityDeliveryOptions, "view">,
+	): Promise<Comment>;
 
 	// ========================================================================
 	// TEAM OPERATIONS
@@ -741,6 +745,10 @@ export interface IIssueTrackerService {
 
 	/** Keep refresh-only reads behind foreground requests in the same API budget. */
 	withBackgroundRequests?<T>(operation: () => Promise<T>): Promise<T>;
+	/** Resolve a previous durable activity attempt before superseding its outer intent. Never resends. */
+	reconcileAgentActivityDelivery?(
+		id: string,
+	): Promise<"pending" | "delivered" | "superseded" | undefined>;
 
 	// ========================================================================
 	// FILE OPERATIONS

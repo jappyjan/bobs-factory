@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-22T06:18:52.487969+00:00",
+  "command": [
+    "pnpm",
+    "exec",
+    "biome",
+    "check",
+    "--write",
+    "packages/edge-worker/src/factory/PushEvents.ts",
+    "packages/edge-worker/src/factory/FactoryPush.ts",
+    "packages/edge-worker/src/factory/web/sw.js",
+    "packages/edge-worker/test/HumanViewPush.test.ts"
+  ],
+  "exitCode": 0,
+  "stdoutSha256": "9a7c40d2e9efe8871655b0f582dde460986037e10c466c9a2b1f149492ddd20d",
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source": {
+    "packages/edge-worker/src/factory/PushEvents.ts": "08c0ea5c630a1b148e81c2cede1911272ce02529e03946c1b831461a51fb229c",
+    "packages/edge-worker/src/factory/FactoryPush.ts": "8af228ea1338d12b602da60d00ad155854bca901308ce87eb163d6eee1d030f7",
+    "packages/edge-worker/src/factory/web/sw.js": "9275261524e04e3ea6931d0d6059e5496925f7d1cce883639ddfe8ac10563f6a",
+    "packages/edge-worker/test/HumanViewPush.test.ts": "85344a624a56e5634dd380caaf9b3c2b386376cec54d3d6ef4912981205fbce6",
+    "packages/edge-worker/src/factory/ViewText.ts": "dd195d449424b9211101892679251839f041618b1c0c42dad805db95e31cc379",
+    "packages/edge-worker/src/factory/HumanStep.ts": "4f740a5fcc661456352ae340f0eedd4d7c9894baaa573359e5dbe85fc89ea78d"
+  }
+}

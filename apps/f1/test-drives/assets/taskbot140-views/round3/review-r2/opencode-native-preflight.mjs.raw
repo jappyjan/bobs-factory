@@ -1,0 +1,24 @@
+import {mkdirSync,writeFileSync,existsSync,readFileSync,statSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {join} from 'node:path';
+import {createHash} from 'node:crypto';
+import {OpenCodeRunner} from '/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-review-r2/packages/opencode-runner/dist/OpenCodeRunner.js';
+const root='/tmp/taskbot140-review-r2/opencode-synthetic-fixture';
+const data=join(root,'data','opencode');
+for(const p of ['cwd','home','data/opencode/storage/project','data/opencode/storage/session/proj_fixture','data/opencode/storage/message/ses_fixture','data/opencode/storage/part/msg_fixture'])mkdirSync(join(root,p),{recursive:true,mode:0o700});
+const json=(p,x)=>writeFileSync(join(data,p),JSON.stringify(x));
+json('auth.json',{'https://unsafe.invalid':{type:'wellknown',key:'SYNTHETIC_AUTH',token:'synthetic-not-a-credential'}});
+json('storage/project/proj_fixture.json',{worktree:join(root,'cwd'),vcs:'git',time:{created:1,updated:1},sandboxes:[]});
+json('storage/session/proj_fixture/ses_fixture.json',{slug:'fixture',directory:join(root,'cwd'),title:'synthetic native history',version:'1',time:{created:1,updated:1}});
+json('storage/message/ses_fixture/msg_fixture.json',{role:'user',time:{created:1}});
+json('storage/part/msg_fixture/prt_fixture.json',{type:'text',text:'SYNTHETIC NATIVE HISTORY MUST NOT BE MIGRATED DURING METADATA REFUSAL',time:{created:1}});
+const auth=readFileSync(join(data,'auth.json'));const marker=join(data,'opencode.db');
+const binary='/tmp/taskbot140-r2-standards/package/bin/opencode';
+const env={PATH:process.env.PATH,HOME:join(root,'home'),XDG_DATA_HOME:join(root,'data'),OPENCODE_DISABLE_MODELS_FETCH:'1'};
+const errors=[];
+const r=new OpenCodeRunner({factoryHome:join(root,'factory'),workingDirectory:join(root,'cwd'),openCodePath:binary,toolProfile:'context-only',model:'openai/unused-no-model',childEnvironment:env,mcpConfig:{'factory-context':{type:'http',url:'http://127.0.0.1:1/context'}},onError:e=>errors.push(String(e))});
+const before={dbExists:existsSync(marker),authHash:createHash('sha256').update(auth).digest('hex')};
+await r.start('This must refuse before model work.');
+const result={before,after:{dbExists:existsSync(marker),dbBytes:existsSync(marker)?statSync(marker).size:0,authUnchanged:auth.equals(readFileSync(join(data,'auth.json')))},errors,lastMessage:r.getMessages().at(-1)};
+if(result.after.dbExists){const query=spawnSync(binary,['db','SELECT (SELECT count(*) FROM session) AS sessions, (SELECT count(*) FROM message) AS messages, (SELECT count(*) FROM part) AS parts, (SELECT data FROM part LIMIT 1) AS syntheticPart','--format','json'],{env:{...env,XDG_CONFIG_HOME:join(root,'factory','opencode-state','context-only','config'),XDG_CACHE_HOME:join(root,'factory','opencode-state','context-only','cache'),XDG_STATE_HOME:join(root,'factory','opencode-state','context-only','state')},cwd:join(root,'cwd'),encoding:'utf8',timeout:5000,maxBuffer:16384});result.syntheticQuery={status:query.status,stdout:query.stdout,stderr:query.stderr};}
+writeFileSync('/tmp/taskbot140-review-r2/opencode-native-preflight.json',JSON.stringify(result,null,2));process.stdout.write(JSON.stringify(result,null,2));

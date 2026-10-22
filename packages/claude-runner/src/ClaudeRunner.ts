@@ -13,6 +13,7 @@ import {
 	type CanUseTool,
 	type HookCallbackMatcher,
 	type HookEvent,
+	type HookInput,
 	type PermissionResult,
 	type Query,
 	query,
@@ -47,6 +48,28 @@ import type {
 	ClaudeRunnerEvents,
 	ClaudeSessionInfo,
 } from "./types.js";
+
+const CONTEXT_ONLY_TOOLS = [
+	"mcp__factory-context__list_context",
+	"mcp__factory-context__read_context",
+];
+
+export function contextOnlyManagedPaths(
+	platform = process.platform,
+	env: NodeJS.ProcessEnv = process.env,
+) {
+	const directory =
+		platform === "darwin"
+			? "/Library/Application Support/ClaudeCode"
+			: platform === "win32"
+				? join(env.ProgramFiles || "C:\\Program Files", "ClaudeCode")
+				: "/etc/claude-code";
+	return [
+		"managed-settings.json",
+		"managed-settings.d",
+		"managed-mcp.json",
+	].map((name) => join(directory, name));
+}
 
 // AbortError is no longer exported in v1.0.95, so we define it locally
 export class AbortError extends Error {
@@ -285,14 +308,37 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 
 	constructor(config: ClaudeRunnerConfig, keepSessionWarm = false) {
 		super();
-		this.config = config;
+		this.config =
+			config.toolProfile === "context-only"
+				? {
+						...config,
+						allowedTools: [...CONTEXT_ONLY_TOOLS],
+						disallowedTools: [],
+						tools: [],
+						skills: [],
+						plugins: [],
+						allowedDirectories: [],
+						additionalDirectories: [],
+						settingSources: [],
+						strictMcpConfig: true,
+						mcpConfigPath: undefined,
+						mcpConfig: config.mcpConfig?.["factory-context"]
+							? { "factory-context": config.mcpConfig["factory-context"] }
+							: {},
+						runnerSettings: undefined,
+						autoMemoryDirectory: undefined,
+						extraArgs: undefined,
+						hooks: undefined,
+						fallbackModel: undefined,
+					}
+				: config;
 		this.keepSessionWarm = keepSessionWarm;
 		this.logger = config.logger ?? createLogger({ component: "ClaudeRunner" });
 		this.factoryHome = config.factoryHome;
 		this.formatter = new ClaudeMessageFormatter();
 
 		// Create canUseTool callback if onAskUserQuestion is provided
-		if (config.onAskUserQuestion) {
+		if (config.toolProfile === "context-only" || config.onAskUserQuestion) {
 			this.canUseToolCallback = this.createCanUseToolCallback();
 		}
 
@@ -322,6 +368,14 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 				toolUseID: string;
 			},
 		): Promise<PermissionResult> => {
+			if (this.config.toolProfile === "context-only") {
+				return CONTEXT_ONLY_TOOLS.includes(toolName)
+					? { behavior: "allow", updatedInput: input }
+					: {
+							behavior: "deny",
+							message: "This session can only list and read accepted context.",
+						};
+			}
 			// Only intercept AskUserQuestion tool
 			if (toolName !== "AskUserQuestion") {
 				// Allow all other tools to proceed normally
@@ -467,7 +521,10 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 
 		// Initialize session info without session ID (will be set from first message)
 		this.sessionInfo = {
-			sessionId: null,
+			sessionId:
+				this.config.toolProfile === "context-only"
+					? (this.config.resumeSessionId ?? null)
+					: null,
 			startedAt: new Date(),
 			isRunning: true,
 		};
@@ -510,6 +567,16 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 		this.messages = [];
 
 		try {
+			if (
+				this.config.toolProfile === "context-only" &&
+				contextOnlyManagedPaths(process.platform, {
+					...(this.config.childEnvironment ?? process.env),
+					...this.config.additionalEnv,
+				}).some((path) => existsSync(path))
+			)
+				throw new Error(
+					"Context-only Claude cannot run with managed configuration that may execute native hooks before its permission boundary.",
+				);
 			// Determine prompt mode and setup
 			let promptForQuery: string | AsyncIterable<SDKUserMessage>;
 
@@ -584,7 +651,10 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 			const configPaths: string[] = [];
 
 			// Auto-detect .mcp.json in working directory (base config)
-			if (this.config.workingDirectory) {
+			if (
+				this.config.workingDirectory &&
+				this.config.toolProfile !== "context-only"
+			) {
 				const autoMcpPath = join(this.config.workingDirectory, ".mcp.json");
 				if (existsSync(autoMcpPath)) {
 					try {
@@ -655,13 +725,21 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 			logSandboxRequirementFailures(sandboxRequirements, this.logger);
 
 			const isDebugLogging = this.logger.getLevel() === LogLevel.DEBUG;
-			const model = this.config.model || "opus";
-			const fallbackModel = this.config.fallbackModel || "sonnet";
+			const model =
+				this.config.toolProfile === "context-only" &&
+				this.config.resumeSessionId &&
+				!this.config.model
+					? undefined
+					: this.config.model || "opus";
+			const fallbackModel =
+				this.config.toolProfile === "context-only"
+					? undefined
+					: this.config.fallbackModel || "sonnet";
 
 			const queryOptions: Parameters<typeof query>[0] = {
 				prompt: promptForQuery,
 				options: {
-					model,
+					...(model && { model }),
 					...(this.config.effort && { effort: this.config.effort }),
 					// The SDK rejects an identical fallback, including one restored by defaults.
 					fallbackModel: fallbackModel === model ? undefined : fallbackModel,
@@ -794,7 +872,9 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 			// attachments, including when resuming an existing native conversation.
 			if (
 				this.config.warmSession &&
-				(this.config.serviceTier || this.config.mcpConfig?.["factory-context"])
+				(this.config.toolProfile === "context-only" ||
+					this.config.serviceTier ||
+					this.config.mcpConfig?.["factory-context"])
 			) {
 				this.config.warmSession.close();
 				this.config.warmSession = undefined;
@@ -1118,6 +1198,26 @@ export class ClaudeRunner extends EventEmitter implements IAgentRunner {
 		const configHooks = this.config.hooks ?? {};
 		return {
 			...configHooks,
+			...(this.config.toolProfile === "context-only" && {
+				PreToolUse: [
+					{
+						hooks: [
+							async (input: HookInput) =>
+								input.hook_event_name === "PreToolUse" &&
+								CONTEXT_ONLY_TOOLS.includes(input.tool_name)
+									? {}
+									: {
+											hookSpecificOutput: {
+												hookEventName: "PreToolUse" as const,
+												permissionDecision: "deny" as const,
+												permissionDecisionReason:
+													"This session can only list and read accepted context.",
+											},
+										},
+						],
+					},
+				],
+			}),
 			Stop: [...(configHooks.Stop ?? []), recorder],
 		};
 	}

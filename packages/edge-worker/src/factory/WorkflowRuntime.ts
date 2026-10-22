@@ -97,6 +97,7 @@ import {
 } from "./Foreach.js";
 import type { GitProviderSnapshot } from "./GitProvider.js";
 import { GitSettings } from "./GitSettings.js";
+import type { ViewRecord, ViewSnapshot } from "./HumanStep.js";
 import {
 	assertImpactFresh,
 	type ConvergenceState,
@@ -212,6 +213,7 @@ import {
 	registerOutputHistory,
 	stepForRun,
 } from "./ToolBindings.js";
+import { HumanViews } from "./ViewRuntime.js";
 import {
 	assertForeachBody,
 	isComputeIntensive,
@@ -249,6 +251,9 @@ export interface WorkflowCall {
 	workflowId: string;
 }
 export interface AgentCheckpoint {
+	/** Effective assistance settings retained with its actual native conversation. */
+	model?: string;
+	toolProfile?: "context-only";
 	/** Original bound input/repository snapshot, retained across native turn restart. */
 	inspection?: OutputRevisionBinding;
 	infrastructureFailure?: { reason: string; at: string; output?: unknown };
@@ -321,6 +326,7 @@ export interface GraphCheckpoint {
 		active?: GraphCheckpoint["active"];
 	}[];
 	active?: {
+		viewId?: string;
 		actionId?: string;
 		attemptId?: string;
 		phase: "executing" | "result" | "waiting" | "answered";
@@ -521,6 +527,9 @@ export interface FactoryRun {
 		planOutput: string;
 	};
 	reviewGate?: ReviewGate;
+	viewDecision?: ViewSnapshot;
+	viewDisplays?: ViewSnapshot[];
+	viewRecords?: ViewRecord[];
 	humanDecisions?: HumanDecision[];
 	roleRevisions?: Record<string, RoleRevision>;
 	boundOutputs?: Record<string, OutputRevisionBinding>;
@@ -570,6 +579,8 @@ export interface ExecutionContext {
 	snapshotInputs?: Record<string, SnapshotInputProvenance>;
 	validateRoleOutput?: (value: unknown) => unknown;
 	readOnlyResearch?: boolean;
+	/** Trusted human-thread execution profile, never selected by authored output. */
+	contextAssistance?: true;
 	researchAccess?: {
 		repositories: { id: string; root: string; revision: string }[];
 		maxCalls: number;
@@ -663,6 +674,7 @@ export interface RuntimeHooks {
 	tool(context: ExecutionContext): Promise<unknown>;
 	evidence?(context: ExecutionContext): Promise<Record<string, unknown>>;
 	question?(run: FactoryRun): Promise<void>;
+	viewDecision?(run: FactoryRun, text: string): Promise<void>;
 	simple?(run: FactoryRun, signal: AbortSignal): Promise<void>;
 	prepare?(run: FactoryRun, signal: AbortSignal): Promise<void>;
 	finished?(run: FactoryRun): Promise<void>;
@@ -672,8 +684,11 @@ export interface RuntimeHooks {
 export class WorkflowRuntime {
 	/** Waiting gates and update-suspended runs have no executing work. */
 	hasExecutingWork(): boolean {
-		return [...this.executions.keys()].some(
-			(id) => this.runs.get(id)?.status !== "waiting",
+		return (
+			this.humanViews.hasExecutingWork() ||
+			[...this.executions.keys()].some(
+				(id) => this.runs.get(id)?.status !== "waiting",
+			)
 		);
 	}
 	private assertSchedulingOpen(): void {
@@ -705,6 +720,7 @@ export class WorkflowRuntime {
 	private launchReconciliations = new Map<string, Promise<void>>();
 	private launchReconciliationDirty = new Set<string>();
 	private controllers = new Map<string, AbortController>();
+	readonly humanViews: HumanViews;
 	private pendingAnswers = new Map<
 		string,
 		{ resolve: () => void; reject: (error: Error) => void }
@@ -757,6 +773,7 @@ export class WorkflowRuntime {
 		private hooks: RuntimeHooks,
 	) {
 		this.directory = join(home, "factory");
+		this.humanViews = new HumanViews(this, hooks);
 		this.launchAssets = new LaunchAssetStore(this.directory);
 		this.snapshots = new JsonSnapshotStore(join(this.directory, "run-chunks"));
 		mkdirSync(join(this.directory, "runs"), { recursive: true });
@@ -2420,6 +2437,12 @@ export class WorkflowRuntime {
 							};
 						if (step.type === "check")
 							output = await this.executeCheck(context, output);
+					} else if (["decide", "approve", "show"].includes(step.type)) {
+						if (parallel && step.type !== "show")
+							throw new Error(
+								"Human checkpoints belong outside concurrent bodies",
+							);
+						output = await this.humanViews.execute(context, checkpoint);
 					} else if (
 						["snapshot", "file-issues", "launch-runs"].includes(step.type)
 					) {
@@ -3944,6 +3967,82 @@ export class WorkflowRuntime {
 		}
 		return outputs;
 	}
+	async publishViewDecision(
+		run: FactoryRun,
+		text: string,
+		batchId: string,
+		displayDigest?: string,
+	) {
+		if (displayDigest) {
+			const record = run.viewRecords?.find(
+				(record) => record.snapshot.id === batchId,
+			);
+			const current = () =>
+				record &&
+				!record.answer &&
+				!record.superseded &&
+				run.status === "waiting" &&
+				run.viewDecision?.id === batchId &&
+				run.viewDecision.digest === displayDigest &&
+				record.snapshot.digest === displayDigest;
+			if (!current() || !record || record.publicationDigest === displayDigest)
+				return;
+			// Original no-discussion waits were already published with their unchanged
+			// digest. Old waits with Ask need their first current-discussion intent.
+			const legacyIntent = run.ticketSync?.receipts.some(
+				(receipt) =>
+					receipt.key === `view:${batchId}` &&
+					!receipt.superseded &&
+					receipt.body.startsWith(
+						`${record.snapshot.kind}\nDecision batch: ${batchId}\nDisplayed digest: ${displayDigest}\n`,
+					),
+			);
+			const legacyPublished =
+				(!(run.ticketReference && this.hooks.track) || legacyIntent) &&
+				record.notified &&
+				!record.publicationDigest &&
+				!Object.values(record.snapshot.threads ?? {}).some(
+					(threads) => threads.length,
+				);
+			record.publicationDigest = displayDigest;
+			record.notified = true;
+			if (legacyPublished) {
+				await this.save(run);
+				return;
+			}
+			if (run.ticketReference && this.hooks.track) {
+				// track records the intent before its first save, atomically with the
+				// publication claim. Its outbox owns provider retries and deduplication.
+				await this.track(run, {
+					key: `view:${batchId}:${displayDigest}`,
+					body: text,
+					viewDecision: { batchId, digest: displayDigest },
+				});
+			} else {
+				await this.save(run);
+				await this.hooks.viewDecision?.(run, text);
+			}
+			return;
+		}
+		if (run.ticketReference && this.hooks.track)
+			await this.track(run, { key: `view:${batchId}`, body: text });
+		else await this.hooks.viewDecision?.(run, text);
+	}
+	async answerView(id: string, input: unknown) {
+		this.requireRunAvailable(this.get(id));
+		return this.humanViews.answer(id, input);
+	}
+	async askView(id: string, input: unknown) {
+		this.requireRunAvailable(this.get(id));
+		return this.humanViews.ask(id, input);
+	}
+	async replyView(id: string, text: string) {
+		if (!text.startsWith("/view-answer "))
+			throw new Error(
+				"This decision requires the explicit /view-answer JSON command with its current batch and displayed digest, or the Factory dashboard.",
+			);
+		return this.answerView(id, JSON.parse(text.slice(13)));
+	}
 	private async waitForAnswers(
 		run: FactoryRun,
 		questions: string[],
@@ -5209,6 +5308,7 @@ export class WorkflowRuntime {
 		for (const controller of this.controllers.values()) controller.abort();
 		await Promise.allSettled(this.launchReconciliations.values());
 		await Promise.allSettled(this.executions.values());
+		await this.humanViews.settle();
 		await Promise.allSettled(this.terminalPublications.values());
 		for (const id of this.pendingActivitySaves.keys())
 			await this.save(this.get(id));
@@ -6262,6 +6362,14 @@ export class WorkflowRuntime {
 			},
 			reviewGate: run.reviewGate,
 			questionCount: run.questions?.length ?? 0,
+			viewDecision: run.viewDecision
+				? {
+						id: run.viewDecision.id,
+						kind: run.viewDecision.kind,
+						title: run.viewDecision.title,
+						...(run.viewDecision.answer ? { answer: true } : {}),
+					}
+				: undefined,
 			architectureGate: run.architectureGate ? { pending: true } : undefined,
 			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
 				? this.summaries.get(run.id)?.hasGuide

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import type { ViewSnapshot } from "../HumanStep.js";
 import type { QuestionChoices } from "../Questions.js";
 import { ArchitectureEntry } from "./architecture";
 import {
@@ -21,6 +22,7 @@ import {
 	workingLabel,
 } from "./client";
 import { activitiesOf } from "./conversation";
+import { DeclarativeView, HumanStepPanel } from "./declarative-view";
 import { ExternalRecovery } from "./external-recovery";
 import { useCurrentForm, useFormState } from "./form-state";
 import {
@@ -60,6 +62,35 @@ export const labels: Record<string, string> = {
 	stuck: "🩹 Stuck",
 	review: "🎁 Ready to review",
 };
+
+/** A decision belongs to its accepted batch; old drafts never target a newer view. */
+export function GenericHumanDecision({ run }: { run: any }) {
+	const snapshot = run.viewDecision as ViewSnapshot | undefined;
+	if (!snapshot) return null;
+	return (
+		<HumanStepPanel
+			key={`${run.id}/${snapshot.id}`}
+			runId={run.id}
+			snapshot={snapshot}
+			disabled={run.status !== "waiting" || Boolean(snapshot.answer)}
+		/>
+	);
+}
+
+/** Show receipts remain visible after the ordinary recipe has progressed. */
+export function RunViewDisplays({ run }: { run: any }) {
+	const displays = (run.viewDisplays ?? []) as ViewSnapshot[];
+	return displays.length ? (
+		<section className="run-view-displays" aria-label="Recipe displays">
+			{displays.map((snapshot) => (
+				<section key={snapshot.id} className="review-surface">
+					<h2>{snapshot.title}</h2>
+					<DeclarativeView view={snapshot.view} runId={run.id} disabled />
+				</section>
+			))}
+		</section>
+	) : null;
+}
 export function RunMeta({ run, config }: { run: any; config: any }) {
 	const repo = config.repositories.find(
 			(r: any) =>
@@ -912,18 +943,24 @@ export function FocusCard({
 			!!run.iterationLimit &&
 			run.iterationLimit.visits > run.iterationLimit.limit,
 		canResume = run.status === "stopped" && run.resumeAvailable === true,
+		label =
+			run.status === "waiting" && run.viewDecision && !run.viewDecision.answer
+				? run.viewDecision.kind === "approve"
+					? "✓ Approval needed"
+					: "☷ Decide per item"
+				: labels[kind],
 		toast = useToast(),
 		action = useAction();
 	return (
 		<section
 			className={`focus-card kind-${kind}`}
-			aria-label={`${stopped ? "Stopped" : labels[kind]}: ${run.title}`}
+			aria-label={`${stopped ? "Stopped" : label}: ${run.title}`}
 		>
 			<div className="focus-top">
 				{!full && (
 					<>
 						<span className={`chip ${kind}`}>
-							{stopped ? "■ Stopped" : labels[kind]}
+							{stopped ? "■ Stopped" : label}
 						</span>
 						<RunMeta run={run} config={config} />
 						{navigation}
@@ -937,6 +974,10 @@ export function FocusCard({
 			)}
 			{detail.isLoading || run.pendingContext ? (
 				<p role="status">Bob is loading this run…</p>
+			) : run.status === "waiting" &&
+				run.viewDecision &&
+				!run.viewDecision.answer ? (
+				<GenericHumanDecision run={run} />
 			) : kind === "question" && run.improvement ? (
 				<div className="imp-focus">
 					<p>

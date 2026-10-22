@@ -1,0 +1,125 @@
+[
+  {
+    "scenario": "context-only-native-ask-restart",
+    "originalNative": {
+      "runner": "codex",
+      "sessionId": "f1-mock-bb9902ea-1b9c-4710-9bbc-4b42d7b3c1f7",
+      "model": "gpt-6.1-sol",
+      "toolProfile": "context-only"
+    },
+    "resumedAsk": {
+      "runId": "session-1",
+      "role": "view-follow-up",
+      "runner": "codex",
+      "model": "gpt-6.1-sol",
+      "resume": "f1-mock-bb9902ea-1b9c-4710-9bbc-4b42d7b3c1f7",
+      "at": "2026-10-22T09:36:37.211Z"
+    },
+    "exactContextKeys": 4,
+    "noArtifactAuthority": true
+  },
+  {
+    "scenario": "composed-decide-ask-approve-restart",
+    "runId": "session-1",
+    "childId": "child-db1e23c2ab73751130655cdb5830f32521fe2f03",
+    "choiceRequest": {
+      "batchId": "990634a9-b409-4513-88a2-b3b5c6b8e0a0",
+      "digest": "aa15578a7cc9e4f2dc4f85c5310ebb94c882f85f15a70a2a7b18e63232dd7dce",
+      "accepted": true,
+      "choices": [
+        {
+          "itemId": "cache",
+          "action": "fix",
+          "comment": "Retain exact receipts"
+        },
+        {
+          "itemId": "labels",
+          "action": "discuss",
+          "comment": "Follow up on wording"
+        }
+      ],
+      "fields": {
+        "reason": "Explicit decisions"
+      }
+    },
+    "acceptedChoices": {
+      "choices": [
+        {
+          "itemId": "cache",
+          "action": "fix",
+          "comment": "Retain exact receipts"
+        },
+        {
+          "itemId": "labels",
+          "action": "discuss",
+          "comment": "Follow up on wording"
+        }
+      ],
+      "itemsByAction": {
+        "fix": [
+          {
+            "id": "cache",
+            "title": "<script>cache()</script>",
+            "body": "Keep HTML inert; [unsafe](javascript:alert(1))",
+            "impact": "Reuse accepted cache receipts"
+          }
+        ],
+        "skip": [],
+        "discuss": [
+          {
+            "id": "labels",
+            "title": "Clarify progress",
+            "body": "Keep the stage labels readable",
+            "impact": "Show truthful waiting state"
+          }
+        ]
+      },
+      "followUps": [
+        {
+          "itemId": "labels",
+          "item": {
+            "id": "labels",
+            "title": "Clarify progress",
+            "body": "Keep the stage labels readable",
+            "impact": "Show truthful waiting state"
+          },
+          "action": "discuss",
+          "comment": "Follow up on wording",
+          "thread": []
+        }
+      ],
+      "hasFollowUps": true,
+      "fields": {
+        "reason": "Explicit decisions"
+      },
+      "batchId": "990634a9-b409-4513-88a2-b3b5c6b8e0a0",
+      "digest": "aa15578a7cc9e4f2dc4f85c5310ebb94c882f85f15a70a2a7b18e63232dd7dce"
+    },
+    "finalApprovalRequest": {
+      "batchId": "dd913fd6-ea77-4bc0-8799-57b46b828f68",
+      "digest": "87e673206cb852c98054e9830a766eb14774d3c58a58dad8eff42ce25055a482",
+      "accepted": true,
+      "approved": true,
+      "feedback": "Explicit acceptance of the current displayed artifact",
+      "fields": {
+        "understood": true
+      }
+    },
+    "originalApprovalId": "fef8fd7c-2455-40a3-b782-2307451114ce",
+    "staleBatchRejected": true,
+    "exactDisplayedAskDigest": "aa15578a7cc9e4f2dc4f85c5310ebb94c882f85f15a70a2a7b18e63232dd7dce",
+    "parentCompleted": true,
+    "originalSourceTurns": 4,
+    "sourceReruns": 0,
+    "duplicateResultReceipts": 0,
+    "restoredBatchNotificationCount": 1,
+    "lastRunPreview": {
+      "kind": "last-run",
+      "runId": "session-1",
+      "workflowId": "f1-views-main",
+      "stepKey": "choose",
+      "at": "2026-10-22T09:36:36.220Z",
+      "definitionMatch": true
+    }
+  }
+]

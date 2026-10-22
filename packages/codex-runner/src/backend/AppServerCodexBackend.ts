@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import { assertContextOnlyNativeConfig } from "../config/contextOnly.js";
 import { waitWithAbort } from "./abort.js";
 import type { AppServerClientFactory } from "./appServerClient.js";
 import {
@@ -55,6 +56,7 @@ export class AppServerCodexBackend
 	};
 	/** Structured-output schema for turns, captured at open() for turn/start. */
 	private outputSchema: unknown;
+	private contextOnly = false;
 
 	/** Resolver for the in-flight {@link runTurn} promise. */
 	private turnResolve: (() => void) | null = null;
@@ -101,6 +103,7 @@ export class AppServerCodexBackend
 
 	async open(config: ResolvedCodexConfig): Promise<{ threadId: string }> {
 		this.outputSchema = config.outputSchema;
+		this.contextOnly = config.toolProfile === "context-only";
 		const signal = this.cancellation.signal;
 		signal.throwIfAborted();
 		const appServer = await this.processManager.acquire(config, signal);
@@ -108,6 +111,19 @@ export class AppServerCodexBackend
 
 		try {
 			signal.throwIfAborted();
+			if (this.contextOnly) {
+				const effective = await waitWithAbort(
+					appServer.request("config/read", {
+						cwd: config.workingDirectory,
+						includeLayers: false,
+					}),
+					signal,
+				);
+				assertContextOnlyNativeConfig(
+					effective,
+					buildCodexThreadConfig(config),
+				);
+			}
 			const threadId = await waitWithAbort(
 				config.resumeSessionId
 					? this.resumeThread(config)
@@ -301,12 +317,21 @@ export class AppServerCodexBackend
 						}[];
 					}>("mcpServerStatus/list", {
 						threadId,
-						serverName: name,
+						...(this.contextOnly ? {} : { serverName: name }),
 						detail: "toolsAndAuthOnly",
 					}),
 					signal,
 				);
 				const entry = status.data?.find((item) => item.name === name);
+				if (
+					this.contextOnly &&
+					status.data?.some(
+						(item) =>
+							item.name !== "factory-context" &&
+							item.runtimeStatus !== "disabled",
+					)
+				)
+					throw new Error("unexpected MCP server in context-only thread");
 				if (
 					!entry ||
 					entry.toolsError ||
@@ -318,6 +343,13 @@ export class AppServerCodexBackend
 				const names = new Set(
 					Object.values(entry.tools ?? {}).map((tool) => tool.name),
 				);
+				if (
+					this.contextOnly &&
+					[...names].some(
+						(tool) => tool !== "list_context" && tool !== "read_context",
+					)
+				)
+					throw new Error("unexpected tool in context-only thread");
 				const missing = Array.isArray(server.enabled_tools)
 					? server.enabled_tools.filter(
 							(tool) => typeof tool === "string" && !names.has(tool),
@@ -337,7 +369,10 @@ export class AppServerCodexBackend
 	private async startThread(config: ResolvedCodexConfig): Promise<string> {
 		const result = await this.appServer?.request<ThreadStartResult>(
 			"thread/start",
-			this.threadOptionsParams(config),
+			{
+				...this.threadOptionsParams(config),
+				...(this.contextOnly ? { allowProviderModelFallback: false } : {}),
+			},
 		);
 		const id = result?.thread?.id;
 		if (!id) {
@@ -369,6 +404,9 @@ export class AppServerCodexBackend
 				? { permissions: sandbox.profileId }
 				: { sandbox: sandbox.mode };
 		return {
+			...(config.toolProfile === "context-only"
+				? { approvalsReviewer: "user" }
+				: {}),
 			...(config.workingDirectory ? { cwd: config.workingDirectory } : {}),
 			approvalPolicy: config.approvalPolicy,
 			...sandboxParams,
@@ -381,6 +419,8 @@ export class AppServerCodexBackend
 	}
 
 	private toProtocolInput(input: CodexUserInput[]): unknown[] {
+		if (this.contextOnly && input.some((item) => item.type !== "text"))
+			throw new Error("Context-only Codex accepts text input only");
 		return input.map((item) =>
 			item.type === "text"
 				? { type: "text", text: item.text }

@@ -6,6 +6,12 @@ export interface RunSummary {
 	id?: string;
 	improvement?: { phase: string };
 	launchActions?: Record<string, { items: { status: string }[] }>;
+	viewDecision?: {
+		id: string;
+		kind?: string;
+		title?: string;
+		answer?: unknown;
+	};
 	questions?: unknown[];
 	questionCount?: number;
 	architectureGate?: unknown;
@@ -73,6 +79,10 @@ function trackingChildren(run: RunSummary): boolean {
 	);
 }
 export function workingLabel(run: RunSummary): string {
+	if (run.status === "waiting" && run.viewDecision && !run.viewDecision.answer)
+		return run.viewDecision.kind === "approve"
+			? "Waiting for approval"
+			: "Waiting for decisions";
 	if (
 		run.status === "waiting" &&
 		trackingChildren(run) &&
@@ -131,6 +141,8 @@ export function settleReason(
 export function attention(run: RunSummary): Attention | undefined {
 	if (run.reviewGate?.status === "pending" && run.status === "waiting")
 		return "review";
+	if (run.status === "waiting" && run.viewDecision && !run.viewDecision.answer)
+		return "question";
 	if (run.status === "waiting")
 		return run.improvement?.phase === "dispatch" ||
 			(trackingChildren(run) &&

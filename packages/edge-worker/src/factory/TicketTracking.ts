@@ -1,10 +1,17 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { IIssueTrackerService, McpServerConfig } from "bobs-factory-core";
+import {
+	type DispatchControl,
+	type IIssueTrackerService,
+	type McpServerConfig,
+	UnsentDispatchError,
+	type ViewDeliveryControl,
+} from "bobs-factory-core";
 import { z } from "zod";
 import { externalCompletionProven } from "./Delivery.js";
 import { isPullRequestSource } from "./GitProviderReference.js";
 import { issueSnapshot } from "./issueSnapshot.js";
 import { outputForTool } from "./ToolBindings.js";
+import { publicViewRecord } from "./ViewPresentation.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
 export const TicketReferenceSchema = z
@@ -43,6 +50,8 @@ export interface TicketMilestone {
 	body: string;
 	purpose?: "documentation" | "operational";
 	deliveryId?: string;
+	/** Original Taskbot wire input, retained across ambiguous responses and newer displays. */
+	commentAttempt?: { body: string; state: "pending" | "absent" | "confirmed" };
 	stage?: TicketStage;
 	stageSuperseded?: boolean;
 	stageApplied?: boolean;
@@ -54,6 +63,8 @@ export interface TicketMilestone {
 	error?: string;
 	conflict?: boolean;
 	limitation?: string;
+	/** Runtime-owned public human display, never an agent-provided action. */
+	viewDecision?: { batchId: string; digest: string };
 }
 export interface TicketSync {
 	receipts: TicketMilestone[];
@@ -72,14 +83,22 @@ export interface TicketSnapshot {
 	[key: string]: unknown;
 }
 export interface TicketAdapter {
+	reconcile?(
+		receipt: TicketMilestone,
+	): Promise<"pending" | "delivered" | "superseded" | undefined>;
 	read(purpose?: "tracking"): Promise<TicketSnapshot>;
 	matchesStage?(stage: TicketStage, snapshot: TicketSnapshot): Promise<boolean>;
 	stage(
 		stage: TicketStage,
 		snapshot: TicketSnapshot,
 	): Promise<string | undefined>;
-	comment(body: string): Promise<void>;
-	publish?(receipt: TicketMilestone, documentationBody: string): Promise<void>;
+	comment(body: string, dispatch?: ViewDeliveryControl): Promise<void>;
+	publish?(
+		receipt: TicketMilestone,
+		documentationBody: string,
+		beforeWrite?: () => Promise<boolean>,
+		dispatch?: ViewDeliveryControl,
+	): Promise<undefined | false>;
 	link(url: string): Promise<void>;
 }
 
@@ -204,10 +223,22 @@ class StatusConflict extends Error {}
 export function taskbotAdapter(
 	ref: Extract<TicketReference, { provider: "taskbot" }>,
 	call: (tool: string, args: Record<string, unknown>) => Promise<unknown>,
+	guardedCall?: (
+		tool: string,
+		args: Record<string, unknown>,
+		dispatch: DispatchControl,
+	) => Promise<unknown>,
 ): TicketAdapter {
 	const args = { project: ref.project, id: ref.id };
-	const invoke = async (tool: string, extra: Record<string, unknown> = {}) => {
-		const result = await call(tool, { ...args, ...extra });
+	const invoke = async (
+		tool: string,
+		extra: Record<string, unknown> = {},
+		dispatch?: DispatchControl,
+	) => {
+		if (dispatch && !guardedCall) throw new UnsentDispatchError("unavailable");
+		const result = dispatch
+			? await guardedCall!(tool, { ...args, ...extra }, dispatch)
+			: await call(tool, { ...args, ...extra });
 		if (tool === "get_ticket") return mcpValue(result);
 		if (
 			result &&
@@ -295,8 +326,8 @@ export function taskbotAdapter(
 			}
 			return undefined;
 		},
-		async comment(body) {
-			await invoke("comment", { author: "bobs-factory", body });
+		async comment(body, dispatch) {
+			await invoke("comment", { author: "bobs-factory", body }, dispatch);
 		},
 		async link(url) {
 			await invoke("add_attachment", {
@@ -494,13 +525,30 @@ export function nativeAdapter(
 			}
 			return undefined;
 		},
-		async comment(body) {
-			await tracker.createComment(ref.id, { body });
+		async comment(body, dispatch) {
+			if (dispatch && ref.platform !== "cli")
+				throw new UnsentDispatchError("unavailable");
+			await tracker.createComment(
+				ref.id,
+				{ body },
+				...(dispatch ? [{ view: dispatch }] : []),
+			);
 		},
 		...(ref.platform === "linear"
 			? {
-					async publish(receipt: TicketMilestone, documentationBody: string) {
+					reconcile: (receipt: TicketMilestone) =>
+						receipt.deliveryId && tracker.reconcileAgentActivityDelivery
+							? tracker.reconcileAgentActivityDelivery(receipt.deliveryId)
+							: Promise.resolve(undefined),
+					async publish(
+						receipt: TicketMilestone,
+						documentationBody: string,
+						beforeWrite?: () => Promise<boolean>,
+						dispatch?: ViewDeliveryControl,
+					) {
 						if (receipt.purpose === "documentation" && !receipt.merged) {
+							if (dispatch) throw new UnsentDispatchError("unavailable");
+							if (beforeWrite && !(await beforeWrite())) return false;
 							await tracker.createComment(ref.id, { body: documentationBody });
 							return;
 						}
@@ -511,23 +559,30 @@ export function nativeAdapter(
 						const sessionId = await options.getTranscriptSession();
 						if (!sessionId)
 							throw new Error("Verified Linear transcript session unavailable");
-						const result = await tracker.createAgentActivity({
-							id: receipt.deliveryId,
-							agentSessionId: sessionId,
-							content: {
-								type: receipt.key.startsWith("outcome:failed:")
-									? "error"
-									: receipt.merged ||
-											/^outcome:(completed|stopped):/.test(receipt.key)
-										? "response"
-										: /^(questions|review):/.test(receipt.key)
-											? "elicitation"
-											: "thought",
-								body: receipt.merged ? documentationBody : receipt.body,
+						// Transcript discovery/creation can await a remote provider. Recheck
+						// current display authority after it, immediately before the write.
+						if (beforeWrite && !(await beforeWrite())) return false;
+						const result = await tracker.createAgentActivity(
+							{
+								id: receipt.deliveryId,
+								agentSessionId: sessionId,
+								content: {
+									type: receipt.key.startsWith("outcome:failed:")
+										? "error"
+										: receipt.merged ||
+												/^outcome:(completed|stopped):/.test(receipt.key)
+											? "response"
+											: /^(questions|review):/.test(receipt.key)
+												? "elicitation"
+												: "thought",
+									body: receipt.merged ? documentationBody : receipt.body,
+								},
 							},
-						});
+							...(dispatch ? [{ view: dispatch }] : []),
+						);
 						if (!result.success)
 							throw new Error("Linear transcript delivery was rejected");
+						return undefined;
 					},
 				}
 			: {}),
@@ -592,6 +647,75 @@ export class TicketTracking {
 		}
 	}
 	private retries = new Map<string, ReturnType<typeof setTimeout>>();
+	private viewState(run: FactoryRun, receipt: TicketMilestone) {
+		if (!receipt.viewDecision) {
+			// Old saved waits used a batch-only outbox key. Associate only an
+			// exact runtime-owned human batch; Show and other receipts retain
+			// their existing behavior. Never relabel its original body/digest.
+			const legacy = run.viewRecords?.find(
+				(record) =>
+					record.snapshot.kind !== "show" &&
+					receipt.key === `view:${record.snapshot.id}`,
+			);
+			if (!legacy) return "current";
+			const prefix = `${legacy.snapshot.kind}\nDecision batch: ${legacy.snapshot.id}\nDisplayed digest: `;
+			const originalDigest = receipt.body.startsWith(prefix)
+				? receipt.body.slice(prefix.length).split("\n", 1)[0]
+				: undefined;
+			if (!originalDigest || !/^[a-f0-9]{64}$/.test(originalDigest)) {
+				receipt.superseded = true;
+				receipt.limitation =
+					"This legacy display has no verifiable current digest; use the renewed dashboard decision.";
+				delete receipt.error;
+				return "superseded";
+			}
+			receipt.viewDecision = {
+				batchId: legacy.snapshot.id,
+				digest: originalDigest,
+			};
+		}
+		const version = receipt.viewDecision;
+		const record = run.viewRecords?.find(
+			(record) => record.snapshot.id === version.batchId,
+		);
+		if (
+			!record ||
+			record.answer ||
+			record.superseded ||
+			["completed", "failed", "stopped"].includes(run.status) ||
+			publicViewRecord(run.id, record).digest !== version.digest ||
+			(run.viewDecision &&
+				(run.viewDecision.id !== version.batchId ||
+					run.viewDecision.digest !== version.digest))
+		) {
+			receipt.superseded = true;
+			receipt.limitation =
+				"A newer decision display or accepted answer replaced this unsent version.";
+			delete receipt.error;
+			return "superseded";
+		}
+		return run.status === "waiting" && run.viewDecision
+			? "current"
+			: "deferred";
+	}
+	private async validateViewPublication(
+		run: FactoryRun,
+		receipt: TicketMilestone,
+	) {
+		if (this.viewState(run, receipt) !== "current") return false;
+		if (!receipt.viewDecision) return true;
+		if (!this.checkView)
+			throw new Error(
+				"Current decision delivery requires runtime display validation",
+			);
+		if (await this.checkView(run, receipt.viewDecision))
+			return this.viewState(run, receipt) === "current";
+		receipt.superseded = true;
+		receipt.limitation =
+			"The active decision or its displayed content changed before delivery; use the renewed decision.";
+		delete receipt.error;
+		return false;
+	}
 	stop(): void {
 		this.stopped = true;
 		for (const timer of this.retries.values()) clearTimeout(timer);
@@ -602,6 +726,15 @@ export class TicketTracking {
 		private save: (run: FactoryRun) => void | Promise<void>,
 		private log: (run: FactoryRun, message: string) => void,
 		private checkExternal?: (run: FactoryRun) => Promise<boolean>,
+		private checkView?: (
+			run: FactoryRun,
+			version: NonNullable<TicketMilestone["viewDecision"]>,
+		) => Promise<boolean>,
+		private dispatchView?: <T>(
+			run: FactoryRun,
+			version: NonNullable<TicketMilestone["viewDecision"]>,
+			write: () => T,
+		) => Promise<{ value: T }>,
 	) {}
 	async record(run: FactoryRun, milestone: TicketMilestone): Promise<void> {
 		if (!run.ticketReference || run.workflow.id === "simple") return;
@@ -632,11 +765,98 @@ export class TicketTracking {
 					// accepted before the freeze. Their intent is already durable.
 					if (this.updateMaintenance) break;
 					if (
+						!receipt.delivered &&
+						(receipt.viewDecision ||
+							run.viewRecords?.some(
+								(record) =>
+									record.snapshot.kind !== "show" &&
+									receipt.key === `view:${record.snapshot.id}`,
+							)) &&
+						receipt.deliveryId &&
+						ref.provider === "taskbot" &&
+						receipt.commentAttempt?.state !== "absent"
+					) {
+						// A newer display cannot establish that an earlier mutation was
+						// unsent. Resolve its original marker/input before viewState can
+						// retire it, including crash gaps and pre-field saved receipts.
+						try {
+							const marker = `<!-- factory:${run.id}:${createHash("sha256").update(receipt.key).digest("hex").slice(0, 20)} -->`;
+							const original =
+								receipt.commentAttempt?.body ?? `${receipt.body}\n\n${marker}`;
+							const snapshot = await (await this.adapter(run)).read("tracking");
+							const found = snapshot.comments.filter((comment) =>
+								comment.body.includes(marker),
+							);
+							if (found.some((comment) => comment.body !== original))
+								throw new StatusConflict(
+									"Original decision delivery marker has different content; retain its identity for reconciliation.",
+								);
+							receipt.commentAttempt = {
+								body: original,
+								state: found.length ? "confirmed" : "absent",
+							};
+							if (found.length) {
+								receipt.delivered = true;
+								delete receipt.superseded;
+								delete receipt.error;
+								delete receipt.conflict;
+							}
+							sync.error = sync.receipts.find(
+								(r) => !r.delivered && !r.superseded && r.error,
+							)?.error;
+							await this.save(run);
+						} catch (error) {
+							delete receipt.superseded;
+							receipt.conflict = error instanceof StatusConflict;
+							receipt.error =
+								error instanceof Error
+									? error.message
+									: "Original Taskbot delivery requires reconciliation";
+							sync.error = receipt.error;
+							await this.save(run);
+							break;
+						}
+					}
+					if (
+						!receipt.delivered &&
+						receipt.viewDecision &&
+						receipt.deliveryId &&
+						ref.provider === "native" &&
+						ref.platform === "linear"
+					) {
+						try {
+							const state = await (await this.adapter(run)).reconcile?.(
+								receipt,
+							);
+							if (state === "delivered") {
+								receipt.delivered = true;
+								delete receipt.superseded;
+								delete receipt.error;
+							} else if (state === "superseded") receipt.superseded = true;
+							await this.save(run);
+						} catch (error) {
+							receipt.error =
+								error instanceof Error
+									? error.message
+									: "Prior Linear delivery requires reconciliation";
+							sync.error = receipt.error;
+							await this.save(run);
+							break;
+						}
+					}
+					if (
 						receipt.delivered ||
 						receipt.superseded ||
 						(receipt.conflict && !reassess)
 					)
 						continue;
+					if (this.viewState(run, receipt) !== "current") {
+						sync.error = sync.receipts.find(
+							(r) => !r.delivered && !r.superseded && r.error,
+						)?.error;
+						await this.save(run);
+						continue;
+					}
 					try {
 						if (receipt.stage === "done" && receipt.completion) {
 							if (
@@ -652,6 +872,7 @@ export class TicketTracking {
 						}
 						const adapter = await this.adapter(run);
 						let snapshot = await adapter.read("tracking");
+						if (this.viewState(run, receipt) !== "current") continue;
 						const statusOf = (snapshot: TicketSnapshot) =>
 							String(
 								snapshot.status ??
@@ -730,14 +951,75 @@ export class TicketTracking {
 						) {
 							receipt.deliveryId ??= randomUUID();
 							await this.save(run);
+							if (!(await this.validateViewPublication(run, receipt))) continue;
 							const body = `${receipt.body}${receipt.limitation ? `\n\nTracking limitation: ${receipt.limitation}` : ""}\n\n${marker}`;
-							if (adapter.publish) await adapter.publish(receipt, body);
-							else await adapter.comment(body);
+							if (receipt.viewDecision && ref.provider === "taskbot") {
+								if (
+									receipt.commentAttempt &&
+									receipt.commentAttempt.body !== body
+								)
+									throw new StatusConflict(
+										"Original decision delivery input cannot change under its delivery ID.",
+									);
+								receipt.commentAttempt = { body, state: "pending" };
+								// Persist a conservative crash-gap intent before provider preparation.
+								// The final mutation guard still decides whether to dispatch.
+								await this.save(run);
+							}
+							const dispatch: ViewDeliveryControl | undefined =
+								receipt.viewDecision
+									? {
+											identity: {
+												version: 1,
+												runId: run.id,
+												receiptKey: receipt.key,
+												...receipt.viewDecision,
+												deliveryId: receipt.deliveryId,
+											},
+											run: async (write) => {
+												if (!this.dispatchView)
+													throw new UnsentDispatchError("unavailable");
+												return this.dispatchView(
+													run,
+													receipt.viewDecision!,
+													() => {
+														if (this.viewState(run, receipt) !== "current")
+															throw new UnsentDispatchError("superseded");
+														return write();
+													},
+												);
+											},
+										}
+									: undefined;
+							if (adapter.publish) {
+								if (
+									(await adapter.publish(
+										receipt,
+										body,
+										() => this.validateViewPublication(run, receipt),
+										dispatch,
+									)) === false
+								)
+									continue;
+							} else await adapter.comment(body, dispatch);
 						}
 						receipt.delivered = true;
+						if (receipt.commentAttempt)
+							receipt.commentAttempt.state = "confirmed";
 						delete receipt.error;
 						delete receipt.conflict;
 					} catch (error) {
+						if (
+							error instanceof UnsentDispatchError &&
+							error.reason === "superseded"
+						) {
+							receipt.superseded = true;
+							receipt.limitation = error.message;
+							if (receipt.commentAttempt)
+								receipt.commentAttempt.state = "absent";
+							delete receipt.error;
+							continue;
+						}
 						receipt.error =
 							error instanceof Error ? error.message : String(error);
 						receipt.conflict = error instanceof StatusConflict;

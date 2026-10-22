@@ -636,7 +636,17 @@ export function phase(step: any) {
 export function stepIcon(step: any) {
 	return (
 		step?.presentation?.icon ??
-		(step?.type === "agent" ? "✦" : step?.type === "foreach" ? "↻" : "⚙️")
+		(step?.type === "agent"
+			? "✦"
+			: step?.type === "foreach"
+				? "↻"
+				: step?.type === "decide"
+					? "☷"
+					: step?.type === "approve"
+						? "✓"
+						: step?.type === "show"
+							? "▤"
+							: "⚙️")
 	);
 }
 export function stepFixing(step: any): boolean {

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "comment-33",
+    "body": "Factory work started: View actual dependency waves. f1-views-waves. Follow progress in Factory.\n\n<!-- factory:session-3:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T12:06:52.756Z"
+  },
+  {
+    "id": "comment-34",
+    "body": "runList:\nWave launch · Wave 1:\n- child\\-72634dd673a2e10d91d8960869ab4c40facae2b5: Controlled child [running]\nWave launch · Wave 2:\n- child\\-23db59d00d3bde63a2a8158ac7536635655c73d7: Dependent controlled child [queued]\n\n<!-- factory:session-3:ddf15eb1055da1d1a6f1 -->",
+    "createdAt": "2026-10-22T12:06:53.781Z"
+  },
+  {
+    "id": "comment-35",
+    "body": "Factory work started: Ordinary child with a human view. f1-views-waves. Follow progress in Factory.\n\n<!-- factory:child-72634dd673a2e10d91d8960869ab4c40facae2b5:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T12:06:53.924Z"
+  },
+  {
+    "id": "comment-36",
+    "body": "Workflow stopped by user. Run child-72634dd673a2e10d91d8960869ab4c40facae2b5 retains its work and remains open; resume or start a follow-up when ready.\n\n<!-- factory:child-72634dd673a2e10d91d8960869ab4c40facae2b5:507c57957e697c0b497c -->",
+    "createdAt": "2026-10-22T12:06:54.192Z"
+  },
+  {
+    "id": "comment-37",
+    "body": "Workflow stopped by user. Run session-3 retains its work and remains open; resume or start a follow-up when ready.\n\n<!-- factory:session-3:7fd72443e350e6121bee -->",
+    "createdAt": "2026-10-22T12:06:54.290Z"
+  }
+]

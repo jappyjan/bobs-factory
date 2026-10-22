@@ -1,0 +1,57 @@
+2026-10-22T04:55:41.099Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T04:55:44.313Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+{"result":"FAIL","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vDMVFE","revision":"318c93ffa211c15bd0dd7e16c6f89b2b531787a4","deltaSha256":"c8b315b2207fef6733dfc00048533b2e4417777dd1d62916d67b1f061bdc5a38","driverSha256":"0250281cfae21a11977472b9bde225843fe9be47cf0086896fa24baea51ebf94","buildSha256":"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128","node":"v24.21.0","error":"AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n  [\n+   [Object: null prototype] {\n-   {\n      action: 'fix',\n      comment: 'Retain exact receipts',\n      itemId: 'cache'\n    },\n+   [Object: null prototype] {\n-   {\n      action: 'discuss',\n      comment: 'Follow up on wording',\n      itemId: 'labels'\n    }\n  ]\n\n    at file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views.mjs:864:9","runs":[{"id":"session-1","status":"waiting","step":"approval"},{"id":"child-4ef1e54ba9043fe5d92b6a6b1c209271e7f7440b","status":"running"}],"turns":[{"runId":"session-1","role":"research","runner":"codex","model":"gpt-5.5","resume":null,"at":"2026-10-22T04:55:41.942Z"},{"runId":"session-1","role":"story","runner":"codex","model":"gpt-5.5","resume":null,"at":"2026-10-22T04:55:42.379Z"},{"runId":"session-1","role":"detail","runner":"codex","model":"gpt-5.5","resume":null,"at":"2026-10-22T04:55:43.054Z"},{"runId":"session-1","role":"detail","runner":"codex","model":"gpt-5.5","resume":null,"at":"2026-10-22T04:55:43.085Z"},{"runId":"session-1","role":"view-follow-up","runner":"codex","model":"gpt-5.5","resume":null,"at":"2026-10-22T04:55:44.596Z"}]}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  [
++   [Object: null prototype] {
+-   {
+      action: 'fix',
+      comment: 'Retain exact receipts',
+      itemId: 'cache'
+    },
++   [Object: null prototype] {
+-   {
+      action: 'discuss',
+      comment: 'Follow up on wording',
+      itemId: 'labels'
+    }
+  ]
+
+    at file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views.mjs:864:9 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: [
+    [Object: null prototype] {
+      itemId: 'cache',
+      action: 'fix',
+      comment: 'Retain exact receipts'
+    },
+    [Object: null prototype] {
+      itemId: 'labels',
+      action: 'discuss',
+      comment: 'Follow up on wording'
+    }
+  ],
+  expected: [
+    {
+      itemId: 'cache',
+      action: 'fix',
+      comment: 'Retain exact receipts'
+    },
+    {
+      itemId: 'labels',
+      action: 'discuss',
+      comment: 'Follow up on wording'
+    }
+  ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

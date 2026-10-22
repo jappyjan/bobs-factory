@@ -1,0 +1,11 @@
+# Taskbot 140 native view smoke
+
+Final attempt: **PASS** (exit 0), `attempt-2026-10-22T05-24-06-431Z-9a5134f8`. The original report retains every API response and both worker logs. Two prior driver fixture failures remain separate: attempt 1 queried repositories from the recipe-only projection; attempt 2 compared the raw save response to the materialized recipes projection. The corrected driver compares the exact same recipes projection before and after restart; no product source, assertion outcome or timeout was weakened.
+
+Binary: macOS ARM64, Bun 1.4.2, version `1.0.0-beta`, embedded commit `667cbffd00357b2d192239f89c33d300c70a0c8e`, **dirty: true**. Binary SHA-256 `f339509e52e4c4ddfee0ed4088f8fb4188dd0b00b9c83e88d85271d295a3fd82`; resource digest `3107421db253d284c9749e79fd8d9e4cada0481153ba42a4069079df8ec68495`. Dashboard and worker identities both matched adjacent `build.json`.
+
+Observed: 26 API responses, 8 expected client rejections, two native starts and two graceful shutdowns. Saved generic Decide / Approve / Show recipe bindings, action/comment/follow-up configuration and all four form field types survived restart. Unknown components, unsafe pointers, native check/approval flags on generic humans, action URLs and a last-run preview without accepted inputs were rejected. Sample preview retained malicious markup as declarative string data; actual renderer inertness is covered by separate browser/runtime evidence.
+
+No runs were created and no provider execution was requested. The isolated process received an OS-only PATH and fresh HOME with no inherited credentials or configured repository. Full native human-step progression was not exercised because ordinary project readiness and background title generation may require a prepared agent; this smoke does not bypass those prerequisites. Separate mocked F1 and production-runtime tests cover full progression. No live model quality, provider authentication, remote forge operation, release publication or deployment is claimed.
+
+`command-results.json` records complete commands, exits, identities, counts and original failed driver hashes. `SHA256SUMS` covers all retained evidence files, including the exact driver bytes used for each attempt.

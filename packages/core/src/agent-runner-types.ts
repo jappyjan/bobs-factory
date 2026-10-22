@@ -452,6 +452,8 @@ export type JsonObject = { [key: string]: JsonValue };
  * ```
  */
 export interface AgentRunnerConfig {
+	/** Trusted runtime ceiling for assistance over explicitly supplied context only. */
+	toolProfile?: "context-only";
 	/** Working directory for the agent session */
 	workingDirectory?: string;
 	/** List of allowed tool names (e.g., ["Read", "Edit", "Bash"]) */

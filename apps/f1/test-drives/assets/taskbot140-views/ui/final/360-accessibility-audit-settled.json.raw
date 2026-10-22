@@ -1,0 +1,77 @@
+{
+  "note": "Supersedes the initial audit whose asynchronous theme-emulation sampling raced the media change. All six expected/actual themes verified before sampling.",
+  "audits": [
+    {
+      "kind": "decide",
+      "expectedTheme": "light",
+      "width": 360,
+      "body": 360,
+      "document": 360,
+      "theme": "light",
+      "attack": null,
+      "remoteResources": 0,
+      "unsafeDOM": 0,
+      "overflows": []
+    },
+    {
+      "kind": "decide",
+      "expectedTheme": "dark",
+      "width": 360,
+      "body": 360,
+      "document": 360,
+      "theme": "dark",
+      "attack": null,
+      "remoteResources": 0,
+      "unsafeDOM": 0,
+      "overflows": []
+    },
+    {
+      "kind": "approve",
+      "expectedTheme": "light",
+      "width": 360,
+      "body": 360,
+      "document": 360,
+      "theme": "light",
+      "attack": null,
+      "remoteResources": 0,
+      "unsafeDOM": 0,
+      "overflows": []
+    },
+    {
+      "kind": "approve",
+      "expectedTheme": "dark",
+      "width": 360,
+      "body": 360,
+      "document": 360,
+      "theme": "dark",
+      "attack": null,
+      "remoteResources": 0,
+      "unsafeDOM": 0,
+      "overflows": []
+    },
+    {
+      "kind": "run-list",
+      "expectedTheme": "light",
+      "width": 360,
+      "body": 360,
+      "document": 360,
+      "theme": "light",
+      "attack": null,
+      "remoteResources": 0,
+      "unsafeDOM": 0,
+      "overflows": []
+    },
+    {
+      "kind": "run-list",
+      "expectedTheme": "dark",
+      "width": 360,
+      "body": 360,
+      "document": 360,
+      "theme": "dark",
+      "attack": null,
+      "remoteResources": 0,
+      "unsafeDOM": 0,
+      "overflows": []
+    }
+  ]
+}

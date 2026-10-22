@@ -37,6 +37,12 @@ import {
 import type { FactoryOnboarding } from "./FactoryOnboarding.js";
 import { CaptureSchema, verifiedScreenshot } from "./FactoryTools.js";
 import { factoryWebAssets } from "./FactoryWebAssets.js";
+import {
+	DecideConfigurationSchema,
+	ViewAnswerSchema,
+	ViewAskSchema,
+	ViewNotificationsSchema,
+} from "./HumanStep.js";
 import { ImprovementActionSchema } from "./Improvement.js";
 import { withAsyncInlineSchemas } from "./InlineSchema.js";
 import {
@@ -95,6 +101,9 @@ import type { TicketManagers } from "./TicketManagers.js";
 import { outputForCheck } from "./ToolBindings.js";
 import type { VideoCapture } from "./Video.js";
 import { registerVideoRoutes } from "./VideoServer.js";
+import { VIEW_JSON_SCHEMA, ViewSourceSchema } from "./View.js";
+import { readViewScreenshot } from "./ViewAssets.js";
+import { publicViewSnapshot } from "./ViewPresentation.js";
 import { routeResult, StepSchema, WorkflowSchema } from "./Workflow.js";
 import type { FactoryRun, WorkflowRuntime } from "./WorkflowRuntime.js";
 import { capacityRunStatus } from "./WorkflowRuntime.js";
@@ -1209,6 +1218,30 @@ export class FactoryServer {
 			access: ACCESS_MODES,
 			contextSources: CONTEXT_SOURCES,
 		}));
+		this.app.get("/api/recipes/view-schema", () => VIEW_JSON_SCHEMA);
+		this.app.post(
+			"/api/recipes/view-preview",
+			{ bodyLimit: 1024 * 1024 },
+			async (request) => {
+				const body = z
+					.object({
+						workflowId: z.string().min(1).max(80),
+						stepId: z.string().min(1).max(400),
+						view: ViewSourceSchema,
+						type: z.enum(["decide", "approve", "show"]).optional(),
+						name: z.string().min(1).optional(),
+						decide: DecideConfigurationSchema.optional(),
+						reads: z.unknown().optional(),
+						notifications: ViewNotificationsSchema.optional(),
+						runId: z.string().min(1).max(200).optional(),
+						lastRun: z.boolean().optional(),
+						sampleScope: z.unknown().optional(),
+					})
+					.strict()
+					.parse(request.body);
+				return runtime.humanViews.preview(body);
+			},
+		);
 		this.app.post(
 			"/api/workflows/check/simulate",
 			{ bodyLimit: 256 * 1024 },
@@ -1731,6 +1764,10 @@ export class FactoryServer {
 					}),
 					...(run
 						? {
+								viewRecords: undefined,
+								viewDecision: runtime.humanViews.snapshot(run),
+								viewDisplays: run.viewDisplays?.map(publicViewSnapshot),
+								viewText: runtime.humanViews.displayText(run),
 								recipeParent: run.recipeParent,
 								launchActions: Object.fromEntries(
 									Object.entries(run.launchActions ?? {}).map(([id, batch]) => [
@@ -2228,6 +2265,23 @@ export class FactoryServer {
 			},
 		);
 		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/view-answer",
+			{ bodyLimit: 256 * 1024 },
+			async (request) => {
+				const output = await runtime.answerView(
+					request.params.id,
+					ViewAnswerSchema.parse(request.body),
+				);
+				return { ...actionResult(request.params.id), output };
+			},
+		);
+		this.app.post<{ Params: { id: string } }>(
+			"/api/runs/:id/view-ask",
+			{ bodyLimit: 32 * 1024 },
+			async (request) =>
+				runtime.askView(request.params.id, ViewAskSchema.parse(request.body)),
+		);
+		this.app.post<{ Params: { id: string } }>(
 			"/api/runs/:id/answer",
 			async (request) => {
 				const { answer, context, kind } = z
@@ -2311,6 +2365,31 @@ export class FactoryServer {
 					.send(bytes);
 			},
 		);
+		this.app.get<{
+			Params: { id: string; index: string };
+			Querystring: { v: string };
+		}>("/api/runs/:id/view-screenshots/:index", async (request, reply) => {
+			const index = z.coerce
+				.number()
+				.int()
+				.nonnegative()
+				.parse(request.params.index);
+			const expected = z
+				.string()
+				.regex(/^[a-f0-9]{64}$/)
+				.parse(request.query.v);
+			const bytes = await readViewScreenshot(
+				runtime.directory,
+				runtime.get(request.params.id),
+				index,
+				expected,
+			);
+			return reply
+				.header("Cache-Control", "no-store")
+				.header("X-Content-Type-Options", "nosniff")
+				.type(bytes[0] === 137 ? "image/png" : "image/jpeg")
+				.send(bytes);
+		});
 		this.app.get<{
 			Params: { id: string; index: string };
 			Querystring: { artifact?: string; v?: string };

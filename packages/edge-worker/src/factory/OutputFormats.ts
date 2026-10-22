@@ -68,10 +68,12 @@ import {
 	resolveStepConfig,
 	type StepScope,
 } from "./StepConfig.js";
+import { ViewSchema } from "./View.js";
 
 /** Versioned schema library. Parsers are lazy to avoid coupling module initialization order. */
 const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"json-v1": (value) => value,
+	"view-v1": (value) => ViewSchema.parse(value),
 	"generated-guide-v1": (value) => GeneratedGuideSchema.parse(value),
 	"generated-review-brief-v1": (value) =>
 		GeneratedBriefSchema.parse(brief(value, "brief-v1")),

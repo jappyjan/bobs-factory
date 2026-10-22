@@ -67,6 +67,16 @@ export interface Recommendation {
 	reason?: string;
 }
 export interface RunDetail extends Omit<RunItem, "workflow"> {
+	viewText?: string;
+	viewDecision?: {
+		id: string;
+		digest: string;
+		kind: string;
+		title: string;
+		items?: { id: string }[];
+		actions?: { id: string; label: string }[];
+		answer?: unknown;
+	};
 	recheckAvailable?: boolean;
 	resumeAvailable?: boolean;
 	workflow?: Workflow;

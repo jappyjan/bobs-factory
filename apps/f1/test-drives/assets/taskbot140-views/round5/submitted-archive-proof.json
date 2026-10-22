@@ -1,0 +1,53 @@
+{
+  "version": "taskbot140-round5-archive-v1",
+  "at": "2026-10-22T11:27:37.623Z",
+  "tree": "07d98cc3fde74531ad14f7cf65f1de64f485de57",
+  "selection": [
+    "--index"
+  ],
+  "exportSha256": "6c8e8f4d5c6cc14f86ea7d71048c0aca3dcc3e7567b39a2ad32cbd7a1f759385",
+  "nonRuntimeLfsPointers": 1,
+  "files": 838,
+  "originalCopies": 379,
+  "sourceInputs": 2818,
+  "driverInputs": 9,
+  "reportLinks": 181,
+  "failures": [],
+  "originalVerifier": {
+    "version": "taskbot140-archive-v1",
+    "at": "2026-10-22T11:27:39.368Z",
+    "node": "v24.21.0",
+    "verifierSha256": "2bb35f6fef75d6fa5fefe8f1427af7b656052361fc50f7e247654dea26eaf58f",
+    "submitted": {
+      "selection": "tree",
+      "reference": "07d98cc3fde74531ad14f7cf65f1de64f485de57",
+      "tree": "07d98cc3fde74531ad14f7cf65f1de64f485de57",
+      "head": "b25ae470b858b0e059603566ec144178ce38fee6",
+      "archiveExportSha256": "2d0fdd9466f7406a61d66256511ceab60e2634d8891030cd8d0a1d2128265211"
+    },
+    "checks": {
+      "originalInventory": 1,
+      "archive": 186,
+      "rawLogMappings": 58,
+      "native": 18,
+      "uiEvidence": 54,
+      "items": 8,
+      "originalJsonByteHashes": 3,
+      "immutableSourceArchives": 2,
+      "f1:attempt1-request-header-omission": 7,
+      "f1:attempt2-json-prototype-comparison": 7,
+      "f1:pre-media-pass": 14,
+      "f1:final": 14,
+      "reportLinks": 42
+    },
+    "failures": [],
+    "originalCopies": {
+      "enabled": false,
+      "checked": 0,
+      "failures": [],
+      "result": "not requested"
+    },
+    "result": "pass"
+  },
+  "result": "PASS"
+}

@@ -4,6 +4,7 @@ import { evaluateCondition, RULE_EVALUATION_LIMITS } from "./Rules.js";
 import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
 import { pointerValue, resolveStepConfig } from "./StepConfig.js";
 import { stepContextSources } from "./StepContextSources.js";
+import { childRunsView } from "./ViewRuntime.js";
 import type { WorkflowStep } from "./Workflow.js";
 import { snapshotHistory } from "./WorkflowInput.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
@@ -43,6 +44,9 @@ export function stepBindings(
 	const outputs = context.outputs ?? run.outputs;
 	const sources: Record<string, unknown> = {
 		callInputs: context.callInputs ?? {},
+		get childRuns() {
+			return childRunsView(run);
+		},
 		item: context.iteration?.value,
 		index: context.iteration?.index,
 		answers: run.answers,

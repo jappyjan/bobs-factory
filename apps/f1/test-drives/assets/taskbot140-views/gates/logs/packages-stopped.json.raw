@@ -1,0 +1,10 @@
+{
+  "source": "e4e9fe2c5f427acdde834305207d945b8ce143ba",
+  "command": "VITEST_MAX_WORKERS=2 npm_config_workspace_concurrency=1 pnpm test:packages:run",
+  "exitCode": 130,
+  "signal": "SIGINT",
+  "reason": "Obsolete candidate requires evidenced ViewAssets and outer Ask-key fixes; stopped before source mutation",
+  "logSha256": "c2297afcf67be11555820bded977d1344a64d88beb802cb472766d7ee4095970",
+  "allOriginalRunnerPidsStopped": true,
+  "partialOnly": true
+}

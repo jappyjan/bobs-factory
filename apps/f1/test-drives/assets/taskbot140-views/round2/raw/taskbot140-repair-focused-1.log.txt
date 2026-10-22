@@ -1,0 +1,49 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
+
+ ❯ test/HumanViewsRuntime.test.ts (22 tests | 4 failed) 12598ms
+     × keeps the current text protocol visible after large displays and faithfully includes digest-bound Ask discussion through reconstruction 584ms
+     × retains historical Ask ownership across real child changes: late-before-answer 1023ms
+     × retains historical Ask ownership across real child changes: late-after-answer 1124ms
+     × retains historical Ask ownership across real child changes: ask-before-rotation 1030ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/HumanViewsRuntime.test.ts > production declarative human steps > keeps the current text protocol visible after large displays and faithfully includes digest-bound Ask discussion through reconstruction
+TypeError: restored.initialize is not a function
+ ❯ test/HumanViewsRuntime.test.ts:743:18
+    741|   await instance.shutdown();
+    742|   const restored = runtime(directory);
+    743|   await restored.initialize();
+       |                  ^
+    744|   expect(restored.humanViews.displayText(restored.get(run.id))).toBe(w…
+    745|   // Initial terminal/ticket publication uses the same reserved protoc…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/HumanViewsRuntime.test.ts > production declarative human steps > retains historical Ask ownership across real child changes: late-before-answer
+ FAIL  test/HumanViewsRuntime.test.ts > production declarative human steps > retains historical Ask ownership across real child changes: late-after-answer
+ FAIL  test/HumanViewsRuntime.test.ts > production declarative human steps > retains historical Ask ownership across real child changes: ask-before-rotation
+TypeError: restored.initialize is not a function
+ ❯ test/HumanViewsRuntime.test.ts:892:18
+    890|   await instance.shutdown();
+    891|   const restored = runtime(directory);
+    892|   await restored.initialize();
+       |                  ^
+    893|   const saved = restored.get(run.id);
+    894|   expect(saved.viewDecision!.id).toBe(renewed.id);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  4 failed | 32 passed (36)
+   Start at  09:13:32
+   Duration  14.11s (transform 540ms, setup 23ms, import 1.28s, tests 12.63s, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/HumanViewsRuntime.test.ts test/BuilderPreviewOwnership.test.tsx --maxWorkers=1

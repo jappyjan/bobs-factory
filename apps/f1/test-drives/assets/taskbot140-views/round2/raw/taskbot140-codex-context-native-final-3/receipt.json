@@ -1,0 +1,1094 @@
+[
+  {
+    "binary": "/opt/homebrew/bin/codex",
+    "args": [
+      "--version"
+    ],
+    "code": 0,
+    "stdout": "codex-cli 0.163.0\n",
+    "stderr": "WARNING: proceeding, even though we could not create PATH aliases: CODEX_HOME points to \"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/auth\", but that path does not exist\n"
+  },
+  {
+    "launch": {
+      "command": "/opt/homebrew/bin/codex",
+      "args": [
+        "app-server",
+        "--listen",
+        "stdio://",
+        "-c",
+        "agents={\"enabled\" = false}",
+        "-c",
+        "allow_login_shell=false",
+        "-c",
+        "default_permissions=\"bobs-factory-context-only\"",
+        "-c",
+        "features={\"agent_message_board\" = false, \"apps\" = false, \"browser_annotation_api\" = false, \"browser_use\" = false, \"browser_use_external\" = false, \"browser_use_full_cdp_access\" = false, \"code_mode\" = false, \"code_mode_buffered_exec\" = false, \"code_mode_host\" = false, \"code_mode_host_grpc\" = false, \"code_mode_interrupt\" = false, \"code_mode_only\" = false, \"code_mode_only_strict_3p_tools\" = false, \"code_mode_prewarm\" = false, \"code_mode_tool_search\" = false, \"codex_apps_mcp_2026_07_28\" = false, \"codex_hooks\" = false, \"collab\" = false, \"computer_use\" = false, \"connectors\" = false, \"enable_fanout\" = false, \"enable_mcp_apps\" = false, \"exec_permission_approvals\" = false, \"experimental_use_unified_exec_tool\" = false, \"external_agent_memory_import\" = false, \"guardian_approval\" = false, \"hooks\" = false, \"image_generation\" = false, \"imagegenext\" = false, \"in_app_browser\" = false, \"in_app_local_automation\" = false, \"js_repl\" = false, \"js_repl_tools_only\" = false, \"memories\" = false, \"memory_tool\" = false, \"multi_agent\" = false, \"multi_agent_mode\" = false, \"multi_agent_v2\" = false, \"multi_agent_v2_dynamic_tools\" = false, \"plugin_hooks\" = false, \"plugin_sharing\" = false, \"plugins\" = false, \"recommended_plugins\" = false, \"remote_control\" = false, \"remote_plugin\" = false, \"request_permissions\" = false, \"request_permissions_tool\" = false, \"request_rule\" = false, \"search_tool\" = false, \"send_async_message\" = false, \"shell_snapshot\" = false, \"shell_snapshot_v2\" = false, \"shell_tool\" = false, \"skill_mcp_dependency_install\" = false, \"skill_search\" = false, \"skip_host_skill_discovery\" = true, \"standalone_web_search\" = false, \"tool_search\" = false, \"tool_suggest\" = false, \"unified_exec\" = false, \"unified_exec_tty\" = false, \"view_image\" = false, \"web_search\" = false, \"web_search_cached\" = false, \"web_search_request\" = false}",
+        "-c",
+        "hooks={\"Interrupt\" = [], \"PermissionRequest\" = [], \"PostCompact\" = [], \"PostToolUse\" = [], \"PreCompact\" = [], \"PreToolUse\" = [], \"SessionEnd\" = [], \"SessionStart\" = [], \"Stop\" = [], \"SubagentStart\" = [], \"SubagentStop\" = [], \"UserPromptSubmit\" = []}",
+        "-c",
+        "include_apps_instructions=false",
+        "-c",
+        "include_environment_context=false",
+        "-c",
+        "instructions=\"\"",
+        "-c",
+        "mcp_servers={\"factory-context\" = {\"command\" = \"/usr/bin/true\", \"default_tools_approval_mode\" = \"approve\", \"enabled\" = true, \"enabled_tools\" = [\"list_context\", \"read_context\"], \"required\" = true}}",
+        "-c",
+        "memories={\"dedicated_tools\" = false, \"generate_memories\" = false, \"use_memories\" = false}",
+        "-c",
+        "notify=[]",
+        "-c",
+        "permissions={\"bobs-factory-context-only\" = {\"filesystem\" = {\":minimal\" = \"read\", \":root\" = \"deny\", \":slash_tmp\" = \"deny\", \":tmpdir\" = \"deny\", \":workspace_roots\" = \"deny\", \"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty\" = \"read\"}, \"network\" = {\"enabled\" = false}}}",
+        "-c",
+        "project_doc_fallback_filenames=[]",
+        "-c",
+        "project_doc_max_bytes=0",
+        "-c",
+        "skills={\"bundled\" = {\"enabled\" = false}, \"config\" = [], \"include_instructions\" = false}",
+        "-c",
+        "tools={\"experimental_request_user_input\" = {\"enabled\" = false}, \"update_plan\" = {\"enabled\" = false}}",
+        "-c",
+        "web_search=\"disabled\""
+      ]
+    }
+  },
+  {
+    "method": "initialize",
+    "result": {
+      "userAgent": "factory-context-proof/0.163.0 (Mac OS 26.6.2; arm64) unknown (factory-context-proof; 1)",
+      "codexHome": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/auth",
+      "platformFamily": "unix",
+      "platformOs": "macos"
+    }
+  },
+  {
+    "method": "config/read",
+    "result": {
+      "config": {
+        "model": null,
+        "review_model": null,
+        "model_context_window": null,
+        "model_auto_compact_token_limit": null,
+        "model_auto_compact_token_limit_scope": null,
+        "model_provider": null,
+        "approval_policy": null,
+        "approvals_reviewer": null,
+        "sandbox_mode": null,
+        "sandbox_workspace_write": null,
+        "forced_chatgpt_workspace_id": null,
+        "forced_login_method": null,
+        "web_search": "disabled",
+        "tools": {
+          "web_search": null
+        },
+        "instructions": "",
+        "developer_instructions": null,
+        "compact_prompt": null,
+        "model_reasoning_effort": null,
+        "model_reasoning_summary": null,
+        "model_verbosity": null,
+        "service_tier": null,
+        "analytics": null,
+        "apps": null,
+        "browser_use": null,
+        "computer_use": null,
+        "desktop": null,
+        "disable_paste_burst": null,
+        "experimental_thread_store": null,
+        "experimental_compact_prompt_file": null,
+        "include_collaboration_mode_instructions": true,
+        "include_permissions_instructions": true,
+        "experimental_realtime_start_instructions": null,
+        "model_post_turn_compact_threshold_percent": null,
+        "orchestrator": null,
+        "apps_mcp_product_sku": null,
+        "history": {
+          "persistence": "save-all",
+          "max_bytes": null
+        },
+        "mcp_oauth_callback_url": null,
+        "experimental_realtime_ws_backend_prompt": null,
+        "cli_auth_credentials_store": "file",
+        "show_raw_agent_reasoning": null,
+        "notify": [],
+        "include_environment_context": false,
+        "project_doc_max_bytes": 0,
+        "windows": null,
+        "plugins": {},
+        "chatgpt_base_url": "https://chatgpt.com/backend-api/",
+        "tui": null,
+        "tool_output_token_limit": null,
+        "skills": {
+          "bundled": {
+            "enabled": false
+          },
+          "include_instructions": false
+        },
+        "experimental_realtime_ws_model": null,
+        "daybreak": null,
+        "profiles": {},
+        "include_environment_context_time": true,
+        "allow_symlinked_codex_home": null,
+        "mcp_oauth_credentials_store": "auto",
+        "js_repl_node_path": null,
+        "personality": null,
+        "project_root_markers": [
+          ".git"
+        ],
+        "mcp_servers": {
+          "factory-context": {
+            "command": "/usr/bin/true",
+            "args": [],
+            "environment_id": "local",
+            "enabled": true,
+            "required": true,
+            "tool_timeout_sec": null,
+            "default_tools_approval_mode": "approve",
+            "enabled_tools": [
+              "list_context",
+              "read_context"
+            ]
+          },
+          "mailbox": {
+            "command": "/nix/store/1n3gcvi8j3nkamym3jw781xx5sgkibl1-opencode-mail-mcp-1.0.0/bin/opencode-mail-mcp",
+            "args": [],
+            "environment_id": "local",
+            "enabled": true,
+            "tool_timeout_sec": null
+          },
+          "taskbot": {
+            "url": "https://taskbot.apps.janjaap.de/mcp",
+            "environment_id": "local",
+            "enabled": true,
+            "tool_timeout_sec": null
+          },
+          "twenty": {
+            "url": "https://twenty.apps.janjaap.de/mcp",
+            "environment_id": "local",
+            "enabled": true,
+            "tool_timeout_sec": null
+          },
+          "linear": {
+            "url": "https://mcp.linear.app/mcp",
+            "environment_id": "local",
+            "enabled": true,
+            "tool_timeout_sec": null
+          },
+          "outline": {
+            "url": "https://outline.apps.janjaap.de/mcp",
+            "environment_id": "local",
+            "enabled": true,
+            "tool_timeout_sec": null
+          }
+        },
+        "project_doc_fallback_filenames": [],
+        "audio": null,
+        "notice": null,
+        "memories": {
+          "version": null,
+          "dual_write": null,
+          "disable_on_external_context": null,
+          "generate_memories": false,
+          "use_memories": false,
+          "dedicated_tools": false,
+          "max_raw_memories_for_consolidation": null,
+          "max_unused_days": null,
+          "max_rollout_age_days": null,
+          "max_rollouts_per_startup": null,
+          "min_rollout_idle_hours": null,
+          "min_rate_limit_remaining_percent": null,
+          "extract_model": null,
+          "consolidation_model": null
+        },
+        "projects": null,
+        "background_terminal_max_timeout": 300000,
+        "plan_mode_reasoning_effort": null,
+        "tool_suggest": null,
+        "hooks": {
+          "PreToolUse": [],
+          "PermissionRequest": [],
+          "PostToolUse": [],
+          "PreCompact": [],
+          "PostCompact": [],
+          "SessionStart": [],
+          "SessionEnd": [],
+          "UserPromptSubmit": [],
+          "SubagentStart": [],
+          "SubagentStop": [],
+          "Stop": [],
+          "Interrupt": []
+        },
+        "ghost_snapshot": null,
+        "default_permissions": "bobs-factory-context-only",
+        "features": {
+          "code_mode": false,
+          "code_mode_host": false,
+          "multi_agent_v2": false,
+          "network_proxy": null,
+          "agent_message_board": false,
+          "apps": false,
+          "browser_annotation_api": false,
+          "browser_use": false,
+          "browser_use_external": false,
+          "browser_use_full_cdp_access": false,
+          "code_mode_buffered_exec": false,
+          "code_mode_host_grpc": false,
+          "code_mode_interrupt": false,
+          "code_mode_only": false,
+          "code_mode_only_strict_3p_tools": false,
+          "code_mode_prewarm": false,
+          "code_mode_tool_search": false,
+          "codex_apps_mcp_2026_07_28": false,
+          "codex_hooks": false,
+          "collab": false,
+          "computer_use": false,
+          "connectors": false,
+          "enable_fanout": false,
+          "enable_mcp_apps": false,
+          "exec_permission_approvals": false,
+          "experimental_use_unified_exec_tool": false,
+          "external_agent_memory_import": false,
+          "guardian_approval": false,
+          "hooks": false,
+          "image_generation": false,
+          "imagegenext": false,
+          "in_app_browser": false,
+          "in_app_local_automation": false,
+          "js_repl": false,
+          "js_repl_tools_only": false,
+          "memories": false,
+          "memory_tool": false,
+          "multi_agent": false,
+          "multi_agent_mode": false,
+          "multi_agent_v2_dynamic_tools": false,
+          "plugin_hooks": false,
+          "plugin_sharing": false,
+          "plugins": false,
+          "recommended_plugins": false,
+          "remote_control": false,
+          "remote_plugin": false,
+          "request_permissions": false,
+          "request_permissions_tool": false,
+          "request_rule": false,
+          "search_tool": false,
+          "send_async_message": false,
+          "shell_snapshot": false,
+          "shell_snapshot_v2": false,
+          "shell_tool": false,
+          "skill_mcp_dependency_install": false,
+          "skill_search": false,
+          "skip_host_skill_discovery": true,
+          "standalone_web_search": false,
+          "tool_search": false,
+          "tool_suggest": false,
+          "unified_exec": false,
+          "unified_exec_tty": false,
+          "view_image": false,
+          "web_search": false,
+          "web_search_cached": false,
+          "web_search_request": false,
+          "api_key_cyber_access_programs": true,
+          "api_key_model_discovery": true,
+          "auth_elicitation": true,
+          "background_paginated_rollout_migration": false,
+          "mcp_2026_07_28": false,
+          "mentions_v2": true,
+          "windows_sandbox_service": false
+        },
+        "js_repl_node_module_dirs": null,
+        "oss_provider": null,
+        "model_instructions_file": null,
+        "thread_unload_delay_secs": null,
+        "mcp_oauth_callback_port": null,
+        "marketplaces": {},
+        "openai_base_url": null,
+        "mcp_enterprise_managed_auth": null,
+        "mcp_optional_startup_grace_ms": null,
+        "profile": null,
+        "hide_agent_reasoning": false,
+        "responses_api_metadata": null,
+        "cloud": null,
+        "realtime": null,
+        "goals": null,
+        "suppress_unstable_features_warning": null,
+        "check_for_update_on_startup": null,
+        "otel": null,
+        "experimental_use_unified_exec_tool": null,
+        "feedback": null,
+        "experimental_realtime_ws_base_url": null,
+        "model_providers": {},
+        "file_opener": "vscode",
+        "include_apps_instructions": false,
+        "experimental_realtime_webrtc_call_base_url": null,
+        "experimental_realtime_ws_startup_context": null,
+        "allow_login_shell": false,
+        "experimental_thread_store_endpoint": null,
+        "shell_environment_policy": {
+          "inherit": null,
+          "ignore_default_excludes": null,
+          "exclude": null,
+          "set": null,
+          "include_only": null,
+          "filters": null,
+          "experimental_use_profile": null
+        },
+        "sqlite_home": null,
+        "permissions": {
+          "bobs-factory-context-only": {
+            "description": null,
+            "extends": null,
+            "workspace_roots": null,
+            "filesystem": {
+              "glob_scan_max_depth": null,
+              "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty": "read",
+              ":minimal": "read",
+              ":root": "deny",
+              ":slash_tmp": "deny",
+              ":tmpdir": "deny",
+              ":workspace_roots": "deny"
+            },
+            "network": {
+              "enabled": false,
+              "proxy_url": null,
+              "enable_socks5": null,
+              "socks_url": null,
+              "enable_socks5_udp": null,
+              "allow_upstream_proxy": null,
+              "dangerously_allow_non_loopback_proxy": null,
+              "dangerously_allow_all_unix_sockets": null,
+              "mode": null,
+              "domains": null,
+              "unix_sockets": null,
+              "allow_local_binding": null,
+              "mitm": null
+            }
+          }
+        },
+        "log_dir": null,
+        "model_catalog_json": null,
+        "agents": {
+          "enabled": false,
+          "max_concurrent_threads_per_session": null,
+          "max_depth": null,
+          "default_subagent_model": null,
+          "default_subagent_reasoning_effort": null,
+          "job_max_runtime_seconds": null,
+          "interrupt_message": null
+        },
+        "auto_review": null
+      },
+      "origins": {
+        "allow_login_shell": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.factory-context.required": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.plugins": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode_prewarm": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "include_apps_instructions": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.skill_mcp_dependency_install": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.connectors": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.web_search": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.imagegenext": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.browser_annotation_api": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "permissions.bobs-factory-context-only.network.enabled": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.mailbox.command": {
+          "name": {
+            "type": "system",
+            "file": "/etc/codex/config.toml"
+          },
+          "version": "sha256:95ff8ca754f9a50de3eae9cde59b1facaf9edfb34890f3031a6d8f5300fe4c04"
+        },
+        "features.skill_search": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode.enabled": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode_host": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.memory_tool": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.recommended_plugins": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.send_async_message": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "default_permissions": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.codex_apps_mcp_2026_07_28": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode_only_strict_3p_tools": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.js_repl": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode_host_grpc": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "tools.update_plan.enabled": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.in_app_local_automation": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.skip_host_skill_discovery": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "web_search": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.in_app_browser": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "skills.include_instructions": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.web_search_cached": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.remote_plugin": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode_tool_search": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.browser_use_full_cdp_access": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.enable_fanout": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "permissions.bobs-factory-context-only.filesystem.:tmpdir": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.view_image": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.twenty.url": {
+          "name": {
+            "type": "system",
+            "file": "/etc/codex/config.toml"
+          },
+          "version": "sha256:95ff8ca754f9a50de3eae9cde59b1facaf9edfb34890f3031a6d8f5300fe4c04"
+        },
+        "permissions.bobs-factory-context-only.filesystem.:slash_tmp": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.multi_agent_mode": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.enable_mcp_apps": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.request_permissions": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.js_repl_tools_only": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.factory-context.enabled": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.plugin_hooks": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.tool_search": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.computer_use": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.memories": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.browser_use": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.multi_agent_v2_dynamic_tools": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.shell_tool": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.remote_control": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.request_permissions_tool": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "permissions.bobs-factory-context-only.filesystem.:root": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.agent_message_board": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "permissions.bobs-factory-context-only.filesystem./private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.unified_exec_tty": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "skills.bundled.enabled": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.outline.url": {
+          "name": {
+            "type": "system",
+            "file": "/etc/codex/config.toml"
+          },
+          "version": "sha256:95ff8ca754f9a50de3eae9cde59b1facaf9edfb34890f3031a6d8f5300fe4c04"
+        },
+        "memories.generate_memories": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.factory-context.default_tools_approval_mode": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.taskbot.url": {
+          "name": {
+            "type": "system",
+            "file": "/etc/codex/config.toml"
+          },
+          "version": "sha256:95ff8ca754f9a50de3eae9cde59b1facaf9edfb34890f3031a6d8f5300fe4c04"
+        },
+        "features.multi_agent": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.hooks": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.standalone_web_search": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "memories.dedicated_tools": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.linear.url": {
+          "name": {
+            "type": "system",
+            "file": "/etc/codex/config.toml"
+          },
+          "version": "sha256:95ff8ca754f9a50de3eae9cde59b1facaf9edfb34890f3031a6d8f5300fe4c04"
+        },
+        "features.image_generation": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode_interrupt": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "project_doc_max_bytes": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.factory-context.command": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.multi_agent_v2.enabled": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.shell_snapshot_v2": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.factory-context.enabled_tools.1": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.experimental_use_unified_exec_tool": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.plugin_sharing": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "permissions.bobs-factory-context-only.filesystem.:minimal": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.tool_suggest": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.external_agent_memory_import": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode_buffered_exec": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "instructions": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "include_environment_context": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.guardian_approval": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "permissions.bobs-factory-context-only.filesystem.:workspace_roots": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.codex_hooks": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "agents.enabled": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.collab": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "tools.experimental_request_user_input.enabled": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.unified_exec": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.exec_permission_approvals": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.request_rule": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.search_tool": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "memories.use_memories": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.code_mode_only": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.shell_snapshot": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.apps": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "mcp_servers.factory-context.enabled_tools.0": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.web_search_request": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        },
+        "features.browser_use_external": {
+          "name": {
+            "type": "sessionFlags"
+          },
+          "version": "sha256:c58f86fbbd1c61f10573f59ef40264c88dbd4e11ce00701db7f918454ae2b127"
+        }
+      }
+    }
+  },
+  {
+    "inheritedMcpRejectedBeforeThread": [
+      "mailbox",
+      "taskbot",
+      "twenty",
+      "linear",
+      "outline"
+    ]
+  },
+  {
+    "binary": "/opt/homebrew/bin/codex",
+    "args": [
+      "sandbox",
+      "-c",
+      "permissions={\"bobs-factory-context-only\" = {\"filesystem\" = {\":minimal\" = \"read\", \":root\" = \"deny\", \":slash_tmp\" = \"deny\", \":tmpdir\" = \"deny\", \":workspace_roots\" = \"deny\", \"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty\" = \"read\"}, \"network\" = {\"enabled\" = false}}}",
+      "-P",
+      "bobs-factory-context-only",
+      "-C",
+      "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty",
+      "--",
+      "/bin/echo",
+      "minimal-runtime-works"
+    ],
+    "code": 0,
+    "stdout": "minimal-runtime-works\n",
+    "stderr": ""
+  },
+  {
+    "binary": "/opt/homebrew/bin/codex",
+    "args": [
+      "sandbox",
+      "-c",
+      "permissions={\"bobs-factory-context-only\" = {\"filesystem\" = {\":minimal\" = \"read\", \":root\" = \"deny\", \":slash_tmp\" = \"deny\", \":tmpdir\" = \"deny\", \":workspace_roots\" = \"deny\", \"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty\" = \"read\"}, \"network\" = {\"enabled\" = false}}}",
+      "-P",
+      "bobs-factory-context-only",
+      "-C",
+      "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty",
+      "--",
+      "/bin/cat",
+      "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/outside-secret"
+    ],
+    "code": 1,
+    "stdout": "",
+    "stderr": "cat: /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/outside-secret: Operation not permitted\n"
+  },
+  {
+    "binary": "/opt/homebrew/bin/codex",
+    "args": [
+      "sandbox",
+      "-c",
+      "permissions={\"bobs-factory-context-only\" = {\"filesystem\" = {\":minimal\" = \"read\", \":root\" = \"deny\", \":slash_tmp\" = \"deny\", \":tmpdir\" = \"deny\", \":workspace_roots\" = \"deny\", \"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty\" = \"read\"}, \"network\" = {\"enabled\" = false}}}",
+      "-P",
+      "bobs-factory-context-only",
+      "-C",
+      "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty",
+      "--",
+      "/bin/sh",
+      "-c",
+      "printf unsafe > \"$1\"",
+      "context-proof",
+      "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/outside-secret"
+    ],
+    "code": 1,
+    "stdout": "",
+    "stderr": "shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted\ncontext-proof: /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/outside-secret: Operation not permitted\n"
+  },
+  {
+    "binary": "/opt/homebrew/bin/codex",
+    "args": [
+      "sandbox",
+      "-c",
+      "permissions={\"bobs-factory-context-only\" = {\"filesystem\" = {\":minimal\" = \"read\", \":root\" = \"deny\", \":slash_tmp\" = \"deny\", \":tmpdir\" = \"deny\", \":workspace_roots\" = \"deny\", \"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty\" = \"read\"}, \"network\" = {\"enabled\" = false}}}",
+      "-P",
+      "bobs-factory-context-only",
+      "-C",
+      "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty",
+      "--",
+      "/bin/sh",
+      "-c",
+      "printf unsafe > \"$1\"",
+      "context-proof",
+      "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty/new-file"
+    ],
+    "code": 1,
+    "stdout": "",
+    "stderr": "shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted\ncontext-proof: /private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty/new-file: Operation not permitted\n"
+  },
+  {
+    "binary": "/opt/homebrew/bin/codex",
+    "args": [
+      "sandbox",
+      "-c",
+      "permissions={\"bobs-factory-context-only\" = {\"filesystem\" = {\":minimal\" = \"read\", \":root\" = \"deny\", \":slash_tmp\" = \"deny\", \":tmpdir\" = \"deny\", \":workspace_roots\" = \"deny\", \"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty\" = \"read\"}, \"network\" = {\"enabled\" = false}}}",
+      "-P",
+      "bobs-factory-context-only",
+      "-C",
+      "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/codex-context-native-KkFYWd/empty",
+      "--",
+      "/usr/bin/curl",
+      "--silent",
+      "--show-error",
+      "--max-time",
+      "2",
+      "http://127.0.0.1:50122/"
+    ],
+    "code": 7,
+    "stdout": "",
+    "stderr": "curl: (7) Failed to connect to 127.0.0.1 port 50122 after 0 ms: Couldn't connect to server\n"
+  },
+  {
+    "result": "PASS",
+    "modelCalls": 0,
+    "threadStarts": 0,
+    "nativeVersion": "codex-cli 0.163.0",
+    "binarySha256": "8813367285524ac798dd96d1b071aea30d58708c7226fd236cd275cf1cfdee31",
+    "scope": "native configuration and OS sandbox, not a live model/tool turn"
+  }
+]

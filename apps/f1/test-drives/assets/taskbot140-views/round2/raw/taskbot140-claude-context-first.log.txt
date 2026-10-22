@@ -1,0 +1,40 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/claude-runner
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 4 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: ENOENT: no such file or directory, open '/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/claude-context-profile-ejruVW/logs/claude-context-profile-ejruVW/session-pending-2026-10-22T06-18-15-823Z.jsonl'
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: '/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/claude-context-profile-ejruVW/logs/claude-context-profile-ejruVW/session-pending-2026-10-22T06-18-15-823Z.jsonl' }
+This error originated in "test/context-only.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: ENOENT: no such file or directory, open '/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/claude-context-profile-ejruVW/logs/claude-context-profile-ejruVW/session-pending-2026-10-22T06-18-15-823Z.md'
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: '/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/claude-context-profile-ejruVW/logs/claude-context-profile-ejruVW/session-pending-2026-10-22T06-18-15-823Z.md' }
+This error originated in "test/context-only.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: ENOENT: no such file or directory, open '/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/claude-context-profile-vYyp2k/logs/claude-context-profile-vYyp2k/session-pending-2026-10-22T06-18-15-827Z.jsonl'
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: '/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/claude-context-profile-vYyp2k/logs/claude-context-profile-vYyp2k/session-pending-2026-10-22T06-18-15-827Z.jsonl' }
+This error originated in "test/context-only.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+
+⎯⎯⎯⎯⎯ Uncaught Exception ⎯⎯⎯⎯⎯
+Error: ENOENT: no such file or directory, open '/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/claude-context-profile-vYyp2k/logs/claude-context-profile-vYyp2k/session-pending-2026-10-22T06-18-15-827Z.md'
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { errno: -2, code: 'ENOENT', syscall: 'open', path: '/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/claude-context-profile-vYyp2k/logs/claude-context-profile-vYyp2k/session-pending-2026-10-22T06-18-15-827Z.md' }
+This error originated in "test/context-only.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+     Errors  4 errors
+   Start at  09:18:15
+   Duration  338ms (transform 131ms, setup 0ms, import 243ms, tests 7ms, environment 0ms)
+

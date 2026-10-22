@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/linear-event-transport
+
+
+ Test Files  4 passed (4)
+      Tests  37 passed (37)
+   Start at  13:59:32
+   Duration  981ms (transform 150ms, setup 0ms, import 529ms, tests 155ms, environment 0ms)
+

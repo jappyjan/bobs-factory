@@ -1,0 +1,40 @@
+import json,hashlib,shutil,subprocess
+from pathlib import Path
+repo=Path.cwd();dest=repo/'apps/f1/test-drives/assets/taskbot140-views/round6';gates=Path('/tmp/taskbot140-round6-complete-validation')
+r=json.loads((gates/'gates.json').read_text());assert r['result']=='pass';assert all(x.get('code')==0 and not x.get('signal') for x in r['commands']);assert subprocess.check_output(['git','status','--porcelain'],text=True)==''
+originals={}
+def copy(src,target,raw=False):
+ src=Path(src);target=dest/target
+ if raw and target.suffix in ('.json','.mjs','.js','.py'):target=target.with_name(target.name+'.raw')
+ target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(src,target);originals[str(target.relative_to(repo))]=str(src)
+def tree(src,target,raw=False):
+ for p in sorted(Path(src).rglob('*')):
+  if p.is_file():copy(p,Path(target)/p.relative_to(src),raw)
+for p in gates.iterdir():
+ if p.is_file():copy(p,Path('gates')/p.name,True)
+copy('/tmp/taskbot140-round6-gates.mjs','gates/driver.mjs',True);copy('/tmp/taskbot140-round6-complete-gates-driver.log','gates/driver.log')
+tree('/tmp/taskbot140-round6-focused','focused',True)
+for name in ['f1','f1-dispatch','f1-assets','f1-native-queue']:
+ rows=[json.loads(line) for line in (gates/(name+'.log')).read_text().splitlines() if line.startswith('{') and '"result":"PASS"' in line];folder=Path(rows[-1]['directory'])
+ # Never export synthetic TLS private keys or incidental home/config stores.
+ for p in folder.iterdir():
+  if p.is_file() and p.suffix not in ('.pem',):copy(p,Path(name)/p.name,True)
+for source,label in [('f1-taskbot140-dispatch-round6-osO4tP','stopped-escaped-colon-fixture'),('f1-taskbot140-dispatch-round6-RBPdI3','first-sse-resumption-fixture'),('f1-taskbot140-dispatch-round6-dXz23E','second-sse-resumption-fixture'),('f1-taskbot140-dispatch-round6-ndZAJf','dirty-exploratory-pass'),('f1-taskbot140-assets-round6-f2H9th','dirty-asset-exploratory-pass')]:
+ folder=Path('/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T')/source
+ for name in ['failure.json','stdout.log','stderr.log','receipt.json','executed-driver.mjs']:
+  p=folder/name
+  if p.is_file():copy(p,Path('historical')/label/name,True)
+for p in Path('/tmp/taskbot140-round6-native-build').rglob('*'):
+ if p.is_file() and (p.name in ['build.json','THIRD_PARTY_NOTICES.txt','LICENSE','NOTICE'] or p.name.endswith('.manifest.json')):copy(p,Path('native/build')/p.name,True)
+tree('/tmp/taskbot140-round6-native-views','native/views',True)
+copy('/tmp/taskbot140-round6-reuse.json','reuse/proof.json',True);copy('/tmp/taskbot140-round6-reuse.py','reuse/driver.py',True)
+copy('/tmp/taskbot140-round6-runtime-identity.json','runtime-identity.json',True);copy('/tmp/taskbot140-round6-runtime-identity.mjs','runtime-identity-driver.mjs',True)
+for stem in ['ambiguous-protocol-probe','ambiguous-original-probe','asset-queue-probe']:
+ for suffix in ['mjs','json','log']:
+  name=stem+'.'+suffix;p=Path('/tmp/taskbot140-review-r5')/name
+  if p.is_file():copy(p,Path('review-r5')/name,True)
+copy('/tmp/taskbot140-round6-original-inventories.json','pinned-original-inventories.json',True)
+copy('/tmp/taskbot140-round6-inventory.py','inventory-driver.py',True)
+copy('/tmp/taskbot140-round6-collect.py','collection-driver.py',True);copy('/tmp/taskbot140-round6-finalize.py','finalization-driver.py',True)
+(dest/'original-copies.json').write_text(json.dumps(originals,indent=2)+'\n')
+print(json.dumps({'copied':len(originals),'root':str(dest)}))

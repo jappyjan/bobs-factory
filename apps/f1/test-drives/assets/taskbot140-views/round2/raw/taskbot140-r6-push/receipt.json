@@ -1,0 +1,54 @@
+{
+  "at": "2026-10-22T06:20:01.521700+00:00",
+  "head": "246e422d2110ae743acb6ed561d549db0784703f",
+  "ownedFiles": {
+    "packages/edge-worker/src/factory/PushEvents.ts": "08c0ea5c630a1b148e81c2cede1911272ce02529e03946c1b831461a51fb229c",
+    "packages/edge-worker/src/factory/FactoryPush.ts": "8af228ea1338d12b602da60d00ad155854bca901308ce87eb163d6eee1d030f7",
+    "packages/edge-worker/src/factory/web/sw.js": "9275261524e04e3ea6931d0d6059e5496925f7d1cce883639ddfe8ac10563f6a",
+    "packages/edge-worker/test/HumanViewPush.test.ts": "85344a624a56e5634dd380caaf9b3c2b386376cec54d3d6ef4912981205fbce6",
+    "docs/FACTORY.md": "4262afab48423b526c2f3546bacd7c7ea00b85e01acfe6d8d9b244b26197e42c"
+  },
+  "focusedTests": {
+    "files": 3,
+    "passed": 77,
+    "exitCode": 0,
+    "commandReceipt": "focused-final.command.json"
+  },
+  "lintExitCode": 0,
+  "diffCheckExitCode": 0,
+  "testedInputChanges": [
+    {
+      "file": "packages/edge-worker/src/factory/ViewText.ts",
+      "tested": "dd195d449424b9211101892679251839f041618b1c0c42dad805db95e31cc379",
+      "current": "f9bec5239f44dd44dd2aa1a3b69ec6a4a9365143049ea80244d12a178b9090ee"
+    }
+  ],
+  "logs": {
+    "diff-check.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "diff-check.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "focused-attempt1.command.json": "d308d05ee61d740785f0fbfdf20f9de45890579f835700793394b43b06704ff8",
+    "focused-attempt1.stderr.txt": "e7b04e6d2141d18b546649e7acf19ee1b5418d3c5ef0498e6cda0d5fcb5c6d37",
+    "focused-attempt1.stdout.txt": "f1bf407db130fcefc50386b09f5034078d54f5731ea57f4409c4dfa9c6cb0e53",
+    "focused-current-formatter.command.json": "2c1fff29267ad62f9d1693ca819e9a8c94a392409dbcaf44d6a7cd6eaa77e3f2",
+    "focused-current-formatter.stderr.txt": "e7b04e6d2141d18b546649e7acf19ee1b5418d3c5ef0498e6cda0d5fcb5c6d37",
+    "focused-current-formatter.stdout.txt": "a6a6de40336111ee155093fbea503441c71dc7bc94c6cbd1be7e0e5d54274f74",
+    "focused-final.command.json": "abe55d67e1bed7342c8e9795e8501df687b0779d6d1004d9cca7fbb295e2a3ac",
+    "focused-final.stderr.txt": "e7b04e6d2141d18b546649e7acf19ee1b5418d3c5ef0498e6cda0d5fcb5c6d37",
+    "focused-final.stdout.txt": "001526b69ceb290fcb3ef1d888429dd23e230def066e5499dffb98fb435fb5d6",
+    "format-final.command.json": "52009b18c3463e5b9fcac6705163279e9c2043975f5d18051957a82c181630d9",
+    "format-final.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "format-final.stdout.txt": "9a7c40d2e9efe8871655b0f582dde460986037e10c466c9a2b1f149492ddd20d",
+    "lint-final.command.json": "95f22fa5186b656a24306013c11e20e041a5920e47d436ed746bf4b3ac029220",
+    "lint-final.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lint-final.stdout.txt": "5a4c5854a00955ff30bd1a02a10df3d1fe2f3837aac1f5a5e5cb33d8235d75e6"
+  },
+  "limits": "Transport provider mocked; actual FactoryPush serialization and bundled production service-worker executed. No live browser/OS push receipt or provider delivery claimed. No full builds/gates, commits/push, status changes or CI actions.",
+  "currentFormatterVerification": {
+    "commandReceipt": "focused-current-formatter.command.json",
+    "exitCode": 0,
+    "formatterBefore": "f9bec5239f44dd44dd2aa1a3b69ec6a4a9365143049ea80244d12a178b9090ee",
+    "formatterAfter": "f9bec5239f44dd44dd2aa1a3b69ec6a4a9365143049ea80244d12a178b9090ee",
+    "files": 1,
+    "tests": 23
+  }
+}

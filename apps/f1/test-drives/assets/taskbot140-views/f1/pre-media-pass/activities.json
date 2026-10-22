@@ -1,0 +1,61 @@
+{
+  "session": {
+    "sessionId": "session-1",
+    "issueId": "issue-1",
+    "status": "active",
+    "createdAt": 1792645025166,
+    "updatedAt": 1792645030984
+  },
+  "activities": [
+    {
+      "id": "activity-1",
+      "type": "thought",
+      "content": "I've received your request and I'm starting to work on it. Let me analyze the issue and prepare my approach.",
+      "createdAt": 1792645025167
+    },
+    {
+      "id": "activity-2",
+      "type": "thought",
+      "content": "**Routing** (Catch-all)\n- **View F1 fixture** → `main` (default)",
+      "createdAt": 1792645025412
+    },
+    {
+      "id": "activity-3",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792645025776
+    },
+    {
+      "id": "activity-4",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792645026201
+    },
+    {
+      "id": "activity-5",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792645026894
+    },
+    {
+      "id": "activity-6",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792645026941
+    },
+    {
+      "id": "activity-7",
+      "type": "thought",
+      "content": "Using model: claude/f1-mock",
+      "createdAt": 1792645028368
+    },
+    {
+      "id": "activity-8",
+      "type": "prompt",
+      "content": "/view-answer {\"batchId\":\"d7edb416-8627-47a5-b73b-afbaec561647\",\"digest\":\"69ca04d8087a39c18a6c2673c2919ce34ebe4241f5fe46e337362cdc21803997\",\"accepted\":true,\"approved\":true,\"feedback\":\"Explicit acceptance of the current displayed artifact\",\"fields\":{\"understood\":true}}",
+      "createdAt": 1792645030984
+    }
+  ],
+  "totalCount": 8,
+  "hasMore": false
+}

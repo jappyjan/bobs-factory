@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/opencode-runner
+
+
+ Test Files  3 passed (3)
+      Tests  52 passed (52)
+   Start at  10:03:07
+   Duration  14.27s (transform 397ms, setup 0ms, import 853ms, tests 20.33s, environment 0ms)
+

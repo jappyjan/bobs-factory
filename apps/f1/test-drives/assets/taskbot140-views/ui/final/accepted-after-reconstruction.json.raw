@@ -1,0 +1,1469 @@
+{
+  "runs": {
+    "views-decide-ui-run": {
+      "status": "completed",
+      "decision": {
+        "id": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+        "stepKey": "choose",
+        "kind": "decide",
+        "title": "Choose the next work",
+        "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9",
+        "view": {
+          "version": "view-v1",
+          "components": [
+            {
+              "id": "brief",
+              "type": "markdown",
+              "title": "Review brief",
+              "data": {
+                "text": "Three findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or ask a focused follow-up.\n\n**No action is selected automatically.**"
+              }
+            },
+            {
+              "id": "checks",
+              "type": "checklist",
+              "title": "Before you decide",
+              "data": {
+                "items": [
+                  {
+                    "label": "Original research retained",
+                    "state": "done"
+                  },
+                  {
+                    "label": "Choose an action for every item",
+                    "state": "open"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "cache",
+            "title": "Reuse validated cache entries",
+            "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+            "details": [
+              {
+                "label": "Impact",
+                "value": "Faster repeat runs"
+              },
+              {
+                "label": "Evidence",
+                "value": "Focused tests pass"
+              }
+            ]
+          },
+          {
+            "id": "labels",
+            "title": "Clarify run progress labels",
+            "body": "Show waiting and active execution with the same accessible vocabulary.",
+            "details": [
+              {
+                "label": "Impact",
+                "value": "Clearer progress"
+              },
+              {
+                "label": "Evidence",
+                "value": "Keyboard labels reviewed"
+              }
+            ]
+          },
+          {
+            "id": "unsafe",
+            "title": "Treat untrusted strings as text",
+            "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+            "details": [
+              {
+                "label": "Impact",
+                "value": "Safe rendering"
+              },
+              {
+                "label": "Evidence",
+                "value": "No raw HTML or remote image requests"
+              }
+            ]
+          }
+        ],
+        "actions": [
+          {
+            "id": "fix",
+            "label": "Fix",
+            "comment": true,
+            "followUp": true
+          },
+          {
+            "id": "issue",
+            "label": "File issue",
+            "comment": true,
+            "followUp": true
+          },
+          {
+            "id": "skip",
+            "label": "Skip",
+            "comment": true
+          }
+        ],
+        "askAvailable": true,
+        "threads": {
+          "cache": [
+            {
+              "id": "78abc7af-c53b-4d0e-9f92-0992ba249ad0",
+              "question": "When can this cached result safely be reused?",
+              "status": "answered",
+              "at": "2026-10-22T05:09:17.259Z",
+              "answer": "The cached result can be reused only when its accepted inputs and evidence still match. This answer came from the dedicated item follow-up; the source research was not rerun."
+            }
+          ]
+        },
+        "createdAt": "2026-10-22T05:07:28.767Z",
+        "answer": {
+          "choices": [
+            {
+              "itemId": "cache",
+              "action": "fix",
+              "comment": "Retain the original cache key and receipt."
+            },
+            {
+              "itemId": "labels",
+              "action": "issue",
+              "comment": "Create a separate backlog item."
+            },
+            {
+              "itemId": "unsafe",
+              "action": "skip",
+              "comment": "Keep malicious strings inert."
+            }
+          ],
+          "itemsByAction": {
+            "fix": [
+              {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              }
+            ],
+            "issue": [
+              {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              }
+            ],
+            "skip": [
+              {
+                "id": "unsafe",
+                "title": "Treat untrusted strings as text",
+                "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+                "impact": "Safe rendering",
+                "evidence": "No raw HTML or remote image requests"
+              }
+            ]
+          },
+          "followUps": [
+            {
+              "itemId": "cache",
+              "item": {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              },
+              "action": "fix",
+              "comment": "Retain the original cache key and receipt.",
+              "thread": [
+                {
+                  "id": "78abc7af-c53b-4d0e-9f92-0992ba249ad0",
+                  "question": "When can this cached result safely be reused?",
+                  "answer": "The cached result can be reused only when its accepted inputs and evidence still match. This answer came from the dedicated item follow-up; the source research was not rerun.",
+                  "status": "answered",
+                  "at": "2026-10-22T05:09:17.259Z"
+                }
+              ]
+            },
+            {
+              "itemId": "labels",
+              "item": {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              },
+              "action": "issue",
+              "comment": "Create a separate backlog item.",
+              "thread": []
+            }
+          ],
+          "hasFollowUps": true,
+          "fields": {},
+          "batchId": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+          "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9"
+        }
+      },
+      "displays": [
+        {
+          "id": "fc9a8931-36d9-40d5-ba7b-fe46a72a645a",
+          "stepKey": "followups",
+          "kind": "show",
+          "title": "Follow-up route selected",
+          "digest": "acca3849f6d517ea62d6cd41093655b997b6f2a3dd8c4f9f6b33be483c708d41",
+          "view": {
+            "version": "view-v1",
+            "components": [
+              {
+                "id": "summary",
+                "type": "markdown",
+                "data": {
+                  "text": "Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged."
+                }
+              }
+            ]
+          },
+          "createdAt": "2026-10-22T05:10:34.612Z",
+          "threads": {}
+        }
+      ],
+      "outputs": {
+        "research": {
+          "summary": {
+            "text": "Three findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or ask a focused follow-up.\n\n**No action is selected automatically.**"
+          },
+          "items": [
+            {
+              "id": "cache",
+              "title": "Reuse validated cache entries",
+              "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+              "impact": "Faster repeat runs",
+              "evidence": "Focused tests pass"
+            },
+            {
+              "id": "labels",
+              "title": "Clarify run progress labels",
+              "body": "Show waiting and active execution with the same accessible vocabulary.",
+              "impact": "Clearer progress",
+              "evidence": "Keyboard labels reviewed"
+            },
+            {
+              "id": "unsafe",
+              "title": "Treat untrusted strings as text",
+              "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+              "impact": "Safe rendering",
+              "evidence": "No raw HTML or remote image requests"
+            }
+          ]
+        },
+        "choose": {
+          "choices": [
+            {
+              "itemId": "cache",
+              "action": "fix",
+              "comment": "Retain the original cache key and receipt."
+            },
+            {
+              "itemId": "labels",
+              "action": "issue",
+              "comment": "Create a separate backlog item."
+            },
+            {
+              "itemId": "unsafe",
+              "action": "skip",
+              "comment": "Keep malicious strings inert."
+            }
+          ],
+          "itemsByAction": {
+            "fix": [
+              {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              }
+            ],
+            "issue": [
+              {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              }
+            ],
+            "skip": [
+              {
+                "id": "unsafe",
+                "title": "Treat untrusted strings as text",
+                "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+                "impact": "Safe rendering",
+                "evidence": "No raw HTML or remote image requests"
+              }
+            ]
+          },
+          "followUps": [
+            {
+              "itemId": "cache",
+              "item": {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              },
+              "action": "fix",
+              "comment": "Retain the original cache key and receipt.",
+              "thread": [
+                {
+                  "id": "78abc7af-c53b-4d0e-9f92-0992ba249ad0",
+                  "question": "When can this cached result safely be reused?",
+                  "answer": "The cached result can be reused only when its accepted inputs and evidence still match. This answer came from the dedicated item follow-up; the source research was not rerun.",
+                  "status": "answered",
+                  "at": "2026-10-22T05:09:17.259Z"
+                }
+              ]
+            },
+            {
+              "itemId": "labels",
+              "item": {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              },
+              "action": "issue",
+              "comment": "Create a separate backlog item.",
+              "thread": []
+            }
+          ],
+          "hasFollowUps": true,
+          "fields": {},
+          "batchId": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+          "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9"
+        },
+        "followups": {
+          "shown": true,
+          "viewId": "fc9a8931-36d9-40d5-ba7b-fe46a72a645a"
+        }
+      },
+      "history": [
+        {
+          "step": "research",
+          "output": {
+            "summary": {
+              "text": "Three findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or ask a focused follow-up.\n\n**No action is selected automatically.**"
+            },
+            "items": [
+              {
+                "id": "cache",
+                "title": "Reuse validated cache entries",
+                "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                "impact": "Faster repeat runs",
+                "evidence": "Focused tests pass"
+              },
+              {
+                "id": "labels",
+                "title": "Clarify run progress labels",
+                "body": "Show waiting and active execution with the same accessible vocabulary.",
+                "impact": "Clearer progress",
+                "evidence": "Keyboard labels reviewed"
+              },
+              {
+                "id": "unsafe",
+                "title": "Treat untrusted strings as text",
+                "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+                "impact": "Safe rendering",
+                "evidence": "No raw HTML or remote image requests"
+              }
+            ]
+          },
+          "at": "2026-10-22T05:07:28.591Z"
+        },
+        {
+          "step": "choose",
+          "output": {
+            "choices": [
+              {
+                "itemId": "cache",
+                "action": "fix",
+                "comment": "Retain the original cache key and receipt."
+              },
+              {
+                "itemId": "labels",
+                "action": "issue",
+                "comment": "Create a separate backlog item."
+              },
+              {
+                "itemId": "unsafe",
+                "action": "skip",
+                "comment": "Keep malicious strings inert."
+              }
+            ],
+            "itemsByAction": {
+              "fix": [
+                {
+                  "id": "cache",
+                  "title": "Reuse validated cache entries",
+                  "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                  "impact": "Faster repeat runs",
+                  "evidence": "Focused tests pass"
+                }
+              ],
+              "issue": [
+                {
+                  "id": "labels",
+                  "title": "Clarify run progress labels",
+                  "body": "Show waiting and active execution with the same accessible vocabulary.",
+                  "impact": "Clearer progress",
+                  "evidence": "Keyboard labels reviewed"
+                }
+              ],
+              "skip": [
+                {
+                  "id": "unsafe",
+                  "title": "Treat untrusted strings as text",
+                  "body": "<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)\n\n`<img src=x onerror=alert(1)>`",
+                  "impact": "Safe rendering",
+                  "evidence": "No raw HTML or remote image requests"
+                }
+              ]
+            },
+            "followUps": [
+              {
+                "itemId": "cache",
+                "item": {
+                  "id": "cache",
+                  "title": "Reuse validated cache entries",
+                  "body": "Keep accepted inputs and original receipts while avoiding repeated work.",
+                  "impact": "Faster repeat runs",
+                  "evidence": "Focused tests pass"
+                },
+                "action": "fix",
+                "comment": "Retain the original cache key and receipt.",
+                "thread": [
+                  {
+                    "id": "78abc7af-c53b-4d0e-9f92-0992ba249ad0",
+                    "question": "When can this cached result safely be reused?",
+                    "answer": "The cached result can be reused only when its accepted inputs and evidence still match. This answer came from the dedicated item follow-up; the source research was not rerun.",
+                    "status": "answered",
+                    "at": "2026-10-22T05:09:17.259Z"
+                  }
+                ]
+              },
+              {
+                "itemId": "labels",
+                "item": {
+                  "id": "labels",
+                  "title": "Clarify run progress labels",
+                  "body": "Show waiting and active execution with the same accessible vocabulary.",
+                  "impact": "Clearer progress",
+                  "evidence": "Keyboard labels reviewed"
+                },
+                "action": "issue",
+                "comment": "Create a separate backlog item.",
+                "thread": []
+              }
+            ],
+            "hasFollowUps": true,
+            "fields": {},
+            "batchId": "d175fb69-da40-4fd2-a30e-a7accaea0d10",
+            "digest": "c49ff2630fc842799906a0d3c0538189229128ab0328afd936ce6a2ab30135e9"
+          },
+          "at": "2026-10-22T05:10:34.371Z"
+        },
+        {
+          "step": "followups",
+          "output": {
+            "shown": true,
+            "viewId": "fc9a8931-36d9-40d5-ba7b-fe46a72a645a"
+          },
+          "at": "2026-10-22T05:10:34.672Z"
+        }
+      ]
+    },
+    "views-approve-ui-run": {
+      "status": "completed",
+      "decision": {
+        "id": "fbf3ca3b-c622-4bfb-a284-82521c398a02",
+        "stepKey": "accept",
+        "kind": "approve",
+        "title": "Approve the delivery brief",
+        "digest": "e9261b6f0fecc4ddf118e4d1c58af39fd9ab0bd3a76b0247676a652a81a1c869",
+        "view": {
+          "version": "view-v1",
+          "components": [
+            {
+              "id": "brief",
+              "type": "markdown",
+              "title": "Delivery brief",
+              "data": {
+                "text": "## A reviewable delivery brief\n\nThe artifact is composed from declarative data. Approve exactly what is displayed or request changes with feedback.\n\n<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)"
+              }
+            },
+            {
+              "id": "change",
+              "type": "beforeAfter",
+              "title": "What changes",
+              "data": {
+                "before": "Separate hand-built human screens",
+                "after": "Reusable, schema-validated components",
+                "note": "Original stock screens remain unchanged."
+              }
+            },
+            {
+              "id": "checks",
+              "type": "checklist",
+              "title": "Acceptance",
+              "data": {
+                "items": [
+                  {
+                    "label": "Schema validation on save and render",
+                    "state": "done"
+                  },
+                  {
+                    "label": "Exact human acceptance",
+                    "state": "open"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "proof",
+              "type": "table",
+              "title": "Evidence",
+              "data": {
+                "columns": [
+                  "Area",
+                  "Evidence"
+                ],
+                "rows": [
+                  [
+                    "Source",
+                    "Declared inputs only"
+                  ],
+                  [
+                    "Approval",
+                    "Displayed content digest"
+                  ],
+                  [
+                    "Malicious strings",
+                    "Inert text"
+                  ]
+                ]
+              }
+            },
+            {
+              "id": "code",
+              "type": "code",
+              "title": "Code reference",
+              "data": {
+                "file": "src/example.ts",
+                "excerpt": "const inert = \"<script>window.__viewAttack=1</script>\";\n// long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-",
+                "language": "typescript",
+                "startLine": 1
+              }
+            },
+            {
+              "id": "measure",
+              "type": "chart",
+              "title": "Validation overview",
+              "data": {
+                "kind": "bar",
+                "series": [
+                  {
+                    "label": "Inert strings",
+                    "value": 3
+                  },
+                  {
+                    "label": "Accepted decisions",
+                    "value": 0
+                  }
+                ],
+                "unit": "cases"
+              }
+            },
+            {
+              "id": "stages",
+              "type": "steps",
+              "title": "Review stages",
+              "data": {
+                "items": [
+                  {
+                    "label": "Compose artifact",
+                    "status": "completed"
+                  },
+                  {
+                    "label": "Human review",
+                    "status": "running"
+                  },
+                  {
+                    "label": "Retain exact answer",
+                    "status": "pending"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "item",
+              "type": "itemCards",
+              "title": "Artifact details",
+              "data": {
+                "items": [
+                  {
+                    "id": "bounded",
+                    "title": "Bounded data scope",
+                    "body": "Only explicitly declared inputs reach this view.",
+                    "details": [
+                      {
+                        "label": "Source",
+                        "value": "Accepted agent output"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "id": "summary-actions",
+              "type": "decisionBar",
+              "title": "Decision summary",
+              "data": {
+                "summary": "Only the human controls below can authorize this artifact.",
+                "actions": [
+                  {
+                    "id": "information",
+                    "label": "Display-only action label"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "form",
+              "type": "choices",
+              "title": "Review context",
+              "data": {
+                "fields": [
+                  {
+                    "id": "owner",
+                    "label": "Review owner",
+                    "type": "text",
+                    "value": "UI validation"
+                  },
+                  {
+                    "id": "understood",
+                    "label": "I understand the documented limitations",
+                    "required": true,
+                    "type": "checkbox"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "createdAt": "2026-10-22T05:07:28.770Z",
+        "threads": {},
+        "answer": {
+          "approved": false,
+          "feedback": "Keep the explicit limitations visible and include the remaining evidence.",
+          "fields": {
+            "owner": "UI validation",
+            "understood": true
+          },
+          "batchId": "fbf3ca3b-c622-4bfb-a284-82521c398a02",
+          "digest": "e9261b6f0fecc4ddf118e4d1c58af39fd9ab0bd3a76b0247676a652a81a1c869"
+        }
+      },
+      "displays": [
+        {
+          "id": "749203d0-8876-4347-80b5-93f79dc339b4",
+          "stepKey": "changes",
+          "kind": "show",
+          "title": "Changes requested",
+          "digest": "4bda005e32438b26d7838747bcca24d0de3e963e0e5c6ad3ab388cd48ee928fc",
+          "view": {
+            "version": "view-v1",
+            "components": [
+              {
+                "id": "summary",
+                "type": "markdown",
+                "data": {
+                  "text": "Requested changes retained. A later revision needs its own approval."
+                }
+              }
+            ]
+          },
+          "createdAt": "2026-10-22T05:11:49.570Z",
+          "threads": {}
+        }
+      ],
+      "outputs": {
+        "author": {
+          "version": "view-v1",
+          "components": [
+            {
+              "id": "brief",
+              "type": "markdown",
+              "title": "Delivery brief",
+              "data": {
+                "literal": {
+                  "text": "## A reviewable delivery brief\n\nThe artifact is composed from declarative data. Approve exactly what is displayed or request changes with feedback.\n\n<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)"
+                }
+              }
+            },
+            {
+              "id": "change",
+              "type": "beforeAfter",
+              "title": "What changes",
+              "data": {
+                "literal": {
+                  "before": "Separate hand-built human screens",
+                  "after": "Reusable, schema-validated components",
+                  "note": "Original stock screens remain unchanged."
+                }
+              }
+            },
+            {
+              "id": "checks",
+              "type": "checklist",
+              "title": "Acceptance",
+              "data": {
+                "literal": {
+                  "items": [
+                    {
+                      "label": "Schema validation on save and render",
+                      "state": "done"
+                    },
+                    {
+                      "label": "Exact human acceptance",
+                      "state": "open"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "proof",
+              "type": "table",
+              "title": "Evidence",
+              "data": {
+                "literal": {
+                  "columns": [
+                    "Area",
+                    "Evidence"
+                  ],
+                  "rows": [
+                    [
+                      "Source",
+                      "Declared inputs only"
+                    ],
+                    [
+                      "Approval",
+                      "Displayed content digest"
+                    ],
+                    [
+                      "Malicious strings",
+                      "Inert text"
+                    ]
+                  ]
+                }
+              }
+            },
+            {
+              "id": "code",
+              "type": "code",
+              "title": "Code reference",
+              "data": {
+                "literal": {
+                  "file": "src/example.ts",
+                  "language": "typescript",
+                  "startLine": 1,
+                  "excerpt": "const inert = \"<script>window.__viewAttack=1</script>\";\n// long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-"
+                }
+              }
+            },
+            {
+              "id": "measure",
+              "type": "chart",
+              "title": "Validation overview",
+              "data": {
+                "literal": {
+                  "kind": "bar",
+                  "unit": "cases",
+                  "series": [
+                    {
+                      "label": "Inert strings",
+                      "value": 3
+                    },
+                    {
+                      "label": "Accepted decisions",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "stages",
+              "type": "steps",
+              "title": "Review stages",
+              "data": {
+                "literal": {
+                  "items": [
+                    {
+                      "label": "Compose artifact",
+                      "status": "completed"
+                    },
+                    {
+                      "label": "Human review",
+                      "status": "running"
+                    },
+                    {
+                      "label": "Retain exact answer",
+                      "status": "pending"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "item",
+              "type": "itemCards",
+              "title": "Artifact details",
+              "data": {
+                "literal": {
+                  "items": [
+                    {
+                      "id": "bounded",
+                      "title": "Bounded data scope",
+                      "body": "Only explicitly declared inputs reach this view.",
+                      "details": [
+                        {
+                          "label": "Source",
+                          "value": "Accepted agent output"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "summary-actions",
+              "type": "decisionBar",
+              "title": "Decision summary",
+              "data": {
+                "literal": {
+                  "summary": "Only the human controls below can authorize this artifact.",
+                  "actions": [
+                    {
+                      "id": "information",
+                      "label": "Display-only action label"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "id": "form",
+              "type": "choices",
+              "title": "Review context",
+              "data": {
+                "literal": {
+                  "fields": [
+                    {
+                      "id": "owner",
+                      "label": "Review owner",
+                      "type": "text",
+                      "value": "UI validation"
+                    },
+                    {
+                      "id": "understood",
+                      "label": "I understand the documented limitations",
+                      "type": "checkbox",
+                      "required": true
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "accept": {
+          "approved": false,
+          "feedback": "Keep the explicit limitations visible and include the remaining evidence.",
+          "fields": {
+            "owner": "UI validation",
+            "understood": true
+          },
+          "batchId": "fbf3ca3b-c622-4bfb-a284-82521c398a02",
+          "digest": "e9261b6f0fecc4ddf118e4d1c58af39fd9ab0bd3a76b0247676a652a81a1c869"
+        },
+        "changes": {
+          "shown": true,
+          "viewId": "749203d0-8876-4347-80b5-93f79dc339b4"
+        }
+      },
+      "history": [
+        {
+          "step": "author",
+          "output": {
+            "version": "view-v1",
+            "components": [
+              {
+                "id": "brief",
+                "type": "markdown",
+                "title": "Delivery brief",
+                "data": {
+                  "literal": {
+                    "text": "## A reviewable delivery brief\n\nThe artifact is composed from declarative data. Approve exactly what is displayed or request changes with feedback.\n\n<script>window.__viewAttack=\"ran\"</script>\n\n[Unsafe action](javascript:alert%281%29) ![Tracking image](https://remote.invalid/pixel)"
+                  }
+                }
+              },
+              {
+                "id": "change",
+                "type": "beforeAfter",
+                "title": "What changes",
+                "data": {
+                  "literal": {
+                    "before": "Separate hand-built human screens",
+                    "after": "Reusable, schema-validated components",
+                    "note": "Original stock screens remain unchanged."
+                  }
+                }
+              },
+              {
+                "id": "checks",
+                "type": "checklist",
+                "title": "Acceptance",
+                "data": {
+                  "literal": {
+                    "items": [
+                      {
+                        "label": "Schema validation on save and render",
+                        "state": "done"
+                      },
+                      {
+                        "label": "Exact human acceptance",
+                        "state": "open"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "proof",
+                "type": "table",
+                "title": "Evidence",
+                "data": {
+                  "literal": {
+                    "columns": [
+                      "Area",
+                      "Evidence"
+                    ],
+                    "rows": [
+                      [
+                        "Source",
+                        "Declared inputs only"
+                      ],
+                      [
+                        "Approval",
+                        "Displayed content digest"
+                      ],
+                      [
+                        "Malicious strings",
+                        "Inert text"
+                      ]
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "code",
+                "type": "code",
+                "title": "Code reference",
+                "data": {
+                  "literal": {
+                    "file": "src/example.ts",
+                    "language": "typescript",
+                    "startLine": 1,
+                    "excerpt": "const inert = \"<script>window.__viewAttack=1</script>\";\n// long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-long-safe-token-"
+                  }
+                }
+              },
+              {
+                "id": "measure",
+                "type": "chart",
+                "title": "Validation overview",
+                "data": {
+                  "literal": {
+                    "kind": "bar",
+                    "unit": "cases",
+                    "series": [
+                      {
+                        "label": "Inert strings",
+                        "value": 3
+                      },
+                      {
+                        "label": "Accepted decisions",
+                        "value": 0
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "stages",
+                "type": "steps",
+                "title": "Review stages",
+                "data": {
+                  "literal": {
+                    "items": [
+                      {
+                        "label": "Compose artifact",
+                        "status": "completed"
+                      },
+                      {
+                        "label": "Human review",
+                        "status": "running"
+                      },
+                      {
+                        "label": "Retain exact answer",
+                        "status": "pending"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "item",
+                "type": "itemCards",
+                "title": "Artifact details",
+                "data": {
+                  "literal": {
+                    "items": [
+                      {
+                        "id": "bounded",
+                        "title": "Bounded data scope",
+                        "body": "Only explicitly declared inputs reach this view.",
+                        "details": [
+                          {
+                            "label": "Source",
+                            "value": "Accepted agent output"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "summary-actions",
+                "type": "decisionBar",
+                "title": "Decision summary",
+                "data": {
+                  "literal": {
+                    "summary": "Only the human controls below can authorize this artifact.",
+                    "actions": [
+                      {
+                        "id": "information",
+                        "label": "Display-only action label"
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "form",
+                "type": "choices",
+                "title": "Review context",
+                "data": {
+                  "literal": {
+                    "fields": [
+                      {
+                        "id": "owner",
+                        "label": "Review owner",
+                        "type": "text",
+                        "value": "UI validation"
+                      },
+                      {
+                        "id": "understood",
+                        "label": "I understand the documented limitations",
+                        "type": "checkbox",
+                        "required": true
+                      }
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "at": "2026-10-22T05:07:28.591Z"
+        },
+        {
+          "step": "accept",
+          "output": {
+            "approved": false,
+            "feedback": "Keep the explicit limitations visible and include the remaining evidence.",
+            "fields": {
+              "owner": "UI validation",
+              "understood": true
+            },
+            "batchId": "fbf3ca3b-c622-4bfb-a284-82521c398a02",
+            "digest": "e9261b6f0fecc4ddf118e4d1c58af39fd9ab0bd3a76b0247676a652a81a1c869"
+          },
+          "at": "2026-10-22T05:11:49.354Z"
+        },
+        {
+          "step": "changes",
+          "output": {
+            "shown": true,
+            "viewId": "749203d0-8876-4347-80b5-93f79dc339b4"
+          },
+          "at": "2026-10-22T05:11:49.637Z"
+        }
+      ]
+    },
+    "views-children-ui-run": {
+      "status": "waiting",
+      "decision": {
+        "id": "5cbd63dd-3988-4445-859c-1d4322db8688",
+        "stepKey": "hold",
+        "kind": "approve",
+        "title": "Review the child-run overview",
+        "digest": "045130290abb9641bc8d7f60c4d5da34c0d0c6815a5768dcb1e236344b731422",
+        "view": {
+          "version": "view-v1",
+          "components": [
+            {
+              "id": "summary",
+              "type": "markdown",
+              "data": {
+                "text": "The run-list summary below is a nonblocking Show snapshot. This separate human step retains an explicit checkpoint for review."
+              }
+            }
+          ]
+        },
+        "createdAt": "2026-10-22T05:07:29.969Z",
+        "threads": {},
+        "answer": {
+          "approved": true,
+          "feedback": "",
+          "fields": {},
+          "batchId": "5cbd63dd-3988-4445-859c-1d4322db8688",
+          "digest": "045130290abb9641bc8d7f60c4d5da34c0d0c6815a5768dcb1e236344b731422"
+        }
+      },
+      "displays": [
+        {
+          "id": "9f4adfa4-0c98-421d-93fb-9ab03a8a649e",
+          "stepKey": "progress",
+          "kind": "show",
+          "title": "Children by dependency wave",
+          "digest": "6224e1c0f15899c040a7cce2096f14e1ca5ab61a7ed1afb5d70cfc9207c3348f",
+          "view": {
+            "version": "view-v1",
+            "components": [
+              {
+                "id": "runs",
+                "type": "runList",
+                "title": "Child run waves",
+                "data": {
+                  "waves": [
+                    {
+                      "id": "b34a7399-6e75-405c-8b48-99e2f32b46c5-0",
+                      "label": "dispatch · Wave 1",
+                      "runs": [
+                        {
+                          "id": "child-16ed9995d03898f39b9422c7c25a6b9fe03480b6",
+                          "title": "Retain an explicit question",
+                          "status": "waiting"
+                        },
+                        {
+                          "id": "child-f19b050e033d608b0314c0bcb738cb8ef57a7ab0",
+                          "title": "Retain active execution",
+                          "status": "running"
+                        },
+                        {
+                          "id": "child-c4df43ce6fc5981ff79ca095b502678f0b3239f6",
+                          "title": "Complete without pretending merge proof",
+                          "status": "completed"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "b34a7399-6e75-405c-8b48-99e2f32b46c5-1",
+                      "label": "dispatch · Wave 2",
+                      "runs": [
+                        {
+                          "id": "child-b78b77b8681defde078db7da4209ecb65987ab3c",
+                          "title": "Wait for readiness merge",
+                          "status": "queued"
+                        },
+                        {
+                          "id": "child-fe8ca0c09b3210b6a7e078f4c4f813735b5bd110",
+                          "title": "Completion alone cannot authorize launch",
+                          "status": "blocked",
+                          "note": "Prerequisite documentation completed without exact human-approved, provider-confirmed repository merge proof"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "notes",
+                "type": "points",
+                "title": "What the statuses mean",
+                "data": {
+                  "items": [
+                    {
+                      "label": "Independent work",
+                      "detail": "First-wave children run independently."
+                    },
+                    {
+                      "label": "Exact prerequisites",
+                      "detail": "A completed child without merge evidence keeps its dependant blocked."
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "createdAt": "2026-10-22T05:07:29.767Z",
+          "threads": {}
+        }
+      ],
+      "outputs": {
+        "propose": {
+          "items": [
+            {
+              "id": "readiness",
+              "title": "Review dependency readiness",
+              "prompt": "Retain an explicit question",
+              "dependencies": []
+            },
+            {
+              "id": "runtime",
+              "title": "Inspect runtime durability",
+              "prompt": "Retain active execution",
+              "dependencies": []
+            },
+            {
+              "id": "documentation",
+              "title": "Document accepted behavior",
+              "prompt": "Complete without pretending merge proof",
+              "dependencies": []
+            },
+            {
+              "id": "integration",
+              "title": "Integrate approved dependency",
+              "prompt": "Wait for readiness merge",
+              "dependencies": [
+                "readiness"
+              ]
+            },
+            {
+              "id": "followup",
+              "title": "Follow documentation result",
+              "prompt": "Completion alone cannot authorize launch",
+              "dependencies": [
+                "documentation"
+              ]
+            }
+          ]
+        },
+        "dispatch": {
+          "children": {
+            "readiness": {
+              "runId": "child-16ed9995d03898f39b9422c7c25a6b9fe03480b6",
+              "url": "/runs/child-16ed9995d03898f39b9422c7c25a6b9fe03480b6",
+              "wave": 0,
+              "dependencies": []
+            },
+            "runtime": {
+              "runId": "child-f19b050e033d608b0314c0bcb738cb8ef57a7ab0",
+              "url": "/runs/child-f19b050e033d608b0314c0bcb738cb8ef57a7ab0",
+              "wave": 0,
+              "dependencies": []
+            },
+            "documentation": {
+              "runId": "child-c4df43ce6fc5981ff79ca095b502678f0b3239f6",
+              "url": "/runs/child-c4df43ce6fc5981ff79ca095b502678f0b3239f6",
+              "wave": 0,
+              "dependencies": []
+            },
+            "integration": {
+              "runId": "child-b78b77b8681defde078db7da4209ecb65987ab3c",
+              "url": "/runs/child-b78b77b8681defde078db7da4209ecb65987ab3c",
+              "wave": 1,
+              "dependencies": [
+                "readiness"
+              ]
+            },
+            "followup": {
+              "runId": "child-fe8ca0c09b3210b6a7e078f4c4f813735b5bd110",
+              "url": "/runs/child-fe8ca0c09b3210b6a7e078f4c4f813735b5bd110",
+              "wave": 1,
+              "dependencies": [
+                "documentation"
+              ]
+            }
+          },
+          "wait": false
+        },
+        "observe": {
+          "observed": true
+        },
+        "progress": {
+          "shown": true,
+          "viewId": "9f4adfa4-0c98-421d-93fb-9ab03a8a649e"
+        },
+        "hold": {
+          "approved": true,
+          "feedback": "",
+          "fields": {},
+          "batchId": "5cbd63dd-3988-4445-859c-1d4322db8688",
+          "digest": "045130290abb9641bc8d7f60c4d5da34c0d0c6815a5768dcb1e236344b731422"
+        }
+      },
+      "history": [
+        {
+          "step": "propose",
+          "output": {
+            "items": [
+              {
+                "id": "readiness",
+                "title": "Review dependency readiness",
+                "prompt": "Retain an explicit question",
+                "dependencies": []
+              },
+              {
+                "id": "runtime",
+                "title": "Inspect runtime durability",
+                "prompt": "Retain active execution",
+                "dependencies": []
+              },
+              {
+                "id": "documentation",
+                "title": "Document accepted behavior",
+                "prompt": "Complete without pretending merge proof",
+                "dependencies": []
+              },
+              {
+                "id": "integration",
+                "title": "Integrate approved dependency",
+                "prompt": "Wait for readiness merge",
+                "dependencies": [
+                  "readiness"
+                ]
+              },
+              {
+                "id": "followup",
+                "title": "Follow documentation result",
+                "prompt": "Completion alone cannot authorize launch",
+                "dependencies": [
+                  "documentation"
+                ]
+              }
+            ]
+          },
+          "at": "2026-10-22T05:07:28.590Z"
+        },
+        {
+          "step": "dispatch",
+          "output": {
+            "children": {
+              "readiness": {
+                "runId": "child-16ed9995d03898f39b9422c7c25a6b9fe03480b6",
+                "url": "/runs/child-16ed9995d03898f39b9422c7c25a6b9fe03480b6",
+                "wave": 0,
+                "dependencies": []
+              },
+              "runtime": {
+                "runId": "child-f19b050e033d608b0314c0bcb738cb8ef57a7ab0",
+                "url": "/runs/child-f19b050e033d608b0314c0bcb738cb8ef57a7ab0",
+                "wave": 0,
+                "dependencies": []
+              },
+              "documentation": {
+                "runId": "child-c4df43ce6fc5981ff79ca095b502678f0b3239f6",
+                "url": "/runs/child-c4df43ce6fc5981ff79ca095b502678f0b3239f6",
+                "wave": 0,
+                "dependencies": []
+              },
+              "integration": {
+                "runId": "child-b78b77b8681defde078db7da4209ecb65987ab3c",
+                "url": "/runs/child-b78b77b8681defde078db7da4209ecb65987ab3c",
+                "wave": 1,
+                "dependencies": [
+                  "readiness"
+                ]
+              },
+              "followup": {
+                "runId": "child-fe8ca0c09b3210b6a7e078f4c4f813735b5bd110",
+                "url": "/runs/child-fe8ca0c09b3210b6a7e078f4c4f813735b5bd110",
+                "wave": 1,
+                "dependencies": [
+                  "documentation"
+                ]
+              }
+            },
+            "wait": false
+          },
+          "at": "2026-10-22T05:07:29.302Z"
+        },
+        {
+          "step": "observe",
+          "output": {
+            "observed": true
+          },
+          "at": "2026-10-22T05:07:29.638Z"
+        },
+        {
+          "step": "progress",
+          "output": {
+            "shown": true,
+            "viewId": "9f4adfa4-0c98-421d-93fb-9ab03a8a649e"
+          },
+          "at": "2026-10-22T05:07:29.823Z"
+        },
+        {
+          "step": "hold",
+          "output": {
+            "approved": true,
+            "feedback": "",
+            "fields": {},
+            "batchId": "5cbd63dd-3988-4445-859c-1d4322db8688",
+            "digest": "045130290abb9641bc8d7f60c4d5da34c0d0c6815a5768dcb1e236344b731422"
+          },
+          "at": "2026-10-22T05:12:12.257Z"
+        }
+      ]
+    }
+  },
+  "browser": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "devicePixelRatio": 2
+  },
+  "version": {
+    "build": "32c73ab9807a3c6248b0d42f",
+    "protocol": 1,
+    "runtime": {
+      "version": "0.2.73",
+      "commit": null,
+      "dirty": null,
+      "target": null,
+      "resourceDigest": null,
+      "packaged": false
+    },
+    "capabilities": [
+      "desktop-app-maintenance-v1"
+    ]
+  },
+  "unsavedDraftText": false
+}

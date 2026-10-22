@@ -1,0 +1,22 @@
+packages/edge-worker/test/HumanViewTicketDelivery.test.ts:324:11 lint/suspicious/noAssignInExpressions ━━━━━━━━━━
+
+  × The assignment should not be in an expression.
+  
+    322 │ 								AbortSignal.any([
+    323 │ 									AbortSignal.timeout(5000),
+  > 324 │ 									(mutationAbort = new AbortController()).signal,
+        │ 									 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    325 │ 								]),
+    326 │ 								home,
+  
+  i The use of assignments in expressions is confusing.
+    Expressions are often considered as side-effect free.
+  
+
+Checked 6 files in 76ms. Fixed 6 files.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while applying fixes.
+  
+

@@ -1,0 +1,106 @@
+{
+  "exitCode": 0,
+  "source": "667cbffd00357b2d192239f89c33d300c70a0c8e",
+  "command": "VITEST_MAX_WORKERS=1 npm_config_workspace_concurrency=1 pnpm test:packages:run",
+  "packages": [
+    {
+      "package": "bobs-factory-cloudflare-tunnel-client",
+      "filesPassed": 2,
+      "testsPassed": 26,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-core",
+      "filesPassed": 19,
+      "testsPassed": 263,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-mcp-tools",
+      "filesPassed": 14,
+      "testsPassed": 82,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-claude-runner",
+      "filesPassed": 12,
+      "testsPassed": 137,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-config-updater",
+      "filesPassed": 8,
+      "testsPassed": 52,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-github-event-transport",
+      "filesPassed": 5,
+      "testsPassed": 117,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-gitlab-event-transport",
+      "filesPassed": 1,
+      "testsPassed": 11,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-linear-event-transport",
+      "filesPassed": 6,
+      "testsPassed": 75,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-slack-event-transport",
+      "filesPassed": 3,
+      "testsPassed": 82,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-zulip-event-transport",
+      "filesPassed": 3,
+      "testsPassed": 25,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-simple-agent-runner",
+      "filesPassed": 2,
+      "testsPassed": 24,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-codex-runner",
+      "filesPassed": 17,
+      "testsPassed": 140,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-cursor-runner",
+      "filesPassed": 8,
+      "testsPassed": 56,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-gemini-runner",
+      "filesPassed": 4,
+      "testsPassed": 200,
+      "testsSkipped": 1
+    },
+    {
+      "package": "bobs-factory-opencode-runner",
+      "filesPassed": 4,
+      "testsPassed": 34,
+      "testsSkipped": 0
+    },
+    {
+      "package": "bobs-factory-edge-worker",
+      "filesPassed": 227,
+      "testsPassed": 2933,
+      "testsSkipped": 1
+    }
+  ],
+  "filesPassed": 335,
+  "testsPassed": 4257,
+  "testsSkipped": 2
+}

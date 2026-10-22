@@ -1,0 +1,36 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/codex-runner
+
+stdout | test/contextOnly.native.test.ts > enforces the exact context-only profile in the native Codex OS sandbox without model calls
+[CodexRunner] Configured 1 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+
+ ❯ test/contextOnly.native.test.ts (1 test | 1 failed) 82ms
+   × enforces the exact context-only profile in the native Codex OS sandbox without model calls 81ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/contextOnly.native.test.ts > enforces the exact context-only profile in the native Codex OS sandbox without model calls
+AssertionError: expected [Function] to throw error including 'inherited MCP server is enabled' but got 'Context-only Codex native feature is …'
+
+Expected: "inherited MCP server is enabled"
+Received: "Context-only Codex native feature is not disabled: apps_mcp_path_override"
+
+ ❯ test/contextOnly.native.test.ts:144:68
+    142|     .map(([name]) => name);
+    143|    if (inherited.length) {
+    144|     expect(() => assertContextOnlyNativeConfig(effective, config)).toT…
+       |                                                                    ^
+    145|      "inherited MCP server is enabled",
+    146|     );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  09:24:13
+   Duration  415ms (transform 130ms, setup 0ms, import 246ms, tests 82ms, environment 0ms)
+
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/codex-runner:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vitest run test/contextOnly.native.test.ts --maxWorkers=1

@@ -1,0 +1,10 @@
+
+> bobs-factory-mcp-tools@0.2.73 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools
+> tsgo
+
+src/callConfiguredTool.ts(146,17): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/callConfiguredTool.ts(151,66): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/callConfiguredTool.ts(154,48): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-mcp-tools@0.2.73 build: `tsgo`
+Exit status 2

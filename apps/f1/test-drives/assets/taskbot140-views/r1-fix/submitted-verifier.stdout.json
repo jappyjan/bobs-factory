@@ -1,0 +1,36 @@
+{
+  "version": "taskbot140-archive-v1",
+  "at": "2026-10-22T06:02:43.913Z",
+  "node": "v24.21.0",
+  "verifierSha256": "2bb35f6fef75d6fa5fefe8f1427af7b656052361fc50f7e247654dea26eaf58f",
+  "submitted": {
+    "selection": "tree",
+    "reference": "b240a54532a2d2981d260cd5d3887930a09b666a",
+    "tree": "b240a54532a2d2981d260cd5d3887930a09b666a",
+    "head": "246e422d2110ae743acb6ed561d549db0784703f",
+    "archiveExportSha256": "d5a3eb9cd0e2d7cf0e0e8401ef2eefcfc69d1709bfc3fdecf2212dec14630a3c"
+  },
+  "checks": {
+    "originalInventory": 1,
+    "archive": 186,
+    "rawLogMappings": 58,
+    "native": 18,
+    "uiEvidence": 54,
+    "items": 8,
+    "originalJsonByteHashes": 3,
+    "immutableSourceArchives": 2,
+    "f1:attempt1-request-header-omission": 7,
+    "f1:attempt2-json-prototype-comparison": 7,
+    "f1:pre-media-pass": 14,
+    "f1:final": 14,
+    "reportLinks": 41
+  },
+  "failures": [],
+  "originalCopies": {
+    "enabled": false,
+    "checked": 0,
+    "failures": [],
+    "result": "not requested"
+  },
+  "result": "pass"
+}

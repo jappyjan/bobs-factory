@@ -1,7 +1,20 @@
-import type { ChildProcessWithoutNullStreams } from "node:child_process";
+import {
+	type ChildProcessWithoutNullStreams,
+	spawnSync,
+} from "node:child_process";
 import crypto from "node:crypto";
 import { EventEmitter } from "node:events";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { cwd } from "node:process";
+import { stripVTControlCharacters } from "node:util";
 import type {
 	IAgentRunner,
 	IMessageFormatter,
@@ -16,6 +29,7 @@ import {
 	buildOpenCodeRuntimeEnv,
 	ensureOpenCodeStateDirectories,
 } from "./config.js";
+import { inspectContextStore } from "./context-store.js";
 import { OpenCodeMessageFormatter } from "./formatter.js";
 import type {
 	OpenCodeJsonEvent,
@@ -27,6 +41,22 @@ import type {
 } from "./types.js";
 
 const FORCE_KILL_DELAY_MS = 5_000;
+const REMOTE_CONFIG_ERROR =
+	"Context-only OpenCode could not verify native provider and organization configuration authority. Native history is preserved; refusing a model turn.";
+
+function safeProviderMetadata(output: string): boolean {
+	const lines = stripVTControlCharacters(output).split(/\r?\n/);
+	if (lines.some((line) => /\bwellknown\b/i.test(line))) return false;
+	const totals = lines.flatMap((line) => {
+		const match = /^[\s│└─]*([0-9]+)\s+credentials?\s*$/.exec(line);
+		return match ? [Number(match[1])] : [];
+	});
+	if (totals.length !== 1 || !Number.isSafeInteger(totals[0])) return false;
+	const entries = lines.filter((line) =>
+		/^[\s│●•ℹi]*\S.*\s+(?:api|oauth)\s*$/i.test(line),
+	);
+	return entries.length === totals[0];
+}
 
 type SDKSystemInitMessage = Extract<
 	SDKMessage,
@@ -374,8 +404,9 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 		};
 
 		const selectorError = this.validateModelSelector();
-		if (selectorError) {
-			this.finalizeSession(selectorError);
+		const profileError = this.contextProfileProblem();
+		if (selectorError || profileError) {
+			this.finalizeSession(selectorError ?? profileError);
 			return this.sessionInfo;
 		}
 
@@ -539,6 +570,149 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 		);
 	}
 
+	private contextProfileReceipt(sessionId: string): string {
+		return join(
+			this.config.factoryHome,
+			"opencode-context-profiles",
+			`${crypto.createHash("sha256").update(sessionId).digest("hex")}.json`,
+		);
+	}
+	private contextProfileProblem(): Error | undefined {
+		if (this.config.toolProfile !== "context-only") return;
+		const managed =
+			process.platform === "darwin"
+				? "/Library/Application Support/opencode"
+				: process.platform === "win32"
+					? join(process.env.ProgramData || "C:\\ProgramData", "opencode")
+					: "/etc/opencode";
+		if (
+			["opencode.json", "opencode.jsonc"].some((name) =>
+				existsSync(join(managed, name)),
+			)
+		)
+			return new Error(
+				"Context-only OpenCode cannot run with managed configuration that may override its permissions.",
+			);
+		if (!this.config.resumeSessionId) return this.nativePermissionProblem();
+		try {
+			const receipt = JSON.parse(
+				readFileSync(
+					this.contextProfileReceipt(this.config.resumeSessionId),
+					"utf8",
+				),
+			);
+			if (
+				receipt.profile === "context-only-v1" &&
+				receipt.sessionId === this.config.resumeSessionId &&
+				receipt.directory === resolve(this.config.workingDirectory || cwd()) &&
+				receipt.dataHome === buildOpenCodeRuntimeEnv(this.config).XDG_DATA_HOME
+			)
+				return this.nativePermissionProblem();
+		} catch {
+			// Original native history remains in place; never silently start anew.
+		}
+		return new Error(
+			"This OpenCode conversation has no matching context-only permission receipt. Its native history is preserved; refusing to resume broader saved permissions.",
+		);
+	}
+	private nativePermissionProblem(): Error | undefined {
+		try {
+			return this.checkNativePermissions();
+		} catch {
+			return new Error(
+				"Context-only OpenCode could not verify that native saved permissions are restricted. Native history is preserved; refusing a model turn.",
+			);
+		}
+	}
+	private checkNativePermissions(): Error | undefined {
+		const runtimeEnv = buildOpenCodeRuntimeEnv(this.config);
+		const dataHome = runtimeEnv.XDG_DATA_HOME;
+		if (!dataHome) throw new Error("Missing native data store");
+		// This check precedes EVERY native invocation, including --version. Native
+		// startup itself migrates pre-SQLite history before command handlers.
+		const store = inspectContextStore(dataHome, this.config.resumeSessionId);
+		if (store.remoteOrg) return new Error(REMOTE_CONFIG_ERROR);
+		const env = {
+			...(this.config.childEnvironment ?? process.env),
+			...this.config.env,
+			...this.config.additionalEnv,
+			...runtimeEnv,
+			OPENCODE_DISABLE_MODELS_FETCH: "1",
+		};
+		// Version discovery runs against an empty factory-owned data directory,
+		// never the original native store. Only the audited startup is supported.
+		const parent = join(
+			this.config.factoryHome,
+			"opencode-state",
+			"context-only",
+		);
+		mkdirSync(parent, { recursive: true, mode: 0o700 });
+		const probe = mkdtempSync(join(parent, "metadata-version-"));
+		try {
+			const version = spawnSync(
+				this.config.openCodePath || "opencode",
+				["--version"],
+				{
+					cwd: this.config.workingDirectory || cwd(),
+					env: { ...env, XDG_DATA_HOME: probe },
+					encoding: "utf8",
+					timeout: 5_000,
+					maxBuffer: 16_384,
+				},
+			);
+			if (
+				version.error ||
+				version.status !== 0 ||
+				version.stdout.trim() !== "1.2.27"
+			)
+				throw new Error("Unsupported native version");
+		} finally {
+			rmSync(probe, { recursive: true, force: true });
+		}
+		store.verify();
+		if (!store.fresh && existsSync(join(dataHome, "opencode", "auth.json"))) {
+			// Native prints types only; credential values remain in its own store.
+			// The schema gate above cannot initialize/migrate native history. The
+			// pinned metadata command uses no original-store writes or model fetch.
+			const metadata = spawnSync(
+				this.config.openCodePath || "opencode",
+				["providers", "list", "--print-logs"],
+				{
+					cwd: this.config.workingDirectory || cwd(),
+					env,
+					encoding: "utf8",
+					timeout: 5_000,
+					maxBuffer: 16_384,
+				},
+			);
+			if (
+				metadata.error ||
+				metadata.status !== 0 ||
+				!safeProviderMetadata(metadata.stdout)
+			)
+				return new Error(REMOTE_CONFIG_ERROR);
+		}
+		store.verify();
+		return;
+	}
+
+	private retainContextProfile(sessionId: string) {
+		if (this.config.toolProfile !== "context-only" || sessionId === "pending")
+			return;
+		const path = this.contextProfileReceipt(sessionId);
+		mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
+		writeFileSync(
+			path,
+			JSON.stringify({
+				profile: "context-only-v1",
+				sessionId,
+				directory: resolve(this.config.workingDirectory || cwd()),
+				dataHome: buildOpenCodeRuntimeEnv(this.config).XDG_DATA_HOME,
+			}),
+			{ mode: 0o600 },
+		);
+	}
+
 	private buildRuntimeEnv(): Record<string, string> {
 		const built = buildOpenCodeConfig(this.config);
 		for (const entry of built.unsupported) {
@@ -568,8 +742,13 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 		}
 		if (this.config.modelVariant)
 			args.push("--variant", this.config.modelVariant);
-		if (this.config.agent) {
-			args.push("--agent", this.config.agent);
+		if (this.config.toolProfile === "context-only" || this.config.agent) {
+			args.push(
+				"--agent",
+				this.config.toolProfile === "context-only"
+					? "factory-context-only"
+					: this.config.agent!,
+			);
 		}
 		if (this.config.resumeSessionId) {
 			args.push("--session", this.config.resumeSessionId);
@@ -613,6 +792,14 @@ export class OpenCodeRunner extends EventEmitter implements IAgentRunner {
 			case "step_start": {
 				const sessionId =
 					event.sessionID || event.sessionId || event.session_id || "pending";
+				try {
+					this.retainContextProfile(sessionId);
+				} catch (error) {
+					const child = this.process;
+					this.finalizeSession(error);
+					child?.kill("SIGTERM");
+					return;
+				}
 				if (this.sessionInfo) {
 					this.sessionInfo.sessionId = sessionId;
 				}

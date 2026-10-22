@@ -1,0 +1,222 @@
+{
+  "head": "b25ae470b858b0e059603566ec144178ce38fee6",
+  "claim": "Appearance/resource/provider-only input reuse. Changed core dispatch control, configured/native MCP, Linear delivery and TicketTracking/ViewRuntime/EdgeWorker backend are excluded and receive fresh gates/F1/native. No live model/device/OS-reader or whole-dist equivalence claim.",
+  "uiSources": {
+    "packages/edge-worker/src/factory/web/declarative-view.tsx": "d66145a2456bec915ab4119816bb30e9188fdb38b0d898b14a7242a914773414",
+    "packages/edge-worker/src/factory/web/declarative-view.css": "053efc5c190575d08952246583d55880efcd15b016fe1a77a1e7b6124a97d333",
+    "packages/edge-worker/src/factory/web/focus.tsx": "ec133cb7ec67d4493ec8565541833e1011bc23404cd367e0b60562b786cd641a",
+    "packages/edge-worker/src/factory/web/styles.css": "95a2df526be61ede4ff216696e49c7ac2cc2c753901cf2dccd53ab81fe158bb1",
+    "packages/edge-worker/src/factory/web/app.tsx": "a2188397d5723aa50c4065b8b5f1451b223ba4b05841b3cb043b0c8f25073d19",
+    "packages/edge-worker/src/factory/web/human-step-settings.tsx": "c2a5b91c1f3119feada97f942abcdb714baea280c9f79edc31ec19351f6520f4",
+    "packages/edge-worker/src/factory/web/recipe-builder.tsx": "176bda6a97e629491598d2a549a1f689cabb2ec4358c6d197a5b3c592530a0e2",
+    "packages/edge-worker/src/factory/web/recipe-graph.ts": "dc57b60e8879e4d1a3a4b8381ddc37e4487c6a415358b130da9d53ceb0bcb771",
+    "packages/edge-worker/src/factory/ViewPresentation.ts": "98aa790cd256ab57034430383a9aac4d7f111f3c3be0b641c23bc501515f7426",
+    "packages/edge-worker/src/factory/ViewText.ts": "a5132573355ac1c823e3e2a2add4967b6461cb980b41a7bf02d4dce713627cf7"
+  },
+  "images": [
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-390px-dark.png",
+      "bytes": 227698,
+      "sha256": "62b520d125e91e8be3efd9d95c8987d65720480fdf89eaaaf8add0c53e72f16a"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-390px-light.png",
+      "bytes": 206718,
+      "sha256": "0f54814dd2ef220d0c3b5fe1973064264995ca91254e14b7aeb41e581ad89958"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-desktop-dark.png",
+      "bytes": 197216,
+      "sha256": "5b2e78a7b88e18ae013041a6472e3b140680e5bd93a44cf4494c2c18adaff26b"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/approve-desktop-light.png",
+      "bytes": 205596,
+      "sha256": "dc1989abd41df48c381e70218a244de418a1c179727b7cdc8553313518679811"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/decide-390px-dark.png",
+      "bytes": 236059,
+      "sha256": "c8ae815eee8e2376cb40a9cf8131cbe6b0a33864f02b4e12765edf768a9b74b5"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/decide-390px-light.png",
+      "bytes": 214907,
+      "sha256": "93834e4a3a8024ae0a00067f0111f21e7a99fa9b07b3928c0663c975947bdeae"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/decide-desktop-dark.png",
+      "bytes": 201430,
+      "sha256": "9465b225817cdcee3b485ad116fed1e3c5ccf63734c6bd20f1f889c4b81a0cc0"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/decide-desktop-light.png",
+      "bytes": 167893,
+      "sha256": "9472e570407850a340986bc2150a1952cd4a22d5cf7bd698a5fe4fbb1ab246af"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/run-list-390px-dark.png",
+      "bytes": 246738,
+      "sha256": "7b9e5cbe8d494afacfc9de8d207d289a62dd1eae3be328230fdd1b43de46d4fb"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/run-list-390px-light.png",
+      "bytes": 224731,
+      "sha256": "78b34e814a36d43e2ebe8e56f823375884032cba6932d0e3172805634a0b537b"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/run-list-desktop-dark.png",
+      "bytes": 222248,
+      "sha256": "f55ca669e44ce73109274ea413c3af454e398bd43431f62e7460da79d2afc51c"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/ui/final/run-list-desktop-light.png",
+      "bytes": 180575,
+      "sha256": "535f674ef1d74e5b48365b128e7b640bc57f4aa473d9770d894107688637f65c"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/ui/builder-390px-dark-consent.png",
+      "bytes": 151940,
+      "sha256": "edfdd4d200a8d988aa30c8f03aa64b909ed882cca55991aa961f18c80196336e"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/ui/builder-390px-dark-preview.png",
+      "bytes": 125504,
+      "sha256": "f5a857383a89a972a0fb5eaadbcd615c27e18350cadc63bd33dfd968137715c4"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/ui/builder-390px-light-consent.png",
+      "bytes": 146583,
+      "sha256": "7952efca283392e8bb69a89e3df0d1f68761448f1a8660ef71d909ce02d2af1b"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/ui/builder-390px-light-preview.png",
+      "bytes": 120318,
+      "sha256": "cbc5c5250d820c9f04931643db52171ac92754c90607674be71d287a58e5de50"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/ui/builder-desktop-dark-consent.png",
+      "bytes": 155658,
+      "sha256": "b82765a2eeb9c4d03cc063a41dd8635bfcb25e244c8c6609d93cb7d3422d5210"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/ui/builder-desktop-dark-preview.png",
+      "bytes": 160859,
+      "sha256": "0530343b09bf4498e790e1ac9f04d63804679065bb6eda7a153615a617b7525e"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/ui/builder-desktop-light-consent.png",
+      "bytes": 153555,
+      "sha256": "47ed140d295e5a8882d40f7550cd251078c70bf8073720e0306d99b35326fc0f"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/ui/builder-desktop-light-preview.png",
+      "bytes": 156517,
+      "sha256": "7741a5a72ce5a683309f0400f602f7ccdeda392d87ee7bfbcbe79a75cbe3ae67"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round3/ui/failure-desktop-light.png",
+      "bytes": 134355,
+      "sha256": "cf0cde97ebdbfea3ec886dde259a22e222e6fdb949a07ddfccb3d0c62ffcbc87"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round3/ui/failure-390-dark.png",
+      "bytes": 174470,
+      "sha256": "a9d06fa883ac3b08412ab66588d3fe30771faabf28455c09a70eed45e3c4dcb5"
+    },
+    {
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round3/ui/answered-390-dark.png",
+      "bytes": 201273,
+      "sha256": "cb19733998085c9f076237438fd91e489593cb415f7da133fb36c3783eacb46b"
+    }
+  ],
+  "nativeProviderInputs": {
+    "packages/opencode-runner/src/OpenCodeRunner.ts": "630f8491f49657a50332cf97a6eeb47fb205be4f46db5135cb9e932a57ac6b93",
+    "packages/opencode-runner/src/context-store.ts": "cbe23296b37bfa5fb2d9a947630df0d3577d0f1152dc0795dfabb3b6ff9a7d70",
+    "packages/opencode-runner/src/config.ts": "56ee45075f2b0ad8bb740f6e016db77d6e087fe7af4f0682375a50a09095ce67",
+    "packages/opencode-runner/src/types.ts": "3074a3826702387238f1683e1f003d5b7f4180d61e7bcaa7bd0996dae0cad1ba",
+    "packages/opencode-runner/src/node-sqlite.d.ts": "a171687cbbd301c2f73cbdd3022799fb32ba0f654c5e60f7d0802617f2e66b2c",
+    "packages/opencode-runner/dist/OpenCodeRunner.js": "33c71f3eaf3bc5cff4385ee346063963899f75982eecc38e2ed0f70c99feecb1",
+    "packages/opencode-runner/dist/context-store.js": "4ef7941ebc1bd0c3ba4c75d06c0e557582c66841b0ec18d11d370e2d8cb14a05",
+    "packages/opencode-runner/test/fixtures/context-store.ts": "bca561b3d50d92cfd59fad25bf660d9124725e8cc8aa6e0c520aa5330caad241"
+  },
+  "codexNativeInputs": {
+    "packages/core/src/agent-runner-types.ts": "ea2f81b53a7efb5719a0fdc380c7cb05a7287b61f9749b900152ff86dd52b52b",
+    "packages/codex-runner/src/CodexRunner.ts": "ecb00bee1c25f6eba1e64757d378a51f6e4dc3f0426e206cef58c7283f4f1bb4",
+    "packages/codex-runner/src/backend/types.ts": "55648f38e00886b04ee816194e0007703cf1d9725081604eb153e140a484371a",
+    "packages/codex-runner/src/backend/AppServerCodexBackend.ts": "73f43da652565d4f55c5a2b2e5de978d399a348415ca800e576ef61543255b03",
+    "packages/codex-runner/src/backend/appServerClient.ts": "9f9dea8e309ed3ea077f1bba6a314e4a6e63556bd3640d7a95d32c4f364e42e4",
+    "packages/codex-runner/src/backend/appServerProcess.ts": "c2b4a4ba22818f07f69cc212b9ec8b2d2b1f284631a5551bc67e7c214155df6a",
+    "packages/codex-runner/src/config/CodexConfigBuilder.ts": "a63ffb27c9d79a7288b85f5925b75aea588dfebf8de3feeabee23133cbdff3ce",
+    "packages/codex-runner/src/config/contextOnly.ts": "dc3cf4b39911c240ef1c7a6a975e618a303a75c74c087d7313462b52acdf904a",
+    "packages/codex-runner/test/contextOnly.test.ts": "c6048590e553955fc1c6fc1c7615dd08050c10ce391935b79f90319fc6a1fe24",
+    "packages/codex-runner/test/contextOnly.native.test.ts": "b729088530fe12564de27571f95311649660481a542dbbe4df6c17d7a881e0d9"
+  },
+  "historicalVisibleProjections": [
+    {
+      "kind": "decide",
+      "projection": "decision",
+      "normalizedSha256": "de8e174d6fb69a07bac999dd3f4758d359f6127e027c64008b1a9808ed66467f"
+    },
+    {
+      "kind": "approve",
+      "projection": "decision",
+      "normalizedSha256": "ab1b96d87e8414290bf8bb7ec0f24f3f1ebd3e639a263ba5cc02ecec58c4ea74"
+    },
+    {
+      "kind": "runs",
+      "projection": "decision",
+      "normalizedSha256": "92fd91f5853b5bb8a4ff22ebec26011fbfa1fc69b317856fd331152e4bd344d5"
+    },
+    {
+      "kind": "runs",
+      "projection": "Show",
+      "normalizedSha256": "b7c51efb2257cc93b2d7d49522b4895f5af5ae7644ca757f3e79ff35f81e3229"
+    }
+  ],
+  "limits": [
+    "23 images retain original execution/source identities; this is no new browser execution.",
+    "Four initial projection equalities were executed and authenticated on94; no changed runtime/protocol/approval equivalence is inferred from those historical projections.",
+    "Current fresh workflow tests and three drives cover final configured MCP dispatch, native durable/paced retry, source rotation and exact current answer protocol. Reused native permission/OS-denial evidence does not cover new MCP transport code."
+  ],
+  "shell": "b6c096735522dd1c43f9750f",
+  "shellAssets": [
+    {
+      "path": "/app.6a33667cbb51eaff0ef37e1b.js",
+      "sha256": "6a33667cbb51eaff0ef37e1bf37555651d422b882c33908467c96bf958e42d4a"
+    },
+    {
+      "path": "/styles.6846ba8d2fed98aee259d76c.css",
+      "sha256": "6846ba8d2fed98aee259d76c0735455de84de134ceeab23f90062041f4bd511a"
+    },
+    {
+      "path": "/",
+      "sha256": "a20e8be5d8e818ee410fce5946b8b1e4abbf93cb0fd1b1d037c6d0b90dae2734"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "sha256": "5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004"
+    },
+    {
+      "path": "/icons/icon-192.png",
+      "sha256": "85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961"
+    },
+    {
+      "path": "/icons/icon-512.png",
+      "sha256": "3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86"
+    },
+    {
+      "path": "/icons/maskable-512.png",
+      "sha256": "4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9"
+    },
+    {
+      "path": "/icons/apple-touch-icon.png",
+      "sha256": "87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4"
+    },
+    {
+      "path": "/sw.js",
+      "sha256": "2ac9bdf6e06459b8ad8c3ec8773d8ff899a82b226d8821310b6648bbcc2509d8"
+    }
+  ],
+  "result": "PASS"
+}

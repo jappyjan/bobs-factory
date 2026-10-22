@@ -1,0 +1,11 @@
+src/factory/ViewRuntime.ts(9,58): error TS6133: 'ResolvedView' is declared but its value is never read.
+src/factory/ViewRuntime.ts(60,114): error TS7030: Not all code paths return a value.
+src/factory/ViewRuntime.ts(133,25): error TS2339: Property 'output' does not exist on type 'never'.
+src/factory/ViewRuntime.ts(198,355): error TS2783: 'prompt' is specified more than once, so this usage will be overwritten.
+src/factory/ViewRuntime.ts(198,673): error TS2322: Type 'AgentCheckpoint' is not assignable to type '{ [key: string]: unknown; runner?: string | undefined; sessionId?: string | undefined; }'.
+  Index signature for type 'string' is missing in type 'AgentCheckpoint'.
+src/factory/ViewRuntime.ts(211,35): error TS2550: Property 'findLast' does not exist on type 'ViewRecord[]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2023' or later.
+src/factory/ViewRuntime.ts(211,44): error TS7006: Parameter 'record' implicitly has an 'any' type.
+undefined
+/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
+ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: tsgo --noEmit

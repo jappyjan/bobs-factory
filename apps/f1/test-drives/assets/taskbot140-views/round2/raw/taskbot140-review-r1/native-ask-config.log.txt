@@ -1,0 +1,94 @@
+2026-10-22T05:59:46.280Z [INFO ] [EdgeWorker] Deployed default skills to /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/home/bobs-factory-skills-plugin (5 skills)
+2026-10-22T05:59:46.286Z [INFO ] [EdgeWorker] Scaffolded user-skills plugin manifest at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/home/user-skills-plugin/.claude-plugin/plugin.json
+2026-10-22T05:59:46.287Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
+2026-10-22T05:59:46.287Z [INFO ] [EdgeWorker] 🛡️  Sandbox egress proxy: disabled (set sandbox.enabled=true in config.json to enable)
+2026-10-22T05:59:46.305Z [INFO ] [EdgeWorker] Software factory UI: http://127.0.0.1:62821
+2026-10-22T05:59:46.307Z [INFO ] [LinearEventTransport] Registered POST /linear-webhook endpoint (proxy mode); POST /webhook retained as deprecated alias
+2026-10-22T05:59:46.307Z [INFO ] [EdgeWorker] ✅ Ticket manager listeners registered; connections follow saved settings
+2026-10-22T05:59:46.307Z [INFO ] [GitHubEventTransport] Registered POST /github-webhook endpoint (proxy mode)
+2026-10-22T05:59:46.307Z [INFO ] [EdgeWorker] GitHub event transport registered (proxy mode)
+2026-10-22T05:59:46.307Z [INFO ] [EdgeWorker] Webhook endpoint: POST /github-webhook
+2026-10-22T05:59:46.307Z [INFO ] [GitLabEventTransport] Registered POST /gitlab-webhook endpoint (proxy mode)
+2026-10-22T05:59:46.307Z [INFO ] [EdgeWorker] GitLab event transport registered (proxy mode)
+2026-10-22T05:59:46.307Z [INFO ] [EdgeWorker] Webhook endpoint: POST /gitlab-webhook
+2026-10-22T05:59:46.307Z [INFO ] [SlackEventTransport] Registered POST /slack-webhook endpoint (proxy mode)
+2026-10-22T05:59:46.307Z [INFO ] [EdgeWorker] Slack event transport registered (proxy mode)
+2026-10-22T05:59:46.308Z [INFO ] [EdgeWorker] ✅ Config updater registered
+2026-10-22T05:59:46.308Z [INFO ] [EdgeWorker]    Routes: /api/update/bobs-factory-config, /api/update/bobs-factory-env,
+2026-10-22T05:59:46.308Z [INFO ] [EdgeWorker]            /api/update/repository, /api/update/test-mcp, /api/update/configure-mcp
+✅ Bob’s Factory tools MCP endpoint registered at /mcp/bobs-factory-tools
+2026-10-22T05:59:46.309Z [INFO ] [EdgeWorker] ✅ Status endpoint registered
+2026-10-22T05:59:46.309Z [INFO ] [EdgeWorker]    Route: GET /status
+2026-10-22T05:59:46.309Z [INFO ] [EdgeWorker] ✅ Version endpoint registered
+2026-10-22T05:59:46.309Z [INFO ] [EdgeWorker]    Route: GET /version
+2026-10-22T05:59:46.310Z [INFO ] [SharedApplicationServer] Shared application server listening on http://127.0.0.1:62820
+2026-10-22T05:59:46.327Z [INFO ] [EdgeWorker] [event:webhook_received] {"source":"linear","action":"created","type":"AgentSessionEvent","repoCount":1}
+2026-10-22T05:59:46.332Z [INFO ] [RepositoryRouter] Repository selected: Probe (workspace catch-all)
+2026-10-22T05:59:46.332Z [INFO ] [EdgeWorker] No baseBranchOverrides from routing result
+2026-10-22T05:59:46.332Z [INFO ] [EdgeWorker] {session=session-, platform=cli, issue=DEF-1} Handling agent session created
+2026-10-22T05:59:46.335Z [INFO ] [EdgeWorker] createCyrusAgentSession: passing baseBranchOverrides=undefined, useCustomHandler=false
+2026-10-22T05:59:46.353Z [INFO ] [GitService] createGitWorktree: baseBranchOverrides=undefined, repoId=probe, overrideValue=undefined
+2026-10-22T05:59:46.354Z [INFO ] [GitService] createSingleRepoWorktree for Probe (id=probe): baseBranchOverride=undefined
+2026-10-22T05:59:46.531Z [INFO ] [GitService] Creating git worktree at /var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/worktrees/DEF-1 from origin/main (tracking main)
+2026-10-22T05:59:46.614Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Tracking session for issue issue-1
+2026-10-22T05:59:46.678Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Starting agent session for issue DEF-1
+2026-10-22T05:59:46.678Z [INFO ] [EdgeWorker] {session=session-, issue=DEF-1} Building initial prompt for issue DEF-1
+2026-10-22T05:59:47.072Z [INFO ] [AgentSessionManager] {session=session-, platform=linear, issue=DEF-1} Session completed (subtype: success)
+[CodexRunner] Configured 2 MCP server(s) for codex config (docs: https://platform.openai.com/docs/docs-mcp)
+{
+  "type": "codex",
+  "config": {
+    "workingDirectory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/worktrees/DEF-1",
+    "allowedTools": [
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context",
+      "mcp__factory-context__list_context",
+      "mcp__factory-context__read_context",
+      "mcp__factory-context__submit_result_artifact"
+    ],
+    "disallowedTools": [
+      "Agent",
+      "Task",
+      "AskUserQuestion"
+    ],
+    "strictMcpConfig": true,
+    "additionalDirectories": [
+      "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/home/factory/evidence/session-1"
+    ],
+    "mcpServerNames": [
+      "cyrus-docs",
+      "factory-context"
+    ]
+  },
+  "resolvedNative": {
+    "sandbox": {
+      "kind": "workspace-mode",
+      "mode": "danger-full-access",
+      "writableRoots": [
+        "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/worktrees/DEF-1",
+        "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/repo",
+        "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/home/factory/evidence/session-1",
+        "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el/home/DEF-1/attachments"
+      ],
+      "networkAccess": true
+    },
+    "approvalPolicy": "never",
+    "features": {
+      "multi_agent": false
+    },
+    "mcpServers": [
+      "cyrus-docs",
+      "factory-context"
+    ]
+  },
+  "thread": {
+    "id": "e1f41e08-2f57-4a18-9ae9-275514e3be01",
+    "question": "Explain Alpha",
+    "status": "answered",
+    "at": "2026-10-22T05:59:46.902Z",
+    "answer": "Exact retained item explained."
+  },
+  "home": "/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/review140-actual-ask-3n61el"
+}
+2026-10-22T05:59:47.287Z [INFO ] [EdgeWorker] ✅ EdgeWorker state saved successfully
+2026-10-22T05:59:47.287Z [INFO ] [SharedApplicationServer] Shared application server stopped

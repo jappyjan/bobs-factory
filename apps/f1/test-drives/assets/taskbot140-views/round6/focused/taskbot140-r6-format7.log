@@ -1,0 +1,47 @@
+packages/edge-worker/test/HumanViewTicketDelivery.test.ts:1647:7 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    1645 │ 			original,
+    1646 │ 			disposition === "different"
+  > 1647 │ 				? original + "\nExternally changed body"
+         │ 				  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    1648 │ 				: undefined,
+    1649 │ 		);
+  
+  i Unsafe fix: Use a template literal.
+  
+    1645 1645 │         original,
+    1646 1646 │         disposition === "different"
+    1647      │ - → → → → ?·original·+·"\nExternally·changed·body"
+         1647 │ + → → → → ?·`${original}\nExternally·changed·body`
+    1648 1648 │           : undefined,
+    1649 1649 │       );
+  
+
+packages/edge-worker/test/HumanViewTicketDelivery.test.ts:1677:27 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    1675 │ 		if (disposition === "unavailable") f.setReadUnavailable(false);
+    1676 │ 		else
+  > 1677 │ 			f.replaceRemoteComment(original + "\nExternally changed body", original);
+         │ 			                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    1678 │ 		await f.service.flush(restored);
+    1679 │ 		expect(retained.delivered).toBe(true);
+  
+  i Unsafe fix: Use a template literal.
+  
+    1675 1675 │       if (disposition === "unavailable") f.setReadUnavailable(false);
+    1676 1676 │       else
+    1677      │ - → → → f.replaceRemoteComment(original·+·"\nExternally·changed·body",·original);
+         1677 │ + → → → f.replaceRemoteComment(`${original}\nExternally·changed·body`,·original);
+    1678 1678 │       await f.service.flush(restored);
+    1679 1679 │       expect(retained.delivered).toBe(true);
+  
+
+Skipped 2 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 1 file in 98ms. Fixed 1 file.
+Found 2 infos.

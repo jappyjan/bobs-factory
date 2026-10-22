@@ -1,0 +1,108 @@
+{
+  "head": "20dc81e7aa61b2af924325c8b3f34875fa4fa683",
+  "tree": "7be5c44949f9e341c9128e5be0e1f3a92862d42c",
+  "base": "fa866b3d18a880a72fb59f19bfc88195cd4db762",
+  "branch": "taskbot/140-views",
+  "cwd": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views",
+  "node": "v24.21.0",
+  "pid": 47313,
+  "startedAt": "2026-10-22T09:37:58.069Z",
+  "sourceFingerprint": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f",
+  "commands": [
+    {
+      "name": "build",
+      "command": "pnpm",
+      "args": [
+        "build"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round4-final-validation/build.log",
+      "startedAt": "2026-10-22T09:37:58.197Z",
+      "pid": 47429,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T09:38:02.578Z",
+      "bytes": 3166,
+      "sha256": "870616d650deca7282a335cb9410d71b1a518791e28fb5373ef306f41af34bbc",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    },
+    {
+      "name": "typecheck",
+      "command": "pnpm",
+      "args": [
+        "typecheck"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round4-final-validation/typecheck.log",
+      "startedAt": "2026-10-22T09:38:02.845Z",
+      "pid": 47823,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T09:38:06.439Z",
+      "bytes": 1865,
+      "sha256": "90e4b27139c8eaa46b590819f95edc8e826807ed952149b69490368df1c95c42",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    },
+    {
+      "name": "lint",
+      "command": "pnpm",
+      "args": [
+        "lint"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round4-final-validation/lint.log",
+      "startedAt": "2026-10-22T09:38:06.684Z",
+      "pid": 48196,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T09:38:08.016Z",
+      "bytes": 14696,
+      "sha256": "26f0ec7b462d9fb1e84446ed1499b9e4647e7eab3e17411f98a630907c7fdae3",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    },
+    {
+      "name": "f1",
+      "command": "node",
+      "args": [
+        "apps/f1/test-drives/assets/taskbot140-views-round4.mjs"
+      ],
+      "env": {
+        "F1_AGENT_MODE": "mock",
+        "F1_EXPECTED_SOURCE_COMMIT": "20dc81e7aa61b2af924325c8b3f34875fa4fa683"
+      },
+      "log": "/tmp/taskbot140-round4-final-validation/f1.log",
+      "startedAt": "2026-10-22T09:38:08.260Z",
+      "pid": 48260,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T09:38:34.759Z",
+      "bytes": 853010,
+      "sha256": "ae1d4c1a2f492202154b8c29b6cc29c9b7ab6c80e6779e21cc562ffa064731dd",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    },
+    {
+      "name": "packages",
+      "command": "pnpm",
+      "args": [
+        "test:packages:run"
+      ],
+      "env": {
+        "VITEST_MAX_WORKERS": "1",
+        "npm_config_workspace_concurrency": "1"
+      },
+      "log": "/tmp/taskbot140-round4-final-validation/packages.log",
+      "startedAt": "2026-10-22T09:38:35.148Z",
+      "pid": 51396,
+      "code": null,
+      "signal": "SIGTERM",
+      "finishedAt": "2026-10-22T09:38:42.770Z",
+      "bytes": 1319,
+      "sha256": "1abd335f33302a66cbd2a11b0099fb050d23f9798f85c382db09a2f0b1831cfd",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    }
+  ],
+  "result": "stopped",
+  "stopSignal": "SIGTERM",
+  "finishedAt": "2026-10-22T09:38:42.905Z",
+  "finalStatus": ""
+}

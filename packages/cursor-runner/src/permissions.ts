@@ -17,6 +17,7 @@ import { type Dirent, readdirSync } from "node:fs";
 import { join, parse as pathParse, resolve } from "node:path";
 
 export interface CyrusPermissionsConfig {
+	toolProfile?: "context-only";
 	workspace: string;
 	allow: string[];
 	deny: string[];
@@ -287,6 +288,7 @@ export function buildAutoDenyPatterns(args: {
  * allow/deny pattern lists in Cursor hook syntax.
  */
 export function buildCyrusPermissionsConfig(args: {
+	toolProfile?: "context-only";
 	workspace: string;
 	allowedTools?: string[];
 	disallowedTools?: string[];
@@ -303,7 +305,12 @@ export function buildCyrusPermissionsConfig(args: {
 	} = args;
 
 	const allow = new Set<string>();
-	for (const pattern of allowedTools) {
+	for (const pattern of args.toolProfile === "context-only"
+		? [
+				"mcp__factory-context__list_context",
+				"mcp__factory-context__read_context",
+			]
+		: allowedTools) {
 		for (const mapped of mapToolPatternToHookPatterns(pattern)) {
 			allow.add(mapped);
 		}
@@ -321,6 +328,8 @@ export function buildCyrusPermissionsConfig(args: {
 
 	const mcpServers: CyrusPermissionsMcpServer[] = [];
 	for (const [name, server] of Object.entries(mcpServersIn)) {
+		if (args.toolProfile === "context-only" && name !== "factory-context")
+			continue;
 		if (!server || typeof server !== "object") continue;
 		if (typeof server.url === "string" && server.url) {
 			mcpServers.push({ name, url: server.url });
@@ -332,6 +341,7 @@ export function buildCyrusPermissionsConfig(args: {
 	}
 
 	return {
+		...(args.toolProfile && { toolProfile: args.toolProfile }),
 		workspace: resolve(workspace),
 		allow: [...allow],
 		deny: [...deny],

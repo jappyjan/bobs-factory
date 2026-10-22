@@ -1,4 +1,8 @@
-import type { AgentRunnerConfig, McpServerConfig } from "bobs-factory-core";
+import type {
+	AgentRunnerConfig,
+	DispatchControl,
+	McpServerConfig,
+} from "bobs-factory-core";
 import { AppServerClient } from "./backend/appServerClient.js";
 import { resolveCodexAppServerLaunch } from "./backend/codexBinary.js";
 import { buildCodexMcpServersConfig } from "./config/mcpConfigTranslator.js";
@@ -25,6 +29,7 @@ async function codexMcpRequest(
 	tool: string | undefined,
 	args: Record<string, unknown>,
 	signal: AbortSignal,
+	dispatch?: DispatchControl,
 ): Promise<unknown> {
 	signal.throwIfAborted();
 	const servers = buildCodexMcpServersConfig({
@@ -34,7 +39,7 @@ async function codexMcpRequest(
 	if (!servers?.[serverName])
 		throw new Error(`MCP server ${serverName} cannot be loaded by Codex`);
 	// Required startup waits for catalog initialization before status is inspected.
-	if (tool === undefined) servers[serverName]!.required = true;
+	if (tool === undefined || dispatch) servers[serverName]!.required = true;
 	const { command, args: launchArgs } = resolveCodexAppServerLaunch(
 		config.codexPath,
 	);
@@ -110,24 +115,30 @@ async function codexMcpRequest(
 			detail: "toolsAndAuthOnly",
 		});
 		signal.throwIfAborted();
-		if (tool === undefined) {
+		if (tool === undefined || dispatch) {
 			const entry = status.data?.find((item) => item.name === serverName);
 			if (
 				!entry ||
 				entry.toolsError ||
-				(entry.runtimeStatus && entry.runtimeStatus !== "connected")
+				(dispatch
+					? entry.runtimeStatus !== "connected"
+					: entry.runtimeStatus && entry.runtimeStatus !== "connected")
 			)
 				throw new Error(
 					`MCP discovery failed: ${entry?.toolsError || entry?.runtimeStatus || "missing server"}`,
 				);
-			return;
+			if (tool === undefined) return;
 		}
-		const result = await client.request<McpToolResult>("mcpServer/tool/call", {
-			threadId: thread.id,
-			server: serverName,
-			tool,
-			arguments: args,
-		});
+		const write = () =>
+			client.request<McpToolResult>("mcpServer/tool/call", {
+				threadId: thread.id,
+				server: serverName,
+				tool,
+				arguments: args,
+			});
+		const result = await (dispatch
+			? (await dispatch.run(write)).value
+			: write());
 		signal.throwIfAborted();
 		if (result.isError) {
 			const message = result.content
@@ -156,8 +167,17 @@ export function callCodexMcpTool(
 	tool: string,
 	args: Record<string, unknown>,
 	signal: AbortSignal,
+	dispatch?: DispatchControl,
 ) {
-	return codexMcpRequest(config, serverName, server, tool, args, signal);
+	return codexMcpRequest(
+		config,
+		serverName,
+		server,
+		tool,
+		args,
+		signal,
+		dispatch,
+	);
 }
 
 /** Discover the selected server through native authentication without a model turn. */

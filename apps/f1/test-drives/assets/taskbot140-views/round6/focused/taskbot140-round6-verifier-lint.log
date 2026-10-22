@@ -1,0 +1,23 @@
+apps/f1/test-drives/assets/taskbot140-round6-archive-verify.mjs:104:72 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    102 │  ["round4/archive-sha256.json",equivalence.pinnedOriginal707Inventory],
+    103 │  ["round5/archive-sha256.json",equivalence.pinnedOriginal838Inventory],
+  > 104 │  ]) assert.equal(sha(readFileSync(join(directory,root,path))),expected,"Pinned original inventory "+path);
+        │                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    105 │ 	assert.equal(source.head, equivalence.validatedHead);
+    106 │ 	assert.equal(source.fingerprint, equivalence.sourceFingerprint);
+  
+  i Unsafe fix: Use a template literal.
+  
+    102 102 │    ["round4/archive-sha256.json",equivalence.pinnedOriginal707Inventory],
+    103 103 │    ["round5/archive-sha256.json",equivalence.pinnedOriginal838Inventory],
+    104     │ - ·])·assert.equal(sha(readFileSync(join(directory,root,path))),expected,"Pinned·original·inventory·"+path);
+        104 │ + ·])·assert.equal(sha(readFileSync(join(directory,root,path))),expected,`Pinned·original·inventory·${path}`);
+    105 105 │   	assert.equal(source.head, equivalence.validatedHead);
+    106 106 │   	assert.equal(source.fingerprint, equivalence.sourceFingerprint);
+  
+
+Checked 1 file in 48ms. No fixes applied.
+Found 1 info.

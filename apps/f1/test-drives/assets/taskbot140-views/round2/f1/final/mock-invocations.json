@@ -1,0 +1,106 @@
+[
+  {
+    "runId": "session-1",
+    "role": "research",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": null,
+    "at": "2026-10-22T07:16:24.824Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "story",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": null,
+    "at": "2026-10-22T07:16:25.356Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "detail",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": null,
+    "at": "2026-10-22T07:16:26.057Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "detail",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": null,
+    "at": "2026-10-22T07:16:26.091Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": null,
+    "at": "2026-10-22T07:16:27.579Z"
+  },
+  {
+    "runId": "session-1",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-6.1-sol",
+    "resume": "f1-mock-7c261b24-d96a-4a2c-818b-1146ad835e9e",
+    "at": "2026-10-22T07:16:28.042Z"
+  },
+  {
+    "runId": "session-2",
+    "role": "research",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T07:16:32.668Z"
+  },
+  {
+    "runId": "session-2",
+    "role": "story",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T07:16:33.154Z"
+  },
+  {
+    "runId": "session-2",
+    "role": "detail",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T07:16:34.111Z"
+  },
+  {
+    "runId": "session-2",
+    "role": "detail",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T07:16:34.147Z"
+  },
+  {
+    "runId": "session-4",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T07:16:41.485Z"
+  },
+  {
+    "runId": "child-3581f67d362c1714f1caea58cee1af2e613e76e6",
+    "role": "controlled-work",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T07:16:45.566Z"
+  },
+  {
+    "runId": "session-5",
+    "role": "view-follow-up",
+    "runner": "codex",
+    "model": "gpt-5",
+    "resume": null,
+    "at": "2026-10-22T07:16:45.763Z"
+  }
+]

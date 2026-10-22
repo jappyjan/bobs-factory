@@ -35,6 +35,8 @@ interface AppServerProcessManagerOptions {
 interface LaunchOptions {
 	command: string;
 	args: string[];
+	cwd?: string;
+	toolProfile?: "context-only";
 	env?: Record<string, string>;
 	requestTimeoutMs?: number;
 	mcpServers?: CodexConfigValue;
@@ -143,6 +145,7 @@ class PooledAppServerProcess {
 		const client = this.clientFactory({
 			binaryPath: this.launchOptions.command,
 			args: this.launchOptions.args,
+			...(this.launchOptions.cwd ? { cwd: this.launchOptions.cwd } : {}),
 			...(this.launchOptions.env ? { env: this.launchOptions.env } : {}),
 			...(this.launchOptions.requestTimeoutMs !== undefined
 				? { requestTimeoutMs: this.launchOptions.requestTimeoutMs }
@@ -200,6 +203,28 @@ class PooledAppServerProcess {
 	}
 
 	private onServerRequest(method: string): unknown {
+		if (this.launchOptions.toolProfile === "context-only") {
+			if (method === "item/permissions/requestApproval")
+				return { permissions: {}, scope: "turn" };
+			if (method === "execCommandApproval" || method === "applyPatchApproval")
+				return { decision: "abort" };
+			if (/approval/i.test(method)) return { decision: "cancel" };
+			if (/auth/i.test(method)) return { chatgptAuthToken: null };
+			if (method === "item/tool/call")
+				return {
+					success: false,
+					contentItems: [
+						{
+							type: "inputText",
+							text: "Context-only Codex denied dynamic tool execution",
+						},
+					],
+				};
+			if (/elicitation/.test(method)) return { action: "decline" };
+			if (/requestUserInput/.test(method)) return { answers: {} };
+			// Do not execute unknown dynamic tools, accept elicitation, or delegate.
+			throw new Error(`Context-only Codex denied server request: ${method}`);
+		}
 		// With approvalPolicy="never" the server should not ask for approvals;
 		// respond defensively so a stray request can never wedge a turn.
 		if (/auth/i.test(method)) {
@@ -310,6 +335,9 @@ export class AppServerProcessManager {
 			config.codexPath,
 			config.sandbox.kind === "profile"
 				? {
+						...(config.toolProfile === "context-only"
+							? buildCodexThreadConfig(config)
+							: {}),
 						permissions: buildCodexThreadConfig(config).permissions!,
 						default_permissions: config.sandbox.profileId,
 					}
@@ -318,6 +346,9 @@ export class AppServerProcessManager {
 		const launchOptions: LaunchOptions = {
 			command,
 			args,
+			...(config.toolProfile === "context-only"
+				? { toolProfile: config.toolProfile, cwd: config.workingDirectory }
+				: {}),
 			...(config.env || Object.keys(executionEnvironment()).length
 				? {
 						env: {
@@ -393,6 +424,8 @@ function buildLaunchKey(options: LaunchOptions): string {
 			JSON.stringify({
 				command: options.command,
 				args: options.args,
+				cwd: options.cwd ?? null,
+				toolProfile: options.toolProfile ?? null,
 				env: options.env ? sortRecord(options.env) : null,
 				requestTimeoutMs: options.requestTimeoutMs ?? null,
 				mcpServers: options.mcpServers ? sortConfig(options.mcpServers) : null,

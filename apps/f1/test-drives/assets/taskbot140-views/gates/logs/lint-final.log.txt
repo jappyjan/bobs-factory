@@ -1,0 +1,859 @@
+
+> bobs-factory-monorepo@1.0.1 lint /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views
+> biome check
+
+packages/core/src/security/WebhookIpValidator.ts:2:9 lint/complexity/noStaticOnlyClass ━━━━━━━━━━━━━
+
+  ! Avoid classes that contain only static members.
+  
+    1 │ // Node 18+ globals — available at runtime but not in ES2022 lib typings
+  > 2 │ declare class AbortSignal {
+      │         ^^^^^^^^^^^^^^^^^^^
+  > 3 │ 	static timeout(ms: number): AbortSignal;
+  > 4 │ }
+      │ ^
+    5 │ declare function fetch(
+    6 │ 	url: string,
+  
+  i Prefer using simple functions instead of classes with only static members.
+  
+
+packages/edge-worker/src/factory/web/styles.css:139:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    137 │ }
+    138 │ h1,
+  > 139 │ h2,
+        │ ^^
+    140 │ h3,
+    141 │ h4,
+  
+  i This selector specificity is (0, 1, 1)
+  
+    10 │ 	max-width: 100%;
+    11 │ }
+  > 12 │ .run-view-displays h2 {
+       │ ^^^^^^^^^^^^^^^^^^^^^
+    13 │ 	overflow-wrap: anywhere;
+    14 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:146:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    144 │ }
+    145 │ h1,
+  > 146 │ h2,
+        │ ^^
+    147 │ h3 {
+    148 │ 	font-weight: 800;
+  
+  i This selector specificity is (0, 1, 1)
+  
+    10 │ 	max-width: 100%;
+    11 │ }
+  > 12 │ .run-view-displays h2 {
+       │ ^^^^^^^^^^^^^^^^^^^^^
+    13 │ 	overflow-wrap: anywhere;
+    14 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:155:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    153 │ 	line-height: 1.2;
+    154 │ }
+  > 155 │ h2 {
+        │ ^^
+    156 │ 	font-size: 21px;
+    157 │ }
+  
+  i This selector specificity is (0, 1, 1)
+  
+    10 │ 	max-width: 100%;
+    11 │ }
+  > 12 │ .run-view-displays h2 {
+       │ ^^^^^^^^^^^^^^^^^^^^^
+    13 │ 	overflow-wrap: anywhere;
+    14 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:431:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    429 │ 	margin-left: auto;
+    430 │ }
+  > 431 │ .toggle {
+        │ ^^^^^^^
+    432 │ 	display: inline-flex;
+    433 │ 	border-radius: 999px;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    426 │ 	font-weight: 700;
+    427 │ }
+  > 428 │ .section-heading .toggle {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    429 │ 	margin-left: auto;
+    430 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1489:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1487 │ 	transform: translateX(-50%);
+    1488 │ }
+  > 1489 │ .markdown {
+         │ ^^^^^^^^^
+    1490 │ 	min-width: 0;
+    1491 │ 	max-width: 100%;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    828 │ 	color: var(--muted);
+    829 │ }
+  > 830 │ .stuck-panel .markdown {
+        │ ^^^^^^^^^^^^^^^^^^^^^^
+    831 │ 	margin: 8px 0;
+    832 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1788:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    1786 │ 	gap: 16px;
+    1787 │ }
+  > 1788 │ .assessment section {
+         │ ^^^^^^^^^^^^^^^^^^^
+    1789 │ 	background: var(--quiet);
+    1790 │ 	padding: 16px;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    849 │ 	object-fit: cover;
+    850 │ }
+  > 851 │ .pairs section + section {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    852 │ 	margin-top: 12px;
+    853 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1868:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 1)
+  
+    1866 │ 	border-radius: 12px;
+    1867 │ }
+  > 1868 │ .diff span {
+         │ ^^^^^^^^^^
+    1869 │ 	display: block;
+    1870 │ 	white-space: pre;
+  
+  i This selector specificity is (0, 1, 2)
+  
+    803 │ 	min-height: 32px;
+    804 │ }
+  > 805 │ .up-next button span {
+        │ ^^^^^^^^^^^^^^^^^^^^
+    806 │ 	margin-right: 6px;
+    807 │ 	color: #ff9f43;
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1921:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1919 │ 	font-weight: 800;
+    1920 │ }
+  > 1921 │ .error,
+         │ ^^^^^^
+    1922 │ .connection-error {
+    1923 │ 	background: var(--red);
+  
+  i This selector specificity is (0, 2, 0)
+  
+    613 │ 	margin: 0;
+    614 │ }
+  > 615 │ .run-title-status .error {
+        │ ^^^^^^^^^^^^^^^^^^^^^^^^
+    616 │ 	flex-basis: 100%;
+    617 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1939:1 lint/style/noDescendingSpecificity ━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 1, 0)
+  
+    1937 │ 	color: var(--muted);
+    1938 │ }
+  > 1939 │ .bob {
+         │ ^^^^
+    1940 │ 	overflow: visible;
+    1941 │ 	animation: bob-bounce 3s ease-in-out infinite;
+  
+  i This selector specificity is (0, 2, 0)
+  
+    717 │ 	font-weight: 700;
+    718 │ }
+  > 719 │ .question-heading .bob {
+        │ ^^^^^^^^^^^^^^^^^^^^^^
+    720 │ 	flex-shrink: 0;
+    721 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+packages/edge-worker/src/factory/web/styles.css:1955:18 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    1953 │ }
+    1954 │ .bob-sleepy {
+  > 1955 │ 	animation: none !important;
+         │ 	                ^^^^^^^^^^
+    1956 │ }
+    1957 │ /* Factory is unreachable: Bob slows down and looks around for it. */
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    1955 │ → animation:·none·!important;
+         │                  ----------- 
+
+website/src/styles.css:55:1 lint/style/noDescendingSpecificity ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Descending specificity selector found. This selector specificity is (0, 0, 1)
+  
+    53 │ 	scroll-behavior: auto !important;
+    54 │ }
+  > 55 │ body {
+       │ ^^^^
+    56 │ 	overflow-x: clip;
+    57 │ }
+  
+  i This selector specificity is (0, 1, 2)
+  
+    46 │ }
+    47 │ html.lenis,
+  > 48 │ html.lenis body {
+       │ ^^^^^^^^^^^^^^^
+    49 │ 	height: auto;
+    50 │ }
+  
+  i Descending specificity selector may not be applied. Consider rearranging the order of the selectors. See MDN web docs for more details.
+  
+
+apps/f1/test-drives/assets/taskbot140-views/f1/attempt1-request-header-omission/failure.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"result":·"FAIL",
+     3    │ - ··"directory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vpX6KN",
+     4    │ - ··"revision":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+     5    │ - ··"deltaSha256":·"39ceab10ce46ceb2bf0ef568861ce8328ceed5633c954d8c12f670566a59bbe4",
+     6    │ - ··"driverSha256":·"a1169eaad559e5230ee4ddf24599242d1d15dceb6aa14a4ac95f0fcc8b419993",
+     7    │ - ··"buildSha256":·"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128",
+     8    │ - ··"node":·"v24.21.0",
+     9    │ - ··"error":·"AssertionError·[ERR_ASSERTION]:·/api/runs/session-1/answer:·{\"error\":\"Factory·request·header·required\"}\n\n403·!==·409\n\n····at·api·(file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views.mjs:613:9)\n····at·process.processTicksAndRejections·(node:internal/process/task_queues:104:5)\n····at·async·file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views.mjs:799:2",
+    10    │ - ··"runs":·[
+    11    │ - ····{
+    12    │ - ······"id":·"session-1",
+    13    │ - ······"status":·"waiting",
+    14    │ - ······"step":·"choose"
+    15    │ - ····}
+    16    │ - ··],
+    17    │ - ··"turns":·[
+    18    │ - ····{
+    19    │ - ······"runId":·"session-1",
+    20    │ - ······"role":·"research",
+    21    │ - ······"runner":·"codex",
+    22    │ - ······"model":·"gpt-5.5",
+    23    │ - ······"resume":·null,
+    24    │ - ······"at":·"2026-10-22T04:54:50.902Z"
+    25    │ - ····},
+    26    │ - ····{
+    27    │ - ······"runId":·"session-1",
+    28    │ - ······"role":·"story",
+    29    │ - ······"runner":·"codex",
+    30    │ - ······"model":·"gpt-5.5",
+    31    │ - ······"resume":·null,
+    32    │ - ······"at":·"2026-10-22T04:54:51.400Z"
+    33    │ - ····},
+    34    │ - ····{
+    35    │ - ······"runId":·"session-1",
+    36    │ - ······"role":·"detail",
+    37    │ - ······"runner":·"codex",
+    38    │ - ······"model":·"gpt-5.5",
+    39    │ - ······"resume":·null,
+    40    │ - ······"at":·"2026-10-22T04:54:52.153Z"
+    41    │ - ····},
+    42    │ - ····{
+    43    │ - ······"runId":·"session-1",
+    44    │ - ······"role":·"detail",
+    45    │ - ······"runner":·"codex",
+    46    │ - ······"model":·"gpt-5.5",
+    47    │ - ······"resume":·null,
+    48    │ - ······"at":·"2026-10-22T04:54:52.187Z"
+    49    │ - ····}
+    50    │ - ··]
+    51    │ - }
+        2 │ + → "result":·"FAIL",
+        3 │ + → "directory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vpX6KN",
+        4 │ + → "revision":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+        5 │ + → "deltaSha256":·"39ceab10ce46ceb2bf0ef568861ce8328ceed5633c954d8c12f670566a59bbe4",
+        6 │ + → "driverSha256":·"a1169eaad559e5230ee4ddf24599242d1d15dceb6aa14a4ac95f0fcc8b419993",
+        7 │ + → "buildSha256":·"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128",
+        8 │ + → "node":·"v24.21.0",
+        9 │ + → "error":·"AssertionError·[ERR_ASSERTION]:·/api/runs/session-1/answer:·{\"error\":\"Factory·request·header·required\"}\n\n403·!==·409\n\n····at·api·(file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views.mjs:613:9)\n····at·process.processTicksAndRejections·(node:internal/process/task_queues:104:5)\n····at·async·file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views.mjs:799:2",
+       10 │ + → "runs":·[
+       11 │ + → → {
+       12 │ + → → → "id":·"session-1",
+       13 │ + → → → "status":·"waiting",
+       14 │ + → → → "step":·"choose"
+       15 │ + → → }
+       16 │ + → ],
+       17 │ + → "turns":·[
+       18 │ + → → {
+       19 │ + → → → "runId":·"session-1",
+       20 │ + → → → "role":·"research",
+       21 │ + → → → "runner":·"codex",
+       22 │ + → → → "model":·"gpt-5.5",
+       23 │ + → → → "resume":·null,
+       24 │ + → → → "at":·"2026-10-22T04:54:50.902Z"
+       25 │ + → → },
+       26 │ + → → {
+       27 │ + → → → "runId":·"session-1",
+       28 │ + → → → "role":·"story",
+       29 │ + → → → "runner":·"codex",
+       30 │ + → → → "model":·"gpt-5.5",
+       31 │ + → → → "resume":·null,
+       32 │ + → → → "at":·"2026-10-22T04:54:51.400Z"
+       33 │ + → → },
+       34 │ + → → {
+       35 │ + → → → "runId":·"session-1",
+       36 │ + → → → "role":·"detail",
+       37 │ + → → → "runner":·"codex",
+       38 │ + → → → "model":·"gpt-5.5",
+       39 │ + → → → "resume":·null,
+       40 │ + → → → "at":·"2026-10-22T04:54:52.153Z"
+       41 │ + → → },
+       42 │ + → → {
+       43 │ + → → → "runId":·"session-1",
+       44 │ + → → → "role":·"detail",
+       45 │ + → → → "runner":·"codex",
+       46 │ + → → → "model":·"gpt-5.5",
+       47 │ + → → → "resume":·null,
+       48 │ + → → → "at":·"2026-10-22T04:54:52.187Z"
+       49 │ + → → }
+       50 │ + → ]
+       51 │ + }
+       52 │ + 
+  
+
+apps/f1/test-drives/assets/taskbot140-views/f1/attempt1-request-header-omission/identity.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"phase":·"setup",
+     3    │ - ··"directory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vpX6KN",
+     4    │ - ··"revision":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+     5    │ - ··"deltaSha256":·"39ceab10ce46ceb2bf0ef568861ce8328ceed5633c954d8c12f670566a59bbe4",
+     6    │ - ··"driverSha256":·"a1169eaad559e5230ee4ddf24599242d1d15dceb6aa14a4ac95f0fcc8b419993",
+     7    │ - ··"buildSha256":·"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128",
+     8    │ - ··"node":·"v24.21.0",
+     9    │ - ··"classification":·"Harness·request-header·omission;·no·product·regression·established",
+    10    │ - ··"exitCode":·1,
+    11    │ - ··"retainedRawDirectory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vpX6KN",
+    12    │ - ··"logs":·"/tmp/taskbot140-f1-attempt-DU1qwo"
+        2 │ + → "phase":·"setup",
+        3 │ + → "directory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vpX6KN",
+        4 │ + → "revision":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+        5 │ + → "deltaSha256":·"39ceab10ce46ceb2bf0ef568861ce8328ceed5633c954d8c12f670566a59bbe4",
+        6 │ + → "driverSha256":·"a1169eaad559e5230ee4ddf24599242d1d15dceb6aa14a4ac95f0fcc8b419993",
+        7 │ + → "buildSha256":·"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128",
+        8 │ + → "node":·"v24.21.0",
+        9 │ + → "classification":·"Harness·request-header·omission;·no·product·regression·established",
+       10 │ + → "exitCode":·1,
+       11 │ + → "retainedRawDirectory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vpX6KN",
+       12 │ + → "logs":·"/tmp/taskbot140-f1-attempt-DU1qwo"
+    13 13 │   }
+    14 14 │   
+  
+
+apps/f1/test-drives/assets/taskbot140-views/f1/attempt1-request-header-omission/sha256.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"actions.jsonl.txt":·"ae1953d82034b0042dd746fde5a4d8326b39be5371f64f1104b354161ace07a3",
+     3    │ - ··"driver.mjs.txt":·"a1169eaad559e5230ee4ddf24599242d1d15dceb6aa14a4ac95f0fcc8b419993",
+     4    │ - ··"exit-code.txt":·"4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+     5    │ - ··"failure.json":·"8c0749c41401857e6c2b28948e045cb875634075d4270297a2b7aa3241f6bfe4",
+     6    │ - ··"identity.json":·"75dc3b2f4f99d264df7cd730d01a759d63291a8f443f5e76deb70c29e672fcf8",
+     7    │ - ··"stderr.log.txt":·"304c82f90eb0821f152efebec113e5f445155b3b0d33e381dc13c32999ba7499",
+     8    │ - ··"stdout.log.txt":·"504e86a5db734c0ef651494f14cf6d63be9246ff296ae19025cf8ba64d2e360e"
+        2 │ + → "actions.jsonl.txt":·"ae1953d82034b0042dd746fde5a4d8326b39be5371f64f1104b354161ace07a3",
+        3 │ + → "driver.mjs.txt":·"a1169eaad559e5230ee4ddf24599242d1d15dceb6aa14a4ac95f0fcc8b419993",
+        4 │ + → "exit-code.txt":·"4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+        5 │ + → "failure.json":·"8c0749c41401857e6c2b28948e045cb875634075d4270297a2b7aa3241f6bfe4",
+        6 │ + → "identity.json":·"75dc3b2f4f99d264df7cd730d01a759d63291a8f443f5e76deb70c29e672fcf8",
+        7 │ + → "stderr.log.txt":·"304c82f90eb0821f152efebec113e5f445155b3b0d33e381dc13c32999ba7499",
+        8 │ + → "stdout.log.txt":·"504e86a5db734c0ef651494f14cf6d63be9246ff296ae19025cf8ba64d2e360e"
+     9  9 │   }
+    10 10 │   
+  
+
+apps/f1/test-drives/assets/taskbot140-views/f1/attempt2-json-prototype-comparison/failure.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"result":·"FAIL",
+     3    │ - ··"directory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vDMVFE",
+     4    │ - ··"revision":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+     5    │ - ··"deltaSha256":·"c8b315b2207fef6733dfc00048533b2e4417777dd1d62916d67b1f061bdc5a38",
+     6    │ - ··"driverSha256":·"0250281cfae21a11977472b9bde225843fe9be47cf0086896fa24baea51ebf94",
+     7    │ - ··"buildSha256":·"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128",
+     8    │ - ··"node":·"v24.21.0",
+     9    │ - ··"error":·"AssertionError·[ERR_ASSERTION]:·Expected·values·to·be·strictly·deep-equal:\n+·actual·-·expected\n\n··[\n+···[Object:·null·prototype]·{\n-···{\n······action:·'fix',\n······comment:·'Retain·exact·receipts',\n······itemId:·'cache'\n····},\n+···[Object:·null·prototype]·{\n-···{\n······action:·'discuss',\n······comment:·'Follow·up·on·wording',\n······itemId:·'labels'\n····}\n··]\n\n····at·file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views.mjs:864:9",
+    10    │ - ··"runs":·[
+    11    │ - ····{
+    12    │ - ······"id":·"session-1",
+    13    │ - ······"status":·"waiting",
+    14    │ - ······"step":·"approval"
+    15    │ - ····},
+    16    │ - ····{
+    17    │ - ······"id":·"child-4ef1e54ba9043fe5d92b6a6b1c209271e7f7440b",
+    18    │ - ······"status":·"running"
+    19    │ - ····}
+    20    │ - ··],
+    21    │ - ··"turns":·[
+    22    │ - ····{
+    23    │ - ······"runId":·"session-1",
+    24    │ - ······"role":·"research",
+    25    │ - ······"runner":·"codex",
+    26    │ - ······"model":·"gpt-5.5",
+    27    │ - ······"resume":·null,
+    28    │ - ······"at":·"2026-10-22T04:55:41.942Z"
+    29    │ - ····},
+    30    │ - ····{
+    31    │ - ······"runId":·"session-1",
+    32    │ - ······"role":·"story",
+    33    │ - ······"runner":·"codex",
+    34    │ - ······"model":·"gpt-5.5",
+    35    │ - ······"resume":·null,
+    36    │ - ······"at":·"2026-10-22T04:55:42.379Z"
+    37    │ - ····},
+    38    │ - ····{
+    39    │ - ······"runId":·"session-1",
+    40    │ - ······"role":·"detail",
+    41    │ - ······"runner":·"codex",
+    42    │ - ······"model":·"gpt-5.5",
+    43    │ - ······"resume":·null,
+    44    │ - ······"at":·"2026-10-22T04:55:43.054Z"
+    45    │ - ····},
+    46    │ - ····{
+    47    │ - ······"runId":·"session-1",
+    48    │ - ······"role":·"detail",
+    49    │ - ······"runner":·"codex",
+    50    │ - ······"model":·"gpt-5.5",
+    51    │ - ······"resume":·null,
+    52    │ - ······"at":·"2026-10-22T04:55:43.085Z"
+    53    │ - ····},
+    54    │ - ····{
+    55    │ - ······"runId":·"session-1",
+    56    │ - ······"role":·"view-follow-up",
+    57    │ - ······"runner":·"codex",
+    58    │ - ······"model":·"gpt-5.5",
+    59    │ - ······"resume":·null,
+    60    │ - ······"at":·"2026-10-22T04:55:44.596Z"
+    61    │ - ····}
+    62    │ - ··]
+    63    │ - }
+        2 │ + → "result":·"FAIL",
+        3 │ + → "directory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vDMVFE",
+        4 │ + → "revision":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+        5 │ + → "deltaSha256":·"c8b315b2207fef6733dfc00048533b2e4417777dd1d62916d67b1f061bdc5a38",
+        6 │ + → "driverSha256":·"0250281cfae21a11977472b9bde225843fe9be47cf0086896fa24baea51ebf94",
+        7 │ + → "buildSha256":·"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128",
+        8 │ + → "node":·"v24.21.0",
+        9 │ + → "error":·"AssertionError·[ERR_ASSERTION]:·Expected·values·to·be·strictly·deep-equal:\n+·actual·-·expected\n\n··[\n+···[Object:·null·prototype]·{\n-···{\n······action:·'fix',\n······comment:·'Retain·exact·receipts',\n······itemId:·'cache'\n····},\n+···[Object:·null·prototype]·{\n-···{\n······action:·'discuss',\n······comment:·'Follow·up·on·wording',\n······itemId:·'labels'\n····}\n··]\n\n····at·file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-views.mjs:864:9",
+       10 │ + → "runs":·[
+       11 │ + → → {
+       12 │ + → → → "id":·"session-1",
+       13 │ + → → → "status":·"waiting",
+       14 │ + → → → "step":·"approval"
+       15 │ + → → },
+       16 │ + → → {
+       17 │ + → → → "id":·"child-4ef1e54ba9043fe5d92b6a6b1c209271e7f7440b",
+       18 │ + → → → "status":·"running"
+       19 │ + → → }
+       20 │ + → ],
+       21 │ + → "turns":·[
+       22 │ + → → {
+       23 │ + → → → "runId":·"session-1",
+       24 │ + → → → "role":·"research",
+       25 │ + → → → "runner":·"codex",
+       26 │ + → → → "model":·"gpt-5.5",
+       27 │ + → → → "resume":·null,
+       28 │ + → → → "at":·"2026-10-22T04:55:41.942Z"
+       29 │ + → → },
+       30 │ + → → {
+       31 │ + → → → "runId":·"session-1",
+       32 │ + → → → "role":·"story",
+       33 │ + → → → "runner":·"codex",
+       34 │ + → → → "model":·"gpt-5.5",
+       35 │ + → → → "resume":·null,
+       36 │ + → → → "at":·"2026-10-22T04:55:42.379Z"
+       37 │ + → → },
+       38 │ + → → {
+       39 │ + → → → "runId":·"session-1",
+       40 │ + → → → "role":·"detail",
+       41 │ + → → → "runner":·"codex",
+       42 │ + → → → "model":·"gpt-5.5",
+       43 │ + → → → "resume":·null,
+       44 │ + → → → "at":·"2026-10-22T04:55:43.054Z"
+       45 │ + → → },
+       46 │ + → → {
+       47 │ + → → → "runId":·"session-1",
+       48 │ + → → → "role":·"detail",
+       49 │ + → → → "runner":·"codex",
+       50 │ + → → → "model":·"gpt-5.5",
+       51 │ + → → → "resume":·null,
+       52 │ + → → → "at":·"2026-10-22T04:55:43.085Z"
+       53 │ + → → },
+       54 │ + → → {
+       55 │ + → → → "runId":·"session-1",
+       56 │ + → → → "role":·"view-follow-up",
+       57 │ + → → → "runner":·"codex",
+       58 │ + → → → "model":·"gpt-5.5",
+       59 │ + → → → "resume":·null,
+       60 │ + → → → "at":·"2026-10-22T04:55:44.596Z"
+       61 │ + → → }
+       62 │ + → ]
+       63 │ + }
+       64 │ + 
+  
+
+apps/f1/test-drives/assets/taskbot140-views/f1/attempt2-json-prototype-comparison/identity.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"phase":·"setup",
+     3    │ - ··"directory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vDMVFE",
+     4    │ - ··"revision":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+     5    │ - ··"deltaSha256":·"c8b315b2207fef6733dfc00048533b2e4417777dd1d62916d67b1f061bdc5a38",
+     6    │ - ··"driverSha256":·"0250281cfae21a11977472b9bde225843fe9be47cf0086896fa24baea51ebf94",
+     7    │ - ··"buildSha256":·"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128",
+     8    │ - ··"node":·"v24.21.0",
+     9    │ - ··"classification":·"Harness·compared·JSON·prototype·identity;·actual·and·expected·accepted·data·values·agree",
+    10    │ - ··"exitCode":·1,
+    11    │ - ··"retainedRawDirectory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vDMVFE",
+    12    │ - ··"logs":·"/tmp/taskbot140-f1-attempt-DGuWuk"
+        2 │ + → "phase":·"setup",
+        3 │ + → "directory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vDMVFE",
+        4 │ + → "revision":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+        5 │ + → "deltaSha256":·"c8b315b2207fef6733dfc00048533b2e4417777dd1d62916d67b1f061bdc5a38",
+        6 │ + → "driverSha256":·"0250281cfae21a11977472b9bde225843fe9be47cf0086896fa24baea51ebf94",
+        7 │ + → "buildSha256":·"9380e75bec0f1de857cfaba2465d3943ec39af8120cac146da9eeea7d671a128",
+        8 │ + → "node":·"v24.21.0",
+        9 │ + → "classification":·"Harness·compared·JSON·prototype·identity;·actual·and·expected·accepted·data·values·agree",
+       10 │ + → "exitCode":·1,
+       11 │ + → "retainedRawDirectory":·"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-vDMVFE",
+       12 │ + → "logs":·"/tmp/taskbot140-f1-attempt-DGuWuk"
+    13 13 │   }
+    14 14 │   
+  
+
+apps/f1/test-drives/assets/taskbot140-views/f1/attempt2-json-prototype-comparison/sha256.json format ━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"actions.jsonl.txt":·"19c510099bd4c24c89181383044d40b58ccee3067064fb1c005ccf7cb782b3d5",
+     3    │ - ··"driver.mjs.txt":·"0250281cfae21a11977472b9bde225843fe9be47cf0086896fa24baea51ebf94",
+     4    │ - ··"exit-code.txt":·"4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+     5    │ - ··"failure.json":·"42f348fdc7bf2fed62e2dcd483f1069238915390508f74759e46b43fb12ef128",
+     6    │ - ··"identity.json":·"fd88f3262b2d7111a5e061b460f5e7a8ecfbd2ae79fa9d10dc8d2b180cdf8482",
+     7    │ - ··"stderr.log.txt":·"2dc26f4e759a6f3ef4417528d8d5c4b3b173c03141641b17ae388459c9ea30ab",
+     8    │ - ··"stdout.log.txt":·"7597fc198048ea7e9bf81f71032b13b70ffddf5dc810b6eeb918180283d71596"
+        2 │ + → "actions.jsonl.txt":·"19c510099bd4c24c89181383044d40b58ccee3067064fb1c005ccf7cb782b3d5",
+        3 │ + → "driver.mjs.txt":·"0250281cfae21a11977472b9bde225843fe9be47cf0086896fa24baea51ebf94",
+        4 │ + → "exit-code.txt":·"4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+        5 │ + → "failure.json":·"42f348fdc7bf2fed62e2dcd483f1069238915390508f74759e46b43fb12ef128",
+        6 │ + → "identity.json":·"fd88f3262b2d7111a5e061b460f5e7a8ecfbd2ae79fa9d10dc8d2b180cdf8482",
+        7 │ + → "stderr.log.txt":·"2dc26f4e759a6f3ef4417528d8d5c4b3b173c03141641b17ae388459c9ea30ab",
+        8 │ + → "stdout.log.txt":·"7597fc198048ea7e9bf81f71032b13b70ffddf5dc810b6eeb918180283d71596"
+     9  9 │   }
+    10 10 │   
+  
+
+apps/f1/test-drives/assets/taskbot140-views/ui/attempt-1/identity.json format ━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+       1    1 │   {
+       2      │ - ··"mode":·"Production·saved·recipes,·WorkflowRuntime·and·FactoryServer;·disposable·Git·and·deterministic·mock·agents",
+       3      │ - ··"startedAt":·"2026-10-22T04:54:40.769Z",
+       4      │ - ··"node":·"v24.21.0",
+       5      │ - ··"head":·"318c93ffa211c15bd0dd7e16c6f89b2b531787a4",
+       6      │ - ··"tree":·"8bcbd671f4eca9e730c118ba96375311550f8c11",
+       7      │ - ··"worktree":·"/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views",
+       8      │ - ··"workingStatus":·"",
+       9      │ - ··"trackedDiffSha256":·"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      10      │ - ··"source":·{
+      11      │ - ····"apps/f1/test-drives/assets/taskbot140-views-ui.mjs":·"526cba68f5a272b6dd562a9287e53fb3667342e807ce4817ac244b862389eb6f",
+      12      │ - ····"packages/edge-worker/src/factory/View.ts":·"6dc508a3ef3ef16c597505d8f5731126e279d51e820147810879e0f30b637ec2",
+      13      │ - ····"packages/edge-worker/src/factory/HumanStep.ts":·"17b1cd266a2de67cd93ee1ce6c5e5c908f60b635356611c621884a848e016b99",
+      14      │ - ····"packages/edge-worker/src/factory/ViewRuntime.ts":·"49f7a7faeadbf439dc60879bb1d9084d0b341328281c7c799f2fc3734d687bc5",
+      15      │ - ····"packages/edge-worker/src/factory/ViewAssets.ts":·"2ec0307940ee34245e1a09d12489ebbd91f43bb0c5b06b23a6c4c0d6d381627e",
+      16      │ - ····"packages/edge-worker/src/factory/Workflow.ts":·"184bea951b6ed1cc887695f94f4ada61720438d46fc96f9cd715b058d80c8e1d",
+      17      │ - ····"packages/edge-worker/src/factory/WorkflowRuntime.ts":·"1617a007a9fd3ccb9c056fbeee0cd1d2337b0172b9607abe06164c6cadc6bf53",
+      18      │ - ····"packages/edge-worker/src/factory/StepBindings.ts":·"22f04a06a94741d3809b3e00dd64d8b747d8ca21d93746c7c48c2dec07025d90",
+      19      │ - ····"packages/edge-worker/src/factory/FactoryServer.ts":·"338fff76c724d7b5f39002fb0aa5bfe97e35590199d27ded9660124c65ddd549",
+      20      │ - ····"packages/edge-worker/src/factory/RunProjection.ts":·"1a36715bf6fdc37da7df40fce444eaeb43235cb9b84c75495669cc9a527bf97b",
+      21      │ - ····"packages/edge-worker/src/factory/LaunchRuns.ts":·"b15aa84ee57b09330123edfb90dd9b52eb8903c4e88fd94724220c5c3acedda0",
+      22      │ - ····"packages/edge-worker/src/factory/web/declarative-view.tsx":·"c965688739c4e0b074ab1d18f5c8b9c5364e6416d2809861eb14d537ea44874b",
+      23      │ - ····"packages/edge-worker/src/factory/web/declarative-view.css":·"593206e3cb0bf5f0b1781cddc6073100612e2e17c7641d8292ce900bf1c1f86a",
+      24      │ - ····"packages/edge-worker/src/factory/web/human-step-settings.tsx":·"49071c648ec866e117fe21191dae82231ee035047a88ab4cdd34cad304936169",
+      25      │ - ····"packages/edge-worker/src/factory/web/focus.tsx":·"dec9d14bf736da2f06c8a034ce4eecf0a51e90c5b643a3bd1d4ab08c2ceac463",
+      26      │ - ····"packages/edge-worker/src/factory/web/recipe-builder.tsx":·"e64b4934c9d1d741d86cabb80802016924a63a2b1b3d98ae633a527b3b2480ab",
+      27      │ - ····"packages/edge-worker/src/factory/web/recipe-graph.ts":·"dc57b60e8879e4d1a3a4b8381ddc37e4487c6a415358b130da9d53ceb0bcb771",
+      28      │ - ····"packages/edge-worker/src/factory/web/styles.css":·"95a2df526be61ede4ff216696e49c7ac2cc2c753901cf2dccd53ab81fe158bb1",
+      29      │ - ····"packages/edge-worker/src/factory/web/app.tsx":·"a2188397d5723aa50c4065b8b5f1451b223ba4b05841b3cb043b0c8f25073d19"
+      30      │ - ··},
+      31      │ - ··"sourceFingerprint":·"d2c3f660606d1d8738c6581f29dbb5fbde9e413418d6cf692a4de29b29e552ed",
+      32      │ - ··"backend":·{
+      33      │ - ····"View.js":·"03b8ad73f6950a730a6c1e6f49653796d41b040807ab457a4bdf39923ce6bcbc",
+      34      │ - ····"HumanStep.js":·"4d675ca250d0c93eb7349941974a91b16892e6bf24c02b3eb6fca0e9ddb54b38",
+      35      │ - ····"ViewRuntime.js":·"ef0d6c0aa608ac4ebe7f2604766f2d2ee4d3d43b46b13b0e7bd9ecfadd017ad2",
+      36      │ - ····"ViewAssets.js":·"7972e4387da523ec65303f61d874d65dff5b9562c643daf18e66c0c66ab19708",
+      37      │ - ····"Workflow.js":·"734788301f6eaac826330f41b8fd086c36e5843f20a1c119c3e6a92eea7a0caa",
+      38      │ - ····"WorkflowRuntime.js":·"f4621d27ea3a173796841a69e7b7b8e90283d555143482982a31ee76836ab82c",
+      39      │ - ····"FactoryServer.js":·"a6ef2c96c1a0c7211cf7e32643652484def63900853b0f2de315a46ce72ae767",
+      40      │ - ····"RunProjection.js":·"f4e846a3a2401b55fb6106c6796a8406f8f26a1db51aa5e77cf9c74c1c8941ae"
+      41      │ - ··},
+      42      │ - ··"build":·"d913ccf7228f6e6f7366daad",
+      43      │ - ··"assets":·[
+      44      │ - ····{
+      45      │ - ······"path":·"/app.f37dcce84b000b38759c847b.js",
+      46      │ - ······"sha256":·"f37dcce84b000b38759c847bbfce844d078bf84ec41832607cf4cc9804632631"
+      47      │ - ····},
+      48      │ - ····{
+      49      │ - ······"path":·"/styles.2775a8c61b890efe4a6b7bc0.css",
+      50      │ - ······"sha256":·"2775a8c61b890efe4a6b7bc085ee16cfadcd18021525ca9e37a40314074b3231"
+      51      │ - ····},
+      52      │ - ····{
+      53      │ - ······"path":·"/",
+      54      │ - ······"sha256":·"094deefab31715631a43a07818c28bc672beb16eab2c614ec62863e82b8abc1b"
+      55      │ - ····},
+      56      │ - ····{
+      57      │ - ······"path":·"/manifest.webmanifest",
+      58      │ - ······"sha256":·"5da81e4e4eeefe86a3512b79bf782702915a6b7a3610fcf3c379b126c63b9004"
+      59      │ - ····},
+      60      │ - ····{
+      61      │ - ······"path":·"/icons/icon-192.png",
+      62      │ - ······"sha256":·"85d0364a8dda3a446eaea0ad2488ae61ddb91f17d7235f44443ced017f3e2961"
+      63      │ - ····},
+      64      │ - ····{
+      65      │ - ······"path":·"/icons/icon-512.png",
+      66      │ - ······"sha256":·"3ac24a7234ff46f19656964872797da0c496f3e58e3b277dd4d3b4ad59cd4f86"
+      67      │ - ····},
+      68      │ - ····{
+      69      │ - ······"path":·"/icons/maskable-512.png",
+      70      │ - ······"sha256":·"4cc6ee50f0e92fb79761778d7c470a7feb5f6fadff45c0f66756c05eb79ba3a9"
+      71      │ - ····},
+      72      │ - ····{
+      73      │ - ······"path":·"/icons/apple-touch-icon.png",
+      74      │ - ······"sha256":·"87b9f631ef239aa7ff2f82070f051285ebab872d4b4990ad52b7a09b868772a4"
+      75      │ - ····},
+      76      │ - ····{
+      77      │ - ······"path":·"/sw.js",
+      78      │ - ······"sha256":·"8c684fb795aa2b4b30afa29664cfc032be08484099cac17eff1c13408a4d3fbb"
+      79      │ - ····}
+      80      │ - ··],
+      81      │ - ··"origin":·"http://localhost:3690",
+      82      │ - ··"directory":·"/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-views-ui-kLIpqF",
+      83      │ - ··"home":·"/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-views-ui-kLIpqF/home",
+      84      │ - ··"repositoryPath":·"/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/taskbot140-views-ui-kLIpqF/repository",
+      85      │ - ··"sourceRevision":·"9777742cd708dd5cbd94bd8099c4e4fcdd13d9cd",
+      86      │ - ··"ids":·{
+      87      │ - ····"decide":·"views-decide-ui-run",
+      88      │ - ····"approve":·"views-approve-ui-run",
+      89      │ - ····"runs":·"views-children-ui-run"
+      90      │ - ··},
+      91      │ - ··"urls":·{
+      92      │ - ····"decide":·"http://localhost:3690/#/runs/views-decide-ui-run",
+      93      │ - ····"approve":·"http://localhost:3690/#/runs/views-approve-ui-run",
+      94      │ - ····"runs":·"http://localhost:3690/#/runs/views-children-ui-run"
+      95      │ - ··},
+      96      │ - ··"builderUrl":·"http://localhost:3690/#/recipes?recipe=views-decide-ui&step=choose",
+      97      │ - ··"assertions":·[
+      98      │ - ····"Saved·generic·custom·recipes·reached·actual·Decide/Approve·and·nonblocking·Show·through·production·runtime",
+      99      │ - ····"Agent·emitted·and·validated·a·view-v1·artifact·consumed·via·an·explicit·declared·binding",
+     100      │ - ····"Launch·runs·created·three·real·child·worktrees·with·waiting/running/completed·and·queued/blocked·dependency·states",
+     101      │ - ····"Generic·runList·Show·resolved·only·the·explicit·public·@childRuns·projection"
+     102      │ - ··],
+     103      │ - ··"observations":·[
+     104      │ - ····{
+     105      │ - ······"at":·"2026-10-22T04:56:39.618Z",
+     106      │ - ······"calls":·[
+     107      │ - ········{
+     108      │ - ··········"runId":·"views-approve-ui-run",
+     109      │ - ··········"step":·"author",
+     110      │ - ··········"key":·"author",
+     111      │ - ··········"at":·"2026-10-22T04:54:42.276Z"
+     112      │ - ········},
+     113      │ - ········{
+     114      │ - ··········"runId":·"views-decide-ui-run",
+     115      │ - ··········"step":·"research",
+     116      │ - ··········"key":·"research",
+     117      │ - ··········"at":·"2026-10-22T04:54:42.290Z"
+     118      │ - ········},
+     119      │ - ········{
+     120      │ - ··········"runId":·"views-children-ui-run",
+     121      │ - ··········"step":·"propose",
+     122      │ - ··········"key":·"propose",
+     123      │ - ··········"at":·"2026-10-22T04:54:42.298Z"
+     124      │ - ········},
+     125      │ - ········{
+     126      │ - ··········"runId":·"child-a2eba2850028753b44b25f077d015f9b610d9a03",
+     127      │ - ··········"step":·"work",
+     128      │ - ··········"key":·"work",
+     129      │ - ··········"at":·"2026-10-22T04:54:43.324Z"
+     130      │ - ········},
+     131      │ - ········{
+     132      │ - ··········"runId":·"child-f5a54f2c94c6d407c9eae350ddf4102fd4c4610a",
+     133      │ - ··········"step":·"work",
+     134      │ - ··········"key":·"work",
+     135      │ - ··········"at":·"2026-10-22T04:54:43.648Z"
+     136      │ - ········},
+     137      │ - ········{
+     138      │ - ··········"runId":·"child-7ac1ad18755bed55697edb0c766107fefaee72ef",
+     139      │ - ··········"step":·"work",
+     140      │ - ··········"key":·"work",
+     141      │ - ··········"at":·"2026-10-22T04:54:43.828Z"
+     142      │ - ········},
+     143      │ - ········{
+     144      │ - ··········"runId":·"views-children-ui-run",
+     145      │ - ··········"step":·"observe",
+     146      │ - ··········"key":·"observe",
+     147      │ - ··········"at":·"2026-10-22T04:54:44.418Z"
+     148      │ - ········}
+     149      │ - ······],
+     150      │ - ······"notifications":·[
+  6441 more lines truncated
+  
+
+apps/f1/test-drives/assets/taskbot140-views/ui/attempt-1/initial-360-audit.json format ━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   [
+     2    │ - ··{
+     3    │ - ····"kind":·"decide",
+     4    │ - ····"width":·360,
+     5    │ - ····"scrollWidth":·360,
+     6    │ - ····"bodyWidth":·360,
+     7    │ - ····"attack":·null,
+     8    │ - ····"scripts":·0,
+     9    │ - ····"remoteImages":·0,
+    10    │ - ····"unsafeLinks":·0,
+    11    │ - ····"overflows":·[]
+    12    │ - ··},
+    13    │ - ··{
+    14    │ - ····"kind":·"approve",
+    15    │ - ····"width":·360,
+    16    │ - ····"scrollWidth":·360,
+    17    │ - ····"bodyWidth":·360,
+    18    │ - ····"attack":·null,
+    19    │ - ····"scripts":·0,
+    20    │ - ····"remoteImages":·0,
+    21    │ - ····"unsafeLinks":·0,
+    22    │ - ····"overflows":·[]
+    23    │ - ··},
+    24    │ - ··{
+    25    │ - ····"kind":·"runs",
+    26    │ - ····"width":·360,
+    27    │ - ····"scrollWidth":·360,
+    28    │ - ····"bodyWidth":·360,
+    29    │ - ····"attack":·null,
+    30    │ - ····"scripts":·0,
+    31    │ - ····"remoteImages":·0,
+    32    │ - ····"unsafeLinks":·0,
+    33    │ - ····"overflows":·[]
+    34    │ - ··}
+        2 │ + → {
+        3 │ + → → "kind":·"decide",
+        4 │ + → → "width":·360,
+        5 │ + → → "scrollWidth":·360,
+        6 │ + → → "bodyWidth":·360,
+        7 │ + → → "attack":·null,
+        8 │ + → → "scripts":·0,
+        9 │ + → → "remoteImages":·0,
+       10 │ + → → "unsafeLinks":·0,
+       11 │ + → → "overflows":·[]
+       12 │ + → },
+       13 │ + → {
+       14 │ + → → "kind":·"approve",
+       15 │ + → → "width":·360,
+       16 │ + → → "scrollWidth":·360,
+       17 │ + → → "bodyWidth":·360,
+       18 │ + → → "attack":·null,
+       19 │ + → → "scripts":·0,
+       20 │ + → → "remoteImages":·0,
+       21 │ + → → "unsafeLinks":·0,
+       22 │ + → → "overflows":·[]
+       23 │ + → },
+       24 │ + → {
+       25 │ + → → "kind":·"runs",
+       26 │ + → → "width":·360,
+       27 │ + → → "scrollWidth":·360,
+       28 │ + → → "bodyWidth":·360,
+       29 │ + → → "attack":·null,
+       30 │ + → → "scripts":·0,
+       31 │ + → → "remoteImages":·0,
+       32 │ + → → "unsafeLinks":·0,
+       33 │ + → → "overflows":·[]
+       34 │ + → }
+    35 35 │   ]
+    36 36 │   
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 25.
+Checked 1482 files in 1044ms. No fixes applied.
+Found 8 errors.
+Found 37 warnings.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+ ELIFECYCLE  Command failed with exit code 1.

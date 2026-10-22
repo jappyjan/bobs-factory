@@ -1,0 +1,288 @@
+{
+  "head": "b25ae470b858b0e059603566ec144178ce38fee6",
+  "tree": "ec9dd8abaa5e7c103abb39a530fa2e7a65d1e945",
+  "base": "fa866b3d18a880a72fb59f19bfc88195cd4db762",
+  "branch": "taskbot/140-views",
+  "cwd": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views",
+  "node": "v24.21.0",
+  "pid": 75133,
+  "startedAt": "2026-10-22T11:03:52.602Z",
+  "sourceFingerprint": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be",
+  "commands": [
+    {
+      "name": "install",
+      "command": "pnpm",
+      "args": [
+        "install",
+        "--frozen-lockfile"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round5-complete-validation/install.log",
+      "startedAt": "2026-10-22T11:03:52.728Z",
+      "pid": 75248,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:03:53.553Z",
+      "bytes": 171,
+      "sha256": "1cdb175fb34e23f90073f4108270034f493c84f29132924c8543e842d6ac73bb",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "audit",
+      "command": "pnpm",
+      "args": [
+        "audit",
+        "--json"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round5-complete-validation/audit.log",
+      "startedAt": "2026-10-22T11:03:53.819Z",
+      "pid": 75323,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:03:55.053Z",
+      "bytes": 310,
+      "sha256": "b762aa3d91189514a6fa7b70c124cb022d7579e4f5095cc8d9e188dc318da600",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "build",
+      "command": "pnpm",
+      "args": [
+        "build"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round5-complete-validation/build.log",
+      "startedAt": "2026-10-22T11:03:55.318Z",
+      "pid": 75615,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:04:02.497Z",
+      "bytes": 3166,
+      "sha256": "fd74081edb54a8658c41cb9650594aad7d605f33ecfb797fa8c62079545d1644",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "typecheck",
+      "command": "pnpm",
+      "args": [
+        "typecheck"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round5-complete-validation/typecheck.log",
+      "startedAt": "2026-10-22T11:04:02.774Z",
+      "pid": 77731,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:04:06.626Z",
+      "bytes": 1865,
+      "sha256": "bac998be59c696a731e3b2604b55c46f8a2659ef23a0ddeeb3b288549d8af2a5",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "lint",
+      "command": "pnpm",
+      "args": [
+        "lint"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round5-complete-validation/lint.log",
+      "startedAt": "2026-10-22T11:04:06.887Z",
+      "pid": 78504,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:04:08.698Z",
+      "bytes": 14696,
+      "sha256": "992996221df2bc65a05a4c1fd6c296872954f3a92394826962d8b4a23d99e66e",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "f1",
+      "command": "node",
+      "args": [
+        "apps/f1/test-drives/assets/taskbot140-views-round5.mjs"
+      ],
+      "env": {
+        "F1_AGENT_MODE": "mock",
+        "F1_EXPECTED_SOURCE_COMMIT": "b25ae470b858b0e059603566ec144178ce38fee6"
+      },
+      "log": "/tmp/taskbot140-round5-complete-validation/f1.log",
+      "startedAt": "2026-10-22T11:04:08.942Z",
+      "pid": 78569,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:04:35.359Z",
+      "bytes": 854115,
+      "sha256": "257964f1b51f87d34083a4d1283f5cce2838cf6ee60f265e71ddbce560d1d914",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "f1-dispatch",
+      "command": "node",
+      "args": [
+        "apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs"
+      ],
+      "env": {
+        "F1_AGENT_MODE": "mock",
+        "F1_EXPECTED_SOURCE_COMMIT": "b25ae470b858b0e059603566ec144178ce38fee6"
+      },
+      "log": "/tmp/taskbot140-round5-complete-validation/f1-dispatch.log",
+      "startedAt": "2026-10-22T11:04:35.615Z",
+      "pid": 80987,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:04:52.405Z",
+      "bytes": 254,
+      "sha256": "7c137b10a3c01d837919452f4c9f885440dc84cd816a807b71ecf633b5c859f2",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "f1-native-queue",
+      "command": "node",
+      "args": [
+        "apps/f1/test-drives/assets/taskbot140-native-delivery-round5.mjs"
+      ],
+      "env": {
+        "F1_AGENT_MODE": "mock",
+        "F1_EXPECTED_SOURCE_COMMIT": "b25ae470b858b0e059603566ec144178ce38fee6"
+      },
+      "log": "/tmp/taskbot140-round5-complete-validation/f1-native-queue.log",
+      "startedAt": "2026-10-22T11:04:52.825Z",
+      "pid": 83012,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:04:56.294Z",
+      "bytes": 384,
+      "sha256": "debc763fa46888c3a617c3c8b7b3fc0d8faf26104ab2d15496ca612e37720082",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "packages",
+      "command": "pnpm",
+      "args": [
+        "test:packages:run"
+      ],
+      "env": {
+        "VITEST_MAX_WORKERS": "1",
+        "npm_config_workspace_concurrency": "1"
+      },
+      "log": "/tmp/taskbot140-round5-complete-validation/packages.log",
+      "startedAt": "2026-10-22T11:04:56.541Z",
+      "pid": 83158,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:21:50.007Z",
+      "bytes": 8756,
+      "sha256": "18104bdf8e8ba75466a3d97f45fb3961fa229260ffe6dad9cfc0e366674a8de2",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "apps",
+      "command": "pnpm",
+      "args": [
+        "--workspace-concurrency=1",
+        "-r",
+        "--filter",
+        "./apps/*",
+        "test:run"
+      ],
+      "env": {
+        "VITEST_MAX_WORKERS": "1"
+      },
+      "log": "/tmp/taskbot140-round5-complete-validation/apps.log",
+      "startedAt": "2026-10-22T11:21:50.464Z",
+      "pid": 2618,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:22:56.725Z",
+      "bytes": 6721,
+      "sha256": "8181cc005fdff2634a0502bca5d443b0881bdd7a18dd7b6697502831bbafe1a6",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "scripts",
+      "command": "/bin/zsh",
+      "args": [
+        "-f",
+        "-c",
+        "node --test --test-concurrency=2 scripts/tests/*.test.mjs"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round5-complete-validation/scripts.log",
+      "startedAt": "2026-10-22T11:22:57.176Z",
+      "pid": 37151,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:24:06.329Z",
+      "bytes": 17564,
+      "sha256": "55c97e327bc18b07348d29b7896852e0b8fa1143858981c3ecaa134dbdffbe76",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "native-build",
+      "command": "bun",
+      "args": [
+        "run",
+        "scripts/build-binary.ts",
+        "--target",
+        "darwin-arm64",
+        "--output",
+        "/tmp/taskbot140-round5-native-build"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round5-complete-validation/native-build.log",
+      "startedAt": "2026-10-22T11:24:06.760Z",
+      "pid": 91347,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:24:11.622Z",
+      "bytes": 80,
+      "sha256": "57e56f38f8a6b5c8e04b62e118b8fbce46f45e2356649c688aba389b543828f2",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "native-standard-smoke",
+      "command": "/bin/bash",
+      "args": [
+        "scripts/smoke-binary.sh",
+        "/tmp/taskbot140-round5-native-build/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory"
+      ],
+      "env": {
+        "BOBS_FACTORY_SMOKE_PORT": "46508"
+      },
+      "log": "/tmp/taskbot140-round5-complete-validation/native-standard-smoke.log",
+      "startedAt": "2026-10-22T11:24:11.883Z",
+      "pid": 91407,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:24:17.801Z",
+      "bytes": 535,
+      "sha256": "148362ecca6d78cad497348a29838b271eea490b93a04a6430c4826f682e46cc",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    },
+    {
+      "name": "native-views",
+      "command": "node",
+      "args": [
+        "apps/f1/test-drives/assets/taskbot140-views-native.mjs",
+        "--binary",
+        "/tmp/taskbot140-round5-native-build/bobs-factory-1.0.0-beta-darwin-arm64/bobs-factory",
+        "--output",
+        "/tmp/taskbot140-round5-native-views"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round5-complete-validation/native-views.log",
+      "startedAt": "2026-10-22T11:24:18.096Z",
+      "pid": 92292,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T11:24:19.211Z",
+      "bytes": 426,
+      "sha256": "2f2ce6026c8b746fa2c2f244121fc55c97296ebb2a1fb30ba95d164327d8808d",
+      "sourceAfter": "4b24ea5c138c8b125c02f4d75286c3a96dd7c2a84b6b73ba5a5a6859e46734be"
+    }
+  ],
+  "result": "pass",
+  "finishedAt": "2026-10-22T11:24:19.345Z",
+  "finalStatus": ""
+}

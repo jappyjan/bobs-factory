@@ -25,6 +25,7 @@ import {
 /** Stable output format IDs. Implementations live in OutputFormats.ts. */
 export const FORMAT_IDS = [
 	"json-v1",
+	"view-v1",
 	"clarify-v1",
 	"plan-v1",
 	"plan-review-v1",
@@ -176,6 +177,7 @@ export const CONTEXT_SOURCES = [
 	"item",
 	"index",
 	"callInputs",
+	"childRuns",
 ] as const;
 export type ContextSource = (typeof CONTEXT_SOURCES)[number];
 
@@ -999,15 +1001,21 @@ export function materializeWorkflowConfig<
 						read.when ? { ...read } : read.from,
 					]),
 				),
-				rules: structuredClone(config.rules),
-				checks: config.checks.map(({ check, args }) =>
-					Object.keys(args).length ? { check, ...args } : check,
-				),
-				access: config.access,
-				instructions: [...config.instructions],
 			});
-			if (config.output) step.output = structuredClone(config.output);
-			if (config.revision) step.revision = config.revision;
+			// Human views share declared reads, but never acquire agent tool/rule authority
+			// merely because Recipes projects an editable definition.
+			if (!["decide", "approve", "show"].includes(step.type ?? "")) {
+				Object.assign(step, {
+					rules: structuredClone(config.rules),
+					checks: config.checks.map(({ check, args }) =>
+						Object.keys(args).length ? { check, ...args } : check,
+					),
+					access: config.access,
+					instructions: [...config.instructions],
+				});
+				if (config.output) step.output = structuredClone(config.output);
+				if (config.revision) step.revision = config.revision;
+			}
 			for (const [groupIndex, group] of (
 				(original as { groups?: object[][] }).groups ?? []
 			).entries())

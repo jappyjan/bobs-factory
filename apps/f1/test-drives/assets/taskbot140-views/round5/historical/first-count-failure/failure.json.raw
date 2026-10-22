@@ -1,0 +1,322 @@
+{
+  "head": "53c839ae3ceed654bb390cdb0c7f63b6429a2ed3",
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n6 !== 4\n",
+  "stack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n6 !== 4\n\n    at file:///Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/f1/test-drives/assets/taskbot140-dispatch-round5.mjs:479:10",
+  "wire": [
+    {
+      "at": 1792666087166,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666087569,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666087719,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666088059,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Current outgoing view. manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345. Follow progress in Factory.\n\n<!-- factory:manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792666088273,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666088529,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666088714,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666088844,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: ff87cde5-f0f6-4115-bcd8-f8cd9b1070d6\nDisplayed digest: 345990cd3ffbb21674ee7de6c9bce4f28ceded1e942311d55b36bab7b8dc7f81\nReply with /view-answer {\"batchId\":\"ff87cde5-f0f6-4115-bcd8-f8cd9b1070d6\",\"digest\":\"345990cd3ffbb21674ee7de6c9bce4f28ceded1e942311d55b36bab7b8dc7f81\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nDecide\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-76e167782912755512ff7f63787aa983ed0f3521: Synthetic [running]\na\\: Item\n\n\n<!-- factory:manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345:6610ed16385ffa1f4407 -->"
+      }
+    },
+    {
+      "at": 1792666088952,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666089088,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666089276,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Factory work started: Controlled child. Synthetic. Follow progress in Factory.\n\n<!-- factory:child-76e167782912755512ff7f63787aa983ed0f3521:03494afd4248c42f5fa1 -->"
+      }
+    },
+    {
+      "at": 1792666091153,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666091251,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666093943,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666094030,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666094153,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "decide\nDecision batch: a3a962c2-5781-4cb1-a2b7-b4bc8ec41a28\nDisplayed digest: f17d1d69207ca4da0d43a03fc8da97455363fbcbfe2c2317c4a4f0e03e45b073\nReply with /view-answer {\"batchId\":\"a3a962c2-5781-4cb1-a2b7-b4bc8ec41a28\",\"digest\":\"f17d1d69207ca4da0d43a03fc8da97455363fbcbfe2c2317c4a4f0e03e45b073\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nDecide\nActions\\: skip \\(Skip\\)\nrunList:\nWave launch · Wave 1:\n- child\\-76e167782912755512ff7f63787aa983ed0f3521: Synthetic [completed]\na\\: Item\n\n\n<!-- factory:manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345:2100e3290a4a03c490eb -->"
+      }
+    },
+    {
+      "at": 1792666094494,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666094645,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666094839,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:child-76e167782912755512ff7f63787aa983ed0f3521:09d21291c5952e75d4f2 -->"
+      }
+    },
+    {
+      "at": 1792666095009,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666095132,
+      "name": "get_ticket",
+      "args": {
+        "project": "synthetic",
+        "id": 1
+      }
+    },
+    {
+      "at": 1792666095329,
+      "name": "comment",
+      "args": {
+        "project": "synthetic",
+        "id": 1,
+        "author": "bobs-factory",
+        "body": "Workflow Controlled child completed. Coding tickets become Done only after confirmed merge. Inspect run child-76e167782912755512ff7f63787aa983ed0f3521 for results.\n\n<!-- factory:child-76e167782912755512ff7f63787aa983ed0f3521:08cb914c436eb1379331 -->"
+      }
+    }
+  ],
+  "turns": [
+    {
+      "runId": "child-76e167782912755512ff7f63787aa983ed0f3521",
+      "runner": "claude",
+      "model": "opus"
+    },
+    {
+      "runId": "manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345",
+      "runner": "claude",
+      "profile": "context-only",
+      "model": "opus"
+    }
+  ],
+  "requests": [
+    {
+      "path": "/api/runs",
+      "body": {
+        "workflow": "dispatch-view",
+        "repositoryId": "fixture",
+        "runner": "claude",
+        "prompt": "Synthetic outgoing dispatch",
+        "source": "https://localhost:58925/p/synthetic/t/1"
+      },
+      "status": 202,
+      "result": {
+        "accepted": true,
+        "id": "manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345",
+        "title": "manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345",
+        "status": "running"
+      }
+    },
+    {
+      "path": "/api/runs/manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345/view-ask",
+      "body": {
+        "batchId": "ff87cde5-f0f6-4115-bcd8-f8cd9b1070d6",
+        "digest": "345990cd3ffbb21674ee7de6c9bce4f28ceded1e942311d55b36bab7b8dc7f81",
+        "itemId": "a",
+        "question": "Synthetic held Ask",
+        "requestId": "8610cffd-07ff-4ec5-8b0b-7c391e0a18d7"
+      },
+      "status": 200,
+      "result": {
+        "id": "ff87cde5-f0f6-4115-bcd8-f8cd9b1070d6",
+        "stepKey": "choose",
+        "kind": "decide",
+        "title": "Decide",
+        "digest": "38c38bd97910e57254b460b8074665d1a2a742eefa2024489ee205899cc97ae4",
+        "view": {
+          "version": "view-v1",
+          "components": [
+            {
+              "id": "children",
+              "type": "runList",
+              "data": {
+                "waves": [
+                  {
+                    "id": "07f10212-329a-4b50-8b4c-200f860b2ec2-0",
+                    "label": "launch · Wave 1",
+                    "runs": [
+                      {
+                        "id": "child-76e167782912755512ff7f63787aa983ed0f3521",
+                        "title": "Synthetic",
+                        "status": "running"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "a",
+            "title": "Item",
+            "details": []
+          }
+        ],
+        "actions": [
+          {
+            "id": "skip",
+            "label": "Skip"
+          }
+        ],
+        "askAvailable": true,
+        "threads": {
+          "a": [
+            {
+              "id": "8610cffd-07ff-4ec5-8b0b-7c391e0a18d7",
+              "question": "Synthetic held Ask",
+              "status": "pending",
+              "at": "2026-10-22T10:48:11.008Z"
+            }
+          ]
+        },
+        "createdAt": "2026-10-22T10:48:08.128Z"
+      }
+    },
+    {
+      "path": "/api/runs/manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345/view-answer",
+      "body": {
+        "batchId": "ff87cde5-f0f6-4115-bcd8-f8cd9b1070d6",
+        "digest": "38c38bd97910e57254b460b8074665d1a2a742eefa2024489ee205899cc97ae4",
+        "accepted": true,
+        "choices": [
+          {
+            "itemId": "a",
+            "action": "skip"
+          }
+        ]
+      },
+      "status": 409,
+      "result": {
+        "error": "This decision batch was superseded. Refresh and review again."
+      }
+    }
+  ],
+  "runs": [
+    {
+      "id": "child-76e167782912755512ff7f63787aa983ed0f3521",
+      "status": "completed"
+    },
+    {
+      "id": "manual-2ff82bff-e48c-4be9-b9e5-cb8086e56345",
+      "status": "waiting"
+    }
+  ]
+}

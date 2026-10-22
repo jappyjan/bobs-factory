@@ -63,11 +63,15 @@ export function bodyProblem(value: unknown): string | undefined {
 				"snapshot",
 				"file-issues",
 				"launch-runs",
+				"show",
+				"decide",
+				"approve",
 			].includes(step.type) ||
 			!Array.isArray(step.branches)
 		)
 			return `Step “${step.id}” needs a name, supported type and branches array.`;
 		if (
+			["decide", "approve"].includes(step.type) ||
 			(step.type === "agent" && step.askQuestions) ||
 			(step.type === "tool" &&
 				[

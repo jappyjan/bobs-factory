@@ -1,0 +1,45 @@
+{
+  "source": "66668d8fffc63fc5dfcb37c9940f123491cd4c0f",
+  "images": [
+    {
+      "path": "builder-390px-dark-consent.png",
+      "sha256": "edfdd4d200a8d988aa30c8f03aa64b909ed882cca55991aa961f18c80196336e",
+      "inspection": "Root implementation owner opened actual image; consent/retained-input provenance and readable light/dark desktop/mobile layout inspected."
+    },
+    {
+      "path": "builder-390px-dark-preview.png",
+      "sha256": "f5a857383a89a972a0fb5eaadbcd615c27e18350cadc63bd33dfd968137715c4",
+      "inspection": "Root implementation owner opened actual image; consent/retained-input provenance and readable light/dark desktop/mobile layout inspected."
+    },
+    {
+      "path": "builder-390px-light-consent.png",
+      "sha256": "7952efca283392e8bb69a89e3df0d1f68761448f1a8660ef71d909ce02d2af1b",
+      "inspection": "Root implementation owner opened actual image; consent/retained-input provenance and readable light/dark desktop/mobile layout inspected."
+    },
+    {
+      "path": "builder-390px-light-preview.png",
+      "sha256": "cbc5c5250d820c9f04931643db52171ac92754c90607674be71d287a58e5de50",
+      "inspection": "Root implementation owner opened actual image; consent/retained-input provenance and readable light/dark desktop/mobile layout inspected."
+    },
+    {
+      "path": "builder-desktop-dark-consent.png",
+      "sha256": "b82765a2eeb9c4d03cc063a41dd8635bfcb25e244c8c6609d93cb7d3422d5210",
+      "inspection": "Root implementation owner opened actual image; consent/retained-input provenance and readable light/dark desktop/mobile layout inspected."
+    },
+    {
+      "path": "builder-desktop-dark-preview.png",
+      "sha256": "0530343b09bf4498e790e1ac9f04d63804679065bb6eda7a153615a617b7525e",
+      "inspection": "Root implementation owner opened actual image; consent/retained-input provenance and readable light/dark desktop/mobile layout inspected."
+    },
+    {
+      "path": "builder-desktop-light-consent.png",
+      "sha256": "47ed140d295e5a8882d40f7550cd251078c70bf8073720e0306d99b35326fc0f",
+      "inspection": "Root implementation owner opened actual image; consent/retained-input provenance and readable light/dark desktop/mobile layout inspected."
+    },
+    {
+      "path": "builder-desktop-light-preview.png",
+      "sha256": "7741a5a72ce5a683309f0400f602f7ccdeda392d87ee7bfbcbe79a75cbe3ae67",
+      "inspection": "Root implementation owner opened actual image; consent/retained-input provenance and readable light/dark desktop/mobile layout inspected."
+    }
+  ]
+}

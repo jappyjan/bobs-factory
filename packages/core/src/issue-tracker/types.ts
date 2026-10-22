@@ -531,6 +531,8 @@ export type AgentActivityCreateInput =
 export interface AgentActivityDeliveryOptions {
 	/** Reserve interactive priority for time-sensitive session acknowledgments. */
 	priority?: "interactive";
+	/** Runtime-owned local authority and its private durable identity; never provider input. */
+	view?: import("../DispatchControl.js").ViewDeliveryControl;
 }
 
 /**

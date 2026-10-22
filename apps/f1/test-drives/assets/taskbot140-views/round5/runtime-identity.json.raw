@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-22T11:25:16.532Z",
+  "head": "b25ae470b858b0e059603566ec144178ce38fee6",
+  "dirty": "",
+  "f1Build": "65d86f2d191f4796f20fd81fa5bc71284014abafafc0c3fb4a60570dd5f247d0",
+  "qualification": "Same local measured compiled aggregate as actual F1 before/after; not independent whole-dist reproducibility. Frozen source remains unchanged.",
+  "critical": {
+    "packages/edge-worker/dist/factory/ViewRuntime.js": "c3ebec99b868a76611ae3d321cc0b03514743cbdfdd8343eb5f01b47afd68cb7",
+    "packages/edge-worker/dist/factory/ViewPresentation.js": "6bfbd679397bc601df126e7dbcfcab66c81fa4256816b7acb9f8cc90bb03cc2c",
+    "packages/edge-worker/dist/factory/ViewText.js": "501fb2ce0f1000ffc6111be23c068ddc276f632d4c1f418424daf45be65b0ae9",
+    "packages/edge-worker/dist/factory/TicketTracking.js": "38de676c16bfd818bbc5b608663b2f0382d7f1f6e74faa8b278e4785299a65f6",
+    "packages/edge-worker/dist/factory/WorkflowRuntime.js": "e507553040b4b2bc40fe9432f0f1c88f1947a264f2f7ff61be9997830bacb736",
+    "packages/edge-worker/dist/EdgeWorker.js": "37841310991b014e4e243a46423ae09139ea83a56b2d8225f265625c923c6fbe",
+    "packages/edge-worker/dist/factory/FactoryServer.js": "bc79c9ae53c0a406fc5b5217dc029bef879f2344a5deb625beb79764307f3c7f",
+    "packages/edge-worker/dist/factory/PushEvents.js": "33c878c5fd15a1367f4ca9415df3411814b26b8f25a76c0b2255967aecd210c8",
+    "packages/core/dist/DispatchControl.js": "1e34e068ff07e35231188ab4870cf2c257b6de1e847aff453a6c0f7bf5a93af1",
+    "packages/mcp-tools/dist/callConfiguredTool.js": "d6db3d496f028cad668655b5d56c198ab70f1935fb903af2be80babcf6883969",
+    "packages/codex-runner/dist/callMcpTool.js": "abc41bd022cb34a1f90fce8a05d94dc247f5bffed5eb93623fe9b99f522e9e1e",
+    "packages/linear-event-transport/dist/LinearDeliveryOutbox.js": "07c18c56ca7a223367bcd3cea2886cd2ebe5369fee9a5d28c49fa04859104f80",
+    "packages/linear-event-transport/dist/LinearIssueTrackerService.js": "c31d73c0b23df874afa4cc29918af5302a24def9332e31864a57ed8fab780ad1",
+    "packages/linear-event-transport/dist/LinearRequestBudget.js": "1c804250c09c7e4f1ec21a37f3d2aa510e46c53c746aca249b8d2472cba60c96"
+  },
+  "result": "PASS"
+}

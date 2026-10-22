@@ -1,0 +1,37 @@
+[
+  {
+    "id": "comment-51",
+    "body": "Factory work started: Historical Ask owner during child changes. f1-views-repair-ask-race. Follow progress in Factory.\n\n<!-- factory:session-6:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T11:04:31.971Z"
+  },
+  {
+    "id": "comment-52",
+    "body": "decide\nDecision batch: 0e14ceba-5398-4f68-b910-126fc86470a6\nDisplayed digest: 742c9294a69a81b8876ba8d55590975be154a94afc88111c1807a6d1a63e581f\nReply with /view-answer {\"batchId\":\"0e14ceba-5398-4f68-b910-126fc86470a6\",\"digest\":\"742c9294a69a81b8876ba8d55590975be154a94afc88111c1807a6d1a63e581f\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose after inspecting actual child state\nActions\\: skip \\(Skip\\)\nrunList:\nWave dispatch · Wave 1:\n- child\\-23915fc2e3d17530083c2f79d74c08296e9d7284: Controlled child [running]\na\\: Alpha\n\n\n<!-- factory:session-6:34a3a0e1c367eca3921e -->",
+    "createdAt": "2026-10-22T11:04:32.818Z"
+  },
+  {
+    "id": "comment-53",
+    "body": "Factory work started: Controlled local child. f1-views-repair-ask-race. Follow progress in Factory.\n\n<!-- factory:child-23915fc2e3d17530083c2f79d74c08296e9d7284:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T11:04:33.712Z"
+  },
+  {
+    "id": "comment-54",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:child-23915fc2e3d17530083c2f79d74c08296e9d7284:ae6317d3db7e5f63c098 -->",
+    "createdAt": "2026-10-22T11:04:33.853Z"
+  },
+  {
+    "id": "comment-55",
+    "body": "Workflow Controlled local child completed. Coding tickets become Done only after confirmed merge. Inspect run child-23915fc2e3d17530083c2f79d74c08296e9d7284 for results.\n\n<!-- factory:child-23915fc2e3d17530083c2f79d74c08296e9d7284:08cb914c436eb1379331 -->",
+    "createdAt": "2026-10-22T11:04:33.918Z"
+  },
+  {
+    "id": "comment-56",
+    "body": "decide\nDecision batch: ac18281b-8e7b-4490-9b9b-b68f9ce2ed1f\nDisplayed digest: 9518d0829719f5b851f6a84cb763081fac772af4c06bba0f48c828347905b3f9\nReply with /view-answer {\"batchId\":\"ac18281b-8e7b-4490-9b9b-b68f9ce2ed1f\",\"digest\":\"9518d0829719f5b851f6a84cb763081fac772af4c06bba0f48c828347905b3f9\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChoose after inspecting actual child state\nActions\\: skip \\(Skip\\)\nrunList:\nWave dispatch · Wave 1:\n- child\\-23915fc2e3d17530083c2f79d74c08296e9d7284: Controlled child [completed]\na\\: Alpha\n\n\n<!-- factory:session-6:6bd66cff8f1460cb9bba -->",
+    "createdAt": "2026-10-22T11:04:34.186Z"
+  },
+  {
+    "id": "comment-57",
+    "body": "UNIQUE_REPAIR_ASK_ANSWER <script>inertAsk()</script> Original context only; no research rerun.\n\n<!-- factory:session-6:ff2338caff046ade481b -->",
+    "createdAt": "2026-10-22T11:04:34.483Z"
+  }
+]

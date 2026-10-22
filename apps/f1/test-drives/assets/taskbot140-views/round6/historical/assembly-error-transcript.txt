@@ -1,0 +1,9 @@
+Derived transcript of the preliminary assembly command, not a product gate or reconstructed original stderr file. Optional metadata copy used round6-main-fetch.log instead of the actual r6-main-fetch.log. The subsequent index verifier genuinely passed its existing967advertised entries; final archive is rebuilt after correction.
+
+Observed tool output:
+Traceback (most recent call last):
+  File "<stdin>", line 25, in <module>
+  File "/nix/store/0kcws5blwbdyxqxjd1w8hjipz61xny3k-python3-3.14.7/lib/python3.14/shutil.py", line 313, in copyfile
+    with open(src, 'rb') as fsrc:
+         ~~~~^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/taskbot140-round6-main-fetch.log'

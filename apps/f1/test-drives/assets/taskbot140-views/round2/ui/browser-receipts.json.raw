@@ -1,0 +1,1904 @@
+{
+  "source": "66668d8fffc63fc5dfcb37c9940f123491cd4c0f",
+  "tabId": "tab_l_0d852e7f-bc6c-4980-8d42-09f5a6608a99",
+  "receipts": [
+    {
+      "at": "2026-10-22T07:22:55.527Z",
+      "step": "open",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"available\":true,\"visible\":false,\"tabId\":\"tab_l_0d852e7f-bc6c-4980-8d42-09f5a6608a99\",\"url\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\",\"title\":\"Bob's Factory\",\"loading\":false,\"control\":{\"owner\":\"agent\",\"ownedByCaller\":true,\"generation\":0},\"dialog\":null,\"viewportSetting\":{\"_tag\":\"fill\"},\"viewport\":{\"width\":1280,\"height\":800},\"fileChooser\":null,\"downloads\":[],\"tabs\":[{\"tabId\":\"tab_l_0d852e7f-bc6c-4980-8d42-09f5a6608a99\",\"url\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\",\"owner\":\"agent\",\"ownedByCaller\":true,\"visible\":false,\"profileId\":\"incognito\"}],\"profiles\":[{\"id\":\"default\",\"name\":\"Default\"},{\"id\":\"incognito\",\"name\":\"Incognito\",\"incognito\":true}],\"defaultProfileId\":\"default\"}"
+          }
+        ],
+        "structuredContent": {
+          "available": true,
+          "visible": false,
+          "tabId": "tab_l_0d852e7f-bc6c-4980-8d42-09f5a6608a99",
+          "url": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose",
+          "title": "Bob's Factory",
+          "loading": false,
+          "control": {
+            "owner": "agent",
+            "ownedByCaller": true,
+            "generation": 0
+          },
+          "dialog": null,
+          "viewportSetting": {
+            "_tag": "fill"
+          },
+          "viewport": {
+            "width": 1280,
+            "height": 800
+          },
+          "fileChooser": null,
+          "downloads": [],
+          "tabs": [
+            {
+              "tabId": "tab_l_0d852e7f-bc6c-4980-8d42-09f5a6608a99",
+              "url": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose",
+              "owner": "agent",
+              "ownedByCaller": true,
+              "visible": false,
+              "profileId": "incognito"
+            }
+          ],
+          "profiles": [
+            {
+              "id": "default",
+              "name": "Default"
+            },
+            {
+              "id": "incognito",
+              "name": "Incognito",
+              "incognito": true
+            }
+          ],
+          "defaultProfileId": "default"
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:23:06.952Z",
+      "step": "initial-private-default",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"fields\":[{\"label\":\"Recipe icon\",\"value\":\"\"},{\"label\":\"Recipe name\",\"value\":\"Review findings with generic views\"},{\"label\":\"Step name\",\"value\":\"Choose the next work\"},{\"label\":\"Include bounded view text in push notifications\",\"value\":false},{\"label\":\"View reads\",\"value\":\"{\\n  \\\"research\\\": \\\"research\\\"\\n}\"},{\"label\":\"View JSON{\\n  \\\"version\\\": \\\"view-v1\\\",\\n  \\\"components\\\": [\\n    {\\n      \\\"id\\\": \\\"brief\\\",\\n      \\\"type\\\": \\\"markdown\\\",\\n      \\\"title\\\": \\\"Review brief\\\",\\n      \\\"data\\\": {\\n        \\\"path\\\": \\\"/inputs/research/summary\\\"\\n      }\\n    },\\n    {\\n      \\\"id\\\": \\\"checks\\\",\\n      \\\"type\\\": \\\"checklist\\\",\\n      \\\"title\\\": \\\"Before you decide\\\",\\n      \\\"data\\\": {\\n        \\\"literal\\\": {\\n          \\\"items\\\": [\\n            {\\n              \\\"label\\\": \\\"Original research retained\\\",\\n              \\\"state\\\": \\\"done\\\"\\n            },\\n            {\\n              \\\"label\\\": \\\"Choose an action for every item\\\",\\n              \\\"state\\\": \\\"open\\\"\\n            }\\n          ]\\n        }\\n      }\\n    }\\n  ]\\n}\",\"value\":\"{\\n  \\\"version\\\": \\\"view-v1\\\",\\n  \\\"components\\\": [\\n    {\\n      \\\"id\\\": \\\"brief\\\",\\n      \\\"type\\\": \\\"markdown\\\",\\n      \\\"title\\\": \\\"Review brief\\\",\\n      \\\"data\\\": {\\n        \\\"path\\\": \\\"/inputs/research/summary\\\"\\n      }\\n    },\\n    {\\n      \\\"id\\\": \\\"checks\\\",\\n      \\\"type\\\": \\\"checklist\\\",\\n      \\\"title\\\": \\\"Before you decide\\\",\\n      \\\"data\\\": {\\n        \\\"literal\\\": {\\n          \\\"items\\\": [\\n            {\\n              \\\"label\\\": \\\"Original research retained\\\",\\n              \\\"state\\\": \\\"done\\\"\\n            },\\n            {\\n              \\\"label\\\": \\\"Choose an action for every item\\\",\\n              \\\"state\\\": \\\"open\\\"\\n            }\\n          ]\\n        }\\n      }\\n    }\\n  ]\\n}\"},{\"label\":\"Available data paths\",\"value\":\"\"},{\"label\":\"Item actions and bindings\",\"value\":\"{\\n  \\\"items\\\": {\\n    \\\"path\\\": \\\"/inputs/research/items\\\"\\n  },\\n  \\\"itemId\\\": \\\"/id\\\",\\n  \\\"title\\\": \\\"/title\\\",\\n  \\\"body\\\": \\\"/body\\\",\\n  \\\"details\\\": [\\n    {\\n      \\\"label\\\": \\\"Impact\\\",\\n      \\\"path\\\": \\\"/impact\\\"\\n    },\\n    {\\n      \\\"label\\\": \\\"Evidence\\\",\\n      \\\"path\\\": \\\"/evidence\\\"\\n    }\\n  ],\\n  \\\"actions\\\": [\\n    {\\n      \\\"id\\\": \\\"fix\\\",\\n      \\\"label\\\": \\\"Fix\\\",\\n      \\\"comment\\\": true,\\n      \\\"followUp\\\": true\\n    },\\n    {\\n      \\\"id\\\": \\\"issue\\\",\\n      \\\"label\\\": \\\"File issue\\\",\\n      \\\"comment\\\": true,\\n      \\\"followUp\\\": true\\n    },\\n    {\\n      \\\"id\\\": \\\"skip\\\",\\n      \\\"label\\\": \\\"Skip\\\",\\n      \\\"comment\\\": true\\n    }\\n  ],\\n  \\\"ask\\\": {\\n    \\\"prompt\\\": \\\"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\\\"\\n  }\\n}\"},{\"label\":\"Sample binding data{\\n  \\\"inputs\\\": {\\n    \\\"research\\\": {\\n      \\\"summary\\\": {\\n        \\\"text\\\": \\\"Review these findings and choose what should happen next.\\\"\\n      },\\n      \\\"items\\\": [\\n        {\\n          \\\"id\\\": \\\"cache\\\",\\n          \\\"title\\\": \\\"Reuse validated cache entries\\\",\\n          \\\"body\\\": \\\"Avoid repeating work when accepted inputs are unchanged.\\\",\\n          \\\"impact\\\": \\\"Faster repeat runs\\\"\\n        },\\n        {\\n          \\\"id\\\": \\\"labels\\\",\\n          \\\"title\\\": \\\"Clarify progress labels\\\",\\n          \\\"body\\\": \\\"Make waiting and active execution easy to distinguish.\\\",\\n          \\\"impact\\\": \\\"Clearer run status\\\"\\n        }\\n      ]\\n    }\\n  }\\n}JSON object with inputs and optional item/index. Preview data is local to this editor.\",\"value\":\"{\\n  \\\"inputs\\\": {\\n    \\\"research\\\": {\\n      \\\"summary\\\": {\\n        \\\"text\\\": \\\"Review these findings and choose what should happen next.\\\"\\n      },\\n      \\\"items\\\": [\\n        {\\n          \\\"id\\\": \\\"cache\\\",\\n          \\\"title\\\": \\\"Reuse validated cache entries\\\",\\n          \\\"body\\\": \\\"Avoid repeating work when accepted inputs are unchanged.\\\",\\n          \\\"impact\\\": \\\"Faster repeat runs\\\"\\n        },\\n        {\\n          \\\"id\\\": \\\"labels\\\",\\n          \\\"title\\\": \\\"Clarify progress labels\\\",\\n          \\\"body\\\": \\\"Make waiting and active execution easy to distinguish.\\\",\\n          \\\"impact\\\": \\\"Clearer run status\\\"\\n        }\\n      ]\\n    }\\n  }\\n}\"},{\"label\":\"Output field\",\"value\":\"hasFollowUps\"},{\"label\":\"Value\",\"value\":\"true\"},{\"label\":\"Stop aftervisits to this step\",\"value\":\"16\"}],\"text\":\"DECIDE PER ITEM\\n\\nDefine item bindings and allowed actions. Output includes choices, itemsByAction, followUps and hasFollowUps for ordinary recipe routes. Ask uses a dedicated follow-up and retains source research.\\n\\nInclude bounded view text in push notifications\\n\\nPrivate notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\\n\\nView reads\\nView JSON\\n\\nUse a view-v1 component list. Each data binding is either a literal object or a JSON Pointer. To display an agent’s view output, use {\\\"from\\\":\\\"/inputs/summary/view\\\"}.\\n\\nAvailable data paths\\nInsert pointer at cursor\\n\\nSelect a quoted path value in the editor, then insert its replacement. Only named reads (/inputs), the current For each item (/item), and its index (/index) are visible. Private run state is never a binding root.\\n\\nComponent schema and examples\\nItem actions and bindings\\n\\nitems uses {\\\"path\\\":\\\"/inputs/research/items\\\"} or {\\\"literal\\\":[…]}. itemId, title, body and detail paths are relative to each item. Each action has an id, label, optional comment and followUp. Optional ask.prompt configures a dedicated follow-up agent; its model inherits the run unless explicitly set.\\n\\nLIVE PREVIEW\\nPreview data source\\nSample data\\nLast run\\n\\nSample data edited below. No run is changed.\\n\\nSample binding data\\nJSON object with inputs and optional item/index. Preview data is local to this editor.\\n\\nPreview unavailable: For each path \\\"/evidence\\\" does not resolve (missing \\\"evidence\\\")\",\"theme\":\"light\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "fields": [
+              {
+                "label": "Recipe icon",
+                "value": ""
+              },
+              {
+                "label": "Recipe name",
+                "value": "Review findings with generic views"
+              },
+              {
+                "label": "Step name",
+                "value": "Choose the next work"
+              },
+              {
+                "label": "Include bounded view text in push notifications",
+                "value": false
+              },
+              {
+                "label": "View reads",
+                "value": "{\n  \"research\": \"research\"\n}"
+              },
+              {
+                "label": "View JSON{\n  \"version\": \"view-v1\",\n  \"components\": [\n    {\n      \"id\": \"brief\",\n      \"type\": \"markdown\",\n      \"title\": \"Review brief\",\n      \"data\": {\n        \"path\": \"/inputs/research/summary\"\n      }\n    },\n    {\n      \"id\": \"checks\",\n      \"type\": \"checklist\",\n      \"title\": \"Before you decide\",\n      \"data\": {\n        \"literal\": {\n          \"items\": [\n            {\n              \"label\": \"Original research retained\",\n              \"state\": \"done\"\n            },\n            {\n              \"label\": \"Choose an action for every item\",\n              \"state\": \"open\"\n            }\n          ]\n        }\n      }\n    }\n  ]\n}",
+                "value": "{\n  \"version\": \"view-v1\",\n  \"components\": [\n    {\n      \"id\": \"brief\",\n      \"type\": \"markdown\",\n      \"title\": \"Review brief\",\n      \"data\": {\n        \"path\": \"/inputs/research/summary\"\n      }\n    },\n    {\n      \"id\": \"checks\",\n      \"type\": \"checklist\",\n      \"title\": \"Before you decide\",\n      \"data\": {\n        \"literal\": {\n          \"items\": [\n            {\n              \"label\": \"Original research retained\",\n              \"state\": \"done\"\n            },\n            {\n              \"label\": \"Choose an action for every item\",\n              \"state\": \"open\"\n            }\n          ]\n        }\n      }\n    }\n  ]\n}"
+              },
+              {
+                "label": "Available data paths",
+                "value": ""
+              },
+              {
+                "label": "Item actions and bindings",
+                "value": "{\n  \"items\": {\n    \"path\": \"/inputs/research/items\"\n  },\n  \"itemId\": \"/id\",\n  \"title\": \"/title\",\n  \"body\": \"/body\",\n  \"details\": [\n    {\n      \"label\": \"Impact\",\n      \"path\": \"/impact\"\n    },\n    {\n      \"label\": \"Evidence\",\n      \"path\": \"/evidence\"\n    }\n  ],\n  \"actions\": [\n    {\n      \"id\": \"fix\",\n      \"label\": \"Fix\",\n      \"comment\": true,\n      \"followUp\": true\n    },\n    {\n      \"id\": \"issue\",\n      \"label\": \"File issue\",\n      \"comment\": true,\n      \"followUp\": true\n    },\n    {\n      \"id\": \"skip\",\n      \"label\": \"Skip\",\n      \"comment\": true\n    }\n  ],\n  \"ask\": {\n    \"prompt\": \"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\"\n  }\n}"
+              },
+              {
+                "label": "Sample binding data{\n  \"inputs\": {\n    \"research\": {\n      \"summary\": {\n        \"text\": \"Review these findings and choose what should happen next.\"\n      },\n      \"items\": [\n        {\n          \"id\": \"cache\",\n          \"title\": \"Reuse validated cache entries\",\n          \"body\": \"Avoid repeating work when accepted inputs are unchanged.\",\n          \"impact\": \"Faster repeat runs\"\n        },\n        {\n          \"id\": \"labels\",\n          \"title\": \"Clarify progress labels\",\n          \"body\": \"Make waiting and active execution easy to distinguish.\",\n          \"impact\": \"Clearer run status\"\n        }\n      ]\n    }\n  }\n}JSON object with inputs and optional item/index. Preview data is local to this editor.",
+                "value": "{\n  \"inputs\": {\n    \"research\": {\n      \"summary\": {\n        \"text\": \"Review these findings and choose what should happen next.\"\n      },\n      \"items\": [\n        {\n          \"id\": \"cache\",\n          \"title\": \"Reuse validated cache entries\",\n          \"body\": \"Avoid repeating work when accepted inputs are unchanged.\",\n          \"impact\": \"Faster repeat runs\"\n        },\n        {\n          \"id\": \"labels\",\n          \"title\": \"Clarify progress labels\",\n          \"body\": \"Make waiting and active execution easy to distinguish.\",\n          \"impact\": \"Clearer run status\"\n        }\n      ]\n    }\n  }\n}"
+              },
+              {
+                "label": "Output field",
+                "value": "hasFollowUps"
+              },
+              {
+                "label": "Value",
+                "value": "true"
+              },
+              {
+                "label": "Stop aftervisits to this step",
+                "value": "16"
+              }
+            ],
+            "text": "DECIDE PER ITEM\n\nDefine item bindings and allowed actions. Output includes choices, itemsByAction, followUps and hasFollowUps for ordinary recipe routes. Ask uses a dedicated follow-up and retains source research.\n\nInclude bounded view text in push notifications\n\nPrivate notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\n\nView reads\nView JSON\n\nUse a view-v1 component list. Each data binding is either a literal object or a JSON Pointer. To display an agent’s view output, use {\"from\":\"/inputs/summary/view\"}.\n\nAvailable data paths\nInsert pointer at cursor\n\nSelect a quoted path value in the editor, then insert its replacement. Only named reads (/inputs), the current For each item (/item), and its index (/index) are visible. Private run state is never a binding root.\n\nComponent schema and examples\nItem actions and bindings\n\nitems uses {\"path\":\"/inputs/research/items\"} or {\"literal\":[…]}. itemId, title, body and detail paths are relative to each item. Each action has an id, label, optional comment and followUp. Optional ask.prompt configures a dedicated follow-up agent; its model inherits the run unless explicitly set.\n\nLIVE PREVIEW\nPreview data source\nSample data\nLast run\n\nSample data edited below. No run is changed.\n\nSample binding data\nJSON object with inputs and optional item/index. Preview data is local to this editor.\n\nPreview unavailable: For each path \"/evidence\" does not resolve (missing \"evidence\")",
+            "theme": "light"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:23:16.594Z",
+      "step": "load-last-run-matched",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"text\":\"DECIDE PER ITEM\\n\\nDefine item bindings and allowed actions. Output includes choices, itemsByAction, followUps and hasFollowUps for ordinary recipe routes. Ask uses a dedicated follow-up and retains source research.\\n\\nInclude bounded view text in push notifications\\n\\nPrivate notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\\n\\nView reads\\nView JSON\\n\\nUse a view-v1 component list. Each data binding is either a literal object or a JSON Pointer. To display an agent’s view output, use {\\\"from\\\":\\\"/inputs/summary/view\\\"}.\\n\\nAvailable data paths\\nInsert pointer at cursor\\n\\nSelect a quoted path value in the editor, then insert its replacement. Only named reads (/inputs), the current For each item (/item), and its index (/index) are visible. Private run state is never a binding root.\\n\\nComponent schema and examples\\nItem actions and bindings\\n\\nitems uses {\\\"path\\\":\\\"/inputs/research/items\\\"} or {\\\"literal\\\":[…]}. itemId, title, body and detail paths are relative to each item. Each action has an id, label, optional comment and followUp. Optional ask.prompt configures a dedicated follow-up agent; its model inherits the run unless explicitly set.\\n\\nLIVE PREVIEW\\nPreview data source\\nSample data\\nLast run\\nRefresh data\\n\\nLast run views-decide-ui-run · 2026-10-22T07:22:38.356Z · accepted step view configuration matches\\n\\nYOUR DECISIONS\\nChoose the next work\\n\\nReview the content below. Your answer applies to this displayed version.\\n\\nREVIEW BRIEF\\n\\nThree findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or ask a focused follow-up.\\n\\nNo action is selected automatically.\\n\\nBEFORE YOU DECIDE\\n✓\\nOriginal research retained\\n○\\nChoose an action for every item\\n1\\nREUSE VALIDATED CACHE ENTRIES\\n\\nKeep accepted inputs and original receipts while avoiding repeated work.\\n\\nDetails (2)\\nAction for Reuse validated cache entries\\nFix\\nFollow-up\\nFile issue\\nFollow-up\\nSkip\\nAsk about this item\\n2\\nCLARIFY RUN PROGRESS LABELS\\n\\nShow waiting and active execution with the same accessible vocabulary.\\n\\nDetails (2)\\nAction for Clarify run progress labels\\nFix\\nFollow-up\\nFile issue\\nFollow-up\\nSkip\\nAsk about this item\\n3\\nTREAT UNTRUSTED STRINGS AS TEXT\\n\\nUnsafe action\\nImage: Tracking image\\n\\n<img src=x onerror=alert(1)>\\n\\nDetails (2)\\nAction for Treat untrusted strings as text\\nFix\\nFollow-up\\nFile issue\\nFollow-up\\nSkip\\nAsk about this item\\nI reviewed this displayed content.\\n0 of 3 decided\\nSave decisions\",\"view\":\"{\\n  \\\"version\\\": \\\"view-v1\\\",\\n  \\\"components\\\": [\\n    {\\n      \\\"id\\\": \\\"brief\\\",\\n      \\\"type\\\": \\\"markdown\\\",\\n      \\\"title\\\": \\\"Review brief\\\",\\n      \\\"data\\\": {\\n        \\\"path\\\": \\\"/inputs/research/summary\\\"\\n      }\\n    },\\n    {\\n      \\\"id\\\": \\\"checks\\\",\\n      \\\"type\\\": \\\"checklist\\\",\\n      \\\"title\\\": \\\"Before you decide\\\",\\n      \\\"data\\\": {\\n        \\\"literal\\\": {\\n          \\\"items\\\": [\\n            {\\n              \\\"label\\\": \\\"Original research retained\\\",\\n              \\\"state\\\": \\\"done\\\"\\n            },\\n            {\\n              \\\"label\\\": \\\"Choose an action for every item\\\",\\n              \\\"state\\\": \\\"open\\\"\\n            }\\n          ]\\n        }\\n      }\\n    }\\n  ]\\n}\",\"title\":\"Choose the next work\",\"workflow\":\"Review findings with generic views\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "text": "DECIDE PER ITEM\n\nDefine item bindings and allowed actions. Output includes choices, itemsByAction, followUps and hasFollowUps for ordinary recipe routes. Ask uses a dedicated follow-up and retains source research.\n\nInclude bounded view text in push notifications\n\nPrivate notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\n\nView reads\nView JSON\n\nUse a view-v1 component list. Each data binding is either a literal object or a JSON Pointer. To display an agent’s view output, use {\"from\":\"/inputs/summary/view\"}.\n\nAvailable data paths\nInsert pointer at cursor\n\nSelect a quoted path value in the editor, then insert its replacement. Only named reads (/inputs), the current For each item (/item), and its index (/index) are visible. Private run state is never a binding root.\n\nComponent schema and examples\nItem actions and bindings\n\nitems uses {\"path\":\"/inputs/research/items\"} or {\"literal\":[…]}. itemId, title, body and detail paths are relative to each item. Each action has an id, label, optional comment and followUp. Optional ask.prompt configures a dedicated follow-up agent; its model inherits the run unless explicitly set.\n\nLIVE PREVIEW\nPreview data source\nSample data\nLast run\nRefresh data\n\nLast run views-decide-ui-run · 2026-10-22T07:22:38.356Z · accepted step view configuration matches\n\nYOUR DECISIONS\nChoose the next work\n\nReview the content below. Your answer applies to this displayed version.\n\nREVIEW BRIEF\n\nThree findings are ready for your decision. Pick a recipe-defined action, leave an optional comment, or ask a focused follow-up.\n\nNo action is selected automatically.\n\nBEFORE YOU DECIDE\n✓\nOriginal research retained\n○\nChoose an action for every item\n1\nREUSE VALIDATED CACHE ENTRIES\n\nKeep accepted inputs and original receipts while avoiding repeated work.\n\nDetails (2)\nAction for Reuse validated cache entries\nFix\nFollow-up\nFile issue\nFollow-up\nSkip\nAsk about this item\n2\nCLARIFY RUN PROGRESS LABELS\n\nShow waiting and active execution with the same accessible vocabulary.\n\nDetails (2)\nAction for Clarify run progress labels\nFix\nFollow-up\nFile issue\nFollow-up\nSkip\nAsk about this item\n3\nTREAT UNTRUSTED STRINGS AS TEXT\n\nUnsafe action\nImage: Tracking image\n\n<img src=x onerror=alert(1)>\n\nDetails (2)\nAction for Treat untrusted strings as text\nFix\nFollow-up\nFile issue\nFollow-up\nSkip\nAsk about this item\nI reviewed this displayed content.\n0 of 3 decided\nSave decisions",
+            "view": "{\n  \"version\": \"view-v1\",\n  \"components\": [\n    {\n      \"id\": \"brief\",\n      \"type\": \"markdown\",\n      \"title\": \"Review brief\",\n      \"data\": {\n        \"path\": \"/inputs/research/summary\"\n      }\n    },\n    {\n      \"id\": \"checks\",\n      \"type\": \"checklist\",\n      \"title\": \"Before you decide\",\n      \"data\": {\n        \"literal\": {\n          \"items\": [\n            {\n              \"label\": \"Original research retained\",\n              \"state\": \"done\"\n            },\n            {\n              \"label\": \"Choose an action for every item\",\n              \"state\": \"open\"\n            }\n          ]\n        }\n      }\n    }\n  ]\n}",
+            "title": "Choose the next work",
+            "workflow": "Review findings with generic views"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:23:40.168Z",
+      "step": "edit-view-withdraws-match-retains-inputs",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"headings\":[\"Choose the next work\",\"Edited review heading\",\"Before you decide\",\"Reuse validated cache entries\",\"Clarify run progress labels\",\"Treat untrusted strings as text\"],\"items\":3,\"asks\":3}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "headings": [
+              "Choose the next work",
+              "Edited review heading",
+              "Before you decide",
+              "Reuse validated cache entries",
+              "Clarify run progress labels",
+              "Treat untrusted strings as text"
+            ],
+            "items": 3,
+            "asks": 3
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:23:56.959Z",
+      "step": "edit-action-label-withdraws-match",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"actions\":[\"Repair carefully\\nFollow-up\",\"File issue\\nFollow-up\",\"Skip\",\"Repair carefully\\nFollow-up\",\"File issue\\nFollow-up\",\"Skip\",\"Repair carefully\\nFollow-up\",\"File issue\\nFollow-up\",\"Skip\"],\"items\":3,\"asks\":3}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "actions": [
+              "Repair carefully\nFollow-up",
+              "File issue\nFollow-up",
+              "Skip",
+              "Repair carefully\nFollow-up",
+              "File issue\nFollow-up",
+              "Skip",
+              "Repair carefully\nFollow-up",
+              "File issue\nFollow-up",
+              "Skip"
+            ],
+            "items": 3,
+            "asks": 3
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:23:57.036Z",
+      "step": "edit-follow-up-withdraws-match",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"actions\":[\"Fix\",\"File issue\\nFollow-up\",\"Skip\",\"Fix\",\"File issue\\nFollow-up\",\"Skip\",\"Fix\",\"File issue\\nFollow-up\",\"Skip\"],\"items\":3,\"asks\":3}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "actions": [
+              "Fix",
+              "File issue\nFollow-up",
+              "Skip",
+              "Fix",
+              "File issue\nFollow-up",
+              "Skip",
+              "Fix",
+              "File issue\nFollow-up",
+              "Skip"
+            ],
+            "items": 3,
+            "asks": 3
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:23:57.112Z",
+      "step": "edit-ask-withdraws-match",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"actions\":[\"Fix\\nFollow-up\",\"File issue\\nFollow-up\",\"Skip\",\"Fix\\nFollow-up\",\"File issue\\nFollow-up\",\"Skip\",\"Fix\\nFollow-up\",\"File issue\\nFollow-up\",\"Skip\"],\"items\":3,\"asks\":0}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "actions": [
+              "Fix\nFollow-up",
+              "File issue\nFollow-up",
+              "Skip",
+              "Fix\nFollow-up",
+              "File issue\nFollow-up",
+              "Skip",
+              "Fix\nFollow-up",
+              "File issue\nFollow-up",
+              "Skip"
+            ],
+            "items": 3,
+            "asks": 0
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:23:57.188Z",
+      "step": "edit-Step name-withdraws-match",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"heading\":\"Edited decision title\",\"items\":3}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "heading": "Edited decision title",
+            "items": 3
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:23:57.261Z",
+      "step": "edit-Recipe name-withdraws-match",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"heading\":\"Choose the next work\",\"items\":3}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "heading": "Choose the next work",
+            "items": 3
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:24:11.626Z",
+      "step": "type-change-clears-loaded-match",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"text\":\"APPROVE DISPLAYED CONTENT\\n\\nApprove and Request changes bind the exact server-rendered content, assets and accepted configuration. A changed version requires a fresh answer.\\n\\nInclude bounded view text in push notifications\\n\\nPrivate notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\\n\\nView reads\\nView JSON\\n\\nUse a view-v1 component list. Each data binding is either a literal object or a JSON Pointer. To display an agent’s view output, use {\\\"from\\\":\\\"/inputs/summary/view\\\"}.\\n\\nAvailable data paths\\nInsert pointer at cursor\\n\\nSelect a quoted path value in the editor, then insert its replacement. Only named reads (/inputs), the current For each item (/item), and its index (/index) are visible. Private run state is never a binding root.\\n\\nComponent schema and examples\\nLIVE PREVIEW\\nPreview data source\\nSample data\\nLast run\\n\\nSample data edited below. No run is changed.\\n\\nSample binding data\\nJSON object with inputs and optional item/index. Preview data is local to this editor.\\nYOUR APPROVAL\\nChoose the next work\\n\\nReview the content below. Your answer applies to this displayed version.\\n\\nREVIEW BRIEF\\n\\nReview these findings and choose what should happen next.\\n\\nBEFORE YOU DECIDE\\n✓\\nOriginal research retained\\n○\\nChoose an action for every item\\nFeedback / requested changes\\nI reviewed this displayed content.\\nRequest changes\\nApprove\",\"asks\":0}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "text": "APPROVE DISPLAYED CONTENT\n\nApprove and Request changes bind the exact server-rendered content, assets and accepted configuration. A changed version requires a fresh answer.\n\nInclude bounded view text in push notifications\n\nPrivate notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\n\nView reads\nView JSON\n\nUse a view-v1 component list. Each data binding is either a literal object or a JSON Pointer. To display an agent’s view output, use {\"from\":\"/inputs/summary/view\"}.\n\nAvailable data paths\nInsert pointer at cursor\n\nSelect a quoted path value in the editor, then insert its replacement. Only named reads (/inputs), the current For each item (/item), and its index (/index) are visible. Private run state is never a binding root.\n\nComponent schema and examples\nLIVE PREVIEW\nPreview data source\nSample data\nLast run\n\nSample data edited below. No run is changed.\n\nSample binding data\nJSON object with inputs and optional item/index. Preview data is local to this editor.\nYOUR APPROVAL\nChoose the next work\n\nReview the content below. Your answer applies to this displayed version.\n\nREVIEW BRIEF\n\nReview these findings and choose what should happen next.\n\nBEFORE YOU DECIDE\n✓\nOriginal research retained\n○\nChoose an action for every item\nFeedback / requested changes\nI reviewed this displayed content.\nRequest changes\nApprove",
+            "asks": 0
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:24:26.182Z",
+      "step": "edit-with-request-pending",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"loading\":false,\"heading\":\"Edited review heading\",\"heads\":[\"Edited review heading\",\"Before you decide\",\"Reuse validated cache entries\",\"Clarify run progress labels\",\"Treat untrusted strings as text\"]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "loading": false,
+            "heading": "Edited review heading",
+            "heads": [
+              "Edited review heading",
+              "Before you decide",
+              "Reuse validated cache entries",
+              "Clarify run progress labels",
+              "Treat untrusted strings as text"
+            ]
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:24:38.926Z",
+      "step": "new-response-first",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"headings\":[\"Edited review heading\",\"Before you decide\",\"Reuse validated cache entries\",\"Clarify run progress labels\",\"Treat untrusted strings as text\"]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "headings": [
+              "Edited review heading",
+              "Before you decide",
+              "Reuse validated cache entries",
+              "Clarify run progress labels",
+              "Treat untrusted strings as text"
+            ]
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:24:39.292Z",
+      "step": "old-response-last-ignored",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"headings\":[\"Edited review heading\",\"Before you decide\",\"Reuse validated cache entries\",\"Clarify run progress labels\",\"Treat untrusted strings as text\"],\"errors\":[]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "headings": [
+              "Edited review heading",
+              "Before you decide",
+              "Reuse validated cache entries",
+              "Clarify run progress labels",
+              "Treat untrusted strings as text"
+            ],
+            "errors": []
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:24:56.085Z",
+      "step": "readonly-api-before-consent",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":200,\"keys\":[\"format\",\"locals\",\"preferences\",\"launch\",\"enabled\",\"defaultWorkflow\",\"order\",\"provenance\",\"inactive\"],\"types\":{\"format\":\"string\",\"locals\":\"array\",\"preferences\":\"object\",\"launch\":\"object\",\"enabled\":\"object\",\"defaultWorkflow\":\"string\",\"order\":\"array\",\"provenance\":\"object\",\"inactive\":\"array\"},\"match\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": 200,
+            "keys": [
+              "format",
+              "locals",
+              "preferences",
+              "launch",
+              "enabled",
+              "defaultWorkflow",
+              "order",
+              "provenance",
+              "inactive"
+            ],
+            "types": {
+              "format": "string",
+              "locals": "array",
+              "preferences": "object",
+              "launch": "object",
+              "enabled": "object",
+              "defaultWorkflow": "string",
+              "order": "array",
+              "provenance": "object",
+              "inactive": "array"
+            },
+            "match": true
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:24:56.221Z",
+      "step": "explicit-notification-consent",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"checked\":true,\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"disclosure\":\"DECIDE PER ITEM\\n\\nDefine item bindings and allowed actions. Output includes choices, itemsByAction, followUps and hasFollowUps for ordinary recipe routes. Ask uses a dedicated follow-up and retains source research.\\n\\nInclude bounded view text in push notifications\\n\\nPrivate notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\\n\\n\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "checked": true,
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "disclosure": "DECIDE PER ITEM\n\nDefine item bindings and allowed actions. Output includes choices, itemsByAction, followUps and hasFollowUps for ordinary recipe routes. Ask uses a dedicated follow-up and retains source research.\n\nInclude bounded view text in push notifications\n\nPrivate notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\n\n"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:24:56.532Z",
+      "step": "actual-save-after-json-roundtrip",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"events\":[{\"url\":\"/api/workflows/export\",\"status\":200,\"result\":{\"format\":\"workflow-catalog-v1\",\"locals\":[{\"id\":\"views-decide-ui\",\"stepConfigVersion\":\"step-config-v1\",\"name\":\"Review findings with generic views\",\"description\":\"Disposable #140 production UI validation\",\"labels\":[],\"steps\":[{\"id\":\"research\",\"name\":\"Gather findings\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Return bounded findings and display data. This is a deterministic fixture.\",\"json\":true,\"askQuestions\":false},{\"id\":\"choose\",\"reads\":{\"research\":\"research\"},\"name\":\"Choose the next work\",\"next\":\"finished\",\"branches\":[{\"when\":{\"path\":\"hasFollowUps\",\"equals\":true},\"next\":\"followups\"}],\"maxVisits\":16,\"type\":\"decide\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"brief\",\"type\":\"markdown\",\"title\":\"Review brief\",\"data\":{\"path\":\"/inputs/research/summary\"}},{\"id\":\"checks\",\"type\":\"checklist\",\"title\":\"Before you decide\",\"data\":{\"literal\":{\"items\":[{\"label\":\"Original research retained\",\"state\":\"done\"},{\"label\":\"Choose an action for every item\",\"state\":\"open\"}]}}}]},\"decide\":{\"items\":{\"path\":\"/inputs/research/items\"},\"itemId\":\"/id\",\"title\":\"/title\",\"body\":\"/body\",\"details\":[{\"label\":\"Impact\",\"path\":\"/impact\"},{\"label\":\"Evidence\",\"path\":\"/evidence\"}],\"actions\":[{\"id\":\"fix\",\"label\":\"Fix\",\"comment\":true,\"followUp\":true},{\"id\":\"issue\",\"label\":\"File issue\",\"comment\":true,\"followUp\":true},{\"id\":\"skip\",\"label\":\"Skip\",\"comment\":true}],\"ask\":{\"prompt\":\"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\"}}},{\"id\":\"followups\",\"name\":\"Follow-up route selected\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged.\"}}}]}},{\"id\":\"finished\",\"name\":\"No follow-up work\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Every item was decided without follow-up work.\"}}}]}}],\"allowedTriggers\":[\"manual\",\"workflow\"]},{\"id\":\"views-approve-ui\",\"stepConfigVersion\":\"step-config-v1\",\"name\":\"Approve an agent-authored declarative artifact\",\"description\":\"Disposable #140 production UI validation\",\"labels\":[],\"steps\":[{\"id\":\"author\",\"output\":{\"format\":\"view-v1\"},\"name\":\"Compose artifact view\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Return the validated declarative artifact view; no script or HTML execution.\",\"json\":true,\"askQuestions\":false},{\"id\":\"accept\",\"reads\":{\"artifact\":\"author\"},\"name\":\"Approve the delivery brief\",\"next\":\"approved\",\"branches\":[{\"when\":{\"path\":\"approved\",\"equals\":false},\"next\":\"changes\"}],\"maxVisits\":16,\"type\":\"approve\",\"view\":{\"from\":\"/inputs/artifact\"}},{\"id\":\"changes\",\"name\":\"Changes requested\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Requested changes retained. A later revision needs its own approval.\"}}}]}},{\"id\":\"approved\",\"name\":\"Artifact accepted\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Exact displayed artifact accepted.\"}}}]}}],\"allowedTriggers\":[\"manual\",\"workflow\"]},{\"id\":\"views-runs-ui\",\"stepConfigVersion\":\"step-config-v1\",\"name\":\"Track child waves with a generic run list\",\"description\":\"Disposable #140 production UI validation\",\"labels\":[],\"steps\":[{\"id\":\"propose\",\"name\":\"Propose child work\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Return deterministic child items.\",\"json\":true,\"askQuestions\":false},{\"id\":\"dispatch\",\"reads\":{\"proposals\":\"propose\"},\"name\":\"Launch child waves\",\"branches\":[],\"maxVisits\":16,\"type\":\"launch-runs\",\"launchRuns\":{\"items\":{\"from\":\"/inputs/proposals/items\"},\"itemId\":\"/id\",\"maxItems\":100,\"workflow\":\"views-child-ui\",\"inputMapping\":{\"prompt\":\"/prompt\"},\"dependencies\":\"/dependencies\",\"wait\":false}},{\"id\":\"observe\",\"name\":\"Observe actual child progress\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Wait for the deterministic child runtime states before returning a summary.\",\"json\":true,\"askQuestions\":false},{\"id\":\"progress\",\"reads\":{\"children\":\"@childRuns\"},\"name\":\"Children by dependency wave\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"runs\",\"type\":\"runList\",\"title\":\"Child run waves\",\"data\":{\"path\":\"/inputs/children\"}},{\"id\":\"notes\",\"type\":\"points\",\"title\":\"What the statuses mean\",\"data\":{\"literal\":{\"items\":[{\"label\":\"Independent work\",\"detail\":\"First-wave children run independently.\"},{\"label\":\"Exact prerequisites\",\"detail\":\"A completed child without merge evidence keeps its dependant blocked.\"}]}}}]}},{\"id\":\"hold\",\"name\":\"Review the child-run overview\",\"branches\":[],\"maxVisits\":16,\"type\":\"approve\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"The run-list summary below is a nonblocking Show snapshot. This separate human step retains an explicit checkpoint for review.\"}}}]}}],\"allowedTriggers\":[\"manual\",\"workflow\"]},{\"id\":\"views-child-ui\",\"stepConfigVersion\":\"step-config-v1\",\"name\":\"Controlled independent child\",\"description\":\"Disposable #140 production UI validation\",\"labels\":[],\"steps\":[{\"id\":\"work\",\"name\":\"Work independently\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Complete or ask the deterministic item checkpoint.\",\"json\":true,\"askQuestions\":true}],\"allowedTriggers\":[\"workflow\"]}],\"preferences\":{\"simple\":{},\"factory\":{},\"takeover\":{},\"factory-pipeline\":{},\"improve-codebase\":{}},\"launch\":{\"simple\":{\"labels\":[\"workflow:simple\"],\"allowedTriggers\":[\"manual\",\"ticket-assignment\"]},\"factory\":{\"labels\":[\"workflow:factory\",\"factory\"],\"allowedTriggers\":[\"workflow\",\"manual\",\"ticket-assignment\"]},\"takeover\":{\"labels\":[\"workflow:takeover\",\"takeover\"],\"allowedTriggers\":[\"workflow\",\"manual\",\"ticket-assignment\"]},\"factory-pipeline\":{\"labels\":[],\"allowedTriggers\":[\"workflow\"]},\"improve-codebase\":{\"labels\":[],\"allowedTriggers\":[\"manual\"]}},\"enabled\":{},\"defaultWorkflow\":\"simple\",\"order\":[\"simple\",\"factory\",\"takeover\",\"factory-pipeline\",\"improve-codebase\",\"views-decide-ui\",\"views-approve-ui\",\"views-runs-ui\",\"views-child-ui\"],\"provenance\":{},\"inactive\":[]}},{\"url\":\"/api/workflows\",\"method\":\"PATCH\",\"body\":\"{\\\"workflows\\\":[{\\\"id\\\":\\\"views-decide-ui\\\",\\\"stepConfigVersion\\\":\\\"step-config-v1\\\",\\\"name\\\":\\\"Review findings with generic views\\\",\\\"description\\\":\\\"Disposable #140 production UI validation\\\",\\\"labels\\\":[],\\\"steps\\\":[{\\\"id\\\":\\\"research\\\",\\\"name\\\":\\\"Gather findings\\\",\\\"branches\\\":[],\\\"maxVisits\\\":16,\\\"type\\\":\\\"agent\\\",\\\"prompt\\\":\\\"Return bounded findings and display data. This is a deterministic fixture.\\\",\\\"json\\\":true,\\\"askQuestions\\\":false,\\\"configVersion\\\":\\\"step-config-v1\\\",\\\"reads\\\":{},\\\"rules\\\":[],\\\"checks\\\":[],\\\"access\\\":{\\\"mode\\\":\\\"workspace\\\"},\\\"instructions\\\":[]},{\\\"id\\\":\\\"choose\\\",\\\"reads\\\":{\\\"research\\\":\\\"research\\\"},\\\"name\\\":\\\"Choose the next work\\\",\\\"next\\\":\\\"finished\\\",\\\"branches\\\":[{\\\"when\\\":{\\\"path\\\":\\\"hasFollowUps\\\",\\\"equals\\\":true},\\\"next\\\":\\\"followups\\\"}],\\\"maxVisits\\\":16,\\\"type\\\":\\\"decide\\\",\\\"view\\\":{\\\"version\\\":\\\"view-v1\\\",\\\"components\\\":[{\\\"id\\\":\\\"brief\\\",\\\"type\\\":\\\"markdown\\\",\\\"title\\\":\\\"Review brief\\\",\\\"data\\\":{\\\"path\\\":\\\"/inputs/research/summary\\\"}},{\\\"id\\\":\\\"checks\\\",\\\"type\\\":\\\"checklist\\\",\\\"title\\\":\\\"Before you decide\\\",\\\"data\\\":{\\\"literal\\\":{\\\"items\\\":[{\\\"label\\\":\\\"Original research retained\\\",\\\"state\\\":\\\"done\\\"},{\\\"label\\\":\\\"Choose an action for every item\\\",\\\"state\\\":\\\"open\\\"}]}}}]},\\\"decide\\\":{\\\"items\\\":{\\\"path\\\":\\\"/inputs/research/items\\\"},\\\"itemId\\\":\\\"/id\\\",\\\"title\\\":\\\"/title\\\",\\\"body\\\":\\\"/body\\\",\\\"details\\\":[{\\\"label\\\":\\\"Impact\\\",\\\"path\\\":\\\"/impact\\\"},{\\\"label\\\":\\\"Evidence\\\",\\\"path\\\":\\\"/evidence\\\"}],\\\"actions\\\":[{\\\"id\\\":\\\"fix\\\",\\\"label\\\":\\\"Fix\\\",\\\"comment\\\":true,\\\"followUp\\\":true},{\\\"id\\\":\\\"issue\\\",\\\"label\\\":\\\"File issue\\\",\\\"comment\\\":true,\\\"followUp\\\":true},{\\\"id\\\":\\\"skip\\\",\\\"label\\\":\\\"Skip\\\",\\\"comment\\\":true}],\\\"ask\\\":{\\\"prompt\\\":\\\"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\\\"}},\\\"configVersion\\\":\\\"step-config-v1\\\",\\\"notifications\\\":{\\\"push\\\":\\\"view-text\\\"}},{\\\"id\\\":\\\"followups\\\",\\\"name\\\":\\\"Follow-up route selected\\\",\\\"next\\\":\\\"end\\\",\\\"branches\\\":[],\\\"maxVisits\\\":16,\\\"type\\\":\\\"show\\\",\\\"view\\\":{\\\"version\\\":\\\"view-v1\\\",\\\"components\\\":[{\\\"id\\\":\\\"summary\\\",\\\"type\\\":\\\"markdown\\\",\\\"data\\\":{\\\"literal\\\":{\\\"text\\\":\\\"Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged.\\\"}}}]},\\\"configVersion\\\":\\\"step-config-v1\\\",\\\"reads\\\":{}},{\\\"id\\\":\\\"finished\\\",\\\"name\\\":\\\"No follow-up work\\\",\\\"next\\\":\\\"end\\\",\\\"branches\\\":[],\\\"maxVisits\\\":16,\\\"type\\\":\\\"show\\\",\\\"view\\\":{\\\"version\\\":\\\"view-v1\\\",\\\"components\\\":[{\\\"id\\\":\\\"summary\\\",\\\"type\\\":\\\"markdown\\\",\\\"data\\\":{\\\"literal\\\":{\\\"text\\\":\\\"Every item was decided without follow-up work.\\\"}}}]},\\\"configVersion\\\":\\\"step-config-v1\\\",\\\"reads\\\":{}}],\\\"allowedTriggers\\\":[\\\"manual\\\",\\\"workflow\\\"],\\\"ownership\\\":\\\"local\\\",\\\"enabled\\\":true,\\\"unavailable\\\":[],\\\"launchFields\\\":[{\\\"name\\\":\\\"prompt\\\",\\\"label\\\":\\\"What should Bob build?\\\",\\\"type\\\":\\\"textarea\\\",\\\"required\\\":true,\\\"placeholder\\\":\\\"What should Bob build?\\\",\\\"options\\\":[]}]}]}\",\"status\":200,\"result\":{\"updatedWorkflows\":[{\"id\":\"views-decide-ui\",\"stepConfigVersion\":\"step-config-v1\",\"name\":\"Review findings with generic views\",\"description\":\"Disposable #140 production UI validation\",\"labels\":[],\"steps\":[{\"id\":\"research\",\"configVersion\":\"step-config-v1\",\"reads\":{},\"rules\":[],\"checks\":[],\"access\":{\"mode\":\"workspace\"},\"instructions\":[],\"name\":\"Gather findings\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Return bounded findings and display data. This is a deterministic fixture.\",\"json\":true,\"askQuestions\":false},{\"notifications\":{\"push\":\"view-text\"},\"id\":\"choose\",\"configVersion\":\"step-config-v1\",\"reads\":{\"research\":\"research\"},\"name\":\"Choose the next work\",\"next\":\"finished\",\"branches\":[{\"when\":{\"path\":\"hasFollowUps\",\"equals\":true},\"next\":\"followups\"}],\"maxVisits\":16,\"type\":\"decide\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"brief\",\"type\":\"markdown\",\"title\":\"Review brief\",\"data\":{\"path\":\"/inputs/research/summary\"}},{\"id\":\"checks\",\"type\":\"checklist\",\"title\":\"Before you decide\",\"data\":{\"literal\":{\"items\":[{\"label\":\"Original research retained\",\"state\":\"done\"},{\"label\":\"Choose an action for every item\",\"state\":\"open\"}]}}}]},\"decide\":{\"items\":{\"path\":\"/inputs/research/items\"},\"itemId\":\"/id\",\"title\":\"/title\",\"body\":\"/body\",\"details\":[{\"label\":\"Impact\",\"path\":\"/impact\"},{\"label\":\"Evidence\",\"path\":\"/evidence\"}],\"actions\":[{\"id\":\"fix\",\"label\":\"Fix\",\"comment\":true,\"followUp\":true},{\"id\":\"issue\",\"label\":\"File issue\",\"comment\":true,\"followUp\":true},{\"id\":\"skip\",\"label\":\"Skip\",\"comment\":true}],\"ask\":{\"prompt\":\"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\"}}},{\"id\":\"followups\",\"configVersion\":\"step-config-v1\",\"reads\":{},\"name\":\"Follow-up route selected\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged.\"}}}]}},{\"id\":\"finished\",\"configVersion\":\"step-config-v1\",\"reads\":{},\"name\":\"No follow-up work\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Every item was decided without follow-up work.\"}}}]}}],\"allowedTriggers\":[\"manual\",\"workflow\"],\"launchFields\":[{\"name\":\"prompt\",\"label\":\"What should Bob build?\",\"type\":\"textarea\",\"required\":true,\"placeholder\":\"What should Bob build?\",\"options\":[]}],\"ownership\":\"local\",\"enabled\":true,\"unavailable\":[]}],\"configRevision\":\"6a3b47301069c9c3d1d79bf20cdb4a695d99cbfa83fa911c3eb8fef286dad66e\"}}],\"alerts\":[\"This recipe changed elsewhere while you were editing. Discard my changes and reload\"],\"header\":\"← Recipes\\nYours\\nUnsaved changes\\nDiscard\\nSave\\n▶ Simulate\\n⚙ Settings\\n{ } JSON\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "events": [
+              {
+                "url": "/api/workflows/export",
+                "status": 200,
+                "result": {
+                  "format": "workflow-catalog-v1",
+                  "locals": [
+                    {
+                      "id": "views-decide-ui",
+                      "stepConfigVersion": "step-config-v1",
+                      "name": "Review findings with generic views",
+                      "description": "Disposable #140 production UI validation",
+                      "labels": [],
+                      "steps": [
+                        {
+                          "id": "research",
+                          "name": "Gather findings",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "agent",
+                          "prompt": "Return bounded findings and display data. This is a deterministic fixture.",
+                          "json": true,
+                          "askQuestions": false
+                        },
+                        {
+                          "id": "choose",
+                          "reads": {
+                            "research": "research"
+                          },
+                          "name": "Choose the next work",
+                          "next": "finished",
+                          "branches": [
+                            {
+                              "when": {
+                                "path": "hasFollowUps",
+                                "equals": true
+                              },
+                              "next": "followups"
+                            }
+                          ],
+                          "maxVisits": 16,
+                          "type": "decide",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "brief",
+                                "type": "markdown",
+                                "title": "Review brief",
+                                "data": {
+                                  "path": "/inputs/research/summary"
+                                }
+                              },
+                              {
+                                "id": "checks",
+                                "type": "checklist",
+                                "title": "Before you decide",
+                                "data": {
+                                  "literal": {
+                                    "items": [
+                                      {
+                                        "label": "Original research retained",
+                                        "state": "done"
+                                      },
+                                      {
+                                        "label": "Choose an action for every item",
+                                        "state": "open"
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "decide": {
+                            "items": {
+                              "path": "/inputs/research/items"
+                            },
+                            "itemId": "/id",
+                            "title": "/title",
+                            "body": "/body",
+                            "details": [
+                              {
+                                "label": "Impact",
+                                "path": "/impact"
+                              },
+                              {
+                                "label": "Evidence",
+                                "path": "/evidence"
+                              }
+                            ],
+                            "actions": [
+                              {
+                                "id": "fix",
+                                "label": "Fix",
+                                "comment": true,
+                                "followUp": true
+                              },
+                              {
+                                "id": "issue",
+                                "label": "File issue",
+                                "comment": true,
+                                "followUp": true
+                              },
+                              {
+                                "id": "skip",
+                                "label": "Skip",
+                                "comment": true
+                              }
+                            ],
+                            "ask": {
+                              "prompt": "Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings."
+                            }
+                          }
+                        },
+                        {
+                          "id": "followups",
+                          "name": "Follow-up route selected",
+                          "next": "end",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "show",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "summary",
+                                "type": "markdown",
+                                "data": {
+                                  "literal": {
+                                    "text": "Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged."
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "id": "finished",
+                          "name": "No follow-up work",
+                          "next": "end",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "show",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "summary",
+                                "type": "markdown",
+                                "data": {
+                                  "literal": {
+                                    "text": "Every item was decided without follow-up work."
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "allowedTriggers": [
+                        "manual",
+                        "workflow"
+                      ]
+                    },
+                    {
+                      "id": "views-approve-ui",
+                      "stepConfigVersion": "step-config-v1",
+                      "name": "Approve an agent-authored declarative artifact",
+                      "description": "Disposable #140 production UI validation",
+                      "labels": [],
+                      "steps": [
+                        {
+                          "id": "author",
+                          "output": {
+                            "format": "view-v1"
+                          },
+                          "name": "Compose artifact view",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "agent",
+                          "prompt": "Return the validated declarative artifact view; no script or HTML execution.",
+                          "json": true,
+                          "askQuestions": false
+                        },
+                        {
+                          "id": "accept",
+                          "reads": {
+                            "artifact": "author"
+                          },
+                          "name": "Approve the delivery brief",
+                          "next": "approved",
+                          "branches": [
+                            {
+                              "when": {
+                                "path": "approved",
+                                "equals": false
+                              },
+                              "next": "changes"
+                            }
+                          ],
+                          "maxVisits": 16,
+                          "type": "approve",
+                          "view": {
+                            "from": "/inputs/artifact"
+                          }
+                        },
+                        {
+                          "id": "changes",
+                          "name": "Changes requested",
+                          "next": "end",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "show",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "summary",
+                                "type": "markdown",
+                                "data": {
+                                  "literal": {
+                                    "text": "Requested changes retained. A later revision needs its own approval."
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "id": "approved",
+                          "name": "Artifact accepted",
+                          "next": "end",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "show",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "summary",
+                                "type": "markdown",
+                                "data": {
+                                  "literal": {
+                                    "text": "Exact displayed artifact accepted."
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "allowedTriggers": [
+                        "manual",
+                        "workflow"
+                      ]
+                    },
+                    {
+                      "id": "views-runs-ui",
+                      "stepConfigVersion": "step-config-v1",
+                      "name": "Track child waves with a generic run list",
+                      "description": "Disposable #140 production UI validation",
+                      "labels": [],
+                      "steps": [
+                        {
+                          "id": "propose",
+                          "name": "Propose child work",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "agent",
+                          "prompt": "Return deterministic child items.",
+                          "json": true,
+                          "askQuestions": false
+                        },
+                        {
+                          "id": "dispatch",
+                          "reads": {
+                            "proposals": "propose"
+                          },
+                          "name": "Launch child waves",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "launch-runs",
+                          "launchRuns": {
+                            "items": {
+                              "from": "/inputs/proposals/items"
+                            },
+                            "itemId": "/id",
+                            "maxItems": 100,
+                            "workflow": "views-child-ui",
+                            "inputMapping": {
+                              "prompt": "/prompt"
+                            },
+                            "dependencies": "/dependencies",
+                            "wait": false
+                          }
+                        },
+                        {
+                          "id": "observe",
+                          "name": "Observe actual child progress",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "agent",
+                          "prompt": "Wait for the deterministic child runtime states before returning a summary.",
+                          "json": true,
+                          "askQuestions": false
+                        },
+                        {
+                          "id": "progress",
+                          "reads": {
+                            "children": "@childRuns"
+                          },
+                          "name": "Children by dependency wave",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "show",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "runs",
+                                "type": "runList",
+                                "title": "Child run waves",
+                                "data": {
+                                  "path": "/inputs/children"
+                                }
+                              },
+                              {
+                                "id": "notes",
+                                "type": "points",
+                                "title": "What the statuses mean",
+                                "data": {
+                                  "literal": {
+                                    "items": [
+                                      {
+                                        "label": "Independent work",
+                                        "detail": "First-wave children run independently."
+                                      },
+                                      {
+                                        "label": "Exact prerequisites",
+                                        "detail": "A completed child without merge evidence keeps its dependant blocked."
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "id": "hold",
+                          "name": "Review the child-run overview",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "approve",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "summary",
+                                "type": "markdown",
+                                "data": {
+                                  "literal": {
+                                    "text": "The run-list summary below is a nonblocking Show snapshot. This separate human step retains an explicit checkpoint for review."
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "allowedTriggers": [
+                        "manual",
+                        "workflow"
+                      ]
+                    },
+                    {
+                      "id": "views-child-ui",
+                      "stepConfigVersion": "step-config-v1",
+                      "name": "Controlled independent child",
+                      "description": "Disposable #140 production UI validation",
+                      "labels": [],
+                      "steps": [
+                        {
+                          "id": "work",
+                          "name": "Work independently",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "agent",
+                          "prompt": "Complete or ask the deterministic item checkpoint.",
+                          "json": true,
+                          "askQuestions": true
+                        }
+                      ],
+                      "allowedTriggers": [
+                        "workflow"
+                      ]
+                    }
+                  ],
+                  "preferences": {
+                    "simple": {},
+                    "factory": {},
+                    "takeover": {},
+                    "factory-pipeline": {},
+                    "improve-codebase": {}
+                  },
+                  "launch": {
+                    "simple": {
+                      "labels": [
+                        "workflow:simple"
+                      ],
+                      "allowedTriggers": [
+                        "manual",
+                        "ticket-assignment"
+                      ]
+                    },
+                    "factory": {
+                      "labels": [
+                        "workflow:factory",
+                        "factory"
+                      ],
+                      "allowedTriggers": [
+                        "workflow",
+                        "manual",
+                        "ticket-assignment"
+                      ]
+                    },
+                    "takeover": {
+                      "labels": [
+                        "workflow:takeover",
+                        "takeover"
+                      ],
+                      "allowedTriggers": [
+                        "workflow",
+                        "manual",
+                        "ticket-assignment"
+                      ]
+                    },
+                    "factory-pipeline": {
+                      "labels": [],
+                      "allowedTriggers": [
+                        "workflow"
+                      ]
+                    },
+                    "improve-codebase": {
+                      "labels": [],
+                      "allowedTriggers": [
+                        "manual"
+                      ]
+                    }
+                  },
+                  "enabled": {},
+                  "defaultWorkflow": "simple",
+                  "order": [
+                    "simple",
+                    "factory",
+                    "takeover",
+                    "factory-pipeline",
+                    "improve-codebase",
+                    "views-decide-ui",
+                    "views-approve-ui",
+                    "views-runs-ui",
+                    "views-child-ui"
+                  ],
+                  "provenance": {},
+                  "inactive": []
+                }
+              },
+              {
+                "url": "/api/workflows",
+                "method": "PATCH",
+                "body": "{\"workflows\":[{\"id\":\"views-decide-ui\",\"stepConfigVersion\":\"step-config-v1\",\"name\":\"Review findings with generic views\",\"description\":\"Disposable #140 production UI validation\",\"labels\":[],\"steps\":[{\"id\":\"research\",\"name\":\"Gather findings\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Return bounded findings and display data. This is a deterministic fixture.\",\"json\":true,\"askQuestions\":false,\"configVersion\":\"step-config-v1\",\"reads\":{},\"rules\":[],\"checks\":[],\"access\":{\"mode\":\"workspace\"},\"instructions\":[]},{\"id\":\"choose\",\"reads\":{\"research\":\"research\"},\"name\":\"Choose the next work\",\"next\":\"finished\",\"branches\":[{\"when\":{\"path\":\"hasFollowUps\",\"equals\":true},\"next\":\"followups\"}],\"maxVisits\":16,\"type\":\"decide\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"brief\",\"type\":\"markdown\",\"title\":\"Review brief\",\"data\":{\"path\":\"/inputs/research/summary\"}},{\"id\":\"checks\",\"type\":\"checklist\",\"title\":\"Before you decide\",\"data\":{\"literal\":{\"items\":[{\"label\":\"Original research retained\",\"state\":\"done\"},{\"label\":\"Choose an action for every item\",\"state\":\"open\"}]}}}]},\"decide\":{\"items\":{\"path\":\"/inputs/research/items\"},\"itemId\":\"/id\",\"title\":\"/title\",\"body\":\"/body\",\"details\":[{\"label\":\"Impact\",\"path\":\"/impact\"},{\"label\":\"Evidence\",\"path\":\"/evidence\"}],\"actions\":[{\"id\":\"fix\",\"label\":\"Fix\",\"comment\":true,\"followUp\":true},{\"id\":\"issue\",\"label\":\"File issue\",\"comment\":true,\"followUp\":true},{\"id\":\"skip\",\"label\":\"Skip\",\"comment\":true}],\"ask\":{\"prompt\":\"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\"}},\"configVersion\":\"step-config-v1\",\"notifications\":{\"push\":\"view-text\"}},{\"id\":\"followups\",\"name\":\"Follow-up route selected\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged.\"}}}]},\"configVersion\":\"step-config-v1\",\"reads\":{}},{\"id\":\"finished\",\"name\":\"No follow-up work\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Every item was decided without follow-up work.\"}}}]},\"configVersion\":\"step-config-v1\",\"reads\":{}}],\"allowedTriggers\":[\"manual\",\"workflow\"],\"ownership\":\"local\",\"enabled\":true,\"unavailable\":[],\"launchFields\":[{\"name\":\"prompt\",\"label\":\"What should Bob build?\",\"type\":\"textarea\",\"required\":true,\"placeholder\":\"What should Bob build?\",\"options\":[]}]}]}",
+                "status": 200,
+                "result": {
+                  "updatedWorkflows": [
+                    {
+                      "id": "views-decide-ui",
+                      "stepConfigVersion": "step-config-v1",
+                      "name": "Review findings with generic views",
+                      "description": "Disposable #140 production UI validation",
+                      "labels": [],
+                      "steps": [
+                        {
+                          "id": "research",
+                          "configVersion": "step-config-v1",
+                          "reads": {},
+                          "rules": [],
+                          "checks": [],
+                          "access": {
+                            "mode": "workspace"
+                          },
+                          "instructions": [],
+                          "name": "Gather findings",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "agent",
+                          "prompt": "Return bounded findings and display data. This is a deterministic fixture.",
+                          "json": true,
+                          "askQuestions": false
+                        },
+                        {
+                          "notifications": {
+                            "push": "view-text"
+                          },
+                          "id": "choose",
+                          "configVersion": "step-config-v1",
+                          "reads": {
+                            "research": "research"
+                          },
+                          "name": "Choose the next work",
+                          "next": "finished",
+                          "branches": [
+                            {
+                              "when": {
+                                "path": "hasFollowUps",
+                                "equals": true
+                              },
+                              "next": "followups"
+                            }
+                          ],
+                          "maxVisits": 16,
+                          "type": "decide",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "brief",
+                                "type": "markdown",
+                                "title": "Review brief",
+                                "data": {
+                                  "path": "/inputs/research/summary"
+                                }
+                              },
+                              {
+                                "id": "checks",
+                                "type": "checklist",
+                                "title": "Before you decide",
+                                "data": {
+                                  "literal": {
+                                    "items": [
+                                      {
+                                        "label": "Original research retained",
+                                        "state": "done"
+                                      },
+                                      {
+                                        "label": "Choose an action for every item",
+                                        "state": "open"
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "decide": {
+                            "items": {
+                              "path": "/inputs/research/items"
+                            },
+                            "itemId": "/id",
+                            "title": "/title",
+                            "body": "/body",
+                            "details": [
+                              {
+                                "label": "Impact",
+                                "path": "/impact"
+                              },
+                              {
+                                "label": "Evidence",
+                                "path": "/evidence"
+                              }
+                            ],
+                            "actions": [
+                              {
+                                "id": "fix",
+                                "label": "Fix",
+                                "comment": true,
+                                "followUp": true
+                              },
+                              {
+                                "id": "issue",
+                                "label": "File issue",
+                                "comment": true,
+                                "followUp": true
+                              },
+                              {
+                                "id": "skip",
+                                "label": "Skip",
+                                "comment": true
+                              }
+                            ],
+                            "ask": {
+                              "prompt": "Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings."
+                            }
+                          }
+                        },
+                        {
+                          "id": "followups",
+                          "configVersion": "step-config-v1",
+                          "reads": {},
+                          "name": "Follow-up route selected",
+                          "next": "end",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "show",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "summary",
+                                "type": "markdown",
+                                "data": {
+                                  "literal": {
+                                    "text": "Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged."
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "id": "finished",
+                          "configVersion": "step-config-v1",
+                          "reads": {},
+                          "name": "No follow-up work",
+                          "next": "end",
+                          "branches": [],
+                          "maxVisits": 16,
+                          "type": "show",
+                          "view": {
+                            "version": "view-v1",
+                            "components": [
+                              {
+                                "id": "summary",
+                                "type": "markdown",
+                                "data": {
+                                  "literal": {
+                                    "text": "Every item was decided without follow-up work."
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "allowedTriggers": [
+                        "manual",
+                        "workflow"
+                      ],
+                      "launchFields": [
+                        {
+                          "name": "prompt",
+                          "label": "What should Bob build?",
+                          "type": "textarea",
+                          "required": true,
+                          "placeholder": "What should Bob build?",
+                          "options": []
+                        }
+                      ],
+                      "ownership": "local",
+                      "enabled": true,
+                      "unavailable": []
+                    }
+                  ],
+                  "configRevision": "6a3b47301069c9c3d1d79bf20cdb4a695d99cbfa83fa911c3eb8fef286dad66e"
+                }
+              }
+            ],
+            "alerts": [
+              "This recipe changed elsewhere while you were editing. Discard my changes and reload"
+            ],
+            "header": "← Recipes\nYours\nUnsaved changes\nDiscard\nSave\n▶ Simulate\n⚙ Settings\n{ } JSON"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:25:06.003Z",
+      "step": "saved-consent-api-readback",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"status\":200,\"saved\":{\"id\":\"views-decide-ui\",\"stepConfigVersion\":\"step-config-v1\",\"name\":\"Review findings with generic views\",\"description\":\"Disposable #140 production UI validation\",\"labels\":[],\"steps\":[{\"id\":\"research\",\"configVersion\":\"step-config-v1\",\"reads\":{},\"rules\":[],\"checks\":[],\"access\":{\"mode\":\"workspace\"},\"instructions\":[],\"name\":\"Gather findings\",\"branches\":[],\"maxVisits\":16,\"type\":\"agent\",\"prompt\":\"Return bounded findings and display data. This is a deterministic fixture.\",\"json\":true,\"askQuestions\":false},{\"notifications\":{\"push\":\"view-text\"},\"id\":\"choose\",\"configVersion\":\"step-config-v1\",\"reads\":{\"research\":\"research\"},\"name\":\"Choose the next work\",\"next\":\"finished\",\"branches\":[{\"when\":{\"path\":\"hasFollowUps\",\"equals\":true},\"next\":\"followups\"}],\"maxVisits\":16,\"type\":\"decide\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"brief\",\"type\":\"markdown\",\"title\":\"Review brief\",\"data\":{\"path\":\"/inputs/research/summary\"}},{\"id\":\"checks\",\"type\":\"checklist\",\"title\":\"Before you decide\",\"data\":{\"literal\":{\"items\":[{\"label\":\"Original research retained\",\"state\":\"done\"},{\"label\":\"Choose an action for every item\",\"state\":\"open\"}]}}}]},\"decide\":{\"items\":{\"path\":\"/inputs/research/items\"},\"itemId\":\"/id\",\"title\":\"/title\",\"body\":\"/body\",\"details\":[{\"label\":\"Impact\",\"path\":\"/impact\"},{\"label\":\"Evidence\",\"path\":\"/evidence\"}],\"actions\":[{\"id\":\"fix\",\"label\":\"Fix\",\"comment\":true,\"followUp\":true},{\"id\":\"issue\",\"label\":\"File issue\",\"comment\":true,\"followUp\":true},{\"id\":\"skip\",\"label\":\"Skip\",\"comment\":true}],\"ask\":{\"prompt\":\"Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings.\"}}},{\"id\":\"followups\",\"configVersion\":\"step-config-v1\",\"reads\":{},\"name\":\"Follow-up route selected\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged.\"}}}]}},{\"id\":\"finished\",\"configVersion\":\"step-config-v1\",\"reads\":{},\"name\":\"No follow-up work\",\"next\":\"end\",\"branches\":[],\"maxVisits\":16,\"type\":\"show\",\"view\":{\"version\":\"view-v1\",\"components\":[{\"id\":\"summary\",\"type\":\"markdown\",\"data\":{\"literal\":{\"text\":\"Every item was decided without follow-up work.\"}}}]}}],\"allowedTriggers\":[\"manual\",\"workflow\"],\"launchFields\":[{\"name\":\"prompt\",\"label\":\"What should Bob build?\",\"type\":\"textarea\",\"required\":true,\"placeholder\":\"What should Bob build?\",\"options\":[]}]},\"alerts\":[],\"header\":\"← Recipes\\nYours\\n▶ Simulate\\n⚙ Settings\\n{ } JSON\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "status": 200,
+            "saved": {
+              "id": "views-decide-ui",
+              "stepConfigVersion": "step-config-v1",
+              "name": "Review findings with generic views",
+              "description": "Disposable #140 production UI validation",
+              "labels": [],
+              "steps": [
+                {
+                  "id": "research",
+                  "configVersion": "step-config-v1",
+                  "reads": {},
+                  "rules": [],
+                  "checks": [],
+                  "access": {
+                    "mode": "workspace"
+                  },
+                  "instructions": [],
+                  "name": "Gather findings",
+                  "branches": [],
+                  "maxVisits": 16,
+                  "type": "agent",
+                  "prompt": "Return bounded findings and display data. This is a deterministic fixture.",
+                  "json": true,
+                  "askQuestions": false
+                },
+                {
+                  "notifications": {
+                    "push": "view-text"
+                  },
+                  "id": "choose",
+                  "configVersion": "step-config-v1",
+                  "reads": {
+                    "research": "research"
+                  },
+                  "name": "Choose the next work",
+                  "next": "finished",
+                  "branches": [
+                    {
+                      "when": {
+                        "path": "hasFollowUps",
+                        "equals": true
+                      },
+                      "next": "followups"
+                    }
+                  ],
+                  "maxVisits": 16,
+                  "type": "decide",
+                  "view": {
+                    "version": "view-v1",
+                    "components": [
+                      {
+                        "id": "brief",
+                        "type": "markdown",
+                        "title": "Review brief",
+                        "data": {
+                          "path": "/inputs/research/summary"
+                        }
+                      },
+                      {
+                        "id": "checks",
+                        "type": "checklist",
+                        "title": "Before you decide",
+                        "data": {
+                          "literal": {
+                            "items": [
+                              {
+                                "label": "Original research retained",
+                                "state": "done"
+                              },
+                              {
+                                "label": "Choose an action for every item",
+                                "state": "open"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "decide": {
+                    "items": {
+                      "path": "/inputs/research/items"
+                    },
+                    "itemId": "/id",
+                    "title": "/title",
+                    "body": "/body",
+                    "details": [
+                      {
+                        "label": "Impact",
+                        "path": "/impact"
+                      },
+                      {
+                        "label": "Evidence",
+                        "path": "/evidence"
+                      }
+                    ],
+                    "actions": [
+                      {
+                        "id": "fix",
+                        "label": "Fix",
+                        "comment": true,
+                        "followUp": true
+                      },
+                      {
+                        "id": "issue",
+                        "label": "File issue",
+                        "comment": true,
+                        "followUp": true
+                      },
+                      {
+                        "id": "skip",
+                        "label": "Skip",
+                        "comment": true
+                      }
+                    ],
+                    "ask": {
+                      "prompt": "Answer the exact item question in a dedicated bounded follow-up. Preserve the source findings."
+                    }
+                  }
+                },
+                {
+                  "id": "followups",
+                  "configVersion": "step-config-v1",
+                  "reads": {},
+                  "name": "Follow-up route selected",
+                  "next": "end",
+                  "branches": [],
+                  "maxVisits": 16,
+                  "type": "show",
+                  "view": {
+                    "version": "view-v1",
+                    "components": [
+                      {
+                        "id": "summary",
+                        "type": "markdown",
+                        "data": {
+                          "literal": {
+                            "text": "Follow-up route selected from the accepted hasFollowUps output. Original findings remain unchanged."
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "finished",
+                  "configVersion": "step-config-v1",
+                  "reads": {},
+                  "name": "No follow-up work",
+                  "next": "end",
+                  "branches": [],
+                  "maxVisits": 16,
+                  "type": "show",
+                  "view": {
+                    "version": "view-v1",
+                    "components": [
+                      {
+                        "id": "summary",
+                        "type": "markdown",
+                        "data": {
+                          "literal": {
+                            "text": "Every item was decided without follow-up work."
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ],
+              "allowedTriggers": [
+                "manual",
+                "workflow"
+              ],
+              "launchFields": [
+                {
+                  "name": "prompt",
+                  "label": "What should Bob build?",
+                  "type": "textarea",
+                  "required": true,
+                  "placeholder": "What should Bob build?",
+                  "options": []
+                }
+              ]
+            },
+            "alerts": [],
+            "header": "← Recipes\nYours\n▶ Simulate\n⚙ Settings\n{ } JSON"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:25:36.949Z",
+      "step": "reload-saved-consent",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"checked\":true,\"label\":\"Include bounded view text in push notifications\",\"describedBy\":\"_r_11_-push-help\",\"disclosure\":[\"Private notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen.\"],\"header\":\"← Recipes\\nYours\\n▶ Simulate\\n⚙ Settings\\n{ } JSON\",\"alerts\":[]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "checked": true,
+            "label": "Include bounded view text in push notifications",
+            "describedBy": "_r_11_-push-help",
+            "disclosure": [
+              "Private notices are the default. Enabling this sends a bounded text summary of displayed content through your push provider and device notifications. It may appear on a lock screen."
+            ],
+            "header": "← Recipes\nYours\n▶ Simulate\n⚙ Settings\n{ } JSON",
+            "alerts": []
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:25:37.065Z",
+      "step": "reload-accurate-notifications-config-mismatch",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"provenance\":\"Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs\",\"items\":3,\"checked\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs",
+            "items": 3,
+            "checked": true
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:26:04.516Z",
+      "step": "keyboard-space-consent",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"checked\":false,\"tag\":\"INPUT\",\"type\":\"checkbox\",\"label\":\"Include bounded view text in push notifications\",\"focusVisible\":false,\"outline\":\"rgb(43, 35, 70) none 0px\",\"theme\":\"light\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "checked": false,
+            "tag": "INPUT",
+            "type": "checkbox",
+            "label": "Include bounded view text in push notifications",
+            "focusVisible": false,
+            "outline": "rgb(43, 35, 70) none 0px",
+            "theme": "light"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:26:04.544Z",
+      "step": "keyboard-tab-to-labelled-reads",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"tag\":\"TEXTAREA\",\"label\":\"View reads{\\n  \\\"research\\\": \\\"research\\\"\\n}\",\"focusVisible\":true,\"outline\":\"rgb(7, 94, 124) solid 3px\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "tag": "TEXTAREA",
+            "label": "View reads{\n  \"research\": \"research\"\n}",
+            "focusVisible": true,
+            "outline": "rgb(7, 94, 124) solid 3px"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:26:04.605Z",
+      "step": "invalid-json-save-guard",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"alerts\":[\"Expected property name or '}' in JSON at position 2 (line 1 column 3)\"],\"saveButtons\":[{\"disabled\":true,\"text\":\"Save\"}],\"editorInvalid\":[{\"invalid\":\"true\",\"describedBy\":\"_r_12_-help _r_12_-error\"}]}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "alerts": [
+              "Expected property name or '}' in JSON at position 2 (line 1 column 3)"
+            ],
+            "saveButtons": [
+              {
+                "disabled": true,
+                "text": "Save"
+              }
+            ],
+            "editorInvalid": [
+              {
+                "invalid": "true",
+                "describedBy": "_r_12_-help _r_12_-error"
+              }
+            ]
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:26:16.640Z",
+      "step": "keyboard-space-confirmed",
+      "before": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"tag\":\"INPUT\",\"label\":\"Include bounded view text in push notifications\",\"checked\":true,\"focusVisible\":true}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "tag": "INPUT",
+            "label": "Include bounded view text in push notifications",
+            "checked": true,
+            "focusVisible": true
+          }
+        },
+        "isError": false
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"tag\":\"INPUT\",\"label\":\"Include bounded view text in push notifications\",\"checked\":false,\"focusVisible\":true,\"outline\":\"rgb(7, 94, 124) solid 3px\"}}"
+          }
+        ],
+        "structuredContent": {
+          "toolIcon": {
+            "_tag": "website",
+            "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+          },
+          "value": {
+            "tag": "INPUT",
+            "label": "Include bounded view text in push notifications",
+            "checked": false,
+            "focusVisible": true,
+            "outline": "rgb(7, 94, 124) solid 3px"
+          }
+        },
+        "isError": false
+      }
+    },
+    {
+      "at": "2026-10-22T07:27:46.713Z",
+      "step": "360-light-dark-audit",
+      "results": [
+        {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"width\":360,\"theme\":\"light\",\"documentWidth\":360,\"bodyWidth\":360,\"panel\":{\"width\":360,\"scrollWidth\":360},\"oversized\":[{\"tag\":\"LEGEND\",\"cls\":\"sr-only\",\"width\":1,\"scroll\":131}],\"unlabelledControls\":[],\"unsafeLinks\":[],\"remoteAttackRequests\":[],\"attackExecuted\":false,\"previewItems\":3}}"
+            }
+          ],
+          "structuredContent": {
+            "toolIcon": {
+              "_tag": "website",
+              "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+            },
+            "value": {
+              "width": 360,
+              "theme": "light",
+              "documentWidth": 360,
+              "bodyWidth": 360,
+              "panel": {
+                "width": 360,
+                "scrollWidth": 360
+              },
+              "oversized": [
+                {
+                  "tag": "LEGEND",
+                  "cls": "sr-only",
+                  "width": 1,
+                  "scroll": 131
+                }
+              ],
+              "unlabelledControls": [],
+              "unsafeLinks": [],
+              "remoteAttackRequests": [],
+              "attackExecuted": false,
+              "previewItems": 3
+            }
+          },
+          "isError": false
+        },
+        {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"width\":360,\"theme\":\"dark\",\"documentWidth\":360,\"bodyWidth\":360,\"panel\":{\"width\":360,\"scrollWidth\":360},\"oversized\":[{\"tag\":\"LEGEND\",\"cls\":\"sr-only\",\"width\":1,\"scroll\":131}],\"unlabelledControls\":[],\"unsafeLinks\":[],\"remoteAttackRequests\":[],\"attackExecuted\":false,\"previewItems\":3}}"
+            }
+          ],
+          "structuredContent": {
+            "toolIcon": {
+              "_tag": "website",
+              "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+            },
+            "value": {
+              "width": 360,
+              "theme": "dark",
+              "documentWidth": 360,
+              "bodyWidth": 360,
+              "panel": {
+                "width": 360,
+                "scrollWidth": 360
+              },
+              "oversized": [
+                {
+                  "tag": "LEGEND",
+                  "cls": "sr-only",
+                  "width": 1,
+                  "scroll": 131
+                }
+              ],
+              "unlabelledControls": [],
+              "unsafeLinks": [],
+              "remoteAttackRequests": [],
+              "attackExecuted": false,
+              "previewItems": 3
+            }
+          },
+          "isError": false
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "builder-desktop-light-consent",
+      "path": "/tmp/taskbot140-views-ui-repairs-final/builder-desktop-light-consent.png",
+      "source": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj7woja-ee169e3e.png"
+    },
+    {
+      "name": "builder-desktop-light-preview",
+      "path": "/tmp/taskbot140-views-ui-repairs-final/builder-desktop-light-preview.png",
+      "source": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj7x4x4-963318f2.png",
+      "state": {
+        "width": 1280,
+        "theme": "light",
+        "documentWidth": 1280,
+        "panel": {
+          "width": 380,
+          "scrollWidth": 380,
+          "top": 1803.5
+        },
+        "consent": true,
+        "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs"
+      }
+    },
+    {
+      "name": "builder-desktop-dark-consent",
+      "path": "/tmp/taskbot140-views-ui-repairs-final/builder-desktop-dark-consent.png",
+      "source": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj7x534-ae555da3.png",
+      "state": {
+        "width": 1280,
+        "theme": "dark",
+        "documentWidth": 1280,
+        "panel": {
+          "width": 380,
+          "scrollWidth": 380,
+          "top": 0
+        },
+        "consent": true,
+        "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs"
+      }
+    },
+    {
+      "name": "builder-desktop-dark-preview",
+      "path": "/tmp/taskbot140-views-ui-repairs-final/builder-desktop-dark-preview.png",
+      "source": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj7x593-51f368d5.png",
+      "state": {
+        "width": 1280,
+        "theme": "dark",
+        "documentWidth": 1280,
+        "panel": {
+          "width": 380,
+          "scrollWidth": 380,
+          "top": 1803.5
+        },
+        "consent": true,
+        "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs"
+      }
+    },
+    {
+      "name": "builder-390px-light-consent",
+      "path": "/tmp/taskbot140-views-ui-repairs-final/builder-390px-light-consent.png",
+      "source": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj7x5g7-e3c23740.png",
+      "state": {
+        "width": 390,
+        "theme": "light",
+        "documentWidth": 390,
+        "panel": {
+          "width": 390,
+          "scrollWidth": 390,
+          "top": 0
+        },
+        "consent": true,
+        "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs"
+      }
+    },
+    {
+      "name": "builder-390px-light-preview",
+      "path": "/tmp/taskbot140-views-ui-repairs-final/builder-390px-light-preview.png",
+      "source": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj7x5ku-75f8b627.png",
+      "state": {
+        "width": 390,
+        "theme": "light",
+        "documentWidth": 390,
+        "panel": {
+          "width": 390,
+          "scrollWidth": 390,
+          "top": 1873
+        },
+        "consent": true,
+        "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs"
+      }
+    },
+    {
+      "name": "builder-390px-dark-consent",
+      "path": "/tmp/taskbot140-views-ui-repairs-final/builder-390px-dark-consent.png",
+      "source": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj7x5qv-c97552df.png",
+      "state": {
+        "width": 390,
+        "theme": "dark",
+        "documentWidth": 390,
+        "panel": {
+          "width": 390,
+          "scrollWidth": 390,
+          "top": 0
+        },
+        "consent": true,
+        "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs"
+      }
+    },
+    {
+      "name": "builder-390px-dark-preview",
+      "path": "/tmp/taskbot140-views-ui-repairs-final/builder-390px-dark-preview.png",
+      "source": "/Users/jappy/.t3/userdata/browser-artifacts/browser-screenshot-localhost-mvj7x5vi-384eadf6.png",
+      "state": {
+        "width": 390,
+        "theme": "dark",
+        "documentWidth": 390,
+        "panel": {
+          "width": 390,
+          "scrollWidth": 390,
+          "top": 1873
+        },
+        "consent": true,
+        "provenance": "Last run views-decide-ui-run · 2026-10-22T07:22:38.356Z · retained accepted input snapshot; draft configuration differs"
+      }
+    }
+  ],
+  "audits": [
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"width\":360,\"theme\":\"light\",\"documentWidth\":360,\"bodyWidth\":360,\"panel\":{\"width\":360,\"scrollWidth\":360},\"oversized\":[{\"tag\":\"LEGEND\",\"cls\":\"sr-only\",\"width\":1,\"scroll\":131}],\"unlabelledControls\":[],\"unsafeLinks\":[],\"remoteAttackRequests\":[],\"attackExecuted\":false,\"previewItems\":3}}"
+        }
+      ],
+      "structuredContent": {
+        "toolIcon": {
+          "_tag": "website",
+          "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+        },
+        "value": {
+          "width": 360,
+          "theme": "light",
+          "documentWidth": 360,
+          "bodyWidth": 360,
+          "panel": {
+            "width": 360,
+            "scrollWidth": 360
+          },
+          "oversized": [
+            {
+              "tag": "LEGEND",
+              "cls": "sr-only",
+              "width": 1,
+              "scroll": 131
+            }
+          ],
+          "unlabelledControls": [],
+          "unsafeLinks": [],
+          "remoteAttackRequests": [],
+          "attackExecuted": false,
+          "previewItems": 3
+        }
+      },
+      "isError": false
+    },
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\"toolIcon\":{\"_tag\":\"website\",\"pageUrl\":\"http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose\"},\"value\":{\"width\":360,\"theme\":\"dark\",\"documentWidth\":360,\"bodyWidth\":360,\"panel\":{\"width\":360,\"scrollWidth\":360},\"oversized\":[{\"tag\":\"LEGEND\",\"cls\":\"sr-only\",\"width\":1,\"scroll\":131}],\"unlabelledControls\":[],\"unsafeLinks\":[],\"remoteAttackRequests\":[],\"attackExecuted\":false,\"previewItems\":3}}"
+        }
+      ],
+      "structuredContent": {
+        "toolIcon": {
+          "_tag": "website",
+          "pageUrl": "http://localhost:3692/#/recipes?recipe=views-decide-ui&step=choose"
+        },
+        "value": {
+          "width": 360,
+          "theme": "dark",
+          "documentWidth": 360,
+          "bodyWidth": 360,
+          "panel": {
+            "width": 360,
+            "scrollWidth": 360
+          },
+          "oversized": [
+            {
+              "tag": "LEGEND",
+              "cls": "sr-only",
+              "width": 1,
+              "scroll": 131
+            }
+          ],
+          "unlabelledControls": [],
+          "unsafeLinks": [],
+          "remoteAttackRequests": [],
+          "attackExecuted": false,
+          "previewItems": 3
+        }
+      },
+      "isError": false
+    }
+  ]
+}

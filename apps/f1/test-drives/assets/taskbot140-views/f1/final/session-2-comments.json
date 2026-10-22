@@ -1,0 +1,87 @@
+[
+  {
+    "id": "comment-20",
+    "body": "Factory work started: Custom declarative human recipe. f1-views-main. Follow progress in Factory.\n\n<!-- factory:session-2:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T05:07:40.409Z"
+  },
+  {
+    "id": "comment-21",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-2:dd11cd799bca5bdc52a5 -->",
+    "createdAt": "2026-10-22T05:07:40.816Z"
+  },
+  {
+    "id": "comment-22",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-2:bb39a7a97b53990e6f79 -->",
+    "createdAt": "2026-10-22T05:07:41.228Z"
+  },
+  {
+    "id": "comment-23",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-2:8ab87c697ef1cf0cc206 -->",
+    "createdAt": "2026-10-22T05:07:42.010Z"
+  },
+  {
+    "id": "comment-24",
+    "body": "Role output recorded. Full details are available in Factory.\n\n<!-- factory:session-2:eb7cf0968f0405d247de -->",
+    "createdAt": "2026-10-22T05:07:42.198Z"
+  },
+  {
+    "id": "comment-25",
+    "body": "markdown:\nThis per\\-item Show does not stop For each progression\\.\n\n<!-- factory:session-2:68b15205b9b2e3da0a47 -->",
+    "createdAt": "2026-10-22T05:07:42.522Z"
+  },
+  {
+    "id": "comment-26",
+    "body": "markdown:\nThis per\\-item Show does not stop For each progression\\.\n\n<!-- factory:session-2:386055c756ac62acb14f -->",
+    "createdAt": "2026-10-22T05:07:42.624Z"
+  },
+  {
+    "id": "comment-27",
+    "body": "decide\\: Choose actions for each item\nmarkdown:\nAgent\\-authored view\\: &lt;script&gt;window\\.\\_\\_f1Pwned=true&lt;/script&gt; \\[bad\\]\\(javascript\\:alert\\(1\\)\\)\n\nscreenshots:\nNo screenshots.\n\npoints:\n- Accepted evidence — No raw HTML or script executes\\.\n\nitemCards:\ncache: &lt;script&gt;cache\\(\\)&lt;/script&gt;\nKeep HTML inert; \\[unsafe\\]\\(javascript\\:alert\\(1\\)\\)\nlabels: Clarify progress\nKeep the stage labels readable\n\nchoices:\nDecision note (reason, text, required)\n\ndecisionBar:\nChoose every item, then explicitly save\\.\nAvailable actions: review (Review every item)\ncache\\: &lt;script&gt;cache\\(\\)&lt;/script&gt;\nKeep HTML inert; \\[unsafe\\]\\(javascript\\:alert\\(1\\)\\)\nImpact\\: Reuse accepted cache receipts\nlabels\\: Clarify progress\nKeep the stage labels readable\nImpact\\: Show truthful waiting state\nActions\\: fix \\(Fix\\), skip \\(Skip\\), discuss \\(Follow up\\)\nDecision batch: ca343606-79a6-4293-8df2-4d2a50e3b542\nDisplayed digest: d06a9da83265961debbd35ad0b857c826b42cfce4554ebf432de4117ac8c4f6b\nReply with /view-answer {\"batchId\":\"ca343606-79a6-4293-8df2-4d2a50e3b542\",\"digest\":\"d06a9da83265961debbd35ad0b857c826b42cfce4554ebf432de4117ac8c4f6b\",\"accepted\":true,\"choices\":[{\"itemId\":\"…\",\"action\":\"…\"}]} after reviewing every item.\n\n<!-- factory:session-2:11ea873a5ccd18db955a -->",
+    "createdAt": "2026-10-22T05:07:42.828Z"
+  },
+  {
+    "id": "comment-28",
+    "body": "markdown:\nThe ordinary no\\-follow\\-up route was selected\\.\n\n<!-- factory:session-2:56e80316c9786ba92da4 -->",
+    "createdAt": "2026-10-22T05:07:43.049Z"
+  },
+  {
+    "id": "comment-29",
+    "body": "approve\\: Approve the displayed artifact\nmarkdown:\nReview the exact artifact and current child\\-run state\\. &lt;img src=x onerror=alert\\(1\\)&gt;\n\nrunList:\nWave dispatch · Wave 1:\n- child\\-cd30f156a0b2fd88f4d3d166b51cf5501e5eebb5: Controlled child [running]\n\nchoices:\nI checked the artifact (understood, checkbox, required)\nDecision batch: 6d30e4ae-443b-441f-bd5f-1040027304dd\nDisplayed digest: 5ad084f56ce4a1f4df0b589489e67e2077e3849cfc8888ff771f67b8077ff249\nReply with /view-answer {\"batchId\":\"6d30e4ae-443b-441f-bd5f-1040027304dd\",\"digest\":\"5ad084f56ce4a1f4df0b589489e67e2077e3849cfc8888ff771f67b8077ff249\",\"accepted\":true,\"approved\":true} or approved:false with feedback.\n\n<!-- factory:session-2:de396206bd0c06c0a61b -->",
+    "createdAt": "2026-10-22T05:07:44.086Z"
+  },
+  {
+    "id": "comment-30",
+    "body": "Factory work started: Ordinary child with a human view. f1-views-main. Follow progress in Factory.\n\n<!-- factory:child-cd30f156a0b2fd88f4d3d166b51cf5501e5eebb5:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T05:07:44.391Z"
+  },
+  {
+    "id": "comment-31",
+    "body": "approve\\: Child acceptance\nmarkdown:\nApprove this isolated child fixture\\. No publication or merge is requested\\.\nDecision batch: 67be98ec-026a-45e3-9039-f21db595bf6e\nDisplayed digest: 2ccc5c244883ff34a911da71c41ab2df6a3a4fcd0c68cd5047120f3941c2a71a\nReply with /view-answer {\"batchId\":\"67be98ec-026a-45e3-9039-f21db595bf6e\",\"digest\":\"2ccc5c244883ff34a911da71c41ab2df6a3a4fcd0c68cd5047120f3941c2a71a\",\"accepted\":true,\"approved\":true} or approved:false with feedback.\n\n<!-- factory:child-cd30f156a0b2fd88f4d3d166b51cf5501e5eebb5:89b44cdec843c232b8ad -->",
+    "createdAt": "2026-10-22T05:07:44.705Z"
+  },
+  {
+    "id": "comment-32",
+    "body": "markdown:\nThe isolated child completed its recipe\\.\n\n<!-- factory:child-cd30f156a0b2fd88f4d3d166b51cf5501e5eebb5:ecf3899eedfc1e09b791 -->",
+    "createdAt": "2026-10-22T05:07:45.106Z"
+  },
+  {
+    "id": "comment-33",
+    "body": "Workflow Ordinary child with a human view completed. Coding tickets become Done only after confirmed merge. Inspect run child-cd30f156a0b2fd88f4d3d166b51cf5501e5eebb5 for results.\n\n<!-- factory:child-cd30f156a0b2fd88f4d3d166b51cf5501e5eebb5:f085cccb79a52488736a -->",
+    "createdAt": "2026-10-22T05:07:45.232Z"
+  },
+  {
+    "id": "comment-34",
+    "body": "approve\\: Approve the displayed artifact\nmarkdown:\nReview the exact artifact and current child\\-run state\\. &lt;img src=x onerror=alert\\(1\\)&gt;\n\nrunList:\nWave dispatch · Wave 1:\n- child\\-cd30f156a0b2fd88f4d3d166b51cf5501e5eebb5: Controlled child [completed]\n\nchoices:\nI checked the artifact (understood, checkbox, required)\nDecision batch: f79723ee-a104-4478-87d8-1e95a02a4cc5\nDisplayed digest: 9b9ba86f9bd66598ddac1b201c946b7b00c8c8c172cf9975de8b33c1550187fe\nReply with /view-answer {\"batchId\":\"f79723ee-a104-4478-87d8-1e95a02a4cc5\",\"digest\":\"9b9ba86f9bd66598ddac1b201c946b7b00c8c8c172cf9975de8b33c1550187fe\",\"accepted\":true,\"approved\":true} or approved:false with feedback.\n\n<!-- factory:session-2:5f663033769f4be7ee60 -->",
+    "createdAt": "2026-10-22T05:07:45.581Z"
+  },
+  {
+    "id": "comment-35",
+    "body": "markdown:\nRequest changes remains explicit feedback and follows the configured route\\.\n\n<!-- factory:session-2:a0fd1e4787b1bef1819d -->",
+    "createdAt": "2026-10-22T05:07:46.297Z"
+  },
+  {
+    "id": "comment-36",
+    "body": "Workflow Custom declarative human recipe completed. Coding tickets become Done only after confirmed merge. Inspect run session-2 for results.\n\n<!-- factory:session-2:b6ccf30198c886c8bc72 -->",
+    "createdAt": "2026-10-22T05:07:46.611Z"
+  }
+]

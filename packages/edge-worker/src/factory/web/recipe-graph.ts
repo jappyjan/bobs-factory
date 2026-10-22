@@ -5,6 +5,8 @@ import {
 	SnapshotConfigurationSchema,
 } from "../ActionSteps.js";
 import { ForeachSettingsSchema, prepareForeach } from "../Foreach.js";
+import { DecideConfigurationSchema } from "../HumanStep.js";
+import { ViewSourceSchema } from "../View.js";
 import type { WorkflowStep } from "../Workflow.js";
 import { DEFAULT_STEP_MAX_VISITS } from "../WorkflowLimits.js";
 
@@ -89,6 +91,8 @@ const conditionText: Record<string, string> = {
 	"deferred=true": "Deferred",
 	"repositoryComplete=true": "Repository done",
 	"drift=true": "External state drifted",
+	"hasFollowUps=true": "Has follow-ups",
+	"hasFollowUps=false": "No follow-ups",
 };
 export function describeCondition(when: { path: string; equals?: unknown }) {
 	if (!when.path) return "New condition";
@@ -102,6 +106,9 @@ export type Kind = { icon: string; label: string; tone: string; hint: string };
 export const kinds: Record<
 	| "agent"
 	| "check"
+	| "decide"
+	| "approve"
+	| "show"
 	| "tool"
 	| "script"
 	| "fanout"
@@ -113,6 +120,24 @@ export const kinds: Record<
 	| "human",
 	Kind
 > = {
+	decide: {
+		icon: "☷",
+		label: "Decide per item",
+		tone: "red",
+		hint: "Choose a configured action for each item, then route the results",
+	},
+	approve: {
+		icon: "✓",
+		label: "Approve",
+		tone: "red",
+		hint: "Explicitly approve the displayed content or request changes",
+	},
+	show: {
+		icon: "▤",
+		label: "Show",
+		tone: "blue",
+		hint: "Displays a declarative view and immediately continues",
+	},
 	snapshot: {
 		icon: "◈",
 		label: "Snapshot repository",
@@ -235,6 +260,12 @@ export const authorableTools = Object.keys(toolText).filter(
 	(tool) => !legacyDecisionTools.has(tool),
 );
 export function stepSummary(step: Step, recipes: Recipe[]): string {
+	if (step.type === "decide")
+		return `Choose an action for each item. Routes can use hasFollowUps or itemsByAction.${step.decide?.actions[0]?.id ?? "action"}.`;
+	if (step.type === "approve")
+		return "Waits for explicit acceptance of the exact displayed content. Routes on approved; requested changes include feedback.";
+	if (step.type === "show")
+		return "Displays the configured view without pausing the recipe.";
 	if (step.type === "snapshot")
 		return `Pins every repository in scope.${step.snapshot?.history ? " Includes dated, repository-matched run history." : ""}`;
 	if (step.type === "file-issues")
@@ -652,6 +683,9 @@ export function newStep(
 	kind:
 		| "agent"
 		| "check"
+		| "decide"
+		| "approve"
+		| "show"
 		| "tool"
 		| "script"
 		| "fanout"
@@ -671,6 +705,64 @@ export function newStep(
 		maxVisits: DEFAULT_STEP_MAX_VISITS,
 	};
 	switch (kind) {
+		case "decide":
+			return {
+				...base,
+				name: "Decide per item",
+				type: "decide",
+				view: {
+					version: "view-v1",
+					components: [
+						{
+							id: "intro",
+							type: "markdown",
+							data: {
+								literal: { text: "Choose what should happen to each item." },
+							},
+						},
+					],
+				},
+				decide: {
+					items: { literal: [{ id: "first", title: "First item" }] },
+					itemId: "/id",
+					title: "/title",
+					details: [],
+					actions: [
+						{ id: "fix", label: "Fix", comment: true },
+						{ id: "skip", label: "Skip", comment: true },
+						{
+							id: "followUp",
+							label: "Follow up",
+							comment: true,
+							followUp: true,
+						},
+					],
+				},
+			};
+		case "approve":
+		case "show":
+			return {
+				...base,
+				name: kind === "approve" ? "Approve artifact" : "Show summary",
+				type: kind,
+				view: {
+					version: "view-v1",
+					components: [
+						{
+							id: "intro",
+							type: "markdown",
+							data: {
+								literal: {
+									text:
+										kind === "approve"
+											? "Review this artifact before approving it."
+											: "The recipe continues after displaying this summary.",
+								},
+							},
+						},
+					],
+				},
+			};
 		case "snapshot":
 			return {
 				...base,
@@ -792,12 +884,49 @@ export function newStep(
 	}
 }
 /** Problems the editor can explain before the server rejects a save. */
-export function draftProblems(recipe: Recipe): string[] {
+export function draftProblems(
+	recipe: Recipe,
+	recipes: Recipe[] = [recipe],
+): string[] {
 	const problems: string[] = [];
+	const hasBlockingView = (steps: Step[], seen = new Set<string>()): boolean =>
+		steps.some((step) => {
+			if (step.type === "decide" || step.type === "approve") return true;
+			if (hasBlockingView(childrenOf(step), seen)) return true;
+			if (step.type !== "workflow" || !step.workflow || seen.has(step.workflow))
+				return false;
+			const target = recipes.find(
+				(candidate) => candidate.id === step.workflow,
+			);
+			return Boolean(
+				target && hasBlockingView(target.steps, new Set([...seen, target.id])),
+			);
+		});
 	// Step IDs are unique within each list; parallel branches have their own scope.
 	const walk = (steps: Step[]) => {
 		const ids = new Set<string>();
 		for (const s of steps) {
+			if (
+				(s.type === "foreach" || s.type === "fanout") &&
+				hasBlockingView(childrenOf(s))
+			)
+				problems.push(
+					`“${s.name}”: Decide and Approve belong outside For each and parallel branches, including called recipes.`,
+				);
+			if (["decide", "approve", "show"].includes(s.type)) {
+				const view = ViewSourceSchema.safeParse(s.view);
+				if (!view.success)
+					problems.push(
+						`“${s.name}”: ${view.error.issues.map((issue) => `${issue.path.join("/")}: ${issue.message}`).join("; ")}`,
+					);
+				if (s.type === "decide") {
+					const decision = DecideConfigurationSchema.safeParse(s.decide);
+					if (!decision.success)
+						problems.push(
+							`“${s.name}”: ${decision.error.issues.map((issue) => `${issue.path.join("/")}: ${issue.message}`).join("; ")}`,
+						);
+				}
+			}
 			const actionSchema =
 				s.type === "snapshot"
 					? SnapshotConfigurationSchema

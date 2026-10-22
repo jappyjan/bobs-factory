@@ -1,0 +1,87 @@
+{
+  "head": "998de5de891db2000099e44fe6938c0a5b3bd375",
+  "tree": "7a4baae53451771f5f01547e7863a1fefa71f358",
+  "base": "fa866b3d18a880a72fb59f19bfc88195cd4db762",
+  "branch": "taskbot/140-views",
+  "cwd": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views",
+  "node": "v24.21.0",
+  "pid": 41420,
+  "startedAt": "2026-10-22T09:36:21.494Z",
+  "sourceFingerprint": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f",
+  "commands": [
+    {
+      "name": "build",
+      "command": "pnpm",
+      "args": [
+        "build"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round4-validation/build.log",
+      "startedAt": "2026-10-22T09:36:21.618Z",
+      "pid": 41536,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T09:36:26.319Z",
+      "bytes": 3166,
+      "sha256": "05ec56fc163b27dac7306c8001ff2d0ac2aa942568b3bb0fba8189d03681e4bb",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    },
+    {
+      "name": "typecheck",
+      "command": "pnpm",
+      "args": [
+        "typecheck"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round4-validation/typecheck.log",
+      "startedAt": "2026-10-22T09:36:26.584Z",
+      "pid": 43486,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T09:36:30.184Z",
+      "bytes": 1865,
+      "sha256": "69e15b94025a014b49c6a83e22e6431c5fe44263838bc8be28698ea3ece9a54c",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    },
+    {
+      "name": "lint",
+      "command": "pnpm",
+      "args": [
+        "lint"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round4-validation/lint.log",
+      "startedAt": "2026-10-22T09:36:30.430Z",
+      "pid": 43865,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T09:36:31.738Z",
+      "bytes": 14696,
+      "sha256": "ca7b2382edca10100e4492bb803bbf3dce5fbb5024fb3dfb2d83b7e89761a308",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    },
+    {
+      "name": "f1",
+      "command": "node",
+      "args": [
+        "apps/f1/test-drives/assets/taskbot140-views-round4.mjs"
+      ],
+      "env": {
+        "F1_AGENT_MODE": "mock",
+        "F1_EXPECTED_SOURCE_COMMIT": "998de5de891db2000099e44fe6938c0a5b3bd375"
+      },
+      "log": "/tmp/taskbot140-round4-validation/f1.log",
+      "startedAt": "2026-10-22T09:36:31.981Z",
+      "pid": 43931,
+      "code": 1,
+      "signal": null,
+      "finishedAt": "2026-10-22T09:36:45.996Z",
+      "bytes": 22840,
+      "sha256": "75571cafa8ca1fb0a9d5a72cb18eb0cd146e820adbff44bb6d22119b5e25e703",
+      "sourceAfter": "47dfa17f5c637a80146733f93133b2736adfd09512be4100e840c76a231a298f"
+    }
+  ],
+  "result": "fail",
+  "finishedAt": "2026-10-22T09:36:46.291Z",
+  "finalStatus": ""
+}

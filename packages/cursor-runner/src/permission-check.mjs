@@ -35,12 +35,12 @@ function log(obj) {
 
 function loadConfig() {
 	if (!existsSync(CONFIG_PATH)) {
-		return { allow: [], deny: [], workspace: process.cwd() };
+		return { unavailable: true };
 	}
 	try {
 		return JSON.parse(readFileSync(CONFIG_PATH, "utf8"));
 	} catch {
-		return { allow: [], deny: [], workspace: process.cwd() };
+		return { unavailable: true };
 	}
 }
 
@@ -144,6 +144,24 @@ function getCandidates(p) {
 }
 
 function evaluate() {
+	if (cfg.unavailable) return { permission: "deny" };
+	if (cfg.toolProfile === "context-only") {
+		const tools = ["list_context", "read_context"];
+		// preToolUse has no server identity. Only these two names can proceed
+		// to beforeMCPExecution, which must verify the trusted transport.
+		const allowed =
+			(eventName === "preToolUse" &&
+				tools.some((tool) => payload.tool_name === `MCP:${tool}`)) ||
+			(eventName === "beforeMCPExecution" &&
+				lookupMcpServerName(payload) === "factory-context" &&
+				tools.includes(payload.tool_name));
+		return {
+			permission: allowed ? "allow" : "deny",
+			...(!allowed && {
+				user_message: "This session can only list and read accepted context.",
+			}),
+		};
+	}
 	const candidates = getCandidates(payload);
 	if (candidates.length === 0) return { permission: "allow" };
 
