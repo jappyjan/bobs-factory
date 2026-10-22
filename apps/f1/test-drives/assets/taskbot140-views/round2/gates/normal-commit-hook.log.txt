@@ -1,0 +1,155 @@
+npm warn Unknown project config "public-hoist-pattern". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+[STARTED] Backing up original state...
+[COMPLETED] Backed up original state in git stash (d8eb1a5d)
+[STARTED] Running tasks for staged files...
+[STARTED] package.json — 54 files
+[STARTED] *.{js,mjs,cjs,jsx,ts,mts,cts,tsx,json} — 14 files
+[STARTED] biome check --write --unsafe
+[COMPLETED] biome check --write --unsafe
+[COMPLETED] *.{js,mjs,cjs,jsx,ts,mts,cts,tsx,json} — 14 files
+[COMPLETED] package.json — 54 files
+[COMPLETED] Running tasks for staged files...
+[STARTED] Applying modifications from tasks...
+[COMPLETED] Applying modifications from tasks...
+[STARTED] Cleaning up temporary files...
+[COMPLETED] Cleaning up temporary files...
+
+> bobs-factory-monorepo@1.0.1 build /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views
+> pnpm -r --filter='!bobs-factory-electron' build
+
+No projects matched the filters "bobs-factory-electron" in "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views"
+Scope: all 20 workspace projects
+apps/desktop build$ node --check src/main.mjs
+packages/mcp-tools build$ tsgo
+packages/cloudflare-tunnel-client build$ tsgo
+packages/core build$ tsgo
+apps/desktop build: Done
+packages/cloudflare-tunnel-client build: Done
+packages/core build: Done
+packages/mcp-tools build: Done
+packages/claude-runner build$ tsgo
+packages/config-updater build$ tsgo
+packages/github-event-transport build$ tsgo
+packages/gitlab-event-transport build$ tsgo
+packages/gitlab-event-transport build: Done
+packages/linear-event-transport build$ tsgo
+packages/github-event-transport build: Done
+packages/slack-event-transport build$ tsgo
+packages/claude-runner build: Done
+packages/zulip-event-transport build$ tsgo
+packages/config-updater build: Done
+packages/linear-event-transport build: Done
+packages/slack-event-transport build: Done
+packages/zulip-event-transport build: Done
+packages/simple-agent-runner build$ tsgo
+packages/simple-agent-runner build: Done
+packages/cursor-runner build$ tsgo && node -e "for(const f of ['permission-check.mjs','sdk-host.mjs']) require('node:fs').copyFileSync('src/'+f, 'dist/'+f)"
+packages/gemini-runner build$ tsgo && cp -r src/prompts dist/prompts
+packages/codex-runner build$ tsgo
+packages/opencode-runner build$ tsgo
+packages/opencode-runner build: Done
+packages/gemini-runner build: Done
+packages/codex-runner build: Done
+packages/cursor-runner build: Done
+packages/edge-worker build$ tsgo && tsgo -p tsconfig.web.json && npm run copy-prompts
+packages/edge-worker build: npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: npm warn Unknown env config "recursive". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+packages/edge-worker build: > bobs-factory-edge-worker@0.2.73 copy-prompts
+packages/edge-worker build: > cp label-prompt-template.md dist/ && cp -r prompts dist/ && rm -rf dist/bobs-factory-skills-plugin && cp -rL bobs-factory-skills-plugin dist/bobs-factory-skills-plugin && node scripts/build-factory-web.mjs
+packages/edge-worker build: Factory web build: b6c096735522dd1c43f9750f
+packages/edge-worker build: Done
+apps/f1 build$ tsgo
+apps/cli build$ tsgo
+apps/f1 build: Done
+apps/cli build: Done
+
+> bobs-factory-monorepo@1.0.1 typecheck /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views
+> pnpm -r typecheck
+
+Scope: 19 of 20 workspace projects
+apps/desktop typecheck$ node --check src/main.mjs
+packages/cloudflare-tunnel-client typecheck$ tsgo --noEmit
+packages/core typecheck$ tsgo --noEmit
+packages/mcp-tools typecheck$ tsgo --noEmit
+apps/desktop typecheck: Done
+packages/cloudflare-tunnel-client typecheck: Done
+packages/core typecheck: Done
+packages/mcp-tools typecheck: Done
+packages/claude-runner typecheck$ tsgo --noEmit
+packages/config-updater typecheck$ tsgo --noEmit
+packages/github-event-transport typecheck$ tsgo --noEmit
+packages/gitlab-event-transport typecheck$ tsgo --noEmit
+packages/gitlab-event-transport typecheck: Done
+packages/linear-event-transport typecheck$ tsgo --noEmit
+packages/github-event-transport typecheck: Done
+packages/slack-event-transport typecheck$ tsgo --noEmit
+packages/claude-runner typecheck: Done
+packages/zulip-event-transport typecheck$ tsgo --noEmit
+packages/config-updater typecheck: Done
+packages/linear-event-transport typecheck: Done
+packages/slack-event-transport typecheck: Done
+packages/zulip-event-transport typecheck: Done
+packages/simple-agent-runner typecheck$ tsgo --noEmit
+packages/simple-agent-runner typecheck: Done
+packages/gemini-runner typecheck$ tsgo --noEmit
+packages/codex-runner typecheck$ tsgo --noEmit
+packages/cursor-runner typecheck$ tsgo --noEmit
+packages/opencode-runner typecheck$ tsgo --noEmit
+packages/opencode-runner typecheck: Done
+packages/codex-runner typecheck: Done
+packages/gemini-runner typecheck: Done
+packages/cursor-runner typecheck: Done
+packages/edge-worker typecheck$ tsgo --noEmit && tsgo -p tsconfig.web.json
+packages/edge-worker typecheck: Done
+apps/cli typecheck$ tsgo --noEmit
+apps/f1 typecheck$ tsgo --noEmit
+apps/f1 typecheck: Done
+apps/cli typecheck: Done
+[taskbot/140-views 66668d8f] fix: close human view permissions and saved-preview seams
+ 54 files changed, 17454 insertions(+), 27 deletions(-)
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization-originals.json
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-final.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-lint-final.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-lint.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-pass.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-opencode-remote-metadata-red.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-combined-lint.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-combined-typecheck-final.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-combined-typecheck.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-final-seams-lint.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-final-seams-typecheck.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-recipes-save.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-source-freeze-commit.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repair-stable-final-focused.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/format.stderr.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/format.stdout.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/lint.stderr.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/lint.stdout.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/receipt-calibration.stderr.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/receipt-calibration.stdout.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/receipt.json
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/syntax.stderr.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-repairs-driver-fix-1/syntax.stdout.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-review-r1-build.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-review-r1-dependency-build.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-review-r1-f1-setup-build.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-review-r1-focused.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-gates-harness-attempt1.mjs.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-gates-runner.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-gates.mjs.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/build.log
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/f1.log
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/gates.json
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/lint.log
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/source-inputs.json
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-round2-validation/typecheck.log
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/round2/stabilization/taskbot140-views-ui-repairs.log.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/ui/repairs/browser-receipts-before-save-fix.json.raw
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/ui/repairs/driver-after-execution.mjs.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/ui/repairs/driver-before-save-fix.log
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/ui/repairs/driver-executed.mjs.txt
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/ui/repairs/identity.json
+ create mode 100644 apps/f1/test-drives/assets/taskbot140-views/ui/repairs/save-failure-before-fix.png

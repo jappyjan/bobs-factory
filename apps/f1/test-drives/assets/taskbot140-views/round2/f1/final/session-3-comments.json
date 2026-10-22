@@ -1,0 +1,32 @@
+[
+  {
+    "id": "comment-37",
+    "body": "Factory work started: View actual dependency waves. f1-views-waves. Follow progress in Factory.\n\n<!-- factory:session-3:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T07:16:38.721Z"
+  },
+  {
+    "id": "comment-38",
+    "body": "runList:\nWave launch · Wave 1:\n- child\\-9e09f869c752ae4a4c4c31fa9074029f79dcf275: Controlled child [running]\nWave launch · Wave 2:\n- child\\-aef3212a5d0b4a4118bbd43aa7a0c9dddf3ba5c3: Dependent controlled child [queued]\n\n<!-- factory:session-3:dbd178a6732f9075610c -->",
+    "createdAt": "2026-10-22T07:16:39.792Z"
+  },
+  {
+    "id": "comment-39",
+    "body": "Factory work started: Ordinary child with a human view. f1-views-waves. Follow progress in Factory.\n\n<!-- factory:child-9e09f869c752ae4a4c4c31fa9074029f79dcf275:03494afd4248c42f5fa1 -->",
+    "createdAt": "2026-10-22T07:16:39.951Z"
+  },
+  {
+    "id": "comment-40",
+    "body": "approve\nDecision batch: 8175dc99-1d68-4898-95bb-9470976523f1\nDisplayed digest: 13db92fe4dad086f8b3ee97a535773f864c05f6c1034998292afd6270d8d4d52\nReply with /view-answer {\"batchId\":\"8175dc99-1d68-4898-95bb-9470976523f1\",\"digest\":\"13db92fe4dad086f8b3ee97a535773f864c05f6c1034998292afd6270d8d4d52\",\"accepted\":true,\"approved\":true} or approved:false with feedback.\nReview the complete display, discussion and assets in the dashboard before accepted:true. A digest identifies content; it does not mean omitted content was reviewed.\nChild acceptance\nmarkdown:\nApprove this isolated child fixture\\. No publication or merge is requested\\.\n\n<!-- factory:child-9e09f869c752ae4a4c4c31fa9074029f79dcf275:69dbe1731a278667df3c -->",
+    "createdAt": "2026-10-22T07:16:40.193Z"
+  },
+  {
+    "id": "comment-41",
+    "body": "Workflow stopped by user. Run child-9e09f869c752ae4a4c4c31fa9074029f79dcf275 retains its work and remains open; resume or start a follow-up when ready.\n\n<!-- factory:child-9e09f869c752ae4a4c4c31fa9074029f79dcf275:507c57957e697c0b497c -->",
+    "createdAt": "2026-10-22T07:16:40.268Z"
+  },
+  {
+    "id": "comment-42",
+    "body": "Workflow stopped by user. Run session-3 retains its work and remains open; resume or start a follow-up when ready.\n\n<!-- factory:session-3:7fd72443e350e6121bee -->",
+    "createdAt": "2026-10-22T07:16:40.546Z"
+  }
+]

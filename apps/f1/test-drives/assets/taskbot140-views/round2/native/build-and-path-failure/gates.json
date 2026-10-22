@@ -1,0 +1,58 @@
+{
+  "head": "66668d8fffc63fc5dfcb37c9940f123491cd4c0f",
+  "tree": "b68e91a49d5d8c27a7dc999af152c10dad81ea4c",
+  "base": "fa866b3d18a880a72fb59f19bfc88195cd4db762",
+  "branch": "taskbot/140-views",
+  "cwd": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views",
+  "node": "v24.21.0",
+  "pid": 31757,
+  "startedAt": "2026-10-22T07:36:00.719Z",
+  "sourceFingerprint": "30879a3607d0ee0b7f7a4728894a5bb3b08af164eb86a8fe21863b2f5e2e048a",
+  "commands": [
+    {
+      "name": "native-build",
+      "command": "bun",
+      "args": [
+        "run",
+        "scripts/build-binary.ts",
+        "--target",
+        "darwin-arm64",
+        "--output",
+        "/tmp/taskbot140-round2-native-build"
+      ],
+      "env": {},
+      "log": "/tmp/taskbot140-round2-native-final/native-build.log",
+      "startedAt": "2026-10-22T07:36:00.893Z",
+      "pid": 31837,
+      "code": 0,
+      "signal": null,
+      "finishedAt": "2026-10-22T07:36:05.578Z",
+      "bytes": 80,
+      "sha256": "8ec0db8b423120291cab0ae86341919b5378f50560b66b1836dd2fbe618e8285",
+      "sourceAfter": "30879a3607d0ee0b7f7a4728894a5bb3b08af164eb86a8fe21863b2f5e2e048a"
+    },
+    {
+      "name": "native-standard-smoke",
+      "command": "/bin/bash",
+      "args": [
+        "scripts/smoke-binary.sh",
+        "/tmp/taskbot140-round2-native-build/bobs-factory-0.2.73-darwin-arm64/bobs-factory"
+      ],
+      "env": {
+        "BOBS_FACTORY_SMOKE_PORT": "46397"
+      },
+      "log": "/tmp/taskbot140-round2-native-final/native-standard-smoke.log",
+      "startedAt": "2026-10-22T07:36:05.927Z",
+      "pid": 31871,
+      "code": 1,
+      "signal": null,
+      "finishedAt": "2026-10-22T07:36:05.936Z",
+      "bytes": 179,
+      "sha256": "41389fe586baec2986c3f76e398c867b5c546fbc259239156236bd091a4a9a15",
+      "sourceAfter": "30879a3607d0ee0b7f7a4728894a5bb3b08af164eb86a8fe21863b2f5e2e048a"
+    }
+  ],
+  "result": "fail",
+  "finishedAt": "2026-10-22T07:36:06.089Z",
+  "finalStatus": ""
+}

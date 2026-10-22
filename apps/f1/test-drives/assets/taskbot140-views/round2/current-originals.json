@@ -1,0 +1,377 @@
+{
+  "kind": "Exact unmodified final command/F1/native outputs, plus retained failed F1 receipts",
+  "files": [
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/apps.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/apps.log",
+      "bytes": 6719,
+      "sha256": "976d201810f7c47d19e9d9687b19dc26bbc725ccedb8339b9b108c17ac921286"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/build.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/build.log",
+      "bytes": 3166,
+      "sha256": "f3c23807b3961a69f9804524bedf8051a6c912654ead4afe9f11aaaabbd7f0db"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/f1.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/f1.log",
+      "bytes": 139556,
+      "sha256": "117eb67b18f35ccb50a309b5ba0f8d89eef29233b52cc7dc924117b5bf640e91"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/gates.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/gates.json",
+      "bytes": 4774,
+      "sha256": "7b2bd9422dcd3f20bc9d6cda47f8dfa1d32320f88036d35db25bfa637d53f96e"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/lint.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/lint.log",
+      "bytes": 14696,
+      "sha256": "9a3d228fcb508e555ce6ff3802ca927a2407f4a2a7b74f18b54f0ff4fe94579e"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/packages.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/packages.log",
+      "bytes": 8744,
+      "sha256": "a6c12c13d452e53c8cdf8991ce88646e768d5e34489225c6b99ff4e316e7643b"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/scripts.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/scripts.log",
+      "bytes": 17577,
+      "sha256": "eda70e47d2fb99c27f7baf6d468e64f9eb010b7c9da720f5621d6aab870b885b"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/source-inputs.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/source-inputs.json",
+      "bytes": 650490,
+      "sha256": "e10e529fe36c12710b1f906669493ad583ea8c7b8bed06ba61353bb72f5b65e9"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/typecheck.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/typecheck.log",
+      "bytes": 1865,
+      "sha256": "024acfc0ba26cd03a79311813be302a1bb373c6449fc4382250e49b640098a9b"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-final/gates.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build-and-path-failure/gates.json",
+      "bytes": 1952,
+      "sha256": "9d3049e9a6b6f4b955e1a07effbc82dc7432f07f08f876f6f8f99264ca0ad232"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-final/native-build.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build-and-path-failure/native-build.log",
+      "bytes": 80,
+      "sha256": "8ec0db8b423120291cab0ae86341919b5378f50560b66b1836dd2fbe618e8285"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-final/native-standard-smoke.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build-and-path-failure/native-standard-smoke.log",
+      "bytes": 179,
+      "sha256": "41389fe586baec2986c3f76e398c867b5c546fbc259239156236bd091a4a9a15"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-final/source-inputs.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build-and-path-failure/source-inputs.json",
+      "bytes": 650490,
+      "sha256": "e10e529fe36c12710b1f906669493ad583ea8c7b8bed06ba61353bb72f5b65e9"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-smoke-final/gates.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/gates/gates.json",
+      "bytes": 2077,
+      "sha256": "f1c49ab85fe55e8d0ae1c5e4fcc944f1b2b45a9790fc4f0de49149a88c7a1f65"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-smoke-final/native-standard-smoke.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/gates/native-standard-smoke.log",
+      "bytes": 535,
+      "sha256": "148362ecca6d78cad497348a29838b271eea490b93a04a6430c4826f682e46cc"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-smoke-final/native-view-smoke.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/gates/native-view-smoke.log",
+      "bytes": 434,
+      "sha256": "8b849fe434f3f63fd5cef7d03d746c3303f48fcacdb9ab73d0e0b16259c295a5"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-smoke-final/source-inputs.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/gates/source-inputs.json",
+      "bytes": 650490,
+      "sha256": "e10e529fe36c12710b1f906669493ad583ea8c7b8bed06ba61353bb72f5b65e9"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-view-evidence/attempt-2026-10-22T07-36-32-344Z-7ad2f08a/native-views.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/views/attempt-2026-10-22T07-36-32-344Z-7ad2f08a/native-views.json",
+      "bytes": 2641807,
+      "sha256": "deeb5bf9d4e564f487dc005b95ee09d46ea39edf762f8945fe23cc87ca16bc9c"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-view-evidence/attempt-2026-10-22T07-36-32-344Z-7ad2f08a/worker-1.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/views/attempt-2026-10-22T07-36-32-344Z-7ad2f08a/worker-1.log",
+      "bytes": 3250,
+      "sha256": "4b3aa72aa5dcfa3ef9b547cde44e6a857c439c6f8d4578890e91f73f737298ab"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-view-evidence/attempt-2026-10-22T07-36-32-344Z-7ad2f08a/worker-2.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/views/attempt-2026-10-22T07-36-32-344Z-7ad2f08a/worker-2.log",
+      "bytes": 2819,
+      "sha256": "ed007fddbb22c4c6a49a43b988b712105f45e881804bc8c4acbad75cb6aafe8a"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-gates-final.mjs",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/executed-runner.mjs.txt",
+      "bytes": 3871,
+      "sha256": "05adf0b253f602daff09eaacabf7b8f65f45fe9b17109d7898e62cf93231f1c1"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-gates-final-runner.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/runner.log.txt",
+      "bytes": 5018,
+      "sha256": "d9956f9e3d177d781c17d992a1315f0532cdad44986b767c7905d940b465565f"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-final.mjs",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/executed-runner.mjs.txt",
+      "bytes": 3830,
+      "sha256": "6e90a036ee2a39fc8dd51db4e07d77161fedc7935cb3681dec5b44cfddaae764"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-final-runner.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build-and-path-failure-runner.log.txt",
+      "bytes": 1845,
+      "sha256": "0b08e33cf93416e0e0ccdc54d8a9fa2d289a4973a2801a73d7c0b94547e78ea3"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-smoke-final.mjs",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/smoke-executed-runner.mjs.txt",
+      "bytes": 3703,
+      "sha256": "76bdac1c0561c177840b5d9a7ba0cbfa62c464b39759b21775162aa4b511873b"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-smoke-final-runner.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/runner.log.txt",
+      "bytes": 2118,
+      "sha256": "4195d722d522c965a5b9413b288e8422376a89d4ee3d25be5d57199e3c3298d8"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-package-counts.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/package-counts.json",
+      "bytes": 2878,
+      "sha256": "8f77b3b800098026833a4904da35d0ee4cc2c4edcb8901ee9d6e757e78bfd8b1"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-codex-proof-equivalence.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/codex-input-equivalence.json",
+      "bytes": 6899,
+      "sha256": "336e0cc608736fd6454cdfe9b6a22fccaad7adc7d29024d6ff1a041d146c1390"
+    },
+    {
+      "original": "/tmp/taskbot140-repair-final-source-freeze-commit.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/gates/normal-commit-hook.log.txt",
+      "bytes": 11404,
+      "sha256": "b6dcaeadbd46bf35cf4d0cbf73b4b7b676a4bb5c57d95a266a58b4b38cab74b4"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/actions.jsonl",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/actions.jsonl",
+      "bytes": 2606779,
+      "sha256": "348cdaf7994b88b3b50c71cc061f83832ce17cfc4df671c0624ac513353e14b8"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/activities.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/activities.json",
+      "bytes": 1911,
+      "sha256": "6238834f325c4e1dafa03c79ca1f6abeddb168c8eeccada2126b2c70f635d02a"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/driver-executed.mjs",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/driver-executed.mjs",
+      "bytes": 54234,
+      "sha256": "afc73532bad8706e7fa303bf71eb810a294d1387e61a73985f7fb35f2e3d2834"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/http-receipts.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/http-receipts.json",
+      "bytes": 2884967,
+      "sha256": "98d825cb424ac9c7fe7d01996621f73753b1ec8ae87bb55625e12b64188c9056"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/mock-invocations.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/mock-invocations.json",
+      "bytes": 2227,
+      "sha256": "4b5cbf7d4dab29718cd4fd016810f9ce24894503ac8722cd65aa31cf00da83ad"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/native-config-captures.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/native-config-captures.json",
+      "bytes": 39858,
+      "sha256": "aaa17fba659ca9bf919cd4b1fe77e66ca48fd5657883150c971f12a1c2039817"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/push-events.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/push-events.json",
+      "bytes": 89361,
+      "sha256": "9e6f7885c9c98f034858d594bd457407979d288f1dcbc2db1bb9adba8c772b8a"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/results.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/results.json",
+      "bytes": 119772,
+      "sha256": "17e134512d84df9e6373f0dfe8864a94ca7a1f98d15045b8634e93b962cfbad2"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/scenario-results.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/scenario-results.json",
+      "bytes": 116202,
+      "sha256": "dfe20e78def814a23719044c4a31a0a921e2e61ba705584ef7beddd413ac969d"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/session-1-comments.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/session-1-comments.json",
+      "bytes": 8313,
+      "sha256": "8470d9a834b3e7f4c6a3485a0dcec46e4adcdf5e8a9820542b57be8602c5db48"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/session-2-comments.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/session-2-comments.json",
+      "bytes": 7588,
+      "sha256": "39f00cae77a0fc86fba0147578199b10baf7487508bcb7b91cb4d4204e6bec04"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/session-3-comments.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/session-3-comments.json",
+      "bytes": 2311,
+      "sha256": "7c165c2608fc9debbfa551b6e2a44ddaebd1ea739cb18c3de8464d7e07ef382c"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/session-4-comments.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/session-4-comments.json",
+      "bytes": 229451,
+      "sha256": "5ffc02ab46312bb92f6843857049e5aca9e7acb1ee78c45ba7c2bafd26e0fe5e"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/session-5-comments.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/session-5-comments.json",
+      "bytes": 3209,
+      "sha256": "c1d9f6d044fd71431d958c1822a09be2e35b288c7d412865a5fc378f00c3f7fa"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/source-files.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/source-files.json",
+      "bytes": 55956,
+      "sha256": "82a07dd2c66abd3474828f6640c9a23a3e75795ba3e3b1b9fb8c9d49712c7c8d"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-QaTuFQ/terminal-current-view.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/final/terminal-current-view.txt",
+      "bytes": 9767,
+      "sha256": "2b83d72a8311395a546b288042498dc060cb5624ad1696d9b1e83f095c5359d1"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation-final/f1.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/driver.log.txt",
+      "bytes": 139556,
+      "sha256": "117eb67b18f35ccb50a309b5ba0f8d89eef29233b52cc7dc924117b5bf640e91"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/actions.jsonl",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/actions.jsonl",
+      "bytes": 2608991,
+      "sha256": "c8e70ca582515f3b1d0e99d91878bb0ec0f6a122f60f59420e72fa31c6ed8551"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/driver-executed.mjs",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/driver-executed.mjs",
+      "bytes": 52839,
+      "sha256": "bab038b04e72efe259a0595dba95815247b399b90f84be3d3b17af5176b00598"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/failure.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/failure.json",
+      "bytes": 6483,
+      "sha256": "e636795ec6fc89995f0764c4f8d1fb69f1f728a91cc051c16539deedd793ee31"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/http-receipts.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/http-receipts.json",
+      "bytes": 2885625,
+      "sha256": "3f62bda9cc2621b343992986c5c6f4702c47602bd37c16bd268d02542bd56958"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/mock-invocations.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/mock-invocations.json",
+      "bytes": 2227,
+      "sha256": "f3181560758624a90befdf3902cc7dcb125a7cc56acbf75b66441e1e3ed31888"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/native-config-captures.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/native-config-captures.json",
+      "bytes": 39858,
+      "sha256": "9811af9e8a1b20d124617932b2e449d9d885134cff306a31b542fca22bf951cb"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/push-events.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/push-events.json",
+      "bytes": 84969,
+      "sha256": "2b6d0d6b68b3b37d100ebaac063ab4bcdc8f70bc73c2e3406d32f55ddfbef382"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/scenario-results.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/scenario-results.json",
+      "bytes": 108420,
+      "sha256": "ce430e4509060bf30b4e598513fe9402e6090f3731eba6b4bec91d64c0de4032"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/source-files.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/source-files.json",
+      "bytes": 55956,
+      "sha256": "c7f2f46282117c2bf8df5f36beb3a36fd2aaf65671b8b50bd130d9057b51d929"
+    },
+    {
+      "original": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-views-repairs-hENXr0/terminal-current-view.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/attempt1/terminal-current-view.txt",
+      "bytes": 9767,
+      "sha256": "f622a514ab8bf93acc4c6052be0320d437738f45e573b0ecfc417b206cb36b76"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-validation/f1.log",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/f1/failed-driver.log.txt",
+      "bytes": 31633,
+      "sha256": "0862da2c1d3f5268b1390d5b1be8c411b7d20ab8e6fb11e2a3c89ec058dae328"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-build/bobs-factory-1.0.0-beta-darwin-arm64/build.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build/build.json",
+      "bytes": 563,
+      "sha256": "c1ccb58f5ab043bfda2d90afa6f902ba31d4966ea824d71cbd119f2c42eb34c6"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-build/bobs-factory-1.0.0-beta-darwin-arm64/LICENSE",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build/LICENSE",
+      "bytes": 11357,
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-build/bobs-factory-1.0.0-beta-darwin-arm64/NOTICE",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build/NOTICE",
+      "bytes": 173,
+      "sha256": "88cfe660584636c41d3ad4a7193db4de35c0ccfccc53cc47524afe131097248d"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-build/bobs-factory-1.0.0-beta-darwin-arm64/THIRD_PARTY_NOTICES.txt",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build/THIRD_PARTY_NOTICES.txt",
+      "bytes": 4135548,
+      "sha256": "3a0a040e229de630ab58b86845f73ea1c11e350421137122a23810be137a726a"
+    },
+    {
+      "original": "/tmp/taskbot140-round2-native-build/bobs-factory-1.0.0-beta-darwin-arm64.manifest.json",
+      "path": "apps/f1/test-drives/assets/taskbot140-views/round2/native/build/archive.manifest.json",
+      "bytes": 340,
+      "sha256": "7ca1b4aa09c6c318a817671f670d1c7f5e11e31c6d0efdb4649ed3d9892ac155"
+    }
+  ]
+}
