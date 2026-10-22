@@ -136,7 +136,7 @@ function historySnapshot(
 				? "architecture"
 				: candidate.reviewGate
 					? "human-review"
-					: candidate.questions.length
+					: candidate.questions?.length
 						? "questions"
 						: Object.values(candidate.capacityLeaves ?? {})
 								.map((leaf) => leaf.phase)

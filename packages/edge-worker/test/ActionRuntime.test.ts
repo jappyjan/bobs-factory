@@ -174,12 +174,10 @@ function fixture(
 		return runtime;
 	};
 	const runtime = load();
-	runtime.updateWorkflows([
-		...runtime.listWorkflows(),
-		parent,
-		child,
-		...dependencies,
-	]);
+	// Accept the complete fixture graph, without copying unrelated bundled prompts
+	// into every parent/child checkpoint. Keep the normal installed catalogue.
+	const definitions = [parent, child, ...dependencies];
+	runtime.updateWorkflows([...runtime.listWorkflows(), ...definitions]);
 	const create = (definition: Workflow = parent) =>
 		runtime.create({
 			repositoryId: "repo",
@@ -193,7 +191,7 @@ function fixture(
 				},
 			],
 			workflow: definition,
-			workflowDefinitions: runtime.listWorkflows(),
+			workflowDefinitions: definitions,
 			workspace: repository,
 			input: "Coordinate controlled child work",
 			triggerOrigin: {

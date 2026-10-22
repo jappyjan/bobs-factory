@@ -232,6 +232,47 @@ it("collects only dated complete-scope run metadata, redacts errors, and freezes
 	expect(sampled.history).toMatchObject({ total: 2, sampled: true });
 	expect(sampled.history!.records).toHaveLength(1);
 });
+it("safely snapshots optional history from older retained runs without a questions array", async () => {
+	const { run } = fixture();
+	const legacy = structuredClone(run);
+	legacy.id = "retained-before-question-arrays";
+	legacy.status = "failed";
+	legacy.error = "Credential denied PRIVATE_CREDENTIAL person@example.invalid";
+	legacy.input = "PRIVATE_OPERATOR_PROMPT";
+	legacy.outputs = { raw: "PRIVATE_AGENT_OUTPUT" };
+	legacy.events = [
+		{ at: legacy.updatedAt, step: "inspect", message: "PRIVATE_RAW_LOG" },
+	];
+	Reflect.deleteProperty(legacy, "questions");
+	const receipt = await captureRepositorySnapshot(
+		run,
+		"legacy-history-snapshot",
+		{ history: { lookbackDays: 30, maxRuns: 100 } },
+		[legacy],
+		signal(),
+		{ key: "baseline" },
+	);
+	expect(JSON.parse(JSON.stringify(receipt.history))).toEqual({
+		observedAt: receipt.observedAt,
+		lookbackDays: 30,
+		total: 1,
+		sampled: false,
+		records: [
+			{
+				id: legacy.id,
+				workflow: legacy.workflow.id,
+				status: "failed",
+				createdAt: legacy.createdAt,
+				updatedAt: legacy.updatedAt,
+				wait: [],
+				transitions: [],
+				attempts: [],
+				error: "access",
+			},
+		],
+	});
+	expect(Object.hasOwn(legacy, "questions")).toBe(false);
+});
 it("rejects copied agent receipts, wrong repository scopes, other lexical frames, and changed iteration ownership", async () => {
 	const { run, context } = fixture();
 	const receipt = await captureRepositorySnapshot(

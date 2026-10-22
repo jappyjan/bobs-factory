@@ -6228,7 +6228,7 @@ export class WorkflowRuntime {
 				})),
 			},
 			reviewGate: run.reviewGate,
-			questionCount: run.questions.length,
+			questionCount: run.questions?.length ?? 0,
 			architectureGate: run.architectureGate ? { pending: true } : undefined,
 			hasGuide: Object.getOwnPropertyDescriptor(run, "outputs")?.get
 				? this.summaries.get(run.id)?.hasGuide
