@@ -1,0 +1,4 @@
+Command log: /tmp/taskbot141-r1-r2-prompt-final.log
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Duration  764ms (transform 349ms, setup 15ms, import 632ms, tests 42ms, environment 0ms)

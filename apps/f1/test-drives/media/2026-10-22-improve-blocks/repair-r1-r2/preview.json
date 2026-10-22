@@ -1,0 +1,14 @@
+{
+	"apiOrigin": "http://127.0.0.1:64755",
+	"rpcPort": 64754,
+	"factoryPort": 64755,
+	"pid": 36203,
+	"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-RmToGM",
+	"parentId": "manual-dca8f91a-951a-4ca6-a950-75399f5da9d3",
+	"decideId": "manual-a5a8287d-ae85-4324-a651-0eb0ffff44e4",
+	"approveId": "manual-d6aca2db-3fa2-4226-9e73-dab872d37433",
+	"childId": "child-db5db494e4f30f9b58ef3e187bc345f5f1944fe0",
+	"forkId": "fork-7c73fa2b-2a38-4035-be13-196e7dcd07f7",
+	"previewWorkflow": "Actual one-perspective catalog fork of current stock graph; normal stock Factory child.",
+	"stop": "kill -TERM 36203"
+}

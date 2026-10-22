@@ -1,0 +1,42 @@
+{
+	"completedAt": "2026-10-22T18:02:34.888Z",
+	"checks": [
+		"Actual Consolidate rejects 2001-character limitation at producer and corrects to complete 201-character detail.",
+		"Actual Refine rejects 8001-character prose at producer and corrects to a complete canonical package over8000 displayed as body plus details.",
+		"Stale approval rejected; exact approval transfers the identical complete reviewed canonical package to ordinary stock Factory child input and launchInputs; no child approvals or external effects."
+	],
+	"sourceChangedDuringDrive": [],
+	"sourceAfter": {
+		"packages/edge-worker/src/EdgeWorker.ts": "8ce291c0c6cffe2a84758116327b7e0397dc9c9d5460313449bf92f681882de4",
+		"packages/edge-worker/src/factory/improvementWorkflow.ts": "c2f9d9d49dd5b97d2d521d6d93333c32752634b37537bf82efc4a794c5118a00",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "c8433685e8e07035ed043c09a129303a14df96c13dbfa87b059acc533c7aa1ae",
+		"packages/edge-worker/src/factory/WorkflowCatalog.ts": "96c0ce6563d667524eca09ae0e77aab0b288dee617a84de653f7ea68d3fdc365",
+		"packages/edge-worker/src/factory/Workflow.ts": "3b992f4e393157679827dfff6827c26c3d5be216216d93fa676b5711f3b76d1c",
+		"packages/edge-worker/src/factory/StepBindings.ts": "437205f514761b093ab9b2c6e9bd4aab6723d4de8b58ad08fbaad2f0ff5ba499",
+		"packages/edge-worker/src/factory/View.ts": "1d3b3a575cbf2c7f3db08c20125c043c04da195ad4af39a21da36273de31124b",
+		"packages/edge-worker/src/factory/ResearchPermissions.ts": "1c63882282c5c8d299fb04dca09717f5b50fdb86daf6981e4d3ca7f14544fd1e",
+		"packages/edge-worker/src/factory/ResearchFormats.ts": "bda66c48f5c47b25f9a5cae8f90efdf2e05301b12467c2394bb735a52e729970",
+		"packages/edge-worker/src/factory/ResearchPrompts.ts": "095565acbda179bee8fd83c95cdcfa01a03e6f9fb10737d40c5c998a7e3d0e9b",
+		"packages/edge-worker/src/factory/FileIssues.ts": "b3f1af57dd0ca34f9717a17bbce09cefda7cd71909a2c71fde7bc582f4e198f1",
+		"packages/edge-worker/src/factory/FileIssueProviders.ts": "b9e73cb03354514658f7d652b43b97f4fded814d9578ae08f10bd68bb6962a2b",
+		"packages/edge-worker/src/factory/OutputFormats.ts": "8643496ac9d678134419285afa44b32b3f037962e230bb24af30a157ecbafbb8",
+		"apps/f1/src/MockAgentRunner.ts": "2206b0b1c96a90a9a2eb1b2742a49251e44b75202a228858340b6a56c9c22d56"
+	},
+	"paidCalls": 0,
+	"nativeRuns": 0,
+	"restartTested": false,
+	"preview": {
+		"apiOrigin": "http://127.0.0.1:64755",
+		"rpcPort": 64754,
+		"factoryPort": 64755,
+		"pid": 36203,
+		"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-RmToGM",
+		"parentId": "manual-dca8f91a-951a-4ca6-a950-75399f5da9d3",
+		"decideId": "manual-a5a8287d-ae85-4324-a651-0eb0ffff44e4",
+		"approveId": "manual-d6aca2db-3fa2-4226-9e73-dab872d37433",
+		"childId": "child-db5db494e4f30f9b58ef3e187bc345f5f1944fe0",
+		"forkId": "fork-7c73fa2b-2a38-4035-be13-196e7dcd07f7",
+		"previewWorkflow": "Actual one-perspective catalog fork of current stock graph; normal stock Factory child.",
+		"stop": "kill -TERM 36203"
+	}
+}

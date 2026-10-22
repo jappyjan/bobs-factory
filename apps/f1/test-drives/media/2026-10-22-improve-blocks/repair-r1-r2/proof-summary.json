@@ -1,0 +1,27 @@
+{
+	"actualPrimaryInvocations": {
+		"map": 1,
+		"coordinate": 1,
+		"worker": 1,
+		"verify": 1,
+		"proposals": 2,
+		"plan": 2,
+		"architecture": 1,
+		"security": 1,
+		"dependencies": 1
+	},
+	"producerHistory": [
+		{
+			"step": "consolidate/proposals",
+			"at": "2026-10-22T18:02:09.482Z"
+		},
+		{
+			"step": "plans/cache/refine/plan",
+			"at": "2026-10-22T18:02:11.530Z"
+		}
+	],
+	"canonicalCharacters": 8097,
+	"childWorkflow": "factory",
+	"childInputExact": true,
+	"correctionCount": 2
+}

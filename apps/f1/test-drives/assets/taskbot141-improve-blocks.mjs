@@ -28,7 +28,12 @@ assert.equal(
 );
 assert.match(process.version, /^v24\./);
 const root = resolve(import.meta.dirname, "../../../..");
-const media = join(root, "apps/f1/test-drives/media/2026-10-22-improve-blocks");
+const repairOnly = process.argv.includes("--review-fixes");
+const media = join(
+	root,
+	"apps/f1/test-drives/media/2026-10-22-improve-blocks",
+	...(repairOnly ? ["repair-r1-r2"] : []),
+);
 mkdirSync(media, { recursive: true });
 const directory = realpathSync(
 	mkdtempSync(join(tmpdir(), "f1-improve-blocks-")),
@@ -228,7 +233,8 @@ const opportunities = [
 	perspectives: ["modules"],
 	issueBody: `# ${title}\n\nProblem: exported cache ownership is unclear.\nEvidence: cache.ts:1 at the pinned baseline.\nBenefit/design: a narrow cache owner.\nPlan: inspect callers, wrap mutation, verify read/write and clear.\nAcceptance: existing observable behavior survives.\nNon-goals: external services.\nRisk/prerequisite: inspect callers first; deferred backlog work only.`,
 }));
-let runtime, worker;
+let runtime, worker, repairTargetRun;
+const corrections = [];
 const mock = (runner, config, output) =>
 	f1AgentHandlers("mock", JSON.stringify(output)).createAgentRunner(
 		runner,
@@ -294,6 +300,15 @@ worker = new EdgeWorker({
 				configOverrides: config.configOverrides,
 				workingDirectory: config.workingDirectory,
 			};
+			if (context.outputCorrection) {
+				turn.correction = {
+					attempts: context.outputCorrection.attempts,
+					issues: context.outputCorrection.issues,
+					originalSha256: hash(JSON.stringify(context.outputCorrection.output)),
+				};
+				if (run.id === repairTargetRun)
+					corrections.push(structuredClone(context.outputCorrection));
+			}
 			turns.push(turn);
 			if (run.recipeParent) {
 				assert.equal(
@@ -416,6 +431,18 @@ worker = new EdgeWorker({
 						limitations: [
 							inheritance,
 							"Mocked providers; no native source inspection was executed.",
+							...(repairOnly
+								? [
+										"L".repeat(
+											run.id === repairTargetRun &&
+												turns.filter(
+													(t) => t.runId === run.id && t.role === role,
+												).length === 1
+												? 2001
+												: 201,
+										),
+									]
+								: []),
 						],
 					};
 					break;
@@ -433,7 +460,17 @@ worker = new EdgeWorker({
 						id: context.item.id,
 						itemIds: [context.item.id],
 						title: context.item.title,
-						plan: context.item.plan,
+						plan:
+							repairOnly && run.id === repairTargetRun
+								? context.item.plan.padEnd(
+										run.id === repairTargetRun &&
+											turns.filter((t) => t.runId === run.id && t.role === role)
+												.length === 1
+											? 8001
+											: 7980,
+										".",
+									)
+								: context.item.plan,
 						criteria: context.item.criteria,
 						dependencies: [],
 						paths: context.item.paths,
@@ -575,11 +612,7 @@ async function manual(workflow = "improve-codebase") {
 	);
 	return accepted.id;
 }
-let retained = false;
-try {
-	await worker.start();
-	assert.match(await cli("ping"), /Server is healthy/i);
-	assert.match(await cli("status"), /status/i);
+async function completeDrive() {
 	const stockId = await manual();
 	const first = await decision(stockId, "decide");
 	const stockRun = current(stockId);
@@ -824,6 +857,195 @@ try {
 			...preview,
 		}),
 	);
+}
+async function reviewFixDrive() {
+	const fork = await api("/api/workflows/improve-codebase/fork", {
+		name: "F1 R1/R2 one-perspective fork",
+	});
+	const definitions = runtime
+		.listWorkflows()
+		.map((workflow) => structuredClone(workflow));
+	const forked = definitions.find((workflow) => workflow.id === fork.id);
+	// Use the ordinary editable action target to exercise the installed stock
+	// Factory child. The fork still retains its copied reachable closure.
+	forked.steps.find(
+		(step) => step.id === "dispatch",
+	).groups[1][0].launchRuns.workflow = "factory";
+	forked.steps.find((step) => step.id === "perspectives").items.values = [
+		{
+			id: "fixture-perspective",
+			name: "Fixture ownership perspective",
+			brief: "Only inspect the disposable cache ownership seam.",
+		},
+	];
+	await api(
+		"/api/workflows",
+		{ workflows: definitions, defaultWorkflow: fork.id },
+		200,
+		"PUT",
+	);
+	const parentId = await manual(fork.id);
+	repairTargetRun = parentId;
+	const first = await decision(parentId, "decide");
+	const points = first.view.components.find(
+		(component) => component.type === "points",
+	);
+	assert.equal(points.data.items.at(-1).detail, "L".repeat(201));
+	assert.equal(
+		turns.filter((turn) => turn.runId === parentId && turn.role === "proposals")
+			.length,
+		2,
+	);
+	await choose(parentId, { cache: "fix" });
+	const approval = await decision(parentId, "approve");
+	const card = approval.view.components.find(
+		(component) => component.type === "itemCards",
+	).data.items[0];
+	assert.equal(card.body.length, 7980);
+	assert(!card.body.includes(opportunities[0].criteria[0]));
+	assert(!card.body.includes(opportunities[0].paths[0]));
+	assert.deepEqual(card.details, [
+		{
+			label: "Acceptance criteria",
+			value: `- ${opportunities[0].criteria[0]}`,
+		},
+		{ label: "Dependencies", value: "None" },
+		{ label: "Paths", value: opportunities[0].paths[0] },
+	]);
+	const canonical = `${card.body}\n\nAcceptance criteria:\n${card.details[0].value}\n\nDependencies: ${card.details[1].value}\nPaths: ${card.details[2].value}`;
+	assert(canonical.length > 8000);
+	assert.equal(
+		turns.filter((turn) => turn.runId === parentId && turn.role === "plan")
+			.length,
+		2,
+	);
+	assert.equal(corrections.length, 2);
+	assert.equal(corrections[0].output.limitations.at(-1).length, 2001);
+	assert.equal(corrections[1].output.plan.length, 8001);
+	assert(
+		corrections[0].issues.some((issue) => issue.path.includes("limitations")),
+	);
+	assert(corrections[1].issues.some((issue) => issue.path === "/plan"));
+	await api(
+		`/api/runs/${parentId}/view-answer`,
+		{
+			batchId: approval.id,
+			digest: "0".repeat(64),
+			accepted: true,
+			approved: true,
+		},
+		409,
+	);
+	await api(`/api/runs/${parentId}/view-answer`, {
+		batchId: approval.id,
+		digest: approval.digest,
+		accepted: true,
+		approved: true,
+	});
+	await until(
+		() =>
+			[...runtime.runs.values()].some(
+				(run) =>
+					run.recipeParent?.runId === parentId &&
+					run.status === "waiting" &&
+					run.questions?.length,
+			),
+		"Complete reviewed plan reaches ordinary stock Factory child",
+	);
+	const parent = current(parentId);
+	const child = [...runtime.runs.values()].find(
+		(run) => run.recipeParent?.runId === parentId,
+	);
+	const batch = Object.values(parent.launchActions)[0];
+	const acceptedLaunch = JSON.stringify(batch.accepted);
+	const item = batch.accepted.items[0];
+	assert.equal(item.id, "cache");
+	assert.deepEqual(item.dependencies, []);
+	assert.equal(item.plan, canonical);
+	assert.equal(child.input, `${item.prompt}\n\n## Plan\n${canonical}`);
+	assert.deepEqual(child.launchInputs, {
+		prompt: item.prompt,
+		plan: canonical,
+	});
+	assert.equal(child.workflow.id, "factory");
+	assert.equal(child.humanDecisions?.length ?? 0, 0);
+	assert.notEqual(child.workspace, parent.workspace);
+	assert.equal(filed.length, 0);
+	const decideId = await manual(fork.id);
+	await decision(decideId, "decide");
+	const approveId = await manual(fork.id);
+	await choose(approveId, { cache: "fix" });
+	await decision(approveId, "approve");
+	assert.equal(JSON.stringify(batch.accepted), acceptedLaunch);
+	const sourceAfter = sourceIdentity();
+	assert.deepEqual(sourceAfter, sourceBefore);
+	const preview = {
+		apiOrigin,
+		rpcPort,
+		factoryPort,
+		pid: process.pid,
+		directory,
+		parentId,
+		decideId,
+		approveId,
+		childId: child.id,
+		forkId: fork.id,
+		previewWorkflow:
+			"Actual one-perspective catalog fork of current stock graph; normal stock Factory child.",
+		stop: `kill -TERM ${process.pid}`,
+	};
+	save("repair-proof.json", {
+		corrections,
+		acceptedApproval: approval,
+		acceptedLaunch: {
+			...batch.accepted,
+			workflow: {
+				id: batch.accepted.workflow.id,
+				sha256: hash(JSON.stringify(batch.accepted.workflow)),
+			},
+			definitions: batch.accepted.definitions.map((definition) => ({
+				id: definition.id,
+				sha256: hash(JSON.stringify(definition)),
+			})),
+		},
+		child: {
+			id: child.id,
+			input: child.input,
+			launchInputs: child.launchInputs,
+			workflowId: child.workflow.id,
+			humanDecisions: child.humanDecisions ?? [],
+		},
+		producerHistory: parent.history
+			.filter((h) => h.step.endsWith("/proposals") || h.step.endsWith("/plan"))
+			.map((h) => ({ step: h.step, at: h.at })),
+		events: parent.events.filter((event) =>
+			/Output validation/.test(event.message),
+		),
+	});
+	save("preview.json", preview);
+	save("results.json", {
+		completedAt: stamp(),
+		checks: [
+			"Actual Consolidate rejects 2001-character limitation at producer and corrects to complete 201-character detail.",
+			"Actual Refine rejects 8001-character prose at producer and corrects to a complete canonical package over8000 displayed as body plus details.",
+			"Stale approval rejected; exact approval transfers the identical complete reviewed canonical package to ordinary stock Factory child input and launchInputs; no child approvals or external effects.",
+		],
+		sourceChangedDuringDrive: [],
+		sourceAfter,
+		paidCalls: 0,
+		nativeRuns: 0,
+		restartTested: false,
+		preview,
+	});
+	console.log(JSON.stringify({ phase: "repair-checks-complete", ...preview }));
+}
+let retained = false;
+try {
+	await worker.start();
+	assert.match(await cli("ping"), /Server is healthy/i);
+	assert.match(await cli("status"), /status/i);
+	if (repairOnly) await reviewFixDrive();
+	else await completeDrive();
 	if (process.argv.includes("--serve")) {
 		retained = true;
 		await new Promise((done) => {

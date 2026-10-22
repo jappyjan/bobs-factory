@@ -1,0 +1,40 @@
+{
+	"revision": "475452bad967645dd0170e7a55d6d004ba990972",
+	"startedAt": "2026-10-22T18:02:03.416Z",
+	"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-RmToGM",
+	"pid": 36203,
+	"node": "v24.21.0",
+	"driverSha256": "fb0ff605d5f4858bc583cda5f032f8691406ceb0e054ed0b44eae7d37b02dbc4",
+	"sourceBefore": {
+		"packages/edge-worker/src/EdgeWorker.ts": "8ce291c0c6cffe2a84758116327b7e0397dc9c9d5460313449bf92f681882de4",
+		"packages/edge-worker/src/factory/improvementWorkflow.ts": "c2f9d9d49dd5b97d2d521d6d93333c32752634b37537bf82efc4a794c5118a00",
+		"packages/edge-worker/src/factory/WorkflowRuntime.ts": "c8433685e8e07035ed043c09a129303a14df96c13dbfa87b059acc533c7aa1ae",
+		"packages/edge-worker/src/factory/WorkflowCatalog.ts": "96c0ce6563d667524eca09ae0e77aab0b288dee617a84de653f7ea68d3fdc365",
+		"packages/edge-worker/src/factory/Workflow.ts": "3b992f4e393157679827dfff6827c26c3d5be216216d93fa676b5711f3b76d1c",
+		"packages/edge-worker/src/factory/StepBindings.ts": "437205f514761b093ab9b2c6e9bd4aab6723d4de8b58ad08fbaad2f0ff5ba499",
+		"packages/edge-worker/src/factory/View.ts": "1d3b3a575cbf2c7f3db08c20125c043c04da195ad4af39a21da36273de31124b",
+		"packages/edge-worker/src/factory/ResearchPermissions.ts": "1c63882282c5c8d299fb04dca09717f5b50fdb86daf6981e4d3ca7f14544fd1e",
+		"packages/edge-worker/src/factory/ResearchFormats.ts": "bda66c48f5c47b25f9a5cae8f90efdf2e05301b12467c2394bb735a52e729970",
+		"packages/edge-worker/src/factory/ResearchPrompts.ts": "095565acbda179bee8fd83c95cdcfa01a03e6f9fb10737d40c5c998a7e3d0e9b",
+		"packages/edge-worker/src/factory/FileIssues.ts": "b3f1af57dd0ca34f9717a17bbce09cefda7cd71909a2c71fde7bc582f4e198f1",
+		"packages/edge-worker/src/factory/FileIssueProviders.ts": "b9e73cb03354514658f7d652b43b97f4fded814d9578ae08f10bd68bb6962a2b",
+		"packages/edge-worker/src/factory/OutputFormats.ts": "8643496ac9d678134419285afa44b32b3f037962e230bb24af30a157ecbafbb8",
+		"apps/f1/src/MockAgentRunner.ts": "2206b0b1c96a90a9a2eb1b2742a49251e44b75202a228858340b6a56c9c22d56"
+	},
+	"executedBuilds": {
+		"packages/edge-worker/dist/EdgeWorker.js": "20398595b3050f0513e9d8200378915fbc21ddf13fc5f3e45e8c6321f9e9f17e",
+		"packages/edge-worker/dist/factory/improvementWorkflow.js": "9bd79758543ceb9a9ea891b25c7708d2a8d4109e75077555ffd2217d3c93317f",
+		"packages/edge-worker/dist/factory/WorkflowRuntime.js": "7460df6424d74ec3466583fcefe2d5a0c23c91d01c4a4a00247bfb695e7c0117",
+		"packages/edge-worker/dist/factory/WorkflowCatalog.js": "8504e18922fefa5158169da494891da93da3d50b08b5b02affebae283c4c431b",
+		"packages/edge-worker/dist/factory/Workflow.js": "681b026c4e3aa3bf1097b352fcc52bd053a8c3f0fdb9e0bdc6abe32853c4dfdb",
+		"packages/edge-worker/dist/factory/StepBindings.js": "37ed4954afe329311b2af3150d0b6c8fb6ada4b9da851481ae9396e7b669871f",
+		"packages/edge-worker/dist/factory/View.js": "8a531dac9603fcae670a95f6192846213cbd60da8cb2e9e29060b31f64b0e7ab",
+		"packages/edge-worker/dist/factory/ResearchPermissions.js": "ad3a53575df15ac27f6c7776d4d45503f67607c3c136ad55710b4257a29ef968",
+		"packages/edge-worker/dist/factory/ResearchFormats.js": "308cebd4aa88890835271e1e21a2435163d45b96cadeb776e4beaeba351fedb6",
+		"packages/edge-worker/dist/factory/ResearchPrompts.js": "7a4e75748d1603ee57651430407917022305663965360474c4efa38fa7213a5e",
+		"packages/edge-worker/dist/factory/FileIssues.js": "4b2c2278bbf188a57e01718ac59aeb783c88e99915b0b4c8405dcf83f9833e85",
+		"packages/edge-worker/dist/factory/FileIssueProviders.js": "8204c204a75d56f5d068fc5e7401e1d43c67ec97a63abdd535f6850eff0b100e",
+		"packages/edge-worker/dist/factory/OutputFormats.js": "50139dd033f792d812c8782bb81c49f8411d12d6a110156be7c59e943df4bea9",
+		"apps/f1/dist/src/MockAgentRunner.js": "324da6e0d2465423d2460e12e84eacf4f2bfa35a7443f27bbd1eacbefd17bfb5"
+	}
+}

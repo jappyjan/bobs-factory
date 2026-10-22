@@ -44,8 +44,10 @@ import {
 	PackageSchema,
 	PackagesSchema,
 	PlanCheckSchema,
+	PlanPackageSchema,
 	ProposalOutputSchema,
 	ProposalsSchema,
+	planReviewDetails,
 	ResearchContextSchema,
 	ResearchPlanSchema,
 	ResearchResultSchema,
@@ -68,7 +70,7 @@ import {
 	resolveStepConfig,
 	type StepScope,
 } from "./StepConfig.js";
-import { ViewSchema } from "./View.js";
+import { ViewSchema, viewDataSchemas } from "./View.js";
 
 /** Versioned schema library. Parsers are lazy to avoid coupling module initialization order. */
 const parsers: Record<FormatId, (value: unknown) => unknown> = {
@@ -76,11 +78,23 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 	"research-context-v1": (value) => ResearchContextSchema.parse(value),
 	"research-plan-v1": (value) => ResearchPlanSchema.parse(value),
 	"research-result-v1": (value) => ResearchResultSchema.parse(value),
-	"proposals-v1": (value) => ProposalsSchema.parse(value),
+	"proposals-v1": (value) => {
+		const proposals = ProposalsSchema.parse(value);
+		return {
+			...proposals,
+			limitationsDisplay: viewDataSchemas.points.parse({
+				items: proposals.limitations.map((detail, index) => ({
+					label: `Limitation ${index + 1}`,
+					detail,
+				})),
+			}),
+		};
+	},
 	"plan-package-v1": (value) => {
-		const plan = PackageSchema.parse(value);
+		const plan = PlanPackageSchema.parse(value);
 		return {
 			...plan,
+			reviewDetails: planReviewDetails(plan),
 			reviewText: `${plan.plan}\n\nAcceptance criteria:\n${plan.criteria.map((c) => `- ${c}`).join("\n")}\n\nDependencies: ${plan.dependencies.join(", ") || "None"}\nPaths: ${plan.paths.join(", ") || "Not specified"}`,
 		};
 	},
@@ -88,11 +102,11 @@ const parsers: Record<FormatId, (value: unknown) => unknown> = {
 		const review = PlanCheckSchema.parse(value);
 		return {
 			...review,
-			display: {
+			display: viewDataSchemas.markdown.parse({
 				text: review.approved
 					? "Approved. No unresolved corrections."
 					: review.feedback.join("\n\n"),
-			},
+			}),
 		};
 	},
 	"follow-up-v1": (value) => FollowUpSchema.parse(value),

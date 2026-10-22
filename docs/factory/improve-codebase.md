@@ -54,6 +54,15 @@ criteria, paths, dependencies and actual check results; it binds the current exa
 plans, decisions, baseline and configuration. A changed/stale decision requires a
 fresh batch. Request changes supplies feedback through Decide and refinement.
 
+The format library checks review-field bounds while the producing agent can
+correct its output. Limitations display their complete text as point details.
+Plans show complete prose plus separate criteria, dependencies and paths; a full
+package may exceed the single body limit without dropping content. Overlong
+individual fields are rejected before reaching a human wait, with the original
+output retained for correction. The child receives the exact complete canonical
+package that was reviewed, including requirements present only in structured
+criteria or paths. Legacy data-only formats retain their original schemas.
+
 File issues creates deferred backlog, unassigned work through the configured
 Linear or Taskbot destination. Configure the action's destination in a fork if
 several destinations are available. An empty issue selection needs no destination.

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { viewDataSchemas } from "./View.js";
 
 const text = z.string().trim().min(1).max(24000);
 const id = z
@@ -29,13 +30,33 @@ export const OpportunitySchema = z.object({
 	perspectives: z.array(z.string()).max(8).default([]),
 });
 export type Opportunity = z.infer<typeof OpportunitySchema>;
+// Library output intended for human review uses the same field bounds as the
+// receiving generic components. Legacy data-only formats retain their schemas.
+const card = viewDataSchemas.itemCards.shape.items.element;
+const detail = card.shape.details.unwrap().element.shape.value;
+const ReviewOpportunitySchema = OpportunitySchema.extend({
+	title: text.pipe(card.shape.title),
+	problem: text.pipe(card.shape.body.unwrap()),
+	consequence: text.pipe(detail),
+	before: text.pipe(detail),
+	after: text.pipe(detail),
+	plan: text.pipe(detail),
+	effort: text.pipe(detail),
+});
 export const ProposalsSchema = z
 	.object({
-		summary: text,
+		summary: text.pipe(viewDataSchemas.markdown.shape.text),
 		opportunities: z
-			.array(OpportunitySchema.extend({ issueBody: text }))
+			.array(ReviewOpportunitySchema.extend({ issueBody: text }))
 			.max(5),
-		limitations: z.array(text).max(30).default([]),
+		limitations: z
+			.array(
+				text.pipe(
+					viewDataSchemas.points.shape.items.element.shape.detail.unwrap(),
+				),
+			)
+			.max(30)
+			.default([]),
 	})
 	.superRefine((value, ctx) => {
 		try {
@@ -85,6 +106,35 @@ export const PackageSchema = z.object({
 	criteria: z.array(text).min(1).max(30),
 	dependencies: z.array(id).max(10).default([]),
 	paths: z.array(text).max(40).default([]),
+});
+export function planReviewDetails(plan: z.infer<typeof PackageSchema>) {
+	return [
+		{
+			label: "Acceptance criteria",
+			value: plan.criteria.map((c) => `- ${c}`).join("\n"),
+		},
+		{ label: "Dependencies", value: plan.dependencies.join(", ") || "None" },
+		{ label: "Paths", value: plan.paths.join(", ") || "Not specified" },
+	];
+}
+export const PlanPackageSchema = PackageSchema.extend({
+	title: text.pipe(card.shape.title),
+	plan: text.pipe(card.shape.body.unwrap()),
+}).superRefine((plan, ctx) => {
+	for (const [index, field] of [
+		"criteria",
+		"dependencies",
+		"paths",
+	].entries()) {
+		const result = detail.safeParse(planReviewDetails(plan)[index]!.value);
+		if (!result.success)
+			for (const issue of result.error.issues)
+				ctx.addIssue({
+					code: "custom",
+					path: [field],
+					message: `Displayed ${field}: ${issue.message}`,
+				});
+	}
 });
 export const PackagesSchema = z.object({
 	packages: z.array(PackageSchema).max(10),

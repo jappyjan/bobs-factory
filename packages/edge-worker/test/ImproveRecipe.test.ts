@@ -30,10 +30,10 @@ const opportunity = (id: string, dependencies: string[] = []) => ({
 	before: "Callers coordinate state",
 	after: "One owner coordinates state",
 	plan: `Concentrate ${id} ownership and verify recovery`,
-	criteria: ["Recovery retains state"],
+	criteria: ["MUST retain pending obligations across restart."],
 	nonGoals: [],
 	risks: [],
-	paths: ["README.md"],
+	paths: ["src/owner.ts"],
 	strength: "strong",
 	effort: "Small",
 	dependencies,
@@ -47,6 +47,7 @@ function fixture(
 		perspectiveFailure?: boolean;
 		rejectOnce?: boolean;
 		empty?: boolean;
+		longReviewedPlan?: boolean;
 	} = {},
 ) {
 	const home = mkdtempSync(join(tmpdir(), "improve-blocks-"));
@@ -208,7 +209,11 @@ function fixture(
 						id: input.item.id,
 						itemIds: [input.item.id],
 						title: input.item.title,
-						plan: `${input.item.plan}\nAccepted baseline ${revision}\nCriteria: ${input.item.criteria.join("; ")}\nNon-goals: no unrelated work.\n${input.feedback ? "Addressed independent review feedback." : "First refinement."}`,
+						// Criteria and paths deliberately exist only in their structured fields.
+						plan: `${input.item.plan}\nAccepted baseline ${revision}\nNon-goals: no unrelated work.\n${input.feedback ? "Addressed independent review feedback." : "First refinement."}`.padEnd(
+							options.longReviewedPlan ? 7980 : 0,
+							".",
+						),
 						criteria: input.item.criteria,
 						dependencies: input.item.dependencies,
 						paths: input.item.paths,
@@ -396,6 +401,7 @@ describe("Improve is an ordinary composed recipe", () => {
 			workerFailure: true,
 			perspectiveFailure: true,
 			rejectOnce: true,
+			longReviewedPlan: true,
 		});
 		void f.runtime.launch(f.run);
 		const first = await waiting(f, "decide");
@@ -500,6 +506,49 @@ describe("Improve is an ordinary composed recipe", () => {
 		const batch = Object.values(f.run.launchActions!)[0]!;
 		const a = batch.accepted.items.find((i) => i.id === "a")!,
 			b = batch.accepted.items.find((i) => i.id === "b")!;
+		const cards = exact.view.components.find(
+			(component) => component.type === "itemCards",
+		)!;
+		if (cards.type !== "itemCards")
+			throw new Error("Missing approved plan cards");
+		const reviewed = new Map(cards.data.items.map((item) => [item.id, item]));
+		const canonical = (id: string) => {
+			const item = reviewed.get(id)!;
+			expect(item.body).not.toContain(
+				"MUST retain pending obligations across restart.",
+			);
+			expect(item.body).not.toContain("src/owner.ts");
+			expect(item.details).toEqual([
+				{
+					label: "Acceptance criteria",
+					value: "- MUST retain pending obligations across restart.",
+				},
+				{ label: "Dependencies", value: id === "b" ? "a" : "None" },
+				{ label: "Paths", value: "src/owner.ts" },
+			]);
+			const text = `${item.body}\n\nAcceptance criteria:\n${item.details![0]!.value}\n\nDependencies: ${item.details![1]!.value}\nPaths: ${item.details![2]!.value}`;
+			expect(text.length).toBeGreaterThan(8000);
+			return text;
+		};
+		for (const item of [a, b]) expect(item.plan).toBe(canonical(item.id));
+		const acceptedLaunch = structuredClone(batch.accepted);
+		const assertChildInput = (item: typeof a) => {
+			const child = f.runtime.get(item.runId);
+			expect(child.input).toBe(
+				`${item.prompt}\n\n## Plan\n${canonical(item.id)}`,
+			);
+			expect(child.launchInputs).toEqual({
+				prompt: item.prompt,
+				plan: canonical(item.id),
+			});
+			expect(child.recipeParent).toMatchObject({
+				itemId: item.id,
+				runId: f.run.id,
+			});
+		};
+		assertChildInput(a);
+		expect(a.dependencies).toEqual([]);
+		expect(b.dependencies).toEqual(["a"]);
 		await waitForRuntime(() => {
 			expect(f.runtime.get(a.runId).error).toBeUndefined();
 			expect(f.deliveries.has(a.runId)).toBe(true);
@@ -508,8 +557,10 @@ describe("Improve is an ordinary composed recipe", () => {
 		// This explicit test action supplies both the simulated human decision and provider merge.
 		await f.confirm(a.runId, f.runtime);
 		await waitForRuntime(() => expect(f.deliveries.has(b.runId)).toBe(true));
+		assertChildInput(b);
 		await f.confirm(b.runId, f.runtime);
 		await waitForRuntime(() => expect(f.run.status).toBe("completed"));
+		expect(batch.accepted).toEqual(acceptedLaunch);
 		expect(
 			f.run.viewRecords!.find((v) => v.snapshot.id === exact.id)!.snapshot,
 		).toEqual(exact);
