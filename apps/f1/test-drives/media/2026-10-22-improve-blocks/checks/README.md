@@ -77,3 +77,12 @@ After the last F1 runtime source hashes were captured, changes were limited to
 palette scrolling CSS, removal of the stale capability paragraph, the matching
 full-prompt expectations/fixture and documentation/evidence/import formatting.
 These do not change the tested graph, execution rules or provider permissions.
+
+Normal initial commit hooks completed successfully at861fc002: lint-staged on70
+JavaScript/TypeScript/JSON files, `pnpm build`(all20workspace projects), and
+`pnpm typecheck`(19of20projects with scripts). These are actual hook runs, not
+manual repeats or a full-suite/CI acceptance claim. After PR178 creation, the
+changelog gained its actual link and duplicated catalog PUT payloads were
+compacted to exact per-definition hashes/IDs/triggers; all decision/action/error
+receipts remain. The driver uses the same compact collector for future runs.
+Its workflow execution/assertions are unchanged; syntax/Biome were checked.

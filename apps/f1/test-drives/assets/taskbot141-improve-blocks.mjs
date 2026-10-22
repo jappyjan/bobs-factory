@@ -498,7 +498,20 @@ async function api(
 		method,
 		path,
 		status: response.status,
-		request: body,
+		request:
+			path === "/api/workflows" && body
+				? {
+						defaultWorkflow: body.defaultWorkflow,
+						workflows: body.workflows.map((workflow) => ({
+							id: workflow.id,
+							name: workflow.name,
+							allowedTriggers: workflow.allowedTriggers,
+							sha256: hash(JSON.stringify(workflow)),
+						})),
+						omitted:
+							"Full catalog bodies; each exact definition is hashed above.",
+					}
+				: body,
 		result:
 			response.status === expected
 				? { id: value.id, status: value.status }
