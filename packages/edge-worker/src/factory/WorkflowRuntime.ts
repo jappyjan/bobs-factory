@@ -168,9 +168,10 @@ import { currentStepView, presentationOutputKeys } from "./RunOutputRoles.js";
 import { buildTitleContext } from "./RunTitleGenerator.js";
 import {
 	aggregateReview,
-	frozenReviewContext,
+	captureReviewContext,
 	type Inventory,
 	latestAggregate,
+	originalReviewContext,
 	type ReviewBaseline,
 	reviewedRunRevision,
 	scopeContextDigest,
@@ -1783,7 +1784,11 @@ export class WorkflowRuntime {
 		const config = resolveStepConfig(step);
 		const input = reviewBaseline
 			? snapshotWorkflowInput({
-					...(reviewBaseline.context as Record<string, unknown>),
+					...(originalReviewContext(
+						reviewBaseline,
+						run,
+						this.historyPreviews(run),
+					) as Record<string, unknown>),
 					reviewBaseline,
 				})
 			: config.inputs
@@ -2795,7 +2800,7 @@ export class WorkflowRuntime {
 										contract: reviewEvidenceContract(s)!,
 									})),
 								),
-								context: frozenReviewContext(input),
+								...captureReviewContext(input, run, this.historyPreviews(run)),
 								...(impact
 									? {
 											impact: {

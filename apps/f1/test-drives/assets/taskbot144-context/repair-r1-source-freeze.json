@@ -1,0 +1,19 @@
+{
+  "packages/core/src/JsonSnapshotStore.ts": "d581ee68fc954656d3b3787f6c37490c5537a7cc36625f6db22812416f6ae7ba",
+  "packages/core/src/index.ts": "9752fb07fda5b5310c2938736912f532a282c4d7dc2b97b21e1cabc13e204271",
+  "packages/core/test/JsonSnapshotStore.test.ts": "9a8a40b8d264afae7ca55143cd64928268c27fffeb9aca6c842f7a5fb283d93c",
+  "packages/edge-worker/src/factory/WorkflowInput.ts": "4eff5ee431d451815e1491315674ac15585ee3fdcd19d0f5064c933a141ce7c3",
+  "packages/edge-worker/src/factory/StepBindings.ts": "d1147bb10e013c8e2c2ad993b163fad031b1d037bc3e1f198bc59b6064b52d49",
+  "packages/edge-worker/test/ReviewContextReferences.test.ts": "deb88e1f7b6f43dc117b368562660208c79cae5603972fdb7054a01403915e09",
+  "packages/mcp-tools/src/factoryContextSnapshot.ts": "700f84dfe0e6a6ea192864bc9cc5b03233230399882dd4e471fbb2edd6a26ec4",
+  "packages/mcp-tools/src/factoryContext.test.ts": "b9c0a60824be4ab488d7ce4672e2c8c2c887b80b6d4a9768ab1226750f4dbf75",
+  "/tmp/taskbot144-repair-r1/custom-alias.mts": "9e516b980ee1e956a3918d054c2f8555a9f9946ee8fec641864d571afc9624c8",
+  "/tmp/taskbot144-repair-r1/restored-cache.mts": "a9a21b1b5572163a23bc045d1098f8da41ab57636190a3dde6d1d4b23b551690",
+  "/tmp/taskbot144-repair-r1/SmallContextDrive.test.ts": "2b1f2dad1b2f27f44852c35239468ff41f86c7ea562ed0998a71f5d99662d42d",
+  "/tmp/taskbot144-repair-r1/focused.config.mts": "b751ea14ad9ae602cbfb887cc00f6b18b71c5c736634b8af714797e773413bc2",
+  "/tmp/taskbot144-repair-r1/small-drive.config.mts": "d06ecfbf7c259e2ffc2a3e46ff1e959ff9b0a85d3e25826933459696fe4f1961",
+  "/tmp/taskbot144-repair-r1/candidate-paths.json": "218ecb0031ef2332cddc0e3b25a3d3ac9ab30b809518105d87a8fa58a6094fb4",
+  "/tmp/taskbot144-repair-r1/edge-owning.tsconfig.json": "ff3bc018e724233ebfef0115130606eca0e68f1bdccc61546245231e3c684290",
+  "apps/f1/test-drives/assets/taskbot144-context/repair-alias.mts": "6c51fe2f7bb943d911cab2d0a53e639b53d6128dfd2751547a75963993280a3e",
+  "apps/f1/test-drives/assets/taskbot144-context/repair-cache.mts": "bd3936ee3dfc078339308e48c4f64afc693e78e0ab2156f2422f2aef02800330"
+}

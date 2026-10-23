@@ -4,6 +4,7 @@ export { calibratedReviewInstructions } from "./InstructionText.js";
 
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { isImmutableJson } from "bobs-factory-core";
 import { z } from "zod";
 import type { ImpactSnapshot, ReuseRecord } from "./Impact.js";
 import { assertReuse, boundaryDigest, environmentDigest } from "./Impact.js";
@@ -21,6 +22,7 @@ import {
 } from "./StepConfig.js";
 import { stepForRun } from "./ToolBindings.js";
 import type { WorkflowStep } from "./Workflow.js";
+import { historySnapshotRange, snapshotHistory } from "./WorkflowInput.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
 const text = z.string().trim().min(1);
@@ -164,7 +166,16 @@ export type ReviewBaseline = {
 	historyLength: number;
 	reviewers: { id: string; key: string; group: number; contract: string }[];
 	context: unknown;
+	/** New baselines retain exact runtime-owned history ranges, without copying payloads. */
+	contextReferences?: ReviewContextReference[];
 	at: string;
+};
+export type ReviewContextReference = {
+	path: string[];
+	runId: string;
+	start: number;
+	end: number;
+	receiptIndexDigest: string;
 };
 export type ReviewerReceipt = Omit<
 	z.infer<typeof CoverageSchema>,
@@ -1018,22 +1029,100 @@ export function scopeContextDigest(input: unknown): string {
 }
 
 /** Keep prior evidence, but avoid recursively copying old immutable source snapshots. */
-export function frozenReviewContext(input: unknown): unknown {
-	const compact = (value: unknown): unknown => {
-		if (Array.isArray(value)) return value.map(compact);
+const frozenContexts = new WeakMap<object, unknown>();
+export function frozenReviewContext(
+	input: unknown,
+	captureHistory?: (value: object, path: string[]) => unknown[] | undefined,
+): unknown {
+	const compact = (value: unknown, path: string[] = []): unknown => {
 		if (!value || typeof value !== "object") return value;
-		return Object.fromEntries(
-			Object.entries(value)
-				.filter(([key]) => key !== "reviewBaseline")
-				.map(([key, item]) => [
-					key,
-					key === "baseline" && item && typeof item === "object"
-						? Object.fromEntries(
-								Object.entries(item).filter(([field]) => field !== "context"),
-							)
-						: compact(item),
-				]),
-		);
+		const reference = captureHistory?.(value, path);
+		if (reference) return reference;
+		// Published receipts never change. Cache only their context projection;
+		// mutable envelopes and native history ranges are always captured anew.
+		if (isImmutableJson(value) && frozenContexts.has(value))
+			return frozenContexts.get(value);
+		const result = Array.isArray(value)
+			? value.map((item, index) => compact(item, [...path, String(index)]))
+			: Object.fromEntries(
+					Object.entries(value)
+						.filter(([key]) => key !== "reviewBaseline")
+						.map(([key, item]) => [
+							key,
+							key === "baseline" && item && typeof item === "object"
+								? Object.fromEntries(
+										Object.entries(item).filter(
+											([field]) => field !== "context",
+										),
+									)
+								: compact(item, [...path, key]),
+						]),
+				);
+		if (isImmutableJson(value)) frozenContexts.set(value, result);
+		return result;
 	};
 	return compact(input);
+}
+
+/** The reference table is authored by the runtime, outside role-provided JSON. */
+export function captureReviewContext(
+	input: unknown,
+	run: Pick<FactoryRun, "id" | "history">,
+	index: { step: string; at: string }[],
+) {
+	const contextReferences: ReviewContextReference[] = [];
+	const context = frozenReviewContext(input, (value, path) => {
+		const range = historySnapshotRange(value);
+		if (!range || range.source !== run.history) return undefined;
+		contextReferences.push({
+			path,
+			runId: run.id,
+			start: range.start,
+			end: range.end,
+			receiptIndexDigest: qaDigest(index.slice(range.start, range.end)),
+		});
+		return [];
+	});
+	return { context, contextReferences };
+}
+
+/** Resolve the original cutoff, never a newest output slot or an equal JSON value. */
+export function originalReviewContext(
+	baseline: Pick<ReviewBaseline, "context" | "contextReferences">,
+	run: Pick<FactoryRun, "id" | "history">,
+	index: { step: string; at: string }[],
+): unknown {
+	let result = baseline.context;
+	for (const reference of baseline.contextReferences ?? []) {
+		if (
+			reference.runId !== run.id ||
+			!Number.isSafeInteger(reference.start) ||
+			!Number.isSafeInteger(reference.end) ||
+			reference.start < 0 ||
+			reference.end < reference.start ||
+			reference.end > run.history.length ||
+			qaDigest(index.slice(reference.start, reference.end)) !==
+				reference.receiptIndexDigest
+		)
+			throw new Error(
+				"Original review context receipt range is missing or changed",
+			);
+		const replace = (value: unknown, depth: number): unknown => {
+			if (depth === reference.path.length)
+				return snapshotHistory(run.history, reference.start, reference.end);
+			const key = reference.path[depth]!;
+			if (!value || typeof value !== "object" || !Object.hasOwn(value, key))
+				throw new Error("Original review context path is missing");
+			const copy = Array.isArray(value) ? value.slice() : { ...value };
+			Object.defineProperty(copy, key, {
+				value: replace((value as Record<string, unknown>)[key], depth + 1),
+				enumerable: true,
+				configurable: true,
+				writable: true,
+			});
+			return copy;
+		};
+		result = replace(result, 0);
+	}
+	return result;
 }

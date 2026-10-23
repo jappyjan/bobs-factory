@@ -10,8 +10,9 @@ import {
 	renameSync,
 	writeFileSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import { setImmediate } from "node:timers/promises";
+import { isImmutableJson, snapshotEntryIdentity } from "bobs-factory-core";
 import type { ContextMemoryAccess } from "./factoryContextMemory.js";
 
 type Node = {
@@ -33,6 +34,11 @@ const hash = (value: string) =>
 const hashPattern = /^[a-f0-9]{64}$/;
 const format = "factory-context-snapshot-v1";
 const chunkCharacters = 16 * 1024;
+// Only core-published immutable JSON may skip capture across role handoffs.
+// Directory-scoped weak keys neither retain receipts nor trust shallow freezes.
+const immutableInputs = new Map<string, WeakMap<object, string>>();
+// Bounded metadata only: no decoded receipts are held by stable source keys.
+const immutableEntries = new Map<string, Map<string, string>>();
 
 /** Keep JSON escaping identical at chunk boundaries, including surrogate pairs. */
 function* stringParts(value: string): Generator<string> {
@@ -161,8 +167,36 @@ export class FactoryContextSnapshot {
 	>();
 	readonly directory: string;
 	root!: Reference;
-	constructor(readonly path: string) {
-		this.directory = dirname(path);
+	constructor(
+		readonly path: string,
+		directory = dirname(path),
+	) {
+		this.directory = directory;
+	}
+	get identity(): string {
+		return this.id(this.root);
+	}
+	private immutableCache(project: boolean) {
+		const key = `${this.directory}:${project ? "projected" : "original"}`;
+		let cache = immutableInputs.get(key);
+		if (!cache) {
+			cache = new WeakMap();
+			immutableInputs.set(key, cache);
+			if (immutableInputs.size > 16)
+				immutableInputs.delete(immutableInputs.keys().next().value!);
+		}
+		return cache;
+	}
+	private entryCache(project: boolean) {
+		const key = `${this.directory}:${project ? "projected" : "original"}`;
+		let cache = immutableEntries.get(key);
+		if (!cache) {
+			cache = new Map();
+			immutableEntries.set(key, cache);
+			if (immutableEntries.size > 16)
+				immutableEntries.delete(immutableEntries.keys().next().value!);
+		}
+		return cache;
 	}
 	private reference(id: string): Reference {
 		let reference = this.handles.get(id);
@@ -254,6 +288,10 @@ export class FactoryContextSnapshot {
 				throw new TypeError("Cannot serialize circular context");
 			const previous = this.seen.get(value);
 			if (previous) return previous;
+			if (isImmutableJson(value)) {
+				const cached = this.immutableCache(project).get(value);
+				if (cached) return this.reference(cached);
+			}
 		}
 		if (
 			value === undefined ||
@@ -311,13 +349,17 @@ export class FactoryContextSnapshot {
 		this.ancestors.add(object);
 		try {
 			const array = Array.isArray(object),
-				entries: [string, string][] = [];
+				entries: [string, string][] = [],
+				positions = new Map<string, number>();
 			let characters = 2;
 			for (const original of array
 				? Array.from({ length: object.length }, (_, index) => String(index))
 				: Object.keys(object)) {
+				const stableIdentity = snapshotEntryIdentity(object, original);
+				const cached =
+					stableIdentity && this.entryCache(project).get(stableIdentity);
 				let key = original,
-					child = object[original];
+					child = cached ? this.reference(cached) : object[original];
 				if (project && child && typeof child === "object") {
 					if (
 						key === "dependencyManifests" ||
@@ -351,12 +393,20 @@ export class FactoryContextSnapshot {
 					(yield* this.capture(child, project, key)) ??
 					(array ? yield* this.capture(null, project) : undefined);
 				if (!reference) continue;
-				const previous = entries.findIndex(([name]) => name === key);
-				if (previous < 0) {
+				const identity =
+					stableIdentity ?? snapshotEntryIdentity(object, original);
+				if (identity) {
+					const cache = this.entryCache(project);
+					cache.set(identity, this.id(reference));
+					if (cache.size > 8192) cache.delete(cache.keys().next().value!);
+				}
+				const previous = positions.get(key);
+				if (previous === undefined) {
 					characters +=
 						(entries.length ? 1 : 0) +
 						(array ? 0 : stringLength(key) + 1) +
 						this.node(reference).characters;
+					positions.set(key, entries.length);
 					entries.push([key, this.id(reference)]);
 				} else {
 					characters +=
@@ -372,6 +422,8 @@ export class FactoryContextSnapshot {
 				characters,
 			});
 			this.seen.set(object, reference);
+			if (isImmutableJson(object))
+				this.immutableCache(project).set(object, this.id(reference));
 			return reference;
 		} finally {
 			this.ancestors.delete(object);
@@ -379,15 +431,23 @@ export class FactoryContextSnapshot {
 	}
 	private *writeSnapshot(input: unknown, project: boolean): Generator<void> {
 		privateDirectory(this.directory);
-		mkdirSync(join(this.directory, "nodes"), { mode: 0o700 });
-		mkdirSync(join(this.directory, "chunks"), { mode: 0o700 });
+		for (const kind of ["nodes", "chunks"]) {
+			mkdirSync(join(this.directory, kind), { mode: 0o700, recursive: true });
+			privateDirectory(join(this.directory, kind));
+		}
 		this.root =
 			(yield* this.capture(input, project)) ??
 			(yield* this.capture(null, project))!;
 		const temporary = `${this.path}.${randomUUID()}.tmp`;
 		writeFileSync(
 			temporary,
-			JSON.stringify({ format, root: this.id(this.root) }),
+			JSON.stringify({
+				format,
+				root: this.identity,
+				...(this.directory !== dirname(this.path)
+					? { directory: this.directory }
+					: {}),
+			}),
 			{ mode: 0o600, flag: "wx" },
 		);
 		renameSync(temporary, this.path);
@@ -409,16 +469,59 @@ export class FactoryContextSnapshot {
 		}
 	}
 	static open(path: string) {
-		const store = new FactoryContextSnapshot(path);
+		privateDirectory(dirname(path));
+		const manifest = JSON.parse(privateFile(path));
+		if (
+			manifest.format !== format ||
+			!hashPattern.test(manifest.root) ||
+			(manifest.directory !== undefined &&
+				(typeof manifest.directory !== "string" ||
+					!isAbsolute(manifest.directory)))
+		)
+			throw new Error("Invalid context snapshot manifest");
+		const store = new FactoryContextSnapshot(path, manifest.directory);
 		privateDirectory(store.directory);
 		privateDirectory(join(store.directory, "nodes"));
 		privateDirectory(join(store.directory, "chunks"));
-		const manifest = JSON.parse(privateFile(path));
-		if (manifest.format !== format || !hashPattern.test(manifest.root))
-			throw new Error("Invalid context snapshot manifest");
 		store.root = store.reference(manifest.root);
 		store.node(store.root);
 		return store;
+	}
+	/** Derived indexes are private, root-bound and built only on explicit navigation. */
+	memoized(name: string, build: () => unknown): Reference {
+		if (!/^[a-z0-9-]+$/.test(name))
+			throw new Error("Invalid context index name");
+		const path = join(this.directory, `index-${this.identity}-${name}.json`);
+		try {
+			const index = JSON.parse(privateFile(path));
+			if (
+				index.format !== "factory-context-index-v1" ||
+				index.root !== this.identity ||
+				!hashPattern.test(index.value)
+			)
+				throw new Error("Invalid context snapshot index");
+			const value = this.reference(index.value);
+			this.node(value);
+			return value;
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+		}
+		const value = this.append(build());
+		const body = JSON.stringify({
+			format: "factory-context-index-v1",
+			root: this.identity,
+			value: this.id(value),
+		});
+		try {
+			writeFileSync(path, body, { mode: 0o600, flag: "wx" });
+		} catch (error) {
+			if (
+				(error as NodeJS.ErrnoException).code !== "EEXIST" ||
+				privateFile(path) !== body
+			)
+				throw error;
+		}
+		return value;
 	}
 	append(value: unknown): Reference {
 		const writer = this.capture(value, false);
@@ -429,8 +532,23 @@ export class FactoryContextSnapshot {
 	keys(value: unknown): string[] {
 		return this.node(value).entries?.map(([key]) => key) ?? [];
 	}
+	entries(
+		value: unknown,
+		offset: number,
+		limit: number,
+	): [string, Reference][] {
+		return (this.node(value).entries ?? [])
+			.slice(offset, offset + limit)
+			.map(([key, id]) => [key, this.reference(id)]);
+	}
 	get(value: unknown, key: string): Reference | undefined {
-		const id = this.node(value).entries?.find(([name]) => name === key)?.[1];
+		const node = this.node(value);
+		const id =
+			node.kind === "array"
+				? /^(0|[1-9][0-9]*)$/.test(key)
+					? node.entries?.[Number(key)]?.[1]
+					: undefined
+				: node.entries?.find(([name]) => name === key)?.[1];
 		return id ? this.reference(id) : undefined;
 	}
 	resolve(path: string, root = this.root): Reference {

@@ -4,7 +4,12 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
-import { immutableJson, JsonSnapshotStore } from "../src/JsonSnapshotStore.js";
+import {
+	immutableJson,
+	immutableTranscript,
+	JsonSnapshotStore,
+	snapshotEntryIdentity,
+} from "../src/JsonSnapshotStore.js";
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -266,4 +271,43 @@ it("services HTTP requests while persisting a large payload and writes no partia
 		await save;
 		await new Promise<void>((resolve) => server.close(() => resolve()));
 	}
+});
+
+it("retains verified entry identities across four-page eviction without pinning decoded receipts", async () => {
+	const { store, path, directory } = await fixture();
+	const history = Array.from({ length: 12 }, (_, i) =>
+		immutableJson({
+			at: `t${i}`,
+			output: { text: `${i}:` + "evidence".repeat(1000) },
+		}),
+	);
+	await store.write(path, { history, equal: history }, {}, [], [], {
+		history: 1,
+		equal: 1,
+	});
+	const saved = store.load<{ history: typeof history; equal: typeof history }>(
+		path,
+	).value;
+	expect(snapshotEntryIdentity(saved.history, "0")).toBeUndefined();
+	immutableTranscript(saved.history);
+	const first = saved.history[0];
+	const identity = snapshotEntryIdentity(saved.history, "0");
+	expect(identity).toBeTypeOf("string");
+	for (let i = 0; i < 12; i++) expect(saved.history[i]).toEqual(history[i]);
+	const retained = saved.history.slice(-4);
+	expect(
+		saved.history.slice(-4).every((entry, i) => entry === retained[i]),
+	).toBe(true);
+	// A new first object proves that old payloads were evicted rather than pinned.
+	expect(saved.history[0]).not.toBe(first);
+	expect(snapshotEntryIdentity(saved.history, "0")).toBe(identity);
+	immutableTranscript(saved.equal);
+	void saved.equal[0];
+	expect(snapshotEntryIdentity(saved.equal, "0")).not.toBe(identity);
+	saved.history[1] = immutableJson({ at: "new", output: { text: "changed" } });
+	expect(snapshotEntryIdentity(saved.history, "1")).toBeUndefined();
+	const manifest = JSON.parse(await readFile(path, "utf8"));
+	const hash = manifest.fields.history.pages[0].chunks[0];
+	await writeFile(join(directory, "chunks", `${hash}.json`), "[]");
+	expect(() => snapshotEntryIdentity(saved.history, "0")).toThrow(/integrity/);
 });
