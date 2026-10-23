@@ -1,0 +1,648 @@
+{
+  "pid": 78815,
+  "mode": "mock",
+  "home": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-148-diagnostics/.task148/tmp/task148-round2-ui-CeASa0",
+  "port": 38948,
+  "runId": "286932c3-282d-48a0-8c5b-d955e7594c66",
+  "blockerId": "468e09e1-a238-4bdf-906a-6612d1800cde",
+  "changes": 0,
+  "observations": [
+    {
+      "at": 1792756687817,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 5007,
+        "executionMs": 0,
+        "waitMs": 4872.543291999999,
+        "unobservedMs": 134.45670800000062,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:07.816Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 4872.543291999999
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756692818,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 10008,
+        "executionMs": 0,
+        "waitMs": 9872.543291999998,
+        "unobservedMs": 135.45670800000153,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:12.817Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 9872.543291999998
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756697822,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 15012,
+        "executionMs": 0,
+        "waitMs": 14872.543291999998,
+        "unobservedMs": 139.45670800000153,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:17.819Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 14872.543291999998
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756702821,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 20011,
+        "executionMs": 0,
+        "waitMs": 19872.543292,
+        "unobservedMs": 138.45670800000153,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:22.821Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 19872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756707822,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 25012,
+        "executionMs": 0,
+        "waitMs": 24872.543292,
+        "unobservedMs": 139.45670800000153,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:27.821Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 24872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756712824,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 30014,
+        "executionMs": 0,
+        "waitMs": 29872.543292,
+        "unobservedMs": 141.45670800000153,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:32.823Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 29872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756717826,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 35016,
+        "executionMs": 0,
+        "waitMs": 34872.543292,
+        "unobservedMs": 143.4567079999979,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:37.826Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 34872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756722829,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 40019,
+        "executionMs": 0,
+        "waitMs": 39872.543292,
+        "unobservedMs": 146.4567079999979,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:42.828Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 39872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756727830,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 45020,
+        "executionMs": 0,
+        "waitMs": 44872.543292,
+        "unobservedMs": 147.4567079999979,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:47.830Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 44872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756732833,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 50023,
+        "executionMs": 0,
+        "waitMs": 49872.543292,
+        "unobservedMs": 150.4567079999979,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:52.832Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 49872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756737835,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 55025,
+        "executionMs": 0,
+        "waitMs": 54872.543292,
+        "unobservedMs": 152.4567079999979,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:58:57.835Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 54872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756742837,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 60027,
+        "executionMs": 0,
+        "waitMs": 59872.543292,
+        "unobservedMs": 154.4567079999979,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:59:02.837Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 59872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    },
+    {
+      "at": 1792756747839,
+      "changes": 0,
+      "diagnostics": {
+        "ageMs": 65029,
+        "executionMs": 0,
+        "waitMs": 64872.543292,
+        "unobservedMs": 156.4567079999979,
+        "roleWallMs": 0,
+        "legacy": false,
+        "observedAt": "2026-10-23T11:59:07.838Z",
+        "startedAt": "2026-10-23T11:58:02.812Z",
+        "clockChanges": 0,
+        "currentTotal": 1,
+        "current": [
+          {
+            "step": "qa",
+            "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+            "kind": "qa-resource",
+            "resource": "QA resource docker",
+            "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+            "since": "2026-10-23T11:58:02.943Z",
+            "measuredMs": 64872.543292
+          }
+        ],
+        "waits": {
+          "qa-resource": 64872.543292
+        },
+        "context": {
+          "pages": 0,
+          "utf8Bytes": 0,
+          "readPages": 0,
+          "listPages": 0,
+          "fullPages": 0,
+          "preparations": 0,
+          "preparationMs": 0
+        }
+      }
+    }
+  ],
+  "diagnostics": {
+    "schemaVersion": 1,
+    "runId": "286932c3-282d-48a0-8c5b-d955e7594c66",
+    "ageMs": 69852,
+    "executionMs": 0,
+    "waitMs": 64872.543292,
+    "unobservedMs": 4979.456707999998,
+    "roleWallMs": 0,
+    "legacy": false,
+    "observedAt": "2026-10-23T11:59:07.838Z",
+    "startedAt": "2026-10-23T11:58:02.812Z",
+    "clockChanges": 0,
+    "currentTotal": 1,
+    "current": [
+      {
+        "step": "qa",
+        "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+        "kind": "qa-resource",
+        "resource": "QA resource docker",
+        "blockerRun": "468e09e1-a238-4bdf-906a-6612d1800cde",
+        "since": "2026-10-23T11:58:02.943Z",
+        "measuredMs": 64872.543292
+      }
+    ],
+    "waits": {
+      "qa-resource": 64872.543292
+    },
+    "context": {
+      "pages": 0,
+      "utf8Bytes": 0,
+      "readPages": 0,
+      "listPages": 0,
+      "fullPages": 0,
+      "preparations": 0,
+      "preparationMs": 0
+    },
+    "semantics": "Execution and exclusive wait are run wall interval unions. Per-reason waits may overlap each other and execution. Role wall is a sum of executing agent leaves, not provider inference time. Unobserved includes legacy gaps, offline time and time after the last checkpoint; wall clock changes can make age differ from monotonic totals.",
+    "recentWindow": 64,
+    "attemptCount": 1,
+    "recentChecks": 0,
+    "repeatedRoles": [],
+    "attempts": [
+      {
+        "id": "05f928eb-74a1-482b-8409-525540b011c0",
+        "step": "qa",
+        "stepIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+        "type": "agent",
+        "kind": "step",
+        "reason": "initial",
+        "outcome": "running",
+        "runtimeCommit": null,
+        "workflowHash": "f968f4816726249cae5174ebda47c589440c2064f576c800f45317ee2302872a",
+        "contractHash": "5cfc65d2784bb799e041d12795050cacc9e41d07f3eb92a4e50afdaaff4afff9",
+        "instructionsHash": "69786ab9931b6c219e52bad238b1bf799199d5c946641a0bb1744c820094deeb"
+      }
+    ],
+    "transitions": [
+      {
+        "sequence": 7,
+        "key": "qa",
+        "keyIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+        "kind": "qa-resource",
+        "at": "2026-10-23T11:58:02.943Z",
+        "measuredMs": 0,
+        "event": "entered"
+      },
+      {
+        "sequence": 6,
+        "key": "qa",
+        "keyIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+        "kind": "unknown",
+        "at": "2026-10-23T11:58:02.943Z",
+        "measuredMs": 23.583458000000064,
+        "event": "left"
+      },
+      {
+        "sequence": 5,
+        "key": "qa",
+        "keyIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+        "kind": "unknown",
+        "at": "2026-10-23T11:58:02.920Z",
+        "measuredMs": 0,
+        "event": "entered"
+      },
+      {
+        "sequence": 4,
+        "key": "qa",
+        "keyIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+        "kind": "unknown",
+        "at": "2026-10-23T11:58:02.920Z",
+        "measuredMs": 12.930374999999913,
+        "event": "left"
+      },
+      {
+        "sequence": 3,
+        "key": "qa",
+        "keyIdentity": "3f3ef786b34d6dd716e1812c8b74a7a0e1f05aa5f3230588f6f5bcd00c6c8392",
+        "kind": "unknown",
+        "at": "2026-10-23T11:58:02.907Z",
+        "measuredMs": 0,
+        "event": "entered"
+      },
+      {
+        "sequence": 2,
+        "key": "run",
+        "keyIdentity": "acba25512100f80b56fc3ccd14c65be55d94800cda77585c5f41a887e398f9be",
+        "kind": "recovery",
+        "at": "2026-10-23T11:58:02.851Z",
+        "measuredMs": 35.892875000000004,
+        "event": "left"
+      },
+      {
+        "sequence": 1,
+        "key": "run",
+        "keyIdentity": "acba25512100f80b56fc3ccd14c65be55d94800cda77585c5f41a887e398f9be",
+        "kind": "recovery",
+        "at": "2026-10-23T11:58:02.815Z",
+        "measuredMs": 0,
+        "event": "entered"
+      }
+    ],
+    "reuse": [],
+    "usage": [],
+    "usageAttribution": "Only available provider-reported values; null is unknown. Per-result values are not summed across native resumes. Adapter compatibility zeros are not cost evidence.",
+    "offset": 0,
+    "limit": 20,
+    "nextOffset": null
+  },
+  "providerCalls": 0,
+  "modelCalls": 0
+}

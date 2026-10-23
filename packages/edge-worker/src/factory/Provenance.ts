@@ -4,6 +4,7 @@ import {
 	type RuntimeIdentity,
 } from "bobs-factory-core";
 import { FACTORY_RESULT_CONTRACT_VERSION } from "./FactoryResults.js";
+import { diagnosticAttempt } from "./RunDiagnostics.js";
 import {
 	checkArgs,
 	formatOf,
@@ -93,6 +94,7 @@ export function beginStepAttempt(
 			if (replaced.has(attempt.id) && attempt.outcome === "running") {
 				attempt.outcome = "interrupted";
 				attempt.endedAt = endedAt;
+				diagnosticAttempt(run, attempt);
 			}
 	}
 	const contract = {
@@ -195,6 +197,7 @@ export function beginStepAttempt(
 	};
 	run.stepAttempts ??= [];
 	run.stepAttempts.push(attempt);
+	diagnosticAttempt(run, attempt, true);
 	context.attemptId = attempt.id;
 	context.save?.();
 	return attempt.id;
@@ -210,6 +213,7 @@ export function finishStepAttempt(
 	if (!attempt || attempt.outcome !== "running") return;
 	attempt.outcome = outcome;
 	attempt.endedAt = new Date().toISOString();
+	diagnosticAttempt(context.run, attempt);
 	context.save?.();
 }
 
@@ -250,6 +254,7 @@ export function recordAttemptInstructions(
 		else if (progress && !progress.uncertain && !progress.unchangedCode)
 			attempt.reason = "code-change";
 	}
+	diagnosticAttempt(context.run, attempt);
 	context.save?.();
 }
 

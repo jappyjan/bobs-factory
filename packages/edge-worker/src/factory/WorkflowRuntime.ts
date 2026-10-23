@@ -178,6 +178,14 @@ import {
 	sameOutputBinding,
 } from "./RevisionBinding.js";
 import { withRuntimeRolePrompt } from "./RolePrompt.js";
+import {
+	diagnosticReuse,
+	diagnosticSummary,
+	RunAccounting,
+	type RunTimingUpdate,
+	runDiagnostics,
+	timingOperation,
+} from "./RunDiagnostics.js";
 import { currentStepView, presentationOutputKeys } from "./RunOutputRoles.js";
 import { buildTitleContext } from "./RunTitleGenerator.js";
 import {
@@ -442,6 +450,7 @@ import {
 import { cleanupVideoEvidence, videoAssetPaths } from "./Video.js";
 
 export interface FactoryRun {
+	diagnostics?: import("./RunDiagnostics.js").RunDiagnostics;
 	/** Operational item progress, separate from accepted immutable item/output receipts. */
 	foreach?: Record<string, ForeachProgress>;
 	/** Original accepted collections; operational status never mutates these receipts. */
@@ -651,6 +660,7 @@ export interface ExecutionContext {
 	reserveExecution?: () => Promise<() => Promise<void>>;
 	/** Runtime-owned home, never inferred from a worktree or a private runner HOME. */
 	factoryHome?: string;
+	checkpointDiagnostics?: () => void;
 	attemptId?: string;
 	reviewKey?: string;
 	execution?: ResolvedExecutionEnvironment;
@@ -726,6 +736,49 @@ export interface RuntimeHooks {
 }
 
 export class WorkflowRuntime {
+	private accounting: RunAccounting;
+	readDiagnostics(id: string, offset = 0, limit = 20) {
+		return runDiagnostics(this.get(id), offset, limit, this.accounting.now());
+	}
+	private diagnosticTimer?: ReturnType<typeof setInterval>;
+	private diagnosticPath(id: string): string {
+		return join(
+			this.directory,
+			"diagnostics",
+			`${encodeURIComponent(id)}.json`,
+		);
+	}
+	private checkpointDiagnostics(run: FactoryRun): void {
+		this.accounting.observe(
+			run,
+			this.controllers.has(run.id) && !this.shuttingDown,
+		);
+		mkdirSync(join(this.directory, "diagnostics"), { recursive: true });
+		this.atomicWrite(this.diagnosticPath(run.id), run.diagnostics);
+	}
+	private startDiagnostics(): void {
+		if (this.diagnosticTimer) return;
+		this.diagnosticTimer = setInterval(() => {
+			for (const id of this.controllers.keys()) {
+				const run = this.runs.get(id);
+				if (run) {
+					try {
+						this.checkpointDiagnostics(run);
+						if (this.diagnosticListeners.size) {
+							const update = {
+								id: run.id,
+								diagnostics: diagnosticSummary(run, this.accounting.now()),
+							};
+							for (const listener of this.diagnosticListeners) listener(update);
+						}
+					} catch {
+						/* Diagnostics never grant or block execution authority. */
+					}
+				}
+			}
+		}, 5000);
+		this.diagnosticTimer.unref();
+	}
 	/** Waiting gates and update-suspended runs have no executing work. */
 	hasExecutingWork(): boolean {
 		return (
@@ -738,6 +791,16 @@ export class WorkflowRuntime {
 	private assertSchedulingOpen(): void {
 		if (existsSync(join(this.directory, "..", "updates", "maintenance.json")))
 			throw new UpdatePausedError();
+	}
+	private diagnosticListeners = new Set<(update: RunTimingUpdate) => void>();
+	/** Timing-only updates must not trigger run serialization or parent reconciliation. */
+	subscribeDiagnostics(
+		listener: (update: RunTimingUpdate) => void,
+	): () => void {
+		this.diagnosticListeners.add(listener);
+		return () => {
+			this.diagnosticListeners.delete(listener);
+		};
 	}
 	readonly runs = new Map<string, FactoryRun>();
 	private listeners = new Set<
@@ -814,7 +877,9 @@ export class WorkflowRuntime {
 	constructor(
 		home: string,
 		private hooks: RuntimeHooks,
+		diagnosticClock?: ConstructorParameters<typeof RunAccounting>[0],
 	) {
+		this.accounting = new RunAccounting(diagnosticClock);
 		this.directory = join(home, "factory");
 		this.humanViews = new HumanViews(this, hooks);
 		this.launchAssets = new LaunchAssetStore(this.directory);
@@ -840,6 +905,16 @@ export class WorkflowRuntime {
 					? this.snapshots.load<FactoryRun>(path)
 					: undefined;
 			const run: FactoryRun = loaded?.value ?? stored;
+			const diagnosticPath = this.diagnosticPath(run.id);
+			if (existsSync(diagnosticPath)) {
+				try {
+					const data = JSON.parse(readFileSync(diagnosticPath, "utf8"));
+					if (data.version === 1) run.diagnostics = data;
+				} catch {
+					/* Retain snapshot/legacy unknowns if the optional sidecar is unreadable. */
+				}
+			}
+			this.accounting.restore(run);
 			if (!loaded) this.legacyRuns.add(run.id);
 			if (loaded)
 				this.summaries.set(
@@ -1448,6 +1523,9 @@ export class WorkflowRuntime {
 		controller: AbortController,
 		task?: (signal: AbortSignal) => Promise<void>,
 	): Promise<void> {
+		this.startDiagnostics();
+		timingOperation(run, "run", { kind: "recovery" });
+		this.checkpointDiagnostics(run);
 		try {
 			if (run.workspace)
 				await reserveOwnedStorageWorkspace(
@@ -1486,6 +1564,7 @@ export class WorkflowRuntime {
 				) as FactoryRun["mergeReadiness"];
 			this.launchAssets.verify(run.id, run.launchAttachments);
 			await this.hooks.prepare?.(run, controller.signal);
+			timingOperation(run, "run");
 			if (run.workspace)
 				await reserveOwnedStorageWorkspace(
 					dirname(this.directory),
@@ -1612,6 +1691,7 @@ export class WorkflowRuntime {
 			if (!this.shuttingDown || run.status === "stopped")
 				releaseDelivery(run, `Run ${run.status}`);
 			this.pendingAnswers.delete(run.id);
+			if (run.diagnostics) run.diagnostics.operations = {};
 			try {
 				this.hooks.cleanupExecution?.(run);
 			} catch {
@@ -1626,6 +1706,7 @@ export class WorkflowRuntime {
 				await this.publishTerminalOutcome(run);
 			} finally {
 				this.controllers.delete(run.id);
+				this.checkpointDiagnostics(run);
 			}
 		}
 	}
@@ -1689,6 +1770,7 @@ export class WorkflowRuntime {
 			recoverable: true,
 			preserveOnShutdown: () => !run.workflowBlock && run.status !== "stopped",
 			onChange: (request) => {
+				this.accounting.capacityChanged(run, key, request);
 				run.capacityLeaves ??= {};
 				const previous = run.capacityLeaves[key]?.phase;
 				if (request && request.phase !== previous)
@@ -2422,6 +2504,7 @@ export class WorkflowRuntime {
 				assertSchedulingOpen: () => this.assertSchedulingOpen(),
 				factoryHome: dirname(this.directory),
 				attemptId: state.attemptId,
+				checkpointDiagnostics: () => this.checkpointDiagnostics(run),
 				execution,
 				reviewKey: checkpoint.reviewKey,
 				iteration: checkpoint.iteration
@@ -3344,6 +3427,17 @@ export class WorkflowRuntime {
 										? "waiting-human"
 										: "executing",
 						};
+						timingOperation(run, key, {
+							kind:
+								run.capacityLeaves[key].phase === "waiting-ci"
+									? "provider-ci"
+									: run.capacityLeaves[key].phase === "waiting-human"
+										? "human"
+										: step.type === "agent" && this.hooks.agentExecutionBoundary
+											? "unknown"
+											: "execution",
+							role: step.type === "agent",
+						});
 						await this.save(run);
 						signal.throwIfAborted();
 						try {
@@ -3514,6 +3608,7 @@ export class WorkflowRuntime {
 								run.capacityLeaves[key]?.phase !== "stopping"
 							)
 								delete run.capacityLeaves[key];
+							timingOperation(run, key);
 							await this.save(run);
 							signal.throwIfAborted();
 						}
@@ -3570,6 +3665,22 @@ export class WorkflowRuntime {
 							decision.questions = assistance;
 						}
 						run.impactDecisions.push(decision);
+						if (decision.status === "completed" && !decision.questions.length) {
+							for (const reuse of decision.reuseRecords)
+								diagnosticReuse(
+									run,
+									key,
+									reuse.originalDigest,
+									reuse.original.stamp.reviewer,
+								);
+							if (decision.inventoryBinding)
+								diagnosticReuse(
+									run,
+									key,
+									decision.inventoryBinding.receiptDigest,
+									decision.inventoryBinding.producerKey,
+								);
+						}
 						if (
 							decision.status === "completed" &&
 							decision.scopeReuse &&
@@ -6104,6 +6215,8 @@ export class WorkflowRuntime {
 	}
 	async shutdown(): Promise<void> {
 		this.shuttingDown = true;
+		if (this.diagnosticTimer) clearInterval(this.diagnosticTimer);
+		this.diagnosticTimer = undefined;
 		for (const controller of this.controllers.values()) controller.abort();
 		await Promise.allSettled(this.launchReconciliations.values());
 		await Promise.allSettled(this.executions.values());
@@ -6752,6 +6865,20 @@ export class WorkflowRuntime {
 		context: ExecutionContext,
 		preparedReview?: unknown,
 	): Promise<unknown> {
+		const key = context.stepKey ?? context.step.id;
+		timingOperation(context.run, key, { kind: "execution" });
+		await this.save(context.run);
+		try {
+			return await this.executeCheckBody(context, preparedReview);
+		} finally {
+			timingOperation(context.run, key);
+			await this.save(context.run);
+		}
+	}
+	private async executeCheckBody(
+		context: ExecutionContext,
+		preparedReview?: unknown,
+	): Promise<unknown> {
 		const { step, signal } = context;
 		if (!step.check) throw new Error("Check configuration is missing");
 		const issues = checkStepEvidenceIssues(step);
@@ -7068,6 +7195,7 @@ export class WorkflowRuntime {
 		return save;
 	}
 	save(run: FactoryRun): Promise<void> {
+		this.checkpointDiagnostics(run);
 		const pending = this.pendingActivitySaves.get(run.id);
 		if (pending) {
 			clearTimeout(pending);
@@ -7165,6 +7293,7 @@ export class WorkflowRuntime {
 					];
 		return {
 			id: run.id,
+			diagnostics: diagnosticSummary(run, this.accounting.now()),
 			videoAssets,
 			recipeParent: run.recipeParent,
 			launchActions: Object.fromEntries(
@@ -7285,6 +7414,7 @@ export class WorkflowRuntime {
 		return [...this.runs.values()].map((run) => ({
 			...(this.summaries.get(run.id) ?? this.runSummary(run)),
 			status: capacityRunStatus(run),
+			diagnostics: diagnosticSummary(run, this.accounting.now()),
 			workflowBlock: run.workflowBlock,
 		}));
 	}

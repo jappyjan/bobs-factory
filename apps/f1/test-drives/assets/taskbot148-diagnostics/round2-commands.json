@@ -1,0 +1,141 @@
+{
+  "cwd": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-148-diagnostics",
+  "noEditsDuringChecks": true,
+  "commands": [
+    {
+      "argv": [
+        "sh",
+        ".task148/check.sh",
+        "env",
+        "F1_AGENT_MODE=mock",
+        "/run/current-system/sw/bin/node",
+        "packages/edge-worker/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "apps/f1/test-drives/assets/taskbot148-diagnostics/vitest-round2.config.ts"
+      ],
+      "exit": 0,
+      "tests": 7,
+      "log": "round2-focused.log"
+    },
+    {
+      "argv": [
+        "sh",
+        ".task148/check.sh",
+        "/run/current-system/sw/bin/node",
+        "node_modules/@typescript/native-preview/bin/tsgo",
+        "-p",
+        ".task148/tsconfig-edge.json"
+      ],
+      "exit": 0,
+      "log": "round2-edge-types.log"
+    },
+    {
+      "argv": [
+        "sh",
+        ".task148/check.sh",
+        "/run/current-system/sw/bin/node",
+        "node_modules/@typescript/native-preview/bin/tsgo",
+        "-p",
+        ".task148/tsconfig-web.json"
+      ],
+      "exit": 0,
+      "log": "round2-web-types.log"
+    },
+    {
+      "argv": [
+        "sh",
+        ".task148/check.sh",
+        "/run/current-system/sw/bin/node",
+        "node_modules/@biomejs/biome/bin/biome",
+        "check",
+        "packages/edge-worker/src/factory/RunDiagnostics.ts",
+        "packages/edge-worker/src/factory/WorkflowRuntime.ts",
+        "packages/edge-worker/src/factory/FactoryServer.ts",
+        "packages/edge-worker/src/factory/FactoryTools.ts",
+        "packages/edge-worker/src/factory/MergeReadiness.ts",
+        "packages/edge-worker/src/factory/web/client.ts",
+        "packages/edge-worker/test/DiagnosticsUpdatesF1.test.ts",
+        "packages/edge-worker/test/DiagnosticsReadiness.test.ts",
+        "apps/f1/test-drives/assets/taskbot148-diagnostics/vitest-round2.config.ts"
+      ],
+      "exit": 0,
+      "files": 9,
+      "log": "round2-format.log"
+    },
+    {
+      "argv": [
+        "sh",
+        ".task148/check.sh",
+        "/run/current-system/sw/bin/node",
+        "packages/edge-worker/scripts/build-factory-web.mjs"
+      ],
+      "exit": 0,
+      "build": "c58909010b7ffc149026e0f5",
+      "log": "round2-web-build.log"
+    },
+    {
+      "argv": [
+        "sh",
+        ".task148/check.sh",
+        "env",
+        "F1_AGENT_MODE=mock",
+        "F1_UI_RESULT=/Users/jappy/.t3/worktrees/bobs-factory/taskbot-148-diagnostics/.task148/tmp/round2-ui-final.json",
+        "/run/current-system/sw/bin/node",
+        "apps/f1/test-drives/assets/taskbot148-round2-live-loader.mjs"
+      ],
+      "exit": 0,
+      "pid": 81272,
+      "shutdown": "SIGTERM awaited; synthetic home removed",
+      "log": "round2-ui-server.log"
+    }
+  ],
+  "retainedOwnCorrections": [
+    {
+      "exit": 1,
+      "log": "round2-first.log",
+      "passed": 6,
+      "failed": 1,
+      "reason": "fixture real Date/controlled wall mismatch; fixture Date clock corrected, exact assertions/production unchanged"
+    },
+    {
+      "exit": 1,
+      "log": "round2-web-types-first.log",
+      "reason": "TS7006 callback parameter explicit annotation added; final types0; same compiled web hash"
+    },
+    {
+      "exit": 1,
+      "reason": "root tsx path lookup absent; existing Vite loader used, no install"
+    },
+    {
+      "exit": 0,
+      "log": "round2-ui-server-first.log",
+      "reason": "nonfatal __APP__ dependency-scan warning; runtime/app served; first captures row below fold not credited, final row-scrolled pair delivered"
+    }
+  ],
+  "expectedPidQuery": {
+    "exit": 1,
+    "pids": [
+      78815,
+      81272
+    ],
+    "meaning": "no owned UI processes remain"
+  },
+  "reusedFourTriggerEvidence": {
+    "packages/edge-worker/src/factory/RunDiagnostics.ts:function operations(": "b4a93401b700a5ee57d5cc2210f5b399137661db91809c718680257f90334647",
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts:\tcapacityOptions(": "6f17ae56b51b1bf6b2a26ffb7b94b1f6f54b55d1bf3e37e993c32a44d9dc3688",
+    "packages/edge-worker/test/DiagnosticsBoundariesF1.test.ts": "ae873b5b543a5f5b887bb92b51af8082e853fec27b9dfa60b82c61b9a5f7540a",
+    "packages/edge-worker/test/RunDiagnostics.test.ts": "a6657a78d6266de23abfbc2e9929757cbd02bec01b9ba49dda88c712476c1f64",
+    "packages/edge-worker/src/EdgeWorker.ts": "a1a72245127f9f50fba572dac01a717864bba498f8995ec2caa6341ab1f7c7e8",
+    "packages/edge-worker/src/factory/DeliveryCoordination.ts": "14d77821da4a81ad0af1a6ea2ae5b5a21fa39d345baf38f0992df0c8e317984d"
+  },
+  "developmentCiAndBroadGates": "DEFERRED",
+  "knownFailures": {
+    "qaAllowedIsNotAFunction": "FAIL/unproven BASE",
+    "threeHistoricalFixtures": "FAIL/deferred",
+    "externalMissingFinalProof": "NOT DELIVERED",
+    "R1FreshWebShell": "setup FAIL",
+    "R2ExternalListProbe": "harness FAIL before corrected negative proof"
+  },
+  "dependenciesChanged": false
+}

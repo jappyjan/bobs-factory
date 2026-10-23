@@ -2,6 +2,7 @@ import { activityPreview } from "./ActivityPage.js";
 import { workflowDisplay } from "./ConfigProjection.js";
 import { launchBatchProjection } from "./LaunchRuns.js";
 import { nativeViewSnapshot } from "./NativeViews.js";
+import { diagnosticSummary } from "./RunDiagnostics.js";
 import {
 	currentStepView,
 	presentationOutputKeys,
@@ -127,6 +128,7 @@ export function focusRun(
 		| undefined;
 	return {
 		...Object.fromEntries(focusFields.map((key) => [key, run[key]])),
+		diagnostics: diagnosticSummary(run),
 		convergence: run.progressBudget && {
 			policy: run.progressBudget.policy,
 			window: run.progressBudget.window,

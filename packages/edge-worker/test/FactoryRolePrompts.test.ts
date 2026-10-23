@@ -197,3 +197,12 @@ function expand(fixture: { keys: Record<string, number>; texts: string[] }) {
 		}),
 	);
 }
+
+it("asserts the entire maintained workflow capability reference", () => {
+	expect(workflowTriggerInstructions).toBe(
+		readFileSync(
+			join(__dirname, "fixtures/workflow-trigger-instructions.txt"),
+			"utf8",
+		).trimEnd(),
+	);
+});

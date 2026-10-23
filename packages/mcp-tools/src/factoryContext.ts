@@ -10,6 +10,10 @@ import {
 	submitFactoryResultArtifact,
 } from "./factoryArtifacts.js";
 import { FactoryContextProjection } from "./factoryContextMemory.js";
+import {
+	contextCounterWriter,
+	readContextCounters,
+} from "./factoryContextMetrics.js";
 import { FactoryContextSnapshot } from "./factoryContextSnapshot.js";
 import {
 	type ResearchAccess,
@@ -71,9 +75,13 @@ export function prepareFactoryContext(
 ) {
 	const directory = mkdtempSync(join(tmpdir(), "bobs-factory-context-"));
 	const path = join(directory, "input.json");
+	const preparationStarted = performance.now();
 	try {
 		new FactoryContextSnapshot(path).writeSync(input, true);
-		return preparedContext(directory, path, artifacts);
+		return {
+			...preparedContext(directory, path, artifacts),
+			preparationMs: performance.now() - preparationStarted,
+		};
 	} catch (error) {
 		rmSync(directory, { recursive: true, force: true });
 		throw error;
@@ -89,6 +97,7 @@ export async function prepareFactoryContextAsync(
 ) {
 	const directory = mkdtempSync(join(tmpdir(), "bobs-factory-context-"));
 	const path = join(directory, "input.json");
+	const preparationStarted = performance.now();
 	try {
 		if (options)
 			mkdirSync(options.cacheDirectory, { recursive: true, mode: 0o700 });
@@ -96,7 +105,10 @@ export async function prepareFactoryContextAsync(
 			input,
 			true,
 		);
-		return preparedContext(directory, path, artifacts, research);
+		return {
+			...preparedContext(directory, path, artifacts, research),
+			preparationMs: performance.now() - preparationStarted,
+		};
 	} catch (error) {
 		rmSync(directory, { recursive: true, force: true });
 		throw error;
@@ -133,6 +145,7 @@ function preparedContext(
 						path,
 					],
 		},
+		counters: () => readContextCounters(path),
 		cleanup: () => rmSync(directory, { recursive: true, force: true }),
 	};
 }
@@ -175,7 +188,12 @@ export function createFactoryContextServer(
 	try {
 		const snapshot = new FactoryContextSnapshot(join(directory, "input.json"));
 		snapshot.writeSync(input);
-		const server = contextServer(snapshot, artifacts);
+		const server = contextServer(
+			snapshot,
+			artifacts,
+			undefined,
+			contextCounterWriter(join(directory, "input.json")),
+		);
 		server.server.onclose = () =>
 			rmSync(directory, { recursive: true, force: true });
 		return server;
@@ -190,14 +208,24 @@ export function createFactoryContextServerFromSnapshot(
 	artifacts?: FactoryArtifactBinding,
 	research?: ResearchAccess,
 ): McpServer {
-	return contextServer(FactoryContextSnapshot.open(path), artifacts, research);
+	return contextServer(
+		FactoryContextSnapshot.open(path),
+		artifacts,
+		research,
+		contextCounterWriter(path),
+	);
 }
 
 function contextServer(
 	snapshot: FactoryContextSnapshot,
 	artifacts?: FactoryArtifactBinding,
 	research?: ResearchAccess,
+	measure?: ReturnType<typeof contextCounterWriter>,
 ): McpServer {
+	const pageResult = (kind: "read" | "list", data: Record<string, unknown>) => {
+		measure?.(kind, data);
+		return result(data);
+	};
 	const compact = new FactoryContextProjection(snapshot);
 	const contextValue = (
 		path: string,
@@ -252,7 +280,7 @@ function contextServer(
 			const value = contextValue(path, view, snapshotRoot);
 			const node = snapshot.node(value);
 			if (node.kind !== "object" && node.kind !== "array")
-				return result({
+				return pageResult("list", {
 					path,
 					view,
 					snapshotRoot: snapshot.identity,
@@ -308,7 +336,7 @@ function contextServer(
 						: {}),
 				};
 			});
-			return result({
+			return pageResult("list", {
 				path,
 				view,
 				snapshotRoot: snapshot.identity,
@@ -358,7 +386,7 @@ function contextServer(
 									offset + limit < text.length ? offset + limit : null,
 							};
 						})();
-			return result({
+			return pageResult("read", {
 				path,
 				view,
 				snapshotRoot: snapshot.identity,

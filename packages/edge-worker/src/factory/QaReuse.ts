@@ -16,6 +16,7 @@ import {
 	qaDigest,
 } from "./Qa.js";
 import { runRepositories } from "./RepositoryScope.js";
+import { diagnosticReuse } from "./RunDiagnostics.js";
 import { consumesImpact, hasCheck, readOutput } from "./StepConfig.js";
 import { boundStepKey } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
@@ -210,6 +211,12 @@ export function stampQaCriteria(
 					throw new Error(
 						"Reused behavioral result differs from the accepted original evidence",
 					);
+				diagnosticReuse(
+					context.run,
+					context.stepKey ?? context.step.id,
+					criterion.reuse.originalDigest,
+					criterion.criterionId,
+				);
 			} else {
 				if (validating) {
 					if (

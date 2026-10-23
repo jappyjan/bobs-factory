@@ -11,6 +11,7 @@ import {
 	runRepositories,
 } from "./RepositoryScope.js";
 import type { OutputRevisionBinding } from "./RevisionBinding.js";
+import { diagnosticReuse } from "./RunDiagnostics.js";
 import type {
 	AggregateReview,
 	Inventory,
@@ -1334,8 +1335,18 @@ export async function selectedChecks(
 	for (const check of decision.checks) {
 		if (
 			decision.checkResults.some((r) => r.id === check.id && r.exitCode === 0)
-		)
+		) {
+			const receipt = decision.checkResults.find(
+				(r) => r.id === check.id && r.exitCode === 0,
+			)!;
+			diagnosticReuse(
+				context.run,
+				context.stepKey ?? context.step.id,
+				qaDigest(receipt),
+				check.id,
+			);
 			continue;
+		}
 		const repo = runRepositories(context.run).find(
 			(r) => r.id === check.repositoryId,
 		)!;

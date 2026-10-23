@@ -277,6 +277,19 @@ export class FactoryServer {
 		let configChanged = false;
 		let capacityChanged = false;
 		let timer: ReturnType<typeof setTimeout> | undefined;
+		const sendEvent = (data: string) => {
+			for (const stream of this.streams) {
+				const session = this.streamSessions.get(stream);
+				if (
+					!session ||
+					(!session.local && !this.auth.session(session.token, session.origin))
+				)
+					stream.end();
+				else if (stream.destroyed || stream.writableEnded)
+					this.streams.delete(stream);
+				else if (!stream.write(data)) stream.destroy(); // Slow readers reconnect and refresh, never queue unlimited events.
+			}
+		};
 		const broadcast = (change: {
 			id?: string;
 			config?: boolean;
@@ -293,29 +306,23 @@ export class FactoryServer {
 				pendingIds.clear();
 				configChanged = false;
 				capacityChanged = false;
-				for (const stream of this.streams) {
-					const session = this.streamSessions.get(stream);
-					if (
-						!session ||
-						(!session.local &&
-							!this.auth.session(session.token, session.origin))
-					)
-						stream.end();
-					else if (stream.destroyed || stream.writableEnded)
-						this.streams.delete(stream);
-					else if (!stream.write(data)) stream.destroy(); // Slow readers reconnect and refresh, never queue unlimited events.
-				}
+				sendEvent(data);
 			}, 500);
 		};
 		const unsubscribeCapacity = hooks.capacity?.subscribe(() =>
 			broadcast({ capacity: true }),
 		);
 		const unsubscribeRuntime = runtime.subscribe(broadcast);
+		const unsubscribeDiagnostics = runtime.subscribeDiagnostics((update) => {
+			if (this.streams.size)
+				sendEvent(`event: timing\ndata: ${JSON.stringify(update)}\n\n`);
+		});
 		const unsubscribeSessions = hooks.subscribe?.((id) => broadcast({ id }));
 		this.app.addHook("preClose", async () => {
 			unsubscribeAuth();
 			this.auth.close();
 			unsubscribeRuntime();
+			unsubscribeDiagnostics();
 			unsubscribeCapacity?.();
 			unsubscribeSessions?.();
 			if (timer) clearTimeout(timer);
@@ -1700,6 +1707,18 @@ export class FactoryServer {
 			const run = await hooks.start(resolved);
 			await runtime.flush(run.id);
 			return reply.code(202).send(runActionResult(run));
+		});
+		this.app.get<{
+			Params: { id: string };
+			Querystring: { offset?: string; limit?: string };
+		}>("/api/runs/:id/diagnostics", (request, reply) => {
+			const run = runtime.runs.get(request.params.id);
+			if (!run) return reply.code(404).send({ error: "Run not found" });
+			return runtime.readDiagnostics(
+				run.id,
+				Number(request.query.offset ?? 0),
+				Number(request.query.limit ?? 20),
+			);
 		});
 		this.app.get<{ Params: { id: string } }>(
 			"/api/runs/:id/provenance",
