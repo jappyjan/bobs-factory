@@ -63,6 +63,14 @@ import {
 	localFactoryBrowserRequest,
 	localFactoryOrigin,
 } from "./LocalFactoryAccess.js";
+import {
+	architectureViewSnapshot,
+	nativeReviewContext,
+	nativeViewSnapshot,
+	nativeViewText,
+	prepareNativeViewConsent,
+	savedReviewViewSnapshot,
+} from "./NativeViews.js";
 import { OperatorService } from "./OperatorService.js";
 import { conforms } from "./OutputFormats.js";
 import { runProvenance } from "./Provenance.js";
@@ -1746,7 +1754,67 @@ export class FactoryServer {
 						?.outputs?.guide &&
 					(["completed", "complete"].includes(status) ||
 						(status === "waiting" && run?.reviewGate?.status === "pending"));
+				let nativeView: ReturnType<typeof nativeViewSnapshot>;
+				let nativeViewError: string | undefined;
+				try {
+					nativeView = run
+						? ((
+								projected as {
+									nativeView?: ReturnType<typeof nativeViewSnapshot>;
+								}
+							)?.nativeView ?? nativeViewSnapshot(run))
+						: undefined;
+				} catch {
+					nativeViewError =
+						"The configured human view cannot be displayed. Correct its public bindings or data before continuing.";
+				}
+				if (nativeView && run)
+					for (const resource of Object.values(nativeView.resources))
+						resource.value = runtime.outputPreviews(run, [resource.source])[
+							resource.source
+						];
+				let savedReviewView: ReturnType<typeof savedReviewViewSnapshot>;
+				let savedReviewViewError: string | undefined;
+				try {
+					savedReviewView =
+						run && !focus ? savedReviewViewSnapshot(run) : undefined;
+					if (savedReviewView && run)
+						for (const resource of Object.values(savedReviewView.resources))
+							resource.value = runtime.outputPreviews(run, [resource.source])[
+								resource.source
+							];
+				} catch {
+					savedReviewViewError =
+						"The saved review view cannot be displayed. Correct its public bindings or data.";
+				}
 				const detail = {
+					savedReviewView,
+					savedReviewViewError,
+					nativeView,
+					nativeViewError,
+					...(architecture && run
+						? {
+								architectureViews: Object.fromEntries(
+									(run.architectureProposals ?? []).map((proposal) => {
+										try {
+											return [
+												proposal.id,
+												architectureViewSnapshot(run, proposal),
+											];
+										} catch {
+											return [
+												proposal.id,
+												{
+													error:
+														"This saved check-in view cannot be displayed. Correct its public bindings or data.",
+												},
+											];
+										}
+									}),
+								),
+							}
+						: {}),
+					reviewContext: run ? nativeReviewContext(run) : undefined,
 					...(projected ?? {
 						...session,
 						workflow:
@@ -1766,7 +1834,12 @@ export class FactoryServer {
 								viewRecords: undefined,
 								viewDecision: runtime.humanViews.snapshot(run),
 								viewDisplays: run.viewDisplays?.map(publicViewSnapshot),
-								viewText: runtime.humanViews.displayText(run),
+								viewText: runtime.humanViews.displayText(
+									run,
+									nativeView
+										? (limit) => nativeViewText(run, limit)
+										: undefined,
+								),
 								recipeParent: run.recipeParent,
 								launchActions: Object.fromEntries(
 									Object.entries(run.launchActions ?? {}).map(([id, batch]) => [
@@ -2057,9 +2130,19 @@ export class FactoryServer {
 			"/api/runs/:id/architecture-decision",
 			async (request, reply) => {
 				try {
+					const { display, ...nativeDecision } = request.body as Record<
+						string,
+						unknown
+					>;
+					const currentDisplay = await prepareNativeViewConsent(
+						runtime,
+						runtime.get(request.params.id),
+						display,
+					);
+					currentDisplay();
 					runtime.decideArchitecture(
 						request.params.id,
-						ArchitectureDecisionSchema.parse(request.body),
+						ArchitectureDecisionSchema.parse(nativeDecision),
 					);
 					await runtime.flush(request.params.id);
 					return reply.code(202).send(actionResult(request.params.id));
@@ -2085,6 +2168,12 @@ export class FactoryServer {
 						feedback: z.string().trim().max(100000).optional(),
 					})
 					.parse(request.body);
+				const currentDisplay = await prepareNativeViewConsent(
+					runtime,
+					runtime.get(request.params.id),
+					(request.body as { display?: unknown })?.display,
+				);
+				currentDisplay();
 				runtime.decide(request.params.id, decision);
 				await runtime.flush(request.params.id);
 				return reply.code(202).send(actionResult(request.params.id));
@@ -2230,6 +2319,12 @@ export class FactoryServer {
 							.optional(),
 					})
 					.parse(request.body);
+				const currentDisplay = await prepareNativeViewConsent(
+					runtime,
+					runtime.get(request.params.id),
+					(request.body as { display?: unknown })?.display,
+				);
+				currentDisplay();
 				await operator.answer(request.params.id, answer, kind, context);
 				return actionResult(request.params.id);
 			},

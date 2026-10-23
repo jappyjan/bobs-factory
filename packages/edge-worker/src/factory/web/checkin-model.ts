@@ -1,5 +1,5 @@
-import type { Architecture, ArchitectureProposal } from "../Architecture";
-import type { ArchitectureFootprint } from "../ArchitectureFootprint";
+import type { Architecture, ArchitectureProposal } from "../Architecture.js";
+import type { ArchitectureFootprint } from "../ArchitectureFootprint.js";
 
 export type Talk = NonNullable<Architecture["talk"]>;
 type Decision = Architecture["decisions"][number];

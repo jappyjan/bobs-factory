@@ -1,8 +1,13 @@
-import { type FormEvent, useId, useRef, useState } from "react";
+import { type FormEvent, type ReactNode, useId, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ViewSnapshot } from "../HumanStep";
-import { type ResolvedView, ResolvedViewSchema, viewUrlSchema } from "../View";
+import {
+	type ResolvedView,
+	ResolvedViewSchema,
+	viewText,
+	viewUrlSchema,
+} from "../View";
 import { useAction } from "./client";
 import { videoUrl } from "./media";
 
@@ -86,6 +91,15 @@ function ViewComponent({
 }) {
 	const formId = useId();
 	switch (component.type) {
+		case "questions":
+			return (
+				<pre className="dv-rich-fallback">
+					{viewText({ version: "view-v1", components: [component] })}
+				</pre>
+			);
+		case "checkin-section":
+		case "review-guide":
+			return <pre className="dv-rich-fallback">{component.data.text}</pre>;
 		case "markdown":
 			return <ViewMarkdown text={component.data.text} />;
 		case "checklist":
@@ -474,12 +488,14 @@ function ViewComponent({
 /** Revalidate at the rendering boundary, including API/agent-supplied resolved data. */
 export function DeclarativeView({
 	view,
+	renderComponent,
 	runId,
 	fields = {},
 	onFieldChange,
 	disabled = false,
 }: {
 	view: ResolvedView;
+	renderComponent?: (component: Component) => ReactNode | undefined;
 	runId?: string;
 	fields?: ViewFields;
 	onFieldChange?: (id: string, value: string | boolean) => void;
@@ -505,13 +521,15 @@ export function DeclarativeView({
 					aria-label={component.title ?? component.type}
 				>
 					{component.title && <h3>{component.title}</h3>}
-					<ViewComponent
-						component={component}
-						runId={runId}
-						fields={fields}
-						onFieldChange={onFieldChange}
-						disabled={disabled}
-					/>
+					{renderComponent?.(component) ?? (
+						<ViewComponent
+							component={component}
+							runId={runId}
+							fields={fields}
+							onFieldChange={onFieldChange}
+							disabled={disabled}
+						/>
+					)}
 				</section>
 			))}
 		</div>

@@ -20,6 +20,9 @@ export function useApproval(run: any, controller: FeedbackController) {
 					headSha: gate.headSha,
 					externalDigest: gate.externalDigest,
 					decision: "approve",
+					...(run.nativeView?.digest
+						? { display: { digest: run.nativeView.digest } }
+						: {}),
 				},
 			})
 			.then(() =>

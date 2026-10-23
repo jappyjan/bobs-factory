@@ -16,6 +16,7 @@ import {
 	sinceLastSeen,
 } from "./checkin-model";
 import { useAction, useRun } from "./client";
+import { DeclarativeView } from "./declarative-view";
 import { useFormState } from "./form-state";
 import { Button, Markdown } from "./ui";
 
@@ -376,7 +377,8 @@ export function ArchitecturePage() {
 	}, [hasRun]);
 	const state = run ? architectureState(run) : undefined;
 	const latest = state?.latest;
-	const context = `${run?.id}/${latest?.id}/${latest?.digest}/${latest?.status}/${run?.status}`;
+	const latestView = latest && run?.architectureViews?.[latest.id];
+	const context = `${run?.id}/${latest?.id}/${latest?.digest}/${latest?.status}/${run?.status}${latestView ? `/${latestView.digest}` : ""}`;
 	const [draft, setDraft] = useFormState(context, "");
 	const [picks, setPicks] = useFormState<Pick[]>(context, []);
 	const [reactions, setReactions] = useFormState<Record<string, Reaction>>(
@@ -406,6 +408,12 @@ export function ArchitecturePage() {
 	const { seen, drafts } = seenVersions(proposals, run.answers ?? []);
 	const shown = proposals.find((p) => p.version === viewing) ?? latest;
 	const content = shown.content;
+	const presentation = run.architectureViews?.[shown.id];
+	const shownView =
+		presentation?.proposalId === shown.id &&
+		presentation.proposalDigest === shown.digest
+			? presentation
+			: undefined;
 	if (!readable(content))
 		return (
 			<>
@@ -416,7 +424,10 @@ export function ArchitecturePage() {
 			</>
 		);
 	const isLatest = shown === latest;
-	const interactive = isLatest && pending;
+	const interactive =
+		isLatest &&
+		pending &&
+		(!run.architectureViews || shownView?.authority === "approve");
 	const since = sinceLastSeen(proposals, seen, shown);
 	const talk = checkinTalk(content, shown.footprint);
 	const openCount = open(latest.content);
@@ -436,6 +447,9 @@ export function ArchitecturePage() {
 					proposalId: latest.id,
 					version: latest.version,
 					digest: latest.digest,
+					...(shownView?.authority === "approve"
+						? { display: { digest: shownView.digest } }
+						: {}),
 					decision,
 					...(decision === "accept"
 						? {}
@@ -479,6 +493,39 @@ export function ArchitecturePage() {
 			: shown.status === "routine"
 				? "Bob didn’t need to check in"
 				: "Bob wants to check his plan before building";
+	const renderCheckin = (section?: string) => (
+		<CheckIn
+			section={section}
+			key={`${shown.id}/${section ?? "all"}`}
+			content={content}
+			footprint={shown.footprint}
+			since={since}
+			reactions={interactive ? reactions : undefined}
+			onReact={
+				interactive
+					? (beat, reaction) =>
+							setReactions((current) => {
+								const next = { ...current };
+								if (reaction) next[beat] = reaction;
+								else delete next[beat];
+								return next;
+							})
+					: undefined
+			}
+			picks={isLatest ? picks : []}
+			onPick={
+				interactive
+					? (next) =>
+							setPicks((current) => [
+								...current.filter((p) => p.decision !== next.decision),
+								next,
+							])
+					: undefined
+			}
+			speaking={listen.speaking}
+		/>
+	);
+
 	return (
 		<div className="ci-page">
 			<nav className="review-links" aria-label="Check-in navigation">
@@ -555,35 +602,33 @@ export function ArchitecturePage() {
 				className={`ci-thread${revising ? " ci-faded" : ""}`}
 				aria-live="polite"
 			>
-				<CheckIn
-					key={shown.id}
-					content={content}
-					footprint={shown.footprint}
-					since={since}
-					reactions={interactive ? reactions : undefined}
-					onReact={
-						interactive
-							? (beat, reaction) =>
-									setReactions((current) => {
-										const next = { ...current };
-										if (reaction) next[beat] = reaction;
-										else delete next[beat];
-										return next;
-									})
-							: undefined
-					}
-					picks={isLatest ? picks : []}
-					onPick={
-						interactive
-							? (next) =>
-									setPicks((current) => [
-										...current.filter((p) => p.decision !== next.decision),
-										next,
-									])
-							: undefined
-					}
-					speaking={listen.speaking}
-				/>
+				{shownView ? (
+					<DeclarativeView
+						view={shownView.view}
+						runId={run.id}
+						renderComponent={(component) => {
+							if (component.type !== "checkin-section") return undefined;
+							if (
+								component.data.proposalId !== shown.id ||
+								component.data.digest !== shown.digest
+							)
+								return undefined;
+							if (component.data.section === "notes")
+								return (
+									<BobsNotes
+										content={content}
+										footprint={shown.footprint}
+										drafts={isLatest ? drafts : 0}
+									/>
+								);
+							return renderCheckin(component.data.section);
+						}}
+					/>
+				) : presentation?.error ? (
+					<p role="alert">{presentation.error}</p>
+				) : (
+					renderCheckin()
+				)}
 				{qa.map((f, i) =>
 					f.kind === "explain" ? (
 						<div key={i} className="ci-you">
@@ -662,7 +707,7 @@ export function ArchitecturePage() {
 						</p>
 					</div>
 				</section>
-			) : stopped && isLatest ? (
+			) : stopped && isLatest && shownView?.authority !== "read-only" ? (
 				<Button
 					requiresConnection
 					disabled={action.isPending}
@@ -680,11 +725,13 @@ export function ArchitecturePage() {
 					{error}
 				</p>
 			)}
-			<BobsNotes
-				content={content}
-				footprint={shown.footprint}
-				drafts={isLatest ? drafts : 0}
-			/>
+			{!shownView && !presentation?.error && (
+				<BobsNotes
+					content={content}
+					footprint={shown.footprint}
+					drafts={isLatest ? drafts : 0}
+				/>
+			)}
 		</div>
 	);
 }

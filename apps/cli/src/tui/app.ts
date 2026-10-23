@@ -592,26 +592,53 @@ export class TodayApp {
 		).catch(() => {});
 	}
 
+	private reviewRequest(run: RunItem) {
+		const displayed =
+			this.details.get(run.id) ??
+			("nativeView" in run ? (run as RunDetail) : undefined);
+		if (!displayed) {
+			this.ensureDetail(run);
+			this.notify("Loading the review. Read it before deciding.");
+			return;
+		}
+		const gate = displayed.reviewGate;
+		if (
+			gate?.status !== "pending" ||
+			!gate.id ||
+			(!gate.headSha && gate.mode !== "external")
+		) {
+			this.notify("No review is waiting on this run", true);
+			return;
+		}
+		// Capture the displayed version before opening confirmation. Background
+		// refreshes must never replace consent with an unseen current digest.
+		return {
+			reviewId: gate.id,
+			headSha: gate.headSha ?? "",
+			externalDigest: gate.externalDigest,
+			...(displayed.nativeView
+				? { display: { digest: displayed.nativeView.digest } }
+				: {}),
+		};
+	}
+
 	private approve(run: RunItem) {
-		const gate = run.reviewGate;
-		if (gate?.status !== "pending" || !gate.id || !gate.headSha)
-			return this.notify("No review is waiting on this run", true);
+		const request = this.reviewRequest(run);
+		if (!request) return;
 		this.overlay = {
 			kind: "confirm",
 			text: `Approve “${run.title}”? Bob continues to merge.`,
 			action: () =>
 				this.options.client.post(this.path(run, "review"), {
-					reviewId: gate.id,
-					headSha: gate.headSha,
+					...request,
 					decision: "approve",
 				}),
 		};
 	}
 
 	private requestChanges(run: RunItem) {
-		const gate = run.reviewGate;
-		if (gate?.status !== "pending" || !gate.id || !gate.headSha)
-			return this.notify("No review is waiting on this run", true);
+		const request = this.reviewRequest(run);
+		if (!request) return;
 		this.overlay = {
 			kind: "prompt",
 			form: new PromptForm(
@@ -621,8 +648,7 @@ export class TodayApp {
 			),
 			submit: async (feedback) => {
 				await this.options.client.post(this.path(run, "review"), {
-					reviewId: gate.id,
-					headSha: gate.headSha,
+					...request,
 					decision: "reject",
 					feedback,
 				});

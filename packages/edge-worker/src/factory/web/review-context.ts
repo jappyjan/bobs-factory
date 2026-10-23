@@ -176,11 +176,11 @@ function ticketLink(value: unknown): ReviewLink | undefined {
 /** Resolve only published metadata; never discover ticket links in run content. */
 export function reviewContext(value: unknown) {
 	const run = record(value),
-		outputs = record(run.outputs),
+		context = record(run.reviewContext ?? record(run.nativeView).context),
 		gate = record(run.reviewGate),
 		draft = record(roleOutput(run, "draft-pr")),
-		source = record(outputs.source),
-		existing = record(outputs["existing-work"]);
+		source = record(context.source ?? roleOutput(run, "source")),
+		existing = record(context.existingWork ?? roleOutput(run, "existing-work"));
 	const prUrl = [gate.url, draft.url, source.url].map(webUrl).find((url) => {
 		if (!url) return false;
 		return new URL(url).hostname !== "github.com" || Boolean(githubPr(url));

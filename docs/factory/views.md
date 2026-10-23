@@ -1,8 +1,10 @@
 # Declarative recipe views
 
-Custom recipes can use `decide`, `approve` and `show` steps. Existing Questions,
-Check-in, Human review and External review screens keep their current
-behavior. Saving a new recipe does not rewrite an accepted run.
+Custom recipes can use `decide`, `approve` and `show` steps. Stock Questions,
+Check-in, Human review and External review also use accepted `step.view`
+declarations, with Ask, Approve, Review and External review presets. Their
+existing native decision protocols and approval requirements remain authoritative.
+Saving a recipe does not rewrite an accepted run.
 
 Every step declares a `view`: either a `view-v1` component list or
 `{"from":"/inputs/presentation"}` referring to an agent's validated `view-v1`
@@ -99,6 +101,95 @@ their called recipes. Sequential Call recipe can wait for a human. Completed
 Call/For each outputs can feed subsequent views, and Show is supported inside
 their lexical frames.
 
+## Stock human presets
+
+Agent question waits and native human actions can declare the same `view-v1`
+components. A view may declare a `preset` (`ask`, `approve`, `review`, or
+`external-review`) and view-local `reads`. These reads describe presentation only:
+`@human` is the current public question/proposal/guide projection; `@callInputs`
+and its JSON Pointer descendants are public mapped input; ordinary producer names
+resolve in the accepted lexical Call frame. Private checkpoints, diagnostics and
+native credentials are unavailable. Native action reads and contracts remain
+separate from presentation reads.
+
+For example, a fork of **Check in with you** can move size first, hide optional
+sections, and add the actual configured proposal's plan:
+
+```json
+{
+  "version": "view-v1",
+  "preset": "approve",
+  "reads": {
+    "human": "@human",
+    "plan": "architecture/candidate/plan"
+  },
+  "components": [
+    {"id":"size","type":"checkin-section","data":{"path":"/inputs/human/sections/size"}},
+    {"id":"goal","type":"checkin-section","data":{"path":"/inputs/human/sections/understood"}},
+    {"id":"plan","type":"markdown","data":{"bindings":{"text":{"path":"/inputs/plan"}}}}
+  ]
+}
+```
+
+Use **Human view → View JSON** in the ordinary recipe editor, then Save. Factory
+forks retain their private called-recipe closure; export/reload retains these
+views. Component order controls display order. Removing an optional component
+does not remove native open questions, exact candidate/assets acceptance, review
+requirements, repository URL/head bindings, external verification, final drift
+checks, or uncertainty recovery. Existing producer and receiving text limits
+still apply; oversized bound text is refused rather than silently shortened.
+
+The Questions component reuses the existing explicit answer form: defaults never
+submit themselves, an explicitly blank custom answer remains incomplete, and
+question batch/retry/dedup and native terminal/ticket reply behavior stay intact.
+Current question waits take precedence over retained rejected review records.
+The terminal displays the declared native view text and current identity; Approve
+and Request changes capture that displayed consent before confirmation. A later
+refresh cannot substitute an unseen version. A pending generic decision keeps its
+exact answer protocol first; otherwise the current native presentation and display
+digest precede retained Show history within the same text budget. Completed guides whose native gate
+is no longer retained receive a read-only stock presentation from their accepted
+configured producer, with the original reading-progress identity and no new
+approval authority. A rejected review also retains a separate read-only review
+presentation/resource while a later Ask owns the current batch and answer form.
+The saved guide uses the original rich reader and progress identity; its display
+digest cannot answer the current Ask or restore native review controls.
+Check-in sections reuse the existing points and combine reactions into one change
+request. The saved check-in route selects the requested proposal/version’s owning
+declaration and proposal resource, including its candidate, rather than the run’s
+current Ask or Review display. Optional notes follow that declaration. Historical
+readers are read-only; only the current native check-in can supply decision consent.
+Declared `@callInputs` reads follow the exact accepted lexical path into the owning
+retained Call frame, including after the run advances; another active frame or
+similarly named output cannot replace that context.
+The rich `review-guide` component reuses the original show & tell,
+Dig deeper, flows, code tour with line notes, tests/checks/choices, comments,
+Decide page, feedback count and reading progress. Reading position and draft
+feedback are independent of approval authority.
+
+Check-in and guide components contain inert source/digest references and useful
+text fallbacks. Only the owning run's verified public resource registry can attach
+the original rich reader and its native controller. A reference is never a URL,
+filesystem path, HTML template or script. Large guides retain the original lazy,
+hash-checked artifact reader and protected code/media readers. Outside that native
+context, the reference is plain display text; it cannot manufacture approval.
+
+New native approval API submissions include `display: {"digest":"…"}` from
+`nativeView` alongside the original architecture or review payload. The server
+rechecks accepted configuration, native batch/proposal/review, declared content,
+all repository URL/head pairs and protected assets immediately before the native
+transition. An authored Approve label or generic `accepted:true` never populates
+native architecture/human/delivery/merge fields. Original frozen native protocols
+remain readable; old definitions receive an in-memory declarative adapter without
+rewriting their accepted graphs. Presentation owner metadata is distinct from
+native decision receipts. Cached old clients and native question channels retain
+their original protocols.
+
+The terminal/API exposes bounded inert view text. New explicitly declared native
+views use the same fallback in ticket notifications while retaining original
+question/review deduplication keys. An incomplete text fallback directs the reader
+to the complete dashboard display and never claims omitted content was reviewed.
+
 ## Component data
 
 The builder's **Component schema and examples** exposes the complete schema.
@@ -125,6 +216,9 @@ Push notifications stay private by default. Only a trusted recipe edit with expl
 | `choices` | `{fields:[{id,label,type,required?,value?,options?}]}`; text, textarea, select or checkbox |
 | `runList` | `{waves:[{id,label?,runs:[{id,title,status,note?}]}]}` |
 | `decisionBar` | `{summary?,actions:[{id,label}]}`; sticky presentation labels |
+| `questions` | `{questions,questionChoices?,questionRecommendations?}`; explicit native Ask form or inert text |
+| `checkin-section` | `{section,proposalId,digest,text}`; one existing proposal point or Bob’s notes |
+| `review-guide` | `{source,digest,text}`; original rich reader only for the owning public guide resource |
 
 View-provided action labels grant no authority. Actual human controls come only
 from the accepted step configuration. Screenshot/video references cannot choose

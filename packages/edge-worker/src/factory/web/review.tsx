@@ -51,6 +51,10 @@ export type Annotate = (
 	order: number[],
 	children: ReactNode,
 ) => ReactNode;
+export type GuidedReviewControls = (
+	identity: string,
+	decisionPage: boolean,
+) => ReactNode;
 export function Lines({
 	items,
 	path,
@@ -87,13 +91,16 @@ export function Lines({
 export function GuidedReview({
 	value,
 	run,
+	source,
 	documentPage = false,
 	controls,
 }: {
 	value: any;
 	run: any;
+	/** Opaque output key already resolved by the native public resource owner. */
+	source?: string;
 	documentPage?: boolean;
-	controls?: (identity: string, decisionPage: boolean) => ReactNode;
+	controls?: GuidedReviewControls;
 }) {
 	const previousIdentity = useRef<string>(undefined);
 	const version = value?.__artifactHash ?? signature(value),
@@ -101,8 +108,10 @@ export function GuidedReview({
 			queryKey: ["guide", run.id, version],
 			enabled: Boolean(value?.__artifactPreview),
 			queryFn: async ({ signal }) => {
+				const key = source ?? roleOutputKey(run, "guide");
+				if (!key) throw new Error("The review guide source is unavailable.");
 				const guide = await api(
-					`/api/runs/${run.id}/artifacts/${encodeURIComponent(roleOutputKey(run, "guide") ?? "guide")}`,
+					`/api/runs/${run.id}/artifacts/${encodeURIComponent(key)}`,
 					{
 						signal,
 					},
@@ -180,6 +189,7 @@ function BriefSession(props: React.ComponentProps<typeof BriefReview>) {
 		revisionOf([
 			feedbackKey(props.storageKey, props.run.reviewGate?.id),
 			props.run.reviewGate,
+			props.run.nativeView?.digest,
 			props.run.status,
 			props.run.chat?.mode,
 		]),
@@ -196,6 +206,7 @@ function ReviewSession(props: React.ComponentProps<typeof ReviewReader>) {
 		revisionOf([
 			feedbackKey(props.storageKey, props.run.reviewGate?.id),
 			props.run.reviewGate,
+			props.run.nativeView?.digest,
 			props.run.status,
 			props.run.chat?.mode,
 		]),

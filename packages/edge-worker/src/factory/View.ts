@@ -4,6 +4,10 @@ import {
 	foreachPointerSchema,
 	sanitizeJsonConfiguration,
 } from "./Foreach.js";
+import {
+	QuestionChoicesSchema,
+	QuestionRecommendationSchema,
+} from "./Questions.js";
 
 /** Views are display data. Neither a component ID nor an action label grants authority. */
 export const VIEW_VERSION = "view-v1" as const;
@@ -191,6 +195,43 @@ export const ViewRunStatusSchema = z.enum([
 
 /** No filesystem paths or remote media URLs. The owner verifies refs in its run inventory. */
 export const viewDataSchemas = {
+	questions: z
+		.object({
+			questions: z.array(text(16000)).min(1).max(100),
+			questionChoices: z.array(QuestionChoicesSchema).max(100).optional(),
+			questionRecommendations: z
+				.array(QuestionRecommendationSchema)
+				.max(100)
+				.optional(),
+		})
+		.strict(),
+	"checkin-section": z
+		.object({
+			section: z.enum([
+				"since",
+				"understood",
+				"plan",
+				"notice",
+				"open",
+				"check-0",
+				"check-1",
+				"check-2",
+				"size",
+				"limits",
+				"notes",
+			]),
+			proposalId: text(100),
+			digest: hash,
+			text: z.string().max(64000),
+		})
+		.strict(),
+	"review-guide": z
+		.object({
+			source: text(500),
+			digest: hash,
+			text: z.string().max(64000),
+		})
+		.strict(),
 	markdown: z.object({ text: text(16_000) }).strict(),
 	checklist: z
 		.object({
@@ -433,6 +474,9 @@ function resolvedComponent<T extends string, D extends z.ZodObject>(
 	return component(type, dataSchema).extend({ data: dataSchema });
 }
 const components = z.discriminatedUnion("type", [
+	component("questions", viewDataSchemas.questions),
+	component("checkin-section", viewDataSchemas["checkin-section"]),
+	component("review-guide", viewDataSchemas["review-guide"]),
 	component("markdown", viewDataSchemas.markdown),
 	component("checklist", viewDataSchemas.checklist),
 	component("beforeAfter", viewDataSchemas.beforeAfter),
@@ -449,6 +493,9 @@ const components = z.discriminatedUnion("type", [
 	component("decisionBar", viewDataSchemas.decisionBar),
 ]);
 const resolvedComponents = z.discriminatedUnion("type", [
+	resolvedComponent("questions", viewDataSchemas.questions),
+	resolvedComponent("checkin-section", viewDataSchemas["checkin-section"]),
+	resolvedComponent("review-guide", viewDataSchemas["review-guide"]),
 	resolvedComponent("markdown", viewDataSchemas.markdown),
 	resolvedComponent("checklist", viewDataSchemas.checklist),
 	resolvedComponent("beforeAfter", viewDataSchemas.beforeAfter),
@@ -464,9 +511,26 @@ const resolvedComponents = z.discriminatedUnion("type", [
 	resolvedComponent("runList", viewDataSchemas.runList),
 	resolvedComponent("decisionBar", viewDataSchemas.decisionBar),
 ]);
+export const ViewReadsSchema = z.record(
+	viewIdSchema,
+	z
+		.string()
+		.min(1)
+		.max(500)
+		.refine(
+			(value) =>
+				value === "@human" ||
+				value === "@callInputs" ||
+				value.startsWith("@callInputs/") ||
+				/^[a-zA-Z0-9_-]+(?:\/[^\p{Cc}]+)*$/u.test(value),
+			"Views may read public human data, call inputs or declared ordinary outputs",
+		),
+);
 const definitionSchema = z
 	.object({
 		version: z.literal(VIEW_VERSION),
+		preset: z.enum(["ask", "approve", "review", "external-review"]).optional(),
+		reads: ViewReadsSchema.optional(),
 		components: z
 			.array(components)
 			.min(1)
@@ -495,6 +559,9 @@ export const ResolvedViewSchema = z.preprocess(
 	z
 		.object({
 			version: z.literal(VIEW_VERSION),
+			preset: z
+				.enum(["ask", "approve", "review", "external-review"])
+				.optional(),
 			components: z
 				.array(resolvedComponents)
 				.min(1)
@@ -607,6 +674,7 @@ export function resolveView(
 			: parsed;
 	return ResolvedViewSchema.parse({
 		version: VIEW_VERSION,
+		...(definition.preset ? { preset: definition.preset } : {}),
 		components: definition.components.map((component) => ({
 			...component,
 			data:
@@ -666,6 +734,30 @@ export function viewText(view: ResolvedView): string {
 	for (const component of accepted.components) {
 		const lines = [component.title ? s(component.title) : `${component.type}:`];
 		switch (component.type) {
+			case "questions":
+				component.data.questions.forEach((question, index) => {
+					lines.push(`${index + 1}. ${s(question)}`);
+					for (const choices of component.data.questionChoices ?? [])
+						if (choices.questionIndex === index)
+							for (const option of choices.options)
+								lines.push(
+									`${s(option.id)}: ${s(option.answer)}${option.reason ? ` — ${s(option.reason)}` : ""}`,
+								);
+					for (const recommendation of component.data.questionRecommendations ??
+						[])
+						if (recommendation.questionIndex === index)
+							lines.push(
+								`Recommendation (requires explicit submission): ${s(recommendation.answer)} — ${s(recommendation.reason)}`,
+							);
+				});
+				lines.push(
+					"Custom answers are available. Defaults never submit themselves.",
+				);
+				break;
+			case "checkin-section":
+			case "review-guide":
+				lines.push(s(component.data.text));
+				break;
 			case "markdown":
 				lines.push(s(component.data.text));
 				break;

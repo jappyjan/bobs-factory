@@ -22,6 +22,7 @@ import { dashboardRun } from "../src/factory/RunProjection.js";
 import { configuredOutputKeys } from "../src/factory/ToolBindings.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { FullReview } from "../src/factory/web/focus.js";
+import { ReviewPage } from "../src/factory/web/review-page.js";
 import {
 	guideMatchesGate,
 	guideRevision,
@@ -56,6 +57,13 @@ vi.mock("../src/factory/web/pwa.js", async (importOriginal) => {
 	const original =
 		await importOriginal<typeof import("../src/factory/web/pwa.js")>();
 	return { ...original, usePwa: () => original.pwaState() };
+});
+
+const route = vi.hoisted(() => ({ run: undefined as any }));
+vi.mock("../src/factory/web/client.js", async (importOriginal) => {
+	const original =
+		await importOriginal<typeof import("../src/factory/web/client.js")>();
+	return { ...original, useRun: () => ({ data: route.run, isLoading: false }) };
 });
 
 const homes: string[] = [];
@@ -391,6 +399,12 @@ it("preserves completed historical review progress identity after its gate is go
 		url: `/api/runs/${run.id}?view=dashboard`,
 	});
 	const projected = response.json();
+	expect(projected.nativeView).toMatchObject({
+		preset: "review",
+		authority: "read-only",
+		guideSource: "guide",
+	});
+	expect(run.reviewGate).toBeUndefined();
 	expect(guideRevision(projected)?.headSha).toBe("accepted");
 	expect(reviewKey(projected, roleOutput(projected, "guide"))).toBe(
 		reviewKey(
@@ -398,6 +412,36 @@ it("preserves completed historical review progress identity after its gate is go
 			guide,
 		),
 	);
+	route.run = projected;
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	try {
+		for (const page of ["overview", "chapter:chapter"]) {
+			const html = renderToStaticMarkup(
+				createElement(
+					QueryClientProvider,
+					{ client },
+					createElement(
+						MemoryRouter,
+						{ initialEntries: [`/runs/${run.id}/review?page=${page}`] },
+						createElement(ReviewPage, {
+							config: { repositories: [], workflows: [] },
+							onSettled: () => {},
+						}),
+					),
+				),
+			);
+			if (page === "overview")
+				expect(html).toContain("Accepted historical guide");
+			else expect(html).toContain("Read me");
+			expect(html).not.toContain("No review guide yet");
+			expect(html).not.toContain("Approve this PR");
+			expect(html).not.toContain("Request changes");
+		}
+	} finally {
+		client.clear();
+	}
 });
 
 it("does not infer a producer from legacy-looking output and history without an accepted graph", () => {
@@ -474,6 +518,54 @@ it("keeps a complete modern chapter guide's authored empty verification list rea
 		expect(text).toContain("1 / 1 supported");
 		expect(text).toContain("Review the tested change");
 		expect(text).not.toContain("No verification evidence was recorded");
+
+		// Hiding an optional rich component cannot remove the native guide's identity
+		// or crash the controller that retains the original approval obligations.
+		const customHtml = renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client },
+				createElement(
+					MemoryRouter,
+					{ initialEntries: ["/runs/modern/review?page=decide"] },
+					createElement(FullReview, {
+						run: {
+							id: "modern",
+							status: "completed",
+							outputs: {},
+							nativeView: {
+								preset: "review",
+								authority: "review",
+								digest: "a".repeat(64),
+								guideSource: "authored/result",
+								resources: {
+									["b".repeat(64)]: {
+										source: "authored/result",
+										digest: "b".repeat(64),
+										value: guide,
+									},
+								},
+								view: {
+									version: "view-v1",
+									preset: "review",
+									components: [
+										{
+											id: "summary",
+											type: "markdown",
+											data: { text: "Custom review summary" },
+										},
+									],
+								},
+							},
+						},
+						onSettled: () => {},
+					}),
+				),
+			),
+		);
+		expect(customHtml).toContain("Custom review summary");
+		expect(customHtml).toContain("Settle");
+		expect(customHtml).not.toContain("Authored step");
 	} finally {
 		client.clear();
 	}
