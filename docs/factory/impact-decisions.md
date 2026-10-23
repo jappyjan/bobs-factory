@@ -33,6 +33,40 @@ recipe upgrades use conservative definitions. Operators opt custom workflows in
 by declaring the contracts and their correction/assistance routes; adding a role
 does not authorize changing delivery or approval policies.
 
+New composed definitions use the existing configurable agent/check protocol:
+`checks: [{check: "impact-reuse", reuseVersion: "composed-v1"}]` on the
+independent assessor, with named `reads.inventory` and `reads.fanout`. Consuming
+steps keep their declared `impact-boundary` checks. Their Calls explicitly set
+`inputFreshness: "on-read"`, so only an actually consumed port refreshes a stale
+producer in its original frame. Unused historical ports do not launch work at
+Call entry. This option does not grant copied JSON execution authority or relax
+the freshness checks of a leaf agent, Check, human step or delivery action.
+
+The assessor may inspect the original requirement inventory after a correction
+without first executing extraction. Its independent decision must still prove
+unchanged accepted scope before consumption; changed scope requires extraction.
+Original inventories and reviewer receipts are retained byte for byte. Separate
+scope decisions and repeat records explain selected work and link original
+receipts, current context and coverage. First acceptance remains complete.
+Mapped Call inputs also bind the assessment independently of Git HEAD. Extraction
+can supplement only its original executed inventory receipt, with the authored
+assessment snapshot retained in `inventoryBinding`; other source, target,
+feedback or environment drift requires reassessment. A fresh assessment can explicitly reference an already completed extraction
+using its original producer/history receipt and current source/repository binding;
+changed inventory still requires complete review and renewed human approval.
+Parallel reassessment retains native conversations and accumulated visit limits.
+Saved completed assessor
+results must match that exact snapshot, even at an unchanged HEAD. A fresh turn
+retains the native conversation rather than reusing a stale result.
+
+Missing options retain the conservative eager-refresh policy. To adopt the new
+behavior in a custom workflow, fork/save a new definition, explicitly add both
+options to the relevant assessor and Calls, inspect its routes and leaf reads,
+and launch a new run. Retain the original definition for existing runs. There is
+no automatic replacement of frozen graphs, visit-limit reset, native-session
+migration or authorization to edit an active run. The human continuation and
+delta-guide policy below is unchanged.
+
 An assessment's `correctionRequired: true` branch retains its declared fixer even
 when a fresh provider check reports that an earlier CI failure cleared. The runtime
 supplies `/assessedCorrection` with the current same-frame assessment's summary,

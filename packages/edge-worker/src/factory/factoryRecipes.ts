@@ -1274,7 +1274,9 @@ const externalRecipe = {
 			name: "Return correction to caller or revise the standalone plan",
 			type: "check",
 			reads: { caller: "@caller" },
-			check: { results: { called: { path: "/inputs/caller/stepKey", exists: true } } },
+			check: {
+				results: { called: { path: "/inputs/caller/stepKey", exists: true } },
+			},
 			next: "plan",
 			branches: [{ when: { path: "called", equals: true }, next: "to-plan" }],
 		},
@@ -1304,6 +1306,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "clarify-plan",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "delivery",
 		branches: [
@@ -1324,6 +1327,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "route-delivery",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "check-in",
 		branches: [
@@ -1360,6 +1364,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "architecture-review",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "implementation",
 		branches: [],
@@ -1371,6 +1376,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "implement-work",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "review",
 		branches: [
@@ -1391,6 +1397,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "review-loop",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "ci",
 		branches: [
@@ -1427,6 +1434,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "qa-screenshots",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "approval",
 		branches: [
@@ -1455,6 +1463,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "ci-watch-fix",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "qa",
 		branches: [
@@ -1499,6 +1508,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "review-approval",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "merge",
 		branches: [
@@ -1543,6 +1553,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "merge-work",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "end",
 		branches: [
@@ -1579,6 +1590,7 @@ const composition = [
 		configVersion: "step-config-v1",
 		workflow: "external-delivery",
 		bindings: sources,
+		inputFreshness: "on-read",
 		maxVisits: 100,
 		next: "end",
 		branches: [

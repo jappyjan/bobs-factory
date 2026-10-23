@@ -228,6 +228,41 @@ it("recovers completed output only on its saved clean revision", async () => {
 	git("commit", "-m", "fix: changed revision");
 	expect(await completedAgentResult(ctx)).toBeUndefined();
 });
+it("requires the original impact snapshot before recovering a completed same-head assessor result", async () => {
+	const { context: ctx } = context();
+	ctx.log = vi.fn();
+	ctx.step = {
+		...ctx.step,
+		configVersion: "step-config-v1",
+		checks: [{ check: "impact-reuse", reuseVersion: "composed-v1" }],
+	};
+	const revision = (await roleProgress(ctx)).currentRevision!;
+	ctx.resumeAgent = {
+		runner: "codex",
+		sessionId: "original-conversation",
+		result: {
+			output: { classification: "none" },
+			revision,
+			impactSnapshotDigest: "original-inputs",
+		},
+	};
+	ctx.input = {
+		impactSnapshot: { reuseVersion: "composed-v1", digest: "original-inputs" },
+	};
+	expect(await completedAgentResult(ctx)).toEqual({
+		output: { classification: "none" },
+	});
+	ctx.input = {
+		impactSnapshot: {
+			reuseVersion: "composed-v1",
+			digest: "changed-target-or-inputs",
+		},
+	};
+	expect(await completedAgentResult(ctx)).toBeUndefined();
+	expect(ctx.resumeAgent.sessionId).toBe("original-conversation");
+	delete ctx.resumeAgent.result!.impactSnapshotDigest;
+	expect(await completedAgentResult(ctx)).toBeUndefined();
+});
 it("reuses unchanged verified evidence, rejecting affected, unexplained, dirty or unapproved evidence", async () => {
 	const { context: ctx, workspace, git } = context();
 	const path = join(ctx.evidenceDir, "old.png");

@@ -48,6 +48,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Composed correction routes preserve independently validated original review evidence and accepted requirements, refresh only consumed Call inputs, and reassess changed inputs before recovering a saved result. Requirement extraction cannot silently rebind an assessment to changed source or target state. Parallel assessor copies retain their qualified original owner, and reassessments accept newly extracted requirement IDs only with current executed provenance. Existing saved recipes retain conservative behavior. ([Taskbot #145](https://taskbot.apps.janjaap.de/p/bobs-factory/t/145), [#182](https://github.com/jappyjan/bobs-factory/pull/182))
+
 - Recheck waiting questions after an update or access repair without inventing an answer or losing the original conversation. Let correction roles return genuine design changes through proposal review, and keep supervised concurrency checks within the run's capacity allowance. ([#171](https://github.com/jappyjan/bobs-factory/pull/171))
 
 - Stop repeated review loops caused by stale pull-request target commits. Let correction roles use retained findings when review is unfinished, and give selected checks the normal twenty-minute command budget while keeping independent review and human approval required. ([#169](https://github.com/jappyjan/bobs-factory/pull/169))

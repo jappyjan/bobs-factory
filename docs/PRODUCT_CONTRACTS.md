@@ -4,6 +4,15 @@ The fork is Apache-2.0; preserve the upstream LICENSE, NOTICE and source attribu
 Historical changelogs and F1 reports retain their original names and commands.
 Native Claude/Codex/Cursor/Gemini/OpenCode, Git, SSH and signing stores remain host-owned.
 
+Composed impact reuse is an explicit `impact-reuse` check option
+`reuseVersion: "composed-v1"`, paired with Call `inputFreshness: "on-read"`.
+Original inventories, reviewer receipts and authored assessment snapshots retain
+their identities; current continuation/extraction bindings remain separate.
+Saved definitions without the options retain conservative behavior. Adoption
+uses a new saved workflow copy and new run, preserving the previous definition;
+no active run or native conversation is silently upgraded. See
+[impact decisions](factory/impact-decisions.md).
+
 | Contract | Maintained producer / consumer | New representation | Explicit migration |
 | --- | --- | --- | --- |
 | Source toolchain | Workspace engines, CI/setup and trial launcher | Node 24.x only (pinned 24.18.0), pnpm 10.33.1; Bun 1.4.2 embeds the binary runtime | Remove Node 22 support outright. Factory binaries require no separate Node/Bun; Git and prepared agent tools/credentials stay external |
