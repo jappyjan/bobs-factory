@@ -1,6 +1,7 @@
 # Taskbot #144: bounded context and original evidence
 
-Date: 2026-10-23. Implementation evidence, **not independent acceptance**.
+Date: 2026-10-23. [PR #181](https://github.com/jappyjan/bobs-factory/pull/181). Implementation evidence, **not independent acceptance**.
+Tested product/source commit: `e8dfe3dc9f78acf842cc667990c9a78602094796`.
 Base: `fb1cbcea803ba56968462e54747093d42cab2aa9`, tree
 `c9b2e286d2f94275c8541346bd56efd80f927787`.
 Own checkout: `/Users/jappy/.t3/worktrees/bobs-factory/taskbot-144-context`,
@@ -164,6 +165,7 @@ checkout path and output JSON path. Final F1 uses `TASKBOT144_DRIVE_RECEIPT`.
 - Temporary source typecheck omitted the repository's existing SQLite declaration.
   Included that original declaration in the probe config; final owning check passes.
 - Final evidence JSON needed one array-layout formatting correction; no source or measured value changed.
+- GitHub connector PR creation returned HTTP 403; no PR was created there. Existing authenticated CLI created the single non-draft PR181 and it was immediately linked to the owner/parent and attached to #144. First push ended with SSH public-key exit 128; explicit HTTPS push then exits 0. Normal LFS pre-push reported 1/1 object, 100 MB, 0 B/s; no new LFS-tracked asset is part of this change. No native key inspection or auth/remote policy edits.
 - SSH main fetch was stopped with exit 130 after no output. A separate explicit
   main-only HTTPS fetch using existing `gh` credentials exits 0 and confirms the
   exact base. No global auth, remote, signing or protection policy changed.
@@ -202,3 +204,7 @@ Both disjoint helpers completed without pending work at priority/xhigh. Final
 handoff records exact HEAD/TREE/base, source-hash authentication and cleanup after
 publication. Tracked hooks/configuration remain intact; the configured checkout
 has LFS hook wrappers and no pre-commit wrapper, so absent broad hooks get no credit.
+
+## Final publication delta
+
+The final follow-up commit changes only this report, the changelog PR link and the context compatibility documentation. All 16 frozen source/fixture/probe hashes remain exact; no source or harness changed during checks. Newly written reference-bearing baselines need a compatible runtime; an older reader is not a supported rollback for those new records. Original receipts are retained. This is repository delivery only, not an installation, service restart, active-run edit, production upgrade or downgrade. Final HEAD/TREE and cleanup are recorded in the direct #144 implementation handoff.

@@ -57,3 +57,5 @@ accepted graph, impact policy, reviewer selection, native thread or approval.
 
 See the [controlled comparison and mocked runtime drive](../../apps/f1/test-drives/2026-10-23-bounded-role-context.md)
 for measured sizes, preparation work, pagination, restart outcomes and limitations.
+
+New reference-bearing baselines require a runtime that understands `contextReferences`. Reverting to an older runtime is not a supported reader for those new records; retain a compatible runtime and the original receipt store. No deployment or downgrade is performed by this repository change.
