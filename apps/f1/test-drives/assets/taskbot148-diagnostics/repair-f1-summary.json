@@ -1,0 +1,37 @@
+{
+  "mode": "mock",
+  "invoked": [
+    "nested/parallel/0/left",
+    "nested/parallel/1/right",
+    "provider"
+  ],
+  "resourceWait": {
+    "executionMs": 3000,
+    "waitMs": 2000,
+    "active": {
+      "nested/parallel/1/right": {
+        "kind": "qa-resource",
+        "resource": "QA resource docker",
+        "blockerRun": "a109dcaa-3b30-4cbb-bfa7-e32ba53d6a95",
+        "since": "2026-10-23T11:26:03.295Z",
+        "measuredMs": 2000
+      }
+    }
+  },
+  "executionMs": 5000,
+  "waitMs": 5000,
+  "roleWallMs": 5000,
+  "waits": {
+    "capacity": 3000,
+    "qa-resource": 2000,
+    "provider-ci": 1000,
+    "human": 2000
+  },
+  "restartPreserved": true,
+  "noReplay": true,
+  "staleHumanDigestRejected": true,
+  "diagnosticBytes": 10816,
+  "providerCalls": 0,
+  "nativeCalls": 0,
+  "inferenceCalls": 0
+}

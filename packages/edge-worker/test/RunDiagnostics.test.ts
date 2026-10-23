@@ -9,7 +9,11 @@ import {
 	timingOperation,
 } from "../src/factory/RunDiagnostics.js";
 import type { FactoryRun } from "../src/factory/WorkflowRuntime.js";
+import type { CapacityRequest } from "../src/MachineCapacity.js";
 
+function capacity(phase: CapacityRequest["phase"], parked = false) {
+	return { phase, parked } as CapacityRequest;
+}
 function fixture() {
 	let wall = Date.parse("2026-10-23T10:00:00Z"),
 		mono = 0;
@@ -34,7 +38,7 @@ it("accounts unions for nested parallel roles and each concurrent wait, independ
 	timingOperation(run, "call/right", { kind: "execution", role: true });
 	accounting.observe(run, true);
 	tick(3000);
-	run.capacityLeaves = { "call/left": { phase: "queued" } };
+	accounting.capacityChanged(run, "call/left", capacity("queued"));
 	accounting.observe(run, true);
 	tick(2000);
 	timingOperation(run, "call/right");
@@ -68,11 +72,11 @@ it("accounts unions for nested parallel roles and each concurrent wait, independ
 		}),
 	);
 	// Actual admission and a later new queue interval are distinct receipts.
-	run.capacityLeaves = {};
+	accounting.capacityChanged(run, "call/left");
 	delete run.deliveryReservations["call/right:resources"];
 	accounting.observe(run, true);
 	tick(500);
-	run.capacityLeaves = { "call/left": { phase: "queued" } };
+	accounting.capacityChanged(run, "call/left", capacity("queued"));
 	accounting.observe(run, true);
 	tick(500);
 	expect(run.diagnostics!.active["call/left"]!.measuredMs).toBe(500);
@@ -237,4 +241,83 @@ it("retains original reuse authority and distinguishes long nested step identiti
 	diagnosticAttempt(run, { ...base, outcome: "interrupted" }); // Late finalizer after the record has left the recent window.
 	expect(run.diagnostics!.attemptCount).toBe(count);
 	expect(run.diagnostics!.attempts).toHaveLength(64);
+});
+
+// P148-R1-S1 (Spec): retained scheduling state is not a new observation.
+it("requires fresh eligible capacity callbacks after restore without changing saved scheduling records", () => {
+	const { run, accounting, tick } = fixture();
+	timingOperation(run, "prior", { kind: "execution", role: true });
+	accounting.observe(run, true);
+	tick(1000);
+	run.capacityLeaves = {
+		prior: { phase: "executing", request: capacity("executing") },
+		parked: { phase: "queued", request: capacity("queued", true) },
+	};
+	const scheduling = structuredClone(run.capacityLeaves);
+	accounting.restore(run);
+	timingOperation(run, "run", { kind: "recovery" });
+	accounting.observe(run, true);
+	tick(2000);
+	expect(run.diagnostics).toMatchObject({
+		executionMs: 1000,
+		roleWallMs: 1000,
+		waitMs: 0,
+	});
+	expect(run.capacityLeaves).toEqual(scheduling);
+	expect(
+		run.diagnostics!.transitions.some((t) => t.event === "interrupted"),
+	).toBe(true);
+	accounting.capacityChanged(run, "parked", capacity("queued", true));
+	accounting.observe(run, true);
+	tick(1000);
+	expect(run.diagnostics!.waitMs).toBe(0);
+	accounting.capacityChanged(run, "parked", capacity("queued"));
+	accounting.observe(run, true);
+	tick(1000);
+	expect(run.diagnostics!.waits.capacity).toBe(1000);
+	accounting.capacityChanged(run, "parked", capacity("executing"));
+	accounting.observe(run, true);
+	tick(2000);
+	expect(run.diagnostics).toMatchObject({
+		executionMs: 3000,
+		roleWallMs: 1000,
+		waitMs: 1000,
+	});
+});
+// P148-R1-S2 (Spec) and R148-R1-01 (root) retain separate trigger provenance.
+it("counts actual attempts once and gives generic capacity execution no agent-role wall", () => {
+	const { run, accounting, tick } = fixture();
+	accounting.capacityChanged(run, "arbitrary-parent", capacity("executing"));
+	timingOperation(run, "different-explanation-key", {
+		kind: "execution",
+		role: true,
+		roleIdentity: "turn-1",
+	});
+	accounting.observe(run, true);
+	tick(2000);
+	expect(run.diagnostics).toMatchObject({
+		executionMs: 2000,
+		roleWallMs: 2000,
+	});
+	// Two observations of the same actual turn do not create two roles.
+	timingOperation(run, "alias", {
+		kind: "execution",
+		role: true,
+		roleIdentity: "turn-1",
+	});
+	accounting.observe(run, true);
+	tick(1000);
+	expect(run.diagnostics!.roleWallMs).toBe(3000);
+	timingOperation(run, "different-explanation-key");
+	timingOperation(run, "alias");
+	accounting.observe(run, true);
+	tick(2000);
+	expect(run.diagnostics).toMatchObject({
+		executionMs: 5000,
+		roleWallMs: 3000,
+	});
+	accounting.capacityChanged(run, "arbitrary-parent");
+	accounting.observe(run, true);
+	tick(1000);
+	expect(run.diagnostics!.executionMs).toBe(5000);
 });

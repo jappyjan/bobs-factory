@@ -9822,6 +9822,7 @@ ${taskSection}`;
 					timingOperation(run, context.stepKey ?? step.id, {
 						kind: "execution",
 						role: true,
+						roleIdentity: context.attemptId,
 					});
 					await context.save?.();
 					progressCharged = true;
@@ -11452,6 +11453,15 @@ ${taskSection}`;
 				...this.getFactoryRuntime().capacityOptions(run, "simple"),
 				remote: runnerType === "cursor",
 			},
+			undefined,
+			async () => {
+				timingOperation(run, "simple", { kind: "execution", role: true });
+				await this.getFactoryRuntime().save(run);
+				return async () => {
+					timingOperation(run, "simple");
+					await this.getFactoryRuntime().save(run);
+				};
+			},
 		);
 		this.agentSessionManager.addAgentRunner(run.id, runner);
 		const stop = () => runner.stop();
@@ -11480,6 +11490,8 @@ ${taskSection}`;
 			delete run.simplePrompt;
 		} finally {
 			signal.removeEventListener("abort", stop);
+			timingOperation(run, "simple");
+			await this.getFactoryRuntime().save(run);
 		}
 	}
 

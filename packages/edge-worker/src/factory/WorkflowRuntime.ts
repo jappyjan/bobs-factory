@@ -1752,6 +1752,7 @@ export class WorkflowRuntime {
 			recoverable: true,
 			preserveOnShutdown: () => !run.workflowBlock && run.status !== "stopped",
 			onChange: (request) => {
+				this.accounting.capacityChanged(run, key, request);
 				run.capacityLeaves ??= {};
 				const previous = run.capacityLeaves[key]?.phase;
 				if (request && request.phase !== previous)
@@ -3410,9 +3411,13 @@ export class WorkflowRuntime {
 						};
 						timingOperation(run, key, {
 							kind:
-								step.type === "agent" && this.hooks.agentExecutionBoundary
-									? "unknown"
-									: "execution",
+								run.capacityLeaves[key].phase === "waiting-ci"
+									? "provider-ci"
+									: run.capacityLeaves[key].phase === "waiting-human"
+										? "human"
+										: step.type === "agent" && this.hooks.agentExecutionBoundary
+											? "unknown"
+											: "execution",
 							role: step.type === "agent",
 						});
 						await this.save(run);

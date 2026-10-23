@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { CapacityRequest } from "../MachineCapacity.js";
 import type { StepAttempt } from "./Provenance.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
 
@@ -16,6 +17,8 @@ export type TimingKind =
 export interface TimingOperation {
 	kind: TimingKind;
 	role?: boolean;
+	/** Actual runner attempt, never inferred from a capacity lease. */
+	roleIdentity?: string;
 	resource?: string;
 	blockerRun?: string;
 }
@@ -171,19 +174,14 @@ function resource(scope: string): string {
 function operations(
 	run: FactoryRun,
 	observing: boolean,
+	capacity: ReadonlyMap<string, TimingOperation>,
 ): Record<string, TimingOperation> {
 	if (!observing) return {};
 	const active = { ...run.diagnostics?.operations };
-	for (const [key, leaf] of Object.entries(run.capacityLeaves ?? {})) {
-		if (leaf.phase === "queued") active[key] = { kind: "capacity" };
-		else if (leaf.phase === "executing" && leaf.request && !active[key])
-			active[key] = { kind: "execution", role: true };
-		else if (
-			leaf.phase === "waiting-ci" &&
-			(!active[key] || ["execution", "unknown"].includes(active[key].kind))
-		)
-			active[key] = { kind: "provider-ci" };
-		else if (leaf.phase === "waiting-human") active[key] = { kind: "human" };
+	// Capacity leaves are durable scheduling/fairness records. Only callbacks
+	// observed by this accounting instance establish a live diagnostic boundary.
+	for (const [key, operation] of capacity) {
+		if (operation.kind === "capacity" || !active[key]) active[key] = operation;
 	}
 	for (const [key, reservation] of Object.entries(
 		run.deliveryReservations ?? {},
@@ -192,12 +190,43 @@ function operations(
 			continue;
 		const owner = key.replace(/:(mutation|resources)$/, "");
 		if (active[owner]?.kind === "capacity") continue;
-		const scopes = reservation.blockers?.[0]?.targets ?? reservation.scopes;
-		active[owner] = {
-			kind: key.endsWith(":resources") ? "qa-resource" : "repository",
-			resource: scopes.slice(0, 3).map(resource).join(", "),
-			blockerRun: reservation.blockers?.[0]?.runId,
-		};
+		// A grouped reservation can wait on repository, QA or both. Its suffix
+		// describes ownership, not the targets that are actually blocking it.
+		delete active[owner];
+		if (!reservation.blockers?.length) {
+			active[owner] = { kind: "unknown" }; // Eligibility is still being checked.
+			continue;
+		}
+		let primary = true;
+		for (const blocker of reservation.blockers) {
+			const groups = new Map<TimingKind, string[]>();
+			for (const scope of blocker.targets) {
+				let kind: TimingKind = "unknown";
+				try {
+					const parsed = JSON.parse(scope);
+					if (Array.isArray(parsed))
+						kind = ["resource", "qa"].includes(parsed[0])
+							? "qa-resource"
+							: "repository";
+				} catch {
+					/* Opaque legacy targets cannot prove a category. */
+				}
+				const scopes = groups.get(kind) ?? [];
+				scopes.push(scope);
+				groups.set(kind, scopes);
+			}
+			for (const [kind, scopes] of groups) {
+				const observationKey = primary
+					? owner
+					: `${owner}/wait/${kind}/${blocker.runId}/${blocker.operation}`;
+				primary = false;
+				active[observationKey] = {
+					kind,
+					resource: scopes.slice(0, 3).map(resource).join(", "),
+					blockerRun: blocker.runId,
+				};
+			}
+		}
 	}
 	if (run.status === "waiting" && !Object.keys(active).length)
 		active.run = {
@@ -214,6 +243,23 @@ function operations(
 /** Incremental sweep over active leaves only. All intervals in this process use a monotonic clock. */
 export class RunAccounting {
 	private live = new WeakMap<FactoryRun, { mono: number; wall: number }>();
+	private capacity = new WeakMap<FactoryRun, Map<string, TimingOperation>>();
+	capacityChanged(
+		run: FactoryRun,
+		key: string,
+		request?: CapacityRequest,
+	): void {
+		let observed = this.capacity.get(run);
+		if (!observed) {
+			observed = new Map();
+			this.capacity.set(run, observed);
+		}
+		if (request?.phase === "queued" && !request.parked)
+			observed.set(key, { kind: "capacity" });
+		else if (request?.phase === "executing")
+			observed.set(key, { kind: "execution" });
+		else observed.delete(key);
+	}
 	constructor(
 		private clock = { wall: () => Date.now(), mono: () => performance.now() },
 	) {}
@@ -221,6 +267,8 @@ export class RunAccounting {
 		return this.clock.wall();
 	}
 	restore(run: FactoryRun): void {
+		this.capacity.delete(run);
+		this.live.delete(run);
 		const data = run.diagnostics;
 		if (!data) return;
 		// Only time persisted at an observation boundary is proven. Never close a
@@ -245,19 +293,29 @@ export class RunAccounting {
 			else if (states.some((s) => !["unknown", "recovery"].includes(s.kind)))
 				data.waitMs += delta;
 			data.roleWallMs +=
-				states.filter((s) => s.kind === "execution" && s.role).length * delta;
+				new Set(
+					Object.entries(data.active)
+						.filter(([, state]) => state.kind === "execution" && state.role)
+						.map(([key, state]) => state.roleIdentity ?? key),
+				).size * delta;
 			for (const kind of new Set(states.map((s) => s.kind)))
 				if (!["execution", "unknown", "recovery"].includes(kind))
 					data.waits[kind] = (data.waits[kind] ?? 0) + delta;
 			for (const state of states) state.measuredMs += delta;
 		}
-		const next = operations(run, observing);
+		const next = operations(
+			run,
+			observing,
+			this.capacity.get(run) ?? new Map(),
+		);
 		const at = new Date(now).toISOString();
 		for (const [key, state] of Object.entries(data.active)) {
 			const operation = next[key];
 			if (
 				!operation ||
 				operation.kind !== state.kind ||
+				operation.role !== state.role ||
+				operation.roleIdentity !== state.roleIdentity ||
 				operation.resource !== state.resource ||
 				operation.blockerRun !== state.blockerRun
 			) {

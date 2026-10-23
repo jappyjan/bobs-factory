@@ -1,0 +1,21 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (packages/edge-worker/vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/Users/jappy/.t3/worktrees/bobs-factory/taskbot-148-diagnostics/packages/edge-worker[39m
+
+ [32m✓[39m test/RunDiagnostics.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m test/DiagnosticsBoundariesF1.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 7015[2mms[22m[39m
+   [33m[2m✓[22m[39m P148-R1-S1: reconstructed executing and parked scheduling records stay unknown during actual preparation [33m 977[2mms[22m[39m
+   [33m[2m✓[22m[39m P148-R1-S2: one actual question-explanation turn under the inherited parent admission callback counts once [33m 1197[2mms[22m[39m
+   [33m[2m✓[22m[39m R148-R1-01: a generic lease with zero agent turns keeps execution but no agent-role sum [33m 410[2mms[22m[39m
+   [33m[2m✓[22m[39m keeps actual Simple runner timing when capacity fallback has no role attribution [33m 409[2mms[22m[39m
+   [33m[2m✓[22m[39m P148-R1-S3: grouped mutation follows actual qa-only blockers without double-counting [33m 1315[2mms[22m[39m
+   [33m[2m✓[22m[39m P148-R1-S3: grouped mutation follows actual repository-only blockers without double-counting [33m 1228[2mms[22m[39m
+   [33m[2m✓[22m[39m P148-R1-S3: grouped mutation follows actual both blockers without double-counting [33m 1479[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m14 passed[39m[22m[90m (14)[39m
+[2m   Start at [22m 14:25:18
+[2m   Duration [22m 8.85s[2m (transform 1.05s, setup 36ms, import 1.75s, tests 7.03s, environment 0ms)[22m
+

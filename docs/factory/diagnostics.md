@@ -19,8 +19,11 @@ allowances; outputs-first restrictions belong to the later follow-up.
 - Exclusive wait is the union of observed waits while no leaf executes. Per-reason
   totals are separate unions and **can overlap** other waits and execution. Do not
   sum them to infer run wall time.
-- Agent role wall is separately labeled: the sum of executing agent leaves,
-  including concurrent roles. It is not provider inference time or CPU time.
+- Agent role wall is separately labeled: the sum of observed actual agent turns,
+  including concurrent roles. Multiple observations of one attempt count once.
+  Generic capacity leases (including transport/discovery/setup) can contribute
+  execution but never imply an agent turn. Simple records its own runner boundary.
+  This is not provider inference time or CPU time.
 - Capacity admission, repository publication, shared QA resources, provider CI,
   human decisions, child-run waits and transport retry/backoff have explicit
   categories. Preparation/recovery without a proven execution boundary is unknown.
@@ -33,6 +36,13 @@ allowances; outputs-first restrictions belong to the later follow-up.
   persisted boundary, with an interruption receipt. Downtime is never execution
   or diagnostic wait credit. Admission fairness retains its separate existing
   policy; diagnostic accounting never reads queue timestamps as elapsed credit.
+  Restored capacity leaves are scheduling records only. A fresh process-local
+  callback establishes execution or eligible capacity waiting; parked requests do
+  not add measured wait. Saved scheduling state and previous totals are retained.
+- Grouped repository/QA ownership stays atomic. Wait categories come from every
+  actual blocking target intersection, not the reservation name. A combined claim
+  may contribute to both per-reason unions while exclusive wait counts once;
+  changing blockers starts/ends the corresponding observed intervals.
 - Age uses wall time since creation. Unobserved is the nonnegative remainder after
   execution/exclusive wait, including old history, offline gaps, preparation and
   time after the last observation. Clock changes are counted; wall age can differ

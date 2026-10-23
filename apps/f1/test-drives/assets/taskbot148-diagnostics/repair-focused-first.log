@@ -1,0 +1,35 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (packages/edge-worker/vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/Users/jappy/.t3/worktrees/bobs-factory/taskbot-148-diagnostics/packages/edge-worker[39m
+
+ [32m✓[39m test/RunDiagnostics.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [31m❯[39m test/DiagnosticsBoundariesF1.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 32799[2mms[22m[39m
+   [33m[2m✓[22m[39m P148-R1-S1: reconstructed executing and parked scheduling records stay unknown during actual preparation [33m 938[2mms[22m[39m
+   [33m[2m✓[22m[39m P148-R1-S2: one actual question-explanation turn under the inherited parent admission callback counts once [33m 1029[2mms[22m[39m
+   [33m[2m✓[22m[39m R148-R1-01: a generic lease with zero agent turns keeps execution but no agent-role sum [33m 342[2mms[22m[39m
+   [33m[2m✓[22m[39m keeps actual Simple runner timing when capacity fallback has no role attribution [33m 376[2mms[22m[39m
+[31m   [31m×[31m P148-R1-S3: one grouped mutation follows QA-only, both and repository-only blocking targets without double-counting[39m[33m 30113[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m test/DiagnosticsBoundariesF1.test.ts[2m > [22mP148-R1-S3: one grouped mutation follows QA-only, both and repository-only blocking targets without double-counting
+[31m[1mError[22m: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m test/DiagnosticsBoundariesF1.test.ts:[2m373:1[22m[39m
+    [90m371|[39m })[33m;[39m
+    [90m372|[39m
+    [90m373|[39m it("P148-R1-S3: one grouped mutation follows QA-only, both and reposit…
+    [90m   |[39m [31m^[39m
+    [90m374|[39m  [35mlet[39m entered [33m=[39m [35mfalse[39m[33m;[39m
+    [90m375|[39m  [35mconst[39m hold [33m=[39m [34mgate[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m11 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 14:23:53
+[2m   Duration [22m 34.62s[2m (transform 1.01s, setup 37ms, import 1.74s, tests 32.81s, environment 0ms)[22m
+
