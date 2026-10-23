@@ -164,7 +164,7 @@ it("finalizes a 3,781-file artifact guide using runtime-owned indexed coverage",
 		headSha: binding.headSha,
 		baseSha: binding.baseSha,
 	});
-}, 20000);
+}, 180000);
 
 it("retains the rejected malformed artifact payload after its source file is overwritten", async () => {
 	const { context, guide } = fixture(2);

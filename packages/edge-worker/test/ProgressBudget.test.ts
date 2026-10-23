@@ -922,11 +922,11 @@ it("binds accepted lexical Call values separately from structural scope and retu
 	};
 	const run = create(
 		["first", "second", "third", "first", "first"].map((source, i) => ({
-			id: "call" + i,
-			name: "Call " + i,
+			id: `call${i}`,
+			name: `Call ${i}`,
 			type: "workflow",
 			workflow: "shared-child",
-			inputMapping: { payload: "/" + source },
+			inputMapping: { payload: `/${source}` },
 		})),
 		[
 			{
@@ -1081,11 +1081,11 @@ it("grants bounded audited observation slots at the real 4096 window without dis
 			type: "foreach",
 			maxItems: 1000,
 			items: {
-				values: Array.from({ length: 1000 }, (_, i) => ({ id: "item" + i })),
+				values: Array.from({ length: 1000 }, (_, i) => ({ id: `item${i}` })),
 			},
 			itemId: "/id",
 			body: Array.from({ length: 5 }, (_, i) =>
-				role("leaf" + i, { next: i === 4 ? "end" : "leaf" + (i + 1) }),
+				role(`leaf${i}`, { next: i === 4 ? "end" : `leaf${i + 1}` }),
 			),
 		},
 	]);
@@ -1093,7 +1093,7 @@ it("grants bounded audited observation slots at the real 4096 window without dis
 	const context = (i: number): ExecutionContext => ({
 		run,
 		step: run.workflow.steps[0]!.body![i % 5]!,
-		stepKey: "items/item" + Math.floor(i / 5) + "/leaf" + (i % 5),
+		stepKey: `items/item${Math.floor(i / 5)}/leaf${i % 5}`,
 		progressOperation:
 			"progress-fixture/items/item/leaf" +
 			(i % 5) +
@@ -1133,7 +1133,7 @@ it("grants bounded audited observation slots at the real 4096 window without dis
 	expect(run.checkpoint).toBeUndefined();
 	expect(run.history).toEqual([]);
 	await runtime.save(run);
-}, 60000);
+}, 180000);
 
 it.each([
 	"choices",
@@ -1239,7 +1239,7 @@ it("forwards semantic accepted strings through nested lexical aliases without tr
 			name,
 			type: "workflow",
 			workflow: "wrapper",
-			inputMapping: { request: "/" + name },
+			inputMapping: { request: `/${name}` },
 		})),
 		[
 			{

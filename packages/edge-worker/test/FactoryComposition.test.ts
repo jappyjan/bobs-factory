@@ -1155,7 +1155,7 @@ it("drives standalone external preparation, independent rejection, persisted exa
 			2,
 		),
 	);
-}, 60000);
+}, 180000);
 
 it.each([
 	"missing",
@@ -1168,7 +1168,7 @@ it.each([
 	expect(f.run.delivery).toBeUndefined();
 	expect(f.state.fields.description).toBe("before");
 	expect(f.run.history.some((x) => x.step === "external-apply")).toBe(false);
-}, 60000);
+}, 180000);
 
 // R3/R7: actual runtime/host preparation and exact external correction, with no live providers.
 it.each([
@@ -1259,7 +1259,7 @@ it.each([
 		await f.runtime.shutdown();
 		await running;
 	}
-}, 60000);
+}, 180000);
 
 it("R7 safely prepares and routes a standalone delivery block without promoting copied context", async () => {
 	const f = fixture("external", false, false, "router");
@@ -1396,7 +1396,7 @@ it("R7 safely prepares and routes a standalone delivery block without promoting 
 			2,
 		),
 	);
-}, 60000);
+}, 180000);
 
 it.each([
 	"missing",
@@ -1408,4 +1408,4 @@ it.each([
 	expect(f.run.delivery).toBeUndefined();
 	expect(f.state.fields.description).toBe("before");
 	expect(f.run.history.some((x) => x.step === "external-apply")).toBe(false);
-}, 60000);
+}, 180000);

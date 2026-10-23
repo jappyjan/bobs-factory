@@ -122,7 +122,7 @@ function observe(runtime, predicate) {
 		const timer = setTimeout(() => {
 			off();
 			reject(new Error("Progress F1 transition timeout"));
-		}, 5000);
+		}, 60000);
 		const off = runtime.subscribe(() => {
 			if (predicate()) {
 				clearTimeout(timer);

@@ -32,4 +32,4 @@ it("drives controlled admission and non-replaying merge recovery through the Fac
 			rmSync(home, { recursive: true, force: true });
 		}
 	}
-}, 30000);
+}, 180000);

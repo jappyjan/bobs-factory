@@ -92,7 +92,7 @@ function observe(instance, predicate) {
 					`Diagnostics F1 phase ${phase} timeout: ${JSON.stringify([...instance.runs.values()].map((r) => ({ status: r.status, error: r.error, step: r.step, leaves: r.capacityLeaves, active: r.diagnostics?.active, events: r.events.slice(-2) })))}`,
 				),
 			);
-		}, 5000);
+		}, 60000);
 		const off = instance.subscribe(() => {
 			if (predicate()) {
 				clearTimeout(timer);

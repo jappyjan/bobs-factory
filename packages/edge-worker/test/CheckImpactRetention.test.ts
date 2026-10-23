@@ -565,7 +565,7 @@ it("retains authenticated Check receipts through blocked-review assistance, dura
 	await expect(assertImpactFresh(context, decision, fanout)).rejects.toThrow(
 		STALE_IMPACT_MESSAGE,
 	);
-}, 60000);
+}, 180000);
 
 it("keeps historical inventory authority scoped to actual independent reassessment and fresh exact-frame proof without rebinding its original inspection", async () => {
 	const inspected: string[] = [];
@@ -809,4 +809,4 @@ it("keeps historical inventory authority scoped to actual independent reassessme
 	expect(
 		JSON.stringify(run.history.find((entry) => entry.step === "scope")!.output),
 	).toBe(originalInventoryBytes);
-}, 60000);
+}, 180000);

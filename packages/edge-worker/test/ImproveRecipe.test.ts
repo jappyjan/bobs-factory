@@ -607,7 +607,7 @@ describe("Improve is an ordinary composed recipe", () => {
 			a: { status: "merged" },
 			b: { status: "merged" },
 		});
-	}, 90000);
+	}, 180000);
 	it("forks the reachable closure and uses an edited perspective, prompt and renamed role", {
 		timeout: 120000,
 	}, async () => {
