@@ -14,6 +14,12 @@ export {
 /** Newly accepted definitions are static. Historical snapshots and forks keep their graphs. */
 export const defaultWorkflows = validateWorkflows([
 	{ ...stockWorkflowMetadata.simple, steps: [] },
-	...factoryRecipes,
-	...improvementRecipes,
+	...factoryRecipes.map((recipe) => ({
+		...recipe,
+		convergence: { maxUnchangedAttempts: 8, continueAttempts: 2 },
+	})),
+	...improvementRecipes.map((recipe) => ({
+		...recipe,
+		convergence: { maxUnchangedAttempts: 8, continueAttempts: 2 },
+	})),
 ]);

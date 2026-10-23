@@ -14,6 +14,7 @@ import {
 	viewAnswerOutput,
 } from "./HumanStep.js";
 import { launchBatchProjection } from "./LaunchRuns.js";
+import { recordProgressInput } from "./ProgressBudget.js";
 import { resolveStepConfig } from "./StepConfig.js";
 import { availableViewPaths, resolveView, viewText } from "./View.js";
 import { prepareViewAssetCheck, verifyViewAssets } from "./ViewAssets.js";
@@ -684,6 +685,19 @@ export class HumanViews {
 					"Wait for the pending Ask reply before submitting decisions",
 				);
 			const output = viewAnswerOutput(record, request);
+			recordProgressInput(
+				run,
+				JSON.stringify({
+					config: record.configDigest,
+					content: record.sourceDigest,
+					approved: output.approved,
+					feedback: output.feedback,
+					fields: output.fields,
+					choices: request.choices
+						?.slice()
+						.sort((a, b) => a.itemId.localeCompare(b.itemId)),
+				}),
+			);
 			record.answer = immutableJson({
 				request,
 				output,
