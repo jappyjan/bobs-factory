@@ -3,13 +3,17 @@
 Date: 2026-10-23. Implementation evidence for Task148 under epic135; independent
 Standards/Spec acceptance and guarded merge remain coordinator-owned.
 
+Ready PR: [#185](https://github.com/jappyjan/bobs-factory/pull/185). The GitHub
+connector lacked PR-write permission (403); authorized existing GitHub CLI
+authentication created the open/non-draft PR. Both T3 threads and Task148 are linked.
+
 Base: `5a97d7099b74f50103320daf5aa915df05edb9ad`, tree
 `d0dae3b9a3305eab72b7802c35da1166c15e4ed9`. Fresh provider/main and MAINONLY
 `--no-prune --no-tags` fetch agreed before implementation and publication.
 Own checkout: `/Users/jappy/.t3/worktrees/bobs-factory/taskbot-148-diagnostics`,
 branch `taskbot/148-diagnostics`. Manual creation did not rebind T3: its inherited
-binding remains the coordinator worktree. No command or mutation ran in another
-owner's checkout. Configuration was actually read: codex / gpt-6.1-sol /
+binding remains the coordinator worktree. No product/install/source/test/Git command or mutation ran in another
+owner's checkout. Initial read-only cwd/environment inventory preceded worktree creation. Configuration was actually read: codex / gpt-6.1-sol /
 serviceTier=priority (Fast) / reasoningEffort=xhigh / full-access / default.
 
 ## Audit and changes
