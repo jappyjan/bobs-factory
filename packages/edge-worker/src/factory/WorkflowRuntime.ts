@@ -5282,7 +5282,49 @@ export class WorkflowRuntime {
 			);
 			return;
 		}
-		recordProgressInput(run, answer);
+		if (run.progressBudget) {
+			// An explanation belongs to its original decision, not a new scope grant.
+			const source =
+				this.questionCheckpoint(run)?.frame.active?.questionDisplay?.source;
+			const choices = source ? source.choices : run.questionChoices;
+			const recommendations = source
+				? source.recommendations
+				: run.questionRecommendations;
+			const optionMeaning = ({
+				answer,
+				reason,
+			}: QuestionChoices["options"][number]) =>
+				JSON.stringify({ answer: answer.trim(), reason: reason?.trim() ?? "" });
+			recordProgressInput(
+				run,
+				JSON.stringify({
+					questions: (source?.questions ?? run.questions).map((question) =>
+						question.trim(),
+					),
+					choices: (choices ?? [])
+						.map((choice) => ({
+							questionIndex: choice.questionIndex,
+							selection: choice.selection,
+							options: choice.options.map(optionMeaning).sort(),
+							preselected: choice.options
+								.filter((option) =>
+									choice.preselectedOptionIds?.includes(option.id),
+								)
+								.map(optionMeaning)
+								.sort(),
+						}))
+						.sort((a, b) => a.questionIndex - b.questionIndex),
+					recommendations: (recommendations ?? [])
+						.map(({ questionIndex, answer, reason }) => ({
+							questionIndex,
+							answer: answer.trim(),
+							reason: reason.trim(),
+						}))
+						.sort((a, b) => a.questionIndex - b.questionIndex),
+					answer: answer.trim(),
+				}),
+			);
+		}
 		run.answers.push({
 			questions: [...run.questions],
 			answer,

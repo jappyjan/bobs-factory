@@ -1276,3 +1276,224 @@ it("forwards semantic accepted strings through nested lexical aliases without tr
 		1,
 	);
 });
+
+it("consumes distinct native Yes decisions after pending-question reconstruction without replaying accepted work", async () => {
+	const questions = [
+		"Support offline operation?",
+		"Save drafts locally?",
+		"Encrypt drafts?",
+	];
+	const native: (string | undefined)[] = [];
+	const agent = async (context: ExecutionContext) => {
+		native.push(context.resumeAgent?.sessionId);
+		await context.checkpointAgent?.({
+			runner: "codex",
+			sessionId: "native-clarification",
+		});
+		return context.run.answers.length < questions.length
+			? { questions: [questions[context.run.answers.length]] }
+			: { questions: [], done: true };
+	};
+	const { home, runtime, create } = fixture({ agent });
+	const run = create([
+		loop({
+			askQuestions: true,
+			branches: [{ when: { path: "done", equals: true }, next: "end" }],
+		}),
+	]);
+	const running = runtime.launch(run);
+	await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
+	expect(run.questions).toEqual([questions[0]]);
+	runtime.answer(run.id, "Yes");
+	await waitForRuntime(() => expect(run.questions).toEqual([questions[1]]));
+	await runtime.save(run);
+	const before = structuredClone({
+		answers: run.answers,
+		history: run.history,
+		budget: run.progressBudget,
+		checkpoint: run.checkpoint,
+		batch: run.questionBatchId,
+	});
+	await runtime.shutdown();
+	await running;
+	const restarted = load(home, { agent });
+	const restored = restarted.get(run.id);
+	expect(restored.answers).toEqual(before.answers);
+	expect(restored.history).toEqual(before.history);
+	expect(restored.progressBudget).toEqual(before.budget);
+	expect(restored.checkpoint).toEqual(before.checkpoint);
+	expect(restored.questionBatchId).toBe(before.batch);
+	restarted.resumeAll();
+	await waitForRuntime(() =>
+		expect(restored.status, restored.error).toBe("waiting"),
+	);
+	expect(native).toHaveLength(2);
+	const facts = [restored.progressBudget!.facts.human];
+	for (const question of questions.slice(1)) {
+		expect(restored.questions).toEqual([question]);
+		restarted.answer(restored.id, "Yes");
+		facts.push(restored.progressBudget!.facts.human);
+		await waitForRuntime(() =>
+			expect(["completed", "failed", "waiting"]).toContain(restored.status),
+		);
+	}
+	await settled(restarted, restored);
+	expect(
+		restored.answers.map(({ questions, answer }) => ({ questions, answer })),
+	).toEqual(
+		questions.map((question) => ({ questions: [question], answer: "Yes" })),
+	);
+	expect(restored.status, restored.error).toBe("completed");
+	expect(native).toEqual([
+		undefined,
+		"native-clarification",
+		"native-clarification",
+		"native-clarification",
+	]);
+	expect(new Set(facts).size).toBe(3);
+	expect(restored.answers.slice(0, before.answers.length)).toEqual(
+		before.answers,
+	);
+	expect(restored.history.slice(0, before.history.length)).toEqual(
+		before.history,
+	);
+	expect(restored.progressBudget!.grantCount).toBe(0);
+});
+
+it.each([
+	"same",
+	"oscillating",
+	"choices",
+	"recommendations",
+	"choice-reason",
+	"recommendation-reason",
+] as const)("retains semantic native %s context without volatile identity credit", async (axis) => {
+	const questions =
+		axis === "oscillating"
+			? [
+					"Support offline operation?",
+					"Save drafts locally?",
+					"Support offline operation?",
+					"Support offline operation?",
+				]
+			: ["Use the suggested scope?"];
+	const scopes = [
+		"Support offline operation",
+		"Save drafts locally",
+		"Encrypt drafts",
+	];
+	const batches: string[] = [],
+		facts: string[] = [],
+		optionIds: string[] = [];
+	let physical = 0;
+	const { runtime, create } = fixture({
+		agent: async (context) => {
+			physical++;
+			await context.checkpointAgent?.({
+				runner: "codex",
+				sessionId: "native-semantic-context",
+			});
+			const index = context.run.answers.length;
+			if (
+				[
+					"choices",
+					"recommendations",
+					"choice-reason",
+					"recommendation-reason",
+				].includes(axis) &&
+				index === 3
+			)
+				return { questions: [], done: true };
+			const id = randomUUID();
+			optionIds.push(id);
+			return {
+				questions: [questions[Math.min(index, questions.length - 1)]],
+				summary: randomUUID(),
+				...(axis === "recommendations" || axis === "recommendation-reason"
+					? {
+							questionRecommendations: [
+								{
+									questionIndex: 0,
+									answer:
+										axis === "recommendation-reason"
+											? "Run selected checks"
+											: scopes[index],
+									reason:
+										axis === "recommendation-reason"
+											? `Cost limit: ${index + 1} credits`
+											: "Accepted scope",
+								},
+							],
+						}
+					: {
+							questionChoices: [
+								{
+									questionIndex: 0,
+									selection: "single",
+									options: [
+										{
+											id,
+											answer: axis === "choices" ? scopes[index] : "Yes",
+											...(axis === "choice-reason"
+												? { reason: `Cost limit: ${index + 1} credits` }
+												: {}),
+										},
+										{ id: randomUUID(), answer: "No" },
+									],
+									preselectedOptionIds: [id],
+								},
+							],
+						}),
+			};
+		},
+	});
+	const run = create([
+		loop({
+			askQuestions: true,
+			branches: [{ when: { path: "done", equals: true }, next: "end" }],
+		}),
+	]);
+	const running = runtime.launch(run);
+	for (let i = 0; i < (axis === "oscillating" ? 4 : 3); i++) {
+		await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
+		batches.push(run.questionBatchId!);
+		expect(run.questions).toEqual([
+			questions[Math.min(i, questions.length - 1)],
+		]);
+		runtime.answer(run.id, "Yes");
+		facts.push(run.progressBudget!.facts.human);
+		await waitForRuntime(() =>
+			expect(["failed", "waiting", "completed"]).toContain(run.status),
+		);
+	}
+	await running;
+	expect(new Set(batches).size).toBe(batches.length);
+	expect(new Set(optionIds).size).toBe(optionIds.length);
+	expect(run.answers).toHaveLength(batches.length);
+	expect(run.progressBudget!.grantCount).toBe(0);
+	if (axis === "same") {
+		expect(run.status).toBe("failed");
+		expect(physical).toBe(3);
+		expect(new Set(facts).size).toBe(1);
+		expect(
+			observations(run)
+				.map((entry) => entry.attempts)
+				.sort(),
+		).toEqual([1, 2]);
+	} else if (axis === "oscillating") {
+		expect(run.status).toBe("failed");
+		expect(physical).toBe(4);
+		expect(facts[0]).not.toBe(facts[1]);
+		expect(facts[0]).toBe(facts[2]);
+		expect(facts[0]).toBe(facts[3]);
+		expect(
+			observations(run)
+				.map((entry) => entry.attempts)
+				.sort(),
+		).toEqual([1, 1, 2]);
+	} else {
+		expect(run.status, run.error).toBe("completed");
+		expect(physical).toBe(4);
+		expect(new Set(facts).size).toBe(3);
+	}
+});
