@@ -1,5 +1,15 @@
 import { isImmutableJson } from "bobs-factory-core";
 
+const historyRanges = new WeakMap<
+	object,
+	{ source: unknown[]; start: number; end: number }
+>();
+
+/** Runtime-owned provenance, never inferred from role JSON or matching payloads. */
+export function historySnapshotRange(value: object) {
+	return historyRanges.get(value);
+}
+
 /** Copy mutable JSON structure while sharing published, deeply frozen receipts. */
 export function snapshotWorkflowInput<T>(
 	value: T,
@@ -7,12 +17,16 @@ export function snapshotWorkflowInput<T>(
 ): T {
 	if (!value || typeof value !== "object" || isImmutableJson(value))
 		return value;
+	if (Array.isArray(value) && historyRanges.has(value))
+		return snapshotHistory(value) as T;
 	if (seen.has(value)) return seen.get(value) as T;
 	if (value instanceof Date) return new Date(value.getTime()) as T;
 	const result: Record<string, unknown> | unknown[] = Array.isArray(value)
 		? new Array(value.length)
 		: {};
 	seen.set(value, result);
+	const range = historyRanges.get(value);
+	if (range) historyRanges.set(result, range);
 	for (const key of Object.keys(value)) {
 		Object.defineProperty(result, key, {
 			value: snapshotWorkflowInput(
@@ -37,6 +51,18 @@ export function snapshotHistory<T>(
 	const limit = Math.max(0, Math.min(end, history.length));
 	const offset = Math.max(0, Math.min(start, limit));
 	const snapshot = new Array<T>(limit - offset);
+	const parent = historyRanges.get(history);
+	if (!project)
+		historyRanges.set(
+			snapshot,
+			parent
+				? {
+						source: parent.source,
+						start: parent.start + offset,
+						end: parent.start + limit,
+					}
+				: { source: history, start: offset, end: limit },
+		);
 	for (let index = offset; index < limit; index++) {
 		const descriptor = Object.getOwnPropertyDescriptor(history, index);
 		if (!descriptor) continue;

@@ -9712,6 +9712,14 @@ ${taskSection}`;
 					},
 			artifactBinding,
 			context.contextAssistance ? undefined : context.researchAccess,
+			{
+				cacheDirectory: join(
+					this.factoryHome,
+					"factory",
+					"context-cache",
+					createHash("sha256").update(run.id).digest("hex"),
+				),
+			},
 		);
 		const graphAttemptId = context.attemptId;
 		let turnCompleted = false;

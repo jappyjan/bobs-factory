@@ -418,3 +418,5 @@ Invalid rules disable Save with an explanation. The simulator calls the same
 production HTTP evaluator/branch function and clearly labels supplied evidence as
 synthetic fixtures: simulation cannot authenticate real files, receipt provenance
 or human approval. Undeclared fixture evidence is rejected.
+
+Agent-facing context uses [bounded nested views and paginated original evidence](context-memory.md). Declared reads retain their complete native values for Check and revision binding; transport references do not grant approval or producer ownership.

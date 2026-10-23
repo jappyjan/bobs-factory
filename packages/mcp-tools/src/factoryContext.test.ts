@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { immutableJson } from "bobs-factory-core";
 import { expect, it, vi } from "vitest";
 import {
 	compactFactoryContext,
@@ -21,7 +22,10 @@ import {
 	prepareFactoryContext,
 	prepareFactoryContextAsync,
 } from "./factoryContext.js";
-import { factoryContextView } from "./factoryContextMemory.js";
+import {
+	factoryContextProjectionLimits,
+	factoryContextView,
+} from "./factoryContextMemory.js";
 import { FactoryContextSnapshot } from "./factoryContextSnapshot.js";
 
 async function withContext(
@@ -709,9 +713,18 @@ it("compacts repeated history while preserving current inputs and all original e
 		expect(compact.outputs).toEqual(input.outputs);
 		expect(compact.answers).toEqual(input.answers);
 		expect(compact.progress.diff).toBe("Exact diff");
-		expect(compact.history).toHaveLength(92);
-		expect(compact.contextMemory.reviewLedger).toHaveLength(1);
-		expect(compact.contextMemory.reviewLedger[0].findings).toEqual([
+		expect(compact.history).toMatchObject({
+			format: "factory-context-ref-v2",
+			fullPath: "/history",
+			entries: 92,
+		});
+		expect(compact.contextMemory.format).toBe("factory-context-memory-v2");
+		expect(compact.contextMemory.reviewLedger).toMatchObject({
+			deferred: true,
+		});
+		const ledger = await readValue(client, "/contextMemory/reviewLedger");
+		expect(ledger).toHaveLength(1);
+		expect(ledger[0].findings).toEqual([
 			{
 				value: finding,
 				firstPath: "/history/0/output/findings/0",
@@ -722,11 +735,11 @@ it("compacts repeated history while preserving current inputs and all original e
 			},
 		]);
 		expect(await readValue(client, "/history", "full")).toEqual(history);
-		expect(await readValue(client, compact.history[91].outputPath)).toEqual(
+		expect(await readValue(client, "/history/91/output", "full")).toEqual(
 			history[91]!.output,
 		);
 		expect(
-			await readValue(client, compact.progress.newHistory[9].outputPath),
+			await readValue(client, "/progress/newHistory/9/output", "full"),
 		).toEqual(history[91]!.output);
 		expect(await readValue(client, "/progress/newHistory", "full")).toEqual(
 			history.slice(-10),
@@ -881,9 +894,8 @@ it("keeps compact and full views scoped, immutable and compatible with unlabelle
 		});
 		const compact = await readValue(client, "");
 		expect(compact.history).toHaveLength(1);
-		expect(compact.contextMemory.reviewLedger[0].findings[0].value).toBe(
-			"Legacy complaint",
-		);
+		const ledger = await readValue(client, "/contextMemory/reviewLedger");
+		expect(ledger[0].findings[0].value).toBe("Legacy complaint");
 		expect(await readValue(client, "/history", "full")).toHaveLength(1);
 		for (const view of ["compact", "full"])
 			for (const path of [
@@ -911,4 +923,537 @@ it("keeps compact and full views scoped, immutable and compatible with unlabelle
 		contextMemory: { answer: "Declared input" },
 	};
 	expect(factoryContextView(collision)).toEqual(collision);
+});
+
+it("keeps the complete v1 native review view unchanged", () => {
+	const finding = { id: "bug", status: "open", evidence: "Original" };
+	const rejected = { id: "bug", status: "rejected", reason: "Intentional" };
+	const history = [
+		{
+			step: "flow/review",
+			at: "first",
+			output: { findings: [finding], summary: "Open" },
+		},
+		{ step: "flow/fix", at: "second", output: { dispositions: [rejected] } },
+		{
+			step: "flow/review",
+			at: "third",
+			output: { findings: [finding], summary: "Reopened" },
+		},
+	];
+	const index = history.map((item, round) => ({
+		fullPath: `/history/${round}`,
+		step: item.step,
+		at: item.at,
+		outputPath: `/history/${round}/output`,
+		outputCharacters: JSON.stringify(item.output).length,
+	}));
+	expect(
+		factoryContextView({
+			history,
+			progress: { visit: 2, newHistory: [history[2]] },
+			current: finding,
+		}),
+	).toEqual({
+		history: index,
+		progress: {
+			visit: 2,
+			newHistory: [
+				{
+					...index[2],
+					fullPath: "/progress/newHistory/0",
+					outputPath: "/progress/newHistory/0/output",
+				},
+			],
+		},
+		current: finding,
+		contextMemory: {
+			format: "factory-context-memory-v1",
+			historyCount: 3,
+			latestSteps: [index[2], index[1]],
+			reviewLedger: [
+				{
+					scope: "flow",
+					id: "bug",
+					findings: [
+						{
+							value: finding,
+							firstPath: "/history/0/output/findings/0",
+							latestPath: "/history/2/output/findings/0",
+							firstRound: 0,
+							latestRound: 2,
+							occurrences: 2,
+						},
+					],
+					dispositions: [
+						{
+							value: rejected,
+							firstPath: "/history/1/output/dispositions/0",
+							latestPath: "/history/1/output/dispositions/0",
+							firstRound: 1,
+							latestRound: 1,
+							occurrences: 1,
+						},
+					],
+					observations: [],
+				},
+			],
+			reviewRounds: history.map((item, round) => ({
+				round,
+				step: item.step,
+				at: item.at,
+				outputPath: `/history/${round}/output`,
+				...("summary" in item.output ? { summary: item.output.summary } : {}),
+			})),
+		},
+	});
+});
+
+it("bounds nested outputs, baselines and progress with distinct immutable original paths", async () => {
+	const body = "Exact baseline evidence 🏭\n".repeat(500);
+	const shared = {
+		rows: Array.from({ length: 103 }, (_, id) => ({ id, body })),
+		files: Object.fromEntries(
+			Array.from({ length: 103 }, (_, id) => [`a/${id}~`, body]),
+		),
+	};
+	const input = {
+		outputs: {
+			current: { answer: "usable", baseline: { context: shared } },
+			sibling: shared,
+		},
+		progress: { visit: 4, baseline: { context: shared }, newHistory: [] },
+	};
+	await withContext(input, async (client) => {
+		const current = await readValue(client, "/outputs/current");
+		expect(current.answer).toBe("usable");
+		expect(current.baseline.context.rows).toMatchObject({
+			format: "factory-context-ref-v2",
+			fullPath: "/outputs/current/baseline/context/rows",
+			view: "full",
+			entries: 103,
+		});
+		const sibling = await readValue(client, "/outputs/sibling");
+		expect(sibling.rows.fullPath).toBe("/outputs/sibling/rows");
+		expect(sibling.rows.snapshotRoot).toBe(
+			current.baseline.context.rows.snapshotRoot,
+		);
+		const progress = await readValue(client, "/progress");
+		expect(progress.baseline.context.files.fullPath).toBe(
+			"/progress/baseline/context/files",
+		);
+		const compact = await readValue(client, "");
+		expect(JSON.stringify(compact).length).toBeLessThanOrEqual(
+			factoryContextProjectionLimits.subtreeCharacters,
+		);
+		expect(JSON.stringify(compact)).not.toContain(body);
+		const paths: string[] = [];
+		let offset: number | null = 0;
+		while (offset !== null) {
+			const page = (
+				await client.callTool({
+					name: "list_context",
+					arguments: {
+						path: "/outputs/sibling/files",
+						offset,
+						limit: 50,
+						snapshotRoot: sibling.rows.snapshotRoot,
+					},
+				})
+			).structuredContent as {
+				entries: { path: string; fullPath: string }[];
+				nextOffset: number | null;
+			};
+			for (const entry of page.entries) expect(entry.fullPath).toBe(entry.path);
+			paths.push(...page.entries.map((entry) => entry.path));
+			offset = page.nextOffset;
+		}
+		expect(paths).toEqual(
+			Object.keys(shared.files).map(
+				(key) =>
+					`/outputs/sibling/files/${key.replace(/~/g, "~0").replace(/\//g, "~1")}`,
+			),
+		);
+		expect(
+			await readValue(client, "/outputs/current/baseline/context", "full"),
+		).toEqual(shared);
+		const record = await readValue(client, "/outputs/sibling/rows/102");
+		expect(record).toEqual({
+			id: 102,
+			body: expect.objectContaining({
+				fullPath: "/outputs/sibling/rows/102/body",
+				type: "string",
+			}),
+		});
+		expect(
+			await readValue(client, "/outputs/sibling/rows/102", "full"),
+		).toEqual(shared.rows[102]);
+		expect(
+			(
+				await client.callTool({
+					name: "read_context",
+					arguments: { path: "/outputs/current", snapshotRoot: "0".repeat(64) },
+				})
+			).isError,
+		).toBe(true);
+	});
+});
+
+it("does no hidden history traversal at startup or on small reads and indexes only on explicit navigation", async () => {
+	const history = Array.from({ length: 240 }, (_, round) => ({
+		step: "flow/review",
+		output: {
+			findings: [{ id: `bug-${round}`, evidence: "verbatim" }],
+			summary: `round-${round}`,
+		},
+	}));
+	const prepared = await prepareFactoryContextAsync({
+		history,
+		plan: { answer: "read me" },
+	});
+	const nodes = vi.spyOn(FactoryContextSnapshot.prototype, "node");
+	try {
+		await withContext(
+			undefined,
+			async (client) => {
+				expect(nodes.mock.calls.length).toBeLessThan(10);
+				nodes.mockClear();
+				expect(await readValue(client, "/plan")).toEqual({ answer: "read me" });
+				expect(nodes.mock.calls.length).toBeLessThan(60);
+				nodes.mockClear();
+				const compact = await readValue(client, "");
+				expect(compact.history.entries).toBe(240);
+				expect(nodes.mock.calls.length).toBeLessThan(400);
+				nodes.mockClear();
+				const first = (
+					await client.callTool({
+						name: "list_context",
+						arguments: { path: "/contextMemory/reviewLedger", limit: 1 },
+					})
+				).structuredContent as { total: number };
+				expect(first.total).toBe(240);
+				expect(nodes.mock.calls.length).toBeGreaterThan(1000);
+				nodes.mockClear();
+				const next = (
+					await client.callTool({
+						name: "list_context",
+						arguments: {
+							path: "/contextMemory/reviewLedger",
+							offset: 239,
+							limit: 1,
+						},
+					})
+				).structuredContent as { entries: { preview: { id: string } }[] };
+				expect(next.entries[0]!.preview.id).toBe("bug-239");
+				expect(nodes.mock.calls.length).toBeLessThan(100);
+				nodes.mockClear();
+			},
+			undefined,
+			prepared.config.args.at(-1)!,
+		);
+		nodes.mockClear();
+		await withContext(
+			undefined,
+			async (client) => {
+				await client.callTool({
+					name: "list_context",
+					arguments: {
+						path: "/contextMemory/reviewLedger",
+						offset: 239,
+						limit: 1,
+					},
+				});
+				expect(nodes.mock.calls.length).toBeLessThan(100);
+			},
+			undefined,
+			prepared.config.args.at(-1)!,
+		);
+	} finally {
+		nodes.mockRestore();
+		prepared.cleanup();
+	}
+});
+
+it("reuses only core-published immutable receipts across private cached handoffs", async () => {
+	const cacheDirectory = mkdtempSync(
+		join(tmpdir(), "factory-context-cache-test-"),
+	);
+	const receipt = immutableJson({
+		rows: Array.from({ length: 500 }, (_, id) => ({
+			id,
+			body: `original-${id}`,
+		})),
+	});
+	const mutable = { answer: "before" };
+	const shallow = Object.freeze({ child: mutable });
+	const first = await prepareFactoryContextAsync(
+		{ outputs: { receipt, shallow } },
+		undefined,
+		undefined,
+		{ cacheDirectory },
+	);
+	const serialized = vi.spyOn(JSON, "stringify");
+	let second:
+		| Awaited<ReturnType<typeof prepareFactoryContextAsync>>
+		| undefined;
+	try {
+		mutable.answer = "after";
+		second = await prepareFactoryContextAsync(
+			{ outputs: { receipt, shallow } },
+			undefined,
+			undefined,
+			{ cacheDirectory },
+		);
+		// A warm handoff captures the few mutable wrappers, not the 500-row payload.
+		expect(serialized.mock.calls.length).toBeLessThan(40);
+		serialized.mockRestore();
+		await withContext(
+			undefined,
+			async (client) => {
+				expect(await readValue(client, "/outputs/shallow", "full")).toEqual({
+					child: { answer: "before" },
+				});
+				expect(await readValue(client, "/outputs/receipt", "full")).toEqual(
+					receipt,
+				);
+			},
+			undefined,
+			first.config.args.at(-1)!,
+		);
+		first.cleanup();
+		expect(existsSync(join(cacheDirectory, "nodes"))).toBe(true);
+		await withContext(
+			undefined,
+			async (client) => {
+				expect(await readValue(client, "/outputs/shallow", "full")).toEqual({
+					child: { answer: "after" },
+				});
+				expect(
+					await readValue(client, "/outputs/receipt/rows/499", "full"),
+				).toEqual(receipt.rows[499]);
+			},
+			undefined,
+			second.config.args.at(-1)!,
+		);
+	} finally {
+		serialized.mockRestore();
+		first.cleanup();
+		second?.cleanup();
+		rmSync(cacheDirectory, { recursive: true, force: true });
+	}
+});
+
+it("keeps large distinct ledger values and rejection reasons at their original full-view pointers", async () => {
+	const first = { id: "bug", evidence: "First evidence ".repeat(300) };
+	const second = { id: "bug", evidence: "Changed evidence ".repeat(300) };
+	const rejection = {
+		id: "bug",
+		status: "rejected",
+		reason: "Preserve this entire rejection ".repeat(300),
+	};
+	await withContext(
+		{
+			history: [
+				{ step: "flow/review", output: { findings: [first] } },
+				{ step: "flow/fix", output: { dispositions: [rejection] } },
+				{
+					step: "flow/review",
+					output: {
+						findings: [second],
+						summary: "Rejected fix is still wrong",
+					},
+				},
+				{ step: "flow/review", output: { findings: [first] } },
+			],
+		},
+		async (client) => {
+			const ledger = await readValue(client, "/contextMemory/reviewLedger/0");
+			expect(ledger.findings).toHaveLength(2);
+			expect(ledger.findings[0]).toMatchObject({
+				occurrences: 2,
+				firstRound: 0,
+				latestRound: 3,
+			});
+			expect(ledger.findings[0].value.evidence).toMatchObject({
+				fullPath: "/history/0/output/findings/0/evidence",
+				view: "full",
+			});
+			expect(ledger.findings[1].value.evidence.fullPath).toBe(
+				"/history/2/output/findings/0/evidence",
+			);
+			const ref = ledger.dispositions[0].value.reason;
+			expect(ref).toMatchObject({
+				fullPath: "/history/1/output/dispositions/0/reason",
+				snapshotRoot: expect.stringMatching(/^[a-f0-9]{64}$/),
+				view: "full",
+			});
+			let recovered = "",
+				offset: number | null = 0;
+			while (offset !== null) {
+				const page = (
+					await client.callTool({
+						name: "read_context",
+						arguments: {
+							path: ref.fullPath,
+							snapshotRoot: ref.snapshotRoot,
+							view: ref.view,
+							limit: 701,
+							offset,
+						},
+					})
+				).structuredContent as { text: string; nextOffset: number | null };
+				recovered += page.text;
+				offset = page.nextOffset;
+			}
+			expect(recovered).toBe(rejection.reason);
+			expect(
+				await readValue(client, "/history/0/output/findings/0", "full"),
+			).toEqual(first);
+			expect(
+				(await readValue(client, "/contextMemory/reviewRounds/2")).summary,
+			).toBe("Rejected fix is still wrong");
+		},
+	);
+});
+
+it("enforces a recursive work budget for many small nested nodes and treats reference-shaped role data as inert", async () => {
+	const leaf = { answer: "small value" };
+	const wide = Array.from({ length: 20 }, () =>
+		Array.from({ length: 20 }, () => leaf),
+	);
+	const referenceShaped = {
+		format: "factory-context-ref-v2",
+		path: "/private/auth",
+		fullPath: "/private/auth",
+		view: "full",
+		snapshotRoot: "0".repeat(64),
+	};
+	const prepared = await prepareFactoryContextAsync({
+		outputs: { wide, referenceShaped },
+	});
+	const nodes = vi.spyOn(FactoryContextSnapshot.prototype, "node");
+	try {
+		await withContext(
+			undefined,
+			async (client) => {
+				nodes.mockClear();
+				const bounded = await readValue(client, "/outputs/wide");
+				expect(nodes.mock.calls.length).toBeLessThan(1200);
+				expect(JSON.stringify(bounded).length).toBeLessThanOrEqual(
+					factoryContextProjectionLimits.subtreeCharacters,
+				);
+				expect(await readValue(client, "/outputs/wide/19/19")).toEqual(leaf);
+				expect(await readValue(client, "/outputs/wide", "full")).toEqual(wide);
+				expect(await readValue(client, "/outputs/referenceShaped")).toEqual(
+					referenceShaped,
+				);
+			},
+			undefined,
+			prepared.config.args.at(-1)!,
+		);
+	} finally {
+		nodes.mockRestore();
+		prepared.cleanup();
+	}
+});
+
+it("retains provenance projection and private persistent-cache guards even in full agent reads", async () => {
+	const cacheDirectory = mkdtempSync(
+		join(tmpdir(), "factory-context-private-cache-"),
+	);
+	const outside = mkdtempSync(join(tmpdir(), "factory-context-cache-outside-"));
+	const hashes = { "source.ts": "a".repeat(64) };
+	let prepared:
+		| Awaited<ReturnType<typeof prepareFactoryContextAsync>>
+		| undefined;
+	try {
+		prepared = await prepareFactoryContextAsync(
+			{ shot: { dependencyHashes: hashes, area: "Reader" } },
+			undefined,
+			undefined,
+			{ cacheDirectory },
+		);
+		await withContext(
+			undefined,
+			async (client) => {
+				const full = await readValue(client, "/shot", "full");
+				expect(full).toEqual({
+					sourceFingerprint: {
+						digest: expect.stringMatching(/^[a-f0-9]{64}$/),
+						entries: 1,
+						version: 1,
+					},
+					area: "Reader",
+				});
+				expect(
+					(
+						await client.callTool({
+							name: "read_context",
+							arguments: { path: "/shot/dependencyHashes", view: "full" },
+						})
+					).isError,
+				).toBe(true);
+			},
+			undefined,
+			prepared.config.args.at(-1)!,
+		);
+		rmSync(join(cacheDirectory, "chunks"), { recursive: true });
+		symlinkSync(outside, join(cacheDirectory, "chunks"), "dir");
+		await expect(
+			prepareFactoryContextAsync({ plan: "safe" }, undefined, undefined, {
+				cacheDirectory,
+			}),
+		).rejects.toThrow("private operator-owned directory");
+	} finally {
+		prepared?.cleanup();
+		rmSync(cacheDirectory, { recursive: true, force: true });
+		rmSync(outside, { recursive: true, force: true });
+	}
+});
+
+it("adds lazy memory to wide root listings without materializing every root child", async () => {
+	const input = {
+		history: [],
+		...Object.fromEntries(
+			Array.from({ length: 300 }, (_, id) => [
+				`field-${id}`,
+				{ body: `record-${id}` },
+			]),
+		),
+	};
+	const prepared = await prepareFactoryContextAsync(input);
+	const nodes = vi.spyOn(FactoryContextSnapshot.prototype, "node");
+	try {
+		await withContext(
+			undefined,
+			async (client) => {
+				nodes.mockClear();
+				const compact = await readValue(client, "");
+				expect(compact).toMatchObject({
+					format: "factory-context-ref-v2",
+					fullPath: "",
+					entries: 301,
+				});
+				expect(nodes.mock.calls.length).toBeLessThan(40);
+				nodes.mockClear();
+				const page = (
+					await client.callTool({
+						name: "list_context",
+						arguments: { offset: 301, limit: 1 },
+					})
+				).structuredContent;
+				expect(page).toMatchObject({
+					total: 302,
+					entries: [{ path: "/contextMemory" }],
+					nextOffset: null,
+				});
+				expect(nodes.mock.calls.length).toBeLessThan(150);
+			},
+			undefined,
+			prepared.config.args.at(-1)!,
+		);
+	} finally {
+		nodes.mockRestore();
+		prepared.cleanup();
+	}
 });

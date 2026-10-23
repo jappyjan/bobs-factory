@@ -1,0 +1,382 @@
+{
+	"base": {
+		"checkout": "/tmp/taskbot144-implementation/baseline",
+		"sourceHashes": {
+			"packages/core/src/JsonSnapshotStore.ts": "51eebba4dee0062b38c357f1c1a6cc79df7162b6782e92f19461da23fab1352e",
+			"packages/mcp-tools/src/factoryContext.ts": "df8386529b531f186dded3eacfc7ef46521c64ae5ca64735848f388d3c5f7bb4",
+			"packages/mcp-tools/src/factoryContextMemory.ts": "a6a93c59bfe66f72a8c2835ff78fc46c78cfff1321f82b8e2ade7c7d1c93cb70",
+			"packages/mcp-tools/src/factoryContextSnapshot.ts": "288f303c130f95674e6dd4c8b1f1cb3389015e5abc030adb3f5def8a335f6e13",
+			"packages/edge-worker/src/factory/SpecialistReview.ts": "d967002a90ad1686a67a63c240d40ad5e254ad3caf55ea7c12c25e48c258827b",
+			"packages/edge-worker/src/factory/WorkflowInput.ts": "4557180a4c418378f4573206613b57634d0c5a12596ad7c7fef070f25903a0a0"
+		},
+		"observations": [
+			{
+				"rounds": 12,
+				"logical": {
+					"historyBytes": 2410675,
+					"inputBytes": 4416056,
+					"baselineBytes": 2088811
+				},
+				"phases": [
+					{
+						"phase": "cold",
+						"preparedMs": 68.020666,
+						"preparationNodeCalls": 2930,
+						"startupMs": 20.56275000000005,
+						"startupNodeCalls": 1627,
+						"disk": {
+							"apparentBytes": 225693,
+							"allocatedBytes": 1323008,
+							"files": 287
+						},
+						"diskAfterPages": {
+							"apparentBytes": 262823,
+							"allocatedBytes": 1929216,
+							"files": 435
+						},
+						"transportManifestBytes": 114,
+						"defaultRead": {
+							"calls": 127,
+							"returnedCharacters": 1542771,
+							"returnedUtf8Bytes": 1690371,
+							"elapsedMs": 54.044167000000016,
+							"nodeCalls": 9745,
+							"logicalViewBytes": 1667438
+						},
+						"roleProtocol": {
+							"calls": 133,
+							"returnedCharacters": 1544903,
+							"returnedUtf8Bytes": 1692510
+						},
+						"ledgerIndex": {
+							"elapsedMs": 0.6238749999999982,
+							"nodeCalls": 85
+						},
+						"pagination": {
+							"elapsedMs": 0.11591699999996763,
+							"nodeCalls": 6
+						}
+					},
+					{
+						"phase": "warm",
+						"preparedMs": 53.93566599999997,
+						"preparationNodeCalls": 2930,
+						"startupMs": 17.535499999999956,
+						"startupNodeCalls": 1627,
+						"disk": {
+							"apparentBytes": 225693,
+							"allocatedBytes": 1323008,
+							"files": 287
+						},
+						"diskAfterPages": {
+							"apparentBytes": 262823,
+							"allocatedBytes": 1929216,
+							"files": 435
+						},
+						"transportManifestBytes": 114,
+						"defaultRead": {
+							"calls": 127,
+							"returnedCharacters": 1542771,
+							"returnedUtf8Bytes": 1690371,
+							"elapsedMs": 38.823125000000005,
+							"nodeCalls": 9745,
+							"logicalViewBytes": 1667438
+						},
+						"roleProtocol": {
+							"calls": 133,
+							"returnedCharacters": 1544903,
+							"returnedUtf8Bytes": 1692510
+						},
+						"ledgerIndex": {
+							"elapsedMs": 0.36216699999999946,
+							"nodeCalls": 85
+						},
+						"pagination": {
+							"elapsedMs": 0.09837499999991905,
+							"nodeCalls": 6
+						}
+					}
+				]
+			},
+			{
+				"rounds": 48,
+				"logical": {
+					"historyBytes": 32915743,
+					"inputBytes": 40729796,
+					"baselineBytes": 31629115
+				},
+				"phases": [
+					{
+						"phase": "cold",
+						"preparedMs": 557.5268330000001,
+						"preparationNodeCalls": 34034,
+						"startupMs": 64.11716699999988,
+						"startupNodeCalls": 6055,
+						"disk": {
+							"apparentBytes": 1020528,
+							"allocatedBytes": 5025792,
+							"files": 1061
+						},
+						"diskAfterPages": {
+							"apparentBytes": 1147184,
+							"allocatedBytes": 7041024,
+							"files": 1551
+						},
+						"transportManifestBytes": 114,
+						"defaultRead": {
+							"calls": 497,
+							"returnedCharacters": 6049060,
+							"returnedUtf8Bytes": 6628660,
+							"elapsedMs": 211.73016700000016,
+							"nodeCalls": 55573,
+							"logicalViewBytes": 6539587
+						},
+						"roleProtocol": {
+							"calls": 503,
+							"returnedCharacters": 6051192,
+							"returnedUtf8Bytes": 6630799
+						},
+						"ledgerIndex": {
+							"elapsedMs": 0.3886659999998301,
+							"nodeCalls": 85
+						},
+						"pagination": {
+							"elapsedMs": 0.09916600000019571,
+							"nodeCalls": 6
+						}
+					},
+					{
+						"phase": "warm",
+						"preparedMs": 574.3135,
+						"preparationNodeCalls": 34034,
+						"startupMs": 64.19174999999996,
+						"startupNodeCalls": 6055,
+						"disk": {
+							"apparentBytes": 1020528,
+							"allocatedBytes": 5025792,
+							"files": 1061
+						},
+						"diskAfterPages": {
+							"apparentBytes": 1147184,
+							"allocatedBytes": 7041024,
+							"files": 1551
+						},
+						"transportManifestBytes": 114,
+						"defaultRead": {
+							"calls": 497,
+							"returnedCharacters": 6049060,
+							"returnedUtf8Bytes": 6628660,
+							"elapsedMs": 212.6144159999999,
+							"nodeCalls": 55573,
+							"logicalViewBytes": 6539587
+						},
+						"roleProtocol": {
+							"calls": 503,
+							"returnedCharacters": 6051192,
+							"returnedUtf8Bytes": 6630799
+						},
+						"ledgerIndex": {
+							"elapsedMs": 0.43033299999979135,
+							"nodeCalls": 85
+						},
+						"pagination": {
+							"elapsedMs": 0.09620799999993324,
+							"nodeCalls": 6
+						}
+					}
+				]
+			}
+		],
+		"scope": "Synthetic source-mode context/baseline comparison; no agent judgment, native CLI or remote delivery"
+	},
+	"candidate": {
+		"checkout": "/Users/jappy/.t3/worktrees/bobs-factory/taskbot-144-context",
+		"sourceHashes": {
+			"packages/core/src/JsonSnapshotStore.ts": "96857723191ab67f3e5eee242cb8901105278067623b20a19c2c6ddea2cc2b64",
+			"packages/mcp-tools/src/factoryContext.ts": "88d964be442177aa15bba5b124f517cd87db19061b511736d590646f37d72f5d",
+			"packages/mcp-tools/src/factoryContextMemory.ts": "e840e101a213b851c3842065390816f1191724a8470fceddd4652faaf8a6d132",
+			"packages/mcp-tools/src/factoryContextSnapshot.ts": "6923390d2d28677ccf8e70470c3c5d16c6a1da95ab82868c5a16a2e053c713ec",
+			"packages/edge-worker/src/factory/SpecialistReview.ts": "c5495291186e86b996c7eb2d7cbecfac78ae62ab32624940bf5398bd1aeb9ec9",
+			"packages/edge-worker/src/factory/WorkflowInput.ts": "8fe19e98b74ea78a2656a2e7b686aad07ddc1f45430996b0ccb13bd2cea22779"
+		},
+		"observations": [
+			{
+				"rounds": 12,
+				"logical": {
+					"historyBytes": 475536,
+					"inputBytes": 626167,
+					"baselineBytes": 153672
+				},
+				"phases": [
+					{
+						"phase": "cold",
+						"preparedMs": 40.41004099999998,
+						"preparationNodeCalls": 686,
+						"startupMs": 2.894541000000004,
+						"startupNodeCalls": 1,
+						"disk": {
+							"apparentBytes": 221935,
+							"allocatedBytes": 1388544,
+							"files": 303
+						},
+						"diskAfterPages": {
+							"apparentBytes": 259574,
+							"allocatedBytes": 1990656,
+							"files": 450
+						},
+						"transportManifestBytes": 198,
+						"defaultRead": {
+							"calls": 1,
+							"returnedCharacters": 2100,
+							"returnedUtf8Bytes": 2100,
+							"elapsedMs": 5.137666999999965,
+							"nodeCalls": 436,
+							"logicalViewBytes": 1647
+						},
+						"roleProtocol": {
+							"calls": 7,
+							"returnedCharacters": 4806,
+							"returnedUtf8Bytes": 4813
+						},
+						"ledgerIndex": {
+							"elapsedMs": 19.970084000000043,
+							"nodeCalls": 1673
+						},
+						"pagination": {
+							"elapsedMs": 0.25395800000001145,
+							"nodeCalls": 7
+						}
+					},
+					{
+						"phase": "warm",
+						"preparedMs": 3.4194579999999632,
+						"preparationNodeCalls": 86,
+						"startupMs": 0.48879199999998946,
+						"startupNodeCalls": 1,
+						"disk": {
+							"apparentBytes": 259574,
+							"allocatedBytes": 1990656,
+							"files": 450
+						},
+						"diskAfterPages": {
+							"apparentBytes": 259574,
+							"allocatedBytes": 1990656,
+							"files": 450
+						},
+						"transportManifestBytes": 198,
+						"defaultRead": {
+							"calls": 1,
+							"returnedCharacters": 2100,
+							"returnedUtf8Bytes": 2100,
+							"elapsedMs": 3.2722909999999956,
+							"nodeCalls": 436,
+							"logicalViewBytes": 1647
+						},
+						"roleProtocol": {
+							"calls": 7,
+							"returnedCharacters": 4806,
+							"returnedUtf8Bytes": 4813
+						},
+						"ledgerIndex": {
+							"elapsedMs": 0.48137499999995725,
+							"nodeCalls": 95
+						},
+						"pagination": {
+							"elapsedMs": 0.10541699999998855,
+							"nodeCalls": 7
+						}
+					}
+				]
+			},
+			{
+				"rounds": 48,
+				"logical": {
+					"historyBytes": 1942032,
+					"inputBytes": 2092663,
+					"baselineBytes": 655404
+				},
+				"phases": [
+					{
+						"phase": "cold",
+						"preparedMs": 105.29316700000004,
+						"preparationNodeCalls": 2522,
+						"startupMs": 0.6403749999999491,
+						"startupNodeCalls": 1,
+						"disk": {
+							"apparentBytes": 876327,
+							"allocatedBytes": 5152768,
+							"files": 1113
+						},
+						"diskAfterPages": {
+							"apparentBytes": 1001791,
+							"allocatedBytes": 7016448,
+							"files": 1566
+						},
+						"transportManifestBytes": 198,
+						"defaultRead": {
+							"calls": 1,
+							"returnedCharacters": 476,
+							"returnedUtf8Bytes": 476,
+							"elapsedMs": 2.3736670000000686,
+							"nodeCalls": 362,
+							"logicalViewBytes": 204
+						},
+						"roleProtocol": {
+							"calls": 7,
+							"returnedCharacters": 3182,
+							"returnedUtf8Bytes": 3189
+						},
+						"ledgerIndex": {
+							"elapsedMs": 73.981,
+							"nodeCalls": 6029
+						},
+						"pagination": {
+							"elapsedMs": 0.24937499999998636,
+							"nodeCalls": 7
+						}
+					},
+					{
+						"phase": "warm",
+						"preparedMs": 5.086125000000038,
+						"preparationNodeCalls": 158,
+						"startupMs": 0.5652089999999816,
+						"startupNodeCalls": 1,
+						"disk": {
+							"apparentBytes": 1001791,
+							"allocatedBytes": 7016448,
+							"files": 1566
+						},
+						"diskAfterPages": {
+							"apparentBytes": 1001791,
+							"allocatedBytes": 7016448,
+							"files": 1566
+						},
+						"transportManifestBytes": 198,
+						"defaultRead": {
+							"calls": 1,
+							"returnedCharacters": 476,
+							"returnedUtf8Bytes": 476,
+							"elapsedMs": 1.8269999999999982,
+							"nodeCalls": 362,
+							"logicalViewBytes": 204
+						},
+						"roleProtocol": {
+							"calls": 7,
+							"returnedCharacters": 3182,
+							"returnedUtf8Bytes": 3189
+						},
+						"ledgerIndex": {
+							"elapsedMs": 0.49479199999996126,
+							"nodeCalls": 95
+						},
+						"pagination": {
+							"elapsedMs": 0.1200420000000122,
+							"nodeCalls": 7
+						}
+					}
+				]
+			}
+		],
+		"scope": "Synthetic source-mode context/baseline comparison; no agent judgment, native CLI or remote delivery"
+	}
+}

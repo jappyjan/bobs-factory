@@ -104,6 +104,7 @@ export function immutableJson<T>(value: T): T {
 	const json = capture(value);
 	const freeze = (entry: SnapshotJson | undefined): void => {
 		if (!entry || typeof entry !== "object") return;
+		if (immutableValues.has(entry)) return;
 		for (const child of Object.values(entry)) freeze(child);
 		Object.freeze(entry);
 		immutableValues.add(entry);

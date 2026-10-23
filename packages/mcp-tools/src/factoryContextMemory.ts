@@ -1,3 +1,5 @@
+import type { FactoryContextSnapshot } from "./factoryContextSnapshot.js";
+
 type RecordValue = Record<string, unknown>;
 const isRecord = (value: unknown): value is RecordValue =>
 	value !== null && typeof value === "object" && !Array.isArray(value);
@@ -211,4 +213,183 @@ export function factoryContextView(
 			reviewRounds: reviewRounds(originalHistory, access),
 		},
 	};
+}
+
+/** Serving limits apply to every subtree, including embedded prior inputs. */
+export const factoryContextProjectionLimits = Object.freeze({
+	entries: 25,
+	depth: 6,
+	nodes: 128,
+	subtreeCharacters: 6000,
+	stringCharacters: 2000,
+});
+const pointerChild = (path: string, key: string) =>
+	`${path}/${key.replace(/~/g, "~0").replace(/\//g, "~1")}`;
+
+/**
+ * V2 is an agent boundary only. Do not replace factoryContextView in native
+ * review authority/digest code: that v1 function deliberately retains its exact
+ * historical semantics. This projection never walks history until an explicit
+ * memory-index read, and never caches a path-bearing result by content hash.
+ */
+export class FactoryContextProjection {
+	private summary?: object;
+	private memory?: object;
+	private enabled?: boolean;
+	constructor(private readonly snapshot: FactoryContextSnapshot) {}
+	private hasMemory() {
+		if (this.enabled === undefined) {
+			const root = this.snapshot.root;
+			const history = this.snapshot.get(root, "history");
+			this.enabled =
+				this.snapshot.node(root).kind === "object" &&
+				!this.snapshot.get(root, "contextMemory") &&
+				!!history &&
+				this.snapshot.node(history).kind === "array";
+		}
+		return this.enabled;
+	}
+	private memorySummary() {
+		if (!this.summary) {
+			const history = this.snapshot.get(this.snapshot.root, "history")!;
+			this.summary = this.snapshot.append({
+				format: "factory-context-memory-v2",
+				snapshotRoot: this.snapshot.identity,
+				historyCount: this.snapshot.node(history).entries!.length,
+				...Object.fromEntries(
+					["latestSteps", "reviewLedger", "reviewRounds"].map((key) => [
+						key,
+						{
+							format: "factory-context-ref-v2",
+							snapshotRoot: this.snapshot.identity,
+							path: `/contextMemory/${key}`,
+							view: "compact",
+							type: "array",
+							derived: true,
+							deferred: true,
+						},
+					]),
+				),
+			});
+		}
+		return this.summary;
+	}
+	private memoryIndex() {
+		this.memory ??= this.snapshot.memoized("review-memory-v1", () => {
+			const view = factoryContextView(
+				this.snapshot.root,
+				this.snapshot.access,
+			) as RecordValue;
+			return view.contextMemory;
+		});
+		return this.memory;
+	}
+	resolve(path: string): object {
+		// Validate the entire pointer even for synthetic paths.
+		if (path !== "" && (!path.startsWith("/") || /~(?![01])/u.test(path)))
+			throw new Error("Use a JSON Pointer path, or an empty path for the root");
+		if (this.hasMemory()) {
+			if (
+				/^\/contextMemory\/(latestSteps|reviewLedger|reviewRounds)(\/|$)/u.test(
+					path,
+				)
+			)
+				return this.snapshot.resolve(
+					path.slice("/contextMemory".length),
+					this.memoryIndex(),
+				);
+			if (path === "/contextMemory" || path.startsWith("/contextMemory/"))
+				return this.snapshot.resolve(
+					path.slice("/contextMemory".length),
+					this.memorySummary(),
+				);
+		}
+		return this.snapshot.resolve(path);
+	}
+	/** The synthetic root field must not require copying every root entry. */
+	listing(reference: object, path: string, offset: number, limit: number) {
+		const count = this.snapshot.node(reference).entries?.length ?? 0;
+		const includeMemory = path === "" && this.hasMemory();
+		const entries = this.snapshot.entries(reference, offset, limit);
+		if (includeMemory && offset <= count && offset + limit > count)
+			entries.push(["contextMemory", this.memorySummary()]);
+		return { total: count + (includeMemory ? 1 : 0), entries };
+	}
+	/** Claims/round previews retain pointers into the original immutable source. */
+	originalPath(path: string): string | undefined {
+		if (!this.hasMemory() || !path.startsWith("/contextMemory")) return path;
+		const claim = path.match(
+			/^(\/contextMemory\/reviewLedger\/\d+\/(?:findings|dispositions|observations)\/\d+)\/value(\/.*)?$/u,
+		);
+		if (claim) {
+			const origin = this.snapshot.get(this.resolve(claim[1]!), "firstPath");
+			return origin
+				? this.snapshot.read(origin, 0, 2000).text + (claim[2] ?? "")
+				: undefined;
+		}
+		const round = path.match(
+			/^(\/contextMemory\/reviewRounds\/\d+)\/(summary|approved|feedback|questions|reviewAssessment)(\/.*)?$/u,
+		);
+		if (round) {
+			const origin = this.snapshot.get(this.resolve(round[1]!), "outputPath");
+			return origin
+				? `${this.snapshot.read(origin, 0, 2000).text}/${round[2]}${round[3] ?? ""}`
+				: undefined;
+		}
+		return undefined;
+	}
+	descriptor(reference: object, path: string) {
+		const node = this.snapshot.node(reference),
+			originalPath = this.originalPath(path);
+		return {
+			format: "factory-context-ref-v2",
+			snapshotRoot: this.snapshot.identity,
+			path: originalPath ?? path,
+			view: originalPath === undefined ? "compact" : "full",
+			...(originalPath === undefined
+				? { derived: true }
+				: { fullPath: originalPath }),
+			type: node.kind,
+			characters: node.kind === "string" ? node.length : node.characters,
+			...(node.entries ? { entries: node.entries.length } : {}),
+		};
+	}
+	project(path: string, reference = this.resolve(path)): unknown {
+		let remaining = factoryContextProjectionLimits.nodes;
+		const visit = (reference: object, path: string, depth: number): unknown => {
+			const node = this.snapshot.node(reference);
+			if (--remaining < 0) return this.descriptor(reference, path);
+			if (node.kind === "string")
+				return node.length! > factoryContextProjectionLimits.stringCharacters
+					? this.descriptor(reference, path)
+					: this.snapshot.read(reference, 0, node.length!).text;
+			if (!node.entries) return node.value;
+			const count =
+				node.entries.length + (path === "" && this.hasMemory() ? 1 : 0);
+			if (
+				depth >= factoryContextProjectionLimits.depth ||
+				count > factoryContextProjectionLimits.entries
+			)
+				return this.descriptor(reference, path);
+			const { entries } = this.listing(
+				reference,
+				path,
+				0,
+				factoryContextProjectionLimits.entries,
+			);
+			const projected = entries.map(
+				([key, child]) =>
+					[key, visit(child, pointerChild(path, key), depth + 1)] as const,
+			);
+			const value =
+				node.kind === "array"
+					? projected.map(([, child]) => child)
+					: Object.fromEntries(projected);
+			return JSON.stringify(value).length <=
+				factoryContextProjectionLimits.subtreeCharacters
+				? value
+				: this.descriptor(reference, path);
+		};
+		return visit(reference, path, 0);
+	}
 }
