@@ -213,7 +213,9 @@ export {
 	isImmutableJson,
 	type JsonSnapshot,
 	JsonSnapshotStore,
+	retainSnapshotEntry,
 	snapshotArrayTimestamps,
+	snapshotEntryIdentity,
 } from "./JsonSnapshotStore.js";
 // Internal Message Bus
 export type {

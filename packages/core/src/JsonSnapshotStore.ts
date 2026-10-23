@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync, statSync } from "node:fs";
 import { copyFile, mkdir, rename, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { setImmediate as yieldToIO } from "node:timers/promises";
@@ -51,6 +51,54 @@ const lazyArrays = new WeakMap<
 		dirty: Set<number>;
 	}
 >();
+// Only owner-created lazy accessors carry receipt identity; JSON cannot forge it.
+const immutableEntrySources = new WeakMap<
+	() => unknown,
+	() => string | undefined
+>();
+
+/** A verified immutable entry may be reused without decoding its evicted page. */
+export function snapshotEntryIdentity(
+	value: object,
+	key: string,
+): string | undefined {
+	const get = Object.getOwnPropertyDescriptor(value, key)?.get;
+	return get ? immutableEntrySources.get(get)?.() : undefined;
+}
+
+/** Carry the source of an unchanged lazy getter through a runtime-owned slice. */
+export function retainSnapshotEntry(
+	source: object,
+	key: string,
+	target: object,
+	targetKey: string,
+): void {
+	const from = Object.getOwnPropertyDescriptor(source, key)?.get;
+	const to = Object.getOwnPropertyDescriptor(target, targetKey)?.get;
+	const identity = from && immutableEntrySources.get(from);
+	if (to && identity) immutableEntrySources.set(to, identity);
+}
+
+function chunkStamp(path: string): string {
+	const stat = lstatSync(path, { bigint: true });
+	const target = stat.isSymbolicLink()
+		? statSync(path, { bigint: true })
+		: stat;
+	return [
+		target.dev,
+		target.ino,
+		target.size,
+		target.mtimeNs,
+		target.ctimeNs,
+		stat.dev,
+		stat.ino,
+		stat.mode,
+		stat.size,
+		stat.mtimeNs,
+		stat.ctimeNs,
+	].join(":");
+}
+
 type CapturedField = {
 	existing?: SnapshotField;
 	json?: SnapshotJson;
@@ -317,6 +365,7 @@ export class JsonSnapshotStore {
 	private backedUp = new Set<string>();
 	private failures = new Map<string, unknown>();
 	private immutablePages = new WeakMap<object, JsonReference>();
+	private verifiedReferences = new WeakMap<JsonReference, string[]>();
 	private previews = new WeakMap<object, Record<string, SnapshotField>>();
 	readonly metrics = {
 		commits: 0,
@@ -405,6 +454,9 @@ export class JsonSnapshotStore {
 			throw new Error("Invalid snapshot reference");
 		const digest = createHash("sha256");
 		let bytes = 0;
+		const stamps = reference.chunks.map((hash) =>
+			chunkStamp(this.chunkPath(hash)),
+		);
 		const parts = reference.chunks.map((hash) => {
 			const body = readFileSync(this.chunkPath(hash), "utf8");
 			if (createHash("sha256").update(body).digest("hex") !== hash)
@@ -415,12 +467,19 @@ export class JsonSnapshotStore {
 		});
 		if (digest.digest("hex") !== reference.hash || bytes !== reference.bytes)
 			throw new Error("Snapshot document integrity failure");
-		return JSON.parse(parts.join(""));
+		const result = JSON.parse(parts.join(""));
+		if (
+			reference.chunks.every(
+				(hash, index) => chunkStamp(this.chunkPath(hash)) === stamps[index],
+			)
+		)
+			this.verifiedReferences.set(reference, stamps);
+		return result;
 	}
-	private hydrate(field: SnapshotField): unknown {
+	private hydrate(field: SnapshotField, scope: string): unknown {
 		if ("value" in field) return field.value;
 		if ("reference" in field) return this.decode(field.reference);
-		if ("record" in field) return this.fields(field.record);
+		if ("record" in field) return this.fields(field.record, scope);
 		const pageSize = field.pageSize ?? defaultPageSize;
 		if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 64)
 			throw new Error("Invalid snapshot page size");
@@ -437,25 +496,44 @@ export class JsonSnapshotStore {
 		lazyArrays.set(array, lazy);
 		owners.set(array, this.directory);
 		for (let index = 0; index < field.length; index++) {
+			const page = Math.floor(index / pageSize);
+			const reference = field.pages[page]!;
+			const identity = `${this.directory}\0${scope}\0${index}:${reference.hash}:${reference.bytes}`;
+			const get = () => {
+				loaded.add(page);
+				let entries = pages.get(page);
+				if (!entries) {
+					entries = this.decode(field.pages[page]!) as SnapshotJson[];
+					if (!Array.isArray(entries)) throw new Error("Invalid snapshot page");
+					if (lazy.immutable)
+						entries = entries.map((entry) => immutableJson(entry));
+					pages.set(page, entries);
+					if (lazy.immutable && pages.size > 4)
+						pages.delete(pages.keys().next().value!);
+				}
+				return entries[index % pageSize];
+			};
+			immutableEntrySources.set(get, () => {
+				if (
+					!lazy.immutable ||
+					lazy.dirty.has(page) ||
+					Object.getOwnPropertyDescriptor(array, index)?.get !== get
+				)
+					return undefined;
+				const stamps = this.verifiedReferences.get(reference);
+				if (!stamps) return undefined;
+				if (
+					!reference.chunks.every(
+						(hash, i) => chunkStamp(this.chunkPath(hash)) === stamps[i],
+					)
+				)
+					this.decode(reference); // Revalidate changed files before any cached projection is reused.
+				return identity;
+			});
 			Object.defineProperty(array, index, {
 				configurable: true,
 				enumerable: true,
-				get: () => {
-					const page = Math.floor(index / pageSize);
-					loaded.add(page);
-					let entries = pages.get(page);
-					if (!entries) {
-						entries = this.decode(field.pages[page]!) as SnapshotJson[];
-						if (!Array.isArray(entries))
-							throw new Error("Invalid snapshot page");
-						if (lazy.immutable)
-							entries = entries.map((entry) => immutableJson(entry));
-						pages.set(page, entries);
-						if (lazy.immutable && pages.size > 4)
-							pages.delete(pages.keys().next().value!);
-					}
-					return entries[index % pageSize];
-				},
+				get,
 				set: (value) => {
 					loaded.add(Math.floor(index / pageSize));
 					lazy.dirty.add(Math.floor(index / pageSize));
@@ -472,6 +550,7 @@ export class JsonSnapshotStore {
 	}
 	private fields(
 		fields: Record<string, SnapshotField>,
+		scope: string,
 	): Record<string, unknown> {
 		const result: Record<string, unknown> = {};
 		const metadata = new Map<
@@ -487,7 +566,7 @@ export class JsonSnapshotStore {
 				enumerable: true,
 				configurable: true,
 				get: () => {
-					const value = this.hydrate(field);
+					const value = this.hydrate(field, `${scope}/${JSON.stringify(key)}`);
 					state.loaded = true;
 					Object.defineProperty(result, key, {
 						value,
@@ -519,7 +598,7 @@ export class JsonSnapshotStore {
 		)
 			throw new Error("Unsupported snapshot format");
 		return {
-			value: this.fields(snapshot.fields) as T,
+			value: this.fields(snapshot.fields, resolve(path)) as T,
 			summary: snapshot.summary,
 		};
 	}

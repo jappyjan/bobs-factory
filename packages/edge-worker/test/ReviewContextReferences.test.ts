@@ -7,10 +7,10 @@ import {
 	captureReviewContext,
 	originalReviewContext,
 } from "../src/factory/SpecialistReview.js";
-import {
-	snapshotHistory,
-	snapshotWorkflowInput,
-} from "../src/factory/WorkflowInput.js";
+import { stepBindings } from "../src/factory/StepBindings.js";
+import { StepSchema } from "../src/factory/Workflow.js";
+import { snapshotHistory } from "../src/factory/WorkflowInput.js";
+import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 
 const homes: string[] = [];
 afterEach(() => {
@@ -28,7 +28,7 @@ const entry = (index: number) =>
 		},
 	});
 
-it("captures native history cutoffs and custom aliases without decoding historical payloads", () => {
+it("captures native history cutoffs without decoding historical payloads", () => {
 	let loads = 0;
 	const index = Array.from({ length: 48 }, (_, i) => ({
 		step: entry(i).step,
@@ -47,7 +47,6 @@ it("captures native history cutoffs and custom aliases without decoding historic
 	const run = { id: "isolated", history };
 	const input = {
 		history: snapshotHistory(history),
-		custom: { relevant: snapshotWorkflowInput(snapshotHistory(history, 1, 3)) },
 		outputs: { current: { dependency: "changed", status: "blocked" } },
 	};
 	const captured = immutableJson(captureReviewContext(input, run, index));
@@ -55,12 +54,11 @@ it("captures native history cutoffs and custom aliases without decoding historic
 	expect(JSON.stringify(captured).length).toBeLessThan(1500);
 	expect(captured.contextReferences.map((ref) => ref.path)).toEqual([
 		["history"],
-		["custom", "relevant"],
 	]);
 	const restored = originalReviewContext(captured, run, index) as typeof input;
 	expect(loads).toBe(0);
 	expect(restored.history).toHaveLength(48);
-	expect(restored.custom.relevant[0]).toEqual(entry(1));
+	expect(restored.history[1]).toEqual(entry(1));
 	expect(loads).toBe(1);
 	expect(restored.outputs.current).toEqual(input.outputs.current);
 });
@@ -128,3 +126,70 @@ it("keeps repository-projected history inline instead of substituting unprojecte
 		history: [{ ...entry(0), output: { findings: [] } }],
 	});
 });
+
+for (const count of [12, 48])
+	it(`captures actual detached declared history aliases at ${count} receipts and retains modified copies`, () => {
+		const history = Array.from({ length: count }, (_, i) => entry(i));
+		const run = {
+			id: "owner",
+			history,
+			outputs: {},
+			answers: [],
+			workspace: "/unused",
+			repositoryId: "fixture",
+		};
+		const index = history.map(({ step, at }) => ({ step, at }));
+		const step = StepSchema.parse({
+			id: "renamed",
+			name: "Review",
+			type: "fanout",
+			groups: [
+				[{ id: "observer", name: "Observer", type: "agent", prompt: "Review" }],
+			],
+			reads: { priorProof: "@history" },
+		});
+		const bindings = stepBindings({
+			run,
+			step,
+			stepKey: "outer/items/0/renamed",
+			outputs: {},
+			input: {},
+		} as ExecutionContext);
+		const prior = bindings.priorProof as typeof history;
+		expect(prior).toEqual(history);
+		expect(prior[0]).not.toBe(history[0]);
+		const baseline = immutableJson(
+			captureReviewContext(
+				{ history: snapshotHistory(history), ...bindings },
+				run,
+				index,
+			),
+		);
+		expect(baseline.contextReferences.map(({ path }) => path)).toEqual([
+			["history"],
+			["priorProof"],
+		]);
+		expect(JSON.stringify(baseline).length).toBeLessThan(600);
+		history.push(entry(count));
+		const restored = originalReviewContext(baseline, run, [
+			...index,
+			{ step: entry(count).step, at: entry(count).at },
+		]) as { priorProof: typeof history };
+		expect(restored.priorProof).toEqual(prior);
+		expect(restored.priorProof).toHaveLength(count);
+		prior[0]!.output.findings[0]!.evidence = "changed detached declaration";
+		expect(history[0]!.output.findings[0]!.evidence).not.toBe(
+			"changed detached declaration",
+		);
+		const modified = captureReviewContext(bindings, run, index);
+		expect(modified.contextReferences).toEqual([]);
+		expect(
+			(originalReviewContext(modified, run, index) as typeof bindings)
+				.priorProof,
+		).toEqual(prior);
+		// Reordering identical JSON members also retains the actual declared input.
+		prior.reverse();
+		expect(
+			captureReviewContext(bindings, run, index).contextReferences,
+		).toEqual([]);
+	});

@@ -1,7 +1,10 @@
 # Taskbot #144: bounded context and original evidence
 
 Date: 2026-10-23. [PR #181](https://github.com/jappyjan/bobs-factory/pull/181). Implementation evidence, **not independent acceptance**.
-Tested product/source commit: `e8dfe3dc9f78acf842cc667990c9a78602094796`.
+Original tested product/source commit: `e8dfe3dc9f78acf842cc667990c9a78602094796`.
+The combined Round1 repair below supersedes the affected seams; its executed
+inputs are pinned by [repair source hashes](assets/taskbot144-context/repair-r1-source-freeze.json).
+Final published HEAD/TREE are recorded in the direct live #144 handoff.
 Base: `fb1cbcea803ba56968462e54747093d42cab2aa9`, tree
 `c9b2e286d2f94275c8541346bd56efd80f927787`.
 Own checkout: `/Users/jappy/.t3/worktrees/bobs-factory/taskbot-144-context`,
@@ -25,9 +28,103 @@ Native outputs, detached declared-read copies, input digests and Check authority
 remain complete. Runtime-owned immutable history receipts can be cached; live
 mutable outputs are recaptured. The first attempt to share immutable declared
 reads broke a mutation/isolation regression; that change and global live-output
-freezing were withdrawn. `StepBindings.ts` is byte-identical to the base.
+freezing were withdrawn. At historical `40ca26`, `StepBindings.ts` was byte-identical
+to base; the combined repair now narrowly carries checked private range hints
+through the same detached `structuredClone` seam.
 
-## Exact controlled comparison
+## Combined Round1 repair: R1 and R2
+
+Read full authoritative live #144 comment **2507** before edits. Preserve the axis
+results: **Standards 0; Spec 0 confirmed plus two uncounted hypotheses**. The root's
+separate production-seam probes confirmed Task144 **R1/R2**. Historical
+`40ca26e18f46072bf18bacb9ea4e84f796fadd7d` / tree
+`82c62de47d87b8c077ad0b0d5e00c29ce6323aae` remains **NOT CLEAN**; this implementation
+repair supplies no independent clearance. No new helpers were launched.
+
+R1: actual StepSchema → stepBindings → captureReviewContext → originalReviewContext
+now preserves a private original range through the detached read. Capture compares
+complete JSON structure, order and values against that exact original cutoff;
+mutated copies remain inline. It does not accept a role-authored reference or an
+equal object without private source provenance. Qualified owner/index validation
+and native full values/digests remain at their existing seams. Native cloning and
+integrity comparison remain proportional to an explicitly declared history read;
+this fix removes repeated **baseline payload storage/serialization**, not those
+necessary detached-read costs. No frozen/shared-read regression was restored.
+
+R2: genuine JsonSnapshotStore pageSize=1 history still evicts after four decoded
+pages. Verified private lazy accessor sources identify store/manifest/field/index/
+chunk, and snapshotHistory carries them through unchanged getters. The context
+cache reuses the projected DAG node before invoking an evicted getter. Device,
+inode, size, nanosecond mtime/ctime (and symlink target metadata if present) are
+checked; changed files undergo original chunk/document hash validation. No JSON
+parse/hash of unchanged old payload is needed on a warm handoff. Cache entries
+are bounded metadata (8,192 IDs × at most 16 directory/projection modes), not a
+retained historical graph. A cold process/cache still captures old payload once;
+membership and chunk-file metadata checks remain real work. Mutable current
+inputs and overwritten native entries remain fresh. These IDs cache derived JSON,
+never confer receipt approval or replace original frame/path authority.
+
+The same root-confirmed generic 12/48 fixtures were run in this retained checkout
+**before edits at exact 40ca26** and after the combined repair. No prior reviewer
+checkout was executed. [Complete measurements](assets/taskbot144-context/repair-r1-measurements.json)
+separate stable in-memory and genuinely saved/restored histories. Logical bytes
+are separate from disk and agent read volume. No fixed timing/cost claim is made.
+
+| Actual seam | Before at 40ca26 | Combined repair |
+| --- | ---: | ---: |
+| Custom alias baseline, 12 receipts / 193,281 history bytes | 193,506 bytes, history ref only | 393 bytes, history + priorProof refs |
+| Custom alias baseline, 48 receipts / 773,241 history bytes | 773,466 bytes, history ref only | 393 bytes, history + priorProof refs |
+| Restored warm prepare, 12 / 217,677 logical history bytes | 309 stringify calls / 217,112 string characters / 123 node touches | 9 / 36 / 15 |
+| Restored warm prepare, 48 / 870,825 logical history bytes | 1,209 / 868,460 / 483 | 9 / 36 / 51 |
+| Stable fresh warm prepare, 12 then 48 | 9 / 36 / 15 then 51 touches | Same work counts |
+
+The alias probe reports `aliasRangeKnown=false` **after deliberately mutating the
+copy**; both baseline reference paths were recorded beforehand. That negative is
+the integrity control, not a missing hint. Full restored alias values and lengths
+remain complete. Small current/default reads and original evidence paging retain
+the previously measured protocol; wire/disk numbers below were not remeasured for
+this repair and are not substituted for these work counts.
+
+Current focused checks (all explicit own checkout, fresh
+`HOME=/tmp/taskbot144-repair-r1/home`, `TMPDIR=/tmp/taskbot144-repair-r1/tmp`):
+
+| Command / owning directory | Exit / actual evidence |
+| --- | --- |
+| `pnpm --filter bobs-factory-core build`; `pnpm --filter bobs-factory-mcp-tools build` | 0; changed owning compilation/preparation. Core was rebuilt once after final file-metadata validation refinement. |
+| Core `pnpm exec vitest run test/JsonSnapshotStore.test.ts -t 'verified entry identities\|corrupt or traversing'` | Final 0: **2 passed**, 11 filtered; actual four-page eviction, identity/field separation, overwritten entry, corrupt chunk. Initial new fixture **1 pass/1 fail** retained: it captured tail identities before deliberately evicting them; fixed ordering, no product assertion weakened. |
+| Edge `pnpm exec vitest run --config /tmp/taskbot144-repair-r1/focused.config.mts test/ReviewContextReferences.test.ts test/ForeachRuntime.test.ts test/SpecialistReview.test.ts -t 'native history cutoffs\|original ranges across appends\|repository-projected history\|actual detached declared\|retains accepted call inputs\|restores a conservative review'` | 0: **7 passed**, 66 filtered. Actual bindings at 12/48, mutation/reorder/isolation/cutoff, original range/reconstruction/stale owner, projected history, accepted Call inputs and conservative pending-human behavior. |
+| MCP `pnpm exec vitest run src/factoryContext.test.ts -t 'verified restored\|reuses only core\|provenance projection and private\|only declared inputs'` | 0: **4 passed**, 23 filtered. Warm real-store handoff, no old-payload JSON.parse, changed mutable input, full original pages, retained private/projection/scoping controls. Final metadata refinement reruns only the new restored test: 0, **1 passed**, 26 filtered. |
+| `pnpm exec tsgo --noEmit -p /tmp/taskbot144-repair-r1/edge-owning.tsconfig.json` | 0; unchanged source-alias config with existing SQLite declaration. |
+| Core `pnpm exec tsx --tsconfig /tmp/taskbot144-repair-r1/candidate-paths.json /tmp/taskbot144-repair-r1/{custom-alias,restored-cache}.mts` (two sequential commands) | Each 0 before and after; same root-confirmed fixtures and counters. Portable import wrappers are [alias](assets/taskbot144-context/repair-alias.mts) / [cache](assets/taskbot144-context/repair-cache.mts); their final smoke runs both exit 0 with identical work/bytes (timings are separate observations). Fixture logic unchanged. |
+| Edge `TASKBOT144_DRIVE_RECEIPT=/tmp/taskbot144-repair-r1/small-drive-receipts.json pnpm exec vitest run --config /tmp/taskbot144-repair-r1/small-drive.config.mts` | 0, **1 passed / 12.00 s**; relevant mocked source-mode runtime/context seam. |
+
+[Current drive receipts](assets/taskbot144-context/repair-r1-drive-receipts.json):
+EACH fresh/restart executes **14 unique roles**, 14 root MCP reads plus two explicit
+original declared-dependency reads, **4 approved automated gates**, 7,893 baseline
+bytes. Original → changed dependency values are actually read. Restart pauses at
+the genuine durable `r2/catalog` synthetic checkpoint, shuts down, reconstructs
+and resumes once. This is the prior independent four-round fixture adapted only
+to the implementation checkout/scratch imports; original outcome/dedup/session
+assertions and 120,000ms timeout remain. No authority checkpoint was patched.
+No full service/native CLI/human/provider/final-delivery certification follows.
+
+Logs and SHA256/byte/exit manifest are retained in `/tmp/taskbot144-repair-r1/`.
+Focused final Biome exits 0 with two informational template-style suggestions,
+left for cleanup; `git diff --check` passes. A probe-format attempt used root-relative
+paths from packages/core and processed no files (exit 1); it changed nothing and
+is preparation failure only. The portable probes then executed successfully.
+Ten of the original 16 frozen source/fixture/probe inputs still match exactly;
+six are superseded by this repair, plus two newly covered core files.
+The original broad 26 MCP tests, 681 complete role variants, five full routing
+prompts, final 24-round drive and original 12/48 transport/storage comparisons are
+**authenticated reuse**, not reruns or current acceptance of changed seams. Exact
+unchanged files retain their prior hashes; the eight changed source/tests have a
+new repair freeze. No prompt changed in this repair. The missing web-assets
+reader setup failure from 2507 remains excluded, not a newly established product
+failure. Base 24-round timeout, stopped 223MB attempt, THREE143 baseline failures
+and original missing-final-proof negative remain failed/stopped/deferred below.
+
+## Original controlled comparison (authenticated reuse)
 
 [Probe](assets/taskbot144-context/measure.mts),
 [complete measurements](assets/taskbot144-context/measurements.json),
@@ -177,11 +274,11 @@ checkout path and output JSON path. Final F1 uses `TASKBOT144_DRIVE_RECEIPT`.
 | Bounded nested default view; actual declared inputs/delta/active work | Generic v2 projection at every requested object path; nested gate/impact/prior-output/progress stress, current dependency and full prompt guidance. Native named-read copying and canonical values remain intact. |
 | Every historical finding/disposition/disagreement/rationale | Exact v1 claim semantics retained; lazy complete ledger/round indexes, original first/latest paths and paginated originals. Old unresolved finding and evidence-backed rejected correction retrieved. No summary supplies acceptance. |
 | Immutable originals, stable identity/revision/ownership | Root-bound content-addressed agent snapshots; wrong-root, missing/stale/foreign history-range regressions; original qualified receipt cutoffs restored before native checks. Native store integrity and executed producer guards remain separate authority. |
-| Avoid baseline history copying; saved compatibility | New baseline `contextReferences` records run/range/index digest; zero old payload loads during capture regression; saved reconstruction and legacy inline readability. No persisted history rewrite, pruning or accepted graph upgrade. |
-| Bounded work as well as bytes | Lazy index, metadata/page counters, visible first-index cost, trusted immutable cache and mutable freshness tests. Cold capture/current mutable copies and wide-container metadata remain real costs. |
+| Avoid baseline history copying; saved compatibility | New baseline `contextReferences` records run/range/index digest; built-in capture remains lazy; R1 actual detached custom alias reference/copy controls now pass; saved reconstruction and legacy inline readability. No persisted history rewrite, pruning or accepted graph upgrade. |
+| Bounded work as well as bytes | Lazy index, metadata/page counters, visible first-index cost; R2 genuine restored warm handoff now avoids old-payload serialization/decoding with bounded decoded pages and checked source metadata; mutable freshness tests. Cold capture/current mutable copies and wide-container metadata remain real costs. |
 | Generic custom/renamed/nested reads | Private runtime history provenance, no step leaf/repository/provider switches; native declared reads unchanged; Call/Parallel/For each and accepted-input mutation/provenance checks. |
 | Actual instructions/capability/full prompt fixture | Runtime MCP browsing guidance and capability reference deliberately updated; complete fixture and routing prompt assertions. Saved graph/prompt bodies/native histories are not rewritten; next turns receive updated runtime context guidance. |
-| Fresh/saved/restart valid outcomes | Current 24-round fresh/restart drive agrees and preserves synthetic checkpoint/session; focused conservative/inline compatibility. Base 24-round timeout remains failed, so no blanket before/after runtime equivalence or real-model claim. |
+| Fresh/saved/restart valid outcomes | Current repair four-round drive agrees; authenticated prior 24-round fresh/restart drive agrees and preserves synthetic checkpoint/session; focused conservative/inline compatibility. Base 24-round timeout remains failed, so no blanket before/after runtime equivalence or real-model claim. |
 | Independent impact/reuse/convergence/native authority | #132 mechanisms reused, no #145/#147 implementation. Original input digests, Checks, exact human/provider/permission/delivery/final-proof guards remain required; no reference upgrades incomplete evidence. |
 | Epic generic-building-block decisions | Existing formats/configured roles, Calls/Parallel/For each/Check/human/action owners retained; declarative views and forkability unchanged; deleted Improve remains deleted and model inheritance unchanged. No runtime fixture IDs/toolchain assumptions added. |
 | Delivery and validation policy | One ready PR, `[skip ci]` subjects, changelog/contracts/reference/report. Parent owns independent Standards/Spec, status, guarded squash and later sequence. CI/full monorepo/native/browser matrices deferred to post-148, not passed. No dependencies changed. |
@@ -200,11 +297,32 @@ failure, never final delivery. #132 delivery 1905's real-model/provider/browser/
 media/stream limitations and #143 2491 qualifications remain historical limits.
 
 No UI flow changed, so no screenshots or browser/device replay were invented.
-Both disjoint helpers completed without pending work at priority/xhigh. Final
+Both original disjoint helpers completed without pending work at priority/xhigh;
+this combined repair launched no new helper and has no pending child work. Final
 handoff records exact HEAD/TREE/base, source-hash authentication and cleanup after
 publication. Tracked hooks/configuration remain intact; the configured checkout
 has LFS hook wrappers and no pre-commit wrapper, so absent broad hooks get no credit.
 
-## Final publication delta
+## Original publication delta (historical)
 
 The final follow-up commit changes only this report, the changelog PR link and the context compatibility documentation. All 16 frozen source/fixture/probe hashes remain exact; no source or harness changed during checks. Newly written reference-bearing baselines need a compatible runtime; an older reader is not a supported rollback for those new records. Original receipts are retained. This is repository delivery only, not an installation, service restart, active-run edit, production upgrade or downgrade. Final HEAD/TREE and cleanup are recorded in the direct #144 implementation handoff.
+
+## Combined repair publication and scope
+
+One combined source freeze and publication updates the same ready PR181; no
+partial per-finding candidate, force rewrite, status/approval/merge or later-ticket
+work. Configuration start/final READbacks remain codex/gpt-6.1-sol priority/xhigh.
+Generated own LFS wrappers were restored intact before Git mutation; tracked
+hooks/global configuration are unchanged. Normal configured hooks are reported in
+the live handoff, with no manual replay or credit for absent pre-commit hooks.
+Source/test/harness inputs were stable during every check; only evidence/docs
+were added afterwards. Current cleanup removes own homes/transports/processes,
+retains the clean checkout for fixes and leaves other owners untouched.
+
+Task144 R1/R2 implementation responses are ready for NEW exact-head independent
+review. The complete requirement/epic matrix above remains qualified: source
+preservation is not universal native/provider acceptance. Product WatchCI/Handoff/
+human/provider/permission/final-proof guards remain; development CI and repeated
+broad checks remain deferred to ONE integrated post148 cleanup, never passed.
+No dependency, workflow/protection policy, accepted graph, active run or native
+conversation/store was changed.

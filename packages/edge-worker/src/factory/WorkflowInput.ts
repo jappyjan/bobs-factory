@@ -1,13 +1,67 @@
-import { isImmutableJson } from "bobs-factory-core";
+import { isImmutableJson, retainSnapshotEntry } from "bobs-factory-core";
 
 const historyRanges = new WeakMap<
 	object,
 	{ source: unknown[]; start: number; end: number }
 >();
 
+function sameHistoryJson(left: unknown, right: unknown): boolean {
+	if (Object.is(left, right)) return true;
+	if (!left || !right || typeof left !== "object" || typeof right !== "object")
+		return false;
+	if (Array.isArray(left) !== Array.isArray(right)) return false;
+	if (Array.isArray(left) && left.length !== (right as unknown[]).length)
+		return false;
+	if (
+		!Array.isArray(left) &&
+		Object.getPrototypeOf(left) !== null &&
+		Object.getPrototypeOf(left) !== Object.prototype
+	)
+		return false;
+	const keys = Object.keys(left),
+		other = Object.keys(right);
+	return (
+		keys.length === other.length &&
+		keys.every(
+			(key, i) =>
+				key === other[i] &&
+				sameHistoryJson(
+					(left as Record<string, unknown>)[key],
+					(right as Record<string, unknown>)[key],
+				),
+		)
+	);
+}
+
+const detachedRanges = new WeakMap<
+	object,
+	{ source: unknown[]; start: number; end: number }
+>();
+
+/** Preserve detached native reads; a modified copy cannot borrow its source's identity. */
+export function detachedWorkflowRead<T>(value: T): T {
+	const copy = structuredClone(value);
+	if (value && typeof value === "object" && copy && typeof copy === "object") {
+		const range = historySnapshotRange(value);
+		if (range) detachedRanges.set(copy, range);
+	}
+	return copy;
+}
+
 /** Runtime-owned provenance, never inferred from role JSON or matching payloads. */
 export function historySnapshotRange(value: object) {
-	return historyRanges.get(value);
+	const native = historyRanges.get(value);
+	if (native) return native;
+	const detached = detachedRanges.get(value);
+	// Compare complete declared values, without serializing them or trusting a
+	// digest supplied by an agent. Keep altered copies inline in the baseline.
+	return detached &&
+		sameHistoryJson(
+			value,
+			snapshotHistory(detached.source, detached.start, detached.end),
+		)
+		? detached
+		: undefined;
 }
 
 /** Copy mutable JSON structure while sharing published, deeply frozen receipts. */
@@ -66,7 +120,7 @@ export function snapshotHistory<T>(
 	for (let index = offset; index < limit; index++) {
 		const descriptor = Object.getOwnPropertyDescriptor(history, index);
 		if (!descriptor) continue;
-		if (descriptor.get || project)
+		if (descriptor.get || project) {
 			Object.defineProperty(snapshot, index - offset, {
 				enumerable: true,
 				configurable: true,
@@ -79,7 +133,14 @@ export function snapshotHistory<T>(
 					return project ? project(entry) : entry;
 				},
 			});
-		else snapshot[index - offset] = snapshotWorkflowInput(descriptor.value);
+			if (!project)
+				retainSnapshotEntry(
+					history,
+					String(index),
+					snapshot,
+					String(index - offset),
+				);
+		} else snapshot[index - offset] = snapshotWorkflowInput(descriptor.value);
 	}
 	return snapshot;
 }

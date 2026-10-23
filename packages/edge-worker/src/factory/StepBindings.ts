@@ -7,7 +7,7 @@ import { stepContextSources } from "./StepContextSources.js";
 import { stepForRun } from "./ToolBindings.js";
 import { childRunsView } from "./ViewRuntime.js";
 import type { WorkflowStep } from "./Workflow.js";
-import { snapshotHistory } from "./WorkflowInput.js";
+import { detachedWorkflowRead, snapshotHistory } from "./WorkflowInput.js";
 import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 
 /** Host ticket timestamps have the same JSON representation before/after restart. */
@@ -150,7 +150,8 @@ export function stepBindings(
 		const value = binding.from.startsWith("@")
 			? pointerValue(sources, binding.from.slice(1))
 			: pointerValue(outputs, binding.from);
-		result[name] = value === undefined ? undefined : structuredClone(value);
+		result[name] =
+			value === undefined ? undefined : detachedWorkflowRead(value);
 	}
 	return result;
 }

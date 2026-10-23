@@ -13,7 +13,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { immutableJson } from "bobs-factory-core";
+import {
+	immutableJson,
+	immutableTranscript,
+	JsonSnapshotStore,
+} from "bobs-factory-core";
 import { expect, it, vi } from "vitest";
 import {
 	compactFactoryContext,
@@ -1455,5 +1459,87 @@ it("adds lazy memory to wide root listings without materializing every root chil
 	} finally {
 		nodes.mockRestore();
 		prepared.cleanup();
+	}
+});
+
+it("reuses verified restored receipts after eviction while recapturing mutable inputs", async () => {
+	const home = mkdtempSync(join(tmpdir(), "restored-context-"));
+	const store = new JsonSnapshotStore(join(home, "native-chunks"));
+	const path = join(home, "saved.json");
+	const history = Array.from({ length: 48 }, (_, i) =>
+		immutableJson({
+			step: `nested/items/${i}/review`,
+			at: `t${i}`,
+			output: { notes: `original-${i}:` + "evidence".repeat(3000) },
+		}),
+	);
+	await store.write(path, { history }, {}, [], [], { history: 1 });
+	const saved = store.load<{ history: typeof history }>(path).value;
+	immutableTranscript(saved.history);
+	const cacheDirectory = join(home, "context-cache");
+	const current = { answer: "before" };
+	let first: Awaited<ReturnType<typeof prepareFactoryContextAsync>> | undefined;
+	let second: typeof first;
+	const stringify = JSON.stringify;
+	let characters = 0;
+	try {
+		first = await prepareFactoryContextAsync(
+			{ history: saved.history, current },
+			undefined,
+			undefined,
+			{ cacheDirectory },
+		);
+		current.answer = "after";
+		const serialized = vi
+			.spyOn(JSON, "stringify")
+			.mockImplementation((...args: Parameters<typeof JSON.stringify>) => {
+				if (typeof args[0] === "string") characters += args[0].length;
+				return stringify(...args);
+			});
+		const parsed = vi.spyOn(JSON, "parse");
+		try {
+			second = await prepareFactoryContextAsync(
+				{ history: saved.history, current },
+				undefined,
+				undefined,
+				{ cacheDirectory },
+			);
+			expect(serialized.mock.calls.length).toBeLessThan(40);
+			expect(characters).toBeLessThan(100);
+			// Node descriptors may be parsed; no native historical payload is decoded.
+			expect(
+				parsed.mock.calls.some(([text]) => text.includes('"original-')),
+			).toBe(false);
+		} finally {
+			serialized.mockRestore();
+			parsed.mockRestore();
+		}
+		await withContext(
+			undefined,
+			async (client) => {
+				expect(await readValue(client, "/current", "full")).toEqual({
+					answer: "after",
+				});
+				expect(await readValue(client, "/history/0", "full")).toEqual(
+					history[0],
+				);
+			},
+			undefined,
+			second!.config.args.at(-1)!,
+		);
+		await withContext(
+			undefined,
+			async (client) => {
+				expect(await readValue(client, "/current", "full")).toEqual({
+					answer: "before",
+				});
+			},
+			undefined,
+			first.config.args.at(-1)!,
+		);
+	} finally {
+		first?.cleanup();
+		second?.cleanup();
+		rmSync(home, { recursive: true, force: true });
 	}
 });

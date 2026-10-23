@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { dirname, isAbsolute, join } from "node:path";
 import { setImmediate } from "node:timers/promises";
-import { isImmutableJson } from "bobs-factory-core";
+import { isImmutableJson, snapshotEntryIdentity } from "bobs-factory-core";
 import type { ContextMemoryAccess } from "./factoryContextMemory.js";
 
 type Node = {
@@ -37,6 +37,8 @@ const chunkCharacters = 16 * 1024;
 // Only core-published immutable JSON may skip capture across role handoffs.
 // Directory-scoped weak keys neither retain receipts nor trust shallow freezes.
 const immutableInputs = new Map<string, WeakMap<object, string>>();
+// Bounded metadata only: no decoded receipts are held by stable source keys.
+const immutableEntries = new Map<string, Map<string, string>>();
 
 /** Keep JSON escaping identical at chunk boundaries, including surrogate pairs. */
 function* stringParts(value: string): Generator<string> {
@@ -182,6 +184,17 @@ export class FactoryContextSnapshot {
 			immutableInputs.set(key, cache);
 			if (immutableInputs.size > 16)
 				immutableInputs.delete(immutableInputs.keys().next().value!);
+		}
+		return cache;
+	}
+	private entryCache(project: boolean) {
+		const key = `${this.directory}:${project ? "projected" : "original"}`;
+		let cache = immutableEntries.get(key);
+		if (!cache) {
+			cache = new Map();
+			immutableEntries.set(key, cache);
+			if (immutableEntries.size > 16)
+				immutableEntries.delete(immutableEntries.keys().next().value!);
 		}
 		return cache;
 	}
@@ -342,8 +355,11 @@ export class FactoryContextSnapshot {
 			for (const original of array
 				? Array.from({ length: object.length }, (_, index) => String(index))
 				: Object.keys(object)) {
+				const stableIdentity = snapshotEntryIdentity(object, original);
+				const cached =
+					stableIdentity && this.entryCache(project).get(stableIdentity);
 				let key = original,
-					child = object[original];
+					child = cached ? this.reference(cached) : object[original];
 				if (project && child && typeof child === "object") {
 					if (
 						key === "dependencyManifests" ||
@@ -377,6 +393,13 @@ export class FactoryContextSnapshot {
 					(yield* this.capture(child, project, key)) ??
 					(array ? yield* this.capture(null, project) : undefined);
 				if (!reference) continue;
+				const identity =
+					stableIdentity ?? snapshotEntryIdentity(object, original);
+				if (identity) {
+					const cache = this.entryCache(project);
+					cache.set(identity, this.id(reference));
+					if (cache.size > 8192) cache.delete(cache.keys().next().value!);
+				}
 				const previous = positions.get(key);
 				if (previous === undefined) {
 					characters +=

@@ -40,8 +40,15 @@ The existing private content-addressed snapshot DAG is reused under
 `<factoryHome>/factory/context-cache/<run-id-hash>`. Each role has its own immutable
 manifest and root. Cleanup releases its temporary transport and bindings while
 other roles retain their nodes. Cross-handoff reuse trusts only the runtime's
-private `isImmutableJson` marker; mutable inputs, including descendants of a
-shallow frozen object, are recaptured. Derived indexes are root-bound and cached
+private `isImmutableJson` marker or verified immutable transcript entry sources.
+The latter bind the native store, saved manifest path, field, index and chunk
+hash; runtime-owned slices carry that identity without retaining decoded pages.
+Unchanged file device/inode/size/mtime/ctime metadata allows reuse after an entry
+has been evicted. Changed files are revalidated against their original chunk and
+document hashes. The native decoded cache remains four pages. Derived source-key
+caches retain at most 8,192 node IDs per directory/projection mode and 16 modes,
+never the receipt payloads. Mutable inputs, including descendants of a shallow
+frozen object, are recaptured. Derived indexes are root-bound and cached
 after explicit access. Cold capture processes uncached inputs once; warm capture
 still visits current envelope/history membership metadata. No constant-time
 whole-run preparation claim is made. This cache is derived, not canonical evidence.
@@ -50,7 +57,13 @@ New review baselines record `contextReferences` for original runtime-owned histo
 ranges instead of copying their payloads. References bind the run, exact range and
 qualified receipt-index digest. Native input construction restores the original
 cutoff before native checks/digests; missing, changed or foreign ranges fail.
-Projected repository history is never replaced with an unprojected source range.
+Declared `@history` aliases still receive complete mutable detached copies.
+Private source-range hints survive that binding seam, but baseline capture checks
+the complete copy against its original range before substituting a reference.
+Modified/reordered copies stay inline; original receipts remain untouched. This
+avoids per-baseline storage duplication, while native cloning and comparison
+still visit the declared history. Projected repository history is never replaced
+with an unprojected source range.
 Legacy inline baseline contexts remain readable and are not rewritten or pruned.
 The new representation is recorded on each newly created baseline; it changes no
 accepted graph, impact policy, reviewer selection, native thread or approval.
