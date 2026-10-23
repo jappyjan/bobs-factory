@@ -11,7 +11,11 @@ import {
 	runRepositories,
 	scopeRevision,
 } from "./RepositoryScope.js";
-import { type TimingKind, timingOperation } from "./RunDiagnostics.js";
+import {
+	type TimingKind,
+	type TimingOperation,
+	timingOperation,
+} from "./RunDiagnostics.js";
 import { scopeContextDigest } from "./SpecialistReview.js";
 import { boundOutput, historyForCheck } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
@@ -105,21 +109,65 @@ export function delay(signal: AbortSignal, ms = 10000): Promise<void> {
 	});
 }
 
+/** Categories come from this scoped provider receipt, never a role or check name. */
+function readinessWaits(snapshot: MergeReadiness): TimingOperation[] {
+	const groups = new Map<TimingKind, string[]>();
+	for (const blocker of snapshot.blockers) {
+		const kind =
+			blocker.action === "human"
+				? "human"
+				: blocker.action === "wait"
+					? "provider-ci"
+					: "unknown";
+		const labels = groups.get(kind) ?? [];
+		if (
+			/^[a-zA-Z0-9_.-]{1,80}$/.test(blocker.kind) &&
+			!labels.includes(blocker.kind) &&
+			labels.length < 3
+		)
+			labels.push(blocker.kind);
+		groups.set(kind, labels);
+	}
+	return groups.size
+		? [...groups].map(([kind, labels]) => ({
+				kind,
+				...(labels.length ? { resource: labels.join(", ") } : {}),
+			}))
+		: [
+				{
+					kind:
+						snapshot.approved || snapshot.queued ? "provider-ci" : "unknown",
+					resource: snapshot.queued
+						? "provider queue"
+						: snapshot.approved
+							? "provider confirmation"
+							: "readiness not attributed",
+				},
+			];
+}
+
 /** A passive provider wait must not hold the worker's update drain open. */
 export async function waitForNextPoll(
 	context: ExecutionContext,
 	ms = 10000,
-	kind: TimingKind = "provider-ci",
+	reason: TimingKind | MergeReadiness = "provider-ci",
 ): Promise<void> {
 	context.assertSchedulingOpen?.();
 	const key = context.stepKey ?? context.step.id;
-	const previous = context.run.diagnostics?.operations[key];
-	timingOperation(context.run, key, { kind });
+	const observations =
+		typeof reason === "string" ? [{ kind: reason }] : readinessWaits(reason);
+	const previous = new Map<string, TimingOperation | undefined>();
+	for (const [index, observation] of observations.entries()) {
+		const observedKey = index ? `${key}/readiness/${observation.kind}` : key;
+		previous.set(observedKey, context.run.diagnostics?.operations[observedKey]);
+		timingOperation(context.run, observedKey, observation);
+	}
 	context.checkpointDiagnostics?.();
 	try {
 		await delay(context.signal, ms);
 	} finally {
-		timingOperation(context.run, key, previous);
+		for (const [observedKey, operation] of previous)
+			timingOperation(context.run, observedKey, operation);
 		context.checkpointDiagnostics?.();
 	}
 	context.assertSchedulingOpen?.();

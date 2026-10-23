@@ -1,0 +1,14 @@
+{
+  "comment": 2606,
+  "utf16Units": 37796,
+  "utf8Bytes": 37850,
+  "sha256": "33249bcef8e51fa9dea56bd9d6ae51267bcb87fea504744c67492071ac21bdc5",
+  "Standards": 0,
+  "Spec": [
+    "P148-R2-S1",
+    "P148-R2-S2"
+  ],
+  "rootConfirms": 2,
+  "rootAdditional": 0,
+  "priorFour": "independently addressed at a8d5 with scoped9 checks; exact unchanged blocks/proof reused; no overall clearance"
+}

@@ -1619,7 +1619,7 @@ export class FactoryTools {
 						}
 						return snapshot;
 					}
-					await waitForNextPoll(context);
+					await waitForNextPoll(context, 10000, snapshot);
 				}
 			}
 			case "architecture-decision":
@@ -1779,6 +1779,7 @@ export class FactoryTools {
 				for (;;) {
 					context.assertSchedulingOpen?.();
 					let immediate = false;
+					let waitingFor: MergeReadiness | undefined;
 					const inspectAndMerge = async () => {
 						const impact = context.groupedImpactValidated
 							? undefined
@@ -1805,6 +1806,7 @@ export class FactoryTools {
 							command,
 							url,
 						);
+						waitingFor = snapshot;
 						const merged = confirmedMerge(run, snapshot);
 						if (merged) {
 							reportReadiness(context, snapshot);
@@ -1873,7 +1875,8 @@ export class FactoryTools {
 						? context.coordinateDelivery(inspectAndMerge)
 						: inspectAndMerge());
 					if (result) return result;
-					if (!immediate) await waitForNextPoll(context);
+					if (!immediate)
+						await waitForNextPoll(context, 10000, waitingFor ?? "unknown");
 				}
 			}
 			case "handoff": {
@@ -2000,7 +2003,7 @@ export class FactoryTools {
 					if (readiness.reviewReady) break;
 					// The provider may recalculate mergeability or start checks while the
 					// guide is being written. Wait as CI does, without replaying roles.
-					await waitForNextPoll(context);
+					await waitForNextPoll(context, 10000, readiness);
 				}
 				const recovery = guideGapRecovery(context, readiness);
 				if (recovery) {

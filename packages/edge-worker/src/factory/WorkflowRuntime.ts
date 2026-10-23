@@ -182,6 +182,7 @@ import {
 	diagnosticReuse,
 	diagnosticSummary,
 	RunAccounting,
+	type RunTimingUpdate,
 	runDiagnostics,
 	timingOperation,
 } from "./RunDiagnostics.js";
@@ -763,6 +764,13 @@ export class WorkflowRuntime {
 				if (run) {
 					try {
 						this.checkpointDiagnostics(run);
+						if (this.diagnosticListeners.size) {
+							const update = {
+								id: run.id,
+								diagnostics: diagnosticSummary(run, this.accounting.now()),
+							};
+							for (const listener of this.diagnosticListeners) listener(update);
+						}
 					} catch {
 						/* Diagnostics never grant or block execution authority. */
 					}
@@ -783,6 +791,16 @@ export class WorkflowRuntime {
 	private assertSchedulingOpen(): void {
 		if (existsSync(join(this.directory, "..", "updates", "maintenance.json")))
 			throw new UpdatePausedError();
+	}
+	private diagnosticListeners = new Set<(update: RunTimingUpdate) => void>();
+	/** Timing-only updates must not trigger run serialization or parent reconciliation. */
+	subscribeDiagnostics(
+		listener: (update: RunTimingUpdate) => void,
+	): () => void {
+		this.diagnosticListeners.add(listener);
+		return () => {
+			this.diagnosticListeners.delete(listener);
+		};
 	}
 	readonly runs = new Map<string, FactoryRun>();
 	private listeners = new Set<

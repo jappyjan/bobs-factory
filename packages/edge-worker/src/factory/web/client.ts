@@ -16,6 +16,7 @@ import {
 	settleReason,
 	workingLabel,
 } from "../RunAttention.js";
+import type { RunTimingUpdate } from "../RunDiagnostics";
 import {
 	accessGeneration,
 	accessRequired,
@@ -96,6 +97,23 @@ export function refreshQueries(cache: QueryClient, queryKey: QueryKey) {
 	})();
 	return refresh.promise;
 }
+/** Patch only already-cached timing projections; never refetch full runs for a heartbeat. */
+export function applyTimingUpdate(
+	cache: QueryClient,
+	update: RunTimingUpdate,
+	epoch = accessGeneration(),
+) {
+	if (epoch !== accessGeneration() || accessState().status !== "authenticated")
+		return;
+	cache.setQueriesData<any[]>({ queryKey: ["runs"], exact: true }, (runs) =>
+		runs?.map((run) =>
+			run.id === update.id ? { ...run, diagnostics: update.diagnostics } : run,
+		),
+	);
+	cache.setQueriesData<any>({ queryKey: ["run", update.id] }, (run: any) =>
+		run ? { ...run, diagnostics: update.diagnostics } : run,
+	);
+}
 export function useLiveUpdates() {
 	const cache = useQueryClient();
 	const [error, setError] = useState<string>();
@@ -110,6 +128,7 @@ export function useLiveUpdates() {
 		const connect = () => {
 			cancelFailure();
 			const connection = new AbortController();
+			const epoch = accessGeneration();
 			controller = connection;
 			void fetchEventSource("/api/events", {
 				signal: connection.signal,
@@ -125,6 +144,16 @@ export function useLiveUpdates() {
 					// validateLiveConnection already refreshed the current routes and caches.
 				},
 				onmessage(event) {
+					if (
+						connection.signal.aborted ||
+						epoch !== accessGeneration() ||
+						accessState().status !== "authenticated"
+					)
+						return;
+					if (event.event === "timing") {
+						applyTimingUpdate(cache, JSON.parse(event.data), epoch);
+						return;
+					}
 					if (event.event !== "change") return;
 					const change = JSON.parse(event.data);
 					if (change.ids?.length || change.config)

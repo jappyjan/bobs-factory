@@ -3,6 +3,126 @@
 Date: 2026-10-23. Implementation evidence for Task148 under epic135; independent
 Standards/Spec acceptance and guarded merge remain coordinator-owned.
 
+## Combined Round2 corrections — implementation candidate, NEW acceptance pending
+
+SAME ready PR185; ONE new combined repair commit after focused proof. Both prior
+heads `a8d50a80b47aee6572cfa51c628d26064e902e57` / tree
+`2bdff2a1ecc828fa051e50e26bed0297241739dd` and `a6dd68b3` remain historically
+**NOT ACCEPTED**. Full authoritative comment2606 authenticated here:37796 UTF-16
+units/37850 UTF-8 bytes, SHA256
+`33249bcef8e51fa9dea56bd9d6ae51267bcb87fea504744c67492071ac21bdc5`.
+Round2 axes remain Standards0/Spec2 P2/root confirms2/additional0. The four original
+Round1 triggers were independently addressed at a8d5 by9 scoped positive checks;
+that exact evidence and unchanged boundaries are authenticated reuse here, not
+inherited overall clearance. Original BASE/tree retained, fresh MAINONLY/provider
+main still5a97d709/tree d0dae3b9. Final exact head/tree/sole parent/full original
+log/path/digest are in the PR and Task148 combined handoff; NEW independent
+whole-original-diff acceptance/guarded delivery/status remain parent-owned.
+
+| Finding / axis | Combined implementation and current proof |
+| --- | --- |
+| P148-R2-S1 — Spec P2 | Existing5s accounting heartbeat emits a separate bounded timing notification. Server sends it through the existing protected SSE/session/origin/expiry/backpressure boundary. Client patches timing in actual useRuns/useRun caches; no full run fetch/serialization, saved-run scan, parent reconciliation or offline extrapolation. Actual runtime resource wait/cache/renderer test advances age/wait/current duration5s with unchanged claim/history,0 normal events/reads/saves. Unknown cache records are not created and old session generations cannot refill caches. Current browser source/build shows the actual Working row updating twice with the identical blocker and no refocus/run read. |
+| P148-R2-S2 — Spec P2 | Each CI/merge/handoff poll passes its actual scoped readiness receipt. Categories come from blocker action, not role/check names: required review approval is human; provider waits are CI/provider; both overlap as separate reasons with one exclusive union. Unknown attribution remains unknown; available approved/queue receipts can identify provider confirmation. Real merge caller under synthetic readiness waits2s for required reviewer approval with green checks and never invokes a provider command/merge. Human-only/CI-only/both/transport-backoff cases preserve prior operation, receipts/decisions and timer cleanup. |
+
+No provider/classifier/approval/currentness/handoff/final-proof guard is changed to
+correct timing. Readiness observation records only safe bounded category labels,
+never raw discussion or complete receipts. Five-second observer cap, monotonic
+accounting, legacy/offline unknowns, role/progress/native identity and atomic
+resource/fairness owners remain unchanged. R1 S1/S2/S3/root additional R148-R1-01
+retain original axes and scoped addressed status; their tests, actual EdgeWorker,
+DeliveryCoordination and accounting/capacity-owner blocks are exact authenticated
+reuse. No149 restrictions or87 platform.
+
+### Current verification / actual commands and failures
+
+[Exact argv/cwd/exits and failure qualifications](assets/taskbot148-diagnostics/round2-commands.json).
+All commands use the own retained checkout and `sh .task148/check.sh`, original
+Node24.21.0/direct pinned pnpm10.33.1/private synthetic HOME/TMPDIR/config. No
+install/dependency change; inspected new harness writes stay in own synthetic paths.
+No edits during checks; no model/provider/forge/tracker/device/production effect.
+
+- `node packages/edge-worker/node_modules/vitest/vitest.mjs run --config apps/f1/test-drives/assets/taskbot148-diagnostics/vitest-round2.config.ts`: final exit0,7 tests (2 heartbeat/cache/privacy +5 scoped readiness/caller/backoff). [Current log](assets/taskbot148-diagnostics/round2-focused.log). The actual clock/real-runtime source boundary is mocked locally, not a live provider or arbitrary OS-crash test.
+- Owning production source alias `tsgo -p .task148/tsconfig-edge.json`: exit0. Changed web-owner `tsgo -p .task148/tsconfig-web.json`: final exit0. Changed9-file Biome check: exit0/no fixes. No broad/native gates.
+- Necessary changed-client web build `node packages/edge-worker/scripts/build-factory-web.mjs`: exit0, build `c58909010b7ffc149026e0f5`, actual loaded `app.f0aed311197c08ac07ee0298.js`. One explicit callback type annotation fixed the owning web check; rebuilding after it produced the SAME web build hash. No unchanged prompt/counter/research/native matrix.
+- Local mocked UI source fixture via the existing Vite source loader: final process exit0, loader/watchers close after import, runtime/API/SSE close on SIGTERM and synthetic run home is removed. No new dependency/native runner. Two runs only because first screenshots missed the row below the fold; the first run's DOM proof was valid, but its header-only images are not credited as row evidence.
+
+Retained own new failures: first7-test attempt6 pass/1 fail, caused by fixture
+creation using real Date while measured age used a controlled wall clock. Corrected
+ONLY the fixture's Date clock setup, retaining exact5s assertions/production clocks;
+subsequent/final7 pass. Initial web type check FAIL TS7006 for callback implicit any;
+explicit annotation fixed, final owning check passes. Root-level tsx launcher lookup
+was absent1; used existing Vite dependency loader without install. First Vite loader
+logged an automatic __APP__ dependency-scan warning; it still served the actual
+built app and exited0. All actual logs retained. No old failure is relabelled by a
+later narrower pass. Raw log EOF blanks remain nonfunctional/nonblocking.
+
+### Current Working refresh UI evidence
+
+[Two actual row captures / DOM proof / hashes](assets/taskbot148-diagnostics/round2-ui-captures.json),
+[actual runtime observations](assets/taskbot148-diagnostics/round2-ui-runtime.json).
+Actual app/runtime/API/SSE; synthetic static Docker owner and waiting role; real
+local clock,0 model/provider calls. Desktop1280×800/light only: the changed behavior
+is refresh, not layout/theme. Original8 desktop/390 light/dark images stay retained
+renderer evidence with original synthetic/PWA/build limits; no artificial matrix.
+
+Final before/after images visibly show wait/current duration0s→19s and age0s→20s,
+with the SAME Docker/blocker ID. A continuous browser MutationObserver separately
+measures9s→14s→19s over two heartbeat values,0 focus events,0 visibility events,
+run API reads1→1,0 horizontal overflow. Runtime records7 timing observations and
+**0 normal change events** through shutdown. No manual refocus or unrelated event
+is needed. Earlier run independently observed44→49→54s, but its initial screenshots
+showed the header; they are not passed row captures. New images have no PWA warning;
+old8 images keep their disclosed banner limits. Browser-responsive evidence only,
+no physical device/native/production updater proof. Development runtime remains
+version0.2.73/unknown commit; source and local build are not installed delivery.
+
+### Full current-versus-reused / failed / deferred matrix
+
+[Current source/harness/evidence and exact reused block hashes](assets/taskbot148-diagnostics/round2-source-freeze.json).
+Prior manifests/logs/full prompt/counter fixtures, original8 capture bytes and the
+R1 boundary tests remain exact reused evidence; they are not rerun current passes.
+No full prompt changed. Current proof is ONLY the7 focused tests, owning edge/web
+types/format, changed-client build and live synthetic Working cache/SSE demonstration.
+
+| All Task148 requirements | Current disposition, NEW independent acceptance pending |
+| --- | --- |
+| Explicit execution/capacity/repository/QA/CI/human/backoff/recovery/unknown receipts | Existing bounded sidecar/actual scoped-resource owners retained; current readiness reasons distinguish human/provider/overlap. Original four repairs authenticated unchanged. |
+| Separate age/accounted totals/current duration/blocker/resource | Current real heartbeat/cache/renderer and actual Working browser updates above, identical blocker/no unrelated events; no offline extrapolation. |
+| Recent roles/checks, original rerun reasons and reused evidence | Original111 canonical attempt/visit/runtime/contract/instruction/reuse owners retained; exact source/earlier scoped proof reused. |
+| Nested/parallel unions and separately labeled role sums | Accounting/actual-turn boundaries unchanged and rehashed; formal independent R2 original9 checks and retained14+1/overlap proof reused. No provider inference claim. |
+| Restart/rollback/repeated admission/downtime/legacy gaps | Original four fixes and cap/monotonic/unknown bodies unchanged; exact scoped reconstruction/clock/eligibility proofs retained, no arbitrary OS certification. |
+| Context page/UTF-8 counts / provider values / unknown attribution | Exact unchanged SDK6pages/81498-byte proof and sources/tests reused; no cost/token inference or transcript allowance. |
+| Protected bounded API/export/generic view/no secret payload/hot scans | Existing bounded recent64/export32/throwing-getter proof retained; current timing-only SSE/cache path never serializes a saved run and uses same auth/expiry/backpressure. |
+| Controlled wait/currentness/reconstruction proof | Current7 local source/runtime/mock/cache cases + current Working demonstration; exact prior nested/API/restart/long-run proof reused. All limits remain. |
+| Ten-day short execution/blocker + desktop390 light/dark | Original8 exact captures retained renderer proof. New2 desktop/light row captures and continuous DOM/source proof cover only changed freshness. |
+| Frozen definitions/forks/native sessions/evidence/obligations/exact decisions | Canonical owners unchanged; no checkpoint/evidence/history/human patch. Current synthetic readiness never bypasses approval; exact earlier reconstruction/explanation proof retained. |
+| Generic identities / narrow diagnostics /111/87/144/146/147/149 | Scoped blocker actions, stable keys and original attempt IDs; no key/provider/name shortcut/new platform/permission framework/149 work. |
+
+| Epic decision1–8 / foundation scope1–8 | Preservation/current evidence disposition |
+| --- | --- |
+| 1 forkability except Simple / configurable agent contract | Catalog/frozen definitions/reads/rules/schema owners unchanged; actual Simple/agent versus lease proof exact reused. |
+| 2 generic configured blocks / generic Check | No timing authority/budget change; evaluator/evidence unchanged; retained one-Check nested drive not rerun. |
+| 3 library/custom schemas / For each | Validators and stable lexical item/frame identities unchanged; no new unchanged schema/For each matrix. |
+| 4 inert declarative views / side-effect actions | Existing inert table renderer; bounded timing-only data. Actions still require existing approvals/provider/final proof, no external side effect. |
+| 5 dedicated Ask then consolidation / generic human views | Original native explanation/decision/answers retained and rehashed; new scoped readiness human time cannot approve it. |
+| 6 old Improve deleted / Improve composition and forks | No routine restoration/forced workflow migration or fresh Improve execution. |
+| 7 inherit research model / callable Factory/Takeover | Existing model/call identity owners untouched; nested mocks remain scoped reuse, no inference/savings/live delivery claim. |
+| 8 foundation-first sequence / questions/check-in/human/external views | Exact decision/currentness guards remain; only148 repairs,149 not started; parent owns148→149→one final integration validation. |
+
+| DoD / compatibility | Current disposition |
+| --- | --- |
+| One latest-main ready linked PR | SAME185, originalBASE unchanged by fresh MAINONLY/provider read; one combined commit, all subjects [skip ci], clean retained own checkout. |
+| Independent whole-original-diff acceptance | Pending NEW parent root +two NEW source axes; prior NOT ACCEPTED heads/axis provenance retained. No self-clearance. |
+| Focused tests/F1/restart/concurrency/staleness | Current7 and actual Working/cache/SSE seam; exact unchanged original four/nested/restart proof authenticated. No arbitrary OS/native/live provider certification. |
+| Whole prompt/capability/changelog/docs | Capability40703-character value/full fixture/test unchanged and hashed; earlier3 passes reused. Same185 changelog entry/maintained docs/report updated. |
+| UI scope | New2 current desktop/light row captures, measured updates; original8 responsive/themes retained with original limits. |
+| Required failure retention | QA allowed-is-not-a-function FAIL/unprovenBASE;3 historical ReviewFiles/TicketDelivery FAIL/deferred; external missing-final-proof NOT DELIVERED. R1 own-shell setup and R2 external list/listRuns probe failures remain historical. New own fixture/type/tooling/capture failures/warnings disclosed above. |
+| CI/full/native/final cleanup | ALL development CI/check/status-rollup/workflow/main-health/provider-finalization queries/triggers/watches/polls/retries/waits and broad/full/native/manual monorepo gates DEFERRED after149, NOT PASSED. No settings/guards weakened; no dependency change. |
+| Delivery/cleanup/ownership | Parent owns guarded [skip ci] squash/status/sequence. Own runtime/API/SSE/loaders/timers/transports/preview closed; private synthetic homes removed. No helpers/pending children/status/approval/merge/149. Own4 executable hooks never moved; normal post-commit/push/LFS intact, command-local unsigned authorization only, no saved config/auth/signing/global/protection/key access. Manual worktree did not rebind inherited T3. Actual own+parent start/end reads codex/gpt-6.1-sol/priority(Fast)/xhigh/full-access/default. |
+
+The following Round1 candidate report is historical at a8d5 and remains retained;
+it does not override Round2 NOT ACCEPTED or grant this new candidate acceptance.
+
 ## Combined Round1 corrections — implementation candidate, acceptance pending
 
 The original `a6dd68b310768d7209986e78ace3183e6fb4fe39` / tree

@@ -26,7 +26,10 @@ allowances; outputs-first restrictions belong to the later follow-up.
   This is not provider inference time or CPU time.
 - Capacity admission, repository publication, shared QA resources, provider CI,
   human decisions, child-run waits and transport retry/backoff have explicit
-  categories. Preparation/recovery without a proven execution boundary is unknown.
+  categories. Passive readiness waits use the actual scoped blocker's action:
+  required reviewer approval is human time, provider waits are CI/provider time,
+  and simultaneous reasons retain separate overlapping unions. No approval,
+  currentness or provider requirement is waived by the category. Preparation/recovery without a proven execution boundary is unknown.
 - A monotonic clock measures intervals within one runtime. State boundaries and a
   five-second heartbeat checkpoint a small sidecar. An observation contributes at
   most five seconds: a suspended process/event loop cannot invent execution for an
@@ -62,7 +65,13 @@ window, not a hidden full history. Current operations cap at 32 with `currentTot
 recent role/check counts describe the retained window. Stable full step hashes and
 original attempt IDs distinguish long nested identities despite bounded display
 labels. The endpoint reads only diagnostic data, not saved outputs or history.
-The same bounded JSON is downloadable from the run screen. No credentials, raw
+The same bounded JSON is downloadable from the run screen.
+Active-run heartbeats also publish a bounded timing-only event through the existing
+protected SSE connection. It patches timing in the Working list and cached run
+views without fetching/serializing full runs, scanning saved history, triggering
+parent reconciliation, or extrapolating execution through offline time. Normal
+session/origin/expiry checks and slow-reader backpressure apply; an old session
+cannot refill private caches. The detail diagnostic poll is separate. No credentials, raw
 prompts, configuration dumps or full evidence bodies are included. Resource names
 are shown only for simple declared IDs; opaque repository/path scopes use stable
 kind/hash identities and a blocking run ID.

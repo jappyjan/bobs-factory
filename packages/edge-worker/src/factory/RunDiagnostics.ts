@@ -14,6 +14,10 @@ export type TimingKind =
 	| "children"
 	| "recovery"
 	| "unknown";
+export interface RunTimingUpdate {
+	id: string;
+	diagnostics: ReturnType<typeof diagnosticSummary>;
+}
 export interface TimingOperation {
 	kind: TimingKind;
 	role?: boolean;
