@@ -25,6 +25,9 @@ import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 /** Instance-owned coordination, persisted with the run rather than a process lease. */
 export interface DeliveryCoordination {
 	waitingSince?: string;
+	/** Restored waits retain credit but do not contend before execution admission. */
+	admissionReady?: boolean;
+	waitCreditMs?: number;
 	priority?: "completion" | "normal";
 	readiness?: "checking" | "blocked" | "active" | "released" | "unknown";
 	waitReason?: string;
@@ -302,12 +305,28 @@ function continuousWait(
 ): string | undefined {
 	if (claim?.phase !== "queued" || claim.admittedAt || claim.releasedAt)
 		return undefined;
+	if (claim.admissionReady === false) {
+		const credit = claim.waitCreditMs;
+		return typeof credit === "number" && Number.isFinite(credit) && credit >= 0
+			? new Date(now - credit).toISOString()
+			: undefined;
+	}
 	const queued = Date.parse(claim.queuedAt);
 	const waiting = Date.parse(claim.waitingSince ?? claim.queuedAt);
 	const since = Math.max(queued, waiting);
 	return Number.isFinite(since) && since <= now
 		? new Date(since).toISOString()
 		: undefined;
+}
+
+function parkQueuedWait(claim: DeliveryCoordination, now: number): void {
+	const since = continuousWait(claim, now);
+	claim.waitCreditMs = since ? now - Date.parse(since) : 0;
+	claim.admissionReady = false;
+	claim.readiness = "checking";
+	claim.waitReason =
+		"Awaiting execution admission; previous resource wait retained";
+	delete claim.blockers;
 }
 
 function queueOrder(
@@ -381,12 +400,14 @@ export function restoreDelivery(run: FactoryRun): void {
 	for (const [key, claim] of pending) {
 		if (cancellationUnconfirmed(run, key, claim)) continue;
 		if (!executing.has(key) || claim.phase === "released") continue;
-		claim.queuedAt = continuousWait(claim, now) ?? new Date(now).toISOString();
-		claim.waitingSince = claim.queuedAt;
+		const since = continuousWait(claim, now);
+		parkQueuedWait(claim, now);
+		if (!since) {
+			claim.queuedAt = new Date(now).toISOString();
+			claim.waitingSince = claim.queuedAt;
+		}
 		claim.priority ??= "normal";
 		claim.phase = "queued";
-		claim.readiness = "checking";
-		claim.waitReason = "Restart requires operation admission";
 		delete claim.admittedAt;
 		delete claim.releasedAt;
 		delete claim.heldScopes;
@@ -449,6 +470,7 @@ export async function acquireDelivery(
 			(waitingSince ? previous?.priority : undefined) ??
 			"normal",
 		phase: "queued",
+		admissionReady: true,
 		readiness: "checking",
 		...(heldScopes?.length ? { heldScopes: [...heldScopes] } : {}),
 		operation: key,
@@ -487,6 +509,7 @@ export async function acquireDelivery(
 					// our expansion: that would deadlock the waiter and its owner.
 					const earlier =
 						!terminal(other) &&
+						candidate.admissionReady !== false &&
 						!candidate.scopes.some((scope) =>
 							claim.heldScopes?.includes(scope),
 						) &&
@@ -601,8 +624,10 @@ export async function acquireDelivery(
 				delete claim.heldScopes;
 				delete claim.blockers;
 				delete claim.waitingSince;
-			} else if (!(claim.phase === "queued" && options.preserveQueued?.()))
-				releaseDelivery(run, "Admission cancelled", key);
+			} else if (claim.phase === "queued" && options.preserveQueued?.()) {
+				parkQueuedWait(claim, Date.now());
+				updateSummary(run, claim);
+			} else releaseDelivery(run, "Admission cancelled", key);
 			await save();
 		}
 		throw error;
@@ -640,6 +665,8 @@ export function releaseDelivery(
 		delete reservation.waitingSince;
 		delete reservation.waitReason;
 		delete reservation.heldScopes;
+		delete reservation.admissionReady;
+		delete reservation.waitCreditMs;
 	}
 	const last = reservations.at(-1)?.[1];
 	if (last) updateSummary(run, last);

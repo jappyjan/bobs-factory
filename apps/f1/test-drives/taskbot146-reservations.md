@@ -1,6 +1,8 @@
 # Task146 — shared mutation reservations
 
 Implementation evidence, 23 October 2026; acceptance remains parent-owned.
+Original A/00cf evidence is historical and NOT CLEAN at independent report2550.
+See the combined-repair section and summary.repair for current proof.
 Base: `6a25d1659c4a9e475596408500117af81b83f2b5`, tree
 `1317fec25dc41e41ad26c48ef2bd2c93a330e967`, sole parent
 `c30d563525f0d9726858f1b6ada83aebb54d687b`.
@@ -146,3 +148,125 @@ No development CI/check/status/workflow query or trigger. Broad build/type/lint/
 package/app/script/audit/native validation is deferred to the integrated post148
 phase, not passed. Independent whole-diff Standards+Spec review, statuses and
 squash merge remain parent-owned.
+
+## Combined repair after independent Round1 (live146/2550)
+
+The original sections/receipts above describe A/`00cff70a` and remain historical.
+That candidate is **NOT CLEAN**, with two independently confirmed P1 defects.
+The complete authoritative report2550, both verbatim axes and their failures
+remain on Task146; this follow-up does not replace it or inherit acceptance.
+
+- **R146-ROOT-1 = Task146R1-STANDARDS-S2 + Task146-SPEC-1:** grouped continued
+  publication required authority even for unchanged context. It now skips an
+  unreceipted grouped repository only when clean status and a fresh base diff
+  prove no changes. Dirty/changed/unreadable context refuses publication; actual
+  affected targets still require original executed receipt/accepted takeover,
+  original branch/open PR/current scope and provider guards. No receipt is invented.
+- **R146-ROOT-2 = Task146R1-STANDARDS-S1:** a restored resource queue could block
+  the holder of its needed capacity. Restored and gracefully paused queued claims
+  now expose `admissionReady:false`, retained `waitCreditMs` and an execution-wait
+  reason. They do not contend until actual execution admission. Acquired claims
+  reactivate earned wait credit; capacity/downtime while parked adds no resource
+  aging. Active, draining, held-expansion and unconfirmed external owners remain
+  exclusive. Machine capacity and its age policy are unchanged.
+
+The repair changes only these two product owners. Current prompt/capability
+contracts already require actual targets and capacity before resource admission;
+no new capability or prompt is introduced. Entire prompt/expected fixtures and
+native/human/impact/provider quality gates remain untouched. Reservation docs and
+the existing changelog entry are updated, with the actual PR183 link.
+
+### Current affected runtime/mock integration
+
+`ReservationRecovery.test.ts` is the one small affected integration family allowed
+by the repair request. Public workflow validation, actual WorkflowRuntime,
+FactoryTools/receipt ownership, normal shutdown/restoration/resumeAll and real
+SessionSemaphore(1) execute. Git/provider commands are controlled; this is not a
+fresh authenticated API F1 drive or real Git/provider/native enforcement proof.
+No validator or authority guard is mocked; checkpoints/run ages/claims/history
+are not patched. Runtime homes and optional receipt outputs use own TMPDIR.
+
+Five publication cells: single and grouped one-affected/one-unchanged both complete
+initial and continued publication, each with one PR creation/two affected pushes.
+Changed/dirty/unreadable unreceipted context fails safely with **zero context
+add/commit/push effects** and one original PR creation. The affected repository can
+already have received its valid continued push before a later context refusal;
+this does not claim whole-provider transaction atomicity or erase partial effects.
+
+The restart cell first creates a genuine queued resource claim while holding the
+single capacity slot, with an older run waiting for capacity. Normal shutdown
+preserves that wait. A new runtime's resumeAll lets the capacity-admitted operation
+run while the older resource claim stays parked. Both intensive runs complete once;
+all three restored tool visits complete, peak conflicting mutations **1**, final
+capacity active0/waiting0. A separate fake-clock assertion proves earned credit is
+reactivated without accruing the parked interval. No sleeps or production timing
+claim. Raw compact receipts and exact input hashes are in the summary's `repair`.
+
+### Frozen checks, failures and reuse
+
+Own artifact root: `/tmp/taskbot146-repair-qyl4wr2i`. Current actual Node24.21.0 and
+pnpm10.33.1; no installs/dependency builds needed. Source/harness remained frozen
+during each check. Only the legacy restart test expectation changed after the
+19-case run; those19 inputs and both product owners remain byte-identical.
+
+Commands used the retained own checkout explicitly. Final runs set private HOME,
+TMPDIR and CLAUDE_CONFIG_DIR under that artifact root, and invoke
+`node packages/edge-worker/node_modules/vitest/vitest.mjs run --config
+<own>/focused.config.mjs` with these filters:
+
+- DeliveryFairness + ReservationRecovery: **exit0,19 passed**. Current13 fairness
+  plus6 affected runtime integration cases, including genuine restart, groups,
+  missing affected authority, dirty context and unreadable base.
+- ReservationBoundaries + DeliveryCoordination, selection `original publication
+  authority|after shutdown|three affected repositories|releases merge ownership
+  between`: **exit1,4 passed/1 failed/30 skipped**. The four positives retain their
+  current scope; the old fixed restart publication order was the failure.
+- DeliveryCoordination, `ineligible claims block admission`, first revised order:
+  **exit1,1 failed/25 skipped**. Reversing a fixed order also failed because either
+  leaf may become execution-ready first as startup disk commits settle.
+- Final corrected restart selection: **exit0,1 passed/25 skipped**. It retains
+  queuedAt/parked-credit assertions, both publication visits exactly once,
+  completed runs, cancellation and original capture-count assertions. Only the
+  unsupported pre-eligibility order assertion changes; fairness among ready
+  contenders and conflict exclusion remain separately exercised.
+- `./node_modules/.bin/tsgo -p <own>/owner-typecheck.json --noEmit`: **exit0**,
+  scoped source/import graph; not a monorepo check.
+
+Before product repair the first six-cell command was **exit1,2 passed/4 failed**:
+unchanged grouped publication and actual restart reproduced the two review defects.
+One changed-context fixture introduced changes during initial publication and hit
+provider identity rejection; it was corrected to change only at continuation.
+The unreadable-base expectation encountered the old missing-authority guard first.
+These are not four unique product defects. After the two product edits and fixture
+correction, the six cells passed (exit0), then the final19 passed. Initial two
+commands isolated runtime TMPDIR/Claude but retained the existing tooling HOME;
+final current checks use the private HOME. No native or credential-store call ran.
+
+No single all-final-file suite claim: prior independent22 are scoped reuse where
+owners/mechanisms remain unchanged; current13 fairness +2 continuation recheck
+changed owners. Other7 original boundary cases, full prompts/429 frozen entries
+and head/native/impact guards retain report2550's exact limits. Original F1 BASE
+prepared-publication versus candidate merge distinction remains historical00cf
+proof, not final repair-source certification. Earlier failures, cosmetic Biome1,
+143 three BASE failures,144 timeout/STOP/EOF and145 partial-matrix qualifications
+remain unchanged. No broad/full/native/CI replay or cosmetic cleanup.
+
+### Outcome and compatibility disposition
+
+Both confirmed failure paths have repair evidence; parent must run NEW exact-head
+whole-diff Standards+Spec review. No self-clearance/status/approval/merge supplied.
+All146 criteria retain their earlier disposition with the two failed compositions
+now exercised by the affected integration: local concurrency/publication split,
+capacity-ready acquisition/cleanup, shared QA exclusion, completion/continuous
+aging, current head/base/context/QA/findings/native human/provider prerequisites,
+atomic grouped/nested/stale/cancel/restart safety, conservative legacy capability
+reasons and truthful ownership/wait state.126 tracking/outbox and109 passive CI are
+unchanged;94/132/145 original approval and cumulative continuation remain required.
+
+All eight epic decisions remain: forkability except Simple; generic configured
+agents/Check/flow/human/actions; library/custom schemas; declarative safe views;
+targeted Ask/reconsolidation; composed Improve/no old routine; inherited research
+worker; foundation-first sequence. No UI,147/148, active-run edit or deployment.
+DoD: same ready PR183, linked ticket, actual changelog/capability contracts and
+focused runtime integration; parent acceptance/squash pending. Development CI is
+skipped; integrated post148 broad/full/native validation remains deferred, not passed.

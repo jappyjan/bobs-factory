@@ -9,7 +9,10 @@ Follow-up Push & draft PR actions use `arguments.publication: "existing"` and
 bind `reads.draftPr` to the original executed publication action (or retain the
 accepted takeover source). They verify the original branch and open PR before
 push, preserve draft state, and never create a replacement PR from missing receipt
-provenance. This includes correction after a PR has already become non-draft.
+provenance. Grouped repositories without a receipt are skipped only after a clean
+worktree and fresh base comparison prove they remain unchanged context; changed,
+dirty or unreadable repositories cannot gain publication authority this way.
+This includes correction after a PR has already become non-draft.
 
 Declare shared environments through `resources` or the existing QA environment
 contract. A separate worktree does not prove separate Docker, databases or fixtures.
@@ -40,8 +43,10 @@ retains exclusion while a hook drains; unconfirmed external cancellation retains
 unknown ownership until existing capacity reconciliation supplies proof. Interrupted
 nested expansion retains its original mutation targets through outer cleanup;
 cyclic expansion fails safely rather than deadlocking or speculatively releasing.
-Queued waits survive restart only for retained unfinished leaves; old active
-admissions start fresh. Original receipts and native conversations stay retained.
+Queued waits survive restart only for retained unfinished leaves. They remain
+outside resource contention until execution admission, with their earned wait
+credit retained separately; time awaiting execution does not add resource aging.
+Old active admissions start fresh. Original receipts and native conversations stay retained.
 
 Saved workflows and accepted runs are never rewritten. Adopt the new boundaries
 by saving a new workflow copy and starting a new run. Existing forks retain their

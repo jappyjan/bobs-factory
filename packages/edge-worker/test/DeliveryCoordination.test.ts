@@ -269,7 +269,7 @@ it("releases an overlapping target while a human is absent and retains its pendi
 	await Promise.all([a, b]);
 });
 
-it("retains continuous queued waits ahead of prior active admissions after shutdown, without reviving cancellation", async () => {
+it("preserves queued wait credit after shutdown without letting ineligible claims block admission", async () => {
 	const directory = home();
 	let ownerStarted = false;
 	const firstRuntime = new WorkflowRuntime(directory, {
@@ -297,6 +297,7 @@ it("retains continuous queued waits ahead of prior active admissions after shutd
 	void firstRuntime.launch(cancelled);
 	void firstRuntime.launch(next);
 	await waitFor(() => expect(next.deliveryCoordination?.phase).toBe("queued"));
+	const queuedAt = next.deliveryCoordination!.queuedAt;
 	firstRuntime.stop(cancelled.id);
 	await firstRuntime.shutdown();
 	const visits: string[] = [];
@@ -311,11 +312,19 @@ it("retains continuous queued waits ahead of prior active admissions after shutd
 			return {};
 		},
 	});
+	expect(runtime.get(next.id).deliveryCoordination).toMatchObject({
+		phase: "queued",
+		queuedAt,
+		admissionReady: false,
+		waitCreditMs: expect.any(Number),
+	});
 	runtime.resumeAll();
 	await waitFor(() => expect(runtime.get(next.id).status).toBe("completed"));
 	await waitFor(() => expect(runtime.get(owner.id).status).toBe("completed"));
 	expect(runtime.get(cancelled.id).status).toBe("stopped");
-	expect(visits.filter((visit) => visit.endsWith(":draft-pr"))).toEqual([
+	// Startup disk commits can make either leaf execution-ready first. A parked
+	// queue retains credit without prescribing an order before that admission.
+	expect(visits.filter((visit) => visit.endsWith(":draft-pr")).sort()).toEqual([
 		"next:draft-pr",
 		"owner:draft-pr",
 	]);

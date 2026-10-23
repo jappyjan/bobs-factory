@@ -1072,10 +1072,29 @@ export class FactoryTools {
 							| undefined)
 					: undefined;
 				const continuedUrl = source?.url ?? prior?.url;
-				if (continuing && !continuedUrl)
+				const baseBranch = String(
+					source?.baseRefName ?? runRepositories(run)[0]!.baseBranch,
+				);
+				if (continuing && !continuedUrl) {
+					// Grouped dispatch includes context-only repositories without receipts.
+					// Prove they are unchanged before skipping, without creating authority
+					// or committing/pushing work that appeared since initial publication.
+					if (
+						context.allowUnchangedRepository &&
+						!(await command("git", ["status", "--porcelain"]))
+					) {
+						await command("git", ["fetch", "origin", baseBranch]);
+						const changed = await command("git", [
+							"diff",
+							"--name-only",
+							`refs/remotes/origin/${baseBranch}...HEAD`,
+						]);
+						if (!changed.trim()) return { unchanged: true };
+					}
 					throw new Error(
 						"Continued publication requires its original executed PR receipt or accepted takeover source",
 					);
+				}
 
 				if (boundOutput(context, "implementation", "status") === "blocked")
 					throw new Error(
@@ -1125,9 +1144,6 @@ export class FactoryTools {
 						`chore: ${subject || "factory changes"}`,
 					]);
 				}
-				const baseBranch = String(
-					source?.baseRefName ?? runRepositories(run)[0]!.baseBranch,
-				);
 				await command("git", ["fetch", "origin", baseBranch]);
 				const baseRef = `refs/remotes/origin/${baseBranch}`;
 				const commits = await command("git", [

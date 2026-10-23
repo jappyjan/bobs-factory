@@ -392,6 +392,26 @@ it("preserves proven queued waits on restart, starts active waits fresh, and nev
 		waitingSince: new Date().toISOString(),
 	});
 	expect(claim(restored.get(cancelled.id), key).phase).toBe("released");
+	const retainedCredit = DELIVERY_AGING_MS + 1000;
+	expect(claim(restored.get(queued.id), key)).toMatchObject({
+		admissionReady: false,
+		waitCreditMs: retainedCredit,
+	});
+	clock(DELIVERY_AGING_MS + 302_000);
+	const resumed = restored.get(queued.id);
+	await acquireDelivery(
+		resumed,
+		() => [resumed],
+		new AbortController().signal,
+		() => {},
+		() => {},
+		{ key, scopes: [a] },
+	);
+	expect(claim(resumed, key)).toMatchObject({
+		phase: "active",
+		admissionReady: true,
+		queuedAt: new Date(Date.now() - retainedCredit).toISOString(),
+	});
 	const stopped = restored.get(queued.id);
 	stopped.status = "stopped";
 	restoreDelivery(stopped);

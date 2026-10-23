@@ -276,5 +276,334 @@
     "F1 publication hooks and human/provider records are scripted; actual merge guard executes, but no real forge/model/native adapter proof.",
     "No production timing/cost or arbitrary process-crash/external exactly-once guarantee.",
     "No development CI, broad build/type/lint/packages/apps/scripts/audit/native cycles; deferred to post148."
-  ]
+  ],
+  "evidenceScope": "Original fields below describe historical A/00cf, NOT CLEAN at review2550; current combined repair is under repair.",
+  "repair": {
+    "priorHead": "00cff70a6fb94b3b18e01b81afba52269a26bbdb",
+    "priorTree": "34b43f1bd70aac7a6cbdde446796d7af000047da",
+    "priorAcceptance": "NOT CLEAN: authoritative live146/2550; two P1 defects",
+    "findings": {
+      "R146-ROOT-1": [
+        "Task146R1-STANDARDS-S2",
+        "Task146-SPEC-1"
+      ],
+      "R146-ROOT-2": [
+        "Task146R1-STANDARDS-S1"
+      ]
+    },
+    "sourceDigest": "37c138f210fe96345b7781fd0909ba4028fbf8d2b19e7772dd426227db6d5521",
+    "inputDigest": "37e2f861cd493363cd2e88cc29cb55a043b5f62141a7cbca1784fbaa67fc675a",
+    "sha256": {
+      "apps/f1/test-drives/assets/taskbot146-reservations.mjs": "5aeda2414a25410de1afbfe1643eda7ba268e864823c198a8c219af24925e48f",
+      "packages/edge-worker/src/EdgeWorker.ts": "1f43e32f08383d92c35e6ee632bb31d7cd04a7dca698b47c53879906140d5d36",
+      "packages/edge-worker/src/factory/DeliveryCoordination.ts": "b51ea4b6d9a0a146f94fe056e16637a219513a316e1f0b1343e5df7981c1aafc",
+      "packages/edge-worker/src/factory/FactoryTools.ts": "9c1607ce8e441017e01950d605ab95e401dfc01d03c9432786e4088892038ebf",
+      "packages/edge-worker/src/factory/RolePrompt.ts": "68e75067c0b1284c4c602366dfc0b1f9b2c8ed273f27402ac76350e0b28960c0",
+      "packages/edge-worker/src/factory/StepConfig.ts": "43c9505c89879bc32d7a235d6011485f29695c5921b66ff86e65037c197d86a8",
+      "packages/edge-worker/src/factory/Workflow.ts": "3a2ae8022c9d6c82af7de546cd09625d54976b8fd3e2fc554d66a3a5e27be7a7",
+      "packages/edge-worker/src/factory/WorkflowRuntime.ts": "1155db5dc3ff4141f0b0e464bb04c94bf43b4cf0be015b8d2ec81e69dfa38c8d",
+      "packages/edge-worker/src/factory/factoryRecipes.ts": "7777526ee7ab69a77e97e23ab495559496858df8b83aa6055555a0f9c129f87f",
+      "packages/edge-worker/src/factory/stockFactorySteps.ts": "9a2090a098201fd2bf781304d9fc51edb4ee1f59a621488814ce29aa48c89b49",
+      "packages/edge-worker/test/DeliveryCoordination.test.ts": "bec69fddb0732b99cb5249a218a917a8c723301c7d08d3237f37f76abe3fe503",
+      "packages/edge-worker/test/DeliveryFairness.test.ts": "6d42db1d3aca2b323e2fd911ea45e62d1fda661fff8f7d3921c07d3189461bb5",
+      "packages/edge-worker/test/FactoryRolePrompts.test.ts": "24401189a109a05fce09834cd2f6f4c6fa7f4065f63769492e5eb597ded1011d",
+      "packages/edge-worker/test/ReservationBoundaries.test.ts": "1c6c50fc13e0e12b9d8899c556fb4c72d91da63198a2819486a0d3def716395d",
+      "packages/edge-worker/test/ReservationF1.test.ts": "7ea7398056b31e856fcf552af3edb9536655412d1867d678b92daa306b8e96e4",
+      "packages/edge-worker/test/ReservationRecovery.test.ts": "08e646546a8df06a85f8144e377d6b86a1bd5e38d4c0915061e855cd3402f302",
+      "packages/edge-worker/test/StepConfig.test.ts": "f450d344ce76aa4be85ecf54bd6b92360126151f378ae32eb7e32df5a74a2214",
+      "packages/edge-worker/test/fixtures/authenticated-factory.ts": "f8f7c6c933875a3d4ac7140faface48c355760273ff697cb978b5e78fc4a7277",
+      "packages/edge-worker/test/fixtures/github-api.ts": "934288ed420c9d1fd4be93b8eafea6995811c6193a17d9926ffe5ac907470f58",
+      "packages/edge-worker/test/fixtures/merge-readiness.ts": "206d194d908d9d46255b6bcf9fede45e8ab540265f75e72e44423b26b6e76c7a",
+      "packages/edge-worker/test/fixtures/runtime-wait.ts": "c8e7678a9782c0e93aed1a37822a4419fdf017b04eab392c291142654f3a9215",
+      "packages/edge-worker/test/fixtures/stock-role-prompts.json": "f5137b4bd14616ce48c011a2cb008e03235af6602f40b70d23f1cdfd38a04520",
+      "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "6e1bfbd6145c28f7bead512c74f6e55e48ac57149a490db725024dd262681723",
+      "packages/edge-worker/test/setup.ts": "72a5a06930a7e014d8795f2a086399342b5c9580a2760da04dd16ead020de358"
+    },
+    "artifactRoot": "/tmp/taskbot146-repair-qyl4wr2i",
+    "configuration": {
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "serviceTier": "priority",
+      "reasoningEffort": "xhigh",
+      "mutation": false
+    },
+    "toolchain": {
+      "node": "24.21.0",
+      "pnpm": "10.33.1"
+    },
+    "publication": [
+      {
+        "mode": "single",
+        "status": "completed",
+        "error": null,
+        "historySteps": [
+          "original",
+          "continued"
+        ],
+        "pushes": {
+          "repo": 2,
+          "context": 0
+        },
+        "contextMutations": 0,
+        "providerCreates": 1
+      },
+      {
+        "mode": "unchanged",
+        "status": "completed",
+        "error": null,
+        "historySteps": [
+          "original",
+          "continued"
+        ],
+        "pushes": {
+          "repo": 2,
+          "context": 0
+        },
+        "contextMutations": 0,
+        "providerCreates": 1
+      },
+      {
+        "mode": "changed",
+        "status": "failed",
+        "error": "Context: Continued publication requires its original executed PR receipt or accepted takeover source",
+        "historySteps": [
+          "original"
+        ],
+        "pushes": {
+          "repo": 2,
+          "context": 0
+        },
+        "contextMutations": 0,
+        "providerCreates": 1
+      },
+      {
+        "mode": "dirty",
+        "status": "failed",
+        "error": "Context: Continued publication requires its original executed PR receipt or accepted takeover source",
+        "historySteps": [
+          "original"
+        ],
+        "pushes": {
+          "repo": 2,
+          "context": 0
+        },
+        "contextMutations": 0,
+        "providerCreates": 1
+      },
+      {
+        "mode": "unreadable",
+        "status": "failed",
+        "error": "Context: Base unavailable",
+        "historySteps": [
+          "original"
+        ],
+        "pushes": {
+          "repo": 2,
+          "context": 0
+        },
+        "contextMutations": 0,
+        "providerCreates": 1
+      }
+    ],
+    "restart": {
+      "beforeCapacity": {
+        "active": 1,
+        "waiting": 1
+      },
+      "beforeWaiting": {
+        "scopes": [
+          "[\"resource\",\"docker:recovery/shared\"]"
+        ],
+        "queuedAt": "2026-10-23T06:35:16.822Z",
+        "waitingSince": "2026-10-23T06:35:16.822Z",
+        "priority": "normal",
+        "phase": "queued",
+        "admissionReady": true,
+        "readiness": "blocked",
+        "operation": "shared:resources",
+        "reason": "Shared QA/environment resource",
+        "blockers": [
+          {
+            "runId": "dc20f209-20f1-464d-8edf-236bec127707",
+            "operation": "shared:resources",
+            "targets": [
+              "[\"resource\",\"docker:recovery/shared\"]"
+            ]
+          }
+        ],
+        "waitReason": "run dc20f209-20f1-464d-8edf-236bec127707, operation shared:resources, target Shared resource docker:recovery/shared",
+        "reservations": [
+          {
+            "scopes": [
+              "[\"resource\",\"docker:recovery/shared\"]"
+            ],
+            "queuedAt": "2026-10-23T06:35:16.822Z",
+            "waitingSince": "2026-10-23T06:35:16.822Z",
+            "priority": "normal",
+            "phase": "queued",
+            "admissionReady": true,
+            "readiness": "blocked",
+            "operation": "shared:resources",
+            "reason": "Shared QA/environment resource",
+            "blockers": [
+              {
+                "runId": "dc20f209-20f1-464d-8edf-236bec127707",
+                "operation": "shared:resources",
+                "targets": [
+                  "[\"resource\",\"docker:recovery/shared\"]"
+                ]
+              }
+            ],
+            "waitReason": "run dc20f209-20f1-464d-8edf-236bec127707, operation shared:resources, target Shared resource docker:recovery/shared",
+            "runId": "c3eaefc1-9c70-4713-8149-bef7e8b729e6"
+          }
+        ]
+      },
+      "restoredParked": {
+        "scopes": [
+          "[\"resource\",\"docker:recovery/shared\"]"
+        ],
+        "queuedAt": "2026-10-23T06:35:16.822Z",
+        "waitingSince": "2026-10-23T06:35:16.822Z",
+        "priority": "normal",
+        "phase": "queued",
+        "admissionReady": false,
+        "readiness": "checking",
+        "operation": "shared:resources",
+        "reason": "Shared QA/environment resource",
+        "waitReason": "Awaiting execution admission; previous resource wait retained",
+        "waitCreditMs": 136,
+        "reservations": [
+          {
+            "scopes": [
+              "[\"resource\",\"docker:recovery/shared\"]"
+            ],
+            "queuedAt": "2026-10-23T06:35:16.822Z",
+            "waitingSince": "2026-10-23T06:35:16.822Z",
+            "priority": "normal",
+            "phase": "queued",
+            "admissionReady": false,
+            "readiness": "checking",
+            "operation": "shared:resources",
+            "reason": "Shared QA/environment resource",
+            "waitReason": "Awaiting execution admission; previous resource wait retained",
+            "waitCreditMs": 136,
+            "runId": "c3eaefc1-9c70-4713-8149-bef7e8b729e6"
+          }
+        ]
+      },
+      "duringCapacity": {
+        "active": 1,
+        "waiting": 1
+      },
+      "duringWaiting": {
+        "scopes": [
+          "[\"resource\",\"docker:recovery/shared\"]"
+        ],
+        "queuedAt": "2026-10-23T06:35:16.822Z",
+        "waitingSince": "2026-10-23T06:35:16.822Z",
+        "priority": "normal",
+        "phase": "queued",
+        "admissionReady": false,
+        "readiness": "checking",
+        "operation": "shared:resources",
+        "reason": "Shared QA/environment resource",
+        "waitReason": "Awaiting execution admission; previous resource wait retained",
+        "waitCreditMs": 136,
+        "reservations": [
+          {
+            "scopes": [
+              "[\"resource\",\"docker:recovery/shared\"]"
+            ],
+            "queuedAt": "2026-10-23T06:35:16.822Z",
+            "waitingSince": "2026-10-23T06:35:16.822Z",
+            "priority": "normal",
+            "phase": "queued",
+            "admissionReady": false,
+            "readiness": "checking",
+            "operation": "shared:resources",
+            "reason": "Shared QA/environment resource",
+            "waitReason": "Awaiting execution admission; previous resource wait retained",
+            "waitCreditMs": 136,
+            "runId": "c3eaefc1-9c70-4713-8149-bef7e8b729e6"
+          }
+        ]
+      },
+      "visits": [
+        "owner",
+        "older-capacity-first",
+        "earlier-resource-waiter"
+      ],
+      "conflictingPeak": 1,
+      "finalStatuses": {
+        "earlier-resource-waiter": "completed",
+        "owner": "completed",
+        "older-capacity-first": "completed"
+      },
+      "finalCapacity": {
+        "active": 0,
+        "waiting": 0
+      }
+    },
+    "attempts": [
+      {
+        "name": "before.log",
+        "exit": 1,
+        "passed": 2,
+        "failed": 4,
+        "scope": "Unchanged context and restart failures reproduced; changed fixture appeared too early and failed provider identity; unreadable expectation reached old authority guard instead. Not four unique product defects."
+      },
+      {
+        "name": "after-a.log",
+        "exit": 0,
+        "passed": 6,
+        "scope": "Corrected changed-context fixture; same final two product source owners."
+      },
+      {
+        "name": "final-current.log",
+        "exit": 0,
+        "passed": 19,
+        "scope": "13 fairness (including paused credit reactivation), 6 actual affected WorkflowRuntime/FactoryTools/SessionSemaphore integration cases."
+      },
+      {
+        "name": "final-guards.log",
+        "exit": 1,
+        "passed": 4,
+        "failed": 1,
+        "skipped": 30,
+        "scope": "Two original-authority controls, affected target reconciliation and current merge approval/provider-poll guard passed; old fixed restart order failed."
+      },
+      {
+        "name": "final-restart.log",
+        "exit": 1,
+        "failed": 1,
+        "skipped": 25,
+        "scope": "Reversing fixed restart order also failed: startup eligibility is asynchronous, not a prescribed old/new order."
+      },
+      {
+        "name": "final-restart-b.log",
+        "exit": 0,
+        "passed": 1,
+        "skipped": 25,
+        "scope": "Retained queuedAt/parked credit, both publication visits exactly once, completion, cancellation and retained capture assertions."
+      },
+      {
+        "name": "final-types.log",
+        "exit": 0,
+        "scope": "Scoped owner source/import graph, no emit; not monorepo."
+      }
+    ],
+    "reuse": {
+      "priorIndependent22": "13 fairness and 2 continuation cases are current repair checks; other 7 unchanged runtime boundary cases remain scoped prior2550 evidence. No all22-final-repair claim.",
+      "priorF1": "Pinned BASE/prepared-publication versus 00cf candidate comparison remains historical scoped evidence. Current repair uses the allowed exact affected runtime/mock integration, not a new authenticated API F1 drive.",
+      "prompts": "No capability/prompt behavior added: repair restores already documented capacity-first/affected-target contracts. All full prompt inputs/expected fixtures unchanged.",
+      "historicalFailures": "All earlier implementation/review staged failures and143-145 qualifications remain; original cosmetic Biome1 remains deferred."
+    },
+    "limits": [
+      "Controlled command/provider hooks; actual WorkflowRuntime/FactoryTools validation/receipt ownership and SessionSemaphore; no real forge/native/model/paid/tracker effects.",
+      "No guard/validator/receipt mock, checkpoint or claim fabrication in the restart integration.",
+      "No arbitrary process-crash/external exactly-once, production timing/cost or real Docker/DB certification.",
+      "No development CI query/trigger/watch; broad/full/native/post148 validation deferred, not passed."
+    ]
+  }
 }
