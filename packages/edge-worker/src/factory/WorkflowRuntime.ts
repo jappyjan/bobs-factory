@@ -617,6 +617,8 @@ export interface ExecutionContext {
 	validateDelivery?: () => Promise<Record<string, unknown> | undefined>;
 	/** Nested publication discovered by passive grouped readiness must also claim targets. */
 	coordinateDelivery?: <T>(operation: () => Promise<T>) => Promise<T>;
+	/** Capable hooks call after capacity admission, and release after runner cleanup. */
+	reserveExecution?: () => Promise<() => Promise<void>>;
 	/** Runtime-owned home, never inferred from a worktree or a private runner HOME. */
 	factoryHome?: string;
 	attemptId?: string;
@@ -652,6 +654,8 @@ export interface ExecutionContext {
 	checkEvidence?: Record<string, unknown>;
 }
 export interface RuntimeHooks {
+	/** The agent hook honors reserveExecution at each actual turn, including retries. */
+	agentExecutionBoundary?: true;
 	issueDestinations?(
 		run: FactoryRun,
 		signal: AbortSignal,
@@ -1694,12 +1698,11 @@ export class WorkflowRuntime {
 			this.log(run, "ticket-sync", `Ticket tracking failed: ${String(error)}`);
 		}
 	}
-	private async coordinate<T>(
+	private async reserveExecution(
 		context: ExecutionContext,
-		operation: () => Promise<T>,
 		scopes?: string[],
 		mutation = !scopes,
-	): Promise<T> {
+	): Promise<() => Promise<void>> {
 		const key = `${context.stepKey ?? context.step.id}:${mutation ? "mutation" : "resources"}`;
 		const targets = () =>
 			[
@@ -1717,38 +1720,70 @@ export class WorkflowRuntime {
 				context.log,
 				{
 					key,
+					ownerExecuting: (run) => this.isExecuting(run.id),
+					preserveQueued: () =>
+						this.shuttingDown &&
+						!context.run.workflowBlock &&
+						context.run.status !== "stopped",
 					assertSchedulingOpen: context.assertSchedulingOpen,
 					scopes: targets,
 					reason: mutation
-						? "Repository integration/publication"
+						? context.step.type === "agent"
+							? "Push-capable agent: no proven boundary inside its execution"
+							: "Repository integration/publication"
 						: "Shared QA/environment resource",
+					priority: resolveStepConfig(context.step).access.priority,
 				},
 			);
 		await admit();
+		let owned = context.run.deliveryReservations?.[key];
+		const nested = context.coordinateDelivery;
 		try {
 			context.signal.throwIfAborted();
-			const nested = context.coordinateDelivery;
 			if (mutation)
 				context.coordinateDelivery = async (operation) => {
-					const owned = context.run.deliveryReservations?.[key];
 					if (
 						owned?.phase !== "active" ||
-						targets().some((target) => !owned.scopes.includes(target))
-					)
+						targets().some((target) => !owned?.scopes.includes(target))
+					) {
 						// Suspend this operation and reconcile its whole scope before any
 						// new publication, retaining ownership until the outer operation settles.
-						await admit();
+						try {
+							await admit();
+						} finally {
+							owned = context.run.deliveryReservations?.[key];
+						}
+					}
 					context.signal.throwIfAborted();
 					return operation();
 				};
-			try {
-				return await operation();
-			} finally {
-				context.coordinateDelivery = nested;
-			}
-		} finally {
-			releaseDelivery(context.run, "Operation settled", key);
+		} catch (error) {
+			if (context.run.deliveryReservations?.[key] === owned)
+				releaseDelivery(context.run, "Admission cancelled", key);
 			await this.save(context.run);
+			throw error;
+		}
+		let released = false;
+		return async () => {
+			if (released) return;
+			released = true;
+			context.coordinateDelivery = nested;
+			if (context.run.deliveryReservations?.[key] === owned)
+				releaseDelivery(context.run, "Operation settled after cleanup", key);
+			await this.save(context.run);
+		};
+	}
+	private async coordinate<T>(
+		context: ExecutionContext,
+		operation: () => Promise<T>,
+		scopes?: string[],
+		mutation = !scopes,
+	): Promise<T> {
+		const release = await this.reserveExecution(context, scopes, mutation);
+		try {
+			return await operation();
+		} finally {
+			await release();
 		}
 	}
 	async retryTracking(id: string): Promise<void> {
@@ -3291,6 +3326,43 @@ export class WorkflowRuntime {
 										outputs: structuredClone(outputs),
 									};
 								}
+								return this.hooks[step.type as "agent" | "script" | "tool"](
+									context,
+								);
+							};
+							const resources = resourceScopes(context);
+							const mutation = deliveryStep(run, step);
+							const reserved = () =>
+								this.coordinate(
+									context,
+									execute,
+									resources.length ? resources : undefined,
+									mutation,
+								);
+							if (step.type === "agent" && this.hooks.agentExecutionBoundary) {
+								if (mutation || resources.length)
+									context.reserveExecution = async () => {
+										const release = await this.reserveExecution(
+											context,
+											resourceScopes(context).length
+												? resourceScopes(context)
+												: undefined,
+											mutation,
+										);
+										try {
+											this.requireRunAvailable(run);
+											context.signal.throwIfAborted();
+											await assertBoundInspectionFresh(context);
+											return release;
+										} catch (error) {
+											await release();
+											throw error;
+										}
+									};
+								output = await execute();
+							} else {
+								const admitted =
+									mutation || resources.length ? reserved : execute;
 								if (
 									step.type !== "agent" &&
 									isComputeIntensive(step) &&
@@ -3303,28 +3375,12 @@ export class WorkflowRuntime {
 									try {
 										signal.throwIfAborted();
 										this.requireRunAvailable(run);
-										return await lease.run(() =>
-											this.hooks[step.type as "script" | "tool"](context),
-										);
+										output = await lease.run(admitted);
 									} finally {
 										await lease.release();
 									}
-								} else
-									return this.hooks[step.type as "agent" | "script" | "tool"](
-										context,
-									);
-							};
-							const resources = resourceScopes(context);
-							const mutation = deliveryStep(run, step);
-							output =
-								mutation || resources.length
-									? await this.coordinate(
-											context,
-											execute,
-											resources.length ? resources : undefined,
-											mutation,
-										)
-									: await execute();
+								} else output = await admitted();
+							}
 							await assertBoundInspectionFresh(context);
 							if (reviewEvidenceContract(step)) {
 								output = validateContractOutput(context, output);
@@ -3366,7 +3422,8 @@ export class WorkflowRuntime {
 						} finally {
 							if (
 								(!this.shuttingDown || run.status === "stopped") &&
-								!run.capacityLeaves[key]?.request?.parked
+								!run.capacityLeaves[key]?.request?.parked &&
+								run.capacityLeaves[key]?.phase !== "stopping"
 							)
 								delete run.capacityLeaves[key];
 							await this.save(run);

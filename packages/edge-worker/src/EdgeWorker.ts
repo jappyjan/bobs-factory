@@ -8044,6 +8044,7 @@ ${taskSection}`;
 					this.executeFactoryMcpTool(context, server, tool),
 			});
 			this.factoryRuntime = new WorkflowRuntime(this.factoryHome, {
+				agentExecutionBoundary: true,
 				issueDestinations: (run, signal) =>
 					this.fileIssueDestinations(run, signal),
 				fileIssue: (run, issue, signal) =>
@@ -9722,6 +9723,7 @@ ${taskSection}`;
 			},
 		);
 		const graphAttemptId = context.attemptId;
+		let releaseExecutionReservation: (() => Promise<void>) | undefined;
 		let turnCompleted = false;
 		let reviewOutcome: "blocked" | "failed" | undefined;
 		let turnStarted = false;
@@ -9763,7 +9765,10 @@ ${taskSection}`;
 				{ ...context.capacity, remote: runnerType === "cursor" },
 				undefined,
 				async () => {
+					releaseExecutionReservation = await context.reserveExecution?.();
 					await assertBoundInspectionFresh(context);
+					if (hasCheck(step, "qa-environment"))
+						await verifyQaEnvironment(context);
 					if (context.inspectionBinding) {
 						const admitted = (await outputRevisionBinding(
 							context,
@@ -9959,37 +9964,44 @@ ${taskSection}`;
 			}
 			throw error;
 		} finally {
-			if (turnStarted)
-				finishStepAttempt(
-					context,
-					context.signal.aborted || updatePaused
-						? "interrupted"
-						: infrastructureFailure
-							? "blocked"
-							: turnCompleted
-								? (reviewOutcome ?? "completed")
-								: "failed",
-				);
-			context.attemptId = graphAttemptId;
-			const rejected = context.resumeAgent?.rejected;
-			if (
-				rejected &&
-				((runnerType === "codex" && !startupConfirmed && rejected.reserved) ||
-					((infrastructureFailure || updatePaused) &&
-						outputCorrection?.reserved))
-			) {
-				// No ready thread or model work: return the launch reservation,
-				// preserving the rejected candidate for an infrastructure retry.
-				await context.checkpointAgent?.({
-					...context.resumeAgent!,
-					rejected: {
-						...rejected,
-						attempts: Math.max(0, rejected.attempts - 1),
-						reserved: false,
-					},
-				});
+			try {
+				if (turnStarted)
+					finishStepAttempt(
+						context,
+						context.signal.aborted || updatePaused
+							? "interrupted"
+							: infrastructureFailure
+								? "blocked"
+								: turnCompleted
+									? (reviewOutcome ?? "completed")
+									: "failed",
+					);
+				context.attemptId = graphAttemptId;
+				const rejected = context.resumeAgent?.rejected;
+				if (
+					rejected &&
+					((runnerType === "codex" && !startupConfirmed && rejected.reserved) ||
+						((infrastructureFailure || updatePaused) &&
+							outputCorrection?.reserved))
+				) {
+					// No ready thread or model work: return the launch reservation,
+					// preserving the rejected candidate for an infrastructure retry.
+					await context.checkpointAgent?.({
+						...context.resumeAgent!,
+						rejected: {
+							...rejected,
+							attempts: Math.max(0, rejected.attempts - 1),
+							reserved: false,
+						},
+					});
+				}
+			} finally {
+				try {
+					factoryContext.cleanup();
+				} finally {
+					await releaseExecutionReservation?.();
+				}
 			}
-			factoryContext.cleanup();
 		}
 	}
 

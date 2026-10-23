@@ -291,8 +291,16 @@ export const AccessSchema = z.union([
 		.object({
 			mode: z.enum(ACCESS_MODES),
 			tools: z.array(z.string().min(1).max(200)).max(100).optional(),
+			/** Trusted recipe intent; aging still bounds overtaking. */
+			priority: z.enum(["normal", "completion"]).optional(),
+			/** Local work followed by an explicit publication action in the graph. */
+			publication: z.literal("action").optional(),
 		})
-		.strict(),
+		.strict()
+		.refine(
+			(value) => value.publication !== "action" || value.mode === "workspace",
+			"Action publication requires workspace access",
+		),
 ]);
 export type StepAccess = z.infer<typeof AccessSchema>;
 
@@ -377,7 +385,12 @@ export interface ResolvedStepConfig {
 	rules: Rule[];
 	checks: ResolvedCheck[];
 	revision?: "bound";
-	access: { mode: (typeof ACCESS_MODES)[number]; tools?: string[] };
+	access: {
+		mode: (typeof ACCESS_MODES)[number];
+		tools?: string[];
+		priority?: "normal" | "completion";
+		publication?: "action";
+	};
 	instructions: InstructionId[];
 }
 /** Where a step runs; legacy result validation depended on it. */

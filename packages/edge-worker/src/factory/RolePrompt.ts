@@ -5,7 +5,7 @@ import {
 	instructionSlot,
 	renderInstructionTemplate,
 } from "./InstructionLibrary.js";
-import { inheritStepConfig } from "./StepConfig.js";
+import { inheritStepConfig, resolveStepConfig } from "./StepConfig.js";
 import type { WorkflowStep } from "./Workflow.js";
 import { workflowTriggerInstructions } from "./Workflow.js";
 import { workflowExecutionInstructions } from "./WorkflowExecution.js";
@@ -59,7 +59,11 @@ export function factoryRoleInstruction(
 	step: WorkflowStep,
 	parts: RolePromptParts,
 ): string {
-	return `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${renderInstructionTemplate(step, step.prompt ?? "")}\n${parts.repositoryScope}\nGit provider: ${parts.gitProvider}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${parts.customProviderInstructions}\nOriginating ticket: ${parts.ticket}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${parts.questions}\n${instructionSlot(step, "architecture")}\n${workflowTriggerInstructions}\n${workflowExecutionInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${instructionSlot(step, "completion")}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}`;
+	const local =
+		resolveStepConfig(step).access.publication === "action"
+			? "\nAccepted access boundary: this role performs isolated worktree correction and local verification. Leave source changes in this worktree for the separate publication action. Do not push, publish, merge, change a shared target branch or use an undeclared shared QA environment. Local commits and fetching/reading the current base are allowed. PR-specific feedback assessment and discussion do not grant branch publication. This boundary also applies when older role instructions mention committing/pushing; the graph's publication action owns that effect. Return any missing shared-environment identity or required assistance instead of using it speculatively."
+			: "";
+	return `You are executing one software-factory step: ${step.name}. Execute ONLY this role. Other pipeline steps handle planning, review, publishing and handoff. Do not execute a full-development/verify-and-ship workflow unless explicitly requested by this role. Do not merge or mark a PR ready.\n${renderInstructionTemplate(step, step.prompt ?? "")}\n${parts.repositoryScope}\nGit provider: ${parts.gitProvider}. Use the selected provider for review, discussion resolution and CI tooling; do not assume GitHub or use gh for another provider. Runtime publication and merge retain the accepted provider. ${parts.customProviderInstructions}\nOriginating ticket: ${parts.ticket}. The runtime tracking service owns ticket status, PR links and publication: native Linear operational communication goes to its transcript; durable developer documentation and delivery summaries remain issue comments; Taskbot keeps milestone comments. Supply meaningful summaries and blockers; do not duplicate these mutations or mark coding tickets Done before confirmed merge. Retain ticket synchronization gaps as limitations.\n${parts.questions}\n${instructionSlot(step, "architecture")}\n${workflowTriggerInstructions}\n${workflowExecutionInstructions}\n${incrementalInstructions}\n${roleInstructions(step)}\n${instructionSlot(step, "completion")}\n${step.json === false ? "" : "Your final response MUST be a single JSON object matching the requested shape, with no prose outside it."}${local}`;
 }
 
 /** First user turn sent to the native runner for one Factory agent role. */
