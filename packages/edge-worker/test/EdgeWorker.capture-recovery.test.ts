@@ -1,8 +1,13 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadFactoryContextSnapshot } from "bobs-factory-mcp-tools";
+import { fileURLToPath } from "node:url";
+import {
+	loadFactoryContextSnapshot,
+	verifyFactoryContext,
+} from "bobs-factory-mcp-tools";
 import { afterEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { digest, freezeDelivery } from "../src/factory/Delivery.js";
@@ -14,6 +19,11 @@ import {
 	assessFeedback,
 	inspectMergeReadiness,
 } from "../src/factory/MergeReadiness.js";
+import {
+	beginProgressAttempt,
+	continueProgress,
+	initializeProgressBudget,
+} from "../src/factory/ProgressBudget.js";
 import { questionInstructions } from "../src/factory/Questions.js";
 import { validateInventory } from "../src/factory/SpecialistReview.js";
 import { registerWorkflowConfig } from "../src/factory/StepConfig.js";
@@ -1462,4 +1472,141 @@ it("corrects a renamed generic schema and rule in the existing bounded native co
 		{ path: "/", message: "Completed reports have no blockers" },
 	]);
 	expect(f.getInput().stepConfiguration.output).toEqual(f.ctx.step.output);
+});
+
+it("bounds physical invalid-output recovery across explicit generations at the same source tree", async () => {
+	const f = await fixture();
+	f.ctx.step = {
+		id: "bounded-output",
+		name: "Return a verified result",
+		type: "agent",
+		configVersion: "step-config-v1",
+		prompt: "Return the required boolean",
+		json: true,
+		output: { schema: { type: "boolean" } },
+	} as typeof f.ctx.step;
+	f.ctx.stepKey = f.ctx.run.step = "pipeline/bounded-output";
+	f.ctx.run.workflow.convergence = {
+		maxUnchangedAttempts: 2,
+		continueAttempts: 1,
+	};
+	initializeProgressBudget(f.ctx.run);
+	f.ctx.progressOperation = "fixture/bounded-output";
+	f.ctx.beginProgressAttempt = (reason) => beginProgressAttempt(f.ctx, reason);
+	f.ctx.resumeAgent!.result!.output = {
+		invalid: "retained rejected candidate",
+	};
+	f.runner.getMessages = () => [
+		{ type: "result", result: '{"invalid":"reworded"}' },
+	];
+	await expect(f.worker.executeFactoryAgent(f.ctx)).rejects.toThrow(
+		"Output correction exhausted",
+	);
+	expect(f.runner.start).toHaveBeenCalledTimes(2);
+	const rejected = f.ctx.resumeAgent!.rejected!;
+	f.ctx.resumeAgent!.rejected = {
+		...rejected,
+		attempts: 0,
+		exhausted: false,
+		retryGeneration: 1,
+	};
+	await expect(f.worker.executeFactoryAgent(f.ctx)).rejects.toThrow(
+		"No progress at pipeline/bounded-output",
+	);
+	expect(f.runner.start).toHaveBeenCalledTimes(2);
+	expect(f.ctx.resumeAgent).toMatchObject({
+		sessionId: "existing-conversation",
+		rejected: { attempts: 0, retryGeneration: 1 },
+	});
+	expect(f.ctx.run.progressBudget!.blocked).toMatchObject({
+		attempts: 2,
+		reason: "output-validation",
+	});
+	expect(f.ctx.resumeAgent!.rejected!.output).toEqual({ invalid: "reworded" });
+});
+
+it("bounds required-MCP infrastructure failures separately from schema correction and retains the repaired same-head conversation", async () => {
+	const f = await fixture();
+	f.ctx.step = {
+		id: "bounded-infrastructure",
+		name: "Return a verified result",
+		type: "agent",
+		configVersion: "step-config-v1",
+		prompt: "Return the required boolean",
+		json: true,
+		output: { schema: { type: "boolean" } },
+	} as typeof f.ctx.step;
+	f.ctx.stepKey = f.ctx.run.step = "pipeline/bounded-infrastructure";
+	f.ctx.run.workflow.convergence = {
+		maxUnchangedAttempts: 2,
+		continueAttempts: 1,
+	};
+	initializeProgressBudget(f.ctx.run);
+	f.ctx.progressOperation = "fixture/bounded-infrastructure";
+	f.ctx.beginProgressAttempt = (reason) => beginProgressAttempt(f.ctx, reason);
+	f.ctx.resumeAgent!.result = undefined;
+	f.ctx.resumeAgent!.rejected = {
+		output: { invalid: true },
+		issues: [{ path: "/", message: "Expected boolean" }],
+		revision: f.ctx.progress!.currentRevision!,
+		attempts: 0,
+		retryGeneration: 1,
+	};
+	f.runner.start.mockImplementation(async () => {
+		throw new Error(
+			"Required MCP server 'factory-context' is unavailable before model work",
+		);
+	});
+	for (let attempt = 0; attempt < 2; attempt++) {
+		await expect(f.worker.executeFactoryAgent(f.ctx)).rejects.toThrow(
+			"unavailable before model work",
+		);
+		expect(f.ctx.resumeAgent!.rejected!.attempts).toBe(0);
+		expect(f.ctx.resumeAgent!.sessionId).toBe("existing-conversation");
+	}
+	await expect(f.worker.executeFactoryAgent(f.ctx)).rejects.toThrow(
+		"No progress at pipeline/bounded-infrastructure",
+	);
+	expect(f.runner.start).toHaveBeenCalledTimes(2);
+	expect(f.ctx.run.progressBudget!.blocked).toMatchObject({
+		attempts: 2,
+		reason: "infrastructure",
+	});
+	continueProgress(f.ctx.run);
+	let scopedToolProbes = 0;
+	f.runner.start.mockImplementation(async () => {
+		const prepared = f.getConfig().mcpConfig["factory-context"];
+		// Execute the real owned stdio MCP server from source; no native model is started.
+		const tsx = createRequire(
+			new URL("../../core/package.json", import.meta.url),
+		).resolve("tsx/esm");
+		await verifyFactoryContext(
+			{
+				...prepared,
+				args: [
+					"--import",
+					tsx,
+					fileURLToPath(
+						new URL(
+							"../../mcp-tools/src/factory-context-main.ts",
+							import.meta.url,
+						),
+					),
+					"--snapshot",
+					prepared.args.at(-1),
+				],
+			},
+			f.ctx.signal,
+			f.ctx.run.workspace,
+		);
+		scopedToolProbes += 2; // verifyFactoryContext requires both list_context and read_context.
+	});
+	f.runner.getMessages = () => [{ type: "result", result: "true" }];
+	const output = await f.worker.executeFactoryAgent(f.ctx);
+	expect(output).toBe(true);
+	expect(f.getConfig().resumeSessionId).toBe("existing-conversation");
+	expect(f.ctx.run.progressBudget!.grantCount).toBe(1);
+	expect(scopedToolProbes).toBe(2);
+	expect(f.ctx.resumeAgent!.rejected).toBeUndefined();
+	expect(f.ctx.resumeAgent!.infrastructureFailure).toBeUndefined();
 });

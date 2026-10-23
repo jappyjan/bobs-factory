@@ -48,6 +48,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Recipes can pause repeated unchanged work across called recipes, correction routes and restart, then grant a bounded explicit continuation while retaining completed work, native conversations and required approvals. New recipes opt into durable progress budgets; existing accepted recipes keep their saved policy. ([Taskbot #147](https://taskbot.apps.janjaap.de/p/bobs-factory/t/147))
+
 - Let ready deliveries advance during independent local correction, reserve shared QA only when execution can begin, and age continuous resource waits fairly while preserving approval and cleanup guards. Grouped corrections skip proven unchanged context repositories, and restored waiters regain resource eligibility only after execution admission. Recovered waiting credit excludes unobserved offline time ([Task146](https://taskbot.apps.janjaap.de/p/bobs-factory/t/146), [#183](https://github.com/jappyjan/bobs-factory/pull/183)).
 
 - Composed correction routes preserve independently validated original review evidence and accepted requirements, refresh only consumed Call inputs, and reassess changed inputs before recovering a saved result. Requirement extraction cannot silently rebind an assessment to changed source or target state. Parallel assessor copies retain their qualified original owner, and reassessments accept newly extracted requirement IDs only with current executed provenance. Existing saved recipes retain conservative behavior. ([Taskbot #145](https://taskbot.apps.janjaap.de/p/bobs-factory/t/145), [#182](https://github.com/jappyjan/bobs-factory/pull/182))

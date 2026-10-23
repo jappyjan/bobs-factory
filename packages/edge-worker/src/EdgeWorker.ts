@@ -285,6 +285,10 @@ import {
 	outputValidationError,
 } from "./factory/OutputValidation.js";
 import {
+	NonConvergenceError,
+	recordProgressFailure,
+} from "./factory/ProgressBudget.js";
+import {
 	beginStepAttempt,
 	finishStepAttempt,
 	recordAttemptInstructions,
@@ -9378,6 +9382,11 @@ ${taskSection}`;
 					const capture = error instanceof CaptureReuseError;
 					if (!(error instanceof OutputValidationError) && !capture)
 						throw error;
+					recordProgressFailure(
+						context,
+						"output-validation",
+						error instanceof Error ? error.message : String(error),
+					);
 					const previous = context.resumeAgent?.rejected;
 					const revision = (await roleProgress(context)).currentRevision;
 					const attempts =
@@ -9724,6 +9733,8 @@ ${taskSection}`;
 		);
 		const graphAttemptId = context.attemptId;
 		let releaseExecutionReservation: (() => Promise<void>) | undefined;
+		let progressCharged = false;
+		let progressDenied = false;
 		let turnCompleted = false;
 		let reviewOutcome: "blocked" | "failed" | undefined;
 		let turnStarted = false;
@@ -9766,6 +9777,16 @@ ${taskSection}`;
 				undefined,
 				async () => {
 					releaseExecutionReservation = await context.reserveExecution?.();
+					await context.beginProgressAttempt?.(
+						outputCorrection
+							? "output-correction"
+							: context.resumeAgent?.infrastructureFailure
+								? "infrastructure-retry"
+								: context.resumeAgent?.sessionId
+									? "resume"
+									: "execution",
+					);
+					progressCharged = true;
 					await assertBoundInspectionFresh(context);
 					if (hasCheck(step, "qa-environment"))
 						await verifyQaEnvironment(context);
@@ -9943,6 +9964,7 @@ ${taskSection}`;
 			}
 		} catch (caught) {
 			updatePaused = isUpdatePaused(caught);
+			progressDenied = caught instanceof NonConvergenceError;
 			const error =
 				!(caught instanceof FactoryContextInfrastructureError) &&
 				caught instanceof Error &&
@@ -9953,10 +9975,15 @@ ${taskSection}`;
 					: caught;
 			if (error instanceof FactoryContextInfrastructureError) {
 				infrastructureFailure = error;
+				if (!progressCharged)
+					await context.beginProgressAttempt?.("infrastructure-preflight");
+				recordProgressFailure(context, "infrastructure", error.message);
 				await context.checkpointAgent?.({
 					...(context.resumeAgent ?? { runner: runnerType }),
 					infrastructureFailure: {
 						reason: error.message,
+						retryGeneration:
+							context.resumeAgent?.infrastructureFailure?.retryGeneration ?? 0,
 						at: new Date().toISOString(),
 						...(error.output !== undefined ? { output: error.output } : {}),
 					},
@@ -9981,7 +10008,7 @@ ${taskSection}`;
 				if (
 					rejected &&
 					((runnerType === "codex" && !startupConfirmed && rejected.reserved) ||
-						((infrastructureFailure || updatePaused) &&
+						((infrastructureFailure || updatePaused || progressDenied) &&
 							outputCorrection?.reserved))
 				) {
 					// No ready thread or model work: return the launch reservation,

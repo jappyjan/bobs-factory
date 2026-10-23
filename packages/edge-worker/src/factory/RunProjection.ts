@@ -127,6 +127,14 @@ export function focusRun(
 		| undefined;
 	return {
 		...Object.fromEntries(focusFields.map((key) => [key, run[key]])),
+		convergence: run.progressBudget && {
+			policy: run.progressBudget.policy,
+			window: run.progressBudget.window,
+			blocked: run.progressBudget.blocked,
+			recent: run.progressBudget.recent.slice(-6),
+			grantCount: run.progressBudget.grantCount,
+			grants: run.progressBudget.grants.slice(-8),
+		},
 		nativeView,
 		nativeViewError,
 		workflow: workflowDisplay(run.workflow),

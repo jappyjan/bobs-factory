@@ -1,0 +1,114 @@
+{
+  "base": {
+    "head": "43f305fc33fed451326db0b6fcbe09e779e2b954",
+    "tree": "ddc03bfc5201dbdc94520509917dd66e74150388",
+    "parent": "6a25d1659c4a9e475596408500117af81b83f2b5"
+  },
+  "sourceFreeze": {
+    "apps/f1/test-drives/assets/taskbot147-progress.mjs": "28d7110f9baaece820c6be127f29d447109c2117e5517db74992590483e7e2c2",
+    "docs/PRODUCT_CONTRACTS.md": "05da7d7c27c016464486ef2119ff658fdc310650f424c6f0a1af2d79d3ea9dfe",
+    "docs/factory/convergence.md": "9d48b0e8f482ba84d01e03dab164d42796c4949fc84968c6667707c564f15e84",
+    "packages/edge-worker/src/EdgeWorker.ts": "08e4b18ca4d0c277e6bc5fb05440208dfe4017ed853d0be217fc6664397cc3ff",
+    "packages/edge-worker/src/factory/Impact.ts": "12ed37933c473590d0e7df156843cc801acb540a9e411a91de11147cd71361f4",
+    "packages/edge-worker/src/factory/ProgressBudget.ts": "7bb7d8879f7b93a31dc029dbf9fd4b19ddb23b607e9c888dd5e5fa4f1e244845",
+    "packages/edge-worker/src/factory/ProgressPolicy.ts": "154c0db44ee624f30f4bbd43b7c95d4f3ba046b8e49e757480eafd75d2c2f495",
+    "packages/edge-worker/src/factory/RunProjection.ts": "087b4e8cdd73144c4482171e4867bbd6c45662f7096ccb87f23eaa82e9f38b4d",
+    "packages/edge-worker/src/factory/ViewRuntime.ts": "dffecc9c7a7586b9b9988b9c77b306c254d536d736aa9bdde2a5e67e2c09ddd2",
+    "packages/edge-worker/src/factory/Workflow.ts": "1eba9703ef12a94597c878e11879ca0241720d9fc7709a510a16fd4600e8bd76",
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts": "13659bfabc6d85bcd99c9b389827f1424b1eae756c102d78d61853f81c5cfb0e",
+    "packages/edge-worker/src/factory/defaultWorkflows.ts": "6d2774f5865294e536cddfed576e49e9d0a029f7774878aaec7cbce4feeed35a",
+    "packages/edge-worker/src/factory/web/recipe-graph.ts": "9e5db585837c67b22841585c8413c4d68ddef8bbb11e22abf8c2f3a8faf2a053",
+    "packages/edge-worker/test/EdgeWorker.capture-recovery.test.ts": "47efcce07eba0cd27e8fe16ea5782f83a04053f1f90f93c3c969a0727ae72703",
+    "packages/edge-worker/test/ProgressBudget.test.ts": "af93c3164fe76ea3330154441e716471dfb00cb980c5ef5f0924af483161bf5d",
+    "packages/edge-worker/test/ProgressBudgetF1.test.ts": "a1a2bb471d321d9e881a30b6fbba80428c069889f8abd5fd91685ef88e46e5d0",
+    "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "1bcba2c3d513faae4cb7613313acc2af77195651924a585936eb17d530371e3b"
+  },
+  "stages": {
+    "C": {
+      "tests": 23,
+      "files": 2,
+      "typesExit": 0,
+      "runtimeExit": 0
+    },
+    "B": {
+      "routingPromptTests": 5,
+      "nativeHookTests": 2,
+      "skippedNative": 47,
+      "typesExit": 0,
+      "exit": 0
+    },
+    "D2": {
+      "realMcpRepairTests": 1,
+      "skipped": 48,
+      "toolProbes": 2,
+      "exit": 0
+    }
+  },
+  "f1": {
+    "mode": "mock",
+    "tree": "c43e8071644b5d2c7e56fbf265f19d4b7d299ac5",
+    "policy": {
+      "maxUnchangedAttempts": 2,
+      "continueAttempts": 1
+    },
+    "physical": [
+      "left/repair",
+      "right/repair",
+      "left/repair",
+      "right/repair",
+      "left/repair"
+    ],
+    "initialPhysicalExecutions": 4,
+    "afterContinueExecutions": 5,
+    "retainedAfterRestart": true,
+    "otherObservationNotGranted": true,
+    "duplicateRetryRejected": true,
+    "nativeSessionsRetained": true,
+    "blocked": {
+      "operation": "right-child/repair",
+      "identity": "6dc0739a7b0f5e3f9080060a1dbac9612aca326cf7f9cc68a0c20e98f88cc184",
+      "attempts": 2,
+      "additional": 0,
+      "step": "right/repair",
+      "key": "0c54a601d04a8cc21ff922030bc4f8c1b7b4e5aae1d08711707e98f4d3512de1",
+      "reason": "unchanged-work",
+      "limit": 2
+    },
+    "grants": [
+      {
+        "at": "2026-10-23T08:02:33.082Z",
+        "key": "acd875ba5818333351634bc9f1aac48f67aa560bebce7590b4c4327a49c550a1",
+        "attempts": 1,
+        "limit": 3
+      }
+    ],
+    "mocks": {
+      "nativeAgentCalls": 0,
+      "inferenceCalls": 0,
+      "providerCalls": 0
+    }
+  },
+  "limits": {
+    "mockModels": true,
+    "liveProvider": false,
+    "nativeEnforcement": false,
+    "arbitraryProcessCrash": false,
+    "developmentCI": "skipped",
+    "broadChecks": "deferred post148",
+    "baselineComparison": "not performed; actual invocation counts only"
+  },
+  "logs": {
+    "stageA-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stageA-runtime.log": "866c8fc5865e14ef22025c3a81532f62d3275b48e65257defae4ada49228e310",
+    "stageA-native.log": "866c8fc5865e14ef22025c3a81532f62d3275b48e65257defae4ada49228e310",
+    "stageA2-runtime.log": "409df3c451de8dd90a8ff425bf5f6feb7146281b9abce2bc328598ac469aaeba",
+    "stageA2-native.log": "8f3ca49313664900a773e19f94cc40c73ff95920eb1372228a2228ce40930af3",
+    "stageB-runtime.log": "5ebbc400f95cf4e5103b80b956d706a1644dd2fe833ae30502155ccb1bf61cbc",
+    "stageB-native.log": "16d2569e4fe51755729a8b670ea2099790b24e8a95b171e8548e600207a74350",
+    "stageB-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stageC-runtime.log": "c5a3159fa250c71646b1d6898c2474e6af6a90ca1d6e62281670b3fac7f3afd3",
+    "stageC-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stageD-mcp.log": "7beb7911247858caa83eaec77b16765e7cac0bbcbe4e3bdd2bf6aa49eac091bd",
+    "stageD2-mcp.log": "105be7af1b9d4c94245c999478143f06ca1de48c183dd4ac0924d93f45a1c6e4"
+  }
+}

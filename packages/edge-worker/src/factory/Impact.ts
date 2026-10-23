@@ -1192,19 +1192,8 @@ export interface ImpactConvergenceRecheck {
 	snapshotDigest: string;
 	at: string;
 }
-export function recordConvergence(
-	run: FactoryRun,
-	key: string,
-	decision: ImpactDecision,
-	limit: number,
-	recheck?: ImpactConvergenceRecheck,
-) {
-	// The assessor's own missing-input questions and failures remain authoritative.
-	// A convergence question must never replace a concrete assistance request.
-	if (decision.status !== "completed" || decision.questions.length) return [];
-	if (decision.readinessOnly && !decision.correctionRequired) return []; // Informational assessments and waits are not correction cycles.
-	run.impactConvergence ??= {};
-	const fingerprint = qaDigest({
+export function impactProgressEvidence(decision: ImpactDecision) {
+	return {
 		repositories: decision.snapshot.repositories.map((r) => [
 			r.repositoryId,
 			r.treeSha,
@@ -1233,7 +1222,21 @@ export function recordConvergence(
 				}),
 			)
 			.sort(),
-	});
+	};
+}
+export function recordConvergence(
+	run: FactoryRun,
+	key: string,
+	decision: ImpactDecision,
+	limit: number,
+	recheck?: ImpactConvergenceRecheck,
+) {
+	// The assessor's own missing-input questions and failures remain authoritative.
+	// A convergence question must never replace a concrete assistance request.
+	if (decision.status !== "completed" || decision.questions.length) return [];
+	if (decision.readinessOnly && !decision.correctionRequired) return []; // Informational assessments and waits are not correction cycles.
+	run.impactConvergence ??= {};
+	const fingerprint = qaDigest(impactProgressEvidence(decision));
 	const prior = run.impactConvergence[key];
 	const blocked = recheck
 		? [...(run.impactDecisions ?? [])]

@@ -13,6 +13,7 @@ import { DEFAULT_STEP_MAX_VISITS } from "../WorkflowLimits.js";
 export type Step = WorkflowStep;
 export type Recipe = {
 	stepConfigVersion?: "step-config-v1";
+	convergence?: import("../ProgressPolicy.js").ProgressPolicy;
 	id: string;
 	name: string;
 	icon?: string;
@@ -58,6 +59,7 @@ export function changeRouteTarget(
 
 /** Fields a recipe owns; catalog metadata (enabled, provenance…) is not edited here. */
 const editableKeys = [
+	"convergence",
 	"stepConfigVersion",
 	"id",
 	"name",

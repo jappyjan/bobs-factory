@@ -110,6 +110,7 @@ import {
 	type ImpactSnapshot,
 	impactDecisionDigest,
 	impactFanout,
+	impactProgressEvidence,
 	inventoryScopeMatches,
 	recordConvergence,
 	STALE_IMPACT_MESSAGE,
@@ -138,6 +139,16 @@ import {
 } from "./MergeRecovery.js";
 import { nativeViewText } from "./NativeViews.js";
 import { conforms } from "./OutputFormats.js";
+import {
+	beginProgressAttempt,
+	continueProgress,
+	initializeProgressBudget,
+	type ProgressBudget,
+	progressEvidence,
+	recordProgressEvidence,
+	recordProgressFailure,
+	recordProgressInput,
+} from "./ProgressBudget.js";
 import { beginStepAttempt, finishStepAttempt } from "./Provenance.js";
 import { qaDigest as importDigest } from "./Qa.js";
 import {
@@ -263,7 +274,12 @@ export interface AgentCheckpoint {
 	toolProfile?: "context-only";
 	/** Original bound input/repository snapshot, retained across native turn restart. */
 	inspection?: OutputRevisionBinding;
-	infrastructureFailure?: { reason: string; at: string; output?: unknown };
+	infrastructureFailure?: {
+		reason: string;
+		at: string;
+		output?: unknown;
+		retryGeneration?: number;
+	};
 	/** Persisted per-role budget for resuming a silent provider turn. */
 	idleRetries?: number;
 	runner: NonNullable<WorkflowStep["runner"]>;
@@ -314,6 +330,8 @@ export interface ForeachCheckpoint {
 	states: ForeachItemState[];
 }
 export interface GraphCheckpoint {
+	/** Definition-local structural identity; excludes generated Call and item frames. */
+	progressPath?: string;
 	/** Calls with declared outcomes retain one lexical frame across correction routes. */
 	calls?: Record<string, GraphCheckpoint>;
 	/** Completed Parallel scopes remain the owners of their qualified producers. */
@@ -460,6 +478,7 @@ export interface FactoryRun {
 	};
 	impactDecisions?: ImpactDecision[];
 	impactConvergence?: Record<string, ConvergenceState>;
+	progressBudget?: ProgressBudget;
 	approvalContinuations?: {
 		originalReviewId: string;
 		decisionDigest: string;
@@ -593,6 +612,10 @@ export interface ChatMessage {
 	step: string;
 }
 export interface ExecutionContext {
+	/** Stable accepted definition identity, independent of Call/frame/attempt IDs. */
+	progressOperation?: string;
+	progressObservation?: string;
+	beginProgressAttempt?: (reason?: string) => Promise<void>;
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
 	/** Private persisted Call input origins, independently checked by pinned access. */
@@ -1329,6 +1352,7 @@ export class WorkflowRuntime {
 			questions: [],
 			events: [],
 		};
+		initializeProgressBudget(run);
 		this.runs.set(run.id, run);
 		registerOutputHistory(run, () => this.historyPreviews(run));
 		this.save(run);
@@ -1447,6 +1471,7 @@ export class WorkflowRuntime {
 					"Migrated legacy output contract to v2 at execution boundary; workflow definitions, checkpoint positions and accepted history preserved.",
 				);
 			}
+			initializeProgressBudget(run, true);
 			if (!run.mergeReadiness)
 				run.mergeReadiness = legacyToolOutput(
 					run,
@@ -2298,14 +2323,15 @@ export class WorkflowRuntime {
 			if (!checkpoint.active) {
 				checkpoint.visits[step.id] = (checkpoint.visits[step.id] ?? 0) + 1;
 				const session =
-					definition?.outcomes?.length ||
+					run.progressBudget?.sessions[key] ??
+					(definition?.outcomes?.length ||
 					reviewBaseline?.impact?.snapshot.reuseVersion === "composed-v1" ||
 					checkArgs(step, "impact-reuse")?.reuseVersion === "composed-v1" ||
 					(checkpoint.reviewKey &&
 						decisionFor(run, checkpoint.reviewKey)?.snapshot.reuseVersion ===
 							"composed-v1")
 						? checkpoint.agentSessions?.[step.id]
-						: undefined;
+						: undefined);
 				checkpoint.active = {
 					phase: "executing",
 					...(session ? { agent: { ...session } } : {}),
@@ -2368,6 +2394,7 @@ export class WorkflowRuntime {
 				? await this.hooks.execution(run, step.runner ?? run.runner)
 				: undefined;
 			const context: ExecutionContext = {
+				progressOperation: `${checkpoint.progressPath ?? workflowId}/${step.id}${checkpoint.iteration ? `/${checkpoint.iteration.id}` : ""}`,
 				assertSchedulingOpen: () => this.assertSchedulingOpen(),
 				factoryHome: dirname(this.directory),
 				attemptId: state.attemptId,
@@ -2449,6 +2476,12 @@ export class WorkflowRuntime {
 					state.agent = agent;
 					if (agent.sessionId && agent.sessionId !== "pending") {
 						checkpoint.agentSessions ??= {};
+						if (run.progressBudget)
+							run.progressBudget.sessions[key] = {
+								runner: agent.runner,
+								sessionId: agent.sessionId,
+								idleRetries: agent.idleRetries,
+							};
 						checkpoint.agentSessions[step.id] = {
 							runner: agent.runner,
 							sessionId: agent.sessionId,
@@ -2459,6 +2492,8 @@ export class WorkflowRuntime {
 				},
 				save: () => this.save(run),
 			};
+			context.beginProgressAttempt = (reason) =>
+				beginProgressAttempt(context, reason);
 			if (step.reads) {
 				const bindings = stepBindings(
 					context,
@@ -2746,6 +2781,7 @@ export class WorkflowRuntime {
 				await this.save(run);
 				signal.throwIfAborted();
 				try {
+					if (step.type === "check") await context.beginProgressAttempt?.();
 					if (
 						(step.tool === "review-gate" ||
 							(step.type === "check" && hasCheck(step, "review-evidence"))) &&
@@ -3017,6 +3053,8 @@ export class WorkflowRuntime {
 									)
 								)
 									state.children![index]!.current = selected[0]!.id;
+								state.children![index]!.progressPath =
+									`${context.progressOperation}/${index}`;
 								return this.graph(
 									run,
 									selected,
@@ -3140,6 +3178,7 @@ export class WorkflowRuntime {
 							checkpoint.calls ??= {};
 							checkpoint.calls[step.id] = state.children[0]!;
 						}
+						state.children[0]!.progressPath = definition.id;
 						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
 						state.children[0]!.iteration ??= checkpoint.iteration;
 						if (
@@ -3326,6 +3365,8 @@ export class WorkflowRuntime {
 										outputs: structuredClone(outputs),
 									};
 								}
+								if (step.type !== "agent" || !this.hooks.agentExecutionBoundary)
+									await context.beginProgressAttempt?.();
 								return this.hooks[step.type as "agent" | "script" | "tool"](
 									context,
 								);
@@ -3445,6 +3486,16 @@ export class WorkflowRuntime {
 								"Source or delivery target changed during impact assessment",
 							);
 						const decision = validateImpact(output, fresh, run);
+						if (decision.status === "completed" && !decision.questions.length) {
+							const progress = impactProgressEvidence(decision);
+							recordProgressEvidence(context, {
+								repositories: progress.repositories,
+								source: progress.source,
+								environment: progress.environment,
+								findings: progress.findings,
+								valid: progress.valid,
+							});
+						}
 						run.impactDecisions ??= [];
 						if (decision.commentAssessments.length)
 							Object.assign(
@@ -3614,6 +3665,24 @@ export class WorkflowRuntime {
 					await this.save(run);
 					signal.throwIfAborted();
 				} catch (error) {
+					if (
+						!context.progressObservation &&
+						!run.progressBudget?.blocked &&
+						!signal.aborted &&
+						!isUpdatePaused(error)
+					)
+						await context.beginProgressAttempt?.("preflight-failure");
+					recordProgressFailure(
+						context,
+						state.agent?.infrastructureFailure
+							? "infrastructure"
+							: state.agent?.rejected
+								? "output-validation"
+								: signal.aborted
+									? "interrupted"
+									: "execution",
+						error instanceof Error ? error.message : String(error),
+					);
 					if (!signal.aborted && error instanceof StaleBoundInspectionError) {
 						finishStepAttempt(context, "interrupted");
 						this.log(run, key, error.message);
@@ -4864,6 +4933,7 @@ export class WorkflowRuntime {
 				at: new Date().toISOString(),
 			});
 			// Discussion regenerates a candidate, never grants acceptance.
+			recordProgressInput(run, decision.feedback!);
 			run.answers.push({
 				questions: [...run.questions],
 				answer: decision.feedback!,
@@ -5165,6 +5235,7 @@ export class WorkflowRuntime {
 			);
 			return;
 		}
+		recordProgressInput(run, answer);
 		run.answers.push({
 			questions: [...run.questions],
 			answer,
@@ -5739,6 +5810,14 @@ export class WorkflowRuntime {
 		)
 			throw new Error("Only failed or interrupted runs can be retried");
 		releaseDelivery(run, "Explicit retry must re-enter delivery coordination");
+		const convergenceGrant = run.progressBudget?.blocked;
+		continueProgress(run);
+		if (convergenceGrant && !run.progressBudget?.blocked)
+			this.log(
+				run,
+				"run",
+				`Continue authorized ${run.progressBudget!.policy.continueAttempts} additional convergence attempts for ${convergenceGrant.operation} at ${convergenceGrant.identity}; quality gates and original receipts retained.`,
+			);
 		// Retry is an explicit request for bounded additional work, never a global reset.
 		const extend = (
 			frame: GraphCheckpoint,
@@ -5767,6 +5846,15 @@ export class WorkflowRuntime {
 			}
 			const agent =
 				frame.active?.phase === "executing" ? frame.active.agent : undefined;
+			if (agent?.infrastructureFailure) {
+				agent.infrastructureFailure.retryGeneration =
+					(agent.infrastructureFailure.retryGeneration ?? 0) + 1;
+				this.log(
+					run,
+					"run",
+					`Infrastructure repair retry generation ${agent.infrastructureFailure.retryGeneration} for ${key}; mandatory tools must verify readiness before native work, and schema budget is unchanged.`,
+				);
+			}
 			if (
 				step.type === "agent" &&
 				agent?.rejected &&
@@ -6369,6 +6457,7 @@ export class WorkflowRuntime {
 				...this.newCheckpoint(step.body!),
 				projectResults: true,
 				resultReceipts: {},
+				progressPath: `${context.progressOperation}/item`,
 				iteration: { ...item, frame: key },
 				callInputs: checkpoint.callInputs,
 				snapshotInputs: checkpoint.snapshotInputs,
@@ -6620,6 +6709,8 @@ export class WorkflowRuntime {
 			};
 		}
 
+		if (context.checkEvidence && Object.keys(context.checkEvidence).length)
+			recordProgressEvidence(context, progressEvidence(context.checkEvidence));
 		const output = await evaluateCheckAsync(
 			step.check,
 			inputs,
