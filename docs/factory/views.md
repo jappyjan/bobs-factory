@@ -145,12 +145,18 @@ question batch/retry/dedup and native terminal/ticket reply behavior stay intact
 Current question waits take precedence over retained rejected review records.
 The terminal displays the declared native view text and current identity; Approve
 and Request changes capture that displayed consent before confirmation. A later
-refresh cannot substitute an unseen version. Completed guides whose native gate
+refresh cannot substitute an unseen version. A pending generic decision keeps its
+exact answer protocol first; otherwise the current native presentation and display
+digest precede retained Show history within the same text budget. Completed guides whose native gate
 is no longer retained receive a read-only stock presentation from their accepted
 configured producer, with the original reading-progress identity and no new
 approval authority.
 Check-in sections reuse the existing points and combine reactions into one change
-request. The rich `review-guide` component reuses the original show & tell,
+request. The saved check-in route selects the requested proposal/version’s owning
+declaration and proposal resource, including its candidate, rather than the run’s
+current Ask or Review display. Optional notes follow that declaration. Historical
+readers are read-only; only the current native check-in can supply decision consent.
+The rich `review-guide` component reuses the original show & tell,
 Dig deeper, flows, code tour with line notes, tests/checks/choices, comments,
 Decide page, feedback count and reading progress. Reading position and draft
 feedback are independent of approval authority.

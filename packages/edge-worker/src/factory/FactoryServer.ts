@@ -64,6 +64,7 @@ import {
 	localFactoryOrigin,
 } from "./LocalFactoryAccess.js";
 import {
+	architectureViewSnapshot,
 	nativeReviewContext,
 	nativeViewSnapshot,
 	nativeViewText,
@@ -1774,6 +1775,28 @@ export class FactoryServer {
 				const detail = {
 					nativeView,
 					nativeViewError,
+					...(architecture && run
+						? {
+								architectureViews: Object.fromEntries(
+									(run.architectureProposals ?? []).map((proposal) => {
+										try {
+											return [
+												proposal.id,
+												architectureViewSnapshot(run, proposal),
+											];
+										} catch {
+											return [
+												proposal.id,
+												{
+													error:
+														"This saved check-in view cannot be displayed. Correct its public bindings or data.",
+												},
+											];
+										}
+									}),
+								),
+							}
+						: {}),
 					reviewContext: run ? nativeReviewContext(run) : undefined,
 					...(projected ?? {
 						...session,
@@ -1794,9 +1817,12 @@ export class FactoryServer {
 								viewRecords: undefined,
 								viewDecision: runtime.humanViews.snapshot(run),
 								viewDisplays: run.viewDisplays?.map(publicViewSnapshot),
-								viewText:
-									runtime.humanViews.displayText(run) ||
-									(nativeView ? nativeViewText(run) : undefined),
+								viewText: runtime.humanViews.displayText(
+									run,
+									nativeView
+										? (limit) => nativeViewText(run, limit)
+										: undefined,
+								),
 								recipeParent: run.recipeParent,
 								launchActions: Object.fromEntries(
 									Object.entries(run.launchActions ?? {}).map(([id, batch]) => [

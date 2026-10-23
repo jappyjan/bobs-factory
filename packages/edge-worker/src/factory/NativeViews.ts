@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ArchitectureProposal } from "./Architecture.js";
 import { digest } from "./Delivery.js";
 import { foreachPointer, sanitizeJsonConfiguration } from "./Foreach.js";
 import { presentationOutputKeys } from "./RunOutputRoles.js";
@@ -36,6 +37,8 @@ export interface NativeViewSnapshot {
 	view: ResolvedView;
 	compatibility: boolean;
 	guideSource?: string;
+	proposalId?: string;
+	proposalDigest?: string;
 	context: ReturnType<typeof nativeReviewContext>;
 	/** Public ordinary guide data only. No checkpoint, path reader or capability. */
 	resources: Record<string, { source: string; digest: string; value: unknown }>;
@@ -78,12 +81,14 @@ function nativeKind(run: FactoryRun): NativeViewPreset | undefined {
 function owner(
 	run: FactoryRun,
 	kind = nativeKind(run),
+	proposal?: ArchitectureProposal,
 ): { key: string; step: WorkflowStep } | undefined {
 	const identity =
 		kind === "ask"
 			? run.questionBatchId
 			: kind === "approve"
-				? (run.architectureGate?.proposalId ??
+				? (proposal?.id ??
+					run.architectureGate?.proposalId ??
 					run.architectureProposals?.at(-1)?.id)
 				: run.reviewGate?.id;
 	let key =
@@ -93,17 +98,17 @@ function owner(
 	let step = stepForRun(run, key);
 	if (
 		kind === "approve" &&
-		!run.architectureGate &&
+		(proposal || !run.architectureGate) &&
 		run.architectureProposals?.length &&
-		!run.questions.length
+		(proposal || !run.questions.length)
 	) {
-		const proposal = run.architectureProposals.at(-1)!;
+		const selected = proposal ?? run.architectureProposals.at(-1)!;
 		const receipt = [...run.history]
 			.reverse()
 			.find(
 				(entry) =>
 					(entry.output as { proposalId?: string })?.proposalId ===
-						proposal.id &&
+						selected.id &&
 					stepForRun(run, entry.step)?.tool === "architecture-decision",
 			);
 		if (receipt) {
@@ -136,6 +141,7 @@ function publicHuman(
 	run: FactoryRun,
 	kind: NativeViewPreset,
 	located: { key: string; step: WorkflowStep },
+	selectedProposal?: ArchitectureProposal,
 ) {
 	const resources: NativeViewSnapshot["resources"] = {};
 	if (kind === "ask")
@@ -155,9 +161,11 @@ function publicHuman(
 		};
 	if (kind === "approve") {
 		const proposal =
+			selectedProposal ??
 			run.architectureProposals?.find(
 				(p) => p.id === run.architectureGate?.proposalId,
-			) ?? run.architectureProposals?.at(-1);
+			) ??
+			run.architectureProposals?.at(-1);
 		if (!proposal) throw new Error("Native proposal unavailable");
 		const talk = checkinTalk(proposal.content, proposal.footprint);
 		const texts: Record<(typeof sectionIds)[number], string> = {
@@ -262,6 +270,64 @@ export function nativeReviewContext(run: FactoryRun) {
 		existingWork: existing ? { branch: existing.branch } : undefined,
 	};
 }
+function resolveNativeDeclaration(
+	run: FactoryRun,
+	kind: NativeViewPreset,
+	located: { key: string; step: WorkflowStep },
+	proposal?: ArchitectureProposal,
+) {
+	const source = located.step.view ?? nativeViewPreset(kind);
+	const human = publicHuman(run, kind, located, proposal);
+	const viewReads = "components" in source ? source.reads : undefined;
+	const inputs: Record<string, unknown> = {};
+	for (const [name, from] of Object.entries(viewReads ?? {})) {
+		if (from === "@human") inputs[name] = human.value;
+		else if (from === "@callInputs" || from.startsWith("@callInputs/")) {
+			const frame = activeFrame(run, located.key);
+			inputs[name] =
+				from === "@callInputs"
+					? (frame?.callInputs ?? {})
+					: foreachPointer(
+							frame?.callInputs ?? {},
+							from.slice("@callInputs".length),
+						);
+		} else {
+			const [target, ...parts] = from.split("/");
+			const key = producerKey(run, located.key.replace(/[^/]+$/, ""), target!);
+			if (proposal?.source !== key && !Object.hasOwn(run.outputs, key))
+				throw new Error(`View input ${name} is unavailable`);
+			inputs[name] = parts.length
+				? foreachPointer(
+						proposal?.source === key ? proposal.content : run.outputs[key],
+						`/${parts.join("/")}`,
+					)
+				: proposal?.source === key
+					? proposal.content
+					: run.outputs[key];
+		}
+	}
+	// Existing v1 views may keep their public step reads instead of view-local declarations.
+	if (!viewReads)
+		for (const [name, binding] of Object.entries(
+			resolveStepConfig(located.step).reads,
+		)) {
+			if (binding.from.startsWith("@") || binding.when) continue;
+			const [target, ...parts] = binding.from.split("/");
+			const key = producerKey(run, located.key.replace(/[^/]+$/, ""), target!);
+			if (proposal?.source === key || Object.hasOwn(run.outputs, key))
+				inputs[name] = parts.length
+					? foreachPointer(
+							proposal?.source === key ? proposal.content : run.outputs[key],
+							`/${parts.join("/")}`,
+						)
+					: proposal?.source === key
+						? proposal.content
+						: run.outputs[key];
+		}
+	const view = resolveView(source, { inputs });
+	return { source, human, inputs, view };
+}
+
 /** Read only the explicitly selected display inputs; native private sources never enter this scope. */
 export function nativeViewSnapshot(
 	run: FactoryRun,
@@ -299,45 +365,11 @@ export function nativeViewSnapshot(
 	if (!kind) return;
 	const located = owner(run, kind);
 	if (!located) return;
-	const source = located.step.view ?? nativeViewPreset(kind);
-	const human = publicHuman(run, kind, located);
-	const viewReads = "components" in source ? source.reads : undefined;
-	const inputs: Record<string, unknown> = {};
-	for (const [name, from] of Object.entries(viewReads ?? {})) {
-		if (from === "@human") inputs[name] = human.value;
-		else if (from === "@callInputs" || from.startsWith("@callInputs/")) {
-			const frame = activeFrame(run, located.key);
-			inputs[name] =
-				from === "@callInputs"
-					? (frame?.callInputs ?? {})
-					: foreachPointer(
-							frame?.callInputs ?? {},
-							from.slice("@callInputs".length),
-						);
-		} else {
-			const [target, ...parts] = from.split("/");
-			const key = producerKey(run, located.key.replace(/[^/]+$/, ""), target!);
-			if (!Object.hasOwn(run.outputs, key))
-				throw new Error(`View input ${name} is unavailable`);
-			inputs[name] = parts.length
-				? foreachPointer(run.outputs[key], `/${parts.join("/")}`)
-				: run.outputs[key];
-		}
-	}
-	// Existing v1 views may keep their public step reads instead of view-local declarations.
-	if (!viewReads)
-		for (const [name, binding] of Object.entries(
-			resolveStepConfig(located.step).reads,
-		)) {
-			if (binding.from.startsWith("@") || binding.when) continue;
-			const [target, ...parts] = binding.from.split("/");
-			const key = producerKey(run, located.key.replace(/[^/]+$/, ""), target!);
-			if (Object.hasOwn(run.outputs, key))
-				inputs[name] = parts.length
-					? foreachPointer(run.outputs[key], `/${parts.join("/")}`)
-					: run.outputs[key];
-		}
-	const view = resolveView(source, { inputs });
+	const { source, human, inputs, view } = resolveNativeDeclaration(
+		run,
+		kind,
+		located,
+	);
 	const preset = view.preset ?? kind;
 	return {
 		preset,
@@ -377,6 +409,67 @@ export function nativeViewSnapshot(
 		}),
 	};
 }
+/** Proposal-local reader, independent of the run's current Ask/Review display. */
+export function architectureViewSnapshot(
+	run: FactoryRun,
+	proposal: ArchitectureProposal,
+): NativeViewSnapshot {
+	if (run.architectureGate?.proposalId === proposal.id) {
+		const current = nativeViewSnapshot(run);
+		if (current?.authority === "approve")
+			return {
+				...current,
+				proposalId: proposal.id,
+				proposalDigest: proposal.digest,
+			};
+	}
+	const located = owner(run, "approve", proposal);
+	// Unshown legacy drafts have no owning human receipt. They remain stock readers.
+	const selected =
+		located &&
+		(run.nativeViewOwners?.[proposal.id] === located.key ||
+			run.history.some(
+				(entry) =>
+					entry.step === located.key &&
+					(entry.output as { proposalId?: string })?.proposalId === proposal.id,
+			))
+			? located
+			: {
+					key: proposal.source,
+					step: {
+						id: proposal.source,
+						name: "Saved check-in",
+						type: "show",
+						branches: [],
+						maxVisits: 1,
+					} satisfies WorkflowStep,
+				};
+	const { view, source, inputs } = resolveNativeDeclaration(
+		run,
+		"approve",
+		selected,
+		proposal,
+	);
+	return {
+		preset: view.preset ?? "approve",
+		authority: "read-only",
+		stepKey: selected.key,
+		compatibility: !selected.step.view,
+		proposalId: proposal.id,
+		proposalDigest: proposal.digest,
+		view,
+		resources: {},
+		context: { source: undefined, existingWork: undefined },
+		digest: digest({
+			protocol: "historical-proposal-display-v1",
+			runId: run.id,
+			proposalId: proposal.id,
+			proposalDigest: proposal.digest,
+			source,
+			inputs,
+		}),
+	};
+}
 export function nativeViewText(
 	run: FactoryRun,
 	limit = 100000,
@@ -403,7 +496,7 @@ export function nativeViewText(
 				: snapshot.authority === "read-only"
 					? "Saved read-only guide"
 					: `Review ${gate?.id ?? ""}${gate?.externalDigest ? ` · external ${gate.externalDigest}` : ""}`;
-	const header = `${snapshot.preset}\n${viewPlainText(identity)}\n${links.join("\n")}\n`;
+	const header = `${snapshot.preset}\n${viewPlainText(identity)}\nDisplayed digest: ${snapshot.digest}\n${links.join("\n")}\n`;
 	const body = viewText(snapshot.view);
 	const protocol =
 		snapshot.authority === "read-only"

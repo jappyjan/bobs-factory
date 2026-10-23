@@ -5,8 +5,71 @@ Date: 2026-10-23. Base: `6ebabd6fc8035fa851eb5415f4306bc358d0cd49`
 Implementation: [PR #180](https://github.com/jappyjan/bobs-factory/pull/180). Initial
 source `884bfc56ef2f4112afc5118c2206a63c937f75c2` and docs head
 `6a25974db454adc66a9cc9461b430ec3d96aabd6` remain historical; independent Round1
-report2472 found that candidate **NOT CLEAN**. The combined R1–R4 repair below
-supersedes it for new independent review; no acceptance clearance is inherited.
+report2472 found that candidate **NOT CLEAN**. The R1–R4 repair `2e9d0f32de90edd7af8f53ce425d0b7622b0742c` / tree
+`4f99d5d61d9e87793bf8a4309e68ff67e28e410d` also remains historically **NOT CLEAN**
+under full independent Round2 report2480 (residual R2 and new R5). The combined
+repair below is a new candidate; no acceptance clearance is inherited.
+
+## Combined Round2 repair: R2 and R5
+
+One combined source/test freeze restores the two reported functional paths. R1,
+R3 and R4 remain preservation requirements, not inherited overall acceptance.
+
+| Finding | Root cause and correction | Actual positive proof |
+| --- | --- | --- |
+| R2 current native text after Show | A nonempty retained Show won the server’s fallback. The shared text composer now gives an unanswered, nonsuperseded current generic decision its original protocol; otherwise current native content, identity and display digest precede Show history. The existing 100000-character budget and explicit incomplete/omitted notices remain. | Executed source → Show → explicit Review, real protected GET, actual TodayApp renderer and keyboard-created confirmation → FactoryClient → protected HTTP. Current custom content/identity precedes the earlier Show and the exact current review is accepted once. Existing current generic Ask/discussion/protocol/budget control passes. Both stale terminal callbacks still return409 without mutation, followed by current success. |
+| R5 retained check-in reader | ArchitecturePage used any current native view and suppressed notes. The architecture projection now supplies proposal-local declarations/resources, selected by the requested proposal ID/digest and its actual owning step/receipt. Proposal-source reads use that retained proposal’s content/candidate. The current run’s nativeView stays unchanged. Historical readers are read-only; only the matching current native check-in carries its original consent. | Two ordinary Factory fork Save/export/reload drives execute planning/review and exact protected check-in acceptance → a new pending Review → architecture GET → actual ArchitecturePage SSR. Both retain scenes/judgments/candidate content/reordered sections; optional notes show or remain deliberately hidden. Neither displays the unrelated Review guide or creates answer controls. A historical display digest cannot approve the current Review (409, native records unchanged). |
+
+Current focused evidence, source-mode only, Node24.21.0/pnpm10.33.1:
+
+- First six-file selection: **exit1,13PASS/2FAIL/16filtered**. The new reader cases
+  called the nonexistent `/decide` route (404); the real native review route is
+  `/review`. This fixture error was corrected without weakening native assertions.
+- Second affected two-file selection: **exit1,4PASS/2FAIL**. Both actual terminal
+  callback controls, rejected-review→Ask/restart/dedup and Show→Review pass at the
+  final product source. The two reader cases reached correct SSR content but
+  incorrectly compared raw Markdown/JSON against escaped rendered HTML. The full
+  component data equality and rendered meaningful plan text now cover that check.
+- Final reader-only selection: **exit0,2PASS**. Product source did not change after
+  the preceding four positives. This is **15 distinct selected positive checks**
+  across the precise scopes above, not a full-suite or all-native claim.
+- Necessary owning/backend and web source `tsgo` both **exit0**. Initial compile
+  failure (read-only context object type) remains retained; the context now has
+  explicit absent source/existing-work fields. Changed web build **exit0**, build
+  `e8610e059d5a3af83b7c12c5`. No native/broad package build was repeated.
+- First manifest command used root-relative paths from the package cwd and failed;
+  the corrected manifest records the unchanged bytes under test. No source/test/
+  harness edits occurred while checks ran. Final source/test freeze SHA256:
+  `de5f7f8e9b8b11d9caf13da5a0f3477d0d919332a69d8684d174a783845b4c9b`.
+
+[Compact repair receipt](assets/taskbot143/round2-repair.json) records exact inputs,
+commands, exits, retained failures and scoped reuse. Raw local logs remain under
+`/tmp/taskbot143-r2-repair/`. The earlier three exact-base fixture failures remain
+**FAIL/deferred**: old ReviewFiles pipeline/guide409 and two mixed TicketDelivery
+fixtures missing original executed clarification/plan/independent-review producers.
+They were not rerun or weakened. The original227 mixed batch, setup/SSR/timeouts,
+Round1 attempts and intentional external missing-final-proof failure remain
+qualified historical failures.
+
+Preservation is scoped: native proposal/candidate/assets/routine bypass, all-repo
+URL AND head, external verified contract/final proof/uncertainty, permissions,
+private projections, question blank/default handling, generic answer authority,
+Snapshot provenance and141/142 frame/visit/session/freshness/limit owners are
+unchanged. Existing selected native Ask/fork/multirepo and historical guide checks
+pass with the common resolver extraction; final header/read-only context changes
+are separately qualified above. No full provider/native/EdgeWorker lifecycle,
+physical device, process crash, live tracker/forge or completed external delivery
+is claimed. Historical version/current Ask routing shares the proposal-local
+reader selection; those variants were not separately native-driven.
+
+All32 earlier before/after images retain their exact bytes and original
+b2755fc9/additive-host, f32b485a/guide-present and303dd6de/narrow-smoke provenance.
+This repair changes architecture route selection and text composition, not the
+stock section/guide/code-tour renderers. Current UI proof is actual SSR/TUI;
+there is no new browser matrix or screenshot claim. Full capability/role prompt
+text and entire expected fixture are unchanged because these restore documented
+behavior. CI and repeated broad gates remain deferred post148. Parent owns NEW
+whole-diff Standards/Spec acceptance and guarded merge.
 
 ## Combined Round1 repair
 

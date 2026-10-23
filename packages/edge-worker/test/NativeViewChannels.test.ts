@@ -34,7 +34,7 @@ const forbidden = async () => {
 	throw new Error("Unexpected provider effect");
 };
 const port = 36344;
-function fixture() {
+function fixture(withShow = false) {
 	const home = mkdtempSync(join(tmpdir(), "native-channels143-"));
 	homes.push(home);
 	const ticket = {
@@ -90,8 +90,30 @@ function fixture() {
 					name: "Current guide",
 					type: "agent",
 					prompt: "Synthetic",
-					next: "human",
+					next: withShow ? "past-display" : "human",
 				},
+				...(withShow
+					? [
+							{
+								id: "past-display",
+								name: "An earlier Show",
+								type: "show",
+								view: {
+									version: "view-v1",
+									components: [
+										{
+											id: "earlier",
+											type: "markdown",
+											data: {
+												literal: { text: "Earlier generic Show content" },
+											},
+										},
+									],
+								},
+								next: "human",
+							},
+						]
+					: []),
 				{
 					id: "human",
 					name: "Review this change",
@@ -313,3 +335,36 @@ it("restores the current Ask after exact terminal rejection while retaining revi
 	expect(current.humanDecisions).toEqual(history);
 	expect(comments()).toHaveLength(1);
 }, 10000);
+
+it("renders the current native Review before retained Show history and approves only that displayed version", async () => {
+	const f = fixture(true),
+		s = f.makeServer(f.runtime);
+	await s.start(port);
+	void f.runtime.launch(f.run);
+	await waitFor(() => expect(f.run.reviewGate?.status).toBe("pending"));
+	const client = await f.client();
+	const detail: any = await client.get(`/api/runs/${f.run.id}?view=dashboard`);
+	expect(detail.nativeView.authority).toBe("review");
+	expect(detail.viewText).toContain(
+		`Displayed digest: ${detail.nativeView.digest}`,
+	);
+	expect(detail.viewText).toContain("Current declared review content");
+	expect(detail.viewText).toContain("Earlier generic Show content");
+	expect(
+		detail.viewText.indexOf("Current declared review content"),
+	).toBeLessThan(detail.viewText.indexOf("Earlier generic Show content"));
+	expect(detail.viewText.replaceAll("\\", "")).toContain(detail.reviewGate.id);
+	expect(detail.viewText.length).toBeLessThanOrEqual(100000);
+	const t = await terminal(client, f.run.id);
+	expect(t.frame()).toContain("Current declared review content");
+	expect(t.frame().replaceAll("\\", "")).toContain(detail.reviewGate.id);
+	t.app.key({ name: "text", text: "a" });
+	await (t.app as any).overlay.action();
+	await waitFor(() => expect(f.run.humanDecisions).toHaveLength(1));
+	expect(f.run.humanDecisions?.[0]).toMatchObject({
+		decision: "approve",
+		reviewId: detail.reviewGate.id,
+		headSha: detail.reviewGate.headSha,
+		url: detail.reviewGate.url,
+	});
+});

@@ -377,7 +377,8 @@ export function ArchitecturePage() {
 	}, [hasRun]);
 	const state = run ? architectureState(run) : undefined;
 	const latest = state?.latest;
-	const context = `${run?.id}/${latest?.id}/${latest?.digest}/${latest?.status}/${run?.status}${run?.nativeView ? `/${run.nativeView.digest}` : ""}`;
+	const latestView = latest && run?.architectureViews?.[latest.id];
+	const context = `${run?.id}/${latest?.id}/${latest?.digest}/${latest?.status}/${run?.status}${latestView ? `/${latestView.digest}` : ""}`;
 	const [draft, setDraft] = useFormState(context, "");
 	const [picks, setPicks] = useFormState<Pick[]>(context, []);
 	const [reactions, setReactions] = useFormState<Record<string, Reaction>>(
@@ -407,6 +408,12 @@ export function ArchitecturePage() {
 	const { seen, drafts } = seenVersions(proposals, run.answers ?? []);
 	const shown = proposals.find((p) => p.version === viewing) ?? latest;
 	const content = shown.content;
+	const presentation = run.architectureViews?.[shown.id];
+	const shownView =
+		presentation?.proposalId === shown.id &&
+		presentation.proposalDigest === shown.digest
+			? presentation
+			: undefined;
 	if (!readable(content))
 		return (
 			<>
@@ -417,7 +424,10 @@ export function ArchitecturePage() {
 			</>
 		);
 	const isLatest = shown === latest;
-	const interactive = isLatest && pending;
+	const interactive =
+		isLatest &&
+		pending &&
+		(!run.architectureViews || shownView?.authority === "approve");
 	const since = sinceLastSeen(proposals, seen, shown);
 	const talk = checkinTalk(content, shown.footprint);
 	const openCount = open(latest.content);
@@ -437,8 +447,8 @@ export function ArchitecturePage() {
 					proposalId: latest.id,
 					version: latest.version,
 					digest: latest.digest,
-					...(run.nativeView
-						? { display: { digest: run.nativeView.digest } }
+					...(shownView?.authority === "approve"
+						? { display: { digest: shownView.digest } }
 						: {}),
 					decision,
 					...(decision === "accept"
@@ -592,15 +602,15 @@ export function ArchitecturePage() {
 				className={`ci-thread${revising ? " ci-faded" : ""}`}
 				aria-live="polite"
 			>
-				{run.nativeView ? (
+				{shownView ? (
 					<DeclarativeView
-						view={run.nativeView.view}
+						view={shownView.view}
 						runId={run.id}
 						renderComponent={(component) => {
 							if (component.type !== "checkin-section") return undefined;
 							if (
-								component.data.proposalId !== latest.id ||
-								component.data.digest !== latest.digest
+								component.data.proposalId !== shown.id ||
+								component.data.digest !== shown.digest
 							)
 								return undefined;
 							if (component.data.section === "notes")
@@ -614,6 +624,8 @@ export function ArchitecturePage() {
 							return renderCheckin(component.data.section);
 						}}
 					/>
+				) : presentation?.error ? (
+					<p role="alert">{presentation.error}</p>
 				) : (
 					renderCheckin()
 				)}
@@ -695,7 +707,7 @@ export function ArchitecturePage() {
 						</p>
 					</div>
 				</section>
-			) : stopped && isLatest ? (
+			) : stopped && isLatest && shownView?.authority !== "read-only" ? (
 				<Button
 					requiresConnection
 					disabled={action.isPending}
@@ -713,7 +725,7 @@ export function ArchitecturePage() {
 					{error}
 				</p>
 			)}
-			{!run.nativeView && (
+			{!shownView && !presentation?.error && (
 				<BobsNotes
 					content={content}
 					footprint={shown.footprint}

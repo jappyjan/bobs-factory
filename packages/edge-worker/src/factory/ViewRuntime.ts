@@ -572,21 +572,28 @@ export class HumanViews {
 	text(record: ViewRecord): string {
 		return humanViewText(record.snapshot);
 	}
-	displayText(run: FactoryRun) {
+	displayText(
+		run: FactoryRun,
+		nativeText?: (limit: number) => string | undefined,
+	) {
 		const records = run.viewRecords ?? [];
 		const current = records.find((r) => r.snapshot.id === run.viewDecision?.id);
 		const history = records.filter((r) => r.snapshot.kind === "show").reverse();
 		const historyNotice =
 			"\n[Earlier Show displays omitted. Open the dashboard for retained history.]";
-		const chunks = current
-			? [
-					humanViewText(publicViewRecord(run.id, current), {
-						maxLength: history.length
-							? 100000 - historyNotice.length - 2
-							: 100000,
-					}),
-				]
-			: [];
+		const limit = history.length ? 100000 - historyNotice.length - 2 : 100000;
+		// Only an unanswered, current generic decision owns the live protocol.
+		// Retained Shows (or an answered generic decision) cannot mask a native wait.
+		const pending = current && !current.answer && !current.superseded;
+		const leading = pending
+			? humanViewText(publicViewRecord(run.id, current), { maxLength: limit })
+			: (nativeText?.(limit) ??
+				(current
+					? humanViewText(publicViewRecord(run.id, current), {
+							maxLength: limit,
+						})
+					: undefined));
+		const chunks = leading ? [leading] : [];
 		let remaining = 100000 - chunks.join("\n\n").length;
 		for (const record of history) {
 			const notice =
