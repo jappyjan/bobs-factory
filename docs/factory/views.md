@@ -150,12 +150,18 @@ exact answer protocol first; otherwise the current native presentation and displ
 digest precede retained Show history within the same text budget. Completed guides whose native gate
 is no longer retained receive a read-only stock presentation from their accepted
 configured producer, with the original reading-progress identity and no new
-approval authority.
+approval authority. A rejected review also retains a separate read-only review
+presentation/resource while a later Ask owns the current batch and answer form.
+The saved guide uses the original rich reader and progress identity; its display
+digest cannot answer the current Ask or restore native review controls.
 Check-in sections reuse the existing points and combine reactions into one change
 request. The saved check-in route selects the requested proposal/version’s owning
 declaration and proposal resource, including its candidate, rather than the run’s
 current Ask or Review display. Optional notes follow that declaration. Historical
 readers are read-only; only the current native check-in can supply decision consent.
+Declared `@callInputs` reads follow the exact accepted lexical path into the owning
+retained Call frame, including after the run advances; another active frame or
+similarly named output cannot replace that context.
 The rich `review-guide` component reuses the original show & tell,
 Dig deeper, flows, code tour with line notes, tests/checks/choices, comments,
 Decide page, feedback count and reading progress. Reading position and draft

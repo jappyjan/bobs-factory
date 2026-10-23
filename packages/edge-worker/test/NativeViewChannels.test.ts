@@ -1,7 +1,11 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
+import { afterEach, expect, it, vi } from "vitest";
 import { TodayApp } from "../../../apps/cli/src/tui/app.js";
 import { FactoryClient } from "../../../apps/cli/src/tui/client.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
@@ -15,7 +19,76 @@ import {
 import { nativeViewPreset } from "../src/factory/ViewPresets.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
+import { ReviewPage } from "../src/factory/web/review-page.js";
+import {
+	readReviewProgress,
+	reviewKey,
+	writeReviewProgress,
+} from "../src/factory/web/review-state.js";
 import { waitForRuntime as waitFor } from "./fixtures/runtime-wait.js";
+
+// Browser stores have no SSR reader. Keep their real snapshot and React hooks.
+vi.mock("react", async (importOriginal) => {
+	const original = await importOriginal<typeof import("react")>();
+	return {
+		...original,
+		useSyncExternalStore: (
+			subscribe: Parameters<typeof original.useSyncExternalStore>[0],
+			getSnapshot: () => unknown,
+			getServerSnapshot?: () => unknown,
+		) =>
+			original.useSyncExternalStore(
+				subscribe,
+				getSnapshot,
+				getServerSnapshot ?? getSnapshot,
+			),
+	};
+});
+vi.mock("../src/factory/web/pwa.js", async (importOriginal) => {
+	const original =
+		await importOriginal<typeof import("../src/factory/web/pwa.js")>();
+	return { ...original, usePwa: () => original.pwaState() };
+});
+// SSR reads the authenticated UI's local progress store. Server/TUI authentication
+// remains the real protected fixture; this mock grants no runtime authority.
+vi.mock("../src/factory/web/auth-state.js", async (importOriginal) => {
+	const original =
+		await importOriginal<typeof import("../src/factory/web/auth-state.js")>();
+	return {
+		...original,
+		accessState: () => ({ status: "authenticated", access: "local" }),
+	};
+});
+const route = vi.hoisted(() => ({ run: undefined as any }));
+vi.mock("../src/factory/web/client.js", async (importOriginal) => {
+	const original =
+		await importOriginal<typeof import("../src/factory/web/client.js")>();
+	return { ...original, useRun: () => ({ data: route.run, isLoading: false }) };
+});
+function renderReader(detail: any) {
+	route.run = detail;
+	const client = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	try {
+		return renderToStaticMarkup(
+			createElement(
+				QueryClientProvider,
+				{ client },
+				createElement(
+					MemoryRouter,
+					{ initialEntries: [`/runs/${detail.id}/review`] },
+					createElement(ReviewPage, {
+						config: { repositories: [], workflows: [] },
+						onSettled: () => {},
+					}),
+				),
+			),
+		);
+	} finally {
+		client.clear();
+	}
+}
 
 const homes: string[] = [],
 	runtimes: WorkflowRuntime[] = [],
@@ -23,6 +96,7 @@ const homes: string[] = [],
 	apps: TodayApp[] = [],
 	services: TicketTracking[] = [];
 afterEach(async () => {
+	vi.unstubAllGlobals();
 	for (const app of apps.splice(0)) app.stop();
 	for (const runtime of runtimes.splice(0)) await runtime.shutdown();
 	for (const server of servers.splice(0)) await server.stop();
@@ -58,7 +132,17 @@ function fixture(withShow = false) {
 	const hooks = {
 		agent: async (c: any) =>
 			c.step.id === "source"
-				? { summary: "Current declared review content" }
+				? {
+						summary: "Current declared review content",
+						chapters: [
+							{
+								id: "retained",
+								title: "Prior correction guide",
+								summary: "Inspect original checks before answering",
+								files: [],
+							},
+						],
+					}
 				: c.run.answers.length
 					? { questions: [] }
 					: { questions: ["Which correction should I make?"] },
@@ -273,6 +357,24 @@ it("restores the current Ask after exact terminal rejection while retaining revi
 	void f.runtime.launch(f.run);
 	await waitFor(() => expect(f.run.reviewGate?.status).toBe("pending"));
 	let client = await f.client();
+	const storage = new Map<string, string>();
+	vi.stubGlobal("localStorage", {
+		getItem: (key: string) => storage.get(key) ?? null,
+		setItem: (key: string, value: string) => storage.set(key, value),
+		removeItem: (key: string) => storage.delete(key),
+	});
+	vi.stubGlobal("matchMedia", () => ({
+		matches: false,
+		addEventListener() {},
+		removeEventListener() {},
+	}));
+	const before: any = await client.get(`/api/runs/${f.run.id}?view=dashboard`);
+	const guide = before.outputs.source;
+	const key = reviewKey(before, guide);
+	writeReviewProgress(before, guide, { page: 1, reviewed: { retained: true } });
+	expect(renderReader(before)).toContain(
+		"Inspect original checks before answering",
+	);
 	const t = await terminal(client, f.run.id),
 		app = t.app as any;
 	t.app.key({ name: "text", text: "r" });
@@ -281,6 +383,25 @@ it("restores the current Ask after exact terminal rejection while retaining revi
 		expect(f.run.questions).toEqual(["Which correction should I make?"]),
 	);
 	let detail: any = await client.get(`/api/runs/${f.run.id}?view=dashboard`);
+	expect(detail.savedReviewView).toMatchObject({
+		authority: "read-only",
+		stepKey: "human",
+		guideSource: "source",
+	});
+	const savedGuide = Object.values(detail.savedReviewView.resources).at(
+		0,
+	) as any;
+	expect(savedGuide.value).toEqual(guide);
+	expect(reviewKey(detail, savedGuide.value)).toBe(key);
+	expect(readReviewProgress(detail, savedGuide.value, 4)).toMatchObject({
+		page: 1,
+		reviewed: { retained: true },
+	});
+	const html = renderReader(detail);
+	expect(html).toContain("Inspect original checks before answering");
+	expect(html).not.toContain("No review guide yet");
+	expect(html).not.toContain("Approve this PR");
+	expect(html).not.toContain("Request changes");
 	expect(detail.nativeView).toMatchObject({
 		authority: "ask",
 		preset: "ask",
@@ -302,6 +423,21 @@ it("restores the current Ask after exact terminal rejection while retaining revi
 	const batch = detail.questionBatchId,
 		gate = structuredClone(f.run.reviewGate),
 		history = structuredClone(f.run.humanDecisions);
+	await expect(
+		client.post(`/api/runs/${f.run.id}/answer`, {
+			answer: "Correct the label",
+			kind: "answer",
+			context: {
+				step: detail.step,
+				questions: detail.questions,
+				questionBatchId: batch,
+			},
+			display: { digest: detail.savedReviewView.digest },
+		}),
+	).rejects.toMatchObject({ status: 409 });
+	expect(f.run.answers).toHaveLength(0);
+	expect(f.run.reviewGate).toEqual(gate);
+	expect(f.run.humanDecisions).toEqual(history);
 	t.app.stop();
 	await f.runtime.shutdown();
 	await s.stop();
@@ -318,6 +454,11 @@ it("restores the current Ask after exact terminal rejection while retaining revi
 		stepKey: "correction",
 	});
 	expect(detail.questionBatchId).toBe(batch);
+	expect(detail.savedReviewView.authority).toBe("read-only");
+	expect(renderReader(detail)).toContain(
+		"Inspect original checks before answering",
+	);
+	expect(reviewKey(detail, savedGuide.value)).toBe(key);
 	expect(comments()).toHaveLength(1);
 	await client.post(`/api/runs/${f.run.id}/answer`, {
 		answer: "Correct the label",

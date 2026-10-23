@@ -10,10 +10,11 @@ export type ReviewGuideViewComponent = Extract<
 export function reviewGuideValue(
 	run: any,
 	component: ReviewGuideViewComponent | undefined,
+	presentation = run?.nativeView,
 ): Record<string, any> | undefined {
 	if (!component) return undefined;
 	const { source, digest } = component.data;
-	const resources = run?.nativeView?.resources;
+	const resources = presentation?.resources;
 	if (!resources || !Object.hasOwn(resources, digest)) return undefined;
 	const resource = resources[digest];
 	if (
@@ -33,15 +34,17 @@ export function ReviewGuideComponent({
 	run,
 	documentPage = false,
 	controls,
+	presentation = run?.nativeView,
 }: {
 	component: ReviewGuideViewComponent;
 	run?: any;
 	documentPage?: boolean;
 	controls?: GuidedReviewControls;
+	presentation?: any;
 }) {
-	const value = reviewGuideValue(run, component);
+	const value = reviewGuideValue(run, component, presentation);
 	if (!value || !run?.id) return <p>{component.data.text}</p>;
-	const authority = run.nativeView.authority;
+	const authority = presentation.authority;
 	return (
 		<GuidedReview
 			value={value}

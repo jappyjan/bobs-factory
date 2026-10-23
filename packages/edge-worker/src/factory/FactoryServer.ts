@@ -69,6 +69,7 @@ import {
 	nativeViewSnapshot,
 	nativeViewText,
 	prepareNativeViewConsent,
+	savedReviewViewSnapshot,
 } from "./NativeViews.js";
 import { OperatorService } from "./OperatorService.js";
 import { conforms } from "./OutputFormats.js";
@@ -1772,7 +1773,23 @@ export class FactoryServer {
 						resource.value = runtime.outputPreviews(run, [resource.source])[
 							resource.source
 						];
+				let savedReviewView: ReturnType<typeof savedReviewViewSnapshot>;
+				let savedReviewViewError: string | undefined;
+				try {
+					savedReviewView =
+						run && !focus ? savedReviewViewSnapshot(run) : undefined;
+					if (savedReviewView && run)
+						for (const resource of Object.values(savedReviewView.resources))
+							resource.value = runtime.outputPreviews(run, [resource.source])[
+								resource.source
+							];
+				} catch {
+					savedReviewViewError =
+						"The saved review view cannot be displayed. Correct its public bindings or data.";
+				}
 				const detail = {
+					savedReviewView,
+					savedReviewViewError,
 					nativeView,
 					nativeViewError,
 					...(architecture && run

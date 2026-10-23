@@ -82,9 +82,13 @@ vi.mock("../src/factory/web/client.js", async (importOriginal) => {
 });
 
 it.each([
-	false,
-	true,
-])("reads the saved Factory check-in declaration during a later Review (notes hidden: %s)", async (hideNotes) => {
+	{ hideNotes: false, callInput: false },
+	{ hideNotes: true, callInput: false },
+	{ hideNotes: false, callInput: true },
+])("reads the saved Factory check-in declaration during a later Review (notes hidden: $hideNotes, Call input: $callInput)", async ({
+	hideNotes,
+	callInput,
+}) => {
 	const directory = home();
 	const git = (...args: string[]) =>
 		execFileSync("git", args, {
@@ -200,6 +204,22 @@ it.each([
 			data: { bindings: { text: { path: "/inputs/planDetails" } } },
 		},
 	];
+	if (callInput) {
+		view.reads!.note = "@callInputs/note";
+		view.components.splice(1, 0, {
+			id: "retained-note",
+			type: "markdown",
+			data: { bindings: { text: { path: "/inputs/note" } } },
+		});
+		child.inputs = [...(child.inputs ?? []), "note"];
+		const call = definitions
+			.find((w) => w.id === fork.id)!
+			.steps.find((s) => s.id === "check-in")!;
+		call.inputMapping = {
+			...call.inputMapping,
+			note: "/planning/outputs/plan/plan",
+		};
+	}
 	decision.view = view;
 	const s = server(runtime),
 		saved = await s.app.inject({
@@ -257,6 +277,10 @@ it.each([
 		expect(run.architectureGate).toBeDefined();
 	});
 	const shown = nativeViewSnapshot(run)!;
+	if (callInput)
+		expect(
+			shown.view.components.find((c) => c.id === "retained-note")?.data,
+		).toEqual({ text: "Save a record safely with a focused local check" });
 	expect(shown.compatibility).toBe(false);
 	expect(shown.view.components[0]?.id).toBe("size");
 	expect(shown.view.components.some((c) => c.id === "notice")).toBe(false);
@@ -304,6 +328,18 @@ it.each([
 			url: `/api/runs/${run.id}?view=architecture`,
 		})
 	).json();
+	if (callInput) {
+		expect(run.checkpoint!.calls!["check-in"]!.callInputs!.note).toBe(
+			"Save a record safely with a focused local check",
+		);
+		expect(current.architectureViews[p.id].error).toBeUndefined();
+		expect(
+			current.architectureViews[p.id].view.components.find(
+				(c: any) => c.id === "retained-note",
+			).data,
+		).toEqual({ text: "Save a record safely with a focused local check" });
+		expect(run.checkpoint!.current).toBe("reader-human");
+	}
 	expect(current.nativeView.authority).toBe("review");
 	expect(current.architectureProposals.at(-1).status).toBe("accepted");
 	const unchanged = structuredClone({

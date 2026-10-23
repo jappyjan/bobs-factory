@@ -52,14 +52,18 @@ export function ReviewPage({
 			</>
 		);
 	const gate = run.reviewGate,
-		nativeView = run.nativeView,
+		nativeView =
+			run.savedReviewView ??
+			(["review", "external-review"].includes(run.nativeView?.preset)
+				? run.nativeView
+				: undefined),
 		review =
 			nativeView?.preset === "review" ||
 			nativeView?.preset === "external-review",
 		guideComponent = nativeView?.view?.components.find(
 			(component: { type: string }) => component.type === "review-guide",
 		) as ReviewGuideViewComponent | undefined,
-		guide = reviewGuideValue(run, guideComponent),
+		guide = reviewGuideValue(run, guideComponent, nativeView),
 		complete = ["complete", "completed"].includes(run.status),
 		trackingPending = ticketTrackingPending(run);
 	return (
@@ -144,13 +148,21 @@ export function ReviewPage({
 				<div className="review-surface">
 					<FullReview
 						run={run}
+						presentation={nativeView}
 						onSettled={() => onSettled(run)}
 						settling={settling}
 					/>
 				</div>
 			) : (
 				<div className="review-surface">
-					<h2>No review guide yet</h2>
+					<h2>
+						{run.savedReviewViewError
+							? "Could not load the saved guide"
+							: "No review guide yet"}
+					</h2>
+					{run.savedReviewViewError && (
+						<p role="alert">{run.savedReviewViewError}</p>
+					)}
 					<p>
 						This run has no guide to read. Open its story for questions,
 						progress and follow-up actions.

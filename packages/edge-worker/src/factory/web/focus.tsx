@@ -43,6 +43,7 @@ import {
 import {
 	ReviewGuideComponent,
 	type ReviewGuideViewComponent,
+	reviewGuideValue,
 } from "./review-guide-component";
 import {
 	guideMatchesGate,
@@ -216,8 +217,8 @@ export function QuestionForm({ run }: { run: any }) {
 	return <AskView run={run} />;
 }
 
-function reviewComponent(run: any) {
-	return run.nativeView?.view.components.find(
+function reviewComponent(run: any, presentation = run.nativeView) {
+	return presentation?.view.components.find(
 		(component: { type: string }) => component.type === "review-guide",
 	) as ReviewGuideViewComponent | undefined;
 }
@@ -310,12 +311,16 @@ export function FullReview({
 	run,
 	onSettled,
 	settling,
+	presentation = run.nativeView,
 }: {
 	run: any;
 	onSettled: () => void;
 	settling?: boolean;
+	presentation?: any;
 }) {
-	const guide = currentGuide(run),
+	const guide =
+			reviewGuideValue(run, reviewComponent(run, presentation), presentation) ??
+			currentGuide(run),
 		version = `${run.reviewGate?.id ?? "historical"}/${run.reviewGate?.headSha ?? ""}/${guide?.__artifactHash ?? signature(guide ?? null)}`,
 		previous = useRef(version),
 		[updated, setUpdated] = useState(false);
@@ -331,15 +336,16 @@ export function FullReview({
 					before deciding. Unsent feedback has been discarded.
 				</p>
 			)}
-			{run.nativeView ? (
+			{presentation ? (
 				<DeclarativeView
-					view={run.nativeView.view}
+					view={presentation.view}
 					runId={run.id}
 					renderComponent={(component) =>
 						component.type === "review-guide" ? (
 							<ReviewGuideComponent
 								component={component}
 								run={run}
+								presentation={presentation}
 								documentPage
 								controls={(identity, decisionPage) => (
 									<DecisionActions
@@ -372,14 +378,16 @@ export function FullReview({
 					)}
 				/>
 			)}
-			{run.nativeView && !reviewComponent(run) && (
-				<DecisionActions
-					run={run}
-					decisionPage
-					onSettled={onSettled}
-					settling={settling}
-				/>
-			)}
+			{presentation &&
+				["review", "external-review"].includes(presentation.authority) &&
+				!reviewComponent(run, presentation) && (
+					<DecisionActions
+						run={run}
+						decisionPage
+						onSettled={onSettled}
+						settling={settling}
+					/>
+				)}
 		</>
 	);
 }

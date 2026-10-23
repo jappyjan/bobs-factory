@@ -49,23 +49,34 @@ export const NativeViewConsentSchema = z
 
 import { nativeViewPreset, sectionIds } from "./ViewPresets.js";
 
-function activeFrame(
-	run: FactoryRun,
-	key: string,
-): GraphCheckpoint | undefined {
-	const visit = (
-		frame: GraphCheckpoint | undefined,
-		prefix: string,
-	): GraphCheckpoint | undefined => {
-		if (!frame) return;
-		if (`${prefix}${frame.current}` === key) return frame;
-		for (const child of frame.active?.children ?? []) {
-			const found = visit(child, `${prefix}${frame.current}/`);
-			if (found) return found;
-		}
-		return undefined;
-	};
-	return visit(run.checkpoint, "");
+/** Follow the accepted lexical identity into its actual retained runtime frame. */
+function viewFrame(run: FactoryRun, key: string): GraphCheckpoint | undefined {
+	if (!stepForRun(run, key)) return;
+	const parts = key.split("/");
+	let frame = run.checkpoint;
+	let prefix = "";
+	for (let index = 0; frame && index < parts.length - 1; ) {
+		const id = parts[index]!;
+		const step = stepForRun(run, `${prefix}${id}`);
+		const active = frame.current === id ? frame.active : undefined;
+		if (step?.type === "workflow") {
+			frame = active?.children?.[0] ?? frame.calls?.[id];
+			prefix += `${id}/`;
+			index++;
+		} else if (step?.type === "fanout") {
+			const branch = Number(parts[index + 1]);
+			if (String(branch) !== parts[index + 1] || !step.groups?.[branch]) return;
+			frame = (active?.children ?? frame.branches?.[id])?.[branch];
+			prefix += `${id}/${branch}/`;
+			index += 2;
+		} else if (step?.type === "foreach") {
+			const item = parts[index + 1];
+			frame = active?.children?.find((child) => child.iteration?.id === item);
+			prefix += `${id}/${item}/`;
+			index += 2;
+		} else return;
+	}
+	return frame;
 }
 function nativeKind(run: FactoryRun): NativeViewPreset | undefined {
 	if (run.architectureGate) return "approve";
@@ -120,7 +131,7 @@ function owner(
 	if (
 		(kind === "review" || kind === "external-review") &&
 		run.reviewGate &&
-		run.status !== "waiting"
+		(run.reviewGate.status !== "pending" || run.status !== "waiting")
 	) {
 		const receipt = [...run.history]
 			.reverse()
@@ -142,6 +153,7 @@ function publicHuman(
 	kind: NativeViewPreset,
 	located: { key: string; step: WorkflowStep },
 	selectedProposal?: ArchitectureProposal,
+	readOnly = false,
 ) {
 	const resources: NativeViewSnapshot["resources"] = {};
 	if (kind === "ask")
@@ -230,7 +242,7 @@ function publicHuman(
 			presentationOutputKeys(run).guide;
 	if (!source || !Object.hasOwn(run.outputs, source))
 		throw new Error("Current review guide unavailable");
-	return publicGuide(run, source);
+	return publicGuide(run, source, readOnly);
 }
 function publicGuide(run: FactoryRun, source: string, readOnly = false) {
 	const resources: NativeViewSnapshot["resources"] = {};
@@ -243,7 +255,7 @@ function publicGuide(run: FactoryRun, source: string, readOnly = false) {
 			guide: {
 				source,
 				digest: hash,
-				text: `Review guide: ${String((guide as { goal?: string; summary?: string }).goal ?? (guide as { summary?: string }).summary ?? "Review the changes and evidence")}\n${readOnly ? "Saved read-only guide. No native decision is pending." : "This is a text summary. Read the complete guide, code tour, tests, checks and choices in the review reader before making the native decision."}`,
+				text: `Review guide: ${String((guide as { goal?: string; summary?: string }).goal ?? (guide as { summary?: string }).summary ?? "Review the changes and evidence")}\n${readOnly ? "Saved read-only guide. This presentation grants no native approval." : "This is a text summary. Read the complete guide, code tour, tests, checks and choices in the review reader before making the native decision."}`,
 			},
 		},
 	};
@@ -275,15 +287,16 @@ function resolveNativeDeclaration(
 	kind: NativeViewPreset,
 	located: { key: string; step: WorkflowStep },
 	proposal?: ArchitectureProposal,
+	readOnly = false,
 ) {
 	const source = located.step.view ?? nativeViewPreset(kind);
-	const human = publicHuman(run, kind, located, proposal);
+	const human = publicHuman(run, kind, located, proposal, readOnly);
 	const viewReads = "components" in source ? source.reads : undefined;
 	const inputs: Record<string, unknown> = {};
 	for (const [name, from] of Object.entries(viewReads ?? {})) {
 		if (from === "@human") inputs[name] = human.value;
 		else if (from === "@callInputs" || from.startsWith("@callInputs/")) {
-			const frame = activeFrame(run, located.key);
+			const frame = viewFrame(run, located.key);
 			inputs[name] =
 				from === "@callInputs"
 					? (frame?.callInputs ?? {})
@@ -406,6 +419,53 @@ export function nativeViewSnapshot(
 			captures: presentationOutputKeys(run).capture
 				? run.outputs[presentationOutputKeys(run).capture!]
 				: undefined,
+		}),
+	};
+}
+/** A saved reader never replaces the current question/decision or grants consent. */
+export function savedReviewViewSnapshot(
+	run: FactoryRun,
+): NativeViewSnapshot | undefined {
+	const gate = run.reviewGate;
+	if (!gate || gate.status === "pending") return;
+	const kind = gate.mode === "external" ? "external-review" : "review";
+	const located = owner(run, kind);
+	if (
+		!located ||
+		!(
+			run.nativeViewOwners?.[gate.id] === located.key ||
+			run.history.some(
+				(entry) =>
+					entry.step === located.key &&
+					(entry.output as { reviewId?: string })?.reviewId === gate.id,
+			)
+		)
+	)
+		return;
+	const { source, human, inputs, view } = resolveNativeDeclaration(
+		run,
+		kind,
+		located,
+		undefined,
+		true,
+	);
+	return {
+		preset: view.preset ?? kind,
+		authority: "read-only",
+		stepKey: located.key,
+		compatibility: !located.step.view,
+		view,
+		resources: human.resources,
+		guideSource: Object.values(human.resources)[0]?.source,
+		context: nativeReviewContext(run),
+		digest: digest({
+			protocol: "saved-review-display-v1",
+			runId: run.id,
+			review: gate,
+			stepKey: located.key,
+			source,
+			inputs,
+			resources: human.resources,
 		}),
 	};
 }

@@ -10,6 +10,71 @@ report2472 found that candidate **NOT CLEAN**. The R1–R4 repair `2e9d0f32de90e
 under full independent Round2 report2480 (residual R2 and new R5). The combined
 repair below is a new candidate; no acceptance clearance is inherited.
 
+## Combined Round3 repair: residual R5 and new R6
+
+The preceding candidate `752df862768d885164573b0a91850ea8d9248de5` / tree
+`7ba5e7b41d842d400a5f5f93d0d0251379c8395f` remains historically **NOT CLEAN**
+under independent full report2486. This is ONE combined repair for a new independent
+whole-diff review; R1–R4 positives are scoped evidence, never overall clearance.
+
+| Finding | Correction | Executed proof |
+| --- | --- | --- |
+| R5 retained lexical Call inputs | The display reader previously searched only active children. It now follows the exact accepted qualified graph path into runtime-owned active/retained Call frames (and existing branch/item identities). It neither re-evaluates mappings nor borrows similarly named/equal-JSON/current-frame values. No checkpoint/history migration or runtime authority change. | An ordinary Factory fork maps the planning output into declared Call input `note` and adds `@callInputs/note` markdown. Save/export/reload → actual planning/independent review/proposal → SAME pending native consent → exact protected acceptance → later Review. Original mapped input remains in checkpoint.calls, API returns a valid read-only proposal view, and actual ArchitecturePage SSR retains scenes/judgments/notes/bound content. BOTH preceding proposal-source/notes-visible/notes-hidden cases also pass; historical reader consent still cannot approve current Review. |
+| R6 saved guide during current Ask | The review route relied only on current nativeView. A separately qualified saved review presentation now comes from the original review owner/receipt and exact declared guide registry, with read-only authority. FullReview/ReviewGuideComponent receive that presentation explicitly; current nativeView and Ask controller stay unchanged. Original deep guide/code-tour/progress modules remain reused. | Actual protected current Review → legitimate terminal rejection → executed correction Ask. The same ReviewPage SSR retains the original chapter and stored progress; no false No-guide or Approve/Request changes controls. Current Ask batch/owner/text/notifications stay current. Historical display digest sent to native answer returns409/no mutation. Normal reconstruction keeps saved reading/current batch, then one explicit native answer succeeds; old rejected gate/human history compare unchanged and notification count remains1. |
+
+Current verification, Node24.21.0/pnpm10.33.1, own retained checkout only:
+
+- First four-file focused selection **exit1,9PASS/1FAIL/12filtered**. The new SSR
+  progress fixture had not established authenticated UI storage; its progress
+  write was correctly refused and the overview rendered instead of chapter text.
+  Correcting only that test setup uses the browser access-state mock for SSR
+  storage, while server/TUI authentication stays real. No native receipt/gate/
+  checkpoint/history was patched, and no assertion/deadline was weakened.
+- Affected rejection→Ask/saved-reader/progress/restart/dedup selection:
+  **exit0,1PASS/3filtered**. Missing/mismatched registry and original-renderer controls
+  passed in the first batch; remaining authored-preset authority selection:
+  **exit0,1PASS/2filtered**. This is **11 DISTINCT selected positives** across these
+  scopes, not one full green batch or a whole suite.
+- Existing BOTH stale/fresh terminal callbacks and Show→Review composition pass
+  with the richer executed guide fixture. All THREE saved check-in cases, completed
+  gate-less guide/progress and the shared rich-component authority checks pass.
+- Necessary owning/backend and web source compilation both **exit0**. Changed web
+  build **exit0**, build `8ce3f87053a9611d939770cf`. Final source delta after compilation is only the saved-guide notice: it says the
+  presentation grants no approval, avoiding a claim that the separate current Ask
+  is not pending. The affected saved-review and gate-less reader checks run again;
+  owning type/build evidence is reused for that literal-only change. Both affected
+  readers pass again (**exit0,2PASS/14filtered**). The other final input delta is
+  SSR test authentication.
+  No source/test/harness edits occurred while checks ran.
+- Final seven-input source/test freeze SHA256:
+  `70bb8d3581cf87060c9be5d39babd7a13e0fe8e5c15d1cbaa2f5da19503c34e1`.
+  [Compact inputs, commands, failures and reuse receipt](assets/taskbot143/round3-repair.json).
+  Raw logs/failed output remain `/tmp/taskbot143-r3-repair/`. Final teardown had
+  stopped all runtimes/servers/TUI streams; a sweep found two own synthetic fixture
+  directories left after teardown. They were explicitly removed without reading
+  auth/native-store contents; the recheck is empty and36344 has no listener.
+
+Current evidence is production WorkflowRuntime/FactoryServer source mode, real
+TodayApp/FactoryClient/protected terminal HTTP, deterministic synthetic hooks,
+in-memory tracker, protected injected APIs and actual React SSR. UI hook/access
+mocks supply SSR browser state only, not runtime acceptance. No full EdgeWorker,
+native/model/provider/live tracker/forge/device/process-crash or completed external
+final-delivery claim. Existing original exact assets/config/EACH repository URL
+AND head, default/blank/conflict answers, hidden-guide/controller, comments/Decide/
+count/pins, prompted-reply and136–142 provenance/visit/frame/native boundaries remain
+scoped reuse in unchanged owners. Whole capability/role prompts and entire expected
+fixture remain unchanged because the repairs restore documented reading behavior.
+
+All32 images remain byte-identical and retain their original additive-host-before,
+guide-present-after and narrow-smoke qualifications. No browser matrix/research/
+native/four-delivery replay. EXACT THREE base fixture failures remain FAIL/deferred,
+not rerun: old ReviewFiles pipeline/guide409; two mixed TicketDelivery fixtures
+missing original executed clarify/plan/independent-review producers. Original227
+mixed batch, earlier setup/SSR/timeouts and all prior repair failures remain
+historical. The intentional external missing-final-state-proof failure remains a
+negative control. CI and repeated broad gates remain deferred post148. Parent owns
+NEW exact-head whole-diff Standards/Spec acceptance, status and guarded merge.
+
 ## Combined Round2 repair: R2 and R5
 
 One combined source/test freeze restores the two reported functional paths. R1,
