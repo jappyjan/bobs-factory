@@ -9359,3 +9359,61 @@ select.recipe-route-target {
 	max-width: 100%;
 	white-space: normal;
 }
+
+.timing-summary {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 0.3rem 0.7rem;
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+}
+.working-main {
+	display: grid;
+	grid-template-columns: 10px minmax(0, 1fr) auto;
+}
+.working-main > strong {
+	grid-column: 2;
+	grid-row: 1;
+}
+.working-main > .step-chip {
+	grid-column: 2;
+	grid-row: 2;
+	max-width: 100%;
+}
+.working-main > .progress {
+	grid-column: 3;
+	grid-row: 1;
+}
+.working-main > small {
+	grid-column: 2 / -1;
+	grid-row: 3;
+	text-align: left;
+	white-space: normal;
+}
+.run-diagnostics {
+	margin-block: 1rem;
+	overflow-wrap: anywhere;
+}
+.run-diagnostics > summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+.run-diagnostics > p {
+	margin-block: 0.8rem;
+}
+@media (max-width: 600px) {
+	.working-main > strong {
+		grid-column: 2 / -1;
+	}
+	.working-main > .step-chip {
+		grid-column: 2 / -1;
+	}
+	.working-main > .progress {
+		grid-column: 1 / -1;
+		grid-row: 3;
+	}
+	.working-main > small {
+		grid-column: 2 / -1;
+		grid-row: 4;
+	}
+}

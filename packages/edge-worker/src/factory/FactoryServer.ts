@@ -1701,6 +1701,18 @@ export class FactoryServer {
 			await runtime.flush(run.id);
 			return reply.code(202).send(runActionResult(run));
 		});
+		this.app.get<{
+			Params: { id: string };
+			Querystring: { offset?: string; limit?: string };
+		}>("/api/runs/:id/diagnostics", (request, reply) => {
+			const run = runtime.runs.get(request.params.id);
+			if (!run) return reply.code(404).send({ error: "Run not found" });
+			return runtime.readDiagnostics(
+				run.id,
+				Number(request.query.offset ?? 0),
+				Number(request.query.limit ?? 20),
+			);
+		});
 		this.app.get<{ Params: { id: string } }>(
 			"/api/runs/:id/provenance",
 			(request, reply) => {

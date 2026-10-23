@@ -336,6 +336,11 @@ import {
 } from "./factory/RolePrompt.js";
 import { takeoverSource, ticketSnapshot } from "./factory/RunContextSources.js";
 import {
+	diagnosticUsage,
+	initializeDiagnostics,
+	timingOperation,
+} from "./factory/RunDiagnostics.js";
+import {
 	buildTitleContext,
 	RunTitleGenerator,
 	type TitleContext,
@@ -9731,6 +9736,34 @@ ${taskSection}`;
 				),
 			},
 		);
+		const contextMetrics = initializeDiagnostics(run).context;
+		contextMetrics.preparations++;
+		contextMetrics.preparationMs += factoryContext.preparationMs;
+		let capturedCounters = {
+			pages: 0,
+			utf8Bytes: 0,
+			readPages: 0,
+			listPages: 0,
+			fullPages: 0,
+		};
+		const captureCounters = () => {
+			const current = factoryContext.counters();
+			for (const key of Object.keys(current) as (keyof typeof current)[])
+				contextMetrics[key] += Math.max(
+					0,
+					current[key] - capturedCounters[key],
+				);
+			capturedCounters = current;
+		};
+		const metricTimer = setInterval(() => {
+			try {
+				captureCounters();
+				context.checkpointDiagnostics?.();
+			} catch {
+				/* Optional diagnostic checkpoint */
+			}
+		}, 5000);
+		metricTimer.unref();
 		const graphAttemptId = context.attemptId;
 		let releaseExecutionReservation: (() => Promise<void>) | undefined;
 		let progressCharged = false;
@@ -9786,6 +9819,11 @@ ${taskSection}`;
 									? "resume"
 									: "execution",
 					);
+					timingOperation(run, context.stepKey ?? step.id, {
+						kind: "execution",
+						role: true,
+					});
+					await context.save?.();
 					progressCharged = true;
 					await assertBoundInspectionFresh(context);
 					if (hasCheck(step, "qa-environment"))
@@ -9862,6 +9900,7 @@ ${taskSection}`;
 				const result = messages
 					.filter((message) => message.type === "result")
 					.at(-1);
+				diagnosticUsage(run, context.stepKey ?? step.id, runnerType, result);
 				if (result?.type === "result" && result.is_error) {
 					const error = new Error(
 						`Agent step failed: ${publicFailure(JSON.stringify(result))}`,
@@ -10024,7 +10063,14 @@ ${taskSection}`;
 				}
 			} finally {
 				try {
-					factoryContext.cleanup();
+					clearInterval(metricTimer);
+					timingOperation(run, context.stepKey ?? step.id);
+					try {
+						captureCounters();
+						await context.save?.();
+					} finally {
+						factoryContext.cleanup();
+					}
 				} finally {
 					await releaseExecutionReservation?.();
 				}

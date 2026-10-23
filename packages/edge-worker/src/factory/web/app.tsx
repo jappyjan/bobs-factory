@@ -78,6 +78,11 @@ import {
 	writeStored,
 	writeTextStored,
 } from "./review-state";
+import {
+	RunDiagnosticsPanel,
+	TimingSummary,
+	timingLabel,
+} from "./run-diagnostics";
 import { roleOutput } from "./run-output";
 import { Settings } from "./settings";
 import {
@@ -902,7 +907,7 @@ function RunPage({
 												: workingLabel(run))}
 						</span>
 						<RunMeta run={run} config={config} />
-						<span>started {ago(run.createdAt)}</span>
+						<TimingSummary diagnostics={run.diagnostics} />
 						{pr && <External href={pr}>PR #{pr.split("/").at(-1)} ↗</External>}
 					</div>
 					<RunTitleStatus run={run} />
@@ -946,6 +951,7 @@ function RunPage({
 				<ArchitectureEntry run={run} />
 			)}
 			<ExecutionDetails run={run} />
+			<RunDiagnosticsPanel runId={run.id} />
 			<RecipeParentLink run={run} />
 			<RunChildren run={run} />
 			<RunViewDisplays run={run} />
@@ -1073,7 +1079,17 @@ function RunPage({
 									<strong>{step.name}</strong>
 									{run.capacityLeaves?.[step.key] && (
 										<span className="chip">
-											{capacityPhaseLabel(run.capacityLeaves[step.key].phase)}
+											{run.diagnostics?.current?.some(
+												(state: any) => state.step === step.key,
+											)
+												? timingLabel(
+														run.diagnostics.current.find(
+															(state: any) => state.step === step.key,
+														).kind,
+													)
+												: capacityPhaseLabel(
+														run.capacityLeaves[step.key].phase,
+													)}
 										</span>
 									)}
 									{step.iterationStatus && (

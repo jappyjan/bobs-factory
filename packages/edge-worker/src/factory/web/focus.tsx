@@ -51,6 +51,7 @@ import {
 	signature,
 	ticketTrackingPending,
 } from "./review-state";
+import { TimingSummary } from "./run-diagnostics";
 import { mergeReadinessFor, roleOutput } from "./run-output";
 import { Bob, Button, ConfirmStop, External, Markdown, useToast } from "./ui";
 export const labels: Record<string, string> = {
@@ -978,7 +979,10 @@ export function WorkingRow({
 					{visits > 1 && ` · ↺${visits}`}
 				</span>
 				<Progress run={data} config={config} />
-				<small>{elapsed(run.createdAt)}</small>
+				<small>
+					<TimingSummary diagnostics={data.diagnostics} />
+					{!data.diagnostics && ` · Age ${elapsed(run.createdAt)}`}
+				</small>
 			</button>
 			{expanded && (
 				<div className="working-peek">

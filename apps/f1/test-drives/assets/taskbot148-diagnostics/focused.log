@@ -1,0 +1,16 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (packages/edge-worker/vitest.config.ts:26:22). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.12 [39m[90m/Users/jappy/.t3/worktrees/bobs-factory/taskbot-148-diagnostics/packages/edge-worker[39m
+
+ [32m✓[39m test/RunDiagnostics.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m test/FactoryRolePrompts.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m test/DiagnosticsF1.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 3093[2mms[22m[39m
+   [33m[2m✓[22m[39m drives nested parallel execution, capacity/shared QA/CI/human waits and retained restart through the Factory API [33m 3093[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m   Start at [22m 13:49:15
+[2m   Duration [22m 3.22s[2m (transform 1.05s, setup 49ms, import 936ms, tests 3.16s, environment 0ms)[22m
+

@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Run timing now separates age, measured execution, waits and unknown gaps, with current blockers, recent role/check provenance, context retrieval counts and a bounded diagnostic export. ([Task148](https://taskbot.apps.janjaap.de/p/bobs-factory/t/148))
+
 - Agent context now bounds nested outputs, review baselines and progress, with immutable references and paginated original evidence. New baselines retain original history ranges, including unchanged detached custom history reads, instead of copying accumulated payloads. Restored immutable history reuses verified snapshots across role handoffs; saved baselines and native decisions remain readable. ([Taskbot #144](https://taskbot.apps.janjaap.de/p/bobs-factory/t/144), [#181](https://github.com/jappyjan/bobs-factory/pull/181))
 
 - Questions, check-ins, human reviews and external ticket reviews now use editable stock views. Fork a recipe to reorder or hide optional sections and add components from declared outputs, while keeping explicit answers, exact proposal/revision approval and the existing review guide and code tour. Terminal review actions retain the displayed version, correction questions remain answerable after rejection, and completed saved guides remain readable. Current terminal decisions appear before earlier Shows, and saved check-ins retain their configured reader and declared Call inputs after the run advances. Saved review guides remain readable while correction questions are pending. Existing runs retain their native decision protocols. ([Taskbot #143](https://taskbot.apps.janjaap.de/p/bobs-factory/t/143), [#180](https://github.com/jappyjan/bobs-factory/pull/180))

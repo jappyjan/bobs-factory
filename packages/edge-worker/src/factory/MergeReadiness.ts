@@ -11,6 +11,7 @@ import {
 	runRepositories,
 	scopeRevision,
 } from "./RepositoryScope.js";
+import { type TimingKind, timingOperation } from "./RunDiagnostics.js";
 import { scopeContextDigest } from "./SpecialistReview.js";
 import { boundOutput, historyForCheck } from "./ToolBindings.js";
 import type { ExecutionContext } from "./WorkflowRuntime.js";
@@ -108,9 +109,19 @@ export function delay(signal: AbortSignal, ms = 10000): Promise<void> {
 export async function waitForNextPoll(
 	context: ExecutionContext,
 	ms = 10000,
+	kind: TimingKind = "provider-ci",
 ): Promise<void> {
 	context.assertSchedulingOpen?.();
-	await delay(context.signal, ms);
+	const key = context.stepKey ?? context.step.id;
+	const previous = context.run.diagnostics?.operations[key];
+	timingOperation(context.run, key, { kind });
+	context.checkpointDiagnostics?.();
+	try {
+		await delay(context.signal, ms);
+	} finally {
+		timingOperation(context.run, key, previous);
+		context.checkpointDiagnostics?.();
+	}
 	context.assertSchedulingOpen?.();
 }
 export function reportReadiness(
@@ -167,7 +178,11 @@ export async function inspectReadinessWithRetry(
 			context.log(
 				`Provider readiness temporarily unavailable; retrying transport (${attempt + 1}/5). ${message.slice(0, 300)}`,
 			);
-			await waitForNextPoll(context, Math.min(10000 * 2 ** attempt, 60000));
+			await waitForNextPoll(
+				context,
+				Math.min(10000 * 2 ** attempt, 60000),
+				"retry-backoff",
+			);
 		}
 	}
 }
