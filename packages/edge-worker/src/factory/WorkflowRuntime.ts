@@ -140,6 +140,7 @@ import {
 import { nativeViewText } from "./NativeViews.js";
 import { conforms } from "./OutputFormats.js";
 import {
+	acceptedProgressValue,
 	beginProgressAttempt,
 	continueProgress,
 	initializeProgressBudget,
@@ -332,6 +333,9 @@ export interface ForeachCheckpoint {
 export interface GraphCheckpoint {
 	/** Definition-local structural identity; excludes generated Call and item frames. */
 	progressPath?: string;
+	/** Private hashes of accepted lexical inputs, without copying their values. */
+	progressInputs?: Record<string, string>;
+	progressItem?: string;
 	/** Calls with declared outcomes retain one lexical frame across correction routes. */
 	calls?: Record<string, GraphCheckpoint>;
 	/** Completed Parallel scopes remain the owners of their qualified producers. */
@@ -615,6 +619,9 @@ export interface ExecutionContext {
 	/** Stable accepted definition identity, independent of Call/frame/attempt IDs. */
 	progressOperation?: string;
 	progressObservation?: string;
+	/** Runtime-owned accepted input hashes; never sourced from role claims. */
+	progressInputs?: Record<string, string>;
+	progressItem?: string;
 	beginProgressAttempt?: (reason?: string) => Promise<void>;
 	iteration?: ItemFrame;
 	callInputs?: Record<string, unknown>;
@@ -2293,6 +2300,21 @@ export class WorkflowRuntime {
 				}
 			}
 		}
+		if (!prefix && run.progressBudget && definition?.inputs) {
+			checkpoint.progressInputs = Object.fromEntries(
+				definition.inputs.flatMap((name) => {
+					const raw = run.launchInputs?.[name];
+					if (typeof raw !== "string") return [];
+					let value: unknown = raw;
+					try {
+						value = JSON.parse(raw);
+					} catch {
+						/* Accepted text input. */
+					}
+					return [[name, digest(value)]];
+				}),
+			);
+		}
 		if (checkpoint.projectResults)
 			this.restoreFrameReceipts(run, steps, checkpoint, prefix);
 		while (checkpoint.current !== "end") {
@@ -2394,6 +2416,8 @@ export class WorkflowRuntime {
 				? await this.hooks.execution(run, step.runner ?? run.runner)
 				: undefined;
 			const context: ExecutionContext = {
+				progressInputs: checkpoint.progressInputs,
+				progressItem: checkpoint.progressItem,
 				progressOperation: `${checkpoint.progressPath ?? workflowId}/${step.id}${checkpoint.iteration ? `/${checkpoint.iteration.id}` : ""}`,
 				assertSchedulingOpen: () => this.assertSchedulingOpen(),
 				factoryHome: dirname(this.directory),
@@ -2982,6 +3006,8 @@ export class WorkflowRuntime {
 							child.reviewKey ??= checkpoint.reviewKey;
 							child.iteration ??= checkpoint.iteration;
 							child.callInputs ??= checkpoint.callInputs;
+							child.progressInputs ??= checkpoint.progressInputs;
+							child.progressItem ??= checkpoint.progressItem;
 							child.snapshotInputs ??= checkpoint.snapshotInputs;
 							child.projectResults ??= config.explicit
 								? true
@@ -3178,7 +3204,11 @@ export class WorkflowRuntime {
 							checkpoint.calls ??= {};
 							checkpoint.calls[step.id] = state.children[0]!;
 						}
-						state.children[0]!.progressPath = definition.id;
+						// Calls of the same recipe in one enclosing body share work identity across routes.
+						// Keep the enclosing structural scope, never its generated visit/frame identity.
+						state.children[0]!.progressPath =
+							`${checkpoint.progressPath ?? workflowId}/${definition.id}`;
+						state.children[0]!.progressItem = checkpoint.progressItem;
 						state.children[0]!.reviewKey ??= checkpoint.reviewKey;
 						state.children[0]!.iteration ??= checkpoint.iteration;
 						if (
@@ -3227,6 +3257,23 @@ export class WorkflowRuntime {
 								? immutableJson(mappings)
 								: checkpoint.callInputs;
 						}
+						if (newVisit || !state.children[0]!.progressInputs)
+							state.children[0]!.progressInputs = step.inputMapping
+								? Object.fromEntries(
+										Object.entries(step.inputMapping).flatMap(
+											([name, path]) => {
+												const value = acceptedProgressValue(
+													context,
+													path,
+													state.children![0]!.callInputs?.[name],
+												);
+												return value === undefined
+													? []
+													: [[name, digest(value)]];
+											},
+										),
+									)
+								: checkpoint.progressInputs;
 						if (step.bindings) {
 							const child = state.children[0]!;
 							child.outputs ??= {};
@@ -5811,12 +5858,12 @@ export class WorkflowRuntime {
 			throw new Error("Only failed or interrupted runs can be retried");
 		releaseDelivery(run, "Explicit retry must re-enter delivery coordination");
 		const convergenceGrant = run.progressBudget?.blocked;
-		continueProgress(run);
-		if (convergenceGrant && !run.progressBudget?.blocked)
+		const progressGrant = continueProgress(run);
+		if (convergenceGrant && progressGrant)
 			this.log(
 				run,
 				"run",
-				`Continue authorized ${run.progressBudget!.policy.continueAttempts} additional convergence attempts for ${convergenceGrant.operation} at ${convergenceGrant.identity}; quality gates and original receipts retained.`,
+				`Continue authorized ${progressGrant.observations ?? progressGrant.attempts} additional ${progressGrant.observations ? "observation slots" : "convergence attempts"} for ${convergenceGrant.operation} at ${convergenceGrant.identity}; quality gates and original receipts retained.`,
 			);
 		// Retry is an explicit request for bounded additional work, never a global reset.
 		const extend = (
@@ -6453,6 +6500,16 @@ export class WorkflowRuntime {
 					snapshot: active.foreach.snapshot,
 				}),
 			);
+			const acceptedItems =
+				step.items && "values" in step.items
+					? step.items.values
+					: step.items && "from" in step.items
+						? acceptedProgressValue(
+								context,
+								step.items.from,
+								snapshot.items.map((item) => item.value),
+							)
+						: undefined;
 			active.children = snapshot.items.map((item) => ({
 				...this.newCheckpoint(step.body!),
 				projectResults: true,
@@ -6460,6 +6517,12 @@ export class WorkflowRuntime {
 				progressPath: `${context.progressOperation}/item`,
 				iteration: { ...item, frame: key },
 				callInputs: checkpoint.callInputs,
+				progressInputs: checkpoint.progressInputs,
+				progressItem:
+					Array.isArray(acceptedItems) &&
+					digest(acceptedItems[item.index]) === digest(item.value)
+						? digest(item.value)
+						: undefined,
 				snapshotInputs: checkpoint.snapshotInputs,
 				reviewKey: checkpoint.reviewKey,
 			}));

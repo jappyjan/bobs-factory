@@ -7,6 +7,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { OutputValidationError } from "../src/factory/OutputValidation.js";
+import {
+	beginProgressAttempt,
+	continueProgress,
+} from "../src/factory/ProgressBudget.js";
 import { validateWorkflows, WorkflowSchema } from "../src/factory/Workflow.js";
 import {
 	type ExecutionContext,
@@ -92,6 +96,7 @@ function fixture(hooks: Partial<RuntimeHooks> = {}) {
 		steps: unknown[],
 		dependencies: unknown[] = [],
 		convergence: unknown = policy,
+		accepted?: { inputs: string[]; launchInputs: Record<string, string> },
 	) => {
 		const definitions = validateWorkflows([
 			...defaultWorkflows,
@@ -100,6 +105,7 @@ function fixture(hooks: Partial<RuntimeHooks> = {}) {
 				id: "progress-fixture",
 				name: "Progress fixture",
 				steps,
+				inputs: accepted?.inputs,
 				...(convergence === undefined ? {} : { convergence }),
 			},
 		]);
@@ -109,6 +115,7 @@ function fixture(hooks: Partial<RuntimeHooks> = {}) {
 			repositoryId: "fixture",
 			workspace,
 			input: "Accepted host input",
+			launchInputs: accepted?.launchInputs,
 			workflow: definitions.at(-1)!,
 			triggerOrigin: {
 				type: "manual",
@@ -847,5 +854,425 @@ it("keeps distinct structural For each bodies independent when their role and it
 	expect(observations(run)).toHaveLength(3);
 	expect(new Set(observations(run).map((entry) => entry.operation)).size).toBe(
 		3,
+	);
+});
+
+it("keeps enclosing For each bodies independent through identical Calls and data", async () => {
+	const calls: string[] = [];
+	const { runtime, create } = fixture({
+		agent: async (context) => {
+			calls.push(context.stepKey!);
+			return {};
+		},
+	});
+	const run = create(
+		["first", "second", "third"].map((id) => ({
+			id,
+			name: id,
+			type: "foreach",
+			items: { values: [{ id: "a" }] },
+			itemId: "/id",
+			body: [
+				{
+					id: "called",
+					name: "Called",
+					type: "workflow",
+					workflow: "shared-child",
+				},
+			],
+		})),
+		[
+			{
+				id: "shared-child",
+				name: "Shared child",
+				steps: [role("work", { next: "end" })],
+			},
+		],
+	);
+	await runtime.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	expect(calls).toEqual([
+		"first/a/called/work",
+		"second/a/called/work",
+		"third/a/called/work",
+	]);
+	expect(new Set(observations(run).map((entry) => entry.operation)).size).toBe(
+		3,
+	);
+	expect(new Set(observations(run).map((entry) => entry.identity)).size).toBe(
+		1,
+	);
+});
+
+it("binds accepted lexical Call values separately from structural scope and returns A-B-A to its counter", async () => {
+	const calls: { operation: string; payload: unknown }[] = [];
+	const { runtime, create } = fixture({
+		agent: async (context) => {
+			calls.push({
+				operation: context.progressOperation!,
+				payload: context.callInputs!.payload,
+			});
+			return {};
+		},
+	});
+	const launchInputs = {
+		first: '{"request":"A"}',
+		second: '{"request":"B"}',
+		third: '{"request":"C"}',
+	};
+	const run = create(
+		["first", "second", "third", "first", "first"].map((source, i) => ({
+			id: "call" + i,
+			name: "Call " + i,
+			type: "workflow",
+			workflow: "shared-child",
+			inputMapping: { payload: "/" + source },
+		})),
+		[
+			{
+				id: "shared-child",
+				name: "Shared child",
+				inputs: ["payload"],
+				steps: [role("work", { next: "end" })],
+			},
+		],
+		policy,
+		{ inputs: Object.keys(launchInputs), launchInputs },
+	);
+	await runtime.launch(run);
+	expect(run.status).toBe("failed");
+	expect(run.error).toMatch(/^No progress at call4\/work:/);
+	expect(calls.map((entry) => entry.payload)).toEqual([
+		{ request: "A" },
+		{ request: "B" },
+		{ request: "C" },
+		{ request: "A" },
+	]);
+	expect(new Set(calls.map((entry) => entry.operation)).size).toBe(1);
+	expect(
+		observations(run)
+			.map((entry) => entry.attempts)
+			.sort(),
+	).toEqual([1, 1, 2]);
+	expect(run.launchInputs).toEqual(launchInputs);
+});
+
+it("does not turn reworded role claims forwarded through Call into accepted input progress", async () => {
+	let calls = 0;
+	const { runtime, create } = fixture({
+		agent: async (context) => {
+			if (context.step.id === "claim")
+				return { request: randomUUID(), summary: randomUUID() };
+			calls++;
+			return {};
+		},
+	});
+	const run = create(
+		[
+			role("claim", { next: "called" }),
+			{
+				id: "called",
+				name: "Called",
+				type: "workflow",
+				workflow: "shared-child",
+				inputMapping: { payload: "/claim/request" },
+				next: "claim",
+				maxVisits: 100,
+			},
+		],
+		[
+			{
+				id: "shared-child",
+				name: "Shared child",
+				inputs: ["payload"],
+				steps: [role("work", { next: "end" })],
+			},
+		],
+	);
+	await runtime.launch(run);
+	expect(run.status).toBe("failed");
+	expect(calls).toBe(2);
+	expect(
+		observations(run).filter((entry) => entry.operation.endsWith("/work")),
+	).toHaveLength(1);
+});
+
+it("normalizes repeated accepted view meaning while preserving exact batch receipts and real changes", async () => {
+	let calls = 0;
+	const { runtime, create } = fixture({
+		agent: async () => {
+			calls++;
+			return {};
+		},
+	});
+	const run = create([
+		role("work", { next: "decision" }),
+		{
+			id: "decision",
+			name: "Decision",
+			type: "approve",
+			maxVisits: 100,
+			view: {
+				version: "view-v1",
+				components: [
+					{
+						id: "brief",
+						type: "markdown",
+						data: { literal: { text: "Accepted display" } },
+					},
+				],
+			},
+			next: "work",
+		},
+	]);
+	const running = runtime.launch(run);
+	const facts: string[] = [];
+	for (const feedback of ["Resolve A", "Resolve B", "Resolve A", "Resolve A"]) {
+		await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
+		const view = run.viewDecision!;
+		const answer = {
+			batchId: view.id,
+			digest: view.digest,
+			accepted: true,
+			approved: false,
+			feedback,
+		};
+		await runtime.answerView(run.id, answer);
+		facts.push(run.progressBudget!.facts.human);
+		expect(run.viewRecords!.at(-1)!.answer!.request).toEqual(answer);
+		expect(run.viewRecords!.at(-1)!.answer!.output).toMatchObject({
+			batchId: view.id,
+			digest: view.digest,
+			approved: false,
+			feedback,
+		});
+		await waitForRuntime(() =>
+			expect(
+				run.status === "failed" ||
+					(run.status === "waiting" && run.viewDecision?.id !== view.id),
+			).toBe(true),
+		);
+	}
+	await running;
+	expect(run.status).toBe("failed");
+	expect(calls).toBe(4);
+	expect(facts[0]).not.toBe(facts[1]);
+	expect(facts[2]).toBe(facts[0]);
+	expect(facts[3]).toBe(facts[0]);
+	expect(
+		new Set(run.viewRecords!.map((record) => record.snapshot.id)).size,
+	).toBe(4);
+	expect(
+		new Set(run.viewRecords!.map((record) => record.sourceDigest)).size,
+	).toBe(1);
+	expect(
+		observations(run)
+			.map((entry) => entry.attempts)
+			.sort(),
+	).toEqual([1, 1, 2]);
+});
+
+it("grants bounded audited observation slots at the real 4096 window without discarding earlier counters", async () => {
+	const { runtime, create } = fixture();
+	const run = create([
+		{
+			id: "items",
+			name: "Items",
+			type: "foreach",
+			maxItems: 1000,
+			items: {
+				values: Array.from({ length: 1000 }, (_, i) => ({ id: "item" + i })),
+			},
+			itemId: "/id",
+			body: Array.from({ length: 5 }, (_, i) =>
+				role("leaf" + i, { next: i === 4 ? "end" : "leaf" + (i + 1) }),
+			),
+		},
+	]);
+	const signal = new AbortController().signal;
+	const context = (i: number): ExecutionContext => ({
+		run,
+		step: run.workflow.steps[0]!.body![i % 5]!,
+		stepKey: "items/item" + Math.floor(i / 5) + "/leaf" + (i % 5),
+		progressOperation:
+			"progress-fixture/items/item/leaf" +
+			(i % 5) +
+			"/item" +
+			Math.floor(i / 5),
+		signal,
+		input: {},
+		log: () => {},
+	});
+	// Production owner seam, real Git, validated 1000x5 definition; optional save omitted.
+	for (let i = 0; i < 4096; i++) await beginProgressAttempt(context(i));
+	const before = structuredClone(run.progressBudget!.observations);
+	await expect(beginProgressAttempt(context(4096))).rejects.toThrow(
+		"observation window is full",
+	);
+	const blocked = structuredClone(run.progressBudget!.blocked!);
+	const grant = continueProgress(run)!;
+	expect(grant).toMatchObject({
+		key: blocked.key,
+		attempts: 0,
+		observations: 4096,
+		previousAllowance: 4096,
+		limit: 8192,
+	});
+	expect(continueProgress(run)).toBeUndefined();
+	expect(run.progressBudget!.grantCount).toBe(1);
+	await beginProgressAttempt(context(4096));
+	expect(run.progressBudget!.observationCount).toBe(4097);
+	for (const [key, observation] of Object.entries(before))
+		expect(run.progressBudget!.observations[key]).toEqual(observation);
+	// Old observation limits still apply; a window grant is not an attempt grant.
+	await beginProgressAttempt(context(0));
+	await expect(beginProgressAttempt(context(0))).rejects.toThrow("No progress");
+	expect(run.progressBudget!.blocked).toMatchObject({ attempts: 2, limit: 2 });
+	expect(run.progressBudget!.grants).toEqual([grant]);
+	// This owner-level seam does not execute the graph; small F1 owns checkpoint/restart proof.
+	expect(run.checkpoint).toBeUndefined();
+	expect(run.history).toEqual([]);
+	await runtime.save(run);
+}, 60000);
+
+it.each([
+	"choices",
+	"fields",
+	"display",
+] as const)("recognizes genuine accepted %s changes and returns repeated human meaning to its retained counter", async (axis) => {
+	let calls = 0;
+	const { runtime, create } = fixture({
+		agent: async () => {
+			calls++;
+			return {
+				items: [{ id: "a", title: "Accepted scope" }],
+				brief: {
+					text: axis === "display" && calls === 2 ? "Display B" : "Display A",
+				},
+			};
+		},
+	});
+	const run = create([
+		role("work", { next: "decision" }),
+		{
+			id: "decision",
+			name: "Decision",
+			type: "decide",
+			maxVisits: 100,
+			reads: { result: "work" },
+			view: {
+				version: "view-v1",
+				components: [
+					{
+						id: "brief",
+						type: "markdown",
+						data: { path: "/inputs/result/brief" },
+					},
+					{
+						id: "form",
+						type: "choices",
+						data: {
+							literal: {
+								fields: [{ id: "note", label: "Note", type: "text" }],
+							},
+						},
+					},
+				],
+			},
+			decide: {
+				items: { path: "/inputs/result/items" },
+				actions: [
+					{ id: "fix", label: "Fix" },
+					{ id: "skip", label: "Skip" },
+				],
+			},
+			next: "work",
+		},
+	]);
+	const running = runtime.launch(run);
+	const facts: string[] = [];
+	for (let i = 0; i < 4; i++) {
+		await waitForRuntime(() => expect(run.status, run.error).toBe("waiting"));
+		const view = run.viewDecision!;
+		await runtime.answerView(run.id, {
+			batchId: view.id,
+			digest: view.digest,
+			accepted: true,
+			choices: [
+				{ itemId: "a", action: axis === "choices" && i === 1 ? "skip" : "fix" },
+			],
+			fields: { note: axis === "fields" && i === 1 ? "B" : "A" },
+		});
+		facts.push(run.progressBudget!.facts.human);
+		await waitForRuntime(() =>
+			expect(
+				run.status === "failed" ||
+					(run.status === "waiting" && run.viewDecision?.id !== view.id),
+			).toBe(true),
+		);
+	}
+	await running;
+	expect(run.status).toBe("failed");
+	expect(calls).toBe(4);
+	expect(facts[1]).not.toBe(facts[0]);
+	expect(facts[2]).toBe(facts[0]);
+	expect(facts[3]).toBe(facts[0]);
+	expect(run.viewRecords).toHaveLength(4);
+});
+
+it("forwards semantic accepted strings through nested lexical aliases without trusting role prose", async () => {
+	const received: unknown[] = [];
+	const { runtime, create } = fixture({
+		agent: async (context) => {
+			received.push(context.callInputs!.request);
+			return {};
+		},
+	});
+	const launchInputs = {
+		first: "Accepted request A",
+		second: "Accepted request B",
+		third: "Accepted request C",
+	};
+	const run = create(
+		Object.keys(launchInputs).map((name) => ({
+			id: name,
+			name,
+			type: "workflow",
+			workflow: "wrapper",
+			inputMapping: { request: "/" + name },
+		})),
+		[
+			{
+				id: "wrapper",
+				name: "Wrapper",
+				inputs: ["request"],
+				steps: [
+					{
+						id: "called",
+						name: "Called",
+						type: "workflow",
+						workflow: "leaf",
+						reads: { request: "@callInputs/request" },
+						inputMapping: { request: "/inputs/request" },
+						next: "end",
+					},
+				],
+			},
+			{
+				id: "leaf",
+				name: "Leaf",
+				inputs: ["request"],
+				steps: [role("work", { next: "end" })],
+			},
+		],
+		policy,
+		{ inputs: Object.keys(launchInputs), launchInputs },
+	);
+	await runtime.launch(run);
+	expect(run.status, run.error).toBe("completed");
+	expect(received).toEqual(Object.values(launchInputs));
+	expect(observations(run)).toHaveLength(3);
+	expect(new Set(observations(run).map((entry) => entry.operation)).size).toBe(
+		1,
 	);
 });

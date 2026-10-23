@@ -4,44 +4,122 @@
     "tree": "ddc03bfc5201dbdc94520509917dd66e74150388",
     "parent": "6a25d1659c4a9e475596408500117af81b83f2b5"
   },
+  "repairs": {
+    "sourceParent": "3fc0f9d5b5f4e2b78891aa609791139330fb8fc0",
+    "historicalCandidateStatus": "NOT CLEAN; four unique P2 findings in live147/2574",
+    "review": "New independent whole-diff acceptance remains parent-owned",
+    "scope": {
+      "ROOT1": "Stable enclosing body/item and called-definition scope, without visit/frame UUIDs",
+      "ROOT4": "Private accepted lexical input hashes, nested alias forwarding, untrusted role prose excluded",
+      "ROOT2": "Semantic accepted decision/display fact; exact human receipts and validators retained",
+      "ROOT3": "Explicit audited 4096-slot grant for the exact full window; no old counter or attempt limit reset"
+    }
+  },
   "sourceFreeze": {
     "apps/f1/test-drives/assets/taskbot147-progress.mjs": "28d7110f9baaece820c6be127f29d447109c2117e5517db74992590483e7e2c2",
     "docs/PRODUCT_CONTRACTS.md": "05da7d7c27c016464486ef2119ff658fdc310650f424c6f0a1af2d79d3ea9dfe",
-    "docs/factory/convergence.md": "9d48b0e8f482ba84d01e03dab164d42796c4949fc84968c6667707c564f15e84",
+    "docs/factory/convergence.md": "cb7c183320830f6e7b4439a4e4b6039c2bfd9bb3495b467e7820d0414df537c6",
     "packages/edge-worker/src/EdgeWorker.ts": "08e4b18ca4d0c277e6bc5fb05440208dfe4017ed853d0be217fc6664397cc3ff",
     "packages/edge-worker/src/factory/Impact.ts": "12ed37933c473590d0e7df156843cc801acb540a9e411a91de11147cd71361f4",
-    "packages/edge-worker/src/factory/ProgressBudget.ts": "7bb7d8879f7b93a31dc029dbf9fd4b19ddb23b607e9c888dd5e5fa4f1e244845",
+    "packages/edge-worker/src/factory/ProgressBudget.ts": "7d9e7863104e554f47c7108efa553ce88af1c9802ada860ec68014e966d666d3",
     "packages/edge-worker/src/factory/ProgressPolicy.ts": "154c0db44ee624f30f4bbd43b7c95d4f3ba046b8e49e757480eafd75d2c2f495",
     "packages/edge-worker/src/factory/RunProjection.ts": "087b4e8cdd73144c4482171e4867bbd6c45662f7096ccb87f23eaa82e9f38b4d",
-    "packages/edge-worker/src/factory/ViewRuntime.ts": "dffecc9c7a7586b9b9988b9c77b306c254d536d736aa9bdde2a5e67e2c09ddd2",
+    "packages/edge-worker/src/factory/ViewRuntime.ts": "92937c2ce46b891a98b64e8c86ab7ec304f5f3e19d9e98b8197ce09a2c14722a",
     "packages/edge-worker/src/factory/Workflow.ts": "1eba9703ef12a94597c878e11879ca0241720d9fc7709a510a16fd4600e8bd76",
-    "packages/edge-worker/src/factory/WorkflowRuntime.ts": "13659bfabc6d85bcd99c9b389827f1424b1eae756c102d78d61853f81c5cfb0e",
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts": "3490b41d134194a0e2b519e3b9c932ecee2556b414f89bd62be1fd2893c521cf",
     "packages/edge-worker/src/factory/defaultWorkflows.ts": "6d2774f5865294e536cddfed576e49e9d0a029f7774878aaec7cbce4feeed35a",
     "packages/edge-worker/src/factory/web/recipe-graph.ts": "9e5db585837c67b22841585c8413c4d68ddef8bbb11e22abf8c2f3a8faf2a053",
     "packages/edge-worker/test/EdgeWorker.capture-recovery.test.ts": "47efcce07eba0cd27e8fe16ea5782f83a04053f1f90f93c3c969a0727ae72703",
-    "packages/edge-worker/test/ProgressBudget.test.ts": "af93c3164fe76ea3330154441e716471dfb00cb980c5ef5f0924af483161bf5d",
+    "packages/edge-worker/test/ProgressBudget.test.ts": "9cd9d97a2c4da4b637952bfec5aec1de84ce2d2469d79de34f0f0230263bd029",
     "packages/edge-worker/test/ProgressBudgetF1.test.ts": "a1a2bb471d321d9e881a30b6fbba80428c069889f8abd5fd91685ef88e46e5d0",
     "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "1bcba2c3d513faae4cb7613313acc2af77195651924a585936eb17d530371e3b"
   },
   "stages": {
-    "C": {
-      "tests": 23,
-      "files": 2,
-      "typesExit": 0,
-      "runtimeExit": 0
+    "R1A": {
+      "runtimeF1Passed": 30,
+      "runtimeF1Failed": 1,
+      "runtimeExit": 1,
+      "failure": "New owner-only seam incorrectly expected an unexecuted graph checkpoint; all slot admission/retained counter assertions preceding it passed",
+      "typeLauncherExit": 1,
+      "typeLauncherFailure": "Wrong tsgo.js filename; no compilation",
+      "actualTypesExit": 1,
+      "actualTypesFailure": "Import filename casing and one missing narrowing"
     },
-    "B": {
-      "routingPromptTests": 5,
-      "nativeHookTests": 2,
-      "skippedNative": 47,
-      "typesExit": 0,
-      "exit": 0
+    "R1B": {
+      "runtimePassed": 31,
+      "f1Passed": 1,
+      "runtimeF1Exit": 0,
+      "physicalRecoveryPassed": 2,
+      "physicalSkipped": 47,
+      "physicalExit": 0,
+      "realMcpToolProbes": 2,
+      "ownerSourceAliasTypesExit": 0,
+      "frozenInputs": 223
+    }
+  },
+  "effects": {
+    "structural": {
+      "independentBodies": 3,
+      "identicalData": true,
+      "physicalExecutions": 3,
+      "operations": 3,
+      "identities": 1
     },
-    "D2": {
-      "realMcpRepairTests": 1,
-      "skipped": 48,
-      "toolProbes": 2,
-      "exit": 0
+    "lexical": {
+      "acceptedRootValuesFixed": [
+        "A",
+        "B",
+        "C"
+      ],
+      "attemptedValues": [
+        "A",
+        "B",
+        "C",
+        "A"
+      ],
+      "nextA": "blocked before execution",
+      "operations": 1,
+      "observationAttempts": [
+        1,
+        1,
+        2
+      ]
+    },
+    "nestedAcceptedStrings": {
+      "physicalExecutions": 3,
+      "observations": 3,
+      "operations": 1
+    },
+    "untrustedForwardedRoleClaims": {
+      "physicalLeafExecutions": 2,
+      "leafObservations": 1
+    },
+    "human": {
+      "axes": [
+        "feedback",
+        "per-item choices",
+        "fields",
+        "display content"
+      ],
+      "acceptedViewsPerAxis": 4,
+      "physicalExecutionsPerAxis": 4,
+      "factPattern": "A-B-A-A, latter unchanged A exhausts retained attempt cap",
+      "exactReceiptsPreserved": true
+    },
+    "observationWindow": {
+      "validatedItems": 1000,
+      "leavesPerItem": 5,
+      "initialAdmissions": 4096,
+      "initialAllowance": 4096,
+      "blockedNextAttempt": 0,
+      "grantCount": 1,
+      "slotGrant": 4096,
+      "newAllowance": 8192,
+      "nextAdmissionCount": 4097,
+      "retainedOriginalCounters": 4096,
+      "oldAttemptCapStill": 2,
+      "duplicateDirectContinue": "no extra grant",
+      "scope": "Production begin/continue owner, actual Git and validated definition; no graph execution or large-window API/restart claim"
     }
   },
   "f1": {
@@ -65,19 +143,19 @@
     "duplicateRetryRejected": true,
     "nativeSessionsRetained": true,
     "blocked": {
-      "operation": "right-child/repair",
+      "operation": "progress-api/right-child/repair",
       "identity": "6dc0739a7b0f5e3f9080060a1dbac9612aca326cf7f9cc68a0c20e98f88cc184",
       "attempts": 2,
       "additional": 0,
       "step": "right/repair",
-      "key": "0c54a601d04a8cc21ff922030bc4f8c1b7b4e5aae1d08711707e98f4d3512de1",
+      "key": "0a0b1f5a26444942fe98c0357b238f03cf1462715c0914d249e66627cf73a867",
       "reason": "unchanged-work",
       "limit": 2
     },
     "grants": [
       {
-        "at": "2026-10-23T08:02:33.082Z",
-        "key": "acd875ba5818333351634bc9f1aac48f67aa560bebce7590b4c4327a49c550a1",
+        "at": "2026-10-23T08:53:37.704Z",
+        "key": "288d1d3757762faca9770bc214eb18291f7b9b0397f285b1ed2228c4c466cc6e",
         "attempts": 1,
         "limit": 3
       }
@@ -87,6 +165,18 @@
       "inferenceCalls": 0,
       "providerCalls": 0
     }
+  },
+  "reuse": {
+    "routingPrompts": {
+      "tests": 5,
+      "stage": "Historical B only; full system/user/components/type/verify assertions",
+      "unchangedOwnerAndFixtureHashes": {
+        "packages/edge-worker/src/factory/Workflow.ts": "1eba9703ef12a94597c878e11879ca0241720d9fc7709a510a16fd4600e8bd76",
+        "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "1bcba2c3d513faae4cb7613313acc2af77195651924a585936eb17d530371e3b"
+      }
+    },
+    "originalStages": "C/D2/B and original failures remain historical with their original source scopes, not current blanket acceptance",
+    "originalCandidate": "3fc0f9d5b5f4e2b78891aa609791139330fb8fc0"
   },
   "limits": {
     "mockModels": true,
@@ -98,6 +188,14 @@
     "baselineComparison": "not performed; actual invocation counts only"
   },
   "logs": {
+    "stage1-types.log": "c70101bfa62658fc6caa11a3f6e109e4de15775309686c30e1bed5e3b74a5d08",
+    "stage1b-types.log": "dfd5ba744db7ad064c6da86c44883f7cfa03bd9f43cfa956abb7bda0f8aba4ff",
+    "stage1-tests.log": "dfdc8fd7049e9caed212f5c86554e52cb11fea5e8f207766369ca24af1de390d",
+    "stage2-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stage2-tests.log": "63ae846bdc4c8a840f51b3dae312d45434fcec2419de563476fba642cd67094f",
+    "stage2-physical.log": "0f3fd9a018e5729755af3a570e50429556c54825fab87105f7af36b9deadef9d"
+  },
+  "historicalLogs": {
     "stageA-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "stageA-runtime.log": "866c8fc5865e14ef22025c3a81532f62d3275b48e65257defae4ada49228e310",
     "stageA-native.log": "866c8fc5865e14ef22025c3a81532f62d3275b48e65257defae4ada49228e310",

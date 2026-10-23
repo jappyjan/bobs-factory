@@ -1,178 +1,186 @@
-# Task147 — durable recipe progress
+# Task147 — durable recipe progress, combined Round1 repair
 
-Implementation handoff evidence, 23 October 2026. Independent Standards/Spec
-acceptance, ticket status and merge remain coordinator-owned.
+Implementation handoff for the same [PR184](https://github.com/jappyjan/bobs-factory/pull/184).
+The previous `3fc0f9d5b5f4e2b78891aa609791139330fb8fc0` / tree
+`bbe4824f277089dfe2fc6dd99336b834fa55831c` remains historically **NOT CLEAN**:
+independent whole-diff report147/2574 identified four unique P2 defects. This
+candidate repairs them together. New independent Standards/Spec review, root
+integration, statuses, guarded squash and148 sequencing remain parent-owned.
 
 Base `43f305fc33fed451326db0b6fcbe09e779e2b954`, tree
 `ddc03bfc5201dbdc94520509917dd66e74150388`, sole parent
 `6a25d1659c4a9e475596408500117af81b83f2b5`, subject
 `fix(factory): shorten shared mutation reservations (#183) [skip ci]`.
-Own checkout: `/Users/jappy/.t3/worktrees/bobs-factory/taskbot-147-progress`,
-branch `taskbot/147-progress`. The manual checkout does not rebind the inherited
-T3 coordinator workspace. All product commands used explicit own working directories.
+Retained checkout `/Users/jappy/.t3/worktrees/bobs-factory/taskbot-147-progress`,
+branch `taskbot/147-progress`; manual creation never rebound the inherited T3
+coordinator workspace. Every product/source/install/check/Git command uses the own
+checkout explicitly. Final Git/provider identities and whole BASE…HEAD inventory
+are recorded in the live147 handoff; this report does not substitute repair hunks
+for the original whole comparison.
 
-## Audit and implementation
+## Audit and behavior
 
-Live147/135, completed107 including745, and completed132 including1905 were read.
-Current StepVisitBudget owns custom limits and recorded additional visits;
-WorkflowRuntime owns retained graph/Call/Parallel/For each checkpoints and Retry.
-Impact.recordConvergence owns validated semantic review repeats, independently
-of its assessor's prose. EdgeWorker owns scoped MCP readiness, native resume,
-reserved schema attempts, idle recovery and rejected candidates. These installed
-owners were audited before live147 comment2568 and implementation.
+FULL current147/135, completed107/745 and132/1905, and authoritative2574 were read.
+The original owner audit is retained in live2568: StepVisitBudget owns custom limits
+and additional visits; WorkflowRuntime owns graph/Call/Parallel/For each checkpoints
+and Retry; Impact.recordConvergence owns independent semantic review repeats;
+EdgeWorker owns scoped MCP readiness, native resume, schema corrections and recovery.
+There is one accepted optional root convergence policy, not a new scheduler or
+assessor. New saved bundled roots opt in; policyless accepted graphs keep their
+original guards. Catalog edits cannot change accepted definitions or policy.
 
-The gap was local budgets attached to individual frames/roles and impact keys.
-Ordinary new child frames and alternate routes could repeat unchanged work while
-local budgets remained acceptable. Infrastructure-only retries had no cumulative
-observation, and new commit IDs could replenish local schema budgets despite an
-unchanged source tree.
+Actual admitted attempts use committed source trees, accepted host/lexical input
+and validated Check/independent Impact evidence. Passive CI, queues, human waits
+and offline time spend no correction credit. Reworded output claims, attempt IDs,
+empty commits and fresh frames do not replenish it. Existing custom visit grants,
+schema limits, original receipts, native sessions and quality gates remain required.
 
-The accepted root recipe now optionally declares `convergence`. New bundled roots
-opt in; old accepted graphs/forks without it retain their existing safeguards.
-The saved run policy applies to children, independently of child policy claims.
-Runtime observes actual admitted attempts, committed trees, accepted human input,
-validated Check consequences and the existing independent Impact semantic evidence.
-Correction-route selections, prose, attempt IDs, dates and empty commits do not
-establish progress. Original observations survive source/evidence A→B→A cycles.
-Structural paths distinguish different Parallel/For each bodies with identical
-local role names, while new Call frames retain definition identities.
+| Finding | Combined repair and consequential proof |
+| --- | --- |
+| ROOT1 / SPEC1: Call erased enclosing scope | Called-definition identity retains its enclosing structural body/item/Call path. Three distinct For each bodies, identical item/data and same child all perform their first execution:3 calls,3 operations,1 identity. Same child work in the same enclosing scope still shares counters across routes/fresh frames. |
+| ROOT4: accepted mapped values absent | Private origin hashes track actual accepted launch/lexical inputs through Call/Parallel/For each and nested aliases, without copying values or scanning history. Independent same-operation test holds all root A/B/C values fixed: A,B,C,A execute, next A pauses;3 observations with attempts1,1,2. Nested accepted strings also execute3 times under1 operation. A separate forwarded role-prose case remains1 observation/2 leaf executions. |
+| ROOT2 / SPEC2: human receipt UUIDs minted credit | Progress uses validated choices/feedback/fields plus meaningful configuration/display content. Original exact request/output/batch/digest/currentness/consent validation and immutable receipts remain unchanged. Actual runtime + HumanViews + answerView tests cover feedback, per-item choices, fields and display: each A→B→A→A sequence retains4 exact distinct view receipts, executes4 physical roles, then pauses on retained A. |
+| ROOT3 / StandardsS1 / SPEC3: full window could not Continue | The exact blocked window records count/allowance. Explicit Continue records4096 additional slots, prior allowance and blocked key; duplicate direct Continue does nothing. Existing observation counters and attempt grants are retained. Actual production begin/continue with real Git and a public validated1000-item/five-leaf definition admits4096 observations, blocks the next before execution, grants4096 slots, admits4097, and still enforces the original2-attempt cap on an old observation. |
 
-Physical native turns charge after capacity/resource admission. Mandatory context
-failure is infrastructure, with its own retained retry generation, never schema
-rejection. Supported native identities survive fresh frames/restart. Passive CI,
-queues, human waits and downtime do not accrue correction attempts. Existing
-custom visits/grants, schema corrections and impact ceilings remain required.
+The window proof is deliberately an exported production-owner seam: optional
+per-admission save is omitted; it does not execute/persist/restart the entire5000-leaf
+graph or drive the large-window condition through API. The small F1 below owns
+ordinary protected API continuation/restart/checkpoint/sibling guarantees. No
+shadow counter, patched authority, synthetic human receipt or permissive validator
+establishes the four repair results.
 
-Failure retains its exact operation, relevant identity, attempted work and blocker.
-The existing authenticated Retry/Continue path records a bounded grant for only
-the blocked observation. It preserves original history, successful siblings,
-checkpoints, accepted definitions and all review/human/provider proof. The public
-run projection exposes only a compact explanation. Recipes' existing JSON editor
-preserves the optional policy; no new visual surface or timing dashboard was added.
+## Current frozen checks and small mocked F1
 
-See [operator semantics](../../../docs/factory/convergence.md) and
-[compact hashes/results](taskbot147-progress-summary.json).
+Actual Node24.21.0; existing direct pinned pnpm10.33.1 launcher is
+`/Users/jappy/Library/pnpm/.tools/pnpm/10.33.1/node_modules/pnpm/bin/pnpm.cjs`.
+No new dependency/install/build preparation was needed for the repair. Own private
+HOME/TMPDIR/CLAUDE_CONFIG_DIR live beneath `/tmp/taskbot147-repair-r1.jgsy92mi`.
+Selected setup/harness writes and shutdown were inspected first. No forbidden142
+Call suite or excluded diagnostic was accessed or executed. Source/test/harness
+hashes were frozen and unchanged during each check stage.
 
-## Applicable controlled F1 family
-
-Runtime/session changes require F1 under the canonical policy. This is one small
-relevant mocked family: `assets/taskbot147-progress.mjs`, invoked through
-`test/ProgressBudgetF1.test.ts` with the source test loader. It uses production
-WorkflowRuntime, public validation schemas, actual isolated Git and the protected
-FactoryServer API fixture. Only the unrelated packaged web shell is omitted.
-Role execution is scripted; no model, live forge, development CI or native agent
-is invoked by the F1 family.
-
-Actual role sequence: `left/repair`, `right/repair`, `left/repair`, `right/repair`;
-then assistance at the left observation (2 attempts). Process reconstruction
-preserves exact progress state, history, checkpoint and synthetic native identities.
-A request lacking the mutation guard gets403. Explicit authenticated Continue
-executes exactly one additional `left/repair`; a duplicate active Retry gets409.
-The right observation receives zero extra credit and pauses at its original2.
-The one grant records allowance1 and resulting left limit3. No fixed savings,
-production model judgment, cost or timing improvement is claimed. No BASE
-comparison was performed; these are actual candidate invocation counts.
-
-## Frozen checks and honest stages
-
-Node24.21.0. Existing `/opt/homebrew/bin/pnpm` resolves10.33.1; login PATH's pnpm
-was12.8.1. Frozen-lockfile installation reused757 cached packages with scripts
-disabled; no manifests/lockfile changed. Tests used own private HOME, TMPDIR and
-CLAUDE_CONFIG_DIR beneath `/tmp/taskbot147-implementation.s3jfk6`.
-Selected fixtures/setup were inspected for writes and shutdown. Neither forbidden
-legacy Call suite nor any of the three excluded142 paths was accessed/executed.
-
-Each execution stage froze source/test/harness hashes, with no edits during its
-checks. All current hashes and log digests are in the compact summary. Commands
-below ran from own `packages/edge-worker`, except source types/format from own root:
+Commands below use own `packages/edge-worker`, except types/format/diff use own root:
 
 ```sh
-/opt/homebrew/bin/pnpm exec env HOME=<own>/home TMPDIR=<own>/tmp CLAUDE_CONFIG_DIR=<own>/claude F1_RESULT=<own>/tmp/f1-stageC.json vitest run --config <own>/vitest.config.mts test/ProgressBudget.test.ts test/ProgressBudgetF1.test.ts --reporter=default --reporter=json --outputFile.json=<own>/stageC-tests.json
-/opt/homebrew/bin/pnpm exec tsgo --project <own>/tsconfig.json
-/opt/homebrew/bin/pnpm exec env HOME=<own>/home TMPDIR=<own>/tmp CLAUDE_CONFIG_DIR=<own>/claude vitest run --config <own>/vitest.config.mts test/EdgeWorker.capture-recovery.test.ts -t 'bounds required-MCP'
+env HOME=<proof>/home TMPDIR=<proof>/tmp CLAUDE_CONFIG_DIR=<proof>/claude F1_AGENT_MODE=mock F1_RESULT=<proof>/tmp/f1-stage2.json node node_modules/vitest/vitest.mjs run --config <proof>/vitest.config.mts test/ProgressBudget.test.ts test/ProgressBudgetF1.test.ts --reporter=default --reporter=json --outputFile.json=<proof>/stage2-tests.json
+env HOME=<proof>/home TMPDIR=<proof>/tmp CLAUDE_CONFIG_DIR=<proof>/claude node node_modules/vitest/vitest.mjs run --config <proof>/vitest.config.mts test/EdgeWorker.capture-recovery.test.ts -t 'bounds physical invalid-output|bounds required-MCP' --reporter=default --reporter=json --outputFile.json=<proof>/stage2-physical.json
+env HOME=<proof>/home TMPDIR=<proof>/tmp CLAUDE_CONFIG_DIR=<proof>/claude node node_modules/@typescript/native-preview/bin/tsgo -p <proof>/tsconfig.json
 ```
 
-- **Current C:**22 focused production-runtime regressions plus1 F1, exit0; changed
-  owner source-alias TypeScript compilation exit0. The alias project includes
-  actual transitive package sources, core's owned-resource subpath and the existing
-  sqlite declaration. It does not build/recheck the monorepo or native binary.
-- **Current D2:**1 selected EdgeWorker/MCP recovery test, exit0,48 skipped. It runs
-  the real source stdio context server under the existing tsx loader and performs
-  required `list_context`/`read_context` probes after same-head repair. The native
-  model runner is scripted; original rejected candidate, schema attempts, native
-  identity and bounded grant are asserted. Child transport closes before return.
-- **Scoped B reuse:**2 new physical native-hook recovery cases passed,47 skipped;
-  the output-validation case and relevant EdgeWorker/ProgressBudget attempt logic
-  remain unchanged. D2 strengthens the infrastructure case with the real MCP probe.
-- **Scoped B reuse:**5 full routing prompt cases passed with complete expected
-  prompts/components/type/verify; those prompt source/fixture hashes remain exact.
-- Focused Biome, MJS syntax and `git diff --check` complete before publication.
-  No unchanged full prompt/native/runtime matrix is credited as freshly rerun.
+- R1B runtime family:31 production-runtime regressions +1 F1, exit0. Includes
+  fresh-Call two-route ping-pong, relevant source/input/evidence changes, A→B→A,
+  base/output/infrastructure failures, interruption/restart, completed Parallel/For
+  each siblings, waits, original custom limits/grants and actual no-human merge guard.
+- R1B physical recovery:2 passed,47 skipped, exit0. Physical invalid output is
+  bounded; same-head infrastructure repair uses real local source stdio MCP and
+  required list_context/read_context probes while retaining the scripted native
+  conversation and original rejection. No native model is started.
+- R1B owning source-alias compilation exit0. It follows actual transitive package
+  sources/core owned-resource subpath and existing sqlite declaration, not a full
+  monorepo or native build.223 source/test/harness inputs retain the final freeze.
+- Exact unchanged reuse only: historical B's5 complete routing prompt assertions
+  (entire system/user prompts, components, type, verify). Workflow.ts and expected
+  fixture hashes match. The existing capability contract already promises semantic
+  progress and bounded continuation; this repair requires no prompt text change.
+- Focused changed-file Biome and diff checks are recorded in the live handoff.
+  There is no full-suite/native/CI claim and skipped tests receive no credit.
 
-Earlier stages remain qualified: preliminary compilation first failed on an own
-missing return plus temporary source-alias omissions. A second preliminary compile
-passed but may overlap the helper's single test-file addition; it is not final
-proof. StageA's test launcher failed before product execution because replacing
-HOME made pnpm search a nonexistent private toolchain (an automatic private-home
-Corepack download was attempted). Corrected launcher A2 passed25 runtime/F1/prompt
-cases; its native command had1 pass/1 failure because infrastructure was relabelled
-output validation. That bug was fixed before B (27 runtime/F1/prompt +2 native
-passes). C fixes cloned-body structural identity and adds its regression. An initial
-D edit/format command used package cwd with root-relative paths and failed before
-editing files, then redundantly ran the unchanged selected test (exit0); no real-MCP
-credit comes from that stage. D2 uses the corrected fixture and owns real-MCP proof.
-None of these stages is labelled a broad/native/CI pass.
+F1 is required by canonical applicability: runtime/session behavior changed.
+ONE small relevant family uses production WorkflowRuntime/public schemas, real
+isolated Git, authenticated FactoryServer API fixture and scripted role hooks;
+only the unrelated packaged web shell is mocked. Actual sequence is
+left/repair,right/repair,left/repair,right/repair, then left assistance at2 attempts.
+Reconstruction preserves exact progress/history/checkpoint and synthetic native IDs.
+Missing mutation guard403; authenticated Continue executes exactly one more left;
+active duplicate Retry409; right remains capped2. One attempt grant records1/limit3.
+No BASE comparison, savings, cost, timing or real-model judgment is claimed.
 
-## Task147 acceptance and epic compatibility
+See [compact results and hashes](taskbot147-progress-summary.json) and
+[operator semantics](../../../docs/factory/convergence.md).
 
-| Requirement | Evidence / scope |
+## Failed stages and history remain qualified
+
+R1A's first compiler launcher used nonexistent tsgo.js and exited1 before compilation.
+The corrected launcher found import casing and one missing TypeScript narrowing,
+exit1. Runtime/F1 R1A had30 passes/1 failure: a new owner-only test incorrectly
+expected a graph checkpoint even though it never launched the graph; all preceding
+slot-grant/admission/counter assertions passed. Corrected only after checks ended;
+R1B froze and passed the final source. No existing assertion, timeout, validator,
+native guard or quality requirement was weakened.
+
+Original C23, D2 selected1/48 skipped, and B5 prompts/physical tests remain historical
+at their recorded source scopes; current runtime/native-hook execution above
+supersedes reuse for changed owners. The original preliminary missing-return/alias
+compiles, possible helper-addition overlap, private-HOME pnpm bootstrap failure,
+A2 infrastructure-as-schema failure, B correction, C direct-body fix and D wrong-cwd
+edit/unchanged rerun remain recorded in the original report at old3fc0f9d5 and live2569.
+Those stages and review2574's four negative confirmations are never relabelled passes.
+
+## Complete147 acceptance and compatibility
+
+| Requirement | Current implementation evidence / limits |
 | --- | --- |
-| Audit current107/132 controls first | Current owner audit above, live2568, completed helper readback |
-| Durable generic state across calls/routes/Parallel/For each/restart | C fresh-frame ping-pong, interruption/restarts, sibling preservation; F1 exact reconstruction |
-| Substantive source/input/evidence progress | C real changed trees, A→B→A, accepted answers, actual files-exist Check; empty commits/dirty/prose/UUID claims negative |
-| Repeated invalid output/tool/infrastructure/base mismatch pause | B physical production EdgeWorker validators; D2 real scoped MCP; C retained base/output/infra failure identity |
-| Passive waits/146 coordination preserved | C actual human/CI/capacity/resource waits under advanced clock, zero queued attempts; unchanged admission/fairness owners |
-| Native conversation and original evidence retained | C/F1 synthetic native IDs and exact history/checkpoints; B/D2 production resume config, original rejection and repair |
-| Bounded explicit auditable Continue | F1 protected API, one exact-state grant, duplicate rejection, other route remains capped; C actual merge guard still rejects absent human approval |
-| Custom limits, grants, legacy and accepted policy | C original custom limit+4 recorded visits, old graph guard, catalog edit cannot replace accepted root policy; labelled missing-history window implementation review |
-| Configurable generic policy and explicit adoption | Public schema ranges/defaults, saved run copy, JSON editor pass-through, saved-copy/new-run documentation; no active graph upgrade |
+| Audit107/132 and current installed guards first | Full live audit2568/current owners plus FULL2574 before combined repair. |
+| One generic durable policy across Call/Parallel/For each/routes/restart | R1B fresh frames, accepted root inheritance, retained state and completed siblings; ROOT1/4 independent identity axes above. |
+| Relevant source/accepted input/findings/dispositions/new evidence; no prose/UUID/empty-commit credit | R1B committed trees and A→B→A, actual files-exist Check/independent Impact facts, accepted lexical hashes and human semantic tests; negative forwarded role claims. |
+| Passive CI/capacity/resources/humans/downtime separate | R1B wait controls under advanced clock, zero queued attempt credit;146 owners unchanged. |
+| Repeated schema/tool/infrastructure/base failures bounded and actionable | R1B failure/reconstruction cases and2 physical hooks with actual scoped MCP; no live moving-provider experiment. |
+| Same-head repair/native resume/original rejection retained | R1B real local context probes, schema0 on infrastructure failure, recorded retry generation and synthetic native identity. Native model/OS enforcement untested. |
+| Preserve checkpoints/receipts/accepted work/siblings/uncertainty/obligations | Small F1 exact restart state/history/checkpoint plus both sibling cases; no automatic completion, approval or merge. |
+| Explicit bounded auditable continuation/current state/duplicates | Current F1 ordinary403/409/one attempt grant/other-route cap; production window4096-slot grant/old counters/duplicate no-op; no large-window API/restart claim. |
+| Original custom limits/additional visits/quality guards | R1B original limit and4 recorded additional visits, separate schema/Impact ceilings and actual missing-human merge negative retained. |
+| Honest legacy window/accepted immutable policy | R1B old policyless graph and accepted policy controls; missing history is labelled legacy-from-now, no invented prior credit or active migration. |
+| Generic configuration/capability/builder | Public schema defaults/ranges, saved recipe JSON pass-through, unchanged complete capability contract/fixture; repository/provider/role/reviewer-count agnostic. |
+| Bounded incremental context/private origins | Small origin hashes, bounded recent/grant facts, no accumulated-history scan; all earlier observation counters retained with explicit slot grants. No148 telemetry. |
+| Frozen graphs/forks/native conversations/explicit opt-in | Accepted run definitions/policy remain saved; opt-in adoption is saved copy/new run. No production upgrade/edit. |
+| Focused F1/restart/actual work counts | Current32+2 scoped cases above, scripted native execution/controlled local MCP; no model judgment/production efficiency claim. |
 
-| Epic decision / DoD | Treatment |
+| Epic135 decision | Treatment |
 | --- | --- |
-| 1 configurable agent building block | Generic root policy/physical hook, no role/repository/provider/reviewer-count dispatch |
-| 2 generic Check | Real Check evidence supplies semantic progress; pure rules do not acquire approval authority |
-| 3 For each | Retained keyed items and successful results; structural body identity regression |
-| 4 side-effect actions | Original receipts, uncertainty and downstream obligations remain required; no new action scheduler |
-| 5 declarative human views | Accepted validated decision input can advance context; no approval manufactured |
-| 6 Improve codebase composition | New saved bundled root policy only; existing graph/forks retained |
-| 7 Factory/Takeover composition | Root policy inherited through calls; no foundation reimplementation |
-| 8 Ask/check-in/human/external review views | Existing protocols, original decisions and quality boundaries retained |
-| One latest-main ready PR + links/changelog | Publication identities and full BASE…HEAD inventory supplied in live147 handoff |
-| Relevant F1, restart/retry/concurrency checks | Current C/D2 and exactly scoped B reuse above |
-| Capability reference/full prompt fixture/docs | Updated Workflow.ts and entire routing fixture; convergence docs/contracts/changelog |
-| UI evidence | No visible flow/layout change; no artificial screenshots; existing matrices not recertified |
-| CI/full local gates/native build | Skipped/deferred to ONE integrated post148 phase under user override, not passed |
-| Reviews, guarded squash, ticket statuses | Parent's NEW whole-diff independent Standards+Spec loop and root integration; no self-clearance/merge/done |
+| 1 Every bundled recipe/subrecipe forkable except Simple | Preserved; policy remains recipe data copied through JSON authoring. |
+| 2 Configured generic agent, Check, flow/human/explicit actions | Existing interpreter/physical execution boundaries; no step-name/repository/provider scheduler. |
+| 3 Library and custom JSON Schema output formats | Real production output validator remains in physical invalid-output tests. |
+| 4 Declarative bound views, no HTML/scripts | Existing validated human-view runtime; only semantic progress normalization changes. |
+| 5 Dedicated Ask follow-up/reconsolidation | Unchanged; no broad Ask replay or new assessor. |
+| 6 Old improvement routine deleted | No hidden routine restored; ordinary saved graph composition retained. |
+| 7 Worker model inherits unless configured | No forced model/provider or fanout change. |
+| 8 Foundation-first sequence | Only147; parent owns review/merge/status/148. |
 
-## Boundaries and retained history
+| DoD | Disposition |
+| --- | --- |
+| One ready latest-main PR, ticket link/changelog | SAME184, actual Unreleased link, attachment237 and final exact Git/provider identities in live handoff. |
+| User skip-CI policy | Every branch subject[skip ci]; no development CI/check/status/workflow/main-health/provider-finalization query/watch. Parent squash must retain[skip ci]. |
+| Independent Standards/Spec acceptance/fix loop | Combined four-defect response only; NEW whole-diff independent review required, no self-clearance. |
+| Consequential tests/retry/restart/concurrency/stale state | Current R1B32+2 scoped checks; original failures and narrow window scope explicit. |
+| Capability/full prompt/docs | Contract already covers repair; authenticated unchanged B5 full prompts, operator docs/changelog/current report updated. |
+| Changed UI screenshots | No visible flow/layout change; no artificial screenshots or unchanged UI matrix recertification. |
+| Full build/types/lint/packages/apps/scripts/audit/native/integration | DEFERRED, NOT PASSED: ONE integrated post148 cleanup under user override. No dependency change. |
+| Guarded squash/status/strict sequence | Parent-owned after FULL report/new independent reviews. Epic remains open. |
 
-No production install, active-run editing, deployment/service restart, live model
-credit, live provider mutation (outside authorized PR publication), account/native
-credential/history access or Task148 implementation. MCP probes establish local
-scoped transport readiness; scripted native IDs/configuration do not certify native
-OS permission enforcement, subscription-provider behavior or arbitrary OS crash
-recovery. Shutdown/reconstruction is controlled graceful recovery, not kill9 proof.
-All test-owned runtimes, API/auth timers, MCP transports and streams terminate.
+## Foundations, boundaries and cleanup
 
-Historical132/1905 real-provider/browser/media/context limits remain historical.
-The exact143 three BASE failures/missing final proof,144 BASE long-run failures,
-145 BASE partial-prefix limitations and146 earlier NOT CLEAN stages remain
-unchanged; this report does not replay or relabel them. Current146's scoped eight
-checks/authenticated reuse remain scoped, not a full/native/CI certification.
+141 atomic ownership/no false completion/no sibling replay;142 qualified lexical
+inputs/original owner/revision/native identity/current visits/Snapshot authority;
+143 current Ask/saved-reader/exact URL/head/assets/consent;144 immutable fullrefs,
+alias provenance/detached isolation/warm cache;145 original assessor/requirement IDs,
+qualified impact reuse/original receipts/cumulative94 human policy;146 capacity-first,
+active/draining/uncertain owner exclusion/shared QA/fairness/observed wait credit
+remain required. No foundation scheduler, telemetry or broad matrix was reimplemented.
 
-Normal push/LFS and repository workflows/protection/security stay intact. The broad
-pre-commit build/typecheck is deferred per user policy through command-local hook
-selection; it is not a passed or absent hook. Command-local signing disablement
-uses the explicitly authorized147 exception, without saved signing/auth/key changes.
-Any own generated untracked hooks are moved intact only after Git mutations, with
-hashes and exact restoration obligation recorded in the final live handoff.
+Historical132/1905 provider/browser/media/stream/context limits (including about35%
+more context),143's exact3 BASE failures and external missing-final-proof negative,
+144 BASE24-round120s failure/223MB STOP/two EOF cleanup,145 partial-prefix/not-all-eight
+proof and146 old NOT CLEAN/F1 timing limits remain historical. No replay or relabelling.
+
+No paid/live model/native/provider/device/production/active-run/install/release/deploy/
+service/account/key/private native history effects occurred, apart from authorized
+Taskbot/PR coordination. Local transport and scripted native identity do not certify
+native OS permission enforcement, remote providers or arbitrary process crash.
+All owned runtimes/API/auth timers/MCP/streams end; only owned private homes are
+cleaned. Original helpers remain terminal/no pending; no new helper was needed.
+
+Normal push/LFS/workflows/protection/security remain intact. Command-local unsigned
+publication and explicit broad-precommit deferral are authorized147 exceptions,
+without saved policy/config/key changes or hook-pass/absence credit. Own generated
+wrappers were restored intact before Git mutations. Any later intact move and exact
+restoration obligation are recorded in the final live handoff.

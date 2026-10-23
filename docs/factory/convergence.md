@@ -17,9 +17,13 @@ requires a saved copy and new run. Missing observed history is labelled
 from incomplete events.
 
 The runtime records actual attempts using the accepted definition's structural
-operation, committed repository trees, accepted host input and validated semantic
+operation (including enclosing bodies through Calls), committed repository trees,
+accepted host and lexical Call inputs, and validated semantic
 Check/impact evidence. Different routes and fresh child frames share those
-observations. For each items retain independent accepted identities. New summaries,
+observations. Forwarded role prose does not become accepted input authority.
+Human decision progress uses accepted choices, feedback, fields and meaningful display
+content; exact batch IDs/digests remain in the original receipts but do not earn credit.
+For each items retain independent accepted identities. New summaries,
 attempt UUIDs, empty commits and unverified output claims cannot replenish budget.
 Returning to an earlier source/evidence state returns to its retained counter.
 Working changes must reach an accepted source checkpoint to establish source
@@ -49,6 +53,7 @@ checkpoints remain in their existing stores. Bookkeeping reads no accumulated ru
 history per attempt. It keeps at most 4,096 distinct observations automatically,
 256 evidence facts, 16 recent attempt summaries and 32 recent grant receipts plus
 a cumulative grant count. Filling the identity window asks for deliberate bounded
-additional slots, retaining every earlier counter and completed sibling; it never
+additional slots: each explicit Continue records 4,096 more slots for the current
+blocked window. It leaves existing attempt limits unchanged, retaining every earlier counter and completed sibling; it never
 evicts identities to invent fresh budget. No timing/cost telemetry or remote model
 judgment is inferred from these records.

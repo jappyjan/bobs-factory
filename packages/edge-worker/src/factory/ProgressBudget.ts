@@ -2,8 +2,10 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { passiveTools } from "./CapacityPolicy.js";
 import { digest } from "./Delivery.js";
+import { foreachPointer, foreachScope } from "./Foreach.js";
 import type { ProgressPolicy } from "./ProgressPolicy.js";
 import { runRepositories } from "./RepositoryScope.js";
+import { pointerValue, resolveStepConfig } from "./StepConfig.js";
 import type {
 	AgentCheckpoint,
 	ExecutionContext,
@@ -40,8 +42,16 @@ export interface ProgressBudget {
 		key: string;
 		reason: string;
 		limit: number;
+		window?: { count: number; allowance: number };
 	};
-	grants: { at: string; key: string; attempts: number; limit: number }[];
+	grants: {
+		at: string;
+		key: string;
+		attempts: number;
+		limit: number;
+		observations?: number;
+		previousAllowance?: number;
+	}[];
 	grantCount: number;
 	sessions: Record<
 		string,
@@ -141,6 +151,58 @@ export function recordProgressEvidence(
 		state.facts[key] = digest(value);
 }
 
+/** Resolve accepted lexical data, checking the current value against its private origin hash.
+ * Role outputs cannot acquire authority just by being mapped into another Call. */
+export function acceptedProgressValue(
+	context: ExecutionContext,
+	path: string,
+	actual: unknown,
+) {
+	if (!context.run.progressBudget) return undefined;
+	const outputs = context.outputs ?? context.run.outputs;
+	const lexical = Object.fromEntries(
+		Object.entries(context.progressInputs ?? {}).flatMap(([name, hash]) =>
+			digest(outputs[name]) === hash ? [[name, outputs[name]]] : [],
+		),
+	);
+	const callInputs = Object.fromEntries(
+		Object.entries(context.progressInputs ?? {}).flatMap(([name, hash]) =>
+			digest(context.callInputs?.[name]) === hash
+				? [[name, context.callInputs![name]]]
+				: [],
+		),
+	);
+	const item =
+		context.progressItem === digest(context.iteration?.value)
+			? context.iteration?.value
+			: undefined;
+	const sources = {
+		callInputs,
+		launchInputs: context.run.launchInputs ?? {},
+		item,
+	};
+	const inputs: Record<string, unknown> = {};
+	for (const [name, binding] of Object.entries(
+		resolveStepConfig(context.step).reads,
+	)) {
+		const value = binding.from.startsWith("@")
+			? pointerValue(sources, binding.from.slice(1))
+			: pointerValue(lexical, binding.from);
+		if (value !== undefined) inputs[name] = value;
+	}
+	try {
+		const accepted = foreachPointer(
+			foreachScope({ outputs: lexical, inputs, item }),
+			path,
+		);
+		return accepted !== undefined && digest(accepted) === digest(actual)
+			? accepted
+			: undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 async function progressIdentity(context: ExecutionContext) {
 	const run = context.run;
 	const repositories = await Promise.all(
@@ -165,6 +227,11 @@ async function progressIdentity(context: ExecutionContext) {
 		repositories,
 		input: run.input,
 		launchInputs: run.launchInputs,
+		lexicalInputs: context.progressInputs,
+		item:
+			context.progressItem === digest(context.iteration?.value)
+				? context.progressItem
+				: undefined,
 		facts: run.progressBudget!.facts,
 	});
 }
@@ -196,6 +263,10 @@ export async function beginProgressAttempt(
 				key,
 				reason: "observation-window-full",
 				limit: 0,
+				window: {
+					count: state.observationCount,
+					allowance: state.observationAllowance,
+				},
 			};
 			await context.save?.();
 			throw new NonConvergenceError(
@@ -247,21 +318,52 @@ export function recordProgressFailure(
 export function continueProgress(run: FactoryRun) {
 	const state = run.progressBudget;
 	const blocked = state?.blocked;
-	if (!state || !blocked || blocked.reason === "observation-window-full")
-		return;
-	const observation = state.observations[blocked.key];
-	if (!observation)
-		throw new Error(
-			"Retained convergence observation is missing; restore its state before continuing",
-		);
-	observation.additional += state.policy.continueAttempts;
-	state.grants.push({
-		at: new Date().toISOString(),
-		key: blocked.key,
-		attempts: state.policy.continueAttempts,
-		limit: state.policy.maxUnchangedAttempts + observation.additional,
-	});
+	if (!state || !blocked) return;
+	let grant: ProgressBudget["grants"][number];
+	if (blocked.reason === "observation-window-full") {
+		if (
+			state.observations[blocked.key] ||
+			state.observationCount !== state.observationAllowance ||
+			(blocked.window &&
+				(blocked.window.count !== state.observationCount ||
+					blocked.window.allowance !== state.observationAllowance)) ||
+			!Number.isSafeInteger(state.observationAllowance + MAX_OBSERVATIONS)
+		)
+			throw new Error(
+				"Convergence window changed; inspect its current blocked state before continuing",
+			);
+		grant = {
+			at: new Date().toISOString(),
+			key: blocked.key,
+			attempts: 0,
+			observations: MAX_OBSERVATIONS,
+			previousAllowance: state.observationAllowance,
+			limit: state.observationAllowance + MAX_OBSERVATIONS,
+		};
+		state.observationAllowance = grant.limit;
+	} else {
+		const observation = state.observations[blocked.key];
+		if (
+			!observation ||
+			observation.operation !== blocked.operation ||
+			observation.identity !== blocked.identity ||
+			observation.attempts !== blocked.attempts ||
+			observation.additional !== blocked.additional
+		)
+			throw new Error(
+				"Retained convergence observation changed or is missing; inspect its current state before continuing",
+			);
+		observation.additional += state.policy.continueAttempts;
+		grant = {
+			at: new Date().toISOString(),
+			key: blocked.key,
+			attempts: state.policy.continueAttempts,
+			limit: state.policy.maxUnchangedAttempts + observation.additional,
+		};
+	}
+	state.grants.push(grant);
 	state.grants = state.grants.slice(-32);
 	state.grantCount++;
 	delete state.blocked;
+	return grant;
 }
