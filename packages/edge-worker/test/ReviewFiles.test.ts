@@ -450,15 +450,15 @@ it("authorizes API requests against retained guide identity and never substitute
 			f.baseSha,
 			f.headSha,
 		);
-	run.outputs["pipeline/guide"] = { summary: "guide", reviewFiles: ref };
+	run.outputs["approval/guide"] = { summary: "guide", reviewFiles: ref };
 	run.history = [
 		{
-			step: "pipeline/guide",
+			step: "approval/guide",
 			at: "now",
-			output: run.outputs["pipeline/guide"],
+			output: run.outputs["approval/guide"],
 		},
 	];
-	const hash = guideDigest(run.outputs["pipeline/guide"]);
+	const hash = guideDigest(run.outputs["approval/guide"]);
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
 		sessions: () => [],
@@ -498,39 +498,39 @@ it("authorizes API requests against retained guide identity and never substitute
 				})
 			).statusCode,
 		).toBe(403);
-		run.outputs["pipeline/guide"] = { summary: "legacy" };
+		run.outputs["approval/guide"] = { summary: "legacy" };
 		run.history = [
 			{
-				step: "pipeline/guide",
+				step: "approval/guide",
 				at: "now",
-				output: run.outputs["pipeline/guide"],
+				output: run.outputs["approval/guide"],
 			},
 		];
 		await expect(
 			resolveGuideSnapshot(
 				run,
 				evidence,
-				guideDigest(run.outputs["pipeline/guide"]),
+				guideDigest(run.outputs["approval/guide"]),
 			),
 		).rejects.toThrow("Exact historical");
 		run.history = [
 			{
-				step: "pipeline/ci",
+				step: "ci/ci",
 				at: "1",
 				output: { baseSha: f.baseSha, headSha: f.headSha },
 			},
 			{
-				step: "pipeline/guide",
+				step: "approval/guide",
 				at: "2",
-				output: run.outputs["pipeline/guide"],
+				output: run.outputs["approval/guide"],
 			},
-			{ step: "pipeline/handoff", at: "3", output: { headSha: f.headSha } },
+			{ step: "approval/handoff", at: "3", output: { headSha: f.headSha } },
 		];
 		expect(
 			await resolveGuideSnapshot(
 				run,
 				evidence,
-				guideDigest(run.outputs["pipeline/guide"]),
+				guideDigest(run.outputs["approval/guide"]),
 			),
 		).toEqual(ref);
 		await expect(
@@ -545,7 +545,7 @@ it("authorizes API requests against retained guide identity and never substitute
 			await resolveGuideSnapshot(
 				{ ...run, workspace: "/does-not-exist" },
 				evidence,
-				guideDigest(run.outputs["pipeline/guide"]),
+				guideDigest(run.outputs["approval/guide"]),
 			),
 		).toEqual(ref);
 		rmSync(join(evidence, "historical-guides"), { recursive: true });
@@ -554,7 +554,7 @@ it("authorizes API requests against retained guide identity and never substitute
 			resolveGuideSnapshot(
 				run,
 				evidence,
-				guideDigest(run.outputs["pipeline/guide"]),
+				guideDigest(run.outputs["approval/guide"]),
 			),
 		).rejects.toThrow("Exact historical");
 	} finally {

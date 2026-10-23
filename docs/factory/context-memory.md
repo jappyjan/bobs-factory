@@ -165,8 +165,6 @@ Legacy inline baseline contexts remain readable and are not rewritten or pruned.
 The new representation is recorded on each newly created baseline; it changes no
 accepted graph, impact policy, reviewer selection, native thread or approval.
 
-See [the #144 comparison](../../apps/f1/test-drives/2026-10-23-bounded-role-context.md)
-and [Task149's scoped mock evidence](../../apps/f1/test-drives/taskbot149-outputs-first.md)
-for measurements and retained limitations. Private provenance classification also
+Private provenance classification also
 keys the derived immutable caches, preventing a previously unclassified cached
 node from bypassing a later runtime source classification.

@@ -1,9 +1,0 @@
-file:///private/tmp/taskbot140-create-legacy-fixtures.mjs:9
- const held=new Promise((_,reject)=>{release=()=>reject(Error('Synthetic process interruption after persisted original checkpoint'));});
-                                                        ^
-
-Error: Synthetic process interruption after persisted original checkpoint
-    at release (file:///private/tmp/taskbot140-create-legacy-fixtures.mjs:9:57)
-    at file:///private/tmp/taskbot140-create-legacy-fixtures.mjs:22:13
-
-Node.js v24.21.0

@@ -1090,7 +1090,12 @@ it.each([
 				() => expect(recovered.status, recovered.error).toBe("completed"),
 				{ timeout: 30000 },
 			);
-		} else await fixture.runtime.launch(run);
+		} else {
+			// Relaunching a failed run resumes it, as Retry does.
+			run.status = "running";
+			run.error = undefined;
+			await fixture.runtime.launch(run);
+		}
 		expect(recovered.status, recovered.error).toBe("completed");
 		expect(recovered.history.slice(0, history.length)).toEqual(history);
 		expect(fixture.calls.filter((id) => id === "repair")).toHaveLength(repairs);

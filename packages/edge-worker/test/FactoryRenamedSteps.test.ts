@@ -381,12 +381,17 @@ it("runs a Factory fork with every step renamed through the same checked graph, 
 	try {
 		const stock = await drive(false),
 			fork = await drive(true);
+		const callee = (step: { workflow?: string }) =>
+			defaultWorkflows.find((workflow) => workflow.id === step.workflow);
+		// The review loop is the called recipe holding the specialist fan-out.
 		const entry = defaultWorkflows
 			.find((workflow) => workflow.id === "factory")!
-			.steps.find((step) => step.type === "workflow")!;
-		const fanout = defaultWorkflows
-			.find((workflow) => workflow.id === entry.workflow)!
-			.steps.find((step) => step.type === "fanout")!;
+			.steps.find(
+				(step) =>
+					step.type === "workflow" &&
+					callee(step)?.steps.some((s) => s.type === "fanout"),
+			)!;
+		const fanout = callee(entry)!.steps.find((step) => step.type === "fanout")!;
 		// Each group is one independent specialist. Keep serial groups ordered if
 		// the stock graph ever grows additional steps within a group.
 		expect(fanout.groups!.every((group) => group.length === 1)).toBe(true);
@@ -416,9 +421,9 @@ it("runs a Factory fork with every step renamed through the same checked graph, 
 			...stock,
 			visits: canonicalVisits(stock.visits),
 		});
-		expect(stock.visits).toContain("pipeline/capture");
-		expect(stock.visits).toContain("pipeline/handoff");
-		expect(stock.visits.at(-1)).toBe("pipeline/merge");
+		expect(stock.visits).toContain("qa/capture");
+		expect(stock.visits).toContain("approval/handoff");
+		expect(stock.visits.at(-1)).toBe("merge/merge");
 	} finally {
 		polling.mockRestore();
 	}

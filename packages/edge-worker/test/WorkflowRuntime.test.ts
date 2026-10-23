@@ -324,13 +324,7 @@ describe("workflow trigger permissions", () => {
 				w.id,
 				w.id === "simple"
 					? ["manual", "ticket-assignment"]
-					: [
-								"factory-pipeline",
-								"map-codebase",
-								"research-perspective",
-								"consolidate-proposals",
-								"refine-plan",
-							].includes(w.id)
+					: w.internal
 						? ["workflow"]
 						: ["workflow", "manual", "ticket-assignment"],
 			]),

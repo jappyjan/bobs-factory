@@ -1,6 +1,0 @@
-1.0.0-beta
-Startup 1: guided setup without an agent; direct local API 200 without cookies; public Host API 401; foreign Origin/cross-site/forwarded local API 403
-Startup 1: runtime identity matches build.json on /version and /api/version
-Startup 2: guided setup without an agent; direct local API 200 without cookies; public Host API 401; foreign Origin/cross-site/forwarded local API 403
-Startup 2: runtime identity matches build.json on /version and /api/version
-Binary startup/assets/protected API/MCP/shutdown/restart smoke passed

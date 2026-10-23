@@ -9,7 +9,32 @@ import {
 	presentationOutputs,
 	presentationRoleRevisions,
 } from "./RunOutputRoles.js";
+import type { Workflow, WorkflowStep } from "./Workflow.js";
 import type { FactoryRun } from "./WorkflowRuntime.js";
+
+/** Accepted definitions the run can actually call, not the whole saved catalog. */
+function reachableDefinitions(run: FactoryRun): Workflow[] | undefined {
+	const definitions = run.workflowDefinitions;
+	if (!definitions) return undefined;
+	const reached = new Set<string>();
+	const visit = (steps: WorkflowStep[]) => {
+		for (const step of steps) {
+			const target =
+				step.type === "launch-runs"
+					? (step.launchRuns?.workflow ?? "factory")
+					: step.workflow;
+			if (target && !reached.has(target)) {
+				reached.add(target);
+				const child = definitions.find((w) => w.id === target);
+				if (child) visit(child.steps);
+			}
+			for (const group of step.groups ?? []) visit(group);
+			if (step.body) visit(step.body);
+		}
+	};
+	visit(run.workflow.steps);
+	return definitions.filter((w) => reached.has(w.id));
+}
 
 const focusFields = [
 	"id",
@@ -148,7 +173,7 @@ export function focusRun(
 				launchBatchProjection(batch),
 			]),
 		),
-		workflowDefinitions: run.workflowDefinitions?.map(workflowDisplay),
+		workflowDefinitions: reachableDefinitions(run)?.map(workflowDisplay),
 		error: run.error?.slice(0, 4000),
 		deliveryRecovery,
 		mergeReadiness: operationalReadiness(run),

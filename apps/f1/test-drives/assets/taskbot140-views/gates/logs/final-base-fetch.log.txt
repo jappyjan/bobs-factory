@@ -1,2 +1,0 @@
-From github.com:jappyjan/bobs-factory
- * branch              main       -> FETCH_HEAD

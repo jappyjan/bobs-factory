@@ -300,12 +300,15 @@ export function Composer({
 		),
 		[settingsOpen, setSettingsOpen] = useFormState(launchConfig, false),
 		[dragging, setDragging] = useFormState(inputContext, false);
-	const workflows = config.workflows.filter(
-			(w: any) =>
-				w.enabled !== false &&
-				!w.unavailable?.length &&
-				w.allowedTriggers.includes("manual"),
-		),
+	// Building blocks stay startable on their own, listed after full recipes.
+	const workflows = config.workflows
+			.filter(
+				(w: any) =>
+					w.enabled !== false &&
+					!w.unavailable?.length &&
+					w.allowedTriggers.includes("manual"),
+			)
+			.sort((a: any, b: any) => Number(!!a.internal) - Number(!!b.internal)),
 		workflow = workflows.find((w: any) => w.id === workflowId),
 		fields: any[] = workflow?.launchFields ?? [];
 	const main =
@@ -497,7 +500,9 @@ export function Composer({
 							options={workflows.map((item: any) => ({
 								value: item.id,
 								label: `${item.icon ?? "🧩"} ${item.name}`,
-								hint: item.description,
+								hint: item.internal
+									? `Building block${item.description ? ` · ${item.description}` : ""}`
+									: item.description,
 							}))}
 						>
 							{workflow ? (

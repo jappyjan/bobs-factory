@@ -1,2 +1,0 @@
-2026-10-22T11:04:55.576Z [WARN ] [LinearIssueTrackerService] Linear activity delivery retained (e93ad47d-7200-4c56-b5f2-1698423715e0); next attempt 2026-10-22T11:05:25.576Z
-{"result":"PASS","directory":"/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-taskbot140-native-delivery-round5-bLoScV","head":"b25ae470b858b0e059603566ec144178ce38fee6","scenarios":2,"paidCalls":0}

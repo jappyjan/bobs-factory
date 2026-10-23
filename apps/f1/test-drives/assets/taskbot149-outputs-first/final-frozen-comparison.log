@@ -1,9 +1,0 @@
-
- RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-149-outputs-first
-
-
- Test Files  1 passed (1)
-      Tests  1 passed | 4 skipped (5)
-   Start at  16:29:24
-   Duration  427ms (transform 133ms, setup 0ms, import 303ms, tests 46ms, environment 0ms)
-

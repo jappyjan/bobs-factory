@@ -1,7 +1,0 @@
-{
-  "file": "workflow-stall-recovery.mjs",
-  "sha256": "416f7b0a29ea8322ea82557301fe16eb0d09de2b279ef6af09684a0ca36eca01",
-  "assertionCalls": 64,
-  "allOtherBytesUnchanged": true,
-  "detail": "Only three explicit stop+save phase boundaries and actual repository scope on architecture direct admission added. All original assertions, numeric limits, check outcomes, provider mocks, and native-role sequences are unchanged."
-}

@@ -6,8 +6,8 @@ import { validateWorkflows } from "../src/factory/Workflow.js";
 import type { ExecutionContext } from "../src/factory/WorkflowRuntime.js";
 import {
 	definitions,
-	roles,
 	reviewKey,
+	roles,
 	setupReplay,
 } from "./fixtures/composed-impact.js";
 

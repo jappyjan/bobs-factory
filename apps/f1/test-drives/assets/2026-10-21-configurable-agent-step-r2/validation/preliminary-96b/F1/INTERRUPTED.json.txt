@@ -1,9 +1,0 @@
-{
-  "source": "96b7cb0306b4ec526e702e3becb935432d40087f",
-  "classification": "preliminary interrupted for unrelated view-only fix",
-  "reason": "Root requested stop for sparse historical chapter view normalization; no assertion failure in this drive",
-  "rpcStop": "{\"jsonrpc\":\"2.0\",\"result\":{\"success\":true,\"message\":\"Session stopped successfully\"},\"id\":1}",
-  "pid": 46588,
-  "signal": "SIGTERM",
-  "paidCalls": 0
-}

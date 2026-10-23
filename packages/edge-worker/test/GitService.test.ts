@@ -36,6 +36,7 @@ vi.mock("../src/factory/GitSettings.js", () => ({
 }));
 
 vi.mock("node:child_process", () => ({
+	execFile: vi.fn(),
 	execSync: vi.fn(),
 	spawn: vi.fn(),
 }));

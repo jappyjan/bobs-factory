@@ -1,3 +1,0 @@
-Initial check:11 evidence JSON formatting errors; formatted using existing Biome.
-Final check:
-Checked 20 files in 19ms. No fixes applied.

@@ -1,3 +1,0 @@
-2026-10-22T05:07:32.690Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
-2026-10-22T05:07:35.914Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher
-2026-10-22T05:07:37.686Z [WARN ] [EdgeWorker] ⚠️  No config path set, skipping config file watcher

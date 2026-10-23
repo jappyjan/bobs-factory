@@ -1,1 +1,0 @@
-/tmp/ticket136-binary-r2-7106f734/artifacts/bobs-factory-1.0.0-beta-darwin-arm64.tar.gz

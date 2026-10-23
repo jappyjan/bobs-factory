@@ -1,12 +1,13 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
 	historicalInventoryRead,
 	type ImpactAssessment,
 	type ImpactSnapshot,
 	validateImpact,
 } from "../src/factory/Impact.js";
+import * as readiness from "../src/factory/MergeReadiness.js";
 import { qaDigest } from "../src/factory/Qa.js";
 import { outputRevisionBinding } from "../src/factory/RevisionBinding.js";
 import { latestAggregate } from "../src/factory/SpecialistReview.js";
@@ -22,6 +23,17 @@ import {
 	specialists,
 } from "./fixtures/composed-impact.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
+
+// Provider polling is simulated; real 10-second waits make these drives load-sensitive.
+let polling: ReturnType<typeof vi.spyOn> | undefined;
+beforeEach(() => {
+	polling = vi
+		.spyOn(readiness, "waitForNextPoll")
+		.mockImplementation(
+			() => new Promise((resolve) => setTimeout(resolve, 20)),
+		);
+});
+afterEach(() => polling?.mockRestore());
 
 it("allows only the qualified assessor owner to read original inventory after a committed correction", async () => {
 	const fixture = setupReplay("provider-recovery", "js");

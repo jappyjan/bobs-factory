@@ -864,6 +864,12 @@ it("corrects mixed external feedback after merge without repeating repository im
 	};
 	f.run.outputs.guide = { summary: "Repository already merged" };
 	f.run.outputs.clarify = { deliveryMode: "mixed" };
+	// Delivery acceptance requires an executed clarification receipt.
+	f.run.history.push({
+		step: "clarify",
+		at: new Date().toISOString(),
+		output: f.run.outputs.clarify,
+	});
 	retainRepositoryReceipts(f.run);
 	f.run.humanDecisions!.push({
 		...f.run.humanDecisions![0]!,
@@ -1055,6 +1061,12 @@ it("routes rejected mixed review through a reviewed ticket contract before repos
 	await f.service.apply(f.run);
 	await f.service.verify(f.run);
 	f.run.outputs.clarify = { deliveryMode: "mixed" };
+	// Delivery acceptance requires an executed clarification receipt.
+	f.run.history.push({
+		step: "clarify",
+		at: new Date().toISOString(),
+		output: f.run.outputs.clarify,
+	});
 	f.run.outputs["draft-pr"] = {
 		url: "https://github.com/example/repo/pull/1",
 		headSha: "current-head",

@@ -10,9 +10,7 @@ it("drives nested parallel execution, capacity/shared QA/CI/human waits and reta
 	process.env.F1_AGENT_MODE = "mock";
 	process.env.F1_RESULT = join(directory, "result.json");
 	try {
-		await import(
-			"../../../apps/f1/test-drives/assets/taskbot148-diagnostics.mjs"
-		);
+		await import("./drives/taskbot148-diagnostics.mjs");
 		const result = JSON.parse(readFileSync(process.env.F1_RESULT, "utf8"));
 		expect(result).toMatchObject({
 			mode: "mock",

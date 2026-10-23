@@ -1,4 +1,0 @@
-
-> bobs-factory-edge-worker@0.2.73 typecheck /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
-> tsgo --noEmit && tsgo -p tsconfig.web.json
-

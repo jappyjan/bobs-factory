@@ -17,6 +17,7 @@ import {
 	configuredOutputKeys,
 	historyForCheck,
 	historyForTool,
+	producerKey,
 	stepForRun,
 	toolForStep,
 } from "./ToolBindings.js";
@@ -466,7 +467,9 @@ export async function resolveGuideSnapshot(
 	const prefix = retained.step.replace(/[^/]+$/, "");
 	const guideStep = stepForRun(run, retained.step)!;
 	const readiness = readStep(guideStep, "ci");
-	const readinessKey = readiness ? `${prefix}${readiness}` : undefined;
+	const readinessKey = readiness
+		? producerKey(run, prefix, readiness)
+		: undefined;
 	const readinessTool = toolForStep(run, readinessKey);
 	const handoffKeys = new Set(
 		historyForTool(run, "handoff")

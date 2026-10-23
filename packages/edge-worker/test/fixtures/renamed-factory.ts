@@ -5,14 +5,33 @@ export function renamedFactory(baseWorkflows: Workflow[]): {
 	definitions: Workflow[];
 	original: (key: string) => string;
 } {
+	// Rename the stock roots together with every recipe they call.
+	const closure = new Set(["factory", "takeover", "factory-pipeline"]);
+	const calls = (steps: WorkflowStep[]) => {
+		for (const step of steps) {
+			if (step.workflow && !closure.has(step.workflow)) {
+				closure.add(step.workflow);
+				calls(baseWorkflows.find((w) => w.id === step.workflow)!.steps);
+			}
+			for (const group of step.groups ?? []) calls(group);
+			if (step.body) calls(step.body);
+		}
+	};
+	for (const workflow of baseWorkflows)
+		if (closure.has(workflow.id)) calls(workflow.steps);
 	const definitions = structuredClone(baseWorkflows).filter((workflow) =>
-		["factory", "takeover", "factory-pipeline"].includes(workflow.id),
+		closure.has(workflow.id),
 	);
+	// Steps sharing a name with a declared input port keep it: reads of that name
+	// resolve to the port when called and to the step when started on its own.
+	const portNames = new Set(definitions.flatMap((w) => w.inputs ?? []));
 	const ids = new Map<string, string>();
 	const collect = (steps: WorkflowStep[]) => {
 		for (const step of steps) {
-			if (!ids.has(step.id)) ids.set(step.id, `node_${ids.size}`);
+			if (!ids.has(step.id))
+				ids.set(step.id, portNames.has(step.id) ? step.id : `node_${ids.size}`);
 			for (const group of step.groups ?? []) collect(group);
+			if (step.body) collect(step.body);
 		}
 	};
 	for (const workflow of definitions) collect(workflow.steps);
@@ -40,19 +59,29 @@ export function renamedFactory(baseWorkflows: Workflow[]): {
 							]),
 						)
 					: value;
+	const read = reference;
 	const rewrite = (steps: WorkflowStep[]) => {
 		for (const step of steps) {
 			step.id = ids.get(step.id)!;
-			if (step.next && step.next !== "end") step.next = ids.get(step.next)!;
-			for (const branch of step.branches)
-				if (branch.next !== "end") branch.next = ids.get(branch.next)!;
-			step.inputs = step.inputs?.map(reference);
+			// Recipe outcomes are port names, not step identities.
+			if (step.next) step.next = ids.get(step.next) ?? step.next;
+			for (const branch of step.branches) {
+				branch.next = ids.get(branch.next) ?? branch.next;
+				if (branch.entry) branch.entry = ids.get(branch.entry)!;
+			}
+			if (step.bindings)
+				for (const [name, source] of Object.entries(step.bindings))
+					step.bindings[name] = reference(source);
+			// Inputs naming a read binding keep the binding's semantic name.
+			step.inputs = step.inputs?.map((value) =>
+				step.reads && Object.hasOwn(step.reads, value) ? value : read(value),
+			);
 			if (step.workflow) step.workflow = `renamed-${step.workflow}`;
 			for (const [name, binding] of Object.entries(step.reads ?? {}))
 				step.reads![name] =
 					typeof binding === "string"
-						? reference(binding)
-						: { ...binding, from: reference(binding.from) };
+						? read(binding)
+						: { ...binding, from: read(binding.from) };
 			if (step.arguments)
 				step.arguments = argumentsValue(step.arguments) as Record<
 					string,
@@ -60,6 +89,7 @@ export function renamedFactory(baseWorkflows: Workflow[]): {
 				>;
 			if (step.args) step.args = argumentsValue(step.args) as string[];
 			for (const group of step.groups ?? []) rewrite(group);
+			if (step.body) rewrite(step.body);
 		}
 	};
 	for (const workflow of definitions) {

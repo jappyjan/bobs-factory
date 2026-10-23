@@ -371,7 +371,7 @@ export const WorkflowSchema = z
 	.object({
 		id,
 		convergence: ProgressPolicySchema.optional(),
-		context: RoleContextPolicySchema.optional(),
+		context: z.lazy(() => RoleContextPolicySchema).optional(),
 		stepConfigVersion: z.literal("step-config-v1").optional(),
 		/** Explicit input ports and terminal outcomes for reusable recipes. */
 		inputs: z.array(id).max(100).optional(),
@@ -390,7 +390,10 @@ export const WorkflowSchema = z
 				"Duplicate allowed triggers",
 			)
 			.optional(),
-		launchFields: z.array(LaunchFieldSchema).max(20).optional(),
+		launchFields: z
+			.array(z.lazy(() => LaunchFieldSchema))
+			.max(20)
+			.optional(),
 	})
 	.transform((workflow) => {
 		const result = {

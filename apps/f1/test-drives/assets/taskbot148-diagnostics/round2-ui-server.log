@@ -1,4 +1,0 @@
-(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
-  - `__dirname` (packages/edge-worker/vitest.config.ts:26:22). Use `import.meta.dirname` instead
-Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
-{"pid":81272,"url":"http://localhost:38948","runId":"46e68cd0-c0b5-415e-8ba6-47f60904d9ff"}

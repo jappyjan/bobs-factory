@@ -235,9 +235,3 @@ not promise exactly-once arbitrary external side effects across a crash between
 the effect and its durable receipt. Existing action-specific reconciliation and
 recovery safeguards still apply. Frozen accepted recipes and old runs retain
 their saved definitions; editing a recipe affects new launches.
-
-The controlled [F1 driver](../../apps/f1/test-drives/assets/taskbot138-foreach.mjs)
-uses actual EdgeWorker/CLI orchestration with deterministic mock SDK responses
-and disposable Git. Restart and native-continuation coverage is separately
-recorded with the production-runtime tests; the driver does not claim a restarted
-EdgeWorker process or live provider behavior.

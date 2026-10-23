@@ -1,9 +1,0 @@
-
- RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/codex-runner
-
-
- Test Files  7 passed (7)
-      Tests  95 passed (95)
-   Start at  09:21:31
-   Duration  2.51s (transform 158ms, setup 0ms, import 615ms, tests 1.34s, environment 0ms)
-

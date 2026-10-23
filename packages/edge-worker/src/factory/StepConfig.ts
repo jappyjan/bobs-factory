@@ -312,7 +312,7 @@ export type StepAccess = z.infer<typeof AccessSchema>;
 /** Zod fields shared by every step type; spread into the step schemas. */
 export const STEP_CONFIG_VERSION = "step-config-v1" as const;
 export const stepConfigFields = {
-	context: RoleContextPolicySchema.optional(),
+	context: z.lazy(() => RoleContextPolicySchema).optional(),
 	configVersion: z.literal(STEP_CONFIG_VERSION).optional(),
 	reads: ReadsSchema.optional(),
 	output: OutputSchema.optional(),
