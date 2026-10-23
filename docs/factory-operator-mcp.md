@@ -81,7 +81,7 @@ the correct operation. Run results identify the instance and run.
 | `list_runs` | Filter by status/repository; `offset` and `limit` (1–50) page summaries |
 | `inspect_run` | Failure, pending questions, execution/connection diagnosis, progress and action eligibility |
 | `read_run_activity` | Page sanitized workflow events; agent payloads are excluded |
-| `retry_run` | Retry a failed run through its existing checkpoint |
+| `retry_run` | Retry a failed run through its existing checkpoint; optional exact-counter `transcriptExtension` uses the accepted bounded diagnostic increment |
 | `resume_run` | Resume interrupted or explicitly stopped saved progress, or a disabled run after its workflow is enabled and execution has stopped |
 | `retry_ticket_sync` | Retry tracker synchronization only |
 | `stop_run` | Stop an active/waiting/interrupted run and retain work |
@@ -104,6 +104,17 @@ request remains an explanation; it does not count as an answer or approval.
 Parallel mutations are serialized per run, and stale requests reject without
 replaying work. Accepted action receipts distinguish accepted recovery from
 completed recovery; inspect again to observe progress.
+
+For an accepted scoped diagnostic whose transcript allowance is exhausted,
+`retry_run` may additionally receive `transcriptExtension` with `work`, a stated
+`reason`, and the refusal's `expectedPages`, `expectedUtf8Bytes` and
+`expectedGrants`. The existing `operate` scope, fresh run revision and retry
+eligibility still apply. Only the recipe's configured byte/page increment is
+recorded; purpose, source run/role/range and existing counters remain bound.
+A capture refusal can record zero delivered pages; that gap is not approval.
+There is no context-tool self-grant, policy rewrite, native permission expansion,
+progress reset or human/provider/final-delivery waiver. See
+[context access](factory/context-memory.md#diagnostic-exceptions-and-cumulative-bounds).
 
 The dashboard's **Check again** button and terminal's `c check again` action use
 the same bounded recheck operation. Restart alone keeps unanswered questions.

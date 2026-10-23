@@ -1,0 +1,30 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-149-outputs-first/packages/edge-worker
+
+ ❯ test/OutputsFirstContext.test.ts (6 tests | 1 failed) 340ms
+   × uses original role-tagged session entries, preserves scalar read provenance and refuses absent source/range 83ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > uses original role-tagged session entries, preserves scalar read provenance and refuses absent source/range
+AssertionError: expected [Function] to throw error including 'unavailable or lacks role provenance' but got 'Transcript accounting identity change…'
+
+Expected: "unavailable or lacks role provenance"
+Received: "Transcript accounting identity changed or is invalid; restore this work's original access receipt. Use a saved recipe copy and new run to adopt different context policy."
+
+ ❯ test/OutputsFirstContext.test.ts:283:43
+    281|    },
+    282|   };
+    283|   expect(() => roleTranscriptSource(ctx)).toThrow(
+       |                                           ^
+    284|    "unavailable or lacks role provenance",
+    285|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed | 3 skipped (6)
+      Tests  1 failed | 11 passed | 10 skipped (22)
+   Start at  16:20:42
+   Duration  5.52s (transform 1.23s, setup 75ms, import 4.04s, tests 869ms, environment 0ms)
+

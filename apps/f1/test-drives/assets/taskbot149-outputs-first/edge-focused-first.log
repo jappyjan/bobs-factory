@@ -1,0 +1,226 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-149-outputs-first/packages/edge-worker
+
+ ❯ test/OutputsFirstContext.test.ts (4 tests | 4 failed) 8ms
+   × keeps ordinary handoffs source-bound and reports missing records without loading native buffers or changing authority 5ms
+   × uses original role-tagged session entries, preserves scalar read provenance and refuses absent source/range 1ms
+   × retains private transcript provenance through detached aliases and reconstructed inline baselines without rewriting originals 1ms
+   × inherits a nested recipe's accepted context configuration independently of role naming 0ms
+ ❯ test/OutputsFirstContextF1.test.ts (2 tests | 2 failed) 60ms
+   × drives fresh/reconstructed renamed Call/Parallel/For each roles from explicit artifacts with zero predecessor transcript downloads 59ms
+   × uses the authenticated existing operator retry for a bounded exact-counter extension without approval or global transcript access 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > keeps ordinary handoffs source-bound and reports missing records without loading native buffers or changing authority
+ZodError: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      0,
+      "steps",
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]
+ ❯ validateWorkflows src/factory/Workflow.ts:512:59
+    510|
+    511| export function validateWorkflows(value: unknown): Workflow[] {
+    512|  const workflows = z.array(WorkflowSchema).min(1).max(50).parse(value);
+       |                                                           ^
+    513|  const ids = new Set<string>();
+    514|  for (const workflow of workflows) {
+ ❯ context test/OutputsFirstContext.test.ts:51:21
+ ❯ test/OutputsFirstContext.test.ts:110:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > uses original role-tagged session entries, preserves scalar read provenance and refuses absent source/range
+ZodError: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      0,
+      "steps",
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]
+ ❯ validateWorkflows src/factory/Workflow.ts:512:59
+    510|
+    511| export function validateWorkflows(value: unknown): Workflow[] {
+    512|  const workflows = z.array(WorkflowSchema).min(1).max(50).parse(value);
+       |                                                           ^
+    513|  const ids = new Set<string>();
+    514|  for (const workflow of workflows) {
+ ❯ context test/OutputsFirstContext.test.ts:51:21
+ ❯ test/OutputsFirstContext.test.ts:169:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > retains private transcript provenance through detached aliases and reconstructed inline baselines without rewriting originals
+ZodError: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      0,
+      "steps",
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]
+ ❯ validateWorkflows src/factory/Workflow.ts:512:59
+    510|
+    511| export function validateWorkflows(value: unknown): Workflow[] {
+    512|  const workflows = z.array(WorkflowSchema).min(1).max(50).parse(value);
+       |                                                           ^
+    513|  const ids = new Set<string>();
+    514|  for (const workflow of workflows) {
+ ❯ context test/OutputsFirstContext.test.ts:51:21
+ ❯ test/OutputsFirstContext.test.ts:269:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > inherits a nested recipe's accepted context configuration independently of role naming
+ZodError: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      0,
+      "steps",
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]
+ ❯ validateWorkflows src/factory/Workflow.ts:512:59
+    510|
+    511| export function validateWorkflows(value: unknown): Workflow[] {
+    512|  const workflows = z.array(WorkflowSchema).min(1).max(50).parse(value);
+       |                                                           ^
+    513|  const ids = new Set<string>();
+    514|  for (const workflow of workflows) {
+ ❯ context test/OutputsFirstContext.test.ts:51:21
+ ❯ test/OutputsFirstContext.test.ts:333:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/OutputsFirstContextF1.test.ts > drives fresh/reconstructed renamed Call/Parallel/For each roles from explicit artifacts with zero predecessor transcript downloads
+ZodError: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      0,
+      "steps",
+      0,
+      "groups",
+      0,
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      0,
+      "steps",
+      0,
+      "groups",
+      1,
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      1,
+      "steps",
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      1,
+      "steps",
+      1,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  },
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      1,
+      "steps",
+      2,
+      "body",
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]
+ ❯ validateWorkflows src/factory/Workflow.ts:512:59
+    510|
+    511| export function validateWorkflows(value: unknown): Workflow[] {
+    512|  const workflows = z.array(WorkflowSchema).min(1).max(50).parse(value);
+       |                                                           ^
+    513|  const ids = new Set<string>();
+    514|  for (const workflow of workflows) {
+ ❯ test/OutputsFirstContextF1.test.ts:95:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/OutputsFirstContextF1.test.ts > uses the authenticated existing operator retry for a bounded exact-counter extension without approval or global transcript access
+ZodError: [
+  {
+    "expected": "string",
+    "code": "invalid_type",
+    "path": [
+      0,
+      "steps",
+      0,
+      "prompt"
+    ],
+    "message": "Invalid input: expected string, received undefined"
+  }
+]
+ ❯ validateWorkflows src/factory/Workflow.ts:512:59
+    510|
+    511| export function validateWorkflows(value: unknown): Workflow[] {
+    512|  const workflows = z.array(WorkflowSchema).min(1).max(50).parse(value);
+       |                                                           ^
+    513|  const ids = new Set<string>();
+    514|  for (const workflow of workflows) {
+ ❯ test/OutputsFirstContextF1.test.ts:403:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  6 failed | 3 passed (9)
+   Start at  15:54:06
+   Duration  2.13s (transform 551ms, setup 23ms, import 1.71s, tests 118ms, environment 0ms)
+

@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-149-outputs-first/packages/edge-worker
+
+
+ Test Files  1 passed | 5 skipped (6)
+      Tests  1 passed | 21 skipped (22)
+   Start at  16:31:35
+   Duration  18.99s (transform 1.12s, setup 38ms, import 3.81s, tests 14.68s, environment 0ms)
+

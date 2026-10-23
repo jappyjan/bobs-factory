@@ -13,9 +13,17 @@ import {
 import { dirname, isAbsolute, join } from "node:path";
 import { setImmediate } from "node:timers/promises";
 import { isImmutableJson, snapshotEntryIdentity } from "bobs-factory-core";
+import {
+	type TranscriptScope,
+	transcriptFieldSources,
+	transcriptProvenanceEpoch,
+	transcriptSource,
+} from "./factoryContextAccess.js";
 import type { ContextMemoryAccess } from "./factoryContextMemory.js";
 
 type Node = {
+	transcript?: TranscriptScope;
+	containsTranscript?: true;
 	kind: "null" | "boolean" | "number" | "string" | "array" | "object";
 	characters: number;
 	value?: null | boolean | number | string;
@@ -33,6 +41,7 @@ const hash = (value: string) =>
 	createHash("sha256").update(value).digest("hex");
 const hashPattern = /^[a-f0-9]{64}$/;
 const format = "factory-context-snapshot-v1";
+const transcriptFormat = "factory-context-snapshot-v2";
 const chunkCharacters = 16 * 1024;
 // Only core-published immutable JSON may skip capture across role handoffs.
 // Directory-scoped weak keys neither retain receipts nor trust shallow freezes.
@@ -125,6 +134,19 @@ function* jsonParts(
 	}
 }
 
+/** Preflight a transcript handoff without serializing or cloning its complete graph. */
+export function boundedFactoryContextBytes(
+	value: unknown,
+	limit: number,
+): number | undefined {
+	let bytes = 0;
+	for (const part of jsonParts(value)) {
+		bytes += Buffer.byteLength(part, "utf8");
+		if (bytes > limit) return undefined;
+	}
+	return bytes;
+}
+
 function privateDirectory(path: string) {
 	const stat = lstatSync(path);
 	if (
@@ -177,7 +199,7 @@ export class FactoryContextSnapshot {
 		return this.id(this.root);
 	}
 	private immutableCache(project: boolean) {
-		const key = `${this.directory}:${project ? "projected" : "original"}`;
+		const key = `${this.directory}:${project ? "projected" : "original"}:${transcriptProvenanceEpoch()}`;
 		let cache = immutableInputs.get(key);
 		if (!cache) {
 			cache = new WeakMap();
@@ -188,7 +210,7 @@ export class FactoryContextSnapshot {
 		return cache;
 	}
 	private entryCache(project: boolean) {
-		const key = `${this.directory}:${project ? "projected" : "original"}`;
+		const key = `${this.directory}:${project ? "projected" : "original"}:${transcriptProvenanceEpoch()}`;
 		let cache = immutableEntries.get(key);
 		if (!cache) {
 			cache = new Map();
@@ -274,7 +296,19 @@ export class FactoryContextSnapshot {
 		project: boolean,
 		key = "",
 		converted = false,
+		inheritedTranscript?: TranscriptScope,
 	): Generator<void, Reference | undefined> {
+		const transcript =
+			value && typeof value === "object"
+				? (transcriptSource(value) ?? inheritedTranscript)
+				: inheritedTranscript;
+		const put = (node: Node) =>
+			this.put({
+				...node,
+				...(transcript
+					? { transcript, containsTranscript: true as const }
+					: {}),
+			});
 		if (value && typeof value === "object") {
 			const binding = references.get(value);
 			if (binding) {
@@ -283,12 +317,18 @@ export class FactoryContextSnapshot {
 				return value;
 			}
 			if (!converted && "toJSON" in value && typeof value.toJSON === "function")
-				return yield* this.capture(value.toJSON(key), project, key, true);
+				return yield* this.capture(
+					value.toJSON(key),
+					project,
+					key,
+					true,
+					transcript,
+				);
 			if (this.ancestors.has(value))
 				throw new TypeError("Cannot serialize circular context");
-			const previous = this.seen.get(value);
+			const previous = !transcript && this.seen.get(value);
 			if (previous) return previous;
-			if (isImmutableJson(value)) {
+			if (!transcript && isImmutableJson(value)) {
 				const cached = this.immutableCache(project).get(value);
 				if (cached) return this.reference(cached);
 			}
@@ -309,7 +349,7 @@ export class FactoryContextSnapshot {
 			const scalar =
 				typeof value === "number" && !Number.isFinite(value) ? null : value;
 			yield;
-			return this.put({
+			return put({
 				kind:
 					scalar === null ? "null" : (typeof scalar as "boolean" | "number"),
 				value: scalar,
@@ -319,7 +359,7 @@ export class FactoryContextSnapshot {
 		if (typeof value === "string") {
 			if (value.length <= chunkCharacters) {
 				yield;
-				return this.put({
+				return put({
 					kind: "string",
 					value,
 					length: value.length,
@@ -338,7 +378,7 @@ export class FactoryContextSnapshot {
 				characters += body.length - 2;
 				yield;
 			}
-			return this.put({
+			return put({
 				kind: "string",
 				length: value.length,
 				characters,
@@ -352,12 +392,15 @@ export class FactoryContextSnapshot {
 				entries: [string, string][] = [],
 				positions = new Map<string, number>();
 			let characters = 2;
+			let containsTranscript = false;
 			for (const original of array
 				? Array.from({ length: object.length }, (_, index) => String(index))
 				: Object.keys(object)) {
 				const stableIdentity = snapshotEntryIdentity(object, original);
 				const cached =
-					stableIdentity && this.entryCache(project).get(stableIdentity);
+					!transcript &&
+					stableIdentity &&
+					this.entryCache(project).get(stableIdentity);
 				let key = original,
 					child = cached ? this.reference(cached) : object[original];
 				if (project && child && typeof child === "object") {
@@ -390,12 +433,18 @@ export class FactoryContextSnapshot {
 					}
 				}
 				const reference =
-					(yield* this.capture(child, project, key)) ??
-					(array ? yield* this.capture(null, project) : undefined);
+					(yield* this.capture(
+						child,
+						project,
+						key,
+						false,
+						transcriptFieldSources(object)?.get(original) ?? transcript,
+					)) ?? (array ? yield* this.capture(null, project) : undefined);
 				if (!reference) continue;
+				containsTranscript ||= !!this.node(reference).containsTranscript;
 				const identity =
 					stableIdentity ?? snapshotEntryIdentity(object, original);
-				if (identity) {
+				if (identity && !transcript) {
 					const cache = this.entryCache(project);
 					cache.set(identity, this.id(reference));
 					if (cache.size > 8192) cache.delete(cache.keys().next().value!);
@@ -416,13 +465,14 @@ export class FactoryContextSnapshot {
 				}
 				yield;
 			}
-			const reference = this.put({
+			const reference = put({
 				kind: array ? "array" : "object",
 				entries,
 				characters,
+				...(containsTranscript ? { containsTranscript: true as const } : {}),
 			});
-			this.seen.set(object, reference);
-			if (isImmutableJson(object))
+			if (!transcript) this.seen.set(object, reference);
+			if (!transcript && isImmutableJson(object))
 				this.immutableCache(project).set(object, this.id(reference));
 			return reference;
 		} finally {
@@ -442,7 +492,9 @@ export class FactoryContextSnapshot {
 		writeFileSync(
 			temporary,
 			JSON.stringify({
-				format,
+				format: this.node(this.root).containsTranscript
+					? transcriptFormat
+					: format,
 				root: this.identity,
 				...(this.directory !== dirname(this.path)
 					? { directory: this.directory }
@@ -472,7 +524,7 @@ export class FactoryContextSnapshot {
 		privateDirectory(dirname(path));
 		const manifest = JSON.parse(privateFile(path));
 		if (
-			manifest.format !== format ||
+			(manifest.format !== format && manifest.format !== transcriptFormat) ||
 			!hashPattern.test(manifest.root) ||
 			(manifest.directory !== undefined &&
 				(typeof manifest.directory !== "string" ||
@@ -600,6 +652,47 @@ export class FactoryContextSnapshot {
 			yield array ? "]" : "}";
 		} else yield JSON.stringify(node.value);
 	}
+	/** Count a bounded page without joining or returning its transcript payload. */
+	pageUtf8Bytes(reference: Reference, offset: number, limit: number): number {
+		let skip = offset,
+			remaining = limit,
+			bytes = 0;
+		const visit = (reference: Reference, raw = false) => {
+			for (const part of this.parts(reference, raw)) {
+				if (!remaining) break;
+				const length =
+					typeof part === "string"
+						? part.length
+						: "chunk" in part
+							? (part as StringChunk).length
+							: this.node(part).characters;
+				if (skip >= length) {
+					skip -= length;
+					continue;
+				}
+				if (typeof part !== "string" && !("chunk" in part)) visit(part);
+				else {
+					const body =
+						typeof part === "string"
+							? part
+							: (() => {
+									const chunk = part as StringChunk;
+									const encoded = this.chunk(chunk.chunk);
+									return chunk.raw
+										? (JSON.parse(encoded) as string)
+										: encoded.slice(1, -1);
+								})();
+					const page = body.slice(skip, skip + remaining);
+					bytes += Buffer.byteLength(page, "utf8");
+					remaining -= page.length;
+					skip = 0;
+				}
+			}
+		};
+		visit(reference, this.node(reference).kind === "string");
+		return bytes;
+	}
+
 	read(reference: Reference, offset: number, limit: number) {
 		const node = this.node(reference),
 			raw = node.kind === "string";

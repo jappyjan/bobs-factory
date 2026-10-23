@@ -1,0 +1,106 @@
+
+ RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-149-outputs-first/packages/edge-worker
+
+ ❯ test/OutputsFirstContextF1.test.ts (2 tests | 2 failed) 78ms
+   × drives fresh/reconstructed renamed Call/Parallel/For each roles from explicit artifacts with zero predecessor transcript downloads 76ms
+   × uses the authenticated existing operator retry for a bounded exact-counter extension without approval or global transcript access 1ms
+ ❯ test/OutputsFirstContext.test.ts (4 tests | 4 failed) 6ms
+   × keeps ordinary handoffs source-bound and reports missing records without loading native buffers or changing authority 3ms
+   × uses original role-tagged session entries, preserves scalar read provenance and refuses absent source/range 1ms
+   × retains private transcript provenance through detached aliases and reconstructed inline baselines without rewriting originals 0ms
+   × inherits a nested recipe's accepted context configuration independently of role naming 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > keeps ordinary handoffs source-bound and reports missing records without loading native buffers or changing authority
+Error: renamed: read "required" names unknown step missing
+ ❯ check src/factory/Workflow.ts:584:36
+    582|    for (const step of steps) {
+    583|     const configIssues = stepConfigIssues(step, steps, inherited);
+    584|     if (configIssues.length) throw new Error(configIssues.join("; "));
+       |                                    ^
+    585|     if (step.computeIntensive && passiveTools.includes(step.tool ?? ""…
+    586|      throw new Error(
+ ❯ validateWorkflows src/factory/Workflow.ts:701:3
+ ❯ context test/OutputsFirstContext.test.ts:51:21
+ ❯ test/OutputsFirstContext.test.ts:112:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > uses original role-tagged session entries, preserves scalar read provenance and refuses absent source/range
+Error: renamed: read "required" names unknown step missing
+ ❯ check src/factory/Workflow.ts:584:36
+    582|    for (const step of steps) {
+    583|     const configIssues = stepConfigIssues(step, steps, inherited);
+    584|     if (configIssues.length) throw new Error(configIssues.join("; "));
+       |                                    ^
+    585|     if (step.computeIntensive && passiveTools.includes(step.tool ?? ""…
+    586|      throw new Error(
+ ❯ validateWorkflows src/factory/Workflow.ts:701:3
+ ❯ context test/OutputsFirstContext.test.ts:51:21
+ ❯ test/OutputsFirstContext.test.ts:171:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > retains private transcript provenance through detached aliases and reconstructed inline baselines without rewriting originals
+Error: renamed: read "required" names unknown step missing
+ ❯ check src/factory/Workflow.ts:584:36
+    582|    for (const step of steps) {
+    583|     const configIssues = stepConfigIssues(step, steps, inherited);
+    584|     if (configIssues.length) throw new Error(configIssues.join("; "));
+       |                                    ^
+    585|     if (step.computeIntensive && passiveTools.includes(step.tool ?? ""…
+    586|      throw new Error(
+ ❯ validateWorkflows src/factory/Workflow.ts:701:3
+ ❯ context test/OutputsFirstContext.test.ts:51:21
+ ❯ test/OutputsFirstContext.test.ts:271:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  test/OutputsFirstContext.test.ts > inherits a nested recipe's accepted context configuration independently of role naming
+Error: renamed: read "required" names unknown step missing
+ ❯ check src/factory/Workflow.ts:584:36
+    582|    for (const step of steps) {
+    583|     const configIssues = stepConfigIssues(step, steps, inherited);
+    584|     if (configIssues.length) throw new Error(configIssues.join("; "));
+       |                                    ^
+    585|     if (step.computeIntensive && passiveTools.includes(step.tool ?? ""…
+    586|      throw new Error(
+ ❯ validateWorkflows src/factory/Workflow.ts:701:3
+ ❯ context test/OutputsFirstContext.test.ts:51:21
+ ❯ test/OutputsFirstContext.test.ts:340:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  test/OutputsFirstContextF1.test.ts > drives fresh/reconstructed renamed Call/Parallel/For each roles from explicit artifacts with zero predecessor transcript downloads
+Error: Keep the simple, factory and takeover defaults
+ ❯ validateWorkflows src/factory/Workflow.ts:708:9
+    706|  }
+    707|  if (!ids.has("simple") || !ids.has("factory") || !ids.has("takeover"))
+    708|   throw new Error("Keep the simple, factory and takeover defaults");
+       |         ^
+    709|  const byId = new Map(workflows.map((workflow) => [workflow.id, workfl…
+    710|  const checkCalls = (
+ ❯ test/OutputsFirstContextF1.test.ts:95:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  test/OutputsFirstContextF1.test.ts > uses the authenticated existing operator retry for a bounded exact-counter extension without approval or global transcript access
+Error: Keep the simple, factory and takeover defaults
+ ❯ validateWorkflows src/factory/Workflow.ts:708:9
+    706|  }
+    707|  if (!ids.has("simple") || !ids.has("factory") || !ids.has("takeover"))
+    708|   throw new Error("Keep the simple, factory and takeover defaults");
+       |         ^
+    709|  const byId = new Map(workflows.map((workflow) => [workflow.id, workfl…
+    710|  const checkCalls = (
+ ❯ test/OutputsFirstContextF1.test.ts:413:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  2 failed | 1 passed (3)
+      Tests  6 failed | 3 passed (9)
+   Start at  15:55:31
+   Duration  2.19s (transform 530ms, setup 31ms, import 1.72s, tests 151ms, environment 0ms)
+

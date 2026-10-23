@@ -5,6 +5,7 @@ import {
 	ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
+import { TranscriptExtensionSchema } from "./factoryContextAccess.js";
 
 export const operatorScopes = ["inspect", "operate", "configure"] as const;
 const id = z.string().min(1).max(200);
@@ -75,8 +76,13 @@ export const operatorTools = [
 		name: "retry_run",
 		scope: "operate",
 		description:
-			"Retry a failed run using saved progress. Does not approve review or merge. Requires a fresh inspection revision.",
-		schema: z.object(mutation).strict(),
+			"Retry a failed run using saved progress. Optional transcriptExtension records one accepted bounded diagnostic allowance for the exact blocked work/counters; it cannot widen role/range. Does not approve review or merge. Requires a fresh inspection revision.",
+		schema: z
+			.object({
+				...mutation,
+				transcriptExtension: TranscriptExtensionSchema.optional(),
+			})
+			.strict(),
 	},
 	{
 		name: "resume_run",

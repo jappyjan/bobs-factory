@@ -16,12 +16,35 @@ export {
 	prepareFactoryContext,
 	prepareFactoryContextAsync,
 } from "./factoryContext.js";
+export {
+	extendTranscriptAccess,
+	type FactoryContextAccess,
+	outputsFirstContext,
+	type RoleContextPolicy,
+	RoleContextPolicySchema,
+	refuseTranscriptMaterialization,
+	retainTranscriptSource,
+	runtimeTranscript,
+	runtimeTranscriptField,
+	type TranscriptExtension,
+	TranscriptExtensionSchema,
+	type TranscriptScope,
+	transcriptAccessPath,
+	transcriptFieldSources,
+	transcriptMaterializationAllowance,
+	transcriptPointerValue,
+	transcriptProvenanceEpoch,
+	transcriptSource,
+} from "./factoryContextAccess.js";
 export { factoryContextView } from "./factoryContextMemory.js";
 export {
 	FactoryContextInfrastructureError,
 	verifyFactoryContext,
 } from "./factoryContextReadiness.js";
-export { loadFactoryContextSnapshot } from "./factoryContextSnapshot.js";
+export {
+	boundedFactoryContextBytes,
+	loadFactoryContextSnapshot,
+} from "./factoryContextSnapshot.js";
 export {
 	createFactoryOperatorBridge,
 	operatorCatalog,

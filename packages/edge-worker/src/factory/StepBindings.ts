@@ -1,8 +1,15 @@
-import { factoryContextView } from "bobs-factory-mcp-tools";
+import {
+	factoryContextView,
+	runtimeTranscriptField,
+	transcriptFieldSources,
+	transcriptPointerValue,
+	transcriptSource,
+} from "bobs-factory-mcp-tools";
 import { repositoryMetadata } from "./RepositoryScope.js";
+import { roleTranscriptSource } from "./RoleContext.js";
 import { evaluateCondition, RULE_EVALUATION_LIMITS } from "./Rules.js";
 import { takeoverSource, ticketSnapshot } from "./RunContextSources.js";
-import { pointerValue, resolveStepConfig } from "./StepConfig.js";
+import { resolveStepConfig } from "./StepConfig.js";
 import { stepContextSources } from "./StepContextSources.js";
 import { stepForRun } from "./ToolBindings.js";
 import { childRunsView } from "./ViewRuntime.js";
@@ -80,6 +87,9 @@ export function stepBindings(
 							: "No step model is configured for this provider; its accepted provider default is used.",
 					],
 		},
+		get transcripts() {
+			return roleTranscriptSource(context);
+		},
 		callInputs: context.callInputs ?? {},
 		delivery: run.delivery,
 		get childRuns() {
@@ -147,11 +157,32 @@ export function stepBindings(
 			!evaluateCondition(binding.when, conditions, conditions, 0, budget)
 		)
 			continue;
-		const value = binding.from.startsWith("@")
-			? pointerValue(sources, binding.from.slice(1))
-			: pointerValue(outputs, binding.from);
+		const { value, scope } = binding.from.startsWith("@")
+			? transcriptPointerValue(sources, binding.from.slice(1))
+			: transcriptPointerValue(outputs, binding.from);
+		if (scope) runtimeTranscriptField(result, name, scope);
 		result[name] =
 			value === undefined ? undefined : detachedWorkflowRead(value);
+	}
+	return result;
+}
+
+/** Native binding/requirement aliases retain the same private scalar provenance. */
+export function mappedStepBindings(
+	bindings: Record<string, unknown>,
+	mapping: object,
+): Record<string, unknown> {
+	const result: Record<string, unknown> = {};
+	for (const [label, name] of Object.entries(mapping)) {
+		const key = String(name),
+			value = bindings[key];
+		result[label] = value;
+		const scope =
+			transcriptFieldSources(bindings)?.get(key) ??
+			(value && typeof value === "object"
+				? transcriptSource(value)
+				: undefined);
+		if (scope) runtimeTranscriptField(result, label, scope);
 	}
 	return result;
 }
