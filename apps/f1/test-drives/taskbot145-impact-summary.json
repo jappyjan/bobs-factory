@@ -1,0 +1,1094 @@
+{
+  "base": {
+    "head": "c30d563525f0d9726858f1b6ada83aebb54d687b",
+    "tree": "028303ac008cb57d674829903a75ca2664a23b43"
+  },
+  "measurementBoundary": "Human gate before fixture approval. Rows lacking sharedBoundary are failed partial prefixes; completedVisitReceipts counts durable history entries, not provider polls or all started attempts.",
+  "matrixSourceFiles": {
+    "packages/edge-worker/src/factory/Impact.ts": "331d12de4252c982b1aaa3455d01ac1829bf20667f56d53c31fa01ef09a3a5ba",
+    "packages/edge-worker/src/factory/Incremental.ts": "55d0719a0351d96b0d7d28e5649a311a4330b0267ed96120a263966f11556049",
+    "packages/edge-worker/src/factory/StepConfig.ts": "b53b7b8010a8be3980f963b403c96f11cc1aefeca262a2a8cb4ac8a98253779a",
+    "packages/edge-worker/src/factory/Workflow.ts": "ce1b50b115a97366d71d6cb778ff1076b65a344d8c8491a9e3e85c97e2959e92",
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts": "878300432c97f6200b91bfc0bc11bbff2c4311443676fbb0d7332f46389c61b9",
+    "packages/edge-worker/src/factory/factoryRecipes.ts": "a31bc6d68374797a1492693cac20c7115085a304006d23732e9a82e3a74b51c3",
+    "packages/edge-worker/src/factory/stockFactorySteps.ts": "f6efe85b29cfd84018161246ca2e96a4e4b45e2489ab9be7e068b0b14883f6c0",
+    "packages/edge-worker/test/ComposedImpactBindings.test.ts": "6b28a9f9ad81e259cbef7a5163fdf0caccf519de429e407afd3b52bd85c410cf",
+    "packages/edge-worker/test/ComposedImpactReplay.test.ts": "f590ef024c22aec5662b1122236efab1baf6355013d8d35b028763f19d18a634",
+    "packages/edge-worker/test/Incremental.test.ts": "7008e48281c95c210a139a6e600459490d5507f4959c758eddedbdf7ac4ed6c0",
+    "packages/edge-worker/test/fixtures/composed-impact.ts": "7a1987d6ebd9820986d3c89388a9594a379da0ab0e761b22e27f92a5456285e6",
+    "packages/edge-worker/test/fixtures/stock-role-prompts.json": "efa73d56e657894953f2959cd5b2590e3027f7be00e5642d596acb1a4950782b",
+    "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "26961f45f22842af0ac7515de28ead7095584e79d8575fc2d085fc4ecd8d5288"
+  },
+  "finalSourceFiles": {
+    "packages/edge-worker/src/factory/Impact.ts": "331d12de4252c982b1aaa3455d01ac1829bf20667f56d53c31fa01ef09a3a5ba",
+    "packages/edge-worker/src/factory/Incremental.ts": "55d0719a0351d96b0d7d28e5649a311a4330b0267ed96120a263966f11556049",
+    "packages/edge-worker/src/factory/StepConfig.ts": "b53b7b8010a8be3980f963b403c96f11cc1aefeca262a2a8cb4ac8a98253779a",
+    "packages/edge-worker/src/factory/Workflow.ts": "ce1b50b115a97366d71d6cb778ff1076b65a344d8c8491a9e3e85c97e2959e92",
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts": "a13719e72e56fa18c20c992e4a6fc8e392c6bf0af3a6ed5b0e037d54c5dd5e11",
+    "packages/edge-worker/src/factory/factoryRecipes.ts": "a31bc6d68374797a1492693cac20c7115085a304006d23732e9a82e3a74b51c3",
+    "packages/edge-worker/src/factory/stockFactorySteps.ts": "f6efe85b29cfd84018161246ca2e96a4e4b45e2489ab9be7e068b0b14883f6c0",
+    "packages/edge-worker/test/ComposedImpactBindings.test.ts": "2e478f7204085c729a1e507bb6b6f02951cbea568941c8a4cc2609761797b296",
+    "packages/edge-worker/test/ComposedImpactReplay.test.ts": "f590ef024c22aec5662b1122236efab1baf6355013d8d35b028763f19d18a634",
+    "packages/edge-worker/test/Incremental.test.ts": "7008e48281c95c210a139a6e600459490d5507f4959c758eddedbdf7ac4ed6c0",
+    "packages/edge-worker/test/fixtures/composed-impact.ts": "3becd567d3c32d19809c5a461b1401ee57d39dda44facfe6092ad55be51de109",
+    "packages/edge-worker/test/fixtures/stock-role-prompts.json": "efa73d56e657894953f2959cd5b2590e3027f7be00e5642d596acb1a4950782b",
+    "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "26961f45f22842af0ac7515de28ead7095584e79d8575fc2d085fc4ecd8d5288"
+  },
+  "finalSourceFingerprint": "8dee58fab55d18c30b60e303e93de7bb115c4e0069b51368855a71bb5d6514f5",
+  "matrixToFinalChanges": [
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts",
+    "packages/edge-worker/test/ComposedImpactBindings.test.ts",
+    "packages/edge-worker/test/fixtures/composed-impact.ts"
+  ],
+  "cases": {
+    "provider-recovery": {
+      "base": {
+        "extractions": 2,
+        "assessments": 2,
+        "specialists": 6,
+        "checks": 1,
+        "qaRounds": 1,
+        "completedVisitReceipts": 35,
+        "retrievalCalls": 30,
+        "retrievalBytes": 97406,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 2,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 1,
+          "accepted-behavior": 1,
+          "behavior-plan": 1,
+          "behavior-execution": 1,
+          "evidence-reader": 1,
+          "apply-request": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "waiting",
+        "error": null
+      },
+      "candidate": {
+        "extractions": 1,
+        "assessments": 2,
+        "specialists": 6,
+        "checks": 1,
+        "qaRounds": 1,
+        "completedVisitReceipts": 34,
+        "retrievalCalls": 28,
+        "retrievalBytes": 95942,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 1,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 1,
+          "accepted-behavior": 1,
+          "behavior-plan": 1,
+          "behavior-execution": 1,
+          "evidence-reader": 1,
+          "apply-request": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "completed",
+        "error": null
+      },
+      "candidateDecisionLink": {
+        "version": "composed-v1",
+        "head": "7eb20744b236374d292a3426cf542306467dc656",
+        "inventory": "f072982ddc7c8870946ab4aed5c2d4a64a082b330df9b05eb179d5ab299dfe57",
+        "snapshot": "4c3f9c04fb3a0702773b278551285ec86e73166b9090bd8a8d266298b50da1b3",
+        "pending": {
+          "specialists": [],
+          "checks": [],
+          "qaCriteria": []
+        },
+        "reused": [
+          [
+            "trust-boundary",
+            "bee259241a8c674d0e3f7c91a62677114b26335e82ab462ff2b95f4af440df0f",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ],
+          [
+            "dependency-boundary",
+            "af7d37093d44184df647aa2bade3f05b7ff258a688b796654dbd887c7f5cf250",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ],
+          [
+            "lifecycle-boundary",
+            "f67cacd90abcefaceddd0cde1c67820314aab31d64ac1ccf541c5f27839d2351",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ],
+          [
+            "combined-tree",
+            "d60f2a6c241caecddfc553e8bc0e0e7f88c970d0d6074798fad69224b98a12f9",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ],
+          [
+            "failure-paths",
+            "e78108ad8f9caa1a3df1952c7c5fb44eae5239bb269d2e4958a032d05c96b8a7",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ],
+          [
+            "accepted-behavior",
+            "439d365998e74fc68583c51f13bbddc29924c3d7da2762e1dbbbf80d2728c1f4",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ]
+        ],
+        "repeated": []
+      }
+    },
+    "metadata-answer": {
+      "base": {
+        "extractions": 4,
+        "assessments": 3,
+        "specialists": 7,
+        "checks": 1,
+        "qaRounds": 1,
+        "completedVisitReceipts": 41,
+        "retrievalCalls": 38,
+        "retrievalBytes": 168046,
+        "roleCounts": {
+          "delta-reader": 3,
+          "accepted-scope": 4,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 1,
+          "accepted-behavior": 2,
+          "behavior-plan": 1,
+          "behavior-execution": 1,
+          "evidence-reader": 1,
+          "apply-request": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "waiting",
+        "error": null
+      },
+      "candidate": {
+        "extractions": 1,
+        "assessments": 3,
+        "specialists": 7,
+        "checks": 1,
+        "qaRounds": 1,
+        "completedVisitReceipts": 38,
+        "retrievalCalls": 32,
+        "retrievalBytes": 143954,
+        "roleCounts": {
+          "delta-reader": 3,
+          "accepted-scope": 1,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 1,
+          "accepted-behavior": 2,
+          "behavior-plan": 1,
+          "behavior-execution": 1,
+          "evidence-reader": 1,
+          "apply-request": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "completed",
+        "error": null
+      },
+      "candidateDecisionLink": {
+        "version": "composed-v1",
+        "head": "c20fc3901ebef52f085f7ed35ab7d51a7e421162",
+        "inventory": "f072982ddc7c8870946ab4aed5c2d4a64a082b330df9b05eb179d5ab299dfe57",
+        "snapshot": "57cf40b4127d57fe27c0d63c28cc4d30012291819710387a006caa07d8cd7da9",
+        "pending": {
+          "specialists": [],
+          "checks": [],
+          "qaCriteria": []
+        },
+        "reused": [
+          [
+            "trust-boundary",
+            "d5b652b74911812223b01be7a6789b3294ef29bc480f510ed7078ea056e8b8ec",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "dependency-boundary",
+            "c390ac00656dd55bdfcd0566ae09be37c3581e3898e38dfde17fa2be58b2a620",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "lifecycle-boundary",
+            "236cdad9cec333a4feca635e4293dbdba7206c569a4f73238497b4f670d96b35",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "combined-tree",
+            "e285be13c73636c16f522d82ac7b6056c91e4c90e7aba52862d51924daefabdc",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "failure-paths",
+            "1dfd6f3d9b0aca6cc9485fa68f1b8f72a0b16c0788362a443dd27c3aa7103b5a",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "accepted-behavior",
+            "c476b47e05fb18348c1c6e26cc80e044dfd7699f5d4ab87dc66e38bd22362446",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ]
+        ],
+        "repeated": []
+      }
+    },
+    "small-correction": {
+      "base": {
+        "extractions": 3,
+        "assessments": 2,
+        "specialists": 8,
+        "checks": 2,
+        "qaRounds": 2,
+        "completedVisitReceipts": 42,
+        "retrievalCalls": 42,
+        "retrievalBytes": 168662,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 3,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 2,
+          "accepted-behavior": 2,
+          "behavior-plan": 2,
+          "behavior-execution": 2,
+          "evidence-reader": 2,
+          "apply-request": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "waiting",
+        "error": null
+      },
+      "candidate": {
+        "extractions": 1,
+        "assessments": 2,
+        "specialists": 8,
+        "checks": 2,
+        "qaRounds": 2,
+        "completedVisitReceipts": 40,
+        "retrievalCalls": 38,
+        "retrievalBytes": 156646,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 1,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 2,
+          "accepted-behavior": 2,
+          "behavior-plan": 2,
+          "behavior-execution": 2,
+          "evidence-reader": 2,
+          "apply-request": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "completed",
+        "error": null
+      },
+      "candidateDecisionLink": {
+        "version": "composed-v1",
+        "head": "3beb481282ce16acb2d7d885fc3f276f75634d49",
+        "inventory": "f072982ddc7c8870946ab4aed5c2d4a64a082b330df9b05eb179d5ab299dfe57",
+        "snapshot": "da04e8475172303db56244e325177b1f454cb41ab5b4f740c62e3d180d6d71eb",
+        "pending": {
+          "specialists": [],
+          "checks": [],
+          "qaCriteria": []
+        },
+        "reused": [
+          [
+            "trust-boundary",
+            "9e75c7f2a3eb1578c2671e94988b9c38dc392265daa8afb46677448fa82a9842",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ],
+          [
+            "dependency-boundary",
+            "139cf622e77cda58be404107f72d00831679dd384111dd54f934d721c309b852",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ],
+          [
+            "lifecycle-boundary",
+            "73c05701c1b64d509137aff5921c0aa26880a7d003643d05e55823b703763d26",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ],
+          [
+            "combined-tree",
+            "89bff6eae7f3588c0cf70aeb8dddb06f4fa7efcf5a1a75282e8dddfbb4cb5eb1",
+            "7eb20744b236374d292a3426cf542306467dc656"
+          ]
+        ],
+        "repeated": [
+          [
+            "specialist",
+            "failure-paths",
+            "abf6494b9ff7f2ef7645860306c6a39166dfba14982e1a39f156079be5b9ec92",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "accepted-behavior",
+            "0b1d711e54bd9f337b50265487e12b03c71d31ccbbaaff7c2d7ece5e3289b2c8",
+            null,
+            null,
+            null
+          ],
+          [
+            "check",
+            "ownership-behavior",
+            "6f5ead0fb09e7c74ba5598b679d1f6ca81f0fcbef4b28b60ad915d8f51c5abbd",
+            null,
+            null,
+            "b6095cca3fe509f286486183217ae3c97de9fd810e1105a854ce0e338c88b242"
+          ],
+          [
+            "qa",
+            "ownership-preserved",
+            "7a008ec41adb44cdc278903fee12982e809299f67820874c6a6d760f29dbec9c",
+            "dispatch-bundle/behavior-execution",
+            17,
+            null
+          ]
+        ]
+      }
+    },
+    "target-advance": {
+      "base": {
+        "extractions": 2,
+        "assessments": 2,
+        "specialists": 6,
+        "checks": 1,
+        "qaRounds": 1,
+        "completedVisitReceipts": 34,
+        "retrievalCalls": 30,
+        "retrievalBytes": 97446,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 2,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 1,
+          "accepted-behavior": 1,
+          "behavior-plan": 1,
+          "behavior-execution": 1,
+          "evidence-reader": 1,
+          "apply-request": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "waiting",
+        "error": null
+      },
+      "candidate": {
+        "extractions": 1,
+        "assessments": 2,
+        "specialists": 6,
+        "checks": 1,
+        "qaRounds": 1,
+        "completedVisitReceipts": 33,
+        "retrievalCalls": 28,
+        "retrievalBytes": 95950,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 1,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 1,
+          "accepted-behavior": 1,
+          "behavior-plan": 1,
+          "behavior-execution": 1,
+          "evidence-reader": 1,
+          "apply-request": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "completed",
+        "error": null
+      },
+      "candidateDecisionLink": {
+        "version": "composed-v1",
+        "head": "c20fc3901ebef52f085f7ed35ab7d51a7e421162",
+        "inventory": "f072982ddc7c8870946ab4aed5c2d4a64a082b330df9b05eb179d5ab299dfe57",
+        "snapshot": "8ff6d3c380597bbbaa7e38068e76c3c5bd34e1afd94f88f5b4a142e7a2dc5d1f",
+        "pending": {
+          "specialists": [],
+          "checks": [],
+          "qaCriteria": []
+        },
+        "reused": [
+          [
+            "trust-boundary",
+            "d93b5ac752d41d7d54eabd40807e14c5d8b543da1a2cb2e1ca654cf36eadc34a",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "dependency-boundary",
+            "0dcb53e19cad1b9d1872103b95e5f2005403517679b5b95f76070ae24caf0f2f",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "lifecycle-boundary",
+            "51c8deb65bcca81aebe790274598c1338502544fe290c28a58d9c03a84c18f06",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "combined-tree",
+            "45c9d0a204061513e14a15eae72809bc57542678e44c91fe41058ce5cff9ffb1",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "failure-paths",
+            "e4d01ce47ac3c11119c170927e0c4787df6a9184d94de83ab28beaeb725e9e8d",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ],
+          [
+            "accepted-behavior",
+            "c558eb8d620c9f1f0a8df676bf8a876f189292c4cfbb397799728d69a723b4b5",
+            "c20fc3901ebef52f085f7ed35ab7d51a7e421162"
+          ]
+        ],
+        "repeated": []
+      }
+    },
+    "integration-conflict": {
+      "base": {
+        "extractions": 3,
+        "assessments": 3,
+        "specialists": 12,
+        "checks": 2,
+        "qaRounds": 2,
+        "completedVisitReceipts": 49,
+        "retrievalCalls": 54,
+        "retrievalBytes": 234622,
+        "roleCounts": {
+          "delta-reader": 3,
+          "accepted-scope": 3,
+          "trust-boundary": 2,
+          "dependency-boundary": 2,
+          "lifecycle-boundary": 2,
+          "combined-tree": 2,
+          "failure-paths": 2,
+          "accepted-behavior": 2,
+          "behavior-plan": 2,
+          "behavior-execution": 2,
+          "evidence-reader": 2,
+          "apply-request": 1,
+          "resolve-integration": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "waiting",
+        "error": null
+      },
+      "candidate": {
+        "extractions": 1,
+        "assessments": 3,
+        "specialists": 12,
+        "checks": 2,
+        "qaRounds": 2,
+        "completedVisitReceipts": 47,
+        "retrievalCalls": 50,
+        "retrievalBytes": 222622,
+        "roleCounts": {
+          "delta-reader": 3,
+          "accepted-scope": 1,
+          "trust-boundary": 2,
+          "dependency-boundary": 2,
+          "lifecycle-boundary": 2,
+          "combined-tree": 2,
+          "failure-paths": 2,
+          "accepted-behavior": 2,
+          "behavior-plan": 2,
+          "behavior-execution": 2,
+          "evidence-reader": 2,
+          "apply-request": 1,
+          "resolve-integration": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "completed",
+        "error": null
+      },
+      "candidateDecisionLink": {
+        "version": "composed-v1",
+        "head": "cac3f85936d37f41721e18168089a741a48a0bde",
+        "inventory": "f072982ddc7c8870946ab4aed5c2d4a64a082b330df9b05eb179d5ab299dfe57",
+        "snapshot": "f90a3da9a7ad229111ad198e2dcc9027d0c7617f753861d4b401fa45ade68dc2",
+        "pending": {
+          "specialists": [],
+          "checks": [],
+          "qaCriteria": []
+        },
+        "reused": [],
+        "repeated": [
+          [
+            "specialist",
+            "trust-boundary",
+            "31687d998cd3357cf50c44bc714f4edb2e79cf442afae880dc35211d73bddf3f",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "dependency-boundary",
+            "287c9890c14596d68a0b9016ca0da507f51bafec50fe613069627c91399cde27",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "lifecycle-boundary",
+            "2321109382a038497ee82d6ca30129eed6bf7622d838fabe2cdfcdc1daa1c2c9",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "combined-tree",
+            "3467e7ca704a5081ae6edc0b49bade7f5467ff3b3f5c3b2e4eeb4e6ef738e7ac",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "failure-paths",
+            "26580b4444224df0482b8f3c74c04a3ae07d99f194c03fb41edca1b461a485c4",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "accepted-behavior",
+            "1bb25135de26ae991dfa897b05667c1f687e4f4ca9a8f0f8ddb4332659639452",
+            null,
+            null,
+            null
+          ],
+          [
+            "check",
+            "ownership-behavior",
+            "6f5ead0fb09e7c74ba5598b679d1f6ca81f0fcbef4b28b60ad915d8f51c5abbd",
+            null,
+            null,
+            "b6cdbd0a9765056dd50d9c8ba42f59d3ac081f86a5d59612e207cc073d7a540c"
+          ],
+          [
+            "qa",
+            "ownership-preserved",
+            "0f97faf952f5614b82c6af140ed7bc3d68b3d7fb6b86c9db17d6cafbf919f35a",
+            "dispatch-bundle/behavior-execution",
+            17,
+            null
+          ]
+        ]
+      }
+    },
+    "accepted-requirements": {
+      "base": {
+        "extractions": 3,
+        "assessments": 2,
+        "specialists": 6,
+        "checks": 1,
+        "qaRounds": 1,
+        "completedVisitReceipts": 26,
+        "retrievalCalls": 32,
+        "retrievalBytes": 96034,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 3,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 1,
+          "accepted-behavior": 1,
+          "behavior-plan": 1,
+          "behavior-execution": 1,
+          "evidence-reader": 1,
+          "apply-request": 2
+        },
+        "sharedBoundary": false,
+        "status": "failed",
+        "error": "Inventory reuse needs the exact prior source context and inventory plus an independent unchanged-scope assessment"
+      },
+      "candidate": {
+        "extractions": 2,
+        "assessments": 2,
+        "specialists": 12,
+        "checks": 2,
+        "qaRounds": 2,
+        "completedVisitReceipts": 47,
+        "retrievalCalls": 50,
+        "retrievalBytes": 138546,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 2,
+          "trust-boundary": 2,
+          "dependency-boundary": 2,
+          "lifecycle-boundary": 2,
+          "combined-tree": 2,
+          "failure-paths": 2,
+          "accepted-behavior": 2,
+          "behavior-plan": 2,
+          "behavior-execution": 2,
+          "evidence-reader": 2,
+          "apply-request": 2,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "completed",
+        "error": null
+      },
+      "candidateDecisionLink": {
+        "version": "composed-v1",
+        "head": "0dcd65f13a03e1239a2c7a66944d772a339c626f",
+        "original": "0dcd65f13a03e1239a2c7a66944d772a339c626f",
+        "inventory": "1e700595c0e5a70f02e7846f04915575393ce25f859716a4f347334551bb1677",
+        "snapshot": "3067f7df3897657866aef93c8b64b400cd03273f27839b3ec64a1a5d12a32aac",
+        "pending": {
+          "specialists": [],
+          "checks": [],
+          "qaCriteria": []
+        },
+        "reused": [],
+        "repeated": [
+          [
+            "specialist",
+            "trust-boundary",
+            "b0d3d23436d9807b2e67b812d60d8098d6e5d69d6e3dc6e405ac1e5ca6c6187f",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "dependency-boundary",
+            "4b7fa55f09b666f56e92825ff60db68546637f7c2e7e2d86a7025826999cbb2c",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "lifecycle-boundary",
+            "b4682d94e7b1d6ccfdd02ccb0e867df5472d4c5e5a92e8cd14309c5d313e1f9a",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "combined-tree",
+            "e7f1f0bd18da74a744121098aaeb363fb306bd3ca826e696917009422eb81bd7",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "failure-paths",
+            "f80471f5e72bab8265246cbfa64d85440b480c4c79b92ddbf9ddd838c2400488",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "accepted-behavior",
+            "30d8e4bc0d22b66bb99c400cacdbede6f1fe339ac9d8b63a1f7da40749ef4c99",
+            null,
+            null,
+            null
+          ],
+          [
+            "check",
+            "ownership-behavior",
+            "6f5ead0fb09e7c74ba5598b679d1f6ca81f0fcbef4b28b60ad915d8f51c5abbd",
+            null,
+            null,
+            "bfd9229697d48267e704613b35ea820c0d0079826b40fcc41db4b5f0c92b929e"
+          ],
+          [
+            "qa",
+            "ownership-preserved",
+            "7521f8ace60a86959362f309d0902e501742ffef8d6d569d4951467fa47ed4a2",
+            "dispatch-bundle/behavior-execution",
+            17,
+            null
+          ]
+        ]
+      }
+    },
+    "weakened-tests": {
+      "base": {
+        "extractions": 4,
+        "assessments": 3,
+        "specialists": 12,
+        "checks": 2,
+        "qaRounds": 2,
+        "completedVisitReceipts": 50,
+        "retrievalCalls": 56,
+        "retrievalBytes": 245174,
+        "roleCounts": {
+          "delta-reader": 3,
+          "accepted-scope": 4,
+          "trust-boundary": 2,
+          "dependency-boundary": 2,
+          "lifecycle-boundary": 2,
+          "combined-tree": 2,
+          "failure-paths": 2,
+          "accepted-behavior": 2,
+          "behavior-plan": 2,
+          "behavior-execution": 2,
+          "evidence-reader": 2,
+          "apply-request": 1,
+          "resolve-integration": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "waiting",
+        "error": null
+      },
+      "candidate": {
+        "extractions": 1,
+        "assessments": 3,
+        "specialists": 12,
+        "checks": 2,
+        "qaRounds": 2,
+        "completedVisitReceipts": 47,
+        "retrievalCalls": 50,
+        "retrievalBytes": 222610,
+        "roleCounts": {
+          "delta-reader": 3,
+          "accepted-scope": 1,
+          "trust-boundary": 2,
+          "dependency-boundary": 2,
+          "lifecycle-boundary": 2,
+          "combined-tree": 2,
+          "failure-paths": 2,
+          "accepted-behavior": 2,
+          "behavior-plan": 2,
+          "behavior-execution": 2,
+          "evidence-reader": 2,
+          "apply-request": 1,
+          "resolve-integration": 1,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "completed",
+        "error": null
+      },
+      "candidateDecisionLink": {
+        "version": "composed-v1",
+        "head": "bec41a7a95f09027b17356c590ec4f619fa09114",
+        "inventory": "f072982ddc7c8870946ab4aed5c2d4a64a082b330df9b05eb179d5ab299dfe57",
+        "snapshot": "e64a2f5ff6afa2c07836e0b8d423ebd0cd2fa91204949ddba194d6267be8883c",
+        "pending": {
+          "specialists": [],
+          "checks": [],
+          "qaCriteria": []
+        },
+        "reused": [],
+        "repeated": [
+          [
+            "specialist",
+            "trust-boundary",
+            "0e3daa46fcde2ffeca9f9fdddf196715b5a1d727b4b1775b66f5da450147ad03",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "dependency-boundary",
+            "bd693a56f3b04affb2eb4925dde0384d970532043e3e30cf4a4638e61af2d79e",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "lifecycle-boundary",
+            "233af9ea2af8a59d35badc73b0c29a7508b9ec8426c3e6cef4171c7a2cd1f281",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "combined-tree",
+            "34a299c7b5fdde25ef4c21fc5e5686c01e203dd90c4e242183d728590675b88d",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "failure-paths",
+            "677114611a5835cb45644bc36bb3a620425e66b8380c1dc0c2b96980c06f679a",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "accepted-behavior",
+            "154c2cd3d8d9abd4901104346291c417c5c8fd40a3c2b477b5e3f61e223b2172",
+            null,
+            null,
+            null
+          ],
+          [
+            "check",
+            "ownership-behavior",
+            "6f5ead0fb09e7c74ba5598b679d1f6ca81f0fcbef4b28b60ad915d8f51c5abbd",
+            null,
+            null,
+            "ab04521cebfe2c81004ac092be97ddac771913d1c2e817408315f877f7ad91d7"
+          ],
+          [
+            "qa",
+            "ownership-preserved",
+            "76d5e4ad62882903bab491def97c323ca29f9aebdeb604c639408659ca32e0de",
+            "dispatch-bundle/behavior-execution",
+            17,
+            null
+          ]
+        ]
+      }
+    },
+    "extraction-drift": {
+      "base": {
+        "extractions": 3,
+        "assessments": 2,
+        "specialists": 6,
+        "checks": 1,
+        "qaRounds": 1,
+        "completedVisitReceipts": 26,
+        "retrievalCalls": 32,
+        "retrievalBytes": 96034,
+        "roleCounts": {
+          "delta-reader": 2,
+          "accepted-scope": 3,
+          "trust-boundary": 1,
+          "dependency-boundary": 1,
+          "lifecycle-boundary": 1,
+          "combined-tree": 1,
+          "failure-paths": 1,
+          "accepted-behavior": 1,
+          "behavior-plan": 1,
+          "behavior-execution": 1,
+          "evidence-reader": 1,
+          "apply-request": 2
+        },
+        "sharedBoundary": false,
+        "status": "failed",
+        "error": "Inventory reuse needs the exact prior source context and inventory plus an independent unchanged-scope assessment"
+      },
+      "candidate": {
+        "extractions": 2,
+        "assessments": 3,
+        "specialists": 12,
+        "checks": 2,
+        "qaRounds": 2,
+        "completedVisitReceipts": 48,
+        "retrievalCalls": 52,
+        "retrievalBytes": 142822,
+        "roleCounts": {
+          "delta-reader": 3,
+          "accepted-scope": 2,
+          "trust-boundary": 2,
+          "dependency-boundary": 2,
+          "lifecycle-boundary": 2,
+          "combined-tree": 2,
+          "failure-paths": 2,
+          "accepted-behavior": 2,
+          "behavior-plan": 2,
+          "behavior-execution": 2,
+          "evidence-reader": 2,
+          "apply-request": 2,
+          "review-notes": 1
+        },
+        "sharedBoundary": true,
+        "status": "completed",
+        "error": null
+      },
+      "candidateDecisionLink": {
+        "version": "composed-v1",
+        "head": "2ed301bfb4d2ee12e81ca2a722f6b775bb6940eb",
+        "original": "2ed301bfb4d2ee12e81ca2a722f6b775bb6940eb",
+        "inventory": "1e700595c0e5a70f02e7846f04915575393ce25f859716a4f347334551bb1677",
+        "snapshot": "a36958ecb1b00336ea6e2b35d15feda00e06a8b58cc6624b0de9c41f4ce7d2a3",
+        "pending": {
+          "specialists": [],
+          "checks": [],
+          "qaCriteria": []
+        },
+        "reused": [],
+        "repeated": [
+          [
+            "specialist",
+            "trust-boundary",
+            "040802a50b8b2fea07cb31c49993a1202d2d95895c933a552cd9ec2aca2700c1",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "dependency-boundary",
+            "46db0e2514dfb7a879b3cf02aa9e53ea92c38c93bfdcdf4f338f84587ae57bc5",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "lifecycle-boundary",
+            "2a666220e40fe7c9b25ce5107ba185eca64e6fb50f1d041e10de3c9ec2d6bcb5",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "combined-tree",
+            "a1559d360be346c6c56f472477a0c726e0269f7b5195e63d0cc470f8a503fe51",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "failure-paths",
+            "b981ef51f42e0d1866ef3b098fd044558dbd19ba1f35a416cd478c0c374db766",
+            null,
+            null,
+            null
+          ],
+          [
+            "specialist",
+            "accepted-behavior",
+            "6dbd3999f0fddfe3d4710e55fb6413d75a6006a154168d1ac61640daa1e47ed4",
+            null,
+            null,
+            null
+          ],
+          [
+            "check",
+            "ownership-behavior",
+            "6f5ead0fb09e7c74ba5598b679d1f6ca81f0fcbef4b28b60ad915d8f51c5abbd",
+            null,
+            null,
+            "c513f36c2f7c878598ab1e77e9cd07b5913264af7e912a2623e050d0f468fc29"
+          ],
+          [
+            "qa",
+            "ownership-preserved",
+            "c811687592afe7e18e192ccd2eb7d1b4ee97e51d72d54791cfb1f768407dd970",
+            "dispatch-bundle/behavior-execution",
+            17,
+            null
+          ]
+        ]
+      }
+    }
+  },
+  "representativeOriginalLinks": {
+    "version": "composed-v1",
+    "head": "3beb481282ce16acb2d7d885fc3f276f75634d49",
+    "inventory": "f072982ddc7c8870946ab4aed5c2d4a64a082b330df9b05eb179d5ab299dfe57",
+    "snapshot": "da04e8475172303db56244e325177b1f454cb41ab5b4f740c62e3d180d6d71eb",
+    "pending": {
+      "specialists": [],
+      "checks": [],
+      "qaCriteria": []
+    },
+    "reused": [
+      {
+        "role": "trust-boundary",
+        "original": "9e75c7f2a3eb1578c2671e94988b9c38dc392265daa8afb46677448fa82a9842",
+        "revision": "7eb20744b236374d292a3426cf542306467dc656",
+        "reason": "trust-boundary: inspected actual unchanged callers and dependencies; the requested ownership correction cannot cross this boundary"
+      },
+      {
+        "role": "dependency-boundary",
+        "original": "139cf622e77cda58be404107f72d00831679dd384111dd54f934d721c309b852",
+        "revision": "7eb20744b236374d292a3426cf542306467dc656",
+        "reason": "dependency-boundary: inspected actual unchanged callers and dependencies; the requested ownership correction cannot cross this boundary"
+      },
+      {
+        "role": "lifecycle-boundary",
+        "original": "73c05701c1b64d509137aff5921c0aa26880a7d003643d05e55823b703763d26",
+        "revision": "7eb20744b236374d292a3426cf542306467dc656",
+        "reason": "lifecycle-boundary: inspected actual unchanged callers and dependencies; the requested ownership correction cannot cross this boundary"
+      },
+      {
+        "role": "combined-tree",
+        "original": "89bff6eae7f3588c0cf70aeb8dddb06f4fa7efcf5a1a75282e8dddfbb4cb5eb1",
+        "revision": "7eb20744b236374d292a3426cf542306467dc656",
+        "reason": "combined-tree: inspected actual unchanged callers and dependencies; the requested ownership correction cannot cross this boundary"
+      }
+    ],
+    "repeated": [
+      {
+        "kind": "specialist",
+        "id": "failure-paths",
+        "reason": "Inspected actual source, target-only delta, original receipts and accepted answers",
+        "originalDigest": "abf6494b9ff7f2ef7645860306c6a39166dfba14982e1a39f156079be5b9ec92",
+        "snapshotDigest": "da04e8475172303db56244e325177b1f454cb41ab5b4f740c62e3d180d6d71eb"
+      },
+      {
+        "kind": "specialist",
+        "id": "accepted-behavior",
+        "reason": "Inspected actual source, target-only delta, original receipts and accepted answers",
+        "originalDigest": "0b1d711e54bd9f337b50265487e12b03c71d31ccbbaaff7c2d7ece5e3289b2c8",
+        "snapshotDigest": "da04e8475172303db56244e325177b1f454cb41ab5b4f740c62e3d180d6d71eb"
+      },
+      {
+        "kind": "check",
+        "id": "ownership-behavior",
+        "reason": "Execute authorization and ownership behavior",
+        "originalDigest": "6f5ead0fb09e7c74ba5598b679d1f6ca81f0fcbef4b28b60ad915d8f51c5abbd",
+        "originalDecisionDigest": "b6095cca3fe509f286486183217ae3c97de9fd810e1105a854ce0e338c88b242",
+        "snapshotDigest": "da04e8475172303db56244e325177b1f454cb41ab5b4f740c62e3d180d6d71eb"
+      },
+      {
+        "kind": "qa",
+        "id": "ownership-preserved",
+        "reason": "Inspected actual source, target-only delta, original receipts and accepted answers",
+        "originalDigest": "7a008ec41adb44cdc278903fee12982e809299f67820874c6a6d760f29dbec9c",
+        "originalProducerKey": "dispatch-bundle/behavior-execution",
+        "originalHistoryIndex": 17,
+        "snapshotDigest": "da04e8475172303db56244e325177b1f454cb41ab5b4f740c62e3d180d6d71eb"
+      }
+    ]
+  }
+}

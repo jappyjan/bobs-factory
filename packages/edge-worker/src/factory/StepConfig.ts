@@ -1284,6 +1284,11 @@ export function stepConfigIssues(
 	}
 	if (hasCheck(step, "impact-boundary") && !readStep(step, "impact"))
 		issues.push(`${step.id}: impact-boundary requires reads.impact`);
+	const reuseVersion = checkArgs(step, "impact-reuse")?.reuseVersion;
+	if (reuseVersion !== undefined && reuseVersion !== "composed-v1")
+		issues.push(
+			`${step.id}: unsupported impact reuseVersion ${String(reuseVersion)}`,
+		);
 	if (hasCheck(step, "capture-evidence") && !readStep(step, "scope"))
 		issues.push(`${step.id}: capture-evidence requires reads.scope`);
 	if (hasCheck(step, "architecture-revision")) {

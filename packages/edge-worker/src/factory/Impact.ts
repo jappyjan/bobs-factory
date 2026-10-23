@@ -4,7 +4,7 @@ import { promisify } from "node:util";
 import { factoryRuntimeIdentity } from "bobs-factory-core";
 import { z } from "zod";
 import { dependencyCovers, dependencyHashes } from "./Incremental.js";
-import { qaDigest } from "./Qa.js";
+import { QaExecutionSchema, qaDigest } from "./Qa.js";
 import {
 	deliveryRevisions,
 	groupedOutput,
@@ -26,7 +26,12 @@ import {
 	readStep,
 	resolveStepConfig,
 } from "./StepConfig.js";
-import { outputForTool, stepForRun } from "./ToolBindings.js";
+import {
+	boundStepKey,
+	outputForTool,
+	producerValue,
+	stepForRun,
+} from "./ToolBindings.js";
 import type { WorkflowStep } from "./Workflow.js";
 import type {
 	ExecutionContext,
@@ -137,6 +142,8 @@ export interface ImpactRepository {
 }
 export interface ImpactSnapshot {
 	schemaVersion: 1;
+	reuseVersion?: "composed-v1";
+	inputDigest?: string;
 	key: string;
 	trigger: string;
 	sourceDigest: string;
@@ -172,12 +179,45 @@ export interface ReuseRecord {
 }
 export interface ImpactDecision extends ImpactAssessment {
 	snapshot: ImpactSnapshot;
+	inventoryBinding?: {
+		assessmentSnapshot: ImpactSnapshot;
+		producerKey: string;
+		receiptDigest: string;
+		historyIndex: number;
+		reason: string;
+	};
+	repeatRecords?: {
+		kind: "specialist" | "check" | "qa";
+		id: string;
+		reason: string;
+		originalDigest?: string;
+		originalDecisionDigest?: string;
+		originalProducerKey?: string;
+		originalHistoryIndex?: number;
+		snapshotDigest: string;
+	}[];
 	reuseRecords: ReuseRecord[];
 	pending: { specialists: string[]; checks: string[]; qaCriteria: string[] };
 	checkResults: { id: string; exitCode: number; evidence: string }[];
 	at: string;
 }
 const exec = promisify(execFile);
+/** Accepted configuration opts in; saved definitions keep their original policy. */
+export function composedImpact(run: FactoryRun, key: string): boolean {
+	const fanout = stepForRun(run, key);
+	if (!fanout) return false;
+	const assessorKey = boundStepKey(
+		{ run, step: fanout, stepKey: key },
+		"impact",
+	);
+	const assessor = assessorKey && stepForRun(run, assessorKey);
+	return Boolean(
+		assessor &&
+			checkArgs(assessor, "impact-reuse")?.reuseVersion === "composed-v1" &&
+			boundStepKey({ run, step: assessor, stepKey: assessorKey }, "fanout") ===
+				key,
+	);
+}
 function inputScope(context: ExecutionContext) {
 	return (
 		context.currentScope?.() ?? {
@@ -215,6 +255,8 @@ export async function collectImpactSnapshot(
 	key: string,
 	retained?: ImpactSnapshot,
 ): Promise<ImpactSnapshot> {
+	const composed = composedImpact(context.run, key);
+	if (composed && context.impactContext) context = context.impactContext(key);
 	const { run } = context;
 	const previous = retained
 		? retained.reviewRound === undefined
@@ -385,6 +427,15 @@ export async function collectImpactSnapshot(
 	}
 	const value = {
 		schemaVersion: 1 as const,
+		...(composed ? { reuseVersion: "composed-v1" as const } : {}),
+		...(composed
+			? {
+					inputDigest: qaDigest({
+						callInputs: context.callInputs,
+						iteration: context.iteration,
+					}),
+				}
+			: {}),
 		contractDigest: run.delivery?.contractDigest,
 		deliveryMode: run.delivery?.contract.mode,
 		externalDigest: run.delivery?.verification?.digest,
@@ -517,9 +568,43 @@ export function validateImpact(
 		)
 	)
 		throw new Error("Impact references an unknown requirement");
+	const fanout = stepForRun(run, snapshot.key);
+	const producer =
+		snapshot.reuseVersion === "composed-v1" && fanout
+			? boundStepKey({ run, step: fanout, stepKey: snapshot.key }, "inventory")
+			: undefined;
+	const executed = producer
+		? (producerValue(run, producer) as Inventory | undefined)
+		: undefined;
+	const binding = producer ? run.boundOutputs?.[producer] : undefined;
+	const extractionIndex =
+		producer && executed ? inventoryReceiptIndex(run, producer, executed) : -1;
+	const currentExtraction =
+		executed &&
+		binding &&
+		extractionIndex >= 0 &&
+		executed.digest === snapshot.inventoryDigest &&
+		executed.sourceContextDigest === snapshot.sourceDigest &&
+		binding.repositories.length === snapshot.repositories.length &&
+		snapshot.repositories.every((repo) =>
+			binding.repositories.some(
+				(bound) =>
+					bound.id === repo.repositoryId &&
+					bound.headSha === repo.headSha &&
+					bound.treeSha === repo.treeSha,
+			),
+		);
 	const uncertain =
 		result.uncertainty.length ||
 		snapshot.repositories.some((r) => r.uncertainty.length) ||
+		(snapshot.reuseVersion === "composed-v1" &&
+			previous &&
+			previous.baseline.impact?.snapshot.inputDigest !== snapshot.inputDigest &&
+			(!previous.baseline.impact?.snapshot.inputDigest ||
+				!result.scopeReuse)) ||
+		(snapshot.reuseVersion === "composed-v1" &&
+			previous &&
+			previous.baseline.inventory.digest !== snapshot.inventoryDigest) ||
 		!result.testAssertions.inspected ||
 		result.testAssertions.weakened;
 	const scopeChanged =
@@ -530,9 +615,13 @@ export function validateImpact(
 	const scopeProven = Boolean(
 		result.scopeReuse &&
 			previous &&
-			result.scopeReuse.inventoryDigest === inventory?.digest &&
-			result.scopeReuse.originalSourceDigest ===
-				inventory?.sourceContextDigest &&
+			((result.scopeReuse.inventoryDigest === inventory?.digest &&
+				result.scopeReuse.originalSourceDigest ===
+					inventory?.sourceContextDigest) ||
+				(currentExtraction &&
+					result.scopeReuse.inventoryDigest === executed.digest &&
+					result.scopeReuse.originalSourceDigest ===
+						executed.sourceContextDigest)) &&
 			!result.extractRequirements &&
 			!result.uncertainty.length,
 	);
@@ -678,7 +767,67 @@ export function validateImpact(
 	return {
 		...result,
 		snapshot,
+		...(currentExtraction && result.scopeReuse && !result.extractRequirements
+			? {
+					inventoryBinding: {
+						assessmentSnapshot: structuredClone(snapshot),
+						producerKey: producer!,
+						receiptDigest: qaDigest(executed),
+						historyIndex: extractionIndex,
+						reason: result.scopeReuse.reason,
+					},
+				}
+			: {}),
 		reuseRecords,
+		...(snapshot.reuseVersion === "composed-v1"
+			? {
+					repeatRecords: [
+						...result.specialists.map((id) => {
+							const original = previous?.reviewers.find(
+								(r) => r.stamp.reviewer === id,
+							);
+							return {
+								kind: "specialist" as const,
+								id,
+								reason: result.rationale,
+								...(original ? { originalDigest: qaDigest(original) } : {}),
+								snapshotDigest: snapshot.digest,
+							};
+						}),
+						...result.checks.map((check) => {
+							const prior = [...(run.impactDecisions ?? [])]
+								.reverse()
+								.find(
+									(d) =>
+										d.snapshot.key === snapshot.key &&
+										d.checkResults.some((r) => r.id === check.id),
+								);
+							const receipt = prior?.checkResults.find(
+								(r) => r.id === check.id,
+							);
+							return {
+								kind: "check" as const,
+								id: check.id,
+								reason: check.reason,
+								...(receipt
+									? {
+											originalDigest: qaDigest(receipt),
+											originalDecisionDigest: prior!.snapshot.digest,
+										}
+									: {}),
+								snapshotDigest: snapshot.digest,
+							};
+						}),
+						...result.qaCriteria.map((id) => ({
+							kind: "qa" as const,
+							id,
+							reason: result.rationale,
+							...originalQaReceipt(run, snapshot.key, id),
+							snapshotDigest: snapshot.digest,
+						})),
+					],
+				}
+			: {}),
 		pending: {
 			specialists: [...result.specialists],
 			checks: result.checks.map((c) => c.id),
@@ -687,6 +836,52 @@ export function validateImpact(
 		checkResults: [],
 		at: new Date().toISOString(),
 	};
+}
+function inventoryReceiptIndex(
+	run: FactoryRun,
+	producer: string,
+	inventory: Inventory,
+) {
+	for (let index = run.history.length - 1; index >= 0; index--) {
+		const entry = run.history[index]!;
+		if (
+			entry.step === producer &&
+			qaDigest(entry.output) === qaDigest(inventory)
+		)
+			return index;
+	}
+	return -1;
+}
+/** Link repeated behavioral work to its actual configured producer, never a sibling's summary. */
+function originalQaReceipt(run: FactoryRun, key: string, criterionId: string) {
+	for (let index = run.history.length - 1; index >= 0; index--) {
+		const entry = run.history[index]!;
+		const producer = stepForRun(run, entry.step);
+		if (!producer || !hasCheck(producer, "capture-evidence")) continue;
+		const assessorKey = boundStepKey(
+			{ run, step: producer, stepKey: entry.step },
+			"impact",
+		);
+		const assessor = assessorKey && stepForRun(run, assessorKey);
+		if (
+			!assessor ||
+			boundStepKey({ run, step: assessor, stepKey: assessorKey }, "fanout") !==
+				key
+		)
+			continue;
+		const capture = QaExecutionSchema.safeParse(entry.output);
+		if (!capture.success) continue;
+		const criterion = capture.data.results
+			.flatMap((result) => result.criteria)
+			.find((candidate) => candidate.criterionId === criterionId);
+		if (criterion)
+			return {
+				originalDigest: qaDigest(criterion),
+				originalProducerKey: entry.step,
+				originalHistoryIndex: index,
+			};
+	}
+	return {};
 }
 export function decisionFor(run: FactoryRun, key: string) {
 	const latest = [...(run.impactDecisions ?? [])]
@@ -702,6 +897,59 @@ export async function historicalInventoryRead(
 	currentBinding: OutputRevisionBinding,
 ): Promise<boolean> {
 	const { run, step } = context;
+	const assessorKey = hasCheck(step, "impact-reuse")
+		? (context.stepKey ?? step.id)
+		: boundStepKey(context, "impact");
+	const assessor = assessorKey && stepForRun(run, assessorKey);
+	const fanoutKey =
+		assessor &&
+		boundStepKey({ run, step: assessor, stepKey: assessorKey }, "fanout");
+	if (fanoutKey && composedImpact(run, fanoutKey)) {
+		const fanout = stepForRun(run, fanoutKey)!;
+		const inventoryKey = boundStepKey(
+			{ run, step: fanout, stepKey: fanoutKey },
+			"inventory",
+		);
+		const sourceKey = boundStepKey(context, "inventory");
+		if (
+			!hasCheck(source, "inventory-evidence") ||
+			sourceKey !== inventoryKey ||
+			stepForRun(run, inventoryKey) !== source
+		)
+			return false;
+		const decision = decisionFor(run, fanoutKey);
+		const original = latestAggregate(run, fanoutKey)?.baseline.inventory;
+		const inventory = producerValue(run, inventoryKey!) as
+			| Inventory
+			| undefined;
+		if (!inventory) return false;
+		const originalReviewInventory =
+			original && qaDigest(inventory) === qaDigest(original);
+		const extracted = decision?.inventoryBinding;
+		const assessedExtraction =
+			extracted &&
+			extracted.producerKey === inventoryKey &&
+			extracted.receiptDigest === qaDigest(inventory);
+		// The independent assessor may inspect the latest executed inventory as
+		// historical input, including extraction completed before a stale decision.
+		// It grants no current inspection or downstream approval authority.
+		if (assessor === step)
+			return run.history.some(
+				(entry) =>
+					entry.step === inventoryKey &&
+					qaDigest(entry.output) === qaDigest(inventory),
+			);
+		if (!originalReviewInventory && !assessedExtraction) return false;
+		if (!decision || !inventoryScopeMatches(context, inventory, decision))
+			return false;
+		try {
+			await assertImpactFresh(context, decision, fanout);
+			return true;
+		} catch {
+			context.signal.throwIfAborted();
+			return false;
+		}
+	}
 	if (
 		!resolveStepConfig(step).explicit ||
 		!resolveStepConfig(source).explicit ||
@@ -712,19 +960,19 @@ export async function historicalInventoryRead(
 	)
 		return false;
 	const prefix = (context.stepKey ?? step.id).replace(/[^/]+$/, "");
-	const assessor = hasCheck(step, "impact-reuse")
+	const legacyAssessor = hasCheck(step, "impact-reuse")
 		? step
 		: hasCheck(step, "impact-boundary") && readStep(step, "impact")
 			? stepForRun(run, `${prefix}${readStep(step, "impact")}`)
 			: undefined;
 	if (
-		!assessor ||
-		!resolveStepConfig(assessor).explicit ||
-		!hasCheck(assessor, "impact-reuse") ||
-		readStep(assessor, "inventory") !== source.id
+		!legacyAssessor ||
+		!resolveStepConfig(legacyAssessor).explicit ||
+		!hasCheck(legacyAssessor, "impact-reuse") ||
+		readStep(legacyAssessor, "inventory") !== source.id
 	)
 		return false;
-	const fanoutId = readStep(assessor, "fanout");
+	const fanoutId = readStep(legacyAssessor, "fanout");
 	const key = `${prefix}${fanoutId}`;
 	const fanout = fanoutId ? stepForRun(run, key) : undefined;
 	if (
@@ -733,14 +981,14 @@ export async function historicalInventoryRead(
 		!resolveStepConfig(fanout).explicit ||
 		!hasCheck(fanout, "review-boundary") ||
 		readStep(fanout, "inventory") !== source.id ||
-		readStep(fanout, "impact") !== assessor.id ||
+		readStep(fanout, "impact") !== legacyAssessor.id ||
 		(readStep(step, "fanout") && readStep(step, "fanout") !== fanoutId) ||
 		(step.type === "fanout" && (context.stepKey ?? step.id) !== key)
 	)
 		return false;
-	const decision = assessor === step ? undefined : decisionFor(run, key);
+	const decision = legacyAssessor === step ? undefined : decisionFor(run, key);
 	const aggregate =
-		assessor === step
+		legacyAssessor === step
 			? latestAggregate(run, key)
 			: decision?.snapshot.reviewRound === undefined
 				? undefined
@@ -761,7 +1009,8 @@ export async function historicalInventoryRead(
 		return false;
 	// An explicitly configured independent assessor needs the prior inventory to
 	// decide whether new answers change scope. Its old binding remains untouched.
-	if (assessor === step) return qaDigest(inventory) === qaDigest(original);
+	if (legacyAssessor === step)
+		return qaDigest(inventory) === qaDigest(original);
 	if (
 		!decision?.scopeReuse ||
 		!inventory.scopeReuse ||
@@ -784,11 +1033,97 @@ export async function historicalInventoryRead(
 		return false;
 	}
 }
+
+/** A scope continuation does not overwrite or restamp the original inventory. */
+export function inventoryScopeMatches(
+	context: ExecutionContext,
+	inventory: Inventory,
+	decision?: ImpactDecision,
+): boolean {
+	if (inventory.sourceContextDigest === scopeContextDigest(context.input))
+		return true;
+	if (
+		decision?.snapshot.reuseVersion === "composed-v1" &&
+		decision.inventoryBinding?.receiptDigest === qaDigest(inventory)
+	)
+		return true;
+	if (
+		!decision ||
+		decision.snapshot.reuseVersion !== "composed-v1" ||
+		!decision.scopeReuse ||
+		decision.extractRequirements
+	)
+		return false;
+	return (
+		decision.scopeReuse.inventoryDigest === inventory.digest &&
+		decision.scopeReuse.originalSourceDigest === inventory.sourceContextDigest
+	);
+}
+
+/** Extraction may publish its inventory; it cannot silently reassess other inputs. */
+export async function bindExtractedInventory(
+	context: ExecutionContext,
+	decision: ImpactDecision,
+	fanout: WorkflowStep,
+) {
+	const current = await collectImpactSnapshot(
+		context,
+		fanout,
+		decision.snapshot.key,
+		decision.snapshot,
+	);
+	if (decision.snapshot.reuseVersion !== "composed-v1") {
+		decision.snapshot = current;
+		return;
+	}
+	const comparable = (snapshot: ImpactSnapshot) => ({
+		...snapshot,
+		inventoryDigest: undefined,
+		trigger: undefined,
+		digest: undefined,
+	});
+	if (qaDigest(comparable(current)) !== qaDigest(comparable(decision.snapshot)))
+		throw new Error(STALE_IMPACT_MESSAGE);
+	const producer = boundStepKey(
+		{ run: context.run, step: fanout, stepKey: decision.snapshot.key },
+		"inventory",
+	);
+	const receipt =
+		producer && (producerValue(context.run, producer) as Inventory | undefined);
+	if (!producer || !receipt || receipt.digest !== current.inventoryDigest)
+		throw new Error(
+			"Selected checks need the original executed extraction receipt",
+		);
+	decision.inventoryBinding ??= {
+		assessmentSnapshot: structuredClone(decision.snapshot),
+		producerKey: producer,
+		receiptDigest: qaDigest(receipt),
+		historyIndex: inventoryReceiptIndex(context.run, producer, receipt),
+		reason:
+			"Completed requirement extraction supplements the assessed inventory; all other assessed inputs are unchanged.",
+	};
+	const value = {
+		...decision.snapshot,
+		inventoryDigest: current.inventoryDigest,
+		digest: undefined,
+	};
+	decision.snapshot = { ...value, digest: qaDigest(value) };
+}
 export async function assertImpactFresh(
 	context: ExecutionContext,
 	decision: ImpactDecision,
 	fanout: WorkflowStep,
 ) {
+	const original = decision.inventoryBinding;
+	if (original) {
+		const receipt = context.run.history[original.historyIndex];
+		if (
+			!receipt ||
+			receipt.step !== original.producerKey ||
+			qaDigest(receipt.output) !== original.receiptDigest
+		)
+			throw new Error(STALE_IMPACT_MESSAGE);
+	}
 	const current = await collectImpactSnapshot(
 		context,
 		fanout,

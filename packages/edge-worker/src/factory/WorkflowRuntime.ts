@@ -100,6 +100,7 @@ import { GitSettings } from "./GitSettings.js";
 import type { ViewRecord, ViewSnapshot } from "./HumanStep.js";
 import {
 	assertImpactFresh,
+	bindExtractedInventory,
 	type ConvergenceState,
 	collectImpactSnapshot,
 	continuationEligible,
@@ -109,6 +110,7 @@ import {
 	type ImpactSnapshot,
 	impactDecisionDigest,
 	impactFanout,
+	inventoryScopeMatches,
 	recordConvergence,
 	STALE_IMPACT_MESSAGE,
 	validateImpact,
@@ -272,6 +274,7 @@ export interface AgentCheckpoint {
 		revision: RoleRevision;
 		finalizing?: boolean;
 		binding?: OutputRevisionBinding;
+		impactSnapshotDigest?: string;
 		reviewScope?: RoleProgress["reviewScope"];
 	};
 	rejected?: {
@@ -609,6 +612,8 @@ export interface ExecutionContext {
 	executionApproval?: HumanDecision;
 	groupedImpactValidated?: boolean;
 	impactKey?: string;
+	/** Resolve impact inputs in their retained owning frame, never the consumer's aliases. */
+	impactContext?: (key: string) => ExecutionContext;
 	validateDelivery?: () => Promise<Record<string, unknown> | undefined>;
 	/** Nested publication discovered by passive grouped readiness must also claim targets. */
 	coordinateDelivery?: <T>(operation: () => Promise<T>) => Promise<T>;
@@ -2257,9 +2262,15 @@ export class WorkflowRuntime {
 				: undefined;
 			if (!checkpoint.active) {
 				checkpoint.visits[step.id] = (checkpoint.visits[step.id] ?? 0) + 1;
-				const session = definition?.outcomes?.length
-					? checkpoint.agentSessions?.[step.id]
-					: undefined;
+				const session =
+					definition?.outcomes?.length ||
+					reviewBaseline?.impact?.snapshot.reuseVersion === "composed-v1" ||
+					checkArgs(step, "impact-reuse")?.reuseVersion === "composed-v1" ||
+					(checkpoint.reviewKey &&
+						decisionFor(run, checkpoint.reviewKey)?.snapshot.reuseVersion ===
+							"composed-v1")
+						? checkpoint.agentSessions?.[step.id]
+						: undefined;
 				checkpoint.active = {
 					phase: "executing",
 					...(session ? { agent: { ...session } } : {}),
@@ -2341,6 +2352,11 @@ export class WorkflowRuntime {
 				stepKey: key,
 				reviewBaseline,
 				historyIndex: () => this.historyPreviews(run),
+				impactContext: (ownerKey) => {
+					const owner = this.importedProducerContext(context, ownerKey);
+					owner.currentScope = () => owner.input;
+					return owner;
+				},
 				currentScope: () => ({
 					originalInput: run.input,
 					...(checkpoint.iteration
@@ -2384,6 +2400,17 @@ export class WorkflowRuntime {
 				resumeAgent: state.agent,
 				questionRecheck: state.questionRecheck,
 				checkpointAgent: async (agent) => {
+					if (
+						agent.result &&
+						state.impactSnapshot?.reuseVersion === "composed-v1"
+					)
+						agent = {
+							...agent,
+							result: {
+								...agent.result,
+								impactSnapshotDigest: state.impactSnapshot.digest,
+							},
+						};
 					state.agent = agent;
 					if (agent.sessionId && agent.sessionId !== "pending") {
 						checkpoint.agentSessions ??= {};
@@ -2439,6 +2466,41 @@ export class WorkflowRuntime {
 				await this.save(run);
 				continue;
 			}
+			// A just-executed extraction must be bound before ordinary input freshness
+			// can schedule it again. Other assessment drift still returns to its owner.
+			if (step.tool === "impact-checks" && state.phase === "executing") {
+				const assessorKey = boundStepKey(context, "impact");
+				const assessor = assessorKey && stepForRun(run, assessorKey);
+				const fanoutKey =
+					assessor &&
+					boundStepKey({ run, step: assessor, stepKey: assessorKey }, "fanout");
+				const decision = fanoutKey && decisionFor(run, fanoutKey);
+				if (
+					decision &&
+					decision.snapshot.reuseVersion === "composed-v1" &&
+					decision.extractRequirements &&
+					!decision.inventoryBinding
+				) {
+					try {
+						await bindExtractedInventory(
+							context,
+							decision,
+							stepForRun(run, fanoutKey)!,
+						);
+						await this.save(run);
+					} catch (error) {
+						if (
+							error instanceof Error &&
+							error.message === STALE_IMPACT_MESSAGE &&
+							this.renewStaleImpact(run, checkpoint, steps, prefix)
+						) {
+							await this.save(run);
+							continue;
+						}
+						throw error;
+					}
+				}
+			}
 			let staleSource: WorkflowStep | undefined;
 			let importedSource: string | undefined;
 			const sourceKeys = new Set([
@@ -2447,9 +2509,9 @@ export class WorkflowRuntime {
 					.map((binding) =>
 						producerKey(run, prefix, binding.from.split("/")[0]!),
 					),
-				...Object.keys(step.bindings ?? {}).map((name) =>
-					producerKey(run, `${key}/`, name),
-				),
+				...Object.keys(
+					step.inputFreshness === "on-read" ? {} : (step.bindings ?? {}),
+				).map((name) => producerKey(run, `${key}/`, name)),
 			]);
 			for (const sourceKey of sourceKeys) {
 				const source = stepForRun(run, sourceKey);
@@ -2523,7 +2585,10 @@ export class WorkflowRuntime {
 				: undefined;
 			context.impactKey =
 				impactSource && readStep(impactSource, "fanout")
-					? `${impactProducer!.slice(0, impactProducer!.lastIndexOf("/") + 1)}${readStep(impactSource, "fanout")}`
+					? boundStepKey(
+							{ run, step: impactSource, stepKey: impactProducer },
+							"fanout",
+						)
 					: checkpoint.reviewKey;
 			context.coordinateDelivery = (operation) =>
 				this.coordinate(context, operation);
@@ -2560,23 +2625,22 @@ export class WorkflowRuntime {
 				step.tool === "impact-checks" &&
 				state.phase === "executing"
 			) {
-				const source = steps.find((s) => s.id === impactSourceId)!;
-				const fanout = steps.find((s) => s.id === readStep(source, "fanout")!)!;
-				const decision = decisionFor(run, `${prefix}${fanout.id}`);
-				if (!decision)
+				const source = impactProducer && stepForRun(run, impactProducer);
+				const fanoutKey =
+					source &&
+					boundStepKey(
+						{ run, step: source, stepKey: impactProducer },
+						"fanout",
+					);
+				const fanout = fanoutKey && stepForRun(run, fanoutKey);
+				const decision = fanoutKey && decisionFor(run, fanoutKey);
+				if (!decision || !fanout)
 					throw new Error(
 						"Selected checks require a completed impact decision",
 					);
-				if (decision.extractRequirements) {
-					const snapshot = await collectImpactSnapshot(
-						context,
-						fanout,
-						decision.snapshot.key,
-						decision.snapshot,
-					);
-					decision.snapshot = snapshot;
-				}
 				try {
+					if (decision.extractRequirements)
+						await bindExtractedInventory(context, decision, fanout);
 					await assertImpactFresh(context, decision, fanout);
 				} catch (error) {
 					if (
@@ -2594,17 +2658,23 @@ export class WorkflowRuntime {
 				await this.save(run);
 			}
 			if (hasCheck(step, "impact-reuse") && state.phase === "executing") {
-				const fanout = steps.find((s) => s.id === impactConfig!.fanout)!;
+				const fanoutKey = boundStepKey(context, "fanout")!;
+				const fanout = stepForRun(run, fanoutKey)!;
 				const snapshot = await collectImpactSnapshot(
 					context,
 					fanout,
-					`${prefix}${fanout.id}`,
+					fanoutKey,
 				);
 				if (
 					state.impactSnapshot &&
 					state.impactSnapshot.digest !== snapshot.digest
-				)
-					state.agent = undefined;
+				) {
+					state.agent =
+						snapshot.reuseVersion === "composed-v1" && state.agent?.sessionId
+							? { runner: state.agent.runner, sessionId: state.agent.sessionId }
+							: undefined;
+					context.resumeAgent = state.agent;
+				}
 				state.impactSnapshot = snapshot;
 				context.input = {
 					...(context.input as Record<string, unknown>),
@@ -2756,7 +2826,9 @@ export class WorkflowRuntime {
 								throw new Error(
 									"Requirement extraction is missing or has unresolved scope/source blockers",
 								);
-							if (inventory.sourceContextDigest !== scopeContextDigest(input)) {
+							const impact = impactSourceId ? decisionFor(run, key) : undefined;
+							if (impact) await assertImpactFresh(context, impact, step);
+							if (!inventoryScopeMatches(context, inventory, impact)) {
 								checkpoint.current = reviewConfig!.inventory;
 								checkpoint.active = undefined;
 								this.log(
@@ -2767,12 +2839,10 @@ export class WorkflowRuntime {
 								finishStepAttempt(context, "blocked");
 								continue;
 							}
-							const impact = impactSourceId ? decisionFor(run, key) : undefined;
 							if (impactSourceId && !impact)
 								throw new Error(
 									"Configured review requires a completed impact assessment",
 								);
-							if (impact) await assertImpactFresh(context, impact, step);
 							const repo = readOutput(step, "repository", outputs) as
 								| { baseBranch?: string }
 								| undefined;
@@ -2814,10 +2884,24 @@ export class WorkflowRuntime {
 						}
 						if (state.reviewBaseline)
 							checkpoint.reviewKey = state.reviewBaseline.key;
-						state.children ??= (step.groups ?? []).map((group) => ({
-							...this.newCheckpoint(group),
-							outputs: reviewConfig ? {} : structuredClone(outputs),
-						}));
+						state.children ??= (step.groups ?? []).map((group, index) => {
+							const prior =
+								state.reviewBaseline?.impact?.snapshot.reuseVersion ===
+								"composed-v1"
+									? checkpoint.branches?.[step.id]?.[index]
+									: undefined;
+							return {
+								...this.newCheckpoint(group),
+								...(prior
+									? {
+											visits: { ...prior.visits },
+											agentSessions: structuredClone(prior.agentSessions),
+											additionalVisits: structuredClone(prior.additionalVisits),
+										}
+									: {}),
+								outputs: reviewConfig ? {} : structuredClone(outputs),
+							};
+						});
 						if (config.explicit) {
 							checkpoint.branches ??= {};
 							checkpoint.branches[step.id] = state.children;
@@ -3293,7 +3377,7 @@ export class WorkflowRuntime {
 					if (execution && output !== undefined)
 						output = JSON.parse(execution.redact(JSON.stringify(output)));
 					if (hasCheck(step, "impact-reuse")) {
-						const fanout = steps.find((s) => s.id === impactConfig!.fanout)!;
+						const fanout = stepForRun(run, boundStepKey(context, "fanout"))!;
 						const fresh = await collectImpactSnapshot(
 							context,
 							fanout,
@@ -3331,7 +3415,11 @@ export class WorkflowRuntime {
 							decision.questions = assistance;
 						}
 						run.impactDecisions.push(decision);
-						if (decision.status === "completed" && decision.scopeReuse) {
+						if (
+							decision.status === "completed" &&
+							decision.scopeReuse &&
+							decision.snapshot.reuseVersion !== "composed-v1"
+						) {
 							const inventory = outputs[impactConfig!.inventory] as Inventory;
 							outputs[impactConfig!.inventory] = {
 								...structuredClone(inventory),

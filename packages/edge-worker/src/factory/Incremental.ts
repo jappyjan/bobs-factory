@@ -373,6 +373,17 @@ export async function completedAgentResult(
 ): Promise<{ output: unknown } | undefined> {
 	const saved = context.resumeAgent?.result;
 	if (!saved) return;
+	const impact = (
+		context.input as
+			| { impactSnapshot?: { reuseVersion?: string; digest: string } }
+			| undefined
+	)?.impactSnapshot;
+	if (
+		hasCheck(context.step, "impact-reuse") &&
+		impact?.reuseVersion === "composed-v1" &&
+		saved.impactSnapshotDigest !== impact.digest
+	)
+		return;
 	const binding = await outputRevisionBinding(context, saved.binding);
 	if (binding && !sameOutputBinding(saved.binding, binding)) return;
 	context.progress = await roleProgress(context);
