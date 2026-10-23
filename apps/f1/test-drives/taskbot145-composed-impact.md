@@ -1,6 +1,6 @@
 # Task145 — composed impact and original receipt reuse
 
-Implementation evidence only; independent Standards/Spec acceptance, task status and merge belong to the coordinator. [Task145](https://taskbot.apps.janjaap.de/p/bobs-factory/t/145) extends the completed [132 mechanism](https://taskbot.apps.janjaap.de/p/bobs-factory/t/132) and preserves [94 policy](https://taskbot.apps.janjaap.de/p/bobs-factory/t/94).
+[PR #182](https://github.com/jappyjan/bobs-factory/pull/182). Implementation evidence only; independent Standards/Spec acceptance, task status and merge belong to the coordinator. [Task145](https://taskbot.apps.janjaap.de/p/bobs-factory/t/145) extends the completed [132 mechanism](https://taskbot.apps.janjaap.de/p/bobs-factory/t/132) and preserves [94 policy](https://taskbot.apps.janjaap.de/p/bobs-factory/t/94).
 
 ## Scope and identities
 
