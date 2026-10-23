@@ -2,7 +2,8 @@
 
 Implementation evidence, 23 October 2026; acceptance remains parent-owned.
 Original A/00cf evidence is historical and NOT CLEAN at independent report2550.
-See the combined-repair section and summary.repair for current proof.
+The combined repair at537d is also historical NOT CLEAN at2555.
+See the ROOT3 section and summary.offlineRepair for current proof.
 Base: `6a25d1659c4a9e475596408500117af81b83f2b5`, tree
 `1317fec25dc41e41ad26c48ef2bd2c93a330e967`, sole parent
 `c30d563525f0d9726858f1b6ada83aebb54d687b`.
@@ -270,3 +271,108 @@ worker; foundation-first sequence. No UI,147/148, active-run edit or deployment.
 DoD: same ready PR183, linked ticket, actual changelog/capability contracts and
 focused runtime integration; parent acceptance/squash pending. Development CI is
 skipped; integrated post148 broad/full/native validation remains deferred, not passed.
+
+## ROOT3 repair after independent Round2 (live146/2555)
+
+Round2 at `537d3d03` is historically **NOT CLEAN**: Standards0, Spec1/P2.
+The sole new finding **R146-ROOT-3 = Task146R2-SPEC-1** belongs only to Spec.
+Prior ROOT1/ROOT2 were positively supported as repaired; reports2550/2552/2555
+remain intact. This section and `summary.offlineRepair` contain current evidence.
+
+Only DeliveryCoordination changes in production. A saved still-ready queue now
+converts eligible wait only through the existing saved `run.updatedAt` observation,
+capped at current time. WorkflowRuntime.save sets this timestamp immediately before
+JsonSnapshotStore synchronously captures the claim and metadata together. Restart
+wall time supplies no eligible-wait evidence. Known parked credit remains frozen;
+legacy missing/unusable observation bounds grant no new credit while keeping the
+original claim timestamps. Active/draining/held/uncertain external ownership,
+capacity-first admission, grouped scopes and original human/provider guards remain.
+No new durable field, scheduler, timer, telemetry or budget system is added.
+
+### Exact affected snapshot/runtime family
+
+`ReservationOfflineAging.test.ts` uses public workflow validation, actual runtime
+and its snapshot store, and controlled shared-resource tool hooks. It copies
+completed, untouched producer snapshot writes before graceful cleanup parks the
+original. It reconstructs that copy after a controlled120000ms offline interval.
+No checkpoint/claim/run age/history/authority is edited. Both completion and
+correction are ready behind an active owner before safe release.
+
+| Observed earned wait | Old537d restored credit/order | Current restored credit/order |
+| --- | --- | --- |
+| 900ms |120900ms;normal,completion |900ms;completion,normal |
+| 60900ms |180900ms;normal,completion |60900ms;normal,completion |
+
+Both current cases complete with peak conflicting mutation1; original queuedAt
+and run age are retained. The second case proves truly earned aged correction
+still progresses. These are controlled clock/scheduling facts, not elapsed-time,
+production latency/cost or arbitrary OS-crash/external-effect certification.
+
+Separate selected fairness controls persist ten seconds of live observed waiting
+before testing restoration/parked reactivation. Copies with omitted legacy
+`updatedAt` verify conservative unparked0 versus preserved known parked10000ms;
+only that metadata is omitted in the unit compatibility control. The primary
+snapshot integration remains untouched producer state. The former test's61000ms
+expectation included unobserved offline time and is replaced with explicit10000ms
+producer evidence; no legitimate earned credit or ready-contender guard is removed.
+
+### Current frozen commands and scopes
+
+Own retained artifact root `/tmp/taskbot146-aging-nxdf85ov`; direct Node24.21.0,
+pnpm10.33.1. All execution uses explicit own source cwd and private HOME/TMPDIR/
+CLAUDE_CONFIG_DIR under that root. Optional outputs use only its before/final dirs.
+Selected harness/setup paths were inspected; forbidden suites/artifacts excluded.
+No source or harness edits during checks or after these final-source passes.
+
+Command prefix: `env HOME=<own>/home TMPDIR=<own>/tmp CLAUDE_CONFIG_DIR=<own>/claude
+BOBS_FACTORY_RESERVATION_RECEIPTS=<own>/final node
+packages/edge-worker/node_modules/vitest/vitest.mjs run --config
+<own>/focused.config.mjs`.
+
+- ReservationOfflineAging: **exit0,2 passed**, the one new small affected
+  runtime/mock family described above.
+- DeliveryFairness, selection `promotes an aged normal waiter|uses FIFO across
+  aged|preserves proven queued waits|retains stopping remote`: **exit0,4 passed/
+  9 skipped**. Sustained arrivals/aged FIFO, persisted/parked/legacy-boundary credit
+  and uncertain external ownership; skipped cases are not newly credited.
+- ReservationRecovery, selection `unchanged context|normal shutdown`: **exit0,
+  2 passed/4 skipped**. Grouped initial+continued publication again completes,
+  two affected pushes/zero context mutation. Genuine shutdown/load/resumeAll at
+  capacity1 completes all3 restored visits with peak1 and final capacity0/0.
+- `env <same private directories> ./node_modules/.bin/tsgo -p
+  <own>/owner-typecheck.json --noEmit`: **exit0**, scoped owner/import graph only.
+- Before source repair, identical final snapshot-family command on old537d:
+  **exit1,2 failed**.900ms case failed actual completion order;60900ms case failed
+  excess-credit assertion. Both raw receipts remain; these are defect evidence,
+  not passing checks. No fixture preflight or product retry was needed afterward.
+
+Exact25 input hashes and9-owner source digest are in `summary.offlineRepair` and
+outside-source final-source-inputs.json. Report/summary/changelog documentation is
+prepared later and is not claimed to have been executed by those tests. Original
+API F1 remains historical00cf; prior25 review positives retain their exact scopes.
+No fresh full fairness/boundary/API/native/UI matrix. No dependency/install/build
+or broad type/lint/audit/hook/CI cycle. Cosmetic Biome1 and integrated post148 broad
+validation remain deferred, not passed. All earlier failures/limits remain.
+
+### Disposition and preservation
+
+The ROOT3 failure seam now has current repair evidence; parent must perform NEW
+exact-head whole-diff Standards+Spec acceptance. No self-clearance/status/merge.
+Complete146 criteria remain as previously mapped, with honest restored eligible
+aging now exercised in addition to ROOT1 grouped-target and ROOT2 capacity-restart
+controls. Local/publication boundaries, genuine QA exclusion, completion preference,
+aged correction progress, safe atomic/nested/cancel/stale/uncertain ownership,
+current revision/evidence/native human/provider/readiness guards and truthful
+owner/resource/wait reasons retain their owners.126 outbox/tracking,109 passiveCI,
+89 capacity policy and94/132/145 impact/original approval/cumulative continuation
+are unchanged. Frozen graphs/native conversations/receipts and explicit adoption
+remain. No production/active-run edits or147/148 work.
+
+All eight epic decisions and DoD dispositions from the prior section remain:
+forkability except Simple; generic configured blocks/actions; library/custom
+schemas; declarative safe views; targeted Ask; composed Improve/no old routine;
+inherited research worker; foundation-first sequence. Same ready PR183 and actual
+changelog link; no UI change, no artificial matrix. Full post148 validation and
+parent independent acceptance/squash remain pending. Historical143 three BASE
+FAIL/deferred/missing-final-proof negative,144 timeout/STOP/EOF and145 partial-prefix/
+not-all-eight-final-source qualifications remain unchanged.

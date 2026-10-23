@@ -277,7 +277,7 @@
     "No production timing/cost or arbitrary process-crash/external exactly-once guarantee.",
     "No development CI, broad build/type/lint/packages/apps/scripts/audit/native cycles; deferred to post148."
   ],
-  "evidenceScope": "Original fields below describe historical A/00cf, NOT CLEAN at review2550; current combined repair is under repair.",
+  "evidenceScope": "Original fields are historical A/00cf (NOT CLEAN2550); repair is historical537d (NOT CLEAN2555); offlineRepair is current ROOT3 repair. Prior reports/failed evidence remain unchanged.",
   "repair": {
     "priorHead": "00cff70a6fb94b3b18e01b81afba52269a26bbdb",
     "priorTree": "34b43f1bd70aac7a6cbdde446796d7af000047da",
@@ -604,6 +604,164 @@
       "No guard/validator/receipt mock, checkpoint or claim fabrication in the restart integration.",
       "No arbitrary process-crash/external exactly-once, production timing/cost or real Docker/DB certification.",
       "No development CI query/trigger/watch; broad/full/native/post148 validation deferred, not passed."
+    ]
+  },
+  "offlineRepair": {
+    "priorHead": "537d3d03b78ef53cf8fca7561ffd2b43aca32fd0",
+    "priorTree": "ff1b4a699f8e66673814d6cd379fad47b2f305f0",
+    "priorReview": "live146/2555: Standards0, Spec1/P2, ROOT3 only; prior ROOT1/ROOT2 repaired in their seams. NOT CLEAN.",
+    "finding": {
+      "id": "R146-ROOT-3",
+      "alias": "Task146R2-SPEC-1",
+      "axis": "Spec only"
+    },
+    "sourceDigest": "be3a61bbc48648cf8d77434e470fcd045e2476ad856801d9c9d448881284956d",
+    "inputDigest": "e413757ddeea1ea555b190c47264eca37e1c9814272c796823b1620edbd457dc",
+    "sha256": {
+      "apps/f1/test-drives/assets/taskbot146-reservations.mjs": "5aeda2414a25410de1afbfe1643eda7ba268e864823c198a8c219af24925e48f",
+      "packages/edge-worker/src/EdgeWorker.ts": "1f43e32f08383d92c35e6ee632bb31d7cd04a7dca698b47c53879906140d5d36",
+      "packages/edge-worker/src/factory/DeliveryCoordination.ts": "14d77821da4a81ad0af1a6ea2ae5b5a21fa39d345baf38f0992df0c8e317984d",
+      "packages/edge-worker/src/factory/FactoryTools.ts": "9c1607ce8e441017e01950d605ab95e401dfc01d03c9432786e4088892038ebf",
+      "packages/edge-worker/src/factory/RolePrompt.ts": "68e75067c0b1284c4c602366dfc0b1f9b2c8ed273f27402ac76350e0b28960c0",
+      "packages/edge-worker/src/factory/StepConfig.ts": "43c9505c89879bc32d7a235d6011485f29695c5921b66ff86e65037c197d86a8",
+      "packages/edge-worker/src/factory/Workflow.ts": "3a2ae8022c9d6c82af7de546cd09625d54976b8fd3e2fc554d66a3a5e27be7a7",
+      "packages/edge-worker/src/factory/WorkflowRuntime.ts": "1155db5dc3ff4141f0b0e464bb04c94bf43b4cf0be015b8d2ec81e69dfa38c8d",
+      "packages/edge-worker/src/factory/factoryRecipes.ts": "7777526ee7ab69a77e97e23ab495559496858df8b83aa6055555a0f9c129f87f",
+      "packages/edge-worker/src/factory/stockFactorySteps.ts": "9a2090a098201fd2bf781304d9fc51edb4ee1f59a621488814ce29aa48c89b49",
+      "packages/edge-worker/test/DeliveryCoordination.test.ts": "bec69fddb0732b99cb5249a218a917a8c723301c7d08d3237f37f76abe3fe503",
+      "packages/edge-worker/test/DeliveryFairness.test.ts": "b324dd25daec160fc9e44103e6218d3dbc4d2e98c40e3666f45c5dcfa2228551",
+      "packages/edge-worker/test/FactoryRolePrompts.test.ts": "24401189a109a05fce09834cd2f6f4c6fa7f4065f63769492e5eb597ded1011d",
+      "packages/edge-worker/test/ReservationBoundaries.test.ts": "1c6c50fc13e0e12b9d8899c556fb4c72d91da63198a2819486a0d3def716395d",
+      "packages/edge-worker/test/ReservationF1.test.ts": "7ea7398056b31e856fcf552af3edb9536655412d1867d678b92daa306b8e96e4",
+      "packages/edge-worker/test/ReservationOfflineAging.test.ts": "02cfbe0f460a46de17bdf035d1edb113b8f89290392f460a4fb713ebecf2fb72",
+      "packages/edge-worker/test/ReservationRecovery.test.ts": "08e646546a8df06a85f8144e377d6b86a1bd5e38d4c0915061e855cd3402f302",
+      "packages/edge-worker/test/StepConfig.test.ts": "f450d344ce76aa4be85ecf54bd6b92360126151f378ae32eb7e32df5a74a2214",
+      "packages/edge-worker/test/fixtures/authenticated-factory.ts": "f8f7c6c933875a3d4ac7140faface48c355760273ff697cb978b5e78fc4a7277",
+      "packages/edge-worker/test/fixtures/github-api.ts": "934288ed420c9d1fd4be93b8eafea6995811c6193a17d9926ffe5ac907470f58",
+      "packages/edge-worker/test/fixtures/merge-readiness.ts": "206d194d908d9d46255b6bcf9fede45e8ab540265f75e72e44423b26b6e76c7a",
+      "packages/edge-worker/test/fixtures/runtime-wait.ts": "c8e7678a9782c0e93aed1a37822a4419fdf017b04eab392c291142654f3a9215",
+      "packages/edge-worker/test/fixtures/stock-role-prompts.json": "f5137b4bd14616ce48c011a2cb008e03235af6602f40b70d23f1cdfd38a04520",
+      "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "6e1bfbd6145c28f7bead512c74f6e55e48ac57149a490db725024dd262681723",
+      "packages/edge-worker/test/setup.ts": "72a5a06930a7e014d8795f2a086399342b5c9580a2760da04dd16ead020de358"
+    },
+    "artifactRoot": "/tmp/taskbot146-aging-nxdf85ov",
+    "mechanism": "Use saved run.updatedAt captured synchronously with eligible queued claim as observation bound. Known parked credit is already frozen. Missing/unusable old observation boundary contributes no new credit; original claim timestamps remain.",
+    "snapshotCases": [
+      {
+        "earnedMs": 900,
+        "offlineMs": 120000,
+        "savedObservation": "2026-10-23T10:00:01.050Z",
+        "queuedAt": "2026-10-23T10:00:00.150Z",
+        "beforeRestoredCreditMs": 120900,
+        "beforeOrder": [
+          "normal",
+          "completion"
+        ],
+        "currentRestoredCreditMs": 900,
+        "currentOrder": [
+          "completion",
+          "normal"
+        ],
+        "bothReady": true,
+        "conflictingPeak": 1,
+        "originalQueuedAtRetained": true
+      },
+      {
+        "earnedMs": 60900,
+        "offlineMs": 120000,
+        "savedObservation": "2026-10-23T10:01:01.000Z",
+        "queuedAt": "2026-10-23T10:00:00.100Z",
+        "beforeRestoredCreditMs": 180900,
+        "beforeOrder": [
+          "normal",
+          "completion"
+        ],
+        "currentRestoredCreditMs": 60900,
+        "currentOrder": [
+          "normal",
+          "completion"
+        ],
+        "bothReady": true,
+        "conflictingPeak": 1,
+        "originalQueuedAtRetained": true
+      }
+    ],
+    "root1Control": {
+      "status": "completed",
+      "historySteps": [
+        "original",
+        "continued"
+      ],
+      "affectedPushes": 2,
+      "contextMutations": 0
+    },
+    "root2Control": {
+      "visits": [
+        "owner",
+        "older-capacity-first",
+        "earlier-resource-waiter"
+      ],
+      "conflictingPeak": 1,
+      "finalStatuses": {
+        "older-capacity-first": "completed",
+        "earlier-resource-waiter": "completed",
+        "owner": "completed"
+      },
+      "finalCapacity": {
+        "active": 0,
+        "waiting": 0
+      }
+    },
+    "attempts": [
+      {
+        "name": "before.log",
+        "exit": 1,
+        "failed": 2,
+        "scope": "Exact final snapshot family on unchanged537d product:900\u2192120900 wrong completion order;60900\u2192180900 excess credit. Defect evidence, not passes."
+      },
+      {
+        "name": "current-offline.log",
+        "exit": 0,
+        "passed": 2,
+        "scope": "Authentic producer snapshots, offline120000, both ready before safe release;900 and60900 credit/order/peak assertions."
+      },
+      {
+        "name": "current-fairness.log",
+        "exit": 0,
+        "passed": 4,
+        "skipped": 9,
+        "scope": "Aged correction/sustained arrivals, FIFO aged priorities, saved observation and parked credit (including missing legacy metadata controls), uncertain external ownership."
+      },
+      {
+        "name": "current-recovery.log",
+        "exit": 0,
+        "passed": 2,
+        "skipped": 4,
+        "scope": "Actual grouped one-affected/unchanged context publication and normal shutdown/load/resumeAll/SessionSemaphore(1)."
+      },
+      {
+        "name": "current-types.log",
+        "exit": 0,
+        "scope": "Scoped owner source/import graph, no emit; not monorepo."
+      }
+    ],
+    "configuration": {
+      "provider": "codex",
+      "model": "gpt-6.1-sol",
+      "serviceTier": "priority",
+      "reasoningEffort": "xhigh",
+      "changed": false
+    },
+    "toolchain": {
+      "node": "24.21.0",
+      "pnpm": "10.33.1"
+    },
+    "reuse": "Prior25 review positives and old API F1 stay scoped historical. Current8 tests are selected affected behavior, not a new whole matrix. Prompts/F1 driver and eight other product owners unchanged.",
+    "limits": [
+      "Snapshot recovery, not arbitrary OS crash/native external effects certification.",
+      "Primary integration copies untouched producer snapshots; no checkpoint/claim/run age/history/authority editing. Legacy missing updatedAt is a separate unit metadata-omission compatibility control.",
+      "Scripted tool hooks; no real DB/Docker, paid/model/native/provider/tracker/device or production experiment, timing/cost or universal exactly-once claim.",
+      "No CI/broad/full/native replay; post148 checks deferred, original cosmetic Biome1 remains deferred."
     ]
   }
 }

@@ -376,7 +376,13 @@ it("preserves proven queued waits on restart, starts active waits fresh, and nev
 	cancelledWait.controller.abort();
 	await expect(cancelledWait.promise).rejects.toThrow();
 	const queuedAt = claim(queued, key).queuedAt;
+	clock(11_000); // Persist ten seconds of observed resource waiting.
 	for (const run of [owner, queued, cancelled]) await runtime.save(run);
+	// Legacy metadata omission is conservative; the original claim is retained.
+	const legacy = structuredClone(queued);
+	Reflect.deleteProperty(legacy, "updatedAt");
+	restoreDelivery(legacy);
+	expect(claim(legacy, key)).toMatchObject({ queuedAt, waitCreditMs: 0 });
 	clock(DELIVERY_AGING_MS + 2000);
 	const restored = load(home);
 	expect(claim(restored.get(queued.id), key)).toMatchObject({
@@ -392,9 +398,16 @@ it("preserves proven queued waits on restart, starts active waits fresh, and nev
 		waitingSince: new Date().toISOString(),
 	});
 	expect(claim(restored.get(cancelled.id), key).phase).toBe("released");
-	const retainedCredit = DELIVERY_AGING_MS + 1000;
+	const retainedCredit = 10_000;
 	expect(claim(restored.get(queued.id), key)).toMatchObject({
 		admissionReady: false,
+		waitCreditMs: retainedCredit,
+	});
+	const legacyParked = structuredClone(restored.get(queued.id));
+	Reflect.deleteProperty(legacyParked, "updatedAt");
+	restoreDelivery(legacyParked);
+	expect(claim(legacyParked, key)).toMatchObject({
+		queuedAt,
 		waitCreditMs: retainedCredit,
 	});
 	clock(DELIVERY_AGING_MS + 302_000);

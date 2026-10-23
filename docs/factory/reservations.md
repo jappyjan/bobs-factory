@@ -46,7 +46,10 @@ cyclic expansion fails safely rather than deadlocking or speculatively releasing
 Queued waits survive restart only for retained unfinished leaves. They remain
 outside resource contention until execution admission, with their earned wait
 credit retained separately; time awaiting execution does not add resource aging.
-Old active admissions start fresh. Original receipts and native conversations stay retained.
+Unparked saved queues earn credit only through the saved run observation captured
+with that claim, excluding the unobserved offline interval. Older records without
+a usable observation boundary gain no new credit; known parked credit and original
+claim timestamps remain. Old active admissions start fresh. Original receipts and native conversations stay retained.
 
 Saved workflows and accepted runs are never rewritten. Adopt the new boundaries
 by saving a new workflow copy and starting a new run. Existing forks retain their

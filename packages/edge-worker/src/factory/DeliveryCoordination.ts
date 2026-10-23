@@ -396,12 +396,16 @@ export function restoreDelivery(run: FactoryRun): void {
 		([key, claim]): [string, DeliveryCoordination] => [key, { ...claim }],
 	);
 	const now = Date.now();
+	// save() captures updatedAt with the claim. Restart time is not evidence
+	// of eligible waiting; old records without a boundary earn no new credit.
+	const savedAt = Date.parse(run.updatedAt);
+	const observedThrough = Number.isFinite(savedAt) ? Math.min(now, savedAt) : 0;
 	releaseDelivery(run, "Restart requires operation admission");
 	for (const [key, claim] of pending) {
 		if (cancellationUnconfirmed(run, key, claim)) continue;
 		if (!executing.has(key) || claim.phase === "released") continue;
 		const since = continuousWait(claim, now);
-		parkQueuedWait(claim, now);
+		parkQueuedWait(claim, observedThrough);
 		if (!since) {
 			claim.queuedAt = new Date(now).toISOString();
 			claim.waitingSince = claim.queuedAt;
