@@ -5,6 +5,7 @@ import { presentationOutputKeys } from "./RunOutputRoles.js";
 import { resolveStepConfig } from "./StepConfig.js";
 import {
 	boundStepKey,
+	configuredOutputBindings,
 	configuredOutputKeys,
 	producerKey,
 	stepForRun,
@@ -29,7 +30,7 @@ export type NativeViewPreset = "ask" | "approve" | "review" | "external-review";
 export interface NativeViewSnapshot {
 	preset: NativeViewPreset;
 	/** The runtime gate, independent of any authored label/preset. */
-	authority: NativeViewPreset;
+	authority: NativeViewPreset | "read-only";
 	stepKey: string;
 	digest: string;
 	view: ResolvedView;
@@ -64,34 +65,35 @@ function activeFrame(
 	return visit(run.checkpoint, "");
 }
 function nativeKind(run: FactoryRun): NativeViewPreset | undefined {
-	if (
-		run.architectureGate ||
-		(run.architectureProposals?.length &&
-			!run.reviewGate &&
-			!run.questions.length)
-	)
-		return "approve";
+	if (run.architectureGate) return "approve";
+	if (run.reviewGate?.status === "pending")
+		return run.reviewGate.mode === "external" ? "external-review" : "review";
+	// Rejected/accepted reviews remain in history while a later frame can ask.
+	if (run.questions.length) return "ask";
 	if (run.reviewGate)
 		return run.reviewGate.mode === "external" ? "external-review" : "review";
-	if (run.questions.length) return "ask";
+	if (run.architectureProposals?.length) return "approve";
 	return undefined;
 }
 function owner(
 	run: FactoryRun,
+	kind = nativeKind(run),
 ): { key: string; step: WorkflowStep } | undefined {
 	const identity =
-		run.architectureGate?.proposalId ??
-		run.reviewGate?.id ??
-		run.questionBatchId ??
-		run.architectureProposals?.at(-1)?.id;
+		kind === "ask"
+			? run.questionBatchId
+			: kind === "approve"
+				? (run.architectureGate?.proposalId ??
+					run.architectureProposals?.at(-1)?.id)
+				: run.reviewGate?.id;
 	let key =
 		(identity && run.nativeViewOwners?.[identity]) ||
 		run.architectureGate?.stepKey ||
 		run.step;
 	let step = stepForRun(run, key);
 	if (
+		kind === "approve" &&
 		!run.architectureGate &&
-		!run.reviewGate &&
 		run.architectureProposals?.length &&
 		!run.questions.length
 	) {
@@ -110,7 +112,11 @@ function owner(
 		}
 	}
 	// Historical native review receipts identify their owning step without guessing a screen name.
-	if (run.reviewGate && run.status !== "waiting") {
+	if (
+		(kind === "review" || kind === "external-review") &&
+		run.reviewGate &&
+		run.status !== "waiting"
+	) {
 		const receipt = [...run.history]
 			.reverse()
 			.find(
@@ -216,6 +222,10 @@ function publicHuman(
 			presentationOutputKeys(run).guide;
 	if (!source || !Object.hasOwn(run.outputs, source))
 		throw new Error("Current review guide unavailable");
+	return publicGuide(run, source);
+}
+function publicGuide(run: FactoryRun, source: string, readOnly = false) {
+	const resources: NativeViewSnapshot["resources"] = {};
 	const guide = sanitizeJsonConfiguration(run.outputs[source]);
 	const hash = digest(guide);
 	resources[hash] = { source, digest: hash, value: guide };
@@ -225,7 +235,7 @@ function publicHuman(
 			guide: {
 				source,
 				digest: hash,
-				text: `Review guide: ${String((guide as { goal?: string; summary?: string }).goal ?? (guide as { summary?: string }).summary ?? "Review the changes and evidence")}\nThis is a text summary. Read the complete guide, code tour, tests, checks and choices in the review reader before making the native decision.`,
+				text: `Review guide: ${String((guide as { goal?: string; summary?: string }).goal ?? (guide as { summary?: string }).summary ?? "Review the changes and evidence")}\n${readOnly ? "Saved read-only guide. No native decision is pending." : "This is a text summary. Read the complete guide, code tour, tests, checks and choices in the review reader before making the native decision."}`,
 			},
 		},
 	};
@@ -257,8 +267,37 @@ export function nativeViewSnapshot(
 	run: FactoryRun,
 ): NativeViewSnapshot | undefined {
 	const kind = nativeKind(run);
-	if (!kind || (run.viewDecision && !run.viewDecision.answer)) return;
-	const located = owner(run);
+	if (run.viewDecision && !run.viewDecision.answer) return;
+	const binding =
+		run.status === "completed" &&
+		!run.reviewGate &&
+		!run.architectureGate &&
+		!run.questions.length
+			? configuredOutputBindings(run, { check: "requirement-coverage" })[0]
+			: undefined;
+	if (binding?.stepKey && Object.hasOwn(run.outputs, binding.key)) {
+		const human = publicGuide(run, binding.key, true);
+		return {
+			preset: "review",
+			authority: "read-only",
+			stepKey: binding.stepKey,
+			compatibility: true,
+			guideSource: binding.key,
+			resources: human.resources,
+			context: nativeReviewContext(run),
+			view: resolveView(nativeViewPreset("review"), {
+				inputs: { human: human.value },
+			}),
+			digest: digest({
+				protocol: "historical-review-display-v1",
+				runId: run.id,
+				source: binding.key,
+				resources: human.resources,
+			}),
+		};
+	}
+	if (!kind) return;
+	const located = owner(run, kind);
 	if (!located) return;
 	const source = located.step.view ?? nativeViewPreset(kind);
 	const human = publicHuman(run, kind, located);
@@ -344,14 +383,32 @@ export function nativeViewText(
 ): string | undefined {
 	const snapshot = nativeViewSnapshot(run);
 	if (!snapshot) return;
-	const links = (run.reviewGate?.repositories ?? []).map(
+	const gate =
+		snapshot.authority === "review" || snapshot.authority === "external-review"
+			? run.reviewGate
+			: undefined;
+	const links = (gate?.repositories ?? []).map(
 		(repository) =>
 			`${viewPlainText(repository.repositoryId)}: ${viewUrlSchema.safeParse(repository.url).success ? viewPlainText(repository.url) : "Open the verified repository in Factory"} @ ${viewPlainText(repository.headSha)}`,
 	);
-	const header = `${snapshot.preset}\n${links.join("\n")}\n`;
+	if (!links.length && gate?.url)
+		links.push(
+			`${viewUrlSchema.safeParse(gate.url).success ? viewPlainText(gate.url) : "Open the verified repository in Factory"} @ ${viewPlainText(gate.headSha)}`,
+		);
+	const identity =
+		snapshot.authority === "ask"
+			? `Question batch ${run.questionBatchId ?? ""}`
+			: snapshot.authority === "approve"
+				? `Proposal ${run.architectureGate?.proposalId ?? run.architectureProposals?.at(-1)?.id ?? ""}`
+				: snapshot.authority === "read-only"
+					? "Saved read-only guide"
+					: `Review ${gate?.id ?? ""}${gate?.externalDigest ? ` · external ${gate.externalDigest}` : ""}`;
+	const header = `${snapshot.preset}\n${viewPlainText(identity)}\n${links.join("\n")}\n`;
 	const body = viewText(snapshot.view);
 	const protocol =
-		"\nUse the original native question/architecture/review command. This display never grants approval by itself.";
+		snapshot.authority === "read-only"
+			? "\nThis retained presentation grants no native approval authority."
+			: "\nUse the original native question/architecture/review command. This display never grants approval by itself.";
 	if (header.length + body.length + protocol.length <= limit)
 		return header + body + protocol;
 	return (

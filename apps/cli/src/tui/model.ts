@@ -58,7 +58,14 @@ export interface RunItem extends RunSummary {
 	step?: string;
 	error?: string;
 	workflowBlock?: { reason: string };
-	reviewGate?: { id?: string; headSha?: string; url?: string; status?: string };
+	reviewGate?: {
+		id?: string;
+		headSha?: string;
+		url?: string;
+		status?: string;
+		mode?: string;
+		externalDigest?: string;
+	};
 	titleGeneration?: { status?: string };
 }
 export interface Recommendation {
@@ -68,6 +75,7 @@ export interface Recommendation {
 }
 export interface RunDetail extends Omit<RunItem, "workflow"> {
 	viewText?: string;
+	nativeView?: { digest: string; authority: string; preset: string };
 	viewDecision?: {
 		id: string;
 		digest: string;

@@ -142,6 +142,13 @@ still apply; oversized bound text is refused rather than silently shortened.
 The Questions component reuses the existing explicit answer form: defaults never
 submit themselves, an explicitly blank custom answer remains incomplete, and
 question batch/retry/dedup and native terminal/ticket reply behavior stay intact.
+Current question waits take precedence over retained rejected review records.
+The terminal displays the declared native view text and current identity; Approve
+and Request changes capture that displayed consent before confirmation. A later
+refresh cannot substitute an unseen version. Completed guides whose native gate
+is no longer retained receive a read-only stock presentation from their accepted
+configured producer, with the original reading-progress identity and no new
+approval authority.
 Check-in sections reuse the existing points and combine reactions into one change
 request. The rich `review-guide` component reuses the original show & tell,
 Dig deeper, flows, code tour with line notes, tests/checks/choices, comments,

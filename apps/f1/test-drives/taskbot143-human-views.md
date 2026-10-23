@@ -2,10 +2,78 @@
 
 Date: 2026-10-23. Base: `6ebabd6fc8035fa851eb5415f4306bc358d0cd49`
 (`ed04d63cfd2cae5f13c2a1e492d2853b12cb590a`). Node 24.21.0; pnpm 10.33.1.
-Implementation: [PR #180](https://github.com/jappyjan/bobs-factory/pull/180), source
-commit `884bfc56ef2f4112afc5118c2206a63c937f75c2`. The final docs-only delta adds
-this PR link, the changelog entry and the hook qualification below; all 30 frozen
-source/test inputs remain unchanged.
+Implementation: [PR #180](https://github.com/jappyjan/bobs-factory/pull/180). Initial
+source `884bfc56ef2f4112afc5118c2206a63c937f75c2` and docs head
+`6a25974db454adc66a9cc9461b430ec3d96aabd6` remain historical; independent Round1
+report2472 found that candidate **NOT CLEAN**. The combined R1–R4 repair below
+supersedes it for new independent review; no acceptance clearance is inherited.
+
+## Combined Round1 repair
+
+| Finding | Root cause and correction | Executed changed-path proof |
+| --- | --- | --- |
+| R1 terminal native review | Terminal callbacks omitted required native display consent. Both now capture the displayed digest plus native review ID/head/external identity before opening confirmation; neither callback fetches or substitutes a newer digest afterward. | Actual TodayApp keyboard actions/callbacks → real FactoryClient → protected FactoryServer accept both current Approve and Request changes. After ordinary public producer content changes and the terminal cache refreshes, each already-open callback still submits the old consent, receives409 and leaves the pending gate/history untouched. Refresh/review/new confirmation then succeeds. |
+| R2 native text | An empty generic display string prevented the nullish fallback. Empty generic text now falls back to the current native text; nonempty generic text keeps its existing priority. Native text includes the current batch/review/proposal identity and safe repository coordinates, without borrowing historical review links for an Ask. Existing text budgets/private projections remain. | Real GET contains the customised declared component content and exact current review ID, URL and head. The actual terminal run renderer displays that content. Current Ask GET/text and synthetic ticket notification contain the current question and batch. Inert escaped punctuation is preserved. |
+| R3 historical reading | No gate meant no native presentation, so ReviewPage hid the saved guide. Completed gate-less runs now receive a stock **read-only** declaration/resource only from the accepted, executed configured guide producer. It precedes historical proposal metadata, creates no pending gate and grants no native approval. | Existing persisted legacy fixture → real runtime/GET → actual ReviewPage SSR renders both the accepted overview and chapter “Read me”; no false “No review guide yet,” Approve or Request changes. Original revision/reading-progress key assertions remain unchanged. |
+| R4 rejected review then Ask | Retained rejected gates won both kind and owner selection. Current architecture/pending-review gates remain native; a current question batch now wins over historical review/proposal records and supplies its own step/frame owner. | Legitimate exact protected terminal rejection → executed correction Ask → normal shutdown/reconstruction → exact current question answer through protected terminal HTTP. Ask preset/component/owner and batch persist, synthetic TicketTracking comments deduplicate, and the rejected gate plus human history stay byte-equivalent. No accepted receipt/checkpoint/history was patched. |
+
+Repair verification uses Node24.21.0/pnpm10.33.1 in the retained own checkout.
+`NativeViewChannels.test.ts` is a source-mode controlled integration drive, with
+deterministic in-process agent/tool hooks, real protected HTTP, normal ephemeral
+terminal authentication and an in-memory tracker adapter. The worker/native
+provider lifecycle is not started and no paid/model/forge/live tracker effect is
+claimed. Historical persistence is the separately labelled existing compatibility
+fixture, not execution or approval evidence.
+
+Current commands/results (raw logs `/tmp/taskbot143-r1-repair/`):
+
+- First three-file focused run: **exit1,14PASS/4FAIL**. The four new assertions
+  expected unescaped inert punctuation or chapter text on the overview page.
+  Those failed attempts remain recorded; corrections changed the new assertions
+  and route page selection, not existing expectations or production safeguards.
+- Corrected NativeViewChannels + LegacyPresentation: **exit0,15PASS**. Existing
+  NativeViews'3 checks passed in the first run and were not duplicated. A final
+  narrow historical-selection delta precedes retained proposal metadata; its
+  owning compile and historical route/progress selection rerun both exit0
+  (**1PASS/11filtered**). The earlier callback/current-Ask paths are reused with
+  that precise scope qualification.
+- Owning source `tsgo --project /tmp/taskbot143-tsconfig-owning.json --noEmit`:
+  exit0, including the final historical delta. Narrow actual terminal app/model
+  source compilation: exit0 after correcting the external alias entry's missing
+  QuestionChoices type export and JS import extensions. The first alias-only
+  preparation failure remains retained; no product type assertion was weakened.
+- Scoped Biome on six changed source/test files: exit0; `git diff --check`: exit0.
+  No source/test/harness edits occurred during checks. No broad hook result is
+  credited; this checkout has no pre-commit wrapper. No dependency, prompt,
+  capability-reference or role-text change was needed: these repairs restore the
+  already documented native protocols and historical compatibility.
+
+[Repair input/log hashes and reuse scope](assets/taskbot143/round1-repair.json)
+retain the six changed source/test hashes and failed attempts. All other product
+source is unchanged from the reviewed candidate, including every web renderer,
+View schema/presets, code tour, question defaults/custom resolver, architecture
+validator, generic human engine, safe assets, final delivery/uncertainty owners and
+141/142 frame/session/visit/freshness/limit guards. The prior32 screenshots and
+303dd6de shell retain their original qualification; no new web build, browser
+matrix, research/native/four-delivery pipeline or three known baseline failures
+were replayed. Current repair tests/compiles are distinct from authenticated or
+reused earlier evidence. CI and broad/post148 checks remain deferred. Parent owns
+new independent whole-diff Standards/Spec acceptance at the combined repair head.
+Test cleanup stopped the actual terminal streams/timers, runtimes and protected
+servers;36344 had no listener afterward. Temporary homes were removed by
+afterEach. No browser/preview or watcher was opened during this repair.
+Publication preparation retained an SSH fetch failure128 (publickey denied).
+HTTPS uses the existing authenticated helper without inspecting credentials or
+changing saved configuration. The first short HTTPS refspec interacted with the
+existing prune setting and removed only the remote-tracking main ref; an explicit
+full-ref `--no-prune` fetch restored it. Provider, fresh fetch and local base all
+remain `6ebabd6f`/tree`ed04`; no source history or candidate base was retargeted.
+The normal commit attempt stalled in its configured SSH signer and was cancelled.
+The combined branch commit uses a per-command `commit.gpgsign=false` override;
+saved signing settings, hooks and guarded merge policy were not changed. No
+credential/key values were inspected and no cancelled signing result is credited.
+
+## Original implementation evidence (historical)
 
 F1 is applicable: this changes native human presentation, protected decision APIs
 and ticket text. This drive uses the actual protected **FactoryServer and

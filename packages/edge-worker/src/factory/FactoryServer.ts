@@ -1795,7 +1795,7 @@ export class FactoryServer {
 								viewDecision: runtime.humanViews.snapshot(run),
 								viewDisplays: run.viewDisplays?.map(publicViewSnapshot),
 								viewText:
-									runtime.humanViews.displayText(run) ??
+									runtime.humanViews.displayText(run) ||
 									(nativeView ? nativeViewText(run) : undefined),
 								recipeParent: run.recipeParent,
 								launchActions: Object.fromEntries(

@@ -1,0 +1,142 @@
+{
+  "historicalNotClean": "6a25974db454adc66a9cc9461b430ec3d96aabd6",
+  "base": "6ebabd6fc8035fa851eb5415f4306bc358d0cd49",
+  "sourceFreeze": {
+    "historicalNotClean": "6a25974db454adc66a9cc9461b430ec3d96aabd6",
+    "base": "6ebabd6fc8035fa851eb5415f4306bc358d0cd49",
+    "files": {
+      "apps/cli/src/tui/app.ts": "2bfd9255792f90722aff828a473177db8eb908c1fd9cd10734e1755327c54224",
+      "apps/cli/src/tui/model.ts": "4ae4a656247717f27e9739cd0bd196ad17bf1ac2bbde72b0445409467c592bec",
+      "packages/edge-worker/src/factory/FactoryServer.ts": "5cdc28c52560f47270faea35853f07d9c7c42dd1dc845936ae98a01d71db4fae",
+      "packages/edge-worker/src/factory/NativeViews.ts": "174b56d9caedd9852270fcccb05d8d6b275eabefa2e36fea231e7f1e15db2e55",
+      "packages/edge-worker/test/LegacyPresentation.test.ts": "83b65b64ec95ba9c063f3542b543ff27b2159ed8911aa64949b852fa440d3b11",
+      "packages/edge-worker/test/NativeViewChannels.test.ts": "82f8abc6bb6961732763caa3b573b98ad3487ae3c37db3e853c027adb6467d43"
+    },
+    "node": "24.21.0",
+    "pnpm": "10.33.1",
+    "findings": [
+      "R1",
+      "R2",
+      "R3",
+      "R4"
+    ],
+    "finalDelta": "Historical read-only selection also precedes retained proposal metadata; active native gates remain prior."
+  },
+  "sourceFreezeSha256": "c053c0e6722b752988a476d309cf8c2f07cea5e26f930e558d69d86680c40347",
+  "logs": [
+    {
+      "file": "/tmp/taskbot143-r1-repair/focused1.log",
+      "exit": 1,
+      "result": "14 pass,4 new assertion fixture failures",
+      "sha256": "d5ddeff12df42cd2611ae268d998389ceeffa1283a4a3a736bd6cd9c0ecd30be",
+      "bytes": 8628
+    },
+    {
+      "file": "/tmp/taskbot143-r1-repair/focused2.log",
+      "exit": 0,
+      "result": "15 pass",
+      "sha256": "b8fa36bbe9345010fb3a886bc8c803b836eb1147ea3474eba14fb380f9174de6",
+      "bytes": 579
+    },
+    {
+      "file": "/tmp/taskbot143-r1-repair/historical-final.log",
+      "exit": 0,
+      "result": "1 pass,11 filtered",
+      "sha256": "d45c4588fd6051db92d31686944bb7dc75c638ef0f879bd7eb13e9c932c17dc3",
+      "bytes": 590
+    },
+    {
+      "file": "/tmp/taskbot143-r1-repair/types-owning.log",
+      "exit": 0,
+      "result": "owning source compile",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/tmp/taskbot143-r1-repair/types-owning-final.log",
+      "exit": 0,
+      "result": "final historical delta owning compile",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/tmp/taskbot143-r1-repair/types-cli.log",
+      "exit": 1,
+      "result": "external alias preparation failure",
+      "sha256": "48b8ffec982815fe1be3520608a8ecfc52ba8946ad08df926612778dc938d9ba",
+      "bytes": 745
+    },
+    {
+      "file": "/tmp/taskbot143-r1-repair/types-cli-corrected.log",
+      "exit": 0,
+      "result": "narrow actual CLI app/model compile",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "/tmp/taskbot143-r1-repair/biome-final.log",
+      "exit": 0,
+      "result": "six scoped source/test files",
+      "sha256": "0376336f05f0c38a10bed010bbc9a10ac7de58125174ae25f5a694f3e33314cb",
+      "bytes": 43
+    }
+  ],
+  "limits": [
+    "Source-mode protected FactoryServer, real terminal callbacks/client and scripted runtime; no native/live provider lifecycle or production effects.",
+    "Read-only historical fixture is compatibility evidence, not native acceptance.",
+    "Final NativeViews delta selects gate-less completed reading before historical proposal metadata; final historical route test and owning compile executed; earlier positive current-gate paths reused with this delta qualification.",
+    "32-image matrix and original303dd6de shell are historical qualified reuse, not new repair browser evidence.",
+    "Three exact-base fixture failures remain FAIL/deferred and were not rerun."
+  ],
+  "harnesses": {
+    "/tmp/taskbot143-focused.config.mts": "beb5d69f8e7491f0190ed6fa19b2713a28bd5951f0b3aa780d9d4de090dda78f",
+    "/tmp/taskbot143-tsconfig-owning.json": "8fb6c9c74c0ff6d6ae6b53c40f48893ff91e75b6f2b42932496782cd9ec32398",
+    "/tmp/taskbot143-r1-repair/tsconfig-cli.json": "6b27fb6b06a62db0f07e4dd630b7c76eda7ac0ba89f6d60af4a4e3bd11ce0b12",
+    "/tmp/taskbot143-r1-repair/tui-type-entry.ts": "dc58e3098b60ddecb48c7fe1816a704efe8de813131a17cb0580e44a35a21d9e"
+  },
+  "unchangedSourceScopes": [
+    "packages/edge-worker/src/factory/web",
+    "packages/edge-worker/src/factory/View.ts",
+    "packages/edge-worker/src/factory/ViewPresets.ts",
+    "packages/edge-worker/src/factory/ViewRuntime.ts",
+    "packages/edge-worker/src/factory/Architecture.ts",
+    "packages/edge-worker/src/factory/Workflow.ts",
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts",
+    "packages/edge-worker/src/factory/Delivery.ts",
+    "packages/edge-worker/src/factory/ViewAssets.ts"
+  ],
+  "unchangedImageCount": 32,
+  "reviewReproductionReadOnlyInput": {
+    "file": "/tmp/taskbot143-review-r1-fast/regressions.mts",
+    "sha256": "6d05fc1eb12dae4c6141db9087cba9f2ad0281562ec6a7221bdebf6b7a572f5a",
+    "executed": false
+  },
+  "documentationDelta": {
+    "CHANGELOG.md": "ee88d3fe1d8c1444da2db97a54e2fdebe64f262cc8f53cf6acfd04a47c557446",
+    "docs/factory/views.md": "b3c2d15f859004f0797009f5d32887869de1e598dd1a196bb05d6d6f49b8c9cf",
+    "apps/f1/test-drives/taskbot143-human-views.md": "a19fabfb9aa9dc6f24f5d4bcdb62007e221e3c98c0f0e0df0d5c91ddfa0eea65"
+  },
+  "gitTransport": {
+    "sshFetch": {
+      "exit": 128,
+      "error": "Permission denied (publickey)"
+    },
+    "shortHttpsFetch": {
+      "exit": 0,
+      "observation": "Existing fetch.prune=true removed remote-tracking origin/main; source/provider branches unchanged."
+    },
+    "explicitFullRefHttpsFetch": {
+      "exit": 0,
+      "options": "--no-prune; temporary credential.helper=gh auth git-credential",
+      "base": "6ebabd6fc8035fa851eb5415f4306bc358d0cd49",
+      "savedConfigurationChanged": false,
+      "credentialValuesReadOrPrinted": false
+    },
+    "commitSigning": {
+      "normalAttempt": "stalled SSH signer cancelled by terminating only own git/signing child processes",
+      "publishedBranchCommit": "per-command commit.gpgsign=false; saved settings unchanged",
+      "requiredSigningPolicyFound": false,
+      "credentialOrKeyValuesInspected": false
+    }
+  }
+}
