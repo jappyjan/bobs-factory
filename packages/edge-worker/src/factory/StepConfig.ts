@@ -966,6 +966,7 @@ function explicitConfig(step: LegacyStep): ResolvedStepConfig {
 }
 
 const registeredScopes = new WeakMap<object, StepScope>();
+const inheritedConfigOwners = new WeakMap<object, object>();
 /** Register an immutable accepted graph without adding fields or changing its digest. */
 export function registerWorkflowConfig(
 	workflow: { id: string; stepConfigVersion?: string; steps: object[] },
@@ -1038,8 +1039,13 @@ export function materializeWorkflowConfig<
 	copy.stepConfigVersion = STEP_CONFIG_VERSION;
 	return copy;
 }
-/** Carry the accepted legacy interpretation to transient runtime copies. */
+/** Accepted definition owning a runtime copy; equal configuration is not ownership. */
+export function stepConfigOwner(step: object): object {
+	return inheritedConfigOwners.get(step) ?? step;
+}
+/** Carry accepted configuration ownership and legacy interpretation to runtime copies. */
 export function inheritStepConfig(source: object, target: object): void {
+	inheritedConfigOwners.set(target, stepConfigOwner(source));
 	const scope = registeredScopes.get(source);
 	if (scope) registeredScopes.set(target, scope);
 }

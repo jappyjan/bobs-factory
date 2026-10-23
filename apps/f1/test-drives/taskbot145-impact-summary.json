@@ -1090,5 +1090,231 @@
         "snapshotDigest": "da04e8475172303db56244e325177b1f454cb41ab5b4f740c62e3d180d6d71eb"
       }
     ]
+  },
+  "historicalPublicationScope": "matrixSourceFiles/finalSourceFiles/finalSourceFingerprint and cases below are retained pre-repair evidence, not execution on the Round1 repair; finalSourceFiles denotes old reviewed 3d266f25.",
+  "round1Repair": {
+    "reviewedNotCleanHead": "3d266f25f9aa4d4996e545d8e543cf9e6c1bd614",
+    "authoritativeReviewComment": 2530,
+    "sourceFiles": {
+      "packages/edge-worker/src/factory/Impact.ts": "6347bf8b81ba8db281dfed1606363e736641c6b284d6d92c7bff8eb90b187a85",
+      "packages/edge-worker/src/factory/Incremental.ts": "55d0719a0351d96b0d7d28e5649a311a4330b0267ed96120a263966f11556049",
+      "packages/edge-worker/src/factory/StepConfig.ts": "14b9e13a91108ccafa76593e3c308d95d1a144d3f33fd04416a685d79ba19838",
+      "packages/edge-worker/src/factory/Workflow.ts": "ce1b50b115a97366d71d6cb778ff1076b65a344d8c8491a9e3e85c97e2959e92",
+      "packages/edge-worker/src/factory/WorkflowRuntime.ts": "a13719e72e56fa18c20c992e4a6fc8e392c6bf0af3a6ed5b0e037d54c5dd5e11",
+      "packages/edge-worker/src/factory/factoryRecipes.ts": "a31bc6d68374797a1492693cac20c7115085a304006d23732e9a82e3a74b51c3",
+      "packages/edge-worker/src/factory/stockFactorySteps.ts": "f6efe85b29cfd84018161246ca2e96a4e4b45e2489ab9be7e068b0b14883f6c0",
+      "packages/edge-worker/test/ComposedImpactBindings.test.ts": "2e478f7204085c729a1e507bb6b6f02951cbea568941c8a4cc2609761797b296",
+      "packages/edge-worker/test/ComposedImpactReplay.test.ts": "f590ef024c22aec5662b1122236efab1baf6355013d8d35b028763f19d18a634",
+      "packages/edge-worker/test/Incremental.test.ts": "7008e48281c95c210a139a6e600459490d5507f4959c758eddedbdf7ac4ed6c0",
+      "packages/edge-worker/test/fixtures/composed-impact.ts": "bd62577144a4fc11f7d0c590b8b0c9c5c59f34968a88831e6542f5e9807b5328",
+      "packages/edge-worker/test/fixtures/stock-role-prompts.json": "efa73d56e657894953f2959cd5b2590e3027f7be00e5642d596acb1a4950782b",
+      "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "26961f45f22842af0ac7515de28ead7095584e79d8575fc2d085fc4ecd8d5288",
+      "packages/edge-worker/test/ComposedImpactCorrections.test.ts": "a4d6e1750511e98fbbf3809b423692431b97c00d30973460bbd9bafae658c944"
+    },
+    "sourceFingerprint": "39b10e55174f61c6a4c35cd62ee238938e9eb10f8147c87c1446c47b3fce60c0",
+    "changedSinceReviewedHead": [
+      "packages/edge-worker/src/factory/Impact.ts",
+      "packages/edge-worker/src/factory/StepConfig.ts",
+      "packages/edge-worker/test/fixtures/composed-impact.ts",
+      "packages/edge-worker/test/ComposedImpactCorrections.test.ts"
+    ],
+    "result": "Implementation repairs supplied for both findings; independent new-head acceptance pending",
+    "R1": {
+      "roleCounts": {
+        "delta-reader": 2,
+        "accepted-scope": 1,
+        "trust-boundary": 1,
+        "dependency-boundary": 1,
+        "lifecycle-boundary": 1,
+        "combined-tree": 1,
+        "failure-paths": 1,
+        "accepted-behavior": 1,
+        "behavior-plan": 1,
+        "behavior-execution": 1,
+        "evidence-reader": 1,
+        "apply-request": 1,
+        "review-notes": 1
+      },
+      "checks": 1,
+      "qa": 1,
+      "history": 34,
+      "retrieval": {
+        "calls": 28,
+        "characters": 95942,
+        "bytes": 95942
+      },
+      "qualification": "Production historical-read seam with genuine reconstructed receipts, not an outer-Parallel end-to-end drive",
+      "originalHead": "7eb20744b236374d292a3426cf542306467dc656",
+      "currentHead": "d85185338b568f0d690f39b248d69711071cc7a7",
+      "originalInventory": {
+        "producer": "dispatch-bundle/inspect-bundle/accepted-scope",
+        "digest": "5d1ad11f7aae9035a888ff431e221bfdf44f6b2e7ea5c90648ac71d0b1bcfdc3",
+        "historyIndex": 4,
+        "binding": {
+          "version": 1,
+          "repositories": [
+            {
+              "id": "fixture",
+              "headSha": "7eb20744b236374d292a3426cf542306467dc656",
+              "treeSha": "4167e38466a97a890c2bbcf155414aedd15e2330",
+              "workspaceDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+            }
+          ],
+          "historyLength": 4,
+          "inputScope": {
+            "outputKeys": [
+              "requestMetadata",
+              "delta-reader",
+              "assessmentPort",
+              "external-revision-boundary"
+            ],
+            "historyLength": 4
+          },
+          "inputExtrasDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "inputDigest": "2cf4eab40cbc121d0710ac37b72985b2d1d16845db68757145becc289744e405"
+        }
+      },
+      "original": true,
+      "inheritedCopy": true,
+      "negativeControls": [
+        "unowned equal config",
+        "wrong owner",
+        "same ID in other frame",
+        "downstream stale decision",
+        "unowned inventory producer"
+      ]
+    },
+    "R2": {
+      "roleCounts": {
+        "delta-reader": 3,
+        "accepted-scope": 2,
+        "trust-boundary": 2,
+        "dependency-boundary": 2,
+        "lifecycle-boundary": 2,
+        "combined-tree": 2,
+        "failure-paths": 2,
+        "accepted-behavior": 2,
+        "behavior-plan": 2,
+        "behavior-execution": 2,
+        "evidence-reader": 2,
+        "apply-request": 2,
+        "review-notes": 1
+      },
+      "checks": 2,
+      "qa": 2,
+      "history": 48,
+      "retrieval": {
+        "calls": 52,
+        "characters": 142822,
+        "bytes": 142822
+      },
+      "priorRequirementIds": [
+        "R1"
+      ],
+      "assessedRequirementIds": [
+        "R2"
+      ],
+      "originalExtraction": {
+        "producerKey": "dispatch-bundle/inspect-bundle/accepted-scope",
+        "receiptDigest": "64e3701e99651368485a129fbf5acfd246a6c337ff3d4abcccda4222815bb2e1",
+        "historyIndex": 26,
+        "reason": "The qualified original extraction already covers the accepted added requirement; its source context remains current"
+      },
+      "originalAssessmentSnapshotDigest": "803c64b7c3983bebb6967e6d40c149105b0346537e953dd351831782a7f1d552",
+      "currentInventoryDigest": "1e700595c0e5a70f02e7846f04915575393ce25f859716a4f347334551bb1677",
+      "currentHead": "2ed301bfb4d2ee12e81ca2a722f6b775bb6940eb",
+      "selectedPending": {
+        "specialists": [
+          "trust-boundary",
+          "dependency-boundary",
+          "lifecycle-boundary",
+          "combined-tree",
+          "failure-paths",
+          "accepted-behavior"
+        ],
+        "checks": [
+          "ownership-behavior"
+        ],
+        "qaCriteria": [
+          "ownership-preserved"
+        ]
+      },
+      "negativeControls": [
+        "unknown ID",
+        "missing original extraction receipt",
+        "stale extraction head"
+      ],
+      "nativeHumanGate": "No original approval/continuation; wrong-SHA rejected; exact synthetic runtime approval then mocked provider MERGED",
+      "providerMerge": [
+        {
+          "operation": "merge",
+          "input": {
+            "url": "https://forge.example/replay/python/pulls/7",
+            "headSha": "2ed301bfb4d2ee12e81ca2a722f6b775bb6940eb",
+            "method": "merge"
+          },
+          "head": "2ed301bfb4d2ee12e81ca2a722f6b775bb6940eb",
+          "human": 1
+        }
+      ]
+    },
+    "proofScope": "R2 passed in second frozen attempt; its complete test body is byte-identical in final R1-only attempt. Product source and fixture identical across those attempts. No whole-matrix/33-check replay.",
+    "logs": {
+      "repair-tests.log": {
+        "sha256": "d66bd57044f4c4f0951d5dda174aac738ba45a10b802018774f26f7ac4ee28a3",
+        "bytes": 2543
+      },
+      "repair-tests-2.log": {
+        "sha256": "7c6beac7455bacc4b20d5638120655b890d100d94c83ebbe5ca583e37f3e6cd5",
+        "bytes": 1625
+      },
+      "repair-r1.log": {
+        "sha256": "955e32f02ba20bb1b2c28c7f1c0bdb5981cdb64362cc39a36ef17e4a7eee0afb",
+        "bytes": 589
+      },
+      "repair-types.log": {
+        "sha256": "9af22cb1e6965414d2080fb0a904f02c20ae88ae8eb9caff1bf4f67ba61ad7c5",
+        "bytes": 107
+      },
+      "repair-tsgo.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "repair-test-types.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "final-types.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    },
+    "commands": [
+      {
+        "command": "pnpm exec vitest run --config /tmp/taskbot145-implementation-r1/focused.config.mts test/ComposedImpactCorrections.test.ts",
+        "exit": 1,
+        "results": "draft 1: 0 pass / 2 fail; graph placement refusal and overly combined new stage wait"
+      },
+      {
+        "command": "same two-test command after fixture setup correction",
+        "exit": 1,
+        "results": "draft 2: R2 passed; R1 graph configuration refused mandatory-question removal"
+      },
+      {
+        "command": "same command -t 'qualified assessor owner'",
+        "exit": 0,
+        "results": "R1 passed / R2 filtered; current complete R2 body unchanged from passing execution"
+      },
+      {
+        "command": "pnpm exec tsc --project focused-types.json",
+        "exit": 254,
+        "results": "tool setup only: tsc absent; owning scripts use tsgo"
+      },
+      {
+        "command": "pnpm exec tsgo --project /tmp/taskbot145-implementation-r1/repair-test-types.json",
+        "exit": 0,
+        "results": "final owning source plus new regression/fixture types; no noCheck"
+      }
+    ]
   }
 }

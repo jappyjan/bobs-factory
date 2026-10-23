@@ -25,6 +25,7 @@ import {
 	readOutput,
 	readStep,
 	resolveStepConfig,
+	stepConfigOwner,
 } from "./StepConfig.js";
 import {
 	boundStepKey,
@@ -559,15 +560,6 @@ export function validateImpact(
 		throw new Error(
 			"Target advancement overlaps reviewed interfaces; integrate and validate the combined tree before continuing",
 		);
-	if (
-		result.requirementIds.some(
-			(id) =>
-				!inventory?.requirements.some(
-					(r) => r.id === id && r.classification === "active",
-				),
-		)
-	)
-		throw new Error("Impact references an unknown requirement");
 	const fanout = stepForRun(run, snapshot.key);
 	const producer =
 		snapshot.reuseVersion === "composed-v1" && fanout
@@ -594,6 +586,17 @@ export function validateImpact(
 					bound.treeSha === repo.treeSha,
 			),
 		);
+	// Only a qualified executed extraction can replace the prior review inventory.
+	const requirementInventory = currentExtraction ? executed : inventory;
+	if (
+		result.requirementIds.some(
+			(id) =>
+				!requirementInventory?.requirements.some(
+					(r) => r.id === id && r.classification === "active",
+				),
+		)
+	)
+		throw new Error("Impact references an unknown requirement");
 	const uncertain =
 		result.uncertainty.length ||
 		snapshot.repositories.some((r) => r.uncertainty.length) ||
@@ -933,7 +936,12 @@ export async function historicalInventoryRead(
 		// The independent assessor may inspect the latest executed inventory as
 		// historical input, including extraction completed before a stale decision.
 		// It grants no current inspection or downstream approval authority.
-		if (assessor === step)
+		if (
+			hasCheck(step, "impact-reuse") &&
+			stepConfigOwner(step) === assessor &&
+			boundStepKey({ run, step: fanout, stepKey: fanoutKey }, "impact") ===
+				assessorKey
+		)
 			return run.history.some(
 				(entry) =>
 					entry.step === inventoryKey &&

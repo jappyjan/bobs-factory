@@ -893,7 +893,7 @@ export function setupReplay(kind: ReplayCase, layout: "js" | "python") {
 					specialists: snapshot.reviewers
 						.map((r) => r.id)
 						.filter((id) => !reuse.some((r) => r.reviewer === id)),
-					requirementIds: [],
+					requirementIds: extracted ? ["R2"] : [],
 					checks: verify
 						? [
 								{
