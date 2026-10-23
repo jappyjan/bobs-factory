@@ -1,0 +1,280 @@
+{
+  "base": "6a25d1659c4a9e475596408500117af81b83f2b5",
+  "baseTree": "1317fec25dc41e41ad26c48ef2bd2c93a330e967",
+  "sourceDigest": "ef548f6a37db3f9d0a59fa9cdb3e9f328cd277355988cf981c496fbece809c0c",
+  "inputDigest": "8b7257bb6514a911e8f241cbcb1c2970a059d54b3db244fd712b5a6985246573",
+  "sha256": {
+    "apps/f1/test-drives/assets/taskbot146-reservations.mjs": "5aeda2414a25410de1afbfe1643eda7ba268e864823c198a8c219af24925e48f",
+    "packages/edge-worker/src/EdgeWorker.ts": "1f43e32f08383d92c35e6ee632bb31d7cd04a7dca698b47c53879906140d5d36",
+    "packages/edge-worker/src/factory/DeliveryCoordination.ts": "05b3388f183df01c38f17418a48af423a4eff639ed06597db639dc39ba4ce048",
+    "packages/edge-worker/src/factory/FactoryTools.ts": "291829d071048de9487ce6b1f1c4144d25d45943b0dfb659b2be432c4b52db5b",
+    "packages/edge-worker/src/factory/RolePrompt.ts": "68e75067c0b1284c4c602366dfc0b1f9b2c8ed273f27402ac76350e0b28960c0",
+    "packages/edge-worker/src/factory/StepConfig.ts": "43c9505c89879bc32d7a235d6011485f29695c5921b66ff86e65037c197d86a8",
+    "packages/edge-worker/src/factory/Workflow.ts": "3a2ae8022c9d6c82af7de546cd09625d54976b8fd3e2fc554d66a3a5e27be7a7",
+    "packages/edge-worker/src/factory/WorkflowRuntime.ts": "1155db5dc3ff4141f0b0e464bb04c94bf43b4cf0be015b8d2ec81e69dfa38c8d",
+    "packages/edge-worker/src/factory/factoryRecipes.ts": "7777526ee7ab69a77e97e23ab495559496858df8b83aa6055555a0f9c129f87f",
+    "packages/edge-worker/src/factory/stockFactorySteps.ts": "9a2090a098201fd2bf781304d9fc51edb4ee1f59a621488814ce29aa48c89b49",
+    "packages/edge-worker/test/DeliveryCoordination.test.ts": "b645a756162879629ec09ebe51a33100235b9d2edf7e550e1142a7f6eb07ebe5",
+    "packages/edge-worker/test/DeliveryFairness.test.ts": "3321cd4d392a5abcf01c99796bf09891288e95e55d8a1406cd26cdb6906e7450",
+    "packages/edge-worker/test/FactoryRolePrompts.test.ts": "24401189a109a05fce09834cd2f6f4c6fa7f4065f63769492e5eb597ded1011d",
+    "packages/edge-worker/test/ReservationBoundaries.test.ts": "1c6c50fc13e0e12b9d8899c556fb4c72d91da63198a2819486a0d3def716395d",
+    "packages/edge-worker/test/ReservationF1.test.ts": "7ea7398056b31e856fcf552af3edb9536655412d1867d678b92daa306b8e96e4",
+    "packages/edge-worker/test/StepConfig.test.ts": "f450d344ce76aa4be85ecf54bd6b92360126151f378ae32eb7e32df5a74a2214",
+    "packages/edge-worker/test/fixtures/authenticated-factory.ts": "f8f7c6c933875a3d4ac7140faface48c355760273ff697cb978b5e78fc4a7277",
+    "packages/edge-worker/test/fixtures/github-api.ts": "934288ed420c9d1fd4be93b8eafea6995811c6193a17d9926ffe5ac907470f58",
+    "packages/edge-worker/test/fixtures/merge-readiness.ts": "206d194d908d9d46255b6bcf9fede45e8ab540265f75e72e44423b26b6e76c7a",
+    "packages/edge-worker/test/fixtures/runtime-wait.ts": "c8e7678a9782c0e93aed1a37822a4419fdf017b04eab392c291142654f3a9215",
+    "packages/edge-worker/test/fixtures/stock-role-prompts.json": "f5137b4bd14616ce48c011a2cb008e03235af6602f40b70d23f1cdfd38a04520",
+    "packages/edge-worker/test/prompt-assembly.routing-context.test.ts": "6e1bfbd6145c28f7bead512c74f6e55e48ac57149a490db725024dd262681723",
+    "packages/edge-worker/test/setup.ts": "72a5a06930a7e014d8795f2a086399342b5c9580a2760da04dd16ead020de358"
+  },
+  "f1": {
+    "before": {
+      "mode": "before",
+      "head": "1a7544009e6bba4a07aa50284ed57b5e9c3fe440",
+      "beforeRelease": {
+        "fixerActive": true,
+        "mergeRequests": 0,
+        "fixerClaim": {
+          "scopes": [
+            "[\"https://github.com/test/repo\",\"main\"]"
+          ],
+          "queuedAt": "2026-10-23T05:57:57.265Z",
+          "phase": "active",
+          "operation": "repair:mutation",
+          "reason": "Repository integration/publication",
+          "admittedAt": "2026-10-23T05:57:57.278Z"
+        },
+        "deliveryClaim": {
+          "scopes": [
+            "[\"https://github.com/test/repo\",\"main\"]"
+          ],
+          "queuedAt": "2026-10-23T05:57:57.419Z",
+          "phase": "queued",
+          "operation": "publication:mutation",
+          "reason": "Repository integration/publication",
+          "blockers": [
+            {
+              "runId": "9df70e99-14a1-4831-90d1-fdb0d8b033b9",
+              "operation": "repair:mutation",
+              "targets": [
+                "[\"https://github.com/test/repo\",\"main\"]"
+              ]
+            }
+          ]
+        }
+      },
+      "visits": [
+        "fixer:repair",
+        "fixer:draft-pr",
+        "delivery:draft-pr",
+        "delivery:merge",
+        "delivery:merge"
+      ],
+      "submissions": 1,
+      "originalDecisionPreserved": true,
+      "restartConfirmedWithoutReplay": true,
+      "mocks": {
+        "paidCalls": 0,
+        "liveProviderCalls": 0,
+        "nativeAgentCalls": 0
+      },
+      "cleanup": {
+        "runtime": true,
+        "restoredRuntime": true,
+        "api": true,
+        "syntheticHome": true
+      }
+    },
+    "after": {
+      "mode": "after",
+      "head": "952fc76289c52f2d54b35c41be522a370cbd5ec7",
+      "beforeRelease": {
+        "fixerActive": true,
+        "mergeRequests": 1,
+        "fixerClaim": null,
+        "deliveryClaim": {
+          "scopes": [
+            "[\"https://github.com/test/repo\",\"main\"]"
+          ],
+          "queuedAt": "2026-10-23T05:59:48.613Z",
+          "priority": "completion",
+          "phase": "released",
+          "readiness": "released",
+          "operation": "finalize:mutation",
+          "reason": "Operation settled after cleanup",
+          "admittedAt": "2026-10-23T05:59:48.627Z",
+          "releasedAt": "2026-10-23T05:59:48.669Z",
+          "reservations": []
+        }
+      },
+      "visits": [
+        "fixer:repair",
+        "delivery:draft-pr",
+        "delivery:merge",
+        "delivery:merge"
+      ],
+      "submissions": 1,
+      "originalDecisionPreserved": true,
+      "restartConfirmedWithoutReplay": true,
+      "mocks": {
+        "paidCalls": 0,
+        "liveProviderCalls": 0,
+        "nativeAgentCalls": 0
+      },
+      "cleanup": {
+        "runtime": true,
+        "restoredRuntime": true,
+        "api": true,
+        "syntheticHome": true
+      }
+    }
+  },
+  "configuration": {
+    "provider": "codex",
+    "model": "gpt-6.1-sol",
+    "serviceTier": "priority",
+    "reasoningEffort": "xhigh",
+    "runtimeMode": "full-access"
+  },
+  "toolchain": {
+    "loginNode": "24.22.1",
+    "pnpmExecutionNode": "24.21.0",
+    "pnpm": "10.33.1",
+    "bunAttempt": "1.4.2"
+  },
+  "attempts": [
+    {
+      "stage": "A focused",
+      "exit": 1,
+      "passed": 39,
+      "failed": 7,
+      "suiteLoadFailures": 2,
+      "notes": "Missing stock fixtures/dependency entry, changed prompt expectations and old restart completion assumption."
+    },
+    {
+      "stage": "A typecheck",
+      "exit": 1,
+      "notes": "Temporary configuration preflight: typeRoots/baseUrl; source not certified."
+    },
+    {
+      "stage": "B focused",
+      "exit": 1,
+      "passed": 49,
+      "failed": 3,
+      "notes": "Restart ordering, blocker-summary race and fixture provider identity; typecheck also exposed mutable tuple/narrowing errors."
+    },
+    {
+      "stage": "B typecheck",
+      "exit": 1,
+      "notes": "Coordinator tuple const inference, owned nullable, and missing transitive sqlite declaration in temporary source-alias config."
+    },
+    {
+      "stage": "C focused",
+      "exit": 1,
+      "passed": 44,
+      "failed": 1,
+      "notes": "13 fairness +26 coordination passed; human-decision fixture still used mismatched provider metadata."
+    },
+    {
+      "stage": "C typecheck",
+      "exit": 0
+    },
+    {
+      "stage": "D focused",
+      "exit": 1,
+      "passed": 5,
+      "failed": 1,
+      "notes": "New approval-after-wait passed; fallback fixture lacked runtime-owned repository identity."
+    },
+    {
+      "stage": "E boundaries",
+      "exit": 0,
+      "passed": 6
+    },
+    {
+      "stage": "F delivery/continuation selection",
+      "exit": 0,
+      "passed": 4,
+      "skipped": 30
+    },
+    {
+      "stage": "G delivery/prompts selection",
+      "exit": 0,
+      "passed": 11,
+      "skipped": 30
+    },
+    {
+      "stage": "H nested resources selection",
+      "exit": 0,
+      "passed": 1,
+      "skipped": 8
+    },
+    {
+      "stage": "G owner source typecheck",
+      "exit": 0
+    },
+    {
+      "stage": "F1 before 1-3",
+      "exit": 1,
+      "notes": "Bun source-loader LaunchFieldSchema initialization failures; no drive completed."
+    },
+    {
+      "stage": "F1 before 4",
+      "exit": 1,
+      "notes": "API shell-build prerequisite missing; no workflow effects."
+    },
+    {
+      "stage": "F1 before 5",
+      "exit": 1,
+      "notes": "Driver timeout while waiting for malformed fixture readiness."
+    },
+    {
+      "stage": "F1 before 6-7",
+      "exit": 1,
+      "notes": "Incomplete publication read produced Invalid URL; queued hold prefix only."
+    },
+    {
+      "stage": "F1 before 8",
+      "exit": 1,
+      "notes": "Original executed publication provenance missing; retained merge proof guard correctly rejected completion."
+    },
+    {
+      "stage": "F1 before 9",
+      "exit": 0,
+      "notes": "Historical harness before snapshot/cleanup correction."
+    },
+    {
+      "stage": "F1 after 1",
+      "exit": 1,
+      "notes": "Admission/submission/restart assertions reached; duplicate fixture cleanup after deleting home failed; not a passing drive."
+    },
+    {
+      "stage": "F1 before 10",
+      "exit": 0,
+      "notes": "Final common fixture against full pinned BASE edge-worker source snapshot."
+    },
+    {
+      "stage": "F1 after 2",
+      "exit": 0,
+      "notes": "Common fixture before final branch-provenance hardening/capability sentence; historical scoped pass."
+    },
+    {
+      "stage": "F1 after 3",
+      "exit": 0,
+      "notes": "Final product source; fixture hooks/scripted provider/empty static shell, actual Factory API/runtime/Git; no native runner or live forge."
+    },
+    {
+      "stage": "Final changed-owner Biome",
+      "exit": 1,
+      "notes": "Only F1 driver two-call line wrapping and useTemplate style; deferred under functional-only epic policy. No source edits or rerun to relabel this failure."
+    }
+  ],
+  "artifactRoot": "/tmp/taskbot146-implementation.QGBiDn",
+  "limits": [
+    "No single full-final-head suite claim: exact unchanged mechanisms reused from the listed staged passes.",
+    "F1 publication hooks and human/provider records are scripted; actual merge guard executes, but no real forge/model/native adapter proof.",
+    "No production timing/cost or arbitrary process-crash/external exactly-once guarantee.",
+    "No development CI, broad build/type/lint/packages/apps/scripts/audit/native cycles; deferred to post148."
+  ]
+}

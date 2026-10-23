@@ -25,17 +25,44 @@ import type { ExecutionContext, FactoryRun } from "./WorkflowRuntime.js";
 /** Instance-owned coordination, persisted with the run rather than a process lease. */
 export interface DeliveryCoordination {
 	waitingSince?: string;
+	priority?: "completion" | "normal";
+	readiness?: "checking" | "blocked" | "active" | "released" | "unknown";
+	waitReason?: string;
 	operation?: string;
 	blockers?: { runId: string; operation: string; targets: string[] }[];
 	scopes: string[];
+	/** Already owned targets remain exclusive while an operation expands its scope. */
+	heldScopes?: string[];
 	queuedAt: string;
 	phase: "queued" | "active" | "released";
 	admittedAt?: string;
 	releasedAt?: string;
 	reason?: string;
+	/** Per-operation state for the existing run summary, including concurrent waits. */
+	reservations?: (Omit<DeliveryCoordination, "reservations"> & {
+		runId: string;
+		operation: string;
+	})[];
 }
+/** After one minute of continuous eligibility, FIFO takes precedence over priority. */
+export const DELIVERY_AGING_MS = 60_000;
+const unconfirmedCancellation =
+	"External execution cancellation is unconfirmed; resource retained";
 const terminal = (run: FactoryRun) =>
 	!["running", "waiting"].includes(run.status);
+function cancellationUnconfirmed(
+	run: FactoryRun,
+	operation: string,
+	claim: DeliveryCoordination,
+): boolean {
+	const leaf =
+		run.capacityLeaves?.[operation.replace(/:(mutation|resources)$/, "")];
+	return (
+		(claim.phase === "active" || Boolean(claim.heldScopes?.length)) &&
+		leaf?.phase === "stopping" &&
+		Boolean(leaf.request)
+	);
+}
 const repositoryIdentities = new Map<string, string>();
 function localRepository(path: string): string {
 	const normalized = existsSync(path) ? realpathSync(path) : resolve(path);
@@ -253,17 +280,63 @@ function claims(run: FactoryRun): [string, DeliveryCoordination][] {
 	);
 }
 function updateSummary(run: FactoryRun, last: DeliveryCoordination): void {
-	const pending = claims(run).map(([, claim]) => claim);
+	const entries = claims(run);
+	const pending = entries.map(([, claim]) => claim);
 	const active = pending.find((claim) => claim.phase === "active");
 	run.deliveryCoordination = pending.length
 		? {
 				...(active ?? pending[0]!),
 				scopes: [...new Set(pending.flatMap((claim) => claim.scopes))].sort(),
+				reservations: entries.map(([operation, claim]) => ({
+					...claim,
+					runId: run.id,
+					operation,
+				})),
 			}
-		: { ...last };
+		: { ...last, reservations: [] };
 }
 
-/** Retain queue priority only for actual unfinished leaves, never passive parent frames. */
+function continuousWait(
+	claim: DeliveryCoordination | undefined,
+	now: number,
+): string | undefined {
+	if (claim?.phase !== "queued" || claim.admittedAt || claim.releasedAt)
+		return undefined;
+	const queued = Date.parse(claim.queuedAt);
+	const waiting = Date.parse(claim.waitingSince ?? claim.queuedAt);
+	const since = Math.max(queued, waiting);
+	return Number.isFinite(since) && since <= now
+		? new Date(since).toISOString()
+		: undefined;
+}
+
+function queueOrder(
+	claim: DeliveryCoordination,
+	owner: string,
+	other: DeliveryCoordination,
+	otherOwner: string,
+	now: number,
+): number {
+	const since = Date.parse(
+		continuousWait(claim, now) ?? new Date(now).toISOString(),
+	);
+	const otherSince = Date.parse(
+		continuousWait(other, now) ?? new Date(now).toISOString(),
+	);
+	const aged = now - since >= DELIVERY_AGING_MS;
+	const otherAged = now - otherSince >= DELIVERY_AGING_MS;
+	if (aged !== otherAged) return aged ? -1 : 1;
+	if (!aged && claim.priority !== other.priority) {
+		const priority = claim.priority === "completion" ? 0 : 1;
+		const otherPriority = other.priority === "completion" ? 0 : 1;
+		if (priority !== otherPriority) return priority - otherPriority;
+	}
+	return (
+		since - otherSince || (owner < otherOwner ? -1 : owner > otherOwner ? 1 : 0)
+	);
+}
+
+/** Restart only: retain proven queued waits for unfinished leaves, not old admissions. */
 export function restoreDelivery(run: FactoryRun): void {
 	const executing = new Set<string>();
 	const visit = (
@@ -298,15 +371,28 @@ export function restoreDelivery(run: FactoryRun): void {
 			executing.add(`${key}:resources`);
 		}
 	};
-	visit(run.checkpoint, run.workflow.steps, "");
-	const pending = Object.entries(run.deliveryReservations ?? {});
+	if (["running", "waiting", "interrupted"].includes(run.status))
+		visit(run.checkpoint, run.workflow.steps, "");
+	const pending = Object.entries(run.deliveryReservations ?? {}).map(
+		([key, claim]): [string, DeliveryCoordination] => [key, { ...claim }],
+	);
+	const now = Date.now();
 	releaseDelivery(run, "Restart requires operation admission");
 	for (const [key, claim] of pending) {
-		if (!executing.has(key)) continue;
+		if (cancellationUnconfirmed(run, key, claim)) continue;
+		if (!executing.has(key) || claim.phase === "released") continue;
+		claim.queuedAt = continuousWait(claim, now) ?? new Date(now).toISOString();
+		claim.waitingSince = claim.queuedAt;
+		claim.priority ??= "normal";
 		claim.phase = "queued";
-		claim.reason = "Restart requires operation admission";
+		claim.readiness = "checking";
+		claim.waitReason = "Restart requires operation admission";
 		delete claim.admittedAt;
 		delete claim.releasedAt;
+		delete claim.heldScopes;
+		delete claim.blockers;
+		delete claim.reservations;
+		run.deliveryReservations![key] = claim;
 		updateSummary(run, claim);
 	}
 }
@@ -321,80 +407,178 @@ export async function acquireDelivery(
 	options: {
 		key?: string;
 		assertSchedulingOpen?: () => void;
+		/** Terminal owners keep active exclusion until their in-process hooks settle. */
+		ownerExecuting?: (run: FactoryRun) => boolean;
+		preserveQueued?: () => boolean;
 		scopes?: string[] | (() => string[]);
 		reason?: string;
+		priority?: "completion" | "normal";
 	} = {},
 ): Promise<void> {
 	const key = options.key ?? "delivery";
+	signal.throwIfAborted();
+	options.assertSchedulingOpen?.();
+	if (terminal(run)) throw new Error("Run cannot acquire delivery admission");
 	run.deliveryReservations ??= {};
 	const previous = run.deliveryReservations[key];
+	if (previous && cancellationUnconfirmed(run, key, previous))
+		throw new Error(unconfirmedCancellation);
+	const now = Date.now();
+	const waitingSince = continuousWait(previous, now);
+	const heldScopes =
+		previous?.phase === "active"
+			? previous.scopes
+			: previous?.phase === "queued"
+				? previous.heldScopes
+				: undefined;
+	const currentScopes = () =>
+		[
+			...new Set([
+				...(typeof options.scopes === "function"
+					? options.scopes()
+					: (options.scopes ?? deliveryScopes(run))),
+				...(heldScopes ?? []),
+			]),
+		].sort();
 	const claim: DeliveryCoordination = {
-		scopes:
-			typeof options.scopes === "function"
-				? options.scopes()
-				: (options.scopes ?? deliveryScopes(run)),
-		queuedAt: previous?.queuedAt ?? new Date().toISOString(),
+		scopes: currentScopes(),
+		queuedAt: waitingSince ?? new Date(now).toISOString(),
+		waitingSince: waitingSince ?? new Date(now).toISOString(),
+		priority:
+			options.priority ??
+			(waitingSince ? previous?.priority : undefined) ??
+			"normal",
 		phase: "queued",
+		readiness: "checking",
+		...(heldScopes?.length ? { heldScopes: [...heldScopes] } : {}),
 		operation: key,
 		reason: options.reason ?? "Repository integration/publication",
+	};
+	const assertCurrent = () => {
+		signal.throwIfAborted();
+		options.assertSchedulingOpen?.();
+		if (run.deliveryReservations?.[key] !== claim || claim.phase === "released")
+			throw new Error("Delivery admission was released or replaced");
+		if (terminal(run)) throw new Error("Run cannot acquire delivery admission");
 	};
 	// Reconcile the entire target set synchronously before admitting any mutation.
 	run.deliveryReservations[key] = claim;
 	updateSummary(run, claim);
-	await save();
 	let reported = "";
 	try {
+		await save();
 		for (;;) {
-			signal.throwIfAborted();
-			options.assertSchedulingOpen?.();
-			const blockers = [...runs()]
-				.filter((other) => !terminal(other))
-				.flatMap((other) =>
-					claims(other).flatMap(([operation, candidate]) => {
-						if (other.id === run.id && operation === key) return [];
-						const targets = candidate.scopes.filter((scope) =>
-							claim.scopes.includes(scope),
-						);
-						const earlier =
-							other.createdAt < run.createdAt ||
-							(other.createdAt === run.createdAt &&
-								(candidate.queuedAt < claim.queuedAt ||
-									(candidate.queuedAt === claim.queuedAt &&
-										JSON.stringify([other.id, operation]) <
-											JSON.stringify([run.id, key]))));
-						return targets.length && (candidate.phase === "active" || earlier)
-							? [{ runId: other.id, operation, targets }]
-							: [];
-					}),
-				);
+			assertCurrent();
+			const now = Date.now();
+			const blockers = [...runs()].flatMap((other) =>
+				claims(other).flatMap(([operation, candidate]) => {
+					if (other.id === run.id && operation === key) return [];
+					if (
+						terminal(other) &&
+						!cancellationUnconfirmed(other, operation, candidate) &&
+						((candidate.phase !== "active" && !candidate.heldScopes?.length) ||
+							!options.ownerExecuting?.(other))
+					)
+						return [];
+					const overlap = candidate.scopes.filter((scope) =>
+						claim.scopes.includes(scope),
+					);
+					// A queued operation waiting on our owned targets cannot precede
+					// our expansion: that would deadlock the waiter and its owner.
+					const earlier =
+						!terminal(other) &&
+						!candidate.scopes.some((scope) =>
+							claim.heldScopes?.includes(scope),
+						) &&
+						queueOrder(
+							candidate,
+							JSON.stringify([other.id, operation]),
+							claim,
+							JSON.stringify([run.id, key]),
+							now,
+						) < 0;
+					const targets =
+						candidate.phase === "active" || earlier
+							? overlap
+							: overlap.filter((scope) =>
+									candidate.heldScopes?.includes(scope),
+								);
+					return targets.length
+						? [{ runId: other.id, operation, targets }]
+						: [];
+				}),
+			);
 			if (!blockers.length) {
 				// Refresh native targets only when eligible, keeping queued polling cheap.
-				const current =
-					typeof options.scopes === "function"
-						? options.scopes()
-						: (options.scopes ?? deliveryScopes(run));
+				const current = currentScopes();
+				assertCurrent();
 				if (JSON.stringify(current) !== JSON.stringify(claim.scopes)) {
 					claim.scopes = current;
+					claim.readiness = "checking";
+					delete claim.blockers;
+					delete claim.waitReason;
+					reported = "";
 					updateSummary(run, claim);
 					await save();
 					continue;
 				}
 				claim.phase = "active";
+				claim.readiness = "active";
 				claim.admittedAt = new Date().toISOString();
 				delete claim.blockers;
+				delete claim.waitingSince;
+				delete claim.waitReason;
+				delete claim.heldScopes;
 				updateSummary(run, claim);
 				await save();
+				assertCurrent();
 				if (claim.scopes.length)
 					log(
 						`${claim.reason} admitted for ${claim.scopes.map(deliveryTargetLabel).join(", ")}.`,
 					);
 				return;
 			}
+			// Expansion may retain already-mutated targets. A cycle must unwind
+			// through the owning operation's cleanup, never wait forever or release it early.
+			if (claim.heldScopes?.length) {
+				const owners = new Map([...runs()].map((owner) => [owner.id, owner]));
+				const reachesSelf = (
+					runId: string,
+					operation: string,
+					seen = new Set<string>(),
+				): boolean => {
+					if (runId === run.id && operation === key) return true;
+					const identity = JSON.stringify([runId, operation]);
+					if (seen.has(identity)) return false;
+					seen.add(identity);
+					return (
+						owners.get(runId)?.deliveryReservations?.[operation]?.blockers ?? []
+					).some((blocker) =>
+						reachesSelf(blocker.runId, blocker.operation, seen),
+					);
+				};
+				if (
+					blockers.some((blocker) =>
+						reachesSelf(blocker.runId, blocker.operation),
+					)
+				)
+					throw new Error(
+						"Delivery target expansion cycle; settle and clean up the owning operation before retrying",
+					);
+			}
 			const fingerprint = JSON.stringify(blockers);
 			if (reported !== fingerprint) {
 				claim.blockers = blockers;
+				claim.readiness = "blocked";
+				claim.waitReason = blockers
+					.map(
+						(blocker) =>
+							`run ${blocker.runId}, operation ${blocker.operation}, target ${blocker.targets.map(deliveryTargetLabel).join(", ")}`,
+					)
+					.join("; ");
 				updateSummary(run, claim);
 				await save();
+				assertCurrent();
 				log(
 					`Waiting for ${claim.reason}: ${blockers.map((blocker) => `run ${blocker.runId}, operation ${blocker.operation.replace(/:(mutation|resources)$/, "")}, target ${blocker.targets.map(deliveryTargetLabel).join(", ")}`).join("; ")}.`,
 				);
@@ -403,8 +587,24 @@ export async function acquireDelivery(
 			await delay(signal, 200);
 		}
 	} catch (error) {
-		releaseDelivery(run, "Admission cancelled", key);
-		await save();
+		// A superseded asynchronous admission never releases its replacement.
+		if (
+			run.deliveryReservations?.[key] === claim &&
+			claim.phase !== "released"
+		) {
+			if (claim.heldScopes?.length) {
+				claim.scopes = [...claim.heldScopes];
+				claim.phase = "active";
+				claim.readiness = "active";
+				claim.reason =
+					"Expansion interrupted; original targets retained until operation cleanup";
+				delete claim.heldScopes;
+				delete claim.blockers;
+				delete claim.waitingSince;
+			} else if (!(claim.phase === "queued" && options.preserveQueued?.()))
+				releaseDelivery(run, "Admission cancelled", key);
+			await save();
+		}
 		throw error;
 	}
 }
@@ -413,18 +613,34 @@ export function releaseDelivery(
 	reason: string,
 	key?: string,
 ): void {
-	const reservations = key
-		? [run.deliveryReservations?.[key]].filter(Boolean)
-		: Object.values(run.deliveryReservations ?? {});
+	const selected = key ? run.deliveryReservations?.[key] : undefined;
+	const reservations: [string, DeliveryCoordination][] = key
+		? selected
+			? [[key, selected]]
+			: []
+		: Object.entries(run.deliveryReservations ?? {});
 	// Explicit compatibility: a legacy broad reservation is never an operation lease.
 	if (!key && run.deliveryCoordination)
-		reservations.push(run.deliveryCoordination);
-	for (const reservation of reservations) {
-		reservation!.phase = "released";
-		reservation!.releasedAt = new Date().toISOString();
-		reservation!.reason = reason;
-		delete reservation!.blockers;
+		reservations.push([
+			run.deliveryCoordination.operation ?? "delivery",
+			run.deliveryCoordination,
+		]);
+	for (const [operation, reservation] of reservations) {
+		if (cancellationUnconfirmed(run, operation, reservation)) {
+			reservation.readiness = "unknown";
+			reservation.reason = unconfirmedCancellation;
+			reservation.waitReason = unconfirmedCancellation;
+			continue;
+		}
+		reservation.phase = "released";
+		reservation.readiness = "released";
+		reservation.releasedAt = new Date().toISOString();
+		reservation.reason = reason;
+		delete reservation.blockers;
+		delete reservation.waitingSince;
+		delete reservation.waitReason;
+		delete reservation.heldScopes;
 	}
-	const last = reservations.at(-1);
-	if (last) updateSummary(run, last!);
+	const last = reservations.at(-1)?.[1];
+	if (last) updateSummary(run, last);
 }

@@ -1675,7 +1675,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			},
 		],
 		access: {
-			mode: "push",
+			mode: "workspace",
+			publication: "action",
 		},
 		instructions: ["incremental-review-fix", "review-fix"],
 		name: "Fix review findings",
@@ -1684,7 +1685,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		maxVisits: 16,
 		type: "agent",
 		prompt:
-			'Fix all open rating 2/3 findings. Use /contextMemory/reviewLedger and /contextMemory/reviewRounds for ALL distinct past findings and fixer dispositions when available, reading original source references only when needed; avoid alternating fixes or reopening settled issues without evidence. You may reject a complaint with concrete evidence. Return {"dispositions":[{"id":"finding-id","status":"fixed or rejected","reason":"..."}],"summary":"...","questions":[]}. Run relevant checks, commit and push changes to the same draft PR. Do not merge or mark the PR ready.\n{{instruction:review-fix}}',
+			'Fix all open rating 2/3 findings. Use /contextMemory/reviewLedger and /contextMemory/reviewRounds for ALL distinct past findings and fixer dispositions when available, reading original source references only when needed; avoid alternating fixes or reopening settled issues without evidence. You may reject a complaint with concrete evidence. Return {"dispositions":[{"id":"finding-id","status":"fixed or rejected","reason":"..."}],"summary":"...","questions":[]}. Run relevant local checks and leave changes for the separate publication action. Do not merge or mark the PR ready.\n{{instruction:review-fix}}',
 		json: true,
 		askQuestions: false,
 	},
@@ -1750,7 +1751,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			},
 		],
 		access: {
-			mode: "push",
+			mode: "workspace",
+			publication: "action",
 		},
 		instructions: ["incremental-ci-fix", "ci-fix-runtime", "ci-assessment"],
 		name: "Fix CI failures",
@@ -1759,7 +1761,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		maxVisits: 16,
 		type: "agent",
 		prompt:
-			'Diagnose and fix CI failures, merge conflicts, stale branches and actionable PR review comments in the supplied merge-readiness receipt and full history. Fetch the base before resolving conflicts. For each supplied unresolved review thread, address it or post an evidence-backed response before resolving it using the selected Git provider (GitHub: write a token-free JSON request file with method POST, path graphql and body {query,variables}, set repoUrl to the selected HTTPS repository URL and requestFile to that file, then run sh -c "$BOBS_FACTORY_GITHUB_CREDENTIAL_COMMAND github-api \\"\\$@\\"" bobs-factory --repo "$repoUrl" --request "$requestFile" with the resolveReviewThread mutation; GitLab: glab api PUT the MR discussion with resolved=true; custom: the configured adapter). Do not dismiss reviews or bypass rules. Required reviewer approvals must wait for the reviewer; do not impersonate one. Assess every supplied new PR comment. Act on requested corrections or document why a comment is informational. Record its ID in addressedCommentIds after assessment, and include disposition/reason in the summary. Add <!-- generated-by-bobs-factory --> to any PR reply you write. Retain all discussion and report addressed comment/thread IDs. Run relevant checks, commit and push to the same draft PR. Return {"summary":"...","checks":["..."],"addressedReviewIds":["review IDs"],"addressedCommentIds":["comment IDs"]}. Do not merge or mark ready.{{instruction:ci-assessment}}',
+			'Diagnose and fix CI failures, merge conflicts, stale branches and actionable PR review comments in the supplied merge-readiness receipt and full history. Fetch the base before resolving conflicts. For each supplied unresolved review thread, address it or post an evidence-backed response before resolving it using the selected Git provider (GitHub: write a token-free JSON request file with method POST, path graphql and body {query,variables}, set repoUrl to the selected HTTPS repository URL and requestFile to that file, then run sh -c "$BOBS_FACTORY_GITHUB_CREDENTIAL_COMMAND github-api \\"\\$@\\"" bobs-factory --repo "$repoUrl" --request "$requestFile" with the resolveReviewThread mutation; GitLab: glab api PUT the MR discussion with resolved=true; custom: the configured adapter). Do not dismiss reviews or bypass rules. Required reviewer approvals must wait for the reviewer; do not impersonate one. Assess every supplied new PR comment. Act on requested corrections or document why a comment is informational. Record its ID in addressedCommentIds after assessment, and include disposition/reason in the summary. Add <!-- generated-by-bobs-factory --> to any PR reply you write. Retain all discussion and report addressed comment/thread IDs. Run relevant local checks and leave changes for the separate publication action. Return {"summary":"...","checks":["..."],"addressedReviewIds":["review IDs"],"addressedCommentIds":["comment IDs"]}. Do not merge or mark ready.{{instruction:ci-assessment}}',
 		json: true,
 		askQuestions: false,
 	},
@@ -3335,7 +3337,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			},
 		],
 		access: {
-			mode: "push",
+			mode: "workspace",
+			publication: "action",
 		},
 		instructions: ["incremental-review-fix", "review-fix", "visual-fix"],
 		name: "Fix QA and visual findings",
@@ -3344,7 +3347,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		maxVisits: 16,
 		type: "agent",
 		prompt:
-			'Fix all open rating 2/3 findings. Use /contextMemory/reviewLedger and /contextMemory/reviewRounds for ALL distinct past findings and fixer dispositions when available, reading original source references only when needed; avoid alternating fixes or reopening settled issues without evidence. You may reject a complaint with concrete evidence. Return {"dispositions":[{"id":"finding-id","status":"fixed or rejected","reason":"..."}],"summary":"...","questions":[]}. Run relevant checks, commit and push changes to the same draft PR. Do not merge or mark the PR ready.\n{{instruction:review-fix}}{{instruction:visual-fix}}',
+			'Fix all open rating 2/3 findings. Use /contextMemory/reviewLedger and /contextMemory/reviewRounds for ALL distinct past findings and fixer dispositions when available, reading original source references only when needed; avoid alternating fixes or reopening settled issues without evidence. You may reject a complaint with concrete evidence. Return {"dispositions":[{"id":"finding-id","status":"fixed or rejected","reason":"..."}],"summary":"...","questions":[]}. Run relevant local checks and leave changes for the separate publication action. Do not merge or mark the PR ready.\n{{instruction:review-fix}}{{instruction:visual-fix}}',
 		json: true,
 		askQuestions: false,
 	},
@@ -3574,7 +3577,8 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 			},
 		],
 		access: {
-			mode: "push",
+			mode: "workspace",
+			publication: "action",
 		},
 		instructions: [],
 		name: "Address human feedback",
@@ -3583,7 +3587,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		maxVisits: 16,
 		type: "agent",
 		prompt:
-			'Address the latest human rejection/follow-up instructions in humanDecisions and human-review, preserving the accepted plan, decisions and all past review findings. Commit and push to the existing PR. Return {"summary":"what changed","checks":["commands and outcomes"]}. Do not merge, mark ready or assume approval.',
+			'Address the latest human rejection/follow-up instructions in humanDecisions and human-review, preserving the accepted plan, decisions and all past review findings. Leave corrected worktree changes for the separate publication action. Return {"summary":"what changed","checks":["commands and outcomes"]}. Do not merge, mark ready or assume approval.',
 		json: true,
 		askQuestions: false,
 	},
@@ -3627,6 +3631,7 @@ export const stockFactorySteps: Record<string, WorkflowStep> = {
 		],
 		access: {
 			mode: "workspace",
+			priority: "completion",
 		},
 		instructions: [],
 		name: "Merge approved revision",

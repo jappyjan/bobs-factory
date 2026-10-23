@@ -80,6 +80,7 @@ import { inspectPullRequest } from "./Takeover.js";
 import {
 	boundOutput,
 	boundStepKey,
+	boundToolOutput,
 	producerValue,
 	stepForRun,
 	writeBoundOutput,
@@ -1064,6 +1065,18 @@ export class FactoryTools {
 				const source = takeoverSource(run) as
 					| { url?: string; headRefName?: string; baseRefName?: string }
 					| undefined;
+				const continuing = context.step.arguments?.publication === "existing";
+				const prior = continuing
+					? (boundToolOutput(context, "draftPr", "draft-pr") as
+							| { url?: string; branch?: string }
+							| undefined)
+					: undefined;
+				const continuedUrl = source?.url ?? prior?.url;
+				if (continuing && !continuedUrl)
+					throw new Error(
+						"Continued publication requires its original executed PR receipt or accepted takeover source",
+					);
+
 				if (boundOutput(context, "implementation", "status") === "blocked")
 					throw new Error(
 						`Implementation is blocked: ${String(boundOutput(context, "implementation", "summary"))}. Answer the implementation questions before publishing.`,
@@ -1073,14 +1086,22 @@ export class FactoryTools {
 				// Keep provider validation ahead of mutations for a delivery candidate.
 				// A grouped context-only repository needs no publication provider.
 				if (!context.allowUnchangedRepository) await provider();
-				if (source?.url) {
-					if (source.headRefName !== branch)
-						throw new Error("Takeover must publish to the original PR branch");
-					const url = source.url;
-					const pr = await (await provider(url)).view(url, "state,isDraft");
-					if (pr.state !== "OPEN" || !pr.isDraft)
+				if (continuedUrl) {
+					const originalBranch = source?.url
+						? source.headRefName
+						: prior?.branch;
+					if (!originalBranch || originalBranch !== branch)
+						throw new Error(
+							"Continued publication must use the original PR branch",
+						);
+					const pr = await (await provider(continuedUrl)).view(
+						continuedUrl,
+						"state,isDraft",
+					);
+					if (pr.state !== "OPEN" || (!continuing && !pr.isDraft))
 						throw new Error("Takeover PR must remain open and draft");
 				}
+
 				if (await command("git", ["status", "--porcelain"])) {
 					await provider();
 					await command("git", ["add", "-A"]);
@@ -1126,18 +1147,25 @@ export class FactoryTools {
 						`No implementation changes to publish against ${baseBranch}. ${String(boundOutput(context, "implementation", "summary") ?? "The worktree has no deliverable changes.")} Resolve the implementation blocker before delivery; retrying PR creation cannot fix an empty branch.`,
 					);
 				const forge = await provider();
-				await command("git", ["push", "-u", "origin", "HEAD"]);
 				const existing = await forge.list(branch);
+				if (
+					continuing &&
+					existing.some((candidate) => candidate.url !== continuedUrl)
+				)
+					throw new Error(
+						"Original publication receipt conflicts with the current branch PR",
+					);
 				if (existing.length > 1)
 					throw new Error(
 						"Multiple pull/merge requests for this branch; supply an explicit takeover source",
 					);
-				let url = source?.url || existing[0]?.url;
+				let url = continuedUrl || existing[0]?.url;
 
-				if (url && !source?.url && !existing[0]?.isDraft)
+				if (url && !continuing && !source?.url && !existing[0]?.isDraft)
 					throw new Error(
 						"Existing PR is not draft; refusing to change its state automatically",
 					);
+				await command("git", ["push", "-u", "origin", "HEAD"]);
 				if (!url) {
 					url = await forge.create({
 						branch,
@@ -1736,6 +1764,22 @@ export class FactoryTools {
 					context.assertSchedulingOpen?.();
 					let immediate = false;
 					const inspectAndMerge = async () => {
+						const impact = context.groupedImpactValidated
+							? undefined
+							: await assertCurrentImpact(context);
+						const originalApproved = context.validateDelivery
+							? (context.executionApproval ?? run.humanDecisions?.at(-1))
+							: await effectiveApproval(context);
+						const continuation = run.approvalContinuations?.at(-1);
+						const approved =
+							continuation &&
+							impact &&
+							continuation.decisionDigest === impactDecisionDigest(impact) &&
+							continuation.originalReviewId === originalApproved?.reviewId
+								? { ...originalApproved, headSha: continuation.headSha }
+								: originalApproved;
+						if (approved?.decision !== "approve")
+							throw new Error("Explicit human approval required before merge");
 						if (!context.groupedImpactValidated)
 							await assertCurrentImpact(context);
 						const invalid = await context.validateDelivery?.();

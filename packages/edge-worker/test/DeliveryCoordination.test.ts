@@ -269,7 +269,7 @@ it("releases an overlapping target while a human is absent and retains its pendi
 	await Promise.all([a, b]);
 });
 
-it("restores the finalizing owner ahead of queued deliveries after shutdown, and cancellation does not starve the next oldest run", async () => {
+it("retains continuous queued waits ahead of prior active admissions after shutdown, without reviving cancellation", async () => {
 	const directory = home();
 	let ownerStarted = false;
 	const firstRuntime = new WorkflowRuntime(directory, {
@@ -313,10 +313,11 @@ it("restores the finalizing owner ahead of queued deliveries after shutdown, and
 	});
 	runtime.resumeAll();
 	await waitFor(() => expect(runtime.get(next.id).status).toBe("completed"));
+	await waitFor(() => expect(runtime.get(owner.id).status).toBe("completed"));
 	expect(runtime.get(cancelled.id).status).toBe("stopped");
 	expect(visits.filter((visit) => visit.endsWith(":draft-pr"))).toEqual([
-		"owner:draft-pr",
 		"next:draft-pr",
+		"owner:draft-pr",
 	]);
 	expect(visits).toEqual(
 		expect.arrayContaining([
@@ -386,7 +387,7 @@ it("uses a stable run identity to order equally old queued deliveries", async ()
 	// Establish the equal queue age this scenario specifically exercises.
 	for (const run of [first, last])
 		for (const claim of Object.values(run.deliveryReservations ?? {}))
-			claim.queuedAt = "2026-10-08T10:00:00Z";
+			claim.queuedAt = claim.waitingSince = "2026-10-08T10:00:00Z";
 	runtime.stop(owner.id);
 	await vi.advanceTimersByTimeAsync(1000);
 	await waitFor(() => expect(last.status).toBe("completed"));

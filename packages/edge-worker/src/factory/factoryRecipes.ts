@@ -566,7 +566,7 @@ const reviewRecipe = {
 		},
 		{
 			...roles["code-fix"]!,
-			next: "assess-impact",
+			next: "publish-correction",
 			branches: [
 				{
 					when: {
@@ -576,6 +576,15 @@ const reviewRecipe = {
 					next: "to-architecture",
 				},
 			],
+		},
+		{
+			...roles["draft-pr"]!,
+			id: "publish-correction",
+			arguments: { publication: "existing" },
+			name: "Publish corrected worktree",
+			reads: { ...roles["draft-pr"]!.reads, implementation: "code-fix" },
+			next: "assess-impact",
+			branches: [],
 		},
 	],
 };
@@ -722,7 +731,7 @@ const qaRecipe = {
 		},
 		{
 			...roles["visual-fix"]!,
-			next: "to-assess-impact",
+			next: "publish-correction",
 			branches: [
 				{
 					when: {
@@ -732,6 +741,15 @@ const qaRecipe = {
 					next: "to-architecture",
 				},
 			],
+		},
+		{
+			...roles["draft-pr"]!,
+			id: "publish-correction",
+			arguments: { publication: "existing" },
+			name: "Publish corrected worktree",
+			reads: { ...roles["draft-pr"]!.reads, implementation: "visual-fix" },
+			next: "to-assess-impact",
+			branches: [],
 		},
 	],
 };
@@ -817,7 +835,7 @@ const ciRecipe = {
 		},
 		{
 			...roles["ci-fix"]!,
-			next: "after-ci-fix-observe",
+			next: "publish-correction",
 			branches: [
 				{
 					when: {
@@ -827,6 +845,15 @@ const ciRecipe = {
 					next: "to-architecture",
 				},
 			],
+		},
+		{
+			...roles["draft-pr"]!,
+			id: "publish-correction",
+			arguments: { publication: "existing" },
+			name: "Publish corrected worktree",
+			reads: { ...roles["draft-pr"]!.reads, implementation: "ci-fix" },
+			next: "after-ci-fix-observe",
+			branches: [],
 		},
 		{ ...roles["after-ci-fix-observe"]!, next: "after-ci-fix", branches: [] },
 		{
@@ -993,7 +1020,7 @@ const approvalRecipe = {
 		},
 		{
 			...roles["human-fix"]!,
-			next: "to-assess-impact",
+			next: "publish-correction",
 			branches: [
 				{
 					when: {
@@ -1003,6 +1030,15 @@ const approvalRecipe = {
 					next: "to-architecture",
 				},
 			],
+		},
+		{
+			...roles["draft-pr"]!,
+			id: "publish-correction",
+			arguments: { publication: "existing" },
+			name: "Publish corrected worktree",
+			reads: { ...roles["draft-pr"]!.reads, implementation: "human-fix" },
+			next: "to-assess-impact",
+			branches: [],
 		},
 	],
 };
