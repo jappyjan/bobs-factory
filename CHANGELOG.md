@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Run timing now separates age, measured execution, waits and unknown gaps, with current blockers, recent role/check provenance, context retrieval counts and a bounded diagnostic export. ([Task148](https://taskbot.apps.janjaap.de/p/bobs-factory/t/148))
+- Run timing now separates age, measured execution, waits and unknown gaps, with current blockers, recent role/check provenance, context retrieval counts and a bounded diagnostic export. ([Task148](https://taskbot.apps.janjaap.de/p/bobs-factory/t/148), [#185](https://github.com/jappyjan/bobs-factory/pull/185))
 
 - Agent context now bounds nested outputs, review baselines and progress, with immutable references and paginated original evidence. New baselines retain original history ranges, including unchanged detached custom history reads, instead of copying accumulated payloads. Restored immutable history reuses verified snapshots across role handoffs; saved baselines and native decisions remain readable. ([Taskbot #144](https://taskbot.apps.janjaap.de/p/bobs-factory/t/144), [#181](https://github.com/jappyjan/bobs-factory/pull/181))
 
