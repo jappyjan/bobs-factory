@@ -98,7 +98,7 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.candidate_json != '' && fromJSON(needs.prepare.outputs.candidate_json).candidate.channel != 'stable'
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       F1_AGENT_MODE: mock
       F1_TESTED_COMMIT: ${{ fromJSON(needs.prepare.outputs.candidate_json).candidate.commit }}

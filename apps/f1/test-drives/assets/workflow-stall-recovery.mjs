@@ -9,11 +9,13 @@ import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
 import { FactoryTools } from "../../../../packages/edge-worker/dist/factory/FactoryTools.js";
+import { nativeViewSnapshot } from "../../../../packages/edge-worker/dist/factory/NativeViews.js";
 import {
 	aggregateForContext,
 	validateInventory,
 } from "../../../../packages/edge-worker/dist/factory/SpecialistReview.js";
 import { stepVisitLimit } from "../../../../packages/edge-worker/dist/factory/StepVisitBudget.js";
+import { stockFactorySteps } from "../../../../packages/edge-worker/dist/factory/stockFactorySteps.js";
 import { WorkflowSchema } from "../../../../packages/edge-worker/dist/factory/Workflow.js";
 import { checkin } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import legacyWorkflows from "../../../../packages/edge-worker/test/fixtures/legacy-workflows-a4990127.json" with {
@@ -132,9 +134,8 @@ BOBS_FACTORY_FIXTURE_JSON`,
 		agent("hold", { askQuestions: true, next: "end" }),
 	],
 };
-const stockPipeline = defaultWorkflows.find(
-	(workflow) => workflow.id === "factory-pipeline",
-);
+// Stock roles are configured once and composed into sub-recipes (#179).
+const stockPipeline = { steps: Object.values(stockFactorySteps) };
 const proposalStep = structuredClone(
 	stockPipeline.steps.find((step) => step.id === "architecture"),
 );
@@ -851,6 +852,8 @@ try {
 					version: proposal.version,
 					digest: proposal.digest,
 					decision: "accept",
+					// Native decisions bind the exact displayed check-in (#143).
+					display: { digest: nativeViewSnapshot(architectureRun).digest },
 				}),
 			},
 		);

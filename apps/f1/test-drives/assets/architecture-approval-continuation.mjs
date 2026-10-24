@@ -14,6 +14,8 @@ import { join } from "node:path";
 import { createCLIIssueTracker } from "../../../../packages/core/dist/index.js";
 import { EdgeWorker } from "../../../../packages/edge-worker/dist/EdgeWorker.js";
 import { defaultWorkflows } from "../../../../packages/edge-worker/dist/factory/defaultWorkflows.js";
+import { nativeViewSnapshot } from "../../../../packages/edge-worker/dist/factory/NativeViews.js";
+import { stockFactorySteps } from "../../../../packages/edge-worker/dist/factory/stockFactorySteps.js";
 import { checkin } from "../../../../packages/edge-worker/test/fixtures/architecture.ts";
 import { loadFactoryContextSnapshot } from "../../../../packages/mcp-tools/dist/index.js";
 import { MockAgentRunner } from "../../src/MockAgentRunner.ts";
@@ -59,7 +61,8 @@ process.env.BOBS_FACTORY_MIGRATION_SOURCE_CAPACITY_DIRECTORY = join(
 	directory,
 	"unused-legacy-capacity",
 );
-const stock = defaultWorkflows.find((w) => w.id === "factory-pipeline");
+// Stock roles are configured once and composed into sub-recipes (#179).
+const stock = { steps: Object.values(stockFactorySteps) };
 // These are executed sources in the reduced fixture, not omitted stock nodes.
 // The separate plan producer is the owned target of the accepted candidate write.
 const fixtureValue = (id, value) => ({
@@ -348,6 +351,8 @@ async function accept(run) {
 		version: p.version,
 		digest: p.digest,
 		decision: "accept",
+		// Native decisions bind the exact displayed check-in (#143).
+		display: { digest: nativeViewSnapshot(run).digest },
 	});
 }
 try {
