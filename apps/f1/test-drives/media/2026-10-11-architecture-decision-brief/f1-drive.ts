@@ -135,8 +135,11 @@ for (const id of ["factory", "takeover"]) {
 const defs = runtime.listWorkflows();
 for (const definition of defs) {
 	if (runtime.catalog.metadata(definition.id).ownership !== "local") continue;
-	const implement = definition.steps.find((s: any) => s.id === "implement");
-	if (implement) implement.next = "end";
+	// Stop after implementation: inside the Implement recipe and at its Call.
+	for (const id of ["implement", "implementation"]) {
+		const step = definition.steps.find((s: any) => s.id === id);
+		if (step) step.next = "end";
+	}
 }
 runtime.updateWorkflows(defs);
 const originalAgent = runtime.hooks.agent;
@@ -281,7 +284,7 @@ try {
 			decision: "accept",
 		});
 		await until(() => ["completed", "failed"].includes(current.status));
-		assert.equal(current.status, "completed");
+		assert.equal(current.status, "completed", current.error);
 		const calls = implementations.filter((x) => x.id === current.id);
 		assert.equal(calls.length, 1);
 		assert.deepEqual(
@@ -323,7 +326,7 @@ try {
 			inputs: {},
 		});
 		await until(() => ["completed", "failed"].includes(current.status));
-		assert.equal(current.status, "completed");
+		assert.equal(current.status, "completed", current.error);
 		assert.equal((current.architectureDecisions ?? []).length, 0);
 		assert.equal(current.architectureProposals.at(-1).status, "routine");
 		receipts.push({
