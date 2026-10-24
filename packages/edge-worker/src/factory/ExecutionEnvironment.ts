@@ -12,7 +12,10 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { inspectCodexNativeLogin } from "bobs-factory-codex-runner";
+import {
+	CODEX_NATIVE_SHARE_CONFIG,
+	inspectCodexNativeLogin,
+} from "bobs-factory-codex-runner";
 import type {
 	AgentRunnerConfig,
 	McpServerConfig,
@@ -1006,7 +1009,11 @@ export class ExecutionEnvironmentResolver {
 				settings: {
 					...executionSettings(tools!, runner, root),
 					...(native && runner === "codex"
-						? { model_provider: "openai", forced_login_method: "chatgpt" }
+						? {
+								...CODEX_NATIVE_SHARE_CONFIG,
+								model_provider: "openai",
+								forced_login_method: "chatgpt",
+							}
 						: {}),
 				},
 				environment: env,

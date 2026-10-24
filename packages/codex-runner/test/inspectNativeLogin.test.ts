@@ -19,7 +19,10 @@ vi.mock("../src/backend/appServerClient.js", () => ({
 	},
 }));
 
-import { inspectCodexNativeLogin } from "../src/inspectNativeLogin.js";
+import {
+	CODEX_NATIVE_SHARE_CONFIG,
+	inspectCodexNativeLogin,
+} from "../src/inspectNativeLogin.js";
 
 afterEach(() => vi.clearAllMocks());
 function responses(
@@ -60,6 +63,23 @@ it("inspects the named store and returns only principal and native MCP names wit
 		refreshToken: false,
 	});
 	expect(mock.close).toHaveBeenCalledOnce();
+});
+it("suppresses native desktop integrations for this process and verifies the effective result", async () => {
+	responses(undefined, {
+		notify: [],
+		hooks: { SessionStart: [] },
+		plugins: { desktop: { enabled: true } },
+		apps: { desktop: { enabled: true } },
+		features: { hooks: false, plugins: false, apps: false },
+	});
+	await expect(
+		inspectCodexNativeLogin({ CODEX_HOME: "/selected" }),
+	).resolves.toEqual({
+		account: "native@example.test",
+		mcp: [],
+	});
+	for (const [key, value] of Object.entries(CODEX_NATIVE_SHARE_CONFIG))
+		expect(mock.options.args).toContain(`${key}=${JSON.stringify(value)}`);
 });
 it.each([
 	[null, {}],

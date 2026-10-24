@@ -1,5 +1,14 @@
 import { AppServerClient } from "./backend/appServerClient.js";
 import { resolveCodexAppServerLaunch } from "./backend/codexBinary.js";
+import type { CodexConfigOverrides } from "./types.js";
+
+/** Process-only suppression; the selected native login/config store stays intact. */
+export const CODEX_NATIVE_SHARE_CONFIG = {
+	notify: [],
+	"features.hooks": false,
+	"features.plugins": false,
+	"features.apps": false,
+} satisfies CodexConfigOverrides;
 
 /** Read native login/configuration without starting a thread, tools or a model turn. */
 export async function inspectCodexNativeLogin(
@@ -8,7 +17,10 @@ export async function inspectCodexNativeLogin(
 	account: string;
 	mcp: string[];
 }> {
-	const { command, args } = resolveCodexAppServerLaunch();
+	const { command, args } = resolveCodexAppServerLaunch(
+		undefined,
+		CODEX_NATIVE_SHARE_CONFIG,
+	);
 	const client = new AppServerClient({
 		binaryPath: command,
 		args,
@@ -47,14 +59,16 @@ export async function inspectCodexNativeLogin(
 			throw new Error(
 				"Native Codex Share rejects competing provider endpoints or API-only authentication policy",
 			);
+		const features = config.features as Record<string, unknown> | undefined;
 		if (
-			config.hooks ||
+			(config.hooks && features?.hooks !== false) ||
 			(config.notify != null &&
 				(!Array.isArray(config.notify) || config.notify.length > 0)) ||
-			Object.values(
+			(Object.values(
 				(config.plugins as Record<string, { enabled?: boolean }>) ?? {},
-			).some((plugin) => plugin.enabled !== false) ||
-			config.apps
+			).some((plugin) => plugin.enabled !== false) &&
+				features?.plugins !== false) ||
+			(config.apps && features?.apps !== false)
 		)
 			throw new Error(
 				"Native Codex Share requires a root without automatic hooks, notification commands, plugins or app connectors; declare MCP sources instead",

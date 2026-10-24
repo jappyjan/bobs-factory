@@ -6,7 +6,10 @@ export type {
 export { CodexEventMapper, type MapperContext } from "./CodexEventMapper.js";
 export { CodexRunner } from "./CodexRunner.js";
 export { callCodexMcpTool, listCodexMcpTools } from "./callMcpTool.js";
-export { inspectCodexNativeLogin } from "./inspectNativeLogin.js";
+export {
+	CODEX_NATIVE_SHARE_CONFIG,
+	inspectCodexNativeLogin,
+} from "./inspectNativeLogin.js";
 export { SimpleCodexRunner } from "./SimpleCodexRunner.js";
 export type {
 	CodexRunnerConfig,

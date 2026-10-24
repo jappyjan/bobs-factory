@@ -5,7 +5,7 @@ import type { AgentRunnerConfig, RunnerType } from "bobs-factory-core";
 import { resolveCursorInstallation } from "bobs-factory-cursor-runner";
 import type { ExecutionSnapshot } from "./ExecutionProfiles.js";
 
-/** Version gates are deliberately explicit; native source suppression is not portable across releases. */
+/** Reject older CLIs; newer releases still undergo the normal profile checks. */
 export function executionCapabilities(runner: RunnerType): {
 	binary: string;
 	version: string;
@@ -46,15 +46,27 @@ export function executionCapabilities(runner: RunnerType): {
 			`${runner} executable unavailable. Install a supported CLI before selecting an execution profile`,
 		);
 	}
-	const expected = {
+	const minimum = {
 		claude: "2.1.281",
 		codex: "0.159.2",
 		gemini: "0.17.0",
 		opencode: "1.18.33",
 	}[runner];
-	if (version.match(/\d+\.\d+\.\d+(?:-[^\s]+)?/)?.[0] !== expected)
+	const parsed = version.match(
+		/(?:^|\s)v?((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?:-([\w.-]+))?(?:\+[\w.-]+)?(?=$|\s)/,
+	);
+	const actual = parsed?.[1]?.split(".").map(Number);
+	const floor = minimum.split(".").map(Number);
+	const difference = actual
+		?.map((part, index) => part - floor[index]!)
+		.find((part) => part !== 0);
+	if (
+		!actual?.every(Number.isSafeInteger) ||
+		(difference ?? 0) < 0 ||
+		(!difference && parsed?.[2])
+	)
 		throw new Error(
-			`${runner} version ${version} has not been capability-tested for execution profiles; expected ${expected}`,
+			`${runner} version ${version} does not meet the execution-profile minimum; requires ${minimum} or newer`,
 		);
 	return { binary, version };
 }
