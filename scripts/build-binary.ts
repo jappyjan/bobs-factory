@@ -241,8 +241,10 @@ const reviewedNotices: {
 const acceptedBaseline = JSON.parse(
 	readFileSync(join(root, "distribution/nightly-baseline.json"), "utf8"),
 );
+// Reviewed tooling is pinned without distributed source; it must never ship.
+const reviewedTooling = new Set<string>();
 for (const reference of acceptedBaseline.dependencyReviews ?? []) {
-	if (reference.schemaVersion !== 2) continue;
+	if (![2, 3].includes(reference.schemaVersion)) continue;
 	if (
 		!/^distribution\/dependency-reviews\/[a-z0-9-]+\.json$/.test(reference.file)
 	)
@@ -250,14 +252,20 @@ for (const reference of acceptedBaseline.dependencyReviews ?? []) {
 	const bytes = readFileSync(join(root, reference.file));
 	if (hash(bytes) !== reference.sha256)
 		throw new Error("Reviewed notice inventory changed");
-	reviewedNotices.push(
-		...(JSON.parse(bytes.toString()).supplementalNotices ?? []),
-	);
+	const review = JSON.parse(bytes.toString());
+	reviewedNotices.push(...(review.supplementalNotices ?? []));
+	for (const p of review.packages ?? [])
+		if (p.distribution === "tooling")
+			reviewedTooling.add(`${p.name}@${p.version}`);
 }
 const notices: string[] = [];
 for (const directory of runtimePackages) {
 	const pkg = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
 	if (pkg.name?.startsWith("bobs-factory")) continue;
+	if (reviewedTooling.has(`${pkg.name}@${pkg.version}`))
+		throw new Error(
+			`${pkg.name}@${pkg.version} was reviewed as tooling but is bundled; review its distributed source`,
+		);
 	const texts: string[] = [];
 	const visit = (directory: string) => {
 		for (const entry of readdirSync(directory, { withFileTypes: true })) {

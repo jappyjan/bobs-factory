@@ -92,6 +92,24 @@ original scope; no new legal opinion or native relink is claimed. The Recipes
 review and its measured checks are recorded in
 [the dependency review](dependency-reviews/2026-10-16-recipes.md).
 
+A schema-3 `dependencyReviews` reference covers a reviewed dependency refresh:
+changed pins, removed workspace overrides and additions across the workspace,
+measured from the accepted baseline. It binds the exact dependency policy of
+every changed package manifest (package versions excluded) and the full lockfile
+and workspace policy bytes. Every added or changed lockfile package is
+enumerated. Packages that the binary or web bundle actually ship are marked
+`bundled`: like schema 2, each one carries its exact official npm archive, its
+package metadata and its full upstream notices, under MIT, ISC, BSD-2-Clause,
+BSD-3-Clause, Apache-2.0 or 0BSD. All other packages are build and test
+`tooling`, pinned by lockfile integrity with their declared license. The binary
+build refuses to bundle any reviewed tooling package, so tooling never ships.
+Manifest license fields, maintained license inputs and Electron and native
+runtime checks stay closed. A refresh review supersedes earlier schema-2
+reviews, because it covers their packages too.
+`scripts/prepare-dependency-refresh-review.mjs` prepares the review material.
+The [October 2026 refresh review](dependency-reviews/2026-10-24-dependency-refresh.md)
+records the current coverage.
+
 The pinned release must remain retained; deleting or changing it blocks publication.
 
 Consumers only download the ordinary release binary or desktop installer. These

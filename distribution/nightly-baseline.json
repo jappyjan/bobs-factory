@@ -81,9 +81,9 @@
 			]
 		},
 		{
-			"schemaVersion": 2,
-			"file": "distribution/dependency-reviews/recipe-workbench.json",
-			"sha256": "9aae5be518aa005d70c6d534bd8f7c1251c80cce0f7b0f54ab6247074091e44c"
+			"schemaVersion": 3,
+			"file": "distribution/dependency-reviews/dependency-refresh-2026-10.json",
+			"sha256": "abb68b697a9d9f9451580bcde31f54e077ec09bf815e2b72c58407f4f1179139"
 		}
 	]
 }

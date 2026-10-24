@@ -106,29 +106,8 @@ export function reviewedJavascriptDelta(
 				canonical(added),
 		"JavaScript source review does not cover every added package",
 	);
-	for (const p of review.packages) {
-		const key = `${p.name}@${p.version}`,
-			a = p.archive;
-		requireValue(
-			after.get(key).integrity === p.integrity &&
-				/^https:\/\/registry\.npmjs\.org\//.test(a?.url) &&
-				new URL(a.url).hostname === "registry.npmjs.org" &&
-				/^npm-[A-Za-z0-9._-]+\.tgz$/.test(a.file) &&
-				/^[a-f0-9]{64}$/.test(a.sha256) &&
-				Number.isSafeInteger(a.size) &&
-				a.size > 0 &&
-				a.size <= 8 * 1024 ** 2,
-			"Invalid reviewed npm source identity",
-		);
-		requireValue(
-			["MIT", "BSD-3-Clause", "ISC"].includes(p.license) &&
-				p.licenses?.length > 0 &&
-				p.licenses.every(
-					(l) => /^[a-f0-9]{64}$/.test(l.sha256) && sha256(l.text) === l.sha256,
-				),
-			"Missing exact reviewed upstream license text",
-		);
-	}
+	for (const p of review.packages)
+		verifyReviewedSource(p, after, ["MIT", "BSD-3-Clause", "ISC"]);
 	const old = JSON.parse(
 			git(["show", `${baselineCommit}:packages/edge-worker/package.json`]),
 		),
@@ -163,6 +142,39 @@ export function reviewedJavascriptDelta(
 				"JavaScript review cannot change package policy or licensing",
 			);
 	}
+	verifySupplementalNotices(review, before, after);
+	return {
+		...review,
+		reviewFile: reference.file,
+		reviewSha256: reference.sha256,
+	};
+}
+
+/** A shipped package: exact npm archive identity and complete upstream notices. */
+function verifyReviewedSource(p, lock, licenses) {
+	const a = p.archive;
+	requireValue(
+		lock.get(`${p.name}@${p.version}`)?.integrity === p.integrity &&
+			/^https:\/\/registry\.npmjs\.org\//.test(a?.url) &&
+			new URL(a.url).hostname === "registry.npmjs.org" &&
+			/^npm-[A-Za-z0-9._-]+\.tgz$/.test(a.file) &&
+			/^[a-f0-9]{64}$/.test(a.sha256) &&
+			Number.isSafeInteger(a.size) &&
+			a.size > 0 &&
+			a.size <= 8 * 1024 ** 2,
+		"Invalid reviewed npm source identity",
+	);
+	requireValue(
+		licenses.includes(p.license) &&
+			p.licenses?.length > 0 &&
+			p.licenses.every(
+				(l) => /^[a-f0-9]{64}$/.test(l.sha256) && sha256(l.text) === l.sha256,
+			),
+		"Missing exact reviewed upstream license text",
+	);
+}
+
+function verifySupplementalNotices(review, before, after) {
 	for (const notice of review.supplementalNotices ?? [])
 		requireValue(
 			typeof notice.package === "string" &&
@@ -177,6 +189,163 @@ export function reviewedJavascriptDelta(
 				sha256(notice.text) === notice.sha256,
 			"Invalid reviewed supplemental upstream notice",
 		);
+}
+
+const DEPENDENCY_POLICY_KEYS = [
+	"license",
+	"dependencies",
+	"devDependencies",
+	"optionalDependencies",
+	"peerDependencies",
+	"overrides",
+	"pnpm",
+	"engines",
+	"packageManager",
+];
+/** The dependency policy of a protected input; package versions are not policy. */
+export function dependencyProjection(file, bytes) {
+	if (!file.endsWith("package.json")) return bytes;
+	const p = JSON.parse(bytes);
+	return canonical(
+		Object.fromEntries(DEPENDENCY_POLICY_KEYS.map((k) => [k, p[k] ?? null])),
+	);
+}
+const refreshInput = (file) =>
+	file === "pnpm-lock.yaml" ||
+	file === "pnpm-workspace.yaml" ||
+	file === "package.json" ||
+	file.endsWith("/package.json");
+/** Licenses accepted for packages that ship inside the binary or web bundle. */
+const SHIPPED_LICENSES = [
+	"MIT",
+	"ISC",
+	"BSD-3-Clause",
+	"BSD-2-Clause",
+	"Apache-2.0",
+	"0BSD",
+];
+
+/**
+ * Schema 3 reviews a dependency refresh: changed pins, workspace overrides and
+ * additions across the workspace. Every added or changed lockfile package is
+ * enumerated. Packages the binary or web bundle actually ship carry their exact
+ * npm archive and full notices; build and test tooling is pinned by integrity
+ * and declared license, and the binary build refuses to bundle it.
+ */
+export function reviewedDependencyRefresh(
+	root,
+	baselineCommit,
+	candidateCommit,
+	reference,
+) {
+	if (reference.schemaVersion !== 3) return;
+	requireValue(
+		/^distribution\/dependency-reviews\/[a-z0-9-]+\.json$/.test(
+			reference.file,
+		) && /^[a-f0-9]{64}$/.test(reference.sha256),
+		"Invalid dependency refresh review reference",
+	);
+	const git = (args) =>
+		execFileSync("git", args, {
+			cwd: root,
+			encoding: "utf8",
+			maxBuffer: 64 * 1024 ** 2,
+		});
+	const show = (commit, file) => git(["show", `${commit}:${file}`]);
+	const text = show(candidateCommit, reference.file);
+	requireValue(
+		sha256(text) === reference.sha256,
+		"Dependency refresh review hash mismatch",
+	);
+	const review = JSON.parse(text);
+	requireValue(
+		review.schemaVersion === 3 &&
+			review.baselineCommit === baselineCommit &&
+			/^[a-f0-9]{40}$/.test(review.commit) &&
+			typeof review.reviewedBy === "string" &&
+			review.reviewedBy.trim() &&
+			typeof review.scope === "string" &&
+			review.scope.trim(),
+		"Missing independent dependency refresh review",
+	);
+	requireValue(
+		git(["merge-base", review.commit, candidateCommit]).trim() ===
+			review.commit,
+		"Reviewed dependency commit is not an ancestor",
+	);
+	// Added or removed inputs fail the protected inventory check separately.
+	const tree = (commit) =>
+		git(["ls-tree", "-r", "--name-only", commit]).trim().split("\n");
+	const existing = new Set(tree(baselineCommit));
+	const inputs = tree(candidateCommit).filter(
+		(file) => refreshInput(file) && existing.has(file),
+	);
+	const changed = inputs.filter(
+		(file) =>
+			dependencyProjection(file, show(baselineCommit, file)) !==
+			dependencyProjection(file, show(candidateCommit, file)),
+	);
+	requireValue(
+		canonical((review.files ?? []).map((r) => r.file).sort()) ===
+			canonical([...changed].sort()),
+		"Dependency refresh review must bind exactly the changed dependency inputs",
+	);
+	for (const record of review.files) {
+		const before = dependencyProjection(
+				record.file,
+				show(baselineCommit, record.file),
+			),
+			after = dependencyProjection(
+				record.file,
+				show(candidateCommit, record.file),
+			);
+		requireValue(
+			record.beforeSha256 === sha256(before) &&
+				record.afterSha256 === sha256(after) &&
+				dependencyProjection(record.file, show(review.commit, record.file)) ===
+					after,
+			"Reviewed dependency inputs changed",
+		);
+		if (record.file.endsWith("package.json"))
+			requireValue(
+				canonical(
+					JSON.parse(show(baselineCommit, record.file)).license ?? null,
+				) ===
+					canonical(
+						JSON.parse(show(candidateCommit, record.file)).license ?? null,
+					),
+				"Dependency refresh review cannot change package licensing",
+			);
+	}
+	const before = lockPackages(show(baselineCommit, "pnpm-lock.yaml")),
+		after = lockPackages(show(candidateCommit, "pnpm-lock.yaml"));
+	const delta = [...after.keys()]
+		.filter((k) => !before.has(k) || before.get(k).block !== after.get(k).block)
+		.sort();
+	requireValue(
+		Array.isArray(review.packages) &&
+			review.packages.length > 0 &&
+			review.packages.length <= 400 &&
+			canonical(review.packages.map((p) => `${p.name}@${p.version}`).sort()) ===
+				canonical(delta),
+		"Dependency refresh review does not cover every added or changed package",
+	);
+	for (const p of review.packages) {
+		requireValue(
+			["bundled", "tooling"].includes(p.distribution) &&
+				typeof p.license === "string" &&
+				p.license.trim(),
+			"Reviewed package needs its distribution role and declared license",
+		);
+		if (p.distribution === "bundled")
+			verifyReviewedSource(p, after, SHIPPED_LICENSES);
+		else
+			requireValue(
+				after.get(`${p.name}@${p.version}`).integrity === p.integrity,
+				"Reviewed tooling package integrity changed",
+			);
+	}
+	verifySupplementalNotices(review, before, after);
 	return {
 		...review,
 		reviewFile: reference.file,
@@ -191,12 +360,14 @@ export async function retainReviewedJavascriptSources(
 ) {
 	const reviews = new Map(
 		observations
-			.filter((o) => o.review?.schemaVersion === 2)
+			.filter((o) => [2, 3].includes(o.review?.schemaVersion))
 			.map((o) => [o.review.reviewSha256, o.review]),
 	);
 	const records = [];
 	for (const review of reviews.values())
 		for (const p of review.packages) {
+			// Tooling never ships; the binary build refuses to bundle it.
+			if (p.distribution === "tooling") continue;
 			const a = p.archive,
 				response = await transport(a.url, {
 					signal: AbortSignal.timeout(60000),
