@@ -35,6 +35,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Storage cleanup releases worktrees of delivered Software factory and Takeover runs again. Review receipts kept in completed sub-recipe frames are now recognised as Bob's own evidence instead of blocking cleanup.
+- Agents are only pointed at review memory when the run has review rounds, and runs launched by Improve codebase name their parent recipe instead of "selection source unavailable".
 - Repeated unchanged work across recipe calls and correction loops now pauses with a bounded, explicit continue instead of looping. ([#184](https://github.com/jappyjan/bobs-factory/pull/184))
 - Ready deliveries no longer wait behind unrelated corrections, and correction routes reuse still-valid review evidence instead of replaying validation. ([#182](https://github.com/jappyjan/bobs-factory/pull/182), [#183](https://github.com/jappyjan/bobs-factory/pull/183))
 - Sub-recipes of Software factory are listed as building blocks and are no longer picked for tickets; the run page loads only the recipes a run actually uses, and review guide diffs resolve in composed runs.

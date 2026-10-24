@@ -186,9 +186,7 @@ it("keeps native continuation and durable ownership after a terminal issue event
 	}
 }, 60_000);
 
-// Taskbot #150: this fixture retains the flat pre-composition `pipeline/` frame;
-// rebuild it on the composed Factory before re-enabling.
-it.skip.each([
+it.each([
 	"manual",
 	"ticket",
 	"nested",
@@ -375,23 +373,16 @@ it.skip.each([
 				url: config.githubUrl,
 			},
 		})) as typeof run.repositories;
-	// A retained, already reviewed stock graph resumes at its delivery segment.
+	// A retained, already reviewed stock graph resumes inside its Merge call.
 	// All previous review records are synthetic; the stock graph is unchanged.
-	const framePrefix = route === "nested" ? "child/pipeline/" : "pipeline/";
-	const impactKey = `${framePrefix}assess-impact`;
-	const checksKey = `${framePrefix}impact-checks`;
-	const guideKey = `${framePrefix}guide`;
-	const terminal = {
+	const callPrefix = route === "nested" ? "child/" : "";
+	const impactKey = `${callPrefix}review/assess-impact`;
+	const checksKey = `${callPrefix}review/impact-checks`;
+	const guideKey = `${callPrefix}approval/guide`;
+	const terminal = { current: "merge", visits: {} };
+	const merge = {
 		current: "merge",
-		outputs: {} as Record<string, unknown>,
-		visits: {},
-		agentSessions: {
-			guide: { runner: "claude" as const, sessionId: "f1-mock-retained-role" },
-		},
-	};
-	const pipeline = {
-		current: "pipeline",
-		visits: { pipeline: 1 },
+		visits: { merge: 1 },
 		active: { phase: "executing" as const, children: [terminal] },
 	};
 	run.checkpoint =
@@ -399,17 +390,17 @@ it.skip.each([
 			? {
 					current: "child",
 					visits: { child: 1 },
-					active: { phase: "executing", children: [pipeline] },
+					active: { phase: "executing", children: [merge] },
 				}
-			: pipeline;
+			: merge;
 	run.reviewRounds = [
 		{
 			schemaVersion: 1,
 			round: 1,
 			key:
 				route === "nested"
-					? "child/pipeline/specialist-review"
-					: "pipeline/specialist-review",
+					? "child/review/specialist-review"
+					: "review/specialist-review",
 			inventory: { schemaVersion: 1, requirements: [] },
 			headSha: head,
 			baseSha: head,
@@ -425,8 +416,8 @@ it.skip.each([
 							digest: "retained-impact-fixture",
 							key:
 								route === "nested"
-									? "child/pipeline/specialist-review"
-									: "pipeline/specialist-review",
+									? "child/review/specialist-review"
+									: "review/specialist-review",
 							repositories: [
 								{
 									repositoryId: configured.id,
@@ -457,8 +448,8 @@ it.skip.each([
 			digest: "retained-impact-fixture",
 			key:
 				route === "nested"
-					? "child/pipeline/specialist-review"
-					: "pipeline/specialist-review",
+					? "child/review/specialist-review"
+					: "review/specialist-review",
 			repositories: [
 				{
 					repositoryId: configured.id,
@@ -500,8 +491,8 @@ it.skip.each([
 	run.history.push({
 		step:
 			route === "nested"
-				? "child/pipeline/impact-checks"
-				: "pipeline/impact-checks",
+				? "child/review/impact-checks"
+				: "review/impact-checks",
 		output: structuredClone(checkOutput),
 		at: new Date().toISOString(),
 	});
@@ -514,8 +505,8 @@ it.skip.each([
 		{
 			step:
 				route === "nested"
-					? "child/pipeline/impact-checks"
-					: "pipeline/impact-checks",
+					? "child/review/impact-checks"
+					: "review/impact-checks",
 			output: structuredClone(checkOutput),
 			at: new Date().toISOString(),
 		},
@@ -534,9 +525,6 @@ it.skip.each([
 		title: "Retained reviewed delivery",
 		summary: "Independent historical guide",
 	};
-	terminal.outputs["assess-impact"] = structuredClone(impact);
-	terminal.outputs["impact-checks"] = structuredClone(checkOutput);
-	terminal.outputs.guide = structuredClone(run.outputs[guideKey]);
 	run.humanDecisions = [
 		{
 			decision: "approve",

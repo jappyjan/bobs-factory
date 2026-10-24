@@ -112,6 +112,20 @@ function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
 	if (decisions.length)
 		yield* collect(run.workflow.steps, "", [run.workflow.id]);
 	const prefixOf = (key: string) => key.slice(0, key.lastIndexOf("/") + 1);
+	// A Call frame names imported values by input port; follow the caller's bindings.
+	const boundProducer = (prefix: string, name: string): string | undefined => {
+		for (let scope = prefix; scope; ) {
+			const callKey = scope.slice(0, -1);
+			const call = steps.get(callKey);
+			const binding =
+				call?.type === "workflow" ? call.bindings?.[name] : undefined;
+			if (!binding) return undefined;
+			scope = prefixOf(callKey);
+			if (!binding.startsWith("@bindings/")) return `${scope}${binding}`;
+			name = binding.slice("@bindings/".length);
+		}
+		return undefined;
+	};
 	const makePolicy = (prefix = ""): ReferencePolicy => {
 		const enroll = (value: unknown, key?: string): ReferencePolicy => {
 			const policy: ReferencePolicy = {
@@ -129,6 +143,11 @@ function* referencePolicy(run: FactoryRun): Generator<void, ReferencePolicy> {
 				const qualified = key.includes("/") ? key : `${prefix}${key}`;
 				const exact = steps.get(qualified);
 				if (exact) return { step: exact, key: qualified };
+				const bound = key.includes("/")
+					? undefined
+					: boundProducer(prefix, key);
+				if (bound && steps.get(bound))
+					return { step: steps.get(bound)!, key: bound };
 				// Old calls shared a global leaf output map. Only a normalized old
 				// producer may recover that alias, and never over an authored root step.
 				if (prefix || key.includes("/") || steps.has(key)) return undefined;
@@ -214,7 +233,8 @@ type ReferenceLocation =
 	| "decisions"
 	| "checkpoint"
 	| "active"
-	| "children";
+	| "children"
+	| "calls";
 /** Stream every retained value and evidence link. Identity metadata is handled by
  * the owning record, while actual content paths remain live dependencies. */
 async function* retainedReferences(
@@ -288,6 +308,12 @@ async function* retainedReferences(
 					next = "active";
 					nextPolicy = policy?.inFrame(`${policy.prefix}${record.current}`);
 				}
+			}
+			if (location === "checkpoint" && key === "calls") next = "calls";
+			// A completed Call keeps its lexical frame, keyed by the Call step.
+			if (location === "calls") {
+				next = "checkpoint";
+				nextPolicy = policy?.inFrame(`${policy.prefix}${key}/`);
 			}
 			if (location === "active" && key === "children") next = "children";
 			if (location === "children") {

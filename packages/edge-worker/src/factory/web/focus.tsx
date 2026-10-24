@@ -189,7 +189,10 @@ export function RunOrigin({ run }: { run: any }) {
 			</p>
 			{origin && (
 				<p>
-					Workflow: {origin.workflowId} · Selected by {selectionLabel(origin)}
+					Workflow: {origin.workflowId} · Selected by{" "}
+					{run.recipeParent
+						? `the parent recipe ${run.recipeParent.workflowId}`
+						: selectionLabel(origin)}
 				</p>
 			)}
 			{(origin || calls.length > 0) && (
