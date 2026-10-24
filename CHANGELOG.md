@@ -35,7 +35,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Accept prepared agent CLIs at or above their minimum supported versions, including newer major versions, so upgraded Codex installations can launch execution-profile runs. Preserve authentication and configuration checks, and suppress desktop Codex plugins, hooks and notifications only in Bob’s child processes.
+- Accept prepared agent CLIs at or above their minimum supported versions, including newer major versions, so upgraded Codex installations can launch execution-profile runs. Preserve authentication and configuration checks, and suppress desktop Codex plugins, hooks and notifications only in Bob’s child processes. ([#191](https://github.com/jappyjan/bobs-factory/pull/191))
 
 - Storage cleanup releases worktrees of delivered Software factory and Takeover runs again. Review receipts kept in completed sub-recipe frames are now recognised as Bob's own evidence instead of blocking cleanup.
 - Agents are only pointed at review memory when the run has review rounds, and runs launched by Improve codebase name their parent recipe instead of "selection source unavailable".
