@@ -151,6 +151,15 @@ it.each([
 	expect(config.strictMcpConfig).toBe(true);
 	expect(config.settingSources).toEqual([]);
 	expect(config.mcpConfig.declared.command).toBe("node");
+	if (runner === "codex")
+		expect(config.runnerSettings).toMatchObject({
+			notify: [],
+			"features.hooks": false,
+			"features.plugins": false,
+			"features.apps": false,
+			model_provider: "openai",
+			forced_login_method: "chatgpt",
+		});
 	resolver.cleanupCredentials("native-share");
 	expect(readFileSync(join(configDirectory, "auth.json"), "utf8")).toBe(
 		"native-store-canary",
