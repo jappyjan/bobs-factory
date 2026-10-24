@@ -35,7 +35,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Fresh Takeovers can reuse an existing branch worktree without retention trying to register the unused new run directory. Preserve existing ownership and reserve the actual worktree for continuation.
+- Fresh Takeovers can reuse an existing branch worktree without retention trying to register the unused new run directory. Preserve existing ownership and reserve the actual worktree for continuation. ([#193](https://github.com/jappyjan/bobs-factory/pull/193))
 
 - Wait for resumed operator test runs to finish saving before retrying ticket synchronization, avoiding intermittent nightly validation failures. ([#192](https://github.com/jappyjan/bobs-factory/pull/192))
 
