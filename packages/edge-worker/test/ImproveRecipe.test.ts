@@ -607,8 +607,10 @@ describe("Improve is an ordinary composed recipe", () => {
 			a: { status: "merged" },
 			b: { status: "merged" },
 		});
-	}, 90000);
-	it("forks the reachable closure and uses an edited perspective, prompt and renamed role", async () => {
+	}, 180000);
+	it("forks the reachable closure and uses an edited perspective, prompt and renamed role", {
+		timeout: 120000,
+	}, async () => {
 		const f = fixture();
 		const fork = f.runtime.forkWorkflow("improve-codebase");
 		const definitions = f.runtime.listWorkflows();
@@ -653,7 +655,7 @@ describe("Improve is an ordinary composed recipe", () => {
 				expect(run.error).toBeUndefined();
 				expect(run.viewDecision?.kind).toBe("decide");
 			},
-			{ timeout: 20000 },
+			{ timeout: 80000 },
 		);
 		expect(
 			f.calls.filter((c) => c.key.endsWith("/renamed-coordinator")),

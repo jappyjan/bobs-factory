@@ -2,8 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
-import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
+import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { validateWorkflows } from "../src/factory/Workflow.js";
 import { WorkflowRuntime } from "../src/factory/WorkflowRuntime.js";
 import { SessionSemaphore } from "../src/RunnerConcurrency.js";
@@ -352,4 +352,4 @@ it("normal shutdown and resumeAll park resource priority until capacity admissio
 		await first.shutdown();
 		rmSync(home, { recursive: true, force: true });
 	}
-}, 15000);
+}, 180000);

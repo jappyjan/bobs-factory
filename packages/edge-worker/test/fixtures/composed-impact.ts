@@ -28,11 +28,11 @@ import { roleProgress } from "../../src/factory/Incremental.js";
 import { parseStepOutput } from "../../src/factory/OutputFormats.js";
 import { qaDigest } from "../../src/factory/Qa.js";
 import { verifyQaEnvironment } from "../../src/factory/QaReuse.js";
-import { hasCheck, readOutput } from "../../src/factory/StepConfig.js";
 import {
-	latestAggregate,
 	type AggregateReview,
+	latestAggregate,
 } from "../../src/factory/SpecialistReview.js";
+import { hasCheck, readOutput } from "../../src/factory/StepConfig.js";
 import { StepSchema, validateWorkflows } from "../../src/factory/Workflow.js";
 import {
 	type RuntimeHooks,
@@ -626,7 +626,9 @@ export function setupReplay(kind: ReplayCase, layout: "js" | "python") {
 				.parse(JSON.parse(readFileSync(args.at(-1)!, "utf8")));
 			const operation = args[0]!;
 			const head = git("rev-parse", "HEAD");
-			expect(git("rev-parse", "origin/ownership-change")).toBe(head);
+			// Existing PRs are listed before the branch is pushed.
+			if (operation !== "list")
+				expect(git("rev-parse", "origin/ownership-change")).toBe(head);
 			providerCalls.push({
 				operation,
 				input: request.input,

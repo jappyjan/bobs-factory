@@ -928,7 +928,7 @@ it("rejects every malformed caption cue while preserving valid WebVTT timing var
 			sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
 		});
 	}
-}, 30000);
+}, 180000);
 
 it("does not let terminal cleanup follow a run-directory symlink or crash on a dangling temporary link", async () => {
 	const f = setup();

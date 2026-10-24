@@ -1,1 +1,0 @@
-packages/edge-worker/src/factory/web/client.ts(113,63): error TS7006: Parameter 'run' implicitly has an 'any' type.

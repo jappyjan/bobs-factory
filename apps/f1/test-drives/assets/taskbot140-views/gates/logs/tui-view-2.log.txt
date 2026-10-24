@@ -1,9 +1,0 @@
-
- RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/apps/cli
-
-
- Test Files  1 passed (1)
-      Tests  1 passed (1)
-   Start at  07:54:45
-   Duration  2.15s (transform 1.18s, setup 0ms, import 1.95s, tests 113ms, environment 0ms)
-

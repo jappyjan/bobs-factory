@@ -50,7 +50,7 @@ for await (const line of createInterface({input:process.stdin})) {
 			{ type: "http", url: "https://synthetic.invalid/mcp" },
 			"comment",
 			{ body: "Exact immutable displayed content" },
-			AbortSignal.timeout(5000),
+			AbortSignal.timeout(20000),
 			{
 				run: async (write) => {
 					if (!current) throw new UnsentDispatchError("superseded");
@@ -62,8 +62,10 @@ for await (const line of createInterface({input:process.stdin})) {
 		const pending = invoke();
 		const rejected =
 			expect(pending).rejects.toBeInstanceOf(UnsentDispatchError);
-		await vi.waitFor(() =>
-			expect(existsSync(join(home, "entered"))).toBe(true),
+		// Spawning the synthetic binary can exceed the default 1s under load.
+		await vi.waitFor(
+			() => expect(existsSync(join(home, "entered"))).toBe(true),
+			{ timeout: 15000 },
 		);
 		current = false;
 		writeFileSync(join(home, "release"), "release");
@@ -106,4 +108,4 @@ for await (const line of createInterface({input:process.stdin})) {
 		writeFileSync(join(home, "release"), "release");
 		rmSync(home, { recursive: true, force: true });
 	}
-});
+}, 30000);

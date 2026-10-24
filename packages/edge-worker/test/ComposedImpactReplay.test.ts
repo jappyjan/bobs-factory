@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { QaCaptureSchema } from "../src/factory/FactoryTools.js";
+import * as readiness from "../src/factory/MergeReadiness.js";
 import { qaDigest } from "../src/factory/Qa.js";
 import {
 	assertAggregateRevision,
@@ -18,6 +19,17 @@ import {
 	specialists,
 } from "./fixtures/composed-impact.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
+
+// Provider polling is simulated; real 10-second waits make these drives load-sensitive.
+let polling: ReturnType<typeof vi.spyOn> | undefined;
+beforeEach(() => {
+	polling = vi
+		.spyOn(readiness, "waitForNextPoll")
+		.mockImplementation(
+			() => new Promise((resolve) => setTimeout(resolve, 20)),
+		);
+});
+afterEach(() => polling?.mockRestore());
 
 const fixtures: ReturnType<typeof setupReplay>[] = [];
 afterEach(async () => {

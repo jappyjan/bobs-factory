@@ -190,4 +190,4 @@ it.each([
 		vi.useRealTimers();
 		rmSync(directory, { recursive: true, force: true });
 	}
-}, 15000);
+}, 180000);

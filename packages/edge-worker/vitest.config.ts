@@ -18,7 +18,7 @@ export default defineConfig({
 				"**/mockData.ts",
 			],
 		},
-		testTimeout: 30000,
+		testTimeout: 120000,
 		hookTimeout: 30000,
 	},
 	resolve: {

@@ -86,7 +86,7 @@ it("serves question images only from the requested run, rejecting traversal, ext
 		expect((await get(run.id, "..%2F..%2Foutside.png")).statusCode).toBe(400);
 		// Completed receipts retain their original paths after a home move.
 		const imageSha256 = createHash("sha256").update(png).digest("hex");
-		run.outputs["pipeline/capture"] = {
+		run.outputs["qa/capture"] = {
 			screenshots: [
 				{
 					path: join(
@@ -105,9 +105,9 @@ it("serves question images only from the requested run, rejecting traversal, ext
 			unavailable: [],
 		};
 		run.history.push({
-			step: "pipeline/capture",
+			step: "qa/capture",
 			at: new Date().toISOString(),
-			output: run.outputs["pipeline/capture"],
+			output: run.outputs["qa/capture"],
 		});
 		const screenshot = () =>
 			server.app.inject({
@@ -963,7 +963,7 @@ it("preserves fork provenance when dashboard artifacts generate review branch li
 		headRefName: "fork-branch",
 		isCrossRepository: true,
 	};
-	run.outputs.source = source;
+	run.takeoverSource = source;
 	await runtime.save(run);
 	const server = new FactoryServer(runtime, {
 		repositories: () => [],
@@ -985,7 +985,7 @@ it("preserves fork provenance when dashboard artifacts generate review branch li
 			branchUrl: undefined,
 			pr: { url: source.url },
 		});
-		run.outputs.source = { ...source, isCrossRepository: false };
+		run.takeoverSource = { ...source, isCrossRepository: false };
 		await runtime.save(run);
 		expect(await context()).toMatchObject({
 			branch: "fork-branch",
@@ -2348,11 +2348,11 @@ it("supplies only the adjacent retained guide in the protected dashboard for leg
 		chapters: [{ id: "authorization" }],
 		reviewFiles: { headSha: "old" },
 	};
-	run.outputs["pipeline/guide"] = { previousHeadSha: "old" };
+	run.outputs["approval/guide"] = { previousHeadSha: "old" };
 	run.history.push(
-		{ step: "pipeline/guide", at: new Date().toISOString(), output: old },
+		{ step: "approval/guide", at: new Date().toISOString(), output: old },
 		{
-			step: "pipeline/capture",
+			step: "qa/capture",
 			at: new Date().toISOString(),
 			output: { notes: "Large unrelated evidence" },
 		},
@@ -2377,7 +2377,7 @@ it("supplies only the adjacent retained guide in the protected dashboard for leg
 		expect(response.json().history.every((entry: any) => !entry.output)).toBe(
 			true,
 		);
-		run.outputs["pipeline/guide"] = { previousHeadSha: "missing" };
+		run.outputs["approval/guide"] = { previousHeadSha: "missing" };
 		const missing = await server.app.inject({
 			method: "GET",
 			url: "/api/runs/reader?view=dashboard",

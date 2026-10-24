@@ -21,7 +21,7 @@ it("drives retained convergence and narrowly scoped Continue through the authent
 	process.env.F1_AGENT_MODE = "mock";
 	process.env.F1_RESULT ??= join(directory!, "result.json");
 	try {
-		await import("../../../apps/f1/test-drives/assets/taskbot147-progress.mjs");
+		await import("./drives/taskbot147-progress.mjs");
 		const result = JSON.parse(readFileSync(process.env.F1_RESULT, "utf8"));
 		expect(result).toMatchObject({
 			mode: "mock",

@@ -1,3 +1,12 @@
+import {
+	retainTranscriptSource,
+	runtimeTranscript,
+	runtimeTranscriptField,
+	type TranscriptScope,
+	transcriptFieldSources,
+	transcriptProvenanceEpoch,
+	transcriptSource,
+} from "bobs-factory-mcp-tools";
 import { legacyScopeSources } from "./StepConfig.js";
 
 export { calibratedReviewInstructions } from "./InstructionText.js";
@@ -168,6 +177,12 @@ export type ReviewBaseline = {
 	context: unknown;
 	/** New baselines retain exact runtime-owned history ranges, without copying payloads. */
 	contextReferences?: ReviewContextReference[];
+	/** Runtime-only source table for legacy inline/copy reconstruction; never native approval. */
+	contextTranscriptSources?: {
+		path: string[];
+		source: TranscriptScope;
+		field?: string;
+	}[];
 	at: string;
 };
 export type ReviewContextReference = {
@@ -1029,7 +1044,34 @@ export function scopeContextDigest(input: unknown): string {
 }
 
 /** Keep prior evidence, but avoid recursively copying old immutable source snapshots. */
-const frozenContexts = new WeakMap<object, unknown>();
+const frozenContexts = new WeakMap<object, { value: unknown; epoch: number }>();
+const frozenContextTranscripts = new WeakMap<
+	object,
+	NonNullable<ReviewBaseline["contextTranscriptSources"]>
+>();
+function contextTranscriptRecords(
+	value: object,
+): NonNullable<ReviewBaseline["contextTranscriptSources"]> {
+	const cached = frozenContextTranscripts.get(value);
+	if (cached) return cached;
+	const sources: NonNullable<ReviewBaseline["contextTranscriptSources"]> = [];
+	const scope = transcriptSource(value);
+	if (scope) sources.push({ path: [], source: scope });
+	for (const [field, source] of transcriptFieldSources(value) ?? [])
+		if (Object.hasOwn(value, field)) sources.push({ path: [], field, source });
+	for (const [key, child] of Object.entries(value))
+		if (child && typeof child === "object")
+			for (const source of contextTranscriptRecords(child))
+				sources.push({ ...source, path: [key, ...source.path] });
+	return sources;
+}
+function withoutNestedBaselineContext(value: object) {
+	const result = Object.fromEntries(
+		Object.entries(value).filter(([field]) => field !== "context"),
+	);
+	retainTranscriptSource(value, result);
+	return result;
+}
 export function frozenReviewContext(
 	input: unknown,
 	captureHistory?: (value: object, path: string[]) => unknown[] | undefined,
@@ -1040,8 +1082,9 @@ export function frozenReviewContext(
 		if (reference) return reference;
 		// Published receipts never change. Cache only their context projection;
 		// mutable envelopes and native history ranges are always captured anew.
-		if (isImmutableJson(value) && frozenContexts.has(value))
-			return frozenContexts.get(value);
+		const cached = frozenContexts.get(value);
+		if (isImmutableJson(value) && cached?.epoch === transcriptProvenanceEpoch())
+			return cached.value;
 		const result = Array.isArray(value)
 			? value.map((item, index) => compact(item, [...path, String(index)]))
 			: Object.fromEntries(
@@ -1050,15 +1093,18 @@ export function frozenReviewContext(
 						.map(([key, item]) => [
 							key,
 							key === "baseline" && item && typeof item === "object"
-								? Object.fromEntries(
-										Object.entries(item).filter(
-											([field]) => field !== "context",
-										),
-									)
+								? withoutNestedBaselineContext(item)
 								: compact(item, [...path, key]),
 						]),
 				);
-		if (isImmutableJson(value)) frozenContexts.set(value, result);
+		retainTranscriptSource(value, result);
+		if (transcriptProvenanceEpoch() > 0)
+			frozenContextTranscripts.set(result, contextTranscriptRecords(result));
+		if (isImmutableJson(value))
+			frozenContexts.set(value, {
+				value: result,
+				epoch: transcriptProvenanceEpoch(),
+			});
 		return result;
 	};
 	return compact(input);
@@ -1083,12 +1129,23 @@ export function captureReviewContext(
 		});
 		return [];
 	});
-	return { context, contextReferences };
+	const contextTranscriptSources =
+		context && typeof context === "object"
+			? (frozenContextTranscripts.get(context) ?? [])
+			: [];
+	return {
+		context,
+		contextReferences,
+		...(contextTranscriptSources.length ? { contextTranscriptSources } : {}),
+	};
 }
 
 /** Resolve the original cutoff, never a newest output slot or an equal JSON value. */
 export function originalReviewContext(
-	baseline: Pick<ReviewBaseline, "context" | "contextReferences">,
+	baseline: Pick<
+		ReviewBaseline,
+		"context" | "contextReferences" | "contextTranscriptSources"
+	>,
 	run: Pick<FactoryRun, "id" | "history">,
 	index: { step: string; at: string }[],
 ): unknown {
@@ -1123,6 +1180,21 @@ export function originalReviewContext(
 			return copy;
 		};
 		result = replace(result, 0);
+	}
+	for (const entry of baseline.contextTranscriptSources ?? []) {
+		if (entry.source.runId !== run.id)
+			throw new Error("Foreign transcript source in original review context");
+		let value = result;
+		for (const key of entry.path) {
+			if (!value || typeof value !== "object" || !Object.hasOwn(value, key))
+				throw new Error("Original transcript source path is missing");
+			value = (value as Record<string, unknown>)[key];
+		}
+		if (!value || typeof value !== "object")
+			throw new Error("Original transcript source is missing");
+		if (entry.field !== undefined)
+			runtimeTranscriptField(value, entry.field, entry.source);
+		else runtimeTranscript(value, entry.source);
 	}
 	return result;
 }

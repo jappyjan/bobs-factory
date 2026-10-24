@@ -358,6 +358,13 @@ export class FactoryContextProjection {
 		let remaining = factoryContextProjectionLimits.nodes;
 		const visit = (reference: object, path: string, depth: number): unknown => {
 			const node = this.snapshot.node(reference);
+			if (node.transcript)
+				return {
+					format: "factory-transcript-restricted-v1",
+					path,
+					reason:
+						"Use explicit handoff records; targeted diagnostics require accepted purpose, role/range and cumulative allowance.",
+				};
 			if (--remaining < 0) return this.descriptor(reference, path);
 			if (node.kind === "string")
 				return node.length! > factoryContextProjectionLimits.stringCharacters

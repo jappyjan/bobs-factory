@@ -30,12 +30,19 @@ it("enforces the production Ask profile without Snapshot, exposes only displayed
 	const git = (...args: string[]) =>
 		execFileSync("git", args, { cwd: workspace, stdio: "pipe" });
 	git("init", "-b", "main");
-	git("config", "user.name", "Fixture");
-	git("config", "user.email", "fixture@example.invalid");
-	git("config", "commit.gpgsign", "false");
 	writeFileSync(join(workspace, "private.txt"), "Not Ask context");
 	git("add", ".");
-	git("commit", "-m", "Fixture");
+	git(
+		"-c",
+		"user.name=Fixture",
+		"-c",
+		"user.email=fixture@example.invalid",
+		"-c",
+		"commit.gpgsign=false",
+		"commit",
+		"-m",
+		"Fixture [skip ci]",
+	);
 	const workflow = WorkflowSchema.parse({
 		id: "context-fixture",
 		name: "Context fixture",

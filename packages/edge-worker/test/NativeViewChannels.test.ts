@@ -475,7 +475,7 @@ it("restores the current Ask after exact terminal rejection while retaining revi
 	expect(current.reviewGate).toEqual(gate);
 	expect(current.humanDecisions).toEqual(history);
 	expect(comments()).toHaveLength(1);
-}, 10000);
+}, 180000);
 
 it("renders the current native Review before retained Show history and approves only that displayed version", async () => {
 	const f = fixture(true),

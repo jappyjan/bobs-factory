@@ -1,4 +1,0 @@
-import {WorkflowSchema} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/Workflow.js';
-import {parseStepOutputAsync} from '/Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/packages/edge-worker/dist/factory/OutputFormats.js';
-const step=WorkflowSchema.parse({id:'custom-question-data',name:'Data',stepConfigVersion:'step-config-v1',steps:[{id:'ordinary',name:'Ordinary',type:'agent',prompt:'Return data',output:{schema:{type:'object',properties:{questions:{type:'integer'}},required:['questions'],additionalProperties:false}},checks:[],rules:[],instructions:[],next:'end'}]}).steps[0];
-try{console.log(JSON.stringify({output:await parseStepOutputAsync(step,{questions:42})}));}catch(e){console.log(JSON.stringify({error:e.message,issues:e.issues}));}

@@ -238,6 +238,13 @@ function stepsForRun(run: ExecutionContext["run"]) {
 			}
 		}
 	};
+	// A recovery graph executes at the root; earlier receipts keep the original keys.
+	if (run.recoveryWorkflow)
+		visit(
+			run.recoveryWorkflow.steps ?? [],
+			"",
+			new Set([run.recoveryWorkflow.id]),
+		);
 	visit(run.workflow.steps ?? [], "", new Set([run.workflow.id]));
 	return entries;
 }

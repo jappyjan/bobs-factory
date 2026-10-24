@@ -1,8 +1,0 @@
-
-> bobs-factory-edge-worker@0.2.73 typecheck /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker
-> tsgo --noEmit && tsgo -p tsconfig.web.json
-
-src/factory/ViewRuntime.ts(222,10): error TS7030: Not all code paths return a value.
-/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
- ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bobs-factory-edge-worker@0.2.73 typecheck: `tsgo --noEmit && tsgo -p tsconfig.web.json`
-Exit status 1

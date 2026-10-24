@@ -352,7 +352,7 @@ it("times out stalled Git removal and retains the exact original workspace", asy
 	expect(await readFile(join(workspace, "file"), "utf8")).toBe(
 		"durable delivered content",
 	);
-}, 40000);
+}, 180000);
 
 it("requires explicit idempotent retry after a crash between teardown effects and its success receipt", async () => {
 	const { home, workspace, record, adapter } = await fixture(

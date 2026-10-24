@@ -1,4 +1,0 @@
-Command log: /tmp/taskbot141-r1-r2-formats-prompt.log
- Test Files  2 passed (2)
-      Tests  22 passed (22)
-   Duration  1.64s (transform 1.26s, setup 48ms, import 2.41s, tests 33ms, environment 0ms)

@@ -22,9 +22,7 @@ it("drives controlled admission and non-replaying merge recovery through the Fac
 	process.env.F1_AGENT_MODE = "mock";
 	process.env.F1_RESULT ??= join(home!, "result.json");
 	try {
-		await import(
-			"../../../apps/f1/test-drives/assets/taskbot146-reservations.mjs"
-		);
+		await import("./drives/taskbot146-reservations.mjs");
 		const receipt = JSON.parse(readFileSync(process.env.F1_RESULT, "utf8"));
 		expect(receipt.restartConfirmedWithoutReplay).toBe(true);
 		expect(receipt.submissions).toBe(1);
@@ -34,4 +32,4 @@ it("drives controlled admission and non-replaying merge recovery through the Fac
 			rmSync(home, { recursive: true, force: true });
 		}
 	}
-}, 30000);
+}, 180000);

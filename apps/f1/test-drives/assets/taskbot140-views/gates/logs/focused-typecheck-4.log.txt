@@ -1,6 +1,0 @@
-src/factory/ViewRuntime.ts(147,16): error TS2304: Cannot find name 'viewPlainText'.
-src/factory/ViewRuntime.ts(148,151): error TS2304: Cannot find name 'viewPlainText'.
-src/factory/ViewRuntime.ts(149,34): error TS2304: Cannot find name 'viewPlainText'.
-undefined
-/Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/edge-worker:
- ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: tsgo --noEmit

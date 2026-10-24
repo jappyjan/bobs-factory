@@ -40,7 +40,8 @@ afterEach(() => {
 
 async function fixture() {
 	const workspace = mkdtempSync(join(tmpdir(), "capture-recovery-"));
-	directories.push(workspace);
+	const factoryHome = mkdtempSync(join(tmpdir(), "capture-recovery-home-"));
+	directories.push(workspace, factoryHome);
 	const git = (...args: string[]) =>
 		execFileSync("git", args, { cwd: workspace, encoding: "utf8" }).trim();
 	git("init", "-b", "main");
@@ -154,7 +155,7 @@ async function fixture() {
 				},
 			],
 		]),
-		factoryHome: workspace,
+		factoryHome,
 		runnerSlots: new SessionSemaphore(1),
 		buildAgentRunnerConfig: vi.fn(async () => ({
 			runnerType: "codex",

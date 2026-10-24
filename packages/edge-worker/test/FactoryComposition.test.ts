@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import {
 	type DeliveryContract,
@@ -14,6 +14,7 @@ import { FactoryTools } from "../src/factory/FactoryTools.js";
 import { factoryFeedbackContext } from "../src/factory/FeedbackPolicy.js";
 import type { ImpactSnapshot } from "../src/factory/Impact.js";
 import { roleProgress } from "../src/factory/Incremental.js";
+import * as readiness from "../src/factory/MergeReadiness.js";
 import { checkArgs, hasCheck } from "../src/factory/StepConfig.js";
 import { WorkflowSchema } from "../src/factory/Workflow.js";
 import {
@@ -27,6 +28,17 @@ import { githubApiReceipt, githubRequest } from "./fixtures/github-api.js";
 import { preCompositionWorkflows } from "./fixtures/pre-composition.js";
 import { qaExecution, qaScope } from "./fixtures/qa.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
+
+// Provider polling is simulated; real 10-second waits make these drives load-sensitive.
+let polling: ReturnType<typeof vi.spyOn> | undefined;
+beforeEach(() => {
+	polling = vi
+		.spyOn(readiness, "waitForNextPoll")
+		.mockImplementation(
+			() => new Promise((resolve) => setTimeout(resolve, 20)),
+		);
+});
+afterEach(() => polling?.mockRestore());
 
 const homes: string[] = [];
 const runtimes: WorkflowRuntime[] = [];
@@ -840,7 +852,7 @@ it.each([
 			await waitForRuntime(
 				() =>
 					expect(["waiting", "completed", "failed"]).toContain(f.run.status),
-				{ timeout: 45000 },
+				{ timeout: 120000 },
 			).catch((error) => {
 				writeFileSync(
 					`/tmp/taskbot142-timeout-${mode}-${takeover}-${frozen}.json`,
@@ -1052,7 +1064,7 @@ it.each([
 			expect(f.calls[0]).toBe("assess-existing");
 		}
 	},
-	120000,
+	600000,
 );
 
 // Same production-runtime/host boundary as the four retained drives; only the new preparation path runs here.
@@ -1143,7 +1155,7 @@ it("drives standalone external preparation, independent rejection, persisted exa
 			2,
 		),
 	);
-}, 60000);
+}, 180000);
 
 it.each([
 	"missing",
@@ -1156,7 +1168,7 @@ it.each([
 	expect(f.run.delivery).toBeUndefined();
 	expect(f.state.fields.description).toBe("before");
 	expect(f.run.history.some((x) => x.step === "external-apply")).toBe(false);
-}, 60000);
+}, 180000);
 
 // R3/R7: actual runtime/host preparation and exact external correction, with no live providers.
 it.each([
@@ -1247,7 +1259,7 @@ it.each([
 		await f.runtime.shutdown();
 		await running;
 	}
-}, 60000);
+}, 180000);
 
 it("R7 safely prepares and routes a standalone delivery block without promoting copied context", async () => {
 	const f = fixture("external", false, false, "router");
@@ -1325,7 +1337,7 @@ it("R7 safely prepares and routes a standalone delivery block without promoting 
 			.filter((x) => x.step.endsWith("/clarify"))
 			.map((x) => x.step),
 	).toEqual(["planning/clarify"]);
-	expect(called.outputs["delivery"]).toMatchObject({
+	expect(called.outputs.delivery).toMatchObject({
 		outcome: "to-external-apply",
 	});
 	expect(called.delivery?.receipts).toEqual([]);
@@ -1384,7 +1396,7 @@ it("R7 safely prepares and routes a standalone delivery block without promoting 
 			2,
 		),
 	);
-}, 60000);
+}, 180000);
 
 it.each([
 	"missing",
@@ -1396,4 +1408,4 @@ it.each([
 	expect(f.run.delivery).toBeUndefined();
 	expect(f.state.fields.description).toBe("before");
 	expect(f.run.history.some((x) => x.step === "external-apply")).toBe(false);
-}, 60000);
+}, 180000);

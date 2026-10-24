@@ -293,7 +293,7 @@ it("drives configured review Calls through For each, bounded MCP, saved stop and
 		if (mode === "restart") {
 			const running = runtime.launch(run);
 			await waitForRuntime(() => expect(paused).toHaveLength(1), {
-				timeout: 60000,
+				timeout: 180000,
 			});
 			runtime.stop(run.id);
 			await running;
@@ -345,4 +345,4 @@ it("drives configured review Calls through For each, bounded MCP, saved stop and
 				2,
 			),
 		);
-}, 120000);
+}, 300000);

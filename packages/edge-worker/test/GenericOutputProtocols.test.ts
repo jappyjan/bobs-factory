@@ -206,7 +206,7 @@ it.each([
 						proposal: "draft",
 						review: "assess",
 						revise: "draft",
-						planOutput: "build",
+						plan: "build",
 					},
 				},
 				{

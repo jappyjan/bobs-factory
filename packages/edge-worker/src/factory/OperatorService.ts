@@ -464,7 +464,7 @@ export class OperatorService {
 					(run.workflowBlock || run.status === "stopped")
 				)
 					this.resume(run.id);
-				else this.retry(run.id);
+				else this.runtime.retry(run.id, args.transcriptExtension);
 			} else if (name === "retry_ticket_sync") await this.retryTracking(run.id);
 			else if (name === "stop_run") this.stop(run.id);
 			else if (name === "answer_run" || name === "recheck_run") {

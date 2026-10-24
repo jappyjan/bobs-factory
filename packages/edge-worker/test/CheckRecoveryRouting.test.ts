@@ -48,25 +48,36 @@ it.each([
 	"renamed-factory",
 	"renamed-takeover",
 ])("routes incomplete specialist assistance through the declared impact producer in %s's called graph", (workflowId) => {
-	const definitions = renamedFactory(defaultWorkflows).definitions;
-	const workflow = definitions.find((item) => item.id === workflowId)!;
-	const call = workflow.steps.find((step) => step.type === "workflow")!;
-	const child = definitions.find((item) => item.id === call.workflow)!;
-	const gate = child.steps.find(
+	const { definitions, original } = renamedFactory(defaultWorkflows);
+	// Review and QA decisions live in the recipes the composition calls.
+	const called: typeof definitions = [];
+	const visit = (id: string) => {
+		const recipe = definitions.find((item) => item.id === id)!;
+		if (called.includes(recipe)) return;
+		called.push(recipe);
+		for (const step of recipe.steps)
+			if (step.type === "workflow") visit(step.workflow!);
+	};
+	visit(workflowId);
+	const steps = called.flatMap((recipe) => recipe.steps);
+	const gate = steps.find(
 		(step) => step.type === "check" && readStep(step, "fanout"),
 	)!;
 	expect(readStep(gate, "review")).toBeUndefined();
 	const impact = readStep(gate, "impact")!;
 	expect(impact).toBeTruthy();
+	// Renamed routes target renamed steps; reads may keep their port names.
 	expect(
-		routeResult(gate, {
-			passed: false,
-			approved: false,
-			reviewIncomplete: true,
-			reviewBlocked: true,
-			questions: ["Restore specialist access"],
-		}),
-	).toBe(impact);
+		original(
+			routeResult(gate, {
+				passed: false,
+				approved: false,
+				reviewIncomplete: true,
+				reviewBlocked: true,
+				questions: ["Restore specialist access"],
+			})!,
+		),
+	).toBe(original(impact));
 	const correction = gate.branches.find(
 		(branch) => branch.when.path === "approved" && !branch.when.equals,
 	)!.next;
@@ -77,20 +88,26 @@ it.each([
 			reviewBlocked: true,
 		}),
 	).toBe(correction);
-	const qa = child.steps.find(
+	const qa = steps.find(
 		(step) => readStep(step, "capture") && step.type === "check",
 	)!;
 	// The historical runtime retries missing QA evidence before impact-aware
 	// incomplete-review assistance, and both precede a product fixer.
 	expect(
-		routeResult(qa, {
-			qaRetry: true,
-			reviewIncomplete: true,
-			reviewBlocked: true,
-		}),
-	).toBe(readStep(qa, "capture"));
-	expect(routeResult(qa, { reviewIncomplete: true, reviewBlocked: true })).toBe(
-		readStep(qa, "impact"),
+		original(
+			routeResult(qa, {
+				qaRetry: true,
+				reviewIncomplete: true,
+				reviewBlocked: true,
+			})!,
+		),
+	).toBe(original(readStep(qa, "capture")!));
+	// A called QA recipe reaches impact assessment through its declared outcome.
+	const qaRecipe = called.find((recipe) => recipe.steps.includes(qa))!;
+	expect(
+		[readStep(qa, "impact")!, ...(qaRecipe.outcomes ?? [])].map(original),
+	).toContain(
+		original(routeResult(qa, { reviewIncomplete: true, reviewBlocked: true })!),
 	);
 });
 

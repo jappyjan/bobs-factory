@@ -160,6 +160,7 @@ import {
 	listConfiguredTools,
 	prepareFactoryContextAsync,
 	type ResolvedSession,
+	retainTranscriptSource,
 	verifyFactoryContext,
 } from "bobs-factory-mcp-tools";
 import { OpenCodeRunner } from "bobs-factory-opencode-runner";
@@ -330,6 +331,7 @@ import {
 	pinReadOnlyAccess,
 	StaleBoundInspectionError,
 } from "./factory/RevisionBinding.js";
+import { roleAgentContext, roleContextAccess } from "./factory/RoleContext.js";
 import {
 	factoryNativePrompt,
 	factoryRoleInstruction,
@@ -8053,6 +8055,8 @@ ${taskSection}`;
 					this.executeFactoryMcpTool(context, server, tool),
 			});
 			this.factoryRuntime = new WorkflowRuntime(this.factoryHome, {
+				transcriptEntries: (id) =>
+					this.agentSessionManager.getSessionEntries(id),
 				agentExecutionBoundary: true,
 				issueDestinations: (run, signal) =>
 					this.fileIssueDestinations(run, signal),
@@ -9699,35 +9703,49 @@ ${taskSection}`;
 				bindingHistory(context, context.inspectionBinding),
 			),
 		);
+		const agentInput = context.contextAssistance
+			? context.input
+			: roleAgentContext(context);
+		const contextInput = context.contextAssistance
+			? context.input
+			: {
+					...(agentInput && typeof agentInput === "object"
+						? agentInput
+						: { input: agentInput }),
+					workflowExecution: workflowExecutionContext(context),
+					stepConfiguration: resolveStepConfig(step),
+					progress: context.progress,
+					...(hasCheck(step, "capture-evidence")
+						? { qaReuse: qaReuseContext(context) }
+						: {}),
+					...liveSources,
+					...(captureCorrection ? { captureCorrection } : {}),
+					...(outputCorrection ? { outputCorrection } : {}),
+					provenance: runProvenance(run),
+					...(artifactBinding
+						? {
+								resultSubmission: {
+									...artifactBinding,
+									maxBytes: 8 * 1024 * 1024,
+								},
+							}
+						: {}),
+				};
+		if (
+			agentInput &&
+			typeof agentInput === "object" &&
+			contextInput &&
+			typeof contextInput === "object"
+		)
+			retainTranscriptSource(agentInput, contextInput);
 		const factoryContext = await prepareFactoryContextAsync(
-			context.contextAssistance
-				? context.input
-				: {
-						...(context.input && typeof context.input === "object"
-							? context.input
-							: { input: context.input }),
-						workflowExecution: workflowExecutionContext(context),
-						stepConfiguration: resolveStepConfig(step),
-						progress: context.progress,
-						...(hasCheck(step, "capture-evidence")
-							? { qaReuse: qaReuseContext(context) }
-							: {}),
-						...liveSources,
-						...(captureCorrection ? { captureCorrection } : {}),
-						...(outputCorrection ? { outputCorrection } : {}),
-						provenance: runProvenance(run),
-						...(artifactBinding
-							? {
-									resultSubmission: {
-										...artifactBinding,
-										maxBytes: 8 * 1024 * 1024,
-									},
-								}
-							: {}),
-					},
+			contextInput,
 			artifactBinding,
 			context.contextAssistance ? undefined : context.researchAccess,
 			{
+				access: context.contextAssistance
+					? undefined
+					: roleContextAccess(context),
 				cacheDirectory: join(
 					this.factoryHome,
 					"factory",

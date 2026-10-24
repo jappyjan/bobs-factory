@@ -231,6 +231,12 @@ export function recognizedStock(workflow: Workflow): boolean {
 		delete legacyTemplate.stepConfigVersion;
 		templates.push(legacyTemplate);
 	}
+	// Stock definitions saved before durable progress budgets have no convergence policy.
+	for (const template of [...templates])
+		if (template.convergence) {
+			const { convergence: _, ...previous } = template;
+			templates.push(previous as Workflow);
+		}
 	return templates.some((template) =>
 		isDeepStrictEqual(behavior(workflow), behavior(template)),
 	);

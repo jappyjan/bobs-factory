@@ -1,3 +1,0 @@
-{"identity": {"source": "50e020294b8b414b2920af8952fd1467ae521180", "node": "v24.21.0", "pnpm": "10.33.1", "bun": "1.4.2", "lockfileSha256": "4d5086fbe1f4c882dd7466a569a75da99817eda5a9adeb89aa7526cc86406e72"}, "command": ["actionlint"], "started": "2026-10-21T18:04:58.386793+00:00"}
-
-{"exitCode": 0, "ended": "2026-10-21T18:04:58.784993+00:00"}

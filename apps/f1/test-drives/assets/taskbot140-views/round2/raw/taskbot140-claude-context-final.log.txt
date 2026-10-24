@@ -1,9 +1,0 @@
-
- RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/claude-runner
-
-
- Test Files  4 passed (4)
-      Tests  57 passed (57)
-   Start at  09:32:34
-   Duration  1.06s (transform 1.22s, setup 0ms, import 2.59s, tests 212ms, environment 0ms)
-

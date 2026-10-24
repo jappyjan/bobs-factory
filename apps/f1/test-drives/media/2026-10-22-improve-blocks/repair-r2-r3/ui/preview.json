@@ -1,9 +1,0 @@
-{
-	"apiOrigin": "http://127.0.0.1:51164",
-	"rpcPort": 51163,
-	"factoryPort": 51164,
-	"pid": 7400,
-	"directory": "/private/var/folders/5m/3pxzz_nd1v7f34rd9vnm01380000gn/T/f1-improve-blocks-9F5xuz",
-	"stockCanvas": "/#/recipes?recipe=improve-codebase&step=plan-dependencies",
-	"stop": "kill -TERM 7400"
-}

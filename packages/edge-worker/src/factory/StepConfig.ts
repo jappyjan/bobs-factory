@@ -1,3 +1,7 @@
+import {
+	type RoleContextPolicy,
+	RoleContextPolicySchema,
+} from "bobs-factory-mcp-tools";
 import { z } from "zod";
 import {
 	compileInlineSchema,
@@ -176,6 +180,7 @@ export const CONTEXT_SOURCES = [
 	"source",
 	"ticket",
 	"history",
+	"transcripts",
 	"launchInputs",
 	"mergeReadiness",
 	"feedback",
@@ -307,6 +312,7 @@ export type StepAccess = z.infer<typeof AccessSchema>;
 /** Zod fields shared by every step type; spread into the step schemas. */
 export const STEP_CONFIG_VERSION = "step-config-v1" as const;
 export const stepConfigFields = {
+	context: z.lazy(() => RoleContextPolicySchema).optional(),
 	configVersion: z.literal(STEP_CONFIG_VERSION).optional(),
 	reads: ReadsSchema.optional(),
 	output: OutputSchema.optional(),
@@ -324,6 +330,7 @@ export const stepConfigFields = {
 		.optional(),
 };
 export interface StepConfigFields {
+	context?: RoleContextPolicy;
 	configVersion?: typeof STEP_CONFIG_VERSION;
 	reads?: Record<string, ReadBinding>;
 	output?: StepOutput;
@@ -979,6 +986,8 @@ function explicitConfig(step: LegacyStep): ResolvedStepConfig {
 }
 
 const registeredScopes = new WeakMap<object, StepScope>();
+export const workflowIdForStep = (step: object) =>
+	registeredScopes.get(step)?.workflowId;
 const inheritedConfigOwners = new WeakMap<object, object>();
 /** Register an immutable accepted graph without adding fields or changing its digest. */
 export function registerWorkflowConfig(

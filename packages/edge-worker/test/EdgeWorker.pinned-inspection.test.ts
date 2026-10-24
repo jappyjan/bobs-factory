@@ -124,6 +124,7 @@ function fixture(
 		outputs: run.outputs,
 		input: { request: "Inspect the code" },
 		evidenceDir,
+		factoryHome: home,
 		log: () => {},
 		signal: new AbortController().signal,
 		resumeAgent,

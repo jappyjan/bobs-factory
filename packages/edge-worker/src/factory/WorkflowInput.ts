@@ -1,4 +1,8 @@
 import { isImmutableJson, retainSnapshotEntry } from "bobs-factory-core";
+import {
+	retainTranscriptSource,
+	transcriptProvenanceEpoch,
+} from "bobs-factory-mcp-tools";
 
 const historyRanges = new WeakMap<
 	object,
@@ -41,6 +45,25 @@ const detachedRanges = new WeakMap<
 /** Preserve detached native reads; a modified copy cannot borrow its source's identity. */
 export function detachedWorkflowRead<T>(value: T): T {
 	const copy = structuredClone(value);
+	const seenSources = new WeakSet<object>();
+	const retain = (source: unknown, target: unknown) => {
+		if (
+			!source ||
+			!target ||
+			typeof source !== "object" ||
+			typeof target !== "object"
+		)
+			return;
+		if (seenSources.has(source)) return;
+		seenSources.add(source);
+		retainTranscriptSource(source, target);
+		for (const key of Object.keys(source))
+			retain(
+				(source as Record<string, unknown>)[key],
+				(target as Record<string, unknown>)[key],
+			);
+	};
+	if (transcriptProvenanceEpoch() > 0) retain(value, copy);
 	if (value && typeof value === "object" && copy && typeof copy === "object") {
 		const range = historySnapshotRange(value);
 		if (range) detachedRanges.set(copy, range);
@@ -79,6 +102,7 @@ export function snapshotWorkflowInput<T>(
 		? new Array(value.length)
 		: {};
 	seen.set(value, result);
+	retainTranscriptSource(value, result);
 	const range = historyRanges.get(value);
 	if (range) historyRanges.set(result, range);
 	for (const key of Object.keys(value)) {

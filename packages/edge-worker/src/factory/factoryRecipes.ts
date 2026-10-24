@@ -125,7 +125,8 @@ const planningRecipe = {
 	],
 	name: "Clarify & plan",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable clarify & plan with declared inputs and original delivery safeguards.",
 	inputs: ports,
@@ -214,7 +215,8 @@ const deliveryRecipe = {
 	],
 	name: "Route by delivery",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Route executed planning inputs, or clarify, plan and independently review a contract before standalone routing. Routing does not apply or complete delivery.",
 	inputs: ports,
@@ -357,7 +359,8 @@ const check_inRecipe = {
 	],
 	name: "Check in with you",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable check in with you with declared inputs and original delivery safeguards.",
 	inputs: ports,
@@ -412,7 +415,8 @@ const implementationRecipe = {
 	],
 	name: "Implement",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable implement with declared inputs and original delivery safeguards.",
 	inputs: ports,
@@ -482,7 +486,8 @@ const reviewRecipe = {
 	],
 	name: "Review loop",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable review loop with declared inputs and original delivery safeguards.",
 	inputs: ports,
@@ -636,7 +641,8 @@ const qaRecipe = {
 	],
 	name: "QA & screenshots",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable qa & screenshots with declared inputs and original delivery safeguards.",
 	inputs: ports,
@@ -794,7 +800,8 @@ const ciRecipe = {
 	],
 	name: "CI watch & fix",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable ci watch & fix with declared inputs and original delivery safeguards.",
 	inputs: ports,
@@ -940,7 +947,8 @@ const approvalRecipe = {
 	],
 	name: "Review guide & your approval",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable review guide & your approval with declared inputs and original delivery safeguards.",
 	inputs: ports,
@@ -1090,7 +1098,8 @@ const mergeRecipe = {
 	],
 	name: "Merge",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable merge with declared inputs and original delivery safeguards.",
 	inputs: ports,
@@ -1166,7 +1175,8 @@ const externalRecipe = {
 	],
 	name: "External ticket delivery",
 	stepConfigVersion: "step-config-v1",
-	allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+	internal: true,
+	allowedTriggers: ["workflow", "manual"],
 	description:
 		"Reusable external ticket delivery. Without an accepted contract, clarify, plan and independently review before accepting and applying it.",
 	inputs: ports,
@@ -1662,7 +1672,7 @@ export const factoryRecipes = [
 	},
 	{
 		...stockWorkflowMetadata["factory-pipeline"],
-		allowedTriggers: ["workflow", "manual", "ticket-assignment"],
+		allowedTriggers: ["workflow", "manual"],
 		steps: composition,
 	},
 	planningRecipe,

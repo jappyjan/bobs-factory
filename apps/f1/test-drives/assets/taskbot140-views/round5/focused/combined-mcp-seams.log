@@ -1,9 +1,0 @@
-
- RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/taskbot-140-views/packages/mcp-tools
-
-
- Test Files  2 passed (2)
-      Tests  4 passed (4)
-   Start at  13:59:33
-   Duration  771ms (transform 101ms, setup 0ms, import 298ms, tests 325ms, environment 0ms)
-

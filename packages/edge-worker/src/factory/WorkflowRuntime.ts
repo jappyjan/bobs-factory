@@ -20,6 +20,12 @@ import {
 	JsonSnapshotStore,
 	reserveOwnedStorageWorkspace,
 } from "bobs-factory-core";
+import {
+	extendTranscriptAccess,
+	type RoleContextPolicy,
+	retainTranscriptSource,
+	type TranscriptExtension,
+} from "bobs-factory-mcp-tools";
 import type {
 	CapacityOptions,
 	CapacityRequest,
@@ -177,6 +183,7 @@ import {
 	StaleBoundInspectionError,
 	sameOutputBinding,
 } from "./RevisionBinding.js";
+import { newRoleContext, roleContextAccess } from "./RoleContext.js";
 import { withRuntimeRolePrompt } from "./RolePrompt.js";
 import {
 	diagnosticReuse,
@@ -200,7 +207,11 @@ import {
 	stampSpecialist,
 	validateContractOutput,
 } from "./SpecialistReview.js";
-import { allRunSteps, stepBindings } from "./StepBindings.js";
+import {
+	allRunSteps,
+	mappedStepBindings,
+	stepBindings,
+} from "./StepBindings.js";
 import {
 	architectureRevisionDecision,
 	CHECK_SELECTOR_IDS,
@@ -492,6 +503,12 @@ export interface FactoryRun {
 	impactDecisions?: ImpactDecision[];
 	impactConvergence?: Record<string, ConvergenceState>;
 	progressBudget?: ProgressBudget;
+	roleContext?: {
+		version: 1;
+		acceptedAt: string;
+		adoption: "new-run";
+		policy: RoleContextPolicy;
+	};
 	approvalContinuations?: {
 		originalReviewId: string;
 		decisionDigest: string;
@@ -630,6 +647,8 @@ export interface ExecutionContext {
 	progressObservation?: string;
 	/** Runtime-owned accepted input hashes; never sourced from role claims. */
 	progressInputs?: Record<string, string>;
+	/** Host-owned original session entries, unavailable to ordinary outputs-first roles. */
+	transcriptEntries?: () => readonly import("bobs-factory-core").CyrusAgentSessionEntry[];
 	progressItem?: string;
 	beginProgressAttempt?: (reason?: string) => Promise<void>;
 	iteration?: ItemFrame;
@@ -694,6 +713,9 @@ export interface ExecutionContext {
 	checkEvidence?: Record<string, unknown>;
 }
 export interface RuntimeHooks {
+	transcriptEntries?(
+		runId: string,
+	): readonly import("bobs-factory-core").CyrusAgentSessionEntry[];
 	/** The agent hook honors reserveExecution at each actual turn, including retries. */
 	agentExecutionBoundary?: true;
 	issueDestinations?(
@@ -1434,6 +1456,7 @@ export class WorkflowRuntime {
 			questions: [],
 			events: [],
 		};
+		run.roleContext = newRoleContext(run);
 		initializeProgressBudget(run);
 		this.runs.set(run.id, run);
 		registerOutputHistory(run, () => this.historyPreviews(run));
@@ -2018,6 +2041,7 @@ export class WorkflowRuntime {
 							run.architectureDecisions ?? [],
 						),
 					};
+		if (config.inputs) retainTranscriptSource(outputs, input);
 		if (run.launchAttachments && Object.keys(run.launchAttachments).length) {
 			Object.assign(input, {
 				launchAttachments: structuredClone(run.launchAttachments),
@@ -2320,24 +2344,24 @@ export class WorkflowRuntime {
 			sourceContext,
 			bindingHistory(sourceContext, previous),
 		);
-		if (source.reads) Object.assign(sourceInput, bindings);
-		else if (
+		if (source.reads) {
+			Object.assign(sourceInput, bindings);
+			retainTranscriptSource(bindings, sourceInput);
+		} else if (
 			sourceConfig.inputs &&
 			sourceConfig.reads.answers &&
 			Object.hasOwn(bindings, "answers")
-		)
-			Object.assign(sourceInput, { answers: bindings.answers });
+		) {
+			const selected = mappedStepBindings(bindings, { answers: "answers" });
+			Object.assign(sourceInput, selected);
+			retainTranscriptSource(selected, sourceInput);
+		}
 		const sources = checkArgs(source, "scope-inputs")?.sources;
 		if (!sourceConfig.inputs && (sources || sourceConfig.explicit))
 			Object.assign(sourceInput, {
 				scopeSources:
 					sources && typeof sources === "object"
-						? Object.fromEntries(
-								Object.entries(sources).map(([label, name]) => [
-									label,
-									bindings[String(name)],
-								]),
-							)
+						? mappedStepBindings(bindings, sources)
 						: {},
 			});
 		return sourceInput;
@@ -2499,6 +2523,9 @@ export class WorkflowRuntime {
 				: undefined;
 			const context: ExecutionContext = {
 				progressInputs: checkpoint.progressInputs,
+				transcriptEntries: this.hooks.transcriptEntries
+					? () => this.hooks.transcriptEntries!(run.id)
+					: undefined,
 				progressItem: checkpoint.progressItem,
 				progressOperation: `${checkpoint.progressPath ?? workflowId}/${step.id}${checkpoint.iteration ? `/${checkpoint.iteration.id}` : ""}`,
 				assertSchedulingOpen: () => this.assertSchedulingOpen(),
@@ -2607,10 +2634,14 @@ export class WorkflowRuntime {
 					bindingHistory(context, boundScope),
 				);
 				Object.assign(input, bindings);
+				retainTranscriptSource(bindings, input);
 			} else if (config.inputs && config.reads.answers) {
 				const bindings = stepBindings(context);
-				if (Object.hasOwn(bindings, "answers"))
-					Object.assign(input, { answers: bindings.answers });
+				if (Object.hasOwn(bindings, "answers")) {
+					const selected = mappedStepBindings(bindings, { answers: "answers" });
+					Object.assign(input, selected);
+					retainTranscriptSource(selected, input);
+				}
 			}
 			if (checkpoint.iteration)
 				Object.assign(input, {
@@ -2621,12 +2652,7 @@ export class WorkflowRuntime {
 			const sourceValues = () => {
 				if (!scopeSources || typeof scopeSources !== "object") return undefined;
 				const bindings = stepBindings(context);
-				return Object.fromEntries(
-					Object.entries(scopeSources).map(([label, name]) => [
-						label,
-						bindings[String(name)],
-					]),
-				);
+				return mappedStepBindings(bindings, scopeSources);
 			};
 			if (!config.inputs && (scopeSources || config.explicit))
 				Object.assign(input, { scopeSources: sourceValues() ?? {} });
@@ -5999,7 +6025,7 @@ export class WorkflowRuntime {
 		);
 		return true;
 	}
-	retry(id: string): FactoryRun {
+	retry(id: string, transcriptExtension?: TranscriptExtension): FactoryRun {
 		const run = this.get(id);
 		this.requireRunAvailable(run);
 		if (this.shuttingDown) throw new Error("Factory is shutting down");
@@ -6009,6 +6035,29 @@ export class WorkflowRuntime {
 				!(run.status === "stopped" && run.architectureGate))
 		)
 			throw new Error("Only failed or interrupted runs can be retried");
+		if (transcriptExtension) {
+			const step = stepForRun(run, transcriptExtension.work);
+			if (!step || step.type !== "agent")
+				throw new Error(
+					"Transcript extension requires the original configured agent role",
+				);
+			const access = roleContextAccess({
+				run,
+				step,
+				stepKey: transcriptExtension.work,
+				factoryHome: dirname(this.directory),
+			});
+			if (!access)
+				throw new Error(
+					"This accepted run has no outputs-first transcript policy",
+				);
+			const grant = extendTranscriptAccess(access, transcriptExtension);
+			this.log(
+				run,
+				"run",
+				`Bounded transcript extension for ${access.work}: ${grant.pages} pages/${grant.utf8Bytes} UTF-8 bytes; reason: ${grant.reason}. Original range, native permissions and all acceptance/delivery gates retained.`,
+			);
+		}
 		releaseDelivery(run, "Explicit retry must re-enter delivery coordination");
 		const convergenceGrant = run.progressBudget?.blocked;
 		const progressGrant = continueProgress(run);
@@ -6673,6 +6722,9 @@ export class WorkflowRuntime {
 				iteration: { ...item, frame: key },
 				callInputs: checkpoint.callInputs,
 				progressInputs: checkpoint.progressInputs,
+				transcriptEntries: this.hooks.transcriptEntries
+					? () => this.hooks.transcriptEntries!(run.id)
+					: undefined,
 				progressItem:
 					Array.isArray(acceptedItems) &&
 					digest(acceptedItems[item.index]) === digest(item.value)

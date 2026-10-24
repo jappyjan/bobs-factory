@@ -134,7 +134,7 @@ function RecipeGallery({ config }: { config: any }) {
 		{ title: "Recipes", items: recipes.filter((r) => !r.internal) },
 		{
 			title: "Building blocks",
-			hint: "Reused inside other recipes; never started on their own.",
+			hint: "Reused inside other recipes. You can also start one on its own from Today.",
 			items: recipes.filter((r) => r.internal),
 		},
 	];

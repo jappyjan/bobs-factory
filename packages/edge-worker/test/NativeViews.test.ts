@@ -2,9 +2,10 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { defaultWorkflows } from "../src/factory/defaultWorkflows.js";
 import { FactoryTools } from "../src/factory/FactoryTools.js";
+import * as readiness from "../src/factory/MergeReadiness.js";
 import {
 	nativeViewSnapshot,
 	prepareNativeViewConsent,
@@ -20,6 +21,17 @@ import {
 import { checkin } from "./fixtures/architecture.js";
 import { FactoryServer } from "./fixtures/authenticated-factory.js";
 import { waitForRuntime } from "./fixtures/runtime-wait.js";
+
+// Provider polling is simulated; real 10-second waits make these drives load-sensitive.
+let polling: ReturnType<typeof vi.spyOn> | undefined;
+beforeEach(() => {
+	polling = vi
+		.spyOn(readiness, "waitForNextPoll")
+		.mockImplementation(
+			() => new Promise((resolve) => setTimeout(resolve, 20)),
+		);
+});
+afterEach(() => polling?.mockRestore());
 
 const homes: string[] = [],
 	runtimes: WorkflowRuntime[] = [],

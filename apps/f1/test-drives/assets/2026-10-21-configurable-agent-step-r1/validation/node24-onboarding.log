@@ -1,9 +1,0 @@
-
- RUN  v4.1.12 /Users/jappy/.t3/worktrees/bobs-factory/ticket-136-agent-step-recovery/apps/cli
-
-
- Test Files  1 passed (1)
-      Tests  16 passed (16)
-   Start at  20:32:16
-   Duration  5.37s (transform 615ms, setup 0ms, import 912ms, tests 4.06s, environment 0ms)
-

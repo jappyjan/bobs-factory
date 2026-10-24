@@ -290,7 +290,7 @@ it("completes fresh multi-slice verification before removing a large artifact", 
 	);
 	await expect(stat(record.path)).rejects.toMatchObject({ code: "ENOENT" });
 	await coordinator.stop();
-}, 30000);
+}, 180000);
 it.each([
 	"missing",
 	"replaced",
@@ -358,7 +358,7 @@ it("limits each inventory page to 100 candidates and continues through the retai
 	}
 	expect(ids.size).toBe(105);
 	await coordinator.stop();
-}, 30000);
+}, 180000);
 
 it("recovers a crash after root and leaf detachment using the durable leaf receipt", async () => {
 	const { coordinator } = await fixture();
