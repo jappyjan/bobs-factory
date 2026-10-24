@@ -587,7 +587,12 @@ it.each([
 			})
 		).ok,
 	).toBe(true);
-	await vi.waitFor(() => expect(f.run.status).toBe("completed"));
+	// Final persistence/diagnostics can still change the optimistic revision
+	// after terminal status becomes visible. Wait before preparing another action.
+	await vi.waitFor(() => {
+		expect(f.run.status).toBe("completed");
+		expect(f.runtime.isExecuting(f.run.id)).toBe(false);
+	});
 	f.run.ticketReference = {
 		provider: "taskbot",
 		instance: "https://taskbot.example",
