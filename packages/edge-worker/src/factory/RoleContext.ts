@@ -185,14 +185,17 @@ export function roleAgentContext(context: ExecutionContext): unknown {
 			{ id: context.run.repositoryId, workspace: context.run.workspace },
 		],
 		progress: context.progress,
-		reviewMemory: Object.hasOwn(input, "history")
-			? {
-					ledger: "/contextMemory/reviewLedger",
-					rounds: "/contextMemory/reviewRounds",
-					authority:
-						"Original output claims and rationale; native receipt/currentness checks remain required",
-				}
-			: undefined,
+		// Ledger and rounds are derived from review history; without review rounds
+		// they are empty, so do not send the role looking for them.
+		reviewMemory:
+			Object.hasOwn(input, "history") && context.run.reviewRounds?.length
+				? {
+						ledger: "/contextMemory/reviewLedger",
+						rounds: "/contextMemory/reviewRounds",
+						authority:
+							"Original output claims and rationale; native receipt/currentness checks remain required",
+					}
+				: undefined,
 		gaps,
 		policy: {
 			mode: "outputs-first",

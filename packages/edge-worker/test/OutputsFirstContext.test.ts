@@ -179,6 +179,16 @@ it("keeps ordinary handoffs source-bound and reports missing records without loa
 	expect(collision.factoryHandoff1).toMatchObject({
 		format: "factory-role-handoff-v1",
 	});
+	ctx.input = { history: [{ step: "research", output: {} }] };
+	const handoffOf = () =>
+		(roleAgentContext(ctx) as { handoff: { reviewMemory?: unknown } }).handoff;
+	expect(handoffOf().reviewMemory).toBeUndefined();
+	ctx.run.reviewRounds = [
+		{ key: "review/specialist-review" },
+	] as unknown as typeof ctx.run.reviewRounds;
+	expect(handoffOf().reviewMemory).toMatchObject({
+		ledger: "/contextMemory/reviewLedger",
+	});
 	delete ctx.run.roleContext;
 	expect(roleAgentContext(ctx)).toBe(ctx.input);
 	expect(roleContextAccess(ctx)).toBeUndefined();
