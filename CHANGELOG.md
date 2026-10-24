@@ -35,7 +35,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Wait for resumed operator test runs to finish saving before retrying ticket synchronization, avoiding intermittent nightly validation failures.
+- Wait for resumed operator test runs to finish saving before retrying ticket synchronization, avoiding intermittent nightly validation failures. ([#192](https://github.com/jappyjan/bobs-factory/pull/192))
 
 - Accept prepared agent CLIs at or above their minimum supported versions, including newer major versions, so upgraded Codex installations can launch execution-profile runs. Preserve authentication and configuration checks, and suppress desktop Codex plugins, hooks and notifications only in Bob’s child processes. ([#191](https://github.com/jappyjan/bobs-factory/pull/191))
 
