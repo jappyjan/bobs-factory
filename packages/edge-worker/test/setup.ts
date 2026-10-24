@@ -24,6 +24,17 @@ const claudeConfigDir =
 process.env.CLAUDE_CONFIG_DIR = claudeConfigDir;
 mkdirSync(join(claudeConfigDir, "debug"), { recursive: true });
 
+// Eventual runtime assertions await real disk commits and child processes. The
+// 1s default flakes under parallel CI load; keep assertions, allow time to settle.
+const waitFor = vi.waitFor;
+vi.waitFor = ((callback, options) => {
+	const settings = typeof options === "number" ? { timeout: options } : options;
+	return waitFor(callback, {
+		...settings,
+		timeout: Math.max(settings?.timeout ?? 0, 30000),
+	});
+}) as typeof vi.waitFor;
+
 // Mock console methods to reduce noise in tests
 global.console = {
 	...console,

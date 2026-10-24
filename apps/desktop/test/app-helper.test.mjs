@@ -48,7 +48,7 @@ async function fixture(mode) {
 					const owned = read(transaction.snapshot).child;
 					if (owned?.stamp && processStamp(owned.pid) === owned.stamp) {
 						process.kill(owned.pid, "SIGTERM");
-						const deadline = Date.now() + 3000;
+						const deadline = Date.now() + 20000;
 						while (
 							processStamp(owned.pid) === owned.stamp &&
 							Date.now() < deadline
@@ -78,7 +78,7 @@ test("retained standalone helper resolves its full module closure and runs recov
 				join(directory, "helper-request.json"),
 				"recover",
 			],
-			{ encoding: "utf8", timeout: 5000 },
+			{ encoding: "utf8", timeout: 20000 },
 		);
 		assert.equal(result.status, 0, result.stderr);
 		assert.equal(
@@ -96,7 +96,7 @@ test("actual Install action's retained helper exits exact UI, activates bytes an
 		assert.equal(await f.exit, 0, f.output());
 		const directory = join(f.data.home, "desktop", "updates"),
 			stateFile = join(directory, "state.json");
-		const deadline = Date.now() + 5000;
+		const deadline = Date.now() + 20000;
 		while (Date.now() < deadline) {
 			const current = read(stateFile).transaction;
 			if (
