@@ -4,6 +4,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
+	realpathSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
@@ -162,4 +163,57 @@ it("retains capacity admission and selected credentials through fetch and setup 
 	}
 	expect((await capacity.snapshot()).active).toBe(0);
 	expect(process.env.GIT_SERVICE_HOST_CANARY).toBe("host-secret");
+});
+
+it.each([
+	true,
+	false,
+])("reuses an existing branch worktree without adopting ownership (registered=%s)", async (registered) => {
+	const { StorageRetentionStore, storageDigest } = await import(
+		"bobs-factory-core"
+	);
+	const { root, env, repository, issue, git } = fixture();
+	const service = new GitService({ factoryHome: root }, logger).withEnvironment(
+		env,
+	);
+	let original: { path: string };
+	if (registered)
+		original = await service.createGitWorktree(issue, [repository]);
+	else {
+		const path = join(root, "external-worktree");
+		git(["worktree", "add", "-b", issue.branchName!, path, "main"]);
+		original = { path: realpathSync(path) };
+	}
+	const continued = { ...issue, id: "takeover", identifier: "MANUAL-takeover" };
+	const workspace = await service.createGitWorktree(continued, [repository]);
+	expect(workspace.path).toBe(original.path);
+	expect(
+		existsSync(join(repository.workspaceBaseDir, continued.identifier)),
+	).toBe(false);
+	const store = new StorageRetentionStore(root);
+	const resource = await store.workspaceResource(original.path);
+	const use = JSON.parse(
+		readFileSync(
+			join(
+				store.directory,
+				"workspace-use",
+				storageDigest(resource),
+				`${storageDigest(continued.id)}.json`,
+			),
+			"utf8",
+		),
+	);
+	expect(use).toMatchObject({
+		owner: continued.id,
+		workspace: resource,
+		state: "reserved",
+	});
+	const records = await Promise.all(
+		(await store.inventoryPage(0)).map((id) => store.record(id)),
+	);
+	expect(
+		records
+			.filter((record) => record.category === "worktree")
+			.map((record) => record.path),
+	).toEqual(registered ? [original.path] : []);
 });
