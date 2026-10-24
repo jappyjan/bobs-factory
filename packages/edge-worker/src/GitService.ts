@@ -17,7 +17,7 @@ export const setupExecutionScope = new AsyncLocalStorage<{
 import { execFile, execSync } from "node:child_process";
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { basename, join, resolve as pathResolve } from "node:path";
+import { basename, dirname, join, resolve as pathResolve } from "node:path";
 import { promisify } from "node:util";
 import type {
 	BaseBranchResolution,
@@ -681,6 +681,32 @@ export class GitService {
 			if (workspace.repoPaths)
 				for (const id of Object.keys(workspace.repoPaths))
 					workspace.repoPaths[id] = await realpath(workspace.repoPaths[id]!);
+			if (workspace.path !== path) {
+				// Git may reuse a branch already checked out under another issue ID.
+				// Reserve that actual root without adopting it for deletion or registering
+				// the unused requested path as a newly created worktree.
+				const reused = await retention.workspaceResource(workspace.path);
+				await retention.workspaceClaim(reused).run(async () => {
+					await storageIdentity(workspace.path, dirname(workspace.path));
+					await publishStorageJson(
+						join(
+							retention.directory,
+							"workspace-use",
+							storageDigest(reused),
+							`${storageDigest(issue.id)}.json`,
+						),
+						{
+							version: 1,
+							owner: issue.id,
+							workspace: reused,
+							state: "reserved",
+							updatedAt: new Date().toISOString(),
+							reason: "Existing branch worktree continuation is reserved",
+						},
+					);
+				}, true);
+				return workspace;
+			}
 			if (!existed) {
 				const record = await retention.register({
 					category: "worktree",
