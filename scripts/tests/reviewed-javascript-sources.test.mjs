@@ -13,7 +13,9 @@ import { join } from "node:path";
 import test from "node:test";
 import { sha256 } from "../lib/binary-release.mjs";
 import {
+	dependencyProjection,
 	retainReviewedJavascriptSources,
+	reviewedDependencyRefresh,
 	reviewedJavascriptDelta,
 } from "../lib/reviewed-javascript-sources.mjs";
 
@@ -243,6 +245,141 @@ test("source retention checks actual archive integrity, package metadata and lic
 					async () => new Response(native),
 				),
 			/Native component/,
+		);
+	} finally {
+		rmSync(f.root, { recursive: true, force: true });
+	}
+});
+
+/** A schema-3 refresh over the same fixture: one shipped addition, one changed tooling pin. */
+function refresh(f, mutate = (review) => review) {
+	const show = (commit, file) =>
+		execFileSync("git", ["show", `${commit}:${file}`], {
+			cwd: f.root,
+			encoding: "utf8",
+		});
+	const head = f.git("rev-parse", "HEAD");
+	const files = ["packages/edge-worker/package.json", "pnpm-lock.yaml"].map(
+		(file) => ({
+			file,
+			beforeSha256: sha256(dependencyProjection(file, show(f.baseline, file))),
+			afterSha256: sha256(dependencyProjection(file, show(head, file))),
+		}),
+	);
+	const review = mutate({
+		schemaVersion: 3,
+		baselineCommit: f.baseline,
+		commit: head,
+		reviewedBy: "Independent controlled reviewer",
+		scope: "Controlled dependency refresh",
+		files,
+		packages: [
+			{ ...f.review.packages[0], distribution: "bundled" },
+			{
+				name: "retained",
+				version: "1.0.0",
+				integrity: "sha512-BBBB",
+				distribution: "tooling",
+				license: "Apache-2.0",
+			},
+		],
+	});
+	const text = JSON.stringify(review);
+	writeFileSync(
+		join(f.root, "distribution/dependency-reviews/refresh.json"),
+		text,
+	);
+	const candidate = f.commit();
+	return {
+		candidate,
+		ref: {
+			schemaVersion: 3,
+			file: "distribution/dependency-reviews/refresh.json",
+			sha256: sha256(text),
+		},
+	};
+}
+test("a dependency refresh review covers changed pins as tooling and retains only shipped sources", async () => {
+	const f = fixture(true);
+	try {
+		const { candidate, ref } = refresh(f);
+		const review = reviewedDependencyRefresh(
+			f.root,
+			f.baseline,
+			candidate,
+			ref,
+		);
+		assert.equal(review.packages.length, 2);
+		const out = join(f.root, "retained");
+		mkdirSync(out);
+		let downloads = 0;
+		const records = await retainReviewedJavascriptSources(
+			[{ review }],
+			out,
+			async () => {
+				downloads++;
+				return new Response(f.bytes);
+			},
+		);
+		assert.equal(downloads, 1);
+		assert.deepEqual(
+			records.map((r) => r.revision),
+			["browser@2.0.0"],
+		);
+	} finally {
+		rmSync(f.root, { recursive: true, force: true });
+	}
+});
+test("a dependency refresh review refuses an uncovered package, an unshipped license grant and licensing changes", () => {
+	const f = fixture(true);
+	try {
+		const omitted = refresh(f, (review) => ({
+			...review,
+			packages: review.packages.slice(0, 1),
+		}));
+		assert.throws(
+			() =>
+				reviewedDependencyRefresh(
+					f.root,
+					f.baseline,
+					omitted.candidate,
+					omitted.ref,
+				),
+			/every added or changed package/,
+		);
+		const copyleft = refresh(f, (review) => {
+			review.packages[0].license = "GPL-3.0";
+			return review;
+		});
+		assert.throws(
+			() =>
+				reviewedDependencyRefresh(
+					f.root,
+					f.baseline,
+					copyleft.candidate,
+					copyleft.ref,
+				),
+			/upstream license text/,
+		);
+		const manifest = join(f.root, "packages/edge-worker/package.json");
+		writeFileSync(
+			manifest,
+			JSON.stringify({
+				...JSON.parse(readFileSync(manifest, "utf8")),
+				license: "MIT",
+			}),
+		);
+		f.commit();
+		const relicensed = refresh(f);
+		assert.throws(
+			() =>
+				reviewedDependencyRefresh(
+					f.root,
+					f.baseline,
+					relicensed.candidate,
+					relicensed.ref,
+				),
+			/package licensing/,
 		);
 	} finally {
 		rmSync(f.root, { recursive: true, force: true });

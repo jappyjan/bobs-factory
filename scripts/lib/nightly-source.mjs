@@ -12,7 +12,11 @@ import {
 } from "./binary-release.mjs";
 import { candidateIdentity, canonical } from "./release-candidate.mjs";
 import { validateSourceMaterials } from "./release-material.mjs";
-import { reviewedJavascriptDelta } from "./reviewed-javascript-sources.mjs";
+import {
+	dependencyProjection,
+	reviewedDependencyRefresh,
+	reviewedJavascriptDelta,
+} from "./reviewed-javascript-sources.mjs";
 
 // A published derived bundle retains the original material inventory and bytes.
 // Recover those exact inputs, not the gzip/tar container whose temporary host
@@ -188,32 +192,16 @@ export function verifyDependencyBaseline(
 		return review;
 	};
 	const additions = reviews
-		.filter((r) => r.schemaVersion === 2)
+		.filter((r) => [2, 3].includes(r.schemaVersion))
 		.map((r) =>
-			reviewedJavascriptDelta(root, baselineCommit, candidateCommit, r),
+			r.schemaVersion === 3
+				? reviewedDependencyRefresh(root, baselineCommit, candidateCommit, r)
+				: reviewedJavascriptDelta(root, baselineCommit, candidateCommit, r),
 		);
 	const observations = [];
 	for (const file of before) {
-		const select = (commit) => {
-			const bytes = git(["show", `${commit}:${file}`]);
-			if (!file.endsWith("package.json")) return bytes;
-			const p = JSON.parse(bytes);
-			return canonical(
-				Object.fromEntries(
-					[
-						"license",
-						"dependencies",
-						"devDependencies",
-						"optionalDependencies",
-						"peerDependencies",
-						"overrides",
-						"pnpm",
-						"engines",
-						"packageManager",
-					].map((k) => [k, p[k] ?? null]),
-				),
-			);
-		};
+		const select = (commit) =>
+			dependencyProjection(file, git(["show", `${commit}:${file}`]));
 		const review =
 			select(baselineCommit) === select(candidateCommit)
 				? undefined

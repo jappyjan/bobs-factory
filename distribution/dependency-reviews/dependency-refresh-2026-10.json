@@ -1,0 +1,1073 @@
+{
+  "schemaVersion": 3,
+  "baselineCommit": "84433882ceed569cb93420d3ddc0961e252e0ce8",
+  "commit": "402768a44f8d5d1eaba696f62284f8a86e310af4",
+  "reviewedBy": "Claude release review, 2026-10-24; independent of the Codex dependency refresh (#173) and the Recipes additions it supersedes",
+  "scope": "Complete lockfile delta from accepted baseline 84433882 to 402768a4: 81 added or changed packages and 22 changed dependency inputs, including removed workspace overrides. 22 packages measured in the binary and web bundle carry exact npm archives (SHA-512 = lockfile, SHA-256, size) and full upstream notices; all are MIT, ISC or BSD-3-Clause, with no native code or install hooks. 59 build and test tooling packages (vitest, vite, rolldown native bindings, express stack) are pinned by lockfile integrity, which matches npm registry metadata, and declare MIT, ISC, BSD-3-Clause or Apache-2.0; the binary build refuses to bundle them. Source and license provenance only; pnpm audit findings are tracked separately.",
+  "files": [
+    {
+      "file": "apps/cli/package.json",
+      "beforeSha256": "18d77accfe83a10cc8acc7e6aaa029455beb95c2282437a9479d51c6bfd9c30b",
+      "afterSha256": "2c1444a776654a94ea7356877a66ed982e650477f92cf1e7eb55480a9b4c5e7b"
+    },
+    {
+      "file": "apps/f1/package.json",
+      "beforeSha256": "54a3f3d543609202412759bfd44425854db7c76cf9313a3bae327fd794181508",
+      "afterSha256": "5d0ffdda39dccdae655b29cbb4bce6a8778f81d1c3d999770609c04d6e52e0cd"
+    },
+    {
+      "file": "distribution/npm/bobs-factory-trial/package.json",
+      "beforeSha256": "1ad96f2f164ffb68964213c4cd11e75fa160fabe33bb30ffc4e10bec21eebafa",
+      "afterSha256": "5e47c6d400b48e7b462a3f533218398d48fa9bdc9c749c63d589908b79f17e36"
+    },
+    {
+      "file": "package.json",
+      "beforeSha256": "3d8aa6b186f046055139cffcb6fdedbd6ed1d7d58a867a1f78c000984884d85d",
+      "afterSha256": "4c32df357981d3aa3ee978403c551d0a5d920c2797cbd334c0dc10bcfd35edd0"
+    },
+    {
+      "file": "packages/claude-runner/package.json",
+      "beforeSha256": "310e09d38a256888fc2964672d3b26ff0992d3c095ab4e43ef8c8d056ec9b347",
+      "afterSha256": "269c7b2186a535aac3affec0fc8a03ae4e9cb0775b08ad76e1b94974e06105e8"
+    },
+    {
+      "file": "packages/cloudflare-tunnel-client/package.json",
+      "beforeSha256": "6190155a36759d3d726972d9a9b89ff5091f2d633d225ddea0381558409b603d",
+      "afterSha256": "57858e2a433467597a1c010a94240303612dc6f4d01d4c0f9002bf394cbb15a6"
+    },
+    {
+      "file": "packages/codex-runner/package.json",
+      "beforeSha256": "88a50e486b2ee90f57982a7ef21652e10709e5d13288f29c3ee7d57712d15ff0",
+      "afterSha256": "011a7a0363d517af5016403d68d7d294c692869d91c853f5977b81457e19fd31"
+    },
+    {
+      "file": "packages/config-updater/package.json",
+      "beforeSha256": "6569e9a4bdb67d00e73b4da0a0ea479cc64f922a396545c64c0ebb65e0f93d18",
+      "afterSha256": "db8f7a8d87350d4b51c8293562a33c5604074611773c72284051e6b60e177968"
+    },
+    {
+      "file": "packages/core/package.json",
+      "beforeSha256": "0cb1cfde180a42dc0c9f1eccf86a949bf2886ea46e4aff9447fa004c333c0ab1",
+      "afterSha256": "c53a04ab0477f6617ccb30e21ef93df1cb48bb1c1b497d97214de09e8cdb6e61"
+    },
+    {
+      "file": "packages/cursor-runner/package.json",
+      "beforeSha256": "c7359529a882b4197ce2fd6cbed555dc14d8be205b7cc2bbd58c62341a4b30ea",
+      "afterSha256": "b0d8e6af70dbc631069b2bd40f2c453c8b6965437ae228e05eb3c1921794bd1f"
+    },
+    {
+      "file": "packages/edge-worker/package.json",
+      "beforeSha256": "1e85f912d607618c06fb90308ca2dceb3f68fa3c60edfd1dae6b67966584d780",
+      "afterSha256": "37e12b7b1043d03fd46678659296bc3e65e6f030124645c1577b7a716fa90ea4"
+    },
+    {
+      "file": "packages/gemini-runner/package.json",
+      "beforeSha256": "5d3c1f0fee7bffbba54f9a117d77fef56b73e4f3002f1058e9dc43d77b8e4f95",
+      "afterSha256": "f7796182239adf7df0565f3a2cfb3d93e40005482d8505ede655d196e8046dee"
+    },
+    {
+      "file": "packages/github-event-transport/package.json",
+      "beforeSha256": "945fa6a6df4a573894e86f5d68d56ba22d058a87f405e613b7eac6ff57665763",
+      "afterSha256": "4596d2b15cedce37d758bc3a34f6102bcaa34740d38815413fd2aaf73ddb5f45"
+    },
+    {
+      "file": "packages/gitlab-event-transport/package.json",
+      "beforeSha256": "945fa6a6df4a573894e86f5d68d56ba22d058a87f405e613b7eac6ff57665763",
+      "afterSha256": "4596d2b15cedce37d758bc3a34f6102bcaa34740d38815413fd2aaf73ddb5f45"
+    },
+    {
+      "file": "packages/linear-event-transport/package.json",
+      "beforeSha256": "0cc8873920a4a12038f819df5468bb247bc4571c17a0dc372e2929d1ed120984",
+      "afterSha256": "7eb1a549fbe5a59d3ccc0daaa7f033aaca6defd9bddca6744a70a50b55e1d78e"
+    },
+    {
+      "file": "packages/mcp-tools/package.json",
+      "beforeSha256": "94b031da84182cdfe159f87847f5c3af2beed7a2678d481d16d31d8e2ff6d151",
+      "afterSha256": "749080e4df52ac7222fe5a5b8ba3fd6a9b83ced6ea5c799b3b1865223d871d1f"
+    },
+    {
+      "file": "packages/opencode-runner/package.json",
+      "beforeSha256": "186c58d1c205c37671a324ed5310f61a2a179bfc52c9da7fad1b29cf35531fed",
+      "afterSha256": "431921554bcefea246494baedf3831bdd1ba7d8ac2112536ed112d98b5433c6d"
+    },
+    {
+      "file": "packages/simple-agent-runner/package.json",
+      "beforeSha256": "776d42f1d64f021ddece2ed7745b50d9b196c0b6a70bfbaea7dc2f584b571512",
+      "afterSha256": "5330136608b044ca4e23080bc27a1a90af657e714af94af263d3b3ebe7cfe12f"
+    },
+    {
+      "file": "packages/slack-event-transport/package.json",
+      "beforeSha256": "945fa6a6df4a573894e86f5d68d56ba22d058a87f405e613b7eac6ff57665763",
+      "afterSha256": "4596d2b15cedce37d758bc3a34f6102bcaa34740d38815413fd2aaf73ddb5f45"
+    },
+    {
+      "file": "packages/zulip-event-transport/package.json",
+      "beforeSha256": "72dcde87886015f81b9cc2c3a0901c3e083d82431b64119dfbed2956f10eaed0",
+      "afterSha256": "4596d2b15cedce37d758bc3a34f6102bcaa34740d38815413fd2aaf73ddb5f45"
+    },
+    {
+      "file": "pnpm-lock.yaml",
+      "beforeSha256": "db1e25c863dc8bfa2bc865b19854280292fbcb819b568080b52b8b935a1f3c84",
+      "afterSha256": "2def79b5bbd43116f2d20b0fe547ceeda37a4c20d7474755b924846643cac0ba"
+    },
+    {
+      "file": "pnpm-workspace.yaml",
+      "beforeSha256": "8867651f6eda85b101584beb4726946236ab63d9c2d9473d3f75f2d669b6a7b2",
+      "afterSha256": "b1b94fb7c18fc6dc010298bf9237aeab6e08112cb1fa48ef83d6ada672947015"
+    }
+  ],
+  "packages": [
+    {
+      "name": "@babel/parser",
+      "version": "7.29.9",
+      "integrity": "sha512-CjXrNHTnvqBVqHgdBysY3vk2T8tpJHb5/RMeHJBTyVa9xgugCB0CJTx/3oO8RV2QRQP391RWpB7D6hLjm8V9uA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@babel/types",
+      "version": "7.29.8",
+      "integrity": "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@dagrejs/dagre",
+      "version": "3.1.1",
+      "integrity": "sha512-zroZB1dFOFiGgv4Xcrn1DckB1o4aOikPqD2NDQPV0WM//CXGcS6xiD0rNkqHmw6FEg4tabt4nxPLwgCWT+Vb2A==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "04cfcaac9c3a3bc1f7a0c464d468abea4297d87cbb5bca1ae90249c4b1dbbd2c"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "6a349742a6cb219d5a2fc8d0844f6d89a6efc62e20c664450d884fc7ff2d6015",
+          "text": "Copyright (c) 2012-2014 Chris Pettitt\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-dagrejs-dagre-3.1.1.tgz",
+        "url": "https://registry.npmjs.org/@dagrejs/dagre/-/dagre-3.1.1.tgz",
+        "size": 359254,
+        "sha256": "6db2c35cf4c52cd1cd3a87c3a97c7c5fa559deaf4e452f67aab4008e00ca28c4"
+      }
+    },
+    {
+      "name": "@dagrejs/graphlib",
+      "version": "4.0.5",
+      "integrity": "sha512-7xrBTqIts3o+PMUZX97wSc+7TUbW+/rULzGNCTP6yooNVDXbzw4Wutg/H/xOutTB/c/k0YqOAavgPh4/Zk9PFA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@hono/node-server",
+      "version": "2.1.5",
+      "integrity": "sha512-MgP/I06GdvsilDspMk/qmRzpk8LOUStP6jFAbSRi40W09DhoyUn+Mj7eyKICPqeYKybOjVFLVIAQzvu1bfIa7Q==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "28b7c255c6c7ae6b994ceae9326211b6c6877c4746adb85b780b759ce1ceba41"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "6895190430d809c4c57a7582ecc2f99acbc2ea39a5dfad20262a41d5b3e91733",
+          "text": "MIT License\n\nCopyright (c) 2022 - present, Yusuke Wada and Hono contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-hono-node-server-2.1.5.tgz",
+        "url": "https://registry.npmjs.org/@hono/node-server/-/node-server-2.1.5.tgz",
+        "size": 37872,
+        "sha256": "bbe77a0002b58c161a7a040312b39307c6b0ba1f8604c4ab590d4ed77d01fdbb"
+      }
+    },
+    {
+      "name": "@jridgewell/sourcemap-codec",
+      "version": "1.6.0",
+      "integrity": "sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@modelcontextprotocol/sdk",
+      "version": "1.32.1",
+      "integrity": "sha512-2DdE+SJDtzLEEWzY1ZjY7Q+VcPhcV1KisD3zI4u0XZyktsjHum1mwbMI+JaulUBi2OZk+KJAi2uPXzxichPkdw==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "0216319ea53177f7ed419d660b2f52ccc7e3327e57f9ee2ef03225ff543aeae4"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "5e13dbbc1d120fc2a03cecde7c91424ae2d7de11b63d58ded2f4431e261ee50d",
+          "text": "MIT License\n\nCopyright (c) 2024 Anthropic, PBC\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-modelcontextprotocol-sdk-1.32.1.tgz",
+        "url": "https://registry.npmjs.org/@modelcontextprotocol/sdk/-/sdk-1.32.1.tgz",
+        "size": 615784,
+        "sha256": "63a3962282ff29d2ce532945c2edefd9b7c7195b8ec20c027e120e4498b0cb19"
+      }
+    },
+    {
+      "name": "@oxc-project/types",
+      "version": "0.155.0",
+      "integrity": "sha512-SeE8JPwW1xs1tHeNycjUtUBdhorRa8o4jlvjwk49R7/Z291i+4DQa7JJIgOm/TaYQZx+QrPQbVJ/9c8dMIZN8Q==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-android-arm-eabi",
+      "version": "1.2.15",
+      "integrity": "sha512-aLcgK9gIJ3YRvrrtfSBbRa27F5WrpiTaPulnFpsHPxpUHgFlSgnU4854MHwoRGEBhfRJDWCS2WQ7lIjskE9Olw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-android-arm64",
+      "version": "1.2.15",
+      "integrity": "sha512-xD7DdZCrbThKuxNg7ooQmvp07ys4J/pnSEMTG3/OdOWl6daC67m/Q4fL78sRHMxTH/N4fGUbYhcPM0MF5WFHkg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-darwin-arm64",
+      "version": "1.2.15",
+      "integrity": "sha512-m2WuQ6r0B4OTYxyPpNLtXaMRbRDUbG8YQV2Q3KTdSSK8Th6KHCnC8jVCJt8bvYeSB5WivkkNbc85mKadaSdOxA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-darwin-x64",
+      "version": "1.2.15",
+      "integrity": "sha512-5RtnsHM36nodM9WbMy+zip0LGS/G+y5wro5RHrpOlr4ac24+1zSi9kiV2MP1myZeZ/ifEHfulQcWjnAXzc2C2A==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-freebsd-x64",
+      "version": "1.2.15",
+      "integrity": "sha512-g3l09pyFqhu+135JKkbkwiKGQmwU5hUMUPJ4VdBADvuqR8d33L6H578rh8m7rtxbdp+VmX/+nzI7nvhSZlzpUQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-linux-arm-gnueabihf",
+      "version": "1.2.15",
+      "integrity": "sha512-nIe3VugI97nGQtspPxDqA4sXMUpeiocKIP/CqpY/u/vgbT+alX+cVxu1C/oVBPKg4feNTmYovE91v4DgXvXNwQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-linux-arm64-gnu",
+      "version": "1.2.15",
+      "integrity": "sha512-iTBjXx+B5QSvgI89lJfmqh4wTh8NabR1YZIIN3hNx4zSG0EVfVqkOvLulNpG4251pbd6/IAmZ/LefVk1Y4rPhw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-linux-arm64-musl",
+      "version": "1.2.15",
+      "integrity": "sha512-uN26XOnVR7rqQupG3V9oAG2EGGatWjcJHOeDOHUFCh4TBWmP2tHTFoVN13aYbwfm0aHqJAEmcwhAu6sooIjfqQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-linux-ppc64-gnu",
+      "version": "1.2.15",
+      "integrity": "sha512-9nWkcdd+H+XhaA3fQIwpHnKIrfx/PQ6rO0pivr78Og07tXlUlctBBJoEYLPfhTmCR/QxEVdn6uPjHV5SymPhdw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-linux-s390x-gnu",
+      "version": "1.2.15",
+      "integrity": "sha512-Ggh0ciFjLwIusLSLz7LZYEaGdxOAUJXI+Qu5JCbhPJJHEt8vP+IjRATTJheiJsdzzTYgUiHUiw3X1Ea3ZpMBdA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-linux-x64-gnu",
+      "version": "1.2.15",
+      "integrity": "sha512-FHg60rS6DBePAYZ9X9F67x+JObFdmgn6tupA1C/a3B+CufFmTD4mX+e8M75tCiAO3foR/6xwVBI0KQiI7sn/rw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-linux-x64-musl",
+      "version": "1.2.15",
+      "integrity": "sha512-/cvV/7v5VGz/moiz0XKRj2dE8DzsKyhIu1KpOvJGPjRywg3yscON889UGvAe8zfiJLHup7VLjBduoGWi3HusWQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-openharmony-arm64",
+      "version": "1.2.15",
+      "integrity": "sha512-MyzC5Hrv/sm+Z7TSGKP/j8001RO2xQm1zOpCNVL4j0cY/VhBZviludA2YFQ7i4lH6ZAXxQm0lcMdBzM+99mE7w==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-win32-arm64-msvc",
+      "version": "1.2.15",
+      "integrity": "sha512-+PgYiS+AH5omy6L45ZLxybasauJaj3M8buoT83D+nzPmCayXlxUV9hydhciCKVyIg0B/v0BtXPDE1uGqNwCPpg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@rolldown/binding-win32-x64-msvc",
+      "version": "1.2.15",
+      "integrity": "sha512-HFZd2QNQYn1JbIi+Hpd7H+r/lkWxcfIu28nirZ6eCn2LafuvmExMlb/P96Sfx5tf7pPArw39IdhmCF8vmV+NhQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@sentry/node-core",
+      "version": "10.65.0",
+      "integrity": "sha512-U01X9mPT+jZnsLPmPWfBU67Ka+t/Sdd9RGAuvGoKdrI6N47a/9PDkM9oCW+kj0fmZwogZHTgSnzJU5oi3pImgA==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "16c8d675807f54547c570d675e80ff2e11c27cf7a8d7fbebaff82424cd609399"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "7434a39124438e38e41778b9d4f2d646d954e22e8c32f9a83c9b41b33fc5cf15",
+          "text": "MIT License\n\nCopyright (c) 2025 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-sentry-node-core-10.65.0.tgz",
+        "url": "https://registry.npmjs.org/@sentry/node-core/-/node-core-10.65.0.tgz",
+        "size": 345224,
+        "sha256": "dc3bdf168c75e9196727d8106dc10ea2e4c80445930ff0bfdfbbd95bb83de1d3"
+      }
+    },
+    {
+      "name": "@sentry/opentelemetry",
+      "version": "10.65.0",
+      "integrity": "sha512-8C6FPvm3XBvUrkM52dX3Gz0p2H0Ij8t4sahUA+GTiCz0WM0fnyPeQPGC/b6I4jamV9UXyCZRnE1UEEGCoD+c7A==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "9d0098d2b7c8017046ecac2cef8582d5d35eb16b1eda9bcc81896b13d2b1f6bc"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "e580c7d30024b7e9a41f4386d359d56ab2397a1aeadee2588ffbe7d03d21506b",
+          "text": "MIT License\n\nCopyright (c) 2023 Functional Software, Inc. dba Sentry\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of\nthis software and associated documentation files (the \"Software\"), to deal in\nthe Software without restriction, including without limitation the rights to\nuse, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\nof the Software, and to permit persons to whom the Software is furnished to do\nso, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-sentry-opentelemetry-10.65.0.tgz",
+        "url": "https://registry.npmjs.org/@sentry/opentelemetry/-/opentelemetry-10.65.0.tgz",
+        "size": 163349,
+        "sha256": "ecc3adf4881a226f7340eb1862639eff989f3a02e41d6e8a702a86d20885c810"
+      }
+    },
+    {
+      "name": "@types/d3-color",
+      "version": "3.1.3",
+      "integrity": "sha512-iO90scth9WAbmgv7ogoq57O9YpKmFBbmoEoCHDB2xMBY0+/KVrqAaCDyCE16dUspeOvIxFFRI+0sEtqDqy2b4A==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@types/d3-drag",
+      "version": "3.0.7",
+      "integrity": "sha512-HE3jVKlzU9AaMazNufooRJ5ZpWmLIoc90A37WU2JMmeq28w1FQqCZswHZ3xR+SuxYftzHq6WU6KJHvqxKzTxxQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@types/d3-interpolate",
+      "version": "3.0.4",
+      "integrity": "sha512-mgLPETlrpVV1YRJIglr4Ez47g7Yxjl1lj7YKsiMCb27VJH9W8NVM6Bb9d8kkpG/uAQS5AmbA48q2IAolKKo1MA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@types/d3-selection",
+      "version": "3.0.12",
+      "integrity": "sha512-Qe/KWYhEiIIxGs7HrAAjMfShxKldx19SJtr5zu53f3afPsdZNz7HHtdTLXo/kqeiWNXVycI24kSnfzBYkTzpgw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@types/d3-transition",
+      "version": "3.0.9",
+      "integrity": "sha512-uZS5shfxzO3rGlu0cC3bjmMFKsXv+SmZZcgp0KD22ts4uGXp5EVYGzu/0YdwZeKmddhcAccYtREJKkPfXkZuCg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@types/d3-zoom",
+      "version": "3.0.9",
+      "integrity": "sha512-0sE1406XBYJGiqD3AusTl9ZqC//2mIXix51tbom25gDCA8ri4xnSZg28CaSE8Srl6FClqABUKfsn0qghgdepMA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/coverage-v8",
+      "version": "4.1.12",
+      "integrity": "sha512-6S7/iVknKglLAxMFxQGNppBI0iqJS2NgM6FBxavitj7KaDq/vywOWGf6dGu7F2L1Qy0G6S3uTp7aGshHrzK8JA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/expect",
+      "version": "4.1.12",
+      "integrity": "sha512-vFlTt+YEu9WBpNjdGayNmlMVzrWPi1+sv853/7t2FU7hpO5gAFBKHzQmkCq5Xjpr+evegF2994LQT3hF3mRlqQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/mocker",
+      "version": "4.1.12",
+      "integrity": "sha512-fKShNpKZzupWZuY0z7egydvL0sqW4INEZBEExMBMAa6izlENEVHwoXgdaTCaBZ5fwlr4xf2o1wXC83n9RpO+NA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/pretty-format",
+      "version": "4.1.12",
+      "integrity": "sha512-XW9O8+Mxx4VpCtkYdMJLZQQwsVryP9wk7cPKDxtXFfwSak6yRh5+2fep/Y0XF/ElBvJHq8bcYdi6aeuai0opZA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/runner",
+      "version": "4.1.12",
+      "integrity": "sha512-NKlVKCr5QnCe8jijdMnmkpHHU+WTqiLFR6G0pHji9uRjXK9xJl1k1nTw6F3pOOj2PDcsDt2GKQMI7wIsaT491w==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/snapshot",
+      "version": "4.1.12",
+      "integrity": "sha512-ko1y1Qgb/slzQ9mr+b89Cuqud8WG1TKtsPD8r7ZUBdvVOGt85Af2HwCqHujrhwJq95hs/9RM7fcAPg57o1vlzw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/spy",
+      "version": "4.1.12",
+      "integrity": "sha512-RGq9x4JNGNTZHEJxvN0oSiJjeSCExm0n2gZKKJZHY9cX5AVA6M7VJILBT3ZJ/tJ/0J9uWT7fETV9/btoi//vSg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/ui",
+      "version": "4.1.12",
+      "integrity": "sha512-eYUTHtsp52Fu6YGUw9T9173bba7YUr9j/Xj9CdhUaOb8AppLKcknHUaiZQeqJ8MiJ8C2VyKiZuUGSKdvPIKQKA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@vitest/utils",
+      "version": "4.1.12",
+      "integrity": "sha512-Q3awXrwOfEV+qc3WmO5ONyE0yO7Q1gQ9/oyHxGLZ/pl7N3NO/ZztqQwKLuwMkV+CA1JYSIeO3gkHnRDIo4AVaA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "@xyflow/react",
+      "version": "12.12.0",
+      "integrity": "sha512-74oXI0Rgm1Eu33cHQAd74J6oVgCH9mbFyTVQbsGgp2kmWwh0HdtBr2VP04z8mbPD+M/xO69nqG5dDEt7/EN2rQ==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "92d35db4281bb51c2b755b26b9d479957273d48e8c17e5d7faceab704aee58cb"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "023119ac20fb1c8c9930abe0bcd196989a1960388529a96fc43cebf96f07c9ff",
+          "text": "MIT License\n\nCopyright (c) 2019-2025 webkid GmbH\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-xyflow-react-12.12.0.tgz",
+        "url": "https://registry.npmjs.org/@xyflow/react/-/react-12.12.0.tgz",
+        "size": 251386,
+        "sha256": "b61b1486935902dc9c2002395004591873733ba48276a63622ce62cb13833fac"
+      }
+    },
+    {
+      "name": "@xyflow/system",
+      "version": "0.0.83",
+      "integrity": "sha512-a//eDjez3WZF47aaPTfVUDD0OINOq+WVwBZCRTqG+m0a5euX8EwlJ4jMY1Wxz0Ocj4xOeekJ70V22Pq0ll8RJw==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "d93a60ac2e8c633349515a84f576a9629a40de4f501508dda026f4c43c91533b"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "023119ac20fb1c8c9930abe0bcd196989a1960388529a96fc43cebf96f07c9ff",
+          "text": "MIT License\n\nCopyright (c) 2019-2025 webkid GmbH\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-xyflow-system-0.0.83.tgz",
+        "url": "https://registry.npmjs.org/@xyflow/system/-/system-0.0.83.tgz",
+        "size": 145564,
+        "sha256": "fc5d6ec987f33c14a83295d3deaaed2e36309ca3271d56f04c8442fba17e0d23"
+      }
+    },
+    {
+      "name": "ajv-formats",
+      "version": "3.0.1",
+      "integrity": "sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "402fb4bcfa457f0226813f3976ac42839dd619907c075c108efba8600d7edb69"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "9df3bb69929a3b650ed73b3bfa1756725aaff0ac296461605753547004eafeaf",
+          "text": "MIT License\n\nCopyright (c) 2020 Evgeny Poberezkin\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-ajv-formats-3.0.1.tgz",
+        "url": "https://registry.npmjs.org/ajv-formats/-/ajv-formats-3.0.1.tgz",
+        "size": 15999,
+        "sha256": "f4d6980fd367381fd29199066911e863db8d97496613b6c2c5b91563a150acc5"
+      }
+    },
+    {
+      "name": "ast-v8-to-istanbul",
+      "version": "1.0.7",
+      "integrity": "sha512-kFL68AG6ajd8fg248zwM9GQrUWEp79gsmjum34OEXjs4yHuUMZfYKwOLW9GMmB4oNvVrj+EAGxsP7ye2UR9UlA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "chai",
+      "version": "6.3.0",
+      "integrity": "sha512-XWAtwJ6OHO+tj0EKCs0Y2UamnyOxseZWltU4x2U2wh8g4AigdjwvtUjvLP2tqkA/avxHEtzxNaqGq/YGNwckKg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "classcat",
+      "version": "5.0.5",
+      "integrity": "sha512-JhZUT7JFcQy/EzW605k/ktHtncoo9vnyW/2GspNYwFlN1C/WmjuV/xtS04e9SOkL2sTdw0VAZ2UGCcQ9lR6p6w==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "3deeb9533e14dcea3a8a998716e3eb7d08496f71a1c699266aec7a5d39c09126"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE.md",
+          "sha256": "f101c761d255d0dddc77dd8a9327733b03d381798ec54a1bb718367207b48a8e",
+          "text": "Copyright © Jorge Bucaran <<https://jorgebucaran.com>>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-classcat-5.0.5.tgz",
+        "url": "https://registry.npmjs.org/classcat/-/classcat-5.0.5.tgz",
+        "size": 2579,
+        "sha256": "e0968992357c1ce4d0ab183986debed34971aff8a440338f0ea8a5b5ed04ed24"
+      }
+    },
+    {
+      "name": "content-disposition",
+      "version": "2.0.1",
+      "integrity": "sha512-e+H0ZXHSWYrENhQzw1LPuP4oF5MzVKmDU6d3hxlvaPEYLLg62MxtQNPRx4SYSuYJSBUgnQIG4HIN2tEtNv7Dog==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "content-type",
+      "version": "2.1.0",
+      "integrity": "sha512-mj7UPXE0jaqaOsukNZRUEfEi2AcL7C/vwmwcHV0O97eO1E1pxBZuyjlZrx5seTaNBg1U6+o35wpa35Qfcc+7ag==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "d3-color",
+      "version": "3.1.0",
+      "integrity": "sha512-zg/chbXyeBtMQ1LbD/WSoW2DpC3I0mpmPdW+ynRTj/x2DAWYrIY7qeZIHidozwV24m4iavr15lNwIwLxRmOxhA==",
+      "distribution": "bundled",
+      "license": "ISC",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "3de1c3c467f09ffc0372c8b765f8981535c22e1d9f944d17a35ee37df1033516"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "faa682e3e430941f958d26180458f5934a62f58dac4d70ccdd15608c15d0f884",
+          "text": "Copyright 2010-2022 Mike Bostock\n\nPermission to use, copy, modify, and/or distribute this software for any purpose\nwith or without fee is hereby granted, provided that the above copyright notice\nand this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS\nOF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\nTORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF\nTHIS SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-color-3.1.0.tgz",
+        "url": "https://registry.npmjs.org/d3-color/-/d3-color-3.1.0.tgz",
+        "size": 14297,
+        "sha256": "d41bbcd99dd4f00e696546bffc73fed9b8fb6c3354905b6ea1721bff25f33b42"
+      }
+    },
+    {
+      "name": "d3-dispatch",
+      "version": "3.0.1",
+      "integrity": "sha512-rzUyPU/S7rwUflMyLc1ETDeBj0NRuHKKAcvukozwhshr6g6c5d8zh4c2gQjY2bZ0dXeGLWc1PF174P2tVvKhfg==",
+      "distribution": "bundled",
+      "license": "ISC",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "6d9bb49819ec45e2187304df1b25e731c246d646cd2eb5aa2fe06e6c9cc7ad84"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee",
+          "text": "Copyright 2010-2021 Mike Bostock\n\nPermission to use, copy, modify, and/or distribute this software for any purpose\nwith or without fee is hereby granted, provided that the above copyright notice\nand this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS\nOF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\nTORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF\nTHIS SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-dispatch-3.0.1.tgz",
+        "url": "https://registry.npmjs.org/d3-dispatch/-/d3-dispatch-3.0.1.tgz",
+        "size": 5011,
+        "sha256": "3d1a0b5c003e0e9608ad57f6ca21a0c8368031fcbe5f5317fe4e50b3f797ea23"
+      }
+    },
+    {
+      "name": "d3-drag",
+      "version": "3.0.0",
+      "integrity": "sha512-pWbUJLdETVA8lQNJecMxoXfH6x+mO2UQo8rSmZ+QqxcbyA3hfeprFgIT//HW2nlHChWeIIMwS2Fq+gEARkhTkg==",
+      "distribution": "bundled",
+      "license": "ISC",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "daecac22c0dfda72109fdd75e3817a15082a6f58d9bdc1380d77e06f7f44c218"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee",
+          "text": "Copyright 2010-2021 Mike Bostock\n\nPermission to use, copy, modify, and/or distribute this software for any purpose\nwith or without fee is hereby granted, provided that the above copyright notice\nand this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS\nOF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\nTORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF\nTHIS SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-drag-3.0.0.tgz",
+        "url": "https://registry.npmjs.org/d3-drag/-/d3-drag-3.0.0.tgz",
+        "size": 11088,
+        "sha256": "a3ccc9d31d85135f35a4eda3ec0fae6ac22435d4e3fe2d2e0c73b5246460d4db"
+      }
+    },
+    {
+      "name": "d3-ease",
+      "version": "3.0.1",
+      "integrity": "sha512-wR/XK3D3XcLIZwpbvQwQ5fK+8Ykds1ip7A2Txe0yxncXSdq1L9skcG7blcedkOX+ZcgxGAmLX1FrRGbADwzi0w==",
+      "distribution": "bundled",
+      "license": "BSD-3-Clause",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "393518c7886852c8cdeae42a54065c3ba54eddb701dd2da98c6d048f92cbc91c"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "b989d9085148d21ff64a75e14462aefa06b2589a55553b07b1460c70081c7d08",
+          "text": "Copyright 2010-2021 Mike Bostock\nCopyright 2001 Robert Penner\nAll rights reserved.\n\nRedistribution and use in source and binary forms, with or without modification,\nare permitted provided that the following conditions are met:\n\n* Redistributions of source code must retain the above copyright notice, this\n  list of conditions and the following disclaimer.\n\n* Redistributions in binary form must reproduce the above copyright notice,\n  this list of conditions and the following disclaimer in the documentation\n  and/or other materials provided with the distribution.\n\n* Neither the name of the author nor the names of contributors may be used to\n  endorse or promote products derived from this software without specific prior\n  written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND\nANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR\nANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;\nLOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON\nANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\nSOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-ease-3.0.1.tgz",
+        "url": "https://registry.npmjs.org/d3-ease/-/d3-ease-3.0.1.tgz",
+        "size": 7848,
+        "sha256": "b249afe4aa8b741beeaf2d14f625ccf49270adb645e3f1c755d11476c1fdbe2a"
+      }
+    },
+    {
+      "name": "d3-interpolate",
+      "version": "3.0.1",
+      "integrity": "sha512-3bYs1rOD33uo8aqJfKP3JWPAibgw8Zm2+L9vBKEHJ2Rg+viTR7o5Mmv5mZcieN+FRYaAOWX5SJATX6k1PWz72g==",
+      "distribution": "bundled",
+      "license": "ISC",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "3e2ce33f9d7072b6bfedbae949c1df546e187994e44b6f4b3795abeb63914613"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee",
+          "text": "Copyright 2010-2021 Mike Bostock\n\nPermission to use, copy, modify, and/or distribute this software for any purpose\nwith or without fee is hereby granted, provided that the above copyright notice\nand this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS\nOF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\nTORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF\nTHIS SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-interpolate-3.0.1.tgz",
+        "url": "https://registry.npmjs.org/d3-interpolate/-/d3-interpolate-3.0.1.tgz",
+        "size": 18040,
+        "sha256": "7e8df78d233cd102a0bb518658dc0b7d5c38442b6f2dbc8b95ffc14ba87c7c33"
+      }
+    },
+    {
+      "name": "d3-selection",
+      "version": "3.0.0",
+      "integrity": "sha512-fmTRWbNMmsmWq6xJV8D19U/gw/bwrHfNXxrIN+HfZgnzqTHp9jOmKMhsTUjXOJnZOdZY9Q28y4yebKzqDKlxlQ==",
+      "distribution": "bundled",
+      "license": "ISC",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "adbb86f6d93c60a3789af9be6f6cdc40127ce15f63187a1e94c46fe26b0776ec"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee",
+          "text": "Copyright 2010-2021 Mike Bostock\n\nPermission to use, copy, modify, and/or distribute this software for any purpose\nwith or without fee is hereby granted, provided that the above copyright notice\nand this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS\nOF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\nTORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF\nTHIS SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-selection-3.0.0.tgz",
+        "url": "https://registry.npmjs.org/d3-selection/-/d3-selection-3.0.0.tgz",
+        "size": 33016,
+        "sha256": "a1f872f30dca23b76de89cae9e882f56c325433e7f3aee87b95fa830d12789f3"
+      }
+    },
+    {
+      "name": "d3-timer",
+      "version": "3.0.1",
+      "integrity": "sha512-ndfJ/JxxMd3nw31uyKoY2naivF+r29V+Lc0svZxe1JvvIRmi8hUsrMvdOwgS1o6uBHmiz91geQ0ylPP0aj1VUA==",
+      "distribution": "bundled",
+      "license": "ISC",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "d2b6cb2200728b60982aa30c4caf787f0bda2c066ef9176282ab54ba656403cb"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee",
+          "text": "Copyright 2010-2021 Mike Bostock\n\nPermission to use, copy, modify, and/or distribute this software for any purpose\nwith or without fee is hereby granted, provided that the above copyright notice\nand this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS\nOF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\nTORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF\nTHIS SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-timer-3.0.1.tgz",
+        "url": "https://registry.npmjs.org/d3-timer/-/d3-timer-3.0.1.tgz",
+        "size": 5774,
+        "sha256": "05cdf901e1876a7f24f4c365a879252752e22e3cc52b131ca616639f07e8ed05"
+      }
+    },
+    {
+      "name": "d3-transition",
+      "version": "3.0.1",
+      "integrity": "sha512-ApKvfjsSR6tg06xrL434C0WydLr7JewBB3V+/39RMHsaXTOG0zmt/OAXeng5M5LBm0ojmxJrpomQVZ1aPvBL4w==",
+      "distribution": "bundled",
+      "license": "ISC",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "6ee7ce4fb0e59ee6be93d5a5fb33db804add32dbb3afb6c753659b99084fde84"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee",
+          "text": "Copyright 2010-2021 Mike Bostock\n\nPermission to use, copy, modify, and/or distribute this software for any purpose\nwith or without fee is hereby granted, provided that the above copyright notice\nand this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS\nOF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\nTORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF\nTHIS SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-transition-3.0.1.tgz",
+        "url": "https://registry.npmjs.org/d3-transition/-/d3-transition-3.0.1.tgz",
+        "size": 22980,
+        "sha256": "260eb8eaed565581afc00634ec83c83fd3b7e830e2a6b73b49f3f744dce0254c"
+      }
+    },
+    {
+      "name": "d3-zoom",
+      "version": "3.0.0",
+      "integrity": "sha512-b8AmV3kfQaqWAuacbPuNbL6vahnOJflOhexLzMMNLga62+/nh0JzvJ0aO/5a5MVgUFGS7Hu1P9P03o3fJkDCyw==",
+      "distribution": "bundled",
+      "license": "ISC",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "0adc45c5f4e5830e8c639c3953761e73e9493f1cb5f3dea6abc2249adb8ff2a9"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee",
+          "text": "Copyright 2010-2021 Mike Bostock\n\nPermission to use, copy, modify, and/or distribute this software for any purpose\nwith or without fee is hereby granted, provided that the above copyright notice\nand this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND\nFITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS\nOF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER\nTORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF\nTHIS SOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-d3-zoom-3.0.0.tgz",
+        "url": "https://registry.npmjs.org/d3-zoom/-/d3-zoom-3.0.0.tgz",
+        "size": 18107,
+        "sha256": "846d28725c4889d6a2069c6cf084ca7e7730ee917a9b87960ecc53247f840f85"
+      }
+    },
+    {
+      "name": "es-module-lexer",
+      "version": "2.3.2",
+      "integrity": "sha512-poHGpORABojJJucnV9KbOavETW8lBVnphkW77ER5/BQ5Fz7oXSoCNek7IH3vR5nRjdsEz926ibFYX8KtLQmdyw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "expect-type",
+      "version": "1.4.0",
+      "integrity": "sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==",
+      "distribution": "tooling",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "express-rate-limit",
+      "version": "8.7.1",
+      "integrity": "sha512-2FXbqkygil3mZiXzEtM0IjE/UBmBNot0J1GEVrJT4JbrvwOSoEtqtO+wHbiMQELWe1eNvHoYRg2dkjOid+6JkA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "express",
+      "version": "5.3.0",
+      "integrity": "sha512-qCqy1xSoaugxOD4IVHb1ZWdkvCF2W3aE2okKouWj8VwJ+ztskSiXoBnCSJqfKT+cVPJhuJqe9YLbY425+Zh00g==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "fdir",
+      "version": "6.5.0",
+      "integrity": "sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "flatted",
+      "version": "3.4.4",
+      "integrity": "sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==",
+      "distribution": "tooling",
+      "license": "ISC"
+    },
+    {
+      "name": "follow-redirects",
+      "version": "1.16.1",
+      "integrity": "sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "fs-extra",
+      "version": "11.4.1",
+      "integrity": "sha512-KYAb4c9BJQI6QqGKthV68OHe0badztdXJWKo0WtBA9IuCFPTKvE5ZdUBglP833aMjhaSPNO4A5j/EkzZtGlKjA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "hono",
+      "version": "4.13.13",
+      "integrity": "sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "169a02072e32d85aacb089ad14b62b027d975479d811f741771fbd0f559fb5c9"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "a6ab98e5c77b9070c443eaff2ff81034a6f8cc05a7524d5098eb0f24defa0115",
+          "text": "MIT License\n\nCopyright (c) 2021 - present, Yusuke Wada and Hono contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-hono-4.13.13.tgz",
+        "url": "https://registry.npmjs.org/hono/-/hono-4.13.13.tgz",
+        "size": 245272,
+        "sha256": "3c656fb527641e841e1c4dae1d2faa238a4e17dde37f1620d5b72172caaddac0"
+      }
+    },
+    {
+      "name": "iconv-lite",
+      "version": "0.7.3",
+      "integrity": "sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "f24ad03476d51470a5b069e65b03ef6383d615897ffe2239edf22584ea0e3d03"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "ac779f7314c74f232ef847ea86e714abe25cf6eeb5cc97b69451b74e2af6492d",
+          "text": "Copyright (c) 2011 Alexander Shtuchkin\n\nPermission is hereby granted, free of charge, to any person obtaining\na copy of this software and associated documentation files (the\n\"Software\"), to deal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify, merge, publish,\ndistribute, sublicense, and/or sell copies of the Software, and to\npermit persons to whom the Software is furnished to do so, subject to\nthe following conditions:\n\nThe above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\nNONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\nLIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\nWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-iconv-lite-0.7.3.tgz",
+        "url": "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.7.3.tgz",
+        "size": 189859,
+        "sha256": "40789b7733e230a0439e07075fe2f37819f4a47ee7115fe17188451fab8e3941"
+      }
+    },
+    {
+      "name": "ip-address",
+      "version": "10.7.4",
+      "integrity": "sha512-DWBMKyeM25D70nrIiTkgQth59/G+naKOTep6huF9j+GmeK3DMD60Zvxg5d5qQnz+38AHgou6ean2LECX+lrKDg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "jose",
+      "version": "6.2.13",
+      "integrity": "sha512-7TIg10ZE1x82YediN+lcrPNvGMKge9yFHQD+Qho/b8y2adfugU3AsvvHfxV0fzyFllT6l9xCjf4RWY9g/Z9PJQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "obug",
+      "version": "2.2.1",
+      "integrity": "sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "postcss",
+      "version": "8.5.31",
+      "integrity": "sha512-YUbWYCgErwnMAVkjUnYa+KlMBzGpHwiIt/DE7f0G33AuX2LH9UcTk6KgWxd3zRU+pN3u/C+Xl3EnMLM4Hea7Sg==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "qs",
+      "version": "6.16.1",
+      "integrity": "sha512-5Px6J7rfHBAGUhNQ3es4YzcOdBBw0SDcVtThJml4RdnKw4tKs2epA0kPZ+K8X+WiHktT93RHVcQ/3ym5aTCgtg==",
+      "distribution": "tooling",
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "range-parser",
+      "version": "1.3.0",
+      "integrity": "sha512-hek2mFQpPuI4E1BBKrSto+BU3e3x4xuarsbiwr3+lf7p44juvFMV0XFWQAP3xUyqXA4RrXLIoaSUGbSt056ZMw==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "rolldown",
+      "version": "1.2.15",
+      "integrity": "sha512-6odND+fel5zVw3I4Yc2e69gvguDnX0CAAGiNDZSq4ik5WUcaLrkD2GLuog0XcODbor31hZ5ayEMgVDno+KPV5g==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "std-env",
+      "version": "4.3.0",
+      "integrity": "sha512-OtU/EgQ1kIm5KwqQpBC6ZEMXrZRui11w8zgfTWp8cdO9B8OaPsbA8bTHO2P+HNo1VlUTGMVBwPhydu6poeXiag==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "tinyexec",
+      "version": "1.3.1",
+      "integrity": "sha512-GCvB3aoys96IuDFBMcTB46JOR6mdMtAToqwiW8JlWhsoh1mhHi/xn9ss/Dg7N555GiJyEt2qzoG/NHCwM6h1EA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "tinyrainbow",
+      "version": "3.2.0",
+      "integrity": "sha512-LgO3D9yZJjApUiuUfl9iFAwrtaX4+lok3wJIqttGoKCHlWUqHqbQpnxCf82L8FjgKsh4iGo78hqJwgL8F6To2A==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "use-sync-external-store",
+      "version": "1.7.0",
+      "integrity": "sha512-6L+EeigHMQhdaIPNIFUKwfWJSwWFQ8gJbJ2DLOs5sDIegTwR9fRxvnM3uciHKjIZhFz+KAv2emhWMRvDmMcY8A==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "ba3694aec166f2f53612c4978bc85fb31dd4eee75a2eccc1ad1a1cc49c9428d2"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+          "text": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-use-sync-external-store-1.7.0.tgz",
+        "url": "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.7.0.tgz",
+        "size": 4189,
+        "sha256": "4f62a44660396a55417322fb0c71c14413b784192e4cd18acfec6bdf3157e359"
+      }
+    },
+    {
+      "name": "vite",
+      "version": "8.3.5",
+      "integrity": "sha512-z1YpjieJ9g0ebTmQpLBv/oq9E3F9EIlOe+7LahW8SrE3LTiG3udBRUXQOlYXP9b+IC2q2phHeVxj9xGlw34OEQ==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "vitest",
+      "version": "4.1.12",
+      "integrity": "sha512-5eWdz2yb3ajxWF3C8C4TjkXl7FGm3n2E/VlazALrQHzK7nYMSGFnCZto0bbPNl77AwkOZVLk0YnBAejUu0NiWA==",
+      "distribution": "tooling",
+      "license": "MIT"
+    },
+    {
+      "name": "zustand",
+      "version": "4.5.7",
+      "integrity": "sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==",
+      "distribution": "bundled",
+      "license": "MIT",
+      "packageJson": {
+        "path": "package/package.json",
+        "sha256": "3be250433bb3c42b82b9a8a67654fca222d3e370f703204c69b4dfa4f6c74de6"
+      },
+      "licenses": [
+        {
+          "path": "package/LICENSE",
+          "sha256": "c1e6e266563517467b1bf874817d23e426f3149252bd7d42758cd697514b8417",
+          "text": "MIT License\n\nCopyright (c) 2019 Paul Henschel\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+        }
+      ],
+      "archive": {
+        "file": "npm-zustand-4.5.7.tgz",
+        "url": "https://registry.npmjs.org/zustand/-/zustand-4.5.7.tgz",
+        "size": 52378,
+        "sha256": "5240b7736397aa0e8442d290dea0ce7a6dd324c986e1a8644ff91bf61864e863"
+      }
+    }
+  ],
+  "supplementalNotices": [
+    {
+      "package": "react-remove-scroll-bar",
+      "version": "2.3.8",
+      "source": "https://raw.githubusercontent.com/theKashey/react-remove-scroll-bar/7301c160fda44cb8cf2b9fdfde61efad35736196/LICENSE",
+      "revision": "7301c160fda44cb8cf2b9fdfde61efad35736196",
+      "file": "react-remove-scroll-bar-2.3.8-LICENSE.txt",
+      "sha256": "a79aae0c0f21990d9d963bb3c5a79cdcea9a46f8523ba55c58d7fe776b6ebc84",
+      "text": "MIT License\n\nCopyright (c) 2025 Anton Korzunov <thekashey@gmail.com>\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    }
+  ]
+}

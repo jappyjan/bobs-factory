@@ -19,7 +19,12 @@
 				"node": "24.18.0",
 				"versionOverride": "1.0.0-nightly.20261011.38179973111"
 			},
-			"targets": ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64"],
+			"targets": [
+				"darwin-arm64",
+				"darwin-x64",
+				"linux-x64",
+				"linux-arm64"
+			],
 			"sequence": 38179973111
 		},
 		"digest": "0fbd30bd0323acdd0ec7af14092140c4ebd3c73ac08277b06686355a13034990"
@@ -81,9 +86,9 @@
 			]
 		},
 		{
-			"schemaVersion": 2,
-			"file": "distribution/dependency-reviews/recipe-workbench.json",
-			"sha256": "9aae5be518aa005d70c6d534bd8f7c1251c80cce0f7b0f54ab6247074091e44c"
+			"schemaVersion": 3,
+			"file": "distribution/dependency-reviews/dependency-refresh-2026-10.json",
+			"sha256": "e073c6347cd98c9a1384b3aa3a977033fa5633be26f6947e2ebf81bd252f553e"
 		}
 	]
 }
