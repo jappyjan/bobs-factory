@@ -19,12 +19,7 @@
 				"node": "24.18.0",
 				"versionOverride": "1.0.0-nightly.20261011.38179973111"
 			},
-			"targets": [
-				"darwin-arm64",
-				"darwin-x64",
-				"linux-x64",
-				"linux-arm64"
-			],
+			"targets": ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64"],
 			"sequence": 38179973111
 		},
 		"digest": "0fbd30bd0323acdd0ec7af14092140c4ebd3c73ac08277b06686355a13034990"
@@ -88,7 +83,7 @@
 		{
 			"schemaVersion": 3,
 			"file": "distribution/dependency-reviews/dependency-refresh-2026-10.json",
-			"sha256": "e073c6347cd98c9a1384b3aa3a977033fa5633be26f6947e2ebf81bd252f553e"
+			"sha256": "abb68b697a9d9f9451580bcde31f54e077ec09bf815e2b72c58407f4f1179139"
 		}
 	]
 }

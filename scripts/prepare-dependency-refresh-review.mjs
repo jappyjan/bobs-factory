@@ -4,6 +4,7 @@
 // bundle actually ship (measured by the build); every other added or changed
 // lockfile package is recorded as tooling. The output is review material: a
 // reviewer still inspects the delta and signs it with --reviewer and --scope.
+// Format the output with Biome before pinning its SHA-256 in nightly-baseline.json.
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
