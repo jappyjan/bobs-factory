@@ -8746,11 +8746,7 @@ ${taskSection}`;
 	private async fileIssueDestinations(run: FactoryRun, signal: AbortSignal) {
 		const options: { name: string; destination: IssueDestination }[] = [],
 			limitations: string[] = [];
-		if (
-			!run.executionSnapshot?.identity &&
-			!run.executionSnapshot?.tools &&
-			this.config.ticketManagers?.linear?.enabled !== false
-		) {
+		if (this.config.ticketManagers?.linear?.enabled !== false) {
 			for (const [workspaceId, tracker] of this.issueTrackers) {
 				const client = (
 					tracker as IIssueTrackerService & { getClient?: () => LinearClient }
@@ -8826,11 +8822,9 @@ ${taskSection}`;
 		const config = await this.factoryMcpConfig(run);
 		const save = () => this.getFactoryRuntime().save(run);
 		signal.throwIfAborted();
+		// Filing and delivery use the Factory's own tracker integration in this process;
+		// execution profiles govern agent sessions, which never receive these credentials.
 		if (destination.provider === "linear") {
-			if (run.executionSnapshot?.identity || run.executionSnapshot?.tools)
-				throw new Error(
-					"Native Linear issue filing requires a retained Legacy workspace binding; explicit profiles cannot silently use native tracker credentials",
-				);
 			for (const tool of ["get_issue", "save_issue"])
 				assertFactoryToolAllowed(
 					`mcp__linear__${tool}`,
@@ -8862,10 +8856,6 @@ ${taskSection}`;
 		this.assertTicketManagerEnabled(target.provider);
 		const config = await this.factoryMcpConfig(run);
 		if (target.provider === "linear") {
-			if (run.executionSnapshot?.identity || run.executionSnapshot?.tools)
-				throw new Error(
-					"Native Linear ticket delivery requires the retained Legacy integration binding; selected explicit profiles do not declare native tracker credentials. Use a reviewed Legacy run or restore a supported binding; native credentials will not be silently substituted.",
-				);
 			assertFactoryToolAllowed(
 				"mcp__linear__get_issue",
 				config.built.config.allowedTools,
