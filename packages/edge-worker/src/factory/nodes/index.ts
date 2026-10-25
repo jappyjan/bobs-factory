@@ -1,14 +1,18 @@
 import { definition as agent } from "./agent.js";
 import { definition as approve } from "./approve.js";
 import { definition as check } from "./check.js";
+import { definition as ci } from "./ci.js";
 import { definition as decide } from "./decide.js";
 import { definition as display } from "./display.js";
 import { definition as exec } from "./exec.js";
 import { definition as fanout } from "./fanout.js";
 import { definition as file_issues } from "./file-issues.js";
 import { definition as foreach } from "./foreach.js";
+import { definition as git } from "./git.js";
 import { definition as launch_runs } from "./launch-runs.js";
 import { definition as merge } from "./merge.js";
+
+import { definition as pr } from "./pr.js";
 import { nodeRegistry } from "./registry.js";
 import { definition as script } from "./script.js";
 import { definition as show } from "./show.js";
@@ -43,3 +47,8 @@ nodeRegistry.register(wait);
 nodeRegistry.register(merge);
 nodeRegistry.register(ticket);
 nodeRegistry.register(exec);
+
+
+nodeRegistry.register(git);
+nodeRegistry.register(pr);
+nodeRegistry.register(ci);

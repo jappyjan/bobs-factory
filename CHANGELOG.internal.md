@@ -89,6 +89,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Added
 
+- Add registry-driven, provider-agnostic `git`, `pr` and `ci` IO nodes with structured repository revisions, reusable GitHub/GitLab PR helpers, durable mutation reconciliation and per-operation read-only metadata for polling wrappers. Retain existing tools, Git identity/signing and worktree boundaries. ([Taskbot #162](https://taskbot.apps.janjaap.de/p/bobs-factory/t/162), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156))
+
 - Record authenticated HTTPS Web Push QA through an isolated `zrok2` tunnel, including proxy guards, device controls, refreshed notification destinations and loss of access; retain explicit native-delivery and production-deployment limitations. ([#35](https://github.com/Attraccess/bobs-factory/pull/35))
 - Add a reproducible mocked F1 follow-up for refinement recommendation submission and existing-session replies, retaining the disputed native-only QA coverage as an explicit limitation. ([#31](https://github.com/Attraccess/bobs-factory/pull/31))
 

@@ -49,6 +49,60 @@ export function githubProvider(
 		return `${api.pullRequestsPath}/${reference.number}`;
 	};
 	return {
+		read: async (url) => {
+			const pr = await api.request<any>("GET", path(url));
+			const snapshot = await inspectGithubReadiness(
+				command,
+				url,
+				checkReceipts,
+			);
+			if (
+				pr.head?.sha !== snapshot.headSha ||
+				pr.base?.ref !== snapshot.baseRefName
+			)
+				throw new Error("PR revision changed during read");
+			return {
+				...githubPullRequest(pr),
+				baseSha: snapshot.baseSha,
+				mergeability:
+					pr.mergeable === true
+						? "mergeable"
+						: pr.mergeable === false
+							? "conflicting"
+							: "unknown",
+				reviews: snapshot.reviews,
+				unresolvedThreads: snapshot.threads,
+				reviewComments: await api.pages(`${path(url)}/comments`),
+				labels: (pr.labels ?? []).map((label: any) => label.name),
+				checks: snapshot.checks,
+			};
+		},
+		update: async (url, input) => {
+			await api.request("PATCH", path(url), input);
+		},
+		comments: async (url) => {
+			const ref = pullRequestReference(url)!;
+			path(url);
+			return (
+				await api.pages<any>(
+					`repos/${api.repository.project}/issues/${ref.number}/comments`,
+				)
+			).map((item) => ({
+				id: String(item.id),
+				body: item.body ?? "",
+				url: item.html_url,
+			}));
+		},
+		comment: async (url, body) => {
+			const ref = pullRequestReference(url)!;
+			path(url);
+			const item = await api.request<any>(
+				"POST",
+				`repos/${api.repository.project}/issues/${ref.number}/comments`,
+				{ body },
+			);
+			return { id: String(item.id), body: item.body ?? "", url: item.html_url };
+		},
 		retryCheck: async (url, retry) => {
 			if (retry.kind !== "github-run" || !/^\d+$/.test(retry.id))
 				throw new Error("Invalid GitHub retry receipt");

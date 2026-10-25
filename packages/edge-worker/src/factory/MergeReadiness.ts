@@ -31,6 +31,8 @@ export interface MergeBlocker {
 	action: "fix" | "wait" | "human";
 }
 export interface ProviderCheck {
+	required?: boolean;
+	failureLogExcerpt?: string;
 	name: string;
 	state: string;
 	bucket: string;
