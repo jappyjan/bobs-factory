@@ -30,7 +30,10 @@ import {
 	registerWorkflowConfig,
 	STEP_CONFIG_VERSION,
 } from "./StepConfig.js";
-import { stockFactorySteps } from "./stockFactorySteps.js";
+import {
+	stockFactorySteps,
+	withoutAssessmentReads,
+} from "./stockFactorySteps.js";
 import {
 	StepSchema,
 	validateWorkflows,
@@ -223,7 +226,10 @@ export function recognizedStock(workflow: Workflow): boolean {
 		const pipeline = reserved.get("factory-pipeline")!;
 		templates.push({ ...current, steps: pipeline.steps });
 		// Bounded #141 flat stock recognition; local forks and accepted runs are never rewritten.
-		templates.push({ ...current, steps: Object.values(stockFactorySteps) });
+		templates.push({
+			...current,
+			steps: Object.values(stockFactorySteps).map(withoutAssessmentReads),
+		});
 		const legacyTemplate = {
 			...current,
 			steps: legacyReviewSteps.map((step) => StepSchema.parse(step)),
