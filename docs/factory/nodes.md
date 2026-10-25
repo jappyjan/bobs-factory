@@ -117,3 +117,108 @@ no cyclic dependencies.
 `test/NodeRegistry.test.ts` demonstrates registration, recipe execution, builder
 insertion/settings, recursive data-only safety, output stamps and effect recovery
 across a cold runtime restart.
+
+## Agent nodes (new engine)
+
+Set `engineVersion: "nodes-v1"` on a recipe to opt into the node engine contract.
+Absence retains accepted legacy definitions, including `step-config-v1` recipes;
+that older marker alone does **not** opt in. The marker belongs to each definition,
+including called recipes, and is retained when saving or forking. No existing
+recipe is migrated automatically. This marker is shared with the other #156 node
+work; align it with B3 if that contract changes before integration.
+
+An agent runs a prompt and returns data. Its configuration is:
+
+```json
+{
+  "id": "compose",
+  "type": "agent",
+  "name": "Compose",
+  "prompt": "Produce the requested result from the supplied reads.",
+  "reads": { "request": "@launchInputs/request", "answer": "human/answer" },
+  "output": { "schema": { "type": "object", "required": ["status"] } },
+  "rules": [],
+  "verify": [{ "check": "files-exist", "path": "/files/*" }],
+  "access": "workspace",
+  "instructions": [],
+  "session": "resume",
+  "runner": "codex",
+  "model": "configured-model",
+  "chat": false,
+  "next": "status"
+}
+```
+
+`output` accepts `{ "format": "<registered format ID>" }` or `{ "schema": <JSON
+Schema> }`. Runner/model settings also include `reasoningEffort`, `modelVariant`
+and `serviceTier`, subject to the selected runner's existing support. Graph routes,
+visit limits, resource constraints and context policies retain their usual meaning.
+
+`session` defaults to `fresh`: each graph visit starts a new native conversation.
+`resume` retains the node's last native session in its lexical graph frame and
+continues it when a loop revisits that node. The next message contains the newly
+resolved named reads (bounded values inline, large or native-transcript reads
+through scoped factory-context references); the factory-context connection is rebuilt with current data.
+Separate nodes, calls and item frames keep separate session identities. An
+interrupted visit and output-correction retries continue their saved session in
+either mode; `fresh` controls **new visits**, not recovery within a visit.
+Session identities survive checkpoints and cold restarts. A resumed visit never
+reuses its previous completed result as the new output.
+
+All currently selectable runners support native resume: Claude uses SDK `resume`,
+Codex resumes its app-server thread, Gemini uses `-r`, Cursor resumes its agent,
+and OpenCode uses `--session`. Native errors propagate through the existing
+recovery path; they do not silently start a fresh conversation. A different runner
+cannot consume another runner's session ID. A revisited `resume` node with no
+retained native ID fails with an explicit error; select `fresh` when the runner
+cannot retain a resumable session.
+
+`verify` accepts only selector-based generic evidence checks:
+
+- `{"check":"files-exist","path":"/files/*","repositoryId":"optional-repo"}`
+- `{"check":"media-valid","path":"/images/*","kind":"image"}` (or `video`)
+- `{"check":"code-refs-valid","path":"/references/*","repositoryId":"optional-repo"}`
+- `{"check":"ids-resolve","path":"/selected/*","source":"items","ids":"/items/*/id"}`
+
+Selectors are JSON Pointers with `*` for array/object entries. `source` names a
+read on this agent. File and code checks retain repository containment/revision
+validation; media checks retain the evidence-directory boundary. Verification
+failures use the existing bounded output-correction retries in the same native
+session, with the rejected output and precise issues. Schemas and declarative
+rules express other output requirements. Runtime contract adapters are unavailable
+through `verify`.
+
+New-engine agents reject `qaContract`, `videoContract`, `impactContract`, `impact`,
+`architectureSource`, `architectureContract`, `architectureBrief`, `reviewContract`,
+`guideContract`, `review`, `impactSource`, `inputs`, `askQuestions`, `view` and
+`checks`, including inside nested graphs. Legacy definitions and their prompt
+assembly remain unchanged. The new builder panel exposes Session and Verify and
+leaves human presentation to separate nodes.
+
+## Asking a human through graph composition
+
+An agent can return ordinary data such as:
+
+```json
+{ "status": "needs-input", "display": { "title": "Choose a value" } }
+```
+
+The recipe owns the loop:
+
+```text
+agent (session: resume)
+  → check(status == needs-input)
+      true → display(from: agent/display) → agent
+      false → next node
+```
+
+Bind the display's answer output into the agent's `reads`. The returning message
+contains that new read; the existing native conversation provides continuity.
+The agent neither renders UI nor waits for answers itself. Output field names
+such as `status` and `display` have no special engine meaning. The display document
+must match the display node's configured schema.
+
+`test/fixtures/agent-node-needs-input.json` is an executable test recipe. Until B2
+lands, `test/AgentNode.test.ts` registers a tiny pure status check and fake human
+node through the registry. It tests the complete loop and a restart while waiting,
+without introducing another production human UI protocol.

@@ -6,6 +6,8 @@ This changelog documents internal development changes, refactors, tooling update
 
 ### Changed
 
+- Add opt-in generic Factory agents with fresh/resumed native sessions, current reads on each turn, selector-only `verify` checks and a separate human-node loop. Reject legacy domain flags and embedded UI in `nodes-v1` definitions while preserving accepted legacy prompts and behavior. ([Taskbot #161](https://taskbot.apps.janjaap.de/p/bobs-factory/t/161), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156))
+
 - Register Factory node schemas, execution and builder metadata through one catalog; extract existing generic node dispatch, stamp completed output receipts with resolved-input digests, and provide durable effect keys and reconciliation for new nodes. Retry proven-absent effects with the same key, retain not-sent cancellations, expose capacity-free wait phases, stamp actual agent reads, track read failures and preserve graph chat inheritance. Generic JSON settings can remove optional fields. Preserve accepted recipe and action-recovery behavior. ([Taskbot #157](https://taskbot.apps.janjaap.de/p/bobs-factory/t/157), epic [#156](https://taskbot.apps.janjaap.de/p/bobs-factory/t/156), [#199](https://github.com/jappyjan/bobs-factory/pull/199))
 
 - Nightly evidence accepts a reviewed dependency refresh (schema 3). Its review enumerates every added or changed lockfile package. Shipped packages carry exact npm archives and full notices. Build and test tooling is pinned by integrity, and the binary build refuses to bundle it. The October 2026 refresh review covers #173's updates and supersedes the Recipes review.

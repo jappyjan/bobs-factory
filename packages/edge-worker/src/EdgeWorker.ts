@@ -335,6 +335,7 @@ import { roleAgentContext, roleContextAccess } from "./factory/RoleContext.js";
 import {
 	factoryNativePrompt,
 	factoryRoleInstruction,
+	nativeAgentReads,
 } from "./factory/RolePrompt.js";
 import { takeoverSource, ticketSnapshot } from "./factory/RunContextSources.js";
 import {
@@ -9307,11 +9308,17 @@ ${taskSection}`;
 			delete context.inspectionBinding;
 			delete context.researchAccess;
 		}
-		if (context.step.reads)
-			context.input = {
+		if (context.step.reads) {
+			const bindings = stepBindings(context);
+			const input = {
 				...(context.input as Record<string, unknown>),
-				...stepBindings(context),
+				...bindings,
 			};
+			if (context.input && typeof context.input === "object")
+				retainTranscriptSource(context.input, input);
+			retainTranscriptSource(bindings, input);
+			context.input = input;
+		}
 		if (!context.contextAssistance)
 			context.inspectionBinding ??=
 				context.resumeAgent?.inspection ??
@@ -9547,6 +9554,13 @@ ${taskSection}`;
 				.update(context.stepKey ?? step.id)
 				.digest("hex"),
 		);
+		if (
+			context.resumeAgent?.sessionId &&
+			context.resumeAgent.runner !== runnerType
+		)
+			throw new Error(
+				`Cannot resume ${context.resumeAgent.runner} session with ${runnerType}; retain the original runner or choose session=fresh.`,
+			);
 		built.config.resumeSessionId = context.resumeAgent?.sessionId;
 		built.config.additionalDirectories = [
 			...(built.config.additionalDirectories ?? []),
@@ -9880,6 +9894,7 @@ ${taskSection}`;
 							outputCorrection: !!outputCorrection,
 							captureCorrection: !!captureCorrection,
 							resumed: !!context.resumeAgent?.sessionId,
+							reads: nativeAgentReads(step, context.input),
 							evidenceDir: context.evidenceDir,
 						});
 				// Include the managed capacity addendum applied by buildRunnerForType.

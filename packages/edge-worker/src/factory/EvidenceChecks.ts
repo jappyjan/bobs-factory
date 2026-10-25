@@ -16,6 +16,7 @@ import {
 import {
 	CHECK_IDS,
 	type CheckId,
+	isNodeEngineStep,
 	readOutput,
 	resolveStepConfig,
 } from "./StepConfig.js";
@@ -283,11 +284,15 @@ export async function runEvidenceChecks(
 						? Object.hasOwn(inputs, args.source)
 							? inputs[args.source]
 							: undefined
-						: readOutput(
-								context.step,
-								args.source,
-								context.outputs ?? context.run.outputs,
-							);
+						: isNodeEngineStep(context.step)
+							? (context.input as Record<string, unknown> | undefined)?.[
+									args.source
+								]
+							: readOutput(
+									context.step,
+									args.source,
+									context.outputs ?? context.run.outputs,
+								);
 					if (bound === undefined)
 						throw new Error(
 							`ids-resolve has no bound output for ${args.source}`,

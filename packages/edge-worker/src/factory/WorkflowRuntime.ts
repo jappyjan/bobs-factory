@@ -2453,7 +2453,7 @@ export class WorkflowRuntime {
 				: undefined;
 			if (!checkpoint.active) {
 				checkpoint.visits[step.id] = (checkpoint.visits[step.id] ?? 0) + 1;
-				const session =
+				const retainedSession =
 					run.progressBudget?.sessions[key] ??
 					(definition?.outcomes?.length ||
 					reviewBaseline?.impact?.snapshot.reuseVersion === "composed-v1" ||
@@ -2463,6 +2463,21 @@ export class WorkflowRuntime {
 							"composed-v1")
 						? checkpoint.agentSessions?.[step.id]
 						: undefined);
+				const session =
+					step.type === "agent" && step.session
+						? step.session === "resume"
+							? checkpoint.agentSessions?.[step.id]
+							: undefined
+						: retainedSession;
+				if (
+					step.type === "agent" &&
+					step.session === "resume" &&
+					checkpoint.visits[step.id]! > 1 &&
+					!session?.sessionId
+				)
+					throw new Error(
+						`Agent ${key} cannot resume: its previous visit did not retain a native session ID. Choose session=fresh to start another conversation.`,
+					);
 				checkpoint.active = {
 					phase: "executing",
 					...(session ? { agent: { ...session } } : {}),

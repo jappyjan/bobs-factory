@@ -12,6 +12,7 @@ import type { WorkflowStep } from "../Workflow.js";
 
 export type Step = WorkflowStep;
 export type Recipe = {
+	engineVersion?: "nodes-v1";
 	stepConfigVersion?: "step-config-v1";
 	convergence?: import("../ProgressPolicy.js").ProgressPolicy;
 	id: string;
@@ -59,6 +60,7 @@ export function changeRouteTarget(
 
 /** Fields a recipe owns; catalog metadata (enabled, provenance…) is not edited here. */
 const editableKeys = [
+	"engineVersion",
 	"convergence",
 	"stepConfigVersion",
 	"id",
