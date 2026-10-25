@@ -39,7 +39,8 @@ two API-backed tests initially lacked the not-yet-built web `current.json`.
 After the web build, the entire affected file plus FactoryServer, FactoryWebClient
 and the new NodeRegistry suite passed (4 files / 102 tests). The registry/editor
 subset subsequently passed (4 files / 30 tests). The edge-worker build, server/web
-typecheck and changed-code Biome checks passed.
+typecheck and changed-code Biome checks passed. The normal pre-commit hook also
+passed lint-staged, the repository build and repository-wide typechecks.
 
 The older Improve drive references a module removed on current main, so this
 fixture directly exercises the refactored execution paths instead. This drive
