@@ -73,6 +73,7 @@ function receiptDigest(receipt: Receipt): string {
 export async function observeNodeRevisions(
 	context: ExecutionContext,
 ): Promise<NodeRevisions> {
+	context.signal.throwIfAborted();
 	const repositories = runRepositories(context.run).filter((repo) =>
 		existsSync(join(repo.workspace, ".git")),
 	);
@@ -80,6 +81,7 @@ export async function observeNodeRevisions(
 	const observed = await captureRepositoryRevisions({
 		run: { ...context.run, repositories },
 	});
+	context.signal.throwIfAborted();
 	return Object.fromEntries(
 		observed.map(({ id, headSha, workspaceDigest }) => [
 			id,
@@ -211,6 +213,7 @@ export async function freshNodeOutput(
 	context: ExecutionContext,
 	reference: string,
 ): Promise<boolean> {
+	context.signal.throwIfAborted();
 	const visiting = new Set<string>();
 	let revisions: Promise<NodeRevisions> | undefined;
 	const check = async (key: string, depth: number): Promise<boolean> => {
@@ -237,8 +240,7 @@ export async function freshNodeOutput(
 					: context.run.outputs[key];
 			if (digest(currentOutput) !== guarantee.outputDigest) return false;
 			const readsHistory = Object.values(resolveStepConfig(step).reads).some(
-				(read) =>
-					!!read.when || /^@(history|reviewLedger)(\/|$)/.test(read.from),
+				(read) => !!read.when || /^@history(\/|$)/.test(read.from),
 			);
 			const history = readsHistory
 				? context.run.history.filter(
@@ -284,7 +286,8 @@ export async function freshNodeOutput(
 					return false;
 			}
 			return true;
-		} catch {
+		} catch (error) {
+			if (context.signal.aborted) throw error;
 			return false;
 		} finally {
 			visiting.delete(key);
