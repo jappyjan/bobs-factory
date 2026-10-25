@@ -288,6 +288,13 @@ it("invalidates fresh after input, dirty workspace and HEAD changes, including a
 	repo.commit("two");
 	expect(await freshNodeOutput(context(loaded), "inspect")).toBe(false);
 	expect(await freshNodeOutput(context(loaded), "missing")).toBe(false);
+	const aborted = {
+		...context(loaded),
+		signal: AbortSignal.abort(new Error("freshness cancelled")),
+	};
+	await expect(freshNodeOutput(aborted, "inspect")).rejects.toThrow(
+		"freshness cancelled",
+	);
 });
 
 it("invalidates reuse after a revision change reported by an IO node", async () => {
@@ -600,4 +607,44 @@ it("does not relabel inherited stale repository evidence with a consumer's curre
 	const source = run.history[0]!.guarantee!.revisions;
 	for (const receipt of run.history.filter((entry) => entry.step === "consume"))
 		expect(receipt.guarantee?.revisions).toEqual(source);
+});
+
+it("stamps a mutating agent with its resulting revision while retaining its input digest", async () => {
+	let repo: ReturnType<typeof repository>;
+	const { instance, home } = runtime(undefined, async (ctx) => {
+		expect(ctx.input).toMatchObject({ value: 1 });
+		repo.commit("two");
+		return { updated: true };
+	});
+	repo = repository(home);
+	execute.mockImplementation((ctx) => {
+		ctx.recordRevisions({
+			fixture: { headSha: repo.git("rev-parse", "HEAD") },
+		});
+		return { value: 1 };
+	});
+	const run = start(
+		instance,
+		home,
+		[
+			fixture("source"),
+			{
+				id: "change",
+				name: "Change",
+				type: "agent",
+				prompt: "Change value",
+				reads: { value: "source/value" },
+				access: { mode: "workspace" },
+			},
+		],
+		repo.workspace,
+	);
+	await instance.launch(run);
+	expect(run.error).toBeUndefined();
+	expect(run.history.at(-1)?.inputDigest).toBe(digest({ value: 1 }));
+	expect(run.history.at(-1)?.guarantee?.revisions.fixture?.headSha).toBe(
+		repo.git("rev-parse", "HEAD"),
+	);
+	expect(await freshNodeOutput(context(run), "source")).toBe(false);
+	expect(await freshNodeOutput(context(run), "change")).toBe(true);
 });

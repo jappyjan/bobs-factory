@@ -18,7 +18,6 @@ export interface NodeGuarantee {
 	version: 1;
 	revisions: NodeRevisions;
 	boundDigests: Record<string, string>;
-	readDigests?: Record<string, string>;
 	/** Repository observations owned by this node, rather than inherited reads. */
 	observedRepositories?: string[];
 	scope: {
@@ -65,7 +64,6 @@ function receiptDigest(receipt: Receipt): string {
 		inputDigest: receipt.inputDigest,
 		revisions: receipt.guarantee?.revisions,
 		boundDigests: receipt.guarantee?.boundDigests,
-		readDigests: receipt.guarantee?.readDigests,
 	});
 }
 
@@ -122,11 +120,9 @@ export async function prepareNodeGuarantee(
 		}),
 	);
 	const revisions: NodeRevisions = {};
-	const readDigests: Record<string, string> = {};
 	for (const name of readSources) {
 		const key = sources[name]!;
 		const receipt = latestNodeReceipt(context, key);
-		if (receipt?.guarantee) readDigests[key] = receiptDigest(receipt);
 		Object.assign(revisions, receipt?.guarantee?.revisions);
 	}
 	const boundDigests: Record<string, string> = {};
@@ -193,7 +189,6 @@ export async function prepareNodeGuarantee(
 			]),
 		],
 		boundDigests,
-		readDigests,
 		scope: {
 			outputs: sources,
 			callInputs: reads.some(
@@ -273,10 +268,7 @@ export async function freshNodeOutput(
 						return false;
 				}
 			}
-			for (const [bound, accepted] of Object.entries({
-				...guarantee.readDigests,
-				...guarantee.boundDigests,
-			})) {
+			for (const [bound, accepted] of Object.entries(guarantee.boundDigests)) {
 				const current = latestNodeReceipt(context, bound);
 				if (
 					!current ||
@@ -311,7 +303,6 @@ export function reusableNodeOutput(
 		receipt.guarantee &&
 		digest(receipt.guarantee.revisions) === digest(guarantee.revisions) &&
 		digest(receipt.guarantee.boundDigests) === digest(guarantee.boundDigests) &&
-		digest(receipt.guarantee.readDigests) === digest(guarantee.readDigests) &&
 		(!context.iteration ||
 			receipt.iteration?.itemDigest === digest(context.iteration.value))
 		? receipt

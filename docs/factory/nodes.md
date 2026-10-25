@@ -846,8 +846,7 @@ In rules-v1, `fresh("sample")` is JSON data:
 The operator works in Check results/passed rules and agent output rules, including
 under `all`, `any` and `not`. It re-resolves the producer's named reads in its own
 persisted scope and compares its output, input digest and repository revisions.
-Consumed stamped producers and bound receipts must still match and themselves
-remain fresh, recursively. Missing,
+Bound receipts must still match and themselves remain fresh, recursively. Missing,
 legacy, cyclic or unreadable evidence yields false. Standalone rule simulation
 without a runtime resolver also yields false. Nodes may call
 `await ctx.fresh("sample")` directly. References are lexical step IDs/paths;

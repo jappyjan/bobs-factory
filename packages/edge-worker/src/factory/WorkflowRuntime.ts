@@ -3058,6 +3058,8 @@ export class WorkflowRuntime {
 						nodeCtx.guarantee,
 					);
 					const reuseHit = !!reused && (await nodeCtx.fresh(step.id));
+					if (!reuseHit && step.type === "check")
+						await context.beginProgressAttempt?.();
 
 					if (reuseHit) {
 						output = structuredClone(reused!.output);
@@ -3130,7 +3132,6 @@ export class WorkflowRuntime {
 						if (step.type === "check")
 							output = await this.executeCheck(context, output);
 					} else if (!nodeRegistry.get(step.type).inline) {
-						if (step.type === "check") await context.beginProgressAttempt?.();
 						output = await nodeRegistry.execute(nodeCtx);
 						if (output === NODE_REROUTE) continue;
 						const summary = nodeRegistry.get(step.type).summary?.(output);
